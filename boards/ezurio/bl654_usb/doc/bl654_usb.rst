@@ -36,35 +36,8 @@ Hardware
 Supported Features
 ==================
 
-The BL654 USB board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `BL654 website`_
 for a complete list of BL654 USB adapter hardware features.
 
@@ -106,8 +79,10 @@ The board supports programming using the built-in bootloader.
 The board is factory-programmed with a Ezurio variation of Nordic's
 open bootloader from Nordic's nRF5x SDK. With this option, you'll use
 Nordic's `nrfutil`_ program to create firmware packages supported by this
-bootloader and flash them to the device. Make sure ``nrfutil`` is installed
-before proceeding. These instructions were tested with version 6.1.0.
+bootloader and flash them to the device. Before proceeding, make sure:
+
+* ``nrfutil`` is installed.
+* The ``nrf5sdk-tools`` command is installed within ``nrfutil``.
 
 #. With the adapter plugged in, reset the board into the bootloader by pressing
    the RESET button.
@@ -132,16 +107,19 @@ before proceeding. These instructions were tested with version 6.1.0.
 
    .. code-block:: console
 
-      nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
-              --application build/zephyr/zephyr.hex \
-              --application-version 1 blinky.zip
+      nrfutil nrf5sdk-tools pkg generate \
+               --hw-version 52 \
+               --sd-req=0x00 \
+               --application build/zephyr/zephyr.hex \
+               --application-version 1 \
+               blinky.zip
 
 #. Flash it onto the board. Note :file:`/dev/ttyACM0` is for Linux; it will be
    something like ``COMx`` on Windows, and something else on macOS.
 
    .. code-block:: console
 
-      nrfutil dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
+      nrfutil nrf5sdk-tools dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
 
    When this command exits, observe the blue LED on the board blinking.
 

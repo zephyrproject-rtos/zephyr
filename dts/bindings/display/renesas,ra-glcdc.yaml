@@ -1,0 +1,48 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas Graphic LCD controller
+
+compatible: "renesas,ra-glcdc"
+
+include: [display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    type: string-array
+    required: true
+    description: name of each interrupt
+
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
+
+  input-pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial input Pixel format for Graphic LCD controller.
+
+  output-pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial output Pixel format for Graphic LCD controller.

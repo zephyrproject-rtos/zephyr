@@ -13,6 +13,6 @@ properties:
   reg:
     required: true
 
-  fifo_depth:
+  fifo-depth:
     type: int
     required: true

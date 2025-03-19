@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i3c.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +54,7 @@ static int cmd_i2c_scan(const struct shell *shell_ctx,
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
@@ -102,7 +103,7 @@ static int cmd_i2c_recover(const struct shell *shell_ctx,
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
 			    argv[1]);
@@ -135,7 +136,7 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 	int ret;
 	int i;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
 			    s_dev_name);
@@ -198,7 +199,7 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 	int dev_addr;
 	int ret;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
 			    s_dev_name);
@@ -310,7 +311,7 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	uint32_t speed;
 	int ret;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
 			    s_dev_name);
@@ -336,9 +337,18 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	return 0;
 }
 
+static bool device_is_i2c(const struct device *dev)
+{
+#ifdef CONFIG_I3C
+	return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);
+#else
+	return DEVICE_API_IS(i2c, dev);
+#endif
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_i2c);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

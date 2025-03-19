@@ -18,7 +18,7 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, bool);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move_by, const struct device *, int32_t);
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_max_velocity, const struct device *, uint32_t);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_microstep_interval, const struct device *, uint64_t);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_micro_step_res, const struct device *,
 			enum stepper_micro_step_resolution);
@@ -34,8 +34,7 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move_to, const struct device *, int32_
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_run, const struct device *, enum stepper_direction,
-			uint32_t);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_run, const struct device *, enum stepper_direction);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_event_callback, const struct device *,
 			stepper_event_callback_t, void *);

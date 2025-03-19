@@ -69,3 +69,10 @@ tests:
     # presence of the arduino_spi DT nodelabel
     platform_allow:
       - mimxrt685_evk/mimxrt685s/cm33
+  drivers.display.read_write.rtkmipilcdb00000be:
+    tags:
+      - shield
+    extra_args:
+      - SHIELD=rtkmipilcdb00000be
+    platform_allow:
+      - ek_ra8d1

@@ -292,8 +292,6 @@ struct rtio_sqe {
 
 	uint32_t iodev_flags; /**< Op iodev flags */
 
-	uint16_t _resv0;
-
 	const struct rtio_iodev *iodev; /**< Device to operation on */
 
 	/**
@@ -1139,10 +1137,14 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 		struct sys_mem_blocks *mem_pool = r->block_pool;
-		int blk_index = (iodev_sqe->sqe.rx.buf - mem_pool->buffer) >>
-				mem_pool->info.blk_sz_shift;
-		int blk_count = iodev_sqe->sqe.rx.buf_len >> mem_pool->info.blk_sz_shift;
+		unsigned int blk_index = 0;
+		unsigned int blk_count = 0;
 
+		if (iodev_sqe->sqe.rx.buf) {
+			blk_index = (iodev_sqe->sqe.rx.buf - mem_pool->buffer) >>
+				    mem_pool->info.blk_sz_shift;
+			blk_count = iodev_sqe->sqe.rx.buf_len >> mem_pool->info.blk_sz_shift;
+		}
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
 #else
@@ -1175,15 +1177,21 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 {
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (RTIO_CQE_FLAG_GET(cqe->flags) == RTIO_CQE_FLAG_MEMPOOL_BUFFER) {
-		int blk_idx = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_IDX(cqe->flags);
-		int blk_count = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_CNT(cqe->flags);
+		unsigned int blk_idx = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_IDX(cqe->flags);
+		unsigned int blk_count = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_CNT(cqe->flags);
 		uint32_t blk_size = rtio_mempool_block_size(r);
 
-		*buff = r->block_pool->buffer + blk_idx * blk_size;
 		*buff_len = blk_count * blk_size;
-		__ASSERT_NO_MSG(*buff >= r->block_pool->buffer);
-		__ASSERT_NO_MSG(*buff <
+
+		if (blk_count > 0) {
+			*buff = r->block_pool->buffer + blk_idx * blk_size;
+
+			__ASSERT_NO_MSG(*buff >= r->block_pool->buffer);
+			__ASSERT_NO_MSG(*buff <
 				r->block_pool->buffer + blk_size * r->block_pool->info.num_blocks);
+		} else {
+			*buff = NULL;
+		}
 		return 0;
 	}
 	return -EINVAL;
@@ -1251,7 +1259,16 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
 		rtio_cqe_produce(r, cqe);
 	}
 
-	atomic_inc(&r->cq_count);
+	/* atomic_t isn't guaranteed to wrap correctly as it could be signed, so
+	 * we must resort to a cas loop.
+	 */
+	atomic_t val, new_val;
+
+	do {
+		val = atomic_get(&r->cq_count);
+		new_val = (atomic_t)((uintptr_t)val + 1);
+	} while (!atomic_cas(&r->cq_count, val, new_val));
+
 #ifdef CONFIG_RTIO_SUBMIT_SEM
 	if (r->submit_count > 0) {
 		r->submit_count--;
@@ -1502,6 +1519,8 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
  * submission chain, freeing submission queue events when done, and
  * producing completion queue events as submissions are completed.
  *
+ * @warning It is undefined behavior to have re-entrant calls to submit
+ *
  * @param r RTIO context
  * @param wait_count Number of submissions to wait for completion of.
  *
@@ -1509,13 +1528,11 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
  */
 __syscall int rtio_submit(struct rtio *r, uint32_t wait_count);
 
+#ifdef CONFIG_RTIO_SUBMIT_SEM
 static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 {
 	int res = 0;
 
-#ifdef CONFIG_RTIO_SUBMIT_SEM
-	/* TODO undefined behavior if another thread calls submit of course
-	 */
 	if (wait_count > 0) {
 		__ASSERT(!k_is_in_isr(),
 			 "expected rtio submit with wait count to be called from a thread");
@@ -1523,35 +1540,43 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 		k_sem_reset(r->submit_sem);
 		r->submit_count = wait_count;
 	}
-#else
-	uintptr_t cq_count = (uintptr_t)atomic_get(&r->cq_count) + wait_count;
-#endif
 
-	/* Submit the queue to the executor which consumes submissions
-	 * and produces completions through ISR chains or other means.
-	 */
 	rtio_executor_submit(r);
-
-
-	/* TODO could be nicer if we could suspend the thread and not
-	 * wake up on each completion here.
-	 */
-#ifdef CONFIG_RTIO_SUBMIT_SEM
 
 	if (wait_count > 0) {
 		res = k_sem_take(r->submit_sem, K_FOREVER);
 		__ASSERT(res == 0,
 			 "semaphore was reset or timed out while waiting on completions!");
 	}
-#else
-	while ((uintptr_t)atomic_get(&r->cq_count) < cq_count) {
-		Z_SPIN_DELAY(10);
-		k_yield();
-	}
-#endif
 
 	return res;
 }
+#else
+static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
+{
+
+	int res = 0;
+	uintptr_t cq_count = (uintptr_t)atomic_get(&r->cq_count);
+	uintptr_t cq_complete_count = cq_count + wait_count;
+	bool wraps = cq_complete_count < cq_count;
+
+	rtio_executor_submit(r);
+
+	if (wraps) {
+		while ((uintptr_t)atomic_get(&r->cq_count) >= cq_count) {
+			Z_SPIN_DELAY(10);
+			k_yield();
+		}
+	}
+
+	while ((uintptr_t)atomic_get(&r->cq_count) < cq_complete_count) {
+		Z_SPIN_DELAY(10);
+		k_yield();
+	}
+
+	return res;
+}
+#endif /* CONFIG_RTIO_SUBMIT_SEM */
 
 /**
  * @}

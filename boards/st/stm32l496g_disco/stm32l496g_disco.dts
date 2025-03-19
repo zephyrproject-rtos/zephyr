@@ -164,7 +164,7 @@
 &adc1 {
 	pinctrl-0 = < &adc1_in2_pc1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -194,7 +194,7 @@ zephyr_udc0: &usbotg_fs {
 			&quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
 	pinctrl-names = "default";
 
-	dmas = <&dma2 7 3 0x480>; /* channel 7 request 3 on DMA2 */
+	dmas = <&dma2 7 3 STM32_DMA_PERIPH_RX>; /* channel 7 request 3 on DMA2 */
 	dma-names = "tx_rx";
 
 	flash-id = <1>;

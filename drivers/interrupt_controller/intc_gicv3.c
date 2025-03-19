@@ -1,6 +1,7 @@
 /*
  * Copyright 2020 Broadcom
  * Copyright 2024 NXP
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,33 @@
 #include <string.h>
 
 #define DT_DRV_COMPAT arm_gic_v3
+
+#define GIC_V3_NODE	DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
+
+#define GIC_REDISTRIBUTOR_STRIDE	DT_PROP_OR(GIC_V3_NODE, redistributor_stride, 0)
+#define GIC_NUM_REDISTRIBUTOR_REGIONS	DT_PROP_OR(GIC_V3_NODE, redistributor_regions, 1)
+
+#define GIC_REG_REGION(idx, node_id)				\
+	{							\
+		.base = DT_REG_ADDR_BY_IDX(node_id, idx),	\
+		.size = DT_REG_SIZE_BY_IDX(node_id, idx),	\
+	}
+
+/*
+ * Structure to save GIC register region info
+ */
+struct gic_reg_region {
+	mem_addr_t base;
+	mem_addr_t size;
+};
+
+/*
+ * GIC register regions info table
+ */
+static struct gic_reg_region gic_reg_regions[] = {
+	LISTIFY(DT_NUM_REGS(GIC_V3_NODE), GIC_REG_REGION, (,), GIC_V3_NODE)
+};
+
 
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
@@ -578,20 +606,34 @@ static inline uint64_t arm_gic_get_typer(mem_addr_t addr)
 static mem_addr_t arm_gic_iterate_rdists(void)
 {
 	uint64_t aff = arm_gic_mpidr_to_affinity(GET_MPIDR());
+	uint32_t idx;
 
-	for (mem_addr_t rdist_addr = GIC_RDIST_BASE;
-		rdist_addr < GIC_RDIST_BASE + GIC_RDIST_SIZE;
-		rdist_addr += 0x20000) {
-		uint64_t val = arm_gic_get_typer(rdist_addr + GICR_TYPER);
-		uint64_t gicr_aff = GICR_TYPER_AFFINITY_VALUE_GET(val);
+	/* Skip the first array entry as it refers to the GIC distributor */
+	for (idx = 1; idx < GIC_NUM_REDISTRIBUTOR_REGIONS + 1; idx++) {
+		uint64_t val;
+		mem_addr_t rdist_addr = gic_reg_regions[idx].base;
+		mem_addr_t rdist_end = rdist_addr + gic_reg_regions[idx].size;
 
-		if (arm_gic_aff_matching(gicr_aff, aff)) {
-			return rdist_addr;
-		}
+		do {
+			val = arm_gic_get_typer(rdist_addr + GICR_TYPER);
+			uint64_t gicr_aff = GICR_TYPER_AFFINITY_VALUE_GET(val);
 
-		if (GICR_TYPER_LAST_GET(val) == 1) {
-			return (mem_addr_t)NULL;
-		}
+			if (arm_gic_aff_matching(gicr_aff, aff)) {
+				return rdist_addr;
+			}
+
+			if (GIC_REDISTRIBUTOR_STRIDE > 0) {
+				rdist_addr += GIC_REDISTRIBUTOR_STRIDE;
+			} else {
+				/*
+				 * Skip RD_base and SGI_base
+				 * In GICv3, GICR_TYPER.VLPIS bit is RES0 and can can be ignored
+				 * as there are no VLPI and reserved pages.
+				 */
+				rdist_addr += KB(64) * 2;
+			}
+
+		} while ((!GICR_TYPER_LAST_GET(val)) && (rdist_addr < rdist_end));
 	}
 
 	return (mem_addr_t)NULL;

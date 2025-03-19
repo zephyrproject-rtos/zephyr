@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Aleksandr Senin <al@meshium.net>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    KSZ8463 ethernet switch
+
+compatible: "microchip,ksz8463"
+
+include: [microchip_dsa.yaml]

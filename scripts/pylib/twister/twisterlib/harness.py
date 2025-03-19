@@ -16,6 +16,8 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from enum import Enum
 
+import junitparser.junitparser as junit
+import yaml
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
@@ -52,7 +54,8 @@ class Harness:
         self.capture_coverage = False
         self.next_pattern = 0
         self.record = None
-        self.record_pattern = None
+        self.record_patterns = []
+        self.record_merge = False
         self.record_as_json = None
         self.recording = []
         self.ztest = False
@@ -98,7 +101,8 @@ class Harness:
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
             if self.record:
-                self.record_pattern = re.compile(self.record.get("regex", ""))
+                self.record_patterns = [re.compile(p) for p in self.record.get("regex", [])]
+                self.record_merge = self.record.get("merge", False)
                 self.record_as_json = self.record.get("as_json")
 
     def build(self):
@@ -124,17 +128,27 @@ class Harness:
                     record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
         return record
 
-    def parse_record(self, line) -> re.Match:
-        match = None
-        if self.record_pattern:
-            match = self.record_pattern.search(line)
+    def parse_record(self, line) -> int:
+        match_cnt = 0
+        for record_pattern in self.record_patterns:
+            match = record_pattern.search(line)
             if match:
+                match_cnt += 1
                 rec = self.translate_record(
                     { k:v.strip() for k,v in match.groupdict(default="").items() }
                 )
-                self.recording.append(rec)
-        return match
-    #
+                if self.record_merge and len(self.recording) > 0:
+                    for k,v in rec.items():
+                        if k in self.recording[0]:
+                            if isinstance(self.recording[0][k], list):
+                                self.recording[0][k].append(v)
+                            else:
+                                self.recording[0][k] = [self.recording[0][k], v]
+                        else:
+                            self.recording[0][k] = v
+                else:
+                    self.recording.append(rec)
+        return match_cnt
 
     def process_test(self, line):
 
@@ -183,7 +197,7 @@ class Robot(Harness):
         ''' Test cases that make use of this harness care about results given
             by Robot Framework which is called in run_robot_test(), so works of this
             handle is trying to give a PASS or FAIL to avoid timeout, nothing
-            is writen into handler.log
+            is written into handler.log
         '''
         self.instance.status = TwisterStatus.PASS
         tc = self.instance.get_case_or_create(self.id)
@@ -388,11 +402,9 @@ class Pytest(Harness):
             '-s', '-v',
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
-            '--log-file-level=DEBUG',
-            '--log-file-format=%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s: %(message)s',
-            f'--log-file={self.pytest_log_file_path}',
             f'--platform={self.instance.platform.name}'
         ]
+
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
 
@@ -516,9 +528,9 @@ class Pytest(Harness):
         if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
             self.status = TwisterStatus.ERROR
             self.instance.reason = f'Pytest error - return code {proc.returncode}'
-            with open(self.pytest_log_file_path, 'w') as log_file:
-                log_file.write(shlex.join(cmd) + '\n\n')
-                log_file.write('\n'.join(self._output))
+        with open(self.pytest_log_file_path, 'w') as log_file:
+            log_file.write(shlex.join(cmd) + '\n\n')
+            log_file.write('\n'.join(self._output))
 
     @staticmethod
     def _update_command_with_env_dependencies(cmd):
@@ -616,6 +628,35 @@ class Pytest(Harness):
         else:
             self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
+
+
+class Shell(Pytest):
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'shell-twister-harness')]
+        config['pytest_root'] = pytest_root
+
+        command = super().generate_command()
+        if test_shell_file := self._get_shell_commands_file(config):
+            command.append(f'--testdata={test_shell_file}')
+        else:
+            logger.warning('No shell commands provided')
+        return command
+
+    def _get_shell_commands_file(self, harness_config):
+        if shell_commands := harness_config.get('shell_commands'):
+            test_shell_file = os.path.join(self.running_dir, 'test_shell.yml')
+            with open(test_shell_file, 'w') as f:
+                yaml.dump(shell_commands, f)
+            return test_shell_file
+
+        test_shell_file = harness_config.get('shell_commands_file', 'test_shell.yml')
+        test_shell_file = os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(test_shell_file))
+        )
+        if os.path.exists(test_shell_file):
+            return test_shell_file
+        return None
 
 
 class Gtest(Harness):
@@ -757,12 +798,14 @@ class Test(Harness):
         """
         ts_names = self.started_suites.keys()
         if ts_name:
-            if ts_name not in self.instance.testsuite.ztest_suite_names:
-                logger.warning(f"On {phase}: unexpected Ztest suite '{ts_name}' "
-                               f"not present among: {self.instance.testsuite.ztest_suite_names}")
+            if self.trace and ts_name not in self.instance.testsuite.ztest_suite_names:
+                # This can happen if a ZTEST_SUITE name is macro-generated
+                # in the test source files, e.g. based on DT information.
+                logger.debug(f"{phase}: unexpected Ztest suite '{ts_name}' is "
+                             f"not present among: {self.instance.testsuite.ztest_suite_names}")
             if ts_name not in self.detected_suite_names:
                 if self.trace:
-                    logger.debug(f"On {phase}: detected new Ztest suite '{ts_name}'")
+                    logger.debug(f"{phase}: detected new Ztest suite '{ts_name}'")
                 self.detected_suite_names.append(ts_name)
             ts_names = [ ts_name ] if ts_name in ts_names else []
 
@@ -773,68 +816,74 @@ class Test(Harness):
             tc_fq_id = self.instance.compose_case_name(f"{ts_name_}.{tc_name}")
             if tc := self.instance.get_case_by_name(tc_fq_id):
                 if self.trace:
-                    logger.debug(f"On {phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
+                    logger.debug(f"{phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
                 return tc
         logger.debug(
-            f"On {phase}: Ztest case '{tc_name}' is not known"
+            f"{phase}: Ztest case '{tc_name}' is not known"
             f" in {self.started_suites} running suite(s)."
         )
         tc_id = self.instance.compose_case_name(tc_name)
         return self.instance.get_case_or_create(tc_id)
 
-    def start_suite(self, suite_name):
+    def start_suite(self, suite_name, phase='TS_START'):
         if suite_name not in self.detected_suite_names:
             self.detected_suite_names.append(suite_name)
-        if suite_name not in self.instance.testsuite.ztest_suite_names:
-            logger.warning(f"Unexpected Ztest suite '{suite_name}'")
+        if self.trace and suite_name not in self.instance.testsuite.ztest_suite_names:
+            # This can happen if a ZTEST_SUITE name is macro-generated
+            # in the test source files, e.g. based on DT information.
+            logger.debug(f"{phase}: unexpected Ztest suite '{suite_name}' is "
+                         f"not present among: {self.instance.testsuite.ztest_suite_names}")
         if suite_name in self.started_suites:
             if self.started_suites[suite_name]['count'] > 0:
-                logger.warning(f"Already STARTED '{suite_name}':{self.started_suites[suite_name]}")
+                # Either the suite restarts itself or unexpected state transition.
+                logger.warning(f"{phase}: already STARTED '{suite_name}':"
+                               f"{self.started_suites[suite_name]}")
             elif self.trace:
-                logger.debug(f"START suite '{suite_name}'")
+                logger.debug(f"{phase}: START suite '{suite_name}'")
             self.started_suites[suite_name]['count'] += 1
             self.started_suites[suite_name]['repeat'] += 1
         else:
             self.started_suites[suite_name] = { 'count': 1, 'repeat': 0 }
 
-    def end_suite(self, suite_name, phase='', suite_status=None):
+    def end_suite(self, suite_name, phase='TS_END', suite_status=None):
         if suite_name in self.started_suites:
             if phase == 'TS_SUM' and self.started_suites[suite_name]['count'] == 0:
                 return
             if self.started_suites[suite_name]['count'] < 1:
                 logger.error(
-                    f"Already ENDED {phase} suite '{suite_name}':{self.started_suites[suite_name]}"
+                    f"{phase}: already ENDED suite '{suite_name}':{self.started_suites[suite_name]}"
                 )
             elif self.trace:
-                logger.debug(f"END {phase} suite '{suite_name}':{self.started_suites[suite_name]}")
+                logger.debug(f"{phase}: END suite '{suite_name}':{self.started_suites[suite_name]}")
             self.started_suites[suite_name]['count'] -= 1
         elif suite_status == 'SKIP':
-            self.start_suite(suite_name)  # register skipped suites at their summary end
+            self.start_suite(suite_name, phase)  # register skipped suites at their summary end
             self.started_suites[suite_name]['count'] -= 1
         else:
-            logger.warning(f"END {phase} suite '{suite_name}' without START detected")
+            logger.warning(f"{phase}: END suite '{suite_name}' without START detected")
 
-    def start_case(self, tc_name):
+    def start_case(self, tc_name, phase='TC_START'):
         if tc_name in self.started_cases:
             if self.started_cases[tc_name]['count'] > 0:
-                logger.warning(f"Already STARTED '{tc_name}':{self.started_cases[tc_name]}")
+                logger.warning(f"{phase}: already STARTED case "
+                               f"'{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] += 1
         else:
             self.started_cases[tc_name] = { 'count': 1 }
 
-    def end_case(self, tc_name, phase=''):
+    def end_case(self, tc_name, phase='TC_END'):
         if tc_name in self.started_cases:
             if phase == 'TS_SUM' and self.started_cases[tc_name]['count'] == 0:
                 return
             if self.started_cases[tc_name]['count'] < 1:
                 logger.error(
-                    f"Already ENDED {phase} case '{tc_name}':{self.started_cases[tc_name]}"
+                    f"{phase}: already ENDED case '{tc_name}':{self.started_cases[tc_name]}"
                 )
             elif self.trace:
-                logger.debug(f"END {phase} case '{tc_name}':{self.started_cases[tc_name]}")
+                logger.debug(f"{phase}: END case '{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] -= 1
         elif phase != 'TS_SUM':
-            logger.warning(f"END {phase} case '{tc_name}' without START detected")
+            logger.warning(f"{phase}: END case '{tc_name}' without START detected")
 
 
     def handle(self, line):
@@ -846,7 +895,7 @@ class Test(Harness):
             self.start_suite(test_suite_start_match.group("suite_name"))
         elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
             suite_name=test_suite_end_match.group("suite_name")
-            self.end_suite(suite_name, 'TS_END')
+            self.end_suite(suite_name)
         elif testcase_match := re.search(self.test_case_start_pattern, line):
             tc_name = testcase_match.group(2)
             tc = self.get_testcase(tc_name, 'TC_START')
@@ -947,6 +996,142 @@ class Bsim(Harness):
         logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
         shutil.copy(original_exe_path, new_exe_path)
 
+class Ctest(Harness):
+    def configure(self, instance: TestInstance):
+        super().configure(instance)
+        self.running_dir = instance.build_dir
+        self.report_file = os.path.join(self.running_dir, 'report.xml')
+        self.ctest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
+        self._output = []
+
+    def ctest_run(self, timeout):
+        assert self.instance is not None
+        try:
+            cmd = self.generate_command()
+            self.run_command(cmd, timeout)
+        except Exception as err:
+            logger.error(str(err))
+            self.status = TwisterStatus.FAIL
+            self.instance.reason = str(err)
+        finally:
+            self.instance.record(self.recording)
+            self._update_test_status()
+
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        handler: Handler = self.instance.handler
+        ctest_args_yaml = config.get('ctest_args', []) if config else []
+        command = [
+            'ctest',
+            '--build-nocmake',
+            '--test-dir',
+            self.running_dir,
+            '--output-junit',
+            self.report_file,
+            '--output-log',
+            self.ctest_log_file_path,
+            '--output-on-failure',
+        ]
+        base_timeout = handler.get_test_timeout()
+        command.extend(['--timeout', str(base_timeout)])
+        command.extend(ctest_args_yaml)
+
+        if handler.options.ctest_args:
+            command.extend(handler.options.ctest_args)
+
+        return command
+
+    def run_command(self, cmd, timeout):
+        with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ) as proc:
+            try:
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t.start()
+                reader_t.join(timeout)
+                if reader_t.is_alive():
+                    terminate_process(proc)
+                    logger.warning('Timeout has occurred. Can be extended in testspec file. '
+                                   f'Currently set to {timeout} seconds.')
+                    self.instance.reason = 'Ctest timeout'
+                    self.status = TwisterStatus.FAIL
+                proc.wait(timeout)
+            except subprocess.TimeoutExpired:
+                self.status = TwisterStatus.FAIL
+                proc.kill()
+
+        if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = f'Ctest error - return code {proc.returncode}'
+            with open(self.ctest_log_file_path, 'w') as log_file:
+                log_file.write(shlex.join(cmd) + '\n\n')
+                log_file.write('\n'.join(self._output))
+
+    def _output_reader(self, proc):
+        self._output = []
+        while proc.stdout.readable() and proc.poll() is None:
+            line = proc.stdout.readline().decode().strip()
+            if not line:
+                continue
+            self._output.append(line)
+            logger.debug(f'CTEST: {line}')
+            self.parse_record(line)
+        proc.communicate()
+
+    def _update_test_status(self):
+        if self.status == TwisterStatus.NONE:
+            self.instance.testcases = []
+            try:
+                self._parse_report_file(self.report_file)
+            except Exception as e:
+                logger.error(f'Error when parsing file {self.report_file}: {e}')
+                self.status = TwisterStatus.FAIL
+            finally:
+                if not self.instance.testcases:
+                    self.instance.init_cases()
+
+        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
+                               TwisterStatus.FAIL
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            self.instance.reason = self.instance.reason or 'Ctest failed'
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+
+    def _parse_report_file(self, report):
+        suite = junit.JUnitXml.fromfile(report)
+        if suite is None:
+            self.status = TwisterStatus.SKIP
+            self.instance.reason = 'No tests collected'
+            return
+
+        assert isinstance(suite, junit.TestSuite)
+
+        if suite.failures and suite.failures > 0:
+            self.status = TwisterStatus.FAIL
+            self.instance.reason = f"{suite.failures}/{suite.tests} ctest scenario(s) failed"
+        elif suite.errors and suite.errors > 0:
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = 'Error during ctest execution'
+        elif suite.skipped and suite.skipped > 0:
+            self.status = TwisterStatus.SKIP
+        else:
+            self.status = TwisterStatus.PASS
+        self.instance.execution_time = suite.time
+
+        for case in suite:
+            tc = self.instance.add_testcase(f"{self.id}.{case.name}")
+            tc.duration = case.time
+            if any(isinstance(r, junit.Failure) for r in case.result):
+                tc.status = TwisterStatus.FAIL
+                tc.output = case.system_out
+            elif any(isinstance(r, junit.Error) for r in case.result):
+                tc.status = TwisterStatus.ERROR
+                tc.output = case.system_out
+            elif any(isinstance(r, junit.Skipped) for r in case.result):
+                tc.status = TwisterStatus.SKIP
+            else:
+                tc.status = TwisterStatus.PASS
 
 class HarnessImporter:
 

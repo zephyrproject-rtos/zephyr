@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
+#
 # Copyright (c) 2023 Arunmani Alagarsamy
 # Author: Arunmani Alagarsamy <arunmani27100@gmail.com>
+#
+# Copyright (c) 2025 Marcin Lyda <elektromarcin@gmail.com>
 
 description: Maxim DS1307 RTC
 
@@ -9,3 +12,16 @@ compatible: "maxim,ds1307"
 include:
   - name: rtc-device.yaml
   - name: i2c-device.yaml
+
+properties:
+  sqw-frequency:
+    type: int
+    description: |
+      SQW frequency value [Hz]
+      This field enables to select output frequency on
+      SQW pin.
+    enum:
+      - 1
+      - 4096
+      - 8192
+      - 32768

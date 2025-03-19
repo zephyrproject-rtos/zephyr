@@ -75,9 +75,52 @@ int _zbus_init(void)
 		++(curr->data->observers_end_idx);
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		/* Check for duplicate channel IDs */
+		if (chan->id == ZBUS_CHAN_ID_INVALID) {
+			continue;
+		}
+		/* Iterate over all previous channels */
+		STRUCT_SECTION_FOREACH(zbus_channel, chan_prev) {
+			if (chan_prev == chan) {
+				break;
+			}
+			if (chan->id == chan_prev->id) {
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+				LOG_WRN("Channels %s and %s have matching IDs (%d)", chan->name,
+					chan_prev->name, chan->id);
+#else
+				LOG_WRN("Channels %p and %p have matching IDs (%d)", chan,
+					chan_prev, chan->id);
+#endif /* CONFIG_ZBUS_CHANNEL_NAME */
+			}
+		}
+	}
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
+
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
+
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+
+const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
+{
+	if (channel_id == ZBUS_CHAN_ID_INVALID) {
+		return NULL;
+	}
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		if (chan->id == channel_id) {
+			/* Found matching channel */
+			return chan;
+		}
+	}
+	/* No matching channel exists */
+	return NULL;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
 
 static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 					const struct zbus_observer *obs, k_timepoint_t end_time,
@@ -337,6 +380,8 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -373,6 +418,8 @@ int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeo
 {
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -395,6 +442,8 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout)
 	int err;
 
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -419,6 +468,8 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout)
 int zbus_chan_claim(const struct zbus_channel *chan, k_timeout_t timeout)
 {
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;

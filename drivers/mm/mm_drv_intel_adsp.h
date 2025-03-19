@@ -55,7 +55,6 @@
 #define MAX_EBB_BANKS_IN_SEGMENT	32
 #define SRAM_BANK_SIZE				(128 * 1024)
 #define L2_SRAM_BANK_NUM			(L2_SRAM_SIZE / SRAM_BANK_SIZE)
-#define IS_BIT_SET(value, idx)		((value) & (1 << (idx)))
 
 /**
  * Calculate TLB entry based on physical address.

@@ -11,13 +11,11 @@
 &hfxo {
 	status = "okay";
 	accuracy-ppm = <30>;
-	startup-time-us = <850>;
-	mode = "crystal";
 };
 
 &lfxo {
 	status = "okay";
-	accuracy-ppm = <20>;
-	startup-time-us = <600000>;
-	mode = "crystal";
 };
+
+/* Get a node label for wi-fi spi to use in shield files */
+wifi_spi: &spi130 {};

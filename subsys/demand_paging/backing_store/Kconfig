@@ -3,7 +3,7 @@
 
 choice BACKING_STORE_CHOICE
 	prompt "Backing store algorithms"
-	default BACKING_STORE_CUSTOM
+	default BACKING_STORE_RAM
 
 config BACKING_STORE_CUSTOM
 	bool "Custom backing store implementation"

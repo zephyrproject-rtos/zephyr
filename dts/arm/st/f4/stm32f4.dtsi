@@ -551,8 +551,9 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
-			st,adc-clock-source = <SYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "SYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dma1: dma@40026000 {
@@ -592,7 +593,7 @@
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
-		io-channels = <&adc1 18>;
+		io-channels = <&adc1 16>;
 		status = "disabled";
 	};
 

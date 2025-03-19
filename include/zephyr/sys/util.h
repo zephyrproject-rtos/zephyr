@@ -712,7 +712,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) ((x) < 1 ?  0 : __z_log2((x)-1) + 1)
+#define LOG2CEIL(x) ((x) <= 1 ?  0 : __z_log2((x)-1) + 1)
 
 /**
  * @brief Compute next highest power of two

@@ -19,7 +19,8 @@
 
 #include <zephyr/bluetooth/hci.h>
 
-#include "hci_ecc.h"
+#include "common/hci_common_internal.h"
+
 #include "monitor.h"
 #include "hci_raw_internal.h"
 
@@ -49,7 +50,7 @@ static void hci_rx_buf_destroy(struct net_buf *buf)
 
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, sizeof(struct bt_buf_data),
 			  hci_rx_buf_destroy);
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE),
 			  sizeof(struct bt_buf_data), NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, CONFIG_BT_BUF_ACL_TX_COUNT,
@@ -311,10 +312,6 @@ int bt_send(struct net_buf *buf)
 		if (status) {
 			return status;
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SEND_ECC_EMULATION)) {
-		return bt_hci_ecc_send(buf);
 	}
 
 	return bt_hci_send(bt_dev.hci, buf);

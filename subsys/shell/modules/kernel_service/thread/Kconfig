@@ -5,6 +5,7 @@
 
 config KERNEL_THREAD_SHELL
 	bool
+	depends on THREAD_MONITOR
 	help
 	  Internal helper macro to determine if the main `thread` command
 	  should be compiled.
@@ -52,3 +53,27 @@ config KERNEL_THREAD_SHELL_UNWIND
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the `unwind` subcommand
+
+config KERNEL_THREAD_SHELL_SUSPEND
+	bool
+	default y
+	depends on THREAD_MONITOR
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'suspend' subcommand
+
+config KERNEL_THREAD_SHELL_RESUME
+	bool
+	default y
+	depends on THREAD_MONITOR
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'resume' subcommand
+
+config KERNEL_THREAD_SHELL_KILL
+	bool
+	default y
+	depends on THREAD_MONITOR
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'kill' subcommad

@@ -624,7 +624,7 @@ static void cc2520_rx(void *p1, void *p2, void *p3)
 			goto flush;
 		}
 
-		if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+		if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len -= 2U;
 		}
 

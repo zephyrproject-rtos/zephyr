@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 static struct k_work work_adv_start;
+static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
 static uint8_t id_current;
 static bool volatile is_disconnecting;
@@ -49,7 +50,7 @@ static void adv_start(struct k_work *work)
 		if (id < 0) {
 			printk("Create id failed (%d)\n", id);
 			if (id_current == 0) {
-				id_current = CONFIG_BT_MAX_CONN;
+				id_current = conn_count_max;
 			}
 			id_current--;
 		} else {
@@ -67,7 +68,7 @@ static void adv_start(struct k_work *work)
 	}
 
 	id_current++;
-	if (id_current == CONFIG_BT_MAX_CONN) {
+	if (id_current == conn_count_max) {
 		id_current = 0;
 	}
 
@@ -84,7 +85,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	conn_count++;
-	if (conn_count < CONFIG_BT_MAX_CONN) {
+	if (conn_count < conn_count_max) {
 		k_work_submit(&work_adv_start);
 	}
 
@@ -225,10 +226,28 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 }
 #endif /* CONFIG_BT_OBSERVER */
 
-int init_peripheral(uint8_t iterations)
+static void disconnect(struct bt_conn *conn, void *data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnecting %s...\n", addr);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		printk("Failed disconnection %s.\n", addr);
+		return;
+	}
+	printk("success.\n");
+}
+
+int init_peripheral(uint8_t max_conn, uint8_t iterations)
 {
 	size_t id_count;
 	int err;
+
+	conn_count_max = max_conn;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -264,7 +283,7 @@ int init_peripheral(uint8_t iterations)
 
 		id_count = 0xFF;
 		bt_id_get(NULL, &id_count);
-	} while (id_count != CONFIG_BT_MAX_CONN);
+	} while (id_count != conn_count_max);
 
 	/* rotate identities so reconnections are attempted in case of any
 	 * disconnections
@@ -272,17 +291,31 @@ int init_peripheral(uint8_t iterations)
 	uint8_t prev_count = conn_count;
 	while (1) {
 		/* If maximum connections is reached, wait for disconnections
-		 * initiated by peer central devices.
 		 */
-		if (conn_count == CONFIG_BT_MAX_CONN) {
+		if (conn_count == conn_count_max) {
+			is_disconnecting = true;
+
+			/* Lets wait sufficiently to ensure a stable connection
+			 * before starting to disconnect for next iteration.
+			 */
+			k_sleep(K_SECONDS(60));
+
 			if (!iterations) {
 				break;
 			}
 			iterations--;
 			printk("Iterations remaining: %u\n", iterations);
 
-			printk("Wait for disconnections...\n");
-			is_disconnecting = true;
+			/* Device needing multiple connections is the one
+			 * initiating the disconnects.
+			 */
+			if (conn_count_max > 1U) {
+				printk("Disconnecting all...\n");
+				bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
+			} else {
+				printk("Wait for disconnections...\n");
+			}
+
 			while (is_disconnecting) {
 				k_sleep(K_MSEC(10));
 			}
@@ -306,6 +339,9 @@ int init_peripheral(uint8_t iterations)
 			 * connections plus few seconds of margin.
 			 */
 			while ((prev_count == conn_count) && wait) {
+				printk("Waiting connections (%u/%u) %u...\n",
+				       prev_count, conn_count, wait);
+
 				wait--;
 
 				k_sleep(K_MSEC(10));

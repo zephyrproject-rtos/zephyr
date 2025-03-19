@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32n6570_dk_common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32N6570 Discovery Kit board";
+	compatible = "st,stm32n6570-dk";
+};

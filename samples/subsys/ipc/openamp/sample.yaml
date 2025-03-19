@@ -6,6 +6,7 @@ tests:
     platform_allow:
       - lpcxpresso54114/lpc54114/m4
       - lpcxpresso55s69/lpc55s69/cpu0
+      - frdm_mcxn947/mcxn947/cpu0
       - mps2/an521/cpu0
       - v2m_musca_b1/musca_b1
     integration_platforms:

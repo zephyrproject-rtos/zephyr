@@ -87,10 +87,10 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 				= CONTAINER_OF(r, struct k_p4wq_work, rbnode);
 
 			rb_remove(&queue->queue, r);
-			w->thread = arch_current_thread();
+			w->thread = _current;
 			sys_dlist_append(&queue->active, &w->dlnode);
-			set_prio(arch_current_thread(), w);
-			thread_clear_requeued(arch_current_thread());
+			set_prio(_current, w);
+			thread_clear_requeued(_current);
 
 			k_spin_unlock(&queue->lock, k);
 
@@ -101,10 +101,17 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			/* Remove from the active list only if it
 			 * wasn't resubmitted already
 			 */
-			if (!thread_was_requeued(arch_current_thread())) {
+			if (!thread_was_requeued(_current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
-				k_sem_give(&w->done_sem);
+
+				if (queue->done_handler) {
+					k_spin_unlock(&queue->lock, k);
+					queue->done_handler(w);
+					k = k_spin_lock(&queue->lock);
+				} else {
+					k_sem_give(&w->done_sem);
+				}
 			}
 		} else {
 			z_pend_curr(&queue->lock, k, &queue->waitq, K_FOREVER);
@@ -152,6 +159,7 @@ static int static_init(void)
 
 			if (!i || (pp->flags & K_P4WQ_QUEUE_PER_THREAD)) {
 				k_p4wq_init(q);
+				q->done_handler = pp->done_handler;
 			}
 
 			q->flags = pp->flags;
@@ -210,7 +218,11 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
  * so they can initialize in parallel instead of serially on the main
  * CPU.
  */
+#if defined(CONFIG_P4WQ_INIT_STAGE_EARLY)
+SYS_INIT(static_init, POST_KERNEL, 1);
+#else
 SYS_INIT(static_init, APPLICATION, 99);
+#endif
 
 void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 {
@@ -223,9 +235,9 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	item->deadline += k_cycle_get_32();
 
 	/* Resubmission from within handler?  Remove from active list */
-	if (item->thread == arch_current_thread()) {
+	if (item->thread == _current) {
 		sys_dlist_remove(&item->dlnode);
-		thread_set_requeued(arch_current_thread());
+		thread_set_requeued(_current);
 		item->thread = NULL;
 	} else {
 		k_sem_init(&item->done_sem, 0, 1);
@@ -296,7 +308,14 @@ bool k_p4wq_cancel(struct k_p4wq *queue, struct k_p4wq_work *item)
 
 	if (ret) {
 		rb_remove(&queue->queue, &item->rbnode);
-		k_sem_give(&item->done_sem);
+
+		if (queue->done_handler) {
+			k_spin_unlock(&queue->lock, k);
+			queue->done_handler(item);
+			k = k_spin_lock(&queue->lock);
+		} else {
+			k_sem_give(&item->done_sem);
+		}
 	}
 
 	k_spin_unlock(&queue->lock, k);

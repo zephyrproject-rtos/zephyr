@@ -13,7 +13,7 @@
 	compatible = "espressif,esp32";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
 		zephyr,flash = &flash0;

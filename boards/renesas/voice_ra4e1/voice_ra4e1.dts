@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4e10d2cne.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "voice_ra4e1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas VOICE-RA4E1";
+	compatible = "renesas,ra4e1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		zephyr,entropy = &trng;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport5 0 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport4 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+	};
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <20 0>;
+	status = "okay";
+};
+
+&pll2 {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <24 0>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
+&sci3 {
+	interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&port_irq4 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};

@@ -1,0 +1,440 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu1: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		sram: sram@10000000 {
+			ranges = <0x0 0x10000000 0x780000
+				0x20000000 0x30000000 0x780000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+
+		xspi2: spi@50411000 {
+			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
+		};
+
+	};
+
+	pinctrl: pinctrl {
+		compatible = "nxp,rt-iocon-pinctrl";
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/* RT7XX SRAM partitions are shared between code and data. Boards can
+	 *  override the reg properties of either sram0 or sram_code nodes to
+	 *  change the balance of SRAM allocation.
+	 *
+	 * The SRAM region [0x580000-0x5BFFFF] is reserved for shared memory or application data.
+	 * The SRAM region [0x5C0000-0x67FFFF] is reserved for CPU1 application.
+	 * The SRAM region [0x680000-0x77FFFF] is reserved for HiFi1 application.
+	 */
+
+	sram_code: memory@600000{
+		compatible = "mmio-sram";
+		reg = <0x600000 DT_SIZE_K(512)>;
+	};
+
+	/* This partition is shared with code in RAM */
+	sram_shared_code: memory@20058000{
+		compatible = "mmio-sram";
+		reg = <0x20058000 DT_SIZE_K(256)>;
+	};
+
+	sram0: memory@205C0000 {
+		compatible = "mmio-sram";
+		/* Only use 256K, align with SDK */
+		reg = <0x205C0000 DT_SIZE_K(256)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	/*
+	 * Note that the offsets here are relative to the base address.
+	 * The base addresses differ between non-secure (0x40000000)
+	 * and secure modes (0x50000000).
+	 */
+
+	lpadc0: adc@20c000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x20c000 0x304>;
+		interrupts = <15 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		clocks = <&clkctl3 MCUX_LPADC1_CLK>;
+	};
+
+	rstctl1: reset@40000 {
+		compatible = "nxp,rstctl";
+		reg = <0x40000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl2: reset@67000 {
+		compatible = "nxp,rstctl";
+		reg = <0x67000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl3: reset@60000 {
+		compatible = "nxp,rstctl";
+		reg = <0x60000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl4: reset@a0000 {
+		compatible = "nxp,rstctl";
+		reg = <0xa0000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	clkctl1: clkctl@41000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x41000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl2: clkctl@65000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x65000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl3: clkctl@61000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x61000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl4: clkctl@a1000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0xa1000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	ctimer5: ctimer@48000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x48000 0x1000>;
+		interrupts = <7 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER5_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer6: ctimer@49000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x49000 0x1000>;
+		interrupts = <8 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER6_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer7: ctimer@4a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x4a000 0x1000>;
+		interrupts = <9 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER7_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	syscon1: syscon@42000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x42000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon2: syscon@66000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x66000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon3: syscon@62000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x62000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon4: syscon@a2000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0xa2000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	iocon1: iocon@64000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x64000 0x1000>;
+		status = "okay";
+	};
+
+	iocon2: iocon@a5000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0xa5000 0x1000>;
+		status = "okay";
+	};
+
+	gpio8: gpio@320000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x320000 0x1000>;
+		interrupts = <61 0>,<62 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio8>;
+		gpio-port-offest = <8>;
+	};
+
+	gpio9: gpio@322000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x322000 0x1000>;
+		interrupts = <63 0>,<64 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio9>;
+		gpio-port-offest = <8>;
+	};
+
+	gpio10: gpio@324000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x324000 0x1000>;
+		interrupts = <65 0>,<66 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio10>;
+		gpio-port-offest = <8>;
+	};
+
+	flexcomm17: flexcomm@326000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x326000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm17_lpuart17: uart@326000 {
+			compatible = "nxp,lpuart";
+			reg = <0x326000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			status = "disabled";
+		};
+		flexcomm17_lpspi17: lpspi@326000 {
+			compatible = "nxp,lpspi";
+			reg = <0x326000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+		flexcomm17_lpi2c17: lpi2c@326800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x326800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm18: flexcomm@327000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x327000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm18_lpuart18: uart@327000 {
+			compatible = "nxp,lpuart";
+			reg = <0x327000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			status = "disabled";
+		};
+		flexcomm18_lpspi18: lpspi@327000 {
+			compatible = "nxp,lpspi";
+			reg = <0x327000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+		flexcomm18_lpi2c18: lpi2c@327800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x327800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm19: flexcomm@328000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x328000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm19_lpuart19: uart@328000 {
+			compatible = "nxp,lpuart";
+			reg = <0x328000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			status = "disabled";
+		};
+		flexcomm19_lpspi19: lpspi@328000 {
+			compatible = "nxp,lpspi";
+			reg = <0x328000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+		flexcomm19_lpi2c19: lpi2c@328800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x328800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm20: flexcomm@329000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x329000 0x1000>;
+		interrupts = <14 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm20_lpuart20: uart@329000 {
+			compatible = "nxp,lpuart";
+			reg = <0x329000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			status = "disabled";
+		};
+		flexcomm20_lpspi20: lpspi@329000 {
+			compatible = "nxp,lpspi";
+			reg = <0x329000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+		flexcomm20_lpi2c20: lpi2c@329800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x329800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	/* LPFlexcomm15 only support LPI2C function. */
+	lpi2c15: i2c@213000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x213000 0x1000>;
+		interrupts = <14 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		status = "disabled";
+	};
+
+	os_timer_cpu1: timers@209000 {
+		compatible = "nxp,os-timer";
+		reg = <0x209000 0x1000>;
+		interrupts = <30 0>;
+		status = "disabled";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	/*
+	 * RT700 cm33_cpu1 relies by default on the OS Timer for system
+	 * clock implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};

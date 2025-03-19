@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PF1550
+
+compatible: "nxp,pf1550"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true

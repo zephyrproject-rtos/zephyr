@@ -68,7 +68,7 @@ def test_check_build_or_run(
     testsuite.build_only = build_only
     testsuite.slow = slow
 
-    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
     env = mock.Mock(
         options=mock.Mock(
             device_testing=False,
@@ -147,7 +147,7 @@ def test_create_overlay(
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
-    testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testcase, platform, 'zephyr', class_testplan.env.outdir)
     platform.type = platform_type
     assert testinstance.create_overlay(platform, enable_asan, enable_ubsan, enable_coverage, coverage_platform) == expected_content
 
@@ -158,7 +158,7 @@ def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
                                              'test_app/sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
-    testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testcase, platform, 'zephyr', class_testplan.env.outdir)
 
     with pytest.raises(BuildError):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
@@ -210,7 +210,7 @@ def sample_testinstance(all_testsuites_dict, class_testplan, platforms_list, req
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform(request.param.get('board_name', 'demo_board_2'))
 
-    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
     return testinstance
 
 
@@ -228,12 +228,12 @@ def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, 
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2/unit_testing")
 
-    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
 
     if detailed_test_id:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite_path)
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, 'zephyr', testsuite_path)
     else:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite.source_dir_rel, testsuite.name)
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, 'zephyr', testsuite.source_dir_rel, testsuite.name)
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
@@ -287,7 +287,7 @@ def test_testinstance_init_cases(all_testsuites_dict, class_testplan, platforms_
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
-    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
 
     testinstance.init_cases()
 
@@ -341,8 +341,8 @@ def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_lis
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
-    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
-    testinstance_copy = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
+    testinstance_copy = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
 
     d = testinstance.__getstate__()
 

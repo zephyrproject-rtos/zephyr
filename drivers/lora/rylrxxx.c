@@ -102,6 +102,7 @@ struct rylr_data {
 	uint8_t pending_async_flags;
 	struct k_poll_signal *async_tx_signal;
 	lora_recv_cb async_rx_cb;
+	void *async_user_data;
 	const struct device *dev;
 	uint8_t msgq_buffer[CONFIG_RYLRXXX_UNSOLICITED_RX_MSGQ_SIZE];
 	struct modem_pipe *modem_pipe;
@@ -170,7 +171,8 @@ static void on_rx(struct modem_chat *chat, char **argv, uint16_t argc, void *use
 	msg.snr = atoi(argv[5]);
 
 	if (RYLR_IS_RX_PENDING(driver_data->pending_async_flags)) {
-		driver_data->async_rx_cb(driver_data->dev, msg.data, msg.length, msg.rssi, msg.snr);
+		driver_data->async_rx_cb(driver_data->dev, msg.data, msg.length, msg.rssi, msg.snr,
+					     driver_data->async_user_data);
 	} else {
 		err = k_msgq_put(&driver_data->rx_msgq, &msg, K_NO_WAIT);
 		if (err != 0) {
@@ -333,7 +335,7 @@ static int rylr_config(const struct device *dev, struct lora_modem_config *confi
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async opperation");
+		LOG_ERR("pending async operation");
 		err = -EBUSY;
 		goto exit;
 	}
@@ -377,7 +379,7 @@ int rylr_send(const struct device *dev, uint8_t *payload, uint32_t payload_len)
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async opperation");
+		LOG_ERR("pending async operation");
 		err = -EBUSY;
 		goto exit;
 	}
@@ -421,7 +423,7 @@ int rylr_send_async(const struct device *dev, uint8_t *payload, uint32_t payload
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async opperation");
+		LOG_ERR("pending async operation");
 		err = -EBUSY;
 		goto bail;
 	}
@@ -482,7 +484,7 @@ int rylr_recv(const struct device *dev, uint8_t *ret_msg, uint8_t size, k_timeou
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async opperation");
+		LOG_ERR("pending async operation");
 		ret = -EBUSY;
 		goto exit;
 	}
@@ -515,7 +517,7 @@ exit:
 	return ret;
 }
 
-int rylr_recv_async(const struct device *dev, lora_recv_cb cb)
+int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 {
 	int err = 0;
 	struct rylr_data *data = dev->data;
@@ -538,8 +540,9 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb)
 	}
 
 	data->async_rx_cb = cb;
+	data->async_user_data = user_data;
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async opperation");
+		LOG_ERR("pending async operation");
 		err = -EBUSY;
 		goto bail;
 	}

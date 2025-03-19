@@ -15,6 +15,7 @@ from colorama import Fore
 from twisterlib.coverage import run_coverage
 from twisterlib.environment import TwisterEnv
 from twisterlib.hardwaremap import HardwareMap
+from twisterlib.log_helper import setup_logging
 from twisterlib.package import Artifacts
 from twisterlib.reports import Reporting
 from twisterlib.runner import TwisterRunner
@@ -23,37 +24,6 @@ from twisterlib.testplan import TestPlan
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
-
-
-def setup_logging(outdir, log_file, log_level, timestamps):
-    # create file handler which logs even debug messages
-    if log_file:
-        fh = logging.FileHandler(log_file)
-    else:
-        fh = logging.FileHandler(os.path.join(outdir, "twister.log"))
-
-    fh.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(getattr(logging, log_level))
-
-    # create formatter and add it to the handlers
-    if timestamps:
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    else:
-        formatter = logging.Formatter("%(levelname)-7s - %(message)s")
-
-    formatter_file = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter_file)
-
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
 
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
@@ -214,10 +184,10 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
-    coverage_completed = True
-    if options.coverage:
+    report.coverage_status = True
+    if options.coverage and not options.disable_coverage_aggregation:
         if not options.build_only:
-            coverage_completed = run_coverage(tplan, options)
+            report.coverage_status, report.coverage = run_coverage(options, tplan)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 
@@ -242,7 +212,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         runner.results.failed
         or runner.results.error
         or (tplan.warnings and options.warnings_as_errors)
-        or (options.coverage and not coverage_completed)
+        or (options.coverage and not report.coverage_status)
     ):
         if env.options.quit_on_failure:
             logger.info("twister aborted because of a failure/error")

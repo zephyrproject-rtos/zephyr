@@ -190,6 +190,11 @@
         "description": "Raspberry Pi RP2040"
     },
     {
+        "id": "0xe48bff57",
+        "short_name": "RP2350",
+        "description": "Raspberry Pi RP2350"
+    },
+    {
         "id": "0x00ff6919",
         "short_name": "STM32L4",
         "description": "ST STM32L4xx"

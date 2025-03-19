@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETHER_BROADCAST_FILTER      0
 #define ETHER_TOTAL_BUF_NUM         (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
 #define ETHER_EE_RECEIVE_EVENT_MASK (0x01070000)
+
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection setting");
 
 void ether_eint_isr(void);
 void renesas_ra_eth_callback(ether_callback_args_t *p_args);
@@ -232,7 +234,6 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct renesas_ra_eth_context *ctx = dev->data;
 	const struct renesas_ra_eth_config *cfg = dev->config;
-	const char *phy_connection_type = DT_INST_PROP_OR(0, phy_connection_type, "rmii");
 
 	LOG_DBG("eth_initialize");
 
@@ -243,15 +244,6 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
-
-	R_PMISC->PFENET = (uint8_t)(0x0 << R_PMISC_PFENET_PHYMODE0_Pos);
-
-	if (strstr(phy_connection_type, "mii") != NULL) {
-		/* Configure pins for MII or RMII. Set PHYMODE0 if MII is selected. */
-		R_PMISC->PFENET = (uint8_t)(0x1 << R_PMISC_PFENET_PHYMODE0_Pos);
-	} else {
-		LOG_ERR("Failed to init ether - phy-connection-type not support");
-	}
 
 	err = R_ETHER_Open(&ctx->ctrl, cfg->p_cfg);
 
@@ -378,14 +370,28 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-#define ELC_EVENT_EDMAC_EINT(channel) ELC_EVENT_EDMAC##channel##_EINT
+#define EVENT_EDMAC_EINT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_EDMAC, channel, _EINT))
 
 /* Bindings to the platform */
 int renesas_ra_eth_init(const struct device *dev)
 {
 	struct renesas_ra_eth_context *ctx = dev->data;
 
-	R_ICU->IELSR[DT_INST_IRQN(0)] = ELC_EVENT_EDMAC_EINT(0);
+	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
+	case 0: /* mii */
+		R_PMISC->PFENET = (uint8_t)(0x1 << R_PMISC_PFENET_PHYMODE0_Pos);
+		break;
+	case 1: /* rmii */
+		R_PMISC->PFENET = (uint8_t)(0x0 << R_PMISC_PFENET_PHYMODE0_Pos);
+		break;
+	default:
+		/* Build assert at top of file should catch this case */
+		LOG_ERR("Failed to init Ethernet driver - phy-connection-type not support");
+
+		return -EINVAL;
+	}
+
+	R_ICU->IELSR[DT_INST_IRQN(0)] = EVENT_EDMAC_EINT(0);
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), renesas_ra_eth_isr,
 		    DEVICE_DT_INST_GET(0), 0);

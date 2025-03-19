@@ -11,8 +11,4 @@ supported:
   - uart
   - watchdog
   - can
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: lilygo

@@ -36,7 +36,7 @@ static void DBG(char *msg, struct k_thread *th)
 	strcpy(buf, "CPU# exc# ");
 	buf[3] = '0' + _current_cpu->id;
 	buf[8] = '0' + arch_exception_depth();
-	strcat(buf, arch_current_thread()->name);
+	strcat(buf, _current->name);
 	strcat(buf, ": ");
 	strcat(buf, msg);
 	strcat(buf, " ");
@@ -125,7 +125,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 			 * replace it, and this avoids a deadlock where
 			 * two CPUs want to pull each other's FPU context.
 			 */
-			if (thread == arch_current_thread()) {
+			if (thread == _current) {
 				arch_flush_local_fpu();
 				while (atomic_ptr_get(&_kernel.cpus[i].arch.fpu_owner) == thread) {
 					barrier_dsync_fence_full();
@@ -260,15 +260,15 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 	 * Make sure the FPU context we need isn't live on another CPU.
 	 * The current CPU's FPU context is NULL at this point.
 	 */
-	flush_owned_fpu(arch_current_thread());
+	flush_owned_fpu(_current);
 #endif
 
 	/* become new owner */
-	atomic_ptr_set(&_current_cpu->arch.fpu_owner, arch_current_thread());
+	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
 
 	/* restore our content */
-	z_arm64_fpu_restore(&arch_current_thread()->arch.saved_fp_context);
-	DBG("restore", arch_current_thread());
+	z_arm64_fpu_restore(&_current->arch.saved_fp_context);
+	DBG("restore", _current);
 }
 
 /*
@@ -287,7 +287,7 @@ static void fpu_access_update(unsigned int exc_update_level)
 
 	if (arch_exception_depth() == exc_update_level) {
 		/* We're about to execute non-exception code */
-		if (atomic_ptr_get(&_current_cpu->arch.fpu_owner) == arch_current_thread()) {
+		if (atomic_ptr_get(&_current_cpu->arch.fpu_owner) == _current) {
 			/* turn on FPU access */
 			write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
 		} else {

@@ -348,7 +348,8 @@
 			#io-channel-cells = <1>;
 			resolutions = <STM32F1_ADC_RES(12)>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dma1: dma@40020000 {

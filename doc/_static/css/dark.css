@@ -93,4 +93,6 @@
     --btn-neutral-background-color: #404040;
     --btn-neutral-hover-background-color: #505050;
     --footer-color: #aaa;
+
+    --graphviz-filter: invert(0.9) brightness(1.2);
 }

@@ -284,4 +284,20 @@ config WINSTREAM_CONSOLE
 
 	  See the WINSTREAM Kconfig help for more information.
 
+config WINSTREAM_CONSOLE_STATIC
+	bool "Use static/linkable memory for the winstream console"
+	default y if !SOC_FAMILY_INTEL_ADSP
+	help
+	  The winstream console can be configured to use simple linker
+	  memory which can help avoid manual memory management at the
+	  platform layer.  The memory should be pointed to by the
+	  symbol "_winstream_console_buf" and have size set by
+	  CONFIG_WINSTREAM_CONSOLE_SIZE.
+
+config WINSTREAM_CONSOLE_STATIC_SIZE
+	int "Size of winstream console buffer"
+	default 32768
+	help
+	  Size of winstream console buffer, in bytes
+
 endif # CONSOLE

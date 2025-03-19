@@ -7,11 +7,11 @@ flash: 704
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - i2c
   - spi
   - watchdog
   - hwinfo
+  - netif:openthread
 vendor: ti

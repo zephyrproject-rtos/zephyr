@@ -1,6 +1,6 @@
 # Binding for TI TCA9544A, compatible with NXP PCA9544A
 
-description: Texas Instruments TCA9544A binding
+description: Texas Instruments TCA9544A
 
 compatible: "ti,tca9544a"
 

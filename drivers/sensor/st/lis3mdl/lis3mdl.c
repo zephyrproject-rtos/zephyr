@@ -66,7 +66,7 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	const struct lis3mdl_config *config = dev->config;
 	int16_t buf[4];
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_XYZ);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,

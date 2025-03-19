@@ -19,6 +19,7 @@
 #include <zephyr/drivers/dma.h>
 #endif
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <fsl_lpuart.h>
 #if CONFIG_NXP_LP_FLEXCOMM
@@ -47,9 +48,6 @@ struct lpuart_dma_config {
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
-#ifdef CONFIG_NXP_LP_FLEXCOMM
-	const struct device *parent_dev;
-#endif
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pincfg;
 	clock_control_subsys_t clock_subsys;
@@ -1211,19 +1209,11 @@ static int mcux_lpuart_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
-#if CONFIG_NXP_LP_FLEXCOMM
-	/* When using LP Flexcomm driver, register the interrupt handler
-	 * so we receive notification from the LP Flexcomm interrupt handler.
-	 */
-	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
-				      LP_FLEXCOMM_PERIPH_LPUART, mcux_lpuart_isr);
-#else
-	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
 #endif
+
 #ifdef CONFIG_UART_EXCLUSIVE_API_CALLBACKS
 	data->api_type = LPUART_NONE;
-#endif
 #endif
 
 #ifdef CONFIG_PM
@@ -1279,15 +1269,26 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (false)
+#define MCUX_LPUART_IRQS_INSTALL(n)					\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
+			   (MCUX_LPUART_IRQ_INSTALL(n, 0);))		\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
+			   (MCUX_LPUART_IRQ_INSTALL(n, 1);))
+/* When using LP Flexcomm driver, register the interrupt handler
+ * so we receive notification from the LP Flexcomm interrupt handler.
+ */
+#define MCUX_LPUART_LPFLEXCOMM_IRQ_CONFIG(n)				\
+	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)),	\
+					DEVICE_DT_INST_GET(n),		\
+					LP_FLEXCOMM_PERIPH_LPUART,	\
+					mcux_lpuart_isr)
 #define MCUX_LPUART_IRQ_INIT(n) .irq_config_func = mcux_lpuart_config_func_##n,
 #define MCUX_LPUART_IRQ_DEFINE(n)						\
 	static void mcux_lpuart_config_func_##n(const struct device *dev)	\
 	{									\
-		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
-			   (MCUX_LPUART_IRQ_INSTALL(n, 0);))		\
-									\
-		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
-			   (MCUX_LPUART_IRQ_INSTALL(n, 1);))		\
+		COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm), \
+			    (MCUX_LPUART_LPFLEXCOMM_IRQ_CONFIG(n)),		\
+			    (MCUX_LPUART_IRQS_INSTALL(n)));			\
 	}
 #else
 #define MCUX_LPUART_IRQ_INIT(n)
@@ -1353,22 +1354,15 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 		: DT_INST_PROP(n, nxp_rs485_mode)\
 				? UART_CFG_FLOW_CTRL_RS485   \
 				: UART_CFG_FLOW_CTRL_NONE
-#ifdef CONFIG_NXP_LP_FLEXCOMM
-#define PARENT_DEV(n) \
-	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
-#else
-#define PARENT_DEV(n)
-#endif /* CONFIG_NXP_LP_FLEXCOMM */
 
 #define LPUART_MCUX_DECLARE_CFG(n)                                      \
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
-	PARENT_DEV(n)		\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
+	.parity = DT_INST_ENUM_IDX(n, parity),                                \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
 	.single_wire = DT_INST_PROP(n, single_wire),	                      \

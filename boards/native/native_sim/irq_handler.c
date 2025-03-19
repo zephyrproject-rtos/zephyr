@@ -113,7 +113,7 @@ void posix_irq_handler(void)
 	 */
 	if (may_swap
 		&& (hw_irq_ctrl_get_cur_prio() == 256)
-		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != arch_current_thread())) {
+		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != _current)) {
 
 		(void)z_swap_irqlock(irq_lock);
 	}
@@ -256,6 +256,11 @@ void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
  */
 void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
+	if (irq >= N_IRQS) {
+		posix_print_error_and_exit("Attempted to configure not existent interrupt %u\n",
+					   irq);
+		return;
+	}
 	hw_irq_ctrl_prio_set(irq, prio);
 }
 

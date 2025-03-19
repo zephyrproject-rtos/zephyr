@@ -23,9 +23,74 @@
  * @defgroup uhc_api USB host controller driver API
  * @ingroup io_interfaces
  * @since 3.3
- * @version 0.1.0
+ * @version 0.1.1
  * @{
  */
+
+/** USB device state */
+enum usb_device_state {
+	USB_STATE_NOTCONNECTED,
+	USB_STATE_DEFAULT,
+	USB_STATE_ADDRESSED,
+	USB_STATE_CONFIGURED,
+};
+
+/**
+ * @brief USB device operating speed
+ */
+enum usb_device_speed {
+	/** Device is probably not connected */
+	USB_SPEED_UNKNOWN,
+	/** Low speed */
+	USB_SPEED_SPEED_LS,
+	/** Full speed */
+	USB_SPEED_SPEED_FS,
+	/** High speed */
+	USB_SPEED_SPEED_HS,
+	/** Super speed */
+	USB_SPEED_SPEED_SS,
+};
+
+#define UHC_INTERFACES_MAX 32
+
+struct usb_host_interface {
+	struct usb_desc_header *dhp;
+	uint8_t alternate;
+};
+
+struct usb_host_ep {
+	struct usb_ep_descriptor *desc;
+};
+
+/**
+ * Host representation of a USB device
+ */
+struct usb_device {
+	/** dlist node */
+	sys_dnode_t node;
+	/** An opaque pointer to the host context to which this device belongs */
+	void *ctx;
+	/** Device mutex */
+	struct k_mutex mutex;
+	/** USB device descriptor */
+	struct usb_device_descriptor dev_desc;
+	/** Device state */
+	enum usb_device_state state;
+	/** Device speed */
+	enum usb_device_speed speed;
+	/** Actual active device configuration */
+	uint8_t actual_cfg;
+	/** Device address */
+	uint8_t addr;
+	/** Pointer to actual device configuration descriptor */
+	void *cfg_desc;
+	/** Pointers to device interfaces */
+	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
+	/** Pointers to device OUT endpoints */
+	struct usb_host_ep ep_out[16];
+	/** Pointers to device IN endpoints */
+	struct usb_host_ep ep_in[16];
+};
 
 /**
  * @brief USB control transfer stage
@@ -53,24 +118,24 @@ struct uhc_transfer {
 	uint8_t setup_pkt[8];
 	/** Transfer data buffer */
 	struct net_buf *buf;
-	/** Device (peripheral) address */
-	uint8_t addr;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint attributes (TBD) */
-	uint8_t attrib;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Timeout in number of frames */
-	uint16_t timeout;
+	/** Interval, used for periodic transfers only */
+	uint16_t interval;
+	/** Start frame, used for periodic transfers only */
+	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
 	unsigned int stage : 2;
-	/** Pointer to USB device (opaque for the UHC) */
-	void *udev;
+	/** Pointer to USB device */
+	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
 	void *cb;
+	/** Pointer to completion callback private data */
+	void *priv;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
 };
@@ -177,6 +242,8 @@ struct uhc_data {
 	sys_dlist_t bulk_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
+	/** Opaque pointer to store higher layer context */
+	const void *event_ctx;
 	/** USB host controller status */
 	atomic_t status;
 	/** Driver private data */
@@ -336,24 +403,18 @@ static inline int uhc_bus_resume(const struct device *dev)
  * and added from different pools.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] addr    Device (peripheral) address
  * @param[in] ep      Endpoint address
- * @param[in] attrib  Endpoint attributes
- * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] timeout Timeout in number of frames
- * @param[in] udev    Opaque pointer to USB device
+ * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
+ * @param[in] cb_priv Completion callback callback private data
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t addr,
 				    const uint8_t ep,
-				    const uint8_t attrib,
-				    const uint16_t mps,
-				    const uint16_t timeout,
-				    void *const udev,
-				    void *const cb);
+				    struct usb_device *const udev,
+				    void *const cb,
+				    void *const cb_priv);
 
 /**
  * @brief Allocate UHC transfer with buffer
@@ -361,25 +422,19 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * Allocate a new transfer from common transfer pool with buffer.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] addr    Device (peripheral) address
  * @param[in] ep      Endpoint address
- * @param[in] attrib  Endpoint attributes
- * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] timeout Timeout in number of frames
- * @param[in] udev    Opaque pointer to USB device
+ * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
+ * @param[in] cb_priv Completion callback callback private data
  * @param[in] size    Size of the buffer
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t addr,
 					     const uint8_t ep,
-					     const uint8_t attrib,
-					     const uint16_t mps,
-					     const uint16_t timeout,
-					     void *const udev,
+					     struct usb_device *const udev,
 					     void *const cb,
+					     void *const cb_priv,
 					     size_t size);
 
 /**
@@ -467,12 +522,14 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
  *
  * @param[in] dev      Pointer to device struct of the driver instance
  * @param[in] event_cb Event callback from the higher layer (USB host stack)
+ * @param[in] event_ctx Opaque pointer to higher layer context
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int uhc_init(const struct device *dev, uhc_event_cb_t event_cb);
+int uhc_init(const struct device *dev,
+	     uhc_event_cb_t event_cb, const void *const event_ctx);
 
 /**
  * @brief Enable USB host controller
@@ -528,6 +585,23 @@ static inline struct uhc_device_caps uhc_caps(const struct device *dev)
 	struct uhc_data *data = dev->data;
 
 	return data->caps;
+}
+
+/**
+ * @brief Get pointer to higher layer context
+ *
+ * The address of the context is passed as an argument to the uhc_init()
+ * function and is stored in the uhc data.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return Opaque pointer to higher layer context
+ */
+static inline const void *uhc_get_event_ctx(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	return data->event_ctx;
 }
 
 /**

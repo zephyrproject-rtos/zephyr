@@ -22,6 +22,15 @@ config NET_DHCPV6_DUID_MAX_LEN
 	help
 	  This will set the available number of bytes for the DUID.
 
+config NET_DHCPV6_OPTION_DNS_ADDRESS
+	bool "Use DNS Recursive Name Server option to configure DNS resolver"
+	default y
+	depends on DNS_RESOLVER
+	help
+	  If enabled, the DHCPv6 client will request DNS Recursive Name Server
+	  option from the server, and if available, use obtained information
+	  to configure DNS resolver.
+
 if NET_DHCPV6
 module = NET_DHCPV6
 module-dep = NET_LOG

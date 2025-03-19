@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H743ZI-NUCLEO board";
+	model = "STMicroelectronics STM32H753ZI-NUCLEO board";
 	compatible = "st,stm32h753zi-nucleo";
 
 	chosen {
@@ -147,7 +147,7 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_inp15_pa3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };

@@ -1,0 +1,30 @@
+# Copyright (C) 2020 Samsung Electronics Co., Ltd.
+# Copyright (C) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    This is a binding for the Synopsys I3C interface
+
+compatible: "snps,designware-i3c"
+
+include: i3c-controller.yaml
+
+properties:
+  clocks:
+    required: true
+
+  od-thigh-max-ns:
+    type: int
+    default: 41
+    description: |
+      Maximum high clock pulse length (ns) in Open-Drain mode.
+      The default is value from Section 6.2 of the I3C
+      Specifiction.
+
+  od-tlow-min-ns:
+    type: int
+    default: 200
+    description: |
+      Minimum low clock pulse length (ns) in Open-Drain mode.
+      The default is value from Section 6.2 of the I3C
+      Specifiction.

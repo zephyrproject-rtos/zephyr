@@ -97,6 +97,7 @@ def main():
             out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL_VARGS(fn, ...)",
                           " ".join(f"fn({nodelabel}, __VA_ARGS__)" for nodelabel in node.labels))
 
+            write_parent(node)
             write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)
@@ -245,13 +246,13 @@ def write_idents_and_existence(node: edtlib.Node) -> None:
     idents.extend(f"N_NODELABEL_{str2ident(label)}" for label in node.labels)
 
     out_comment("Existence and alternate IDs:")
-    out_dt_define(node.z_path_id + "_EXISTS", 1)
+    out_dt_define(f"{node.z_path_id}_EXISTS", 1)
 
     # Only determine maxlen if we have any idents
     if idents:
-        maxlen = max(len("DT_" + ident) for ident in idents)
+        maxlen = max(len(f"DT_{ident}") for ident in idents)
     for ident in idents:
-        out_dt_define(ident, "DT_" + node.z_path_id, width=maxlen)
+        out_dt_define(ident, f"DT_{node.z_path_id}", width=maxlen)
 
 
 def write_bus(node: edtlib.Node) -> None:
@@ -410,8 +411,8 @@ def write_interrupts(node: edtlib.Node) -> None:
             idx_vals.append((idx_macro, cell_value))
             idx_vals.append((idx_macro + "_EXISTS", 1))
             if irq.name:
-                name_macro = \
-                    f"{path_id}_IRQ_NAME_{str2ident(irq.name)}_VAL_{name}"
+                name_macro = (
+                    f"{path_id}_IRQ_NAME_{str2ident(irq.name)}_VAL_{name}")
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
                 name_vals.append((name_macro + "_EXISTS", 1))
 
@@ -457,6 +458,17 @@ def write_compatibles(node: edtlib.Node) -> None:
             out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}",
                           quote_str(node.edt.compat2model[compat]))
 
+def write_parent(node: edtlib.Node) -> None:
+    # Visit all parent nodes.
+    def _visit_parent_node(node: edtlib.Node):
+        while node is not None:
+            yield node.parent
+            node = node.parent
+
+    # Writes helper macros for dealing with node's parent.
+    out_dt_define(f"{node.z_path_id}_FOREACH_ANCESTOR(fn)",
+            " ".join(f"fn(DT_{parent.z_path_id})" for parent in
+            _visit_parent_node(node) if parent is not None))
 
 def write_children(node: edtlib.Node) -> None:
     # Writes helper macros for dealing with node's children.
@@ -593,8 +605,8 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             # DT_N_<node-id>_P_<prop-id>_IDX_0_EXISTS:
             # Allows treating the string like a degenerate case of a
             # string-array of length 1.
-            macro2val[macro + "_IDX_0"] = quote_str(prop.val)
-            macro2val[macro + "_IDX_0_EXISTS"] = 1
+            macro2val[f"{macro}_IDX_0"] = quote_str(prop.val)
+            macro2val[f"{macro}_IDX_0_EXISTS"] = 1
 
         if prop.enum_indices is not None:
             macro2val.update(enum_macros(prop, macro))
@@ -607,31 +619,30 @@ def write_vanilla_props(node: edtlib.Node) -> None:
         plen = prop_len(prop)
         if plen is not None:
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM
-            macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = \
-                ' \\\n\t'.join(
-                    f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
-                    for i in range(plen))
+            macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = (
+                ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
+                               for i in range(plen)))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP
-            macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP(fn, sep)"] = \
+            macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP(fn, sep)"] = (
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
-                    for i in range(plen))
+                    for i in range(plen)))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_VARGS
-            macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = \
+            macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = (
                 ' \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
-                    for i in range(plen))
+                    for i in range(plen)))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP_VARGS
-            macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)"] = \
+            macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)"] = (
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
-                    for i in range(plen))
+                    for i in range(plen)))
 
             # DT_N_<node-id>_P_<prop-id>_LEN
-            macro2val[macro + "_LEN"] = plen
+            macro2val[f"{macro}_LEN"] = plen
 
         # DT_N_<node-id>_P_<prop-id>_EXISTS
         macro2val[f"{macro}_EXISTS"] = 1
@@ -669,9 +680,9 @@ def enum_macros(prop: edtlib.Property, macro: str):
 
     for i, subval in enumerate(val):
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
-        ret[macro + f"_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
 
     return ret
 
@@ -683,15 +694,15 @@ def array_macros(prop: edtlib.Property, macro: str):
     ret = {}
     for i, subval in enumerate(prop.val):
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_EXISTS"] = 1
 
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>
         if isinstance(subval, str):
-            ret[macro + f"_IDX_{i}"] = quote_str(subval)
+            ret[f"{macro}_IDX_{i}"] = quote_str(subval)
             # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_...
-            ret.update(string_macros(macro + f"_IDX_{i}", subval))
+            ret.update(string_macros(f"{macro}_IDX_{i}", subval))
         else:
-            ret[macro + f"_IDX_{i}"] = subval
+            ret[f"{macro}_IDX_{i}"] = subval
 
     return ret
 
@@ -703,11 +714,14 @@ def write_dep_info(node: edtlib.Node) -> None:
         if dep_list:
             # Sort the list by dependency ordinal for predictability.
             sorted_list = sorted(dep_list, key=lambda node: node.dep_ordinal)
-            return "\\\n\t" + \
-                " \\\n\t".join(f"{n.dep_ordinal}, /* {n.path} */"
-                               for n in sorted_list)
+            return ("\\\n\t" + " \\\n\t"
+                    .join(f"{n.dep_ordinal}, /* {n.path} */"
+                          for n in sorted_list))
         else:
             return "/* nothing */"
+
+    out_comment("Node's hash:")
+    out_dt_define(f"{node.z_path_id}_HASH", node.hash)
 
     out_comment("Node's dependency ordinal:")
     out_dt_define(f"{node.z_path_id}_ORD", node.dep_ordinal)
@@ -855,8 +869,8 @@ def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: s
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_VAL_<VAL>
     for cell, val in data.items():
         cell_ident = str2ident(cell)
-        ret[f"{macro}_NAME_{name}_VAL_{cell_ident}"] = \
-            f"DT_{macro}_IDX_{i}_VAL_{cell_ident}"
+        ret[f"{macro}_NAME_{name}_VAL_{cell_ident}"] = (
+            f"DT_{macro}_IDX_{i}_VAL_{cell_ident}")
         ret[f"{macro}_NAME_{name}_VAL_{cell_ident}_EXISTS"] = 1
 
     return ret
@@ -907,24 +921,24 @@ def write_global_macros(edt: edtlib.EDT):
 
         # Helpers for non-INST for-each macros that take node
         # identifiers as arguments.
-        for_each_macros[f"DT_FOREACH_OKAY_{ident}(fn)"] = \
+        for_each_macros[f"DT_FOREACH_OKAY_{ident}(fn)"] = (
             " ".join(f"fn(DT_{node.z_path_id})"
-                     for node in okay_nodes)
-        for_each_macros[f"DT_FOREACH_OKAY_VARGS_{ident}(fn, ...)"] = \
+                     for node in okay_nodes))
+        for_each_macros[f"DT_FOREACH_OKAY_VARGS_{ident}(fn, ...)"] = (
             " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)"
-                     for node in okay_nodes)
+                     for node in okay_nodes))
 
         # Helpers for INST versions of for-each macros, which take
         # instance numbers. We emit separate helpers for these because
         # avoiding an intermediate node_id --> instance number
         # conversion in the preprocessor helps to keep the macro
         # expansions simpler. That hopefully eases debugging.
-        for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
+        for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = (
             " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
-                     for node in okay_nodes)
-        for_each_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = \
+                     for node in okay_nodes))
+        for_each_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = (
             " ".join(f"fn({edt.compat2nodes[compat].index(node)}, __VA_ARGS__)"
-                     for node in okay_nodes)
+                     for node in okay_nodes))
 
     for compat, nodes in edt.compat2nodes.items():
         for node in nodes:
@@ -985,7 +999,7 @@ def out_dt_define(
     # generate a warning if used, via __WARN(<deprecation_msg>)).
     #
     # Returns the full generated macro for 'macro', with leading "DT_".
-    ret = "DT_" + macro
+    ret = f"DT_{macro}"
     out_define(ret, val, width=width, deprecation_msg=deprecation_msg)
     return ret
 
@@ -1031,15 +1045,14 @@ def out_comment(s: str, blank_before=True) -> None:
         for line in s.splitlines():
             # Avoid an extra space after '*' for empty lines. They turn red in
             # Vim if space error checking is on, which is annoying.
-            res.append(" *" if not line.strip() else " * " + line)
+            res.append(f" * {line}".rstrip())
         res.append(" */")
         print("\n".join(res), file=header_file)
     else:
         # Format single-line comments like
         #
         #   /* foo bar */
-        print("/* " + s + " */", file=header_file)
-
+        print(f"/* {s} */", file=header_file)
 
 ESCAPE_TABLE = str.maketrans(
     {

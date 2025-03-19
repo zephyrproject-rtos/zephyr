@@ -1,0 +1,126 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 RCC (Reset and Clock controller).
+
+  This node is in charge of system clock ('SYSCLK') source selection and
+  System Clock Generation.
+
+  Configuring STM32 Reset and Clock controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hse, clk_csi', 'pll', ...).
+  As part of this node configuration, SYSCLK frequency should also be defined, using
+  "clock-frequency" property.
+  Last, bus clocks (typically HCLK, PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+    clocks = <&ic2>;
+    clock-frequency = <DT_FREQ_M(400)>;
+    ahb-prescaler = <2>;
+    apb1-prescaler = <1>;
+    apb2-prescaler = <1>;
+    apb4-prescaler = <1>;
+    apb5-prescaler = <1>;
+  }
+
+  Confere st,stm32-rcc binding for information about domain clocks configuration.
+
+compatible: "st,stm32n6-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  ahb-prescaler:
+    type: int
+    required: true
+    description: |
+        AHB clock prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  apb1-prescaler:
+    type: int
+    required: true
+    description: |
+        CPU domain APB1 prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  apb2-prescaler:
+    type: int
+    required: true
+    description: |
+        CPU domain APB2 prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  apb4-prescaler:
+    type: int
+    required: true
+    description: |
+        CPU domain APB4 prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  apb5-prescaler:
+    type: int
+    required: true
+    description: |
+        CPU domain APB5 prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+
+clock-cells:
+  - bus
+  - bits

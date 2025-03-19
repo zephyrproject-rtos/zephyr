@@ -36,3 +36,15 @@ test_i3c_ilps22qs: ilps22qs@400000803E0000004 {
 	reg = <0x3 0x00000803 0xE0000004>;
 	assigned-address = <0x4>;
 };
+
+test_i3c_lsm6dsv16x: lsm6dsv16x@500000803E0000004 {
+	compatible = "st,lsm6dsv16x";
+	reg = <0x5 0x00000803 0xE0000004>;
+	assigned-address = <0x5>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV16X_DT_FS_8G>;
+	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+};

@@ -149,7 +149,7 @@ int st_ilps22qs_init(const struct device *dev)
 
 		/* Select bus interface */
 		ilps22qs_bus_mode_get(ctx, &bus_mode);
-		bus_mode.filter = ILPS22QS_AUTO;
+		bus_mode.filter = ILPS22QS_FILTER_AUTO;
 		bus_mode.interface = ILPS22QS_SEL_BY_HW;
 		ilps22qs_bus_mode_set(ctx, &bus_mode);
 	}

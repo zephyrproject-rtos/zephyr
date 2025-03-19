@@ -10,8 +10,4 @@ supported:
   - uart
   - nvs
   - pwm
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

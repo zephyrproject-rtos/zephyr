@@ -12,10 +12,137 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
+/* Count down number of metrics intervals before performing a PHY update */
+#define PHY_UPDATE_COUNTDOWN 3U
+static uint32_t phy_update_countdown;
+static uint8_t phy_param_idx;
+
+static void phy_update_iterate(struct bt_conn *conn)
+{
+	const struct bt_conn_le_phy_param phy_param[] = {
+		/* List of 1M Tx with Rx on other PHYs */
+		{
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_1M,
+			.pref_rx_phy = BT_GAP_LE_PHY_1M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_1M,
+			.pref_rx_phy = BT_GAP_LE_PHY_2M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_1M,
+			.pref_rx_phy = BT_GAP_LE_PHY_CODED,
+		},
+
+		/* List of 2M Tx with Rx on other PHYs */
+		{
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_2M,
+			.pref_rx_phy = BT_GAP_LE_PHY_1M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_2M,
+			.pref_rx_phy = BT_GAP_LE_PHY_2M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_2M,
+			.pref_rx_phy = BT_GAP_LE_PHY_CODED,
+		},
+
+		/* List of Coded PHY S8 Tx with Rx on other PHYs */
+		{
+			.options = BT_CONN_LE_PHY_OPT_CODED_S8,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_1M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_CODED_S8,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_2M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_CODED_S8,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_CODED,
+		},
+
+		/* List of Coded PHY S2 Tx with Rx on other PHYs */
+		{
+			.options = BT_CONN_LE_PHY_OPT_CODED_S2,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_1M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_CODED_S2,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_2M,
+		}, {
+			.options = BT_CONN_LE_PHY_OPT_CODED_S2,
+			.pref_tx_phy = BT_GAP_LE_PHY_CODED,
+			.pref_rx_phy = BT_GAP_LE_PHY_CODED,
+		},
+
+		/* Finally stop at 2M Tx with Rx on 2M */
+		{
+			.options = BT_CONN_LE_PHY_OPT_NONE,
+			.pref_tx_phy = BT_GAP_LE_PHY_2M,
+			.pref_rx_phy = BT_GAP_LE_PHY_2M,
+		},
+	};
+	int err;
+
+	if (phy_update_countdown--) {
+		return;
+	}
+
+	phy_update_countdown = PHY_UPDATE_COUNTDOWN;
+
+	phy_param_idx++;
+	if (phy_param_idx >= ARRAY_SIZE(phy_param)) {
+		/* No more PHY updates, stay at the last index */
+		phy_param_idx = ARRAY_SIZE(phy_param);
+		return;
+	}
+
+	struct bt_conn_info conn_info;
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (err) {
+		printk("Failed to get connection info (%d).\n", err);
+		return;
+	}
+
+	struct bt_conn_le_phy_param conn_phy_param;
+
+	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
+		conn_phy_param.options = phy_param[phy_param_idx].options;
+		conn_phy_param.pref_tx_phy = phy_param[phy_param_idx].pref_tx_phy;
+		conn_phy_param.pref_rx_phy = phy_param[phy_param_idx].pref_rx_phy;
+	} else {
+		conn_phy_param.options = phy_param[phy_param_idx].options;
+		conn_phy_param.pref_tx_phy = phy_param[phy_param_idx].pref_rx_phy;
+		conn_phy_param.pref_rx_phy = phy_param[phy_param_idx].pref_tx_phy;
+	}
+
+	printk("%s: PHY Update requested %u %u (%u)\n", __func__,
+	       conn_phy_param.pref_tx_phy,
+	       conn_phy_param.pref_rx_phy,
+	       conn_phy_param.options);
+
+	err = bt_conn_le_phy_update(conn, &conn_phy_param);
+	if (err) {
+		printk("Failed to update PHY (%d).\n", err);
+		return;
+	}
+}
+
+/* Interval between storing the measured write rate */
+#define METRICS_INTERVAL 1U /* seconds */
+
 static struct bt_gatt_exchange_params mtu_exchange_params;
 static uint32_t write_count;
 static uint32_t write_len;
 static uint32_t write_rate;
+
+/* Globals, reused by central_gatt_write and peripheral_gatt_write samples */
 struct bt_conn *conn_connected;
 uint32_t last_write_rate;
 void (*start_scan_func)(void);
@@ -36,7 +163,7 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
-	if (delta > (1U * NSEC_PER_SEC)) {
+	if (delta > (METRICS_INTERVAL * NSEC_PER_SEC)) {
 		printk("%s: count= %u, len= %u, rate= %u bps.\n", __func__,
 		       write_count, write_len, write_rate);
 
@@ -46,6 +173,11 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		write_len = 0U;
 		write_rate = 0U;
 		cycle_stamp = k_cycle_get_32();
+
+		if (IS_ENABLED(CONFIG_BT_USER_PHY_UPDATE)) {
+			phy_update_iterate(conn);
+		}
+
 	} else {
 		uint16_t len;
 
@@ -55,7 +187,7 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		len = (uint32_t)user_data & 0xFFFF;
 
 		write_len += len;
-		write_rate = ((uint64_t)write_len << 3) * (1U * NSEC_PER_SEC) /
+		write_rate = ((uint64_t)write_len << 3) * (METRICS_INTERVAL * NSEC_PER_SEC) /
 			     delta;
 	}
 }
@@ -119,6 +251,11 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		}
 	}
 #endif
+
+	if (IS_ENABLED(CONFIG_BT_USER_PHY_UPDATE)) {
+		phy_update_countdown = PHY_UPDATE_COUNTDOWN;
+		phy_param_idx = 0U;
+	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -171,14 +308,50 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 }
 #endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+static void le_phy_updated(struct bt_conn *conn,
+			   struct bt_conn_le_phy_info *param)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("LE PHY Updated: %s Tx 0x%x, Rx 0x%x\n", addr, param->tx_phy,
+	       param->rx_phy);
+}
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+static void le_data_len_updated(struct bt_conn *conn,
+				struct bt_conn_le_data_len_info *info)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Data length updated: %s max tx %u (%u us) max rx %u (%u us)\n",
+	       addr, info->tx_max_len, info->tx_max_time, info->rx_max_len,
+	       info->rx_max_time);
+}
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
+
 #if defined(CONFIG_BT_SMP)
 	.security_changed = security_changed,
 #endif
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	.le_phy_updated = le_phy_updated,
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	.le_data_len_updated = le_data_len_updated,
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
 int write_cmd(struct bt_conn *conn)

@@ -75,18 +75,6 @@ endif # WIFI_CREDENTIALS_CONNECT_STORED
 
 endif # WIFI_CREDENTIALS
 
-if WIFI_CREDENTIALS_BACKEND_PSA
-
-config WIFI_CREDENTIALS_BACKEND_PSA_OFFSET
-	int "PSA_KEY_ID range offset"
-	default 0
-	help
-	  The PSA specification mandates to set key identifiers for keys
-	  with persistent lifetime. The users of the PSA API are responsible (WIFI credentials
-	  management is user of PSA API) to provide correct and unique identifiers.
-
-endif # WIFI_CREDENTIALS_BACKEND_PSA
-
 config WIFI_CREDENTIALS_STATIC
 	bool "Static Wi-Fi network configuration"
 

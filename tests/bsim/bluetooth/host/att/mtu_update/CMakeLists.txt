@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_mtu_update)
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+target_link_libraries(app PRIVATE babblekit)
+
 target_include_directories(app PRIVATE src)
 
 target_sources_ifdef(CONFIG_BT_PERIPHERAL app PRIVATE

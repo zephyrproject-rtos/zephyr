@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <string.h>
 #include <zephyr/irq.h>
+
+/* clang-format off */
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK
 #define SERCOM_USART_CTRLA_MODE_USART_INT_CLK SERCOM_USART_CTRLA_MODE(0x1)
@@ -35,14 +38,11 @@ struct uart_sam0_dev_cfg {
 	uint32_t baudrate;
 	uint32_t pads;
 	bool     collision_detect;
-#ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
-	uint16_t gclk_core_id;
-#else
-	uint32_t pm_apbcmask;
-	uint16_t gclk_clkctrl_id;
-#endif
+	uint32_t gclk_gen;
+	uint16_t gclk_id;
+
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -510,20 +510,15 @@ static int uart_sam0_init(const struct device *dev)
 
 	SercomUsart * const usart = cfg->regs;
 
-#ifdef MCLK
-	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
-
-	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
-#else
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
 
-	/* Enable SERCOM clock in PM */
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#else
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
 
 	/* Disable all USART interrupts */
@@ -1272,34 +1267,23 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
 	(DT_INST_PROP(n, collision_detection))
 
-#ifdef MCLK
+#define ASSIGNED_CLOCKS_CELL_BY_NAME					\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
+
 #define UART_SAM0_CONFIG_DEFN(n)					\
 static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.regs = (SercomUsart *)DT_INST_REG_ADDR(n),			\
 	.baudrate = DT_INST_PROP(n, current_speed),			\
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
-	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
+	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
 	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
-#else
-#define UART_SAM0_CONFIG_DEFN(n)					\
-static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
-	.regs = (SercomUsart *)DT_INST_REG_ADDR(n),			\
-	.baudrate = DT_INST_PROP(n, current_speed),			\
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
-	.pads = UART_SAM0_SERCOM_PADS(n),				\
-	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
-	UART_SAM0_DMA_CHANNELS(n)					\
-}
-#endif
 
 #define UART_SAM0_DEVICE_INIT(n)					\
 PINCTRL_DT_INST_DEFINE(n);						\
@@ -1314,3 +1298,5 @@ DEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL,				\
 UART_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
+
+/* clang-format on */

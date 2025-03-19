@@ -20,10 +20,21 @@ extern uint32_t _irq_vector_table[];
 
 #if defined(CONFIG_RISCV)
 #if defined(CONFIG_NRFX_CLIC)
-#define ISR1_OFFSET	15
-#define ISR3_OFFSET	16
-#define ISR5_OFFSET	17
-#define TRIG_CHECK_SIZE	18
+
+#if defined(CONFIG_SOC_SERIES_NRF54LX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#define ISR1_OFFSET	16
+#define ISR3_OFFSET	17
+#define ISR5_OFFSET	18
+#define TRIG_CHECK_SIZE	19
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)
+#define ISR1_OFFSET	14
+#define ISR3_OFFSET	15
+#define ISR5_OFFSET	16
+#define TRIG_CHECK_SIZE	17
+#else
+#error "Target not supported"
+#endif
+
 #elif defined(CONFIG_RISCV_HAS_CLIC)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17
@@ -65,8 +76,8 @@ extern uint32_t _irq_vector_table[];
  * with isr used here, so add a workaround
  */
 #define TEST_NUM_IRQS	105
-#elif defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF9160)
-/* In nRF9160 and application core in nRF5340, not all interrupts with highest
+#elif defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_SERIES_NRF91X)
+/* In the application core of nRF5340 and nRF9 series, not all interrupts with highest
  * numbers are implemented. Thus, limit the number of interrupts reported to
  * the test, so that it does not try to use some unavailable ones.
  */
@@ -398,9 +409,6 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 static void *gen_isr_table_setup(void)
 {
 	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-label"
 
 	return NULL;
 }

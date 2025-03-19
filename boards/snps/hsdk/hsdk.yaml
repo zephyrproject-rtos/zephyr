@@ -5,7 +5,6 @@ arch: arc
 toolchain:
   - zephyr
   - cross-compile
-  - xtools
   - arcmwdt
 supported:
   - smp

@@ -81,7 +81,7 @@
 };
 
 &usart2 {
-	compatible = "silabs,gecko-spi-usart";
+	compatible = "silabs,usart-spi";
 
 	#address-cells = <1>;
 	#size-cells = <0>;

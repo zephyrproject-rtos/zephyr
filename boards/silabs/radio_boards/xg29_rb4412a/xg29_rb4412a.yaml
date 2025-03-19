@@ -1,0 +1,20 @@
+identifier: xg29_rb4412a
+name: EFR32xG29 2.4 GHz 8 dBm Buck Radio Board (xG29-RB4412A, BRD4412A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - gpio
+  - uart
+  - dma
+  - watchdog
+  - comparator
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

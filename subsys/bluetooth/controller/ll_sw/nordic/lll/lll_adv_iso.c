@@ -625,10 +625,35 @@ static void isr_tx_common(void *param,
 
 	/* Get ISO data PDU, not control subevent */
 	if (!pdu) {
-		uint8_t payload_index;
+		uint16_t payload_index;
 
-		payload_index = (lll->bn_curr - 1U) +
-				(lll->ptc_curr * lll->pto);
+		if (lll->ptc_curr) {
+			/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+			 *        running buffer offset related to nse.
+			 *        Fix ptc and ptc_curr definitions, until then there is an assertion
+			 *        check when ptc is calculated in ptc_calc function.
+			 */
+			uint8_t ptx_idx = lll->ptc_curr - 1U; /* max. nse 5 bits */
+			uint8_t ptx_payload_idx;
+			uint16_t ptx_group_mult;
+			uint8_t ptx_group_idx;
+
+			/* Calculate group index and multiplier for deriving
+			 * pre-transmission payload index.
+			 */
+			ptx_group_idx = ptx_idx / lll->bn; /* 5 bits */
+			ptx_payload_idx = ptx_idx - ptx_group_idx * lll->bn; /* 8 bits */
+			ptx_group_mult = (ptx_group_idx + 1U) * lll->pto; /* 9 bits */
+			payload_index = ptx_payload_idx + ptx_group_mult * lll->bn; /* 13 bits */
+
+			/* FIXME: memq_peek_n function does not support indices > UINT8_MAX,
+			 *        add assertion check to honor this limitation.
+			 */
+			LL_ASSERT(payload_index <= UINT8_MAX);
+		} else {
+			payload_index  = lll->bn_curr - 1U; /* 3 bits */
+		}
+
 		payload_count = lll->payload_count + payload_index - lll->bn;
 
 #if !TEST_WITH_DUMMY_PDU
@@ -654,6 +679,10 @@ static void isr_tx_common(void *param,
 				 (tx->payload_count < payload_count));
 		}
 		if (!link || (tx->payload_count != payload_count)) {
+			/* FIXME: Do not transmit on air an empty PDU if this is a Pre-Transmission
+			 *        subevent, instead use radio_tmr_start_us() to schedule next valid
+			 *        subevent.
+			 */
 			pdu = radio_pkt_empty_get();
 			pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED :
 						    PDU_BIS_LLID_START_CONTINUE;

@@ -4,6 +4,8 @@
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
  */
 
+#include "dt-bindings/adc/silabs-adc.h"
+
 / {
 	zephyr,user {
 		io-channels = <&adc0 0>, <&adc0 1>;
@@ -20,7 +22,7 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <0x11>;
+		zephyr,input-positive = <IADC_INPUT_IOVDD>;
 	};
 
 	channel@1 {
@@ -29,6 +31,6 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <0x01>;
+		zephyr,input-positive = <IADC_INPUT_GND>;
 	};
 };

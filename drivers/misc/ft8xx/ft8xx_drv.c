@@ -6,6 +6,9 @@
 
 #include "ft8xx_drv.h"
 
+#include "ft8xx_dev_data.h"
+
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
@@ -17,17 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT ftdi_ft800
 #define NODE_ID DT_INST(0, DT_DRV_COMPAT)
 
-/* SPI device */
-static const struct spi_dt_spec spi = SPI_DT_SPEC_INST_GET(0,
-					 SPI_WORD_SET(8) | SPI_OP_MODE_MASTER,
-					 0);
-
-/* GPIO int line */
-static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
-
-static struct gpio_callback irq_cb_data;
-
-__weak void ft8xx_drv_irq_triggered(const struct device *dev,
+__weak void ft8xx_drv_irq_triggered(const struct device *gpio_port,
 				     struct gpio_callback *cb, uint32_t pins)
 {
 	/* Intentionally empty */
@@ -51,43 +44,46 @@ static void insert_addr(uint32_t addr, uint8_t *buff)
 	buff[2] = (addr) & 0xff;
 }
 
-int ft8xx_drv_init(void)
+int ft8xx_drv_init(const struct device *dev)
 {
 	int ret;
+	struct ft8xx_data *data = dev->data;
 
-	if (!spi_is_ready_dt(&spi)) {
-		LOG_ERR("SPI bus %s not ready", spi.bus->name);
+	if (!spi_is_ready_dt(&data->spi)) {
+		LOG_ERR("SPI bus %s not ready", data->spi.bus->name);
 		return -ENODEV;
 	}
 
 	/* TODO: Verify if such entry in DTS is present.
 	 * If not, use polling mode.
 	 */
-	if (!gpio_is_ready_dt(&irq_gpio)) {
-		LOG_ERR("GPIO device %s is not ready", irq_gpio.port->name);
+	if (!gpio_is_ready_dt(&data->irq_gpio)) {
+		LOG_ERR("GPIO device %s is not ready", data->irq_gpio.port->name);
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&data->irq_gpio, GPIO_INPUT);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&data->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		return ret;
 	}
 
-	gpio_init_callback(&irq_cb_data, ft8xx_drv_irq_triggered, BIT(irq_gpio.pin));
-	gpio_add_callback(irq_gpio.port, &irq_cb_data);
+	gpio_init_callback(&data->irq_cb_data, ft8xx_drv_irq_triggered, BIT(data->irq_gpio.pin));
+	gpio_add_callback(data->irq_gpio.port, &data->irq_cb_data);
 
 	return 0;
 }
 
-int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
+int ft8xx_drv_write(const struct device *dev, uint32_t address, const uint8_t *data,
+		    unsigned int length)
 {
 	int ret;
 	uint8_t addr_buf[ADDR_SIZE];
+	const struct ft8xx_data *dev_data = dev->data;
 
 	insert_addr(address, addr_buf);
 	addr_buf[0] |= WRITE_OP;
@@ -109,7 +105,7 @@ int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
 		.count = 2,
 	};
 
-	ret = spi_write_dt(&spi, &tx_bufs);
+	ret = spi_write_dt(&dev_data->spi, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI write error: %d", ret);
 	}
@@ -117,11 +113,12 @@ int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
 	return ret;
 }
 
-int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
+int ft8xx_drv_read(const struct device *dev, uint32_t address, uint8_t *data, unsigned int length)
 {
 	int ret;
 	uint8_t dummy_read_buf[ADDR_SIZE + DUMMY_READ_SIZE];
 	uint8_t addr_buf[ADDR_SIZE];
+	const struct ft8xx_data *dev_data = dev->data;
 
 	insert_addr(address, addr_buf);
 	addr_buf[0] |= READ_OP;
@@ -152,7 +149,7 @@ int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
 		.count = 2,
 	};
 
-	ret = spi_transceive_dt(&spi, &tx_bufs, &rx_bufs);
+	ret = spi_transceive_dt(&dev_data->spi, &tx_bufs, &rx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI transceive error: %d", ret);
 	}
@@ -160,9 +157,10 @@ int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
 	return ret;
 }
 
-int ft8xx_drv_command(uint8_t command)
+int ft8xx_drv_command(const struct device *dev, uint8_t command)
 {
 	int ret;
+	const struct ft8xx_data *dev_data = dev->data;
 	/* Most commands include COMMAND_OP bit. ACTIVE power mode command is
 	 * an exception with value 0x00.
 	 */
@@ -178,7 +176,7 @@ int ft8xx_drv_command(uint8_t command)
 		.count = 1,
 	};
 
-	ret = spi_write_dt(&spi, &tx_bufs);
+	ret = spi_write_dt(&dev_data->spi, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI command error: %d", ret);
 	}

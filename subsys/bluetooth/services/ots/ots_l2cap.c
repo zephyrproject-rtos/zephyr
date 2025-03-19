@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_CLIENT_LOG_LEVEL);
 #endif
 
-/* According to BLE specification Assigned Numbers that are used in the
+/* According to Bluetooth specification Assigned Numbers that are used in the
  * Logical Link Control for protocol/service multiplexers.
  */
 #define BT_GATT_OTS_L2CAP_PSM	0x0025

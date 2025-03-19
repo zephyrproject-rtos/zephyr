@@ -9,3 +9,11 @@ config DMA_XMC4XXX
 	depends on DT_HAS_INFINEON_XMC4XXX_DMA_ENABLED
 	help
 	  DMA driver for Infineon xmc4xxx series MCUs.
+
+config DMA_XMC4XXX_NUM_DESCRIPTORS
+	int "Max DMA descriptors in a linked list"
+	default 4
+	depends on DMA_XMC4XXX
+	help
+	  Maximum number of blocks in a DMA block transfer configuration.
+	  Only supported by dma0 channels 0 and 1.

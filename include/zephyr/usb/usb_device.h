@@ -73,9 +73,6 @@ extern "C" {
 #define USBD_DEFINE_CFG_DATA(name) \
 	static STRUCT_SECTION_ITERABLE(usb_cfg_data, name)
 
-#define USBD_CFG_DATA_DEFINE(p, name) __DEPRECATED_MACRO \
-	static __in_section(_usb_cfg_data, static, p##_name) __used __aligned(4)
-
 /*************************************************************************
  *  USB configuration
  **************************************************************************/

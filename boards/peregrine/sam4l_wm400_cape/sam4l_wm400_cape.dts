@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sam4lx4.dtsi>
+#include "sam4l_wm400_cape-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Atmel SAM4L WM-400 Cape Board with an Atmel SAM4LC4B SoC";
+	compatible = "peregrine,sam4l_wm400_cape", "atmel,sam4lc4b", "atmel,sam4l";
+
+	aliases {
+		i2c-0 = &twim1;
+		led0 = &red_mod_led;
+		led1 = &green_mod_led;
+		led2 = &blue_mod_led;
+		led3 = &red_cape_led;
+		sw0 = &sw0_dfu;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition= &code_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_mod_led: led_0 {
+			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+			label = "LED_0";
+		};
+
+		green_mod_led: led_1 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+			label = "LED_1";
+		};
+
+		blue_mod_led: led_2 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
+			label = "LED_2";
+		};
+
+		red_cape_led: led_3 {
+			gpios = <&gpioa 24 GPIO_ACTIVE_LOW>;
+			label = "LED_3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw0_dfu: button_1 {
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW)>;
+			label = "SW0_DFU";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "sam-ba";
+			reg = <0x000000000 0x00004000>;
+		};
+
+		code_partition: partition@4000 {
+			label = "image";
+			reg = <0x00004000 0x0003c000>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpioa 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)
+		    &gpioa 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+
+	rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		spi-max-frequency = <6000000>;
+		irq-gpios = <&gpioa 20 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		reset-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
+		slptr-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	at45db: at45db081d@1 {
+		compatible = "atmel,at45";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [1f 25 00];
+		size = <8388608>;
+		sector-size = <65536>;
+		block-size = <2048>;
+		page-size = <256>;
+		enter-dpd-delay = <3000>;
+		exit-dpd-delay = <35000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000000 0x00100000>;
+			};
+		};
+	};
+};
+
+&tc0 {
+	clk = <4>;
+	status = "okay";
+};
+
+&twim1 {
+	status = "okay";
+
+	pinctrl-0 = <&twi1_default>;
+	pinctrl-names = "default";
+
+	std-clk-slew-lim = <0>;
+	std-clk-strength-low = "0.5";
+	std-data-slew-lim = <0>;
+	std-data-strength-low = "0.5";
+
+	hs-clk-slew-lim = <0>;
+	hs-clk-strength-high = "0.5";
+	hs-clk-strength-low = "0.5";
+	hs-data-slew-lim = <0>;
+	hs-data-strength-low = "0.5";
+
+	hs-master-code = <0>;
+
+	eeprom1: eeprom@57 {
+		compatible = "atmel,at24";
+		reg = <0x57>;
+		size = <32768>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbc {
+	status = "okay";
+
+	pinctrl-0 = <&usbc_default>;
+	pinctrl-names = "default";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

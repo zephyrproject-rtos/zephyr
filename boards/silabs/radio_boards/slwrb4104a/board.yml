@@ -1,5 +1,6 @@
-boards:
-  - name: slwrb4104a
-    full_name: EFR32BG13 2.4 GHz 10 dBm (SLWRB4104A)
-    socs:
-      - name: efr32bg13p632f512gm48
+board:
+  name: slwrb4104a
+  full_name: EFR32BG13 2.4 GHz 10 dBm (SLWRB4104A)
+  vendor: silabs
+  socs:
+    - name: efr32bg13p632f512gm48

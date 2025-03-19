@@ -96,6 +96,17 @@ extern enum bst_result_t bst_result;
 	} while (0)
 
 /*
+ * @brief Assert `expr` is true
+ *
+ * Assert that `expr` is true. If assertion is false, fail the test. I.e. return non-zero.
+ *
+ * @note This is different than `sys/__assert.h`.
+ *
+ */
+#define TEST_ASSERT_NO_MSG(expr)                                                                   \
+	TEST_ASSERT(expr, "")
+
+/*
  * @brief Print a value. Lower-level than `printk` or `LOG_xx`.
  *
  * Print a message to console.

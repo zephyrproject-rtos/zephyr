@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_SILABS_SIWX91X
+	bool "Silabs SiWx91x SoC series WiFi driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_WIFI_ENABLED
+	depends on NETWORKING
+	select WISECONNECT_NETWORK_STACK
+	select EVENTS
+	select NET_L2_WIFI_MGMT
+	help
+	  Enable WiFi driver for the Silabs SiWx91x SoC series.
+
+if WIFI_SILABS_SIWX91X
+
+choice
+	prompt "Network stack"
+	default WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
+	help
+	  Choose "Native" stack if you want a better compatibility with Zephyr
+	  features. "Offloaded" stack may provide better resource (power and
+	  memory) consumption.
+
+config WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
+	bool "Native"
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+
+config WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+	bool "Offloaded"
+	select WIFI_OFFLOAD
+
+endchoice
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_QUEUE_SIZE
+	default 10
+
+# Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
+# This device supports filtering scan results for only one SSID.
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	default 1
+
+endif

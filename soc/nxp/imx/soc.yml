@@ -35,6 +35,7 @@ family:
       - name: m4
   - name: imx9
     socs:
+    - name: mimx9131
     - name: mimx9352
       cpuclusters:
       - name: a55

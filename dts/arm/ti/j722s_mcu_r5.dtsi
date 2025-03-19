@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+
+#include "j722s_mcu.dtsi"
+#include "j722s_main.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5";
+			reg = <0>;
+		};
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ATCM";
+	};
+
+	btcm: memory@41010000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "BTCM";
+	};
+
+	vim: interrupt-controller@7ff0000 {
+		#address-cells = <1>;
+		compatible = "ti,vim";
+		reg = <0x07ff0000 0x2800>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+		status = "okay";
+	};
+
+	systick_timer: timer@4800000 {
+		compatible = "ti,am654-timer";
+		reg = <0x04800000 0x70>;
+		interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
+};

@@ -17,7 +17,7 @@
 #include "soc_miwu.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(gpio_npcx, CONFIG_GPIO_LOG_LEVEL);
 
 /* GPIO module instances */
 #define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),

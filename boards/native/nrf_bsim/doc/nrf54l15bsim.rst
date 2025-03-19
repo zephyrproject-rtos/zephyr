@@ -40,6 +40,7 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * AAR (Accelerated Address Resolver)
 * CCM (AES CCM mode encryption)
 * CLOCK (Clock control)
+* CRACEN (Crypto Accelerator Engine)
 * DPPI (Distributed Programmable Peripheral Interconnect)
 * ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
@@ -49,7 +50,6 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * PPIB (PPI Bridge)
 * RADIO
 * RRAMC (Resistive RAM Controller)
-* RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * TIMER
 * UARTE (UART with Easy DMA)
@@ -90,6 +90,4 @@ ARM's TrustZone is not modeled in this board. This means that:
   can be labeled as restricted for secure or non secure access.
 * TF-M cannot be used.
 
-Note that the CRACEN peripheral is not modeled.
 As crypto library, Mbed TLS can be used with its SW crypto backend.
-As entropy driver, the :dtcompatible:`zephyr,native-posix-rng` is enabled by default.

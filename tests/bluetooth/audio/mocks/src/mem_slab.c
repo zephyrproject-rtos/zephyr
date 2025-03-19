@@ -3,9 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/ztest_assert.h>
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {

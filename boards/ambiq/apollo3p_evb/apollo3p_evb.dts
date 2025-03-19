@@ -2,6 +2,7 @@
 #include <ambiq/ambiq_apollo3p_blue.dtsi>
 
 #include "apollo3p_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Ambiq Apollo3 Blue Plus evaluation board";
@@ -25,6 +26,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -56,14 +58,17 @@
 		button0: button_0 {
 			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
 			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
 			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
 			label = "BTN2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 };
@@ -113,7 +118,6 @@
 };
 
 &spi0 {
-	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
@@ -122,7 +126,6 @@
 };
 
 &i2c3 {
-	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -163,8 +166,12 @@
 	status = "okay";
 };
 
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
+};
+
 &adc0 {
-	compatible = "ambiq,adc";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	status = "disabled";

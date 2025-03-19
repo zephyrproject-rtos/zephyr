@@ -7,6 +7,7 @@ config BT_CRYPTO
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_CMAC
-	select MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_ALG_ECB_NO_PADDING
+	imply MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
 	help
 	  This option enables the Bluetooth Cryptographic Toolbox.

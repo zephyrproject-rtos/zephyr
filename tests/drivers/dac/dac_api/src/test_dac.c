@@ -85,8 +85,8 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#elif defined(CONFIG_BOARD_SAM_E70_XPLAINED) || \
-	defined(CONFIG_BOARD_SAM_V71_XULT)
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM) && \
+	!defined(CONFIG_SOC_SERIES_SAM4L)
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dacc)
 #define DAC_RESOLUTION		12
@@ -98,6 +98,12 @@
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		10
 #define DAC_CHANNEL_ID		0
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+
+#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
+#define DAC_RESOLUTION  12
+#define DAC_CHANNEL_ID  0
 
 #else
 #error "Unsupported board."

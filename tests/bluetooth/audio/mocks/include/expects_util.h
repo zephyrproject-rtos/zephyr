@@ -6,10 +6,17 @@
 
 #ifndef MOCKS_UTIL_H_
 #define MOCKS_UTIL_H_
+#include <stddef.h>
+#include <stdint.h>
 
+#include <stdint.h>
+
+#include <zephyr/sys/util_internal.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_internal.h>
 #include <zephyr/ztest.h>
+#include <zephyr/ztest_assert.h>
 
 #define CHECK_EMPTY(_x) UTIL_BOOL(IS_EMPTY(_x))
 #define COND_CODE_EMPTY(_x, _if_any_code, _else_code)                                              \

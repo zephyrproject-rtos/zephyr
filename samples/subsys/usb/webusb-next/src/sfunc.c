@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(sfunc, LOG_LEVEL_INF);
 NET_BUF_POOL_FIXED_DEFINE(sfunc_pool,
 			  1, 0, sizeof(struct udc_buf_info), NULL);
 
-static uint8_t __aligned(sizeof(void *)) sfunc_buf[512];
+UDC_STATIC_BUF_DEFINE(sfunc_buf, 512);
 
 struct sfunc_desc {
 	struct usb_if_descriptor if0;
@@ -133,7 +133,6 @@ struct net_buf *sfunc_buf_alloc(struct usbd_class_data *const c_data,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;

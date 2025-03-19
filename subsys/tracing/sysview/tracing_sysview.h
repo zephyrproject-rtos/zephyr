@@ -532,7 +532,18 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret)
 #define sys_port_trace_k_mbox_data_get(rx_msg)
 
-#define sys_port_trace_k_pipe_init(pipe)
+#define sys_port_trace_k_pipe_init(pipe, buffer, size)
+#define sys_port_trace_k_pipe_reset_enter(pipe)
+#define sys_port_trace_k_pipe_reset_exit(pipe)
+#define sys_port_trace_k_pipe_close_enter(pipe)
+#define sys_port_trace_k_pipe_close_exit(pipe)
+#define sys_port_trace_k_pipe_write_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_write_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_write_exit(pipe, ret)
+#define sys_port_trace_k_pipe_read_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_read_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_read_exit(pipe, ret)
+
 #define sys_port_trace_k_pipe_cleanup_enter(pipe)
 #define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
 #define sys_port_trace_k_pipe_alloc_init_enter(pipe)
@@ -573,6 +584,13 @@ void sys_trace_thread_info(struct k_thread *thread);
 
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)                                       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_ALLOC, (uint32_t)ret)
+
+#define sys_port_trace_k_heap_calloc_enter(heap, timeout)                                          \
+	SEGGER_SYSVIEW_RecordU32x2(TID_HEAP_CALLOC, (uint32_t)(uintptr_t)heap,                     \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_heap_calloc_exit(heap, timeout, ret)                                      \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_CALLOC, (uint32_t)ret)
 
 #define sys_port_trace_k_heap_free(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_FREE, (uint32_t)(uintptr_t)heap)

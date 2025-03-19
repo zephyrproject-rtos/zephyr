@@ -32,6 +32,13 @@ def create_signed_image(build_dir: Path, app_build_dir: Path, version: str) -> P
     return image_to_test
 
 
+def get_upgrade_string_to_verify(build_dir: Path) -> str:
+    sysbuild_config = Path(build_dir) / 'zephyr' / '.config'
+    if find_in_config(sysbuild_config, 'SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET'):
+        return 'Starting swap using offset algorithm'
+    return 'Starting swap using move algorithm'
+
+
 def clear_buffer(dut: DeviceAdapter) -> None:
     disconnect = False
     if not dut.is_device_connected():
@@ -71,9 +78,10 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
 
     dut.connect()
     output = dut.readlines_until('Launching primary slot application')
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is booted')
     check_with_shell_command(shell, new_version, swap_type='test')
@@ -87,7 +95,7 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     dut.connect()
     output = dut.readlines_until('Launching primary slot application')
     match_no_lines(output, [
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is still booted')
     check_with_shell_command(shell, new_version)
@@ -126,9 +134,10 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
 
     dut.connect()
     output = dut.readlines_until('Launching primary slot application')
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is booted')
     check_with_shell_command(shell, new_version, swap_type='test')
@@ -142,7 +151,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     output = dut.readlines_until('Launching primary slot application')
     match_lines(output, [
         'Swap type: revert',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify that MCUboot reverts update')
     check_with_shell_command(shell, origin_version)
@@ -202,5 +211,6 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
 
     dut.connect()
     output = dut.readlines_until('Launching primary slot application')
-    match_no_lines(output, ['Starting swap using move algorithm'])
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
+    match_no_lines(output, [upgrade_string_to_verify])
     match_lines(output, ['Image in the secondary slot is not valid'])

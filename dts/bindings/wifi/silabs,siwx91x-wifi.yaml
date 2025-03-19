@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Antmicro
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs SiWx91x SoC WiFi
+
+compatible: "silabs,siwx91x-wifi"

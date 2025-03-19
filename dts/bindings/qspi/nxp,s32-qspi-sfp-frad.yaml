@@ -1,0 +1,53 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Quad Serial Peripheral Interface (QSPI) Secure Flash Protection SFP FRAD.
+
+  The SFP FRAD performs second-level checks on input flash write and erase transactions,
+  based on the address range of each transaction.
+
+compatible: "nxp,s32-qspi-sfp-frad"
+
+child-binding:
+
+  properties:
+    reg:
+      type: array
+      required: true
+
+    master-domain-acp-policy:
+      type: int
+      required: true
+      description: |
+        Selects the master domain access control policy, defined in dt-bindings/qspi/nxp-s32-qspi.h:
+        - NXP_S32_QSPI_NON_SECURE: Selects the non-secure access control policy.
+        - NXP_S32_QSPI_SECURE: Selects the secure access control policy.
+        - NXP_S32_QSPI_PRIVILEGE: Selects the privilege access control policy.
+        Allowed combinations:
+        - NXP_S32_QSPI_SECURE
+        - NXP_S32_QSPI_SECURE | NXP_S32_QSPI_PRIVILEGE
+        - NXP_S32_QSPI_NON_SECURE | NXP_S32_QSPI_PRIVILEGE
+        - NXP_S32_QSPI_NON_SECURE | NXP_S32_QSPI_SECURE | NXP_S32_QSPI_PRIVILEGE
+
+    exclusive-access-lock:
+      type: string
+      enum:
+        - DISABLED
+        - OWNER
+        - NONE
+      default: DISABLED
+      description: |
+        Selects the exclusive access lock:
+        - DISABLED: The exclusive access lock disabled, granting write permissions for all masters
+        - ENABLED: The exclusive access lock enabled, granting write permissions only to the
+          exclusive access owner master and disabling write permissions for other masters.
+        - NONE: This configuration should not be used
+        The default corresponds to the reset value of the register field.
+
+    exclusive-access-owner:
+      type: int
+      default: 0
+      description: |
+        The domain master ID that owns the exclusive access lock.
+        Valid range: 0 - 63. The default corresponds to the reset
+        value of the register field.

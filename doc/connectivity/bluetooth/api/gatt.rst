@@ -4,10 +4,18 @@
 Generic Attribute Profile (GATT)
 ################################
 
-GATT layer manages the service database providing APIs for service registration
-and attribute declaration.
+The GATT layer manages the service database providing APIs for service
+registration and attribute declaration.
 
-Services can be registered using :c:func:`bt_gatt_service_register` API
+The GATT Client initiates commands and requests towards the GATT Server, and can
+receive responses, indications and notifications sent by the server. It is
+enabled through the configuration option:
+:kconfig:option:`CONFIG_BT_GATT_CLIENT`
+
+The GATT Server accepts incoming commands and requests from the GATT Client, and
+sends responses, indications and notifications to the client.
+
+Services can be registered using the :c:func:`bt_gatt_service_register` API
 which takes the :c:struct:`bt_gatt_service` struct that provides the list of
 attributes the service contains. The helper macro :c:macro:`BT_GATT_SERVICE()`
 can be used to declare a service.
@@ -60,9 +68,6 @@ alternatively there is :c:func:`bt_gatt_notify_cb` where it is possible to
 pass a callback to be called when it is necessary to know the exact instant when
 the data has been transmitted over the air. Indications are supported by
 :c:func:`bt_gatt_indicate` API.
-
-Client procedures can be enabled with the configuration option:
-:kconfig:option:`CONFIG_BT_GATT_CLIENT`
 
 Discover procedures can be initiated with the use of
 :c:func:`bt_gatt_discover` API which takes the

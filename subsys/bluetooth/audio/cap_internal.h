@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
@@ -113,7 +114,7 @@ struct cap_broadcast_reception_stop {
 
 /* Note that although the broadcast_code will be the same for all
  * we nevertheless store a separate copy for each sink, for
- * consistensy in the struct bt_cap_commander_proc_param
+ * consistency in the struct bt_cap_commander_proc_param
  * There is no memory savings by not having broadcast_code part of the
  * union: struct cap_broadcast_reception_start uses minimum 20 bytes
  * and struct cap_distribute_broadcast_code uses 17 bytes

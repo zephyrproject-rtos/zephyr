@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Inherits property specifications without modification.
+
+include: simple.yaml

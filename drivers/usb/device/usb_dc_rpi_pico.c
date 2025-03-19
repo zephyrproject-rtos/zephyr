@@ -524,6 +524,9 @@ static int udc_rpi_init(void)
 		hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
 	}
 
+	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
+	irq_enable(USB_IRQ);
+
 	return 0;
 }
 
@@ -1071,9 +1074,6 @@ static int usb_rpi_init(void)
 	if (ret < 0) {
 		return ret;
 	}
-
-	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
-	irq_enable(USB_IRQ);
 
 	return 0;
 }

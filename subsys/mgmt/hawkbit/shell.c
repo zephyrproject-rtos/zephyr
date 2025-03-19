@@ -33,16 +33,8 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 				"Rebooting to revert back to previous confirmed image");
 		break;
 
-	case HAWKBIT_CANCEL_UPDATE:
-		shell_info(sh, "hawkBit update cancelled from server");
-		break;
-
 	case HAWKBIT_NO_UPDATE:
 		shell_info(sh, "No update found");
-		break;
-
-	case HAWKBIT_OK:
-		shell_info(sh, "Image already updated");
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:

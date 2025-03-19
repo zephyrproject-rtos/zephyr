@@ -8,10 +8,10 @@
 
 #include <stdint.h>
 
-int init_peripheral(uint8_t iterations);
+int init_peripheral(uint8_t max_conn, uint8_t iterations);
 
 int main(void)
 {
-	(void)init_peripheral(CONFIG_SAMPLE_CONN_ITERATIONS);
+	(void)init_peripheral(CONFIG_BT_MAX_CONN, CONFIG_SAMPLE_CONN_ITERATIONS);
 	return 0;
 }

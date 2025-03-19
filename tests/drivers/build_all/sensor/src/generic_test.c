@@ -217,33 +217,8 @@ static void run_generic_test(const struct device *dev)
 			q31_t q;
 			int8_t shift;
 
-			switch (ch) {
-			/* Special handling to break out triplet samples. */
-			case SENSOR_CHAN_MAGN_X:
-			case SENSOR_CHAN_ACCEL_X:
-			case SENSOR_CHAN_GYRO_X:
-				q = decoded_data.three_axis.readings[0].x;
-				shift = decoded_data.three_axis.shift;
-				break;
-			case SENSOR_CHAN_MAGN_Y:
-			case SENSOR_CHAN_ACCEL_Y:
-			case SENSOR_CHAN_GYRO_Y:
-				q = decoded_data.three_axis.readings[0].y;
-				shift = decoded_data.three_axis.shift;
-				break;
-			case SENSOR_CHAN_MAGN_Z:
-			case SENSOR_CHAN_ACCEL_Z:
-			case SENSOR_CHAN_GYRO_Z:
-				q = decoded_data.three_axis.readings[0].z;
-				shift = decoded_data.three_axis.shift;
-				break;
-
-			/* Default case for single Q31 samples */
-			default:
-				q = decoded_data.q31.readings[0].value;
-				shift = decoded_data.q31.shift;
-				break;
-			}
+			q = decoded_data.q31.readings[0].value;
+			shift = decoded_data.q31.shift;
 
 			/* Align everything to be a 64-bit Q32.32 number for comparison */
 			int64_t expected_shifted =

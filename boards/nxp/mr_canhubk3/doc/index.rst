@@ -279,11 +279,12 @@ Applications for the ``mr_canhubk3`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
 This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_ and `pyOCD`_
-West runners for flashing and debugging applications. Follow the steps described
-in :ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
-:ref:`pyocd-debug-host-tools`,
-to setup the flash and debug host tools for these runners, respectively. The
-default runner is J-Link.
+West runners for flashing and debugging. Follow the steps described in
+:ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
+:ref:`pyocd-debug-host-tools`, to set up the required host tools.
+The default runner is J-Link.
+
+If using TRACE32, ensure you have version >= 2024.09 installed.
 
 Flashing
 ========

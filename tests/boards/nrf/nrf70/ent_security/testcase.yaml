@@ -1,0 +1,62 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - wifi
+    - net
+  platform_allow:
+    - nrf7002dk/nrf5340/cpuapp
+tests:
+  wifi.build.crypto_enterprise_typical:
+    extra_configs:
+      - CONFIG_EAP_TLS=y
+      - CONFIG_EAP_TTLS=y
+      - CONFIG_EAP_PEAP=y
+  wifi.build.crypto_enterprise_tls:
+    extra_configs:
+      - CONFIG_EAP_TLS=y
+  wifi.build.crypto_enterprise_ttls:
+    extra_configs:
+      - CONFIG_EAP_TTLS=y
+  wifi.build.crypto_enterprise_peap:
+    extra_configs:
+      - CONFIG_EAP_PEAP=y
+  wifi.build.crypto_enterprise_md5:
+    extra_configs:
+      - CONFIG_EAP_MD5=y
+  wifi.build.crypto_enterprise_mschapv2:
+    extra_configs:
+      - CONFIG_EAP_MSCHAPV2=y
+  wifi.build.crypto_enterprise_leap:
+    extra_configs:
+      - CONFIG_EAP_LEAP=y
+  wifi.build.crypto_enterprise_psk:
+    extra_configs:
+      - CONFIG_EAP_PSK=y
+  wifi.build.crypto_enterprise_pax:
+    extra_configs:
+      - CONFIG_EAP_PAX=y
+  wifi.build.crypto_enterprise_sake:
+    extra_configs:
+      - CONFIG_EAP_SAKE=y
+  wifi.build.crypto_enterprise_gpsk:
+    extra_configs:
+      - CONFIG_EAP_GPSK=y
+  wifi.build.crypto_enterprise_pwd:
+    extra_configs:
+      - CONFIG_EAP_PWD=y
+  wifi.build.crypto_enterprise_eke:
+    extra_configs:
+      - CONFIG_EAP_EKE=y
+  wifi.build.crypto_enterprise_ikev2:
+    extra_configs:
+      - CONFIG_EAP_IKEV2=y
+  wifi.build.crypto_enterprise_sim:
+    extra_configs:
+      - CONFIG_EAP_SIM=y
+  wifi.build.crypto_enterprise_aka:
+    extra_configs:
+      - CONFIG_EAP_AKA=y
+  wifi.build.crypto_enterprise_gtc:
+    extra_configs:
+      - CONFIG_EAP_GTC=y

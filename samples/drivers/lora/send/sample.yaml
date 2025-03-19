@@ -11,3 +11,5 @@ tests:
       type: one_line
       regex:
         - "<inf> lora_send: Data sent!"
+    integration_platforms:
+      - b_l072z_lrwan1

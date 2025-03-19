@@ -29,6 +29,13 @@ config PHY_DM8806_TRIGGER_GLOBAL_THREAD
 
 endchoice
 
+config PHY_DM8806_ENERGY_EFFICIENT_MODE
+	bool "Energy efficient mode"
+	help
+	  By default in DM8806, the energy efficient mode is enabled.
+	  It had been observed that the network randomly fails when
+	  this mode is on. Thus, this symbol is by default disabled.
+
 config PHY_DM8806_TRIGGER
 	bool
 
@@ -46,4 +53,25 @@ config PHY_DM8806_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-endif # PHY_DM8806_TRIGGER
+config PHY_DM8806_SMI_BUS_CHECK
+	bool "Host SMI bus error check function"
+	default y
+	help
+	  This functionality prevents the host SMI bus to be interferered by the
+	  noise on board-level. During write procedure, the written value in
+	  register will be applied until the correct checksum is written. In read
+	  procedure, the hardware calculated checksum is compared with the software
+	  calculated one to detect correctness of received data.
+
+config PHY_DM8806_SMI_BUS_CHECK_REPETITION
+	int "SMI bus transmission repetitions"
+	depends on PHY_DM8806_SMI_BUS_CHECK
+	default 5
+	help
+	  The numbers of SMI bus transmission repetition in case if CRC checksum
+	  fails during read or write. After this numbers of repetition, the reading
+	  message is dropped and will not be passed to the system. In write
+	  procedure, the written value in register will be applied until the correct
+	  checksum is written to the PHY register.
+
+endif # PHY_DM8806

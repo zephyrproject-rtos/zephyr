@@ -1,44 +1,35 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
-	select ARM
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select CPU_CORTEX_M_HAS_SYSTICK
 	select CLOCK_CONTROL
 	select BUILD_OUTPUT_HEX
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
-config SOC_MAX32655
+config SOC_FAMILY_MAX32_M4
+	select ARM
 	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
 
-config SOC_MAX32662
-	select CPU_CORTEX_M4
+config SOC_MAX32655_M4
+	select MAX32_HAS_SECONDARY_RV32
 
-config SOC_MAX32666
-	select CPU_CORTEX_M4
+config SOC_MAX32680_M4
+	select MAX32_HAS_SECONDARY_RV32
 
-config SOC_MAX32670
-	select CPU_CORTEX_M4
+config SOC_MAX32690_M4
+	select MAX32_HAS_SECONDARY_RV32
 
-config SOC_MAX32672
-	select CPU_CORTEX_M4
-
-config SOC_MAX32675
-	select CPU_CORTEX_M4
-
-config SOC_MAX32680
-	select CPU_CORTEX_M4
-
-config SOC_MAX32690
-	select CPU_CORTEX_M4
+config SOC_MAX78000_M4
+	select MAX32_HAS_SECONDARY_RV32
 
 config SOC_MAX78002_M4
-	select CPU_CORTEX_M4
+	select MAX32_HAS_SECONDARY_RV32
 
 if SOC_FAMILY_MAX32
 
@@ -51,5 +42,19 @@ config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
+
+config MAX32_HAS_SECONDARY_RV32
+	bool
+
+config MAX32_SECONDARY_RV32
+	bool "Secondary RISC-V core enable"
+	depends on MAX32_HAS_SECONDARY_RV32
+
+DT_CHOSEN_Z_CODE_RV32_PARTITION := zephyr,code-rv32-partition
+
+config MAX32_SECONDARY_RV32_BOOT_ADDRESS
+	hex "Secondary RISC-V core boot address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_RV32_PARTITION))
+	depends on MAX32_SECONDARY_RV32
 
 endif # SOC_FAMILY_MAX32

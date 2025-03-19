@@ -4,10 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/same70.dtsi>
-
-&gmac {
-	interrupts = <39 0>, <66 0>, <67 0>, <71 0>, <72 0>, <73 0>;
-	interrupt-names = "gmac", "q1", "q2", "q3", "q4", "q5";
-	num-queues = <6>;
-};
+#include <atmel/samx7xb.dtsi>

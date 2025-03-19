@@ -1,0 +1,13 @@
+#
+#  Copyright (c) 2025 Pierrick Curt
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Accelerometer trigger sample application"
+
+config SAMPLE_TAP_DETECTION
+	bool "Set tap detection as trigger in the sample"
+	default n
+
+source "Kconfig.zephyr"

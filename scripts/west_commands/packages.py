@@ -95,6 +95,14 @@ class Packages(WestCommand):
             "'--dry-run' to pip not to actually install anything, but print what would be.",
         )
 
+        pip_parser.add_argument(
+            "--ignore-venv-check",
+            action="store_true",
+            help="Ignore the virtual environment check. "
+            "This is useful when running 'west packages pip --install' "
+            "in a CI environment where the virtual environment is not set up.",
+        )
+
         return parser
 
     def do_run(self, args, unknown):
@@ -145,7 +153,7 @@ class Packages(WestCommand):
             requirements += [Path(module.project) / r for r in pip.get("requirement-files", [])]
 
         if args.install:
-            if not in_venv():
+            if not in_venv() and not args.ignore_venv_check:
                 self.die("Running pip install outside of a virtual environment")
 
             if len(requirements) > 0:

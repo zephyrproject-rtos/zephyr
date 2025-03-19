@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2019 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS2
@@ -9,8 +10,23 @@ config SOC_MPS2_AN521
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 
+config SOC_MPS2_AN383
+	select CPU_CORTEX_M0PLUS
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+
 config SOC_MPS2_AN385
 	select CPU_CORTEX_M3
+	select CPU_HAS_ARM_MPU
+
+config SOC_MPS2_AN386
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_VFP
+
+config SOC_MPS2_AN500
+	select CPU_CORTEX_M7
 	select CPU_HAS_ARM_MPU
 
 config SOC_MPS2_AN521_CPU0

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
 #include "bstests.h"
 
 void tester_procedure(void);
@@ -17,31 +16,23 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central performs active scanning using RPA",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure,
 	},
 	{
 		.test_id = "central_connect_short_rpa_timeout",
 		.test_descr = "Central connects to a peripheral using a short RPA timeout",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure_connect_short_rpa_timeout,
 	},
 	{
 		.test_id = "central_connect_fails_with_short_rpa_timeout",
 		.test_descr = "Central connects to a peripheral using a short RPA timeout"
 			      " but expects connection establishment to time out.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure_connect_timeout,
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Performs scannable advertising, validates that the scanner"
 			      " RPA address refreshes",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = tester_procedure,
 	},
 	{
@@ -49,8 +40,6 @@ static const struct bst_test_instance test_to_add[] = {
 		.test_descr = "Performs connectable advertising. "
 			      "The advertiser is stopped for 10 seconds when instructed by the DUT"
 			      " to allow it to run the initiator for longer than its RPA timeout.",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = tester_procedure_periph_delayed_start_of_conn_adv,
 	},
 	BSTEST_END_MARKER,

@@ -24,14 +24,6 @@ config ESP_SIMPLE_BOOT
 	  Please note that this method brings the system up with all memories set-up, but
 	  all other features, such as secure boot OTA or slots management are not available.
 
-config ESP_HEAP_RUNTIME
-	bool
-	default y
-	help
-	  Enabling this will allocate SRAM area starting from the last linked data at the symbolic `_end`,
-	  ending at the last memory location that can be safely accessed (depending on a boot mode).
-	  This is a memory pool used in runtime to create a new heap memory.
-
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
 	default 4096
@@ -56,9 +48,20 @@ config ESP32_PHY_MAX_TX_POWER
 	  Set maximum transmit power for Wi-Fi radio. Actual transmit power for high
 	  data rates may be lower than this setting.
 
+config ESP32_SW_COEXIST_ENABLE
+	bool "Software controls Wi-Fi/Bluetooth coexistence"
+	default y if (BT_ESP32 && WIFI_ESP32)
+	help
+	  If enabled, Wi-Fi & Bluetooth coexistence is controlled by software rather than hardware.
+	  Recommended for heavy traffic scenarios. Both coexistence configuration options are
+	  automatically managed, no user intervention is required.
+	  If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+	  size.
+
 endif
 
 rsource "Kconfig.amp"
+rsource "Kconfig.console"
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"

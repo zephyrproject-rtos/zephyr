@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023 Nordic Semiconductor ASA
+# Copyright (c) 2020-2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # This file includes extra build system logic that is enabled when
@@ -52,23 +52,8 @@ function(zephyr_mcuboot_tasks)
     endif()
   endforeach()
 
-  # Find imgtool. Even though west is installed, imgtool might not be.
-  # The user may also have a custom manifest which doesn't include
-  # MCUboot.
-  #
-  # Therefore, go with an explicitly installed imgtool first, falling
-  # back on mcuboot/scripts/imgtool.py.
-  if(IMGTOOL)
-    set(imgtool_path "${IMGTOOL}")
-  elseif(DEFINED ZEPHYR_MCUBOOT_MODULE_DIR)
-    set(IMGTOOL_PY "${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/imgtool.py")
-    if(EXISTS "${IMGTOOL_PY}")
-      set(imgtool_path "${IMGTOOL_PY}")
-    endif()
-  endif()
-
   # No imgtool, no signed binaries.
-  if(NOT DEFINED imgtool_path)
+  if(NOT DEFINED IMGTOOL)
     message(FATAL_ERROR "Can't sign images for MCUboot: can't find imgtool. To fix, install imgtool with pip3, or add the mcuboot repository to the west manifest and ensure it has a scripts/imgtool.py file.")
     return()
   endif()
@@ -94,7 +79,7 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'imgtool sign' command with known image information.
-  set(imgtool_sign ${PYTHON_EXECUTABLE} ${imgtool_path} sign
+  set(imgtool_sign ${PYTHON_EXECUTABLE} ${IMGTOOL} sign
       --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
       --slot-size ${slot_size})
 
@@ -198,8 +183,18 @@ function(zephyr_mcuboot_tasks)
     set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
         CACHE FILEPATH "Signed kernel hex file" FORCE
     )
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-                 ${imgtool_sign} ${imgtool_args} ${output}.hex ${output}.signed.hex)
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      # When encryption is enabled, set the encrypted bit when signing the image but do not
+      # encrypt the data, this means that when the image is moved out of the primary into the
+      # secondary, it will be encrypted rather than being in unencrypted
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" --clear
+                   ${output}.hex ${output}.signed.hex)
+    else()
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} ${output}.hex ${output}.signed.hex)
+    endif()
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND byproducts ${output}.signed.confirmed.hex)

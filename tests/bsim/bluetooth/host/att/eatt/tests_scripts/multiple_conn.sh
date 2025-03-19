@@ -17,6 +17,6 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_eatt_prj_multiple_conn_co
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -RealEncryption=1
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=200e6 $@
+  -D=2 -sim_length=60e6 $@
 
 wait_for_background_jobs

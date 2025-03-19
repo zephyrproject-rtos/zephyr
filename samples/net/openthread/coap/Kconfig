@@ -1,0 +1,23 @@
+# Config options for OpenThread Border CoAP sample app
+
+# Copyright (c) 2024 Alexandre Bailon
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "OpenThread CoAP Sample"
+
+menu "Application configuration"
+
+config OT_COAP_SAMPLE_SERVER
+	bool "Build the sample CoAP server application"
+
+config OT_COAP_SAMPLE_LED
+	bool "Enable LED support"
+	default y
+
+config OT_COAP_SAMPLE_SW
+	bool "Enable switch support"
+	default y
+
+endmenu
+
+source "Kconfig.zephyr"

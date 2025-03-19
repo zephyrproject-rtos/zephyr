@@ -47,7 +47,19 @@ tests:
       - stm32h735g_disco
       - stm32h750b_dk
       - stm32h745i_disco/stm32h745xx/m7
+      - nucleo_h743zi
+      - google_icetower
     extra_configs:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
+      - CONFIG_FLASH_STM32_WRITE_PROTECT=y
     filter: dt_compat_enabled("st,stm32h7-flash-controller") and
       dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+  drivers.flash.stm32.h7.block_registers:
+    platform_allow:
+      - nucleo_h743zi
+      - google_icetower
+    extra_configs:
+      - CONFIG_FLASH_STM32_BLOCK_REGISTERS=y
+    filter: dt_compat_enabled("st,stm32h7-flash-controller") and
+            dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
+            CONFIG_SOC_SERIES_STM32H7X

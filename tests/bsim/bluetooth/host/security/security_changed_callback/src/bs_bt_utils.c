@@ -9,25 +9,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
 LOG_MODULE_REGISTER(bs_bt_utils, LOG_LEVEL_DBG);
-
-#define BS_SECONDS(dur_sec)    ((bs_time_t)dur_sec * 1000000)
-#define TEST_TIMEOUT_SIMULATED BS_SECONDS(60)
-
-void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
-}
 
 DEFINE_FLAG(flag_is_connected);
 struct bt_conn *g_conn;
@@ -55,7 +40,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	ASSERT((!g_conn || (conn == g_conn)), "Unexpected new connection.");
+	TEST_ASSERT((!g_conn || (conn == g_conn)), "Unexpected new connection.");
 
 	if (!g_conn) {
 		g_conn = bt_conn_ref(conn);
@@ -81,7 +66,7 @@ void clear_g_conn(void)
 
 	conn = g_conn;
 	g_conn = NULL;
-	ASSERT(conn, "Test error: No g_conn!\n");
+	TEST_ASSERT(conn, "Test error: No g_conn!\n");
 	bt_conn_unref(conn);
 }
 
@@ -119,13 +104,13 @@ void bs_bt_utils_setup(void)
 	int err;
 
 	err = bt_enable(NULL);
-	ASSERT(!err, "bt_enable failed.\n");
+	TEST_ASSERT(!err, "bt_enable failed.");
 	err = bt_conn_auth_info_cb_register(&bt_conn_auth_info_cb);
-	ASSERT(!err, "bt_conn_auth_info_cb_register failed.\n");
+	TEST_ASSERT(!err, "bt_conn_auth_info_cb_register failed.");
 
 	err = settings_load();
 	if (err) {
-		FAIL("Settings load failed (err %d)\n", err);
+		TEST_FAIL("Settings load failed (err %d)", err);
 	}
 }
 
@@ -145,10 +130,10 @@ static void stop_scan_and_connect(const bt_addr_le_t *addr,
 	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
 
 	err = bt_le_scan_stop();
-	ASSERT(!err, "Err bt_le_scan_stop %d", err);
+	TEST_ASSERT(!err, "Err bt_le_scan_stop %d", err);
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &g_conn);
-	ASSERT(!err, "Err bt_conn_le_create %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_le_create %d", err);
 }
 
 void scan_connect_to_first_result(void)
@@ -156,7 +141,7 @@ void scan_connect_to_first_result(void)
 	int err;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, stop_scan_and_connect);
-	ASSERT(!err, "Err bt_le_scan_start %d", err);
+	TEST_ASSERT(!err, "Err bt_le_scan_start %d", err);
 }
 
 void set_security(bt_security_t sec)
@@ -164,7 +149,7 @@ void set_security(bt_security_t sec)
 	int err;
 
 	err = bt_conn_set_security(g_conn, sec);
-	ASSERT(!err, "Err bt_conn_set_security %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_set_security %d", err);
 }
 
 void advertise_connectable(int id, bt_addr_le_t *directed_dst)
@@ -183,5 +168,5 @@ void advertise_connectable(int id, bt_addr_le_t *directed_dst)
 	}
 
 	err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
-	ASSERT(err == 0, "Advertising failed to start (err %d)\n", err);
+	TEST_ASSERT(err == 0, "Advertising failed to start (err %d)", err);
 }

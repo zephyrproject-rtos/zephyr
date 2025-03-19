@@ -31,9 +31,6 @@
 		status = "okay";
 
 		pwm_1 {
-			/delete-property/ period;
-			/delete-property/ polarity;
-			/delete-property/ duty-cycle;
 			prescaler = <16>;
 			pwm-mode = "SAIC";
 		};

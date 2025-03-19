@@ -1,39 +1,13 @@
+# Copyright (c) 2024 TDK Invensense
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
 # SPDX-License-Identifier: Apache-2.0
 
 description: ICM-42670 motion tracking device
 
-include: [sensor-device.yaml]
+include: invensense,icm42x70.yaml
 
 properties:
-  int-gpios:
-    type: phandle-array
-    description: |
-      The INT signal default configuration is active-high. The
-      property value should ensure the flags properly describe the
-      signal that is presented to the driver.
-
-  accel-hz:
-    type: int
-    required: true
-    description: |
-      Default frequency of accelerometer. (Unit - Hz)
-      Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting
-      Power-on reset value is 800.
-    enum:
-      - 1
-      - 3
-      - 6
-      - 12
-      - 25
-      - 50
-      - 100
-      - 200
-      - 400
-      - 800
-      - 1600
-
   gyro-hz:
     type: int
     required: true
@@ -42,27 +16,15 @@ properties:
       Maps to GYRO_ODR field in GYRO_CONFIG0 setting
       Power-on reset value is 800.
     enum:
-      - 12
-      - 25
-      - 50
-      - 100
-      - 200
-      - 400
-      - 800
+      - 0
       - 1600
-
-  accel-fs:
-    type: int
-    required: true
-    description: |
-      Default full scale of accelerometer. (Unit - g)
-      Maps to ACCEL_FS_SEL field in ACCEL_CONFIG0 setting
-      Power-on reset value is 16
-    enum:
-      - 16
-      - 8
-      - 4
-      - 2
+      - 800
+      - 400
+      - 200
+      - 100
+      - 50
+      - 25
+      - 12
 
   gyro-fs:
     type: int
@@ -76,3 +38,20 @@ properties:
       - 1000
       - 500
       - 250
+
+  gyro-filt-bw-hz:
+    type: int
+    default: 180
+    description: |
+      Gyroscope low pass filter bandwidth frequency (Unit - Hz).
+      Maps to GYRO_UI_FILT_BW field in GYRO_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 180
+      - 121
+      - 73
+      - 53
+      - 34
+      - 25
+      - 16

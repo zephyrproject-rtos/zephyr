@@ -38,10 +38,16 @@ extern "C" {
  */
 #define SYS_FOREVER_US (-1)
 
+/** @brief System-wide macro to initialize #k_timeout_t with a number of ticks
+ * converted from milliseconds.
+ */
+#define SYS_TIMEOUT_MS_INIT(ms) \
+	Z_TIMEOUT_TICKS_INIT((ms) == SYS_FOREVER_MS ? \
+	K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
+
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
-#define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
-					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
+#define SYS_TIMEOUT_MS(ms) ((k_timeout_t) SYS_TIMEOUT_MS_INIT(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 

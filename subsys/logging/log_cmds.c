@@ -341,7 +341,19 @@ static int log_go(const struct shell *sh,
 		  char **argv)
 {
 	if (backend || !IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_backend_activate(backend, backend->cb->ctx);
+		if (!backend->cb->initialized) {
+			log_backend_init(backend);
+			while (log_backend_is_ready(backend) != 0) {
+				if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+					k_msleep(10);
+				}
+			}
+			if (log_backend_is_ready(backend) == 0) {
+				log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
+			}
+		} else {
+			log_backend_activate(backend, backend->cb->ctx);
+		}
 		return 0;
 	}
 

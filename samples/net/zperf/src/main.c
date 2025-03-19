@@ -12,6 +12,8 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/net/net_config.h>
 
+LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
+
 #ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
 #include <zephyr/net/loopback.h>
 #endif

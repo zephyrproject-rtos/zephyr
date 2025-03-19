@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description:
-  This is a representation of AndesTech L2 cache node
+description: AndesTech L2 cache
 
 compatible: "andestech,l2c"
 

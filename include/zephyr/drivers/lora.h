@@ -121,7 +121,7 @@ struct lora_modem_config {
  * @see lora_recv() for argument descriptions.
  */
 typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t size,
-			     int16_t rssi, int8_t snr);
+			     int16_t rssi, int8_t snr, void *user_data);
 
 /**
  * @typedef lora_api_config()
@@ -168,7 +168,8 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
  * @param dev Modem to receive data on.
  * @param cb Callback to run on receiving data.
  */
-typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb);
+typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
+			     void *user_data);
 
 /**
  * @typedef lora_api_test_cw()
@@ -286,14 +287,16 @@ static inline int lora_recv(const struct device *dev, uint8_t *data,
  * @param dev Modem to receive data on.
  * @param cb Callback to run on receiving data. If NULL, any pending
  *	     asynchronous receptions will be cancelled.
+ * @param user_data User data passed to callback
  * @return 0 when reception successfully setup, negative on error
  */
-static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb)
+static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
+			       void *user_data)
 {
 	const struct lora_driver_api *api =
 		(const struct lora_driver_api *)dev->api;
 
-	return api->recv_async(dev, cb);
+	return api->recv_async(dev, cb, user_data);
 }
 
 /**

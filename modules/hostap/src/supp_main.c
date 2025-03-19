@@ -77,6 +77,8 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.channel = supplicant_channel,
 	.set_rts_threshold = supplicant_set_rts_threshold,
 	.get_rts_threshold = supplicant_get_rts_threshold,
+	.bss_ext_capab = supplicant_bss_ext_capab,
+	.legacy_roam = supplicant_legacy_roam,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	.btm_query = supplicant_btm_query,
 #endif
@@ -111,6 +113,7 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.ap_config_params = supplicant_ap_config_params,
+	.set_rts_threshold = supplicant_set_rts_threshold,
 #ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
@@ -1088,12 +1091,6 @@ static void zephyr_hostapd_init(struct supplicant_context *ctx)
 		zephyr_hostapd_ctrl_init((void *)interfaces->iface[i]->bss[0]);
 	}
 
-	ret = wifi_nm_register_mgd_iface(wifi_nm_get_instance("hostapd"), iface);
-	if (ret) {
-		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
-			ifname, ret);
-		goto out;
-	}
 out:
 	return;
 }
@@ -1222,3 +1219,16 @@ static int init(void)
 }
 
 SYS_INIT(init, APPLICATION, 0);
+
+static enum net_verdict eapol_recv(struct net_if *iface, uint16_t ptype,
+				   struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, AF_UNSPEC);
+
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(EAPOL, NET_ETH_PTYPE_EAPOL, eapol_recv);

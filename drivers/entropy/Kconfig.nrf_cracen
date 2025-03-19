@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_NRF_CRACEN_CTR_DRBG
+	bool "nRF entropy driver based on the CRACEN CTR_DRBG driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_CRACEN_CTRDRBG_ENABLED
+	depends on SOC_COMPATIBLE_NRF54LX
+	select ENTROPY_HAS_DRIVER
+	select NRFX_CRACEN
+	help
+	  This option enables the 54L CRACEN based entropy driver, based on the nrfx CRACEN CTR_DRBG
+	  random driver.
+	  Notes: This driver is only compatible with 54L devices, and may only be used from one processor
+	  core. This driver cannot be used in conjunction with the nRF security PSA solution, as both
+	  would attempt to use the CRACEN HW exclusively; When that is enabled, the PSA crypto entropy
+	  driver should be selected instead.

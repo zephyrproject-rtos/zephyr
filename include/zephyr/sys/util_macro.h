@@ -93,6 +93,14 @@ extern "C" {
  */
 #define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
 
+/**
+ * @brief Check if bit is set in a value
+ *
+ * @param value Value that contain checked bit
+ * @param bit Bit number
+ */
+#define IS_BIT_SET(value, bit) ((((value) >> (bit)) & (0x1)) != 0)
+
 /** @brief Extract the Least Significant Bit from @p value. */
 #define LSB_GET(value) ((value) & -(value))
 

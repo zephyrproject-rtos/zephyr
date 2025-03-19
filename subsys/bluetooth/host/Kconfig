@@ -15,7 +15,7 @@ config BT_LONG_WQ_STACK_SIZE
 	# Hidden: Long workqueue stack size. Should be derived from system
 	# requirements.
 	int
-	default 1400 if BT_SEND_ECC_EMULATION
+	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
 
@@ -90,8 +90,12 @@ config BT_RECV_WORKQ_SYS
 	  High priority HCI packets will processed in the context of the caller of bt_recv().
 	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
 	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
-	  Note: When this option is used, other users of the system work queue will influence the
-	  latency of incoming Bluetooth events.
+	  Warning: Enabling this option will cause the latency of incoming Bluetooth events to be
+	  affected by other tasks using the system work queue. When this option is active, the Host
+	  will process Bluetooth events in a blocking manner. This can lead to deadlocks if the
+	  application waits for the system work queue while handling Bluetooth events. This feature
+	  is intended for advanced users to allow aggressive memory optimization for devices with
+	  very limited memory. It is strongly advised not to use this option.
 
 config BT_RECV_WORKQ_BT
 	bool "Process low priority HCI packets in the bluetooth-specific work queue"
@@ -283,7 +287,7 @@ config BT_FILTER_ACCEPT_LIST
 	bool "Filter accept list support"
 	help
 	  This option enables the filter accept list API. This takes advantage of the
-	  filtering feature of a BLE controller.
+	  filtering feature of a Bluetooth LE controller.
 	  The filter accept list is a global list and the same list is used
 	  by both scanner and advertiser. The filter accept list cannot be modified while
 	  it is in use.
@@ -407,7 +411,7 @@ config BT_SMP
 	bool "Security Manager Protocol support"
 	select BT_CRYPTO
 	select BT_RPA
-	select BT_ECC
+	select BT_ECC if !BT_SMP_OOB_LEGACY_PAIR_ONLY
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -991,36 +995,24 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  format.
 
 endif # BT_DF
-endif # BT_HCI_HOST
 
 config BT_ECC
-	bool "ECDH key generation support"
-	default y if BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY
-	help
-	  This option adds support for ECDH HCI commands.
-
-config BT_SEND_ECC_EMULATION
-	bool "Emulate ECDH in the Host using PSA Crypto API library"
+	bool
 	select MBEDTLS if !BUILD_WITH_TFM
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
-	select MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
-	select BT_LONG_WQ
-	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if HAS_BT_CTLR && !BT_CTLR_ECDH
+	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
+	imply BT_LONG_WQ
 	help
-	  If this option is set PSA Crypto API library is used for emulating the
-	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
-	  In builds including the BLE Host, if not set the controller crypto is
-	  used for ECDH and if the controller doesn't support the required HCI
-	  commands the LE Secure Connections support will be disabled.
-	  In builds including the HCI Raw interface and the BLE Controller, this
-	  option injects support for the 2 HCI commands required for LE Secure
-	  Connections so that Hosts can make use of those. The option defaults
-	  to enabled for a combined build with Zephyr's own controller, since it
-	  does not have any special ECC support itself (at least not currently).
+	  If this option is set, internal APIs will be available to perform ECDH operations through
+	  the long work queue (or system work queue). The operations are used e.g. by LE Secure
+	  Connections.
+
+endif # BT_HCI_HOST
 
 config BT_HOST_CCM
 	bool "Host side AES-CCM module"

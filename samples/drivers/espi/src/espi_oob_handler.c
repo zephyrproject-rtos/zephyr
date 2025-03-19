@@ -6,7 +6,6 @@
 
 #include <zephyr/device.h>
 #include <soc.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>

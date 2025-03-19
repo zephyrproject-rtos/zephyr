@@ -4,12 +4,24 @@ family:
       - name: ra2a1
         socs:
           - name: r7fa2a1ab3cfm
+      - name: ra2l1
+        socs:
+          - name: r7fa2l1a9xxfp
+          - name: r7fa2l1abxxfp
+      - name: ra4e1
+        socs:
+          - name: r7fa4e10d2cfm
+          - name: r7fa4e10d2cne
       - name: ra4e2
         socs:
           - name: r7fa4e2b93cfm
+      - name: ra4l1
+        socs:
+          - name: r7fa4l1bd4cfp
       - name: ra4m1
         socs:
           - name: r7fa4m1ab3cfm
+          - name: r7fa4m1ab3cfp
       - name: ra4m2
         socs:
           - name: r7fa4m2ad3cfp

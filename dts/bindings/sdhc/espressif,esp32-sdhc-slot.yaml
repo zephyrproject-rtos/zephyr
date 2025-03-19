@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Espressif ESP32 SDHC controller slot
+description: ESP32 SDHC controller slot
 
 compatible: "espressif,esp32-sdhc-slot"
 

@@ -8,6 +8,9 @@
 #define MOCKS_BAP_STREAM_EXPECTS_H_
 
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/ztest_assert.h>
 
 #include "bap_stream.h"
 #include "expects_util.h"

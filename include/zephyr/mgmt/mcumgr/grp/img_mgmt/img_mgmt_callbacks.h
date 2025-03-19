@@ -42,6 +42,16 @@ struct img_mgmt_upload_check {
 };
 
 /**
+ * Structure provided in the #MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED notification callback: This
+ * callback function is used to notify the application about an image confirmation being executed
+ * successfully.
+ */
+struct img_mgmt_image_confirmed {
+	/** Image number which has been confirmed */
+	const uint8_t image;
+};
+
+/**
  * Structure provided in the #MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE notification callback: This
  * callback function is used to allow applications or modules append custom fields to the image
  * slot state response.

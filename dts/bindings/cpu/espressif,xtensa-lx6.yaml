@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Espressif Xtensa CPU
+description: Espressif Xtensa LX6 CPU
 
 compatible: "espressif,xtensa-lx6"
 
@@ -32,3 +32,4 @@ properties:
     enum:
       - 40000000
       - 32000000
+      - 26000000

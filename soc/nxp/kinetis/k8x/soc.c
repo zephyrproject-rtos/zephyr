@@ -69,7 +69,7 @@ static const sim_clock_config_t sim_config = {
 	.pllFllFrac = (0),
 };
 
-static ALWAYS_INLINE void clk_init(void)
+__weak void clk_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 

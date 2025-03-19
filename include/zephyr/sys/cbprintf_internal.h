@@ -722,17 +722,6 @@ do { \
 #define Z_CBPRINTF_PACK_ARG(arg_idx, arg) \
 	Z_CBPRINTF_PACK_ARG2(arg_idx, _pbuf, _pkg_len, _pkg_offset, _pmax, arg)
 
-/* When using clang additional warning needs to be suppressed since each
- * argument of fmt string is used for sizeof() which results in the warning
- * if argument is a string literal. Suppression is added here instead of
- * the macro which generates the warning to not slow down the compiler.
- */
-#ifdef __clang__
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
-	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
-#else
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY
-#endif
 
 /* Allocation to avoid using VLA and alloca. Alloc frees space when leaving
  * a function which can lead to increased stack usage if logging is used
@@ -780,7 +769,6 @@ do { \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT)), \

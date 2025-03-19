@@ -46,31 +46,7 @@ For detailed information check `ESP8684 Technical Reference Manual`_.
 Supported Features
 ==================
 
-Current Zephyr's ESP8684-DevKitM board supports the following features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| Timers     | on-chip    | counter                             |
-+------------+------------+-------------------------------------+
-| Wi-Fi      | on-chip    |                                     |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| SPI DMA    | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 For a getting started user guide, please check `ESP8684-DevKitM User Guide`_.
 

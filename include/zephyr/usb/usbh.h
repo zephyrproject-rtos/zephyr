@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/sys/bitarray.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -42,15 +43,21 @@ struct usbh_contex {
 	struct k_mutex mutex;
 	/** Pointer to UHC device struct */
 	const struct device *dev;
-	/** peripheral list */
-	sys_dlist_t peripherals;
+	/** USB device list */
+	sys_dlist_t udevs;
+	/** USB root device */
+	struct usb_device *root;
+	/** Allocated device addresses bit array */
+	struct sys_bitarray *addr_ba;
 };
 
 #define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
+	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
 	static STRUCT_SECTION_ITERABLE(usbh_contex, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
 		.dev = uhc_dev,						\
+		.addr_ba = &ba_##device_name,				\
 	}
 
 /**

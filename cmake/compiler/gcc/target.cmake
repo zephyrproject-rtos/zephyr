@@ -42,7 +42,8 @@ execute_process(
     OUTPUT_VARIABLE temp_compiler_version
     )
 
-if("${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
+if("${temp_compiler_version}" VERSION_LESS 4.3.0 OR
+    "${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
     set(fix_header_file include/limits.h)
 else()
     set(fix_header_file include-fixed/limits.h)

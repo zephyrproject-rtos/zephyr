@@ -1,0 +1,78 @@
+/*
+ * Copyright 2024-2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/rt/MIMXRT798SGFOA-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
+		group0 {
+			pinmux = <LP_FLEXCOMM0_P0_PIO0_31>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group1 {
+			pinmux = <LP_FLEXCOMM0_P1_PIO1_0>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+
+	pinmux_flexcomm8_i2c: pinmux_flexcomm8_i2c {
+		group0 {
+			pinmux = <LP_FLEXCOMM8_P0_PIO0_6>,
+				<LP_FLEXCOMM8_P1_PIO0_7>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+			drive-open-drain;
+		};
+	};
+
+	pinmux_flexcomm19_lpuart: pinmux_flexcomm19_lpuart {
+		group0 {
+			pinmux = <LP_FLEXCOMM19_P0_PIO8_14>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group1 {
+			pinmux = <LP_FLEXCOMM19_P1_PIO8_15>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+
+	pinmux_lpspi14: pinmux_lpspi14 {
+		group0 {
+			pinmux = <LPSPI14_SOUT_PIO3_0>,
+				<LPSPI14_SCK_PIO3_1>,
+				<LPSPI14_SIN_PIO3_2>,
+				<LPSPI14_PCS0_PIO3_3>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
+
+	flexio_pwm_default: flexio_pwm_default {
+		group0 {
+			pinmux = <FLEXIO_IO7_PIO2_7>;
+			drive-strength = "normal";
+			slew-rate = "slow";
+		};
+	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_CH0_PIO10_0>,
+				<ADC0_CH1_PIO10_2>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			nxp,analog-mode;
+		};
+	};
+};

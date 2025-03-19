@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Aurelien Jarno
+ * Copyright (c) 2021 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,6 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
-#include <soc.h>
 
 #include <zephyr/logging/log.h>
 
@@ -20,6 +20,13 @@ LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 /* Some SoCs use a slightly different naming scheme */
 #if !defined(PWMCHNUM_NUMBER) && defined(PWMCH_NUM_NUMBER)
 #define PWMCHNUM_NUMBER PWMCH_NUM_NUMBER
+#endif
+
+/* The SAMV71 HALs change the name of the field, so we need to
+ * define it this way to match how the other SoC variants name it
+ */
+#if defined(CONFIG_SOC_ATMEL_SAMV71) || defined(CONFIG_SOC_ATMEL_SAMV71_REVB)
+#define PWM_CH_NUM PwmChNum
 #endif
 
 struct sam_pwm_config {

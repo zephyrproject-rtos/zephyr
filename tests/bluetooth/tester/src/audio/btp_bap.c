@@ -2,11 +2,12 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
+#include <stdint.h>
 #include <stddef.h>
 #include <errno.h>
 
@@ -337,6 +338,20 @@ static uint8_t btp_bap_supported_commands(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	struct btp_bap_send_rp *rp = rsp;
+	const struct btp_bap_send_cmd *cp = cmd;
+
+	/* Always send dummy success for now until the command has be deprecated
+	 * https://github.com/auto-pts/auto-pts/issues/1317
+	 */
+	rp->data_len = cp->data_len;
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler bap_handlers[] = {
 	{
 		.opcode = BTP_BAP_READ_SUPPORTED_COMMANDS,
@@ -465,7 +480,28 @@ static const struct btp_handler bap_handlers[] = {
 
 uint8_t tester_init_pacs(void)
 {
+	const struct bt_pacs_register_param pacs_param = {
+#if defined(CONFIG_BT_PAC_SNK)
+		.snk_pac = true,
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+		.snk_loc = true,
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+		.src_pac = true,
+#endif /* CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+		.src_loc = true,
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	};
 	int err;
+
+	/* PACS shall be registered before ASCS in btp_bap_unicast_init */
+	err = bt_pacs_register(&pacs_param);
+	if (err != 0) {
+		LOG_DBG("Failed to register client callbacks: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	btp_bap_unicast_init();
 
@@ -534,7 +570,7 @@ uint8_t tester_init_bap(void)
 		return BTP_STATUS_FAILED;
 	}
 
-	btp_bap_audio_stream_init_send_worker();
+	btp_bap_audio_stream_tx_init();
 
 	tester_register_command_handlers(BTP_SERVICE_ID_BAP, bap_handlers,
 					 ARRAY_SIZE(bap_handlers));
