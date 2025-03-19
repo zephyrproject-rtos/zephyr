@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +30,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
 	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_lpuart,
-						(MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
-
-	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_flexcan,
 						(MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
 
 #if CONFIG_SOF
