@@ -203,6 +203,7 @@ static void write_ep_ctrl_reg(const struct device *dev, const uint8_t ep,
 static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 {
 	bool abort_handshake_supported = rp2040_chip_version() >= 2;
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	const struct rpi_pico_config *config = dev->config;
 	usb_hw_t *base = config->base;
 	mm_reg_t abort_done_reg = (mm_reg_t)&base->abort_done;
@@ -213,6 +214,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 	buf_ctrl = read_buf_ctrl_reg(dev, ep);
 	if (!(buf_ctrl & USB_BUF_CTRL_AVAIL)) {
 		/* The buffer is not used by the controller */
+		udc_ep_set_busy(ep_cfg, false);
 		return;
 	}
 
@@ -229,6 +231,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 		rpi_pico_bit_clr(abort_reg, ep_mask);
 	}
 
+	udc_ep_set_busy(ep_cfg, false);
 	LOG_INF("Canceled ep 0x%02x transaction", ep);
 }
 
