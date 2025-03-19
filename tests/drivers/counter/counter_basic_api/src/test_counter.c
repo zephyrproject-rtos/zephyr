@@ -882,7 +882,7 @@ static bool late_detection_capable(const struct device *dev)
 	int err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
 
-	if (err == -ENOTSUP) {
+	if (err == -ENOSYS) {
 		return false;
 	}
 
