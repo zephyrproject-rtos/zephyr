@@ -15,6 +15,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 
 struct emul_rx_config {
@@ -296,6 +298,8 @@ int emul_rx_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);       \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n), emul_rx_cfg_##n.source_dev);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)
