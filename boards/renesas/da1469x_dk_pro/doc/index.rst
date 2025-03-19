@@ -1,4 +1,4 @@
-.. _da1469x_dk_pro:
+.. zephyr:board:: da1469x_dk_pro
 
 DA1469x Development Kit Pro
 ###########################
@@ -27,29 +27,7 @@ the sleep clock is 32768 Hz. The frequency of the system clock is 32 MHz.
 Supported Features
 ==================
 
-The _da1469x_dk_pro board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-
-Other hardware features, including the Configurable MAC (CMAC) controller,
-are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 For more information about the DA14695 Development Kit see:
 
