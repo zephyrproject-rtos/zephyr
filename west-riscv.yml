@@ -25,6 +25,8 @@ manifest:
       url-base: https://github.com/BabbleSim
     - name: eigen-remote
       url-base: https://gitlab.com/libeigen/
+    - name: muriscv-nn-remote
+      url-base: https://github.com/tum-ei-eda/
 
   group-filter: [-babblesim, -optional]
 
@@ -112,6 +114,11 @@ manifest:
       repo-path: eigen
       path: modules/lib/eigen
       revision: 68f4e58cfacc686583d16cff90361f0b43bc2c1b
+    - name: muriscv-nn
+      remote: muriscv-nn-remote
+      repo-path: muriscv-nn 
+      path: modules/muriscv-nn
+      revision: e17d4c79d9bd81008bdc4012f15d0ae9d4c0a032
   # zephyr-keep-sorted-stop
 
   self:
