@@ -10,7 +10,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 #define POWER_GPIO_CONFIG_IS(node_id, config)\

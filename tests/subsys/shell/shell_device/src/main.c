@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <zephyr/device.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>

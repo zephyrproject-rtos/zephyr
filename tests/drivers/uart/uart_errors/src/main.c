@@ -12,7 +12,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test, LOG_LEVEL_NONE);

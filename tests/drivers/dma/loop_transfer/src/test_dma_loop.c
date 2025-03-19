@@ -25,7 +25,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/ztest.h>
 
 /* in millisecond */

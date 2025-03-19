@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/ztest.h>
 #include <zephyr/random/random.h>
 

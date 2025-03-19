@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/device.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/ztest.h>
 
 #define UART_NODE DT_NODELABEL(dut)

@@ -15,7 +15,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 LOG_MODULE_REGISTER(log_uart);
 

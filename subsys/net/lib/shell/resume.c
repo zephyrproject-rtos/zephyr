@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/logging/log.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"

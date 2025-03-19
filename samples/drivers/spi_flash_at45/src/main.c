@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device.h>
 
 /* Set to 1 to test the chip erase functionality. Please be aware that this

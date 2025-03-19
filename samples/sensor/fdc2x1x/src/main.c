@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/fdc2x1x.h>
 #include <stdio.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define CH_BUF_INIT(m)          {},
 

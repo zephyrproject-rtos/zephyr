@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 static bool pm_device_filter(const struct device *dev)

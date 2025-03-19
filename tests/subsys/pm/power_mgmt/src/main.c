@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
 #include <ksched.h>
