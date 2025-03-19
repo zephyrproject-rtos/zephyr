@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/logging/log.h>
@@ -33,6 +34,7 @@ struct rpi_pico_config {
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
 	const struct device *clk_dev;
+	struct pinctrl_dev_config *const pcfg;
 	clock_control_subsys_t clk_sys;
 };
 
@@ -103,6 +105,19 @@ static void ALWAYS_INLINE rpi_pico_bit_set(const mm_reg_t reg, const uint32_t bi
 static void ALWAYS_INLINE rpi_pico_bit_clr(const mm_reg_t reg, const uint32_t bit)
 {
 	sys_write32(bit, REG_ALIAS_CLR_BITS | reg);
+}
+
+
+static void sie_dp_pullup(const struct device *dev, const bool enable)
+{
+	const struct rpi_pico_config *config = dev->config;
+	usb_hw_t *base = config->base;
+
+	if (enable) {
+		rpi_pico_bit_set((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	} else {
+		rpi_pico_bit_clr((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	}
 }
 
 static void ALWAYS_INLINE sie_status_clr(const struct device *dev, const uint32_t bit)
@@ -639,6 +654,7 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 static void rpi_pico_isr_handler(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	struct rpi_pico_data *priv = udc_get_private(dev);
 	usb_hw_t *base = config->base;
 	uint32_t status = base->ints;
@@ -652,15 +668,35 @@ static void rpi_pico_isr_handler(const struct device *dev)
 	if (status & USB_INTS_DEV_CONN_DIS_BITS) {
 		uint32_t sie_status;
 
-		handled |= USB_INTS_DEV_CONN_DIS_BITS;
-		sie_status_clr(dev, USB_SIE_STATUS_CONNECTED_BITS);
-
 		sie_status = sys_read32((mm_reg_t)&base->sie_status);
-		if (sie_status & USB_SIE_STATUS_CONNECTED_BITS) {
-			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
-		} else {
+		LOG_DBG("CONNECTED bit %u, VBUS_DETECTED bit %u",
+			(bool)(sie_status & USB_SIE_STATUS_CONNECTED_BITS),
+			(bool)(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS));
+
+		if (pcfg != NULL && !(sie_status & USB_SIE_STATUS_CONNECTED_BITS) &&
+		    !(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS)) {
+			sie_dp_pullup(dev, false);
 			udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
 		}
+
+		handled |= USB_INTS_DEV_CONN_DIS_BITS;
+		sie_status_clr(dev, USB_SIE_STATUS_CONNECTED_BITS);
+	}
+
+	if (status & USB_INTS_VBUS_DETECT_BITS) {
+		uint32_t sie_status;
+
+		sie_status = sys_read32((mm_reg_t)&base->sie_status);
+		LOG_DBG("VBUS_DETECTED bit %u",
+			(bool)(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS));
+
+		if (pcfg != NULL && (sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS)) {
+			sie_dp_pullup(dev, true);
+			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		}
+
+		handled |= USB_INTS_VBUS_DETECT_BITS;
+		sie_status_clr(dev, USB_SIE_STATUS_VBUS_DETECTED_BITS);
 	}
 
 	if ((status & (USB_INTS_BUFF_STATUS_BITS | USB_INTS_SETUP_REQ_BITS)) &&
@@ -943,6 +979,7 @@ static int udc_rpi_pico_host_wakeup(const struct device *dev)
 static int udc_rpi_pico_enable(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	usb_device_dpram_t *dpram = config->dpram;
 	usb_hw_t *base = config->base;
 
@@ -958,9 +995,11 @@ static int udc_rpi_pico_enable(const struct device *dev)
 	sys_write32(USB_USB_MUXING_TO_PHY_BITS | USB_USB_MUXING_SOFTCON_BITS,
 		    (mm_reg_t)&base->muxing);
 
-	/* Force VBUS detect so the device thinks it is plugged into a host */
-	sys_write32(USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS,
-		    (mm_reg_t)&base->pwr);
+	if (pcfg == NULL) {
+		/* Force VBUS detect so the device thinks it is plugged into a host */
+		sys_write32(USB_USB_PWR_VBUS_DETECT_BITS |
+			    USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS, (mm_reg_t)&base->pwr);
+	}
 
 	/* Enable an interrupt per EP0 transaction */
 	sys_write32(USB_SIE_CTRL_EP0_INT_1BUF_BITS, (mm_reg_t)&base->sie_ctrl);
@@ -981,8 +1020,10 @@ static int udc_rpi_pico_enable(const struct device *dev)
 		    USB_INTE_BUFF_STATUS_BITS,
 		    (mm_reg_t)&base->inte);
 
-	/* Present full speed device by enabling pull up on DP */
-	rpi_pico_bit_set((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	if (sys_read32((mm_reg_t)&base->sie_status) & USB_SIE_STATUS_VBUS_DETECTED_BITS) {
+		/* Present full speed device by enabling pull up on DP */
+		sie_dp_pullup(dev, true);
+	}
 
 	/* Enable the USB controller in device mode. */
 	sys_write32(USB_MAIN_CTRL_CONTROLLER_EN_BITS, (mm_reg_t)&base->main_ctrl);
@@ -1007,6 +1048,8 @@ static int udc_rpi_pico_disable(const struct device *dev)
 static int udc_rpi_pico_init(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	int err;
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
@@ -1018,6 +1061,14 @@ static int udc_rpi_pico_init(const struct device *dev)
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	if (pcfg != NULL) {
+		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+		if (err) {
+			LOG_ERR("Failed to apply default pinctrl state (%d)", err);
+			return err;
+		}
 	}
 
 	return clock_control_on(config->clk_dev, config->clk_sys);
@@ -1132,7 +1183,16 @@ static const struct udc_api udc_rpi_pico_api = {
 
 #define DT_DRV_COMPAT raspberrypi_pico_usbd
 
+#define UDC_RPI_PICO_PINCTRL_DT_INST_DEFINE(n)						\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),				\
+		    (PINCTRL_DT_INST_DEFINE(n)), ())
+
+#define UDC_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n)					\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),				\
+		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
+
 #define UDC_RPI_PICO_DEVICE_DEFINE(n)							\
+	UDC_RPI_PICO_PINCTRL_DT_INST_DEFINE(n);						\
 	K_THREAD_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);	\
 											\
 	SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(rpi_pico_mb_##n,			\
@@ -1190,6 +1250,7 @@ static const struct udc_api udc_rpi_pico_api = {
 		.make_thread = udc_rpi_pico_make_thread_##n,				\
 		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,			\
 		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,			\
+		.pcfg = UDC_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clk_sys = (void *)DT_INST_PHA_BY_IDX(n, clocks, 0, clk_id),		\
 	};										\

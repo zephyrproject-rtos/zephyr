@@ -7,6 +7,7 @@ config UDC_RPI_PICO
 	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
 	select SYS_MEM_BLOCKS
 	select EVENTS
+	imply PINCTRL
 	help
 	  Driver for an Raspberry PI Pico USB device controller.
 
