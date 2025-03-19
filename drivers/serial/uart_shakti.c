@@ -438,8 +438,8 @@ static void uart_shakti_irq_cfg_func_0(void);
 
 static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
 	.port         = 0X11300,
-	.sys_clk_freq = SHAKTI_UART_0_CLK_FREQUENCY,
-	.baud_rate    = SECIOT_NEXYS_UART_BAUD,
+	.sys_clk_freq = 700000000,
+	.baud_rate    = 115200,
 	.rxcnt_irq    = 0,
 	.txcnt_irq    = 0,
 	// .pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),

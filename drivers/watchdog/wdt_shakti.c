@@ -80,6 +80,7 @@ struct wdt_shakti_dev_data {
 static int wdt_shakti_disable(const struct device *dev)
 {
 	*control_reg=*control_reg && 0xFFFE;
+	return 0;
 }
 
 static int wdt_shakti_setup(const struct device *dev, uint8_t options)
@@ -87,13 +88,14 @@ static int wdt_shakti_setup(const struct device *dev, uint8_t options)
 	*control_reg=options;
 	*reset_cycles=obj.rcycles;
 	*wd_cycles=obj.wcycles;
+	return 0;
 }
 
 
 static int wdt_shakti_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *cfg)
 {
-	
+	return 0;	
 }
 
 static int wdt_shakti_feed(const struct device *dev, int channel_id)
@@ -112,7 +114,7 @@ static const struct wdt_driver_api wdt_shakti_api = {
 
 static int wdt_shakti_init(const struct device *dev)
 {
-
+	return 0;
 }
 
 static struct wdt_shakti_dev_data wdt_shakti_data;
