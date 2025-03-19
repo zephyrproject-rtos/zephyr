@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_ZEPHYR_MODEM_UART
+	bool "Generic device driver for modem on UART bus"
+	select MODEM_MODULES
+	select MODEM_PIPE
+	select MODEM_PIPELINK
+	select MODEM_BACKEND_UART
+	depends on DT_HAS_ZEPHYR_MODEM_UART_ENABLED
+
+if MODEM_ZEPHYR_MODEM_UART
+
+config ZEPHYR_MODEM_UART_INIT_PRIORITY
+	int "Device driver init priority"
+	default 99
+
+config ZEPHYR_MODEM_UART_BUFFER_SIZES
+	int "Size of UART receive and transmit buffers in bytes"
+	default 512
+
+endif # MODEM_ZEPHYR_MODEM_UART

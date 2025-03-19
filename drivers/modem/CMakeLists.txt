@@ -37,3 +37,4 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_ZEPHYR_MODEM_UART zephyr_modem_uart.c)
