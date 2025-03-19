@@ -58,6 +58,8 @@ Removed APIs and options
 * Removed the ``--disable-unrecognized-section-test`` Twister option. Test has been removed and the
   option became the default behavior.
 
+* Removed the deprecated ``kscan`` subsystem.
+
 Deprecated APIs and options
 ===========================
 
