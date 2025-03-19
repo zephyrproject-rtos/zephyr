@@ -366,6 +366,34 @@ drop:
 	return ret;
 }
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+static inline bool process_multicast(struct net_pkt *pkt)
+{
+	struct net_context *ctx = net_pkt_context(pkt);
+	sa_family_t family = net_pkt_family(pkt);
+
+	if (ctx == NULL) {
+		return false;
+	}
+
+#if defined(CONFIG_NET_IPV4)
+	if (family == AF_INET) {
+		const struct in_addr *dst = (const struct in_addr *)&NET_IPV4_HDR(pkt)->dst;
+
+		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
+	}
+#endif
+#if defined(CONFIG_NET_IPV6)
+	if (family == AF_INET6) {
+		const struct in6_addr *dst = (const struct in6_addr *)&NET_IPV6_HDR(pkt)->dst;
+
+		return net_ipv6_is_addr_mcast(dst) && net_context_get_ipv6_mcast_loop(ctx);
+	}
+#endif
+	return false;
+}
+#endif
+
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	int status;
@@ -410,26 +438,31 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		goto err;
 	}
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+	if (process_multicast(pkt)) {
+		struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
+
+		if (clone != NULL) {
+			net_pkt_set_iface(clone, net_pkt_iface(pkt));
+			if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
+				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+					switch (net_pkt_family(pkt)) {
+#if defined(CONFIG_NET_IPV4)
+					case AF_INET:
+						net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+						break;
+#endif
 #if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		const struct in6_addr *dest = (const struct in6_addr *)&NET_IPV6_HDR(pkt)->dst;
-		struct net_context *ctx = net_pkt_context(pkt);
-
-		if (net_ipv6_is_addr_mcast(dest) && ctx != NULL &&
-		    net_context_get_ipv6_mcast_loop(ctx)) {
-			struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
-
-			if (clone != NULL) {
-				net_pkt_set_iface(clone, net_pkt_iface(pkt));
-				if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
-					if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-						net_stats_update_ipv6_drop(net_pkt_iface(pkt));
+					case AF_INET6:
+						net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+						break;
+#endif
 					}
-					net_pkt_unref(clone);
 				}
-			} else {
-				NET_DBG("Failed to clone multicast packet");
+				net_pkt_unref(clone);
 			}
+		} else {
+			NET_DBG("Failed to clone multicast packet");
 		}
 	}
 #endif
