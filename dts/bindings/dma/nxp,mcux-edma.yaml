@@ -40,7 +40,7 @@ properties:
     type: boolean
     description: If the DMA controller supports memory to memory transfer
 
-  nxp,a_on:
+  nxp,a-on:
     type: boolean
     description: If the DMA controller supports always on
 
