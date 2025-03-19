@@ -95,7 +95,12 @@ struct bt_df_per_adv_sync_iq_samples_report;
  * @note Used in @ref bt_le_ext_adv_cb.
  */
 struct bt_le_ext_adv_sent_info {
-	/** The number of advertising events completed. */
+	/**
+	 * If the advertising set was started with a non-zero
+	 * @ref bt_le_ext_adv_start_param.num_events, this field
+	 * contains the number of times this advertising set has
+	 * been sent since it was enabled.
+	 */
 	uint8_t num_sent;
 };
 
@@ -193,12 +198,11 @@ struct bt_le_per_adv_response_info {
  */
 struct bt_le_ext_adv_cb {
 	/**
-	 * @brief The advertising set has finished sending adv data.
+	 * @brief The advertising set was disabled after reaching limit
 	 *
-	 * This callback notifies the application that the advertising set has
-	 * finished sending advertising data.
-	 * The advertising set can either have been stopped by a timeout or
-	 * because the specified number of advertising events has been reached.
+	 * This callback is invoked when the limit set in
+	 * @ref bt_le_ext_adv_start_param.timeout or
+	 * @ref bt_le_ext_adv_start_param.num_events is reached.
 	 *
 	 * @param adv  The advertising set object.
 	 * @param info Information about the sent event.
@@ -1554,24 +1558,48 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
  */
 struct bt_le_ext_adv_start_param {
 	/**
-	 * @brief Advertiser timeout (N * 10 ms).
+	 * @brief Maximum advertising set duration (N * 10 ms)
 	 *
-	 * Application will be notified by the advertiser sent callback.
-	 * Set to zero for no timeout.
+	 * The advertising set can be automatically disabled after a
+	 * certain amount of time has passed since it first appeared on
+	 * air.
 	 *
-	 * When using high duty cycle directed connectable advertising then
-	 * this parameters must be set to a non-zero value less than or equal
-	 * to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+	 * Set to zero for no limit. Set in units of 10 ms.
 	 *
-	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the timeout
-	 * must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
+	 * When the advertising set is automatically disabled because of
+	 * this limit, @ref bt_le_ext_adv_cb.sent will be called.
+	 *
+	 * When using high duty cycle directed connectable advertising
+	 * then this parameters must be set to a non-zero value less
+	 * than or equal to the maximum of
+	 * @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+	 *
+	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the
+	 * timeout must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
+	 *
+	 * For background information, see parameter "Duration" in
+	 * Bluetooth Core Specification Version 6.0 Vol. 4 Part E,
+	 * Section 7.8.56.
 	 */
 	uint16_t timeout;
+
 	/**
-	 * @brief Number of advertising events.
+	 * @brief Maximum number of extended advertising events to be
+	 * sent
 	 *
-	 * Application will be notified by the advertisement sent callback, once num_events are
-	 * reached. Set to zero for no limit.
+	 * The advertiser can be automatically disabled once the whole
+	 * advertisement (i.e. extended advertising event) has been sent
+	 * a certain number of times. The number of advertising PDUs
+	 * sent may be higher and is not relevant.
+	 *
+	 * Set to zero for no limit.
+	 *
+	 * When the advertising set is automatically disabled because of
+	 * this limit, @ref bt_le_ext_adv_cb.sent will be called.
+	 *
+	 * For background information, see parameter
+	 * "Max_Extended_Advertising_Events" in Bluetooth Core
+	 * Specification Version 6.0 Vol. 4 Part E, Section 7.8.56.
 	 */
 	uint8_t  num_events;
 };
