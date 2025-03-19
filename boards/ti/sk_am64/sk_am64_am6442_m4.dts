@@ -7,6 +7,7 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am64x_m4.dtsi>
 #include "sk_am64_am6442_m4-pinctrl.dtsi"
 
@@ -16,8 +17,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &mcu_uart0;
+		zephyr,shell-uart = &mcu_uart0;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 	};
@@ -54,7 +55,7 @@
 		compatible = "gpio-leds";
 
 		heartbeat_led: led_0 {
-			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
 			label = "Heartbeat LED";
 		};
 	};
@@ -66,15 +67,20 @@
 	};
 };
 
-&uart0 {
+&mcu_uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
-&gpio0 {
+&mcu_gpio0 {
 	pinctrl-0 = <&mcu_gpio0_led_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mbox6 {
+	usr-id = <3>;
 	status = "okay";
 };
