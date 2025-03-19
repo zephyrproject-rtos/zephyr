@@ -1,0 +1,55 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  xhsc hc32 pinctrl node.
+  Based on pincfg-node.yaml binding.
+
+  Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+      They will be applied in case no `bias-foo` or `driver-bar` properties
+      are set.
+
+compatible: "xhsc,hc32-pinctrl"
+include: base.yaml
+
+child-binding:
+  description: |
+    hc32 pin controller pin configuration state nodes.
+  child-binding:
+    description:
+      hc32 pin controller pin configuration group.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - input-enable
+          - output-enable
+          - output-high
+          - output-low
+          - input-schmitt-enable
+          - input-schmitt-disable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Each array element represents pin muxing information of an individual
+          pin.
+
+      drive-strength:
+        type: string
+        default: "low"
+        enum:
+          - "low"
+          - "medium"
+          - "high"
+        description: |
+          Pin output drive strength.
+          0 (low) - sets pin to low drive strength, default set.
+          1 (medium) - sets pin to medium drive strength
+          2 (high) - sets pin to high drive strength
