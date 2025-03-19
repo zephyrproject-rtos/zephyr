@@ -91,7 +91,19 @@ static inline uint32_t ll_rng_is_active_drdy(RNG_TypeDef *RNGx)
 static inline uint16_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_STM32WB09XX)
-	return (uint16_t)LL_RNG_GetRndVal(RNGx);
+	uint16_t rnd = (uint16_t)LL_RNG_GetRndVal(RNGx);
+
+	/**
+	 * STM32WB09 TRNG does not clear IRQ flags in hardware.
+	 * We must clear the "FIFO full" flag now that we consumed data
+	 * from it to ensure the TRNG's IRQ line goes back to low state.
+	 *
+	 * Raw register access is performed because STM32CubeWB0 v1.0.0
+	 * package is lacking the LL function to clear IRQ flags.
+	 */
+	WRITE_REG(RNG->IRQ_SR, RNG_IRQ_SR_FF_FULL_IRQ);
+
+	return rnd;
 #elif defined(CONFIG_SOC_SERIES_STM32WB0X)
 	/* STM32WB05 / STM32WB06 / STM32WB07 */
 	return LL_RNG_ReadRandData16(RNGx);
