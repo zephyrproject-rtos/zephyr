@@ -247,8 +247,7 @@ int enabled_clock(uint32_t src_clk)
 	return r;
 }
 
-static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	volatile int temp;
@@ -271,8 +270,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
@@ -289,9 +287,9 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
 {
 	/* At least one alt src clock available */
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
