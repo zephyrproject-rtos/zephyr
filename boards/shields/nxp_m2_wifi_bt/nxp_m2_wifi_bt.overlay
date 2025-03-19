@@ -28,3 +28,15 @@
 		};
 	};
 };
+
+&usdhc1 {
+	/* Use dat3 detection method */
+	detect-dat3;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+
+	nxp_wifi {
+		compatible = "nxp,wifi";
+		status = "okay";
+	};
+};
