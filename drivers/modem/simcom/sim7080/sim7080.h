@@ -177,4 +177,18 @@ struct socket_read_data {
 	uint16_t recv_read_len;
 };
 
+/*
+ * Driver internals
+ */
+extern struct sim7080_data mdata;
+extern struct modem_context mctx;
+extern const struct socket_op_vtable offload_socket_fd_op_vtable;
+extern const struct socket_dns_offload offload_dns_ops;
+
+enum sim7080_state sim7080_get_state(void);
+
+void sim7080_change_state(enum sim7080_state state);
+
+int modem_autobaud(void);
+
 #endif /* SIMCOM_SIM7080_H */
