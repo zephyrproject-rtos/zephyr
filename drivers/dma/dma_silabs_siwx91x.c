@@ -32,7 +32,6 @@ enum {
 
 struct dma_siwx91x_config {
 	UDMA0_Type *reg;                 /* UDMA register base address */
-	uint8_t channels;                /* UDMA channel count */
 	uint8_t irq_number;              /* IRQ number */
 	RSI_UDMA_DESC_T *sram_desc_addr; /* SRAM Address for UDMA Descriptor Storage */
 	const struct device *clock_dev;
@@ -41,6 +40,7 @@ struct dma_siwx91x_config {
 };
 
 struct dma_siwx91x_data {
+	struct dma_context dma_ctx;
 	UDMA_Channel_Info *chan_info;
 	dma_callback_t dma_callback;         /* User callback */
 	void *cb_data;                       /* User callback data */
@@ -187,13 +187,12 @@ static int siwx91x_channel_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 				 struct dma_config *config)
 {
-	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
 	void *udma_handle = &data->udma_handle;
 	int status;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
-	if (channel >= cfg->channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -216,6 +215,8 @@ static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 	data->dma_callback = config->dma_callback;
 	data->cb_data = config->user_data;
 
+	atomic_set_bit(data->dma_ctx.atomic, channel);
+
 	return 0;
 }
 
@@ -232,7 +233,7 @@ static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32
 	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
-	if (channel >= cfg->channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -283,7 +284,7 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 	void *udma_handle = &data->udma_handle;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
-	if (channel >= cfg->channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -304,12 +305,11 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 /* Function to stop a DMA transfer */
 static int siwx91x_dma_stop(const struct device *dev, uint32_t channel)
 {
-	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
 	void *udma_handle = &data->udma_handle;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
-	if (channel >= cfg->channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -325,10 +325,15 @@ static int siwx91x_dma_get_status(const struct device *dev, uint32_t channel,
 				  struct dma_status *stat)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
+	struct dma_siwx91x_data *data = dev->data;
 	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
-	if (channel >= cfg->channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(data->dma_ctx.atomic, channel)) {
 		return -EINVAL;
 	}
 
@@ -399,7 +404,7 @@ static void siwx91x_dma_isr(const struct device *dev)
 
 	channel = find_lsb_set(cfg->reg->UDMA_DONE_STATUS_REG);
 	/* Identify the interrupt channel */
-	if (!channel || channel > cfg->channels) {
+	if (!channel || channel > data->dma_ctx.dma_channels) {
 		goto out;
 	}
 	/* find_lsb_set() returns 1 indexed value */
@@ -438,8 +443,12 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 };
 
 #define SIWX91X_DMA_INIT(inst)                                                                     \
+	static ATOMIC_DEFINE(dma_channels_atomic_##inst, DT_INST_PROP(inst, dma_channels));        \
 	static UDMA_Channel_Info dma_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];        \
 	static struct dma_siwx91x_data dma_data_##inst = {                                         \
+		.dma_ctx.magic = DMA_MAGIC,                                                        \
+		.dma_ctx.dma_channels = DT_INST_PROP(inst, dma_channels),                          \
+		.dma_ctx.atomic = dma_channels_atomic_##inst,                                      \
 		.chan_info = dma_channel_info_##inst,                                              \
 	};                                                                                         \
 	static void siwx91x_dma_irq_configure_##inst(void)                                         \
@@ -452,7 +461,6 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.reg = (UDMA0_Type *)DT_INST_REG_ADDR(inst),                                       \
-		.channels = DT_INST_PROP(inst, dma_channels),                                      \
 		.irq_number = DT_INST_PROP_BY_IDX(inst, interrupts, 0),                            \
 		.sram_desc_addr = (RSI_UDMA_DESC_T *)DT_INST_PROP(inst, silabs_sram_desc_addr),    \
 		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
