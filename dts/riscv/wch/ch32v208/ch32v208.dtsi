@@ -37,7 +37,7 @@
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "wch,ch32v20x_30x-pll-clock";
-			mul = <18>;
+			mul = <15>;
 			status = "disabled";
 		};
 	};
@@ -54,9 +54,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@0 {
+			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(128)>;
+				reg = <0x08000000 DT_SIZE_K(480)>;
 			};
 		};
 
@@ -160,5 +160,5 @@
 };
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_M(144)>;
+	clock-frequency = <DT_FREQ_M(120)>;
 };
