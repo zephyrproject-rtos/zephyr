@@ -209,6 +209,11 @@ Networking
   more generic :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` to better
   reflect the purpose of this credential type.
 
+* The MQTT public API function :c:func:`mqtt_disconnect` has changed. The function
+  now accepts additional ``param`` parameter to support MQTT 5.0 case. The parameter
+  is optional and not used with older MQTT versions - MQTT 3.1.1 users should pass
+  NULL as an argument.
+
 SPI
 ===
 
