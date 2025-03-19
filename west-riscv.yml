@@ -117,7 +117,7 @@ manifest:
     - name: muriscv-nn
       remote: muriscv-nn-remote
       repo-path: muriscv-nn 
-      path: modules/muriscv-nn
+      path: modules/lib/muriscv-nn
       revision: e17d4c79d9bd81008bdc4012f15d0ae9d4c0a032
   # zephyr-keep-sorted-stop
 
