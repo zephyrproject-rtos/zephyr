@@ -96,6 +96,12 @@ config RISCV_ISA_EXT_C
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
 
+config RISCV_ISA_EXT_V
+	bool "Enable RISC-V Vector Extension"
+	default n
+	help
+	  (C) - Standard Extension for RISCV Vector Instructions
+
 config RISCV_ISA_EXT_ZICSR
 	bool
 	help
