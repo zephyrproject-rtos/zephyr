@@ -2962,6 +2962,10 @@ static const struct event_handler normal_events[] = {
 		      sizeof(struct bt_hci_evt_remote_ext_features)),
 	EVENT_HANDLER(BT_HCI_EVT_ROLE_CHANGE, bt_hci_role_change,
 		      sizeof(struct bt_hci_evt_role_change)),
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	EVENT_HANDLER(BT_HCI_EVT_MODE_CHANGE, bt_hci_link_mode_change,
+		      sizeof(struct bt_hci_evt_mode_change)),
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 	EVENT_HANDLER(BT_HCI_EVT_SYNC_CONN_COMPLETE, bt_hci_synchronous_conn_complete,
 		      sizeof(struct bt_hci_evt_sync_conn_complete)),
 #endif /* CONFIG_BT_CLASSIC */
