@@ -140,7 +140,10 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
         hwm.dump(filtered=tplan.selected_platforms)
         print("")
 
-    if options.dry_run:
+    if options.check:
+        tplan.checker.report()
+
+    if options.dry_run or options.check:
         duration = time.time() - start_time
         logger.info(f"Completed in {duration} seconds")
         return 0
