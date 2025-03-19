@@ -136,6 +136,11 @@ Networking
   (because the addr is not a pointer) and must be changed to ``if (lladdr->len == 0)``
   if the code wants to check that the link address is not set.
 
+* The MQTT public API function :c:func:`mqtt_disconnect` has changed. The function
+  now accepts additional ``param`` parameter to support MQTT 5.0 case. The parameter
+  is optional and not used with older MQTT versions - MQTT 3.1.1 users should pass
+  NULL as an argument.
+
 SPI
 ===
 
