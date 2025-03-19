@@ -57,7 +57,17 @@
 
 &gem0 {
 	status = "okay";
+	phy-handle = <&gem0_phy>;
 	clock-frequency = <1000000000>;
-	mdc-divider = <XLNX_GEM_MDC_DIVIDER_224>;
 	local-mac-address = [00 00 00 01 02 03];
+};
+
+&gem0_mdio {
+	status = "okay";
+
+	gem0_phy: phy@1 {
+		compatible = "marvell,88e1xxx";
+		reg = <1>;
+		status = "okay";
+	};
 };
