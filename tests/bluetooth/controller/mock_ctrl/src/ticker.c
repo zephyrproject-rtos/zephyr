@@ -33,6 +33,13 @@ uint8_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 	return TICKER_STATUS_SUCCESS;
 }
 
+uint8_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
+			 uint8_t ticker_id, uint32_t ticks_at_stop,
+			 ticker_op_func fp_op_func, void *op_context)
+{
+	return TICKER_STATUS_SUCCESS;
+}
+
 void ticker_job_sched(uint8_t instance_index, uint8_t user_id)
 {
 }
