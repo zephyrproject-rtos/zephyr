@@ -1,0 +1,2 @@
+config BOARD_CHIPYARD_CYGNUS
+	select QEMU_TARGET
