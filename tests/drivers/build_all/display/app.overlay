@@ -191,6 +191,24 @@
 				vcomh-voltage = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_sh1122: sh1122@12 {
+				compatible = "sinowealth,sh1122";
+				reg = <12>;
+				mipi-max-frequency = <10000000>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -439,6 +457,22 @@
 				display-offset = <0>;
 				start-line = <0>;
 				remap-value = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+			};
+
+			test_sh1122: sh1122@4 {
+				compatible = "sinowealth,sh1122";
+				reg = <4>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
 				precharge-voltage = <0>;
 				phase-length = <0>;
 				vcomh-voltage = <0>;
