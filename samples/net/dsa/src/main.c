@@ -25,19 +25,19 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 	}
 
 	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) {
-		if (ifaces->master == NULL) {
-			ifaces->master = iface;
+		if (ifaces->conduit == NULL) {
+			ifaces->conduit = iface;
 
-			/* Get slave interfaces */
+			/* Get user interfaces */
 			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
-				struct net_if *slave = dsa_get_slave_port(iface, i);
+				struct net_if *user = dsa_get_slave_port(iface, i);
 
-				if (slave == NULL) {
+				if (user == NULL) {
 					continue;
 				}
-				LOG_INF("Slave interface %d found.", i);
+				LOG_INF("User interface %d found.", i);
 
-				ifaces->lan[i] = slave;
+				ifaces->lan[i] = user;
 			}
 			return;
 		}
