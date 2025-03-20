@@ -1036,6 +1036,29 @@ ZTEST(devicetree_api, test_phandles)
 	/* DT_PHANDLE */
 	zassert_true(DT_SAME_NODE(DT_PHANDLE(TEST_PH, gpios), TEST_GPIO_1), "");
 
+	/* DT_PHANDLE_TOKEN */
+	const char *gpios_token = STRINGIFY(DT_PHANDLE_TOKEN(TEST_PH, ph));
+
+	zassert_equal(gpios_token, "test_gpio_1");
+
+	/* DT_PHANDLE_TOKEN_BY_IDX */
+	const char *i2c_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_IDX(TEST_PH, phs, 0));
+	const char *spi_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_IDX(TEST_PH, phs, 1));
+
+	zassert_equal(i2c_token, "test_i2c");
+	zassert_equal(spi_token, "test_spi");
+
+	/* DT_PHANDLE_TOKEN_BY_LABEL_IDX */
+	const char *i2c1_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_LABEL_IDX(TEST_PH, phs, 0, 1));
+	const char *i2c2_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_LABEL_IDX(TEST_PH, phs, 0, 2));
+	const char *spi1_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_LABEL_IDX(TEST_PH, phs, 1, 1));
+	const char *spi2_token = STRINGIFY(DT_PHANDLE_TOKEN_BY_LABEL_IDX(TEST_PH, phs, 1, 2));
+
+	zassert_equal(i2c1_token, "test_i2c1");
+	zassert_equal(i2c2_token, "test_i2c2");
+	zassert_equal(spi1_token, "test_spi1");
+	zassert_equal(spi2_token, "test_spi2");
+
 	/* DT_PHA */
 	zassert_equal(DT_PHA(TEST_PH, gpios, pin), 10, "");
 	zassert_equal(DT_PHA(TEST_PH, gpios, flags), 20, "");
