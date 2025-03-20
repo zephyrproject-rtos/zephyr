@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
+
 zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources(
   scfg.c
-  registers.c
+  ${CONFIG_NPCX_SOC_VARIANT}/registers.c
 )
+zephyr_include_directories(${CONFIG_NPCX_SOC_VARIANT}/include)
 
 # Check for disabling header CRC.
 if (NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_HEADER_CRC)
