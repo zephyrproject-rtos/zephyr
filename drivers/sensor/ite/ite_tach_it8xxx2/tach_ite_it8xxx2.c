@@ -127,8 +127,14 @@ static int tach_it8xxx2_sample_fetch(const struct device *dev,
 	if (tach_ch_is_valid(dev, tach_ch)) {
 		/* If channel data of tachometer is valid, then save it */
 		data->capture = ((*reg_fxtmrr) << 8) | (*reg_fxtlrr);
-		/* Clear tachometer data valid status */
-		*reg_tswctlr |= config->dvs_bit;
+
+		if (config->dvs_bit == IT8XXX2_PWM_T0DVS) {
+			/* Only W/C tach 0 data valid status */
+			*reg_tswctlr = (*reg_tswctlr & ~IT8XXX2_PWM_T1DVS);
+		} else {
+			/* Only W/C tach 1 data valid status */
+			*reg_tswctlr = (*reg_tswctlr & ~IT8XXX2_PWM_T0DVS);
+		}
 	} else {
 		/* If channel data of tachometer isn't valid, then clear it */
 		data->capture = 0;
@@ -200,13 +206,17 @@ static int tach_it8xxx2_init(const struct device *dev)
 	if (tach_ch == IT8XXX2_TACH_CHANNEL_A) {
 		/* Select IT8XXX2_TACH_CHANNEL_A output to tachometer */
 		*reg_tswctlr &= ~(config->chsel_bit);
-		/* Clear tachometer data valid status */
-		*reg_tswctlr |= config->dvs_bit;
 	} else {
 		/* Select IT8XXX2_TACH_CHANNEL_B output to tachometer */
 		*reg_tswctlr |= config->chsel_bit;
-		/* Clear tachometer data valid status */
-		*reg_tswctlr |= config->dvs_bit;
+	}
+
+	if (config->dvs_bit == IT8XXX2_PWM_T0DVS) {
+		/* Only W/C tach 0 data valid status */
+		*reg_tswctlr = (*reg_tswctlr & ~IT8XXX2_PWM_T1DVS);
+	} else {
+		/* Only W/C tach 1 data valid status */
+		*reg_tswctlr = (*reg_tswctlr & ~IT8XXX2_PWM_T0DVS);
 	}
 
 	/* Tachometer sensor already start */
