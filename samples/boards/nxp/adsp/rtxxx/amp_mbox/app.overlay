@@ -1,0 +1,3 @@
+&adsp {
+    status = "okay";
+};
