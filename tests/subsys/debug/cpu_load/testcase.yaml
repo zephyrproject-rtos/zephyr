@@ -1,7 +1,9 @@
 common:
   tags: cpu_load
-  arch_allow: arm
-  filter: CONFIG_CPU_CORTEX_M
+  arch_allow:
+    - arm
+    - riscv
+  filter: CONFIG_CPU_LOAD
 tests:
   debug.cpu_load:
     integration_platforms:
