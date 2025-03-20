@@ -142,6 +142,10 @@ Ethernet
 * NuMaker Ethernet driver ``eth_numaker.c`` now supports ``gen_random_mac``,
   and the EMAC data flash feature has been removed (:github:`87953`).
 
+* The enum ``ETHERNET_DSA_MASTER_PORT`` and ``ETHERNET_DSA_SLAVE_PORT`` in
+  :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
+  to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 

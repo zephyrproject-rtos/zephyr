@@ -295,7 +295,7 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 	);
 
 	if (cfg->pseudo_mac) {
-		caps |= ETHERNET_DSA_MASTER_PORT;
+		caps |= ETHERNET_DSA_CONDUIT_PORT;
 	}
 
 	return caps;
