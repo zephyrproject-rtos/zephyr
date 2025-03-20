@@ -90,19 +90,21 @@
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(447)>;
+			reg = <0x20000000 DT_SIZE_K(415)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20000000 0x6fc00>;
+			ranges = <0x0 0x20000000 0x67c00>;
 		};
 
-		cpuflpr_sram: memory@2006fc00 {
+		cpuflpr_sram: memory@20067c00 {
 			compatible = "mmio-sram";
-			reg = <0x2006fc00 DT_SIZE_K(64)>;
+			reg = <0x20067c00 DT_SIZE_K(96)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2006fc00 0x10000>;
+			ranges = <0x0 0x20067c00 0x18000>;
 		};
+
+		/* 0x20067c00 - 0x20080000; size 0x400 (1k): Reserved for VPR context */
 
 		global_peripherals: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
@@ -775,14 +777,14 @@
 
 			cpuapp_rram: rram@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(1972)>;
+				reg = <0x0 DT_SIZE_K(1940)>;
 				erase-block-size = <4096>;
 				write-block-size = <16>;
 			};
 
-			cpuflpr_rram: rram@1ed000 {
+			cpuflpr_rram: rram@1e5000 {
 				compatible = "soc-nv-flash";
-				reg = <0x1ed000 DT_SIZE_K(64)>;
+				reg = <0x1e5000 DT_SIZE_K(96)>;
 				erase-block-size = <4096>;
 				write-block-size = <16>;
 			};
