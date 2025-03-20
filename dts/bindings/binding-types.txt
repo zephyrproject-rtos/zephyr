@@ -66,7 +66,6 @@ input	Input
 interrupt-controller	Interrupt controller
 ipc	IPC (Inter-Processor Communication)
 ipm	IPM (Inter-Processor Mailbox)
-kscan	Keyscan
 led	LED (Light Emitting Diode)
 led_strip	LED (Light Emitting Diode) strip
 lora	LoRa
@@ -76,8 +75,8 @@ memory-controllers	Memory controller
 memory-window	Memory window
 mfd	Multi-Function Device
 mhu	Mailbox Handling Unit
-mipi-dbi	Mobile Industry Processor Interface Display Bus Interface
-mipi-dsi	Mobile Industry Processor Interface Display Serial Interface
+mipi-dbi	MIPI-DBI (Mobile Industry Processor Interface Display Bus Interface)
+mipi-dsi	MIPI-DSI (Mobile Industry Processor Interface Display Serial Interface)
 misc	Miscellaneous
 mm	Memory management
 mmc	MMC (MultiMedia Card)

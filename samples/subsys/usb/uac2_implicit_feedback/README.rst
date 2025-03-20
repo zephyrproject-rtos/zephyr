@@ -12,6 +12,10 @@ This sample demonstrates how to implement USB asynchronous bidirectional audio
 with implicit feedback. The host adjusts number of stereo samples sent for
 headphones playback based on the number of mono microphone samples received.
 
+.. warning::
+   Microsoft Windows USB Audio 2.0 driver available since Windows 10,
+   release 1703 does not support implicit feedback.
+
 Requirements
 ************
 

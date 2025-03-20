@@ -13,9 +13,6 @@ import shlex
 _WINDOWS = platform.system() == 'Windows'
 
 
-logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
-
 def log_command(logger, msg, args):
     '''Platform-independent helper for logging subprocess invocations.
     Will log a command string that can be copy/pasted into a POSIX
@@ -26,6 +23,9 @@ def log_command(logger, msg, args):
     :param msg: message to associate with the command
     :param args: argument list as passed to subprocess module
     '''
+    logger = logging.getLogger("twister")
+    logger.setLevel(logging.DEBUG)
+
     msg = f'{msg}: %s'
     if _WINDOWS:
         logger.debug(msg, str(args))
@@ -33,6 +33,9 @@ def log_command(logger, msg, args):
         logger.debug(msg, shlex.join(args))
 
 def setup_logging(outdir, log_file, log_level, timestamps):
+    logger = logging.getLogger("twister")
+    logger.setLevel(logging.DEBUG)
+
     # create file handler which logs even debug messages
     if log_file:
         file_handler = logging.FileHandler(log_file)
@@ -60,3 +63,19 @@ def setup_logging(outdir, log_file, log_level, timestamps):
     # add the handlers to logger
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
+
+
+def close_logging():
+    logger = logging.getLogger("twister")
+    handlers = logger.handlers[:]
+
+    for handler in handlers:
+        logger.removeHandler(handler)
+        handler.close()
+
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logg in loggers:
+        handls = logg.handlers[:]
+        for handl in handls:
+            logg.removeHandler(handl)
+            handl.close()

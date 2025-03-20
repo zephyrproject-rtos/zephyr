@@ -938,4 +938,107 @@ ZTEST(test_utils_fn, test_ip_checksum)
 	}
 }
 
+/* Verify that the net_pkt pointer to the received link layer address
+ * is correct.
+ */
+ZTEST(test_utils_fn, test_linkaddr_handling)
+{
+	/* A simple Ethernet frame with IPv4 and UDP headers */
+	static const uint8_t udp[] = {
+		0x18, 0xfd, 0x74, 0x09, 0xcb, 0x62, 0xac, 0x91,  /* 0000 */
+		0xa1, 0x8f, 0x9d, 0xf8, 0x08, 0x00, 0x45, 0x00,  /* 0008 */
+		0x00, 0x4c, 0x48, 0x8e, 0x00, 0x00, 0x40, 0x11,  /* 0010 */
+		0x57, 0x34, 0xc0, 0xa8, 0x58, 0x29, 0xc1, 0xe5,  /* 0018 */
+		0x00, 0x28, 0xba, 0xf0, 0x00, 0x35, 0x00, 0x38,  /* 0020 */
+		0xdb, 0x28,
+	};
+
+	/* Create net_pkt from the above data, then check the link layer
+	 * addresses are properly set even if we pull the data like how
+	 * the network stack would do in ethernet.c
+	 */
+	const uint8_t *dst = &udp[0];
+	const uint8_t *src = &udp[NET_ETH_ADDR_LEN];
+	uint8_t hdr_len = sizeof(struct net_eth_hdr);
+	struct net_linkaddr *lladdr;
+	struct net_eth_hdr *hdr;
+	struct net_pkt *pkt, *pkt2;
+	int ret;
+
+	pkt = net_pkt_rx_alloc_with_buffer(net_if_get_default(),
+					   sizeof(udp), AF_UNSPEC,
+					   0, K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	ret = net_pkt_write(pkt, udp, sizeof(udp));
+	zassert_equal(ret, 0, "Cannot write data to pkt");
+
+	hdr = NET_ETH_HDR(pkt);
+
+	/* Set the pointers to ll src and dst addresses */
+	lladdr = net_pkt_lladdr_src(pkt);
+	memcpy(lladdr->addr, hdr->src.addr, sizeof(struct net_eth_addr));
+	lladdr->len = sizeof(struct net_eth_addr);
+	lladdr->type = NET_LINK_ETHERNET;
+
+	lladdr = net_pkt_lladdr_dst(pkt);
+	memcpy(lladdr->addr, hdr->dst.addr, sizeof(struct net_eth_addr));
+	lladdr->len = sizeof(struct net_eth_addr);
+	lladdr->type = NET_LINK_ETHERNET;
+
+	zassert_mem_equal(net_pkt_lladdr_src(pkt)->addr,
+			  src, NET_ETH_ADDR_LEN,
+			  "Source address mismatch");
+	zassert_mem_equal(net_pkt_lladdr_dst(pkt)->addr,
+			  dst, NET_ETH_ADDR_LEN,
+			  "Destination address mismatch");
+
+	pkt2 = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_null(pkt2, "Cannot clone pkt");
+
+	/* Make sure we still point to the correct addresses after cloning */
+	zassert_mem_equal(net_pkt_lladdr_src(pkt2)->addr,
+			  src, NET_ETH_ADDR_LEN,
+			  "Source address mismatch");
+	zassert_mem_equal(net_pkt_lladdr_dst(pkt2)->addr,
+			  dst, NET_ETH_ADDR_LEN,
+			  "Destination address mismatch");
+
+	net_pkt_unref(pkt2);
+
+	/* Get rid of the Ethernet header. */
+	net_buf_pull(pkt->frags, hdr_len);
+
+	/* Make sure we still point to the correct addresses after pulling
+	 * the Ethernet header.
+	 */
+	zassert_mem_equal(net_pkt_lladdr_src(pkt)->addr,
+			  src, NET_ETH_ADDR_LEN,
+			  "Source address mismatch");
+	zassert_mem_equal(net_pkt_lladdr_dst(pkt)->addr,
+			  dst, NET_ETH_ADDR_LEN,
+			  "Destination address mismatch");
+
+	/* Clone the packet and check that the link layer addresses are
+	 * still correct.
+	 */
+
+	pkt2 = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_null(pkt2, "Cannot clone pkt");
+
+	zassert_not_equal(net_pkt_lladdr_src(pkt2)->addr,
+			  net_pkt_lladdr_src(pkt)->addr,
+			  "Source address should not be the same");
+
+	zassert_mem_equal(net_pkt_lladdr_src(pkt2)->addr,
+			  src, NET_ETH_ADDR_LEN,
+			  "Source address mismatch");
+	zassert_mem_equal(net_pkt_lladdr_dst(pkt2)->addr,
+			  dst, NET_ETH_ADDR_LEN,
+			  "Destination address mismatch");
+
+	net_pkt_unref(pkt);
+	net_pkt_unref(pkt2);
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);

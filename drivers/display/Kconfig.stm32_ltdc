@@ -52,6 +52,9 @@ config STM32_LTDC_FB_NUM
 	    - 1 single frame buffer in stm32 ltdc driver.
 	    - 2 double frame buffer in stm32 ltdc driver.
 
+config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
+	bool "Use shared multi heap for the display buffer"
+
 config STM32_LTDC_DISABLE_FMC_BANK1
 	bool "Disable FMC bank1 for STM32F7/H7 series"
 	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F7X

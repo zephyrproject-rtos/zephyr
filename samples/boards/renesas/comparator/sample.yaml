@@ -1,0 +1,9 @@
+sample:
+  name: Comparator
+tests:
+  sample.boards.renesas.comparator:
+    build_only: true
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+    tags: comparator

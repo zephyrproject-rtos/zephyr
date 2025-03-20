@@ -125,6 +125,9 @@ Set ``--shield nxp_btb44_ov5640`` when you invoke ``west build``. For example:
    :shield: nxp_btb44_ov5640
    :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

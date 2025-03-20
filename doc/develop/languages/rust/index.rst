@@ -36,7 +36,7 @@ In order to enable Rust support in a Zephyr application, a few things need to be
     to do this (as well as the CMake setup from the next step) is to start with one of the samples
     in :module_file:`modules/lang/rust/samples <zephyr-lang-rust:samples>`.
 
-3.  Configure the application's :file:`CMakeLists.txt` file to support CMake.  Again this is easiest
+3.  Configure the application's :file:`CMakeLists.txt` file to support Rust.  Again this is easiest
     to copy from a sample, but this will look something like:
 
     .. code-block:: cmake

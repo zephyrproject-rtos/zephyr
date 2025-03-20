@@ -1,4 +1,4 @@
-description: STM32 L5 flash controller
+description: STM32L5 flash controller
 
 compatible: "st,stm32l5-flash-controller"
 

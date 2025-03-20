@@ -28,7 +28,6 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 _WINDOWS = platform.system() == 'Windows'
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  ST STM32H7 Ethernet
+  STM32H7 Ethernet
 
   This binding file describes the device tree properties required to configure
   and use the Ethernet controller on STM32H7 and STM32H5 series microcontrollers.

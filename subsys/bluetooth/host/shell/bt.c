@@ -12,6 +12,9 @@
  */
 
 #include <errno.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/types.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -358,7 +361,8 @@ static void print_data_set(uint8_t set_value_len,
 
 static bool data_verbose_cb(struct bt_data *data, void *user_data)
 {
-	bt_shell_fprintf_info("%*sType 0x%02x: ", strlen(scan_response_label), "", data->type);
+	bt_shell_fprintf_info("%*sType 0x%02x: ",
+			      (int)strlen(scan_response_label), "", data->type);
 
 	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
@@ -569,10 +573,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 
 	if (scan_verbose_output) {
 		bt_shell_info("%*s[SCAN DATA START - %s]",
-			      strlen(scan_response_label), "",
+			      (int)strlen(scan_response_label), "",
 			      scan_response_type_txt(info->adv_type));
 		bt_data_parse(&buf_copy, data_verbose_cb, NULL);
-		bt_shell_info("%*s[SCAN DATA END]", strlen(scan_response_label), "");
+		bt_shell_info("%*s[SCAN DATA END]", (int)strlen(scan_response_label), "");
 	}
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -1932,7 +1936,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		csis_ad_len = csis_ad_data_add(&data_array[ad_len],
 					       data_array_size - ad_len, discoverable);
 		if (csis_ad_len < 0) {
-			bt_shell_error("Failed to add CSIS data (err %d)", csis_ad_len);
+			bt_shell_error("Failed to add CSIS data (err %zd)", csis_ad_len);
 			return ad_len;
 		}
 
@@ -3238,10 +3242,17 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 #if defined(CONFIG_BT_CENTRAL)
 static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 {
+	struct bt_le_conn_param conn_param;
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn = NULL;
 	uint32_t options = 0;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST) || IS_ENABLED(CONFIG_BT_BAP_BROADCAST_ASSISTANT)) {
+		conn_param = *BT_BAP_CONN_PARAM_RELAXED;
+	} else {
+		conn_param = *BT_LE_CONN_PARAM_DEFAULT;
+	}
 
 	*ercd = 0;
 
@@ -3279,7 +3290,7 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT, &conn);
+	err = bt_conn_le_create(&addr, create_params, &conn_param, &conn);
 	if (err) {
 		*ercd = err;
 		return -ENOEXEC;

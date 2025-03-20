@@ -60,37 +60,7 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access Controller     |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_n657x0_q/nucleo_n657x0_q_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -183,7 +153,7 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             :board: nucleo_n657x0_q
             :goals: build flash
 
-.. note::
+         .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
             * BOOT0: 0
@@ -194,12 +164,6 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 
@@ -216,10 +180,10 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
          Build and load an application using ``nucleo_n657x0_q/stm32n657xx/sb`` target (you
          can also use the shortened form: ``nucleo_n657x0_q//sb``)
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: nucleo_n657x0_q
-   :goals: build flash
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q
+            :goals: build flash
 
 
 Run a serial host program to connect to your board:

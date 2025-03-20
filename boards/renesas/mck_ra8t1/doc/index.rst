@@ -72,49 +72,11 @@ Detailed Hardware features for the  MCB-RA8T1 board can be found at `MCB-RA8T1 -
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for MCB-RA8T1 board:
+.. zephyr:board-supported-hw::
 
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| GPIO         | on-chip    | gpio                 |
-+--------------+------------+----------------------+
-| MPU          | on-chip    | arch/arm             |
-+--------------+------------+----------------------+
-| NVIC         | on-chip    | arch/arm             |
-+--------------+------------+----------------------+
-| UART         | on-chip    | serial               |
-+--------------+------------+----------------------+
-| CLOCK        | on-chip    | clock control        |
-+--------------+------------+----------------------+
-| ENTROPY      | on-chip    | entropy              |
-+--------------+------------+----------------------+
-| SPI          | on-chip    | spi                  |
-+--------------+------------+----------------------+
-| FLASH        | on-chip    | flash                |
-+--------------+------------+----------------------+
-| PWM          | on-chip    | pwm                  |
-+--------------+------------+----------------------+
-| COUNTER      | on-chip    | counter              |
-+--------------+------------+----------------------+
-| CAN          | on-chip    | canfd                |
-+--------------+------------+----------------------+
-| I2C          | on-chip    | i2c                  |
-+--------------+------------+----------------------+
-| ETHERNET     | on-chip    | ethernet             |
-+--------------+------------+----------------------+
-| ADC          | on-chip    | adc                  |
-+--------------+------------+----------------------+
-| SDHC         | on-chip    | sdhc                 |
-+--------------+------------+----------------------+
-| DAC          | on-chip    | dac                  |
-+--------------+------------+----------------------+
-| USBFS        | on-chip    | udc                  |
-+--------------+------------+----------------------+
+.. note::
 
-**Note:** For using SDHC module on EK-RA8M1, Connect microSD Card to microSD Socket (CN12)
-
-Other hardware features are currently not supported by the port.
+   For using SDHC module on EK-RA8M1, Connect microSD Card to microSD Socket (CN12)
 
 Programming and Debugging
 *************************

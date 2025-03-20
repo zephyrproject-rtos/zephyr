@@ -175,11 +175,14 @@ SECTIONS {
 
   /* Cold code in IMR memory */
   .cold : ALIGN(4096) {
+    __cold_start = .;
     *(.cold .cold.* )
+    __cold_end = .;
   } >imr
 
   /* Cold data. */
   .coldrodata : ALIGN(4096) {
+    __coldrodata_start = .;
     *(.coldrodata .coldrodata.*)
     _imr_end = .;
   } >imr

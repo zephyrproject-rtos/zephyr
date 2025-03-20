@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32N6 CPU Clock
+  STM32N6 CPU Clock.
+
   Describes the STM32N6 CPU clock multiplexer. On STM32N6, this is the CPU
   clock that feeds the SysTick.
+
   For instance:
   &cpusw {
     clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;

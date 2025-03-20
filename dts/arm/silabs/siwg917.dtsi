@@ -78,22 +78,22 @@
 			status = "disabled";
 		};
 
-		uart1: uart@44000000 {
+		uart0: uart@44000000 {
 			compatible = "ns16550";
 			reg = <0x44000000 0x1000>;
 			interrupts = <38 0>;
 			reg-shift = <2>;
-			clocks = <&clock0 SIWX91X_CLK_UART1>;
+			clocks = <&clock0 SIWX91X_CLK_UART0>;
 			current-speed = <115200>;
 			status = "disabled";
 		};
 
-		uart2: uart@45020000 {
+		uart1: uart@45020000 {
 			compatible = "ns16550";
 			reg = <0x45020000 0x1000>;
 			interrupts = <39 0>;
 			reg-shift = <2>;
-			clocks = <&clock0 SIWX91X_CLK_UART2>;
+			clocks = <&clock0 SIWX91X_CLK_UART1>;
 			current-speed = <115200>;
 			status = "disabled";
 		};
@@ -259,6 +259,30 @@
 			silabs,sram-desc-addr = <0x24061c00>;
 			#dma-cells = < 1>;
 			dma-channels = <12>;
+			status = "disabled";
+		};
+
+		pwm: pwm@47070000 {
+			compatible = "silabs,siwx91x-pwm";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47070000 0x14C>;
+			interrupts = <48 0>;
+			interrupt-names = "pwm";
+			clocks = <&clock0 SIWX91X_CLK_PWM>;
+			#pwm-cells = <2>;
+			silabs,ch_prescaler = <64 64 64 64>;
+			status = "disabled";
+		};
+
+		watchdog: wdt@24048300 {
+			compatible = "silabs,siwx91x-wdt";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24048300 0x1C>;
+			interrupts = <20 0>;
+			interrupt-names = "watchdog";
+			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
 			status = "disabled";
 		};
 	};

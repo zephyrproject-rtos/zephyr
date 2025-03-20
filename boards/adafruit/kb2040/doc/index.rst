@@ -27,54 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_kb2040 board configuration supports the following
-hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v6m-nvic`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - USB Device
-     - :kconfig:option:`CONFIG_USB_DEVICE_STACK`
-     - :dtcompatible:`raspberrypi,pico-usbd`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - Watchdog Timer (WDT)
-     - :kconfig:option:`CONFIG_WATCHDOG`
-     - :dtcompatible:`raspberrypi,pico-watchdog`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - Flash
-     - :kconfig:option:`CONFIG_FLASH`
-     - :dtcompatible:`raspberrypi,pico-flash`
-   * - Clock controller
-     - :kconfig:option:`CONFIG_CLOCK_CONTROL`
-     - :dtcompatible:`raspberrypi,pico-clock-controller`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

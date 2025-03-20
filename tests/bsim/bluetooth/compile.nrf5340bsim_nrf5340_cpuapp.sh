@@ -18,6 +18,7 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf sysbuild=1  co
 app=tests/bsim/bluetooth/ll/throughput sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/multiple_id sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/bis sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group.conf sysbuild=1 compile
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh

@@ -81,54 +81,14 @@ Nucleo F767ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f767zi board configuration supports the following hardware
-features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet (*)                        |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb_device                          |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-
-(*) nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
+.. note::
+    nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
     instability (:github:`26519`).
     Use of cut-Z is advised.
     see restrictions errata:
     https://www.st.com/content/ccc/resource/technical/document/errata_sheet/group0/23/a6/11/0b/30/24/46/a5/DM00257543/files/DM00257543.pdf/jcr:content/translations/en.DM00257543.pdf
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f767zi/nucleo_f767zi_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 

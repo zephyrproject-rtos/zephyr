@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* Timeout in microseconds used to wait for flags */
 #define RTC_TIMEOUT 1000000
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 #define RTC_STM32_ALARMS_COUNT	DT_INST_PROP(0, alarms_count)
 
 #define RTC_STM32_ALRM_A	0U
@@ -95,7 +95,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #else
 #define RTC_STM32_EXTI_LINE	0
 #endif /* DT_INST_NODE_HAS_PROP(0, alrm_exti_line) */
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 /*
@@ -120,7 +120,7 @@ struct rtc_stm32_config {
 #endif
 };
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 struct rtc_stm32_alrm {
 	LL_RTC_AlarmTypeDef ll_rtc_alrm;
 	/* user-defined alarm mask, values from RTC_ALARM_TIME_MASK */
@@ -129,14 +129,14 @@ struct rtc_stm32_alrm {
 	void *user_data;
 	bool is_pending;
 };
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 struct rtc_stm32_data {
 	struct k_mutex lock;
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	struct rtc_stm32_alrm rtc_alrm_a;
 	struct rtc_stm32_alrm rtc_alrm_b;
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 };
 
 static int rtc_stm32_configure(const struct device *dev)
@@ -185,7 +185,7 @@ static int rtc_stm32_configure(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 static inline ErrorStatus rtc_stm32_init_alarm(RTC_TypeDef *rtc, uint32_t format,
 					LL_RTC_AlarmTypeDef *ll_alarm_struct, uint16_t id)
 {
@@ -329,7 +329,7 @@ static void rtc_stm32_irq_config(const struct device *dev)
 		    rtc_stm32_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 static int rtc_stm32_init(const struct device *dev)
 {
@@ -350,6 +350,36 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/**
+	 * The STM32WB0 series has no bit for clock gating of RTC's APB
+	 * interface. On the other hand, the RTCEN bit that would control
+	 * whether the RTC IP is clock gated or not exists, and has been
+	 * placed in APB0ENR. The call to clock_control_on() that just
+	 * completed should have set this bit to 1.
+	 *
+	 * However, according to RefMan, the software must wait two slow
+	 * clock cycles before the IP is actually usable, due to clock
+	 * resynchronization delays. Sadly, there is no hardware register
+	 * we can poll to wait until RTC is ready...
+	 *
+	 * In worst case scenario of 24 kHz LSI, we have to wait for:
+	 *		tREADY = (2 cycles / 24'000 Hz) ≅ 84µs
+	 *
+	 * Spin until that much time has elapsed, and RTC should be up.
+	 *
+	 * N.B.: we can't use k_busy_wait because it uses the SysTick
+	 * as time base, but SysTick is initialized after the RTC...
+	 */
+	const uint32_t cycles_to_waste =
+		84 * (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / USEC_PER_SEC);
+	volatile uint32_t i = cycles_to_waste;
+
+	while (--i > 0) {
+		/* Do nothing - loop itself burns enough cycles */
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+
 	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
@@ -362,16 +392,22 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
 #endif
 	/* Enable RTC clock source */
-	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
-		LOG_ERR("clock configure failed\n");
-		return -EIO;
+	if (cfg->pclken[1].enr != NO_SEL) {
+		err = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
+
+		if (err < 0) {
+			LOG_ERR("clock configure failed\n");
+			return -EIO;
+		}
 	}
 
 /*
  * On STM32WBAX series, there is no bit in BCDR register to enable RTC.
  * Enabling RTC is done directly via the RCC APB register bit.
+ * On STM32WB0 series, LL_RCC_EnableRTC is not provided by STM32CubeWB0,
+ * but RTC IP clock has already been turned on - skip the call as well.
  */
-#ifndef CONFIG_SOC_SERIES_STM32WBAX
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
@@ -385,7 +421,7 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_PWR_DisableBkUpAccess();
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	rtc_stm32_irq_config(dev);
 
 	ll_func_exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE);
@@ -394,7 +430,7 @@ static int rtc_stm32_init(const struct device *dev)
 	memset(&(data->rtc_alrm_a), 0, sizeof(struct rtc_stm32_alrm));
 	memset(&(data->rtc_alrm_b), 0, sizeof(struct rtc_stm32_alrm));
 	k_mutex_unlock(&data->lock);
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 	return err;
 }
@@ -564,7 +600,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	return 0;
 }
 
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 static void rtc_stm32_init_ll_alrm_struct(LL_RTC_AlarmTypeDef *p_rtc_alarm,
 					const struct rtc_time *timeptr, uint16_t mask)
 {
@@ -959,7 +995,7 @@ unlock:
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
@@ -1042,13 +1078,13 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 static DEVICE_API(rtc, rtc_stm32_driver_api) = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
-#ifdef CONFIG_RTC_ALARM
+#ifdef STM32_RTC_ALARM_ENABLED
 	.alarm_get_supported_fields = rtc_stm32_alarm_get_supported_fields,
 	.alarm_set_time = rtc_stm32_alarm_set_time,
 	.alarm_get_time = rtc_stm32_alarm_get_time,
 	.alarm_set_callback = rtc_stm32_alarm_set_callback,
 	.alarm_is_pending = rtc_stm32_alarm_is_pending,
-#endif /* CONFIG_RTC_ALARM */
+#endif /* STM32_RTC_ALARM_ENABLED */
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))

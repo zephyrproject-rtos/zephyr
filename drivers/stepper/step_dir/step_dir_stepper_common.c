@@ -16,10 +16,10 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 
 	switch (data->direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 1);
+		ret = gpio_pin_set_dt(&config->dir_pin, 1 ^ config->invert_direction);
 		break;
 	case STEPPER_DIRECTION_NEGATIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 0);
+		ret = gpio_pin_set_dt(&config->dir_pin, 0 ^ config->invert_direction);
 		break;
 	default:
 		LOG_ERR("Unsupported direction: %d", data->direction);
@@ -326,6 +326,21 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 		config->timing_source->start(dev);
 	}
 
+	return 0;
+}
+
+int step_dir_stepper_common_stop(const struct device *dev)
+{
+	const struct step_dir_stepper_common_config *config = dev->config;
+	int ret;
+
+	ret = config->timing_source->stop(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop timing source: %d", ret);
+		return ret;
+	}
+
+	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
 	return 0;
 }
 

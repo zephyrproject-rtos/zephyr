@@ -2227,8 +2227,8 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	uint16_t conn_interval_unit_old;
 	uint16_t conn_interval_unit_new;
 	uint32_t ticks_win_offset = 0U;
-	uint16_t conn_interval_old_us;
-	uint16_t conn_interval_new_us;
+	uint32_t conn_interval_old_us;
+	uint32_t conn_interval_new_us;
 	uint32_t ticks_slot_overhead;
 	uint16_t conn_interval_old;
 	uint16_t conn_interval_new;
@@ -2744,7 +2744,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t sync_remainder_us;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint32_t start_us;
 	uint32_t ret;
 	uint8_t id;

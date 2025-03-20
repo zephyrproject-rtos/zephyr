@@ -71,6 +71,8 @@ int spi_nxp_init_common(const struct device *dev);
 /* common api function for now */
 int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg);
 
+void lpspi_wait_tx_fifo_empty(const struct device *dev);
+
 /* Argument to MCUX SDK IRQ handler */
 #define LPSPI_IRQ_HANDLE_ARG COND_CODE_1(CONFIG_NXP_LP_FLEXCOMM, (LPSPI_GetInstance(base)), (base))
 

@@ -373,7 +373,7 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -387,7 +387,7 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 	};

@@ -130,13 +130,8 @@ ZTEST(video_common, test_video_ctrl)
 	int value;
 
 	/* Exposure control, expected to be supported by all imagers */
-	zexpect_ok(video_set_ctrl(imager_dev, VIDEO_CID_EXPOSURE, (void *)30));
-	zexpect_ok(video_get_ctrl(imager_dev, VIDEO_CID_EXPOSURE, &value));
-	zexpect_equal(value, 30);
-
-	/* Gain control, expected to be supported by all imagers */
-	zexpect_ok(video_set_ctrl(imager_dev, VIDEO_CID_GAIN, (void *)30));
-	zexpect_ok(video_get_ctrl(imager_dev, VIDEO_CID_GAIN, &value));
+	zexpect_ok(video_set_ctrl(imager_dev, VIDEO_CID_PRIVATE_BASE + 0x01, (void *)30));
+	zexpect_ok(video_get_ctrl(imager_dev, VIDEO_CID_PRIVATE_BASE + 0x01, &value));
 	zexpect_equal(value, 30);
 }
 
@@ -157,7 +152,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_ok(video_set_format(rx_dev, VIDEO_EP_OUT, &fmt));
 
 	/* Allocate a buffer, assuming prj.conf gives enough memory for it */
-	vbuf = video_buffer_alloc(fmt.pitch * fmt.height, K_FOREVER);
+	vbuf = video_buffer_alloc(fmt.pitch * fmt.height, K_NO_WAIT);
 	zexpect_not_null(vbuf);
 
 	/* Start the virtual hardware */
@@ -184,6 +179,9 @@ ZTEST(video_common, test_video_vbuf)
 
 	/* Nothing left in the queue, possible to stop */
 	zexpect_ok(video_stream_stop(rx_dev));
+
+	/* Nothing tested, but this should not crash */
+	video_buffer_release(vbuf);
 }
 
 ZTEST_SUITE(video_emul, NULL, NULL, NULL, NULL, NULL);

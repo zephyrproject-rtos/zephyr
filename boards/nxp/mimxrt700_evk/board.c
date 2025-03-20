@@ -406,6 +406,36 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+	/* Power on usb ram array as need, powered USB0RAM array*/
+	POWER_DisablePD(kPDRUNCFG_APD_USB0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USB0_SRAM);
+	/* Apply the config */
+	POWER_ApplyPD();
+	/* disable the read and write gate */
+	SYSCON4->USB0_MEM_CTRL |= (SYSCON4_USB0_MEM_CTRL_MEM_WIG_MASK |
+				   SYSCON4_USB0_MEM_CTRL_MEM_RIG_MASK |
+				   SYSCON4_USB0_MEM_CTRL_MEM_STDBY_MASK);
+	/* Enable the USBPHY0 CLOCK */
+	SYSCON4->USBPHY0_CLK_ACTIVE |= SYSCON4_USBPHY0_CLK_ACTIVE_IPG_CLK_ACTIVE_MASK;
+	CLOCK_AttachClk(k32KHZ_WAKE_to_USB);
+	CLOCK_AttachClk(kOSC_CLK_to_USB_24MHZ);
+	CLOCK_EnableClock(kCLOCK_Usb0);
+	CLOCK_EnableClock(kCLOCK_UsbphyRef);
+	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSBPHY0_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, usbClockFreq);
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, usbClockFreq);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_AttachClk(kLPOSC_to_WWDT0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sc_timer), okay)
+	CLOCK_AttachClk(kFRO0_DIV6_to_SCT);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)

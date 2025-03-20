@@ -33,6 +33,14 @@ extern void z_arm_reserved(void);
  * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
  * control functions are mapped to the GIC driver interface.
  *
+ * When GIC is used together with other interrupt controller for
+ * multi-level interrupts support (i.e. CONFIG_MULTI_LEVEL_INTERRUPTS
+ * is enabled), the architecture interrupt control functions are mapped
+ * to the SoC layer in `include/arch/arm/irq.h`.
+ * The exported arm interrupt control functions which are wrappers of
+ * GIC control could be used for SoC to do level 1 irq control to implement SoC
+ * layer interrupt control functions.
+ *
  * When a custom interrupt controller is used (i.e.
  * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
  * interrupt control functions are mapped to the SoC layer in
@@ -40,17 +48,17 @@ extern void z_arm_reserved(void);
  */
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-void arch_irq_enable(unsigned int irq)
+void arm_irq_enable(unsigned int irq)
 {
 	arm_gic_irq_enable(irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void arm_irq_disable(unsigned int irq)
 {
 	arm_gic_irq_disable(irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int arm_irq_is_enabled(unsigned int irq)
 {
 	return arm_gic_irq_is_enabled(irq);
 }
@@ -65,10 +73,11 @@ int arch_irq_is_enabled(unsigned int irq)
  * priority levels which are reserved: three for various types of exceptions,
  * and possibly one additional to support zero latency interrupts.
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	arm_gic_irq_set_priority(irq, prio, flags);
 }
+
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);

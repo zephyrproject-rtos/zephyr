@@ -283,7 +283,7 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 {
 	const bool is_negative = val_str[0] == '-';
 	const char *decimal_pos = strchr(val_str, '.');
-	long value;
+	int64_t value;
 	char *endptr;
 
 	/* Parse int portion */

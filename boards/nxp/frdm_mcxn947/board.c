@@ -84,7 +84,7 @@ __ramfunc static void enable_cache64(void)
 }
 #endif
 
-static int frdm_mcxn947_init(void)
+void board_early_init_hook(void)
 {
 	power_mode_od();
 
@@ -148,23 +148,27 @@ static int frdm_mcxn947_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM2);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM4);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm7))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 1u);
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM7);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM7);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
@@ -394,8 +398,4 @@ static int frdm_mcxn947_init(void)
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
-
-	return 0;
 }
-
-SYS_INIT(frdm_mcxn947_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);

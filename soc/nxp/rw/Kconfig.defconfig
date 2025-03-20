@@ -29,6 +29,7 @@ config MAIN_STACK_SIZE
 	default 2560
 
 config BT_LONG_WQ_STACK_SIZE
+	default 5120 if (WIFI || IEEE802154)
 	default 2560
 
 config SYSTEM_WORKQUEUE_STACK_SIZE

@@ -23,36 +23,7 @@ For more information about the Apollo4 Blue Plus SoC and Apollo4 Blue Plus KXR E
 Supported Features
 ==================
 
-The Apollo4 Blue Plus KXR EVB board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| STIMER    | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C(M)    | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/ambiq/apollo4p_blue_kxr_evb/apollo4p_blue_kxr_evb_defconfig`
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 =========================

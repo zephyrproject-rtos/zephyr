@@ -149,16 +149,24 @@ typedef struct {
  */
 #define Z_TICK_ABS(t) (K_TICKS_FOREVER - 1 - (t))
 
+/* Test for relative timeout */
+#if CONFIG_TIMEOUT_64BIT
+#define Z_IS_TIMEOUT_RELATIVE(timeout)  (Z_TICK_ABS((timeout).ticks) < 0)
+#else
+#define Z_IS_TIMEOUT_RELATIVE(timeout)  true
+#endif
+
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
 /** @endcond */
 
+#ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
-
+#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 /* kernel clocks */
 

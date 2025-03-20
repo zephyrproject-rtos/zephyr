@@ -31,6 +31,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
 #define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc23x0_aes)
+#define CRYPTO_DEV_COMPAT ti_cc23x0_aes
 #elif CONFIG_CRYPTO_SI32
 #define CRYPTO_DEV_COMPAT silabs_si32_aes
 #else
@@ -396,7 +398,7 @@ static const uint8_t ccm_expected[31] = {0x58, 0x8c, 0x97, 0x9a, 0x61, 0xc6, 0x6
 void ccm_mode(const struct device *dev)
 {
 	uint8_t encrypted[50] __aligned(IO_ALIGNMENT_BYTES);
-	uint8_t decrypted[25] __aligned(IO_ALIGNMENT_BYTES);
+	uint8_t decrypted[32] __aligned(IO_ALIGNMENT_BYTES);
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,

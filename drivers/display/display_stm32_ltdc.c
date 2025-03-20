@@ -21,6 +21,9 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
+#if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
+#include <zephyr/multi_heap/shared_multi_heap.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
@@ -391,6 +394,21 @@ static int stm32_ltdc_init(const struct device *dev)
 		return err;
 	}
 
+#if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
+	data->frame_buffer = shared_multi_heap_aligned_alloc(
+			CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE,
+			32,
+			CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
+
+	if (data->frame_buffer == NULL) {
+		return -ENOMEM;
+	}
+
+	data->pend_buf = data->frame_buffer;
+	data->front_buf = data->frame_buffer;
+	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t) data->frame_buffer;
+#endif
+
 	/* Configure layer 1 (only one layer is used) */
 	/* LTDC starts fetching pixels and sending them to display after this call */
 	err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
@@ -503,7 +521,19 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #define STM32_LTDC_FRAME_BUFFER_LEN(inst)							\
 	(STM32_LTDC_INIT_PIXEL_SIZE * DT_INST_PROP(inst, height) * DT_INST_PROP(inst, width))	\
 
+#if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
+#define STM32_LTDC_FRAME_BUFFER_ADDR(inst)  (NULL)
+#define STM32_LTDC_FRAME_BUFFER_DEFINE(inst)
+#else
+#define STM32_LTDC_FRAME_BUFFER_ADDR(inst)  frame_buffer_##inst
+#define STM32_LTDC_FRAME_BUFFER_DEFINE(inst)    \
+	/* frame buffer aligned to cache line width for optimal cache flushing */                  \
+	FRAME_BUFFER_SECTION static uint8_t __aligned(32)                                          \
+		frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];
+#endif
+
 #define STM32_LTDC_DEVICE(inst)									\
+	STM32_LTDC_FRAME_BUFFER_DEFINE(inst);                       \
 	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);							\
 	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);					\
 	static void stm32_ltdc_irq_config_func_##inst(const struct device *dev)			\
@@ -515,15 +545,11 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 			    0);									\
 		irq_enable(DT_INST_IRQN(inst));							\
 	}											\
-	/* frame buffer aligned to cache line width for optimal cache flushing */		\
-	FRAME_BUFFER_SECTION static uint8_t __aligned(32)					\
-				frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM *			\
-							STM32_LTDC_FRAME_BUFFER_LEN(inst)];	\
 	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {			\
-		.frame_buffer = frame_buffer_##inst,						\
+		.frame_buffer = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
 		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),				\
-		.front_buf = frame_buffer_##inst,						\
-		.pend_buf = frame_buffer_##inst,						\
+		.front_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
+		.pend_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),					\
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
@@ -594,7 +620,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 				.Alpha0 = 0,							\
 				.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA,			\
 				.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA,			\
-				.FBStartAdress = (uint32_t) frame_buffer_##inst,		\
+				.FBStartAdress = (uint32_t) STM32_LTDC_FRAME_BUFFER_ADDR(inst), \
 				.ImageWidth = DT_INST_PROP(inst, width),			\
 				.ImageHeight = DT_INST_PROP(inst, height),			\
 				.Backcolor.Red =						\

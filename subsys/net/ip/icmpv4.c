@@ -493,7 +493,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv4_addr(src),
 		net_sprint_ipv4_addr(&ip_hdr->src));
 
-	if (net_send_data(reply) < 0) {
+	if (net_try_send_data(reply, K_NO_WAIT) < 0) {
 		goto drop;
 	}
 
@@ -580,15 +580,16 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	net_pkt_cursor_init(pkt);
 	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
-	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
-	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
+	net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			 net_pkt_lladdr_src(orig)->addr,
+			 net_pkt_lladdr_src(orig)->len);
 
 	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
 		type, code,
 		net_sprint_ipv4_addr(&ip_hdr->dst),
 		net_sprint_ipv4_addr(&ip_hdr->src));
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(orig));
 		return 0;
 	}

@@ -27,7 +27,12 @@ void z_arm_interrupt_init(void)
 {
 	int irq = 0;
 
+/* CONFIG_2ND_LVL_ISR_TBL_OFFSET could be treated as total number of level1 interrupts */
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && defined(CONFIG_2ND_LVL_ISR_TBL_OFFSET)
+	for (; irq < CONFIG_2ND_LVL_ISR_TBL_OFFSET; irq++) {
+#else
 	for (; irq < CONFIG_NUM_IRQS; irq++) {
+#endif
 		NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
 	}
 }

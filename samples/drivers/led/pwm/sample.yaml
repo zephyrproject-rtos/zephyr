@@ -7,6 +7,8 @@ tests:
     tags: LED
     depends_on: pwm
     platform_exclude: reel_board
+    integration_platforms:
+      - frdm_k22f
     timeout: 20
     harness: console
     harness_config:

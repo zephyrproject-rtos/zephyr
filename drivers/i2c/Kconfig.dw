@@ -5,7 +5,7 @@ menuconfig I2C_DW
 	bool "Design Ware I2C support"
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
-	select PINCTRL if DT_HAS_RASPBERRYPI_PICO_I2C_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pinctrl-0)
 	help
 	  Enable the Design Ware I2C driver
 

@@ -157,22 +157,7 @@ More information about STM32WB5MMG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MMG board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mmg/stm32wb5mmg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================

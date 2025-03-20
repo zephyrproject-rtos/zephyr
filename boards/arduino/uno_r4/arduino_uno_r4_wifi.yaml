@@ -1,4 +1,4 @@
-identifier: arduino_uno_r4_wifi
+identifier: arduino_uno_r4@wifi
 name: Arduino Uno R4 WiFi
 type: mcu
 arch: arm

@@ -496,7 +496,11 @@ enum net_ip_mtu {
 	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
 	 * without fragmentation.
 	 */
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	NET_IPV4_MTU = CONFIG_NET_IPV4_MTU,
+#else
 	NET_IPV4_MTU = 576,
+#endif
 };
 
 /** @brief Network packet priority settings described in IEEE 802.1Q Annex I.1 */
@@ -1539,6 +1543,8 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 		}
 
 		break;
+	default:
+		return false;
 	}
 
 	return false;

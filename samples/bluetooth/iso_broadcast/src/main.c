@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -31,9 +32,20 @@ static uint16_t seq_num;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	if (err != 0) {
+		printk("Failed to setup ISO TX data path: %d\n", err);
+	}
 
 	k_sem_give(&sem_big_cmplt);
 }
@@ -81,7 +93,9 @@ static struct bt_iso_big_create_param big_create_param = {
 	.bis_channels = bis,
 	.interval = BIG_SDU_INTERVAL_US, /* in microseconds */
 	.latency = 10, /* in milliseconds */
-	.packing = 0, /* 0 - sequential, 1 - interleaved */
+	.packing = (IS_ENABLED(CONFIG_ISO_PACKING_INTERLEAVED) ?
+		    BT_ISO_PACKING_INTERLEAVED :
+		    BT_ISO_PACKING_SEQUENTIAL),
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 

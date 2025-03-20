@@ -922,6 +922,10 @@ dark-mode-toggle::part(toggleLabel){
   font-size: unset;
 }
 
+div.graphviz > object {
+    filter: var(--graphviz-filter);
+}
+
 /* Home page grid display */
 .grid {
     list-style-type: none !important;

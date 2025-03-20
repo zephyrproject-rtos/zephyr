@@ -29,6 +29,9 @@
 
 LOG_MODULE_REGISTER(hci_ipc, CONFIG_BT_LOG_LEVEL);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "HCI IPC driver can drop ACL data without Controller-to-Host ACL flow control");
+
 static struct ipc_ept hci_ept;
 
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);

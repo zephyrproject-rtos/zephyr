@@ -261,11 +261,9 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 	/* Add peer to neighbor table */
 	setup_iid_address(ctx->ipv6cp.peer_options.iid, &peer_addr);
 
-	peer_lladdr.addr = ctx->ipv6cp.peer_options.iid;
-	peer_lladdr.len = sizeof(ctx->ipv6cp.peer_options.iid);
-
-	/* TODO: What should be the type? */
-	peer_lladdr.type = NET_LINK_DUMMY;
+	(void)net_linkaddr_create(&peer_lladdr, ctx->ipv6cp.peer_options.iid,
+				  sizeof(ctx->ipv6cp.peer_options.iid),
+				  NET_LINK_DUMMY);
 
 	nbr = net_ipv6_nbr_add(ctx->iface, &peer_addr, &peer_lladdr,
 			       false, NET_IPV6_NBR_STATE_STATIC);
@@ -317,11 +315,9 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	/* Remove peer from neighbor table */
 	setup_iid_address(ctx->ipv6cp.peer_options.iid, &peer_addr);
 
-	peer_lladdr.addr = ctx->ipv6cp.peer_options.iid;
-	peer_lladdr.len = sizeof(ctx->ipv6cp.peer_options.iid);
-
-	/* TODO: What should be the type? */
-	peer_lladdr.type = NET_LINK_DUMMY;
+	(void)net_linkaddr_create(&peer_lladdr, ctx->ipv6cp.peer_options.iid,
+				  sizeof(ctx->ipv6cp.peer_options.iid),
+				  NET_LINK_DUMMY);
 
 	ret = net_ipv6_nbr_rm(ctx->iface, &peer_addr);
 	if (!ret) {

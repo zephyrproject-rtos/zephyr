@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor
+ * Copyright (c) 2024-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -82,9 +83,18 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	LOG_INF("ISO Channel %p connected", chan);
 
 	SET_FLAG(flag_iso_connected);
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to setup ISO RX data path: %d\n", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)

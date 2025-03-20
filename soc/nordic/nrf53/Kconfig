@@ -41,6 +41,14 @@ if SOC_SERIES_NRF53X
 VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
 VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
 
+config SOC_NRF53_ANOMALY_47_WORKAROUND
+	bool "Anomaly 47 workaround"
+	depends on NRFX_TWIM
+	help
+	  Due to Anomaly 47 the low period of SCL clock is too short to meet
+	  the I2C specification at 400 kHz. This workaround configures the I2C
+	  frequency to 390 kHz instead of 400 kHz.
+
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND

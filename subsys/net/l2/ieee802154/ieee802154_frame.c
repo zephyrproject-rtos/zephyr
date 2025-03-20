@@ -449,7 +449,7 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 					       uint8_t *authtag_len)
 {
 	uint8_t hdr_len = sizeof(struct ieee802154_fcf_seq), tag_len = 0;
-	bool broadcast = !dst->addr;
+	bool broadcast = (dst->len == 0);
 
 	/* PAN ID */
 	hdr_len += IEEE802154_PAN_ID_LENGTH;
@@ -458,7 +458,7 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 	hdr_len += broadcast ? IEEE802154_SHORT_ADDR_LENGTH : dst->len;
 
 	/* Source Address - see data_addr_to_fs_settings() */
-	hdr_len += src->addr ? src->len : dst->len;
+	hdr_len += (src->len > 0) ? src->len : dst->len;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx *sec_ctx;
@@ -539,7 +539,7 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf, b
 static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linkaddr *dst,
 								bool *broadcast)
 {
-	if (!dst->addr) {
+	if (dst->len == 0) {
 		NET_DBG("Broadcast destination");
 		*broadcast = true;
 		return IEEE802154_ADDR_MODE_SHORT;
@@ -688,7 +688,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
-	if (src->addr && src->len == IEEE802154_SHORT_ADDR_LENGTH) {
+	if (src->len == IEEE802154_SHORT_ADDR_LENGTH) {
 		params.short_addr = ntohs(*(uint16_t *)(src->addr));
 		if (ctx->short_addr != params.short_addr) {
 			goto out;

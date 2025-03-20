@@ -649,7 +649,7 @@ function(section_to_string)
       set(TEMP "${TEMP} { section ${first_index_section_name} },\n")
     endif()
 
-    # block init_100 with alphabetical order { section .z_init_EARLY?_}
+    # block init_100 with alphabetical order { section .z_init_EARLY_?_}
     set(TEMP "${TEMP}\n  block ${name_clean}_${idx}")
     if(DEFINED offset AND NOT offset EQUAL 0 )
       list(APPEND block_attr "size = ${offset}")

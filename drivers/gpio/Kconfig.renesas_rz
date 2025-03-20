@@ -8,3 +8,10 @@ config GPIO_RENESAS_RZ
 	select USE_RZ_FSP_IOPORT
 	help
 	  Enable Renesas RZ series gpio driver.
+
+config GPIO_RENESAS_RZ_HAS_GPIO_INTERRUPT
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RZ_GPIO_INT_ENABLED
+	help
+	  GPIO pins can generate interrupts at port mode.

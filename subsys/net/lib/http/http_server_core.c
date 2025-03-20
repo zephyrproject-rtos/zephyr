@@ -22,6 +22,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -762,7 +763,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
-				*path_len = strlen(resource->resource);
+				*path_len = path_len_without_query(path);
 				return resource->detail;
 			}
 		}
@@ -785,26 +786,65 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 	return NULL;
 }
 
-int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped)
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
+			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
 	struct fs_dirent dirent;
 	size_t len;
 	int ret;
 
+	len = strlen(fname);
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		*chosen_compression = HTTP_NONE;
+		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
+			snprintk(fname + len, fname_size - len, ".br");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_BR;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
+			snprintk(fname + len, fname_size - len, ".gz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_GZIP;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
+			snprintk(fname + len, fname_size - len, ".zst");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_ZSTD;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
+			snprintk(fname + len, fname_size - len, ".lzw");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_COMPRESS;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
+			snprintk(fname + len, fname_size - len, ".zz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_DEFLATE;
+				goto return_filename;
+			}
+		}
+	}
 	ret = fs_stat(fname, &dirent);
-	if (ret < 0) {
-		len = strlen(fname);
-		snprintk(fname + len, fname_size - len, ".gz");
-		ret = fs_stat(fname, &dirent);
-		*gzipped = (ret == 0);
+	if (ret != 0) {
+		return -ENOENT;
 	}
 
-	if (ret == 0) {
-		*file_size = dirent.size;
-		return ret;
-	}
-
-	return -ENOENT;
+return_filename:
+	*file_size = dirent.size;
+	return ret;
 }
 
 void http_server_get_content_type_from_extension(char *url, char *content_type,

@@ -56,6 +56,7 @@
 
 
 &flexspi {
+	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";

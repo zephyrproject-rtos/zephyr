@@ -257,7 +257,7 @@
 		};
 
 		msc: flash-controller@50030000 {
-			compatible = "silabs,gecko-flash-controller";
+			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x4000>;
 			interrupts = <55 0>;
 			interrupt-names = "msc";
@@ -281,15 +281,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			gpioa: gpio@5003c000 {
-				compatible = "silabs,gecko-gpio-port";
-				reg = <0x5003C000 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				status = "disabled";
-			};
-
-			gpiob: gpio@5003c030 {
+			gpioa: gpio@5003c030 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C030 0x30>;
 				gpio-controller;
@@ -297,7 +289,7 @@
 				status = "disabled";
 			};
 
-			gpioc: gpio@5003c060 {
+			gpiob: gpio@5003c060 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C060 0x30>;
 				gpio-controller;
@@ -305,9 +297,17 @@
 				status = "disabled";
 			};
 
-			gpiod: gpio@5003c090 {
+			gpioc: gpio@5003c090 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C090 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@5003c0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C0C0 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";

@@ -6,7 +6,7 @@ version v3.7.0 or later.
 
 Usage::
 
-    python $ZEPHYR_BASE/scripts/utils/migrate_posix_kconfigs.py -r root_path
+    python $ZEPHYR_BASE/scripts/utils/migrate_posix_kconfigs.py --root root_path --dry-run
 
 The utility will process c, cpp, h, hpp, rst, conf, CMakeLists.txt,
 yml, yaml and Kconfig files.
@@ -85,6 +85,7 @@ def process_file(path):
         with open(path) as f:
             lines = f.readlines()
 
+            lineno = 1
             for line in lines:
                 longest = ""
                 length = 0
@@ -93,17 +94,24 @@ def process_file(path):
                         length = len(m)
                         longest = m
 
+                # TIMER is just way too frequent an occurrence. Skip it.
+                skip = {"TIMER"}
                 if length != 0:
-                    modified = True
-                    line = line.replace(longest, REPLACEMENTS[longest])
-                    msg = MESSAGES.get(longest)
-                    if msg:
-                        print(
-                            f"Notice: {longest} -> {REPLACEMENTS[longest]}: {msg}")
+                    if longest in skip:
+                        pass
+                    else:
+                        modified = True
+                        old = line
+                        line = line.replace(longest, REPLACEMENTS[longest])
+                        msg = MESSAGES.get(longest)
+                        if msg:
+                            print(f"{path}:{lineno}:old:{old.strip()}")
+                            print(f"{path}:{lineno}:new:{line.strip()}")
 
+                lineno += 1
                 output.append(line)
 
-        if modified is False:
+        if modified is False or args.dry_run:
             return
 
         with open(path, "w") as f:
@@ -131,6 +139,11 @@ if __name__ == "__main__":
         type=Path,
         required=True,
         help="Zephyr-based project path")
+    parser.add_argument(
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="log potential changes without modifying files")
     args = parser.parse_args()
 
     process_tree(args.root)

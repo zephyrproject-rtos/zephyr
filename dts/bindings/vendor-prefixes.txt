@@ -452,6 +452,7 @@ myir	MYIR Tech Limited
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
+neorv32	NEORV32 RISC-V Processor
 netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
@@ -513,6 +514,7 @@ phicomm	PHICOMM Co., Ltd.
 phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
+pimoroni	Pimoroni Ltd.
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
 pixart	PixArt Imaging Inc.

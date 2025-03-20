@@ -55,36 +55,7 @@ EK-RA2A1 has following features.
 Supported Features
 ==================
 
-The Renesas EK-RA2A1 board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------+
-| Interface | Controller | Driver/components             |
-+===========+============+===============================+
-| PINCTRL   | on-chip    | pinctrl                       |
-+-----------+------------+-------------------------------+
-| CLOCK     | on-chip    | clock_control                 |
-+-----------+------------+-------------------------------+
-| GPIO      | on-chip    | gpio                          |
-+-----------+------------+-------------------------------+
-| UART      | on-chip    | uart                          |
-+-----------+------------+-------------------------------+
-| SPI       | on-chip    | spi                           |
-+-----------+------------+-------------------------------+
-| COUNTER   | on-chip    | counter                       |
-+-----------+------------+-------------------------------+
-| PWM       | on-chip    | pwm                           |
-+-----------+------------+-------------------------------+
-| ENTROPY   | on-chip    | entropy                       |
-+-----------+------------+-------------------------------+
-| I2C       | on-chip    | i2c                           |
-+-----------+------------+-------------------------------+
-| DAC       | on-chip    | dac                           |
-+-----------+------------+-------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/renesas/ek_ra2a1/ek_ra2a1_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************

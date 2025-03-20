@@ -69,6 +69,15 @@ config PHY_TI_DP83825
 	help
 	  Enable TI DP83825 Ethernet PHY Driver
 
+config PHY_TI_DP83867
+	bool "TI DP83867 PHY Driver"
+	default y
+	depends on DT_HAS_TI_DP83867_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable TI DP83867 Ethernet PHY Driver
+
 config PHY_REALTEK_RTL8211F
 	bool "Realtek RTL8211F PHY Driver"
 	default y

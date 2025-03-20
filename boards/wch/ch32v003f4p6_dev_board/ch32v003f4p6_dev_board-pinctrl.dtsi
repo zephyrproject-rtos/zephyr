@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Andrei-Edward Popa <andrei.popa105@yahoo.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v003-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PD5_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PD6_0>;
+			bias-pull-up;
+		};
+	};
+};

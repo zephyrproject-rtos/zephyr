@@ -105,7 +105,9 @@ struct _thread_base {
 	int prio_deadline;
 #endif /* CONFIG_SCHED_DEADLINE */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 	uint32_t order_key;
+#endif
 
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */

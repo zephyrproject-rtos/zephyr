@@ -77,4 +77,5 @@ dut_spis: &spi131 {
 	pinctrl-names = "default", "sleep";
 	/delete-property/rx-delay-supported;
 	/delete-property/rx-delay;
+	zephyr,pm-device-runtime-auto;
 };

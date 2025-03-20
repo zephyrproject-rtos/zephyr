@@ -11,6 +11,9 @@ on:
     - v*
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   # NOTE: west docstrings will be extracted from the version listed here
   WEST_VERSION: 1.2.0
@@ -24,18 +27,16 @@ jobs:
   doc-file-check:
     name: Check for doc changes
     runs-on: ubuntu-24.04
-    if: >
-      github.repository_owner == 'zephyrproject-rtos'
     outputs:
       file_check: ${{ steps.check-doc-files.outputs.any_modified }}
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@v45
+      uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
       id: check-doc-files
       with:
         files: |
@@ -46,7 +47,6 @@ jobs:
           kernel/include/kernel_arch_interface.h
           lib/libc/**
           subsys/testsuite/ztest/include/**
-          tests/
           **/Kconfig*
           west.yml
           scripts/dts/
@@ -59,8 +59,7 @@ jobs:
     name: "Documentation Build (HTML)"
     needs: [doc-file-check]
     if: >
-      github.repository_owner == 'zephyrproject-rtos' &&
-        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+      needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:
@@ -78,7 +77,7 @@ jobs:
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -101,7 +100,7 @@ jobs:
         git log --graph --oneline HEAD...${PR_HEAD}
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@v1
+      uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
       with:
         app-path: zephyr
         toolchains: 'all'
@@ -147,13 +146,13 @@ jobs:
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
     - name: upload-build
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: html-output
         path: zephyr/html-output.tar.xz
 
     - name: upload-api-coverage
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: api-coverage
         path: zephyr/api-coverage.tar.xz
@@ -173,7 +172,7 @@ jobs:
         echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -183,8 +182,7 @@ jobs:
     name: "Documentation Build (PDF)"
     needs: [doc-file-check]
     if: |
-      github.event_name != 'pull_request' &&
-      github.repository_owner == 'zephyrproject-rtos'
+      github.event_name != 'pull_request'
     runs-on: ubuntu-22.04
     container: texlive/texlive:latest
     timeout-minutes: 120
@@ -198,7 +196,7 @@ jobs:
         git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: install-pkgs
       run: |
@@ -206,7 +204,7 @@ jobs:
         apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin imagemagick
 
     - name: cache-pip
-      uses: actions/cache@v4
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('doc/requirements.txt') }}
@@ -244,7 +242,7 @@ jobs:
 
     - name: upload-build
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: pdf-output
         if-no-files-found: ignore

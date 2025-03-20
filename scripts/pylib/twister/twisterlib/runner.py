@@ -61,7 +61,6 @@ import expr_parser
 from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class ExecutionCounter:
@@ -1758,8 +1757,8 @@ class ProjectBuilder(FilterBuilder):
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
-                if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
-                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
+                if('CONFIG_FAKE_ENTROPY_NATIVE_SIM' in self.defconfig and
+                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_SIM'] == 'y'):
                     instance.handler.seed = self.options.seed
 
             if self.options.extra_test_args and instance.platform.arch == "posix":

@@ -65,6 +65,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_nodelabel_bool_prop,<node label>,<prop>)
    $(dt_nodelabel_enabled,<node label>)
    $(dt_nodelabel_enabled_with_compat,<node label>,<compatible string>)
+   $(dt_nodelabel_exists,<node label>)
    $(dt_nodelabel_has_compat,<node label>,<compatible string>)
    $(dt_nodelabel_has_prop,<node label>,<prop>)
    $(dt_nodelabel_path,<node label>)

@@ -287,6 +287,9 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1020_evk
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _MIMXRT1020-EVK Website:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/i.mx-rt1020-evaluation-kit:MIMXRT1020-EVK
 

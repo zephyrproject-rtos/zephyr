@@ -13,6 +13,9 @@ on:
         description: fullrun
         value: ${{ jobs.prep_push.outputs.fullrun != '' && jobs.prep_push.outputs.fullrun || jobs.prep_pr.outputs.size }}
 
+permissions:
+  contents: read
+
 jobs:
   prep_pr:
     if: github.repository_owner == 'zephyrproject-rtos' && github.event_name == 'pull_request_target'
@@ -56,7 +59,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0

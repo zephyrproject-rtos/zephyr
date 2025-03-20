@@ -624,6 +624,13 @@
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
 		};
+
+		wdt: wdt@40044200 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40044200 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
 	};
 
 	usbfs_phy: usbfs-phy {

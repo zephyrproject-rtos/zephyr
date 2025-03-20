@@ -97,7 +97,7 @@
 	pinctrl-names = "default";
 };
 
-&gpio0 {
+gpio0_lo: &gpio0 {
 	status = "okay";
 };
 
@@ -134,6 +134,10 @@
 };
 
 &timer0 {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
 

@@ -31,6 +31,8 @@ NFC or USB protocols to a host application running on a smartphone/PC to impleme
 (see `Sensing`_ section for the complete lists of available
 sensors on board)
 
+.. zephyr:board-supported-hw::
+
 Hardware
 ********
 

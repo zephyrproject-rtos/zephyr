@@ -17,7 +17,7 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 
-config ETH_NATIVE_POSIX
+config ETH_NATIVE_TAP
 	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 endif # NETWORKING

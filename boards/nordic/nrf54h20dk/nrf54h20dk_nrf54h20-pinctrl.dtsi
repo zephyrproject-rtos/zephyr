@@ -73,9 +73,34 @@
 	/omit-if-no-ref/ exmif_default: exmif_default {
 		group1 {
 			psels = <NRF_PSEL(EXMIF_CK, 6, 0)>,
+				<NRF_PSEL(EXMIF_CS0, 6, 3)>,
+				<NRF_PSEL(EXMIF_RWDS, 6, 2)>,
 				<NRF_PSEL(EXMIF_DQ0, 6, 7)>,
-				<NRF_PSEL(EXMIF_DQ1, 6, 5)>;
+				<NRF_PSEL(EXMIF_DQ1, 6, 5)>,
+				<NRF_PSEL(EXMIF_DQ2, 6, 10)>,
+				<NRF_PSEL(EXMIF_DQ3, 6, 9)>,
+				<NRF_PSEL(EXMIF_DQ4, 6, 11)>,
+				<NRF_PSEL(EXMIF_DQ5, 6, 8)>,
+				<NRF_PSEL(EXMIF_DQ6, 6, 6)>,
+				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
 			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
+
+	/omit-if-no-ref/ exmif_sleep: exmif_sleep {
+		group1 {
+			low-power-enable;
+			psels = <NRF_PSEL(EXMIF_CK, 6, 0)>,
+				<NRF_PSEL(EXMIF_CS0, 6, 3)>,
+				<NRF_PSEL(EXMIF_RWDS, 6, 2)>,
+				<NRF_PSEL(EXMIF_DQ0, 6, 7)>,
+				<NRF_PSEL(EXMIF_DQ1, 6, 5)>,
+				<NRF_PSEL(EXMIF_DQ2, 6, 10)>,
+				<NRF_PSEL(EXMIF_DQ3, 6, 9)>,
+				<NRF_PSEL(EXMIF_DQ4, 6, 11)>,
+				<NRF_PSEL(EXMIF_DQ5, 6, 8)>,
+				<NRF_PSEL(EXMIF_DQ6, 6, 6)>,
+				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
 		};
 	};
 

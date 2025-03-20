@@ -8,6 +8,11 @@
 	status = "okay";
 };
 
+/* Enable HSI as it will be output on MCO pin by this sample */
+&clk_hsi {
+	status = "okay";
+};
+
 /* see RefMan RM0383 */
 &mco1 {
 	/* Select One of the line below for clock source */

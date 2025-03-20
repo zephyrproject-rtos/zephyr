@@ -77,7 +77,7 @@ class adsp_request_handler(socketserver.BaseRequestHandler):
             return None
 
         # Check the MD5 of the firmware
-        md5_rx = hashlib.md5(total).hexdigest()
+        md5_rx = hashlib.md5(total, usedforsecurity=False).hexdigest()
         md5_tx = md5_tx_b.decode('utf-8')
 
         if md5_tx != md5_rx:

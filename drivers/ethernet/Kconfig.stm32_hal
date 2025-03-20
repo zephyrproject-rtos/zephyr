@@ -9,11 +9,12 @@ menuconfig ETH_STM32_HAL
 	default y
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
-	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
+	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
 	select HWINFO
 	select ETH_DSA_SUPPORT
 	select PINCTRL
-	select MDIO if SOC_SERIES_STM32H5X || SOC_SERIES_STM32H7X
+	select MDIO if DT_HAS_ST_STM32_MDIO_ENABLED
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -26,7 +27,8 @@ choice ETH_STM32_HAL_API_VERSION
 
 config ETH_STM32_HAL_API_V2
 	bool "Use official STM32Cube HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32N6X
+	select USE_STM32_HAL_ETH_EX if SOC_SERIES_STM32N6X
 	help
 	  Use the official STM32Cube HAL driver instead of the legacy one.
 
@@ -44,6 +46,14 @@ config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	default 1500
 	help
 	  RX thread stack size
+
+config ETH_STM32_HAL_RX_THREAD_PREEMPTIVE
+	bool "STM32 Ethernet RX Thread pre-emptive [EXPERIMENTAL]"
+	default y if NET_TC_THREAD_PREEMPTIVE
+	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
 
 config ETH_STM32_HAL_RX_THREAD_PRIO
 	int "STM32 Ethernet RX Thread Priority"
@@ -70,13 +80,16 @@ config ETH_STM32_HAL_PHY_ADDRESS
 	help
 	  The phy address to use.
 
-config ETH_STM32_HAL_MII
-	bool "Use MII interface"
+config ETH_STM32_CARRIER_CHECK
+	bool "Check PHY carrier periodically"
+	default y
 	help
-	  Use the MII physical interface instead of RMII.
+	  Enables or disables checking of the PHY's carrier status.
+	  See also CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
 
 config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
 	int "Carrier check timeout period (ms)"
+	depends on ETH_STM32_CARRIER_CHECK
 	default 500
 	range 100 30000
 	help

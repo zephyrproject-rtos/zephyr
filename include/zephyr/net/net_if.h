@@ -96,6 +96,11 @@ struct net_if_addr {
 		struct {
 			/** Duplicate address detection (DAD) timer */
 			sys_snode_t dad_node;
+
+			/** DAD needed list node */
+			sys_snode_t dad_need_node;
+
+			/** DAD start time */
 			uint32_t dad_start;
 
 			/** How many times we have done DAD */
@@ -106,6 +111,11 @@ struct net_if_addr {
 		struct {
 			/** Address conflict detection (ACD) timer. */
 			sys_snode_t acd_node;
+
+			/** ACD needed list node */
+			sys_snode_t acd_need_node;
+
+			/** ACD timeout value. */
 			k_timepoint_t acd_timeout;
 
 			/** ACD probe/announcement counter. */
@@ -150,6 +160,9 @@ struct net_if_addr {
 struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
+
+	/** Rejoining multicast groups list node */
+	sys_snode_t rejoin_node;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	/** Sources to filter on */
@@ -912,14 +925,33 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 }
 
 /**
- * @brief Send a packet through a net iface
+ * @brief Try sending a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to send
+ * @param timeout timeout for attempting to send
  *
- * return verdict about the packet
+ * @return verdict about the packet
  */
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict net_if_try_send_data(struct net_if *iface,
+				      struct net_pkt *pkt, k_timeout_t timeout);
+
+/**
+ * @brief Send a packet through a net iface
+ *
+ * This is equivalent to net_if_try_queue_tx with an infinite timeout
+ * @param iface Pointer to a network interface structure
+ * @param pkt Pointer to a net packet to send
+ *
+ * @return verdict about the packet
+ */
+static inline enum net_verdict net_if_send_data(struct net_if *iface,
+						struct net_pkt *pkt)
+{
+	k_timeout_t timeout = k_is_in_isr() ? K_NO_WAIT : K_FOREVER;
+
+	return net_if_try_send_data(iface, pkt, timeout);
+}
 
 /**
  * @brief Get a pointer to the interface L2
@@ -980,12 +1012,27 @@ static inline const struct device *net_if_get_device(struct net_if *iface)
 }
 
 /**
- * @brief Queue a packet to the net interface TX queue
+ * @brief Try enqueuing a packet to the net interface TX queue
  *
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
+ * @param timeout Timeout for the enqueuing attempt
  */
-void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
+void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t timeout);
+
+/**
+ * @brief Queue a packet to the net interface TX queue
+ *
+ * This is equivalent to net_if_try_queue_tx with an infinite timeout
+ * @param iface Pointer to a network interface structure
+ * @param pkt Pointer to a net packet to queue
+ */
+static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
+{
+	k_timeout_t timeout = k_is_in_isr() ? K_NO_WAIT : K_FOREVER;
+
+	net_if_try_queue_tx(iface, pkt, timeout);
+}
 
 /**
  * @brief Return the IP offload status
@@ -1199,13 +1246,20 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 						uint8_t *addr, uint8_t len,
 						enum net_link_type type)
 {
+	int ret;
+
 	if (net_if_flag_is_set(iface, NET_IF_RUNNING)) {
 		return -EPERM;
 	}
 
-	net_if_get_link_addr(iface)->addr = addr;
-	net_if_get_link_addr(iface)->len = len;
-	net_if_get_link_addr(iface)->type = type;
+	if (len > sizeof(net_if_get_link_addr(iface)->addr)) {
+		return -EINVAL;
+	}
+
+	ret = net_linkaddr_create(net_if_get_link_addr(iface), addr, len, type);
+	if (ret < 0) {
+		return ret;
+	}
 
 	net_hostname_set_postfix(addr, len);
 
@@ -3331,7 +3385,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				   init_fn, pm, data, config, prio,	\
 				   api, l2, l2_ctx_type, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, NULL,		\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
@@ -3478,7 +3533,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 #define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,	\
 				  data, config, prio, api, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn,	NULL,		\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)

@@ -18,6 +18,7 @@
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
 #include <hal/nrf_memconf.h>
+#include <hal/nrf_nfct.h>
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
@@ -150,6 +151,11 @@ static int nordicsemi_nrf54h_init(void)
 
 	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
 #endif
+
+	if (DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled) &&
+	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
+		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
+	}
 
 	return 0;
 }

@@ -4,6 +4,11 @@ common:
   min_ram: 64
   depends_on:
     - usbd
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "USB DFU sample is initialized"
 tests:
   sample.usbd.dfu:
     integration_platforms:

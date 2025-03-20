@@ -1555,6 +1555,11 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	sys_snode_t *node = NULL;
 
+	if (mgmt_event != NET_EVENT_IF_UP &&
+	    mgmt_event != NET_EVENT_IF_DOWN) {
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
@@ -1602,6 +1607,16 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	sys_snode_t *node = NULL;
 	struct in_addr *addr;
 
+	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
+	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
+		return;
+	}
+
+	if (cb->info_length != sizeof(struct in_addr)) {
+		return;
+	}
+
+	addr = (struct in_addr *)cb->info;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -1614,17 +1629,6 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	if (node == NULL) {
 		goto out;
 	}
-
-	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
-	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
-		goto out;
-	}
-
-	if (cb->info_length != sizeof(struct in_addr)) {
-		goto out;
-	}
-
-	addr = (struct in_addr *)cb->info;
 
 	if (!net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip, addr)) {
 		goto out;

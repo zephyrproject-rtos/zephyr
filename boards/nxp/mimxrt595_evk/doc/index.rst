@@ -303,6 +303,9 @@ steps:
 
 #. Reset by pressing SW3
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _MIMXRT595-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt595-evaluation-kit:MIMXRT595-EVK
 

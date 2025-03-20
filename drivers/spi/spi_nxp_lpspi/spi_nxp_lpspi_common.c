@@ -9,6 +9,14 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
+void lpspi_wait_tx_fifo_empty(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	while (LPSPI_GetTxFifoCount(base) != 0) {
+	}
+}
+
 int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -56,7 +64,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return -EINVAL;
 	}
 
-	if (spi_cfg->slave > LPSPI_CHIP_SELECT_COUNT) {
+	if (spi_cfg->slave > (LPSPI_CHIP_SELECT_COUNT - 1)) {
 		LOG_ERR("Peripheral %d select exceeds max %d", spi_cfg->slave,
 			LPSPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
@@ -103,6 +111,9 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
 	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
 	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+	master_config.whichPcs = spi_cfg->slave + kLPSPI_Pcs0;
+	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
+				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
 	master_config.pinCfg = config->data_pin_config;
 	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
 							      kLpspiDataOutRetained;
