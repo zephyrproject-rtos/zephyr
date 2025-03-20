@@ -413,3 +413,12 @@ paa3905: paa3905@32 {
 	reg = <0x32>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_icp201xx: icp201xx@33 {
+	compatible = "invensense,icp201xx";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
