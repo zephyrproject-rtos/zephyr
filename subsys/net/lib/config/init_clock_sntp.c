@@ -13,9 +13,20 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/sntp.h>
 #include <zephyr/posix/time.h>
 
+#include "init_clock_sntp.h"
+
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
 static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
+#endif
+
+#if CONFIG_NET_CONFIG_SNTP_TIMEZONE
+enum timezone global_tz = UTC_0;
+
+void sntp_set_timezone(const enum timezone tz)
+{
+  global_tz = tz;
+}
 #endif
 
 static int sntp_init_helper(struct sntp_time *tm)
@@ -48,7 +59,11 @@ int net_init_clock_via_sntp(void)
 		goto end;
 	}
 
-	tspec.tv_sec = ts.seconds;
+#if CONFIG_NET_CONFIG_SNTP_TIMEZONE
+  tspec.tv_sec = ts.seconds - (UTC_0 - global_tz) * 3600;
+#else
+  tspec.tv_sec = ts.seconds;
+#endif
 	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
 	res = clock_settime(CLOCK_REALTIME, &tspec);
 
@@ -75,3 +90,16 @@ static void sntp_resync_handler(struct k_work *work)
 	LOG_DBG("Time resynced using SNTP");
 }
 #endif /* CONFIG_NET_CONFIG_SNTP_INIT_RESYNC */
+
+#if CONFIG_NET_CONFIG_SNTP_TIMEZONE
+const char* get_timezone_string(const enum timezone tz)
+{
+  static const char* timezones[] = {
+      "UTC-12", "UTC-11", "UTC-10", "UTC-9", "UTC-8", "UTC-7", "UTC-6", "UTC-5",
+      "UTC-4", "UTC-3", "UTC-2", "UTC-1", "UTC+0", "UTC+1", "UTC+2", "UTC+3",
+      "UTC+4", "UTC+5", "UTC+6", "UTC+7", "UTC+8", "UTC+9", "UTC+10", "UTC+11",
+      "UTC+12", "UTC+13", "UTC+14"
+  };
+  return (tz >= 0 && tz < TIMEZONE_MAX) ? timezones[tz] : "Invalid timezone";
+}
+#endif

@@ -226,6 +226,16 @@ config NET_CONFIG_SNTP_INIT_SERVER
 	  e.g. server information at
 	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
 
+config NET_CONFIG_SNTP_TIMEZONE
+  bool "Enable timezone control for system clock"
+  default n
+  help
+    Use sntp_set_timezone() function to set the current timezone of the 
+    device. This reconfigure the clock system to timezone UTC offsets
+    accordingly to 
+    https://en.wikipedia.org/wiki/Time_zone
+    Default timezone is UTC+00:00.
+
 config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	bool "SNTP server to use for system clock init is set using DHCPv4 option"
 	default y
