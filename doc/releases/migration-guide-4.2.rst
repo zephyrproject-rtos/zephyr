@@ -196,6 +196,12 @@ Modem
   :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE` and :kconfig:option:`CONFIG_MODEM_CMUX_MTU`.
 
 
+LED
+===
+
+* Renamed the devicetree property ``log_scale_en`` to ``log-scale-en``.
+
+
 Stepper
 =======
 
