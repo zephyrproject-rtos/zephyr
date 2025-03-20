@@ -159,6 +159,24 @@
 				height = <64>;
 				column-offset =	<28>;
 			};
+
+			test_mipi_dbi_sh1122: sh1122@10 {
+				compatible = "sinowealth,sh1122";
+				reg = <10>;
+				mipi-max-frequency = <10000000>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -387,6 +405,7 @@
 				com-invdir;
 				prechargep = <0x22>;
 			};
+
 			test_st7567: st7567@2 {
 				compatible = "sitronix,st7567";
 				reg = <0x2>;
@@ -395,6 +414,22 @@
 				column-offset = <0>;
 				line-offset = <0>;
 				regulation-ratio = <7>;
+			};
+
+			test_sh1122: sh1122@3 {
+				compatible = "sinowealth,sh1122";
+				reg = <3>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
 			};
 		};
 	};
