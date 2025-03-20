@@ -26,6 +26,7 @@
 
 #define TMP116_DEVICE_ID		0x1116
 #define TMP117_DEVICE_ID		0x0117
+#define TMP119_DEVICE_ID		0x2117
 
 #define TMP116_CFGR_AVG			(BIT(5) | BIT(6))
 #define TMP116_CFGR_CONV		(BIT(7) | BIT(8) | BIT(9))

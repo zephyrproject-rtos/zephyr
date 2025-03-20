@@ -77,10 +77,9 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 		return false;
 	}
 
-	/* TMP117 uses EEPROM[2] as temperature offset register */
-	if (drv_data->id == TMP117_DEVICE_ID &&
-	    offset <= EEPROM_TMP117_RESERVED &&
-	    (offset + len) > EEPROM_TMP117_RESERVED) {
+	/* TMP117 and TMP119 uses EEPROM[2] as temperature offset register */
+	if ((drv_data->id == TMP117_DEVICE_ID || drv_data->id == TMP119_DEVICE_ID) &&
+	    offset <= EEPROM_TMP117_RESERVED && (offset + len) > EEPROM_TMP117_RESERVED) {
 		return false;
 	}
 
@@ -171,7 +170,7 @@ static inline int tmp116_device_id_check(const struct device *dev, uint16_t *id)
 		return -EIO;
 	}
 
-	if ((*id != TMP116_DEVICE_ID) && (*id != TMP117_DEVICE_ID)) {
+	if ((*id != TMP116_DEVICE_ID) && (*id != TMP117_DEVICE_ID) && (*id != TMP119_DEVICE_ID)) {
 		LOG_ERR("%s: Failed to match the device IDs!",
 			dev->name);
 		return -EINVAL;
@@ -293,8 +292,8 @@ static int tmp116_attr_set(const struct device *dev,
 		return tmp116_write_config(dev, TMP116_CFGR_CONV, value);
 
 	case SENSOR_ATTR_OFFSET:
-		if (drv_data->id != TMP117_DEVICE_ID) {
-			LOG_ERR("%s: Offset is only supported by TMP117",
+		if (drv_data->id != TMP117_DEVICE_ID && drv_data->id != TMP119_DEVICE_ID) {
+			LOG_ERR("%s: Offset is only supported by TMP117 and TMP119",
 			dev->name);
 			return -EINVAL;
 		}
