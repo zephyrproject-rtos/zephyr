@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include "reg/reg_def.h"
+#include "reg_def.h"
 
 #ifdef __cplusplus
 extern "C" {
