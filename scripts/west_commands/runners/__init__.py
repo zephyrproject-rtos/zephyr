@@ -59,6 +59,7 @@ _names = [
     'spi_burn',
     'stm32cubeprogrammer',
     'stm32flash',
+    'sy1xx',
     'teensy',
     'trace32',
     'uf2',
