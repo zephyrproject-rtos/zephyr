@@ -482,19 +482,26 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	uint8_t seg = CONT_SEG_INDEX(rx->gpc);
 
-	if (link.tx.adv[0]) {
-		LOG_DBG("Ongoing tx transaction has not been completed yet");
-		return;
-	}
-
 	LOG_DBG("len %u, seg_index %u", buf->len, seg);
 
+	/* When link.rx.seg is zero for a valid link.rx.id, this means that transaction
+	 * has already been received. The other device probably missed the Transaction
+	 * Acknowledgment PDU, so we need to resend it regardless of the active transmission.
+	 */
 	if (!link.rx.seg && link.rx.id == rx->xact_id) {
+		/* Send ack if another ack is NOT pending for transmission. Otherwise, skip sending
+		 * this ack for now.
+		 */
 		if (!ack_pending()) {
 			LOG_DBG("Resending ack");
 			gen_prov_ack_send(rx->xact_id);
 		}
 
+		return;
+	}
+
+	if (link.tx.adv[0]) {
+		LOG_DBG("Ongoing tx transaction has not been completed yet");
 		return;
 	}
 
@@ -575,21 +582,28 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	uint8_t seg = SEG_NVAL;
 
+	/* When link.rx.seg is zero for a valid link.rx.id, this means that transaction
+	 * has already been received. The other device probably missed the Transaction
+	 * Acknowledgment PDU, so we need to resend it regardless of the active transmission.
+	 */
+	if (rx->xact_id == link.rx.id && !link.rx.seg) {
+		/* Send ack if another ack is NOT pending for transmission. Otherwise, skip sending
+		 * this ack for now.
+		 */
+		if (!ack_pending()) {
+			LOG_DBG("Resending ack");
+			gen_prov_ack_send(rx->xact_id);
+		}
+
+		return;
+	}
+
 	if (link.tx.adv[0]) {
 		LOG_DBG("Ongoing tx transaction has not been completed yet");
 		return;
 	}
 
 	if (rx->xact_id == link.rx.id) {
-		if (!link.rx.seg) {
-			if (!ack_pending()) {
-				LOG_DBG("Resending ack");
-				gen_prov_ack_send(rx->xact_id);
-			}
-
-			return;
-		}
-
 		if (!(link.rx.seg & BIT(0))) {
 			LOG_DBG("Ignoring duplicate segment");
 			return;
