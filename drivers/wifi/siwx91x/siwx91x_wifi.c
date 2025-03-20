@@ -67,6 +67,61 @@ static int siwx91x_security(enum wifi_security_type security)
 		return -EINVAL;
 	}
 }
+static enum wifi_mfp_options siwx91x_configure_mfp_option(sl_wifi_interface_t interface,
+							  sl_wifi_security_t security,
+							  enum wifi_mfp_options mfp_conf)
+{
+	uint8_t join_config;
+
+	if (interface & SL_WIFI_CLIENT_INTERFACE) {
+		switch (security) {
+		case SL_WIFI_OPEN:
+		case SL_WIFI_WPA:
+			return WIFI_MFP_DISABLE;
+		case SL_WIFI_WPA2:
+		case SL_WIFI_WPA_WPA2_MIXED:
+			if (mfp_conf == WIFI_MFP_REQUIRED) {
+				/* Handling the case for WPA2_SHA256 security type */
+				/* Directly enabling the MFP Required bit in the Join Feature
+				 * bitmap. This ensures that MFP is enforced for connections using
+				 * WPA2_SHA256.
+				 *
+				 * Note: This is a workaround to configure MFP as the current SDK
+				 * does not provide a dedicated API to configure MFP settings.
+				 * By manipulating the join feature bitmap directly, we achieve
+				 * the desired MFP configuration for enhanced security.
+				 *
+				 * This case will be updated in the future when the SDK adds
+				 * dedicated support for configuring MFP.
+				 */
+				sl_si91x_get_join_configuration(interface, &join_config);
+				sl_si91x_set_join_configuration(
+					interface,
+					(join_config | SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED));
+				return WIFI_MFP_REQUIRED;
+			}
+			/* Handling the case for WPA2 security type */
+			/* Ensuring the connection happened in WPA2-PSK
+			 * by clearing the MFP Required bit in the Join Feature bitmap.
+			 */
+			sl_si91x_get_join_configuration(interface, &join_config);
+			sl_si91x_set_join_configuration(
+				interface,
+				(join_config & ~(SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED)));
+			return WIFI_MFP_OPTIONAL;
+		case SL_WIFI_WPA3:
+			return WIFI_MFP_REQUIRED;
+		case SL_WIFI_WPA3_TRANSITION:
+			return WIFI_MFP_OPTIONAL;
+		default:
+			return WIFI_MFP_DISABLE;
+		}
+	} else if (interface & SL_WIFI_AP_INTERFACE) {
+		return WIFI_MFP_DISABLE;
+	}
+
+	return WIFI_MFP_UNKNOWN;
+}
 
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 				    char *result, uint32_t result_size, void *arg)
@@ -98,6 +153,7 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	struct siwx91x_dev *sidev = dev->data;
 	/* Wiseconnect requires a valid PSK even if WIFI_SECURITY_TYPE_NONE is selected */
 	static const char dummy_psk[] = "dummy_value";
+	enum wifi_mfp_options mfp_conf;
 	sl_status_t ret;
 	int sec;
 
@@ -151,6 +207,13 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 
 	if (ret != SL_STATUS_OK) {
 		return -EINVAL;
+	}
+
+	mfp_conf = siwx91x_configure_mfp_option(SL_WIFI_AP_INTERFACE, siwx91x_ap_cfg.security,
+						params->mfp);
+	if (params->mfp != mfp_conf) {
+		LOG_WRN("Needed MFP %s but got MFP %s, hence setting to MFP %s",
+			wifi_mfp_txt(mfp_conf), wifi_mfp_txt(params->mfp), wifi_mfp_txt(mfp_conf));
 	}
 
 	ret = sl_wifi_start_ap(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE, &siwx91x_ap_cfg);
@@ -241,6 +304,7 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		.encryption = SL_WIFI_DEFAULT_ENCRYPTION,
 		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
+	enum wifi_mfp_options mfp_conf;
 	int ret;
 
 	switch (params->security) {
@@ -251,12 +315,19 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		wifi_config.security = SL_WIFI_WPA;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		/* This case is meant to fall through to the next */
+		wifi_config.security = SL_WIFI_WPA2;
+		break;
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		/* Use WPA2 security as the device supports only SHA256
 		 * key derivation for WPA2-PSK
 		 */
 		wifi_config.security = SL_WIFI_WPA2;
+		if (params->mfp != WIFI_MFP_REQUIRED) {
+			LOG_WRN("Needed MFP %s but got MFP %s, hence setting to MFP %s",
+				wifi_mfp_txt(WIFI_MFP_REQUIRED), wifi_mfp_txt(params->mfp),
+				wifi_mfp_txt(WIFI_MFP_REQUIRED));
+			params->mfp = WIFI_MFP_REQUIRED;
+		}
 		break;
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
 		/* Use WPA3 security as the device supports only HNP and H2E
@@ -294,6 +365,11 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		return -EINVAL;
 	}
 
+	mfp_conf = siwx91x_configure_mfp_option(SL_WIFI_CLIENT_INTERFACE, wifi_config.security,
+						params->mfp);
+	if (params->mfp != mfp_conf) {
+		LOG_WRN("Needed MFP %s but got MFP %s, hence setting to MFP %s",
+			wifi_mfp_txt(mfp_conf), wifi_mfp_txt(params->mfp), wifi_mfp_txt(mfp_conf));
 	}
 
 	if (params->channel != WIFI_CHANNEL_ANY) {
@@ -487,6 +563,7 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 {
 	sl_si91x_rsp_wireless_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
+	uint8_t join_config;
 	sl_wifi_interface_t interface;
 	int32_t rssi;
 	int ret;
@@ -510,8 +587,21 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 	strncpy(status->ssid, wlan_info.ssid, WIFI_SSID_MAX_LEN);
 	status->ssid_len = strlen(status->ssid);
 	memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
-	status->mfp = WIFI_MFP_UNKNOWN;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
+
+	ret = sl_si91x_get_join_configuration(interface, &join_config);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to get join configuration: 0x%x", ret);
+		return -EINVAL;
+	}
+
+	if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED) {
+		status->mfp = WIFI_MFP_REQUIRED;
+	} else if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_ONLY) {
+		status->mfp = WIFI_MFP_OPTIONAL;
+	} else {
+		status->mfp = WIFI_MFP_DISABLE;
+	}
 
 	if (interface & SL_WIFI_2_4GHZ_INTERFACE) {
 		status->band = WIFI_FREQ_BAND_2_4_GHZ;
