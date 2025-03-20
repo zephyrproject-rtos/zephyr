@@ -317,11 +317,16 @@ static void start_proxy_sol_or_proxy_adv(struct bt_mesh_ext_adv *ext_adv)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) &&
-	    !atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
-		if (bt_mesh_adv_gatt_send()) {
-			atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY);
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
+		if (stop_proxy_adv(ext_adv)) {
 			return;
+		}
+
+		if (!atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+			if (bt_mesh_adv_gatt_send()) {
+				atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY);
+				return;
+			}
 		}
 	}
 }
