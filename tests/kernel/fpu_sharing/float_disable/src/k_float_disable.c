@@ -207,6 +207,16 @@ static void sup_fp_thread_entry(void *p1, void *p2, void *p3)
 			break;
 		}
 	}
+#elif defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+		if (z_soc_irq_is_enabled(i) == 0) {
+			/*
+			 * Similar to NVIC, get an IRQ line that is not enabled
+			 * with the custom ARM controller
+			 */
+			break;
+		}
+	}
 #else
 	/*
 	 * SGIs are always enabled by default, so choose the last one
