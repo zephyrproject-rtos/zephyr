@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
 # zephyr-keep-sorted-stop
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_FLASH_ADI_MAX32_SPIXF flash_max32_spixf_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_AMBIQ flash_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c flash_cadence_qspi_nor_ll.c)
