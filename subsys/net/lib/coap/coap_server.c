@@ -16,7 +16,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_link_format.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/coap_service.h>
-#include <zephyr/posix/fcntl.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -38,7 +39,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX > 0, "CONFIG_ZVFS_POLL_MAX can't be 0");
 
 static K_MUTEX_DEFINE(lock);
-static int control_socks[2];
+static int control_sock;
 
 #if defined(CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC)
 K_MEM_SLAB_DEFINE_STATIC(pending_data, CONFIG_COAP_SERVER_MESSAGE_SIZE,
@@ -370,7 +371,7 @@ static int coap_server_poll_timeout(void)
 
 static void coap_server_update_services(void)
 {
-	if (zsock_send(control_socks[1], &(char){0}, 1, 0) < 0) {
+	if (zvfs_eventfd_write(control_sock, 1)) {
 		LOG_ERR("Failed to notify server thread (%d)", errno);
 	}
 }
@@ -468,7 +469,7 @@ int coap_service_start(const struct coap_service *service)
 		goto end;
 	}
 
-	ret = zsock_fcntl(service->data->sock_fd, F_SETFL, O_NONBLOCK);
+	ret = zsock_fcntl(service->data->sock_fd, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
 		goto close;
@@ -763,23 +764,10 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	/* Create a socket pair to wake zsock_poll */
-	ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, control_socks);
-	if (ret < 0) {
-		LOG_ERR("Failed to create socket pair (%d)", ret);
+	control_sock = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (control_sock < 0) {
+		LOG_ERR("Failed to create event fd (%d)", -errno);
 		return;
-	}
-
-	for (int i = 0; i < 2; ++i) {
-		ret = zsock_fcntl(control_socks[i], F_SETFL, O_NONBLOCK);
-
-		if (ret < 0) {
-			zsock_close(control_socks[0]);
-			zsock_close(control_socks[1]);
-
-			LOG_ERR("Failed to set socket pair [%d] non-blocking (%d)", i, ret);
-			return;
-		}
 	}
 
 	COAP_SERVICE_FOREACH(svc) {
@@ -810,9 +798,9 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			sock_nfds++;
 		}
 
-		/* Add socket pair FD to allow wake up */
+		/* Add event FD to allow wake up */
 		if (sock_nfds < MAX_POLL_FD) {
-			sock_fds[sock_nfds].fd = control_socks[0];
+			sock_fds[sock_nfds].fd = control_sock;
 			sock_fds[sock_nfds].events = ZSOCK_POLLIN;
 			sock_fds[sock_nfds].revents = 0;
 			sock_nfds++;
@@ -828,11 +816,11 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 
 		for (int i = 0; i < sock_nfds; ++i) {
 			/* Check the wake up event */
-			if (sock_fds[i].fd == control_socks[0] &&
+			if (sock_fds[i].fd == control_sock &&
 			    sock_fds[i].revents & ZSOCK_POLLIN) {
-				char tmp;
+				zvfs_eventfd_t tmp;
 
-				zsock_recv(sock_fds[i].fd, &tmp, 1, 0);
+				zvfs_eventfd_read(sock_fds[i].fd, &tmp);
 				continue;
 			}
 

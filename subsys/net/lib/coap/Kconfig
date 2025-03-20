@@ -166,7 +166,8 @@ config COAP_SERVER
 	bool "CoAP server support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_SOCKETS
-	select NET_SOCKETPAIR
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  This option enables the API for CoAP-services to register resources.
 
