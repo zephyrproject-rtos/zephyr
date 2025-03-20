@@ -155,19 +155,17 @@ and :ref:`application_run` for more details).
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This
-board is configured by default to use the LPC-Link2 CMSIS-DAP Onboard
-Debug Probe, however the :ref:`pyocd-debug-host-tools` does not yet
-support the LPC55S16 so you must reconfigure the board for one of the
-J-Link debug probe instead.
+LinkServer is the default runner for this board.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
+in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
+:ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+Refer to the detailed overview about :ref:`application_debugging` for additional
+information.
 
-First install the :ref:`jlink-debug-host-tools` and make sure they are
-in your search path.
-
-Then follow the instructions in
-:ref:`lpclink2-jlink-onboard-debug-probe` to program the J-Link
-firmware. Please make sure you have the latest firmware for this
-board.
+The integrated MCU-Link hardware can also be used as a J-Link probe with a
+firmware update, as described in :ref:`mcu-link-jlink-onboard-debug-probe`.
+The :ref:`jlink-debug-host-tools` should be available in this case.
 
 Configuring a Console
 =====================
