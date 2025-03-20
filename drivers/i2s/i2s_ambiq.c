@@ -89,6 +89,10 @@ static void i2s_ambiq_isr(const struct device *dev)
 	if (ui32Status & AM_HAL_I2S_INT_TXDMACPL) {
 		k_sem_give(&data->tx_ready_sem);
 	}
+
+	if (ui32Status & AM_HAL_I2S_INT_RXDMACPL) {
+		k_sem_give(&data->rx_done_sem);
+	}
 }
 
 static int i2s_ambiq_init(const struct device *dev)
@@ -117,7 +121,7 @@ static int i2s_ambiq_init(const struct device *dev)
 }
 
 static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir, 
-				struct i2s_config *i2s_config)
+				const struct i2s_config *i2s_config)
 {
 	struct i2s_ambiq_data *data = dev->data;
 	const struct i2s_ambiq_cfg *config = dev->config;
@@ -183,12 +187,29 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
         LOG_ERR("Unsupported direction %d", dir);
         return -EINVAL;
     }
-    
-//    data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_750kHz;
-    data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_1_5MHz;
+
+    // Default sample rate is 16KHz for I2S master mode.
+    if(i2s_config->word_size == 16) {
+        if(i2s_config->channels == 1) {
+            data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_750kHz;
+        }
+        else {
+            data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_1_5MHz;
+        }
+    }
+    else {
+        if(i2s_config->channels == 1) {
+            data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_1_5MHz;
+        }
+        else {
+            data->i2s_hal_cfg.eClock = eAM_HAL_I2S_CLKSEL_HFRC_3MHz;
+        }
+    }
     data->i2s_hal_cfg.eDiv3 = 1;
     data->i2s_hal_cfg.eASRC = 0;
     data->i2s_hal_cfg.eIO = &i2s_io_config;
+
+    LOG_INF("I2S eClock %d, eDiv3 %d\n", data->i2s_hal_cfg.eClock & 0xFF, data->i2s_hal_cfg.eDiv3);
 
     if(i2s_config->channels == 1) {
         // For 1 channel data, we need to set the Pulse Type to one bit clock
@@ -298,8 +319,7 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer,
     }
 
     //
-    // I2S DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
-    // block_size
+    // Clean I2S DMA buffer of block_size after filling data.
     //
     am_hal_cachectrl_dcache_clean(&(am_hal_cachectrl_range_t){i2s_data_buf_ptr, data->block_size});
 
@@ -332,22 +352,11 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer,
 
 		//
 		// I2S DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
-		// block_size
+		// block_size when we are getting 16 bits sample.
 		//
-		am_hal_cachectrl_dcache_invalidate(&(am_hal_cachectrl_range_t){(uint32_t)i2s_data_buf, data->block_size * 2}, false);
+		am_hal_cachectrl_dcache_invalidate(&(am_hal_cachectrl_range_t){(uint32_t)i2s_data_buf, data->block_size}, false);
 
-		//
-		// Re-arrange data
-		//
-		uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
-		for (uint32_t i = 0; i < data->sample_num; i++) {
-			temp1[2 * i] = (i2s_data_buf[i] & 0xFF00) >> 8U;
-			temp1[2 * i + 1] = (i2s_data_buf[i] & 0xFF0000) >> 16U;
-		}
-		*buffer = temp1;
-
-		// LOG_DBG("Released buffer %p", *buffer);
-
+        memcpy(data->mem_slab_buffer, (void *)i2s_data_buf, data->block_size);
 		*size = data->block_size;
 	}
 

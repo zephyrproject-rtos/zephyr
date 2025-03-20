@@ -151,10 +151,11 @@ int main(void)
 
     while (1) {
         int ret;
+
+#if DMIC_INPUT_ENABLE
         void *buffer;
         uint32_t size;
 
-#if DMIC_INPUT_ENABLE
         ret = dmic_read(dmic_dev, 0, &buffer, &size, TIMEOUT);
         if (ret < 0) {
             LOG_ERR("Read failed: %d", ret);
