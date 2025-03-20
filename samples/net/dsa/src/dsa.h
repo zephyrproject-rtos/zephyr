@@ -15,8 +15,8 @@ extern struct ud user_data;
 
 /* User data for the interface callback */
 struct ud {
-	struct net_if *lan[CONFIG_NET_SAMPLE_DSA_MAX_SLAVE_PORTS];
-	struct net_if *master;
+	struct net_if *lan[CONFIG_NET_SAMPLE_DSA_MAX_USER_PORTS];
+	struct net_if *conduit;
 };
 
 #endif
