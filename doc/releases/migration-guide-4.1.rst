@@ -231,8 +231,8 @@ Display
         ...
     };
 
-* Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
-  to ``pclk-pol`` and ``data-cmd-gpios``.
+* Renamed the devicetree property ``pclk_pol`` to ``pclk-pol``.
+* Renamed the devicetree property ``data_cmd-gpios`` to ``data-cmd-gpios``.
 
 DAC
 ===

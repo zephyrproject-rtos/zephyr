@@ -102,6 +102,12 @@ GPIO
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
 
+LED
+===
+
+* Renamed the devicetree property ``log_scale_en`` to ``log-scale-en``.
+
+
 Bluetooth
 *********
 
