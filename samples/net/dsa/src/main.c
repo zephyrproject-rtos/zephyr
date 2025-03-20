@@ -30,7 +30,11 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 
 			/* Get user interfaces */
 			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 				struct net_if *user = dsa_get_slave_port(iface, i);
+#else
+				struct net_if *user = dsa_user_get_iface(iface, i);
+#endif
 
 				if (user == NULL) {
 					continue;
