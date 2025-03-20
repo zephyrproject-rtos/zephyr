@@ -8,8 +8,6 @@
  * https://www.st.com/resource/en/datasheet/lsm6dsv16x.pdf
  */
 
-#define DT_DRV_COMPAT st_lsm6dsv16x
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/__assert.h>

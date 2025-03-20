@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+include: st,lsm6dsvxxx-common.yaml
+
+properties:
+  accel-range:
+    type: int
+    default: 4
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 4  # LSM6DSV32X_DT_FS_4G  (0.122 mg/LSB)
+      - 8  # LSM6DSV32X_DT_FS_8G  (0.244 mg/LSB)
+      - 16 # LSM6DSV32X_DT_FS_16G (0.488 mg/LSB)
+      - 32 # LSM6DSV32X_DT_FS_32G (0.976 mg/LSB)
+
+    enum: [4, 8, 16, 32]
