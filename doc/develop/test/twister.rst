@@ -1491,10 +1491,11 @@ The current status of tests on the quarantine list can also be verified by addin
 ``--quarantine-verify`` to the above argument. This will make twister skip all tests
 which are not on the given list.
 
-A quarantine yaml has to be a sequence of dictionaries. Each dictionary has to have
-``scenarios`` and ``platforms`` entries listing combinations of scenarios and platforms
-to put under quarantine. In addition, an optional entry ``comment`` can be used, where
-some more details can be given (e.g. link to a reported issue). These comments will also
+A quarantine yaml is a sequence of dictionaries. Each dictionary must have
+at least one of the following keys: ``scenarios``, ``platforms``, ``architectures``
+or ``simulations``. A combination of these entries is allowed.
+An optional ``comment`` entry can be used to provide more details
+(e.g., a link to a reported issue). These comments will also
 be added to the output reports.
 
 When quarantining a class of tests or many scenarios in a single testsuite or
@@ -1518,15 +1519,15 @@ An example of entries in a quarantine yaml:
         - .*_cortex_.*
         - native_sim
 
-To exclude a platform, use the following syntax:
-
-.. code-block:: yaml
-
     - platforms:
-      - qemu_x86
-      comment: "broken qemu"
+        - qemu_x86
+      comment: "filter out qemu_x86"
 
-Additionally you can quarantine entire architectures or a specific simulator for executing tests.
+    - architectures:
+        - riscv
+
+    - simulations:
+        - armfvp
 
 Test Configuration
 ******************
