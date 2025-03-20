@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(tach_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
  * NOTE: The PWM output maximum is 324Hz in EC LPM, so if we need fan to work
  *       then don't let EC enter LPM.
  */
-#define TACH_FREQ		EC_FREQ
+#define TACH_FREQ EC_FREQ
 
 struct tach_it8xxx2_config {
 	/* Fan x tachometer LSB reading register */
@@ -110,8 +110,7 @@ static bool tach_ch_is_valid(const struct device *dev, int tach_ch)
 	return valid;
 }
 
-static int tach_it8xxx2_sample_fetch(const struct device *dev,
-				     enum sensor_channel chan)
+static int tach_it8xxx2_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct tach_it8xxx2_config *const config = dev->config;
 	volatile uint8_t *reg_fxtlrr = (uint8_t *)config->reg_fxtlrr;
@@ -143,8 +142,7 @@ static int tach_it8xxx2_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tach_it8xxx2_channel_get(const struct device *dev,
-				    enum sensor_channel chan,
+static int tach_it8xxx2_channel_get(const struct device *dev, enum sensor_channel chan,
 				    struct sensor_value *val)
 {
 	const struct tach_it8xxx2_config *const config = dev->config;
@@ -228,29 +226,24 @@ static DEVICE_API(sensor, tach_it8xxx2_driver_api) = {
 	.channel_get = tach_it8xxx2_channel_get,
 };
 
-#define TACH_IT8XXX2_INIT(inst)						       \
-	PINCTRL_DT_INST_DEFINE(inst);					       \
-									       \
-	static const struct tach_it8xxx2_config tach_it8xxx2_cfg_##inst = {    \
-		.reg_fxtlrr = DT_INST_REG_ADDR_BY_IDX(inst, 0),		       \
-		.reg_fxtmrr = DT_INST_REG_ADDR_BY_IDX(inst, 1),		       \
-		.reg_tswctlr = DT_INST_REG_ADDR_BY_IDX(inst, 2),	       \
-		.dvs_bit = DT_INST_PROP(inst, dvs_bit),			       \
-		.chsel_bit = DT_INST_PROP(inst, chsel_bit),		       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
-		.channel = DT_INST_PROP(inst, channel),			       \
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),      \
-	};								       \
-									       \
-	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;	       \
-									       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				       \
-			      tach_it8xxx2_init,			       \
-			      NULL,					       \
-			      &tach_it8xxx2_data_##inst,		       \
-			      &tach_it8xxx2_cfg_##inst,			       \
-			      POST_KERNEL,				       \
-			      CONFIG_SENSOR_INIT_PRIORITY,		       \
-			      &tach_it8xxx2_driver_api);
+#define TACH_IT8XXX2_INIT(inst)                                                                    \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct tach_it8xxx2_config tach_it8xxx2_cfg_##inst = {                        \
+		.reg_fxtlrr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                    \
+		.reg_fxtmrr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                    \
+		.reg_tswctlr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                   \
+		.dvs_bit = DT_INST_PROP(inst, dvs_bit),                                            \
+		.chsel_bit = DT_INST_PROP(inst, chsel_bit),                                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.channel = DT_INST_PROP(inst, channel),                                            \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;                                  \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_it8xxx2_init, NULL, &tach_it8xxx2_data_##inst,     \
+				     &tach_it8xxx2_cfg_##inst, POST_KERNEL,                        \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tach_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_IT8XXX2_INIT)
