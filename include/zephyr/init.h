@@ -109,8 +109,8 @@ struct init_entry {
  * level/priority/sub-priority.
  */
 #define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                                                \
-	__attribute__((                                                                            \
-		__section__(".z_init_" #level "_" STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
+	__attribute__((__section__(                                                                \
+		".z_init_" #level "_P_" STRINGIFY(prio) "_SUB_" STRINGIFY(sub_prio)"_")))
 
 /** @endcond */
 
