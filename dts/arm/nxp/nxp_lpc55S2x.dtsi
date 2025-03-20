@@ -34,3 +34,12 @@
 &iap {
 	status = "okay";
 };
+
+/*
+ * lpc55S_2x:
+ * Combine SRAM0, SRAM1, SRAM2 for total of 192K RAM
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
