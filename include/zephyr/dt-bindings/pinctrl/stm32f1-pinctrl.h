@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_STM32_PINCTRLF1_H_
-#define ZEPHYR_STM32_PINCTRLF1_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32F1_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32F1_PINCTRL_H_
 
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>
 #include <zephyr/dt-bindings/pinctrl/stm32f1-afio.h>
@@ -115,4 +115,4 @@
 #define STM32_ODR_MASK			0x1
 #define STM32_ODR_SHIFT			9
 
-#endif	/* ZEPHYR_STM32_PINCTRLF1_H_ */
+#endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32F1_PINCTRL_H_ */

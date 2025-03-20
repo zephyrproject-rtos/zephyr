@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_STM32_PWM_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_STM32_PWM_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PWM_STM32_PWM_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PWM_STM32_PWM_H_
 
 /**
  * @name custom PWM complementary flags for output pins
@@ -27,4 +27,4 @@
 /** @endcond */
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PWM_STM32_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PWM_STM32_PWM_H_ */

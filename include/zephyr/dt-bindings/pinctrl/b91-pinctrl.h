@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_B91_PINCTRL_COMMON_H_
-#define ZEPHYR_B91_PINCTRL_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_B91_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_B91_PINCTRL_H_
 
 /* IDs for GPIO functions */
 
@@ -71,4 +71,4 @@
 #define B91_PINMUX_GET_PIN(pinmux)        ((pinmux >> B91_PIN_POS) & B91_PIN_MSK)
 #define B91_PINMUX_GET_PIN_ID(pinmux)     ((pinmux >> B91_PIN_POS) & B91_PIN_ID_MSK)
 
-#endif  /* ZEPHYR_B91_PINCTRL_COMMON_H_ */
+#endif  /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_B91_PINCTRL_H_ */
