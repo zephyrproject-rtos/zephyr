@@ -261,7 +261,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 		ETHERNET_PTP |
 #endif
 #if defined(CONFIG_NET_DSA_DEPRECATED)
-		ETHERNET_DSA_MASTER_PORT |
+		ETHERNET_DSA_CONDUIT_PORT |
 #endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
