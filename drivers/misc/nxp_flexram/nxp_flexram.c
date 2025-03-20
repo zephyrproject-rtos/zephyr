@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 #include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
@@ -15,7 +15,7 @@
 #include "fsl_device_registers.h"
 
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API)
+#if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API)
 BUILD_ASSERT(DT_PROP(FLEXRAM_DT_NODE, flexram_has_magic_addr),
 		"SOC does not support magic flexram addresses");
 #endif
@@ -92,7 +92,7 @@ static FLEXRAM_Type *const base = (FLEXRAM_Type *) DT_REG_ADDR(FLEXRAM_DT_NODE);
 static flexram_callback_t flexram_callback;
 static void *flexram_user_data;
 
-void memc_flexram_register_callback(flexram_callback_t callback, void *user_data)
+void flexram_register_callback(flexram_callback_t callback, void *user_data)
 {
 	flexram_callback = callback;
 	flexram_user_data = user_data;
@@ -106,7 +106,7 @@ static void nxp_flexram_isr(void *arg)
 		return;
 	}
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_ERROR_INTERRUPT)
+#if defined(CONFIG_NXP_FLEXRAM_ERROR_INTERRUPT)
 	if (base->INT_STATUS & FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK) {
 		base->INT_STATUS |= FLEXRAM_INT_STATUS_OCRAM_ERR_STATUS_MASK;
 		flexram_callback(flexram_ocram_access_error, flexram_user_data);
@@ -119,9 +119,9 @@ static void nxp_flexram_isr(void *arg)
 		base->INT_STATUS |= FLEXRAM_INT_STATUS_ITCM_ERR_STATUS_MASK;
 		flexram_callback(flexram_itcm_access_error, flexram_user_data);
 	}
-#endif /* CONFIG_MEMC_NXP_FLEXRAM_ERROR_INTERRUPT */
+#endif /* CONFIG_NXP_FLEXRAM_ERROR_INTERRUPT */
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API)
+#if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API)
 	if (base->INT_STATUS & FLEXRAM_INT_STATUS_OCRAM_MAM_STATUS_MASK) {
 		base->INT_STATUS |= FLEXRAM_INT_STATUS_OCRAM_MAM_STATUS_MASK;
 		flexram_callback(flexram_ocram_magic_addr, flexram_user_data);
@@ -134,11 +134,11 @@ static void nxp_flexram_isr(void *arg)
 		base->INT_STATUS |= FLEXRAM_INT_STATUS_ITCM_MAM_STATUS_MASK;
 		flexram_callback(flexram_itcm_magic_addr, flexram_user_data);
 	}
-#endif /* CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API */
+#endif /* CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API */
 }
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API)
-int memc_flexram_set_ocram_magic_addr(uint32_t ocram_addr)
+#if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API)
+int flexram_set_ocram_magic_addr(uint32_t ocram_addr)
 {
 #ifdef OCRAM_DT_NODE
 	ocram_addr -= DT_REG_ADDR(OCRAM_DT_NODE);
@@ -156,7 +156,7 @@ int memc_flexram_set_ocram_magic_addr(uint32_t ocram_addr)
 #endif
 }
 
-int memc_flexram_set_itcm_magic_addr(uint32_t itcm_addr)
+int flexram_set_itcm_magic_addr(uint32_t itcm_addr)
 {
 #ifdef ITCM_DT_NODE
 	itcm_addr -= DT_REG_ADDR(ITCM_DT_NODE);
@@ -174,7 +174,7 @@ int memc_flexram_set_itcm_magic_addr(uint32_t itcm_addr)
 #endif
 }
 
-int memc_flexram_set_dtcm_magic_addr(uint32_t dtcm_addr)
+int flexram_set_dtcm_magic_addr(uint32_t dtcm_addr)
 {
 #ifdef DTCM_DT_NODE
 	dtcm_addr -= DT_REG_ADDR(DTCM_DT_NODE);
@@ -191,7 +191,7 @@ int memc_flexram_set_dtcm_magic_addr(uint32_t dtcm_addr)
 	return -ENODEV;
 #endif
 }
-#endif /* CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API */
+#endif /* CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API */
 
 #endif /* FLEXRAM_INTERRUPTS_USED */
 
@@ -204,20 +204,20 @@ static int nxp_flexram_init(void)
 		base->TCM_CTRL |= FLEXRAM_TCM_CTRL_TCM_RWAIT_EN_MASK;
 	}
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_ERROR_INTERRUPT)
+#if defined(CONFIG_NXP_FLEXRAM_ERROR_INTERRUPT)
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_OCRAM_ERR_SIG_EN_MASK;
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_DTCM_ERR_SIG_EN_MASK;
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_ITCM_ERR_SIG_EN_MASK;
 	base->INT_STAT_EN |= FLEXRAM_INT_STAT_EN_OCRAM_ERR_STAT_EN_MASK;
 	base->INT_STAT_EN |= FLEXRAM_INT_STAT_EN_DTCM_ERR_STAT_EN_MASK;
 	base->INT_STAT_EN |= FLEXRAM_INT_STAT_EN_ITCM_ERR_STAT_EN_MASK;
-#endif /* CONFIG_MEMC_NXP_FLEXRAM_ERROR_INTERRUPT */
+#endif /* CONFIG_NXP_FLEXRAM_ERROR_INTERRUPT */
 
-#if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API)
+#if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API)
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_OCRAM_MAM_SIG_EN_MASK;
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_DTCM_MAM_SIG_EN_MASK;
 	base->INT_SIG_EN |= FLEXRAM_INT_SIG_EN_ITCM_MAM_SIG_EN_MASK;
-#endif /* CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API */
+#endif /* CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API */
 
 #ifdef FLEXRAM_INTERRUPTS_USED
 	IRQ_CONNECT(DT_IRQN(FLEXRAM_DT_NODE), DT_IRQ(FLEXRAM_DT_NODE, priority),
