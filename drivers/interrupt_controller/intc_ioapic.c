@@ -84,7 +84,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  * In either case, regardless how many CPUs in the system, 0xff implies that
  * it's intended to deliver to all possible 8 local APICs.
  */
-#define DEFAULT_RTE_DEST	(0xFF << 24)
+#define DEFAULT_RTE_DEST (0xFFU << 24)
 
 static __pinned_bss uint32_t ioapic_rtes;
 
