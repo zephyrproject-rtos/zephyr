@@ -28,7 +28,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t bit0 = (pins->config >> CH32V003_PINCTRL_RM_BASE_SHIFT) & 0x1F;
 		uint8_t remap = (pins->config >> CH32V003_PINCTRL_RM_SHIFT) & 0x3;
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
-		uint32_t pcfr1 = AFIO->PCFR1;
 		uint8_t cfg = 0;
 
 		if (pins->output_high || pins->output_low) {
@@ -62,16 +61,23 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		if (bit0 == CH32V003_PINMUX_I2C1_RM) {
-			pcfr1 |= ((remap & 1) << CH32V003_PINMUX_I2C1_RM) |
-				 (((remap >> 1) & 1) << CH32V003_PINMUX_I2C1_RM1);
-		} else if (bit0 == CH32V003_PINMUX_USART1_RM) {
-			pcfr1 |= ((remap & 1) << CH32V003_PINMUX_USART1_RM) |
-				 (((remap >> 1) & 1) << CH32V003_PINMUX_USART1_RM1);
-		} else {
-			pcfr1 |= remap << bit0;
+		if (remap != 0) {
+			RCC->APB2PCENR |= RCC_AFIOEN;
+
+			if (bit0 == CH32V003_PINMUX_I2C1_RM) {
+				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+							<< CH32V003_PINMUX_I2C1_RM) |
+					       ((uint32_t)((remap >> 1) & 1)
+							<< CH32V003_PINMUX_I2C1_RM1);
+			} else if (bit0 == CH32V003_PINMUX_USART1_RM) {
+				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+							<< CH32V003_PINMUX_USART1_RM) |
+					       ((uint32_t)((remap >> 1) & 1)
+							<< CH32V003_PINMUX_USART1_RM1);
+			} else {
+				AFIO->PCFR1 |= (uint32_t)remap << bit0;
+			}
 		}
-		AFIO->PCFR1 = pcfr1;
 	}
 
 	return 0;
