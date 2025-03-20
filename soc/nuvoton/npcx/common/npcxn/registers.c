@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <soc.h>
+#include "reg_def.h"
 
 /* CDCG register structure check */
 NPCX_REG_SIZE_CHECK(cdcg_reg, 0x116);
