@@ -22,6 +22,7 @@ properties:
     enum:
       - "AGT_CLOCK_PCLKB"
       - "AGT_CLOCK_LOCO"
+      - "AGT_CLOCK_SUBCLOCK"
 
   renesas,prescaler:
     description: |
@@ -42,6 +43,7 @@ properties:
 
   renesas,resolution:
     type: int
+    enum: [16, 32]
     required: true
 
   interrupts:
