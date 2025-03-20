@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,15 @@ static volatile uint32_t *mstp_regs[] = {};
 #if defined(CONFIG_CORTEX_M_SYSTICK)
 /* If a CPU clock exists in the system, it will be the source for the CPU */
 #if BSP_FEATURE_CGC_HAS_CPUCLK
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu0))
+#define sys_clk DT_NODELABEL(cpuclk0)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu1))
+#define sys_clk DT_NODELABEL(cpuclk1)
+#else
 #define sys_clk DT_NODELABEL(cpuclk)
+#endif
+
 #else
 #define sys_clk DT_NODELABEL(iclk)
 #endif
