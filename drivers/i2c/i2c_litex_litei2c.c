@@ -30,9 +30,14 @@ struct i2c_litex_litei2c_config {
 	uint32_t bitrate;
 };
 
+struct i2c_litex_litei2c_data {
+	struct k_mutex mutex;
+};
+
 static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
+	struct i2c_litex_litei2c_data *data = dev->data;
 
 	if (I2C_ADDR_10_BITS & dev_config) {
 		return -ENOTSUP;
@@ -41,6 +46,8 @@ static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		return -ENOTSUP;
 	}
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Setup speed to use */
 	switch (I2C_SPEED_GET(dev_config)) {
@@ -54,8 +61,11 @@ static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
 		litex_write8(2, config->phy_speed_mode_addr);
 		break;
 	default:
+		k_mutex_unlock(&data->mutex);
 		return -ENOTSUP;
 	}
+
+	k_mutex_unlock(&data->mutex);
 
 	return 0;
 }
@@ -99,6 +109,7 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 			      uint16_t addr)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
+	struct i2c_litex_litei2c_data *data = dev->data;
 	uint32_t len_tx_buf = 0;
 	uint32_t len_rx_buf = 0;
 	uint8_t len_tx = 0;
@@ -114,6 +125,8 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	uint32_t rx_j = 0;
 
 	int ret = 0;
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	litex_write8(1, config->master_active_addr);
 
@@ -256,12 +269,17 @@ transfer_end:
 
 	litex_write8(0, config->master_active_addr);
 
+	k_mutex_unlock(&data->mutex);
+
 	return ret;
 }
 
 static int i2c_litex_recover_bus(const struct device *dev)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
+	struct i2c_litex_litei2c_data *data = dev->data;
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	litex_write8(1, config->master_active_addr);
 
@@ -281,13 +299,18 @@ static int i2c_litex_recover_bus(const struct device *dev)
 
 	litex_write8(0, config->master_active_addr);
 
+	k_mutex_unlock(&data->mutex);
+
 	return 0;
 }
 
 static int i2c_litex_init(const struct device *dev)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
+	struct i2c_litex_litei2c_data *data = dev->data;
 	int ret;
+
+	k_mutex_init(&data->mutex);
 
 	ret = i2c_litex_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	if (ret != 0) {
@@ -310,6 +333,8 @@ static DEVICE_API(i2c, i2c_litex_litei2c_driver_api) = {
 /* Device Instantiation */
 
 #define I2C_LITEX_INIT(n)                                                                          \
+	static struct i2c_litex_litei2c_data i2c_litex_litei2c_data_##n;                           \
+												   \
 	static const struct i2c_litex_litei2c_config i2c_litex_litei2c_config_##n = {              \
 		.phy_speed_mode_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_speed_mode),                \
 		.master_active_addr = DT_INST_REG_ADDR_BY_NAME(n, master_active),                  \
@@ -320,7 +345,7 @@ static DEVICE_API(i2c, i2c_litex_litei2c_driver_api) = {
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 	};                                                                                         \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, NULL,                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, &i2c_litex_litei2c_data_##n,            \
 				  &i2c_litex_litei2c_config_##n, POST_KERNEL,                      \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_litex_litei2c_driver_api);
 
