@@ -1,0 +1,3 @@
+config ILI9341
+	bool "ILI9341 display driver"
+	default y

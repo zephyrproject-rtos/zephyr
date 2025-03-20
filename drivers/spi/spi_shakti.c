@@ -938,6 +938,8 @@ static int spi_shakti_transceive(const struct device *dev,
   }
   //gpio_pin_set_dt(&(((struct spi_shakti_cfg*)(dev->config))->ncs), 0);
   k_mutex_unlock(&(((struct spi_shakti_cfg*)(dev->config))->mutex));
+
+  return 0;
 }
 }
 static int spi_shakti_release(const struct device *dev,

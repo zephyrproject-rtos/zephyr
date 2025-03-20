@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
-#include <zephyr/drivers/mipi_dbi.h>
+// #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/util.h>
 
 /* Commands/registers. */
@@ -22,7 +22,7 @@
 #define ILI9XXX_CASET 0x2a
 #define ILI9XXX_PASET 0x2b
 #define ILI9XXX_RAMWR 0x2c
-#define ILI9XXX_MADCTL 0x36
+#define ILI9XXX_MADCTL 0x36           
 #define ILI9XXX_PIXSET 0x3A
 
 /* MADCTL register fields. */
@@ -64,8 +64,8 @@ struct ili9xxx_quirks {
 
 struct ili9xxx_config {
 	const struct ili9xxx_quirks *quirks;
-	const struct device *mipi_dev;
-	struct mipi_dbi_config dbi_config;
+	const struct device *spi_dev;
+	// struct mipi_dbi_config dbi_config;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;
@@ -77,5 +77,8 @@ struct ili9xxx_config {
 
 int ili9xxx_transmit(const struct device *dev, uint8_t cmd,
 		     const void *tx_data, size_t tx_len);
+
+int ili9341_transmission(const struct device *dev, uint8_t cmd,
+		     int *tx_data, size_t tx_len);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_ */
