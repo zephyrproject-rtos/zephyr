@@ -7,5 +7,6 @@ config COUNTER_RA_AGT
 	bool "Renesas RA AGT driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_AGT_COUNTER_ENABLED
+	select USE_RA_FSP_AGT
 	help
 	  Enable support for Renesas Low Power Asynchronous General Purpose Timer (AGT) driver.
