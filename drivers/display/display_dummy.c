@@ -57,19 +57,6 @@ static int dummy_display_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static int dummy_display_read(const struct device *dev, const uint16_t x,
-			      const uint16_t y,
-			      const struct display_buffer_descriptor *desc,
-			      void *buf)
-{
-	return -ENOTSUP;
-}
-
-static void *dummy_display_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
 static int dummy_display_blanking_off(const struct device *dev)
 {
 	return 0;
@@ -123,8 +110,6 @@ static const struct display_driver_api dummy_display_api = {
 	.blanking_on = dummy_display_blanking_on,
 	.blanking_off = dummy_display_blanking_off,
 	.write = dummy_display_write,
-	.read = dummy_display_read,
-	.get_framebuffer = dummy_display_get_framebuffer,
 	.set_brightness = dummy_display_set_brightness,
 	.set_contrast = dummy_display_set_contrast,
 	.get_capabilities = dummy_display_get_capabilities,

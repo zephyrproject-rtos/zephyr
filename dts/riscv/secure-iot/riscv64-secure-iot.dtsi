@@ -1,4 +1,4 @@
-//#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
   #address-cells = <2>;
@@ -67,24 +67,34 @@
     };
 
     spi0: spi@20000 {
+            #address-cells = <1>;
+            #size-cells = <0>;
             compatible = "shakti,spi";
             reg = <0x0 0x20000 0x0 0x100>;
     };
 
     spi1: spi@20100 {
+           #address-cells = <1>;
+			     #size-cells = <0>;
            compatible = "shakti,spi";
            reg = <0x0 0x20100 0x0 0x100>;
     };
 
     gpio0: gpio@40200 {
-                compatible = "shakti,gpio0";
+                #gpio-cells = <0x2>;
+                compatible = "shakti,gpio";
                 reg = < 0x0 0x40200 0x0 0x08>;
+                config_gpio = <GPIO_OUTPUT>;
     };
     
     i2c0: i2c@44000 {
            compatible = "shakti,i2c0";
            reg= <0x0 0x44000 0x0 0x100>;
     };
+    i2c1: i2c@44100 {
+      compatible = "shakti,i2c0";
+      reg= <0x0 0x44100 0x0 0x100>;
+};
 
   };
 };

@@ -203,34 +203,6 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 	return ls0xx_update_display(dev, y + 1, desc->height, buf);
 }
 
-static int ls0xx_read(const struct device *dev, const uint16_t x,
-		      const uint16_t y,
-		      const struct display_buffer_descriptor *desc,
-		      void *buf)
-{
-	LOG_ERR("not supported");
-	return -ENOTSUP;
-}
-
-static void *ls0xx_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("not supported");
-	return NULL;
-}
-
-static int ls0xx_set_brightness(const struct device *dev,
-				const uint8_t brightness)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
-static int ls0xx_set_contrast(const struct device *dev, uint8_t contrast)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
 static void ls0xx_get_capabilities(const struct device *dev,
 				   struct display_capabilities *caps)
 {
@@ -240,13 +212,6 @@ static void ls0xx_get_capabilities(const struct device *dev,
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_X_ALIGNMENT_WIDTH;
-}
-
-static int ls0xx_set_orientation(const struct device *dev,
-				 const enum display_orientation orientation)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
 }
 
 static int ls0xx_set_pixel_format(const struct device *dev,
@@ -317,13 +282,8 @@ static struct display_driver_api ls0xx_driver_api = {
 	.blanking_on = ls0xx_blanking_on,
 	.blanking_off = ls0xx_blanking_off,
 	.write = ls0xx_write,
-	.read = ls0xx_read,
-	.get_framebuffer = ls0xx_get_framebuffer,
-	.set_brightness = ls0xx_set_brightness,
-	.set_contrast = ls0xx_set_contrast,
 	.get_capabilities = ls0xx_get_capabilities,
 	.set_pixel_format = ls0xx_set_pixel_format,
-	.set_orientation = ls0xx_set_orientation,
 };
 
 DEVICE_DT_INST_DEFINE(0, ls0xx_init, NULL, NULL, &ls0xx_config, POST_KERNEL,
