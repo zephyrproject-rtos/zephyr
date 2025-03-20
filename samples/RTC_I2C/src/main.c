@@ -590,8 +590,8 @@ void main(){
   const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
   uint8_t hr,min,secs;
       DS3231_setSeconds(dev,DS3231_ADDR,56);
-      DS3231_setHours(dev,DS3231_ADDR,18);
-      DS3231_setMinutes(dev,DS3231_ADDR,30);
+      DS3231_setHours(dev,DS3231_ADDR,10);
+      DS3231_setMinutes(dev,DS3231_ADDR,54);
 	  DS3231_setHourMode(dev,DS3231_ADDR,CLOCK_H12);
     while(1){
         hr=DS3231_getHours(dev,DS3231_ADDR);

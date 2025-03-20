@@ -21,13 +21,15 @@ manifest:
   remotes:
     - name: origin
       url-base: https://github.com/Mindgrove-Technologies/zephyr.git
+    - name: origin
+      url-base: https://github.com/zephyrproject-rtos
 
-  #
+  
   # Please add items below based on alphabetical order
-  # projects:
-    # - name: acpica
-      # revision: 0333c2af13179f9b33d495cf7cb9a509f751cbb1
-      # path: modules/lib/acpica
+  projects:
+    - name: lvgl
+      revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
+      path: modules/lib/gui/lvgl
 
   self:
     path: zephyr
