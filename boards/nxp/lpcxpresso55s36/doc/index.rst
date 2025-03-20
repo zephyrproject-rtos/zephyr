@@ -159,12 +159,12 @@ and :ref:`application_run` for more details).
 Configuring a Debug Probe
 =========================
 
+LinkServer is the default runner for this board.
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
 in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
 :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
-Then, use the ``linkserver`` runner option to flash and debug the board. Refer
-to the detailed overview about :ref:`application_debugging` for additional
+Refer to the detailed overview about :ref:`application_debugging` for additional
 information.
 
 The integrated MCU-Link hardware can also be used as a J-Link probe with a
