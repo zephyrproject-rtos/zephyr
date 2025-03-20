@@ -205,12 +205,7 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
-static struct bt_bap_unicast_server_register_param param = {
-	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
-};
-
-static const struct bt_bap_unicast_server_cb unicast_server_cb = {
+static struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -220,6 +215,12 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.disable = lc3_disable,
 	.stop = lc3_stop,
 	.release = lc3_release,
+};
+
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+	&unicast_server_cb
 };
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
@@ -446,8 +447,6 @@ static void init(void)
 		return;
 	}
 
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
-
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
@@ -474,12 +473,6 @@ static void init(void)
 static void deinit(void)
 {
 	int err;
-
-	err = bt_bap_unicast_server_unregister_cb(&unicast_server_cb);
-	if (err != 0) {
-		FAIL("Failed to unregister unicast server callbacks (err %d)\n", err);
-		return;
-	}
 
 	err = bt_bap_unicast_server_unregister();
 	if (err != 0) {

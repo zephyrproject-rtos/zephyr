@@ -57,7 +57,7 @@ DEFINE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_stop, struct bt_bap_strea
 DEFINE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_release, struct bt_bap_stream *,
 		       struct bt_bap_ascs_rsp *);
 
-const struct bt_bap_unicast_server_cb mock_bap_unicast_server_cb = {
+struct bt_bap_unicast_server_cb mock_bap_unicast_server_cb = {
 	.config = mock_bap_unicast_server_cb_config,
 	.reconfig = mock_bap_unicast_server_cb_reconfig,
 	.qos = mock_bap_unicast_server_cb_qos,

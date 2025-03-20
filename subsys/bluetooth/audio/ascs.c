@@ -74,6 +74,12 @@ BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
 #define ASE_COUNT (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT)
 #define BT_BAP_ASCS_RSP_NULL ((struct bt_bap_ascs_rsp[]) { BT_BAP_ASCS_RSP(0, 0) })
 
+enum {
+	FLAG_REGISTERED,
+	FLAG_UNREGISTERING,
+	FLAG_NUM,
+};
+
 struct bt_ascs_ase {
 	struct bt_conn *conn;
 	struct bt_bap_ep ep;
@@ -85,8 +91,8 @@ struct bt_ascs_ase {
 };
 
 struct bt_ascs {
-	/* Whether the service has been registered or not */
-	bool registered;
+	/* Whether the service has been registered, or is unregistering */
+	ATOMIC_DEFINE(flags, FLAG_NUM);
 
 	struct bt_ascs_ase ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
 } ascs;
@@ -612,6 +618,14 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 	const enum bt_bap_ep_state old_state = ascs_ep_get_state(&ase->ep);
 	bool valid_state_transition = false;
 	int err;
+
+	/* If we are unregistering the service, only allow state changes causing us to release and
+	 * to go to idle
+	 */
+	if (atomic_test_bit(ascs.flags, FLAG_UNREGISTERING) &&
+	    state != BT_BAP_EP_STATE_IDLE && state != BT_BAP_EP_STATE_RELEASING) {
+		return -EBUSY;
+	}
 
 	switch (state) {
 	case BT_BAP_EP_STATE_IDLE:
@@ -3163,7 +3177,7 @@ int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
 {
 	int err = 0;
 
-	if (ascs.registered) {
+	if (atomic_test_and_set_bit(ascs.flags, FLAG_REGISTERED)) {
 		LOG_DBG("ASCS already registered");
 
 		return -EALREADY;
@@ -3172,6 +3186,7 @@ int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
 	if (snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ||
 	    src_cnt > CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT) {
 		LOG_DBG("Provided ASE count above maximum");
+		atomic_clear_bit(ascs.flags, FLAG_REGISTERED);
 
 		return -EINVAL;
 	}
@@ -3179,6 +3194,7 @@ int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
 	/* At least one ASE has been registered */
 	if (snk_cnt == 0 && src_cnt == 0) {
 		LOG_DBG("Can't register ASCS with zero ASEs");
+		atomic_clear_bit(ascs.flags, FLAG_REGISTERED);
 
 		return -EINVAL;
 	}
@@ -3188,11 +3204,10 @@ int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
 	err = bt_gatt_service_register(&ascs_svc);
 	if (err != 0) {
 		LOG_DBG("Failed to register ASCS in gatt DB");
+		atomic_clear_bit(ascs.flags, FLAG_REGISTERED);
 
 		return err;
 	}
-
-	ascs.registered = true;
 
 	return err;
 }
@@ -3211,7 +3226,7 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 {
 	int err;
 
-	if (!ascs.registered) {
+	if (!atomic_test_bit(ascs.flags, FLAG_REGISTERED)) {
 		return -ENOTSUP;
 	}
 
@@ -3249,18 +3264,42 @@ int bt_ascs_unregister(void)
 {
 	int err;
 	struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+	bool all_ases_idle = false;
 
-	if (!ascs.registered) {
+	if (!atomic_test_bit(ascs.flags, FLAG_REGISTERED)) {
 		LOG_DBG("No ascs instance registered");
 		return -EALREADY;
 	}
 
+	if (atomic_test_and_set_bit(ascs.flags, FLAG_UNREGISTERING)) {
+		LOG_DBG("ASCS is already unregistering");
+		return -EALREADY;
+	}
+
+	/* Release all ASEs not in IDLE state */
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
-		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			LOG_DBG("[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
-				bt_bap_ep_state_str(ascs.ase_pool[i].ep.status.state));
-			return -EBUSY;
+		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE &&
+		    ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_RELEASING) {
+			/* Perform a force release on all ASEs. Notify the application, but
+			 * disregard any error returned
+			 */
+			unicast_server_cb->release(ascs.ase_pool[i].ep.stream,
+						   BT_BAP_ASCS_RSP_NULL);
+			ascs_ep_set_state(&ascs.ase_pool[i].ep, BT_BAP_EP_STATE_RELEASING);
 		}
+	}
+	/* The ASEs have to traverse through releasing state before reaching idle, make sure they
+	 * have reached idle state before we unregister
+	 */
+	while (!all_ases_idle) {
+		all_ases_idle = true;
+		for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+			if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
+				all_ases_idle = false;
+				break;
+			}
+		}
+		k_sleep(K_MSEC(5));
 	}
 
 	err = bt_gatt_service_unregister(&ascs_svc);
@@ -3269,11 +3308,14 @@ int bt_ascs_unregister(void)
 	 */
 	if (err != 0) {
 		LOG_DBG("Failed to unregister ASCS");
+		atomic_clear_bit(ascs.flags, FLAG_UNREGISTERING);
+
 		return err;
 	}
 
 	memcpy(&ascs_attrs, &_ascs_attrs, sizeof(struct bt_gatt_attr));
-	ascs.registered = false;
+	atomic_clear_bit(ascs.flags, FLAG_UNREGISTERING);
+	atomic_clear_bit(ascs.flags, FLAG_REGISTERED);
 
 	return err;
 }
