@@ -47,7 +47,7 @@ endif()
 
 if (CONFIG_RISCV_ISA_EXT_V)
     # do not enable in kernel mode, or gcc will generate auto-vectorized code in kernel
-    # string(CONCAT riscv_march ${riscv_march} "v")
+    string(CONCAT riscv_march ${riscv_march} "v")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZICSR)

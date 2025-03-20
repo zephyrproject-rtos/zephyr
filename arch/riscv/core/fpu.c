@@ -142,11 +142,15 @@ static void z_riscv_fpu_disable(void)
 
 	if ((status & MSTATUS_FS) != 0 || (status & MSTATUS_VS) != 0) {
 		csr_clear(mstatus, MSTATUS_FS);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 		csr_clear(mstatus, MSTATUS_VS);
+#endif
 
 		/* remember its clean/dirty state */
 		_current_cpu->arch.fpu_state = (status & MSTATUS_FS);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 		_current_cpu->arch.vpu_state = (status & MSTATUS_VS);
+#endif
 	}
 }
 
@@ -161,9 +165,13 @@ static void z_riscv_fpu_load(void)
 
 	/* restore our content */
 	csr_set(mstatus, MSTATUS_FS_INIT);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 	csr_set(mstatus, MSTATUS_VS_INIT);
+#endif
 	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 	z_riscv_vstate_restore(&_current->arch.saved_v_context);
+#endif
 	DBG("restore", _current);
 }
 
@@ -184,16 +192,25 @@ void arch_flush_local_fpu(void)
 	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
 
 	if (owner != NULL) {
+#ifdef CONFIG_RISCV_ISA_EXT_V
+
 		bool dirty = (_current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY) ||
 			     (_current_cpu->arch.vpu_state == MSTATUS_VS_DIRTY);
+#else
+		bool dirty = _current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY;
+#endif
 
 		if (dirty) {
 			/* turn on FPU access */
 			csr_set(mstatus, MSTATUS_FS_CLEAN);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 			csr_set(mstatus, MSTATUS_VS_CLEAN);
+#endif
 			/* save current owner's content */
 			z_riscv_fpu_save(&owner->arch.saved_fp_context);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 			z_riscv_vstate_save(&owner->arch.saved_v_context);
+#endif
 		}
 
 		/* dirty means active use */
@@ -201,7 +218,9 @@ void arch_flush_local_fpu(void)
 
 		/* disable FPU access */
 		csr_clear(mstatus, MSTATUS_FS);
+#ifdef CONFIG_RISCV_ISA_EXT_V
 		csr_clear(mstatus, MSTATUS_VS);
+#endif
 
 		/* release ownership */
 		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
@@ -302,7 +321,9 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 		/* make it accessible to the returning context */
 		esf->mstatus |= MSTATUS_FS_INIT;
+#ifdef CONFIG_RISCV_ISA_EXT_V
 		esf->mstatus |= MSTATUS_VS_INIT;
+#endif
 
 		return;
 	}
@@ -317,7 +338,9 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 	/* make it accessible and clean to the returning context */
 	esf->mstatus |= MSTATUS_FS_CLEAN;
+#ifdef CONFIG_RISCV_ISA_EXT_V
 	esf->mstatus |= MSTATUS_VS_CLEAN;
+#endif
 
 	/* and load it with corresponding content */
 	z_riscv_fpu_load();
@@ -356,7 +379,9 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 #endif
 			z_riscv_fpu_load();
 			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;
+#ifdef CONFIG_RISCV_ISA_EXT_V
 			_current_cpu->arch.vpu_state = MSTATUS_VS_CLEAN;
+#endif
 			return true;
 		}
 		return false;
@@ -375,14 +400,15 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
  */
 void z_riscv_fpu_exit_exc(struct arch_esf *esf)
 {
+	esf->mstatus &= ~MSTATUS_FS;
+#ifdef CONFIG_RISCV_ISA_EXT_V
+	esf->mstatus &= ~MSTATUS_VS;
+#endif
 	if (fpu_access_allowed(1)) {
-		esf->mstatus &= ~MSTATUS_FS;
-		esf->mstatus &= ~MSTATUS_VS;
 		esf->mstatus |= _current_cpu->arch.fpu_state;
+#ifdef CONFIG_RISCV_ISA_EXT_V
 		esf->mstatus |= _current_cpu->arch.vpu_state;
-	} else {
-		esf->mstatus &= ~MSTATUS_FS;
-		esf->mstatus &= ~MSTATUS_VS;
+#endif
 	}
 }
 
@@ -397,8 +423,10 @@ void z_riscv_fpu_thread_context_switch(void)
 	if (fpu_access_allowed(0)) {
 		csr_clear(mstatus, MSTATUS_FS);
 		csr_set(mstatus, _current_cpu->arch.fpu_state);
-		csr_clear(mstatus, MSTATUS_VS);
+#ifdef CONFIG_RISCV_ISA_EXT_V
+csr_clear(mstatus, MSTATUS_VS);
 		csr_set(mstatus, _current_cpu->arch.vpu_state);
+#endif
 	} else {
 		z_riscv_fpu_disable();
 	}

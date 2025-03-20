@@ -254,8 +254,10 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	ori  t1, t0, 0b0001100
 	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
 	beqz t1, is_fp
+#ifdef CONFIG_RISCV_ISA_EXT_V
 	xori t1, t0, 0x57	/* VECTOR */
 	beqz t1, is_fp
+#endif
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
 	 * are in fact CSR instructions targeting the fcsr, frm and fflags
