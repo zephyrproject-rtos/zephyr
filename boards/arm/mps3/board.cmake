@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Linaro
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # The FVP variant must be used to enable Ethos-U55 NPU support, but QEMU also
@@ -52,6 +52,8 @@ if (CONFIG_BUILD_WITH_TFM)
   # TF-M (Secure) & Zephyr (Non Secure) image (when running
   # in-tree tests).
   set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
+
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
 endif()
 
 # FVP Parameters
