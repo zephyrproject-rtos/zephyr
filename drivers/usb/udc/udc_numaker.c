@@ -505,6 +505,7 @@ static void numaker_usbd_ep_config_dmabuf(struct numaker_usbd_ep *ep_cur, uint32
 
 static void numaker_usbd_ep_abort(struct numaker_usbd_ep *ep_cur)
 {
+	struct udc_ep_config *ep_cfg;
 	const struct device *dev = ep_cur->dev;
 	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
@@ -512,7 +513,8 @@ static void numaker_usbd_ep_abort(struct numaker_usbd_ep *ep_cur)
 	ep_base->CFGP |= USBD_CFGP_CLRRDY_Msk;
 
 	if (ep_cur->addr_valid) {
-		udc_ep_set_busy(dev, ep_cur->addr, false);
+		ep_cfg = udc_get_ep_cfg(dev, ep_cur->addr);
+		udc_ep_set_busy(ep_cfg, false);
 	}
 }
 
@@ -589,11 +591,13 @@ static void numaker_usbd_ep_disable(struct numaker_usbd_ep *ep_cur)
 /* Start EP data transaction */
 static void udc_numaker_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len)
 {
+	struct udc_ep_config *ep_cfg;
 	const struct device *dev = ep_cur->dev;
 	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
 	if (ep_cur->addr_valid) {
-		udc_ep_set_busy(dev, ep_cur->addr, true);
+		ep_cfg = udc_get_ep_cfg(dev, ep_cur->addr);
+		udc_ep_set_busy(ep_cfg, true);
 	}
 
 	ep_base->MXPLD = len;
@@ -762,13 +766,15 @@ static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool stri
 {
 	struct net_buf *buf;
 	struct numaker_usbd_ep *ep_cur;
+	struct udc_ep_config *ep_cfg;
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
 		LOG_ERR("Invalid EP address 0x%02x for data out", ep);
 		return -EINVAL;
 	}
 
-	if (udc_ep_is_busy(dev, ep)) {
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	if (udc_ep_is_busy(ep_cfg)) {
 		if (strict) {
 			LOG_ERR("EP 0x%02x busy", ep);
 			return -EAGAIN;
@@ -777,7 +783,7 @@ static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool stri
 		return 0;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		if (strict) {
 			LOG_ERR("No buffer queued for EP 0x%02x", ep);
@@ -803,6 +809,7 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 {
 	struct net_buf *buf;
 	struct numaker_usbd_ep *ep_cur;
+	struct udc_ep_config *ep_cfg;
 	uint32_t data_len;
 
 	if (!USB_EP_DIR_IS_IN(ep)) {
@@ -810,7 +817,8 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 		return -EINVAL;
 	}
 
-	if (udc_ep_is_busy(dev, ep)) {
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	if (udc_ep_is_busy(ep_cfg)) {
 		if (strict) {
 			LOG_ERR("EP 0x%02x busy", ep);
 			return -EAGAIN;
@@ -819,7 +827,7 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 		return 0;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		if (strict) {
 			LOG_ERR("No buffer queued for EP 0x%02x", ep);
@@ -944,6 +952,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	int err;
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
+	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
 	uint8_t *data_ptr;
 	uint32_t data_len;
@@ -952,8 +961,9 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_OUT);
 
 	ep = msg->out.ep;
+	ep_cfg = udc_get_ep_cfg(ep);
 
-	udc_ep_set_busy(dev, ep, false);
+	udc_ep_set_busy(ep_cfg, false);
 
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
@@ -962,7 +972,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 		return -ENODEV;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer queued for ep=0x%02x", ep);
 		return -ENODATA;
@@ -993,7 +1003,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	}
 
 	/* To submit the peeked buffer */
-	udc_buf_get(dev, ep);
+	udc_buf_get(ep_cfg);
 
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
@@ -1037,13 +1047,15 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 	int err;
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
+	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_IN);
 
 	ep = msg->in.ep;
+	ep_cfg = udc_get_ep_cfg(dev, ep);
 
-	udc_ep_set_busy(dev, ep, false);
+	udc_ep_set_busy(ep_cfg, false);
 
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
@@ -1052,7 +1064,7 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 		return -ENODEV;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		/* No DATA IN request */
 		return 0;
@@ -1063,7 +1075,7 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 	}
 
 	/* To submit the peeked buffer */
-	udc_buf_get(dev, ep);
+	udc_buf_get(ep_cfg);
 
 	if (ep == USB_CONTROL_EP_IN) {
 		if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
@@ -1408,7 +1420,7 @@ static int udc_numaker_ep_dequeue(const struct device *dev, struct udc_ep_config
 
 	numaker_usbd_ep_abort(ep_cur);
 
-	buf = udc_buf_get_all(dev, ep_cfg->addr);
+	buf = udc_buf_get_all(ep_cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
