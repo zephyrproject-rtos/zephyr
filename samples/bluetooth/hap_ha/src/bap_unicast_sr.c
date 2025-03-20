@@ -338,7 +338,7 @@ static struct bt_bap_unicast_server_register_param param = {
 	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
 };
 
-static const struct bt_bap_unicast_server_cb unicast_server_cb = {
+static struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -421,6 +421,7 @@ int bap_unicast_sr_init(void)
 		.snk_loc = true,
 		.src_pac = true,
 		.src_loc = true,
+		&unicast_server_cb
 	};
 	int err;
 
@@ -431,7 +432,6 @@ int bap_unicast_sr_init(void)
 	}
 
 	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 

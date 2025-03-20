@@ -3249,18 +3249,37 @@ int bt_ascs_unregister(void)
 {
 	int err;
 	struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+	bool all_ases_idle = false;
 
 	if (!ascs.registered) {
 		LOG_DBG("No ascs instance registered");
 		return -EALREADY;
 	}
 
+	/* Release all ASEs not in IDLE state */
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
-		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			LOG_DBG("[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
-				bt_bap_ep_state_str(ascs.ase_pool[i].ep.status.state));
-			return -EBUSY;
+		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE &&
+		    ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_RELEASING) {
+			/* Perform a force release on all ASEs. Notify the application, but
+			 * disregard any error returned
+			 */
+			unicast_server_cb->release(ascs.ase_pool[i].ep.stream,
+						   BT_BAP_ASCS_RSP_NULL);
+			ascs_ep_set_state(&ascs.ase_pool[i].ep, BT_BAP_EP_STATE_RELEASING);
 		}
+	}
+	/* The ASEs have to traverse through releasing state before reaching idle, make sure they
+	 * have reached idle state before we unregister
+	 */
+	while (!all_ases_idle) {
+		all_ases_idle = true;
+		for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+			if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
+				all_ases_idle = false;
+				break;
+			}
+		}
+		k_sleep(K_MSEC(5));
 	}
 
 	err = bt_gatt_service_unregister(&ascs_svc);
