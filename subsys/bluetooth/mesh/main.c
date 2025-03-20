@@ -62,7 +62,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	LOG_INF("Primary Element: 0x%04x", addr);
 	LOG_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x", net_idx, flags, iv_index);
 
-	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_VALID)) {
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return -EALREADY;
 	}
 
@@ -74,14 +74,12 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		comp = bt_mesh_comp_get();
 		if (comp == NULL) {
 			LOG_ERR("Failed to get node composition");
-			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -EINVAL;
 		}
 
 		subnet = bt_mesh_cdb_subnet_get(net_idx);
 		if (!subnet) {
 			LOG_ERR("No subnet with idx %d", net_idx);
-			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -ENOENT;
 		}
 
@@ -90,7 +88,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 					      comp->elem_count, net_idx);
 		if (node == NULL) {
 			LOG_ERR("Failed to allocate database node");
-			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -ENOMEM;
 		}
 
@@ -108,9 +105,8 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 						    net_key);
 		if (err) {
 			LOG_ERR("Failed to import cdb network key");
-			goto end;
+			goto error_exit;
 		}
-		bt_mesh_cdb_subnet_store(subnet);
 
 		addr = node->addr;
 		bt_mesh_cdb_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
@@ -118,32 +114,34 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		err = bt_mesh_cdb_node_key_import(node, dev_key);
 		if (err) {
 			LOG_ERR("Failed to import cdb device key");
-			goto end;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_mesh_cdb_node_store(node);
+			goto error_exit;
 		}
 	}
 
 	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, dev_key, &mesh_dev_key);
 	if (err) {
 		LOG_ERR("Failed to import device key");
-		goto end;
+		goto error_exit;
 	}
 	is_dev_key_valid = true;
 
 	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, net_key, &mesh_net_key);
 	if (err) {
 		LOG_ERR("Failed to import network key");
-		goto end;
+		goto error_exit;
 	}
 	is_net_key_valid = true;
 
 	err = bt_mesh_net_create(net_idx, flags, &mesh_net_key, iv_index);
 	if (err) {
-		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
-		goto end;
+		LOG_ERR("Failed to create network");
+		goto error_exit;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_CDB) &&
+	    atomic_test_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID)) {
+		bt_mesh_cdb_subnet_store(subnet);
+		bt_mesh_cdb_node_store(node);
 	}
 
 	bt_mesh_net_settings_commit();
@@ -163,18 +161,21 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		bt_mesh_net_store();
 	}
 
+	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
 	bt_mesh_start();
 
-end:
-	if (err && node != NULL && IS_ENABLED(CONFIG_BT_MESH_CDB)) {
-		bt_mesh_cdb_node_del(node, true);
+	return 0;
+
+error_exit:
+	if (node != NULL && IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		bt_mesh_cdb_node_del(node, false);
 	}
 
-	if (err && is_dev_key_valid) {
+	if (is_dev_key_valid) {
 		bt_mesh_key_destroy(&mesh_dev_key);
 	}
 
-	if (err && is_net_key_valid) {
+	if (is_net_key_valid) {
 		bt_mesh_key_destroy(&mesh_net_key);
 	}
 
