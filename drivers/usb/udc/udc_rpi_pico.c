@@ -278,14 +278,16 @@ static int rpi_pico_ctrl_feed_dout(const struct device *dev, const size_t length
 
 static void drop_control_transfers(const struct device *dev)
 {
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	buf = udc_buf_get_all(cfg_out);
 	if (buf != NULL) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_IN);
+	buf = udc_buf_get_all(cfg_in);
 	if (buf != NULL) {
 		net_buf_unref(buf);
 	}
@@ -337,14 +339,14 @@ static inline int rpi_pico_handle_evt_dout(const struct device *dev,
 	struct net_buf *buf;
 	int err = 0;
 
-	buf = udc_buf_get(dev, cfg->addr);
+	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for OUT ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENODATA;
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
@@ -373,15 +375,15 @@ static int rpi_pico_handle_evt_din(const struct device *dev,
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
 
-	buf = udc_buf_get(dev, cfg->addr);
-	udc_ep_set_busy(dev, cfg->addr, false);
+	buf = udc_buf_get(cfg);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_IN) {
 		if (udc_ctrl_stage_is_status_in(dev) ||
@@ -415,7 +417,7 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		return;
 	}
@@ -429,7 +431,7 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	if (err != 0) {
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	} else {
-		udc_ep_set_busy(dev, cfg->addr, true);
+		udc_ep_set_busy(cfg, true);
 	}
 }
 
@@ -460,7 +462,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 		break;
 	}
 
-	if (ep_cfg->addr != USB_CONTROL_EP_OUT && !udc_ep_is_busy(dev, ep_cfg->addr)) {
+	if (ep_cfg->addr != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
 		rpi_pico_handle_xfer_next(dev, ep_cfg);
 	}
 }
@@ -503,7 +505,7 @@ static void rpi_pico_handle_buff_status_in(const struct device *dev, const uint8
 	struct net_buf *buf;
 	size_t len;
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -538,7 +540,7 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	struct net_buf *buf;
 	size_t len;
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -739,7 +741,7 @@ static int udc_rpi_pico_ep_dequeue(const struct device *dev,
 	lock_key = irq_lock();
 
 	rpi_pico_ep_cancel(dev, cfg->addr);
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -856,7 +858,7 @@ static int udc_rpi_pico_ep_clear_halt(const struct device *dev,
 		arch_nop();
 		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_STALL);
 
-		if (udc_buf_peek(dev, cfg->addr)) {
+		if (udc_buf_peek(cfg)) {
 			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	}
