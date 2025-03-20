@@ -95,13 +95,14 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *buf)
 {
 	const struct udc_ambiq_data *priv = udc_get_private(dev);
+	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, ep);
 	uint32_t status;
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(cfg)) {
 		LOG_WRN("ep 0x%02x is busy!", ep);
 		return 0;
 	}
-	udc_ep_set_busy(dev, ep, true);
+	udc_ep_set_busy(cfg, true);
 
 	/* buf equals NULL is used as indication of ZLP request */
 	if (buf == NULL) {
@@ -111,7 +112,7 @@ static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *bu
 	}
 
 	if (status != AM_HAL_STATUS_SUCCESS) {
-		udc_ep_set_busy(dev, ep, false);
+		udc_ep_set_busy(cfg, false);
 		LOG_ERR("am_hal_usb_ep_xfer write failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
@@ -122,15 +123,16 @@ static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *bu
 static int udc_ambiq_rx(const struct device *dev, uint8_t ep, struct net_buf *buf)
 {
 	struct udc_ambiq_data *priv = udc_get_private(dev);
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	uint32_t status;
 	uint16_t rx_size = buf->size;
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(ep_cfg)) {
 		LOG_WRN("ep 0x%02x is busy!", ep);
 		return 0;
 	}
-	udc_ep_set_busy(dev, ep, true);
+	udc_ep_set_busy(ep_cfg, true);
 
 	/* Make sure that OUT transaction size triggered doesn't exceed EP's MPS */
 	if ((ep != USB_CONTROL_EP_OUT) && (cfg->mps < rx_size)) {
@@ -139,7 +141,7 @@ static int udc_ambiq_rx(const struct device *dev, uint8_t ep, struct net_buf *bu
 
 	status = am_hal_usb_ep_xfer(priv->usb_handle, ep, buf->data, rx_size);
 	if (status != AM_HAL_STATUS_SUCCESS) {
-		udc_ep_set_busy(dev, ep, false);
+		udc_ep_set_busy(ep_cfg, false);
 		LOG_ERR("am_hal_usb_ep_xfer read(rx) failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
@@ -280,12 +282,12 @@ static int udc_ambiq_ep_dequeue(const struct device *dev, struct udc_ep_config *
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(dev, ep_cfg->addr);
+	buf = udc_buf_get_all(ep_cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
-	udc_ep_set_busy(dev, ep_cfg->addr, false);
+	udc_ep_set_busy(ep_cfg, false);
 	am_hal_usb_ep_state_reset(priv->usb_handle, ep_cfg->addr);
 	irq_unlock(lock_key);
 
@@ -653,7 +655,7 @@ static inline void ambiq_handle_evt_dout(const struct device *dev, struct udc_ep
 	}
 
 	/* Clear endpoint busy status */
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	/* Handle transfer complete event */
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
@@ -685,9 +687,9 @@ static void ambiq_handle_evt_din(const struct device *dev, struct udc_ep_config 
 	bool udc_ambiq_rx_status_in_completed = false;
 
 	/* Clear endpoint busy status */
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 	/* Check and Handle ZLP flag */
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (cfg->addr != USB_CONTROL_EP_IN) {
 		if (udc_ep_buf_has_zlp(buf)) {
 			udc_ep_buf_clear_zlp(buf);
@@ -753,7 +755,7 @@ static void udc_event_xfer(const struct device *dev, struct udc_ep_config *const
 {
 	struct net_buf *buf;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
 		return;
