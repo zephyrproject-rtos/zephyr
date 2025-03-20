@@ -434,8 +434,8 @@ config CS_TRACE_DEFMT
 
 config CPU_LOAD
 	select TRACING
-	# Currently hooks are added only to Cortex M architecture.
-	depends on CPU_CORTEX_M
+	depends on CPU_CORTEX_M || RISCV
+	depends on !SMP
 	bool "CPU load measurement"
 
 # Workaround for not being able to have commas in macro arguments
