@@ -49,6 +49,24 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 	return 0;
 }
 
+static enum wifi_mfp_options siwx91x_get_default_mfp(sl_wifi_security_t security)
+{
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
+		switch (security) {
+		case SL_WIFI_WPA3:
+			return WIFI_MFP_REQUIRED;
+		case SL_WIFI_WPA2:
+			return WIFI_MFP_OPTIONAL;
+		default:
+			return WIFI_MFP_DISABLE;
+		}
+	} else {
+		return WIFI_MFP_DISABLE;
+	}
+}
+
 static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	sl_wifi_client_configuration_t wifi_config = {
@@ -56,6 +74,7 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		.encryption = SL_WIFI_DEFAULT_ENCRYPTION,
 		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
+	enum wifi_mfp_options mfp_conf;
 	int ret;
 
 	switch (params->security) {
@@ -93,14 +112,27 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		return -ENOTSUP;
 	}
 
-	if (params->psk_length) {
-		sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID, SL_NET_WIFI_PSK,
-				      params->psk, params->psk_length);
+	ret = SL_STATUS_FAIL;
+	if (params->sae_password_length >= WIFI_PSK_MIN_LEN &&
+	    params->sae_password_length <= WIFI_PSK_MAX_LEN) {
+		ret = sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
+					    SL_NET_WIFI_PSK, params->sae_password,
+					    params->sae_password_length);
+	} else if (params->psk_length) {
+		ret = sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
+					    SL_NET_WIFI_PSK, params->psk, params->psk_length);
 	}
 
-	if (params->sae_password_length) {
-		sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID, SL_NET_WIFI_PSK,
-				      params->sae_password, params->sae_password_length);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set credentials: 0x%x", ret);
+		return -EINVAL;
+	}
+
+	mfp_conf = siwx91x_get_default_mfp(wifi_config.security);
+	if (params->mfp != mfp_conf) {
+		LOG_WRN("Needed MFP %s but got MFP %s, hence setting to MFP %s",
+			wifi_mfp_txt(mfp_conf), wifi_mfp_txt(params->mfp),
+			wifi_mfp_txt(mfp_conf));
 	}
 
 	if (params->channel != WIFI_CHANNEL_ANY) {
@@ -293,10 +325,21 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 static int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	struct siwx91x_dev *sidev = dev->data;
+	sl_si91x_rsp_wireless_info_t info = {0};
 	int32_t rssi = -1;
+	int ret = 0;
 
 	memset(status, 0, sizeof(*status));
 	status->state = sidev->state;
+
+	ret = sl_wifi_get_wireless_info(&info);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to get wireless info: 0x%x", ret);
+		return -EIO;
+	}
+
+	status->mfp = siwx91x_get_default_mfp(info.sec_type);
+
 	sl_wifi_get_signal_strength(SL_WIFI_CLIENT_INTERFACE, &rssi);
 	status->rssi = rssi;
 	return 0;
