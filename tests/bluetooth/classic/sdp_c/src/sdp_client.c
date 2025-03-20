@@ -20,8 +20,6 @@
 
 #include <zephyr/shell/shell.h>
 
-static const struct shell *ctx_shell;
-
 extern struct bt_conn *default_conn;
 
 static struct bt_sdp_discover_params sdp_discover;
@@ -173,8 +171,6 @@ static int cmd_ssa_discovery(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	size_t len;
 
-	ctx_shell = sh;
-
 	len = strlen(argv[1]);
 
 	if (len == (BT_UUID_SIZE_16 * 2)) {
@@ -207,7 +203,7 @@ static int cmd_ssa_discovery(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_sdp_discover(default_conn, &sdp_discover);
 	if (err) {
-		shell_error(ctx_shell, "Fail to start SDP Discovery (err %d)", err);
+		shell_error(sh, "Fail to start SDP Discovery (err %d)", err);
 		return err;
 	}
 	return 0;
@@ -217,8 +213,6 @@ static int cmd_ss_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	size_t len;
-
-	ctx_shell = sh;
 
 	len = strlen(argv[1]);
 
@@ -252,7 +246,7 @@ static int cmd_ss_discovery(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_sdp_discover(default_conn, &sdp_discover);
 	if (err) {
-		shell_error(ctx_shell, "Fail to start SDP Discovery (err %d)", err);
+		shell_error(sh, "Fail to start SDP Discovery (err %d)", err);
 		return err;
 	}
 	return 0;
@@ -263,8 +257,6 @@ static int cmd_sa_discovery(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	size_t len;
 	uint32_t handle;
-
-	ctx_shell = sh;
 
 	len = strlen(argv[1]);
 
@@ -282,7 +274,7 @@ static int cmd_sa_discovery(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_sdp_discover(default_conn, &sdp_discover);
 	if (err) {
-		shell_error(ctx_shell, "Fail to start SDP Discovery (err %d)", err);
+		shell_error(sh, "Fail to start SDP Discovery (err %d)", err);
 		return err;
 	}
 	return 0;
