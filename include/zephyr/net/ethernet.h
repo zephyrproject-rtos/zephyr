@@ -192,10 +192,10 @@ enum ethernet_hw_caps {
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
 
 	/** DSA switch slave port */
-	ETHERNET_DSA_SLAVE_PORT		= BIT(15),
+	ETHERNET_DSA_USER_PORT		= BIT(15),
 
 	/** DSA switch master port */
-	ETHERNET_DSA_MASTER_PORT	= BIT(16),
+	ETHERNET_DSA_CONDUIT_PORT	= BIT(16),
 
 	/** IEEE 802.1Qbv (scheduled traffic) supported */
 	ETHERNET_QBV			= BIT(17),
