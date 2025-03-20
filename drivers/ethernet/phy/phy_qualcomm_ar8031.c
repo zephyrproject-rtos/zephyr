@@ -188,22 +188,22 @@ static int qc_ar8031_update_link_state(const struct device *dev)
 
 	switch (speed | duplex) {
 	case PHY_SPEED_10M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_10BASE_T;
+		data->state.speed = LINK_FULL_10BASE;
 		break;
 	case PHY_SPEED_10M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_10BASE_T;
+		data->state.speed = LINK_HALF_10BASE;
 		break;
 	case PHY_SPEED_100M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_100BASE_T;
+		data->state.speed = LINK_FULL_100BASE;
 		break;
 	case PHY_SPEED_100M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_100BASE_T;
+		data->state.speed = LINK_HALF_100BASE;
 		break;
 	case PHY_SPEED_1000M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_1000BASE_T;
+		data->state.speed = LINK_FULL_1000BASE;
 		break;
 	case PHY_SPEED_1000M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_1000BASE_T;
+		data->state.speed = LINK_HALF_1000BASE;
 		break;
 	}
 
@@ -271,37 +271,37 @@ static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_
 		return -EIO;
 	}
 
-	if (adv_speeds & LINK_FULL_10BASE_T) {
+	if (adv_speeds & LINK_FULL_10BASE) {
 		anar_reg |= MII_ADVERTISE_10_FULL;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_10_FULL;
 	}
 
-	if (adv_speeds & LINK_HALF_10BASE_T) {
+	if (adv_speeds & LINK_HALF_10BASE) {
 		anar_reg |= MII_ADVERTISE_10_HALF;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_10_HALF;
 	}
 
-	if (adv_speeds & LINK_FULL_100BASE_T) {
+	if (adv_speeds & LINK_FULL_100BASE) {
 		anar_reg |= MII_ADVERTISE_100_FULL;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_100_FULL;
 	}
 
-	if (adv_speeds & LINK_HALF_100BASE_T) {
+	if (adv_speeds & LINK_HALF_100BASE) {
 		anar_reg |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_100_HALF;
 	}
 
-	if (adv_speeds & LINK_FULL_1000BASE_T) {
+	if (adv_speeds & LINK_FULL_1000BASE) {
 		c1kt_reg |= MII_ADVERTISE_1000_FULL;
 	} else {
 		c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
 	}
 
-	if (adv_speeds & LINK_HALF_1000BASE_T) {
+	if (adv_speeds & LINK_HALF_1000BASE) {
 		c1kt_reg |= MII_ADVERTISE_1000_HALF;
 	} else {
 		c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
@@ -463,17 +463,17 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 
 		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE_T,  LINK_FULL_10BASE_T,   LINK_HALF_100BASE_T,
-			LINK_FULL_100BASE_T, LINK_HALF_1000BASE_T, LINK_FULL_1000BASE_T,
+			LINK_HALF_10BASE,  LINK_FULL_10BASE,   LINK_HALF_100BASE,
+			LINK_FULL_100BASE, LINK_HALF_1000BASE, LINK_FULL_1000BASE,
 		};
 
 		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
 		data->state.is_up = true;
 	} else { /* Auto negotiation */
 		/* Advertise all speeds */
-		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-						LINK_HALF_100BASE_T | LINK_FULL_100BASE_T |
-						LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
+						LINK_HALF_100BASE | LINK_FULL_100BASE |
+						LINK_HALF_1000BASE | LINK_FULL_1000BASE);
 
 		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 

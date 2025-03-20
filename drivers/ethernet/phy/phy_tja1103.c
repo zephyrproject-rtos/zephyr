@@ -342,7 +342,7 @@ static int phy_tja1103_cfg_link(const struct device *dev, enum phy_link_speed ad
 {
 	ARG_UNUSED(dev);
 
-	if (adv_speeds & LINK_FULL_100BASE_T) {
+	if (adv_speeds & LINK_FULL_100BASE) {
 		return 0;
 	}
 
@@ -360,7 +360,7 @@ static int phy_tja1103_init(const struct device *dev)
 	data->dev = dev;
 	data->cb = NULL;
 	data->state.is_up = false;
-	data->state.speed = LINK_FULL_100BASE_T;
+	data->state.speed = LINK_FULL_100BASE;
 
 	ret = WAIT_FOR(!phy_tja1103_id(dev, &phy_id) && phy_id == TJA1103_ID,
 		       TJA1103_AWAIT_RETRY_COUNT * TJA1103_AWAIT_DELAY_POLL_US,
