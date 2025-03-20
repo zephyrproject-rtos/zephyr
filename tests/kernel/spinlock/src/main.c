@@ -11,6 +11,7 @@
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 #define CPU1_STACK_SIZE 1024
+#define BUSY_WAIT_TIME_US 5
 
 K_THREAD_STACK_DEFINE(cpu1_stack, CPU1_STACK_SIZE);
 struct k_thread cpu1_thread;
@@ -80,6 +81,10 @@ static void bounce_once(int id, bool trylock)
 		if (bounce_owner != id) {
 			locked = 1;
 			break;
+		}
+
+		if ((id == 1234) && trylock) {
+			k_busy_wait(BUSY_WAIT_TIME_US);
 		}
 
 		k_spin_unlock(&bounce_lock, key);
