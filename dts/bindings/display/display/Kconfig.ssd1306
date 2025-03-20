@@ -1,0 +1,26 @@
+# SSD1306 display controller configuration options
+
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1306
+	bool "SSD1306 display driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1306FB_ENABLED || DT_HAS_SINOWEALTH_SH1106_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),spi)
+	help
+	  Enable driver for SSD1306 display driver.
+
+if SSD1306
+
+config SSD1306_DEFAULT_CONTRAST
+	int "SSD1306 default contrast"
+	default 128
+	range 0 255
+	help
+	  SSD1306 default contrast.
+
+endif # SSD1306
