@@ -166,8 +166,7 @@ yaml_get(board_qualifiers NAME build_info KEY cmake board qualifiers)
 yaml_get(board_revision NAME build_info KEY cmake board revision)
 zephyr_build_string(normalized_board_target
     BOARD ${board_name}
-    BOARD_QUALIFIERS ${board_qualifiers}
-    BOARD_REVISION ${board_revision})
+    BOARD_QUALIFIERS ${board_qualifiers})
 
 set(llext_edk_name ${CONFIG_LLEXT_EDK_NAME})
 set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
