@@ -44,7 +44,11 @@ Boards
 * The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
   :dtcompatible:`zephyr,native-sim-cpu`.
 
-* Zephyr now supports version 1.11.1 of the :zephyr:board:`neorv32`.
+* Zephyr now supports version 1.11.2 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
+  implementations need to be updated to this version to be compatible with Zephyr v4.2.0.
+
+* The :zephyr:board:`neorv32` now targets NEORV32 processor (SoC) templates via board variants. The
+  old ``neorv32`` board target is now named ``neorv32/neorv32/up5kdemo``.
 
 * ``arduino_uno_r4_minima``, ``arduino_uno_r4_wifi``, and ``mikroe_clicker_ra4m1`` have migrated to
   new FSP-based configurations.
