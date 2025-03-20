@@ -364,9 +364,9 @@ Bluetooth Controller:
     - carlescufi
     - thoh-ot
     - ppryga
-    - mtpr-ot
     - wopu-ot
     - erbr-ot
+    - Tronil
   files:
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/img/ctlr*
