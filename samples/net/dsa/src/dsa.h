@@ -8,7 +8,11 @@
 #ifndef __DSA_SAMPLE__
 #define __DSA_SAMPLE__
 
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
+#else
+#include <zephyr/net/dsa_core.h>
+#endif
 #include <zephyr/net/ethernet.h>
 
 extern struct ud user_data;
