@@ -184,7 +184,7 @@ static void udc_stm32_flush_tx_fifo(const struct device *dev)
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, NULL, 0);
 }
 
-static int udc_stm32_tx(const struct device *dev, uint8_t ep,
+static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
 			struct net_buf *buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -192,31 +192,31 @@ static int udc_stm32_tx(const struct device *dev, uint8_t ep,
 	uint8_t *data; uint32_t len;
 	HAL_StatusTypeDef status;
 
-	LOG_DBG("TX ep 0x%02x len %u", ep, buf->len);
+	LOG_DBG("TX ep 0x%02x len %u", epcfg->addr, buf->len);
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(epcfg)) {
 		return 0;
 	}
 
 	data = buf->data;
 	len = buf->len;
 
-	if (ep == USB_CONTROL_EP_IN) {
+	if (epcfg->addr == USB_CONTROL_EP_IN) {
 		len = MIN(cfg->ep0_mps, buf->len);
 	}
 
 	buf->data += len;
 	buf->len -= len;
 
-	status = HAL_PCD_EP_Transmit(&priv->pcd, ep, data, len);
+	status = HAL_PCD_EP_Transmit(&priv->pcd, epcfg->addr, data, len);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep, (int)status);
+		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", epcfg->addr, (int)status);
 		return -EIO;
 	}
 
-	udc_ep_set_busy(dev, ep, true);
+	udc_ep_set_busy(epcfg, true);
 
-	if (ep == USB_CONTROL_EP_IN && len > 0) {
+	if (epcfg->addr == USB_CONTROL_EP_IN && len > 0) {
 		/* Wait for an empty package from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
@@ -230,25 +230,25 @@ static int udc_stm32_tx(const struct device *dev, uint8_t ep,
 	return 0;
 }
 
-static int udc_stm32_rx(const struct device *dev, uint8_t ep,
+static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *epcfg,
 			struct net_buf *buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
 
-	LOG_DBG("RX ep 0x%02x len %u", ep, buf->size);
+	LOG_DBG("RX ep 0x%02x len %u", epcfg->addr, buf->size);
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(epcfg)) {
 		return 0;
 	}
 
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep, buf->data, buf->size);
+	status = HAL_PCD_EP_Receive(&priv->pcd, epcfg->addr, buf->data, buf->size);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep, (int)status);
+		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", epcfg->addr, (int)status);
 		return -EIO;
 	}
 
-	udc_ep_set_busy(dev, ep, true);
+	udc_ep_set_busy(epcfg, true);
 
 	return 0;
 }
@@ -288,14 +288,16 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
 {
 	const struct device *dev = priv->dev;
+	struct udc_ep_config *epcfg;
 	uint8_t ep = epnum | USB_EP_DIR_OUT;
 	struct net_buf *buf;
 
 	LOG_DBG("DataOut ep 0x%02x",  ep);
 
-	udc_ep_set_busy(dev, ep, false);
+	epcfg = udc_get_ep_cfg(dev, ep);
+	udc_ep_set_busy(epcfg, false);
 
-	buf = udc_buf_get(dev, ep);
+	buf = udc_buf_get(epcfg);
 	if (unlikely(buf == NULL)) {
 		LOG_ERR("ep 0x%02x queue is empty", ep);
 		return;
@@ -318,23 +320,25 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 		udc_submit_ep_event(dev, buf, 0);
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(epcfg);
 	if (buf) {
-		udc_stm32_rx(dev, ep, buf);
+		udc_stm32_rx(dev, epcfg, buf);
 	}
 }
 
 static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 {
 	const struct device *dev = priv->dev;
+	struct udc_ep_config *epcfg;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
 	struct net_buf *buf;
 
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
-	udc_ep_set_busy(dev, ep, false);
+	epcfg = udc_get_ep_cfg(dev, ep);
+	udc_ep_set_busy(epcfg, false);
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(epcfg);
 	if (unlikely(buf == NULL)) {
 		return;
 	}
@@ -358,7 +362,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		return;
 	}
 
-	udc_buf_get(dev, ep);
+	udc_buf_get(epcfg);
 
 	if (ep == USB_CONTROL_EP_IN) {
 		if (udc_ctrl_stage_is_status_in(dev) ||
@@ -383,9 +387,9 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 
 	udc_submit_ep_event(dev, buf, 0);
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(epcfg);
 	if (buf) {
-		udc_stm32_tx(dev, ep, buf);
+		udc_stm32_tx(dev, epcfg, buf);
 	}
 }
 
@@ -849,9 +853,9 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 	lock_key = irq_lock();
 
 	if (USB_EP_DIR_IS_IN(epcfg->addr)) {
-		ret = udc_stm32_tx(dev, epcfg->addr, buf);
+		ret = udc_stm32_tx(dev, epcfg, buf);
 	} else {
-		ret = udc_stm32_rx(dev, epcfg->addr, buf);
+		ret = udc_stm32_rx(dev, epcfg, buf);
 	}
 
 	irq_unlock(lock_key);
@@ -866,12 +870,12 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 
 	udc_stm32_ep_flush(dev, epcfg);
 
-	buf = udc_buf_get_all(dev, epcfg->addr);
+	buf = udc_buf_get_all(epcfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
-	udc_ep_set_busy(dev, epcfg->addr, false);
+	udc_ep_set_busy(epcfg, false);
 
 	return 0;
 }
