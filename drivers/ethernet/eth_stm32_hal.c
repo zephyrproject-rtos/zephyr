@@ -1282,7 +1282,7 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
 #if defined(CONFIG_NET_DSA_DEPRECATED)
-		| ETHERNET_DSA_MASTER_PORT
+		| ETHERNET_DSA_CONDUIT_PORT
 #endif
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 		| ETHERNET_HW_FILTERING

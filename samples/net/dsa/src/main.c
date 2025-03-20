@@ -24,7 +24,7 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_MASTER_PORT) {
+	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) {
 		if (ifaces->master == NULL) {
 			ifaces->master = iface;
 

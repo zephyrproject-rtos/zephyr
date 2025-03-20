@@ -214,7 +214,7 @@ static enum ethernet_hw_caps dsa_netc_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_DSA_SLAVE_PORT | ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
+	return ETHERNET_DSA_USER_PORT | ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
 	       ETHERNET_LINK_1000BASE_T;
 }
 
