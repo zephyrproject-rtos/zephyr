@@ -25,7 +25,7 @@ config UDC_BUF_POOL_SIZE
 	help
 	  Total amount of memory available for UDC requests.
 
-config UDC_BUF_FORCE_NOCACHE
+config USB_BUF_FORCE_NOCACHE
 	bool "Place the buffer pools in the nocache memory region"
 	depends on NOCACHE_MEMORY && DCACHE
 	help
