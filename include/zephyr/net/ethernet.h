@@ -26,7 +26,7 @@
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
 #endif
 
@@ -132,7 +132,7 @@ struct net_eth_addr {
  * Extend the max frame size for DSA (KSZ8794) by one byte (to 1519) to
  * store tail tag.
  */
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #define NET_ETH_MAX_FRAME_SIZE (_NET_ETH_MAX_FRAME_SIZE + DSA_TAG_SIZE)
 #define NET_ETH_MAX_HDR_SIZE (_NET_ETH_MAX_HDR_SIZE + DSA_TAG_SIZE)
 #else
@@ -702,7 +702,7 @@ struct ethernet_context {
 	int port;
 #endif
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	/** DSA RX callback function - for custom processing - like e.g.
 	 * redirecting packets when MAC address is caught
 	 */
