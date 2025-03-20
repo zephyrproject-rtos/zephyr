@@ -1,0 +1,44 @@
+common:
+  sysbuild: true
+  depends_on: spi
+
+tests:
+  tests.drivers.nrf_qspi_flash.qspi_multi_line_mode:
+    tags:
+      - drivers
+      - flash
+      - spi
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - ".*Flash erase succeeded.*"
+        - ".*Data read matches data written. Good.*"
+
+  tests.drivers.nrf_qspi_flash.qspi_single_line_mode:
+    tags:
+      - drivers
+      - flash
+      - spi
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="flash_cfg/mx25r64_single_line.overlay"
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - ".*Flash erase succeeded.*"
+        - ".*Data read matches data written. Good.*"
