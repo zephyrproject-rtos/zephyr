@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strnlen() */
+
 #include <errno.h>
 #include <string.h>
 
@@ -169,12 +172,13 @@ static int settings_zms_load_subtree(struct settings_store *cs, const struct set
 {
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
 	struct settings_zms_read_fn_arg read_fn_arg;
-	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	char name[SETTINGS_FULL_NAME_LEN];
 	ssize_t rc1;
 	ssize_t rc2;
 	uint32_t name_hash;
 
-	name_hash = sys_hash32(arg->subtree, strlen(arg->subtree)) & ZMS_HASH_MASK;
+	name_hash = sys_hash32(arg->subtree, strnlen(arg->subtree, SETTINGS_FULL_NAME_LEN)) &
+		    ZMS_HASH_MASK;
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
 		name_hash = ZMS_UPDATE_COLLISION_NUM(name_hash, i);
 		/* Get the name entry from ZMS */
@@ -214,7 +218,7 @@ static ssize_t settings_zms_load_one(struct settings_store *cs, const char *name
 				     size_t buf_len)
 {
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
-	char r_name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	char r_name[SETTINGS_FULL_NAME_LEN];
 	ssize_t rc = 0;
 	uint32_t name_hash;
 	uint32_t value_id;
@@ -224,7 +228,7 @@ static ssize_t settings_zms_load_one(struct settings_store *cs, const char *name
 		return -EINVAL;
 	}
 
-	name_hash = sys_hash32(name, strlen(name)) & ZMS_HASH_MASK;
+	name_hash = sys_hash32(name, strnlen(name, SETTINGS_FULL_NAME_LEN)) & ZMS_HASH_MASK;
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
 		name_hash = ZMS_UPDATE_COLLISION_NUM(name_hash, i);
 		/* Get the name entry from ZMS */
@@ -259,7 +263,7 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
 	struct settings_zms_read_fn_arg read_fn_arg;
 	struct settings_hash_linked_list settings_element;
-	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	char name[SETTINGS_FULL_NAME_LEN];
 	ssize_t rc1;
 	ssize_t rc2;
 	uint32_t ll_hash_id;
@@ -380,7 +384,7 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 {
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
 	struct settings_hash_linked_list settings_element;
-	char rdname[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	char rdname[SETTINGS_FULL_NAME_LEN];
 	uint32_t name_hash;
 	uint32_t collision_num = 0;
 	bool delete;
@@ -396,7 +400,7 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 	/* Find out if we are doing a delete */
 	delete = ((value == NULL) || (val_len == 0));
 
-	name_hash = sys_hash32(name, strlen(name)) & ZMS_HASH_MASK;
+	name_hash = sys_hash32(name, strnlen(name, SETTINGS_FULL_NAME_LEN)) & ZMS_HASH_MASK;
 	/* MSB is always 1 */
 	name_hash |= BIT(31);
 
@@ -523,7 +527,7 @@ no_hash_collision:
 no_ll_update:
 #endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
 		/* Now let's write the name */
-		rc = zms_write(&cf->cf_zms, name_hash, name, strlen(name));
+		rc = zms_write(&cf->cf_zms, name_hash, name, strnlen(name, SETTINGS_FULL_NAME_LEN));
 		if (rc < 0) {
 			return rc;
 		}
@@ -534,7 +538,7 @@ no_ll_update:
 static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *name)
 {
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
-	char r_name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	char r_name[SETTINGS_FULL_NAME_LEN];
 	ssize_t rc = 0;
 	uint32_t name_hash;
 
@@ -543,7 +547,7 @@ static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *n
 		return -EINVAL;
 	}
 
-	name_hash = sys_hash32(name, strlen(name)) & ZMS_HASH_MASK;
+	name_hash = sys_hash32(name, strnlen(name, SETTINGS_FULL_NAME_LEN)) & ZMS_HASH_MASK;
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
 		name_hash = ZMS_UPDATE_COLLISION_NUM(name_hash, i);
 		/* Get the name entry from ZMS */

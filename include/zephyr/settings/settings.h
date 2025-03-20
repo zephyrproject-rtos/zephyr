@@ -45,6 +45,9 @@ extern "C" {
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
+/* Maximum Settings name length including separators */
+#define SETTINGS_FULL_NAME_LEN SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1
+
 /**
  * Function used to read the data from the settings storage in
  * h_set handler implementations.
