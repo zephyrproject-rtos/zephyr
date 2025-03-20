@@ -9,7 +9,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 10000000
 
 config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
-	default 10
+	default 0
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y
