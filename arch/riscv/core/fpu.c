@@ -56,9 +56,83 @@ static void DBG(char *msg, struct k_thread *th)
 
 #else
 
-static inline void DBG(char *msg, struct k_thread *t) { }
+static inline void DBG(char *msg, struct k_thread *t)
+{
+}
 
 #endif /* FPU_DEBUG */
+
+#ifdef CONFIG_RISCV_ISA_EXT_V
+
+void z_riscv_vstate_csr_save(struct z_riscv_v_context *dest)
+{
+	__asm volatile("csrr	%0, vstart\n\t"
+		       "csrr	%1, vtype\n\t"
+		       "csrr	%2, vl\n\t"
+		       "csrr	%3, vcsr\n\t"
+		       "csrr	%4, vlenb\n\t"
+		       : "=r"(dest->vstart), "=r"(dest->vtype), "=r"(dest->vl), "=r"(dest->vcsr),
+			 "=r"(dest->vlenb)
+		       :
+		       :);
+}
+
+void z_riscv_vstate_csr_restore(struct z_riscv_v_context *src)
+{
+	__asm volatile(".option push\n\t"
+		       ".option arch, +v\n\t"
+		       "vsetvl	 x0, %2, %1\n\t"
+		       ".option pop\n\t"
+		       "csrw	vstart, %0\n\t"
+		       "csrw	vcsr, %3\n\t"
+		       :
+		       : "r"(src->vstart), "r"(src->vtype), "r"(src->vl), "r"(src->vcsr)
+		       :);
+}
+
+void z_riscv_vstate_save(struct z_riscv_v_context *save_to)
+{
+	unsigned long vl;
+
+	z_riscv_vstate_csr_save(save_to);
+	__asm volatile(".option push\n\t"
+		       ".option arch, +v\n\t"
+		       "vsetvli	%0, x0, e8, m8, ta, ma\n\t"
+		       "vse8.v		v0, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vse8.v		v8, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vse8.v		v16, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vse8.v		v24, (%1)\n\t"
+		       ".option pop\n\t"
+		       : "=&r"(vl)
+		       : "r"(save_to->vreg)
+		       : "memory");
+}
+
+void z_riscv_vstate_restore(struct z_riscv_v_context *restore_from)
+{
+	unsigned long vl;
+
+	__asm volatile(".option push\n\t"
+		       ".option arch, +v\n\t"
+		       "vsetvli	%0, x0, e8, m8, ta, ma\n\t"
+		       "vle8.v		v0, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vle8.v		v8, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vle8.v		v16, (%1)\n\t"
+		       "add		%1, %1, %0\n\t"
+		       "vle8.v		v24, (%1)\n\t"
+		       ".option pop\n\t"
+		       : "=&r"(vl)
+		       : "r"(restore_from->vreg)
+		       : "memory");
+	z_riscv_vstate_csr_restore(restore_from);
+}
+
+#endif /* CONFIG_RISCV_ISA_EXT_V */
 
 static void z_riscv_fpu_disable(void)
 {
@@ -66,27 +140,30 @@ static void z_riscv_fpu_disable(void)
 
 	__ASSERT((status & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
-	if ((status & MSTATUS_FS) != 0) {
+	if ((status & MSTATUS_FS) != 0 || (status & MSTATUS_VS) != 0) {
 		csr_clear(mstatus, MSTATUS_FS);
+		csr_clear(mstatus, MSTATUS_VS);
 
 		/* remember its clean/dirty state */
 		_current_cpu->arch.fpu_state = (status & MSTATUS_FS);
+		_current_cpu->arch.vpu_state = (status & MSTATUS_VS);
 	}
 }
 
 static void z_riscv_fpu_load(void)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
-	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
-		 "must be called with FPU access disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0, "must be called with FPU access disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_VS) == 0, "must be called with VPU access disabled");
 
 	/* become new owner */
 	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
 
 	/* restore our content */
 	csr_set(mstatus, MSTATUS_FS_INIT);
+	csr_set(mstatus, MSTATUS_VS_INIT);
 	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
+	z_riscv_vstate_restore(&_current->arch.saved_v_context);
 	DBG("restore", _current);
 }
 
@@ -100,21 +177,23 @@ static void z_riscv_fpu_load(void)
  */
 void arch_flush_local_fpu(void)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
-	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
-		 "must be called with FPU access disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0, "must be called with FPU access disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_VS) == 0, "must be called with VPU access disabled");
 
 	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
 
 	if (owner != NULL) {
-		bool dirty = (_current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY);
+		bool dirty = (_current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY) ||
+			     (_current_cpu->arch.vpu_state == MSTATUS_VS_DIRTY);
 
 		if (dirty) {
 			/* turn on FPU access */
 			csr_set(mstatus, MSTATUS_FS_CLEAN);
+			csr_set(mstatus, MSTATUS_VS_CLEAN);
 			/* save current owner's content */
 			z_riscv_fpu_save(&owner->arch.saved_fp_context);
+			z_riscv_vstate_save(&owner->arch.saved_v_context);
 		}
 
 		/* dirty means active use */
@@ -122,6 +201,7 @@ void arch_flush_local_fpu(void)
 
 		/* disable FPU access */
 		csr_clear(mstatus, MSTATUS_FS);
+		csr_clear(mstatus, MSTATUS_VS);
 
 		/* release ownership */
 		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
@@ -132,8 +212,7 @@ void arch_flush_local_fpu(void)
 #ifdef CONFIG_SMP
 static void flush_owned_fpu(struct k_thread *thread)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
 	int i;
 	atomic_ptr_val_t owner;
@@ -206,8 +285,7 @@ void z_riscv_fpu_enter_exc(void)
  */
 void z_riscv_fpu_trap(struct arch_esf *esf)
 {
-	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 &&
-		 (csr_read(mstatus) & MSTATUS_FS) == 0,
+	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 && (csr_read(mstatus) & MSTATUS_FS) == 0,
 		 "called despite FPU being accessible");
 
 	/* save current owner's content  if any */
@@ -224,6 +302,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 		/* make it accessible to the returning context */
 		esf->mstatus |= MSTATUS_FS_INIT;
+		esf->mstatus |= MSTATUS_VS_INIT;
 
 		return;
 	}
@@ -238,6 +317,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 	/* make it accessible and clean to the returning context */
 	esf->mstatus |= MSTATUS_FS_CLEAN;
+	esf->mstatus |= MSTATUS_VS_CLEAN;
 
 	/* and load it with corresponding content */
 	z_riscv_fpu_load();
@@ -253,8 +333,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
  */
 static bool fpu_access_allowed(unsigned int exc_update_level)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
 	if (_current->arch.exception_depth == exc_update_level) {
 		/* We're about to execute non-exception code */
@@ -277,6 +356,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 #endif
 			z_riscv_fpu_load();
 			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;
+			_current_cpu->arch.vpu_state = MSTATUS_VS_CLEAN;
 			return true;
 		}
 		return false;
@@ -297,9 +377,12 @@ void z_riscv_fpu_exit_exc(struct arch_esf *esf)
 {
 	if (fpu_access_allowed(1)) {
 		esf->mstatus &= ~MSTATUS_FS;
+		esf->mstatus &= ~MSTATUS_VS;
 		esf->mstatus |= _current_cpu->arch.fpu_state;
+		esf->mstatus |= _current_cpu->arch.vpu_state;
 	} else {
 		esf->mstatus &= ~MSTATUS_FS;
+		esf->mstatus &= ~MSTATUS_VS;
 	}
 }
 
@@ -314,6 +397,8 @@ void z_riscv_fpu_thread_context_switch(void)
 	if (fpu_access_allowed(0)) {
 		csr_clear(mstatus, MSTATUS_FS);
 		csr_set(mstatus, _current_cpu->arch.fpu_state);
+		csr_clear(mstatus, MSTATUS_VS);
+		csr_set(mstatus, _current_cpu->arch.vpu_state);
 	} else {
 		z_riscv_fpu_disable();
 	}

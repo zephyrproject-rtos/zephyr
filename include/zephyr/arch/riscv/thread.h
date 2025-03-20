@@ -62,13 +62,22 @@ struct z_riscv_fp_context {
 	uint32_t fcsr;
 };
 typedef struct z_riscv_fp_context z_riscv_fp_context_t;
+struct z_riscv_v_context {
+	unsigned long vstart;
+	unsigned long vl;
+	unsigned long vtype;
+	unsigned long vcsr;
+	unsigned long vlenb;
+	char vreg[32][CONFIG_RISCV_VECTOR_MAX_LEN];
+};
+typedef struct z_riscv_v_context z_riscv_v_context_t;
 
 #define PMP_M_MODE_SLOTS 8	/* 8 is plenty enough for m-mode */
 
 struct _thread_arch {
 #ifdef CONFIG_FPU_SHARING
 	struct z_riscv_fp_context saved_fp_context;
-	bool fpu_recently_used;
+	bool fpu_recently_used; // include vector extension
 	uint8_t exception_depth;
 #endif
 #ifdef CONFIG_USERSPACE
@@ -83,6 +92,9 @@ struct _thread_arch {
 	unsigned int m_mode_pmp_end_index;
 	unsigned long m_mode_pmpaddr_regs[PMP_M_MODE_SLOTS];
 	unsigned long m_mode_pmpcfg_regs[PMP_M_MODE_SLOTS / sizeof(unsigned long)];
+#endif
+#ifdef CONFIG_FPU_SHARING
+	struct z_riscv_v_context saved_v_context;
 #endif
 };
 

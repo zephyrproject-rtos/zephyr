@@ -16,6 +16,12 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+config RISCV_VECTOR_MAX_LEN
+	int "Maximum length of a vector register in bits"
+	default 256
+	help
+	  Maximum length of a vector register in bits.
+
 choice RISCV_GP_PURPOSE
 	prompt "Purpose of the global pointer (GP) register"
 	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING

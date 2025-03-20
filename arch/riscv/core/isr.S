@@ -244,6 +244,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * 1001011 = NMSUB
 	 * 1001111 = NMADD
 	 * 1010011 = OP-FP
+	 * 0x57    = VECTOR
 	 */
 	xori t1, t0, 0b1010011	/* OP-FP */
 	beqz t1, is_fp
@@ -252,6 +253,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	beqz t1, is_fp
 	ori  t1, t0, 0b0001100
 	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
+	beqz t1, is_fp
+	xori t1, t0, 0x57	/* VECTOR */
 	beqz t1, is_fp
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
@@ -269,11 +272,24 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	beqz t0, 2f		/* not a CSR insn */
 	srli t0, t2, 20		/* isolate the csr register number */
 	beqz t0, 2f		/* 0=ustatus */
-	andi t0, t0, ~0x3	/* 1=fflags, 2=frm, 3=fcsr */
+	andi t1, t0, ~0x3	/* 1=fflags, 2=frm, 3=fcsr */
 #if !defined(CONFIG_RISCV_ISA_EXT_C)
-	bnez t0, no_fp
+	bnez t1, no_fp
 #else
-	beqz t0, is_fp
+	beqz t1, is_fp
+#ifdef CONFIG_RISCV_ISA_EXT_V
+/* Vector extension instructions, but vxsat&vxrm is not processed */
+	li t1, 0x8	// vstart
+	beq t0, t1, is_fp
+	li t1, 0xf	// vcsr
+	beq t0, t1, is_fp
+	li t1, 0xc20	// vl
+	beq t0, t1, is_fp
+	li t1, 0xc21	// vtype
+	beq t0, t1, is_fp
+	li t1, 0xc22	// vlenb
+	beq t0, t1, is_fp
+#endif /* CONFIG_RISCV_ISA_EXT_V */
 2:	/* remaining non RVC (0b11) and RVC with 0b01 are not FP instructions */
 	andi t1, t2, 1
 	bnez t1, no_fp
@@ -789,8 +805,6 @@ fp_trap_exit:
 	sr t0, __struct_arch_esf_sp_OFFSET(sp)
 2:
 #endif
-	li s0, MSTATUS_VS_CLEAN
-	csrs mstatus, s0
 	/* Restore s0 (it is no longer ours) */
 	lr s0, __struct_arch_esf_s0_OFFSET(sp)
 

@@ -21,6 +21,7 @@ struct _cpu_arch {
 #ifdef CONFIG_FPU_SHARING
 	atomic_ptr_val_t fpu_owner;
 	uint32_t fpu_state;
+	uint32_t vpu_state;
 #endif
 };
 
