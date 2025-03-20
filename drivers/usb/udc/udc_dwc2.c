@@ -3026,8 +3026,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 		if (!priv->hibernated) {
 			LOG_DBG("New transfer(s) in the queue");
-			eps = k_event_test(&priv->xfer_new, UINT32_MAX);
-			k_event_clear(&priv->xfer_new, eps);
+			eps = k_event_clear(&priv->xfer_new, UINT32_MAX);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
@@ -3049,8 +3048,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 
 		if (!priv->hibernated) {
-			eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
-			k_event_clear(&priv->xfer_finished, eps);
+			eps = k_event_clear(&priv->xfer_finished, UINT32_MAX);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
