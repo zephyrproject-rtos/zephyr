@@ -152,24 +152,49 @@ extern "C" {
 /**
  * @brief SPI Chip Select control structure
  *
- * This can be used to control a CS line via a GPIO line, instead of
- * using the controller inner CS logic.
+ * This describes how the SPI CS line should be controlled, including whether
+ * to use GPIO or native hardware CS, and timing parameters.
  *
  */
 struct spi_cs_control {
 	/**
 	 * GPIO devicetree specification of CS GPIO.
-	 * The device pointer can be set to NULL to fully inhibit CS control if
-	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+	 *
+	 * If set to NULL, hardware driver can attempt to natively control CS
+	 * automatically if it has that capability and the correct pinmux has
+	 * been applied. Otherwise, NULL will inhibit CS control.
+	 *
+	 * The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
 	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
 	 * spi_config.
 	 */
 	struct gpio_dt_spec gpio;
+
 	/**
-	 * Delay in microseconds to wait before starting the
-	 * transmission and before releasing the CS line.
+	 * Timing configuration.
+	 * For GPIO CS, delay is microseconds to wait before starting
+	 * transmission and releasing CS.
+	 * For hardware CS, pcs_to_sck_delay_ns and sck_to_pcs_delay_ns
+	 * control assertion/deassertion timing.
 	 */
-	uint32_t delay;
+	union {
+		/**
+		 * In the case of GPIO CS, this is delay in microseconds to wait
+		 * before starting the transmission and before releasing the CS line.
+		 */
+		uint32_t delay;
+
+		struct {
+			/** @brief Delay from PCS assertion to first SCK edge in nanoseconds.
+			 * If set to 0, hardware default will be used.
+			 */
+			uint8_t pcs_to_sck_delay_ns;
+			/** @brief Delay from last SCK edge to PCS deassertion in nanoseconds.
+			 * If set to 0, hardware default will be used.
+			 */
+			uint8_t sck_to_pcs_delay_ns;
+		};
+	};
 };
 
 /**
@@ -329,8 +354,10 @@ struct spi_config {
 	 * if not used).
 	 */
 	struct spi_cs_control cs;
-};
 
+	/** @brief Delay between data frames in nanoseconds (0 means 50% of frequency) */
+	uint16_t dfs_delay_ns;
+};
 /**
  * @brief Structure initializer for spi_config from devicetree
  *
