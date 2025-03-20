@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_lsm6dsv16x
-
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/drivers/sensor.h>
 #include "lsm6dsv16x.h"
@@ -102,7 +100,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
@@ -138,9 +136,7 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 
 	/*
@@ -156,7 +152,7 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
@@ -315,10 +311,12 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 		return;
 	}
 
+	/* clang-format off */
 	struct lsm6dsv16x_fifo_data hdr = {
 		.header = {
 			.is_fifo = true,
-			.accel_fs = lsm6dsv16x->accel_fs,
+			.accel_fs_idx = LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(
+				config->accel_fs_map[lsm6dsv16x->accel_fs]),
 			.gyro_fs = lsm6dsv16x->gyro_fs,
 			.timestamp = lsm6dsv16x->fifo_timestamp,
 		},
@@ -330,6 +328,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 #endif
 		.sflp_batch_odr = lsm6dsv16x->sflp_batch_odr,
 	};
+	/* clang-format on */
 
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
@@ -375,7 +374,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	uint64_t cycles;
@@ -395,7 +394,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	/* get timestamp as soon as the irq is served */
 	lsm6dsv16x->fifo_timestamp = sensor_clock_cycles_to_ns(cycles);
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {
 		/*
 		 * If we are on an I3C bus, then it should be expected that the fifo status was
