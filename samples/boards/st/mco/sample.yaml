@@ -9,6 +9,7 @@ tests:
       - stm32f746g_disco
       - nucleo_u5a5zj_q
       - nucleo_wba55cg
+      - nucleo_wl55jc
     integration_platforms:
       - stm32f746g_disco
     tags: board
