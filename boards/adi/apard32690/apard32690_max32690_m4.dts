@@ -308,3 +308,19 @@ pmod_spi: &spi4 {
 		config-reg-vals = <0x801F>;
 	};
 };
+
+&spixf {
+	pinctrl-0 = <&spixf_sdio0_p0_1 &spixf_sdio2_p0_2 &spixf_sck_p0_3
+		     &spixf_sdio3_p0_4 &spixf_sdio1_p0_5 &spixf_ss0_p0_6>;
+	pinctrl-names = "default";
+
+	mx25u64: mx25u6432f@0 {
+		compatible = "adi,max32-spixf-nor";
+		reg = <0x0 DT_SIZE_M(8)>; /* 64 Mbits */
+		qspi-max-frequency = <80000000>;
+		jedec-id = [c2 37 25];
+		reset-cmd;
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
+	};
+};
