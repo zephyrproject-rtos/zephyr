@@ -164,6 +164,7 @@ config FLASH_INIT_PRIORITY
 	  initialization priority
 
 # zephyr-keep-sorted-start
+source "drivers/flash/Kconfig.adi_max32_spixf"
 source "drivers/flash/Kconfig.ambiq"
 source "drivers/flash/Kconfig.andes"
 source "drivers/flash/Kconfig.at45"
