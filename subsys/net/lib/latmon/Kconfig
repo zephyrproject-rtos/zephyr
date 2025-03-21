@@ -1,0 +1,58 @@
+# Copyright (c) 2025 Jorge A. Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_LATMON
+	bool "Latency monitoring support"
+	select EXPERIMENTAL
+	select NET_SOCKETS
+	depends on NET_TCP
+	help
+	  This option enables the latency monitoring support for Zephyr
+
+config NET_LATMON_PORT
+	int "Latmon - Latmus communication port"
+	default 2306
+	help
+	  Specify the port number used for Latmon - Latmus communication.
+
+config NET_LATMON_XFER_THREAD_STACK_SIZE
+	int "Stack size for the network transfer thread"
+	default 8192
+	help
+	Specify the stack size for the network transfer thread used in latency monitoring.
+
+config NET_LATMON_XFER_THREAD_PRIORITY
+	int "Priority for the network transfer thread"
+	default 14
+	help
+	  Specify the priority for the network transfer thread used in latency monitoring.
+
+config NET_LATMON_THREAD_STACK_SIZE
+	int "Stack size for the Latmon thread"
+	default 8192
+	help
+	  Specify the stack size for the Latmon thread used in latency monitoring.
+
+config NET_LATMON_THREAD_PRIORITY
+	int "Priority for the Latmon thread"
+	default 14
+	help
+	  Specify the priority for the Latmon thread used in latency monitoring.
+
+config NET_LATMON_MONITOR_THREAD_STACK_SIZE
+	int "Stack size for the monitor thread"
+	default 8192
+	help
+	  Specify the stack size for the monitor thread used in latency monitoring.
+
+config NET_LATMON_MONITOR_THREAD_PRIORITY
+	int "Priority for the monitor thread"
+	default -16
+	help
+	  Specify the priority for the monitor thread used in latency monitoring.
+
+module = LATMON
+module-dep = NET_LOG
+module-str = Latency monitoring Service
+module-help = This option enables the latency monitoring support for Zephyr
+source "subsys/net/Kconfig.template.log_config.net"
