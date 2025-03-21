@@ -1,0 +1,11 @@
+identifier: bluepillplus_ch32v203
+name: WeActStudio Blue Pill Plus CH32V203
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 20
+flash: 64
+supported:
+  - gpio
