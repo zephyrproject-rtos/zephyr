@@ -88,6 +88,7 @@ struct modbus_serial_config {
 };
 
 #define MODBUS_STATE_CONFIGURED		0
+#define MODBUS_STATE_RX_ENABLED		1
 
 struct modbus_context {
 	/* Interface name */
