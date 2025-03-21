@@ -100,11 +100,71 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 		reason = K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT;
 		LOG_ERR("Unsupported Exclusive Access Fault @ 0x%08x", addr);
 		break;
+#elif defined(CONFIG_ARMV7_A)
+	case FSR_FS_ACCESS_FLAG_FAULT:
+		reason = K_ERR_ARM_ACCESS_FLAG_FAULT;
+		LOG_ERR("Access Flag Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_CACHE_MAINTENANCE_INSTRUCTION_FAULT:
+		reason = K_ERR_ARM_CACHE_MAINTENANCE_INSTRUCTION_FAULT;
+		LOG_ERR("Cache Maintenance Instruction Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_TRANSLATION_FAULT:
+		reason = K_ERR_ARM_TRANSLATION_FAULT;
+		LOG_ERR("Translation Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_DOMAIN_FAULT:
+		reason = K_ERR_ARM_DOMAIN_FAULT;
+		LOG_ERR("Domain Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE:
+		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE;
+		LOG_ERR("Synchronous External Abort Translation Table @ 0x%08x", addr);
+		break;
+	case FSR_FS_TBL_CONFLICT_FAULT:
+		reason = K_ERR_ARM_TBL_CONFLICT_FAULT;
+		LOG_ERR("Table Conflict Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE:
+		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE;
+		LOG_ERR("Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		break;
+#else
+#if defined(CONFIG_ARMV7_A)
+	case FSR_FS_ACCESS_FLAG_FAULT:
+		reason = K_ERR_ARM_ACCESS_FLAG_FAULT;
+		LOG_ERR("Access Flag Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_CACHE_MAINTENANCE_INSTRUCTION_FAULT:
+		reason = K_ERR_ARM_CACHE_MAINTENANCE_INSTRUCTION_FAULT;
+		LOG_ERR("Cache Maintenance Instruction Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_TRANSLATION_FAULT:
+		reason = K_ERR_ARM_TRANSLATION_FAULT;
+		LOG_ERR("Translation Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_DOMAIN_FAULT:
+		reason = K_ERR_ARM_DOMAIN_FAULT;
+		LOG_ERR("Domain Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE:
+		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE;
+		LOG_ERR("Synchronous External Abort Translation Table @ 0x%08x", addr);
+		break;
+	case FSR_FS_TBL_CONFLICT_FAULT:
+		reason = K_ERR_ARM_TBL_CONFLICT_FAULT;
+		LOG_ERR("Table Conflict Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE:
+		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE;
+		LOG_ERR("Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		break;
 #else
 	case FSR_FS_BACKGROUND_FAULT:
 		reason = K_ERR_ARM_BACKGROUND_FAULT;
 		LOG_ERR("Background Fault @ 0x%08x", addr);
 		break;
+#endif
 #endif
 	default:
 		LOG_ERR("Unknown (%u)", status);
