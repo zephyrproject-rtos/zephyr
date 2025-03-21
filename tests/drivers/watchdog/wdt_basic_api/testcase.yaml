@@ -23,6 +23,7 @@ tests:
       - panb511evb/nrf54l15/cpuapp
       - panb511evb/nrf54l15/cpuflpr
       - panb511evb/nrf54l15/cpuflpr/xip
+      - mimxrt700_evk/mimxrt798s/cm33_cpu1
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"

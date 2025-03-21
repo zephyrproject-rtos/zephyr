@@ -679,14 +679,22 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wshadow\"")
-
-#define TOOLCHAIN_IGNORE_WSHADOW_END \
-	_Pragma("GCC diagnostic pop")
-
 #endif /* !_LINKER */
+
+#define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
+#define TOOLCHAIN_WARNING_ARRAY_BOUNDS             "-Warray-bounds"
+#define TOOLCHAIN_WARNING_ATTRIBUTES               "-Wattributes"
+#define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR  "-Wdelete-non-virtual-dtor"
+#define TOOLCHAIN_WARNING_EXTRA                    "-Wextra"
+#define TOOLCHAIN_WARNING_NONNULL                  "-Wnonnull"
+#define TOOLCHAIN_WARNING_SHADOW                   "-Wshadow"
+#define TOOLCHAIN_WARNING_UNUSED_LABEL             "-Wunused-label"
+#define TOOLCHAIN_WARNING_UNUSED_VARIABLE          "-Wunused-variable"
+
+/* GCC-specific warnings that aren't in clang. */
+#if defined(__GNUC__) && !defined(__clang__)
+#define TOOLCHAIN_WARNING_POINTER_ARITH "-Wpointer-arith"
+#endif
 
 #define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
 	TOOLCHAIN_PRAGMA(compiler diagnostic push)                                                 \

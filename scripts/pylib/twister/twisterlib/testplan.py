@@ -38,7 +38,6 @@ from twisterlib.testsuite import TestSuite, scan_testsuite_path
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -786,11 +785,14 @@ class TestPlan:
                 if self.options.integration:
                     platform_scope = integration_platforms
                 else:
-                    # if not in integration mode, still add integration platforms to the list
+                    platform_scope = platforms
                     if not platform_filter:
-                        platform_scope = platforms + integration_platforms
-                    else:
-                        platform_scope = platforms
+                        tco = self.test_config.get('options', {})
+                        im = tco.get('integration_mode', [])
+                        if any(ts.id.startswith(i) for i in im):
+                            platform_scope = integration_platforms
+                        else:
+                            platform_scope += integration_platforms
             else:
                 platform_scope = platforms
 

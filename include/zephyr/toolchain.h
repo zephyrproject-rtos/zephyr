@@ -126,28 +126,6 @@
 #endif
 
 /**
- * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
- * @brief Begin of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#endif
-
-/**
- * @def TOOLCHAIN_IGNORE_WSHADOW_END
- * @brief End of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_END
-#define TOOLCHAIN_IGNORE_WSHADOW_END
-#endif
-
-/**
  * @def TOOLCHAIN_PRAGMA
  * @brief Helper for using pragma in macros.
  */
@@ -155,6 +133,117 @@
 #define TOOLCHAIN_PRAGMA(x) _Pragma(#x)
 #else
 #define TOOLCHAIN_PRAGMA(x)
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+ * @brief Toolchain-specific warning for taking the address of a packed member.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+#define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ARRAY_BOUNDS
+ * @brief Toolchain-specific warning for array bounds violations.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ARRAY_BOUNDS
+#define TOOLCHAIN_WARNING_ARRAY_BOUNDS
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ATTRIBUTES
+ * @brief Toolchain-specific warning for unknown attributes.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ATTRIBUTES
+#define TOOLCHAIN_WARNING_ATTRIBUTES
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+ * @brief Toolchain-specific warning for deleting a pointer to an object
+ * with a non-virtual destructor.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+#define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_EXTRA
+ * @brief Toolchain-specific warning for extra warnings.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_EXTRA
+#define TOOLCHAIN_WARNING_EXTRA
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_NONNULL
+ * @brief Toolchain-specific warning for null pointer arguments to functions marked with "nonnull".
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_NONNULL
+#define TOOLCHAIN_WARNING_NONNULL
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_POINTER_ARITH
+ * @brief Toolchain-specific warning for pointer arithmetic.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_POINTER_ARITH
+#define TOOLCHAIN_WARNING_POINTER_ARITH
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_SHADOW
+ * @brief Toolchain-specific warning for shadow variables.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_SHADOW
+#define TOOLCHAIN_WARNING_SHADOW
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_UNUSED_LABEL
+ * @brief Toolchain-specific warning for unused labels.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_UNUSED_LABEL
+#define TOOLCHAIN_WARNING_UNUSED_LABEL
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_UNUSED_VARIABLE
+ * @brief Toolchain-specific warning for unused variables.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_UNUSED_VARIABLE
+#define TOOLCHAIN_WARNING_UNUSED_VARIABLE
 #endif
 
 /**

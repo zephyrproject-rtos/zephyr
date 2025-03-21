@@ -317,6 +317,11 @@ LLEXT_LOAD_UNLOAD(threads_kernel_objects,
 	.test_setup = threads_objects_test_setup,
 )
 
+static LLEXT_CONST uint8_t align_ext[] ELF_ALIGN = {
+	#include "align.inc"
+};
+LLEXT_LOAD_UNLOAD(align)
+
 static LLEXT_CONST uint8_t inspect_ext[] ELF_ALIGN = {
 	#include "inspect.inc"
 };
@@ -395,6 +400,13 @@ static LLEXT_CONST uint8_t riscv_edge_case_cb_type_ext[] ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(riscv_edge_case_cb_type)
 #endif /* CONFIG_RISCV && CONFIG_RISCV_ISA_EXT_C */
+
+#if defined(CONFIG_RISCV)
+static LLEXT_CONST uint8_t riscv_edge_case_non_paired_hi20_lo12_ext[] ELF_ALIGN = {
+	#include "riscv_edge_case_non_paired_hi20_lo12.inc"
+};
+LLEXT_LOAD_UNLOAD(riscv_edge_case_non_paired_hi20_lo12)
+#endif /* CONFIG_RISCV */
 
 #endif /* !CONFIG_LLEXT_TYPE_ELF_OBJECT */
 

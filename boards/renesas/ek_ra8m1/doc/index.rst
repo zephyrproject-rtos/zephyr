@@ -74,54 +74,12 @@ Detailed Hardware features for the EK-RA8M1 MCU can be found at `EK-RA8M1 - User
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for EK-RA8M1 board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| CAN       | on-chip    | canfd                |
-+-----------+------------+----------------------+
-| USBHS     | on-chip    | udc                  |
-+-----------+------------+----------------------+
-| USBFS     | on-chip    | udc                  |
-+-----------+------------+----------------------+
-| ETHERNET  | on-chip    | ethernet             |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| SDHC      | on-chip    | sdhc                 |
-+-----------+------------+----------------------+
-| DAC       | on-chip    | dac                  |
-+-----------+------------+----------------------+
+.. note::
 
-**Note:**
-
-- For using Ethernet module on EK-RA8M1, remove jumper J61 to enable Ethernet B
-- For using SDHC driver on EK-RA8M1, remove jumper J61 to use with channel 0
-
-Other hardware features are currently not supported by the port.
+   - For using Ethernet module on EK-RA8M1, remove jumper J61 to enable Ethernet B
+   - For using SDHC driver on EK-RA8M1, remove jumper J61 to use with channel 0
 
 Programming and Debugging
 *************************

@@ -17,13 +17,14 @@ supported:
   - adc
   - can
   - counter
+  - dma
   - flash
   - gpio
   - i2c
-  - pwm
-  - uart
   - i3c
-  - dma
-  - spi
+  - mbox
+  - pwm
   - sdhc
+  - spi
+  - uart
 vendor: nxp

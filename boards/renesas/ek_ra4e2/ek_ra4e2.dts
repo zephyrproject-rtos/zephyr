@@ -59,6 +59,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt;
 	};
 
 	transceiver0: can-phy0 {
@@ -186,4 +187,8 @@
 			reg = <0X0 DT_SIZE_K(4)>;
 		};
 	};
+};
+
+&wdt {
+	status = "okay";
 };

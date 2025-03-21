@@ -20,6 +20,8 @@
 		led1 = &blue_led;
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
+		watchdog0 = &wwdt0;
+		pwm-0 = &sc_timer;
 	};
 
 	chosen {
@@ -131,6 +133,12 @@
 	status = "okay";
 };
 
+&sc_timer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
+};
+
 &xspi0 {
 	status = "okay";
 
@@ -145,6 +153,22 @@
 		erase-block-size = <4096>;
 		write-block-size = <2>;
 	};
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+	phy-handle = <&usbphy>;
+};
+
+&usbphy {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
+&wwdt0 {
+	status = "okay";
 };
 
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};

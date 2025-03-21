@@ -30,50 +30,19 @@ More information about STM32WB07CCV can be found here:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_wb07cc`` board target supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | internal flash memory               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | counter, pwm                        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb07cc/nucleo_wb07cc_defconfig`
-
-Bluetooth support
------------------
+Bluetooh support
+----------------
 
 BLE support is enabled; however, to build a Zephyr sample using this board,
-the Bluetooth controller library must be fetched into Zephyr as a binary blob.
+you first need to fetch the Bluetooth controller library into Zephyr as a binary BLOB.
 
-To fetch the binary blobs:
+To fetch binary BLOBs:
 
 .. code-block:: console
 
-   $ west blobs fetch hal_stm32
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================

@@ -8,9 +8,6 @@ zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
 zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 
-zephyr_linker_section(NAME deferred_init_list KVMA RAM_REGION GROUP RODATA_REGION)
-zephyr_linker_section_configure(SECTION deferred_init_list INPUT ".z_deferred_init*" KEEP SORT NAME)
-
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
@@ -20,10 +17,16 @@ if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
   )
+  if(CONFIG_SHARED_INTERRUPTS)
+    zephyr_linker_section_configure(
+      SECTION sw_isr_table
+      INPUT ".gnu.linkonce.shared_sw_isr_table*"
+    )
+  endif()
 endif()
 
 zephyr_linker_section(NAME initlevel_error KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
-zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_[_A-Z0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_*" KEEP SORT NAME)
 # How to do cross linker ?
 # ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 

@@ -942,7 +942,26 @@ very file can be done using the :rst:role:`zephyr_file` role.
 
       Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
 
-You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
+   You can reference specific lines or line ranges in a file by appending :samp:`#L{line_number}` or
+   :samp:`#L{start_line}-L{end_line}` to the file path::
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   Will render as:
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   The role automatically verifies that the referenced file exists in the Zephyr tree and will
+   generate a warning during documentation build if the file is not found.
+
+   .. note::
+
+      Use the line references sparingly as keeping them accurate over time can be challenging as the
+      content of the linked file is subject to change.
+
+   You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
 
 .. rst:role:: zephyr_raw
 
@@ -964,6 +983,7 @@ You may use the :rst:role:`zephyr_raw` role instead if you want to reference the
 
          Check out :module_file:`hal_stm32:CMakeLists.txt` for more information.
 
+   Similar to :rst:role:`zephyr_file`, you can reference specific lines or line ranges in a file.
 
 Cross-referencing GitHub issues and pull requests
 =================================================

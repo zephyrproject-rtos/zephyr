@@ -7,8 +7,6 @@ common:
     - arch
     - simulation
   platform_exclude:
-    - native_posix
-    - native_posix/native/64
     # consistently overflows flash
     - qemu_nios2
   filter: not CONFIG_NATIVE_LIBC

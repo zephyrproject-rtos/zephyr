@@ -10,6 +10,9 @@ on:
     branches:
       - v*-branch
 
+permissions:
+  contents: read
+
 jobs:
   backport:
     name: Backport Issue Check
@@ -18,10 +21,12 @@ jobs:
       cancel-in-progress: true
     runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      issues: read # to check if associated issue exists for backport
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Python dependencies
         run: |

@@ -6,7 +6,7 @@
 if SOC_NRF54L09_ENGA_CPUAPP
 
 config NUM_IRQS
-	default 274
+	default 271
 
 config IEEE802154_NRF5
 	default IEEE802154

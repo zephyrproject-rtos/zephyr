@@ -212,7 +212,7 @@ static int drv8424_set_micro_step_res(const struct device *dev,
 		m1_value = 2;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	};
 
 	ret = drv8424_set_microstep_pin(dev, &config->m0_pin, m0_value);
@@ -341,6 +341,7 @@ static DEVICE_API(stepper, drv8424_stepper_api) = {
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
 	.run = drv8424_run,
+	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = drv8424_set_micro_step_res,
 	.get_micro_step_res = drv8424_get_micro_step_res,
 	.set_event_callback = step_dir_stepper_common_set_event_callback,

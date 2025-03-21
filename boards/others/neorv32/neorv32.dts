@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include <neorv32.dtsi>
-#include <freq.h>
 #include <mem.h>
 
 / {
@@ -29,25 +28,9 @@
 		zephyr,uart-pipe = &uart0;
 	};
 
-	soc {
-		imem: memory@0 {
-			compatible = "soc-nv-flash", "mmio-sram";
-			reg = <0x0 DT_SIZE_K(64)>;
-		};
-
-		bootrom: memory@ffff0000 {
-			compatible = "soc-nv-flash", "mmio-sram";
-			reg = <0xffff0000 DT_SIZE_K(4)>;
-		};
-
-		dmem: memory@80000000 {
-			compatible = "mmio-sram";
-			reg = <0x80000000 DT_SIZE_K(32)>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led0 {
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			label = "LED_0";
@@ -71,7 +54,29 @@
 };
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_M(100)>;
+	riscv,isa = "rv32im_zicsr_zifencei";
+};
+
+&bootrom {
+	status = "okay";
+};
+
+&imem {
+	status = "okay";
+	reg = <0x0 DT_SIZE_K(64)>;
+};
+
+&dmem {
+	status = "okay";
+	reg = <0x80000000 DT_SIZE_K(64)>;
+};
+
+&clint {
+	status = "okay";
+};
+
+&mtimer {
+	status = "okay";
 };
 
 &uart0 {
@@ -79,10 +84,6 @@
 	current-speed = <19200>;
 };
 
-&gpio_lo {
-	status = "okay";
-};
-
-&gpio_hi {
+&gpio {
 	status = "okay";
 };

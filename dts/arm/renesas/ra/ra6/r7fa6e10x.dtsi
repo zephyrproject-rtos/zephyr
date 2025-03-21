@@ -95,7 +95,6 @@
 		};
 
 		adc@40170000 {
-			channel-count = <11>;
 			channel-available-mask = <0x31ff>;
 		};
 

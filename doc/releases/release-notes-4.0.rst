@@ -105,21 +105,19 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions in favor of
+* Deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions in favor of
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
-* The :ref:`kscan_api` subsystem has been marked as deprecated.
+* The ``kscan_api`` subsystem has been marked as deprecated.
 
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
-* :ref:`native_posix<native_posix>` has been deprecated in favour of
+* ``native_posix`` has been deprecated in favour of
   :ref:`native_sim<native_sim>`.
 
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
   ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
   and its usage should be avoided.
-
-* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions.
 
 Architectures
 *************
@@ -281,7 +279,7 @@ Boards & SoC Support
    * :zephyr:board:`ADI MAX32666FTHR <max32666fthr>` (``max32666fthr``)
    * :zephyr:board:`ADI MAX32675EVKIT <max32675evkit>` (``max32675evkit``)
    * :zephyr:board:`ADI MAX32690FTHR <max32690fthr>` (``max32690fthr``)
-   * :ref:`Arduino Nicla Vision <arduino_nicla_vision_board>` (``arduino_nicla_vision``)
+   * :zephyr:board:`arduino_nicla_vision` (``arduino_nicla_vision``)
    * :zephyr:board:`BeagleBone AI-64 <beaglebone_ai64>` (``beaglebone_ai64``)
    * :zephyr:board:`BeaglePlay (CC1352) <beagleplay>` (``beagleplay``)
    * :zephyr:board:`DPTechnics Walter <walter>` (``walter``)
@@ -1543,7 +1541,7 @@ zcbor
 Tests and Samples
 *****************
 
-* Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
+* Together with the deprecation of ``native_posix``, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
 * Extended the tests of counter_basic_api with a testcase for counters without alarms

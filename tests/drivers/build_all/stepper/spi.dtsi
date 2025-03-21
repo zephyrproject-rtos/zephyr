@@ -6,7 +6,7 @@
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
 
-test_spi_tmc50xx: tmc50xx@0 {
+adi_tmc50xx: adi_tmc50xx@0 {
 	compatible = "adi,tmc50xx";
 	reg = <0x0>;
 	spi-max-frequency = <0>;

@@ -25,6 +25,7 @@ set(ext_names
 	threads_kernel_objects
 	export_dependent
 	export_dependency
+	align
 )
 
 if(CONFIG_ARM)
@@ -89,5 +90,15 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   )
   generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_cb_type.inc
+  )
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV)
+  add_llext_target(riscv_edge_case_non_paired_hi20_lo12_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12_trigger.S
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_non_paired_hi20_lo12.inc
   )
 endif()

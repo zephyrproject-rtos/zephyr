@@ -83,6 +83,7 @@ config X86_64
 	select X86_MMX
 	select X86_SSE
 	select X86_SSE2
+	select ARCH_HAS_DIRECTED_IPIS if !X2APIC
 
 menu "x86 Features"
 

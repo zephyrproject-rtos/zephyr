@@ -48,6 +48,13 @@ The Renesas RZ/G3S MPU documentation can be found at `RZ/G3S Group Website`_
 
 	RZ/G3S block diagram (Credit: Renesas Electronics Corporation)
 
+Multi-OS processing
+*******************
+
+The RZ/G3S-EVKIT allows different applications to be executed in RZ/G3S SoC. With its multi-core architecture,
+each core can operate independently to perform customized tasks or exchange data using the OpenAMP framework.
+Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
+
 Supported Features
 ==================
 
@@ -63,7 +70,13 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | PINCTRL   | on-chip    | pinctrl                             |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
@@ -74,6 +87,8 @@ and the following hardware features:
 | INTC      | on-chip    | external interrupt controller       |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock control                       |
++-----------+------------+-------------------------------------+
+| MHU       | on-chip    | mbox                                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.

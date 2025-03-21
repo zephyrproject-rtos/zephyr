@@ -29,6 +29,6 @@ GROUP_START(CCM)
 
 	__ccm_end = .;
 
-	__ccm_data_rom_start = LOADADDR(_CCM_DATA_SECTION_NAME);
+	__ccm_data_load_start = LOADADDR(_CCM_DATA_SECTION_NAME);
 
 GROUP_END(CCM)

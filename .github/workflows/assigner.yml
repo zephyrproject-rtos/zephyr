@@ -15,11 +15,17 @@ on:
     types:
     - labeled
 
+permissions:
+  contents: read
+
 jobs:
   assignment:
     name: Pull Request Assignment
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write # to add assignees to pull requests
+      issues: write        # to add assignees to issues
 
     steps:
     - name: Install Python dependencies
@@ -27,7 +33,7 @@ jobs:
         pip install -U PyGithub>=1.55 west
 
     - name: Check out source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Run assignment script
       env:

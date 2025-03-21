@@ -1430,7 +1430,7 @@ static int cmd_i3c_ccc_getstatus(const struct shell *sh, size_t argc, char **arg
 	if (argc > 3) {
 		fmt = GETSTATUS_FORMAT_2;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETSTATUS_FORMAT_2_TGTSTAT || defbyte != GETSTATUS_FORMAT_2_PRECR) {
+		if (defbyte != GETSTATUS_FORMAT_2_TGTSTAT && defbyte != GETSTATUS_FORMAT_2_PRECR) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
 		}
@@ -1476,8 +1476,8 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 3) {
 		fmt = GETCAPS_FORMAT_2;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETCAPS_FORMAT_2_TGTCAPS || defbyte != GETCAPS_FORMAT_2_TESTPAT ||
-		    defbyte != GETCAPS_FORMAT_2_CRCAPS || defbyte != GETCAPS_FORMAT_2_VTCAPS ||
+		if (defbyte != GETCAPS_FORMAT_2_TGTCAPS && defbyte != GETCAPS_FORMAT_2_TESTPAT &&
+		    defbyte != GETCAPS_FORMAT_2_CRCAPS && defbyte != GETCAPS_FORMAT_2_VTCAPS &&
 		    defbyte != GETCAPS_FORMAT_2_DBGCAPS) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
@@ -1711,7 +1711,7 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 	if (argc > 3) {
 		fmt = GETMXDS_FORMAT_3;
 		defbyte = strtol(argv[3], NULL, 16);
-		if (defbyte != GETMXDS_FORMAT_3_CRHDLY || defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
+		if (defbyte != GETMXDS_FORMAT_3_CRHDLY && defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
 			shell_error(sh, "Invalid defining byte.");
 			return -EINVAL;
 		}
@@ -2075,9 +2075,9 @@ static int cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	data_length = argc - 3;
+	data_length = argc - 2;
 	for (i = 0; i < data_length; i++) {
-		buf[i] = (uint8_t)strtol(argv[3 + i], NULL, 16);
+		buf[i] = (uint8_t)strtol(argv[2 + i], NULL, 16);
 	}
 
 	request.ibi_type = I3C_IBI_TARGET_INTR;

@@ -173,35 +173,45 @@ tests:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pio_spi.loopback:
     extra_args:
       - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
@@ -217,10 +227,37 @@ tests:
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
     platform_allow: mimxrt1040_evk
-  drivers.spi.nrf_fast:
+  drivers.spi.nrf54h_fast_8mhz:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_16mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_32mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54l_8mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_8mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+  drivers.spi.nrf54l_16mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+  drivers.spi.nrf54l_32mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
   drivers.spi.ke1xz_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
@@ -248,3 +285,19 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+  drivers.spi.silabs_s2.loopback.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=n
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_s2.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=y
+      - CONFIG_SPI_ASYNC=n

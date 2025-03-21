@@ -1011,8 +1011,8 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 };
 
 #define CAN_RENESAS_RA_GLOBAL_IRQ_INIT()                                                           \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = ELC_EVENT_CAN_GLERR;                        \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = ELC_EVENT_CAN_RXF;                            \
+	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_GLERR);         \
+	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_RXF);             \
 	IRQ_CONNECT(VECTOR_NUMBER_CAN_GLERR,                                                       \
 		    DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), glerr, priority),          \
 		    canfd_error_isr, NULL, 0);                                                     \
@@ -1074,22 +1074,18 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_ren
 		 NULL, NULL, &g_can_renesas_ra_global_cfg, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,
 		 NULL)
 
-#define _ELC_EVENT_CAN_COMFRX(channel) ELC_EVENT_CAN##channel##_COMFRX
-#define _ELC_EVENT_CAN_TX(channel)     ELC_EVENT_CAN##channel##_TX
-#define _ELC_EVENT_CAN_CHERR(channel)  ELC_EVENT_CAN##channel##_CHERR
-
-#define ELC_EVENT_CAN_COMFRX(channel) _ELC_EVENT_CAN_COMFRX(channel)
-#define ELC_EVENT_CAN_TX(channel)     _ELC_EVENT_CAN_TX(channel)
-#define ELC_EVENT_CAN_CHERR(channel)  _ELC_EVENT_CAN_CHERR(channel)
+#define EVENT_CAN_COMFRX(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _COMFRX))
+#define EVENT_CAN_TX(channel)     BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _TX))
+#define EVENT_CAN_CHERR(channel)  BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _CHERR))
 
 #define CAN_RENESAS_RA_CHANNEL_IRQ_INIT(index)                                                     \
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, rx, irq)].IELS =                         \
-			ELC_EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                        \
+			EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, tx, irq)].IELS =                         \
-			ELC_EVENT_CAN_TX(DT_INST_PROP(index, channel));                            \
+			EVENT_CAN_TX(DT_INST_PROP(index, channel));                                \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, err, irq)].IELS =                        \
-			ELC_EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                         \
+			EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                             \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), canfd_common_fifo_rx_isr,    \

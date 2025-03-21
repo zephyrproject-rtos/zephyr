@@ -73,13 +73,11 @@ struct z_heap_stress_result {
  * @{
  */
 
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-
 /**
  * @brief Get the runtime statistics of a sys_heap
  *
  * @param heap Pointer to specified sys_heap
- * @param stats_t Pointer to struct to copy statistics into
+ * @param stats Pointer to struct to copy statistics into
  * @return -EINVAL if null pointers, otherwise 0
  */
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
@@ -95,8 +93,6 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
  * @return -EINVAL if null pointer was passed, otherwise 0
  */
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
-
-#endif
 
 /** @brief Initialize sys_heap
  *

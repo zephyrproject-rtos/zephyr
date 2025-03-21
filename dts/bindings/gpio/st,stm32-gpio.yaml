@@ -1,7 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 GPIO node
+description: STM32 GPIO Controller
 
 compatible: "st,stm32-gpio"
 

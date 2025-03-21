@@ -82,6 +82,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -297,14 +298,11 @@
 	};
 };
 
-zephyr_lcdif: &lcdif {
-	pinctrl-0 = <&glcdc_default>;
-	pinctrl-names = "default";
-};
+zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {};
 
-renesas_mipi_i2c: &iic1{};
+renesas_mipi_i2c: &iic1 {};
 
 pmod_sd_shield: &sdhc1 {};
 
@@ -312,4 +310,8 @@ pmod_sd_shield: &sdhc1 {};
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
+};
+
+&wdt {
+	status = "okay";
 };

@@ -1,4 +1,4 @@
-description: stm32 sdmmc disk access
+description: STM32 SDMMC Disk Access
 
 compatible: "st,stm32-sdmmc"
 

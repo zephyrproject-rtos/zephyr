@@ -65,12 +65,26 @@
 		interrupt-parent = <&nvic>;
 		ranges;
 
+		bbram: bb-ram@40005000 {
+			compatible = "realtek,rts5912-bbram";
+			reg = <0x40005000 0x100>;
+			status = "okay";
+		};
+
 		sccon: clock-controller@40020000 {
 			compatible = "realtek,rts5912-sccon";
 			reg = <0x40020000 0xf0>;
 			#clock-cells = <2>;
 			clocks = <&rc25m>, <&pll>;
 			clock-names = "rc25m", "pll";
+		};
+
+		rtc: rtc@4000c100 {
+			compatible = "realtek,rts5912-rtc";
+			reg = <0x4000c100 0x20>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_RTC_CLKPWR>;
+			clock-names = "rtc";
+			status = "disabled";
 		};
 
 		slwtmr0: slwtmr0@4000c200 {
@@ -232,6 +246,26 @@
 					      136 0 137 0 138 0 139 0
 					      140 0 141 0 142 0 143 0>;
 			};
+		};
+
+		wdog: watchdog@4000c000 {
+			compatible = "realtek,rts5912-watchdog";
+			reg = <0x4000c000 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <209 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_WDT_CLKPWR>;
+			clock-names = "watchdog";
+			clk-divider = <33>;
+			status = "disabled";
+		};
+
+		kbd: kbd@40010000 {
+			compatible = "realtek,rts5912-kbd";
+			reg = <0x40010000 0x10>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBM_CLKPWR>;
+			interrupts = <210 0>;
+			interrupt-parent = <&nvic>;
+			status = "disabled";
 		};
 	};
 

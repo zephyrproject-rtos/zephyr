@@ -58,6 +58,8 @@ Supported Releases
 +------------------------+----------------+---------------+
 | Release                | Release date   | EOL           |
 +========================+================+===============+
+| `Zephyr 4.1.0`_        | 2025-03-07     | 2025-11-14    |
++------------------------+----------------+---------------+
 | `Zephyr 4.0.0`_        | 2024-11-15     | 2025-07-18    |
 +------------------------+----------------+---------------+
 | `Zephyr 3.7.0 (LTS3)`_ | 2024-07-26     | 2027-01-26    |
@@ -94,7 +96,7 @@ with the changes in the project.
    :reversed:
 
    release-notes-3.7
-   release-notes-4.[0-1]
+   release-notes-4.[0-2]
 
 Migration Guides
 ****************
@@ -126,7 +128,7 @@ to be able to understand the context of the change.
    :reversed:
 
    migration-guide-3.[6-7]
-   migration-guide-4.[0-1]
+   migration-guide-4.[0-2]
 
 End-of-life Releases
 ********************
@@ -146,3 +148,4 @@ Release notes and migration guides for end-of-life releases of Zephyr RTOS can b
 .. _`Zephyr 2.7.6 (LTS2)`: https://docs.zephyrproject.org/2.7.6/
 .. _`Zephyr 3.7.0 (LTS3)`: https://docs.zephyrproject.org/3.7.0/
 .. _`Zephyr 4.0.0`: https://docs.zephyrproject.org/4.0.0/
+.. _`Zephyr 4.1.0`: https://docs.zephyrproject.org/4.1.0/

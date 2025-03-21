@@ -1,0 +1,14 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST7567 132x65 dot-matrix LCD controller on SPI bus
+
+compatible: "sitronix,st7567"
+
+include: ["sitronix,st7567-common.yaml", "spi-device.yaml"]
+
+properties:
+  data-cmd-gpios:
+    type: phandle-array
+    required: true
+    description: D/C# pin.

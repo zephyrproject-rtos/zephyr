@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas SmartBond(tm) GPIO node
+description: Renesas SmartBond(tm) GPIO
 
 compatible: "renesas,smartbond-gpio"
 

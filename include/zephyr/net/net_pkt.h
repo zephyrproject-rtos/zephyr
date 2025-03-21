@@ -1284,16 +1284,23 @@ static inline struct net_linkaddr *net_pkt_lladdr_dst(struct net_pkt *pkt)
 
 static inline void net_pkt_lladdr_swap(struct net_pkt *pkt)
 {
-	uint8_t *addr = net_pkt_lladdr_src(pkt)->addr;
+	struct net_linkaddr tmp;
 
-	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(pkt)->addr;
-	net_pkt_lladdr_dst(pkt)->addr = addr;
+	memcpy(tmp.addr,
+	       net_pkt_lladdr_src(pkt)->addr,
+	       net_pkt_lladdr_src(pkt)->len);
+	memcpy(net_pkt_lladdr_src(pkt)->addr,
+	       net_pkt_lladdr_dst(pkt)->addr,
+	       net_pkt_lladdr_dst(pkt)->len);
+	memcpy(net_pkt_lladdr_dst(pkt)->addr,
+	       tmp.addr,
+	       net_pkt_lladdr_src(pkt)->len);
 }
 
 static inline void net_pkt_lladdr_clear(struct net_pkt *pkt)
 {
-	net_pkt_lladdr_src(pkt)->addr = NULL;
-	net_pkt_lladdr_src(pkt)->len = 0U;
+	(void)net_linkaddr_clear(net_pkt_lladdr_src(pkt));
+	(void)net_linkaddr_clear(net_pkt_lladdr_dst(pkt));
 }
 
 static inline uint16_t net_pkt_ll_proto_type(struct net_pkt *pkt)

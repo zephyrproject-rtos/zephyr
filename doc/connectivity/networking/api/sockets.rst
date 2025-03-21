@@ -23,7 +23,7 @@ compatible API implementation for Zephyr:
   names like ``close()``, which may be part of libc or other POSIX
   compatibility libraries.
   If enabled by :kconfig:option:`CONFIG_POSIX_API`, it will also
-  expose native POSIX names.
+  expose POSIX compatible APIs.
 
 BSD Sockets compatible API is enabled using :kconfig:option:`CONFIG_NET_SOCKETS`
 config option and implements the following operations: ``socket()``, ``close()``,
@@ -93,7 +93,7 @@ socket options.
 The following TLS credential types can be registered in the system:
 
 - ``TLS_CREDENTIAL_CA_CERTIFICATE``
-- ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+- ``TLS_CREDENTIAL_PUBLIC_CERTIFICATE``
 - ``TLS_CREDENTIAL_PRIVATE_KEY``
 - ``TLS_CREDENTIAL_PSK``
 - ``TLS_CREDENTIAL_PSK_ID``

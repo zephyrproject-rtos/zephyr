@@ -316,7 +316,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 					const struct rtc_time *timeptr)
 {
 	int rc = 0;
-	bool alarm_enabled;
+	bool alarm_enabled = false;
 	struct rx8130ce_alarm alarm_time;
 	struct rx8130ce_data *data = dev->data;
 	const struct rx8130ce_config *cfg = dev->config;
@@ -358,7 +358,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	alarm_time.minute = bin2bcd(timeptr->tm_min);
 	alarm_time.hour = bin2bcd(timeptr->tm_hour);
 	alarm_time.day = bin2bcd(timeptr->tm_mday);
-	data->reg.extension &= ~EXT_WADA;
+	data->reg.extension |= EXT_WADA;
 
 	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) == 0U) {
 		alarm_time.minute |= ALARM_DISABLE;
@@ -426,14 +426,14 @@ static int rx8130ce_alarm_get_time(const struct device *dev, uint16_t id, uint16
 		*mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 	if (data->reg.extension & EXT_WADA) {
-		timeptr->tm_wday = rtc2wday(alarm_time.wday & RX8130CE_WEEKDAYS_MASK);
-		if (!(alarm_time.wday & ALARM_DISABLE)) {
-			*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
-		}
-	} else {
-		timeptr->tm_mday = bcd2bin(alarm_time.day & RX8130CE_DAYS_MASK);
+		timeptr->tm_mday = bcd2bin(alarm_time.day);
 		if (!(alarm_time.day & ALARM_DISABLE)) {
 			*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
+		}
+	} else {
+		timeptr->tm_wday = rtc2wday(alarm_time.wday);
+		if (!(alarm_time.wday & ALARM_DISABLE)) {
+			*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 		}
 	}
 error:

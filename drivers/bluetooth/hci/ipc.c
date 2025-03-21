@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth.h>
 
 #include <zephyr/device.h>
@@ -18,9 +20,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "HCI IPC driver can drop ACL data without Controller-to-Host ACL flow control");
+
 #define DT_DRV_COMPAT zephyr_bt_hci_ipc
 
-#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
+#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(CONFIG_BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS)
+
+/* The retry of ipc_service_send function requires a small (tens of us) delay.
+ * In order to ensure proper delay k_usleep is used when the system clock is
+ * precise enough and available (CONFIG_SYS_CLOCK_TICKS_PER_SEC different than 0).
+ */
+#define USE_SLEEP_BETWEEN_IPC_RETRIES COND_CODE_0(CONFIG_SYS_CLOCK_TICKS_PER_SEC, \
+	(false), \
+	((USEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC) > CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US))
 
 struct ipc_data {
 	bt_hci_recv_t recv;
@@ -74,7 +87,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for event header");
+		LOG_ERR("Not enough data (%u) for event header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -85,7 +98,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	remaining -= sizeof(hdr);
 
 	if (remaining != hdr.len) {
-		LOG_ERR("Event payload length is not correct");
+		LOG_ERR("Event payload length is not correct (%u != %u)", remaining, hdr.len);
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
@@ -122,7 +135,7 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ACL header");
+		LOG_ERR("Not enough data (%u) for ACL header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -139,7 +152,8 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr.len)) {
-		LOG_ERR("ACL payload length is not correct");
+		LOG_ERR("ACL payload length is not correct (%u != %u)", remaining,
+			sys_le16_to_cpu(hdr.len));
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -165,7 +179,7 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ISO header");
+		LOG_ERR("Not enough data (%u) for ISO header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -189,7 +203,8 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct");
+		LOG_ERR("ISO payload length is not correct (%u != %lu)", remaining,
+			bt_iso_hdr_len(sys_le16_to_cpu(hdr.len)));
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -265,19 +280,35 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
+		err = -ENOMSG;
 		goto done;
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
+
+	for (int retries = 0; retries < CONFIG_BT_HCI_IPC_SEND_RETRY_COUNT + 1; retries++) {
+		err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
+		if ((err >= 0) || (err != -ENOMEM)) {
+			break;
+		}
+
+		if (USE_SLEEP_BETWEEN_IPC_RETRIES) {
+			k_usleep(CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US);
+		} else {
+			k_busy_wait(CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US);
+		}
+	}
+
 	if (err < 0) {
 		LOG_ERR("Failed to send (err %d)", err);
+	} else {
+		err = 0;
 	}
 
 done:
 	net_buf_unref(buf);
-	return 0;
+	return err;
 }
 
 static void hci_ept_bound(void *priv)
@@ -347,14 +378,6 @@ static int bt_ipc_close(const struct device *dev)
 {
 	struct ipc_data *ipc = dev->data;
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Sending reset command failed with: %d", err);
-			return err;
-		}
-	}
 
 	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {

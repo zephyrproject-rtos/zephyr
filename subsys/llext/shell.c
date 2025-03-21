@@ -128,17 +128,19 @@ static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_O
 
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
-	char name[16];
-	size_t hex_len = strnlen(argv[2], CONFIG_LLEXT_SHELL_MAX_SIZE*2+1);
-	size_t bin_len = hex_len/2;
+	char *name = argv[1];
+	size_t hex_len = strlen(argv[2]);
 
-	if (bin_len > CONFIG_LLEXT_SHELL_MAX_SIZE) {
+	if (strlen(name) > LLEXT_MAX_NAME_LEN) {
+		shell_print(sh, "Extension name too long, max %d chars\n", LLEXT_MAX_NAME_LEN);
+		return -EINVAL;
+	}
+
+	if (hex_len > CONFIG_LLEXT_SHELL_MAX_SIZE*2) {
 		shell_print(sh, "Extension %d bytes too large to load, max %d bytes\n", hex_len/2,
 			    CONFIG_LLEXT_SHELL_MAX_SIZE);
 		return -ENOMEM;
 	}
-
-	strncpy(name, argv[1], sizeof(name));
 
 	size_t llext_buf_len = hex2bin(argv[2], hex_len, llext_buf, CONFIG_LLEXT_SHELL_MAX_SIZE);
 	struct llext_buf_loader buf_loader = LLEXT_BUF_LOADER(llext_buf, llext_buf_len);

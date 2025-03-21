@@ -24,12 +24,10 @@ extern enum bst_result_t bst_result;
 static volatile bool g_locked;
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 struct bt_csip_set_member_register_param param = {
-	.set_size = 3,
-	.rank = 1,
 	.lockable = true,
 	/* Using the CSIS test sample SIRK */
-	.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-		  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+	.sirk = {0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce, 0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d,
+		 0x7d, 0x45},
 };
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
@@ -106,6 +104,56 @@ static void test_sirk(void)
 	}
 
 	printk("New SIRK correctly set and retrieved\n");
+}
+
+static void update_set_size_and_rank(void)
+{
+	struct bt_csip_set_member_set_info info;
+	uint8_t old_set_size;
+	uint8_t old_rank;
+	uint8_t new_set_size;
+	uint8_t new_rank;
+	int err;
+
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	/* Simulate a new device being added as rank 1 to the set, making the set size increase by 1
+	 * and this device's rank increase by 1
+	 */
+	old_set_size = info.set_size;
+	old_rank = info.rank;
+	new_set_size = old_set_size + 1U;
+	new_rank = old_rank + 1U;
+
+	printk("Setting new SIRK\n");
+	err = bt_csip_set_member_set_size_and_rank(svc_inst, new_set_size, new_rank);
+	if (err != 0) {
+		FAIL("Failed to set new size and rank: %d\n", err);
+		return;
+	}
+
+	printk("Getting new SIRK\n");
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	if (info.set_size != new_set_size) {
+		FAIL("Unexpected set size %u != %u\n", info.set_size, new_set_size);
+		return;
+	}
+
+	if (info.rank != new_rank) {
+		FAIL("Unexpected rank %u != %u\n", info.rank, new_rank);
+		return;
+	}
+
+	printk("New size correctly set and retrieved\n");
 }
 
 static void test_main(void)
@@ -210,6 +258,36 @@ static void test_new_sirk(void)
 	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
+static void test_new_set_size_and_rank(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	update_set_size_and_rank();
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (size_t argn = 0; argn < argc; argn++) {
@@ -265,6 +343,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_new_size_and_rank",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_set_size_and_rank,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,

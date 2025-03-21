@@ -40,9 +40,16 @@ Execute_AC_7_I 24_1_1 24_1_1
 Execute_AC_7_I 24_2_1 24_2_1
 Execute_AC_7_I 32_1_1 32_1_1
 Execute_AC_7_I 32_2_1 32_2_1
-Execute_AC_7_I 441_1_1 441_1_1
-Execute_AC_7_I 441_2_1 441_2_1
-Execute_AC_7_I 48_1_1 48_1_1
+# No sent callback on peripheral and no RX on peripheral
+# https://github.com/zephyrproject-rtos/zephyr/issues/83585
+# Execute_AC_7_I 441_1_1 441_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_7_I 441_2_1 441_2_1
+# No sent callback on peripheral and no RX on peripheral
+# https://github.com/zephyrproject-rtos/zephyr/issues/83585
+# Execute_AC_7_I 48_1_1 48_1_1
 Execute_AC_7_I 48_2_1 48_2_1
 Execute_AC_7_I 48_3_1 48_3_1
 Execute_AC_7_I 48_4_1 48_4_1

@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(silabs_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
@@ -34,6 +35,45 @@ struct acmp_data {
 	comparator_callback_t callback;
 	void *user_data;
 };
+
+static int acmp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct acmp_config *config = dev->config;
+	int err;
+
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0 && err != -EALREADY) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			LOG_ERR("failed to allocate silabs,analog-bus via pinctrl");
+			return err;
+		}
+
+		ACMP_Enable(config->base);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+		ACMP_Disable(config->base);
+
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 
 static int acmp_init(const struct device *dev)
 {
@@ -58,10 +98,16 @@ static int acmp_init(const struct device *dev)
 	/* Configure the ACMP Input Channels */
 	ACMP_ChannelSet(config->base, config->input_negative, config->input_positive);
 
+	/* After initialization, the comparator should not yet be enabled. It was temporarily
+	 * enabled to perform input configuration since the INPUTCTRL register has the SYNC type,
+	 * disable it again here. It will be enabled by the PM resume action.
+	 */
+	ACMP_Disable(config->base);
+
 	/* Initialize the irq handler */
 	config->irq_init();
 
-	return 0;
+	return pm_device_driver_init(dev, acmp_pm_action);
 }
 
 static int acmp_get_output(const struct device *dev)
@@ -169,6 +215,7 @@ static DEVICE_API(comparator, acmp_api) = {
 
 #define ACMP_DEVICE(inst)                                                                          \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	PM_DEVICE_DT_INST_DEFINE(inst, acmp_pm_action);                                            \
                                                                                                    \
 	static void acmp_irq_init##inst(void)                                                      \
 	{                                                                                          \
@@ -197,7 +244,8 @@ static DEVICE_API(comparator, acmp_api) = {
 		.input_positive = DT_INST_PROP(inst, input_positive),                              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, acmp_init, NULL, &acmp_data##inst, &acmp_config##inst,         \
-			      POST_KERNEL, CONFIG_COMPARATOR_INIT_PRIORITY, &acmp_api);
+	DEVICE_DT_INST_DEFINE(inst, acmp_init, PM_DEVICE_DT_INST_GET(inst), &acmp_data##inst,      \
+			      &acmp_config##inst, POST_KERNEL, CONFIG_COMPARATOR_INIT_PRIORITY,    \
+			      &acmp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ACMP_DEVICE)

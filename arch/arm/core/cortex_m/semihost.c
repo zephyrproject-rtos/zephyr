@@ -13,6 +13,6 @@ long semihost_exec(enum semihost_instr instr, void *args)
 	register void *r1 __asm__("r1") = args;
 	register int ret __asm__("r0");
 
-	__asm__ __volatile__("bkpt 0xab" : "=r"(ret) : "r"(r0), "r"(r1) : "memory");
+	__asm__ volatile("bkpt 0xab" : "=r"(ret) : "r"(r0), "r"(r1) : "memory");
 	return ret;
 }

@@ -1,7 +1,7 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP PDM MICFIL node
+description: NXP PDM MICFIL
 
 compatible: "nxp,dai-micfil"
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Espressif's GDMA (General Direct Memory Access) Node
+  ESP32 GDMA (General Direct Memory Access)
 
   General Direct Memory Access (GDMA) is a feature that allows
   peripheral-to-memory, memory-to-peripheral, and memory-to-memory
@@ -16,7 +16,7 @@ description: |
   ESP32C3's Peripherals with GDMA:
   * SPI2
   * UHCI0 (UART0/UART1)
-  * I2S (Not Supported yet)
+  * I2S
   * AES (Not Supported yet)
   * SHA (Not Supported yet)
   * ADC
@@ -29,12 +29,12 @@ description: |
   * SPI2
   * SPI3
   * UHCI0
-  * I2S0 (Not Supported yet)
-  * I2S1 (Not Supported yet)
-  * LCD/CAM (Not Supported yet)
+  * I2S0
+  * I2S1
+  * LCD/CAM
   * AES (Not Supported yet)
   * SHA (Not Supported yet)
-  * ADC (Not Supported yet)
+  * ADC
   * RMT (Not Supported yet)
 
 compatible: "espressif,esp32-gdma"

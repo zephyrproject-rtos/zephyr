@@ -111,7 +111,7 @@ struct bt_avdtp_sep_data {
 #endif
 } __packed;
 
-typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req);
+typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req, struct net_buf *buf);
 
 struct bt_avdtp_req {
 	uint8_t sig;
@@ -148,13 +148,11 @@ struct bt_avdtp_media_hdr {
 
 struct bt_avdtp_discover_params {
 	struct bt_avdtp_req req;
-	struct net_buf *buf;
 };
 
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
 	uint8_t stream_endpoint_id;
-	struct net_buf *buf;
 };
 
 struct bt_avdtp_set_configuration_params {

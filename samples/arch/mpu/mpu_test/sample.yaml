@@ -7,3 +7,5 @@ tests:
     tags:
       - mpu
     harness: shell
+    integration_platforms:
+      - mps2/an385

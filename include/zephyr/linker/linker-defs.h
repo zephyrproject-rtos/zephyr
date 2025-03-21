@@ -44,10 +44,13 @@
  * (sorted by priority). Ensure the objects aren't discarded if there is
  * no direct reference to them
  */
+/* clang-format off */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.z_##object##_##level?_*)));	\
-		KEEP(*(SORT(.z_##object##_##level??_*)));
+		KEEP(*(SORT(.z_##object##_##level##_P_?_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_P_??_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));
+/* clang-format on */
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -161,7 +164,7 @@ extern char __gcov_bss_size[];
 extern char _end[];
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm)))
-extern char __ccm_data_rom_start[];
+extern char __ccm_data_load_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
 extern char __ccm_data_end[];

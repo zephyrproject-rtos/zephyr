@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
 
 / {
@@ -47,6 +48,26 @@
 		sram0: memory@20070000 {
 			compatible = "mmio-sram";
 			reg = <0x20070000 0x18000>;
+		};
+
+		spi0: spi@40008000 {
+			compatible = "atmel,sam-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008000 0x4000>;
+			interrupts = <24 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 24>;
+			status = "disabled";
+		};
+
+		spi1: spi@4000c000 {
+			compatible = "atmel,sam-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000c000 0x4000>;
+			interrupts = <25 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 25>;
+			status = "disabled";
 		};
 
 		/* Only used for HWINFO device ID */

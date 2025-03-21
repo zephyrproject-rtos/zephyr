@@ -297,6 +297,10 @@ typedef uint16_t spi_operation_t;
 
 /**
  * @brief SPI controller configuration structure
+ *
+ * @warning Most drivers use pointer comparison to determine whether a passed
+ * configuration is different from one used in a previous transaction.
+ * Changes to fields in the structure may not be detected.
  */
 struct spi_config {
 	/** @brief Bus frequency in Hertz. */
@@ -579,7 +583,7 @@ struct spi_device_state {
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm_device,					\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm_device,	\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
@@ -614,7 +618,8 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 				api, ...)			\
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));			\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),			\
-			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,	\
+			DEVICE_DT_NAME(node_id), init_fn, NULL,			\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data, config,		\
 			level, prio, api,					\
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
 			__VA_ARGS__)

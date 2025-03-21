@@ -29,8 +29,7 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	unsigned int i;
 
 	for (i = 1; i < ext->sect_cnt; i++) {
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
-						ext->sect_hdrs[i].sh_name);
+		const char *name = llext_section_name(ldr, ext, ext->sect_hdrs + i);
 
 		if (!strcmp(name, sect_name)) {
 			return i;
@@ -96,7 +95,7 @@ struct llext *llext_by_name(const char *name)
 	     node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
 
-		if (strncmp(ext->name, name, sizeof(ext->name)) == 0) {
+		if (strncmp(ext->name, name, LLEXT_MAX_NAME_LEN) == 0) {
 			k_mutex_unlock(&llext_lock);
 			return ext;
 		}
@@ -194,8 +193,9 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	strncpy((*ext)->name, name, sizeof((*ext)->name));
-	(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
+	/* The (*ext)->name array is LLEXT_MAX_NAME_LEN + 1 bytes long */
+	strncpy((*ext)->name, name, LLEXT_MAX_NAME_LEN);
+	(*ext)->name[LLEXT_MAX_NAME_LEN] = '\0';
 	(*ext)->use_count++;
 
 	sys_slist_append(&_llext_list, &(*ext)->_llext_list);

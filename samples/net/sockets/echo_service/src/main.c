@@ -38,11 +38,6 @@ static void tcp_service_handler(struct net_socket_service_event *pev)
 {
 	static char buf[1500];
 
-	/* Note that in this application we receive / send data from
-	 * system work queue. In proper application the socket reading and data
-	 * sending should be done so that the system work queue is not blocked.
-	 * It is possible to create a socket service that uses own work queue.
-	 */
 	receive_data(false, pev, buf, sizeof(buf));
 }
 

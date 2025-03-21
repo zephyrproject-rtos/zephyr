@@ -7,10 +7,7 @@ common:
 sample:
   name: Telnet Server
 tests:
-  sample.net.telnet:
-    platform_exclude:
-      - native_posix
-      - native_posix/native/64
+  sample.net.telnet: {}
   sample.net.telnet.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4

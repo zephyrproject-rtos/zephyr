@@ -87,6 +87,8 @@ source "drivers/watchdog/Kconfig.xec"
 
 source "drivers/watchdog/Kconfig.gecko"
 
+source "drivers/watchdog/Kconfig.siwx91x"
+
 source "drivers/watchdog/Kconfig.sifive"
 
 source "drivers/watchdog/Kconfig.npcx"
@@ -142,5 +144,9 @@ source "drivers/watchdog/Kconfig.numaker"
 source "drivers/watchdog/Kconfig.ene"
 
 source "drivers/watchdog/Kconfig.litex"
+
+source "drivers/watchdog/Kconfig.rts5912"
+
+source "drivers/watchdog/Kconfig.renesas_ra"
 
 endif # WATCHDOG

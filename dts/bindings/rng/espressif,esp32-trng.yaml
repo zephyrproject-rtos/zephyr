@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Espressif ESP32 TRNG (True Random Number Generator).
+    ESP32 TRNG (True Random Number Generator).
 
     The TRNG uses the noise in the Wi-Fi/BT RF system. When Wi-Fi and BT are
     disabled, the random number generator will give out pseudo-random numbers.

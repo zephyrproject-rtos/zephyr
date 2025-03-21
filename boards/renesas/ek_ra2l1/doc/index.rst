@@ -46,25 +46,7 @@ EK-RA2L1 has following features.
 Supported Features
 ==================
 
-The Renesas ``ek_ra2l1`` board supports the following
-hardware features:
-
-+-----------+------------+-------------------------------+
-| Interface | Controller | Driver/components             |
-+===========+============+===============================+
-| NVIC      | on-chip    | arch/arm                      |
-+-----------+------------+-------------------------------+
-| PINCTRL   | on-chip    | pinctrl                       |
-+-----------+------------+-------------------------------+
-| CLOCK     | on-chip    | clock_control                 |
-+-----------+------------+-------------------------------+
-| GPIO      | on-chip    | gpio                          |
-+-----------+------------+-------------------------------+
-| UART      | on-chip    | uart                          |
-+-----------+------------+-------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/renesas/ek_ra2l1/ek_ra2l1_defconfig`
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************

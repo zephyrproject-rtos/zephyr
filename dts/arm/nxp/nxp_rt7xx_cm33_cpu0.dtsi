@@ -57,6 +57,13 @@
 	pinctrl: pinctrl {
 		compatible = "nxp,rt-iocon-pinctrl";
 	};
+
+	/* USB PLL */
+	usbclk: usbpll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
 };
 
 
@@ -968,6 +975,32 @@
 		status = "disabled";
 	};
 
+	usb0: usbd@418000 {
+		compatible = "nxp,ehci";
+		reg = <0x418000 0x1000>;
+		interrupts = <40 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb1: usbd@419000 {
+		compatible = "nxp,ehci";
+		reg = <0x419000 0x1000>;
+		interrupts = <41 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbphy: usbphy@414000 {
+		compatible = "nxp,usbphy";
+		reg = <0x414000 0x1000>;
+		status = "disabled";
+	};
+
 	mrt0: mrt@2d000 {
 		compatible = "nxp,mrt";
 		reg = <0x2d000 0x100>;
@@ -1017,6 +1050,32 @@
 		reg = <0x207000 0x1000>;
 		interrupts = <34 0>;
 		status = "disabled";
+	};
+
+	wwdt0: watchdog@e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xe000 0x1000>;
+		interrupts = <42 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	wwdt1: watchdog@2e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x2e000 0x1000>;
+		interrupts = <43 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	sc_timer: pwm@114000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x114000 0x1000>;
+		interrupts = <5 0>;
+		status = "disabled";
+		clocks = <&clkctl0 MCUX_SCTIMER_CLK>;
+		prescaler = <8>;
+		#pwm-cells = <3>;
 	};
 };
 

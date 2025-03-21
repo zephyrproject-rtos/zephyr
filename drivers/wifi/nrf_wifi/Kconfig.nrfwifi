@@ -66,12 +66,6 @@ endchoice
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
-config HEAP_MEM_POOL_ADD_SIZE_NRF70
-	# Use a maximum that works for typical use cases and boards, each sample/app can override
-	# this value if needed by using CONFIG_HEAP_MEM_POOL_IGNORE_MIN
-	def_int 25000 if NRF70_SCAN_ONLY
-	def_int 150000
-
 if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
 	bool "nRF70 STA mode"
@@ -156,6 +150,7 @@ config NRF70_REG_DOMAIN
 # stack requirements.
 config NET_MGMT_EVENT_STACK_SIZE
 	default 2048 if !WIFI_NM_WPA_SUPPLICANT
+	default 4600
 
 config NRF70_LOG_VERBOSE
 	bool "Maintains the verbosity of information in logs"
@@ -529,8 +524,19 @@ config NRF70_RSSI_STALE_TIMEOUT_MS
 	  value as the driver does not store it and requires RPU to provide the
 	  information.
 
+config NRF_WIFI_CTRL_HEAP_SIZE
+	int "Dedicated memory pool for control plane"
+	default 20000
+
+config NRF_WIFI_DATA_HEAP_SIZE
+	int "Dedicated memory pool for data plane"
+	default 6000 if NRF70_SCAN_ONLY
+	default 110000 if !SOC_FAMILY_NORDIC_NRF
+	default 130000
+
 if NETWORKING
 # Finetune defaults for certain system components used by the driver
+
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 4096
 
@@ -545,11 +551,22 @@ config NET_TC_TX_COUNT
 
 endif # NETWORKING
 
+config NRF_WIFI_USE_VARIABLE_NET_BUFS
+	bool "Use variable network buffers"
+	default y
+	help
+	  This option enables the use of variable network buffers in the nRF70 driver.
+	  Variable network buffers optimize RAM usage by allocating buffers of different sizes
+	  based on the data size. This option is enabled by default to optimize RAM usage.
+	  Samples and applications can override this option for higher performance.
+
+if NRF_WIFI_USE_VARIABLE_NET_BUFS
 # nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used, samples/apps can override
 # for higher performance.
 choice NET_PKT_DATA_ALLOC_TYPE
 	default NET_BUF_VARIABLE_DATA_SIZE
 endchoice
+endif # NRF_WIFI_USE_VARIABLE_NET_BUFS
 
 config MAIN_STACK_SIZE
 	default 4096
@@ -741,6 +758,8 @@ endchoice
 
 config NRF_WIFI_MGMT_BUFF_OFFLOAD
 	bool "Management buffer offload"
+	# Raw scan results need host based refilling
+	depends on !WIFI_MGMT_RAW_SCAN_RESULTS
 	default y
 	help
 	  This option offloads the refilling of management buffers to the UMAC, saving the host

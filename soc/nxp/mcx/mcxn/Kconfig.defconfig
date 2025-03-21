@@ -3,6 +3,9 @@
 
 if SOC_SERIES_MCXN
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 

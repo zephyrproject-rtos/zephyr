@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 
 #include <cmsis_core.h>
 
@@ -19,4 +20,11 @@ void soc_reset_hook(void)
 
 	sctlr &= ~SCTLR_V_Msk;
 	__set_SCTLR(sctlr);
+}
+
+void soc_early_init_hook(void)
+{
+	/* Enable caches */
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 }

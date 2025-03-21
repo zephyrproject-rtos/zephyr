@@ -44,6 +44,8 @@ family:
       cpuclusters:
       - name: cm33_cpu0
       - name: cm33_cpu1
+      - name: hifi4
+      - name: hifi1
 runners:
   run_once:
     '--erase':

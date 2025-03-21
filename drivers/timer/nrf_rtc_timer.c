@@ -208,8 +208,7 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 	} while (curr_time != z_nrf_rtc_timer_read());
 
 	abs_ticks = Z_TICK_ABS(t.ticks);
-	if (abs_ticks < 0) {
-		/* relative timeout */
+	if (Z_IS_TIMEOUT_RELATIVE(t)) {
 		return (t.ticks > COUNTER_SPAN) ?
 			-EINVAL : (curr_time + t.ticks);
 	}
@@ -726,13 +725,6 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
-	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
-			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
-			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
-			CLOCK_CONTROL_NRF_LF_START_STABLE);
-
 	int_event_disable_rtc();
 
 	/* TODO: replace with counter driver to access RTC */
@@ -763,7 +755,16 @@ static int sys_clock_driver_init(void)
 
 	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL, false);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
+
 	z_nrf_clock_control_lf_on(mode);
+#endif
 
 	return 0;
 }

@@ -1,4 +1,5 @@
-/* Copyright (c) 2024 BayLibre SAS
+/* Copyright (c) 2018 Laczen
+ * Copyright (c) 2024 BayLibre SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -1364,6 +1365,7 @@ int zms_mount(struct zms_fs *fs)
 	if (fs->sector_size < ZMS_MIN_ATE_NUM * fs->ate_size) {
 		LOG_ERR("Invalid sector size, should be at least %zu",
 			ZMS_MIN_ATE_NUM * fs->ate_size);
+		return -EINVAL;
 	}
 
 	/* check the number of sectors, it should be at least 2 */

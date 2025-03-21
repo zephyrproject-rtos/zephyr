@@ -174,7 +174,7 @@ void nrf_wifi_wpa_supp_event_proc_scan_res(void *if_priv,
 		beacon_ie_len = scan_res->beacon_ies_len;
 	}
 
-	r = k_calloc(sizeof(*r) + ie_len + beacon_ie_len, sizeof(char));
+	r = nrf_wifi_osal_mem_zalloc(sizeof(*r) + ie_len + beacon_ie_len);
 
 	if (!r) {
 		LOG_ERR("%s: Unable to allocate memory for scan result", __func__);
@@ -254,7 +254,7 @@ void nrf_wifi_wpa_supp_event_proc_scan_res(void *if_priv,
 		vif_ctx_zep->scan_in_progress = false;
 	}
 
-	k_free(r);
+	nrf_wifi_osal_mem_free(r);
 }
 
 void nrf_wifi_wpa_supp_event_proc_auth_resp(void *if_priv,
@@ -519,8 +519,8 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		}
 	}
 
-	scan_info = k_calloc(sizeof(*scan_info) + (num_freqs * sizeof(unsigned int)),
-			     sizeof(char));
+	scan_info = nrf_wifi_osal_mem_zalloc(sizeof(*scan_info) +
+					    (num_freqs * sizeof(unsigned int)));
 
 	if (!scan_info) {
 		LOG_ERR("%s: Unable to allocate memory for scan info", __func__);
@@ -579,7 +579,7 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 	ret = 0;
 out:
 	if (scan_info) {
-		k_free(scan_info);
+		nrf_wifi_osal_mem_free(scan_info);
 	}
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return ret;
@@ -1414,7 +1414,7 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 
 	k_mutex_lock(&mgmt_tx_lock, K_FOREVER);
 
-	mgmt_tx_info = k_calloc(sizeof(*mgmt_tx_info), sizeof(char));
+	mgmt_tx_info = nrf_wifi_osal_mem_zalloc(sizeof(*mgmt_tx_info));
 
 	if (!mgmt_tx_info) {
 		LOG_ERR("%s: Unable to allocate memory", __func__);
@@ -1491,7 +1491,7 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 
 out:
 	if (mgmt_tx_info) {
-		k_free(mgmt_tx_info);
+		nrf_wifi_osal_mem_free(mgmt_tx_info);
 	}
 	k_mutex_unlock(&mgmt_tx_lock);
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
@@ -1610,22 +1610,24 @@ void nrf_wifi_wpa_supp_event_get_wiphy(void *if_priv,
 
 	if ((wiphy_info->params_valid & NRF_WIFI_GET_WIPHY_VALID_EXTENDED_CAPABILITIES) &&
 	    rpu_ctx_zep->extended_capa == NULL) {
+		/* To avoid overflowing the 100 column limit */
+		unsigned char ec_len = wiphy_info->extended_capabilities_len;
 
-		rpu_ctx_zep->extended_capa = k_malloc(wiphy_info->extended_capabilities_len);
+		rpu_ctx_zep->extended_capa = nrf_wifi_osal_mem_alloc(ec_len);
 
 		if (rpu_ctx_zep->extended_capa) {
 			memcpy(rpu_ctx_zep->extended_capa, wiphy_info->extended_capabilities,
-			       wiphy_info->extended_capabilities_len);
+			       ec_len);
 		}
 
-		rpu_ctx_zep->extended_capa_mask = k_malloc(wiphy_info->extended_capabilities_len);
+		rpu_ctx_zep->extended_capa_mask = nrf_wifi_osal_mem_alloc(ec_len);
 
 		if (rpu_ctx_zep->extended_capa_mask) {
 			memcpy(rpu_ctx_zep->extended_capa_mask,
 			       wiphy_info->extended_capabilities_mask,
-			       wiphy_info->extended_capabilities_len);
+			       ec_len);
 		} else {
-			free(rpu_ctx_zep->extended_capa);
+			nrf_wifi_osal_mem_free(rpu_ctx_zep->extended_capa);
 			rpu_ctx_zep->extended_capa = NULL;
 			rpu_ctx_zep->extended_capa_len = 0;
 		}
