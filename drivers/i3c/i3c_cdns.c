@@ -458,9 +458,6 @@
  * Local Constants Definition
  ******************************************************************************/
 
-/* TODO: this needs to be configurable in the dts...somehow */
-#define I3C_CONTROLLER_ADDR 0x08
-
 /* Maximum i3c devices that the IP can be built with */
 #define I3C_MAX_DEVS                     11
 #define I3C_MAX_MSGS                     10
@@ -1016,13 +1013,22 @@ static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-	/* Set controller retaining register */
-	uint8_t controller_da = I3C_CONTROLLER_ADDR;
+	uint8_t controller_da;
 
-	if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots, controller_da)) {
+	/* Set controller retaining register */
+	if (config->common.primary_controller_da) {
+		if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots,
+					    config->common.primary_controller_da)) {
+			controller_da = i3c_addr_slots_next_free_find(
+				&data->common.attached_dev.addr_slots, 0);
+			LOG_WRN("%s: 0x%02x DA selected for controller as 0x%02x is unavailable",
+				dev->name, controller_da, config->common.primary_controller_da);
+		} else {
+			controller_da = config->common.primary_controller_da;
+		}
+	} else {
 		controller_da =
 			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
-		LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
 	}
 	sys_write32(prepare_rr0_dev_address(controller_da) | DEV_ID_RR0_IS_I3C,
 		    config->base + DEV_ID_RR0(0));
@@ -3653,6 +3659,7 @@ static DEVICE_API(i3c, api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
 		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
 		.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),              \
+		.common.primary_controller_da = DT_INST_PROP_OR(n, primary_controller_da, 0x00),   \
 	};                                                                                         \
 	static struct cdns_i3c_data i3c_data_##n = {                                               \
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
