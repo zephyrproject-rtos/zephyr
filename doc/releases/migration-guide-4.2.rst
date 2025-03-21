@@ -196,6 +196,12 @@ Modem
   :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE` and :kconfig:option:`CONFIG_MODEM_CMUX_MTU`.
 
 
+Stepper
+=======
+
+* Refactored the ``stepper_enable(const struct device * dev, bool enable)`` function to
+  :c:func:`stepper_enable` & :c:func:`stepper_disable`.
+
 Bluetooth
 *********
 
