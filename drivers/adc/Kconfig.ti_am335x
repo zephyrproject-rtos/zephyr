@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TI_AM335X
+	bool "TI ADC Driver"
+	default y
+	depends on DT_HAS_TI_AM335X_ADC_ENABLED
+	help
+	  Enable TI AM335x Analog-to-Digital Converter (ADC) driver.
