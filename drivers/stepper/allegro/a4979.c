@@ -76,7 +76,6 @@ static int a4979_stepper_enable(const struct device *dev)
 
 static int a4979_stepper_disable(const struct device *dev)
 {
-
 	int ret;
 	const struct a4979_config *config = dev->config;
 	struct a4979_data *data = dev->data;
