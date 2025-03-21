@@ -95,6 +95,8 @@ enum stepper_event {
 	STEPPER_EVENT_RIGHT_END_STOP_DETECTED = 3,
 	/** Stepper has stopped */
 	STEPPER_EVENT_STOPPED = 4,
+	/** Fault with the stepper controller detected */
+	STEPPER_FAULT_EVENT = 5,
 };
 
 /**
