@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,46 @@
 	iomuxc_adma_sai1_txd_spi0_cs1: IOMUXC_ADMA_SAI1_TXD_SPI0_CS1 {
 		pinmux = <SC_P_SPI0_CS1 IMX8QXP_ADMA_SAI1_TXD_SPI0_CS1>;
 	};
+
+	iomuxc_adma_esai0_fsr_esai0_fsr: IOMUXC_ADMA_ESAI0_FSR_ESAI0_FSR {
+		pinmux = <SC_P_ESAI0_FSR IMX8QXP_ADMA_ESAI0_FSR_ESAI0_FSR>;
+	};
+
+	iomuxc_adma_esai0_fst_esai0_fst: IOMUXC_ADMA_ESAI0_FST_ESAI0_FST {
+		pinmux = <SC_P_ESAI0_FST IMX8QXP_ADMA_ESAI0_FST_ESAI0_FST>;
+	};
+
+	iomuxc_adma_esai0_sckr_esai0_sckr: IOMUXC_ADMA_ESAI0_SCKR_ESAI0_SCKR {
+		pinmux = <SC_P_ESAI0_SCKR IMX8QXP_ADMA_ESAI0_SCKR_ESAI0_SCKR>;
+	};
+
+	iomuxc_adma_esai0_sckt_esai0_sckt: IOMUXC_ADMA_ESAI0_SCKT_ESAI0_SCKT {
+		pinmux = <SC_P_ESAI0_SCKT IMX8QXP_ADMA_ESAI0_SCKT_ESAI0_SCKT>;
+	};
+
+	iomuxc_adma_esai0_tx0_esai0_tx0: IOMUXC_ADMA_ESAI0_TX0_ESAI0_TX0 {
+		pinmux = <SC_P_ESAI0_TX0 IMX8QXP_ADMA_ESAI0_TX0_ESAI0_TX0>;
+	};
+
+	iomuxc_adma_esai0_tx1_esai0_tx1: IOMUXC_ADMA_ESAI0_TX1_ESAI0_TX1 {
+		pinmux = <SC_P_ESAI0_TX1 IMX8QXP_ADMA_ESAI0_TX1_ESAI0_TX1>;
+	};
+
+	iomuxc_adma_esai0_tx2_rx3_esai0_tx2_rx3: IOMUXC_ADMA_ESAI0_TX2_RX3_ESAI0_TX2_RX3 {
+		pinmux = <SC_P_ESAI0_TX2_RX3 IMX8QXP_ADMA_ESAI0_TX2_RX3_ESAI0_TX2_RX3>;
+	};
+
+	iomuxc_adma_esai0_tx3_rx2_esai0_tx3_rx2: IOMUXC_ADMA_ESAI0_TX3_RX2_ESAI0_TX3_RX2 {
+		pinmux = <SC_P_ESAI0_TX3_RX2 IMX8QXP_ADMA_ESAI0_TX3_RX2_ESAI0_TX3_RX2>;
+	};
+
+	iomuxc_adma_esai0_tx4_rx1_esai0_tx4_rx1: IOMUXC_ADMA_ESAI0_TX4_RX1_ESAI0_TX4_RX1 {
+		pinmux = <SC_P_ESAI0_TX4_RX1 IMX8QXP_ADMA_ESAI0_TX4_RX1_ESAI0_TX4_RX1>;
+	};
+
+	iomuxc_adma_esai0_tx5_rx0_esai0_tx5_rx0: IOMUXC_ADMA_ESAI0_TX5_RX0_ESAI0_TX5_RX0 {
+		pinmux = <SC_P_ESAI0_TX5_RX0 IMX8QXP_ADMA_ESAI0_TX5_RX0_ESAI0_TX5_RX0>;
+	};
 };
 
 &pinctrl {
@@ -46,6 +86,21 @@
 				<&iomuxc_adma_sai1_rxd_sai1_rxd>,
 				<&iomuxc_adma_sai1_txc_sai1_rxc>,
 				<&iomuxc_adma_sai1_txd_spi0_cs1>;
+		};
+	};
+
+	esai0_default: esai0_default {
+		group0 {
+			pinmux = <&iomuxc_adma_esai0_fsr_esai0_fsr>,
+				 <&iomuxc_adma_esai0_fst_esai0_fst>,
+				 <&iomuxc_adma_esai0_sckr_esai0_sckr>,
+				 <&iomuxc_adma_esai0_sckt_esai0_sckt>,
+				 <&iomuxc_adma_esai0_tx0_esai0_tx0>,
+				 <&iomuxc_adma_esai0_tx1_esai0_tx1>,
+				 <&iomuxc_adma_esai0_tx2_rx3_esai0_tx2_rx3>,
+				 <&iomuxc_adma_esai0_tx3_rx2_esai0_tx3_rx2>,
+				 <&iomuxc_adma_esai0_tx4_rx1_esai0_tx4_rx1>,
+				 <&iomuxc_adma_esai0_tx5_rx0_esai0_tx5_rx0>;
 		};
 	};
 };
