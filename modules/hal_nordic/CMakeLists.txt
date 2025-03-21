@@ -12,7 +12,7 @@ if(CONFIG_NRF_REGTOOL_GENERATE_UICR)
   list(APPEND nrf_regtool_components GENERATE:UICR)
 endif()
 if(DEFINED nrf_regtool_components)
-  find_package(nrf-regtool 8.1.2
+  find_package(nrf-regtool 8.1.3
     COMPONENTS ${nrf_regtool_components}
     PATHS ${CMAKE_CURRENT_LIST_DIR}/nrf-regtool
     NO_CMAKE_PATH

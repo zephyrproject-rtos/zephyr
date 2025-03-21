@@ -152,15 +152,34 @@ directory. It's a tarball that contains the headers and compile flags needed
 to build extensions. The extension developer can then include the headers
 and use the compile flags in their build system to build the extension.
 
+EDK definition files
+--------------------
+
+The EDK includes several convenience files which define a set of variables that
+contain the compile flags needed by the project, as well as other build-related
+information, when enabled. The information is currently exported in the
+following formats:
+
+- ``Makefile.cflags``, for Makefile-based projects;
+- ``cmake.cflags``, for CMake-based projects.
+
+Paths to the headers and flags are prefixed by the EDK root directory. This is
+automatically obtained for CMake projects from ``CMAKE_CURRENT_LIST_DIR``;
+other formats refer to an ``LLEXT_EDK_INSTALL_DIR`` variable, which must be set
+by the user with the path where the EDK is installed before including the
+generated file.
+
+.. note::
+   The ``LLEXT_EDK`` prefix in the variable name may be changed with the
+   :kconfig:option:`CONFIG_LLEXT_EDK_NAME` option.
+
 Compile flags
 -------------
 
-The EDK includes the convenience files ``cmake.cflags`` (for CMake-based
-projects) and ``Makefile.cflags`` (for Make-based ones), which define a set of
-variables that contain the compile flags needed by the project. The full list
-of flags needed to build an extension is provided by ``LLEXT_CFLAGS``. Also
-provided is a more granular set of flags that can be used in support of
-different use cases, such as when building mocks for unit tests:
+The full list of flags needed to build an extension is provided by
+``LLEXT_CFLAGS``. Also provided is a more granular set of flags that can be
+used in support of different use cases, such as when building mocks for unit
+tests:
 
 ``LLEXT_INCLUDE_CFLAGS``
 
@@ -194,6 +213,29 @@ different use cases, such as when building mocks for unit tests:
         ``LLEXT_ALL_INCLUDE_CFLAGS``, ``LLEXT_GENERATED_IMACROS_CFLAGS`` and
         ``LLEXT_BASE_CFLAGS``.
 
+Target information
+------------------
+
+The EDK includes information that identifies the target of the current Zephyr
+build. The following variables are currently defined and mirror the information
+available in the Zephyr build system:
+
+``LLEXT_EDK_BOARD_NAME``
+    The board name used in the Zephyr build.
+
+``LLEXT_EDK_BOARD_QUALIFIERS``
+    The board qualifiers, if provided, used in the Zephyr build.
+
+``LLEXT_EDK_BOARD_REVISION``
+    The board revision, if provided, used in the Zephyr build.
+
+``LLEXT_EDK_BOARD_TARGET``
+    The fully qualified board target used in the Zephyr build.
+
+.. note::
+   The ``LLEXT_EDK`` prefix in the variable names may be changed with the
+   :kconfig:option:`CONFIG_LLEXT_EDK_NAME` option.
+
 .. _llext_kconfig_edk:
 
 LLEXT EDK Kconfig options
@@ -202,7 +244,8 @@ LLEXT EDK Kconfig options
 The LLEXT EDK can be configured using the following Kconfig options:
 
 :kconfig:option:`CONFIG_LLEXT_EDK_NAME`
-    The name of the generated EDK tarball.
+    The name of the generated EDK tarball. This is also used as the prefix for
+    several variables defined in the EDK files.
 
 :kconfig:option:`CONFIG_LLEXT_EDK_USERSPACE_ONLY`
     If set, the EDK will include headers that do not contain code to route

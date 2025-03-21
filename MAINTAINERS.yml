@@ -1777,24 +1777,6 @@ Release Notes:
   tests:
     - drivers.ipm
 
-"Drivers: kscan":
-  status: maintained
-  maintainers:
-    - albertofloyd
-  collaborators:
-    - VenkatKotakonda
-  files:
-    - drivers/kscan/
-    - include/zephyr/drivers/kscan.h
-    - samples/drivers/kscan/
-    - tests/drivers/kscan/
-    - dts/bindings/kscan/
-    - doc/hardware/peripherals/kscan.rst
-  labels:
-    - "area: Kscan"
-  tests:
-    - drivers.kscan
-
 "Drivers: LED":
   status: maintained
   maintainers:
@@ -2136,6 +2118,7 @@ Release Notes:
     - doc/hardware/peripherals/stepper.rst
     - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
+    - tests/drivers/stepper/
   labels:
     - "area: Stepper"
   tests:
@@ -2820,7 +2803,7 @@ hawkBit:
   tests:
     - sample.net.updatehub
 
-Native POSIX/Sim and POSIX arch:
+Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
@@ -2843,7 +2826,7 @@ Native POSIX/Sim and POSIX arch:
   labels:
     - "area: native port"
   description: >-
-    POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
+    POSIX architecture and SOC, native_sim boards, and related drivers
   tests:
     - boards.native_sim
 
@@ -2875,7 +2858,6 @@ Networking:
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
-    - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
     - samples/net/gptp/
@@ -2928,7 +2910,6 @@ Networking:
     - jukkar
   files:
     - doc/services/net_buf/
-    - include/zephyr/net/buf.h
     - include/zephyr/net_buf.h
     - lib/net_buf/
     - tests/lib/net_buf/
@@ -3597,9 +3578,15 @@ Raspberry Pi Pico Platforms:
     - threeeights
     - ajf58
   files:
-    - boards/raspberrypi/
+    - boards/raspberrypi/rpi_pico*/
     - boards/adafruit/kb2040/
+    - boards/adafruit/macropad_rp2040/
+    - boards/adafruit/qt_py_rp2040/
+    - boards/pimoroni/pico_plus2/
+    - boards/seeed/xiao_rp2040/
     - boards/sparkfun/pro_micro_rp2040/
+    - boards/waveshare/rp2040_zero/
+    - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/*/*rpi_pico
@@ -3990,6 +3977,19 @@ nRF Platforms:
   labels:
     - "platform: nRF"
 
+Octavo Systems Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/oct/
+    - soc/oct/
+  labels:
+    - "platform: Octavo Systems"
+
 OpenTitan Platforms:
   status: maintained
   maintainers:
@@ -4055,6 +4055,7 @@ Renesas RA Platforms:
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
+    - samples/boards/renesas/
   labels:
     - "platform: Renesas RA"
   description: >-

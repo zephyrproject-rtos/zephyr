@@ -20,3 +20,5 @@ tests:
         - "Attempting to write 4 bytes"
         - "Data read matches data written. Good!!"
     depends_on: mspi
+    integration_platforms:
+      - apollo3p_evb

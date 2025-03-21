@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family NFCT (Near Field Communication Tag)
+
+compatible: "nordic,nrf-nfct-v2"
+
+include: nordic,nrf-nfct.yaml
+
+properties:
+  nfct-pins-as-gpios:
+    type: boolean
+    description: |
+      When enabled this property will configure pins dedicated to NFCT
+      peripheral as regular GPIOs. This property must be applied in cpuapp
+      if NFCT pins are intended to be used as regular GPIOs by any core.
+
+      NFC pins in nRF54H series: P2.10 and P2.11

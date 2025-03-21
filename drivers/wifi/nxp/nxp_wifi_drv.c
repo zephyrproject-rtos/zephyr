@@ -716,7 +716,7 @@ static int nxp_wifi_process_results(unsigned int count)
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
 		if (scan_result.wpa2_entp) {
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		}
 		if (scan_result.wpa2) {
 			res.security = WIFI_SECURITY_TYPE_PSK;
@@ -730,13 +730,13 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		if (scan_result.wpa3_entp) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		} else if (scan_result.wpa3_1x_sha256) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		} else if (scan_result.wpa3_1x_sha384) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
-			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+			res.security = WIFI_SECURITY_TYPE_EAP;
 		}
 
 		if (scan_result.ap_mfpr) {
@@ -1032,6 +1032,25 @@ static int nxp_wifi_disconnect(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *mac)
+{
+	int ret;
+
+	if (!is_uap_started()) {
+		LOG_ERR("Please start uap first!");
+		return -EAGAIN;
+	}
+
+	ret = wlan_uap_disconnect_sta((uint8_t *)mac);
+	if (ret != WM_SUCCESS) {
+		LOG_ERR("Failed to disconnect STA");
+	}
+
+	return ret;
+}
+#endif
 
 static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, int pwe)
 {
@@ -2190,6 +2209,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_btwt = nxp_wifi_set_btwt,
 #endif
+	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
 };
 

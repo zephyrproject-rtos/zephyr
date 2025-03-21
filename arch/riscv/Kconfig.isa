@@ -97,7 +97,7 @@ config RISCV_ISA_EXT_C
 	  instruction encodings for common operations.
 
 config RISCV_ISA_EXT_V
-	bool "Enable V extension"
+	bool "Enable RISC-V extension"
 	default n
 	help
 	  (V) - Standard Extension for Vector Instructions

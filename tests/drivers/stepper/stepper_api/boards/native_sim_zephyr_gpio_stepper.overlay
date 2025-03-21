@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+
+/ {
+	aliases {
+		stepper =  &zephyr_gpio_stepper;
+	};
+};
+
+/ {
+	zephyr_gpio_stepper: zephyr_gpio_stepper {
+		compatible = "zephyr,gpio-stepper";
+		status = "okay";
+		micro-step-res = <1>;
+		gpios = <&gpio1 0 0>,
+				<&gpio2 0 0>,
+				<&gpio3 0 0>,
+				<&gpio4 0 0>;
+	};
+};

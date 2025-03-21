@@ -40,7 +40,7 @@ static int vevif_event_tx_send(const struct device *dev, uint32_t id, const stru
 	nrf_vpr_csr_vevif_events_trigger(BIT(id));
 
 #if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
-	while (!nrf_vpr_csr_vevif_events_get()) {
+	while (!(nrf_vpr_csr_vevif_events_get() & BIT(id))) {
 		;
 	}
 	nrf_vpr_csr_vevif_events_set(0);

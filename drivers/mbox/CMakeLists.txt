@@ -20,3 +20,4 @@ zephyr_library_sources_ifdef(CONFIG_MBOX_NRF_BELLBOARD_TX mbox_nrf_bellboard_tx.
 zephyr_library_sources_ifdef(CONFIG_MBOX_STM32_HSEM   mbox_stm32_hsem.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_IVSHMEM mbox_ivshmem.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_TI_OMAP_MAILBOX   mbox_ti_omap.c)
+zephyr_library_sources_ifdef(CONFIG_MBOX_RENESAS_RZ_MHU mbox_renesas_rz_mhu.c)

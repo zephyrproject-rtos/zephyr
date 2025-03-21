@@ -12,6 +12,14 @@
 		};
 	};
 
+	sci7_default: sci7_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 6, 13)>,
+			<RA_PSEL(RA_PSEL_SCI_7, 6, 14)>;
+		};
+	};
+
 	iic1_default: iic1_default {
 		group1 {
 			/* SCL1 SDA1 */

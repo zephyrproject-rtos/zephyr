@@ -175,12 +175,17 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  * to devices making general inquiry. To enable this state it's mandatory
  * to first be in connectable state.
  *
+ * If the device enters limited discoverable mode, the controller will leave from discoverable
+ * mode after the duration of @kconfig{BT_LIMITED_DISCOVERABLE_DURATION} seconds in the limited
+ * discoverable mode.
+ *
  * @param enable Value allowing/disallowing controller to become discoverable.
+ * @param limited Value allowing/disallowing controller to enter limited discoverable mode.
  *
  * @return Negative if fail set to requested state or requested state has been
  *         already set. Zero if done successfully.
  */
-int bt_br_set_discoverable(bool enable);
+int bt_br_set_discoverable(bool enable, bool limited);
 
 /**
  * @brief Enable/disable set controller in connectable state.

@@ -1564,7 +1564,9 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	ARG_UNUSED(ctx);
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if ((*pev)->state != K_POLL_STATE_NOT_READY || sock_is_eof(ctx)) {
+		if (((*pev)->state != K_POLL_STATE_NOT_READY &&
+		     (*pev)->state != K_POLL_STATE_CANCELLED) ||
+		    sock_is_eof(ctx)) {
 			pfd->revents |= ZSOCK_POLLIN;
 		}
 		(*pev)++;

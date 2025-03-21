@@ -34,71 +34,13 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | ldma                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | semailbox                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | comparator                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
-
-Connections and IOs
-===================
-
-In the following table, the column **Name** contains Pin names. For example, PA2
-means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
-
-+-------+-------------+-------------------------------------+
-| Name  | Function    | Usage                               |
-+=======+=============+=====================================+
-| PB2   | GPIO        | LED0                                |
-+-------+-------------+-------------------------------------+
-| PB4   | GPIO        | LED1                                |
-+-------+-------------+-------------------------------------+
-| PB1   | GPIO        | Push Button 0                       |
-+-------+-------------+-------------------------------------+
-| PB3   | GPIO        | Push Button 1                       |
-+-------+-------------+-------------------------------------+
-| PB0   | GPIO        | Board Controller Enable             |
-|       |             | VCOM_ENABLE                         |
-+-------+-------------+-------------------------------------+
-| PA8   | USART0_TX   | UART Console VCOM_TX US0_TX         |
-+-------+-------------+-------------------------------------+
-| PA9   | USART0_RX   | UART Console VCOM_RX US0_RX         |
-+-------+-------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/radio_boards/xg24_rb4187c/xg24_rb4187c_defconfig`
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
 
-The EFR32MG24 SoC is configured to use the 39 MHz external oscillator on the
-board.
+The EFR32MG24 SoC is configured to use the HFRCODPLL oscillator at 78 MHz as the system clock,
+locked to the 39 MHz external crystal oscillator on the board.
 
 Serial Port
 ===========

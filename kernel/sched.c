@@ -1123,12 +1123,12 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
-		      k_ticks_to_ms_ceil64(ticks);
+	/* k_sleep() still returns 32 bit milliseconds for compatibility */
+	int64_t ms = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
+		CLAMP(k_ticks_to_ms_ceil64(ticks), 0, INT_MAX);
 
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
-
-	return ret;
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ms);
+	return (int32_t) ms;
 }
 
 #ifdef CONFIG_USERSPACE

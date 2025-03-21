@@ -55,6 +55,7 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		rtc = &rtc;
+		eeprom-0 = &mb85rs1mt;
 	};
 };
 

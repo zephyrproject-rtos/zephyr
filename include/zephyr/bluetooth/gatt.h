@@ -217,12 +217,6 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
  *  While the formed GATT service is registered with the local
  *  GATT server, pointers to this type can typically be given to
  *  GATT server APIs, like bt_gatt_notify().
- *
- *  @note This type is given as an argument to the
- *  bt_gatt_discover() application callback, but it's not a
- *  proper object of this type. The field @ref perm, and methods
- *  read() and write() are not available, and it's unsound to
- *  pass the pointer to GATT server APIs.
  */
 struct bt_gatt_attr {
 	/** @brief Attribute Type
@@ -235,7 +229,8 @@ struct bt_gatt_attr {
 	 *  GATT Characteristic Presentation Format descriptor as
 	 *  specified in Core Specification 3.G.3.3.3.5.
 	 *
-	 *  You can define a new Attribute Type.
+	 *  You can define a new Attirubute Type for your application specific
+	 *  use by generating a new UUID for it.
 	 */
 	const struct bt_uuid *uuid;
 
@@ -1700,6 +1695,11 @@ struct bt_gatt_discover_params;
  *
  *  The attribute object as well as its UUID and value objects are temporary and
  *  must be copied to in order to cache its information.
+ *
+ *  @note @ref bt_gatt_attr is given as an argument to bt_gatt_discover(), but
+ *  it's not a proper object of this type. @ref bt_gatt_attr.perm, and methods
+ *  bt_gatt_attr.read() and bt_gatt_attr.write() are not available, and it's
+ *  unsound to pass the pointer to GATT server APIs.
  *  Only the following fields of the attribute contains valid information:
  *   - uuid      UUID representing the type of attribute.
  *   - handle    Handle in the remote database.
