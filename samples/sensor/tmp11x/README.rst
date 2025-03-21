@@ -1,19 +1,19 @@
-.. _ti_tmp116_sample:
+.. _ti_tmp11x_sample:
 
-TI_TMP116 Sample
+TI_TMP11X Sample
 ################
 
 Description
 ***********
 
-This sample application periodically takes temperature readings using the ti_tmp116
+This sample application periodically takes temperature readings using the ti_tmp11x
 sensor driver. The result is written to the console. This sample also included the code
-to use the  features provided by TMP117, which is a sensor similar to TMP116
+to use the features provided by TMP117 and TMP119, which are sensors similar to TMP116.
 
 Requirements
 ************
 
-This sample needs a TI TMP116 or TI TMP117 sensor connected to the target board's I2C
+This sample needs a TI TMP116, TI TMP117 or TI TMP119 sensor connected to the target board's I2C
 connector.
 
 
@@ -38,7 +38,7 @@ In order to build the sample, connect the board to the computer with a USB cable
 following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/tmp116
+   :zephyr-app: samples/sensor/tmp11x
    :board: nucleo_f401re
    :goals: build flash
    :compact:
@@ -57,7 +57,7 @@ The output should look like this:
 
 .. code-block:: console
 
-    Device TMP116 - 0x200010a8 is ready
+    Device TMP11X - 0x200010a8 is ready
     temp is 26.7031250 oC
     temp is 26.7109375 oC
     ...
