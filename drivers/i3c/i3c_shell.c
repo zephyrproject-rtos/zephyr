@@ -629,7 +629,7 @@ static int cmd_i3c_ccc_setaasa(const struct shell *sh, size_t argc, char **argv)
 
 	/* set all devices DA to SA */
 	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-		if ((desc->supports_setaasa) && (desc->dynamic_addr == 0) &&
+		if (((desc->flags) & I3C_SUPPORTS_SETAASA) && (desc->dynamic_addr == 0) &&
 		    (desc->static_addr != 0)) {
 			desc->dynamic_addr = desc->static_addr;
 		}
