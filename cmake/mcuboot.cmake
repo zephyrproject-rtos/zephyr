@@ -138,6 +138,7 @@ function(zephyr_mcuboot_tasks)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND byproducts ${output}.signed.confirmed.bin)
+      zephyr_runner_file(bin ${output}.signed.confirmed.bin)
       set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_BIN_NAME "${output}.signed.confirmed.bin"
           CACHE FILEPATH "Signed and confirmed kernel bin file" FORCE
       )
@@ -200,6 +201,7 @@ function(zephyr_mcuboot_tasks)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND byproducts ${output}.signed.confirmed.hex)
+      zephyr_runner_file(hex ${output}.signed.confirmed.hex)
       set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${output}.signed.confirmed.hex"
           CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
       )
