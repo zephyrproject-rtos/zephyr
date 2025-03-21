@@ -53,11 +53,18 @@ static void modbus_serial_tx_off(struct modbus_context *ctx)
 static void modbus_serial_rx_on(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
+	uint8_t c;
+
+	/* Flush any stale data in the RX FIFO */
+	while (uart_poll_in(cfg->dev, &c) == 0) {
+		/* do nothing */
+	}
 
 	if (cfg->re != NULL) {
 		gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
 	}
 
+	atomic_set_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
 	uart_irq_rx_enable(cfg->dev);
 }
 
@@ -66,6 +73,8 @@ static void modbus_serial_rx_off(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	uart_irq_rx_disable(cfg->dev);
+	atomic_clear_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
+
 	if (cfg->re != NULL) {
 		gpio_pin_set(cfg->re->port, cfg->re->pin, 0);
 	}
@@ -311,6 +320,17 @@ static void rtu_tx_adu(struct modbus_context *ctx)
 static void cb_handler_rx(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
+
+	if (!atomic_test_bit(&ctx->state, MODBUS_STATE_RX_ENABLED)) {
+		int n;
+		uint8_t buf[8];
+
+		do {
+			n = uart_fifo_read(cfg->dev, buf, sizeof(buf));
+		} while (n == sizeof(buf));
+
+		return;
+	}
 
 	if ((ctx->mode == MODBUS_MODE_ASCII) &&
 	    IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
