@@ -21,6 +21,7 @@ env:
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
   DOXYGEN_VERSION: 1.12.0
+  DOXYGEN_MD5SUM: fd96a5defa535dfe2e987b46540844a4
   JOB_COUNT: 4
 
 jobs:
@@ -72,6 +73,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y wget python3-pip git ninja-build graphviz lcov
         wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        echo "${DOXYGEN_MD5SUM}  doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" | md5sum -c
+        if [ $? -ne 0 ]; then
+          echo "Failed to verify doxygen tarball"
+          exit 1
+        fi
         sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
