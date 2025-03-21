@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Texas Instruments
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI AM335X ADC
+
+compatible: "ti,am335x-adc"
+
+include: [adc-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  ti,vrefp:
+    type: int
+    required: true
+    description: Reference Voltage (in mV)
+
+  ti,fifo:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: FIFO for storing conversions
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
+
+child-binding:
+  properties:
+    ti,open-delay:
+      type: int
+      default: 0
+      description: Delay before acquisition period
+
+    zephyr,resolution:
+      default: 12
+
+    zephyr,oversampling:
+      default: 0
