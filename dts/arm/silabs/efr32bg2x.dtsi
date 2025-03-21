@@ -223,7 +223,7 @@
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0xC69>;
-			interrupts = <49 0>;
+			interrupts = <49 2>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -263,7 +263,7 @@
 			compatible = "silabs,gecko-trng";
 			reg = <0x4C021000 0x1000>;
 			status = "disabled";
-			interrupts = <0x1 0x0>;
+			interrupts = <0x1 0x2>;
 		};
 
 		i2c0: i2c@5a010000 {
@@ -310,14 +310,14 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x4A018000 0x3028>;
 			peripheral-id = <0>;
-			interrupts = <43 0>;
+			interrupts = <43 2>;
 			status = "disabled";
 		};
 
 		adc0: adc@5a004000 {
 			compatible = "silabs,gecko-iadc";
 			reg = <0x5a004000 0x4000>;
-			interrupts = <48 0>;
+			interrupts = <48 2>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
