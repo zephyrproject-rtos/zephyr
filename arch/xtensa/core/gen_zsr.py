@@ -67,6 +67,9 @@ for il in range(1, 1 + int(get("XCHAL_NUM_INTLEVELS"))):
     if il != int(get("XCHAL_DEBUGLEVEL")):
         maxint = max(il, maxint)
 
+# Find EXCM_LEVEL.
+excm_level = int(get("XCHAL_EXCM_LEVEL"))
+
 # Find the highest priority software interrupt.  We'll use that for
 # arch_irq_offload().
 irqoff_level = -1
@@ -79,7 +82,7 @@ for sym, val in syms.items():
             levelsym = f"XCHAL_INT{intnum}_LEVEL"
             if levelsym in syms:
                 intlevel = int(syms[levelsym])
-                if intlevel > irqoff_level:
+                if irqoff_level < intlevel <= excm_level:
                     irqoff_int = intnum
                     irqoff_level = intlevel
 
