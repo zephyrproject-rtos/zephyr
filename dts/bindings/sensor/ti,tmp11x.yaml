@@ -1,11 +1,11 @@
 # Copyright (c) 2019 Centaur Analytics, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-description: Texas Instruments TMP116 temperature sensor
+description: Texas Instruments TMP11X temperature sensor
 
-compatible: "ti,tmp116"
+compatible: "ti,tmp11x"
 
-bus: tmp116
+bus: tmp11x
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
@@ -18,14 +18,14 @@ properties:
       Specify the default temperature output data rate in milliseconds (ms).
       Default is power-up configuration.
 
-      - 0     # TMP116_DT_ODR_15_5_MS
-      - 0x80  # TMP116_DT_ODR_125_MS
-      - 0x100 # TMP116_DT_ODR_250_MS
-      - 0x180 # TMP116_DT_ODR_500_MS
-      - 0x200 # TMP116_DT_ODR_1000_MS
-      - 0x280 # TMP116_DT_ODR_4000_MS
-      - 0x300 # TMP116_DT_ODR_8000_MS
-      - 0x380 # TMP116_DT_ODR_16000_MS
+      - 0     # TMP11X_DT_ODR_15_5_MS
+      - 0x80  # TMP11X_DT_ODR_125_MS
+      - 0x100 # TMP11X_DT_ODR_250_MS
+      - 0x180 # TMP11X_DT_ODR_500_MS
+      - 0x200 # TMP11X_DT_ODR_1000_MS
+      - 0x280 # TMP11X_DT_ODR_4000_MS
+      - 0x300 # TMP11X_DT_ODR_8000_MS
+      - 0x380 # TMP11X_DT_ODR_16000_MS
   oversampling:
     type: int
     default: 0x20
@@ -34,7 +34,7 @@ properties:
       Set number of sample to averaging in one readout.
       Default is power-up configuration (8 samples).
 
-      - 0    # TMP116_DT_OVERSAMPLING_1
-      - 0x20 # TMP116_DT_OVERSAMPLING_8
-      - 0x40 # TMP116_DT_OVERSAMPLING_32
-      - 0x60 # TMP116_DT_OVERSAMPLING_64
+      - 0    # TMP11X_DT_OVERSAMPLING_1
+      - 0x20 # TMP11X_DT_OVERSAMPLING_8
+      - 0x40 # TMP11X_DT_OVERSAMPLING_32
+      - 0x60 # TMP11X_DT_OVERSAMPLING_64
