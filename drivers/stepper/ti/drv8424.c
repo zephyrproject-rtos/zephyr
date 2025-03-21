@@ -116,30 +116,26 @@ int drv8424_microstep_recovery(const struct device *dev)
 	return 0;
 }
 
-static int drv8424_enable(const struct device *dev, bool enable)
+static int drv8424_check_en_sleep_pin(const struct drv8424_config *config)
 {
-	int ret;
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
-	bool has_enable_pin = config->en_pin.port != NULL;
 	bool has_sleep_pin = config->sleep_pin.port != NULL;
+	bool has_enable_pin = config->en_pin.port != NULL;
 
-	/* Check availability of sleep and enable pins, as these might be hardwired. */
 	if (!has_sleep_pin && !has_enable_pin) {
-		LOG_ERR("%s: Failed to enable/disable device, neither sleep pin nor enable pin are "
-			"available. The device is always on.",
-			dev->name);
+		LOG_ERR("Failed to enable/disable device, neither sleep pin nor enable pin are "
+			"available. The device is always on.");
 		return -ENOTSUP;
 	}
 
-	if (has_sleep_pin) {
-		ret = gpio_pin_set_dt(&config->sleep_pin, !enable);
-		if (ret != 0) {
-			LOG_ERR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
-			return ret;
-		}
-		data->pin_states.sleep = enable ? 0U : 1U;
-	}
+	return 0;
+}
+
+static int drv8424_set_en_pin_state(const struct device *dev, bool enable)
+{
+	const struct drv8424_config *config = dev->config;
+	struct drv8424_data *data = dev->data;
+	bool has_enable_pin = config->en_pin.port != NULL;
+	int ret;
 
 	if (has_enable_pin) {
 		ret = gpio_pin_set_dt(&config->en_pin, enable);
@@ -150,13 +146,80 @@ static int drv8424_enable(const struct device *dev, bool enable)
 		data->pin_states.en = enable ? 1U : 0U;
 	}
 
-	data->enabled = enable;
-	if (!enable) {
-		config->common.timing_source->stop(dev);
-		gpio_pin_set_dt(&config->common.step_pin, 0);
+	return 0;
+}
+
+static int drv8424_set_sleep_pin_state(const struct device *dev, bool enable)
+{
+	int ret;
+	const struct drv8424_config *config = dev->config;
+	struct drv8424_data *data = dev->data;
+	bool has_sleep_pin = config->sleep_pin.port != NULL;
+
+	if (has_sleep_pin) {
+		ret = gpio_pin_set_dt(&config->sleep_pin, !enable);
+		if (ret != 0) {
+			LOG_ERR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
+			return ret;
+		}
+		data->pin_states.sleep = enable ? 0U : 1U;
 	}
 
 	return 0;
+}
+
+static int drv8424_enable(const struct device *dev)
+{
+	const struct drv8424_config *config = dev->config;
+	struct drv8424_data *data = dev->data;
+	int ret;
+
+	ret = drv8424_check_en_sleep_pin(config);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = drv8424_set_sleep_pin_state(dev, true);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = drv8424_set_en_pin_state(dev, true);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->enabled = true;
+
+	return ret;
+}
+
+static int drv8424_disable(const struct device *dev)
+{
+	const struct drv8424_config *config = dev->config;
+	struct drv8424_data *data = dev->data;
+	int ret;
+
+	ret = drv8424_check_en_sleep_pin(config);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = drv8424_set_sleep_pin_state(dev, false);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = drv8424_set_en_pin_state(dev, false);
+	if (ret != 0) {
+		return ret;
+	}
+
+	config->common.timing_source->stop(dev);
+
+	data->enabled = false;
+
+	return ret;
 }
 
 static int drv8424_set_micro_step_res(const struct device *dev,
@@ -334,6 +397,7 @@ static int drv8424_init(const struct device *dev)
 
 static DEVICE_API(stepper, drv8424_stepper_api) = {
 	.enable = drv8424_enable,
+	.disable = drv8424_disable,
 	.move_by = drv8424_move_by,
 	.move_to = drv8424_move_to,
 	.is_moving = step_dir_stepper_common_is_moving,

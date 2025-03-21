@@ -72,7 +72,7 @@ static void *stepper_setup(void)
 			  &stepper_signal);
 
 	zassert_not_null(fixture.dev);
-	(void)stepper_enable(fixture.dev, true);
+	(void)stepper_enable(fixture.dev);
 	return &fixture;
 }
 
