@@ -19,7 +19,7 @@ if(CONFIG_EEPROM_SIMULATOR)
   endif()
 endif()
 zephyr_library_sources_ifdef(CONFIG_EEPROM_EMULATOR eeprom_emulator.c)
-zephyr_library_sources_ifdef(CONFIG_EEPROM_TMP116 eeprom_tmp116.c)
+zephyr_library_sources_ifdef(CONFIG_EEPROM_TMP11X eeprom_tmp11x.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_XEC eeprom_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_FAKE eeprom_fake.c)
 

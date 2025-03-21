@@ -25,8 +25,8 @@ description: |
               #address-cells = <1>;
               #size-cells = <0>;
 
-              temp_sens_0: tmp116@49 {
-                  compatible = "ti,tmp116";
+              temp_sens_0: tmp11x@49 {
+                  compatible = "ti,tmp11x";
                   reg = <0x49>;
               };
           };
@@ -37,8 +37,8 @@ description: |
               #address-cells = <1>;
               #size-cells = <0>;
 
-              temp_sens_1: tmp116@49 {
-                  compatible = "ti,tmp116";
+              temp_sens_1: tmp11x@49 {
+                  compatible = "ti,tmp11x";
                   reg = <0x49>;
               };
           };
