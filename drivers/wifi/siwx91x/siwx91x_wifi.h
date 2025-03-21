@@ -14,6 +14,25 @@
 #include "sl_si91x_types.h"
 #include "sl_si91x_protocol_types.h"
 
+typedef uint8_t sl_si91x_wlan_module_state_t;
+#define WLAN_REASON_CODES 10
+
+typedef enum {
+	STATE_IDLE = 0x00,
+	STATE_BEACON_LOSS = 0x10,      /* Failover Roam */
+	STATE_DEAUTHENTICATION = 0x20, /* AP induced Roam / Disconnect from supplicant */
+	STATE_CURRENT_AP_BEST = 0x50,
+	STATE_BETTER_AP_FOUND = 0x60, /* While roaming */
+	STATE_NO_AP_FOUND = 0x70,
+	STATE_ASSOCIATED = 0x80,
+	STATE_UNASSOCIATED = 0x90
+} sl_si91x_wlan_module_state_enum_t;
+
+struct siwx91x_bit_to_string {
+	uint8_t bit;
+	char *string;
+};
+
 struct siwx91x_dev {
 	struct net_if *iface;
 	sl_mac_address_t macaddr;
