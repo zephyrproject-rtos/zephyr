@@ -7,7 +7,24 @@
 #include <zephyr/sys/reboot.h>
 #include <stdio.h>
 #include <Eigen/Dense>
-#include "data/matrices.hpp"  // This header defines matrix_A, matrix_B, and matrix_C
+// #include "data/matrices.hpp"  // This header defines matrix_A, matrix_B, and matrix_C
+#if CONFIG_MATRIX_SIZE == 32
+#include "data/matrices-32.hpp"
+#elif CONFIG_MATRIX_SIZE == 64
+#include "data/matrices-64.hpp"
+#elif CONFIG_MATRIX_SIZE == 96
+#include "data/matrices-96.hpp"
+#elif CONFIG_MATRIX_SIZE == 128
+#include "data/matrices-128.hpp"
+#elif CONFIG_MATRIX_SIZE == 192
+#include "data/matrices-192.hpp"
+#elif CONFIG_MATRIX_SIZE == 256
+#include "data/matrices-256.hpp"
+#else
+#error "Unsupported matrix size. Please set CONFIG_MATRIX_SIZE to one of: 32, 64, 96, 128, 192, 256."
+#endif
+
+
 
 #ifdef __cplusplus
 // Helper function template to print an Eigen matrix using C-style printf.
@@ -29,10 +46,11 @@ extern "C" {
 
 int main(void)
 {
+    constexpr int N = CONFIG_MATRIX_SIZE;      // Full matrix size.
+    
     // Print an initial greeting using C-style printf.
-    printf("Hello C World! %s\n", CONFIG_BOARD);
+    printf("Testing %dx%d tiled matmul on %s\n", N, N, CONFIG_BOARD);
 
-    constexpr int N = 32;      // Full matrix size.
     constexpr int nHalf = N / 2; // Block size (16).
 
     // Create Eigen matrices to hold the data from the header arrays.

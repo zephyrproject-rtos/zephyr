@@ -7,4 +7,6 @@ project(tiled_eigen)
 
 target_include_directories(app PRIVATE . ${CMAKE_CURRENT_SOURCE_DIR}/../../../../modules/lib/eigen)
 
+target_compile_definitions(app PRIVATE CONFIG_MATRIX_SIZE=128)
+
 target_sources(app PRIVATE src/main.cpp)
