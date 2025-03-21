@@ -1,0 +1,50 @@
+#include <pthread.h>
+namespace std{
+  class mutex {
+    public:
+        mutex() {
+            pthread_mutex_init(&mutex_, nullptr);
+        }
+    
+        ~mutex() {
+            pthread_mutex_destroy(&mutex_);
+        }
+    
+        void lock() {
+            pthread_mutex_lock(&mutex_);
+        }
+    
+        void unlock() {
+            pthread_mutex_unlock(&mutex_);
+        }
+    
+        bool try_lock() {
+            return pthread_mutex_trylock(&mutex_) == 0;
+        }
+    
+        // Allow access for condition variables, etc.
+        pthread_mutex_t* native_handle() {
+            return &mutex_;
+        }
+    
+    private:
+        pthread_mutex_t mutex_;
+    };
+    template <typename LockType>
+    class lock_guard {
+    public:
+        explicit lock_guard(LockType& lock) : lock_(lock) {
+            lock_.lock();
+        }
+    
+        ~lock_guard() {
+            lock_.unlock();
+        }
+
+        lock_guard(const lock_guard&) = delete;
+        lock_guard& operator=(const lock_guard&) = delete;
+
+    private:
+        LockType& lock_;
+    };
+}
