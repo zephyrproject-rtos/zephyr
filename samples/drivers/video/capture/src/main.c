@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -172,6 +173,17 @@ int main(void)
 			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
 		}
 		fie.index++;
+	}
+
+	/* Get supported controls */
+	LOG_INF("- Supported controls:");
+
+	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+
+	while (!video_query_ctrl(video_dev, &cq)) {
+		LOG_INF("%*s id=0x%08x (type=%d) : min/max=%d/%d step=%d def=%d flags=0x%x", 32,
+			cq.name, cq.id, cq.type, cq.min, cq.max, cq.step, cq.def, cq.flags);
+		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 	}
 
 	/* Set controls */
