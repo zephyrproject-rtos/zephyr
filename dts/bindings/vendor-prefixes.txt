@@ -470,6 +470,7 @@ ni	National Instruments
 nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
+nooploop	Shenzhen Nooploop Technology CO., LTD
 nordic	Nordic Semiconductor
 norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
