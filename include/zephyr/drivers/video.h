@@ -672,6 +672,41 @@ int video_set_ctrl(const struct device *dev, struct video_control *control);
  */
 int video_get_ctrl(const struct device *dev, struct video_control *control);
 
+struct video_ctrl_query;
+
+/**
+ * @brief Query information about a control.
+ *
+ * Applications set the id field of the query structure, the function fills the rest of this
+ * structure. It is possible to enumerate base class controls (i.e., VIDEO_CID_BASE + x) by calling
+ * this function with successive id values starting from VIDEO_CID_BASE up to and exclusive
+ * VIDEO_CID_LASTP1. The function may return -ENOTSUP if a control in this range is not supported.
+ * Applications can also enumerate private controls by starting at VIDEO_CID_PRIVATE_BASE and
+ * incrementing the id until the driver returns -ENOTSUP. For other control classes, it's a bit more
+ * difficult. Hence, the best way to enumerate all kinds of device's supported controls is to
+ * iterate with VIDEO_CTRL_FLAG_NEXT_CTRL.
+ *
+ * @param dev Pointer to the device structure.
+ * @param cq Pointer to the control query struct.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If the control id is invalid.
+ * @retval -ENOTSUP If the control id is not supported.
+ */
+int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
+
+/**
+ * @brief Print all the information of a control.
+ *
+ * Print all the information of a control including its name, type, flag, range,
+ * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
+ * human readble format.
+ *
+ * @param dev Pointer to the device structure.
+ * @param cq Pointer to the control query struct.
+ */
+void video_print_ctrl(const struct device *const dev, const struct video_ctrl_query *const cq);
+
 /**
  * @brief Register/Unregister k_poll signal for a video endpoint.
  *

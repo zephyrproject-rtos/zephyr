@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
@@ -67,6 +69,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	int ret;
 	uint32_t flags;
 	enum video_ctrl_type type;
+	struct video_ctrl *vc;
 	struct video_device *vdev = video_find_vdev(dev);
 
 	if (!vdev) {
@@ -94,6 +97,14 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	ctrl->step = step;
 	ctrl->def = def;
 	ctrl->val = def;
+
+	/* Insert in an ascending order of ctrl's id */
+	SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, vc, node) {
+		if (vc->id > ctrl->id) {
+			sys_dlist_insert(&vc->node, &ctrl->node);
+			return 0;
+		}
+	}
 
 	sys_dlist_append(&vdev->ctrls, &ctrl->node);
 
@@ -172,4 +183,132 @@ update:
 	ctrl->val = control->val;
 
 	return 0;
+}
+
+static inline const char *video_get_ctrl_name(uint32_t id)
+{
+	switch (id) {
+	/* User controls */
+	case VIDEO_CID_BRIGHTNESS:
+		return "Brightness";
+	case VIDEO_CID_CONTRAST:
+		return "Contrast";
+	case VIDEO_CID_SATURATION:
+		return "Saturation";
+	case VIDEO_CID_HUE:
+		return "Hue";
+	case VIDEO_CID_EXPOSURE:
+		return "Exposure";
+	case VIDEO_CID_GAIN:
+		return "Gain";
+	case VIDEO_CID_HFLIP:
+		return "Horizontal Flip";
+	case VIDEO_CID_VFLIP:
+		return "Vertical Flip";
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+		return "Power Line Frequency";
+
+	/* Camera controls */
+	case VIDEO_CID_ZOOM_ABSOLUTE:
+		return "Zoom, Absolute";
+
+	/* JPEG encoder controls */
+	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
+		return "Compression Quality";
+
+	/* Image processing controls */
+	case VIDEO_CID_PIXEL_RATE:
+		return "Pixel Rate";
+	case VIDEO_CID_TEST_PATTERN:
+		return "Test Pattern";
+	default:
+		return NULL;
+	}
+}
+
+int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
+{
+	int ret;
+	struct video_device *vdev;
+	struct video_ctrl *ctrl = NULL;
+
+	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
+		vdev = video_find_vdev(dev);
+		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
+		while (vdev) {
+			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
+				if (ctrl->id > cq->id) {
+					goto fill_query;
+				}
+			}
+			vdev = video_find_vdev(vdev->src_dev);
+		}
+		return -ENOTSUP;
+	}
+
+	ret = video_find_ctrl(dev, cq->id, &ctrl);
+	if (ret) {
+		return ret;
+	}
+
+fill_query:
+	cq->id = ctrl->id;
+	cq->type = ctrl->type;
+	cq->flags = ctrl->flags;
+	cq->min = ctrl->min;
+	cq->max = ctrl->max;
+	cq->step = ctrl->step;
+	cq->def = ctrl->def;
+	cq->name = video_get_ctrl_name(cq->id);
+
+	return 0;
+}
+
+void video_print_ctrl(const struct device *const dev, const struct video_ctrl_query *const cq)
+{
+	uint8_t i = 0;
+	const char *type = NULL;
+	char typebuf[8];
+
+	__ASSERT(dev && cq, "Invalid arguments");
+
+	/* Get type of the control */
+	switch (cq->type) {
+	case VIDEO_CTRL_TYPE_BOOLEAN:
+		type = "bool";
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER:
+		type = "int";
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER64:
+		type = "int64";
+		break;
+	case VIDEO_CTRL_TYPE_MENU:
+		type = "menu";
+		break;
+	case VIDEO_CTRL_TYPE_STRING:
+		type = "string";
+		break;
+	default:
+		break;
+	}
+	snprintf(typebuf, sizeof(typebuf), "(%s)", type);
+
+	/* Get current value of the control */
+	struct video_control vc = {.id = cq->id};
+
+	video_get_ctrl(dev, &vc);
+
+	/* Print the control information */
+	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%lld max=%lld step=%lld "
+			"default=%lld value=%lld ",
+			cq->name, cq->id, typebuf, cq->flags, cq->range.min64, cq->range.max64,
+			cq->range.step64, cq->range.def64, vc.val64);
+	} else {
+		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
+			"value=%d ",
+			cq->name, cq->id, typebuf, cq->flags, cq->range.min, cq->range.max,
+			cq->range.step, cq->range.def, vc.val);
+	}
 }
