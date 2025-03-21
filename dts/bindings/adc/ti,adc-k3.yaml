@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI K3-family ADC
+
+compatible: "ti,adc-k3"
+
+include: [adc-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  vref_mv:
+    type: int
+    required: true
+    description: Internal Reference Voltage (in mV)
+
+  fifo:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: FIFO for storing conversions
+
+io-channel-cells:
+  - input
+
+child-binding:
+  properties:
+    open-delay:
+      type: int
+      default: 0
+      description: Delay before acquisition period
+
+    zephyr,resolution:
+      default: 12
+
+    zephyr,oversampling:
+      default: 0
