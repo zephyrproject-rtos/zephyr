@@ -15,4 +15,11 @@ config STARTUP_TACIT
       Enable profiling and tracing at the earliest stage of bootup.
 
 
+config RTC_CLOCK_DIVIDER_VALUE
+    int "Digital top clock divider to RTC"
+    default 1000
+    help
+      Define the clock dividing from digital top clock to the RTC clocking mtime.
+
+
 rsource "*/Kconfig.soc"
