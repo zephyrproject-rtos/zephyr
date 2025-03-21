@@ -258,9 +258,9 @@ static void rampstat_work_handler(struct k_work *work)
 
 #endif
 
-static int tmc50xx_stepper_enable(const struct device *dev, const bool enable)
+static int tmc50xx_stepper_enable(const struct device *dev)
 {
-	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
+	LOG_DBG("Enabling Stepper motor controller %s", dev->name);
 	const struct tmc50xx_stepper_config *config = dev->config;
 	uint32_t reg_value;
 	int err;
@@ -270,11 +270,29 @@ static int tmc50xx_stepper_enable(const struct device *dev, const bool enable)
 		return -EIO;
 	}
 
-	if (enable) {
-		reg_value |= TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
-	} else {
-		reg_value &= ~TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
+	reg_value |= TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
+
+
+	err = tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
+	if (err != 0) {
+		return -EIO;
 	}
+	return 0;
+}
+
+static int tmc50xx_stepper_disable(const struct device *dev)
+{
+	LOG_DBG("Disabling Stepper motor controller %s", dev->name);
+	const struct tmc50xx_stepper_config *config = dev->config;
+	uint32_t reg_value;
+	int err;
+
+	err = tmc50xx_read(config->controller, TMC50XX_CHOPCONF(config->index), &reg_value);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	reg_value &= ~TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
 
 	err = tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
 	if (err != 0) {
@@ -708,6 +726,7 @@ static int tmc50xx_stepper_init(const struct device *dev)
 #define TMC50XX_STEPPER_API_DEFINE(child)							\
 	static DEVICE_API(stepper, tmc50xx_stepper_api_##child) = {				\
 		.enable = tmc50xx_stepper_enable,						\
+		.disable = tmc50xx_stepper_disable,						\
 		.is_moving = tmc50xx_stepper_is_moving,						\
 		.move_by = tmc50xx_stepper_move_by,						\
 		.set_micro_step_res = tmc50xx_stepper_set_micro_step_res,			\

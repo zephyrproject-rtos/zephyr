@@ -46,13 +46,13 @@ ZTEST(stepper_shell, test_stepper_enable)
 	int err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_NAME " on");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_enable_fake, err);
-	zassert_equal(fake_stepper_enable_fake.arg1_val, true, "wrong enable value");
+	zassert_equal(fake_stepper_enable_fake.arg0_val, true, "wrong enable value");
 
 	RESET_FAKE(fake_stepper_enable);
 
 	err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_NAME " off");
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_enable_fake, err);
-	zassert_equal(fake_stepper_enable_fake.arg1_val, false, "wrong enable value");
+	zassert_equal(fake_stepper_enable_fake.arg0_val, false, "wrong enable value");
 }
 
 ZTEST(stepper_shell, test_stepper_move_by)
