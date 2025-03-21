@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2021 Nordic Semiconductor ASA.
+ * Copyright (c) 2025 HubbleNetwork.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,11 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #else
 #define PM_DOMAIN(_pm) NULL
 #endif
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE);
+static struct k_work_q pm_device_runtime_wq;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ */
 
 #define EVENT_STATE_ACTIVE	BIT(PM_DEVICE_STATE_ACTIVE)
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
@@ -79,7 +85,11 @@ static int runtime_suspend(const struct device *dev, bool async,
 	if (async) {
 		/* queue suspend */
 		pm->base.state = PM_DEVICE_STATE_SUSPENDING;
+#ifdef CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
 		(void)k_work_schedule(&pm->work, delay);
+#else
+		(void)k_work_schedule_for_queue(&pm_device_runtime_wq, &pm->work, delay);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ */
 	} else {
 		/* suspend now */
 		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
@@ -569,3 +579,23 @@ int pm_device_runtime_usage(const struct device *dev)
 
 	return dev->pm_base->usage;
 }
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+
+static int pm_device_runtime_wq_init(void)
+{
+	const struct k_work_queue_config cfg = {.name = "PM DEVICE RUNTIME WQ"};
+
+	k_work_queue_init(&pm_device_runtime_wq);
+
+	k_work_queue_start(&pm_device_runtime_wq, pm_device_runtime_stack,
+			   K_THREAD_STACK_SIZEOF(pm_device_runtime_stack),
+			   CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO, &cfg);
+
+	return 0;
+}
+
+SYS_INIT(pm_device_runtime_wq_init, POST_KERNEL,
+	CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO);
+
+#endif /* CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ */
