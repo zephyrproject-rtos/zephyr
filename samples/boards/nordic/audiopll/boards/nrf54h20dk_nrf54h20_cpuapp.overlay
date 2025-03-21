@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&audiopll {
+	status = "okay";
+	freq-fraction = <0>;
+	prescaler-div = <12>;
+};
