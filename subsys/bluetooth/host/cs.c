@@ -22,6 +22,11 @@ LOG_MODULE_REGISTER(bt_cs);
 static struct bt_le_cs_test_cb cs_test_callbacks;
 #endif
 
+#define A1 (0)
+#define A2 (1)
+#define A3 (2)
+#define A4 (3)
+
 struct reassembly_buf_meta_data {
 	uint16_t conn_handle;
 };
@@ -1342,6 +1347,72 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 
 		net_buf_simple_pull(step_data_buf, step.data_len);
 	}
+}
+
+/* Bluetooth Core Specification 6.0, Table 4.13, Antenna Path Permutation for N_AP=2.
+ * The last element corresponds to extension slot
+ */
+static uint8_t antenna_path_lut_n_ap_2[2][3] = {
+	{A1, A2, A2},
+	{A2, A1, A1},
+};
+
+/* Bluetooth Core Specification 6.0, Table 4.14, Antenna Path Permutation for N_AP=3.
+ * The last element corresponds to extension slot
+ */
+static uint8_t antenna_path_lut_n_ap_3[6][4] = {
+	{A1, A2, A3, A3},
+	{A2, A1, A3, A3},
+	{A1, A3, A2, A2},
+	{A3, A1, A2, A2},
+	{A3, A2, A1, A1},
+	{A2, A3, A1, A1},
+};
+
+/* Bluetooth Core Specification 6.0, Table 4.15, Antenna Path Permutation for N_AP=4.
+ * The last element corresponds to extension slot
+ */
+static uint8_t antenna_path_lut_n_ap_4[24][5] = {
+	{A1, A2, A3, A4, A4},
+	{A2, A1, A3, A4, A4},
+	{A1, A3, A2, A4, A4},
+	{A3, A1, A2, A4, A4},
+	{A3, A2, A1, A4, A4},
+	{A2, A3, A1, A4, A4},
+	{A1, A2, A4, A3, A3},
+	{A2, A1, A4, A3, A3},
+	{A1, A4, A2, A3, A3},
+	{A4, A1, A2, A3, A3},
+	{A4, A2, A1, A3, A3},
+	{A2, A4, A1, A3, A3},
+	{A1, A4, A3, A2, A2},
+	{A4, A1, A3, A2, A2},
+	{A1, A3, A4, A2, A2},
+	{A3, A1, A4, A2, A2},
+	{A3, A4, A1, A2, A2},
+	{A4, A3, A1, A2, A2},
+	{A4, A2, A3, A1, A1},
+	{A2, A4, A3, A1, A1},
+	{A4, A3, A2, A1, A1},
+	{A3, A4, A2, A1, A1},
+	{A3, A2, A4, A1, A1},
+	{A2, A3, A4, A1, A1},
+};
+
+uint8_t bt_le_cs_get_antenna_path(uint8_t n_ap,
+				  uint8_t antenna_path_permutation_index,
+				  uint8_t tone_index)
+{
+	if (n_ap == 2) {
+		return antenna_path_lut_n_ap_2[antenna_path_permutation_index][tone_index];
+	}
+	if (n_ap == 3) {
+		return antenna_path_lut_n_ap_3[antenna_path_permutation_index][tone_index];
+	}
+	if (n_ap == 4) {
+		return antenna_path_lut_n_ap_4[antenna_path_permutation_index][tone_index];
+	}
+	return 0;
 }
 
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
