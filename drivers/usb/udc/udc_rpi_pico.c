@@ -628,8 +628,7 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	len = read_buf_ctrl_reg(dev, ep) & USB_BUF_CTRL_LEN_MASK;
 	net_buf_add_mem(buf, ep_data->buf, MIN(len, net_buf_tailroom(buf)));
 
-	if (net_buf_tailroom(buf) >= udc_mps_ep_size(ep_cfg) &&
-	    len == udc_mps_ep_size(ep_cfg)) {
+	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
 		__unused int err;
 
 		err = rpi_pico_prep_rx(dev, buf, ep_cfg);
