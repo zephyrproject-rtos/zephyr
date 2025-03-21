@@ -450,7 +450,7 @@ static DEVICE_API(dma, dma_wch_driver_api) = {
 };
 
 #define GENERATE_ISR(ch, _)                                                                        \
-	static void dma_wch_isr##ch(const struct device *dev)                                      \
+	__used static void dma_wch_isr##ch(const struct device *dev)                               \
 	{                                                                                          \
 		if (ch <= DMA_WCH_MAX_CHAN_BASE) {                                                 \
 			dma_wch_isr(dev, ch);                                                      \
@@ -459,10 +459,7 @@ static DEVICE_API(dma, dma_wch_driver_api) = {
 		}                                                                                  \
 	}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 LISTIFY(DMA_WCH_MAX_CHAN, GENERATE_ISR, ())
-#pragma GCC diagnostic pop
 
 #define IRQ_CONFIGURE(n, idx)                                                                      \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority),         \
