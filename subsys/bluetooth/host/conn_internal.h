@@ -508,6 +508,8 @@ void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subeve
 
 void notify_cs_security_enable_available(struct bt_conn *conn);
 
+void notify_cs_security_enable_failed(struct bt_conn *conn, uint8_t err);
+
 void notify_cs_procedure_enable_available(struct bt_conn *conn,
 					  struct bt_conn_le_cs_procedure_enable_complete *params);
 

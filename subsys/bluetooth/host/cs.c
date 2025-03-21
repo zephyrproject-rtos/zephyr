@@ -1204,7 +1204,6 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Security Enable failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -1213,7 +1212,11 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 		return;
 	}
 
-	notify_cs_security_enable_available(conn);
+	if (evt->status) {
+		notify_cs_security_enable_failed(conn, evt->status);
+	} else {
+		notify_cs_security_enable_available(conn);
+	}
 
 	bt_conn_unref(conn);
 }

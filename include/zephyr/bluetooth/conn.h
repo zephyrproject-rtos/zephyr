@@ -1960,6 +1960,16 @@ struct bt_conn_cb {
 	 */
 	void (*le_cs_security_enabled)(struct bt_conn *conn);
 
+	/** @brief LE CS Security Enable Failed.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Security Enable procedure has completed with an error.
+	 *
+	 *  @param conn Connection object.
+	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 */
+	void (*le_cs_security_enable_failed)(struct bt_conn *conn, uint8_t err);
+
 	/** @brief LE CS Procedure Enabled.
 	 *
 	 *  This callback notifies the application that a Channel Sounding

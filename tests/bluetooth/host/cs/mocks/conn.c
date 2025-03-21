@@ -18,5 +18,6 @@ DEFINE_FAKE_VOID_FUNC(notify_cs_config_removed, struct bt_conn *, uint8_t);
 DEFINE_FAKE_VOID_FUNC(notify_cs_subevent_result, struct bt_conn *,
 		      struct bt_conn_le_cs_subevent_result *);
 DEFINE_FAKE_VOID_FUNC(notify_cs_security_enable_available, struct bt_conn *);
+DEFINE_FAKE_VOID_FUNC(notify_cs_security_enable_failed, struct bt_conn *, uint8_t);
 DEFINE_FAKE_VOID_FUNC(notify_cs_procedure_enable_available, struct bt_conn *,
 		      struct bt_conn_le_cs_procedure_enable_complete *);
