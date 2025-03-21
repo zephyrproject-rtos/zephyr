@@ -136,6 +136,12 @@ Timer
   :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER` has been deprecated in favor of
   :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, (:github:`86612`).
 
+Stepper
+=======
+
+  * Refactored the ``stepper_enable(const struct device * dev, bool enable)`` function to
+    :c:func:`stepper_enable` & :c:func:`stepper_disable`.
+
 Bluetooth
 *********
 
