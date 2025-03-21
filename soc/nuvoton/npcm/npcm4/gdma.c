@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include "gdma.h"
 
 /*-------------------------------------------------------------------------------------------*/
@@ -17,6 +18,8 @@ void gdma_memset_u8(uint8_t *dat, uint8_t set_val, uint32_t setlen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	GDMA_SRCB0 = (uint32_t)&val;
 	GDMA_DSTB0 = (uint32_t)dat;
 	GDMA_TCNT0 = setlen;
@@ -25,6 +28,8 @@ void gdma_memset_u8(uint8_t *dat, uint8_t set_val, uint32_t setlen)
 	while (GDMA_CTL0 & 0x1) {
 	}
 	GDMA_CTL0 = 0;
+
+	irq_unlock(key);
 }
 
 /*-------------------------------------------------------------------------------------------*/
@@ -36,6 +41,8 @@ void gdma_memcpy_u8(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	GDMA_SRCB0 = (uint32_t)src;
 	GDMA_DSTB0 = (uint32_t)dst;
 	GDMA_TCNT0 = cpylen;
@@ -44,6 +51,8 @@ void gdma_memcpy_u8(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 	while (GDMA_CTL0 & 0x1) {
 	}
 	GDMA_CTL0 = 0;
+
+	irq_unlock(key);
 }
 
 /*-------------------------------------------------------------------------------------------*/
@@ -55,6 +64,8 @@ void gdma_memcpy_u32(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	GDMA_SRCB0 = (uint32_t)src;
 	GDMA_DSTB0 = (uint32_t)dst;
 	GDMA_TCNT0 = cpylen / 4;
@@ -63,6 +74,8 @@ void gdma_memcpy_u32(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 	while (GDMA_CTL0 & 0x1) {
 	}
 	GDMA_CTL0 = 0;
+
+	irq_unlock(key);
 }
 
 /*-------------------------------------------------------------------------------------------*/
@@ -76,9 +89,12 @@ void gdma_memcpy_burst_u32(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	/* src and dst address must 16byte aligned */
 	if (((uint32_t)src & 0x0F) || ((uint32_t)dst & 0xF)) {
 		gdma_memcpy_u8(dst, src, cpylen);
+		irq_unlock(key);
 		return;
 	}
 
@@ -107,6 +123,8 @@ void gdma_memcpy_burst_u32(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 	if (cpylen) {
 		gdma_memcpy_u8(dst, src, cpylen);
 	}
+
+	irq_unlock(key);
 }
 
 /*-------------------------------------------------------------------------------------------*/
@@ -118,6 +136,8 @@ void gdma_memcpy_u32_dstfix(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	GDMA_SRCB0 = (uint32_t)src;
 	GDMA_DSTB0 = (uint32_t)dst;
 	GDMA_TCNT0 = cpylen / 4;
@@ -126,6 +146,8 @@ void gdma_memcpy_u32_dstfix(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 	while (GDMA_CTL0 & 0x1) {
 	}
 	GDMA_CTL0 = 0;
+
+	irq_unlock(key);
 }
 
 
@@ -138,6 +160,8 @@ void gdma_memcpy_u32_srcfix(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 		return;
 	}
 
+	int key = irq_lock();
+
 	GDMA_SRCB0 = (uint32_t)src;
 	GDMA_DSTB0 = (uint32_t)dst;
 	GDMA_TCNT0 = cpylen / 4;
@@ -146,4 +170,6 @@ void gdma_memcpy_u32_srcfix(uint8_t *dst, uint8_t *src, uint32_t cpylen)
 	while (GDMA_CTL0 & 0x1) {
 	}
 	GDMA_CTL0 = 0;
+
+	irq_unlock(key);
 }
