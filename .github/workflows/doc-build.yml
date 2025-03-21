@@ -17,9 +17,6 @@ permissions:
 env:
   # NOTE: west docstrings will be extracted from the version listed here
   WEST_VERSION: 1.2.0
-  # The latest CMake available directly with apt is 3.18, but we need >=3.20
-  # so we fetch that through pip.
-  CMAKE_VERSION: 3.20.5
   DOXYGEN_VERSION: 1.12.0
   DOXYGEN_MD5SUM: fd96a5defa535dfe2e987b46540844a4
   JOB_COUNT: 4
@@ -188,50 +185,48 @@ jobs:
     needs: [doc-file-check]
     if: |
       github.event_name != 'pull_request'
-    runs-on: ubuntu-22.04
-    container: texlive/texlive:latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
-    - name: Apply container owner mismatch workaround
-      run: |
-        git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
     - name: checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        path: zephyr
 
     - name: install-pkgs
       run: |
-        apt-get update
-        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin imagemagick
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends graphviz librsvg2-bin \
+          texlive-latex-base texlive-latex-extra latexmk \
+          texlive-fonts-recommended texlive-fonts-extra texlive-xetex \
+          imagemagick fonts-noto xindy
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        echo "${DOXYGEN_MD5SUM}  doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" | md5sum -c
+        if [ $? -ne 0 ]; then
+          echo "Failed to verify doxygen tarball"
+          exit 1
+        fi
+        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
+        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
-    - name: cache-pip
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+    - name: Setup Zephyr project
+      uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
       with:
-        path: ~/.cache/pip
-        key: pip-${{ hashFiles('doc/requirements.txt') }}
+        app-path: zephyr
+        toolchains: 'arm-zephyr-eabi'
 
-    - name: setup-venv
-      run: |
-        python3 -m venv .venv
-        . .venv/bin/activate
-        echo PATH=$PATH >> $GITHUB_ENV
-
-    - name: install-pip
+    - name: install-pip-pkgs
+      working-directory: zephyr
       run: |
         pip install -r doc/requirements.txt
-        pip install west==${WEST_VERSION}
-        pip install cmake==${CMAKE_VERSION}
-
-    - name: west setup
-      run: |
-        west init -l .
 
     - name: build-docs
       shell: bash
+      working-directory: zephyr
       continue-on-error: true
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
@@ -252,8 +247,8 @@ jobs:
         name: pdf-output
         if-no-files-found: ignore
         path: |
-          doc/_build/latex/zephyr.pdf
-          doc/_build/latex/zephyr.log
+          zephyr/doc/_build/latex/zephyr.pdf
+          zephyr/doc/_build/latex/zephyr.log
 
   doc-build-status-check:
     if: always()
