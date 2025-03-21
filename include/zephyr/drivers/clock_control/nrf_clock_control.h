@@ -164,7 +164,6 @@ void z_nrf_clock_bt_ctlr_hf_release(void);
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 
-
 #if defined(CONFIG_CLOCK_CONTROL_NRF2)
 
 /* Specifies to use the maximum available frequency for a given clock. */
@@ -342,6 +341,59 @@ void nrf_clock_control_hfxo_request(void);
 void nrf_clock_control_hfxo_release(void);
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
+
+/**
+ * @brief Set the audiopll's frequency fraction.
+ *
+ * @param freq_fraction Frequency fractional divider ratio 0-65535 to set.
+ *
+ * @note Use smaller values (under 2000) to apply fine tuning on audiopll,
+ * otherwise new base frequency will be applied resulting in going out of
+ * lock statefor some time.
+ *
+ * @retval 0 if success.
+ * @retval -errno code if failure.
+ */
+int nrf_clock_control_audiopll_set_freq(const struct device *dev, uint16_t freq_fraction);
+
+/** Supported audiopll prescaler dividers. */
+enum nrf_clock_control_audiopll_prescaler_div {
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_DISABLED = 0,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_1 = 1,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_2 = 2,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_3 = 3,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_4 = 4,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_6 = 5,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_8 = 6,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_12 = 7,
+	NRF_CLOCK_CONTROL_AUDIOPLL_DIV_16 = 8
+};
+
+/**
+ * @brief Set the audiopll's prescaler.
+ *
+ * @param div Prescaler divider to set.
+ *
+ * @retval 0 if success.
+ * @retval -errno code if failure.
+ */
+int nrf_clock_control_audiopll_set_prescaler(const struct device *dev,
+					     enum nrf_clock_control_audiopll_prescaler_div div);
+
+/**
+ * @brief Configure the audiopll's periodic frequency change feature.
+ *
+ * @param inc_val Increment value in range -128 to 127.
+ * @param inc_period_ms increment period in ms.
+ *
+ * @note Setting either parameter to 0 disables the feature.
+ *
+ * @retval 0 if success
+ * @retval -errno code if failure
+ */
+int nrf_clock_control_audiopll_set_freq_inc(const struct device *dev,
+					    int8_t inc_val,
+					    uint16_t inc_period_ms);
 
 #ifdef __cplusplus
 }
