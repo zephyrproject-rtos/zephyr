@@ -376,6 +376,13 @@ int main(void)
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
+		struct net_if *iface = net_if_get_default();
+
+		if (!iface) {
+			LOG_ERR("No network interface found!");
+			return -ENODEV;
+		}
+
 		/* Setup handler for Zephyr NET Connection Manager events. */
 		net_mgmt_init_event_callback(&l4_cb, l4_event_handler, L4_EVENT_MASK);
 		net_mgmt_add_event_callback(&l4_cb);
@@ -385,14 +392,14 @@ int main(void)
 					     CONN_LAYER_EVENT_MASK);
 		net_mgmt_add_event_callback(&conn_cb);
 
-		ret = net_if_up(net_if_get_default());
+		ret = net_if_up(iface);
 
 		if (ret < 0 && ret != -EALREADY) {
 			LOG_ERR("net_if_up, error: %d", ret);
 			return ret;
 		}
 
-		(void)conn_mgr_if_connect(net_if_get_default());
+		(void)conn_mgr_if_connect(iface);
 
 		LOG_INF("Waiting for network connection...");
 		k_sem_take(&network_connected_sem, K_FOREVER);
