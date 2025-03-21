@@ -30,10 +30,14 @@ LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
 #define PINCTRL_STATE_FLOWCONTROL PINCTRL_STATE_PRIV_START
 
-#if defined(CONFIG_UART_LINE_CTRL) &&  \
-	defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
-	(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT)
-#define UART_LINE_CTRL_ENABLE
+/* Helper macros */
+#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
+	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
+#define LPUART_HAS_MODEM 1
+#endif
+
+#if defined(FSL_FEATURE_LPUART_HAS_MCR) && FSL_FEATURE_LPUART_HAS_MCR
+#define LPUART_HAS_MCR 1
 #endif
 
 #if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
@@ -970,9 +974,43 @@ static void mcux_lpuart_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
+#if LPUART_HAS_MODEM
+static int mcux_lpuart_config_flowctrl(uint8_t flow_ctrl, lpuart_config_t *uart_config)
+{
+	switch (flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+	case UART_CFG_FLOW_CTRL_RS485:
+		uart_config->enableTxCTS = false;
+		uart_config->enableRxRTS = false;
+		break;
+
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		uart_config->enableTxCTS = true;
+		uart_config->enableRxRTS = true;
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#else
+static int mcux_lpuart_config_flowctrl(uint8_t flow_ctrl, lpuart_config_t *uart_config)
+{
+	if (flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* LPUART_HAS_MODEM */
+
 static int mcux_lpuart_configure_basic(const struct device *dev, const struct uart_config *cfg,
 					lpuart_config_t *uart_config)
 {
+	int ret;
+
 	/* Translate UART API enum to LPUART enum from HAL */
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
@@ -1016,22 +1054,15 @@ static int mcux_lpuart_configure_basic(const struct device *dev, const struct ua
 	}
 #endif
 
-#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
-	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
-	switch (cfg->flow_ctrl) {
-	case UART_CFG_FLOW_CTRL_NONE:
-	case UART_CFG_FLOW_CTRL_RS485:
-		uart_config->enableTxCTS = false;
-		uart_config->enableRxRTS = false;
-		break;
-	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		uart_config->enableTxCTS = true;
-		uart_config->enableRxRTS = true;
-		break;
-	default:
+	/* Configure for Flow Control option */
+	if (!IS_ENABLED(LPUART_HAS_MCR) && cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR) {
 		return -ENOTSUP;
 	}
-#endif
+
+	ret = mcux_lpuart_config_flowctrl(cfg->flow_ctrl, uart_config);
+	if (ret) {
+		return ret;
+	}
 
 	uart_config->baudRate_Bps = cfg->baudrate;
 	uart_config->enableRx = true;
@@ -1105,8 +1136,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
 
-#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
-	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
+#ifdef LPUART_HAS_MODEM
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
 		/* Set the LPUART into RS485 mode (tx driver enable using RTS) */
 		config->base->MODIR |= LPUART_MODIR_TXRTSE(true);
@@ -1185,10 +1215,15 @@ static int mcux_lpuart_configure(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-#ifdef UART_LINE_CTRL_ENABLE
-static void mcux_lpuart_line_ctrl_set_rts(const struct mcux_lpuart_config *config,
-		uint32_t val)
+#ifdef CONFIG_UART_LINE_CTRL
+#if LPUART_HAS_MODEM
+static void mcux_lpuart_line_ctrl_set_rts(const struct device *dev, uint32_t val)
 {
+	const struct mcux_lpuart_config *config = dev->config;
+
+	/* Disable Transmitter and Receiver */
+	config->base->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
+
 	if (val >= 1U) {
 		/* Reset TXRTS to set RXRTSE bit, this provides high-level on RTS line */
 		config->base->MODIR &= ~(LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
@@ -1199,20 +1234,39 @@ static void mcux_lpuart_line_ctrl_set_rts(const struct mcux_lpuart_config *confi
 		config->base->MODIR |= (LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
 	}
 }
+#else
+#define mcux_lpuart_line_ctrl_set_rts(dev, val) ret = -ENOTSUP
+#endif /* LPUART_HAS_MODEM */
+
+#if LPUART_HAS_MCR
+static void mcux_lpuart_set_dtr(const struct device *dev, uint32_t val)
+{
+	const struct mcux_lpuart_config *config = dev->config;
+
+	if (val >= 1U) {
+		/* assert DTR_b */
+		config->base->MCR &= ~LPUART_MCR_DTR_MASK;
+	} else {
+		/* deassert DTR_b */
+		config->base->MCR |= LPUART_MCR_DTR_MASK;
+	}
+}
+#else
+#define mcux_lpuart_set_dtr(dev, val) ret = -ENOTSUP
+#endif /* LPUART_HAS_MCR */
 
 static int mcux_lpuart_line_ctrl_set(const struct device *dev,
 		uint32_t ctrl, uint32_t val)
 {
-	const struct mcux_lpuart_config *config = dev->config;
 	int ret = 0;
 
 	switch (ctrl) {
 	case UART_LINE_CTRL_RTS:
-		/* Disable Transmitter and Receiver */
-		config->base->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
+		mcux_lpuart_line_ctrl_set_rts(dev, val);
+		break;
 
-		mcux_lpuart_line_ctrl_set_rts(config, val);
-
+	case UART_LINE_CTRL_DTR:
+		mcux_lpuart_set_dtr(dev, val);
 		break;
 
 	default:
@@ -1221,7 +1275,37 @@ static int mcux_lpuart_line_ctrl_set(const struct device *dev,
 
 	return ret;
 }
-#endif /* UART_LINE_CTRL_ENABLE */
+
+#if LPUART_HAS_MCR
+static int mcux_lpuart_line_ctrl_get(const struct device *dev,
+	uint32_t ctrl, uint32_t *val)
+{
+	const struct mcux_lpuart_config *config = dev->config;
+	int ret = 0;
+
+	switch (ctrl) {
+	case UART_LINE_CTRL_DSR:
+		*val = (config->base->MSR & LPUART_MSR_DSR_MASK) >> LPUART_MSR_DSR_SHIFT;
+		break;
+
+	case UART_LINE_CTRL_DCD:
+		*val = (config->base->MSR & LPUART_MSR_DCD_MASK) >> LPUART_MSR_DCD_SHIFT;
+		break;
+
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#else
+static int mcux_lpuart_line_ctrl_get(const struct device *dev,
+	uint32_t ctrl, uint32_t *val)
+{
+	return -ENOTSUP;
+}
+#endif /* LPUART_HAS_MCR */
+#endif /* CONFIG_UART_LINE_CTRL */
 
 static int mcux_lpuart_init(const struct device *dev)
 {
@@ -1301,9 +1385,10 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 	.rx_buf_rsp = mcux_lpuart_rx_buf_rsp,
 	.rx_disable = mcux_lpuart_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
-#ifdef UART_LINE_CTRL_ENABLE
+#ifdef CONFIG_UART_LINE_CTRL
 	.line_ctrl_set = mcux_lpuart_line_ctrl_set,
-#endif  /* UART_LINE_CTRL_ENABLE */
+	.line_ctrl_get = mcux_lpuart_line_ctrl_get,
+#endif  /* CONFIG_UART_LINE_CTRL */
 };
 
 
