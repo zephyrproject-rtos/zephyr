@@ -76,6 +76,8 @@ static int st_stm32_common_config(void)
 	LL_DBGMCU_EnableDebugInStopMode();
 #elif defined(CONFIG_SOC_SERIES_STM32WB0X)
 	LL_PWR_EnableDEEPSTOP2();
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	LL_DBGMCU_EnableDebugInLowPowerMode();
 #else /* all other parts */
 	LL_DBGMCU_EnableDBGStopMode();
 #endif
@@ -90,6 +92,8 @@ static int st_stm32_common_config(void)
 	LL_DBGMCU_DisableDebugInStopMode();
 #elif defined(CONFIG_SOC_SERIES_STM32WB0X)
 	LL_PWR_DisableDEEPSTOP2();
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	LL_DBGMCU_DisableDebugInLowPowerMode();
 #else /* all other parts */
 	LL_DBGMCU_DisableDBGStopMode();
 #endif
