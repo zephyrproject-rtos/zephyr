@@ -166,7 +166,7 @@ static void sh_mqtt_close_and_cleanup(void)
 	 */
 	if ((sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED) &&
 	    (sh_mqtt->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED)) {
-		rc = mqtt_disconnect(&sh_mqtt->mqtt_cli);
+		rc = mqtt_disconnect(&sh_mqtt->mqtt_cli, NULL);
 	}
 
 	/* If network/mqtt disconnected, or mqtt_disconnect failed, do mqtt_abort */
