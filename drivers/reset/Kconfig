@@ -36,5 +36,6 @@ rsource "Kconfig.intel_socfpga"
 rsource "Kconfig.npcx"
 rsource "Kconfig.lpc_syscon"
 rsource "Kconfig.nxp_rstctl"
+rsource "Kconfig.mmio"
 
 endif # RESET
