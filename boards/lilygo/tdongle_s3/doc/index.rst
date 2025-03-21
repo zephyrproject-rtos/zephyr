@@ -26,43 +26,7 @@ enabled by moving a 0-ohm resistor.
 Connections and IOs
 ===================
 
-The ``tdongle_s3`` board target supports the following hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| USB-JTAG   | on-chip    | hardware interface                  |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi, sdmmc                          |
-+------------+------------+-------------------------------------+
-| TWAI/CAN   | on-chip    | can                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | adc                                 |
-+------------+------------+-------------------------------------+
-| Timers     | on-chip    | counter                             |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| MCPWM      | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| PCNT       | on-chip    | qdec                                |
-+------------+------------+-------------------------------------+
-| GDMA       | on-chip    | dma                                 |
-+------------+------------+-------------------------------------+
-| USB-CDC    | on-chip    | serial                              |
-+------------+------------+-------------------------------------+
-| DISPLAY    | on-chip    | display                             |
-+------------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Start Application Development
 *****************************
@@ -209,16 +173,6 @@ message in the monitor:
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! tdongle_s3
-
-Code samples
-============
-
-The following code samples will run out of the box on the T-Dongle S3 board:
-
-* :zephyr:code-sample:`wifi-shell`
-* :zephyr:code-sample:`hello-world`
-* :zephyr:code-sample:`display`
-
 
 References
 **********
