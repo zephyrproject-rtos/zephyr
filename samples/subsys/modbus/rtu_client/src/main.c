@@ -19,7 +19,6 @@ const static struct modbus_iface_param client_param = {
 	.serial = {
 		.baud = 19200,
 		.parity = UART_CFG_PARITY_NONE,
-		.stop_bits_client = UART_CFG_STOP_BITS_2,
 	},
 };
 
