@@ -693,7 +693,8 @@ do {                                                                    \
 
 /* GCC-specific warnings that aren't in clang. */
 #if defined(__GNUC__) && !defined(__clang__)
-#define TOOLCHAIN_WARNING_POINTER_ARITH "-Wpointer-arith"
+#define TOOLCHAIN_WARNING_POINTER_ARITH     "-Wpointer-arith"
+#define TOOLCHAIN_WARNING_STRINGOP_OVERREAD "-Wstringop-overread"
 #endif
 
 #define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
