@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nooploop TOFSense Time Of Flight Sensor through UART bus
+
+compatible: "nooploop,tofsense"
+
+include: ["nooploop,tofsense-common.yaml", "uart-device.yaml"]
+
+properties:
+  id:
+    type: int
+    required: true
+    description: Device ID

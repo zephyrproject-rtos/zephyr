@@ -1,0 +1,49 @@
+# Copyright (c) 2025 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nooploop TOFSense properties shared by UART and CAN implementation.
+
+description: |
+    When setting the odr property in a .dts or .dtsi file you may include
+    tofsense.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/tofsense.h>
+
+    tofsense: tofsense {
+      ...
+      operating-mode = <TOFSENSE_MODE_ACTIVE>;
+      active-mode-frequency = <30>;
+    };
+
+include: "sensor-device.yaml"
+
+properties:
+  operating-mode:
+    type: int
+    required: true
+    description: |
+      Specify the sensor operating mode for CAN or UART.
+
+      - ACTIVE mode: the module actively outputs measurement
+      information at a frequency of 30Hz.
+
+      - QUERY mode: the controller sends a query instruction
+      containing the module ID to the expected query module,
+      and the module can output one frame of measurement information
+
+      - 0 # TOFSENSE_MODE_ACTIVE
+      - 1 # TOFSENSE_MODE_QUERY
+
+    enum:
+      - 0
+      - 1
+
+  active-mode-frequency:
+    type: int
+    default: 30
+    description: |
+      Specify the sensor data output frequency.
+      It's required only when 'operating-mode' is set to 'ACTIVE'.
+
+      Default is 30Hz (The sensor will emit new data message every ~33ms).
