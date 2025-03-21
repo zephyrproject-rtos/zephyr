@@ -78,6 +78,9 @@ enum video_power_line_frequency {
 /** Balance of colors in direction of blue (cold) or red (warm) */
 #define VIDEO_CID_WHITE_BALANCE_TEMPERATURE (VIDEO_CID_BASE + 26)
 
+/** Last base CID + 1 */
+#define VIDEO_CID_LASTP1 (VIDEO_CID_BASE + 44)
+
 /**
  * @}
  */
@@ -165,6 +168,16 @@ enum video_power_line_frequency {
  */
 
 /**
+ * @name Query flags, to be ORed with the control ID
+ * @{
+ */
+#define VIDEO_CTRL_FLAG_NEXT_CTRL 0x80000000
+
+/**
+ * @}
+ */
+
+/**
  * @name Public video control structures
  * @{
  */
@@ -181,6 +194,33 @@ struct video_control {
 	uint32_t id;
 	/** control value */
 	int32_t val;
+};
+
+/**
+ * @struct video_control_query
+ * @brief Video control query structure
+ *
+ * Used to query information about a control.
+ */
+struct video_ctrl_query {
+	/** control id */
+	uint32_t id;
+	/** control type */
+	uint32_t type;
+	/** control name */
+	const char *name;
+	/** control flags */
+	uint32_t flags;
+	/** control minimum value, inclusive */
+	int32_t min;
+	/** control maximum value, inclusive */
+	int32_t max;
+	/** control value step */
+	int32_t step;
+	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
+	 * _INTEGER_MENU, not valid for other types
+	 */
+	int32_t def;
 };
 
 /**
