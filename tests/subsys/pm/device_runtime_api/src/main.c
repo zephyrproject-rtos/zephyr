@@ -9,6 +9,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "test_driver.h"
+#include "zephyr/sys/util_macro.h"
 
 static const struct device *test_dev;
 static struct k_thread get_runner_td;
@@ -200,8 +201,10 @@ ZTEST(device_runtime_api, test_api)
 		 */
 		k_thread_create(&get_runner_td, get_runner_stack,
 				K_THREAD_STACK_SIZEOF(get_runner_stack), get_runner,
-				NULL, NULL, NULL, CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0,
-				K_NO_WAIT);
+				NULL, NULL, NULL,
+				COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ,
+				(CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO),
+				(CONFIG_SYSTEM_WORKQUEUE_PRIORITY)), 0, K_NO_WAIT);
 		k_yield();
 
 		/* let driver suspend to finish and wait until get_runner finishes
