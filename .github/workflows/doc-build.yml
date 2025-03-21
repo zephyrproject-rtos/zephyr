@@ -109,7 +109,7 @@ jobs:
     - name: install-pip
       working-directory: zephyr
       run: |
-        pip install -r doc/requirements.txt
+        pip install -r doc/requirements.txt --require-hashes
 
     - name: build-docs
       shell: bash
@@ -220,7 +220,7 @@ jobs:
     - name: install-pip-pkgs
       working-directory: zephyr
       run: |
-        pip install -r doc/requirements.txt
+        pip install -r doc/requirements.txt --require-hashes
 
     - name: build-docs
       shell: bash
