@@ -963,7 +963,7 @@ static int cmd_i3c_ccc_setmwl_bc(const struct shell *sh, size_t argc, char **arg
 		return -ENODEV;
 	}
 
-	mwl.len = strtol(argv[3], NULL, 16);
+	mwl.len = strtol(argv[2], NULL, 16);
 
 	ret = i3c_ccc_do_setmwl_all(dev, &mwl);
 	if (ret < 0) {
