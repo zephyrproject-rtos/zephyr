@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic NRFS AudioPLL clock
+
+compatible: "nordic,nrfs-audiopll"
+
+include: base.yaml
+
+properties:
+  freq-fraction:
+    type: int
+    description: Initial frequency fraction [0..65535]
+
+  prescaler-div:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 6
+      - 12
+      - 16
+    description: Initial prescaler divider
