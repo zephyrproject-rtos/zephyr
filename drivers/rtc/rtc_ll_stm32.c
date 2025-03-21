@@ -2,6 +2,7 @@
  * Copyright (c) 2023 Prevas A/S
  * Copyright (c) 2023 Syslinbit
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,7 +26,7 @@
 #include <stm32_ll_rtc.h>
 #include <stm32_hsem.h>
 #ifdef CONFIG_RTC_ALARM
-#include <stm32_ll_exti.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #endif /* CONFIG_RTC_ALARM */
 
 #include <zephyr/logging/log.h>
@@ -139,6 +140,31 @@ struct rtc_stm32_data {
 	struct rtc_stm32_alrm rtc_alrm_b;
 #endif /* STM32_RTC_ALARM_ENABLED */
 };
+
+#ifdef STM32_RTC_ALARM_ENABLED
+
+static inline void ll_func_exti_enable_rtc_alarm_it(uint32_t exti_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
+#else
+	stm32_exti_enable(exti_line, STM32_EXTI_TRIG_RISING, STM32_EXTI_MODE_IT,
+			NULL, (void *)DEVICE_DT_INST_GET(0));
+#endif
+}
+
+static inline void ll_func_exti_clear_rtc_alarm_flag(uint32_t exti_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
+#else
+	if (stm32_exti_is_pending(exti_line) > 0) {
+		stm32_exti_clear_pending(exti_line);
+	}
+#endif
+}
+
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 static int rtc_stm32_configure(const struct device *dev)
 {
