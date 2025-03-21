@@ -61,7 +61,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_args:
-      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+      - SB_CONFIG_TESTER_AUDIO=y
     tags: bluetooth
     harness: bluetooth
     sysbuild: true

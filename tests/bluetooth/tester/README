@@ -51,3 +51,18 @@ target.
 Use serial client, e.g. PUTTY to communicate over the serial port
 (typically /dev/ttyUSBx) with the tester using BTP.
 
+# Building for LE Audio
+
+The tester application can be built with support for BT LE Audio by applying the
+`overlay-le-audio-bt_ll_sw_split.conf` file for the controller and the `overlay-le-audio.conf` file
+for the host. These files are automatically applied for the `nrf5340_audio_dk` board, but can
+otherwise be applied either as
+
+    west build -- DEXTRA_CONF_FILE=overlay-le-audio-bt_ll_sw_split.conf;overlay-le-audio.conf
+
+or by using sysbuild
+
+    west build --sysbuild -- DSB_CONFIG_TESTER_AUDIO=y
+
+Applying the LE Audio configuration requires a significant amount of RAM and ROM, so cannot be done
+for a lot of boards.
