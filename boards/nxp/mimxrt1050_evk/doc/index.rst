@@ -87,7 +87,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| S26KS512SDPBHI020  | FLEXSPI    | Enabled via flash configurationn    |
+| S26KS512SDPBHI020  | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -448,6 +448,9 @@ MIMXRT1050-EVKB (rev A1) board, with these major hardware differences:
 For more details, please see the following `NXP i.MXRT1050 A0 to A1 Migration Guide`_.
 
 Current Zephyr build supports the new MIMXRT1050-EVKB
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1050-EVK Website:
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK

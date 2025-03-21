@@ -629,6 +629,7 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		}
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 		break;
+#if NRF_CLOCK_HAS_CALIBRATION
 	case NRFX_CLOCK_EVT_CAL_DONE:
 		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_done_handler();
@@ -637,7 +638,10 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 			__ASSERT_NO_MSG(false);
 		}
 		break;
+#endif
+#if NRF_CLOCK_HAS_PLL
 	case NRFX_CLOCK_EVT_PLL_STARTED:
+#endif
 #if NRF_CLOCK_HAS_XO_TUNE
 	case NRFX_CLOCK_EVT_XO_TUNED:
 	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:

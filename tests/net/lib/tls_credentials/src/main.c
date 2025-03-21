@@ -34,10 +34,10 @@ static void test_credential_add(void)
 	/* Function should allow to add credentials of different types
 	 * with the same tag
 	 */
-	ret = tls_credential_add(common_tag, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	ret = tls_credential_add(common_tag, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 test_server_cert, sizeof(test_server_cert));
 	zassert_equal(ret, 0, "Failed to add credential %d %d",
-		      common_tag, TLS_CREDENTIAL_SERVER_CERTIFICATE);
+		      common_tag, TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
 
 	ret = tls_credential_add(common_tag, TLS_CREDENTIAL_PRIVATE_KEY,
 				 test_server_key, sizeof(test_server_key));
@@ -87,7 +87,7 @@ static void test_credential_get(void)
 
 	/* Try to read with too small buffer */
 	credlen = sizeof(test_server_cert) - 1;
-	ret = tls_credential_get(common_tag, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	ret = tls_credential_get(common_tag, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 cred, &credlen);
 	zassert_equal(ret, -EFBIG, "Should have failed with EFBIG");
 }
@@ -121,7 +121,7 @@ static void test_credential_internal_iterate(void)
 		cert = temp;
 	}
 
-	zassert_equal(cert->type, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	zassert_equal(cert->type, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 		      "Invalid type for cert");
 	zassert_equal(cert->tag, common_tag, "Invalid tag for cert");
 	zassert_equal(cert->len, sizeof(test_server_cert),

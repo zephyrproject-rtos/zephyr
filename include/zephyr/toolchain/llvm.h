@@ -30,6 +30,8 @@
 
 #include <zephyr/toolchain/gcc.h>
 
+#define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY "-Wsizeof-array-decay"
+
 #define TOOLCHAIN_DISABLE_CLANG_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(clang, warning)
 #define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(clang, warning)
 

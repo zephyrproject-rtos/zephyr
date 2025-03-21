@@ -49,38 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4l_ek board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique 120 bit serial number        |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| TWIM      | on-chip    | i2c master port-interrupt           |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb device                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4l_ek/sam4l_ek_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

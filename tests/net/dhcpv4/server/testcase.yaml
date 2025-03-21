@@ -1,12 +1,8 @@
 common:
   depends_on: netif
   tags:
-    # eventfd API does not work with native_posix so exclude it here
     - net
     - dhcpv4
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   net.dhcpv4_server:
     extra_configs:

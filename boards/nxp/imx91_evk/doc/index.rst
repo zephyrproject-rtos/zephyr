@@ -118,11 +118,5 @@ display the following console output:
     thread_a: Hello World from cpu 0 on imx91_evk!
     thread_b: Hello World from cpu 0 on imx91_evk!
 
-References
-==========
-
-More information can refer to NXP official website:
-`NXP website`_.
-
-.. _NXP website:
-   https://www.nxp.com/products/i.MX91
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer

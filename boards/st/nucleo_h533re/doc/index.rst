@@ -139,47 +139,7 @@ More information about STM32H533RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h533re board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| BKP SRAM  | on-chip    | Backup SRAM                         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB full-speed host/device bus      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_h533re/nucleo_h533re_defconfig`
-  - :zephyr_file:`boards/st/nucleo_h533re/nucleo_h533re.dts`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================
@@ -247,7 +207,7 @@ OpenOCD Support
 
 For now, openocd support  for stm32h5 is not available on upstream OpenOCD.
 You can check `OpenOCD official Github mirror`_.
-In order to use it though, you should clone from the cutomized
+In order to use it though, you should clone from the customized
 `STMicroelectronics OpenOCD Github`_ and compile it following usual README guidelines.
 Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
 :zephyr_file:`boards/st/nucleo_h533re/board.cmake` to point the build

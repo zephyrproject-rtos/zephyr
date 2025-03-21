@@ -1,7 +1,34 @@
 /*
- * Copyright 2023 Nordic Semiconductor ASA
+ * Copyright 2021 Google LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "native_posix.overlay"
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+&adc0 {
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};

@@ -156,4 +156,51 @@
 			drive-strength = "high";
 		};
 	};
+
+	/omit-if-no-ref/ acmphs_ivref0: acmphs_ivref0 {
+		group1 {
+			/* IVREF0 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 1)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs_ivref1: acmphs_ivref1 {
+		group1 {
+			/* IVREF1 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 3)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp0: acmphs0_ivcmp0 {
+		group1 {
+			/* CH0 IVCMP0 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 10)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp2: acmphs0_ivcmp2 {
+		group1 {
+			/* CH0 IVCMP2 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 4)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs0_ivcmp3: acmphs0_ivcmp3 {
+		group1 {
+			/* CH0 IVCMP3 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 6)>;
+			renesas,analog-enable;
+		};
+	};
+
+	/omit-if-no-ref/ acmphs_vcout: acmphs_vcout {
+		group1 {
+			/* VCOUT */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, 2, 8)>;
+		};
+	};
 };

@@ -1,7 +1,44 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP FlexRAM on-chip ram controller
+description: |
+  NXP FlexRAM on-chip ram controller
+  If the flexram,bank-spec property is specified, then the flexram will be
+  dynamically reconfigured to the configuration specified at runtime. An
+  example to configure the flexram dynamically using the
+  flexram,bank-spec property for rt1060 is as follows:
+
+  &itcm {
+          reg = < 0x0 DT_SIZE_K(64) >;
+  };
+  &dtcm {
+          reg = < 0x20000000 DT_SIZE_K(384) >;
+  };
+  &ocram {
+          reg = < 0x20280000 DT_SIZE_K(64) >;
+  };
+  &flexram {
+          flexram,bank-spec = <FLEXRAM_OCRAM>,
+                              <FLEXRAM_OCRAM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_ITCM>,
+                              <FLEXRAM_ITCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>,
+                              <FLEXRAM_DTCM>;
+  };
+
+  This will configure the flexram for 384K of DTCM, 64K of ITCM,
+  and 64K of OCRAM.
+
 
 include: base.yaml
 

@@ -219,8 +219,10 @@ struct bt_micp_mic_ctlr_cb {
 	struct bt_aics_cb               aics_cb;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**

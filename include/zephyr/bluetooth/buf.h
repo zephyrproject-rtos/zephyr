@@ -97,13 +97,13 @@ struct bt_buf_data {
   * available for the HCI driver to allocate from.
   *
   * TODO: When CONFIG_BT_BUF_ACL_RX_COUNT is removed,
-  *       remove the MAX and only keep (CONFIG_BT_MAX_CONN + 1)
+  *       remove the MAX and only keep the 1.
   */
-#define BT_BUF_ACL_RX_COUNT                                                                        \
-	(MAX(CONFIG_BT_BUF_ACL_RX_COUNT, (CONFIG_BT_MAX_CONN + 1)) +                               \
-	 CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA)
+#define BT_BUF_ACL_RX_COUNT_EXTRA CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA
+#define BT_BUF_ACL_RX_COUNT       (MAX(CONFIG_BT_BUF_ACL_RX_COUNT, 1) + BT_BUF_ACL_RX_COUNT_EXTRA)
 #else
-#define BT_BUF_ACL_RX_COUNT 0
+#define BT_BUF_ACL_RX_COUNT_EXTRA 0
+#define BT_BUF_ACL_RX_COUNT       0
 #endif /* CONFIG_BT_CONN && CONFIG_BT_HCI_HOST */
 
 #if defined(CONFIG_BT_BUF_ACL_RX_COUNT) && CONFIG_BT_BUF_ACL_RX_COUNT > 0
@@ -117,10 +117,15 @@ BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
 #define BT_BUF_RX_SIZE (MAX(MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
 			    BT_BUF_ISO_RX_SIZE))
 
-/** Buffer count needed for HCI ACL, HCI ISO or Event RX buffers */
-#define BT_BUF_RX_COUNT (MAX(MAX(CONFIG_BT_BUF_EVT_RX_COUNT, \
-				 BT_BUF_ACL_RX_COUNT), \
-			     BT_BUF_ISO_RX_COUNT))
+/* Controller can generate up to CONFIG_BT_BUF_ACL_TX_COUNT number of unique HCI Number of Completed
+ * Packets events.
+ */
+BUILD_ASSERT(CONFIG_BT_BUF_EVT_RX_COUNT > CONFIG_BT_BUF_ACL_TX_COUNT,
+	     "Increase Event RX buffer count to be greater than ACL TX buffer count");
+
+/** Buffer count needed for HCI ACL or HCI ISO plus Event RX buffers */
+#define BT_BUF_RX_COUNT (CONFIG_BT_BUF_EVT_RX_COUNT + \
+			 MAX(BT_BUF_ACL_RX_COUNT, BT_BUF_ISO_RX_COUNT))
 
 /** Data size needed for HCI Command buffers. */
 #define BT_BUF_CMD_TX_SIZE BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE)

@@ -6,7 +6,7 @@ module = I3C_DW
 module-str = i3c-dw
 source "subsys/logging/Kconfig.template.log_config"
 
-config I3C_DW
+menuconfig I3C_DW
 	bool "DW I3C support"
 	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
 	depends on DT_HAS_SNPS_DESIGNWARE_I3C_ENABLED
@@ -14,3 +14,11 @@ config I3C_DW
 	default y
 	help
 	  Enable the Synopsys Designware I3C driver
+
+if I3C_DW
+
+config I3C_DW_RW_TIMEOUT_MS
+	int "Set the Read/Write timeout in milliseconds"
+	default 100
+
+endif # I3C_DW

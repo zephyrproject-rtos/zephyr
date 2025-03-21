@@ -68,33 +68,7 @@ For more information about the i.MX7 SoC and WaRP7, see these references:
 Supported Features
 ==================
 
-The WaRP7 configuration supports the following hardware features on the
-Cortex M4 Core:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger;                   |
-|           |            | fxas21002 polling;                  |
-|           |            | fxas21002 trigger;                  |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/element14/warp7/warp7_mcimx7d_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

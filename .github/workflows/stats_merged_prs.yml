@@ -6,13 +6,17 @@ on:
       - main
       - v*-branch
     types: [closed]
+
+permissions:
+  contents: read
+
 jobs:
   record_merged:
     if: github.event.pull_request.merged == true && github.repository == 'zephyrproject-rtos/zephyr'
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: PR event
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

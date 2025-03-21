@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2023 BeagleBoard.org Foundation
  * Copyright (C) 2023 S Prashanth
+ * Copyright (C) 2025 Siemens Mobility GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,8 +54,8 @@ struct gpio_davinci_data {
 };
 
 struct gpio_davinci_config {
-	void (*bank_config)(const struct device *dev);
 	struct gpio_driver_config common;
+	void (*bank_config)(const struct device *dev);
 
 	DEVICE_MMIO_NAMED_ROM(port_base);
 

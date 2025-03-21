@@ -1,7 +1,4 @@
-.. _ene_kb1200_evb:
-
-ENE KB1200_EVB
-##############
+.. zephyr:board:: kb1200_evb
 
 Overview
 ********
@@ -24,38 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc controller                      |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port/controller                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PMU       | on-chip    | power management                    |
-+-----------+------------+-------------------------------------+
-| PSL       | on-chip    | power switch logic                  |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pulse width modulator               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer sensor                   |
-+-----------+------------+-------------------------------------+
-| SER       | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
+.. zephyr:board-supported-hw::
 
 System Clock
 ============

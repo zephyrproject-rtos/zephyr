@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
-#include <zephyr/dt-bindings/adc/nrf-saadc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
@@ -510,8 +510,8 @@
 				status = "disabled";
 			};
 
-			exmif: spi@95000 {
-				compatible = "nordic,nrf-exmif";
+			exmif: exmif@95000 {
+				compatible = "nordic,nrf-exmif", "snps,designware-ssi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x95000 0x500 0x95500 0xb00>;
@@ -520,7 +520,6 @@
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE0>;
 				clock-frequency = <DT_FREQ_M(400)>;
 				fifo-depth = <32>;
-				max-xfer-size = <16>;
 				status = "disabled";
 			};
 

@@ -132,4 +132,5 @@ Sample output
 
 References
 **********
-- :ref:`litex-vexriscv`
+
+- :zephyr:board:`litex_vexriscv`

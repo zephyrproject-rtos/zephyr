@@ -29,6 +29,11 @@ uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 
 volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
 
+#ifdef CONFIG_RUNTIME_NMI
+extern bsp_grp_irq_cb_t g_bsp_group_irq_sources[];
+extern void NMI_Handler(void);
+#endif /* CONFIG_RUNTIME_NMI */
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -39,10 +44,12 @@ void soc_early_init_hook(void)
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
 
+#ifdef CONFIG_ICACHE
 	SCB->CCR = (uint32_t)CCR_CACHE_ENABLE;
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
-
+#endif
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT)
 	/* Apply Arm Cortex-M85 errata workarounds for D-Cache
 	 * Attributing all cacheable memory as write-through set FORCEWT bit in MSCR register.
 	 * Set bit 16 in ACTLR to 1.
@@ -58,4 +65,13 @@ void soc_early_init_hook(void)
 	barrier_isync_fence_full();
 
 	sys_cache_data_enable();
+#endif
+
+#ifdef CONFIG_RUNTIME_NMI
+	for (uint32_t i = 0; i < 16; i++) {
+		g_bsp_group_irq_sources[i] = 0;
+	}
+
+	z_arm_nmi_set_handler(NMI_Handler);
+#endif /* CONFIG_RUNTIME_NMI */
 }

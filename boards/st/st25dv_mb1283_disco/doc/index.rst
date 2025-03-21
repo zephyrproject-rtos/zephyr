@@ -66,6 +66,11 @@ Default Zephyr Peripheral Mapping
 - GPIO : PE15/PE7 (Available on external ST25DV connector J6)
 - GPIO : PE14 (Available on J5 connector)
 
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Serial Port
 ===========
 

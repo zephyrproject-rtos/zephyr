@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
@@ -2390,6 +2391,11 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
 
+	if (peer == NULL) {
+		LOG_DBG("Invalid peer address");
+		return NULL;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
 		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
 
@@ -2491,6 +2497,20 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	return err;
 }
 
+const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
+{
+	if (conn == NULL) {
+		LOG_DBG("Invalid connect");
+		return NULL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return NULL;
+	}
+
+	return &conn->br.dst;
+}
 #endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_SMP)
@@ -2978,7 +2998,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-		    conn->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED && conn->iso.acl != NULL) {
+		    (conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
+		    conn->iso.acl != NULL) {
 			info->le.dst = &conn->iso.acl->le.dst;
 			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
 		} else {
@@ -3003,8 +3025,7 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 	return (conn->type & type) != 0;
 }
 
-int bt_conn_get_remote_info(struct bt_conn *conn,
-			    struct bt_conn_remote_info *remote_info)
+int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
 		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);

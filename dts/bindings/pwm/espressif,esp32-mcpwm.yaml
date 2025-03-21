@@ -3,7 +3,7 @@
 
 description: |
 
-  Espressif's Motor Control Pulse Width Modulator (MCPWM) controller Node
+  ESP32 Motor Control Pulse Width Modulator (MCPWM)
 
   The MCPWM peripheral is intended for motor and power control.
   It provides six PWM outputs that can be set up to operate in several topologies

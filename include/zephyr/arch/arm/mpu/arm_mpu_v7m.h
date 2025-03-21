@@ -273,10 +273,21 @@ typedef struct {
 
 #endif /* _ASMLANGUAGE */
 
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_SIZE(size)                                                 \
 	BUILD_ASSERT(!(((size) & ((size) - 1))) &&                                                 \
-			     (size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE &&                 \
-			     !((uint32_t)(start) & ((size) - 1)),                                  \
+		     (size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE,                           \
 		     "The size of the partition must be power of 2 and greater than or equal to "  \
-		     "the minimum MPU region size.\n"                                              \
+		     "the minimum MPU region size.\n")
+
+/* Some compilers do not handle BUILD_ASSERT on the values of pointers.*/
+#if defined(__IAR_SYSTEMS_ICC__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)
+#else
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)                                         \
+	BUILD_ASSERT(!((uint32_t)(start) & ((size) - 1)),                                          \
 		     "The start address of the partition must align with size.")
+#endif
+
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+	_ARCH_MEM_PARTITION_ALIGN_CHECK_SIZE(size);                                                \
+	_ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)

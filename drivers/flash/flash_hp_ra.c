@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,8 +378,10 @@ static void flash_controller_ra_irq_config_func(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] = ELC_EVENT_FCU_FRDYI;
-	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq)] = ELC_EVENT_FCU_FIFERR;
+	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] =
+		BSP_PRV_IELS_ENUM(EVENT_FCU_FRDYI);
+	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), fiferr, irq)] =
+		BSP_PRV_IELS_ENUM(EVENT_FCU_FIFERR);
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, priority), fcu_frdyi_isr,

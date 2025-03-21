@@ -655,6 +655,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCall(TID_SYSCALL)
 
 void sys_trace_idle(void);
+void sys_trace_idle_exit(void);
 
 void sys_trace_k_thread_create(struct k_thread *new_thread, size_t stack_size, int prio);
 void sys_trace_k_thread_user_mode_enter(k_thread_entry_t entry, void *p1, void *p2, void *p3);

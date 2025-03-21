@@ -37,6 +37,9 @@ There are configuration files for various setups in the
     * - :zephyr_file:`overlay-tls.conf <samples/net/sockets/http_server/overlay-tls.conf>`
       - This overlay config can be added to build the HTTPS variant.
 
+    * - :zephyr_file:`overlay-dhcpv4.conf <samples/net/sockets/http_server/overlay-dhcpv4.conf>`
+      - This overlay enables DHCPv4 client feature.
+
 To build and run the HTTP server application:
 
 .. code-block:: bash

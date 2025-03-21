@@ -10,6 +10,9 @@ on:
     types:
     - completed
 
+permissions:
+  contents: read
+
 jobs:
   doc-publish:
     name: Publish Documentation
@@ -22,7 +25,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download-artifacts
-      uses: dawidd6/action-download-artifact@v8
+      uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
@@ -30,7 +33,7 @@ jobs:
 
     - name: Load PR number
       if: steps.download-artifacts.outputs.found_artifact == 'true'
-      uses: actions/github-script@v7
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       with:
         script: |
           let fs = require("fs");
@@ -40,7 +43,7 @@ jobs:
     - name: Check PR number
       if: steps.download-artifacts.outputs.found_artifact == 'true'
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@v0.14.0
+      uses: carpentries/actions/check-valid-pr@e27aa6c531dadd357d2aa4c9a21e90849e23e963 # v0.14.0
       with:
         pr: ${{ env.PR_NUM }}
         sha: ${{ github.event.workflow_run.head_sha }}
@@ -63,7 +66,7 @@ jobs:
 
     - name: Configure AWS Credentials
       if: steps.download-artifacts.outputs.found_artifact == 'true'
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}

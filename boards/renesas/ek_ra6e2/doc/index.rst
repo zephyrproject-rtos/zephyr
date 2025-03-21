@@ -19,7 +19,7 @@ The key features of the EK-RA6E2 board are categorized in three groups as follow
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6E2 MCU oscillator and sub-clock oscillator crystals,
   providing precision 20.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6E2 MCU
+  Additional low precision clocks are available internal to the RA6E2 MCU
 
 **System Control and Ecosystem Access**
 
@@ -74,35 +74,7 @@ Detailed hardware features for the EK-RA6E2 MCU can be found at `EK-RA6E2 - User
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for EK-RA6E2 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| DAC       | on-chip    | dac                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -116,7 +88,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA6E2 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

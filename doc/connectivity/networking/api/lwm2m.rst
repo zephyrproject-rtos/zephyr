@@ -504,7 +504,7 @@ Enabling and configuring
 
 Enable data cache by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`.
 Application needs to allocate an array of :c:struct:`lwm2m_time_series_elem` structures and then
-enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Each resource
+enable the cache by calling :c:func:`lwm2m_enable_cache` for a given resource. Each resource
 must be enabled separately and each resource needs their own storage.
 
 .. code-block:: c
@@ -512,7 +512,7 @@ must be enabled separately and each resource needs their own storage.
   /* Allocate data cache storage */
   static struct lwm2m_time_series_elem temperature_cache[10];
   /* Enable data cache */
-  lwm2m_engine_enable_cache(LWM2M_PATH(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
+  lwm2m_enable_cache(LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
           temperature_cache, ARRAY_SIZE(temperature_cache));
 
 LwM2M engine have room for four resources that have cache enabled. Limit can be increased by

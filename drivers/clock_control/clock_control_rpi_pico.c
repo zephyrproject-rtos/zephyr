@@ -676,7 +676,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			     RESETS_RESET_USBCTRL_BITS));
 
 	/* Start tick in watchdog */
-	watchdog_start_tick(cycles_per_tick);
+	tick_start(TICK_WATCHDOG, cycles_per_tick);
 #if defined(CONFIG_SOC_SERIES_RP2350)
 	tick_start(TICK_TIMER0, cycles_per_tick);
 	tick_start(TICK_TIMER1, cycles_per_tick);

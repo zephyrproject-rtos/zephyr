@@ -117,4 +117,4 @@ int notify_new_rx_frame(struct net_pkt *pkt);
  */
 int notify_new_tx_frame(struct net_pkt *pkt);
 
-#endif  /* PLATFORM_POSIX_H_ */
+#endif /* PLATFORM_ZEPHYR_H_ */

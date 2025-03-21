@@ -1,0 +1,77 @@
+# NXP ENET ethernet drivers configuration options
+
+# Copyright (c) 2016-2017 ARM Ltd
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_NXP_ENET
+	bool "NXP ENET Ethernet driver"
+	default y
+	depends on DT_HAS_NXP_ENET_MAC_ENABLED
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
+	select ARM_MPU if CPU_CORTEX_M7
+	select MDIO if DT_HAS_NXP_ENET_MDIO_ENABLED
+	select NET_POWER_MANAGEMENT if (PM_DEVICE && SOC_FAMILY_KINETIS)
+	select ETH_DSA_SUPPORT
+	select PINCTRL
+	help
+	  Enable NXP ENET Ethernet driver.
+
+
+if ETH_NXP_ENET
+
+config ETH_NXP_ENET_1G
+	bool "1G mode for ENET1G instance"
+	default y
+	depends on DT_HAS_NXP_ENET1G_ENABLED
+	help
+	  Enable the use of the ENET1G ethernet instance in 1G mode.
+
+config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for hardware DMA buffers"
+	default y
+	help
+	  Place the hardware DMA buffers into DTCM for better
+	  networking performance.
+
+config ETH_NXP_ENET_HW_ACCELERATION
+	bool "Hardware acceleration"
+	default y
+	help
+	  Enable hardware acceleration for the following:
+	  - IPv4, UDP and TCP checksum (both Rx and Tx)
+
+config ETH_NXP_ENET_RX_BUFFERS
+	int "Number of RX buffers for ethernet driver"
+	default 6
+	range 6 16
+	help
+	  Set the number of RX buffers provided to the NXP ENET driver.
+
+config ETH_NXP_ENET_TX_BUFFERS
+	int "Number of TX buffers for ethernet driver"
+	default 1
+	range 1 16
+	help
+	  Set the number of TX buffers provided to the NXP ENET driver.
+
+config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
+	int "NXP ENET RX thread stack size"
+	default 1600
+	help
+	  ENET RX thread stack size in bytes.
+
+config ETH_NXP_ENET_RX_THREAD_PRIORITY
+	int "NXP ENET driver RX cooperative thread priority"
+	default 2
+	help
+	  ENET MAC Driver handles RX in cooperative workqueue thread.
+	  This options sets the priority of that thread.
+
+config ETH_NXP_ENET_RMII_EXT_CLK
+	bool "RMII clock from external sources"
+	help
+	  Setting this option will configure ENET clock block to feed RMII
+	  reference clock from external source (ENET_1588_CLKIN)
+
+endif # ETH_NXP_ENET

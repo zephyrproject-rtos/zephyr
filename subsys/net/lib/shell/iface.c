@@ -260,8 +260,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
 	net_if_lock(iface);
-	if (net_if_get_link_addr(iface) &&
-	    net_if_get_link_addr(iface)->addr) {
+	if (net_if_get_link_addr(iface)->len > 0) {
 		PR("Link addr : %s\n",
 		   net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
 				      net_if_get_link_addr(iface)->len));
@@ -278,6 +277,20 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	   net_if_oper_state2str(net_if_oper_state(iface)),
 	   net_if_is_admin_up(iface) ? "UP" : "DOWN",
 	   net_if_is_carrier_ok(iface) ? "ON" : "OFF");
+
+#if defined(CONFIG_NET_IF_LOG_LEVEL_DBG)
+	/* Print low level details only if debug is enabled */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		PR("IPv4 TTL             : %d\n", net_if_ipv4_get_ttl(iface));
+		PR("IPv4 mcast TTL       : %d\n", net_if_ipv4_get_mcast_ttl(iface));
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("IPv6 hop limit       : %d\n", net_if_ipv6_get_hop_limit(iface));
+		PR("IPv6 mcast hop limit : %d\n",
+		   net_if_ipv6_get_mcast_hop_limit(iface));
+	}
+#endif /* CONFIG_NET_IF_LOG_LEVEL_DBG */
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
@@ -711,13 +724,51 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-	PR("Hostname: %s\n\n", net_hostname_get());
+	PR("Hostname: %s\n", net_hostname_get());
 #endif
+	PR("Default interface: %d\n\n",
+	   net_if_get_by_iface(net_if_get_default()));
 
 	user_data.sh = sh;
 	user_data.user_data = iface;
 
 	net_if_foreach(iface_cb, &user_data);
+
+	return 0;
+}
+
+static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = NULL;
+	int idx;
+
+	if (argc < 2) {
+		iface = net_if_get_default();
+		if (!iface) {
+			PR_WARNING("No default interface\n");
+			return -ENOEXEC;
+		}
+
+		idx = net_if_get_by_iface(iface);
+		PR("Default interface: %d\n", idx);
+	} else {
+		int new_idx;
+
+		idx = get_iface_idx(sh, argv[1]);
+		if (idx < 0) {
+			return -ENOEXEC;
+		}
+
+		net_if_set_default(net_if_get_by_index(idx));
+
+		new_idx = net_if_get_by_iface(net_if_get_default());
+		if (new_idx != idx) {
+			PR_WARNING("Failed to set default interface to %d\n", idx);
+			return -ENOEXEC;
+		}
+
+		PR("Default interface: %d\n", new_idx);
+	}
 
 	return 0;
 }
@@ -743,6 +794,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(set_mac, IFACE_DYN_CMD,
 		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
 		  cmd_net_set_mac),
+	SHELL_CMD(default, IFACE_DYN_CMD,
+		  "'net iface default [<index>]' displays or sets the default network interface.",
+		  cmd_net_default_iface),
 	SHELL_SUBCMD_SET_END
 );
 

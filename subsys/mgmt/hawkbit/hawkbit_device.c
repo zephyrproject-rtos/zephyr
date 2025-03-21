@@ -19,7 +19,7 @@ bool hawkbit_get_device_identity(char *id, int id_max_len)
 
 static bool hawkbit_get_device_identity_default(char *id, int id_max_len)
 {
-#ifdef CONFIG_HWINFO
+#ifdef CONFIG_HAWKBIT_HWINFO_DEVICE_ID
 	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
 	ssize_t length;
 
@@ -32,12 +32,12 @@ static bool hawkbit_get_device_identity_default(char *id, int id_max_len)
 	length = bin2hex(hwinfo_id, (size_t)length, id, id_max_len);
 
 	return length > 0;
-#else /* CONFIG_HWINFO */
+#else /* CONFIG_HAWKBIT_HWINFO_DEVICE_ID */
 	ARG_UNUSED(id);
 	ARG_UNUSED(id_max_len);
 
 	return false;
-#endif /* CONFIG_HWINFO */
+#endif /* CONFIG_HAWKBIT_HWINFO_DEVICE_ID */
 }
 
 #ifdef CONFIG_HAWKBIT_CUSTOM_DEVICE_ID

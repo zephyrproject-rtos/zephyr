@@ -27,7 +27,6 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -578,6 +577,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         which only removes artifacts of passing tests. If you wish to
         remove all artificats including those of failed tests, use 'all'.""")
 
+    parser.add_argument(
+        "--keep-artifacts", action="append", default=[],
+        help="""Keep specified artifacts when cleaning up at runtime. Multiple invocations
+        are possible."""
+    )
     test_xor_generator.add_argument(
         "-N", "--ninja", action="store_true",
         default=not any(a in sys.argv for a in ("-k", "--make")),

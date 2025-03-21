@@ -1,9 +1,13 @@
 sample:
   name: BME280 Sensor sample
+common:
+  filter: dt_compat_enabled("bosch,bme280")
+  tags:
+    - sensors
+    - bme280
 tests:
   sample.sensor.bme280:
     harness: console
-    tags: sensors
     platform_allow:
       - adafruit_feather_m0_basic_proto
       - rpi_pico
@@ -16,11 +20,11 @@ tests:
       fixture: fixture_i2c_bme280
   sample.sensor.bme280.spi:
     harness: console
-    tags: sensors
+    platform_allow:
+      - lpcxpresso55s16
     depends_on:
       - spi
-      - bme280
-    extra_args: "DTC_OVERLAY_FILE=arduino_spi.overlay"
+    extra_args: "SHIELD=mikroe_weather_click_spi"
     harness_config:
       type: one_line
       regex:
@@ -28,7 +32,6 @@ tests:
       fixture: fixture_spi_bme280
   sample.sensor.bme280.rpi_pico.pio:
     harness: console
-    tags: sensors
     platform_allow: rpi_pico
     integration_platforms:
       - rpi_pico

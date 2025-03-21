@@ -1,7 +1,8 @@
 description: |
-  STM32 flash memory. This binding is for the flash memory itself, not
-  the flash controller peripheral. For that, see the
-  "st,stm32-flash-controller" binding.
+  STM32 flash memory.
+
+  This binding is for the flash memory itself, not the flash controller peripheral.
+  For that, see the "st,stm32-flash-controller" binding.
 
 include: soc-nv-flash.yaml
 

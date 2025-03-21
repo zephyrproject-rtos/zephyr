@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample app demonstrates use of a SWDP interface driver and CMSIS DAP
-controller through USB Bulk interface.
+controller through DAP USB backend.
 
 Requirements
 ************
@@ -21,8 +21,6 @@ e.g. if the SWD connections are multiplexed.
 Building and Running
 ********************
 
-In order for our debug adapter to be recognized by pyOCD we need to change
-Zephyr's VID/PID to IDs known to pyOCD, this is up to the user.
 The following commands build and flash DAP sample.
 
 .. zephyr-app-commands::

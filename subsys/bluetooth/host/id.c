@@ -267,7 +267,7 @@ static void adv_rpa_clear_data(struct bt_le_ext_adv *adv, void *data)
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 		bt_addr_copy(&bt_dev.rpa[adv->id], BT_ADDR_NONE);
 	} else {
-		LOG_WRN("Adv sets rpa expired cb with id %d returns false\n", adv->id);
+		LOG_WRN("Adv sets rpa expired cb with id %d returns false", adv->id);
 	}
 }
 #endif
@@ -286,6 +286,9 @@ static void le_rpa_invalidate(void)
 			return;
 		}
 		bool rpa_expired_data[bt_dev.id_count];
+		for (uint8_t i = 0; i < bt_dev.id_count; i++) {
+			rpa_expired_data[i] = true;
+		}
 
 		bt_le_ext_adv_foreach(adv_rpa_invalidate, &rpa_expired_data);
 #if defined(CONFIG_BT_RPA_SHARING)

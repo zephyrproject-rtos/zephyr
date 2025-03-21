@@ -112,7 +112,7 @@ void isr0(const void *param)
 	trigger_irq(irq_line_1);
 
 	/* Wait for interrupt */
-	k_busy_wait(MS_TO_US(DURATION));
+	k_busy_wait(DURATION * USEC_PER_MSEC);
 
 	/* Validate nested ISR result token */
 	zassert_equal(isr1_result, ISR1_TOKEN, "isr1 did not execute");
@@ -160,7 +160,7 @@ ZTEST(interrupt_feature, test_nested_isr)
 	trigger_irq(irq_line_0);
 
 	/* Wait for interrupt */
-	k_busy_wait(MS_TO_US(DURATION));
+	k_busy_wait(DURATION * USEC_PER_MSEC);
 
 	/* Validate ISR result token */
 	zassert_equal(isr0_result, ISR0_TOKEN, "isr0 did not execute");

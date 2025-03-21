@@ -74,35 +74,7 @@ Detailed Hardware features for the EK-RA4W1 MCU can be found at `EK-RA4W1 - User
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for EK-RA4W1 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| COUNTER   | on-chip    | counter              |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -116,7 +88,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4W1 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

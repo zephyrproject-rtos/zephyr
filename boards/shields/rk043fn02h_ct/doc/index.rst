@@ -96,6 +96,9 @@ example:
    :shield: rk043fn02h_ct
    :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 References
 **********
 

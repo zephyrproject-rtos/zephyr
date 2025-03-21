@@ -15,6 +15,24 @@
 
 #include <am_mcu_apollo.h>
 
+#include <zephyr/mem_mgmt/mem_attr.h>
+
+#ifdef CONFIG_DCACHE
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif /* CONFIG_DCACHE */
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+#if defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY)
+#define I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 1
+#else
+#define I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 0
+#endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+
 #ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
 #include "i2c_bitbang.h"
@@ -86,9 +104,15 @@ static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
 }
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
+/*
+ * If Nocache Memory is supported, buffer will be placed in nocache region by
+ * the linker to avoid potential DMA cache-coherency problems.
+ * If Nocache Memory is not supported, cache coherency might need to be kept
+ * manually. See I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED.
+ */
 static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_I2C_DMA_TCB_BUFFER_SIZE];
-} i2c_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)] __attribute__((__section__(".nocache")));
+} i2c_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)] __nocache;
 
 static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 {
@@ -100,6 +124,39 @@ static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 	}
 	data->transfer_status = status;
 }
+
+#ifdef CONFIG_DCACHE
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	/* Check if buffer is in nocache region defined by the linker */
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+	/* Check if buffer is in nocache memory region defined in DT */
+	buf_within_nocache =
+		mem_attr_check_buf((void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
+}
+
+static bool i2c_buf_set_in_nocache(const struct i2c_msg *msgs, uint8_t num_msgs)
+{
+	for (int i = 0; i < num_msgs; i++) {
+		if (!buf_in_nocache((uintptr_t)msgs[i]->buf, msgs[i]->len)) {
+			return false;
+		}
+	}
+	return true;
+}
+#endif /* CONFIG_DCACHE */
+
 #endif
 
 static void i2c_ambiq_isr(const struct device *dev)
@@ -140,6 +197,10 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *msg, uint16_
 		am_hal_iom_enable(data->iom_handler);
 		return -ETIMEDOUT;
 	}
+#if I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
+	/* Invalidate Dcache after DMA read */
+	sys_cache_data_invd_range((void *)trans.pui32RxBuffer, trans.ui32NumBytes);
+#endif /* I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
 	ret = data->transfer_status;
 #else
 	ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
@@ -163,6 +224,10 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *msg, uint16
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 	data->transfer_status = -EFAULT;
+#if I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
+	/* Clean Dcache before DMA write */
+	sys_cache_data_flush_range((void *)trans.pui32TxBuffer, trans.ui32NumBytes);
+#endif /* I2C_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
 	ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
 					      (void *)dev);
 
@@ -224,6 +289,12 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	if (!num_msgs) {
 		return 0;
 	}
+
+#ifdef CONFIG_DCACHE
+	if (!i2c_buf_set_in_nocache(msgs, num_msgs)) {
+		return -EFAULT;
+	}
+#endif /* CONFIG_DCACHE */
 
 	i2c_ambiq_pm_policy_state_lock_get(dev);
 
@@ -344,8 +415,7 @@ static int i2c_ambiq_init(const struct device *dev)
 	data->iom_cfg.eInterfaceMode = AM_HAL_IOM_I2C_MODE;
 
 	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_iom_initialize((config->base - IOM0_BASE) / config->size,
-				  &data->iom_handler)) {
+	    am_hal_iom_initialize((config->base - IOM0_BASE) / config->size, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize I2C\n");
 		return -ENXIO;
 	}
@@ -450,7 +520,7 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.pwr_func = pwr_on_ambiq_i2c_##n,                                                  \
 		IF_ENABLED(CONFIG_I2C_AMBIQ_BUS_RECOVERY,			\
 		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),\
-		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };      \
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };       \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_pm_action);                                          \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n, \
 				  &i2c_ambiq_config##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \

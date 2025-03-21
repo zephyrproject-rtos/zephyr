@@ -838,10 +838,14 @@ static void sm_do_bootstrap_reg(void)
 void engine_bootstrap_finish(void)
 {
 	LOG_INF("Bootstrap data transfer done!");
-	/* Delay the state transition, so engine have some time to send ACK
-	 * before we close the socket
+	/* Transition only if the client is bootstrapping, otherwise retransmissions of bootstrap
+	 * finish may restart an already registered client.
+	 * Delay the state transition, so engine have some time to send ACK before we close the
+	 * socket.
 	 */
-	set_sm_state_delayed(ENGINE_BOOTSTRAP_TRANS_DONE, DELAY_BEFORE_CLOSING);
+	if (get_sm_state() == ENGINE_BOOTSTRAP_REG_DONE) {
+		set_sm_state_delayed(ENGINE_BOOTSTRAP_TRANS_DONE, DELAY_BEFORE_CLOSING);
+	}
 }
 
 static int sm_bootstrap_trans_done(void)

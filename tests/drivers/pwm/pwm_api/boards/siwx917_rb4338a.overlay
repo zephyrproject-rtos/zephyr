@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-0 = &pwm;
+	};
+};
+
+&pinctrl0 {
+	pwm_ch: pwm_ch {
+		group1 {
+			pinmux = <PWM_0H_PA7>; /* GPIO_7 P20 */
+		};
+	};
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch>;
+	pinctrl-names = "default";
+	pwm_channel1: pwm_channel1 {
+		pwms = <&pwm 0 1000000>;
+	};
+	silabs,pwm_polarity = <PWM_POLARITY_NORMAL>;
+	status = "okay";
+};

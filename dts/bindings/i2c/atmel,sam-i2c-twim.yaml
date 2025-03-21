@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Atmel SAM4L Family I2C (TWIM) node
+  Atmel SAM4L Family I2C (TWIM)
 
   The Atmel Two-wire Master Interface (TWIM) interconnects components on a
   unique two-wire bus, made up of one clock line and one data line with speeds

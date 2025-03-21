@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "net_sample_common.h"
 
 #define MY_PORT 4242
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || defined(CONFIG_NET_TCP) || \
@@ -72,15 +73,6 @@ void start_tcp(void);
 void stop_tcp(void);
 
 void quit(void);
-
-#if defined(CONFIG_NET_VLAN)
-int init_vlan(void);
-#else
-static inline int init_vlan(void)
-{
-	return 0;
-}
-#endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE)
 int init_ws(void);

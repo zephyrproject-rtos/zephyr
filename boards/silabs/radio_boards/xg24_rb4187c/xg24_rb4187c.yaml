@@ -8,9 +8,11 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - bluetooth
   - gpio
   - uart
+  - spi
   - dma
   - watchdog
   - comparator

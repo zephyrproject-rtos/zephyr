@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, The Linux Foundation.
+ * Copyright (c) 2024-2025, The Linux Foundation.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -80,6 +80,49 @@
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid #ccc;
+  border-radius: 50px;
+  padding: 5px 18px;
+}
+
+.tag-container:focus-within {
+  border-color: var(--input-focus-border-color);
+}
+
+.tag {
+  background-color: var(--admonition-note-background-color);
+  color: var(--admonition-note-color);
+  padding: 2px 12px 4px 16px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.tag:hover {
+  background-color: #0056b3;
+}
+
+.tag::after {
+  content: '\00D7'; /* multiplication sign */
+  margin-left: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filter-form input.tag-input {
+  flex: 1;
+  border: none;
+  padding: 5px;
+  outline: none;
+  background-color: transparent;
 }
 
 #catalog {

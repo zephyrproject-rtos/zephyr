@@ -122,6 +122,14 @@ static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
 	uint16_t len;
+#ifdef CONFIG_NET_VLAN
+	const uint16_t min_len =
+		NET_ETH_MINIMAL_FRAME_SIZE - (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC
+						      ? sizeof(struct net_eth_vlan_hdr)
+						      : sizeof(struct net_eth_hdr));
+#else
+	const uint16_t min_len = NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr);
+#endif
 
 	/* Let's check IP payload's length. If it's smaller than 46 bytes,
 	 * i.e. smaller than minimal Ethernet frame size minus ethernet
@@ -131,11 +139,13 @@ static inline void ethernet_update_length(struct net_if *iface,
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		len = ntohs(NET_IPV4_HDR(pkt)->len);
-	} else {
+	} else if (net_pkt_family(pkt) == AF_INET6) {
 		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
+	} else {
+		return;
 	}
 
-	if (len < NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr)) {
+	if (len < min_len) {
 		struct net_buf *frag;
 
 		for (frag = pkt->frags; frag; frag = frag->frags) {
@@ -171,6 +181,7 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
  */
@@ -191,6 +202,7 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 
 	return NET_OK;
 }
+#endif
 
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
@@ -329,15 +341,13 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 	/* Set the pointers to ll src and dst addresses */
-	lladdr = net_pkt_lladdr_src(pkt);
-	lladdr->addr = hdr->src.addr;
-	lladdr->len = sizeof(struct net_eth_addr);
-	lladdr->type = NET_LINK_ETHERNET;
+	(void)net_linkaddr_create(net_pkt_lladdr_src(pkt), hdr->src.addr,
+				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
+
+	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt), hdr->dst.addr,
+				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
 
 	lladdr = net_pkt_lladdr_dst(pkt);
-	lladdr->addr = hdr->dst.addr;
-	lladdr->len = sizeof(struct net_eth_addr);
-	lladdr->type = NET_LINK_ETHERNET;
 
 	net_pkt_set_ll_proto_type(pkt, type);
 	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
@@ -750,9 +760,10 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	 * temporarily it's a broadcast one. When filling the header,
 	 * it might detect this should be multicast and act accordingly.
 	 */
-	if (!net_pkt_lladdr_dst(pkt)->addr) {
-		net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)broadcast_eth_addr.addr;
-		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	if (net_pkt_lladdr_dst(pkt)->len == 0) {
+		(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+				       broadcast_eth_addr.addr,
+				       sizeof(struct net_eth_addr));
 	}
 
 	/* Then set the ethernet header. Note that the iface parameter tells

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,8 +36,6 @@ void adc_scan_end_isr(void);
  * This structure contains constant data for given instance of RA ADC.
  */
 struct adc_ra_config {
-	/** Number of supported channels */
-	uint8_t num_channels;
 	/** Mask for channels existed in each board */
 	uint32_t channel_available_mask;
 	/** pinctrl configs */
@@ -155,16 +153,10 @@ static void adc_ra_isr(const struct device *dev)
  */
 static int adc_ra_check_buffer_size(const struct device *dev, const struct adc_sequence *sequence)
 {
-	const struct adc_ra_config *config = dev->config;
 	uint8_t channels = 0;
 	size_t needed;
-	uint32_t mask;
 
-	for (mask = BIT(config->num_channels - 1); mask != 0; mask >>= 1) {
-		if (mask & sequence->channels) {
-			channels++;
-		}
-	}
+	channels = POPCOUNT(sequence->channels);
 
 	needed = channels * sizeof(uint16_t);
 	if (sequence->options) {
@@ -202,7 +194,7 @@ static int adc_ra_start_read(const struct device *dev, const struct adc_sequence
 		return -ENOTSUP;
 	}
 
-	if (find_msb_set(sequence->channels) > config->num_channels) {
+	if ((sequence->channels & ~config->channel_available_mask) != 0) {
 		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
@@ -319,11 +311,12 @@ static int adc_ra_init(const struct device *dev)
 	return 0;
 }
 
+#define EVENT_ADC_SCAN_END(idx) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ADC, idx, _SCAN_END))
+
 #define IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	static void adc_ra_configure_func_##idx(void)                                              \
 	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] =                             \
-			ELC_EVENT_ADC##idx##_SCAN_END;                                             \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] = EVENT_ADC_SCAN_END(idx);    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                                \
 			    DT_INST_IRQ_BY_NAME(idx, scanend, priority), adc_ra_isr,               \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \
@@ -354,7 +347,6 @@ static int adc_ra_init(const struct device *dev)
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_ra_read_async))};                  \
 	static const struct adc_ra_config adc_ra_config_##idx = {                                  \
-		.num_channels = DT_INST_PROP(idx, channel_count),                                  \
 		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		IRQ_CONFIGURE_DEFINE(idx),                                                         \

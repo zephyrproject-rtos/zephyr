@@ -196,6 +196,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.1.0", "/4.1.0/"),
         ("4.0.0", "/4.0.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
@@ -325,6 +326,7 @@ external_content_keep = [
 # -- Options for zephyr.domain --------------------------------------------
 
 zephyr_breathe_insert_related_samples = True
+zephyr_generate_hw_features = not tags.has("hw_features_turbo")  # pylint: disable=undefined-variable  # noqa: F821
 
 # -- Options for sphinx.ext.graphviz --------------------------------------
 
@@ -337,6 +339,9 @@ graphviz_dot_args = [
     "-Ncolor=gray60",
     "-Nfontcolor=gray25",
     "-Ecolor=gray60",
+    "-Gfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Nfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Efontname=SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,Courier,monospace",
 ]
 
 # -- Options for sphinx_copybutton ----------------------------------------

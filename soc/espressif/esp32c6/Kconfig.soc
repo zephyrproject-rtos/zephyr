@@ -17,6 +17,16 @@ config SOC_ESP32C6
 	bool
 	select SOC_SERIES_ESP32C6
 
+config SOC_ESP32C6_HPCORE
+	bool
+	help
+	  This hidden configuration defines that build is targeted for HP CORE.
+
+config SOC_ESP32C6_LPCORE
+	bool
+	help
+	  This hidden configuration defines that build is targeted for LP CORE.
+
 config SOC_SERIES
 	default "esp32c6" if SOC_SERIES_ESP32C6
 

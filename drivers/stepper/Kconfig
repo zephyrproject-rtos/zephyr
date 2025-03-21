@@ -34,6 +34,7 @@ comment "Stepper Drivers"
 rsource "Kconfig.fake"
 rsource "Kconfig.gpio"
 rsource "adi_tmc/Kconfig"
+rsource "allegro/Kconfig"
 rsource "ti/Kconfig"
 # zephyr-keep-sorted-stop
 

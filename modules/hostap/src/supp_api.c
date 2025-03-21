@@ -2466,6 +2466,10 @@ int hapd_config_network(struct hostapd_iface *iface,
 				goto out;
 			}
 #endif
+		} else {
+			wpa_printf(MSG_ERROR, "Security type %d is not supported",
+				   params->security);
+			goto out;
 		}
 	} else {
 		if (!hostapd_cli_cmd_v("set wpa 0")) {

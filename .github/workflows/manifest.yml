@@ -2,13 +2,18 @@ name: Manifest
 on:
   pull_request_target:
 
+permissions:
+  contents: read
+
 jobs:
   contribs:
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write # to create/update pull request comments
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: zephyrproject/zephyr
           ref: ${{ github.event.pull_request.head.sha }}
@@ -26,7 +31,7 @@ jobs:
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@v1.7.0
+        uses: zephyrproject-rtos/action-manifest@cb8f6fba6f20b5f8649bd573e80a7583a239894c # v1.7.0
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'

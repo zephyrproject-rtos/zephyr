@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,6 @@ void sci_uart_eri_isr(void);
 
 struct uart_ra_sci_config {
 	const struct pinctrl_dev_config *pcfg;
-
 	R_SCI0_Type * const regs;
 };
 
@@ -1054,15 +1053,10 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 }
 #endif
 
-#define _ELC_EVENT_SCI_RXI(channel) ELC_EVENT_SCI##channel##_RXI
-#define _ELC_EVENT_SCI_TXI(channel) ELC_EVENT_SCI##channel##_TXI
-#define _ELC_EVENT_SCI_TEI(channel) ELC_EVENT_SCI##channel##_TEI
-#define _ELC_EVENT_SCI_ERI(channel) ELC_EVENT_SCI##channel##_ERI
-
-#define ELC_EVENT_SCI_RXI(channel) _ELC_EVENT_SCI_RXI(channel)
-#define ELC_EVENT_SCI_TXI(channel) _ELC_EVENT_SCI_TXI(channel)
-#define ELC_EVENT_SCI_TEI(channel) _ELC_EVENT_SCI_TEI(channel)
-#define ELC_EVENT_SCI_ERI(channel) _ELC_EVENT_SCI_ERI(channel)
+#define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
+#define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
+#define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
+#define EVENT_SCI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _ERI))
 
 #if CONFIG_UART_ASYNC_API
 #define UART_RA_SCI_ASYNC_INIT(index)                                                              \
@@ -1137,13 +1131,13 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 #define UART_RA_SCI_IRQ_INIT(index)                                                                \
 	{                                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                    \
-			ELC_EVENT_SCI_RXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_RXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			ELC_EVENT_SCI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
-			ELC_EVENT_SCI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
-			ELC_EVENT_SCI_ERI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \
@@ -1166,6 +1160,10 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 #define UART_RA_SCI_IRQ_INIT(index)
 #endif
 
+#define FLOW_CTRL_PARAMETER(index)                                                                 \
+	COND_CODE_1(DT_INST_PROP(index, hw_flow_control),                                          \
+	(UART_CFG_FLOW_CTRL_RTS_CTS), (UART_CFG_FLOW_CTRL_NONE))
+
 #define UART_RA_SCI_INIT(index)                                                                    \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
 	static const struct uart_ra_sci_config uart_ra_sci_config_##index = {                      \
@@ -1180,9 +1178,7 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_INST_PROP(index, hw_flow_control),     \
-							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
-							 (UART_CFG_FLOW_CTRL_NONE)),               \
+				.flow_ctrl = FLOW_CTRL_PARAMETER(index),                           \
 			},                                                                         \
 		.fsp_config =                                                                      \
 			{                                                                          \

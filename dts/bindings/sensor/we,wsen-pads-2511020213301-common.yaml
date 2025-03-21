@@ -41,7 +41,7 @@ properties:
   additional-low-pass-filter:
     type: boolean
     description: |
-      Enable or disable the addtional low pass filter of the sensor.
+      Enable or disable the additional low pass filter of the sensor.
 
   additional-low-pass-filter-configuration:
     type: int
@@ -50,7 +50,7 @@ properties:
     - 0
     - 1
     description: |
-      Configuration of the addtional low pass filter of the sensor.
+      Configuration of the additional low pass filter of the sensor.
       Defaults to 0, which is the configuration at power-up.
 
   threshold:

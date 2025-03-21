@@ -12,10 +12,13 @@
 #include "rsi_power_save.h"
 #include "rsi_rom_ulpss_clk.h"
 #include "rsi_rom_clks.h"
+#include "rsi_sysrtc.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
 #define DT_DRV_COMPAT silabs_siwx91x_clock
+#define DT_DRV_COMPAT          silabs_siwx91x_clock
+#define LF_FSM_CLOCK_FREQUENCY 32768
 
 LOG_MODULE_REGISTER(siwx91x_clock, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -42,12 +45,12 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_UDMA);
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_UDMA_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		/* RSI_CLK_UsartClkConfig() calls RSI_CLK_PeripheralClkEnable(); */
 		RSI_CLK_UsartClkConfig(M4CLK, ENABLE_STATIC_CLK, 0, USART1, 0, 1);
 		break;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		/* RSI_CLK_UsartClkConfig() calls RSI_CLK_PeripheralClkEnable(); */
 		RSI_CLK_UsartClkConfig(M4CLK, ENABLE_STATIC_CLK, 0, USART2, 0, 1);
@@ -63,6 +66,16 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 	case SIWX91X_CLK_DMA0:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_PeripheralClkEnable(M4CLK, UDMA_CLK, ENABLE_STATIC_CLK);
+		break;
+	case SIWX91X_CLK_PWM:
+		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
+		RSI_CLK_PeripheralClkEnable(M4CLK, PWM_CLK, ENABLE_STATIC_CLK);
+		break;
+	case SIWX91X_CLK_WATCHDOG:
+		/* Both SYSRTC and WDT are clocked using LF-FSM XTAL which is initialized in
+		 * SystemCoreClockUpdate(). This function allows clock to stabilize before use.
+		 */
+		rsi_sysrtc_clk_set(RSI_SYSRTC_CLK_32kHz_Xtal, 0);
 		break;
 	default:
 		return -EINVAL;
@@ -84,10 +97,10 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 	case SIWX91X_CLK_ULP_DMA:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_UDMA_CLK);
 		break;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		RSI_CLK_PeripheralClkDisable(M4CLK, USART1_CLK);
 		break;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		RSI_CLK_PeripheralClkDisable(M4CLK, USART2_CLK);
 		break;
 	case SIWX91X_CLK_DMA0:
@@ -115,11 +128,18 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 	case SIWX91X_CLK_ULP_UART:
 		*rate = RSI_CLK_GetBaseClock(ULPSS_UART);
 		return 0;
-	case SIWX91X_CLK_UART1:
+	case SIWX91X_CLK_UART0:
 		*rate = RSI_CLK_GetBaseClock(M4_USART0);
 		return 0;
-	case SIWX91X_CLK_UART2:
+	case SIWX91X_CLK_UART1:
 		*rate = RSI_CLK_GetBaseClock(M4_UART1);
+		return 0;
+	case SIWX91X_CLK_PWM:
+		/* PWM peripheral operates at the system clock frequency */
+		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+		return 0;
+	case SIWX91X_CLK_WATCHDOG:
+		*rate = LF_FSM_CLOCK_FREQUENCY;
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */

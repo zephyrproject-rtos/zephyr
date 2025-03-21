@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4m1ab3cfm.dtsi>
+#include "arduino_uno_r4-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	model = "Arduino Uno R4 Board";
+	compatible = "renesas,ra4m1", "renesas,ra";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,entropy = &trng;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&sci2 {
+	status = "okay";
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+
+	uart2: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq0 {
+	interrupts = <27 12>;
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <28 12>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x4000>;
+			read-only;
+		};
+
+		code_partition: partition@4000 {
+			label = "code";
+			reg = <0x4000 0x3C000>;
+			read-only;
+		};
+	};
+};
+
+&hoco {
+	status = "okay";
+	clock-frequency = <48000000>;
+};
+
+&pclkblock {
+	clocks = <&hoco>;
+};
+
+&iclk {
+	div = <1>;
+};
+
+&pclka {
+	div = <1>;
+};
+
+&pclkb {
+	div = <2>;
+};
+
+&pclkc {
+	div = <1>;
+};
+
+&pclkd {
+	div = <1>;
+};
+
+&fclk {
+	div = <2>;
+};

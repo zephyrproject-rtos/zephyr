@@ -57,6 +57,7 @@ void llext_fs_finalize(struct llext_loader *ldr);
 				.seek = llext_fs_seek,                                             \
 				.peek = NULL,                                                      \
 				.finalize = llext_fs_finalize,                                     \
+				.storage = LLEXT_STORAGE_TEMPORARY,                                \
 			},                                                                         \
 		.is_open = false,                                                                  \
 		.name = (_filename),                                                               \

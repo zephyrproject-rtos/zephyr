@@ -88,6 +88,8 @@ static void mic_privacy_enable_dmic_irq(bool enable_irq, const void *fn)
 			NULL, 0);
 		irq_enable(ACE_INTL_DMIC);
 		ace_dmic_intc_unmask();
+	} else {
+		irq_disable(ACE_INTL_DMIC);
 	}
 }
 

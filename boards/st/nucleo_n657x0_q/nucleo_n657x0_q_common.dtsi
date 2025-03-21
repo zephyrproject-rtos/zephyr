@@ -6,6 +6,7 @@
 
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "arduino_r3_connector.dtsi"
 
@@ -15,6 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
+		spi-flash0 = &mx25um51245g;
 	};
 
 	leds: leds {
@@ -173,4 +175,59 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth1_rmii_ref_clk_pf7
+		     &eth1_rmii_crs_dv_pf10
+		     &eth1_rmii_rxd0_pf14
+		     &eth1_rmii_rxd1_pf15
+		     &eth1_rmii_tx_en_pf11
+		     &eth1_rmii_txd0_pf12
+		     &eth1_rmii_txd1_pf13>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth1_mdio_pf4 &eth1_mdc_pg11>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x0>;
+		status = "okay";
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&xspim_p2_ncs1_pn1 &xspim_p2_dqs0_pn0 &xspim_p2_clk_pn6
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3 &xspim_p2_io2_pn4
+		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25um51245g: ospi-nor-flash@70000000 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(200)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@3ff0000 {
+				label = "storage";
+				reg = <0x3ff0000 DT_SIZE_K(64)>;
+			};
+		};
+	};
 };

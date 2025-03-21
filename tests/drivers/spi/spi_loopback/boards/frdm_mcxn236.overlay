@@ -5,7 +5,7 @@
  */
 
 /* To test this sample, connect
- * LPSPI3 MOSI(J2-8, P1_0/FC3_P0)     -->        LPSPI5 MISO(J2-10, P1_2/FC3_P2)
+ * LPSPI3 MOSI(J2-8, P1_0/FC3_P0)     -->        LPSPI3 MISO(J2-10, P1_2/FC3_P2)
  */
 &flexcomm3_lpspi3 {
 	slow@0 {

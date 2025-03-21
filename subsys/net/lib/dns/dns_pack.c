@@ -592,6 +592,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		&& query_type != DNS_RR_TYPE_PTR
 		&& query_type != DNS_RR_TYPE_SRV
 		&& query_type != DNS_RR_TYPE_TXT
+		&& query_type != DNS_RR_TYPE_HTTPS
 		&& query_type != DNS_RR_TYPE_ANY) {
 		return -EINVAL;
 	}

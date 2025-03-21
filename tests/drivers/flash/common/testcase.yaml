@@ -94,3 +94,24 @@ tests:
       - gd32vf103v_eval
       - gd32a503v_eval
       - gd32f470i_eval
+  drivers.flash.common.silabs.dma:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+  drivers.flash.common.silabs.dma.lpwrite:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/silabs_s2_lpwrite.overlay
+  drivers.flash.common.silabs.dma_read:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+      - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y

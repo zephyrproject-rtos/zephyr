@@ -151,7 +151,7 @@
 #define DWT_TX_FCTRL_PE_MASK        0x00300000UL
 /* Bit mask to access Transmit Preamble Symbol Repetitions (PSR). */
 #define DWT_TX_FCTRL_TXPSR_PE_MASK  0x003C0000UL
-/* FSCTRL has fields which should always be writen zero */
+/* FSCTRL has fields which should always be written zero */
 #define DWT_TX_FCTRL_SAFE_MASK_32   0xFFFFE3FFUL
 /* Transmit Bit Rate = 110k */
 #define DWT_TX_FCTRL_TXBR_110k      0x00000000UL
@@ -227,7 +227,7 @@
 #define DWT_SYS_CTRL_LEN            4
 /*
  * System Control Register access mask
- * (all unused fields should always be writen as zero)
+ * (all unused fields should always be written as zero)
  */
 #define DWT_SYS_CTRL_MASK_32        0x010003CFUL
 /* Suppress Auto-FCS Transmission (on this frame) */
@@ -262,7 +262,7 @@
 #define DWT_SYS_MASK_LEN            4
 /*
  * System Event Mask Register access mask
- * (all unused fields should always be writen as zero)
+ * (all unused fields should always be written as zero)
  */
 #define DWT_SYS_MASK_MASK_32        0x3FF7FFFEUL
 /* Mask clock PLL lock event */
@@ -329,7 +329,7 @@
 #define DWT_SYS_STATUS_LEN          5
 /*
  * System event Status Register access mask
- * (all unused fields should always be writen as zero)
+ * (all unused fields should always be written as zero)
  */
 #define DWT_SYS_STATUS_MASK_32      0xFFF7FFFFUL
 /* Interrupt Request Status READ ONLY */
@@ -453,7 +453,7 @@
 #define DWT_RX_FINFO_LEN            4
 /*
  * System event Status Register access mask
- * (all unused fields should always be writen as zero)
+ * (all unused fields should always be written as zero)
  */
 #define DWT_RX_FINFO_MASK_32        0xFFFFFBFFUL
 /* Receive Frame Length (0 to 127) */
@@ -558,7 +558,7 @@
 #define DWT_RX_TTCKO_LEN            5
 /*
  * Receiver Time Tracking Offset access mask
- * (all unused fields should always be writen as zero)
+ * (all unused fields should always be written as zero)
  */
 #define DWT_RX_TTCKO_MASK_32        0xFF07FFFFUL
 /* RX time tracking offset. This RXTOFS value is a 19-bit signed quantity */

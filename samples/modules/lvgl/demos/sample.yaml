@@ -97,3 +97,21 @@ tests:
       - shield
       - lvgl
       - gui
+  sample.modules.lvgl.demos.rtk7eka6m3b00001bu:
+    platform_allow: ek_ra8d1
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_args:
+      - SHIELD=rtk7eka6m3b00001bu
+      - DTC_OVERLAY_FILE=rtk7eka6m3b00001bu.overlay
+    extra_configs:
+      - CONFIG_LV_DEMO_MUSIC_LANDSCAPE=y
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui

@@ -24,25 +24,7 @@ See the `TI CC2340R5 Product Page`_ for additional details.
 Supported Features
 ==================
 
-The ``lp_em_cc2340r5`` board supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| SYSTIM    | on-chip    | system timer         |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash memory         |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

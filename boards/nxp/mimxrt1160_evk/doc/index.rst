@@ -83,7 +83,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| IS25WP128          | FLEXSPI    | Enabled via flash configurationn    |
+| IS25WP128          | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -361,6 +361,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1160_evk
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1160-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1160-evaluation-kit:MIMXRT1160-EVK

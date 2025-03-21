@@ -20,7 +20,7 @@ The key features of the FPB-RA6E2 board are categorized in three groups as follo
 - MCU current measurement point for precision current consumption measurement
 - Multiple clock sources - RA6E2 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6E2 MCU
+  Additional low precision clocks are available internal to the RA6E2 MCU
 
 **System Control and Ecosystem Access**
 
@@ -63,33 +63,7 @@ Detailed hardware features for the FPB-RA6E2 MCU can be found at `FPB-RA6E2 - Us
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for FPB-RA6E2 board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| ENTROPY   | on-chip    | entropy              |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| DAC       | on-chip    | dac                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -103,7 +77,7 @@ Flashing
 ========
 
 Program can be flashed to fpb-RA6E2 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

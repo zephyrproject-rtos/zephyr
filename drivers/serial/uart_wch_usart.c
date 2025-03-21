@@ -312,7 +312,7 @@ static DEVICE_API(uart, usart_wch_driver_api) = {
 #define USART_WCH_IRQ_HANDLER(idx)                                                                 \
 	static void usart_wch_irq_config_func_##idx(const struct device *dev)                      \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(index, priority), usart_wch_isr,        \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), usart_wch_isr,        \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \
 		irq_enable(DT_INST_IRQN(idx));                                                     \
 	}

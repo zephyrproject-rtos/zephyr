@@ -5,12 +5,10 @@ tests:
   sample.display.sdl:
     build_only: true
     platform_allow:
-      - native_posix/native/64
       - native_sim/native/64
     tags: display
   sample.display.dummy:
     platform_allow:
-      - native_posix
       - native_sim
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
@@ -109,4 +107,6 @@ tests:
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
+      - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
+      - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu

@@ -103,7 +103,7 @@ struct pcf8563_data {
  * the datasheet because they may contain unexpected values. Applying a mask will help us
  * to sanitize the read values
  */
-int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
+static int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
@@ -146,7 +146,7 @@ int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
 	return 0;
 }
 
-int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
+static int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
@@ -198,7 +198,34 @@ int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 	return 0;
 }
 
+#ifdef PCF8563_INT1_GPIOS_IN_USE
 
+/* The logic related to the pin interrupt logic */
+static void callback_work_handler(struct k_work *work)
+{
+	/* This function is run as a work so the user can spend here all the necessary time */
+	struct pcf8563_data *data = CONTAINER_OF(work, struct pcf8563_data, callback_work);
+
+	if (data->alarm_callback == NULL) {
+		LOG_WRN("No PCF8563 alarm callback function provided");
+	} else {
+		data->alarm_callback(data->dev, 0, data->alarm_user_data);
+	}
+}
+
+/* The function called when the clock alarm activates the interrupt*/
+static void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
+		    uint32_t pins)
+{
+	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
+
+	LOG_DBG("PCF8563 interrupt detected");
+	/* By using a work we are able to run "heavier" code */
+	k_work_submit(&(data->callback_work));
+
+}
+
+#endif /* PCF8563_INT1_GPIOS_IN_USE */
 
 #ifdef CONFIG_RTC_ALARM
 
@@ -366,37 +393,6 @@ static int pcf8563_alarm_is_pending(const struct device *dev, uint16_t id)
 	/* No alarms */
 	return 0;
 }
-#endif
-
-#ifdef PCF8563_INT1_GPIOS_IN_USE
-/* The logic related to the pin interrupt logic */
-
-void callback_work_handler(struct k_work *work)
-{
-	/* This function is run as a work so the user can spend here all the necessary time */
-	struct pcf8563_data *data = CONTAINER_OF(work, struct pcf8563_data, callback_work);
-
-	if (data->alarm_callback == NULL) {
-		LOG_WRN("No PCF8563 alarm callback function provided");
-	} else {
-		data->alarm_callback(data->dev, 0, data->alarm_user_data);
-	}
-}
-
-
-/* The function called when the clock alarm activates the interrupt*/
-void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
-		    uint32_t pins)
-{
-	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
-
-	LOG_DBG("PCF8563 interrupt detected");
-	/* By using a work we are able to run "heavier" code */
-	k_work_submit(&(data->callback_work));
-
-}
-
-#endif
 
 static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 				      rtc_alarm_callback callback, void *user_data)
@@ -408,7 +404,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	ARG_UNUSED(user_data);
 
 	return -ENOTSUP;
-#else
+#else /* PCF8563_INT1_GPIOS_IN_USE */
 	const struct pcf8563_config *config = dev->config;
 	struct pcf8563_data *data = dev->data;
 	int ret;
@@ -446,8 +442,10 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	gpio_add_callback(config->int1.port, &data->int1_callback);
 	LOG_DBG("Alarm set");
 	return 0;
-#endif
+#endif /* PCF8563_INT1_GPIOS_IN_USE */
 }
+
+#endif /* CONFIG_RTC_ALARM */
 
 static DEVICE_API(rtc, pcf8563_driver_api) = {
 	.set_time = pcf8563_set_time,
@@ -462,7 +460,7 @@ static DEVICE_API(rtc, pcf8563_driver_api) = {
 };
 
 
-int pcf8563_init(const struct device *dev)
+static int pcf8563_init(const struct device *dev)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;

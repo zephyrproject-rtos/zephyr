@@ -312,6 +312,7 @@ endchoice
 
 config TFM_ETHOS_DRIVER_PATH_LOCAL
 	string "Path to a locally available Ethos-U driver or an empty string"
+	depends on SOC_SERIES_MPS3
 	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
 	help
 	  Path to a locally available Ethos-U driver to be used for TF-M builds or

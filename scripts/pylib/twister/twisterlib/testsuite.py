@@ -18,7 +18,6 @@ from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 class ScanPathResult:
     """Result of the scan_tesuite_path function call.

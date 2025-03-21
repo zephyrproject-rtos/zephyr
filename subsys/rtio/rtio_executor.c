@@ -84,6 +84,10 @@ void rtio_executor_submit(struct rtio *r)
 				    "Expected chained or transaction flag, not both");
 #endif
 			node = mpsc_pop(&iodev_sqe->r->sq);
+
+			__ASSERT(node != NULL,
+				    "Expected a valid submission in the queue while in a transaction or chain");
+
 			next = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
 			/* If the current submission was cancelled before submit,

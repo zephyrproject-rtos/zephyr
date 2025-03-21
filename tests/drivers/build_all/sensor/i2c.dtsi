@@ -1251,3 +1251,14 @@ test_i2c_xbr818: xbr818@aa {
 	int-gpios = <&test_gpio 0 0>;
 	i2c-en-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_veml6031: veml6031@ab {
+	compatible = "vishay,veml6031";
+	reg = <0xab>;
+};
+
+test_i2c_bmm350: bmm350@ac {
+	compatible = "bosch,bmm350";
+	reg = <0xac>;
+	drdy-gpios = <&test_gpio 0 0>;
+};

@@ -270,10 +270,12 @@ SYS_INIT(init_fn, APPLICATION, 0);
 SYS_INIT_NAMED(init1, init_fn, APPLICATION, 1);
 SYS_INIT_NAMED(init2, init_fn, APPLICATION, 2);
 SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
+SYS_INIT_NAMED(init4, init_fn, APPLICATION, 99);
+SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
 
 ZTEST(device, test_sys_init_multiple)
 {
-	zassert_equal(sys_init_counter, 4, "");
+	zassert_equal(sys_init_counter, 6, "");
 }
 
 /* this is for storing sequence during initialization */

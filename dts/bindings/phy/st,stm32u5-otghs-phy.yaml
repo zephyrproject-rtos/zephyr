@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
+    STM32U5 OTG HS PHY.
+
     This binding is to be used by the STM32U5xx transceivers which are built-in
     with USB HS PHY IP and a configurable HSE clock source.
 

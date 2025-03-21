@@ -5,7 +5,8 @@
 #
 
 description: |
-    STMicroelectronics STM32 Digital Camera Memory Interface (DCMI).
+    STM32 Digital Camera Memory Interface (DCMI).
+
     Example of node configuration at board level:
 
     &dcmi {

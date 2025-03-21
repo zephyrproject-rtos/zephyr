@@ -1,37 +1,34 @@
-# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_NEORV32
 	select RISCV
-	select RISCV_ISA_RV32I
-	select RISCV_ISA_EXT_M
-	select RISCV_ISA_EXT_A
-	select RISCV_ISA_EXT_ZICSR
-	select RISCV_ISA_EXT_ZIFENCEI
 	select RISCV_PRIVILEGED
 	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 	imply XIP
 
 if SOC_NEORV32
 
-config SOC_NEORV32_V1_8_6
-	bool "v1.8.6"
-	# NEORV32 RISC-V ISA A extension implements only LR/SC, not AMO
-	select ATOMIC_OPERATIONS_C
-
 config SOC_NEORV32_VERSION
 	hex
-	default 0x01080600 if SOC_NEORV32_V1_8_6
+	default 0x01110200
 	help
 	  The targeted NEORV32 version as BCD-coded number. The format is
 	  identical to that of the NEORV32 Machine implementation ID (mimpid)
 	  register.
 
-config SOC_NEORV32_ISA_C
-	bool "RISC-V ISA Extension \"C\""
-	select RISCV_ISA_EXT_C
+config SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
+	bool "Read the NEORV32 clock frequency at runtime"
+	default y
+	depends on !$(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	depends on SYS_CLOCK_EXISTS
+	select SOC_EARLY_INIT_HOOK
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
-	  Enable this if the NEORV32 CPU implementation supports the RISC-V ISA
-	  "C" extension (Compressed Instructions).
+	  If enabled, the NEORV32 clock frequency will be read from SYSINFO during boot. This
+	  results in small overhead, which can be avoided by setting the clock-frequency property of
+	  the cpu@0 devicetree node if the frequency is known at build-time.
 
 endif # SOC_NEORV32

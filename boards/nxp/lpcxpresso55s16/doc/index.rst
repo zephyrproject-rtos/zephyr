@@ -217,6 +217,9 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS zephyr-v2.2.0 *****
    Hello World! lpcxpresso55s16
 
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _LPC55S16 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc551x-s1x-baseline-arm-cortex-m33-based-microcontroller-family:LPC551X-S1X
 

@@ -292,11 +292,13 @@ static void i2c_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 
 	if (status < 0) {
 		data->err = -EIO;
+		Wrap_MXC_I2C_SetIntEn(cfg->regs, 0, 0);
+		k_sem_give(&data->xfer);
 	} else {
-		if (data->req.restart) {
-			Wrap_MXC_I2C_Restart(cfg->regs);
-		} else {
+		if (data->flags & I2C_MSG_STOP) {
 			Wrap_MXC_I2C_Stop(cfg->regs);
+		} else if (!(data->flags & I2C_MSG_READ)) {
+			MXC_I2C_EnableInt(cfg->regs, ADI_MAX32_I2C_INT_EN0_TX_THD, 0);
 		}
 	}
 }
@@ -366,48 +368,75 @@ static int i2c_max32_transfer_dma(const struct device *dev, struct i2c_msg *msgs
 	const struct max32_i2c_config *const cfg = dev->config;
 	struct max32_i2c_data *data = dev->data;
 	mxc_i2c_regs_t *i2c = cfg->regs;
+	mxc_i2c_req_t *req = &data->req;
 	uint8_t target_rw;
 	unsigned int i = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	req->addr = target_address;
+	req->i2c = i2c;
 
 	MXC_I2C_SetRXThreshold(i2c, 1);
 	MXC_I2C_SetTXThreshold(i2c, 2);
 	MXC_I2C_ClearTXFIFO(i2c);
 	MXC_I2C_ClearRXFIFO(i2c);
 
+	/* First message should always begin with a START condition */
+	msgs[0].flags |= I2C_MSG_RESTART;
+
 	for (i = 0; i < num_msgs; i++) {
-		data->req.restart = !(msgs[i].flags & I2C_MSG_STOP);
 		if (msgs[i].flags & I2C_MSG_READ) {
+			req->rx_len = msgs[i].len;
+			req->tx_len = 0;
 			target_rw = (target_address << 1) | 0x1;
-			MXC_I2C_WriteTXFIFO(i2c, &target_rw, 1);
-			Wrap_MXC_I2C_SetRxCount(i2c, msgs[i].len);
 			ret = i2c_max32_rx_dma_load(dev, &msgs[i]);
 			if (ret < 0) {
 				break;
 			}
-
-			MXC_I2C_EnableInt(
-				i2c, ADI_MAX32_I2C_INT_EN0_DONE | ADI_MAX32_I2C_INT_EN0_ERR, 0);
-			i2c->dma |= ADI_MAX32_I2C_DMA_RX_EN;
 		} else {
+			req->tx_len = msgs[i].len;
+			req->rx_len = 0;
 			target_rw = (target_address << 1) & ~0x1;
-			MXC_I2C_WriteTXFIFO(i2c, &target_rw, 1);
 			ret = i2c_max32_tx_dma_load(dev, &msgs[i]);
 			if (ret < 0) {
 				break;
 			}
-
-			MXC_I2C_EnableInt(
-				i2c, ADI_MAX32_I2C_INT_EN0_DONE | ADI_MAX32_I2C_INT_EN0_ERR, 0);
-			i2c->dma |= ADI_MAX32_I2C_DMA_TX_EN;
 		}
+
+		/*
+		 *  If previous message ends with a STOP condition, this message
+		 *  should begin with a START
+		 */
+		if (i > 0) {
+			if ((msgs[i - 1].flags & (I2C_MSG_STOP | I2C_MSG_READ))) {
+				msgs[i].flags |= I2C_MSG_RESTART;
+			}
+		}
+
+		data->flags = msgs[i].flags;
+		data->readb = 0;
+		data->written = 0;
 		data->err = 0;
 
-		Wrap_MXC_I2C_Start(i2c);
+		MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK, ADI_MAX32_I2C_INT_FL1_MASK);
+		MXC_I2C_EnableInt(i2c, ADI_MAX32_I2C_INT_EN0_ERR, 0);
+		Wrap_MXC_I2C_SetRxCount(i2c, req->rx_len);
+
+		if ((data->flags & I2C_MSG_RESTART)) {
+			MXC_I2C_EnableInt(i2c, ADI_MAX32_I2C_INT_EN0_ADDR_ACK, 0);
+			MXC_I2C_Start(i2c);
+			Wrap_MXC_I2C_WaitForRestart(i2c);
+			MXC_I2C_WriteTXFIFO(i2c, &target_rw, 1);
+		} else if (req->tx_len) {
+			MXC_I2C_EnableInt(i2c, ADI_MAX32_I2C_INT_EN0_DONE, 0);
+			i2c->dma |= ADI_MAX32_I2C_DMA_TX_EN;
+		}
+
 		ret = k_sem_take(&data->xfer, K_FOREVER);
-		Wrap_MXC_I2C_SetIntEn(i2c, 0, 0);
-		i2c->dma &= ~(ADI_MAX32_I2C_DMA_TX_EN | ADI_MAX32_I2C_DMA_RX_EN);
+
+		i2c->dma &= ~(ADI_MAX32_I2C_DMA_TX_EN);
+		i2c->dma &= ~(ADI_MAX32_I2C_DMA_RX_EN);
 
 		if (data->err) {
 			ret = data->err;
@@ -416,6 +445,7 @@ static int i2c_max32_transfer_dma(const struct device *dev, struct i2c_msg *msgs
 			MXC_I2C_Stop(i2c);
 			dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
 			dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+			break;
 		}
 	}
 
@@ -785,6 +815,8 @@ static void i2c_max32_isr_controller(const struct device *dev, mxc_i2c_regs_t *i
 static void i2c_max32_isr_controller_dma(const struct device *dev, mxc_i2c_regs_t *i2c)
 {
 	struct max32_i2c_data *data = dev->data;
+	const struct max32_i2c_config *cfg = dev->config;
+	struct dma_status dma_stat;
 	uint32_t int_fl0, int_fl1;
 	uint32_t int_en0, int_en1;
 
@@ -797,7 +829,34 @@ static void i2c_max32_isr_controller_dma(const struct device *dev, mxc_i2c_regs_
 		Wrap_MXC_I2C_SetIntEn(i2c, 0, 0);
 		k_sem_give(&data->xfer);
 	} else {
-		if (!data->err && (int_en0 & ADI_MAX32_I2C_INT_EN0_DONE)) {
+		/* Run DMA once address is acknowledged */
+		if ((int_fl0 & ADI_MAX32_I2C_INT_FL0_ADDR_ACK)) {
+			MXC_I2C_DisableInt(i2c, ADI_MAX32_I2C_INT_EN0_ADDR_ACK, 0);
+			MXC_I2C_EnableInt(i2c, ADI_MAX32_I2C_INT_EN0_DONE, 0);
+			if (data->flags & I2C_MSG_READ) {
+				i2c->dma |= ADI_MAX32_I2C_DMA_RX_EN;
+			} else {
+				i2c->dma |= ADI_MAX32_I2C_DMA_TX_EN;
+			}
+		} else if ((int_fl0 & ADI_MAX32_I2C_INT_FL0_DONE)) {
+			MXC_I2C_DisableInt(i2c, ADI_MAX32_I2C_INT_EN0_DONE, 0);
+			if ((data->flags & I2C_MSG_READ)) {
+				dma_get_status(cfg->rx_dma.dev, cfg->rx_dma.channel, &dma_stat);
+				/* Send RESTART if more data is expected */
+				if (dma_stat.pending_length > 0) {
+					Wrap_MXC_I2C_SetRxCount(i2c, dma_stat.pending_length);
+					MXC_I2C_EnableInt(i2c, ADI_MAX32_I2C_INT_EN0_ADDR_ACK, 0);
+					i2c->fifo = (data->req.addr << 1) | 0x1;
+					Wrap_MXC_I2C_Restart(i2c);
+				} else {
+					k_sem_give(&data->xfer);
+				}
+			} else {
+				k_sem_give(&data->xfer);
+			}
+		} else if ((int_fl0 & ADI_MAX32_I2C_INT_FL0_TX_THD)) {
+			MXC_I2C_DisableInt(
+				i2c, ADI_MAX32_I2C_INT_EN0_DONE | ADI_MAX32_I2C_INT_EN0_TX_THD, 0);
 			k_sem_give(&data->xfer);
 		}
 	}

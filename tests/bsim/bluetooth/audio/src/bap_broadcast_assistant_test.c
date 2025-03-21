@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -27,6 +28,7 @@
 #include "common.h"
 #include "bap_common.h"
 #include "bstests.h"
+#include "syscalls/kernel.h"
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
@@ -517,9 +519,12 @@ static void test_bass_mod_source(uint32_t bis_sync)
 		FAIL("Could not modify source (err %d)\n", err);
 		return;
 	}
-	printk("Source modified, waiting for server to PA sync\n");
 
-	WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
+		printk("Source modified, waiting for server to PA sync\n");
+
+		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
+	}
 
 	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		/* Wait for PAST to finish and then a new receive state */
@@ -579,10 +584,13 @@ static void test_bass_mod_source(uint32_t bis_sync)
 				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
 				return;
 			}
-		} else if (remote_bis_sync != subgroup.bis_sync) {
-			FAIL("Unexpected BIS sync value: %u != %u\n", remote_bis_sync,
-			     subgroup.bis_sync);
-			return;
+		} else {
+			WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+			if (remote_bis_sync != subgroup.bis_sync) {
+				FAIL("Unexpected BIS sync value: %u != %u\n", remote_bis_sync,
+				     subgroup.bis_sync);
+				return;
+			}
 		}
 	}
 
@@ -659,12 +667,17 @@ static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCA
 
 	printk("Adding broadcast code\n");
 	UNSET_FLAG(flag_write_complete);
-	err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, recv_state.src_id,
-							    broadcast_code);
-	if (err != 0) {
-		FAIL("Could not add broadcast code (err %d)\n", err);
-		return;
-	}
+
+	do {
+		err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, recv_state.src_id,
+								    broadcast_code);
+		if (err == -EBUSY) {
+			k_sleep(BAP_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not add broadcast code (err %d)\n", err);
+			return;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Broadcast code added\n");

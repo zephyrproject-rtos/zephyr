@@ -361,6 +361,15 @@
 				com-invdir;
 				prechargep = <0x22>;
 			};
+			test_st7567: st7567@2 {
+				compatible = "sitronix,st7567";
+				reg = <0x2>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
+			};
 		};
 	};
 };

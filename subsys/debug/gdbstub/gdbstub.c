@@ -55,12 +55,6 @@ __weak const size_t gdb_mem_num_regions;
  * @return Pointer to the memory region description if found.
  *         NULL if not found.
  */
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-/* Required due to gdb_mem_region_array having a default size of zero. */
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#endif
-
 static inline const
 struct gdb_mem_region *find_memory_region(const uintptr_t addr, const size_t len)
 {
@@ -81,10 +75,6 @@ struct gdb_mem_region *find_memory_region(const uintptr_t addr, const size_t len
 
 	return ret;
 }
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 bool gdb_mem_can_read(const uintptr_t addr, const size_t len, uint8_t *align)
 {

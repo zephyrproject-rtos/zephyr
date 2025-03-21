@@ -2,6 +2,8 @@
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+board_runner_args(stm32cubeprogrammer "--extload=N25Q128A_STM32F746G-DISCO.stldr")
+
 board_runner_args(jlink "--device=STM32F746NG" "--speed=4000")
 
 # keep first

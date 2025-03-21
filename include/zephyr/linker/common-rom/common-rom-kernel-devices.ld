@@ -18,9 +18,6 @@
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
 		__init_end = .;
-		__deferred_init_list_start = .;
-		KEEP(*(.z_deferred_init*))
-		__deferred_init_list_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	ITERABLE_SECTION_ROM_NUMERIC(device, Z_LINK_ITERABLE_SUBALIGN)
@@ -70,7 +67,7 @@
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
-		KEEP(*(SORT(.z_init_[_A-Z0-9]*)))
+		KEEP(*(SORT(.z_init_*)))
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 

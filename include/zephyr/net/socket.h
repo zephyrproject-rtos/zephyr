@@ -8,6 +8,7 @@
 /*
  * Copyright (c) 2017-2018 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1004,6 +1005,9 @@ struct ip_mreq  {
 
 /** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
+
+/** Set the multicast loop bit for the socket. */
+#define IPV6_MULTICAST_LOOP 19
 
 /** Join IPv6 multicast group. */
 #define IPV6_ADD_MEMBERSHIP 20

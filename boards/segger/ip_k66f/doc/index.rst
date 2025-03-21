@@ -32,28 +32,7 @@ For more information about the K66F SoC and IP-K66F board:
 Supported Features
 ==================
 
-The ip_k66f board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/segger/ip_k66f/ip_k66f_defconfig`
+.. zephyr:board-supported-hw::
 
 Micrel/Microchip KSZ8794CNX Ethernet Switch is supported
 (see :zephyr:code-sample:`dsa` sample).

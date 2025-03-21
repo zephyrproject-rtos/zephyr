@@ -34,13 +34,18 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 				const elf_rela_t *rel, uintptr_t addr,
-				uint8_t *loc, int type, uint32_t stb)
+				uint8_t *loc, int type, uint32_t stb,
+				const struct llext_load_param *ldr_parm)
 {
 	elf_word *got_entry = (elf_word *)loc;
 
 	switch (type) {
 	case R_XTENSA_RELATIVE:
-		;
+		if (ldr_parm->pre_located) {
+			/* Relative relocations are already correct in the pre-located case */
+			break;
+		}
+
 		/* Relocate a local symbol: Xtensa specific. Seems to only be used with PIC */
 		unsigned int sh_ndx;
 
@@ -146,7 +151,8 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const 
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}
 
-	xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type, ELF_ST_BIND(sym->st_info));
+	xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type, ELF_ST_BIND(sym->st_info),
+			    ldr_parm);
 }
 
 /**
@@ -163,5 +169,5 @@ void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const
 	}
 
 	xtensa_elf_relocate(ldr, ext, rel, (uintptr_t)link_addr, rel_addr, type,
-			    ELF_ST_BIND(sym->st_info));
+			    ELF_ST_BIND(sym->st_info), NULL);
 }

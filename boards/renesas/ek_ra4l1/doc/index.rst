@@ -76,33 +76,7 @@ Debug on-board:
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for the ``ek_ra4l1`` board:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock control        |
-+-----------+------------+----------------------+
-| CAN       | on-chip    | canfd                |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -116,7 +90,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4L1 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

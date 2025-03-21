@@ -1587,8 +1587,8 @@ function(pow2round n)
   set(${n} ${${n}} PARENT_SCOPE)
 endfunction()
 
-# Function to create a build string based on BOARD, BOARD_REVISION, and BUILD
-# type.
+# Function to create a build string based on BOARD, BOARD_REVISION, and
+# BOARD_QUALIFIER.
 #
 # This is a common function to ensure that build strings are always created
 # in a uniform way.
@@ -3037,6 +3037,16 @@ endfunction()
 # This function extends the CMake string function by providing additional
 # manipulation arguments to CMake string.
 #
+# ESCAPE:   Ensure that any single '\', except '\"', in the input string is
+#           escaped with the escape char '\'. For example the string 'foo\bar'
+#           will be escaped so that it becomes 'foo\\bar'.
+#           Backslashes which are already escaped will not be escaped further,
+#           for example 'foo\\bar' will not be modified.
+#           This is useful for handling of windows path separator in strings or
+#           when strings contains newline escapes such as '\n' and this can
+#           cause issues when writing to a file where a '\n' is desired in the
+#           string instead of a newline.
+#
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
 #           converted to underscores '_'.
@@ -3048,8 +3058,10 @@ endfunction()
 #
 # returns the updated string
 function(zephyr_string)
-  set(options SANITIZE TOUPPER)
+  set(options SANITIZE TOUPPER ESCAPE)
   cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
+
+  zephyr_check_flags_exclusive(${CMAKE_CURRENT_FUNCTION} ZEPHYR_STRING SANITIZE ESCAPE)
 
   if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Function zephyr_string() called without a return variable")
@@ -3066,6 +3078,13 @@ function(zephyr_string)
 
   if(ZEPHYR_STRING_TOUPPER)
     string(TOUPPER ${work_string} work_string)
+  endif()
+
+  if(ZEPHYR_STRING_ESCAPE)
+    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
+    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
+    # which then becomes a single '\' in the final string.
+    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
@@ -5221,8 +5240,8 @@ endfunction()
 # This is useful content such as struct devices.
 #
 # For example: zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
-# will create an input section matching `.z_init_PRE_KERNEL_1?_` and
-# `.z_init_PRE_KERNEL_1??_`.
+# will create an input section matching `.z_init_PRE_KERNEL_P_1_SUB_?_`,
+# `.z_init_PRE_KERNEL_P_1_SUB_??_`, and `.z_init_PRE_KERNEL_P_1_SUB_???_`.
 #
 # SECTION <section>: Section in which the objects shall be placed
 # LEVEL <level>    : Priority level, all input sections matching the level
@@ -5246,13 +5265,18 @@ function(zephyr_linker_section_obj_level)
 
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}?_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_?_*"
     SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
     KEEP SORT NAME
   )
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}??_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_??_*"
+    KEEP SORT NAME
+  )
+  zephyr_linker_section_configure(
+    SECTION ${OBJ_SECTION}
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_???_*"
     KEEP SORT NAME
   )
 endfunction()

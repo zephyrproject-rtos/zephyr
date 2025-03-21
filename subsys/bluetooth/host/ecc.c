@@ -265,7 +265,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
 		if (cb == new_cb) {
-			LOG_WRN("Callback already registered");
+			LOG_DBG("Callback already registered");
 			return -EALREADY;
 		}
 	}

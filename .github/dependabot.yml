@@ -11,3 +11,15 @@ updates:
       actions-deps:
         patterns:
           - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/doc"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci: doc: "
+    labels: []
+    groups:
+      doc-deps:
+        patterns:
+          - "*"

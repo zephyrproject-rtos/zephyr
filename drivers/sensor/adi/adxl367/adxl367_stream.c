@@ -206,7 +206,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	case ADXL367_8B:
 		fifo_bytes = fifo_packet_cnt;
 		break;
-	case ADXL367_12B:
+	case ADXL367_12B: {
 		unsigned int fifo_bits = fifo_packet_cnt * sample_numb * 12;
 
 		if (fifo_bits % 8 == 0) {
@@ -235,7 +235,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 			packet_size++;
 		}
 		break;
-
+	}
 	default:
 		fifo_bytes = fifo_packet_cnt * 2;
 		packet_size *= 2;
@@ -363,7 +363,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	((struct adxl367_fifo_data *)buf)->fifo_byte_count = read_len;
 
-	__ASSERT_NO_MSG(read_len % pkt_size == 0);
+	__ASSERT_NO_MSG(read_len % packet_size == 0);
 
 	uint8_t *read_buf = buf + sizeof(*hdr);
 

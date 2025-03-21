@@ -14,7 +14,7 @@
 
 #include "stubs.h"
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#include "nsi_timer_model.h"
 #endif
 
 #define LOG_LEVEL	LOG_LEVEL_DBG
@@ -467,7 +467,7 @@ ZTEST(lwm2m_engine, test_security)
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[1], TLS_PEER_VERIFY);
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[2], TLS_CIPHERSUITE_LIST);
 	zassert_true(tls_credential_add_fake.call_count == 3);
-	zassert_equal(tls_credential_add_fake.arg1_history[0], TLS_CREDENTIAL_SERVER_CERTIFICATE);
+	zassert_equal(tls_credential_add_fake.arg1_history[0], TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
 	zassert_equal(tls_credential_add_fake.arg1_history[1], TLS_CREDENTIAL_PRIVATE_KEY);
 	zassert_equal(tls_credential_add_fake.arg1_history[2], TLS_CREDENTIAL_CA_CERTIFICATE);
 	zassert_equal(lwm2m_engine_stop(&ctx), 0);

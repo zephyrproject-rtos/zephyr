@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Sink */
 
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -355,6 +355,9 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	}
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
+
+	/* Setup the ISO data path */
+	bt_bap_setup_iso_data_path(stream);
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
@@ -973,7 +976,6 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
-	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 

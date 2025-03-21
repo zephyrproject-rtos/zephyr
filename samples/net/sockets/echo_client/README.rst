@@ -48,6 +48,10 @@ echo-client directory:
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
 
+- :file:`overlay-vlan.conf`
+  This overlay config enables support for Virtual LAN.
+  See :ref:`networking_samples_common` for details.
+
 Build echo-client sample application like this:
 
 .. zephyr-app-commands::

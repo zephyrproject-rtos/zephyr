@@ -27,19 +27,21 @@ LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 #define EMUL_IMAGER_REG_TIMING1   0x0004
 #define EMUL_IMAGER_REG_TIMING2   0x0005
 #define EMUL_IMAGER_REG_TIMING3   0x0006
-#define EMUL_IMAGER_REG_EXPOSURE  0x0007
-#define EMUL_IMAGER_REG_GAIN      0x0008
-#define EMUL_IMAGER_REG_PATTERN   0x0009
+#define EMUL_IMAGER_REG_CUSTOM    0x0007
+#define EMUL_IMAGER_REG_FORMAT    0x000a
 #define EMUL_IMAGER_PATTERN_OFF   0x00
 #define EMUL_IMAGER_PATTERN_BARS1 0x01
 #define EMUL_IMAGER_PATTERN_BARS2 0x02
+
+/* Custom control that is just an I2C write for example and test purpose */
+#define EMUL_IMAGER_CID_CUSTOM (VIDEO_CID_PRIVATE_BASE + 0x01)
 
 /* Emulated register bank */
 uint8_t emul_imager_fake_regs[10];
 
 enum emul_imager_fmt_id {
-	RGB565_64x20,
-	YUYV_64x20,
+	RGB565_320x240,
+	YUYV_320x240,
 };
 
 struct emul_imager_reg {
@@ -53,7 +55,7 @@ struct emul_imager_mode {
 	 * This permits to deduplicate the list of registers in case some lare sections
 	 * are repeated across modes, such as the resolution for different FPS.
 	 */
-	const struct emul_imager_reg *regs[2];
+	const struct emul_imager_reg *regs[3];
 	/* More fields can be added according to the needs of the sensor driver */
 };
 
@@ -62,101 +64,95 @@ struct emul_imager_config {
 };
 
 struct emul_imager_data {
-	/* First field is a framebuffer for I/O emulation purpose */
-	uint8_t framebuffer[CONFIG_VIDEO_EMUL_IMAGER_FRAMEBUFFER_SIZE];
+	/* First field is a line buffer for I/O emulation purpose */
+	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
 	const struct emul_imager_mode *mode;
 	enum emul_imager_fmt_id fmt_id;
 	struct video_format fmt;
 };
 
-/* Initial parameters of the sensors common to all modes. */
+/* All the I2C registers sent on various scenario */
 static const struct emul_imager_reg emul_imager_init_regs[] = {
 	{EMUL_IMAGER_REG_CTRL, 0x00},
-	/* Example comment about REG_INIT1 */
 	{EMUL_IMAGER_REG_INIT1, 0x10},
 	{EMUL_IMAGER_REG_INIT2, 0x00},
+	/* Undocumented registers from the vendor */
+	{0x1200, 0x01},
+	{0x1204, 0x01},
+	{0x1205, 0x20},
+	{0x1209, 0x7f},
 	{0},
 };
-
-/* List of registers aggregated together in "modes" that can be applied
- * to set the timing parameters and other mode-dependent configuration.
- */
-
-static const struct emul_imager_reg emul_imager_rgb565_64x20[] = {
-	{EMUL_IMAGER_REG_TIMING1, 0x64},
-	{EMUL_IMAGER_REG_TIMING2, 0x20},
+static const struct emul_imager_reg emul_imager_rgb565[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x01},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_64x20_15fps[] = {
+static const struct emul_imager_reg emul_imager_yuyv[] = {
+	{EMUL_IMAGER_REG_FORMAT, 0x02},
+	{0},
+};
+static const struct emul_imager_reg emul_imager_320x240[] = {
+	{EMUL_IMAGER_REG_TIMING1, 0x32},
+	{EMUL_IMAGER_REG_TIMING2, 0x24},
+	{0},
+};
+static const struct emul_imager_reg emul_imager_15fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 15},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_64x20_30fps[] = {
+static const struct emul_imager_reg emul_imager_30fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 30},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565_64x20_60fps[] = {
+static const struct emul_imager_reg emul_imager_60fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 60},
 	{0},
 };
-struct emul_imager_mode emul_imager_rgb565_64x20_modes[] = {
-	{.fps = 15, .regs = {emul_imager_rgb565_64x20, emul_imager_rgb565_64x20_15fps}},
-	{.fps = 30, .regs = {emul_imager_rgb565_64x20, emul_imager_rgb565_64x20_30fps}},
-	{.fps = 60, .regs = {emul_imager_rgb565_64x20, emul_imager_rgb565_64x20_60fps}},
+
+/* Description of "modes", that pick lists of registesr that will be all sentto the imager */
+struct emul_imager_mode emul_imager_rgb565_320x240_modes[] = {
+	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_15fps}},
+	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_30fps}},
+	{.fps = 60, .regs = {emul_imager_320x240, emul_imager_rgb565, emul_imager_60fps}},
+	{0},
+};
+struct emul_imager_mode emul_imager_yuyv_320x240_modes[] = {
+	{.fps = 15, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_15fps}},
+	{.fps = 30, .regs = {emul_imager_320x240, emul_imager_yuyv, emul_imager_30fps}},
 	{0},
 };
 
-static const struct emul_imager_reg emul_imager_yuyv_64x20[] = {
-	{EMUL_IMAGER_REG_TIMING1, 0x64},
-	{EMUL_IMAGER_REG_TIMING2, 0x20},
-	{0},
-};
-static const struct emul_imager_reg emul_imager_yuyv_64x20_15fps[] = {
-	{EMUL_IMAGER_REG_TIMING3, 15},
-	{0},
-};
-static const struct emul_imager_reg emul_imager_yuyv_64x20_30fps[] = {
-	{EMUL_IMAGER_REG_TIMING3, 30},
-	{0},
-};
-struct emul_imager_mode emul_imager_yuyv_64x20_modes[] = {
-	{.fps = 15, .regs = {emul_imager_yuyv_64x20, emul_imager_yuyv_64x20_15fps}},
-	{.fps = 30, .regs = {emul_imager_yuyv_64x20, emul_imager_yuyv_64x20_30fps}},
-	{0},
-};
-
-/* Summary of all the modes of all the frame formats, with the format ID as
- * index, matching fmts[].
- */
+/* Summary of all the modes of all the frame formats, with indexes matching those of fmts[]. */
 static const struct emul_imager_mode *emul_imager_modes[] = {
-	[RGB565_64x20] = emul_imager_rgb565_64x20_modes,
-	[YUYV_64x20] = emul_imager_yuyv_64x20_modes,
+	[RGB565_320x240] = emul_imager_rgb565_320x240_modes,
+	[YUYV_320x240] = emul_imager_yuyv_320x240_modes,
 };
 
 /* Video device capabilities where the supported resolutions and pixel formats are listed.
  * The format ID is used as index to fetch the matching mode from the list above.
  */
-#define EMUL_IMAGER_VIDEO_FORMAT_CAP(width, height, format)                                        \
+#define EMUL_IMAGER_VIDEO_FORMAT_CAP(format, width, height)                                        \
 	{                                                                                          \
+		/* For a real imager, the width and height would be macro parameters */            \
 		.pixelformat = (format),                                                           \
 		.width_min = (width),                                                              \
 		.width_max = (width),                                                              \
+		.width_step = 0,                                                                   \
 		.height_min = (height),                                                            \
 		.height_max = (height),                                                            \
-		.width_step = 0,                                                                   \
 		.height_step = 0,                                                                  \
 	}
 static const struct video_format_cap fmts[] = {
-	[RGB565_64x20] = EMUL_IMAGER_VIDEO_FORMAT_CAP(64, 20, VIDEO_PIX_FMT_RGB565),
-	[YUYV_64x20] = EMUL_IMAGER_VIDEO_FORMAT_CAP(64, 20, VIDEO_PIX_FMT_YUYV),
+	[RGB565_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565, 320, 240),
+	[YUYV_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV, 320, 240),
 	{0},
 };
 
 /* Emulated I2C register interface, to replace with actual I2C calls for real hardware */
 static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr, uint8_t *value)
 {
-	LOG_DBG("%s placeholder for I2C read from 0x%02x", dev->name, reg_addr);
+	LOG_DBG("Placeholder for I2C read from 0x%02x", reg_addr);
 	switch (reg_addr) {
 	case EMUL_IMAGER_REG_SENSOR_ID:
 		*value = EMUL_IMAGER_SENSOR_ID;
@@ -181,7 +177,7 @@ static int emul_imager_read_int(const struct device *const dev, uint8_t reg_addr
 /* Some sensors will need reg8 or reg16 variants. */
 static int emul_imager_write_reg(const struct device *const dev, uint8_t reg_addr, uint8_t value)
 {
-	LOG_DBG("%s placeholder for I2C write 0x%08x to 0x%02x", dev->name, value, reg_addr);
+	LOG_DBG("Placeholder for I2C write 0x%08x to 0x%02x", value, reg_addr);
 	emul_imager_fake_regs[reg_addr] = value;
 	return 0;
 }
@@ -203,12 +199,8 @@ static int emul_imager_write_multi(const struct device *const dev,
 static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
 	switch (cid) {
-	case VIDEO_CID_EXPOSURE:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_EXPOSURE, (int)value);
-	case VIDEO_CID_GAIN:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_GAIN, (int)value);
-	case VIDEO_CID_TEST_PATTERN:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_PATTERN, (int)value);
+	case EMUL_IMAGER_CID_CUSTOM:
+		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, (int)value);
 	default:
 		return -ENOTSUP;
 	}
@@ -216,18 +208,9 @@ static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void
 
 static int emul_imager_get_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
-	struct emul_imager_data *data = dev->data;
-
 	switch (cid) {
-	case VIDEO_CID_EXPOSURE:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_EXPOSURE, value);
-	case VIDEO_CID_GAIN:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_GAIN, value);
-	case VIDEO_CID_TEST_PATTERN:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_PATTERN, value);
-	case VIDEO_CID_PIXEL_RATE:
-		*(int64_t *)value = (int64_t)data->fmt.width * data->fmt.pitch * data->mode->fps;
-		return 0;
+	case EMUL_IMAGER_CID_CUSTOM:
+		return emul_imager_read_int(dev, EMUL_IMAGER_REG_CUSTOM, value);
 	default:
 		return -ENOTSUP;
 	}
@@ -256,7 +239,7 @@ static int emul_imager_set_mode(const struct device *dev, const struct emul_imag
 	data->mode = mode;
 	return 0;
 err:
-	LOG_ERR("Could not apply %s mode %p (%u FPS)", dev->name, mode, mode->fps);
+	LOG_ERR("Could not apply mode %p (%u FPS)", mode, mode->fps);
 	return ret;
 }
 
@@ -315,48 +298,6 @@ static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoin
 	return mode->fps == 0;
 }
 
-/* White, Yellow, Cyan, Green, Magenta, Red, Blue, Black */
-static const uint16_t pattern_8bars_yuv[8][3] = {
-	{0xFF, 0x7F, 0x7F}, {0xFF, 0x00, 0xFF}, {0xFF, 0xFF, 0x00}, {0x7F, 0x00, 0x00},
-	{0x00, 0xFF, 0xFF}, {0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00}, {0x00, 0x7F, 0x7F}};
-static const uint16_t pattern_8bars_rgb[8][3] = {
-	{0xFF, 0xFF, 0xFF}, {0xFF, 0xFF, 0x00}, {0x00, 0xFF, 0xFF}, {0x00, 0xFF, 0x00},
-	{0xFF, 0x00, 0xFF}, {0xFF, 0x00, 0x00}, {0x00, 0x00, 0xFF}, {0x00, 0x00, 0x00}};
-static void emul_imager_fill_framebuffer(const struct device *const dev, struct video_format *fmt)
-{
-	struct emul_imager_data *data = dev->data;
-	uint16_t *fb16 = (uint16_t *)data->framebuffer;
-	uint16_t r, g, b, y, uv;
-
-	/* Fill the first row of the emulated framebuffer */
-	switch (fmt->pixelformat) {
-	case VIDEO_PIX_FMT_YUYV:
-		for (size_t i = 0; i < fmt->width; i++) {
-			y = pattern_8bars_yuv[i * 8 / fmt->width][0];
-			uv = pattern_8bars_yuv[i * 8 / fmt->width][1 + i % 2];
-			fb16[i] = sys_cpu_to_be16(y << 8 | uv << 0);
-		}
-		break;
-	case VIDEO_PIX_FMT_RGB565:
-		for (size_t i = 0; i < fmt->width; i++) {
-			r = pattern_8bars_rgb[i * 8 / fmt->width][0] >> (8 - 5);
-			g = pattern_8bars_rgb[i * 8 / fmt->width][1] >> (8 - 6);
-			b = pattern_8bars_rgb[i * 8 / fmt->width][2] >> (8 - 5);
-			fb16[i] = sys_cpu_to_le16((r << 11) | (g << 6) | (b << 0));
-		}
-		break;
-	default:
-		LOG_WRN("Unsupported pixel format %x, supported: %x, %x", fmt->pixelformat,
-			VIDEO_PIX_FMT_YUYV, VIDEO_PIX_FMT_RGB565);
-		memset(fb16, 0, fmt->pitch);
-	}
-
-	/* Duplicate the first row over the whole frame */
-	for (size_t i = 1; i < fmt->height; i++) {
-		memcpy(data->framebuffer + fmt->pitch * i, data->framebuffer, fmt->pitch);
-	}
-}
-
 static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoint_id ep,
 			       struct video_format *fmt)
 {
@@ -368,21 +309,13 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 		return -EINVAL;
 	}
 
-	if (fmt->pitch * fmt->height > CONFIG_VIDEO_EMUL_IMAGER_FRAMEBUFFER_SIZE) {
-		LOG_ERR("%s has %u bytes of memory, unable to support %x %ux%u (%u bytes)",
-			dev->name, CONFIG_VIDEO_EMUL_IMAGER_FRAMEBUFFER_SIZE, fmt->pixelformat,
-			fmt->width, fmt->height, fmt->pitch * fmt->height);
-		return -ENOMEM;
-	}
-
 	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
 		return 0;
 	}
 
 	ret = video_format_caps_index(fmts, fmt, &fmt_id);
 	if (ret < 0) {
-		LOG_ERR("Format %x %ux%u not found for %s", fmt->pixelformat, fmt->width,
-			fmt->height, dev->name);
+		LOG_ERR("Format %x %ux%u not found", fmt->pixelformat, fmt->width, fmt->height);
 		return ret;
 	}
 
@@ -391,8 +324,16 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 		return ret;
 	}
 
-	/* Change the image pattern on the framebuffer */
-	emul_imager_fill_framebuffer(dev, fmt);
+	/* For the purpose of simulation, fill the image line buffer with 50% gray, this data
+	 * will be collected by the video_emul_rx driver.
+	 */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		for (int i = 0; i < fmt->width; i++) {
+			((uint16_t *)data->framebuffer)[i] = sys_cpu_to_le16(0x7bef);
+		}
+	} else {
+		memset(data->framebuffer, 0x7f, fmt->pitch);
+	}
 
 	data->fmt_id = fmt_id;
 	data->fmt = *fmt;
@@ -453,13 +394,13 @@ int emul_imager_init(const struct device *dev)
 
 	ret = emul_imager_read_reg(dev, EMUL_IMAGER_REG_SENSOR_ID, &sensor_id);
 	if (ret < 0 || sensor_id != EMUL_IMAGER_SENSOR_ID) {
-		LOG_ERR("Failed to get %s correct sensor ID (0x%x", dev->name, sensor_id);
+		LOG_ERR("Failed to get a correct sensor ID 0x%x",  sensor_id);
 		return ret;
 	}
 
 	ret = emul_imager_write_multi(dev, emul_imager_init_regs);
 	if (ret < 0) {
-		LOG_ERR("Could not set %s initial registers", dev->name);
+		LOG_ERR("Could not set initial registers");
 		return ret;
 	}
 
@@ -470,8 +411,8 @@ int emul_imager_init(const struct device *dev)
 
 	ret = emul_imager_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret < 0) {
-		LOG_ERR("Failed to set %s to default format %x %ux%u", dev->name, fmt.pixelformat,
-			fmt.width, fmt.height);
+		LOG_ERR("Failed to set to default format %x %ux%u",
+			fmt.pixelformat, fmt.width, fmt.height);
 	}
 
 	return 0;

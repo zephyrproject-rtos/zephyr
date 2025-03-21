@@ -315,7 +315,7 @@ static void udp_receiver_cleanup(void)
 static int udp_recv_data(struct net_socket_service_event *pev)
 {
 	static uint8_t buf[UDP_RECEIVER_BUF_SIZE];
-	int ret = 0;
+	int ret = 1;
 	int family, sock_error;
 	struct sockaddr addr;
 	socklen_t optlen = sizeof(int);
@@ -341,19 +341,25 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 		return 0;
 	}
 
-	ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), 0,
-			     &addr, &addrlen);
-	if (ret < 0) {
-		ret = -errno;
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_DOMAIN, &family, &optlen);
-		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
-		goto error;
+	while (ret > 0) {
+		ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT,
+				     &addr, &addrlen);
+		if ((ret < 0) && (errno == EAGAIN)) {
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			ret = -errno;
+			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
+					       SO_DOMAIN, &family, &optlen);
+			NET_ERR("recv failed on IPv%d socket (%d)",
+				family == AF_INET ? 4 : 6, -ret);
+			goto error;
+		}
+
+		udp_received(pev->event.fd, &addr, buf, ret);
 	}
-
-	udp_received(pev->event.fd, &addr, buf, ret);
-
 	return ret;
 
 error:

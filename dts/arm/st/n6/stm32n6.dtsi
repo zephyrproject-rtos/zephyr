@@ -640,6 +640,39 @@
 			dma-offset = <0>;
 			status = "disabled";
 		};
+
+		mac: ethernet@58036000 {
+			compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
+				"st,stm32-ethernet";
+			reg = <0x58036000 0x8000>;
+			interrupts = <179 0>;
+			clock-names = "stmmaceth", "mac-clk-tx",
+				"mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
+				 <&rcc STM32_CLOCK(AHB5, 23)>,
+				 <&rcc STM32_CLOCK(AHB5, 24)>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		xspi2: spi@5802a000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x5802A000 0x1000>;
+			interrupts = <171 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
+				 <&rcc STM32_SRC_CKPER XSPI2_SEL(1)>,
+				 <&rcc STM32_CLOCK(AHB5, 13)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

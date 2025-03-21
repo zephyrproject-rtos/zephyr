@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OSD32MP1_BRK
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config CLOCK_STM32_HSE_CLOCK
+	default 24000000
+
+endif # BOARD_OSD32MP1_BRK

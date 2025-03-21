@@ -5,20 +5,26 @@ on:
     workflows: ["BabbleSim Tests"]
     types:
       - completed
+
+permissions:
+  contents: read
+
 jobs:
   bsim-test-results:
     name: "Publish BabbleSim Test Results"
     runs-on: ubuntu-22.04
     if: github.event.workflow_run.conclusion != 'skipped'
+    permissions:
+      checks: write # to create the check run entry with test results
 
     steps:
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v8
+        uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
         with:
           run_id: ${{ github.event.workflow_run.id }}
 
       - name: Publish BabbleSim Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
         with:
           check_name: BabbleSim Test Results
           comment_mode: off

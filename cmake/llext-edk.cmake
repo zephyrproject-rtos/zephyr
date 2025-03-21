@@ -14,6 +14,9 @@
 # The script expects a build_info.yml file in the project binary directory.
 # This file should contain the following entries:
 #  - cmake application source-dir
+#  - cmake board name
+#  - cmake board qualifiers
+#  - cmake board revision
 #  - cmake llext-edk cflags
 #  - cmake llext-edk file
 #  - cmake llext-edk include-dirs
@@ -158,19 +161,37 @@ yaml_get(INTERFACE_INCLUDE_DIRECTORIES NAME build_info KEY cmake llext-edk inclu
 yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
 yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
 
+yaml_get(board_name NAME build_info KEY cmake board name)
+yaml_get(board_qualifiers NAME build_info KEY cmake board qualifiers)
+yaml_get(board_revision NAME build_info KEY cmake board revision)
+zephyr_build_string(normalized_board_target
+    BOARD ${board_name}
+    BOARD_QUALIFIERS ${board_qualifiers}
+    BOARD_REVISION ${board_revision})
+
 set(llext_edk_name ${CONFIG_LLEXT_EDK_NAME})
 set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
 set(llext_edk_inc ${llext_edk}/include)
 
-string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
-string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
-set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
+zephyr_string(SANITIZE TOUPPER var_prefix ${llext_edk_name})
+set(install_dir_var "${var_prefix}_INSTALL_DIR")
 
 set(make_relative FALSE)
 foreach(flag ${llext_edk_cflags})
-    if (flag STREQUAL "-imacros")
+    # Detect all combinations of 'imacros' flag:
+    # - with one or two preceding dashes
+    # - separated from the argument, joined by '=', or joined (no separator)
+    if(flag MATCHES "^--?imacros$")
+        # imacros followed by a space, convert next argument
         set(make_relative TRUE)
-    elseif (make_relative)
+        continue()
+    elseif(flag MATCHES "^--?imacros=?([^=].*)$")
+        # imacros=<stuff> or imacros<stuff>, immediately convert <stuff>
+        set(flag ${CMAKE_MATCH_1})
+        set(make_relative TRUE)
+    endif()
+
+    if(make_relative)
         set(make_relative FALSE)
         cmake_path(GET flag PARENT_PATH parent)
         cmake_path(GET flag FILENAME name)
@@ -228,6 +249,12 @@ set(edk_file_CMAKE ${llext_edk}/cmake.cflags)
 
 foreach(target ${edk_targets})
     edk_write_header(${target})
+
+    edk_write_comment(${target} "Target information")
+    edk_write_var(${target} "${var_prefix}_BOARD_NAME" "${board_name}")
+    edk_write_var(${target} "${var_prefix}_BOARD_QUALIFIERS" "${board_qualifiers}")
+    edk_write_var(${target} "${var_prefix}_BOARD_REVISION" "${board_revision}")
+    edk_write_var(${target} "${var_prefix}_BOARD_TARGET" "${normalized_board_target}")
 
     edk_write_comment(${target} "Compile flags")
     edk_write_var(${target} "LLEXT_CFLAGS" "${all_flags}")

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        STM32H7 SPI controller
+        STM32H7 SPI controller.
+
         This compatible stands for all SPI hardware blocks matching the
         version available in STM32H7 SoCs.
         This version of STM32 SPI hardware block could be identified by the

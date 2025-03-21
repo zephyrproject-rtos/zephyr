@@ -145,8 +145,8 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	 * that it is set properly using a value from neighbor cache.
 	 * Same for source as it points to original pkt ll src address.
 	 */
-	net_pkt_lladdr_dst(reply)->addr = NULL;
-	net_pkt_lladdr_src(reply)->addr = NULL;
+	(void)net_linkaddr_clear(net_pkt_lladdr_dst(reply));
+	(void)net_linkaddr_clear(net_pkt_lladdr_src(reply));
 
 	net_pkt_set_ip_dscp(reply, net_pkt_ip_dscp(pkt));
 	net_pkt_set_ip_ecn(reply, net_pkt_ip_ecn(pkt));
@@ -169,7 +169,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv6_addr(src),
 		net_sprint_ipv6_addr(&ip_hdr->src));
 
-	if (net_send_data(reply) < 0) {
+	if (net_try_send_data(reply, K_NO_WAIT) < 0) {
 		goto drop;
 	}
 
@@ -264,7 +264,8 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		goto drop;
 	}
 
-	net_pkt_lladdr_dst(pkt)->addr = pkt->buffer->data;
+	memcpy(net_pkt_lladdr_dst(pkt)->addr, pkt->buffer->data,
+	       net_pkt_lladdr_dst(orig)->len);
 
 	ret = net_pkt_write(pkt, net_pkt_lladdr_dst(orig)->addr,
 			    net_pkt_lladdr_dst(orig)->len);
@@ -275,7 +276,8 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 
 	net_buf_pull_mem(pkt->buffer, net_pkt_lladdr_dst(orig)->len);
 
-	net_pkt_lladdr_src(pkt)->addr = pkt->buffer->data;
+	memcpy(net_pkt_lladdr_src(pkt)->addr, pkt->buffer->data,
+	       net_pkt_lladdr_src(orig)->len);
 
 	net_buf_pull_mem(pkt->buffer, net_pkt_lladdr_src(orig)->len);
 
@@ -319,7 +321,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_sprint_ipv6_addr(src),
 		net_sprint_ipv6_addr(&ip_hdr->src));
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(pkt));
 		return 0;
 	}

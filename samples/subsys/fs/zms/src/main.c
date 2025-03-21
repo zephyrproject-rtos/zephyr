@@ -26,9 +26,6 @@ static struct zms_fs fs;
 #define CNT_ID        2
 #define LONG_DATA_ID  3
 
-#define MAX_ITERATIONS   300
-#define DELETE_ITERATION 10
-
 static int delete_and_verify_items(struct zms_fs *fs, uint32_t id)
 {
 	int rc = 0;
@@ -112,7 +109,7 @@ int main(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	for (i = 0; i < MAX_ITERATIONS; i++) {
+	for (i = 0; i < CONFIG_MAX_ITERATIONS; i++) {
 		rc = zms_mount(&fs);
 		if (rc) {
 			printk("Storage Init failed, rc=%d\n", rc);
@@ -164,7 +161,8 @@ int main(void)
 		rc = zms_read(&fs, CNT_ID, &i_cnt, sizeof(i_cnt));
 		if (rc > 0) { /* item was found, show it */
 			printk("Id: %d, loop_cnt: %u\n", CNT_ID, i_cnt);
-			if (i_cnt != (i - 1)) {
+			if ((i > 0) && (i_cnt != (i - 1))) {
+				printk("Error loop_cnt %u must be %d\n", i_cnt, i - 1);
 				break;
 			}
 		}
@@ -195,8 +193,8 @@ int main(void)
 			break;
 		}
 
-		/* Each DELETE_ITERATION delete all basic items */
-		if (!(i % DELETE_ITERATION) && (i)) {
+		/* Each CONFIG_DELETE_ITERATION delete all basic items */
+		if (!(i % CONFIG_DELETE_ITERATION) && (i)) {
 			rc = delete_basic_items(&fs);
 			if (rc) {
 				break;
@@ -204,7 +202,7 @@ int main(void)
 		}
 	}
 
-	if (i != MAX_ITERATIONS) {
+	if (i != CONFIG_MAX_ITERATIONS) {
 		printk("Error: Something went wrong at iteration %u rc=%d\n", i, rc);
 		return 0;
 	}

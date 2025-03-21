@@ -102,7 +102,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * takes time during this test thread waits
  *
  * Note: This test relies on the exact timing of the ticks.
- * For native_posix it works, with a tick of 10ms. In general this test will
+ * For native_sim it works, with a tick of 10ms. In general this test will
  * probably give problems if the tick time is not a relatively even number
  * of microseconds
  */
@@ -214,8 +214,8 @@ static void np_timer_isr_test_replacement(const void *arg)
  */
 ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 {
-#if defined(CONFIG_BOARD_NATIVE_POSIX) || defined(CONFIG_BOARD_NATIVE_SIM)
-	/* So far we only have a test for native_posix.
+#if defined(CONFIG_BOARD_NATIVE_SIM)
+	/* So far we only have a test for native_sim.
 	 * As the test hooks into an interrupt to cause an extra delay
 	 * this is very platform specific
 	 */
@@ -287,7 +287,7 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 			PRIu64"-"PRIu64"!="PRIu32"\n",
 			time2, time1, ONE_TICK_TIME);
 
-#endif /* defined(CONFIG_BOARD_NATIVE_POSIX) */
+#endif /* defined(CONFIG_BOARD_NATIVE_SIM) */
 }
 
 ZTEST_SUITE(native_cpu_hold, NULL, NULL, NULL, NULL, NULL);

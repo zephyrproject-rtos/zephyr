@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  i.MX IOMUXC node
+  i.MX IOMUXC
 
   The specifier space "pinmux" of this binding should have two cells describing
   the resources needed from the GPR registers.

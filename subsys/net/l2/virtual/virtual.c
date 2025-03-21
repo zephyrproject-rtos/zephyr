@@ -69,6 +69,32 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 		return verdict;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		size_t pkt_len;
+
+		pkt_len = net_pkt_get_len(pkt);
+
+		NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
+
+		net_stats_update_bytes_recv(iface, pkt_len);
+	}
+
+	/* If there are no virtual interfaces attached, then pass the packet
+	 * to the actual virtual network interface.
+	 */
+	api = net_if_get_device(iface)->api;
+	if (!api || api->recv == NULL) {
+		goto drop;
+	}
+
+	if (!net_if_is_up(iface)) {
+		NET_DBG("Interface %d is down.", net_if_get_by_iface(iface));
+		goto drop;
+	}
+
+	return api->recv(iface, pkt);
+
+drop:
 	NET_DBG("No handler, dropping pkt %p len %zu", pkt, net_pkt_get_len(pkt));
 
 	return NET_DROP;

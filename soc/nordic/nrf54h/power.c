@@ -175,17 +175,21 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	if (state == PM_STATE_SUSPEND_TO_IDLE) {
 		__disable_irq();
+		sys_trace_idle();
 		s2idle_enter(substate_id);
 		/* Resume here. */
 		s2idle_exit(substate_id);
+		sys_trace_idle_exit();
 		__enable_irq();
 	}
 #if defined(CONFIG_PM_S2RAM)
 	else if (state == PM_STATE_SUSPEND_TO_RAM) {
 		__disable_irq();
+		sys_trace_idle();
 		s2ram_enter();
 		/* On resuming or error we return exactly *HERE* */
 		s2ram_exit();
+		sys_trace_idle_exit();
 		__enable_irq();
 	}
 #endif

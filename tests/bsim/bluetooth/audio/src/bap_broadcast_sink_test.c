@@ -569,6 +569,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
 	test_stream->rx_cnt = 0U;
+	test_stream->valid_rx_cnt = 0U;
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {

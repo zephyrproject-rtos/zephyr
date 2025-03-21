@@ -32,19 +32,39 @@ function Execute_AC_11_I() {
 
 set -e # Exit on error
 
-Execute_AC_11_I 8_1_1 8_1_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 8_1_1 8_1_1
 Execute_AC_11_I 8_2_1 8_2_1
-Execute_AC_11_I 16_1_1 16_1_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 16_1_1 16_1_1
 Execute_AC_11_I 16_2_1 16_2_1
-Execute_AC_11_I 24_1_1 24_1_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 24_1_1 24_1_1
 Execute_AC_11_I 24_2_1 24_2_1
-Execute_AC_11_I 32_1_1 32_1_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 32_1_1 32_1_1
 Execute_AC_11_I 32_2_1 32_2_1
-# Execute_AC_11_I 441_1_1 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-# Execute_AC_11_I 441_2_1 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-Execute_AC_11_I 48_1_1 48_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_11_I 441_1_1 441_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_11_I 441_2_1 441_2_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 48_1_1 48_1_1
 Execute_AC_11_I 48_2_1 48_2_1
-Execute_AC_11_I 48_3_1 48_3_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 48_3_1 48_3_1
 Execute_AC_11_I 48_4_1 48_4_1
-Execute_AC_11_I 48_5_1 48_5_1
+# bt_iso_chan_disconnected: 0x8570cc0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_11_I 48_5_1 48_5_1
 Execute_AC_11_I 48_6_1 48_6_1

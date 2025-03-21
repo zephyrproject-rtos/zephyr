@@ -12,9 +12,5 @@
 		reg = <0x70>;
 		/* Uncomment to use IRQ instead of polling: */
 		/* irq-gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; */
-
-		kscan-input {
-			compatible = "zephyr,kscan-input";
-		};
 	};
 };

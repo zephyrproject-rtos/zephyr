@@ -283,15 +283,24 @@ static uint32_t i2c_xilinx_axi_wait_interrupt(const struct i2c_xilinx_axi_config
 	return events;
 }
 
-static void i2c_xilinx_axi_clear_interrupt(const struct i2c_xilinx_axi_config *config,
-					   struct i2c_xilinx_axi_data *data, uint32_t int_mask)
+static void i2c_xilinx_axi_clear_interrupt_no_lock(const struct i2c_xilinx_axi_config *config,
+						   struct i2c_xilinx_axi_data *data,
+						   uint32_t int_mask)
 {
-	const k_spinlock_key_t key = k_spin_lock(&data->lock);
 	const uint32_t int_status = sys_read32(config->base + REG_ISR);
 
 	if (int_status & int_mask) {
 		sys_write32(int_status & int_mask, config->base + REG_ISR);
 	}
+}
+
+static void i2c_xilinx_axi_clear_interrupt(const struct i2c_xilinx_axi_config *config,
+					   struct i2c_xilinx_axi_data *data, uint32_t int_mask)
+{
+	const k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	i2c_xilinx_axi_clear_interrupt_no_lock(config, data, int_mask);
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -521,7 +530,8 @@ static int i2c_xilinx_axi_write(const struct i2c_xilinx_axi_config *config,
 			bytes_to_send--;
 			bytes_left--;
 		}
-		i2c_xilinx_axi_clear_interrupt(config, data, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
+		i2c_xilinx_axi_clear_interrupt_no_lock(config, data,
+						       ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
 		k_spin_unlock(&data->lock, key);
 
 		ret = i2c_xilinx_axi_wait_tx_done(config, data);

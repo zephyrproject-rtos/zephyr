@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gap.h>
 
+#include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 
 #include "host/conn_internal.h"
@@ -38,7 +39,7 @@ DEFINE_FLAG(flag_l2cap_connected);
 static K_FIFO_DEFINE(rx_queue);
 
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE, 8, NULL);
 
 static K_SEM_DEFINE(cmd_sem, 1, 1);
 static struct k_sem acl_pkts;

@@ -1197,6 +1197,11 @@ boilerplate with ``find_package(Zephyr ...)``.
    When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
    be used. Relative paths are treated relatively to the application directory.
 
+.. note::
+
+   When using sysbuild, then ``BOARD_ROOT`` must defined in a module or in the sysbuild
+   ``CMakeLists.txt`` file, see :ref:`sysbuild_var_override` for details.
+
 SOC Definitions
 ===============
 

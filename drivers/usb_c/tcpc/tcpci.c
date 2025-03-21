@@ -623,7 +623,7 @@ int tcpci_tcpm_get_status_register(const struct i2c_dt_spec *bus, enum tcpc_stat
 	case TCPC_ALERT_STATUS:
 		return tcpci_read_reg16(bus, TCPC_REG_ALERT, status);
 	case TCPC_CC_STATUS:
-		return tcpci_read_reg16(bus, TCPC_REG_CC_STATUS, status);
+		return tcpci_read_reg8(bus, TCPC_REG_CC_STATUS, (uint8_t *)status);
 	case TCPC_POWER_STATUS:
 		return tcpci_read_reg8(bus, TCPC_REG_POWER_STATUS, (uint8_t *)status);
 	case TCPC_FAULT_STATUS:
@@ -645,9 +645,11 @@ int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_st
 	case TCPC_ALERT_STATUS:
 		return tcpci_write_reg16(bus, TCPC_REG_ALERT, mask);
 	case TCPC_CC_STATUS:
-		return tcpci_write_reg16(bus, TCPC_REG_CC_STATUS, mask);
+		LOG_ERR("CC_STATUS is cleared by the TCPC");
+		return -EINVAL;
 	case TCPC_POWER_STATUS:
-		return tcpci_write_reg8(bus, TCPC_REG_POWER_STATUS, (uint8_t)mask);
+		LOG_ERR("POWER_STATUS is cleared by the TCPC");
+		return -EINVAL;
 	case TCPC_FAULT_STATUS:
 		return tcpci_write_reg8(bus, TCPC_REG_FAULT_STATUS, (uint8_t)mask);
 	case TCPC_EXTENDED_STATUS:

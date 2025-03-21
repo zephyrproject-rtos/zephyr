@@ -5,6 +5,7 @@
  */
 
 #include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "nxp,frdm_rw612";
@@ -15,6 +16,7 @@
 		usart-0 = &flexcomm3;
 		i2c-0 = &flexcomm2;
 		pwm-0 = &sctimer;
+		sw0 = &user_button_0;
 	};
 
 	chosen {
@@ -30,8 +32,27 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_1 {
-			gpios = <&hsgpio0 12 0>;
+			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+	};
+
+	nxp_lcd_pmod_connector: lcd-pmod-connector {
+		compatible = "nxp,lcd-pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xfffffff0>;
+		gpio-map-pass-thru = <0 0xf>;
+		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
 	};
 };
 
@@ -175,6 +196,7 @@
 &os_timer {
 	status = "okay";
 	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
 };
 
 &systick {
@@ -193,6 +215,12 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
+};
+
+/* RTC is the wakeup source for PM modes 3,4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
 };
 
 &nbu {
@@ -227,4 +255,14 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_spi: &lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
+nxp_pmod_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };

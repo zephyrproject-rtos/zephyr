@@ -8,8 +8,13 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <assert.h>
+
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #define NANO_SEC        1000000000ULL
 #define BYTES_PER_DWORD 4
@@ -365,6 +370,10 @@ struct dw_i3c_config {
 	uint32_t od_tlow_min_ns;
 
 	void (*irq_config_func)();
+
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct dw_i3c_data {
@@ -664,33 +673,6 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 }
 
 /**
- * @brief Get the position of an I2C device with the specified address.
- *
- * This function retrieves the position (ID) of an I2C device with the specified
- * address on the I3C bus associated with the provided I3C device structure. This
- * utilizes the controller private data for where the id reg is stored.
- *
- * @param dev Pointer to the I3C device structure.
- * @param addr I2C address of the device whose position is to be retrieved.
- *
- * @return The position (ID) of the device on success, or a negative error code
- *         if the device with the given address is not found.
- */
-static int get_i2c_addr_pos(const struct device *dev, uint16_t addr)
-{
-	struct dw_i3c_i2c_dev_data *dw_i3c_device_data;
-	struct i3c_i2c_device_desc *desc = i3c_dev_list_i2c_addr_find(dev, addr);
-
-	if (desc == NULL) {
-		return -ENODEV;
-	}
-
-	dw_i3c_device_data = desc->controller_priv;
-
-	return dw_i3c_device_data->id;
-}
-
-/**
  * @brief Transfer messages in I3C mode.
  *
  * @param dev Pointer to device driver instance.
@@ -743,6 +725,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
+
+	pm_device_busy_set(dev);
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
@@ -857,7 +841,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -874,9 +858,45 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	ret = xfer->ret;
 
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
+}
+
+static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	uint8_t pos;
+
+	pos = get_free_pos(data->free_pos);
+	if (pos < 0) {
+		return -ENOSPC;
+	}
+
+	data->dw_i3c_i2c_priv_data[pos].id = pos;
+	desc->controller_priv = &(data->dw_i3c_i2c_priv_data[pos]);
+	data->free_pos &= ~BIT(pos);
+
+	sys_write32(DEV_ADDR_TABLE_LEGACY_I2C_DEV | DEV_ADDR_TABLE_STATIC_ADDR(desc->addr),
+		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+
+	return 0;
+}
+
+static void dw_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	struct dw_i3c_i2c_dev_data *dw_i2c_device_data = desc->controller_priv;
+
+	__ASSERT_NO_MSG(dw_i2c_device_data != NULL);
+
+	sys_write32(0,
+		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i2c_device_data->id));
+	data->free_pos |= BIT(dw_i2c_device_data->id);
+	desc->controller_priv = NULL;
 }
 
 /**
@@ -909,12 +929,6 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return -ENOTSUP;
 	}
 
-	pos = get_i2c_addr_pos(dev, target->addr);
-	if (pos < 0) {
-		LOG_ERR("%s: Invalid slave device", dev->name);
-		return -EINVAL;
-	}
-
 	for (i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
 			nrxwords += DIV_ROUND_UP(msgs[i].len, 4);
@@ -932,6 +946,19 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
+
+	pm_device_busy_set(dev);
+
+	/* In order limit the number of retaining registers occupied by connected devices,
+	 * I2C devices are only configured during transfers. This allows the number of devices
+	 * to be larger than the number of retaining registers on mixed buses.
+	 */
+	ret = dw_i3c_i2c_attach_device(dev, target);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to attach I2C device (%d)", dev->name, ret);
+		goto error_attach;
+	}
+	pos = ((struct dw_i3c_i2c_dev_data *)target->controller_priv)->id;
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
@@ -973,7 +1000,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -988,6 +1015,9 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	ret = xfer->ret;
 
 error:
+	dw_i3c_i2c_detach_device(dev, target);
+error_attach:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
@@ -1017,9 +1047,9 @@ static struct i3c_i2c_device_desc *dw_i3c_i2c_device_find(const struct device *d
  * @see i2c_transfer
  *
  * @param dev Pointer to device driver instance.
- * @param target Pointer to target device descriptor.
  * @param msgs Pointer to I2C messages.
  * @param num_msgs Number of messages to transfers.
+ * @param addr Address of the I2C target device.
  *
  * @return @see i2c_transfer
  */
@@ -1027,15 +1057,12 @@ static int dw_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *msg
 				   uint16_t addr)
 {
 	struct i3c_i2c_device_desc *i2c_dev = dw_i3c_i2c_device_find(dev, addr);
-	int ret;
 
 	if (i2c_dev == NULL) {
-		ret = -ENODEV;
-	} else {
-		ret = dw_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
+		return -ENODEV;
 	}
 
-	return ret;
+	return dw_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
 }
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -1212,7 +1239,7 @@ static int dw_i3c_target_ibi_raise_hj(const struct device *dev)
 	sys_write32(sys_read32(config->regs + SLV_EVENT_STATUS) | SLV_EVENT_STATUS_HJ_EN,
 		    config->regs + SLV_EVENT_STATUS);
 
-	ret = k_sem_take(&data->sem_hj, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_hj, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		return ret;
 	}
@@ -1556,50 +1583,6 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 	return 0;
 }
 
-static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
-{
-	const struct dw_i3c_config *config = dev->config;
-	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
-
-	pos = get_free_pos(data->free_pos);
-	if (pos < 0) {
-		return -ENOSPC;
-	}
-
-	data->dw_i3c_i2c_priv_data[pos].id = pos;
-	desc->controller_priv = &(data->dw_i3c_i2c_priv_data[pos]);
-	data->free_pos &= ~BIT(pos);
-
-	sys_write32(DEV_ADDR_TABLE_LEGACY_I2C_DEV | DEV_ADDR_TABLE_STATIC_ADDR(desc->addr),
-		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-
-	return 0;
-}
-
-static int dw_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_device_desc *desc)
-{
-	const struct dw_i3c_config *config = dev->config;
-	struct dw_i3c_data *data = dev->data;
-	struct dw_i3c_i2c_dev_data *dw_i2c_device_data = desc->controller_priv;
-
-	if (dw_i2c_device_data == NULL) {
-		LOG_ERR("%s: device not attached", dev->name);
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->mt, K_FOREVER);
-
-	sys_write32(0,
-		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i2c_device_data->id));
-	data->free_pos |= BIT(dw_i2c_device_data->id);
-	desc->controller_priv = NULL;
-
-	k_mutex_unlock(&data->mt);
-
-	return 0;
-}
-
 static int set_controller_info(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -1685,6 +1668,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		return ret;
 	}
 
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 	xfer->ret = -1;
 
@@ -1756,7 +1741,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
@@ -1778,6 +1763,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	ret = xfer->ret;
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	return ret;
@@ -1894,6 +1880,9 @@ static int dw_i3c_do_daa(const struct device *dev)
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
+
+	pm_device_busy_set(dev);
+
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = 1;
@@ -1906,14 +1895,15 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
 	start_xfer(dev);
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(1000));
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+
+	pm_device_busy_clear(dev);
+	k_mutex_unlock(&data->mt);
+
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
-		k_mutex_unlock(&data->mt);
 		return ret;
 	}
-
-	k_mutex_unlock(&data->mt);
 
 	if (data->maxdevs == cmd->rx_len) {
 		newdevs = 0;
@@ -2001,9 +1991,9 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 
 		if (!(sys_read32(dev_config->regs + PRESENT_STATE) &
 		      PRESENT_STATE_CURRENT_MASTER)) {
-			target_config->enable = true;
+			target_config->enabled = true;
 		} else {
-			target_config->enable = false;
+			target_config->enabled = false;
 		}
 	} else {
 		return -EINVAL;
@@ -2204,6 +2194,27 @@ static int dw_i3c_target_unregister(const struct device *dev, struct i3c_target_
 	return 0;
 }
 
+static int dw_i3c_pinctrl_enable(const struct device *dev, bool enable)
+{
+#ifdef CONFIG_PINCTRL
+	const struct dw_i3c_config *config = dev->config;
+	uint8_t state = enable ? PINCTRL_STATE_DEFAULT : PINCTRL_STATE_SLEEP;
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, state);
+	if (ret == -ENOENT) {
+		/* State not defined; ignore and return success. */
+		ret = 0;
+	}
+
+	return ret;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+	return 0;
+#endif
+}
+
 static int dw_i3c_init(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -2228,6 +2239,8 @@ static int dw_i3c_init(const struct device *dev)
 #endif
 	k_sem_init(&data->sem_xfer, 0, 1);
 	k_mutex_init(&data->mt);
+
+	dw_i3c_pinctrl_enable(dev, true);
 
 	data->mode = i3c_bus_mode(&config->common.dev_list);
 
@@ -2299,8 +2312,10 @@ static int dw_i3c_init(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
-		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->common.dev_list);
+		/* Perform bus initialization - skip if no I3C devices are known. */
+		if (config->common.dev_list.num_i3c > 0) {
+			ret = i3c_bus_init(dev, &config->common.dev_list);
+		}
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~(DEV_CTRL_HOT_JOIN_NACK),
 			    config->regs + DEVICE_CTRL);
@@ -2309,8 +2324,37 @@ static int dw_i3c_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	LOG_DBG("PM action: %d", (int)action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		dw_i3c_enable_controller(config, false);
+		dw_i3c_pinctrl_enable(dev, false);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		dw_i3c_pinctrl_enable(dev, true);
+		dw_i3c_enable_controller(config, true);
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(i3c, dw_i3c_api) = {
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 
 	.configure = dw_i3c_configure,
 	.config_get = dw_i3c_config_get,
@@ -2318,8 +2362,6 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.attach_i3c_device = dw_i3c_attach_device,
 	.reattach_i3c_device = dw_i3c_reattach_device,
 	.detach_i3c_device = dw_i3c_detach_device,
-	.attach_i2c_device = dw_i3c_i2c_attach_device,
-	.detach_i2c_device = dw_i3c_i2c_detach_device,
 
 	.do_daa = dw_i3c_do_daa,
 	.do_ccc = dw_i3c_do_ccc,
@@ -2338,6 +2380,10 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.ibi_disable = dw_i3c_controller_disable_ibi,
 	.ibi_raise = dw_i3c_target_ibi_raise,
 #endif /* CONFIG_I3C_USE_IBI */
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
+#endif
 };
 
 #define I3C_DW_IRQ_HANDLER(n)                                                                      \
@@ -2348,8 +2394,17 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+#if defined(CONFIG_PINCTRL)
+#define I3C_DW_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define I3C_DW_PINCTRL_INIT(n)   .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define I3C_DW_PINCTRL_DEFINE(n)
+#define I3C_DW_PINCTRL_INIT(n)
+#endif
+
 #define DEFINE_DEVICE_FN(n)                                                                        \
 	I3C_DW_IRQ_HANDLER(n)                                                                      \
+	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
 	static struct i3c_device_desc dw_i3c_device_array_##n[] = I3C_DEVICE_ARRAY_DT_INST(n);     \
 	static struct i3c_i2c_device_desc dw_i3c_i2c_device_array_##n[] =                          \
 		I3C_I2C_DEVICE_ARRAY_DT_INST(n);                                                   \
@@ -2368,9 +2423,11 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),                    \
 		.common.dev_list.i2c = dw_i3c_i2c_device_array_##n,                                \
 		.common.dev_list.num_i2c = ARRAY_SIZE(dw_i3c_i2c_device_array_##n),                \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, NULL, &dw_i3c_data_##n, &dw_i3c_cfg_##n,             \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &dw_i3c_api);
+		I3C_DW_PINCTRL_INIT(n)};                                                           \
+	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
+	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \
+			      &dw_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,   \
+			      &dw_i3c_api);
 
 #define DT_DRV_COMPAT snps_designware_i3c
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DEVICE_FN);

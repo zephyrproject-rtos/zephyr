@@ -4,6 +4,7 @@
 menuconfig SECURE_STORAGE
 	bool "Secure storage subsystem"
 	depends on !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_STORAGE_C if MBEDTLS_PSA_CRYPTO_C
 	select EXPERIMENTAL
 	help
 	  The secure storage subsystem provides an implementation of the PSA Secure Storage API
@@ -65,7 +66,6 @@ endif
 
 menuconfig SECURE_STORAGE_ITS_STORE_MODULE
 	bool "ITS store module"
-	imply FLASH # for FLASH_HAS_DRIVER_ENABLED
 	help
 	  The module that handles the storage/retrieval of the ITS data to/from NVM.
 	  Zephyr's ITS implementation calls into it.

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 Reset and Clock Control (RCC) node.
+  STM32 Reset and Clock Control (RCC) Controller.
+
   This node is in charge of reset control for AHB (Advanced High Performance)
   and APB (Advanced Peripheral) bus domains.
 

@@ -166,7 +166,7 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 static void calc_dietemp(const struct npm1300_charger_config *const config, uint16_t code,
 			 struct sensor_value *valp)
 {
-	/* Ref: Datasheet Figure 36: Die temperature (Celcius) */
+	/* Ref: Datasheet Figure 36: Die temperature (Celsius) */
 	int32_t temp =
 		DIETEMP_OFFSET_MDEGC - (((int32_t)code * DIETEMP_FACTOR_MUL) / DIETEMP_FACTOR_DIV);
 

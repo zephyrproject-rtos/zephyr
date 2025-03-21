@@ -440,7 +440,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>,
 					<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 

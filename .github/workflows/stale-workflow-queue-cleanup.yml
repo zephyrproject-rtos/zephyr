@@ -7,6 +7,9 @@ on:
   # everyday at 15:00
   - cron: '0 15 * * *'
 
+permissions:
+  contents: read
+
 concurrency:
   group: stale-workflow-queue-cleanup
   cancel-in-progress: true
@@ -15,10 +18,12 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-22.04
+    permissions:
+      actions: write # to delete stale workflow runs
 
     steps:
     - name: Delete stale queued workflow runs
-      uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
+      uses: MajorScruffy/delete-old-workflow-runs@78b5af714fefaefdf74862181c467b061782719e # v0.3.0
       with:
         repository: ${{ github.repository }}
         # Remove any workflow runs in "queued" state for more than 1 day

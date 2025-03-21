@@ -1,0 +1,39 @@
+description: |
+  Silabs siwx91x PWM Controller
+
+  The siwx91x PWM controller is designed to generate PWM signals. The mapping
+  between PWM channels and GPIO pins is configured through pinctrl settings.
+
+compatible: "silabs,siwx91x-pwm"
+
+include: [base.yaml, pinctrl-device.yaml, pwm-controller.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 2
+
+  silabs,ch_prescaler:
+    type: array
+    required: true
+    description: |
+      Contains the prescaler values for all the 4 channels
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  silabs,pwm_polarity:
+    type: int
+    required: true
+    description: |
+        Common PWM polarity for all the channels
+        0 - Normal polarity
+        1 - Inverted polarity
+
+pwm-cells:
+  - channel
+  - period

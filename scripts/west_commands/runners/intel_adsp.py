@@ -90,7 +90,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         'Generate a hash string for appending to the sending ri file'
-        hash_object = hashlib.md5(self.bin_fw.encode())
+        hash_object = hashlib.md5(self.bin_fw.encode(), usedforsecurity=False)
         random_str = f"{random.getrandbits(64)}".encode()
         hash_object.update(random_str)
         send_bin_fw = str(self.bin_fw + "." + hash_object.hexdigest())

@@ -1,0 +1,13 @@
+identifier: rza3ul_smarc
+name: Cortex-A55 for Renesas RZ/A3UL SMARC
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - uart
+  - gpio
+testing:
+  ignore_tags:
+    - bluetooth

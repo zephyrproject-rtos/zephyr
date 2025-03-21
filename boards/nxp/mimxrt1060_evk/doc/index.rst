@@ -87,7 +87,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| IS42S16160J        | FLEXSPI    | Enabled via flash configurationn    |
+| IS42S16160J        | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -509,6 +509,9 @@ steps:
 If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1060-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1060-evaluation-kit:MIMXRT1060-EVKB

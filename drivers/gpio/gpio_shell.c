@@ -101,10 +101,6 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
 #define GPIO_CTRL_PIN_GET_FN(node_id)                                                              \
 	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL});   \
                                                                                                    \
-	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry);       \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);                \
-                                                                                                   \
 	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry)        \
 	{                                                                                          \
 		gpio_port_pins_t reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id);    \
@@ -112,7 +108,9 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
                                                                                                    \
 		port_pin_get(reserved_mask, node_id##line_names, line_names_len, idx, entry);      \
 		entry->subcmd = NULL;                                                              \
-	}
+	}                                                                                          \
+                                                                                                   \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);
 
 #define IS_GPIO_CTRL_PIN_GET(node_id)                                                              \
 	COND_CODE_1(DT_PROP(node_id, gpio_controller), (GPIO_CTRL_PIN_GET_FN(node_id)), ())
@@ -152,7 +150,7 @@ static const struct gpio_ctrl *get_gpio_ctrl(const char *name)
 	return NULL;
 }
 
-int line_cmp(const char *input, const char *line_name)
+static int line_cmp(const char *input, const char *line_name)
 {
 	int i = 0;
 
@@ -174,7 +172,7 @@ static int get_gpio_pin(const struct shell *sh, const struct gpio_ctrl *ctrl, ch
 	gpio_pin_t i;
 	int result;
 
-	for (i = 0; i < ctrl->ngpios; i++) {
+	for (i = 0; i < ctrl->ngpios && i < ctrl->line_names_len; i++) {
 		result = line_cmp(line_name, ctrl->line_names[i]);
 		if (result == 0) {
 			if ((BIT64(i) & ctrl->reserved_mask) != 0) {
@@ -224,12 +222,13 @@ static int get_sh_gpio(const struct shell *sh, char **argv, struct sh_gpio *gpio
 	return 0;
 }
 
-static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void *data)
+static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	gpio_flags_t flags = 0;
 	gpio_flags_t vendor_specific;
 	struct sh_gpio gpio;
-	int ret = 0;
+	int ret;
+	size_t len;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -237,7 +236,8 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void 
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	for (int i = 0; i < strlen(argv[ARGV_CONF]); i++) {
+	len = strlen(argv[ARGV_CONF]);
+	for (int i = 0; i < len; i++) {
 		switch (argv[ARGV_CONF][i]) {
 		case 'i':
 			flags |= GPIO_INPUT;
@@ -363,7 +363,7 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sh_gpio gpio;
 	unsigned long value;
-	int ret = 0;
+	int ret;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -389,7 +389,7 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_gpio_toggle(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sh_gpio gpio;
-	int ret = 0;
+	int ret;
 
 	ret = get_sh_gpio(sh, argv, &gpio);
 	if (ret != 0) {
@@ -474,14 +474,28 @@ static int cmd_gpio_blink(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static const char *gpio_device_name(const struct device *dev)
+{
+#ifdef CONFIG_DEVICE_DT_METADATA
+	const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
+
+	if (nl != NULL && nl->num_nodelabels > 0) {
+		return nl->nodelabels[0];
+	}
+#endif
+	return dev->name;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
+	const struct device *dev = gpio_list[idx].dev;
+
 	if (idx >= ARRAY_SIZE(gpio_list)) {
 		entry->syntax = NULL;
 		return;
 	}
 
-	entry->syntax = gpio_list[idx].dev->name;
+	entry->syntax = gpio_device_name(dev);
 	entry->handler = NULL;
 	entry->help = "Device";
 	entry->subcmd = gpio_list[idx].subcmd;
@@ -511,9 +525,7 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 	const char *line_name;
 
 	shell_print(sh, " ngpios: %u", ctrl->ngpios);
-	shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
-
-	shell_print(sh, "");
+	shell_print(sh, " Reserved pin mask: 0x%08X\n", ctrl->reserved_mask);
 
 	shell_print(sh, " Reserved  Pin  Line Name");
 	for (pin = 0; pin < ctrl->ngpios; pin++) {
@@ -599,7 +611,7 @@ static void pin_ordered(const struct pin_info *info, void *user_data)
 	shell_print(data->sh, "   %-12s %-8c %-16s %2u",
 		    data->next.line_name,
 		    data->next.reserved ? '*' : ' ',
-		    data->next.dev->name,
+		    gpio_device_name(data->next.dev),
 		    data->next.pin);
 
 	data->prev = data->next;

@@ -31,7 +31,7 @@ properties:
   transfer-delay:
     type: int
     description: |
-      Delay in nanoseconds between last SCK edge of a trasnfer word and the
+      Delay in nanoseconds between last SCK edge of a transfer word and the
       first SCK edge of the next transfer word.
       If not set, the minimum supported delay is used.
 

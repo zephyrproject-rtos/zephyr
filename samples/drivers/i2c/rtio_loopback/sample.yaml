@@ -5,9 +5,12 @@ tests:
     tags:
       - rtio
       - i2c_target
-    harness: ztest
+    harness: console
     harness_config:
       fixture: i2c_bus_short
+      type: one_line
+      regex:
+        - "sample complete"
     platform_allow:
       - b_u585i_iot02a
       - nrf5340dk/nrf5340/cpuapp

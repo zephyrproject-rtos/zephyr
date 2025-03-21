@@ -397,7 +397,7 @@ static int set_up_recv_socket(enum net_sock_type socket_type)
 	struct sockaddr_ll socket_sll = {
 		.sll_ifindex = net_if_get_by_iface(net_iface),
 		.sll_family = AF_PACKET,
-		.sll_protocol = ETH_P_IEEE802154,
+		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
 	struct timeval timeo_optval = {
 		.tv_sec = 1,
@@ -682,7 +682,7 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	struct ieee802154_context *ctx = net_if_l2_data(net_iface);
 	struct sockaddr_ll socket_sll = {.sll_ifindex = net_if_get_by_iface(net_iface),
 					 .sll_family = AF_PACKET,
-					 .sll_protocol = ETH_P_IEEE802154};
+					 .sll_protocol = htons(ETH_P_IEEE802154)};
 	struct sockaddr_ll pkt_dst_sll = {
 		.sll_halen = dst_sll_halen,
 		.sll_protocol = htons(ETH_P_IEEE802154),
@@ -742,8 +742,8 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 		goto release_frag;
 	}
 
-	net_pkt_lladdr_src(current_pkt)->addr = net_if_get_link_addr(net_iface)->addr;
-	net_pkt_lladdr_src(current_pkt)->len = net_if_get_link_addr(net_iface)->len;
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(current_pkt),
+				net_if_get_link_addr(net_iface));
 
 	if (!ieee802154_decipher_data_frame(net_iface, current_pkt, &mpdu)) {
 		NET_ERR("*** Cannot decipher/authenticate packet");
@@ -810,17 +810,23 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	pkt->lladdr_dst.type = NET_LINK_IEEE802154;
-	pkt->lladdr_dst.addr = is_broadcast ? NULL : our_ext_addr;
-	pkt->lladdr_dst.len = is_broadcast ? 0 : sizeof(ctx->ext_addr);
+	if (is_broadcast) {
+		memset(pkt->lladdr_dst.addr, 0, sizeof(pkt->lladdr_dst.addr));
+		pkt->lladdr_dst.len = 0;
+	} else {
+		memcpy(pkt->lladdr_dst.addr, our_ext_addr, sizeof(our_ext_addr));
+		pkt->lladdr_dst.len = sizeof(ctx->ext_addr);
+	}
 
 	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH ||
 	    src_ll_addr_len == IEEE802154_EXT_ADDR_LENGTH) {
-		pkt->lladdr_src.addr = src_ll_addr;
+		memcpy(pkt->lladdr_src.addr, src_ll_addr, src_ll_addr_len);
 	} else {
 		NET_ERR("*** Illegal L2 source address length.");
 		goto release_pkt;
 	}
 	pkt->lladdr_src.len = src_ll_addr_len;
+	pkt->lladdr_src.type = NET_LINK_IEEE802154;
 
 	frame_buf = net_pkt_get_frag(pkt, IEEE802154_MTU, K_FOREVER);
 	if (!frame_buf) {
@@ -854,7 +860,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
 		ctx->short_addr = our_short_addr;
 	} else {
-		sys_memcpy_swap(ctx->ext_addr, our_ext_addr, sizeof(ctx->ext_addr));
+		sys_memcpy_swap(ctx->ext_addr, pkt->lladdr_dst.addr,
+				sizeof(ctx->ext_addr));
 	}
 
 	if (!frame_result) {
@@ -892,7 +899,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
-	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_family != AF_PACKET ||
+	    recv_src_sll.sll_protocol != htons(ETH_P_IEEE802154) ||
 	    recv_src_sll.sll_ifindex != net_if_get_by_iface(net_iface) ||
 	    recv_src_sll.sll_halen != src_ll_addr_len ||
 	    memcmp(recv_src_sll.sll_addr, src_ll_addr, src_ll_addr_len)) {
@@ -932,7 +940,7 @@ static bool test_raw_packet_sending(void)
 
 	socket_sll.sll_ifindex = net_if_get_by_iface(net_iface);
 	socket_sll.sll_family = AF_PACKET;
-	socket_sll.sll_protocol = ETH_P_IEEE802154;
+	socket_sll.sll_protocol = htons(ETH_P_IEEE802154);
 
 	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
@@ -1091,7 +1099,7 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	struct sockaddr_ll socket_sll = {
 		.sll_ifindex = net_if_get_by_iface(net_iface),
 		.sll_family = AF_PACKET,
-		.sll_protocol = ETH_P_IEEE802154,
+		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
 	uint8_t received_payload[80] = {0};
 	struct timeval timeo_optval = {
@@ -1149,7 +1157,8 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	sys_memcpy_swap(mac_be, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
 	    recv_src_sll.sll_ifindex != net_if_get_by_iface(net_iface) ||
-	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_family != AF_PACKET ||
+	    recv_src_sll.sll_protocol != htons(ETH_P_IEEE802154) ||
 	    recv_src_sll.sll_halen != IEEE802154_EXT_ADDR_LENGTH ||
 	    memcmp(recv_src_sll.sll_addr, mac_be, IEEE802154_EXT_ADDR_LENGTH)) {
 		NET_ERR("*** Received socket address does not compare (%d)", -errno);

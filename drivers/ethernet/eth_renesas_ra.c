@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -370,7 +370,7 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-#define ELC_EVENT_EDMAC_EINT(channel) ELC_EVENT_EDMAC##channel##_EINT
+#define EVENT_EDMAC_EINT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_EDMAC, channel, _EINT))
 
 /* Bindings to the platform */
 int renesas_ra_eth_init(const struct device *dev)
@@ -391,7 +391,7 @@ int renesas_ra_eth_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	R_ICU->IELSR[DT_INST_IRQN(0)] = ELC_EVENT_EDMAC_EINT(0);
+	R_ICU->IELSR[DT_INST_IRQN(0)] = EVENT_EDMAC_EINT(0);
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), renesas_ra_eth_isr,
 		    DEVICE_DT_INST_GET(0), 0);

@@ -101,12 +101,13 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.tool_opt += opts
 
     @classmethod
-    def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True,
-                          reset=True, tool_opt=True)
+    def _capabilities(cls, mult_dev_ids=False):
+        return RunnerCaps(commands={'flash'}, dev_id=True,
+                          mult_dev_ids=mult_dev_ids, erase=True, reset=True,
+                          tool_opt=True)
 
     @classmethod
-    def dev_id_help(cls) -> str:
+    def _dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
                   of the device connected over USB. '*' matches one or more
                   characters/digits'''
@@ -146,9 +147,19 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             args.dev_id = previous_runner.dev_id
 
     def ensure_snr(self):
-        if not self.dev_id or "*" in self.dev_id:
-            self.dev_id = self.get_board_snr(self.dev_id or "*")
-        self.dev_id = self.dev_id.lstrip("0")
+        # dev_id can be None, str or list of str
+        dev_id = self.dev_id
+        if isinstance(dev_id, list):
+            if len(dev_id) == 0:
+                dev_id = None
+            elif len(dev_id) == 1:
+                dev_id = dev_id[0]
+            else:
+                self.dev_id = [d.lstrip("0") for d in dev_id]
+                return
+        if not dev_id or "*" in dev_id:
+            dev_id = self.get_board_snr(dev_id or "*")
+        self.dev_id = dev_id.lstrip("0")
 
     @abc.abstractmethod
     def do_get_boards(self):
@@ -528,5 +539,5 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # All done, now flush any outstanding ops
         self.flush(force=True)
 
-        self.logger.info(f'Board with serial number {self.dev_id} '
-                         'flashed successfully.')
+        self.logger.info(f'Board(s) with serial number(s) {self.dev_id} '
+                          'flashed successfully.')

@@ -828,14 +828,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
-"./scripts/tests/twister/test_config_parser.py" = [
-    "B017",     # https://docs.astral.sh/ruff/rules/assert-raises-exception
-    "B033",     # https://docs.astral.sh/ruff/rules/duplicate-value
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
-]
 "./scripts/tests/twister/test_data/mixins/test_to_ignore.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
 ]

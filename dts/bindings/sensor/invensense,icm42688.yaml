@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    ICM-42688 motion tracking device
+    ICM-42688 motion tracking device.
+
     When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
     gyro-odr properties in a .dts or .dtsi file you may include icm42688.h
     and use the macros defined there.

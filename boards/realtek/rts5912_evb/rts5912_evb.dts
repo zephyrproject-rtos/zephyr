@@ -31,6 +31,25 @@
 	pinctrl-names = "default";
 };
 
+&kbd {
+	status = "okay";
+	pinctrl-0 = <&kso0_gpio041 &kso1_gpio042
+		     &kso2_gpio043 &kso3_gpio044
+		     &kso4_gpio045 &kso5_gpio046
+		     &kso6_gpio047 &kso7_gpio048
+		     &kso8_gpio049 &kso9_gpio050
+		     &kso10_gpio051 &kso11_gpio055
+		     &kso12_gpio056 &kso13_gpio057
+		     &kso14_gpio058 &kso15_gpio059
+		     &ksi0_gpio064 &ksi1_gpio065
+		     &ksi2_gpio066 &ksi3_gpio067
+		     &ksi4_gpio068 &ksi5_gpio069
+		     &ksi6_gpio070 &ksi7_gpio071>;
+	pinctrl-names = "default";
+	row-size = <8>;
+	col-size = <16>;
+};
+
 &swj_port {
 	status = "okay";
 };

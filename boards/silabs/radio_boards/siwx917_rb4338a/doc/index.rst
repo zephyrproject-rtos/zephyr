@@ -32,19 +32,7 @@ documents:
 Supported Features
 ==================
 
-The ``siwx917_rb4338a`` board supports the following hardware features:
-
-+-----------+------------+------------------------+
-| Interface | Controller | Driver/Component       |
-+===========+============+========================+
-| CMU       | on-chip    | clock control          |
-+-----------+------------+------------------------+
-| MPU       | on-chip    | memory protection unit |
-+-----------+------------+------------------------+
-| NVIC      | on-chip    | interrupt controller   |
-+-----------+------------+------------------------+
-| UART      | on-chip    | serial                 |
-+-----------+------------+------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -107,7 +95,7 @@ the board.
    https://www.silabs.com/wireless/wi-fi/siwx917-wireless-socs
 
 .. _SiWG917 Datasheet:
-   https://www.silabs.com/documents/public/data-sheets/siw917x-datasheet.pdf
+   https://www.silabs.com/documents/public/data-sheets/siwg917-datasheet.pdf
 
 .. _SiWG917 Reference Manual:
    https://www.silabs.com/documents/public/reference-manuals/siw917x-family-rm.pdf

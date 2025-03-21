@@ -2,19 +2,22 @@ name: Coding Guidelines
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   compliance_job:
     runs-on: ubuntu-22.04
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
     - name: cache-pip
-      uses: actions/cache@v4
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/coding_guidelines.yml') }}

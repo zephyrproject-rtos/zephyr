@@ -26,22 +26,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in
-:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

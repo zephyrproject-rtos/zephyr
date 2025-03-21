@@ -27,6 +27,15 @@
 		watchdog0 = &wdt0;
 		led-strip = &ws2812;
 	};
+
+	stemma_connector: stemma_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 23 0>,
+			   <1 0 &gpio0 22 0>;
+	};
 };
 
 &flash0 {

@@ -535,8 +535,6 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 
 			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS,
 						       (uint16_t *)&pwr_status);
-			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_POWER_STATUS,
-							 (uint16_t)pwr_status);
 
 			LOG_DBG("PS8xxx power status: %02x", pwr_status);
 		} else if (alert_type == TCPC_ALERT_EXTENDED) {
