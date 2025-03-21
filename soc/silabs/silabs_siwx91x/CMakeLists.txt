@@ -1,6 +1,12 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_linker_sources_ifdef(CONFIG_SRAM_VECTOR_TABLE
+  RAM_SECTIONS
+  SORT_KEY 0
+  sram_vector_table.ld
+)
+
 add_subdirectory(siwg917)
 
 # Necessary to not overwrite NWP Firmware
