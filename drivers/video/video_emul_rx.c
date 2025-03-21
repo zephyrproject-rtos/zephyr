@@ -296,6 +296,6 @@ int emul_rx_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
+			      POST_KERNEL, CONFIG_VIDEO_EMUL_RX_INIT_PRIORITY, &emul_rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)
