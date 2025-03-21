@@ -30,6 +30,7 @@
 #ifndef ZEPHYR_INCLUDE_MODBUS_H_
 #define ZEPHYR_INCLUDE_MODBUS_H_
 
+#include <zephyr/sys_clock.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/slist.h>
 #ifdef __cplusplus
@@ -560,6 +561,38 @@ int modbus_init_client(const int iface, struct modbus_iface_param param);
  * @retval           0 If the function was successful
  */
 int modbus_disable(const uint8_t iface);
+
+#if IS_ENABLED(CONFIG_MODBUS_LOCKING)
+/**
+ * @brief Lock Modbus Interface
+ *
+ * The lock ensures that no new requests are handled while the inetraface is locked.asm
+ * May be used to ensure atomic update of register values in server role.
+ *
+ * @param iface   Modbus interface index
+ * @param timeout Waiting period to lock the interface,
+ *                or one of the special values K_NO_WAIT and
+ *                K_FOREVER.
+ *
+ * @retval 0 Interface locked.
+ * @retval -ENODEV Invalid interface index
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+int modbus_lock(const int iface, k_timeout_t timeout);
+
+/**
+ * @brief Unlock Modbus Interface
+ *
+ * @param iface Modbus interface index
+ *
+ * @retval 0 Interface unlocked.
+ * @retval -ENODEV Invalid interface index
+ * @retval -EPERM The current thread does not own the lock
+ * @retval -EINVAL The interface is not locked
+ */
+int modbus_unlock(const int iface);
+#endif
 
 /**
  * @brief Submit raw ADU

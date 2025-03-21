@@ -92,7 +92,15 @@ static void modbus_rx_handler(struct k_work *item)
 	if (ctx->client == true) {
 		k_sem_give(&ctx->client_wait_sem);
 	} else if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
+		if (IS_ENABLED(CONFIG_MODBUS_SERVER_LOCKING)) {
+			k_mutex_lock(&ctx->iface_lock, K_FOREVER);
+		}
+
 		bool respond = modbus_server_handler(ctx);
+
+		if (IS_ENABLED(CONFIG_MODBUS_SERVER_LOCKING)) {
+			k_mutex_unlock(&ctx->iface_lock);
+		}
 
 		if (respond) {
 			modbus_tx_adu(ctx);
@@ -407,3 +415,29 @@ int modbus_disable(const uint8_t iface)
 
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_MODBUS_LOCKING)
+
+int modbus_lock(const int iface, k_timeout_t timeout)
+{
+	struct modbus_context *ctx = modbus_get_context(iface);
+
+	if (ctx == NULL) {
+		return -ENODEV;
+	}
+
+	return k_mutex_lock(&ctx->iface_lock, timeout);
+}
+
+int modbus_unlock(const int iface)
+{
+	struct modbus_context *ctx = modbus_get_context(iface);
+
+	if (ctx == NULL) {
+		return -ENODEV;
+	}
+
+	return k_mutex_unlock(&ctx->iface_lock);
+}
+
+#endif
