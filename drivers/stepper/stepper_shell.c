@@ -178,19 +178,32 @@ static int parse_device_arg(const struct shell *sh, char **argv, const struct de
 static int cmd_stepper_enable(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
-	int err = 0;
-	bool enable = shell_strtobool(argv[ARG_IDX_PARAM], 10, &err);
-
-	if (err < 0) {
-		return err;
-	}
+	int err;
 
 	err = parse_device_arg(sh, argv, &dev);
 	if (err < 0) {
 		return err;
 	}
 
-	err = stepper_enable(dev, enable);
+	err = stepper_enable(dev);
+	if (err) {
+		shell_error(sh, "Error: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_stepper_disable(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int err;
+
+	err = parse_device_arg(sh, argv, &dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = stepper_disable(dev);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -477,8 +490,8 @@ static int cmd_stepper_info(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	stepper_cmds,
-	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device> <on/off>", cmd_stepper_enable,
-		      3, 0),
+	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_enable, 2, 0),
+	SHELL_CMD_ARG(disable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_disable, 2, 0),
 	SHELL_CMD_ARG(set_micro_step_res, &dsub_pos_stepper_motor_name_microstep,
 		      "<device> <resolution>", cmd_stepper_set_micro_step_res, 3, 0),
 	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_motor_name, "<device>",

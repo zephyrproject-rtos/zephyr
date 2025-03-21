@@ -25,16 +25,20 @@ struct tmc22xx_data {
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct tmc22xx_config, struct tmc22xx_data);
 
-static int tmc22xx_stepper_enable(const struct device *dev, const bool enable)
+static int tmc22xx_stepper_enable(const struct device *dev)
 {
 	const struct tmc22xx_config *config = dev->config;
 
-	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
-	if (enable) {
-		return gpio_pin_set_dt(&config->enable_pin, 1);
-	} else {
-		return gpio_pin_set_dt(&config->enable_pin, 0);
-	}
+	LOG_DBG("Enabling Stepper motor controller %s", dev->name);
+	return gpio_pin_set_dt(&config->enable_pin, 1);
+}
+
+static int tmc22xx_stepper_disable(const struct device *dev)
+{
+	const struct tmc22xx_config *config = dev->config;
+
+	LOG_DBG("Disabling Stepper motor controller %s", dev->name);
+	return gpio_pin_set_dt(&config->enable_pin, 0);
 }
 
 static int tmc22xx_stepper_set_micro_step_res(const struct device *dev,
@@ -145,6 +149,7 @@ static int tmc22xx_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, tmc22xx_stepper_api) = {
 	.enable = tmc22xx_stepper_enable,
+	.disable = tmc22xx_stepper_disable,
 	.move_by = step_dir_stepper_common_move_by,
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,

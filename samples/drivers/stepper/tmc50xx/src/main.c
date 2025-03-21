@@ -37,7 +37,7 @@ int main(void)
 	printf("stepper is %p, name is %s\n", stepper, stepper->name);
 
 	stepper_set_event_callback(stepper, stepper_callback, NULL);
-	stepper_enable(stepper, true);
+	stepper_enable(stepper);
 	stepper_set_reference_position(stepper, 0);
 	stepper_move_by(stepper, ping_pong_target_position);
 

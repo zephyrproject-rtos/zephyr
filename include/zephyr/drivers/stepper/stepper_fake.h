@@ -14,7 +14,9 @@
 extern "C" {
 #endif
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, bool);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *);
+
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_disable, const struct device *);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move_by, const struct device *, int32_t);
 
