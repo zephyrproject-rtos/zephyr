@@ -2,6 +2,7 @@
  * Copyright (c) 2023 Prevas A/S
  * Copyright (c) 2023 Syslinbit
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,7 +25,7 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rtc.h>
 #ifdef CONFIG_RTC_ALARM
-#include <stm32_ll_exti.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #endif /* CONFIG_RTC_ALARM */
 
 #include <zephyr/logging/log.h>
@@ -93,11 +94,8 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 	| RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_WEEKDAY	\
 	| RTC_ALARM_TIME_MASK_MONTHDAY)
 
-#if DT_INST_NODE_HAS_PROP(0, alrm_exti_line)
-#define RTC_STM32_EXTI_LINE	CONCAT(LL_EXTI_LINE_, DT_INST_PROP(0, alrm_exti_line))
-#else
-#define RTC_STM32_EXTI_LINE	0
-#endif /* DT_INST_NODE_HAS_PROP(0, alrm_exti_line) */
+#define RTC_STM32_EXTI_LINE_NUM	DT_INST_PROP_OR(0, alrm_exti_line, 0)
+
 #endif /* STM32_RTC_ALARM_ENABLED */
 
 struct rtc_stm32_config {
@@ -130,6 +128,35 @@ struct rtc_stm32_data {
 	struct rtc_stm32_alrm rtc_alrm_b;
 #endif /* STM32_RTC_ALARM_ENABLED */
 };
+
+#ifdef STM32_RTC_ALARM_ENABLED
+
+static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
+#else
+	int ret;
+
+	ret = stm32_exti_enable(line_num, STM32_EXTI_TRIG_RISING, STM32_EXTI_MODE_IT);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable EXTI line number %d (error %d)", line_num, ret);
+	}
+#endif
+}
+
+static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
+#else
+	if (stm32_exti_is_pending(line_num)) {
+		stm32_exti_clear_pending(line_num);
+	}
+#endif
+}
+
+#endif /* STM32_RTC_ALARM_ENABLED */
 
 static int rtc_stm32_configure(const struct device *dev)
 {
@@ -305,7 +332,7 @@ void rtc_stm32_isr(const struct device *dev)
 		}
 	}
 
-	ll_func_exti_clear_rtc_alarm_flag(RTC_STM32_EXTI_LINE);
+	exti_clear_rtc_alarm_flag(RTC_STM32_EXTI_LINE_NUM);
 }
 
 static void rtc_stm32_irq_config(const struct device *dev)
@@ -404,7 +431,7 @@ static int rtc_stm32_init(const struct device *dev)
 #ifdef STM32_RTC_ALARM_ENABLED
 	rtc_stm32_irq_config(dev);
 
-	ll_func_exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE);
+	exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE_NUM);
 
 	K_SPINLOCK(&data->lock) {
 		memset(&(data->rtc_alrm_a), 0, sizeof(struct rtc_stm32_alrm));
@@ -874,7 +901,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	/* Enable Alarm IT */
 	rtc_stm32_enable_interrupt_alarm(RTC, id);
 
-	ll_func_exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE);
+	exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE_NUM);
 
 	/* Enable the write protection for RTC registers */
 	LL_RTC_EnableWriteProtection(RTC);
