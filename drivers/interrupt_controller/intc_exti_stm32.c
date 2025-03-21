@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2019-23 Linaro Limited
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,14 +19,19 @@
 #include <stm32_ll_gpio.h> /* For STM32F1 series */
 #include <stm32_ll_exti.h>
 #include <stm32_ll_system.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For STM32L0 series */
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 
 #include "stm32_hsem.h"
+#include "intc_exti_stm32_priv.h"
+
+LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);
 
 /** @brief EXTI lines range mapped to a single interrupt line */
 struct stm32_exti_range {
@@ -35,9 +41,14 @@ struct stm32_exti_range {
 	uint8_t len;
 };
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+/* The number of EXTI lines associated with GPIO's on most stm32 */
+#define NUM_GPIO_EXTI_LINES	16U
+#define NUM_EXTI_LINES		DT_PROP(DT_NODELABEL(exti), num_lines)
 
-static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
+/* EXTI IRQ table assiciated with GPIO's */
+static IRQn_Type exti_gpio_irq_table[NUM_GPIO_EXTI_LINES] = {
+	[0 ... NUM_GPIO_EXTI_LINES - 1] = 0xFF
+};
 
 /* User callback wrapper */
 struct __exti_cb {
@@ -50,6 +61,8 @@ struct stm32_exti_data {
 	/* per-line callbacks */
 	struct __exti_cb cb[NUM_EXTI_LINES];
 };
+
+static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line);
 
 /**
  * @returns the LL_<PPP>_EXTI_LINE_xxx define that corresponds to specified @p linenum
@@ -70,38 +83,58 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 #endif
 }
 
-/**
- * @brief Checks interrupt pending bit for specified EXTI line
- *
- * @param line EXTI line number
- */
-static inline int stm32_exti_is_pending(stm32_gpio_irq_line_t line)
+int stm32_exti_is_pending(uint32_t line)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	return (LL_EXTI_IsActiveRisingFlag_0_31(line) ||
-		LL_EXTI_IsActiveFallingFlag_0_31(line));
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	return LL_C2_EXTI_IsActiveFlag_0_31(line);
-#else
-	return LL_EXTI_IsActiveFlag_0_31(line);
-#endif
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	if (line_num < 32U) {
+		ret = EXTI_IS_ACTIVE_FLAG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		ret = EXTI_IS_ACTIVE_FLAG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		ret = EXTI_IS_ACTIVE_FLAG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
 }
 
-/**
- * @brief Clears interrupt pending bit for specified EXTI line
- *
- * @param line EXTI line number
- */
-static inline void stm32_exti_clear_pending(stm32_gpio_irq_line_t line)
+int stm32_exti_clear_pending(uint32_t line)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	LL_EXTI_ClearRisingFlag_0_31(line);
-	LL_EXTI_ClearFallingFlag_0_31(line);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_ClearFlag_0_31(line);
-#else
-	LL_EXTI_ClearFlag_0_31(line);
-#endif
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	if (line_num < 32U) {
+		EXTI_CLEAR_FLAG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_CLEAR_FLAG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_CLEAR_FLAG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
 }
 
 /**
@@ -141,7 +174,7 @@ static void stm32_exti_isr(const void *exti_range)
 		line = linenum_to_ll_exti_line(line_num);
 
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line) != 0) {
+		if (stm32_exti_is_pending(line) > 0) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
@@ -192,13 +225,13 @@ static int stm32_exti_enable_registers(void)
 static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 {
 	for (int i = 0; i < len; i++) {
-		exti_irq_table[start + i] = irqn;
+		exti_gpio_irq_table[start + i] = irqn;
 	}
 }
 
 /* This macro:
  * - populates line_range_x from line_range dt property
- * - fill exti_irq_table through stm32_fill_irq_table()
+ * - fill exti_gpio_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each interrupt and matching line_range
  */
 #define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)			\
@@ -260,18 +293,14 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 	unsigned int irqnum;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
 
-	__ASSERT_NO_MSG(line_num < NUM_EXTI_LINES);
+	__ASSERT_NO_MSG(line_num < NUM_GPIO_EXTI_LINES);
 
 	/* Get matching exti irq provided line thanks to irq_table */
-	irqnum = exti_irq_table[line_num];
+	irqnum = exti_gpio_irq_table[line_num];
 	__ASSERT_NO_MSG(irqnum != 0xFF);
 
 	/* Enable requested line interrupt */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(line);
-#else
-	LL_EXTI_EnableIT_0_31(line);
-#endif
+	EXTI_ENABLE_IT_0_31(line);
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
@@ -279,46 +308,225 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 
 void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_DisableIT_0_31(line);
-#else
-	LL_EXTI_DisableIT_0_31(line);
-#endif
+	EXTI_DISABLE_IT_0_31(line);
 }
 
-void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)
+/**
+ * @brief Enable EXTI interrupts.
+ *
+ * @param line	EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_enable_isr(uint32_t line)
 {
-	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
 
+	if (line_num < 32U) {
+		EXTI_ENABLE_IT_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_ENABLE_IT_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_ENABLE_IT_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Disable EXTI interrupts.
+ *
+ * @param line	EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_disable_isr(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	/* Disable requested line interrupt */
+	if (line_num < 32U) {
+		EXTI_DISABLE_IT_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_DISABLE_IT_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_DISABLE_IT_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Enables rising trigger for specified EXTI line
+ *
+ * @param line EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_enable_rising_trig(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_ENABLE_RISING_TRIG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_ENABLE_RISING_TRIG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_ENABLE_RISING_TRIG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Disables rising trigger for specified EXTI line
+ *
+ * @param line EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_disable_rising_trig(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_DISABLE_RISING_TRIG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_DISABLE_RISING_TRIG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_DISABLE_RISING_TRIG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Enables falling trigger for specified EXTI line
+ *
+ * @param line EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_enable_falling_trig(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_ENABLE_FALLING_TRIG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_ENABLE_FALLING_TRIG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_ENABLE_FALLING_TRIG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Disables falling trigger for specified EXTI line
+ *
+ * @param line EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_disable_falling_trig(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_DISABLE_FALLING_TRIG_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_DISABLE_FALLING_TRIG_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_DISABLE_FALLING_TRIG_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static inline void stm32_exti_intc_select_line_trigger(uint32_t line, uint32_t trg)
+{
 	switch (trg) {
 	case STM32_GPIO_IRQ_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(line);
-		LL_EXTI_DisableFallingTrig_0_31(line);
+		stm32_exti_disable_rising_trig(line);
+		stm32_exti_disable_falling_trig(line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(line);
-		LL_EXTI_DisableFallingTrig_0_31(line);
+		stm32_exti_enable_rising_trig(line);
+		stm32_exti_disable_falling_trig(line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(line);
-		LL_EXTI_DisableRisingTrig_0_31(line);
+		stm32_exti_enable_falling_trig(line);
+		stm32_exti_disable_rising_trig(line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(line);
-		LL_EXTI_EnableFallingTrig_0_31(line);
+		stm32_exti_enable_rising_trig(line);
+		stm32_exti_enable_falling_trig(line);
 		break;
 	default:
 		__ASSERT_NO_MSG(0);
 		break;
 	}
-	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
-int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *user)
+void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)
+{
+	stm32_exti_intc_select_line_trigger(line, trg);
+}
+
+static inline int stm32_exti_intc_set_irq_callback(stm32_gpio_irq_line_t line,
+						stm32_gpio_irq_cb_t cb, void *user)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num >= ARRAY_SIZE(data->cb)) {
+		LOG_ERR("Invalid line: %d", line);
+		return -EINVAL;
+	}
 
 	if ((data->cb[line_num].cb == cb) && (data->cb[line_num].data == user)) {
 		return 0;
@@ -326,6 +534,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_
 
 	/* if callback already exists/maybe-running return busy */
 	if (data->cb[line_num].cb != NULL) {
+		LOG_ERR("Callback already exists for line %d", line);
 		return -EBUSY;
 	}
 
@@ -335,7 +544,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_
 	return 0;
 }
 
-void stm32_gpio_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
+static inline void stm32_exti_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
@@ -343,6 +552,16 @@ void stm32_gpio_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
 
 	data->cb[line_num].cb = NULL;
 	data->cb[line_num].data = NULL;
+}
+
+int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *user)
+{
+	return stm32_exti_intc_set_irq_callback(line, cb, user);
+}
+
+void stm32_gpio_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
+{
+	stm32_exti_intc_remove_irq_callback(line);
 }
 
 void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port)
@@ -402,4 +621,141 @@ uint32_t stm32_exti_get_line_src_port(gpio_pin_t line)
 #endif
 
 	return port;
+}
+
+/**
+ * @brief Enable EXTI event.
+ *
+ * @param line	EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_enable_event(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_ENABLE_EVENT_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_ENABLE_EVENT_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_ENABLE_EVENT_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Disable EXTI interrupts.
+ *
+ * @param line	EXTI line
+ * @returns 0 on success, -EINVAL if @p line is invalid
+ */
+static int stm32_exti_disable_event(uint32_t line)
+{
+	int ret = 0;
+	const uint32_t line_num = ll_exti_line_to_linenum(line);
+
+	if (line_num < 32U) {
+		EXTI_DISABLE_EVENT_0_31(line);
+#ifdef CONFIG_EXTI_STM32_HAS_64_LINES
+	} else if (line_num < 64U) {
+		EXTI_DISABLE_EVENT_32_63(line);
+#endif /* CONFIG_EXTI_STM32_HAS_64_LINES */
+#ifdef CONFIG_EXTI_STM32_HAS_96_LINES
+	} else if (line_num < 96U) {
+		EXTI_DISABLE_EVENT_64_95(line);
+#endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
+	} else {
+		LOG_ERR("Invalid line: %d", line);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Enables external interrupt/event for specified EXTI line
+ *
+ * @param line	EXTI line
+ * @param mode	EXTI mode
+ * @returns 0 on success
+ * @returns -ENOSYS if @p mode is not supported
+ */
+static int stm32_exti_set_mode(uint32_t line, stm32_exti_mode mode)
+{
+	int ret = 0;
+
+	switch (mode) {
+	case STM32_EXTI_MODE_NONE:
+		stm32_exti_disable_event(line);
+		stm32_exti_disable_isr(line);
+		break;
+	case STM32_EXTI_MODE_IT:
+		stm32_exti_disable_event(line);
+		stm32_exti_enable_isr(line);
+		break;
+	case STM32_EXTI_MODE_EVENT:
+		stm32_exti_disable_isr(line);
+		stm32_exti_enable_event(line);
+		break;
+	case STM32_EXTI_MODE_BOTH:
+		stm32_exti_enable_isr(line);
+		stm32_exti_enable_event(line);
+		break;
+	default:
+		LOG_ERR("Unsupported EXTI mode type: %d", mode);
+		ret = -ENOSYS;
+		break;
+	}
+
+	return ret;
+}
+
+int stm32_exti_enable(uint32_t line, stm32_exti_trigger_type trigger,
+		stm32_exti_mode mode, stm32_exti_irq_cb_t cb, void *user)
+{
+	int ret = 0;
+
+	if (cb != NULL) {
+		ret = stm32_exti_intc_set_irq_callback(line, cb, user);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	stm32_exti_intc_select_line_trigger(line, trigger);
+	ret = stm32_exti_set_mode(line, mode);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
+}
+
+int stm32_exti_disable(uint32_t line)
+{
+	int ret = 0;
+
+	ret = stm32_exti_set_mode(line, STM32_EXTI_MODE_NONE);
+	if (ret != 0) {
+		return ret;
+	}
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	stm32_exti_intc_select_line_trigger(line, STM32_EXTI_TRIG_NONE);
+	stm32_exti_intc_remove_irq_callback(line);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
 }
