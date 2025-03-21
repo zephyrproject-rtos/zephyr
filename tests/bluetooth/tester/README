@@ -51,3 +51,12 @@ target.
 Use serial client, e.g. PUTTY to communicate over the serial port
 (typically /dev/ttyUSBx) with the tester using BTP.
 
+# Building for LE Audio
+
+The tester application can be built with support for targets supporting the hci_ipc sample by
+
+    west build -T bluetooth.general.tester_hci_ipc_le_audio .
+
+Or for a specific board as
+
+    west build -b nrf5340dk/nrf5340/cpuapp -T bluetooth.general.tester_hci_ipc_le_audio .
