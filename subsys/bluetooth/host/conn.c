@@ -47,6 +47,7 @@
 #include "iso_internal.h"
 #include "direction_internal.h"
 #include "classic/sco_internal.h"
+#include "classic/conn_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -112,8 +113,6 @@ static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 
 #if defined(CONFIG_BT_CLASSIC)
-static int bt_hci_connect_br_cancel(struct bt_conn *conn);
-
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
@@ -2298,66 +2297,9 @@ static struct bt_conn *acl_conn_new(void)
 }
 
 #if defined(CONFIG_BT_CLASSIC)
-void bt_sco_cleanup(struct bt_conn *sco_conn)
-{
-	bt_sco_cleanup_acl(sco_conn);
-	bt_conn_unref(sco_conn);
-}
-
 static struct bt_conn *sco_conn_new(void)
 {
 	return bt_conn_new(sco_conns, ARRAY_SIZE(sco_conns));
-}
-
-struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
-				  const struct bt_br_conn_param *param)
-{
-	struct bt_hci_cp_connect *cp;
-	struct bt_conn *conn;
-	struct net_buf *buf;
-
-	conn = bt_conn_lookup_addr_br(peer);
-	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_INITIATING:
-		case BT_CONN_CONNECTED:
-			return conn;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
-	}
-
-	conn = bt_conn_add_br(peer);
-	if (!conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
-	if (!buf) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
-	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
-	cp->pscan_rep_mode = 0x02; /* R2 */
-	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
-	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_INITIATING);
-	conn->role = BT_CONN_ROLE_CENTRAL;
-
-	return conn;
 }
 
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
@@ -2466,50 +2408,6 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 	conn->has_data = acl_has_data;
 
 	return conn;
-}
-
-static int bt_hci_connect_br_cancel(struct bt_conn *conn)
-{
-	struct bt_hci_cp_connect_cancel *cp;
-	struct bt_hci_rp_connect_cancel *rp;
-	struct net_buf *buf, *rsp;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-
-	err = rp->status ? -EIO : 0;
-
-	net_buf_unref(rsp);
-
-	return err;
-}
-
-const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
-{
-	if (conn == NULL) {
-		LOG_DBG("Invalid connect");
-		return NULL;
-	}
-
-	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
-		return NULL;
-	}
-
-	return &conn->br.dst;
 }
 #endif /* CONFIG_BT_CLASSIC */
 
