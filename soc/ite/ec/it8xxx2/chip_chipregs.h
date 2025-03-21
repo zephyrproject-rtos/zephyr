@@ -907,6 +907,7 @@ struct smfi_it8xxx2_regs {
 #define EC_INDIRECT_READ_INTERNAL_FLASH BIT(6)
 /* Enable EC-indirect page program command */
 #define IT8XXX2_SMFI_MASK_ECINDPP       BIT(3)
+#define ITE_EC_SMFI_MASK_ECINDPP        IT8XXX2_SMFI_MASK_ECINDPP
 /* Scratch SRAM 0 address(BIT(19)) */
 #define IT8XXX2_SMFI_SC0A19             BIT(7)
 /* Scratch SRAM enable */
@@ -1089,6 +1090,7 @@ struct gpio_it8xxx2_regs {
 /* GPIO register fields */
 /* 0x00: General Control */
 #define IT8XXX2_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
+#define ITE_EC_GPIO_LPCRSTEN              IT8XXX2_GPIO_LPCRSTEN
 #define IT8XXX2_GPIO_GCR_ESPI_RST_D2      0x2
 #define IT8XXX2_GPIO_GCR_ESPI_RST_POS     1
 #define IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT8XXX2_GPIO_GCR_ESPI_RST_POS)
@@ -1455,7 +1457,7 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_EM_DEV1_IRQ      BIT(4)
 
 /*
- * TODO: use gctrl_it8xxx2_regs instead of following register declarations
+ * TODO: use gctrl_ite_ec_regs instead of following register declarations
  *       to fix in cros_flash_it8xxx2.c, cros_shi_it8xxx2.c and tcpm\it8xxx2.c.
  */
 /* --- General Control (GCTRL) --- */
@@ -2252,5 +2254,14 @@ struct spisc_it8xxx2_regs {
 #define IT8XXX2_SPISC_RVLIM        BIT(0)
 /* 0x27: Rx Valid Length Interrupt Status */
 #define IT8XXX2_SPISC_RVLI         BIT(0)
+
+/* Alias gpio_ite_ec_regs to gpio_it8xxx2_regs for compatibility */
+#define gpio_ite_ec_regs       gpio_it8xxx2_regs
+#define GPIO_ITE_EC_REGS_BASE  GPIO_IT8XXX2_REG_BASE
+/* Alias smfi_ite_ec_regs to smfi_it8xxx2_regs for compatibility */
+#define smfi_ite_ec_regs       smfi_it8xxx2_regs
+/* Alias gctrl_ite_ec_regs to  gctrl_it8xxx2_regs for compatibility */
+#define gctrl_ite_ec_regs      gctrl_it8xxx2_regs
+#define GCTRL_ITE_EC_REGS_BASE GCTRL_IT8XXX2_REGS_BASE
 
 #endif /* CHIP_CHIPREGS_H */
