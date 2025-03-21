@@ -19,6 +19,9 @@
 # The build directory will default to current working directory but can be
 # controlled with: '-B <path-to-build>'
 #
+# After the modules have been loaded, additional commands can be optionally
+# executed in the current context by providing the '-R <path-to-script>' option.
+#
 # For example, if you were invoking CMake for 'hello_world' sample as:
 #   $ cmake -DBOARD=<board> -B build -S samples/hello_world
 #
@@ -49,10 +52,12 @@ foreach(i RANGE ${CMAKE_ARGC})
   if(CMAKE_ARGV${i} MATCHES "^-B(.*)")
     set(argB ${CMAKE_MATCH_1})
     set(argB_index ${i})
-  elseif()
   elseif(CMAKE_ARGV${i} MATCHES "^-S(.*)")
     set(argS_index ${i})
     set(argS ${CMAKE_MATCH_1})
+  elseif(CMAKE_ARGV${i} MATCHES "^-R(.*)")
+    set(argR_index ${i})
+    set(argR ${CMAKE_MATCH_1})
   endif()
 endforeach()
 
@@ -73,6 +78,16 @@ if(DEFINED argS_index)
     # value of -S follows in next index
     math(EXPR argS_value_index "${argS_index} + 1")
     set(APPLICATION_SOURCE_DIR ${CMAKE_ARGV${argS_value_index}})
+  endif()
+endif()
+
+if(DEFINED argR_index)
+  if(DEFINED argR)
+    set(RUN_SCRIPT ${argR})
+  else()
+    # value of -R follows in next index
+    math(EXPR argR_value_index "${argR_index} + 1")
+    set(RUN_SCRIPT ${CMAKE_ARGV${argR_value_index}})
   endif()
 endif()
 
@@ -99,3 +114,7 @@ endif()
 
 string(REPLACE ";" "," MODULES "${MODULES}")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS zephyr_default:${MODULES})
+
+if (DEFINED RUN_SCRIPT)
+  include(${RUN_SCRIPT})
+endif()
