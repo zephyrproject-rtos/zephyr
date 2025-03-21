@@ -82,6 +82,12 @@ extern "C" {
 #define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	0
 #endif
 
+/** Trick compiler to allow working with all types of arguments, including bitfields,
+ * opaque struct pointers. Alternative is to add + 0 but that requires suppressing
+ * compiler warning about pointer arithmetic and does not cover opaque structs.
+ */
+#define Z_ARGIFY(arg) ((0) ? (arg) : (arg))
+
 /** @brief Return 1 if argument is a pointer to char or wchar_t
  *
  * @param x argument.
@@ -94,7 +100,7 @@ extern "C" {
 #else
 /* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
-	_Generic((x) + 0, \
+	_Generic(Z_ARGIFY(x), \
 		/* char * */ \
 		char * : 1, \
 		const char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
@@ -154,7 +160,7 @@ extern "C" {
 #define Z_CBPRINTF_IS_NONE_CHAR_PTR(x) z_cbprintf_cxx_is_none_char_ptr(x)
 #else
 #define Z_CBPRINTF_IS_NONE_CHAR_PTR(x) \
-	_Generic((x) + 0, \
+	_Generic(Z_ARGIFY(x), \
 		char * : 0, \
 		volatile char * : 0, \
 		const char * : 0, \
@@ -530,14 +536,12 @@ extern "C" {
  */
 #if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
-	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	int _rv; \
 	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
 		_rv = 0; \
 	} else { \
 		_rv = Z_CBPRINTF_PCHAR_COUNT(flags, __VA_ARGS__) > 0 ? 1 : 0; \
 	} \
-	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	_rv; \
 })
 #else
@@ -558,7 +562,7 @@ extern "C" {
 #else
 #define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type __v = (Z_CONSTIFY(v)) + 0; \
+	__auto_type __v = Z_ARGIFY(Z_CONSTIFY(v)); \
 	/* Static code analysis may complain about unused variable. */ \
 	(void)__v; \
 	size_t __arg_size = _Generic((v), \
@@ -582,9 +586,9 @@ extern "C" {
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
-		__auto_type _v = (Z_CONSTIFY(arg)) + 0; \
-		double _d = _Generic((arg) + 0, \
-				float : (arg) + 0, \
+		__auto_type _v = Z_ARGIFY(Z_CONSTIFY(arg)); \
+		double _d = _Generic(Z_ARGIFY(arg), \
+				float : Z_ARGIFY(arg), \
 				default : \
 					0.0); \
 		/* Static code analysis may complain about unused variable. */ \
@@ -593,10 +597,10 @@ extern "C" {
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
 		z_cbprintf_wcpy((int *)(buf), \
-			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
+			      (int *) _Generic(Z_ARGIFY(arg), float : &_d, default : &_v), \
 			      _wsize); \
 	} else { \
-		*_Generic((arg) + 0, \
+		*_Generic(Z_ARGIFY(arg), \
 			char : (int *)(buf), \
 			unsigned char: (int *)(buf), \
 			short : (int *)(buf), \
@@ -626,14 +630,14 @@ extern "C" {
 #define Z_CBPRINTF_ALIGNMENT(_arg) z_cbprintf_cxx_alignment(_arg)
 #else
 #define Z_CBPRINTF_ALIGNMENT(_arg) \
-	MAX(_Generic((_arg) + 0, \
+	MAX(_Generic(Z_ARGIFY(_arg), \
 		float : VA_STACK_ALIGN(double), \
 		double : VA_STACK_ALIGN(double), \
 		long double : VA_STACK_ALIGN(long double), \
 		long long : VA_STACK_ALIGN(long long), \
 		unsigned long long : VA_STACK_ALIGN(long long), \
 		default : \
-			__alignof__((_arg) + 0)), VA_STACK_MIN_ALIGN)
+			__alignof__(Z_ARGIFY(_arg))), VA_STACK_MIN_ALIGN)
 #endif
 
 /** @brief Detect long double variable as a constant expression.
@@ -654,7 +658,7 @@ extern "C" {
 #endif
 #else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) \
-	_Generic((x) + 0, long double : 1, default : 0)
+	_Generic(Z_ARGIFY(x), long double : 1, default : 0)
 #endif
 
 /** @brief Safely package arguments to a buffer.
@@ -765,7 +769,6 @@ do { \
 #define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
 					  flags, ... /* fmt, ... */) \
 do { \
-	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT)), \
@@ -843,7 +846,6 @@ do { \
 			   (pkg_hdr.desc.pkg_flags = flags)); \
 		*_len_loc = pkg_hdr; \
 	} \
-	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 } while (false)
 
 #if Z_C_GENERIC
