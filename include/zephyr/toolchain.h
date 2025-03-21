@@ -300,6 +300,24 @@
 #define TOOLCHAIN_ENABLE_GCC_WARNING(warning)
 #endif
 
+/**
+ * @def TOOLCHAIN_DISABLE_IAR_WARNING
+ * @brief Disable the specified compiler warning for IAR compilers.
+ */
+#ifndef TOOLCHAIN_DISABLE_IAR_WARNING
+#define TOOLCHAIN_DISABLE_IAR_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_IAR_WARNING
+ * @brief Re-enable the specified compiler warning for IAR compilers.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_IAR_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_IAR_WARNING
+#define TOOLCHAIN_ENABLE_IAR_WARNING(warning)
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * and that they match the Kconfig option that is used in the code itself to
