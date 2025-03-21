@@ -216,7 +216,6 @@ static struct modbus_iface_param client_param = {
 	.serial = {
 		.baud = MB_TEST_BAUDRATE_LOW,
 		.parity = UART_CFG_PARITY_ODD,
-		.stop_bits_client = UART_CFG_STOP_BITS_1,
 	},
 };
 
@@ -241,7 +240,6 @@ void test_client_setup_low_none(void)
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	client_param.serial.parity = UART_CFG_PARITY_NONE;
-	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_2;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -255,7 +253,6 @@ void test_client_setup_low_odd(void)
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	client_param.serial.parity = UART_CFG_PARITY_ODD;
-	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -269,7 +266,6 @@ void test_client_setup_high_even(void)
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	client_param.serial.parity = UART_CFG_PARITY_EVEN;
-	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -283,7 +279,6 @@ void test_client_setup_ascii(void)
 	client_param.mode = MODBUS_MODE_ASCII;
 	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	client_param.serial.parity = UART_CFG_PARITY_EVEN;
-	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 

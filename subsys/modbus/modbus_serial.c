@@ -477,14 +477,14 @@ static inline int configure_uart(struct modbus_context *ctx,
 		return -EINVAL;
 	}
 
-	if (ctx->client) {
-		/* Allow custom stop bit settings only in client mode */
-		switch (param->serial.stop_bits_client) {
+	if (IS_ENABLED(CONFIG_MODBUS_NONCOMPLIANT_SERIAL_MODE)) {
+		/* Allow custom stop bit settings only in non-compliant mode */
+		switch (param->serial.stop_bits) {
 		case UART_CFG_STOP_BITS_0_5:
 		case UART_CFG_STOP_BITS_1:
 		case UART_CFG_STOP_BITS_1_5:
 		case UART_CFG_STOP_BITS_2:
-			uart_cfg.stop_bits = param->serial.stop_bits_client;
+			uart_cfg.stop_bits = param->serial.stop_bits;
 			break;
 		default:
 			return -EINVAL;

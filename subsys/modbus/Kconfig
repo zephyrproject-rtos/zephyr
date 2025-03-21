@@ -79,6 +79,12 @@ config MODBUS_FC08_DIAGNOSTIC
 	help
 	  Enable function code 08 Diagnostic support
 
+config MODBUS_NONCOMPLIANT_SERIAL_MODE
+	bool "Non-compliant serial mode"
+	depends on MODBUS_SERIAL
+	help
+	  Allow non-compliant stop and parity bit settings.
+
 module = MODBUS
 module-str = Modbus Support
 module-help = Sets log level for Modbus support
