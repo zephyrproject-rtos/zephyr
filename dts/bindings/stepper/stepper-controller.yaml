@@ -3,6 +3,9 @@
 
 description: Stepper Controller
 
+include:
+  - name: pinctrl-device.yaml
+
 properties:
   invert-direction:
     type: boolean
@@ -44,3 +47,23 @@ properties:
   counter:
     type: phandle
     description: Counter used for generating step-accurate pulse signals.
+
+  step-generator:
+    type: phandle
+    description: Counter used for generating step-accurate pulse signals.
+
+  step-counter:
+    type: phandle
+    description: Counter used for counting steps.
+
+  trigger-input:
+    type: int
+    description: |
+      Value describing the connection between step-generator otput and step-counter
+      clocking input, depends on board and used counters
+
+  output-channel:
+    type: int
+    description: |
+      Output channel of the timer for the step signal. Note that this is completely
+      distinct from step-gpios. It needs to match the channel of the pinctrl.
