@@ -5,3 +5,7 @@
 	path = third-party/XNNPACK
 	url = https://github.com/ucb-bar/XNNPACK.git
 	branch = zephyr
+[submodule "third-party/executorch"]
+	path = third-party/executorch
+	url = https://github.com/ucb-bar/executorch.git
+	branch = zephyr
