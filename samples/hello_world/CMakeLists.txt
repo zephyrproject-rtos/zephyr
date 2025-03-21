@@ -6,3 +6,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
 target_sources(app PRIVATE src/main.c)
+
+file(GLOB uart_driver_files ${ZEPHYR_BASE}/drivers/serial/*.c)
+
+zephyr_code_relocate(FILES ${uart_driver_files} LOCATION RAM)
