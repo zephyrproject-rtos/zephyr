@@ -2243,6 +2243,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 /* L2 I3C CCC Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_ccc_cmds,
+	SHELL_CMD_ARG(rstdaa_dc, &dsub_i3c_device_name,
+		      "Send CCC RSTDAA\n"
+		      "Usage: ccc rstdaa_dc <device> <target>",
+		      cmd_i3c_ccc_rstdaa_dc, 3, 0),
 	SHELL_CMD_ARG(rstdaa, &dsub_i3c_device_name,
 		      "Send CCC RSTDAA\n"
 		      "Usage: ccc rstdaa <device>",
