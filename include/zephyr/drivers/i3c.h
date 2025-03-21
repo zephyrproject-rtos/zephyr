@@ -1179,6 +1179,9 @@ struct i3c_dev_list {
 struct i3c_driver_config {
 	/** I3C/I2C device list struct. */
 	struct i3c_dev_list dev_list;
+
+	/** I3C Primary Controller Dynamic Address */
+	uint8_t primary_controller_da;
 };
 
 /**

@@ -1587,10 +1587,22 @@ static int set_controller_info(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
+	uint8_t controller_da;
 
-	uint8_t controller_da =
-		i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
-	LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
+	if (config->common.primary_controller_da) {
+		if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots,
+					    config->common.primary_controller_da)) {
+			controller_da = i3c_addr_slots_next_free_find(
+				&data->common.attached_dev.addr_slots, 0);
+			LOG_WRN("%s: 0x%02x DA selected for controller as 0x%02x is unavailable",
+				dev->name, controller_da, config->common.primary_controller_da);
+		} else {
+			controller_da = config->common.primary_controller_da;
+		}
+	} else {
+		controller_da =
+			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
+	}
 
 	sys_write32(DEVICE_ADDR_DYNAMIC_ADDR_VALID | DEVICE_ADDR_DYNAMIC(controller_da),
 		    config->regs + DEVICE_ADDR);
@@ -2423,6 +2435,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),                    \
 		.common.dev_list.i2c = dw_i3c_i2c_device_array_##n,                                \
 		.common.dev_list.num_i2c = ARRAY_SIZE(dw_i3c_i2c_device_array_##n),                \
+		.common.primary_controller_da = DT_INST_PROP_OR(n, primary_controller_da, 0x00),   \
 		I3C_DW_PINCTRL_INIT(n)};                                                           \
 	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \
