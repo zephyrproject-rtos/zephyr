@@ -399,11 +399,11 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 	const struct i3c_driver_config *config = dev->config;
 	int ret;
 
-	*(const struct device **)&temp_desc.bus = dev;
+	temp_desc.bus = dev;
 	temp_desc.dynamic_addr = dynamic_addr;
 	temp_desc.bcr = bcr;
 	temp_desc.dcr = dcr;
-	/* attach it first with a temperary value so we can at least get the pid */
+	/* attach it first with a temporary value so we can at least get the pid */
 	ret = i3c_attach_i3c_device(&temp_desc);
 	if (ret != 0) {
 		return ret;
@@ -415,7 +415,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 		return ret;
 	}
 
-	*(uint64_t *)&id = sys_get_be48(getpid.pid);
+	id.pid = sys_get_be48(getpid.pid);
 
 	/* try to see if we already have a device statically allocated */
 	desc = i3c_dev_list_find(&config->dev_list, &id);
@@ -425,8 +425,8 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 		if (!desc) {
 			return -ENOMEM;
 		}
-		*(uint64_t *)&desc->pid = id.pid;
-		*(uint16_t *)&temp_desc.static_addr = (uint16_t)static_addr;
+		desc->pid = id.pid;
+		temp_desc.static_addr = (uint16_t)static_addr;
 	}
 	desc->dynamic_addr = dynamic_addr;
 	desc->bcr = bcr;
@@ -462,8 +462,8 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 			return -ENOMEM;
 		}
 		*(const struct device **)&i2c_desc->bus = dev;
-		*(uint16_t *)&i2c_desc->addr = (uint16_t)static_addr;
-		*(uint8_t *)&i2c_desc->lvr = lvr;
+		i2c_desc->addr = (uint16_t)static_addr;
+		i2c_desc->lvr = lvr;
 	}
 
 	ret = i3c_attach_i2c_device(i2c_desc);
