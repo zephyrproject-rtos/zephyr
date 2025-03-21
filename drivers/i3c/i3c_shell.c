@@ -575,6 +575,36 @@ static int cmd_i3c_hdr_ddr_read(const struct shell *sh, size_t argc, char **argv
 	return ret;
 }
 
+/* i3c ccc rstdaa_dc <device> <target> */
+static int cmd_i3c_ccc_rstdaa_dc(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!(desc->flags & I3C_V1P0_SUPPORT)) {
+		shell_error(sh, "I3C: %s does not support RSTDAA_DC.", tdev->name);
+		return -ENOTSUP;
+	}
+
+	ret = i3c_ccc_do_rstdaa(desc);
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC RSTDAA.");
+		return ret;
+	}
+
+	/* reset device DA */
+	desc->dynamic_addr = 0;
+	shell_print(sh, "Reset dynamic address for device %s", desc->dev->name);
+
+	return ret;
+}
+
 /* i3c ccc rstdaa <device> */
 static int cmd_i3c_ccc_rstdaa(const struct shell *sh, size_t argc, char **argv)
 {
