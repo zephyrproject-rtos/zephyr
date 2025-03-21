@@ -15,8 +15,6 @@ permissions:
   contents: read
 
 env:
-  # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 1.2.0
   DOXYGEN_VERSION: 1.12.0
   DOXYGEN_MD5SUM: fd96a5defa535dfe2e987b46540844a4
   JOB_COUNT: 4
