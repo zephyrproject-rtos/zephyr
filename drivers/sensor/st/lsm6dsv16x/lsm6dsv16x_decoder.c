@@ -66,7 +66,7 @@ static const uint32_t sflp_period_ns[] = {
  * Expand val to q31_t according to its range; this is achieved multiplying by 2^31/2^range.
  */
 #define Q31_SHIFT_VAL(val, range) \
-	(q31_t) (round((val) * ((int64_t)1 << (31 - (range)))))
+	(q31_t) (roundf((val) * ((int64_t)1 << (31 - (range)))))
 
 /*
  * Expand micro_val (a generic micro unit) to q31_t according to its range; this is achieved
