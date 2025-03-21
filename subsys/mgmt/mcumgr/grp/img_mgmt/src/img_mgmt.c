@@ -892,9 +892,13 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 #endif
 
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		/* erase the entire req.size all at once */
+		/* Erase the entire req.size or flash slot all at once */
 		if (action.erase) {
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS)
+			rc = img_mgmt_erase_pending_upload_slot();
+#else
 			rc = img_mgmt_erase_image_data(0, req.size);
+#endif
 			if (rc != 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 					img_mgmt_err_str_flash_erase_failed);
