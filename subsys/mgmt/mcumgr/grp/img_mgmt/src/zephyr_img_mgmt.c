@@ -51,6 +51,11 @@ BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
 	     "Missing partitions?");
 #endif
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS)
+BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS_BUFFER_SIZE % 4 == 0,
+	     "CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS_BUFFER_SIZE must be multiple of 4");
+#endif
+
 /**
  * Determines if the specified area of flash is completely unwritten.
  *
@@ -274,6 +279,89 @@ int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b
 	return 0;
 }
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS)
+static int img_mgmt_erase_unerased_slot_data(const struct flash_area *fa)
+{
+	struct flash_pages_info fpi;
+	int rc;
+	off_t off = 0;
+	uint8_t erased_val;
+	uint32_t erased_val_32;
+
+	assert(fa->fa_size % 4 == 0);
+	erased_val = flash_area_erased_val(fa);
+	erased_val_32 = ERASED_VAL_32(erased_val);
+
+	while (off < fa->fa_size) {
+		uint32_t data[CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS_BUFFER_SIZE];
+		off_t addr;
+		int bytes_to_read;
+		int i;
+		bool needs_erase = false;
+
+		rc = flash_get_page_info_by_offs(fa->fa_dev, (fa->fa_off + off), &fpi);
+
+		if (rc) {
+			return rc;
+		}
+
+		for (addr = 0; addr < fpi.size; addr += sizeof(data)) {
+			if ((fpi.size - addr) < sizeof(data)) {
+				bytes_to_read = (fpi.size - addr);
+			} else {
+				bytes_to_read = sizeof(data);
+			}
+
+			rc = flash_area_read(fa, (addr + off), data, bytes_to_read);
+
+			if (rc < 0) {
+				LOG_ERR("Failed to read data from flash area: %d", rc);
+				return rc;
+			}
+
+			for (i = 0; i < bytes_to_read / sizeof(erased_val_32); i++) {
+				if (data[i] != erased_val_32) {
+					needs_erase = true;
+					goto perform_erase;
+				}
+			}
+		}
+
+perform_erase:
+		if (needs_erase) {
+			rc = flash_area_flatten(fa, off, fpi.size);
+
+			if (rc != 0) {
+				LOG_ERR("Failed to erase flash area: %d", rc);
+				return rc;
+			}
+		}
+
+		off += fpi.size;
+	}
+
+	return 0;
+}
+
+int img_mgmt_erase_pending_upload_slot(void)
+{
+	const struct flash_area *fa;
+	int rc;
+
+	rc = flash_area_open(g_img_mgmt_state.area_id, &fa);
+
+	if (rc) {
+		goto done;
+	}
+
+	rc = img_mgmt_erase_unerased_slot_data(fa);
+	flash_area_close(fa);
+
+done:
+	return rc;
+}
+#endif
+
 int img_mgmt_erase_slot(int slot)
 {
 	const struct flash_area *fa;
@@ -291,6 +379,9 @@ int img_mgmt_erase_slot(int slot)
 		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS)
+	rc = img_mgmt_erase_unerased_slot_data(fa);
+#else
 	rc = img_mgmt_flash_check_empty_inner(fa);
 
 	if (rc == 0) {
@@ -306,6 +397,7 @@ int img_mgmt_erase_slot(int slot)
 		 */
 		rc = 0;
 	}
+#endif
 
 	flash_area_close(fa);
 
