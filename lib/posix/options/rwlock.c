@@ -359,24 +359,14 @@ static uint32_t read_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout)
 static uint32_t write_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout)
 {
 	uint32_t ret = 0U;
-	int64_t elapsed_time, st_time = k_uptime_get();
-	k_timeout_t k_timeout;
+	k_timepoint_t deadline;
 
-	k_timeout = SYS_TIMEOUT_MS(timeout);
+	deadline = sys_timepoint_calc(SYS_TIMEOUT_MS(timeout));
 
 	/* waiting for release of write lock */
-	if (sys_sem_take(&rwl->wr_sem, k_timeout) == 0) {
-		/* update remaining timeout time for 2nd sem */
-		if (timeout != SYS_FOREVER_MS) {
-			elapsed_time = k_uptime_get() - st_time;
-			timeout = timeout <= elapsed_time ? 0 :
-				  timeout - elapsed_time;
-		}
-
-		k_timeout = SYS_TIMEOUT_MS(timeout);
-
+	if (sys_sem_take(&rwl->wr_sem, sys_timepoint_timeout(deadline)) == 0) {
 		/* waiting for reader to complete operation */
-		if (sys_sem_take(&rwl->reader_active, k_timeout) == 0) {
+		if (sys_sem_take(&rwl->reader_active, sys_timepoint_timeout(deadline)) == 0) {
 			rwl->wr_owner = k_current_get();
 		} else {
 			(void)sys_sem_give(&rwl->wr_sem);
