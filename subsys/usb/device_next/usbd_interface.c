@@ -184,9 +184,10 @@ int usbd_interface_set(struct usbd_context *const uds_ctx,
 	}
 
 	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
-	if (alt == cur_alt) {
-		return 0;
-	}
+	/*
+	 * Disable/enable endpoints even if the new alternate is the same as
+	 * the current one, forcing the endpoint to reset to defaults.
+	 */
 
 	/* Test if interface or interface alternate exist */
 	ret = usbd_interface_modify(uds_ctx, class, EP_OP_TEST, iface, alt);
