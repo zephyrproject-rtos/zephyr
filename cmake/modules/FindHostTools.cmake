@@ -48,8 +48,6 @@ if(HostTools_FOUND)
   return()
 endif()
 
-find_package(Deprecated COMPONENTS CROSS_COMPILE)
-
 find_package(Zephyr-sdk 0.16)
 
 # gperf is an optional dependency
