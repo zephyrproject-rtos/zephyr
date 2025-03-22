@@ -239,6 +239,7 @@ static int rpi_pico_prep_rx(const struct device *dev,
 			    struct net_buf *const buf, struct udc_ep_config *const cfg)
 {
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
+	unsigned int lock_key;
 	uint32_t buf_ctrl;
 
 	buf_ctrl = read_buf_ctrl_reg(dev, cfg->addr);
@@ -249,6 +250,8 @@ static int rpi_pico_prep_rx(const struct device *dev,
 
 	LOG_DBG("Prepare RX ep 0x%02x len %u pid: %u",
 		cfg->addr, net_buf_tailroom(buf), ep_data->next_pid);
+
+	lock_key = irq_lock();
 
 	buf_ctrl = cfg->mps;
 	buf_ctrl |= ep_data->next_pid ? USB_BUF_CTRL_DATA1_PID : USB_BUF_CTRL_DATA0_PID;
@@ -264,6 +267,8 @@ static int rpi_pico_prep_rx(const struct device *dev,
 	arch_nop();
 	write_buf_ctrl_reg(dev, cfg->addr, buf_ctrl | USB_BUF_CTRL_AVAIL);
 
+	irq_unlock(lock_key);
+
 	return 0;
 }
 
@@ -271,6 +276,7 @@ static int rpi_pico_prep_tx(const struct device *dev,
 			    struct net_buf *const buf, struct udc_ep_config *const cfg)
 {
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
+	unsigned int lock_key;
 	uint32_t buf_ctrl;
 	size_t len;
 
@@ -279,6 +285,8 @@ static int rpi_pico_prep_tx(const struct device *dev,
 		LOG_ERR("ep 0x%02x buffer is used by the controller", cfg->addr);
 		return -EBUSY;
 	}
+
+	lock_key = irq_lock();
 
 	len = MIN(cfg->mps, buf->len);
 	memcpy(ep_data->buf, buf->data, len);
@@ -300,6 +308,8 @@ static int rpi_pico_prep_tx(const struct device *dev,
 	arch_nop();
 	arch_nop();
 	write_buf_ctrl_reg(dev, cfg->addr, buf_ctrl | USB_BUF_CTRL_AVAIL);
+
+	irq_unlock(lock_key);
 
 	return 0;
 }
@@ -466,6 +476,10 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		if (cfg->stat.halted) {
+			return;
+		}
+
 		err = rpi_pico_prep_rx(dev, buf, cfg);
 	} else {
 		err = rpi_pico_prep_tx(dev, buf, cfg);
@@ -742,9 +756,13 @@ static void rpi_pico_isr_handler(const struct device *dev)
 	if (status & USB_INTS_ERROR_DATA_SEQ_BITS) {
 		handled |= USB_INTS_ERROR_DATA_SEQ_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_DATA_SEQ_ERROR_BITS);
-
-		LOG_ERR("Data Sequence Error");
-		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
+		/*
+		 * This can be triggered before the STALL handshake response
+		 * to the OUT DATAx. Handling IRQ_ON_STALL to fix the expected
+		 * DATA PID is too much overhead since the endpoint is halted
+		 * anyway.
+		 */
+		LOG_WRN("Data Sequence Error");
 	}
 
 	if (status & USB_INTS_ERROR_RX_TIMEOUT_BITS) {
@@ -904,20 +922,38 @@ static int udc_rpi_pico_ep_set_halt(const struct device *dev,
 	const struct rpi_pico_config *config = dev->config;
 	mem_addr_t buf_ctrl_reg = get_buf_ctrl_reg(dev, cfg->addr);
 	usb_hw_t *base = config->base;
+	unsigned int lock_key;
+	uint32_t bits;
 
+	lock_key = irq_lock();
 	if (USB_EP_GET_IDX(cfg->addr) == 0) {
-		uint32_t bit = USB_EP_DIR_IS_OUT(cfg->addr) ?
-			       USB_EP_STALL_ARM_EP0_OUT_BITS : USB_EP_STALL_ARM_EP0_IN_BITS;
-
-		rpi_pico_bit_set((mm_reg_t)&base->ep_stall_arm, bit);
+		bits = USB_EP_DIR_IS_OUT(cfg->addr) ?
+		       USB_EP_STALL_ARM_EP0_OUT_BITS : USB_EP_STALL_ARM_EP0_IN_BITS;
+		rpi_pico_bit_set((mm_reg_t)&base->ep_stall_arm, bits);
 	}
 
-	rpi_pico_bit_set(buf_ctrl_reg, USB_BUF_CTRL_STALL);
+	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		/*
+		 * Cancel any transfer in progress.  The available bit must be
+		 * set for the controller to respond to OUT DATAx with a STALL
+		 * handshake.
+		 */
+		rpi_pico_ep_cancel(dev, cfg->addr);
+		bits = USB_BUF_CTRL_STALL | USB_BUF_CTRL_AVAIL;
+	} else {
+		/* Only STALL bit needs to be set here. */
+		bits = USB_BUF_CTRL_STALL;
+	}
 
-	LOG_INF("Set halt ep 0x%02x", cfg->addr);
+	rpi_pico_bit_set(buf_ctrl_reg, bits);
+
 	if (USB_EP_GET_IDX(cfg->addr) != 0) {
 		cfg->stat.halted = true;
 	}
+
+	irq_unlock(lock_key);
+	LOG_DBG("Set halt ep 0x%02x buf_ctrl 0x%08x busy %u",
+		cfg->addr, sys_read32(buf_ctrl_reg), udc_ep_is_busy(cfg));
 
 	return 0;
 }
@@ -928,28 +964,33 @@ static int udc_rpi_pico_ep_clear_halt(const struct device *dev,
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
 	struct rpi_pico_data *priv = udc_get_private(dev);
 	mem_addr_t buf_ctrl_reg = get_buf_ctrl_reg(dev, cfg->addr);
+	unsigned int lock_key;
 
-	if (USB_EP_GET_IDX(cfg->addr) != 0) {
-		ep_data->next_pid = 0;
-		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_DATA1_PID);
-		/*
-		 * By default, clk_sys runs at 125MHz, wait 3 nop instructions
-		 * before clearing the CTRL_STALL bit. See 4.1.2.5.4.
-		 */
-		arch_nop();
-		arch_nop();
-		arch_nop();
-		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_STALL);
-
-		if (udc_buf_peek(cfg)) {
-			k_event_post(&priv->xfer_new, udc_ep_to_bmsk(cfg->addr));
-			k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
-		}
+	if (USB_EP_GET_IDX(cfg->addr) == 0) {
+		return 0;
 	}
 
+	lock_key = irq_lock();
+	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		/* Cancel responds with a STALL handshake.*/
+		rpi_pico_ep_cancel(dev, cfg->addr);
+	} else {
+		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_STALL);
+	}
+
+	ep_data->next_pid = 0;
 	cfg->stat.halted = false;
-	LOG_INF("Clear halt ep 0x%02x buf_ctrl 0x%08x",
-		cfg->addr, sys_read32(buf_ctrl_reg));
+	irq_unlock(lock_key);
+
+	if (udc_ep_is_busy(cfg)) {
+		rpi_pico_handle_xfer_next(dev, cfg);
+	} else if (udc_buf_peek(cfg)) {
+		k_event_post(&priv->xfer_new, udc_ep_to_bmsk(cfg->addr));
+		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
+	}
+
+	LOG_DBG("Clear halt ep 0x%02x buf_ctrl 0x%08x busy %u",
+		cfg->addr, sys_read32(buf_ctrl_reg), udc_ep_is_busy(cfg));
 
 	return 0;
 }
