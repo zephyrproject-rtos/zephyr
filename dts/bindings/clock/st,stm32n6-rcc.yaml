@@ -120,6 +120,17 @@ properties:
       - 64
       - 128
 
+  timg-prescaler:
+    type: int
+    default: 1
+    description: |
+        TIMG timer group domain prescaler divider, default reset value is 'not divided'.
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
 
 clock-cells:
   - bus
