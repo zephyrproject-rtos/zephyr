@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025, Mathieu Anquetin <mathieu.anquetin@groupe-cahors.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f429.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f439", "st,stm32f4", "simple-bus";
+
+		cryp: cryp@50060000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 4U)>;
+			resets = <&rctl STM32_RESET(AHB2, 4U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+	};
+};
