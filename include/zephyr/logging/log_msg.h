@@ -560,7 +560,7 @@ do { \
 
 /* Create local variable from input variable (expect for the first (fmt) argument). */
 #define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
-	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = Z_ARGIFY(arg)))
 
 /* First level of processing creates stack variables to be passed for further processing.
  * This is done to prevent multiple evaluations of input arguments (in case argument
@@ -569,9 +569,7 @@ do { \
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
 			   _level, _data, _dlen, ...) \
 do { \
-	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
-	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
