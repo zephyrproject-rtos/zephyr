@@ -46,6 +46,9 @@ ARCHS = {
         # for explanation.
         "extra_string_section": ['datas'],
     },
+    "openrisc" : {
+        "kconfig": "CONFIG_OPENRISC",
+    },
     "posix" : {
         "kconfig": "CONFIG_ARCH_POSIX",
     },
