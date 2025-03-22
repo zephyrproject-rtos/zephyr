@@ -5,15 +5,16 @@
  */
 
 /**
- * @brief Assembler-hooks specific to Nuclei's Extended Core Interrupt Controller
+ * @brief Assembler-hooks specific to RISC-V Core Local Interrupt Controller
  */
 
 #include <zephyr/arch/cpu.h>
+#include "intc_clic.h"
 
 
 GTEXT(__soc_handle_irq)
 /*
- * In an ECLIC, pending interrupts don't have to be cleared by hand.
+ * In an CLIC, pending interrupts don't have to be cleared by hand.
  * In vectored mode, interrupts are cleared automatically.
  * In non-vectored mode, interrupts are cleared when writing the mnxti register (done in
  * __soc_handle_all_irqs).
@@ -31,7 +32,7 @@ GTEXT(sys_trace_isr_exit)
 #endif
 
 /*
- * This function services and clears all pending interrupts for an ECLIC in non-vectored mode.
+ * This function services and clears all pending interrupts for an CLIC in non-vectored mode.
  */
 SECTION_FUNC(exception.other, __soc_handle_all_irqs)
 	addi sp, sp, -16
@@ -39,7 +40,7 @@ SECTION_FUNC(exception.other, __soc_handle_all_irqs)
 
 	/* Read and clear mnxti to get highest current interrupt and enable interrupts. Will return
 	 * original interrupt if no others appear. */
-	csrrci a0, 0x345, MSTATUS_IEN
+	csrrci a0, CSR_MNXTI, MSTATUS_IEN
 	beqz a0, irq_done /* Check if original interrupt vanished. */
 
 irq_loop:
@@ -50,7 +51,7 @@ irq_loop:
 
 	/* Call corresponding registered function in _sw_isr_table. a0 is offset in pointer with
 	 * the mtvt, sw irq table is 2-pointer wide -> shift by one. */
-	csrr t0, 0x307 /* mtvt */
+	csrr t0, CSR_MTVT
 	sub a0, a0, t0
 	la t0, _sw_isr_table
 	slli a0, a0, (1)
@@ -70,7 +71,7 @@ irq_loop:
 #endif
 
 	/* Read and clear mnxti to get highest current interrupt and enable interrupts. */
-	csrrci a0, 0x345, MSTATUS_IEN
+	csrrci a0, CSR_MNXTI, MSTATUS_IEN
 	bnez a0, irq_loop
 
 irq_done:
