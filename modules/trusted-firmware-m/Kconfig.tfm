@@ -206,6 +206,12 @@ config TFM_IMAGE_VERSION_NS
 	help
 	  Version of the non-secure image.
 
+config TFM_BL1
+	bool "Add BL1 to TFM"
+	help
+	  TFM is designed to run with BL1 in a certain configuration.
+	  This config adds BL1 to the build - built via TFM's build system.
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
 	depends on !TFM_BL2_NOT_SUPPORTED
@@ -239,6 +245,18 @@ config TFM_CONNECTION_BASED_SERVICE_API
 	  Note: This is an auto-generated configuration in the TF-M build
 	  system. When this option is not enabled in the TF-M build system this
 	  will result in compilation error.
+
+
+if TFM_BL1
+
+config TFM_BL2_SIGNING_KEY_PATH
+	string "Path to private key used to sign BL2 firmware images."
+	help
+	  Path to binary BL2 signing private key
+	  Default is ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl1/bl1_2/bl1_dummy_rotpk
+	  if it has not been changed on TF-M side for your board
+
+endif # TFM_BL1
 
 if TFM_BL2
 
