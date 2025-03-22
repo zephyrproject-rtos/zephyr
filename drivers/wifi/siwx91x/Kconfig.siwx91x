@@ -131,7 +131,7 @@ config WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION
 
 config WIFI_SILABS_SIWX91X_ADV_MULTIPROBE
 	int "Advanced multiprobe setting"
-	default 0
+	default 1
 	help
 	  Configure the advanced multiprobe setting for WiFi scanning.
 	  When set to 1, multiple probe requests will be sent to all access
