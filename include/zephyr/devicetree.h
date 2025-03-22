@@ -1799,6 +1799,73 @@
 #define DT_PHANDLE(node_id, prop) DT_PHANDLE_BY_IDX(node_id, prop, 0)
 
 /**
+ * @brief Get the symbolic name of a phandle by position and label index
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             foo = <&n2_2 &n3_1>;
+ *     };
+ *
+ *     n2_1: n2_2: node-2 { ... };
+ *     n3_1: n3_2: node-3 { ... };
+ * @endcode
+ *
+ * Above, `foo` has type phandles and has two elements:
+ *
+ * - index 0 has phandle `&n2_2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3_1`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define N1 DT_NODELABEL(n1)
+ *
+ *     DT_PHANDLE_TOKEN_BY_LABEL_IDX(N1, foo, 0, 0) // n2_1
+ *     DT_PHANDLE_TOKEN_BY_LABEL_IDX(N1, foo, 0, 1) // n2_2
+ *     DT_PHANDLE_TOKEN_BY_LABEL_IDX(N1, foo, 1, 0) // n3_1
+ *     DT_PHANDLE_TOKEN_BY_LABEL_IDX(N1, foo, 1, 1) // n3_2
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name in @p node_id
+ *             with type `phandle`, `phandles` or `phandle-array`
+ * @param idx index into @p prop
+ * @param label_idx index to node label
+ * @return symbolic name of the phandle for the given label index at that position
+ */
+#define DT_PHANDLE_TOKEN_BY_LABEL_IDX(node_id, prop, idx, label_idx) \
+	DT_CAT7(node_id, _P_, prop, _IDX_, idx, _PH_TOKEN_, label_idx)
+
+/**
+ * @brief Get the symbolic name of a phandle by index
+ *
+ * This is equivalent to DT_PHANDLE_TOKEN_BY_LABEL_IDX(node_id, prop, idx, 0).
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name in @p node_id
+ *             with type `phandle`, `phandles` or `phandle-array`
+ * @param idx index into @p prop
+ * @return symbolic name of the phandle
+ */
+#define DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_PHANDLE_TOKEN_BY_LABEL_IDX(node_id, prop, idx, 0)
+
+/**
+ * @brief Get the symbolic name for a phandle
+ *
+ * This is equivalent to DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, 0).
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property of @p node_id
+ *             with type `phandle`
+ * @return symbolic name of the phandle
+ */
+#define DT_PHANDLE_TOKEN(node_id, prop) \
+	DT_PHANDLE_TOKEN_BY_IDX(node_id, prop, 0)
+
+/**
  * @}
  */
 

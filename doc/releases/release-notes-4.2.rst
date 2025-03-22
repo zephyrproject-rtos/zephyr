@@ -125,6 +125,12 @@ New APIs and options
 
   * :c:func:`stepper_stop()`
 
+* Devicetree
+
+  * :c:macro:`DT_PHANDLE_TOKEN_BY_LABEL_IDX`
+  * :c:macro:`DT_PHANDLE_TOKEN_BY_IDX`
+  * :c:macro:`DT_PHANDLE_TOKEN`
+
 New Boards
 **********
 
