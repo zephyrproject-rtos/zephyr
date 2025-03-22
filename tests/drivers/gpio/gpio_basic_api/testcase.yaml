@@ -111,3 +111,9 @@ tests:
     platform_allow:
       - siwx917_rb4338a
     extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"
+
+  drivers.gpio.kv260_r5:
+    filter: CONFIG_GPIO_XLNX_PS
+    platform_allow:
+      - kv260_r5
+    extra_args: "DTC_OVERLAY_FILE=boards/kv260_r5.overlay"
