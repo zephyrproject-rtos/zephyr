@@ -545,18 +545,15 @@
     "F405",     # https://docs.astral.sh/ruff/rules/undefined-local-with-import-star-usage
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
 "./scripts/kconfig/hardenconfig.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/kconfig/kconfigfunctions.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/kconfig/kconfiglib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
@@ -569,11 +566,9 @@
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/kconfig/lint.py" = [
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/kconfig/menuconfig.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
@@ -583,7 +578,6 @@
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "UP010",    # https://docs.astral.sh/ruff/rules/unnecessary-future-import
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
