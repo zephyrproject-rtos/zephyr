@@ -1135,6 +1135,9 @@ static void handler(void)
 {
 	struct supplicant_context *ctx;
 	struct wpa_params params;
+	struct k_work_queue_config iface_wq_cfg = {
+		.name = "hostap_iface_wq",
+	};
 
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 	/* Needed for crypto operation as default is no-op and fails */
@@ -1151,7 +1154,7 @@ static void handler(void)
 	k_work_queue_start(&ctx->iface_wq, iface_wq_stack,
 			   K_THREAD_STACK_SIZEOF(iface_wq_stack),
 			   CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_PRIO,
-			   NULL);
+			   &iface_wq_cfg);
 
 	k_work_init(&ctx->iface_work, iface_work_handler);
 
@@ -1209,11 +1212,15 @@ err:
 
 static int init(void)
 {
+	k_tid_t id;
+
 	/* We create a thread that handles all supplicant connections */
-	k_thread_create(&tid, supplicant_thread_stack,
-			K_THREAD_STACK_SIZEOF(supplicant_thread_stack),
-			(k_thread_entry_t)handler, NULL, NULL, NULL,
-			CONFIG_WIFI_NM_WPA_SUPPLICANT_PRIO, 0, K_NO_WAIT);
+	id = k_thread_create(&tid, supplicant_thread_stack,
+			     K_THREAD_STACK_SIZEOF(supplicant_thread_stack),
+			     (k_thread_entry_t)handler, NULL, NULL, NULL,
+			     CONFIG_WIFI_NM_WPA_SUPPLICANT_PRIO, 0, K_NO_WAIT);
+
+	k_thread_name_set(id, "hostap_handler");
 
 	return 0;
 }
