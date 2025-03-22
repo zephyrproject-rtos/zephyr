@@ -5,7 +5,7 @@
 clang-format>=15.0.0
 gitlint
 junitparser>=2
-lxml
+lxml>=5.3.0
 pykwalify
 pylint>=3
 python-magic-bin; sys_platform == "win32"
