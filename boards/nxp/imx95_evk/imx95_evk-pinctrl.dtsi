@@ -6,6 +6,42 @@
 #include <nxp/nxp_imx/mimx9596avzxn-pinctrl.dtsi>
 
 &pinctrl {
+	emdio_default: emdio_default {
+		group1 {
+			pinmux = <&iomuxc_enet1_mdc_netc_mdc_netc_mdc>,
+				<&iomuxc_enet1_mdio_netc_mdio_netc_mdio>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+	};
+
+	eth0_default: eth0_default {
+		group1 {
+			pinmux = <&iomuxc_enet1_rx_ctl_eth_rgmii_rx_ctl_eth0_rgmii_rx_ctl>,
+				<&iomuxc_enet1_rd0_eth_rgmii_rd_eth0_rgmii_rd0>,
+				<&iomuxc_enet1_rd1_eth_rgmii_rd_eth0_rgmii_rd1>,
+				<&iomuxc_enet1_rd2_eth_rgmii_rd_eth0_rgmii_rd2>,
+				<&iomuxc_enet1_rd3_eth_rgmii_rd_eth0_rgmii_rd3>,
+				<&iomuxc_enet1_tx_ctl_eth_rgmii_tx_ctl_eth0_rgmii_tx_ctl>,
+				<&iomuxc_enet1_td0_eth_rgmii_td_eth0_rgmii_td0>,
+				<&iomuxc_enet1_td1_eth_rgmii_td_eth0_rgmii_td1>,
+				<&iomuxc_enet1_td2_eth_rgmii_td_eth0_rgmii_td2>,
+				<&iomuxc_enet1_td3_eth_rgmii_td_eth0_rgmii_td3>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+		group2 {
+			pinmux = <&iomuxc_enet1_rxc_eth_rgmii_rx_clk_eth0_rgmii_rx_clk>,
+				<&iomuxc_enet1_txc_eth_rgmii_tx_clk_eth0_rgmii_tx_clk>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+
+	};
+
 	lpi2c5_default: lpi2c5_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,

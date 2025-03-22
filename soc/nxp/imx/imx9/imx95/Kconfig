@@ -12,6 +12,7 @@ config SOC_MIMX9596_M7
 	select ARM_MPU
 	select SOC_LATE_INIT_HOOK
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 
 config SOC_MIMX9596_A55
 	select ARM64
