@@ -175,12 +175,15 @@ int main(void)
 	}
 
 	/* Set controls */
+	struct video_control ctrl = {VIDEO_CID_HFLIP, 1};
+
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
+		video_set_ctrl(video_dev, &ctrl);
 	}
 
 #ifdef CONFIG_TEST
-	video_set_ctrl(video_dev, VIDEO_CID_TEST_PATTERN, (void *)1);
+	ctrl.id = VIDEO_CID_TEST_PATTERN;
+	video_set_ctrl(video_dev, &ctrl);
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)

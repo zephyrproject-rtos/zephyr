@@ -11,6 +11,9 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
@@ -24,8 +27,13 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
  */
 #define MAX_FRAME_RATE          60
 
+struct sw_ctrls {
+	struct video_ctrl vflip;
+};
+
 struct video_sw_generator_data {
 	const struct device *dev;
+	struct sw_ctrls ctrls;
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -255,18 +263,11 @@ static int video_sw_generator_set_signal(const struct device *dev, enum video_en
 }
 #endif
 
-static inline int video_sw_generator_set_ctrl(const struct device *dev, unsigned int cid,
-					      void *value)
+static inline int video_sw_generator_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	switch (cid) {
-	case VIDEO_CID_VFLIP:
-		data->ctrl_vflip = (bool)value;
-		break;
-	default:
-		return -ENOTSUP;
-	}
+	data->ctrl_vflip = (bool)ctrl->val;
 
 	return 0;
 }
@@ -357,6 +358,13 @@ static struct video_sw_generator_data video_sw_generator_data_0 = {
 	.frame_rate = DEFAULT_FRAME_RATE,
 };
 
+static int video_sw_generator_init_controls(const struct device *dev)
+{
+	struct video_sw_generator_data *data = dev->data;
+
+	return video_init_ctrl(&data->ctrls.vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+}
+
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -366,9 +374,11 @@ static int video_sw_generator_init(const struct device *dev)
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->buf_work, __buffer_work);
 
-	return 0;
+	return video_sw_generator_init_controls(dev);
 }
 
 DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR", &video_sw_generator_init, NULL,
 	      &video_sw_generator_data_0, NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 	      &video_sw_generator_driver_api);
+
+VIDEO_DEVICE_DEFINE(video_sw_generator, DEVICE_GET(video_sw_generator), NULL);
