@@ -202,6 +202,12 @@
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
+
+		audiopll: audiopll {
+			compatible = "nordic,nrfs-audiopll";
+			freq-fraction = <0>;
+			prescaler-div = <12>;
+		};
 	};
 
 	gpd: global-power-domain {

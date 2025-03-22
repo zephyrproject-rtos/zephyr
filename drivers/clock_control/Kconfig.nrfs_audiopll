@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NRFS_AUDIOPLL
+	bool "NRFS AudioPLL driver support"
+	depends on DT_HAS_NORDIC_NRFS_AUDIOPLL_ENABLED
+	depends on NRFS_AUDIOPLL_SERVICE_ENABLED
+	default y
