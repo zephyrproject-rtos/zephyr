@@ -82,16 +82,23 @@ static void uart_async_test_init(int idx)
 	k_sem_reset(&rx_buf_released);
 	k_sem_reset(&rx_disabled);
 
-#ifdef CONFIG_UART_WIDE_DATA
-	const struct uart_config uart_cfg = {
-		.baudrate = 115200,
-		.parity = UART_CFG_PARITY_NONE,
-		.stop_bits = UART_CFG_STOP_BITS_1,
-		.data_bits = UART_CFG_DATA_BITS_9,
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
+	struct uart_config uart_cfg;
+
+	zassert_equal(uart_config_get(uart_dev, &uart_cfg), 0);
+
+	if (IS_ENABLED(CONFIG_COVERAGE)) {
+		/* When coverage is used then performance is degraded - avoid using
+		 * higher baudrates.
+		 */
+		uart_cfg.baudrate = MIN(uart_cfg.baudrate, 115200);
+	} else if (IS_ENABLED(CONFIG_UART_WIDE_DATA)) {
+		uart_cfg.baudrate = 115200;
+		uart_cfg.parity = UART_CFG_PARITY_NONE;
+		uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
+		uart_cfg.data_bits = UART_CFG_DATA_BITS_9;
+		uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 	};
-	__ASSERT_NO_MSG(uart_configure(uart_dev, &uart_cfg) == 0);
-#endif
+	zassert_equal(uart_configure(uart_dev, &uart_cfg), 0);
 
 	if (!initialized) {
 		initialized = true;
