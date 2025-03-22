@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   prep_pr:
-    if: github.repository_owner == 'zephyrproject-rtos' && github.event_name == 'pull_request_target'
+    if: github.repository_owner == 'zephyrproject-rtos' && github.event_name == 'pull_request'
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
