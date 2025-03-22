@@ -32,10 +32,16 @@ extern "C" {
 #define WIFI_CREDENTIALS_FLAG_2_4GHz       BIT(2)
 /* this entry can use the 5 GHz band */
 #define WIFI_CREDENTIALS_FLAG_5GHz         BIT(3)
+/* this entry can use the 6 GHz band */
+#define WIFI_CREDENTIALS_FLAG_6GHz         BIT(4)
 /* this entry requires management frame protection */
-#define WIFI_CREDENTIALS_FLAG_MFP_REQUIRED BIT(4)
+#define WIFI_CREDENTIALS_FLAG_MFP_REQUIRED BIT(5)
 /* this entry disables management frame protection */
-#define WIFI_CREDENTIALS_FLAG_MFP_DISABLED BIT(5)
+#define WIFI_CREDENTIALS_FLAG_MFP_DISABLED BIT(6)
+/* this entry has anonymous identity configured */
+#define WIFI_CREDENTIALS_FLAG_ANONYMOUS_IDENTITY  BIT(7)
+/* this entry has key password configured */
+#define WIFI_CREDENTIALS_FLAG_KEY_PASSWORD  BIT(8)
 
 #define WIFI_CREDENTIALS_MAX_PASSWORD_LEN                                                          \
 	MAX(WIFI_PSK_MAX_LEN, CONFIG_WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH)
@@ -56,6 +62,16 @@ struct wifi_credentials_header {
 	uint32_t timeout;                 /**< Timeout for connecting to the network */
 	uint8_t bssid[WIFI_MAC_ADDR_LEN]; /**< BSSID (Basic Service Set Identifier) */
 	uint8_t channel;                  /**< Channel on which the network operates */
+
+	/** Anonymous identifier (Limited to 16 bytes due to settings subsystem overflow) */
+	char anon_id[16];
+
+	uint8_t aid_length;               /**< Length of the Anonymous identifier */
+
+	/** Password/PSK (Limited to 16 bytes due to settings subsystem overflow) */
+	char key_passwd[16];
+
+	uint8_t key_passwd_length;        /**< Length of the Password */
 };
 
 /**
