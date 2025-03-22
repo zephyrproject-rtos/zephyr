@@ -44,6 +44,9 @@
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x90
 
+/** @brief RCC_CFGRx register offset */
+#define CFGR1_REG        0x08
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR_REG)
@@ -60,5 +63,27 @@
 #define RNG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 30, CCIPR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+/** CFGR1 devices */
+#define MCO1_SEL(val)       STM32_DT_CLOCK_SELECT(val, 0xF, 24, CFGR1_REG)
+#define MCO1_PRE(val)       STM32_DT_CLOCK_SELECT(val, 0x7, 28, CFGR1_REG)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1  0
+#define MCO_PRE_DIV_2  1
+#define MCO_PRE_DIV_4  2
+#define MCO_PRE_DIV_8  3
+#define MCO_PRE_DIV_16 4
+
+/* MCO clock output */
+#define MCO_SEL_NOCLK     0
+#define MCO_SEL_SYSCLKPRE 1
+#define MCO_SEL_MSI       2
+#define MCO_SEL_HSI16     3
+#define MCO_SEL_HSE32     4
+#define MCO_SEL_PLL1RCLK  5
+#define MCO_SEL_LSI       6
+#define MCO_SEL_LSE       8
+#define MCO_SEL_PLL1PCLK  13
+#define MCO_SEL_PLL1QCLK  14
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_ */
