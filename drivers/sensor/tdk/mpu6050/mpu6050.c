@@ -186,7 +186,7 @@ int mpu6050_init(const struct device *dev)
 
 	/* set accelerometer full-scale range */
 	for (i = 0U; i < 4; i++) {
-		if (BIT(i+1) == CONFIG_MPU6050_ACCEL_FS) {
+		if (BIT(i+1) == cfg->accel_fs) {
 			break;
 		}
 	}
@@ -206,7 +206,7 @@ int mpu6050_init(const struct device *dev)
 
 	/* set gyroscope full-scale range */
 	for (i = 0U; i < 4; i++) {
-		if (BIT(i) * 250 == CONFIG_MPU6050_GYRO_FS) {
+		if (BIT(i) * 250 == cfg->gyro_fs) {
 			break;
 		}
 	}
@@ -223,6 +223,12 @@ int mpu6050_init(const struct device *dev)
 	}
 
 	drv_data->gyro_sensitivity_x10 = mpu6050_gyro_sensitivity_x10[i];
+
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_SMPLRT_DIV,
+				  cfg->smplrt_div) < 0) {
+		LOG_ERR("Failed to write samplerate divider.");
+		return -EIO;
+	}
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	if (cfg->int_gpio.port) {
@@ -241,6 +247,9 @@ int mpu6050_init(const struct device *dev)
 												\
 	static const struct mpu6050_config mpu6050_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.accel_fs = DT_INST_PROP(inst, accel_fs),					\
+		.gyro_fs = DT_INST_PROP(inst, gyro_fs),						\
+		.smplrt_div = DT_INST_PROP(inst, smplrt_div),					\
 		IF_ENABLED(CONFIG_MPU6050_TRIGGER,						\
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
