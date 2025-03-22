@@ -108,9 +108,20 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.direction =
 		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kLPSPI_LsbFirst : kLPSPI_MsbFirst;
 	master_config.baudRate = spi_cfg->frequency;
-	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
-	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
-	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+
+	/* TODO: deprecate the DT delay props */
+	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay ?
+		config->pcs_sck_delay : spi_cfg->cs.pcs_to_sck_delay_ns;
+	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay ?
+		config->sck_pcs_delay : spi_cfg->cs.sck_to_pcs_delay_ns;
+	if (config->transfer_delay > 0) {
+		master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+	} else if (spi_cfg->dfs_delay_ns > 0) {
+		master_config.betweenTransferDelayInNanoSec = spi_cfg->dfs_delay_ns;
+	} else {
+		master_config.betweenTransferDelayInNanoSec = (1000000000 / spi_cfg->frequency) / 2;
+	}
+
 	master_config.whichPcs = spi_cfg->slave + kLPSPI_Pcs0;
 	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
 				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
