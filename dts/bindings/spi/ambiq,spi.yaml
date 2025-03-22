@@ -5,7 +5,7 @@ description: Ambiq SPI
 
 compatible: "ambiq,spi"
 
-include: [spi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -15,7 +15,4 @@ properties:
     required: true
 
   clock-frequency:
-    required: true
-
-  ambiq,pwrcfg:
     required: true

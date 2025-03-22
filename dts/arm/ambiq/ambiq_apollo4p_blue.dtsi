@@ -141,7 +141,6 @@
 			#size-cells = <0>;
 			interrupts = <6 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
 		spi1: spi@40051000 {
@@ -151,7 +150,6 @@
 			#size-cells = <0>;
 			interrupts = <7 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
 		spi2: spi@40052000 {
@@ -161,7 +159,6 @@
 			#size-cells = <0>;
 			interrupts = <8 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
 		spi3: spi@40053000 {
@@ -171,7 +168,6 @@
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
 
 		spi4: spi@40054000 {
@@ -184,7 +180,6 @@
 			cs-gpios = <&gpio32_63 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 
 			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
@@ -203,7 +198,6 @@
 			#size-cells = <0>;
 			interrupts = <11 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
 		spi6: spi@40056000 {
@@ -213,7 +207,6 @@
 			#size-cells = <0>;
 			interrupts = <12 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
 		spi7: spi@40057000 {
@@ -223,7 +216,6 @@
 			#size-cells = <0>;
 			interrupts = <13 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 		};
 
 		i2c0: i2c@40050000 {
@@ -233,7 +225,6 @@
 			#size-cells = <0>;
 			interrupts = <6 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
 		i2c1: i2c@40051000 {
@@ -243,7 +234,6 @@
 			#size-cells = <0>;
 			interrupts = <7 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
 		i2c2: i2c@40052000 {
@@ -253,7 +243,6 @@
 			#size-cells = <0>;
 			interrupts = <8 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
 		i2c3: i2c@40053000 {
@@ -263,7 +252,6 @@
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
 
 		i2c4: i2c@40054000 {
@@ -273,7 +261,6 @@
 			#size-cells = <0>;
 			interrupts = <10 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 		};
 
 		i2c5: i2c@40055000 {
@@ -283,7 +270,6 @@
 			#size-cells = <0>;
 			interrupts = <11 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
 		i2c6: i2c@40056000 {
@@ -293,7 +279,6 @@
 			#size-cells = <0>;
 			interrupts = <12 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
 		i2c7: i2c@40057000 {
@@ -303,7 +288,6 @@
 			#size-cells = <0>;
 			interrupts = <13 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 		};
 
 		mspi0: spi@40060000 {
@@ -313,7 +297,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
 		};
 
 		mspi1: spi@40061000 {
@@ -323,7 +306,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
 		};
 
 		mspi2: spi@40062000 {
@@ -333,7 +315,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
 		};
 
 		usb: usb@400b0000 {
@@ -343,7 +324,6 @@
 			num-bidir-endpoints = <6>;
 			maximum-speed = "full-speed";
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x400000>;
 		};
 
 		rtc0: rtc@40004800 {

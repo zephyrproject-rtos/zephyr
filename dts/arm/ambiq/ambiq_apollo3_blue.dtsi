@@ -204,7 +204,6 @@
 			#size-cells = <0>;
 			interrupts = <4 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -215,7 +214,6 @@
 			#size-cells = <0>;
 			interrupts = <6 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -226,7 +224,6 @@
 			#size-cells = <0>;
 			interrupts = <7 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -237,7 +234,6 @@
 			#size-cells = <0>;
 			interrupts = <8 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -248,7 +244,6 @@
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -259,7 +254,6 @@
 			#size-cells = <0>;
 			interrupts = <10 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -270,7 +264,6 @@
 			#size-cells = <0>;
 			interrupts = <11 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -281,7 +274,6 @@
 			#size-cells = <0>;
 			interrupts = <6 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -292,7 +284,6 @@
 			#size-cells = <0>;
 			interrupts = <7 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -303,7 +294,6 @@
 			#size-cells = <0>;
 			interrupts = <8 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -314,7 +304,6 @@
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -325,7 +314,6 @@
 			#size-cells = <0>;
 			interrupts = <10 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -336,7 +324,6 @@
 			#size-cells = <0>;
 			interrupts = <11 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -349,7 +336,6 @@
 			internal-vref-mv = <1500>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x200>;
 		};
 
 		mspi0: spi@40020000 {
@@ -359,7 +345,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
 		rtc0: rtc@40004240 {
@@ -377,7 +362,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x8000>;
 
 			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
