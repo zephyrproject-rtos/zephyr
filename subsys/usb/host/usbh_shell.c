@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 #define FOOBAZ_VREQ_IN		0x5c
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-static struct usb_device *udev;
 static uint8_t vreq_test_buf[1024];
 
 static void print_dev_desc(const struct shell *sh,
@@ -78,14 +77,23 @@ static int bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const 
 
 static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 {
+	static struct usb_device *udev;
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
+	uint8_t addr;
 	uint8_t ep;
 	size_t len;
 	int ret;
 
-	ep = strtol(argv[1], NULL, 16);
-	len = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	ep = strtol(argv[2], NULL, 16);
+	len = MIN(sizeof(vreq_test_buf), strtol(argv[3], NULL, 10));
 
 	xfer = usbh_xfer_alloc(udev, ep, bulk_req_cb, NULL);
 	if (!xfer) {
@@ -135,12 +143,21 @@ static int cmd_vendor_in(const struct shell *sh,
 	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_IN;
+	static struct usb_device *udev;
 	const uint16_t wValue = 0x0000;
 	struct net_buf *buf;
 	uint16_t wLength;
+	uint8_t addr;
 	int ret;
 
-	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[1], NULL, 10));
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 	buf = usbh_xfer_buf_alloc(udev, wLength);
 	if (!buf) {
 		shell_print(sh, "host: Failed to allocate buffer");
@@ -163,12 +180,21 @@ static int cmd_vendor_out(const struct shell *sh,
 	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_DEVICE << 7) |
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_OUT;
+	static struct usb_device *udev;
 	const uint16_t wValue = 0x0000;
 	struct net_buf *buf;
 	uint16_t wLength;
+	uint8_t addr;
 	int ret;
 
-	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[1], NULL, 10));
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 	buf = usbh_xfer_buf_alloc(udev, wLength);
 	if (!buf) {
 		shell_print(sh, "host: Failed to allocate buffer");
@@ -186,8 +212,18 @@ static int cmd_desc_device(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	struct usb_device_descriptor desc;
+	static struct usb_device *udev;
+	uint8_t addr;
 	int err;
 
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	shell_error(sh, "host: USB device with address %u", addr);
 	err = usbh_req_desc_dev(udev, sizeof(desc), &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
@@ -202,10 +238,19 @@ static int cmd_desc_config(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	struct usb_cfg_descriptor desc;
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t cfg;
 	int err;
 
-	cfg = strtol(argv[1], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	cfg = strtol(argv[2], NULL, 10);
 
 	err = usbh_req_desc_cfg(udev, cfg, sizeof(desc), &desc);
 	if (err) {
@@ -221,13 +266,22 @@ static int cmd_desc_string(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	const uint8_t type = USB_DESC_STRING;
+	static struct usb_device *udev;
 	struct net_buf *buf;
+	uint8_t addr;
 	uint8_t id;
 	uint8_t idx;
 	int err;
 
-	id = strtol(argv[1], NULL, 10);
-	idx = strtol(argv[2], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	id = strtol(argv[2], NULL, 10);
+	idx = strtol(argv[3], NULL, 10);
 
 	buf = usbh_xfer_buf_alloc(udev, 128);
 	if (!buf) {
@@ -246,16 +300,52 @@ static int cmd_desc_string(const struct shell *sh,
 	return err;
 }
 
-static int cmd_feature_set_halt(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_feature_clear_halt(const struct shell *sh,
+				  size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t ep;
 	int err;
 
-	ep = strtol(argv[1], NULL, 16);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
 
-	/* TODO: add usbh_req_set_sfs_halt(&uhs_ctx, NULL, 0); */
-	err = usbh_req_set_sfs_rwup(udev);
+	ep = strtol(argv[2], NULL, 16);
+
+	err = usbh_req_clear_sfs_halt(udev, ep);
+	if (err) {
+		shell_error(sh, "host: Failed to clear halt feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature cleared",
+			    udev->addr, ep);
+	}
+
+	return err;
+}
+
+static int cmd_feature_set_halt(const struct shell *sh,
+				size_t argc, char **argv)
+{
+	static struct usb_device *udev;
+	uint8_t addr;
+	uint8_t ep;
+	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	ep = strtol(argv[2], NULL, 16);
+
+	err = usbh_req_set_sfs_halt(udev, ep);
 	if (err) {
 		shell_error(sh, "host: Failed to set halt feature");
 	} else {
@@ -269,7 +359,16 @@ static int cmd_feature_set_halt(const struct shell *sh,
 static int cmd_feature_clear_rwup(const struct shell *sh,
 				  size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
 
 	err = usbh_req_clear_sfs_rwup(udev);
 	if (err) {
@@ -284,7 +383,16 @@ static int cmd_feature_clear_rwup(const struct shell *sh,
 static int cmd_feature_set_rwup(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
 
 	err = usbh_req_set_sfs_rwup(udev);
 	if (err) {
@@ -299,10 +407,19 @@ static int cmd_feature_set_rwup(const struct shell *sh,
 static int cmd_feature_set_ppwr(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t port;
 	int err;
 
-	port = strtol(argv[1], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	port = strtol(argv[2], NULL, 10);
 
 	err = usbh_req_set_hcfs_ppwr(udev, port);
 	if (err) {
@@ -318,10 +435,19 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 static int cmd_feature_set_prst(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t port;
 	int err;
 
-	port = strtol(argv[1], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	port = strtol(argv[2], NULL, 10);
 
 	err = usbh_req_set_hcfs_prst(udev, port);
 	if (err) {
@@ -337,10 +463,19 @@ static int cmd_feature_set_prst(const struct shell *sh,
 static int cmd_config_set(const struct shell *sh,
 			  size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t cfg;
 	int err;
 
-	cfg = strtol(argv[1], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	cfg = strtol(argv[2], NULL, 10);
 
 	err = usbh_req_set_cfg(udev, cfg);
 	if (err) {
@@ -356,8 +491,17 @@ static int cmd_config_set(const struct shell *sh,
 static int cmd_config_get(const struct shell *sh,
 			  size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t addr;
 	uint8_t cfg;
 	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
 
 	err = usbh_req_get_cfg(udev, &cfg);
 	if (err) {
@@ -373,12 +517,21 @@ static int cmd_config_get(const struct shell *sh,
 static int cmd_device_interface(const struct shell *sh,
 				size_t argc, char **argv)
 {
+	static struct usb_device *udev;
 	uint8_t iface;
+	uint8_t addr;
 	uint8_t alt;
 	int err;
 
-	iface = strtol(argv[1], NULL, 10);
-	alt = strtol(argv[2], NULL, 10);
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	iface = strtol(argv[2], NULL, 10);
+	alt = strtol(argv[3], NULL, 10);
 
 	err = usbh_req_set_alt(udev, iface, alt);
 	if (err) {
@@ -394,19 +547,40 @@ static int cmd_device_interface(const struct shell *sh,
 static int cmd_device_address(const struct shell *sh,
 			      size_t argc, char **argv)
 {
+	static struct usb_device *udev;
+	uint8_t new_addr;
 	uint8_t addr;
 	int err;
 
 	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
 
-	err = usbh_req_set_address(udev, addr);
+	new_addr = strtol(argv[2], NULL, 10);
+
+	err = usbh_req_set_address(udev, new_addr);
 	if (err) {
 		shell_error(sh, "host: Failed to set address");
 	} else {
-		shell_print(sh, "host: New device address is 0x%02x", addr);
+		shell_print(sh, "host: New device address is %u", new_addr);
 	}
 
 	return err;
+}
+
+static int cmd_device_list(const struct shell *sh,
+			   size_t argc, char **argv)
+{
+	struct usb_device *udev;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx.udevs, udev, node) {
+		shell_print(sh, "%u", udev->addr);
+	}
+
+	return 0;
 }
 
 static int cmd_bus_suspend(const struct shell *sh,
@@ -469,8 +643,6 @@ static int cmd_usbh_init(const struct shell *sh,
 {
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
-
 	err = usbh_init(&uhs_ctx);
 	if (err == -EALREADY) {
 		shell_error(sh, "host: USB host already initialized");
@@ -514,62 +686,64 @@ static int cmd_usbh_disable(const struct shell *sh,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(desc_cmds,
-	SHELL_CMD_ARG(device, NULL, NULL,
-		      cmd_desc_device, 1, 0),
-	SHELL_CMD_ARG(configuration, NULL, "<index>",
-		      cmd_desc_config, 2, 0),
-	SHELL_CMD_ARG(string, NULL, "<id> <index>",
-		      cmd_desc_string, 3, 0),
+	SHELL_CMD_ARG(device, NULL, "<addr>",
+		      cmd_desc_device, 2, 0),
+	SHELL_CMD_ARG(configuration, NULL, "<addr> <index>",
+		      cmd_desc_config, 3, 0),
+	SHELL_CMD_ARG(string, NULL, "<addr> <id> <index>",
+		      cmd_desc_string, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
-	SHELL_CMD_ARG(rwup, NULL, NULL,
-		      cmd_feature_set_rwup, 1, 0),
-	SHELL_CMD_ARG(ppwr, NULL, "<port>",
-		      cmd_feature_set_ppwr, 2, 0),
-	SHELL_CMD_ARG(prst, NULL, "<port>",
-		      cmd_feature_set_prst, 2, 0),
-	SHELL_CMD_ARG(halt, NULL, "<endpoint>",
-		      cmd_feature_set_halt, 2, 0),
+	SHELL_CMD_ARG(rwup, NULL, "<addr>",
+		      cmd_feature_set_rwup, 2, 0),
+	SHELL_CMD_ARG(ppwr, NULL, "<addr> <port>",
+		      cmd_feature_set_ppwr, 3, 0),
+	SHELL_CMD_ARG(prst, NULL, "<addr> <port>",
+		      cmd_feature_set_prst, 3, 0),
+	SHELL_CMD_ARG(halt, NULL, "<addr> <endpoint>",
+		      cmd_feature_set_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
-	SHELL_CMD_ARG(rwup, NULL, NULL,
-		      cmd_feature_clear_rwup, 1, 0),
-	SHELL_CMD_ARG(halt, NULL, "<endpoint>",
-		      cmd_feature_set_halt, 2, 0),
+	SHELL_CMD_ARG(rwup, NULL, "<addr>",
+		      cmd_feature_clear_rwup, 2, 0),
+	SHELL_CMD_ARG(halt, NULL, "<addr> <endpoint>",
+		      cmd_feature_clear_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
-	SHELL_CMD_ARG(get, NULL, NULL,
-		      cmd_config_get, 1, 0),
-	SHELL_CMD_ARG(set, NULL, "<configuration>",
-		      cmd_config_set, 2, 0),
+	SHELL_CMD_ARG(get, NULL, "<addr>",
+		      cmd_config_get, 2, 0),
+	SHELL_CMD_ARG(set, NULL, "<addr> <configuration>",
+		      cmd_config_set, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
-	SHELL_CMD_ARG(address, NULL, "<address>",
-		      cmd_device_address, 2, 0),
+	SHELL_CMD_ARG(list, NULL, NULL,
+		      cmd_device_list, 1, 0),
+	SHELL_CMD_ARG(address, NULL, "<address> <new address>",
+		      cmd_device_address, 3, 0),
 	SHELL_CMD_ARG(config, &config_cmds, "get|set configuration",
-		      NULL, 1, 0),
-	SHELL_CMD_ARG(interface, NULL, "<interface> <alternate>",
-		      cmd_device_interface, 3, 0),
+		      NULL, 2, 0),
+	SHELL_CMD_ARG(interface, NULL, "<address> <interface> <alternate>",
+		      cmd_device_interface, 4, 0),
 	SHELL_CMD_ARG(descriptor, &desc_cmds, "descriptor request",
-		      NULL, 1, 0),
+		      NULL, 2, 0),
 	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "feature selector",
-		      NULL, 1, 0),
+		      NULL, 2, 0),
 	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "feature selector",
-		      NULL, 1, 0),
-	SHELL_CMD_ARG(vendor_in, NULL, "<length>",
-		      cmd_vendor_in, 2, 0),
-	SHELL_CMD_ARG(vendor_out, NULL, "<length>",
-		      cmd_vendor_out, 2, 0),
-	SHELL_CMD_ARG(bulk, NULL, "<endpoint> <length>",
-		      cmd_bulk, 3, 0),
+		      NULL, 2, 0),
+	SHELL_CMD_ARG(vendor_in, NULL, "<address> <length>",
+		      cmd_vendor_in, 3, 0),
+	SHELL_CMD_ARG(vendor_out, NULL, "<address> <length>",
+		      cmd_vendor_out, 3, 0),
+	SHELL_CMD_ARG(bulk, NULL, "<address> <endpoint> <length>",
+		      cmd_bulk, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
