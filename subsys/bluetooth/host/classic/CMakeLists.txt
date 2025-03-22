@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(
   CONFIG_BT_CLASSIC
   br.c
+  conn_br.c
   keys_br.c
   l2cap_br.c
   sdp.c
