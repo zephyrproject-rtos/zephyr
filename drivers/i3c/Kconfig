@@ -24,15 +24,6 @@ config I3C_SHELL
 	  The I3C shell supports info, bus recovery, CCC, I3C read and
 	  write operations.
 
-config I3C_USE_GROUP_ADDR
-	bool "Use Group Addresses"
-	default y
-	help
-	  Enable this to use group addresses if supported
-	  by the controllers and target devices.
-
-	  Says Y if unsure.
-
 config I3C_TARGET_BUFFER_MODE
 	bool "I3C target driver for buffer mode"
 	help

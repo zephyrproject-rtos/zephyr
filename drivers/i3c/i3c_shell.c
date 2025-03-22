@@ -200,9 +200,6 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    "\tpid: 0x%012llx\n"
 						    "\tstatic_addr: 0x%02x\n"
 						    "\tdynamic_addr: 0x%02x\n"
-#if defined(CONFIG_I3C_USE_GROUP_ADDR)
-						    "\tgroup_addr: 0x%02x\n"
-#endif
 						    "\tbcr: 0x%02x\n"
 						    "\tdcr: 0x%02x\n"
 						    "\tmaxrd: 0x%02x\n"
@@ -216,9 +213,6 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    "\tcrcaps: 0x%02x; 0x%02x",
 						    desc->dev->name, (uint64_t)desc->pid,
 						    desc->static_addr, desc->dynamic_addr,
-#if defined(CONFIG_I3C_USE_GROUP_ADDR)
-						    desc->group_addr,
-#endif
 						    desc->bcr, desc->dcr, desc->data_speed.maxrd,
 						    desc->data_speed.maxwr,
 						    desc->data_speed.max_read_turnaround,
@@ -249,9 +243,6 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    "\tpid: 0x%012llx\n"
 					    "\tstatic_addr: 0x%02x\n"
 					    "\tdynamic_addr: 0x%02x\n"
-#if defined(CONFIG_I3C_USE_GROUP_ADDR)
-					    "\tgroup_addr: 0x%02x\n"
-#endif
 					    "\tbcr: 0x%02x\n"
 					    "\tdcr: 0x%02x\n"
 					    "\tmaxrd: 0x%02x\n"
@@ -265,9 +256,6 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    "\tcrcaps: 0x%02x; 0x%02x",
 					    desc->dev->name, (uint64_t)desc->pid, desc->static_addr,
 					    desc->dynamic_addr,
-#if defined(CONFIG_I3C_USE_GROUP_ADDR)
-					    desc->group_addr,
-#endif
 					    desc->bcr, desc->dcr, desc->data_speed.maxrd,
 					    desc->data_speed.maxwr,
 					    desc->data_speed.max_read_turnaround,

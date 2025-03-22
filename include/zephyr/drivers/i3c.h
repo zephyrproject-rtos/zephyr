@@ -946,18 +946,6 @@ struct i3c_device_desc {
 	 */
 	uint8_t dynamic_addr;
 
-#if defined(CONFIG_I3C_USE_GROUP_ADDR) || defined(__DOXYGEN__)
-	/**
-	 * Group address for this target device. Set during:
-	 * - Reset Group Address(es) (RSTGRPA)
-	 * - Set Group Address (SETGRPA)
-	 *
-	 * 0 if group address has not been assigned.
-	 * Only available if @kconfig{CONFIG_I3C_USE_GROUP_ADDR} is set.
-	 */
-	uint8_t group_addr;
-#endif /* CONFIG_I3C_USE_GROUP_ADDR */
-
 	/**
 	 * Bus Characteristic Register (BCR)
 	 * @see @ref I3C_BCR
