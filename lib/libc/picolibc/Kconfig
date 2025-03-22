@@ -161,12 +161,14 @@ config PICOLIBC_IO_MINIMAL_LONG_LONG
 	  Include long long support in the minimal picolibc printf code
 
 config PICOLIBC_LOCALE_INFO
-	bool "support locales in libc functions"
+	bool "support locale info in libc functions [DEPRECATED]"
+	select DEPRECATED
 	help
 	  Includes code for basic locale support
 
 config PICOLIBC_LOCALE_EXTENDED_INFO
-	bool "support extended locales in libc functions"
+	bool "support extended locale info in libc functions [DEPRECATED]"
+	select DEPRECATED
 	help
 	  Includes code for extended locale support
 
