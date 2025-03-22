@@ -1,0 +1,12 @@
+# SGW-2 board configuration
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2024 Sensoan Oy
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SGW2
+	select SOC_NRF9160_SICA if BOARD_SGW2_NRF9160 || BOARD_SGW2_NRF9160_NS
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_SGW2_NRF5340_CPUAPP
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_SGW2_NRF5340_CPUAPP_NS
+	select SOC_NRF5340_CPUNET_QKAA if BOARD_SGW2_NRF5340_CPUNET
