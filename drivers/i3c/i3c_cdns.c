@@ -1571,13 +1571,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 	uint8_t last_addr = 0;
-
-	/* DAA should not be done by secondary controllers */
-	if (ctrl_config->is_secondary) {
-		return -EACCES;
-	}
 
 	/* read dev active reg */
 	uint32_t olddevs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
