@@ -8,27 +8,27 @@ common:
     - native_sim
   build_only: true
 tests:
-  sensors.build.sensorhub:
+  drivers.sensor.sensorhub.build:
     extra_args: EXTRA_CONF_FILE=sensors_shub.conf;sensors_die_temp.conf
-  sensors.build.trigger.own:
+  drivers.sensor.trigger.own.build:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_own.conf;sensors_die_temp.conf
-  sensors.build.trigger.global:
+  drivers.sensor.trigger.global.build:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_global.conf;sensors_die_temp.conf
-  sensors.build.trigger.none:
+  drivers.sensor.trigger.none.build:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_none.conf;sensors_die_temp.conf
-  sensors.build.no_default:
+  drivers.sensor.no_default.build:
     extra_args: EXTRA_CONF_FILE=sensors_no_default.conf
-  sensors.build:
+  drivers.sensor.build:
     tags: sensors
     extra_args: EXTRA_CONF_FILE=sensors_die_temp.conf
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
-  sensors.build.pm:
+  drivers.sensor.pm.build:
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
       - CONFIG_UART_INTERRUPT_DRIVEN=y
-  sensors.generic_test:
+  drivers.sensor.generic_test:
     build_only: false
     extra_configs:
       - CONFIG_GENERIC_SENSOR_TEST=y
