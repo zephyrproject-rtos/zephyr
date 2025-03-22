@@ -1583,7 +1583,6 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),            \
 		.idac_current = DT_INST_PROP(n, idac_current),                                    \
 		.vbias_level = DT_INST_PROP(n, vbias_level),                                      \
-		.vbias_level = DT_INST_PROP(n, vbias_level),                                      \
 		.resolution = res,                                                                \
 		.channels = ch,                                                                   \
 	};                                                                                        \
