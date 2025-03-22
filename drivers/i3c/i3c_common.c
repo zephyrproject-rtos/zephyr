@@ -786,18 +786,16 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 	}
 
 	/* GETCAPS */
-	ret = i3c_ccc_do_getcaps_fmt1(target, &caps);
-	/*
-	 * GETCAPS (GETHDRCAP) is required to be supported for I3C v1.0 targets that support HDR
-	 * modes and required if the Target's I3C version is v1.1 or later, but which the version it
-	 * supports it can't be known ahead of time. So if the BCR bit for Advanced capabilities is
-	 * set, then it is expected for GETCAPS to always be supported. Otherwise, then it's a I3C
-	 * v1.0 device without any HDR modes so do not treat as an error if no valid response.
-	 */
-	if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		return ret;
-	} else {
-		ret = 0;
+	if (((target->flags & I3C_V1P0_SUPPORT) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) ||
+	   (!(target->flags & I3C_V1P0_SUPPORT))) {
+		/*
+		 * GETCAPS (GETHDRCAP) is required to be supported for I3C v1.0 targets that support
+		 * HDR modes and required if the Target's I3C version is v1.1 or later.
+		 */
+		ret = i3c_ccc_do_getcaps_fmt1(target, &caps);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* CRCAPS */
@@ -872,8 +870,9 @@ static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *
 		 * address as its static address if a different dynamic address
 		 * is not requested
 		 */
-		if ((desc->supports_setaasa) && ((desc->init_dynamic_addr == 0) ||
-						 desc->init_dynamic_addr == desc->static_addr)) {
+		if ((desc->flags & I3C_SUPPORTS_SETAASA) &&
+		    ((desc->init_dynamic_addr == 0) ||
+		     desc->init_dynamic_addr == desc->static_addr)) {
 			*need_aasa = true;
 			continue;
 		}
@@ -1078,7 +1077,8 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				 * Only set for devices that support SETAASA and do not
 				 * request a different dynamic address than its SA
 				 */
-				if ((desc->supports_setaasa) && (desc->static_addr != 0) &&
+				if ((desc->flags & I3C_SUPPORTS_SETAASA) &&
+				    (desc->static_addr != 0) &&
 				    ((desc->init_dynamic_addr == 0) ||
 				     desc->init_dynamic_addr == desc->static_addr)) {
 					desc->dynamic_addr = desc->static_addr;
