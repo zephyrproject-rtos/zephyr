@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2022-2025 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bouffalolab/bl60x.dtsi>
+#include "bl604e_iot_dvk-pinctrl.dtsi"
+
+/ {
+	model = "BL604E IOT DVK development board";
+	compatible = "bflb,bl604";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(192)>;
+};
+
+&spi1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x4000b000 0x1000 0x23000000 0xc00000>;
+
+	flash0: flash@0 {
+		compatible = "issi,is25lp128", "jedec,spi-nor";
+		status = "disabled";
+		size = <DT_SIZE_M(128)>;
+		jedec-id = [96 60 18];
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
