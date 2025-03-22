@@ -212,6 +212,37 @@ static void *lexer_number(struct json_lexer *lex)
 	}
 }
 
+static void *lexer_number_nan(struct json_lexer *lex)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	backup(lex);
+
+	switch (peek(lex)) {
+	case 'N':
+		if (!accept_run(lex, "NaN")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	case 'I':
+		if (!accept_run(lex, "Infinity")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	case '-':
+		if (!accept_run(lex, "-Infinity")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	}
+
+#endif
+	emit(lex, JSON_TOK_ERROR);
+	return NULL;
+}
+
 static void *lexer_json(struct json_lexer *lex)
 {
 	while (true) {
@@ -236,9 +267,15 @@ static void *lexer_json(struct json_lexer *lex)
 		case 't':
 		case 'f':
 			return lexer_boolean;
+		case 'N':
+		case 'I':
+			return lexer_number_nan;
 		case '-':
 			if (isdigit(peek(lex)) != 0) {
 				return lexer_number;
+			}
+			if (peek(lex) == 'I') {
+				return lexer_number_nan;
 			}
 
 			__fallthrough;
