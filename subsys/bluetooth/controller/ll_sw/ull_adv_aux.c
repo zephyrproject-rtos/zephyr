@@ -2694,6 +2694,9 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 	lll_adv_data_reset(&lll_aux->data);
 	err = lll_adv_aux_data_init(&lll_aux->data);
 	if (err) {
+		lll->aux = NULL;
+		aux_release(aux);
+
 		return NULL;
 	}
 
