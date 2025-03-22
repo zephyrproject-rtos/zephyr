@@ -2,6 +2,9 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+if("${BOARD}" STREQUAL "s32k148_evb")
+  set(SHIELD nxp_adtja1101)
+endif()
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sockets_socketpair)
 
