@@ -1,0 +1,81 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Arm Mps2 pin controller is a node responsible for controlling
+    pin function selection and pin properties, such as routing a UART3 TX
+    to pin 1.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      &pinctrl {
+        /* configuration for the usart0 "default" state */
+        uart3_default: uart3_default {
+          /* group 1 */
+          group1 {
+            /* configure P1 as UART3 TX */
+            pinmux = <UART3_TXD_EXP>;
+          };
+          /* group 2 */
+          group2 {
+            /* configure P0 as UART3 RX */
+            pinmux = <UART3_RXD_EXP>;
+            /* enable input on pin 1 */
+            input-enable;
+          };
+        };
+      };
+
+    The 'uart3_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property. Here is a list of supported standard pin properties:
+    - input-enable
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'input-enable' property in group 2.
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+       #include "board-pinctrl.dtsi"
+
+       &uart3 {
+             pinctrl-0 = <&uart3_default>;
+             pinctrl-1 = <&uart3_sleep>;
+             pinctrl-names = "default", "sleep";
+       };
+
+compatible: "arm,mps2-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.

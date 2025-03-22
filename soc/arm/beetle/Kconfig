@@ -1,10 +1,12 @@
 # ARM LTD Beetle SoC configuration options
 
 # Copyright (c) 2016 Linaro Limited
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_BEETLE
 	select ARM
+	select PINCTRL
 	select CPU_CORTEX_M3
 	select CPU_HAS_ARM_MPU
 	select CPU_CORTEX_M_HAS_DWT
