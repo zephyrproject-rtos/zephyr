@@ -16,7 +16,7 @@ RISC-V SoC with optional sensor level.
 
 The SoC has the following core features:
 
-* 32-Bit RSIC-V 1+8-core processor, up to 500MHz
+* 32-Bit RISC-V 1+8-core processor, up to 500MHz
 
   * 1x Data Acquisition Unit
   * 8x Data Processing Unit
@@ -28,7 +28,6 @@ The SoC has the following core features:
 * 512 KB Global MRAM
 * 512 KB Secure MRAM
 * CLOCK
-* RAM
 * :abbr:`32x GPIO (General Purpose Input Output)`
 * :abbr:`4x TWIM (I2C-compatible two-wire interface with MicroDMA)`
 * 4x I2S
@@ -73,31 +72,37 @@ The ``ganymed-bob/sy120-gbm`` board supports the following hardware features:
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-| SAADC     | on-chip    | adc                  |
-+-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| MRAM      | on-chip    | flash                |
 +-----------+------------+----------------------+
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
 | TWIM      | on-chip    | i2c                  |
 +-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| GRTC      | on-chip    | counter              |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
+| SPI(M)    | on-chip    | spi                  |
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
 | TSN       | on-chip    | ethernet MAC         |
 +-----------+------------+----------------------+
-| CAN       | on-chip    | CAN                  |
+| MDIO      | on-chip    |                      |
++-----------+------------+----------------------+
+| TIMER     | on-chip    |                      |
++-----------+------------+----------------------+
+| PINCTRL   | on-chip    |                      |
++-----------+------------+----------------------+
+| I2S       | on-chip    | coming soon          |
++-----------+------------+----------------------+
+| CAN       | on-chip    | CAN - coming soon    |
++-----------+------------+----------------------+
+| SPU       | on-chip    | system protection    |
++-----------+------------+----------------------+
+| GRTC      | on-chip    | counter              |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
+| MRAM      | on-chip    | non-volatile memory  |
++-----------+------------+----------------------+
+| SAADC     | on-chip    | adc - coming soon    |
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
@@ -119,6 +124,9 @@ with these features:
 
 Other hardware features have not been enabled yet for this board.
 
+For more detailed description please refer to `Ganymed BreakOut Board Documentation`_
+
+
 Power
 *****
 
@@ -128,17 +136,41 @@ Power
 Programming and Debugging
 *************************
 
-Applications for the ``ganymed-bob/sy120-gbm`` board can be
-built, flashed, and debugged in the usual way. See
+Applications for the ``ganymed_bob/sy120_gbm`` board can be
+built and flashed in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
+
+Building the :zephyr:code-sample:`hello_world` sample:
+
+.. code-block:: console
+
+    west build -b ganymed_bob/sy120_gbm samples/hello_world
+
 
 Testing the Ganymed BreakOut Board
 **********************************
 
-Test the Ganymed with a :zephyr:code-sample:`blinky` sample.
+Test the Ganymed with a :zephyr:code-sample:`hello_world` sample.
+
+Flash the zephyr image:
+
+.. code-block:: console
+
+    west flash --serial /dev/ttyUSB0
+
+
+Then attach a serial console, ex. minicom / picocom / putty; Reset the target.
 The sample output should be:
 
 .. code-block:: console
 
-    Hello World! ganymed-bob/sy120-gbm
+    Hello World! ganymed_bob/sy120_gbm
+
+
+References
+**********
+
+.. target-notes::
+
+.. _`Ganymed BreakOut Board Documentation`: https://docs.sensry.net/datasheets/sy120-bob/
