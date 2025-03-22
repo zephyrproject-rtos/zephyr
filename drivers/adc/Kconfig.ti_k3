@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TI_K3
+	bool "TI K3 ADC Driver"
+	default y
+	depends on DT_HAS_TI_ADC_K3_ENABLED
+	help
+	  Enable TI K3 Family Analog-to-Digital Converter (ADC) driver.
