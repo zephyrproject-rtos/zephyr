@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c/i2c_nrfx_twim.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -31,7 +32,63 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
+	i2c_nrfx_twim_async_transfer_handler_t async_transfer_handler;
+	void *async_transfer_handler_ctx;
 };
+
+int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
+{
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	int ret;
+
+	ret = k_sem_take(&dev_data->transfer_sync, timeout);
+
+	if (ret == 0) {
+		(void)pm_device_runtime_get(dev);
+	}
+
+	return ret;
+}
+
+void i2c_nrfx_twim_exclusive_access_release(const struct device *dev)
+{
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+
+	(void)pm_device_runtime_put(dev);
+
+	k_sem_give(&dev_data->transfer_sync);
+}
+
+int i2c_nrfx_twim_async_transfer_begin(const struct device *dev, struct i2c_msg *msg, uint16_t addr,
+				       i2c_nrfx_twim_async_transfer_handler_t handler, void *ctx)
+{
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	const struct i2c_nrfx_twim_common_config *dev_config = dev->config;
+	uint8_t *buf;
+
+	if (I2C_MSG_ADDR_10_BITS & msg->flags) {
+		return -ENOTSUP;
+	}
+
+	if (!nrf_dma_accessible_check(&dev_config->twim, msg->buf)) {
+		if (msg->len > dev_config->msg_buf_size) {
+			return -ENOSPC;
+		}
+		memcpy(dev_config->msg_buf, msg->buf, msg->len);
+		buf = dev_config->msg_buf;
+	} else {
+		buf = msg->buf;
+	}
+
+	if (handler == NULL) {
+		return -ENOTSUP;
+	}
+
+	dev_data->async_transfer_handler = handler;
+	dev_data->async_transfer_handler_ctx = ctx;
+
+	return i2c_nrfx_twim_msg_transfer(dev, msg->flags, buf, msg->len, addr);
+}
 
 static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
@@ -46,12 +103,10 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	uint8_t *buf;
 	uint16_t buf_len;
 
-	k_sem_take(&dev_data->transfer_sync, K_FOREVER);
+	(void)i2c_nrfx_twim_exclusive_access_acquire(dev, K_FOREVER);
 
 	/* Dummy take on completion_sync sem to be sure that it is empty */
 	k_sem_take(&dev_data->completion_sync, K_NO_WAIT);
-
-	(void)pm_device_runtime_get(dev);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -164,9 +219,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		msg_buf_used = 0;
 	}
 
-	(void)pm_device_runtime_put(dev);
-
-	k_sem_give(&dev_data->transfer_sync);
+	i2c_nrfx_twim_exclusive_access_release(dev);
 
 	return ret;
 }
@@ -189,6 +242,15 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	default:
 		dev_data->res = NRFX_ERROR_INTERNAL;
 		break;
+	}
+
+	if (dev_data->async_transfer_handler != NULL) {
+		i2c_nrfx_twim_async_transfer_handler_t handler = dev_data->async_transfer_handler;
+		void *ctx = dev_data->async_transfer_handler_ctx;
+
+		dev_data->async_transfer_handler = NULL;
+		handler(dev, dev_data->res == NRFX_SUCCESS ? 0 : -EIO, ctx);
+		return;
 	}
 
 	k_sem_give(&dev_data->completion_sync);
