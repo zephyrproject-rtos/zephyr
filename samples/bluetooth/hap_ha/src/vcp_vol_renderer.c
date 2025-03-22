@@ -61,12 +61,12 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units, i
 	}
 }
 
-static void aics_input_type_cb(struct bt_aics *inst, int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type input_type)
 {
 	if (err) {
 		printk("AICS input type get failed (%d) for inst %p\n", err, inst);
 	} else {
-		printk("AICS inst %p input type %u\n", inst, input_type);
+		printk("AICS inst %p input type %d\n", inst, input_type);
 	}
 }
 
