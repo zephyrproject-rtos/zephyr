@@ -59,11 +59,16 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_VBUS_SENSING false
 #endif
 
-#define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
-#define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
-#define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
-#define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+#define USB_BASE_ADDRESS		DT_INST_REG_ADDR(0)
+#define USB_IRQ				DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
+#define USB_IRQ_PRI			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
+#define DT_USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
+#define USB_RAM_SIZE			DT_INST_PROP(0, ram_size)
+
+/* Values comes from HAL macros. */
+#define USB_OTG_HS_PHY_ULPI	1U
+#define USB_FS_EMBEDDED_PHY	2U
+#define USB_OTG_HS_EMBEDDED_PHY	3U
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
@@ -109,7 +114,7 @@ static const struct gpio_dt_spec ulpi_reset =
  * per endpoint.
  *
  */
-#define USB_BTABLE_SIZE  (8 * USB_NUM_BIDIR_ENDPOINTS)
+#define USB_BTABLE_SIZE  (8 * DT_USB_NUM_BIDIR_ENDPOINTS)
 
 #else /* USB_OTG_FS */
 
@@ -131,7 +136,7 @@ static const struct gpio_dt_spec ulpi_reset =
 #endif
 
 /* We need n TX IN FIFOs */
-#define TX_FIFO_NUM USB_NUM_BIDIR_ENDPOINTS
+#define TX_FIFO_NUM DT_USB_NUM_BIDIR_ENDPOINTS
 
 /* We need a minimum size for RX FIFO - exact number seemingly determined through trial and error */
 #define RX_FIFO_EP_WORDS 160
@@ -169,9 +174,9 @@ struct usb_dc_stm32_ep_state {
 struct usb_dc_stm32_state {
 	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
 	usb_dc_status_callback status_cb; /* Status callback */
-	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
-	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
-	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
+	struct usb_dc_stm32_ep_state out_ep_state[DT_USB_NUM_BIDIR_ENDPOINTS];
+	struct usb_dc_stm32_ep_state in_ep_state[DT_USB_NUM_BIDIR_ENDPOINTS];
+	uint8_t ep_buf[DT_USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
 
 #if defined(USB) || defined(USB_DRD_FS)
 	uint32_t pma_offset;
@@ -186,7 +191,7 @@ static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
-	if (USB_EP_GET_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
+	if (USB_EP_GET_IDX(ep) >= DT_USB_NUM_BIDIR_ENDPOINTS) {
 		return NULL;
 	}
 
@@ -472,33 +477,15 @@ static int usb_dc_stm32_init(void)
 	HAL_StatusTypeDef status;
 	int ret;
 	unsigned int i;
-
+	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	usb_dc_stm32_state.pcd.Init.phy_itface = DT_INST_STRING_UPPER_TOKEN(0, physel);
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = DT_USB_NUM_BIDIR_ENDPOINTS;
 #if defined(USB) || defined(USB_DRD_FS)
-#ifdef USB
-	usb_dc_stm32_state.pcd.Instance = USB;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
-#endif
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-#endif
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
@@ -573,14 +560,14 @@ static int usb_dc_stm32_init(void)
 	/* Start PMA configuration for the endpoints after the BTABLE. */
 	usb_dc_stm32_state.pma_offset = USB_BTABLE_SIZE;
 
-	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
+	for (i = 0U; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #else /* USB_OTG_FS */
 
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, RX_FIFO_EP_WORDS);
-	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
+	for (i = 0U; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		if (i == 0) {
 			/* first endpoint need only 64 byte for EP_TYPE_CTRL */
 			HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
@@ -757,7 +744,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+	if (ep_idx > (DT_USB_NUM_BIDIR_ENDPOINTS - 1)) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
@@ -1172,7 +1159,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 	/* The DataInCallback will never be called at this point for any pending
 	 * transactions. Reset the IN semaphores to prevent perpetual locked state.
 	 * */
-	for (i = 0; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
+	for (i = 0; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		k_sem_give(&usb_dc_stm32_state.in_ep_state[i].write_sem);
 	}
 
