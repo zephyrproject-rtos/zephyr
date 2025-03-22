@@ -39,14 +39,31 @@ Z_GENERIC_SECTION(.vt_pointer_section) __attribute__((used)) void *_vector_table
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
-#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
-
 /* In some Cortex-M3 implementations SCB_VTOR bit[29] is called the TBLBASE bit */
 #ifdef SCB_VTOR_TBLBASE_Msk
 #define VTOR_MASK (SCB_VTOR_TBLBASE_Msk | SCB_VTOR_TBLOFF_Msk)
 #else
 #define VTOR_MASK SCB_VTOR_TBLOFF_Msk
 #endif
+
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+
+/* Vector table is in ROM, copy it to the RAM and set VTOR*/
+
+#define VECTOR_ADDRESS ((uintptr_t)_sram_vector_start)
+
+static inline void relocate_vector_table(void)
+{
+	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
+	(void) memcpy(_sram_vector_start, _vector_start, vector_size);
+	SCB->VTOR = VECTOR_ADDRESS & VTOR_MASK;
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
+
+#else
+
+#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
 static inline void relocate_vector_table(void)
 {
@@ -55,6 +72,7 @@ static inline void relocate_vector_table(void)
 	barrier_isync_fence_full();
 }
 
+#endif /* CONFIG_SRAM_VECTOR_TABLE */
 #else
 #define VECTOR_ADDRESS 0
 
