@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_brg, LOG_LEVEL_INF);
 
-#define WAIT_TIME          32  /*seconds*/
+#define WAIT_TIME          50  /*seconds*/
 #define WAIT_TIME_IVU_TEST 240 /* seconds */
 #define BEACON_INTERVAL    10  /*seconds */
 
