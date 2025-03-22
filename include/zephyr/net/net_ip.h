@@ -1551,6 +1551,19 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 }
 
 /**
+ * @brief Get sockaddr from sockaddr_storage. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket storage address
+ *
+ * @return Pointer to socket address (struct sockaddr)
+ */
+static inline struct sockaddr *net_sad(const struct sockaddr_storage *addr)
+{
+	return (struct sockaddr *)addr;
+}
+
+/**
  * @brief Get sockaddr_in6 from sockaddr. This is a helper so that
  * the code calling this function can be made shorter.
  *
