@@ -54,6 +54,9 @@ extern "C" {
 /** Amount of time an image sensor is exposed to light, affecting the brightness */
 #define VIDEO_CID_EXPOSURE (VIDEO_CID_BASE + 17)
 
+/** Enable/Disable the autogain */
+#define VIDEO_CID_AUTOGAIN (VIDEO_CID_BASE + 18)
+
 /** Amount of amplification performed to each pixel electrical signal, affecting the brightness */
 #define VIDEO_CID_GAIN (VIDEO_CID_BASE + 19)
 
