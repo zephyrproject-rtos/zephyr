@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32n6_reset.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <freq.h>
@@ -659,6 +661,19 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+		};
+
+		xspi1: xspi@58025000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x58025000 0x1000>;
+			interrupts = <170 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
+				 <&rcc STM32_SRC_CKPER XSPI1_SEL(1)>,
+				 <&rcc STM32_CLOCK(AHB5, 13)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		xspi2: spi@5802a000 {
