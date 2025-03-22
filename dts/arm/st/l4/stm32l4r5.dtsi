@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <st/l4/stm32l4p5.dtsi>
 
+/delete-node/ &ltdc;
 /delete-node/ &sdmmc2;
 /delete-node/ &sram2; /* different memory address */
 
