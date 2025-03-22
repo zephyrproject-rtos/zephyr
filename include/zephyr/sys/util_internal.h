@@ -49,6 +49,48 @@
  */
 #define Z_IS_ENABLED3(ignore_this, val, ...) val
 
+/* Helper macro for IS_ENABLED_ANY */
+#define IS_ENABLED_ANY_(...) 												\
+	IS_ENABLED_ANY_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define IS_ENABLED_ANY_N_(N, ...) UTIL_CAT(IS_ENABLED_ANY_, N)(__VA_ARGS__)
+#define IS_ENABLED_ANY_0(...)
+#define IS_ENABLED_ANY_1(a, ...)  COND_CODE_1(a, (1), (0))
+#define IS_ENABLED_ANY_2(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_1(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_3(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_2(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_4(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_3(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_5(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_4(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_6(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_5(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_7(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_6(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_8(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_7(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_9(a, ...)  COND_CODE_1(a, (1), (IS_ENABLED_ANY_8(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_10(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_9(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_11(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_10(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_12(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_11(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_13(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_12(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_14(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_13(__VA_ARGS__,)))
+#define IS_ENABLED_ANY_15(a, ...) COND_CODE_1(a, (1), (IS_ENABLED_ANY_14(__VA_ARGS__,)))
+
+/* Helper macro for IS_ENABLED_ALL */
+#define IS_ENABLED_ALL_(...) 												\
+	IS_ENABLED_ALL_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define IS_ENABLED_ALL_N_(N, ...) UTIL_CAT(IS_ENABLED_ALL_, N)(__VA_ARGS__)
+#define IS_ENABLED_ALL_0(...)
+#define IS_ENABLED_ALL_1(a, ...)  COND_CODE_1(a, (1), (0))
+#define IS_ENABLED_ALL_2(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_1(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_3(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_2(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_4(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_3(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_5(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_4(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_6(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_5(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_7(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_6(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_8(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_7(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_9(a, ...)  COND_CODE_1(a, (IS_ENABLED_ALL_8(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_10(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_9(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_11(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_10(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_12(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_11(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_13(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_12(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_14(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_13(__VA_ARGS__,)), (0))
+#define IS_ENABLED_ALL_15(a, ...) COND_CODE_1(a, (IS_ENABLED_ALL_14(__VA_ARGS__,)), (0))
+
 /* Implementation of IS_EQ(). Returns 1 if _0 and _1 are the same integer from
  * 0 to 4096, 0 otherwise.
  */
@@ -115,6 +157,48 @@
 #define UTIL_EVAL(...) __VA_ARGS__
 #define UTIL_EXPAND(...) __VA_ARGS__
 #define UTIL_REPEAT(...) UTIL_LISTIFY(__VA_ARGS__)
+
+#define UTIL_OR_CAT(a, b) a || b
+#define UTIL_CONCAT_OR_(...)									\
+	UTIL_CONCAT_OR_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define UTIL_CONCAT_OR_N_(N, ...) UTIL_CAT(UTIL_CONCAT_OR_, N)(__VA_ARGS__)
+#define UTIL_CONCAT_OR_0
+#define UTIL_CONCAT_OR_1(a, ...) a
+#define UTIL_CONCAT_OR_2(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_1(__VA_ARGS__))
+#define UTIL_CONCAT_OR_3(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_2(__VA_ARGS__))
+#define UTIL_CONCAT_OR_4(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_3(__VA_ARGS__))
+#define UTIL_CONCAT_OR_5(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_4(__VA_ARGS__))
+#define UTIL_CONCAT_OR_6(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_5(__VA_ARGS__))
+#define UTIL_CONCAT_OR_7(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_6(__VA_ARGS__))
+#define UTIL_CONCAT_OR_8(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_7(__VA_ARGS__))
+#define UTIL_CONCAT_OR_9(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_8(__VA_ARGS__))
+#define UTIL_CONCAT_OR_10(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_9(__VA_ARGS__))
+#define UTIL_CONCAT_OR_11(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_10(__VA_ARGS__))
+#define UTIL_CONCAT_OR_12(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_11(__VA_ARGS__))
+#define UTIL_CONCAT_OR_13(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_12(__VA_ARGS__))
+#define UTIL_CONCAT_OR_14(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_13(__VA_ARGS__))
+#define UTIL_CONCAT_OR_15(a, ...) UTIL_OR_CAT(a, UTIL_CONCAT_OR_14(__VA_ARGS__))
+
+#define UTIL_AND_CAT(a, b) a && b
+#define UTIL_CONCAT_AND_(...)									\
+	UTIL_CONCAT_AND_N_(NUM_VA_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define UTIL_CONCAT_AND_N_(N, ...) UTIL_CAT(UTIL_CONCAT_AND_, N)(__VA_ARGS__)
+#define UTIL_CONCAT_AND_0
+#define UTIL_CONCAT_AND_1(a, ...) a
+#define UTIL_CONCAT_AND_2(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_1(__VA_ARGS__))
+#define UTIL_CONCAT_AND_3(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_2(__VA_ARGS__))
+#define UTIL_CONCAT_AND_4(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_3(__VA_ARGS__))
+#define UTIL_CONCAT_AND_5(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_4(__VA_ARGS__))
+#define UTIL_CONCAT_AND_6(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_5(__VA_ARGS__))
+#define UTIL_CONCAT_AND_7(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_6(__VA_ARGS__))
+#define UTIL_CONCAT_AND_8(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_7(__VA_ARGS__))
+#define UTIL_CONCAT_AND_9(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_8(__VA_ARGS__))
+#define UTIL_CONCAT_AND_10(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_9(__VA_ARGS__))
+#define UTIL_CONCAT_AND_11(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_10(__VA_ARGS__))
+#define UTIL_CONCAT_AND_12(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_11(__VA_ARGS__))
+#define UTIL_CONCAT_AND_13(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_12(__VA_ARGS__))
+#define UTIL_CONCAT_AND_14(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_13(__VA_ARGS__))
+#define UTIL_CONCAT_AND_15(a, ...) UTIL_AND_CAT(a, UTIL_CONCAT_AND_14(__VA_ARGS__))
 
 #define _CONCAT_0(arg, ...) arg
 #define _CONCAT_1(arg, ...) UTIL_CAT(arg, _CONCAT_0(__VA_ARGS__))
