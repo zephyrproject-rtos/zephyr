@@ -1469,12 +1469,7 @@ static inline void iface_ipv6_dad_init(void)
 }
 
 #else
-static inline void net_if_ipv6_start_dad(struct net_if *iface,
-					 struct net_if_addr *ifaddr)
-{
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
-}
-
+#define net_if_ipv6_start_dad(...)
 #define iface_ipv6_dad_init(...)
 #endif /* CONFIG_NET_IPV6_DAD */
 
@@ -1816,11 +1811,7 @@ static void address_start_timer(struct net_if_addr *ifaddr, uint32_t vlifetime)
 }
 #else /* CONFIG_NET_NATIVE_IPV6 */
 #define address_start_timer(...)
-static inline void net_if_ipv6_start_dad(struct net_if *iface,
-					 struct net_if_addr *ifaddr)
-{
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
-}
+#define net_if_ipv6_start_dad(...)
 #define join_mcast_nodes(...)
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
@@ -2037,7 +2028,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
 
-		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_DAD) &&
+		    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
 		    !net_ipv6_is_addr_loopback(addr) &&
 		    !net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 			/* The groups are joined without locks held */
@@ -4369,13 +4361,7 @@ out:
 	net_if_unlock(iface);
 }
 #else
-void net_if_ipv4_start_acd(struct net_if *iface, struct net_if_addr *ifaddr)
-{
-	ARG_UNUSED(iface);
-
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
-}
-
+#define net_if_ipv4_start_acd(...)
 #define net_if_start_acd(...)
 #endif /* CONFIG_NET_IPV4_ACD */
 
@@ -4456,7 +4442,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
-		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+		    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
 		    !net_ipv4_is_addr_loopback(addr)) {
 			/* ACD is started after the lock is released. */
 			;
