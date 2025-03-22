@@ -21,9 +21,10 @@ extern "C" {
 /* Note: None of these functions are public interfaces. But internal to the SDL display driver */
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
-			    bool use_accelerator, void **window, void **renderer, void **mutex,
-			    void **texture, void **read_texture, void **background_texture,
-			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
+			    bool use_accelerator, void **window, const void *window_user_data,
+			    void **renderer, void **mutex, void **texture, void **read_texture,
+			    void **background_texture, uint32_t transparency_grid_color1,
+			    uint32_t transparency_grid_color2,
 			    uint16_t transparency_grid_cell_size);
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
 			      const uint16_t y, void *renderer, void *mutex, void *texture,

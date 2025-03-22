@@ -196,6 +196,7 @@
 
 	input_sdl_touch: input-sdl-touch {
 		compatible = "zephyr,input-sdl-touch";
+		display = <&sdl_dc>;
 	};
 
 	can_loopback0: can_loopback0 {
