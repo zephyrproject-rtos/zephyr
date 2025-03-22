@@ -44,6 +44,8 @@ enum json_tokens {
 	JSON_TOK_ENCODED_OBJ = '4',
 	JSON_TOK_INT64 = '5',
 	JSON_TOK_UINT64 = '6',
+	JSON_TOK_FLOAT_FP = '7',
+	JSON_TOK_DOUBLE_FP = '8',
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',

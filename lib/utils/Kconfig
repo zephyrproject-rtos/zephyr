@@ -9,6 +9,17 @@ config JSON_LIBRARY
 	  Build a minimal JSON parsing/encoding library. Used by sample
 	  applications such as the NATS client.
 
+config JSON_LIBRARY_FP_SUPPORT
+	bool "Floating point support in JSON library"
+	depends on JSON_LIBRARY
+	select CBPRINTF_FP_SUPPORT
+	select REQUIRES_FULL_LIBC
+	help
+	  Build the JSON library with support for floating point types.
+
+	  Requires a libc implementation with support for floating point
+	  functions: strtof(), strtod(), isnan() and isinf().
+
 config RING_BUFFER
 	bool "Ring buffers"
 	help
