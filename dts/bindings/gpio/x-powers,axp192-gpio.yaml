@@ -18,6 +18,8 @@ compatible: "x-powers,axp192-gpio"
 
 include: gpio-controller.yaml
 
+on-bus: axp192
+
 properties:
   "#gpio-cells":
     const: 2
