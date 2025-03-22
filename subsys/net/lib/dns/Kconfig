@@ -175,6 +175,19 @@ config MDNS_RESPONDER
 
 if MDNS_RESPONDER
 
+config MDNS_RESPONDER_PORT
+	int "Multicast/UDP port for mDNS"
+	default 5353
+	help
+	  RFC6732 assigned port is 5353, but in case some wants to divert.
+
+config MDNS_RESPONDER_MCAST_IP
+	int "The lower 16 bits for the multicast IP address"
+	default 251
+	help
+	  RFC6732 assigned lower bits are 251, but in case some wants to divert.
+	  It will change the well-known address ff02::fb and 224.0.0.251.
+
 config MDNS_RESPONDER_TTL
 	int "Time-to-Live of returned DNS name"
 	default 600
