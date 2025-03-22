@@ -1,0 +1,68 @@
+# Copyright (c) 2024 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STORAGE_AREA
+	bool "Storage area subsystem"
+	help
+	  Storage area subsystem.
+
+if STORAGE_AREA
+
+config STORAGE_AREA_OFFSET_64BIT
+	bool "Large storage area addressing"
+	default y if 64BIT
+	help
+	  Enable 64bit addressing range.
+
+config STORAGE_AREA_VERIFY
+	bool "Verification support"
+	default y if DEBUG
+	help
+	  Verify if the definition of the storage area is
+	  valid for the used backend.
+
+config STORAGE_AREA_DISK
+	bool "Storage area on disk"
+	select DISK_ACCESS
+	help
+	  Use storage area on disk.
+
+config STORAGE_AREA_EEPROM
+	bool "Storage area on eeprom"
+	select EEPROM
+	help
+	  Use storage area on eeprom.
+
+config STORAGE_AREA_FLASH
+	bool "Storage area on flash"
+	select FLASH
+	help
+	  Use storage area on flash.
+
+config STORAGE_AREA_RAM
+	bool "Storage area on ram"
+	help
+	  Use storage area on ram.
+
+config STORAGE_AREA_STORE
+	bool "Storage area record storage"
+	select CRC
+	help
+	  Use record storage on a storage area.
+
+if STORAGE_AREA_STORE
+
+config STORAGE_AREA_STORE_SEMAPHORE
+	bool "Thread safety using semaphore"
+	default y if MULTITHREADING
+	help
+	  Use a semaphore for multithreading.
+
+endif #STORAGE_AREA_STORE
+
+
+module = STORAGE_AREA
+module-str = shared_info
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # STORAGE_AREA
