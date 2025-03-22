@@ -23,10 +23,6 @@ target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/udp.c)
 target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/tcp.c)
 target_sources_ifdef(CONFIG_NET_L2_IPIP app PRIVATE src/tunnel.c)
 
-if (CONFIG_USB_DEVICE_STACK)
-  target_sources(app PRIVATE src/usb.c)
-endif()
-
 if (CONFIG_USB_DEVICE_STACK_NEXT)
   target_sources(app PRIVATE src/usb.c)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
