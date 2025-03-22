@@ -79,6 +79,32 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 	return 0;
 }
 
+static int siwx91x_hidden_ssid(uint8_t ignore_broadcast_ssid)
+{
+	int ret;
+	static siwx91x_boot_config_t boot_cfg = { };
+
+	boot_cfg.oper_mode = WIFI_AP_MODE;
+
+	if (!boot_cfg.hidden_ssid && !ignore_broadcast_ssid) {
+		return 0;
+	}
+
+	/* Device hiddes both length and ssid at same time */
+	if (boot_cfg.hidden_ssid && !ignore_broadcast_ssid) {
+		boot_cfg.hidden_ssid = false;
+	} else if (!boot_cfg.hidden_ssid && ignore_broadcast_ssid > 0) {
+		boot_cfg.hidden_ssid = true;
+	}
+
+	ret = siwx91x_nwp_mode_switch(boot_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to reboot the device");
+	}
+
+	return ret;
+}
+
 static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct siwx91x_dev *sidev = dev->data;
@@ -127,6 +153,11 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	if (params->band != WIFI_FREQ_BAND_UNKNOWN && params->band != WIFI_FREQ_BAND_2_4_GHZ) {
 		LOG_ERR("Unsupported band");
 		return -ENOTSUP;
+	}
+
+	ret = siwx91x_hidden_ssid(params->ignore_broadcast_ssid);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (params->channel == WIFI_CHANNEL_ANY) {
@@ -628,6 +659,7 @@ static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
+	siwx91x_boot_config_t boot_cfg = { };
 	int cur_mode;
 	int ret = 0;
 
@@ -642,7 +674,8 @@ static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 		mode->mode = cur_mode;
 	} else if (mode->oper == WIFI_MGMT_SET) {
 		if (cur_mode != mode->mode) {
-			ret = siwx91x_nwp_mode_switch(mode->mode);
+			boot_cfg.oper_mode = mode->mode;
+			ret = siwx91x_nwp_mode_switch(boot_cfg);
 			if (ret < 0) {
 				return ret;
 			}
