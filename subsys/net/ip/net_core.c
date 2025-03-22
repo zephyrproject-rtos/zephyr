@@ -527,6 +527,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret;
 
+	/* DSA driver handles first to untag and to redirect to slave interface. */
+#if defined(CONFIG_NET_DSA)
+#if !defined(CONFIG_NET_DSA_DEPRECATED)
+	iface = dsa_recv(iface, &pkt);
+#endif
+#endif
 	SYS_PORT_TRACING_FUNC_ENTER(net, recv_data, iface, pkt);
 
 	if (!pkt || !iface) {

@@ -27,7 +27,11 @@
 #include <zephyr/net/ptp_time.h>
 
 #if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
+#else
+#include <zephyr/net/dsa_core.h>
+#endif
 #endif
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
@@ -192,10 +196,10 @@ enum ethernet_hw_caps {
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
 
 	/** DSA switch slave port */
-	ETHERNET_DSA_SLAVE_PORT		= BIT(15),
+	ETHERNET_DSA_USER_PORT		= BIT(15),
 
 	/** DSA switch master port */
-	ETHERNET_DSA_MASTER_PORT	= BIT(16),
+	ETHERNET_DSA_CONDUIT_PORT	= BIT(16),
 
 	/** IEEE 802.1Qbv (scheduled traffic) supported */
 	ETHERNET_QBV			= BIT(17),
@@ -714,8 +718,12 @@ struct ethernet_context {
 	/** DSA context pointer */
 	struct dsa_context *dsa_ctx;
 
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	/** Send a network packet via DSA master port */
 	dsa_send_t dsa_send;
+#else
+	enum dsa_port_type dsa_port;
+#endif
 #endif
 
 	/** Is network carrier up */
@@ -953,12 +961,23 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
+	enum ethernet_hw_caps caps = 0;
+#if defined(CONFIG_NET_DSA)
+#if !defined(CONFIG_NET_DSA_DEPRECATED)
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
+	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+		caps |= ETHERNET_DSA_CONDUIT_PORT;
+	} else if (eth_ctx->dsa_port == DSA_USER_PORT) {
+		caps |= ETHERNET_DSA_USER_PORT;
+	}
+#endif
+#endif
 	if (!api || !api->get_capabilities) {
-		return (enum ethernet_hw_caps)0;
+		return caps;
 	}
 
-	return api->get_capabilities(dev);
+	return (enum ethernet_hw_caps)(caps | api->get_capabilities(dev));
 }
 
 /**
