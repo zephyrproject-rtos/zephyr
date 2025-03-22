@@ -19,6 +19,7 @@
 	FAKE(notify_cs_config_removed)                                                             \
 	FAKE(notify_cs_subevent_result)                                                            \
 	FAKE(notify_cs_security_enable_available)                                                  \
+	FAKE(notify_cs_security_enable_failed)                                                     \
 	FAKE(notify_cs_procedure_enable_available)                                                 \
 	FAKE(notify_remote_cs_fae_table)
 
@@ -33,5 +34,6 @@ DECLARE_FAKE_VOID_FUNC(notify_cs_config_removed, struct bt_conn *, uint8_t);
 DECLARE_FAKE_VOID_FUNC(notify_cs_subevent_result, struct bt_conn *,
 		       struct bt_conn_le_cs_subevent_result *);
 DECLARE_FAKE_VOID_FUNC(notify_cs_security_enable_available, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(notify_cs_security_enable_failed, struct bt_conn *, uint8_t);
 DECLARE_FAKE_VOID_FUNC(notify_cs_procedure_enable_available, struct bt_conn *,
 		       struct bt_conn_le_cs_procedure_enable_complete *);

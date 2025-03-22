@@ -305,7 +305,6 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Read Remote Supported Capabilities failed (status 0x%02X)", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
@@ -314,6 +313,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 		return;
 	}
 
+	remote_cs_capabilities.status = evt->status;
 	remote_cs_capabilities.num_config_supported = evt->num_config_supported;
 	remote_cs_capabilities.max_consecutive_procedures_supported =
 		sys_le16_to_cpu(evt->max_consecutive_procedures_supported);
@@ -465,7 +465,6 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Read Remote FAE Table failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
@@ -474,6 +473,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 		return;
 	}
 
+	fae_table.status = evt->status;
 	fae_table.remote_fae_table = evt->remote_fae_table;
 	notify_remote_cs_fae_table(conn, fae_table);
 
@@ -805,7 +805,6 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("CS Config failed (status 0x%02X)", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -814,12 +813,14 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 		return;
 	}
 
-	if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED) {
+	if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED &&
+	    evt->status == BT_HCI_ERR_SUCCESS) {
 		notify_cs_config_removed(conn, evt->config_id);
 		bt_conn_unref(conn);
 		return;
 	}
 
+	config.status = evt->status;
 	config.id = evt->config_id;
 	config.main_mode_type = evt->main_mode_type;
 	config.sub_mode_type = evt->sub_mode_type;
@@ -1203,7 +1204,6 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Security Enable failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -1212,7 +1212,11 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 		return;
 	}
 
-	notify_cs_security_enable_available(conn);
+	if (evt->status) {
+		notify_cs_security_enable_failed(conn, evt->status);
+	} else {
+		notify_cs_security_enable_available(conn);
+	}
 
 	bt_conn_unref(conn);
 }
@@ -1232,7 +1236,6 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Procedure Enable failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -1250,6 +1253,7 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 		}
 	}
 
+	params.status = evt->status;
 	params.config_id = evt->config_id;
 	params.state = evt->state;
 	params.tone_antenna_config_selection = evt->tone_antenna_config_selection;

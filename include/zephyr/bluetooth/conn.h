@@ -295,6 +295,10 @@ enum bt_conn_le_cs_capability_rtt_random_payload {
 
 /** Remote channel sounding capabilities for LE connections supporting CS */
 struct bt_conn_le_cs_capabilities {
+	/** HCI Status from LE CS Read Remote Supported Capabilities Complete event.
+	 *  The remaining parameters could be invalid if status is not BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
 	/** Number of CS configurations */
 	uint8_t num_config_supported;
 	/** Maximum number of consecutive CS procedures.
@@ -411,6 +415,10 @@ struct bt_conn_le_cs_capabilities {
 
 /** Remote FAE Table for LE connections supporting CS */
 struct bt_conn_le_cs_fae_table {
+	/** HCI Status from LE CS Read Remote FAE Table Complete event.
+	 *  The remaining parameters could be invalid if status is not BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
 	int8_t *remote_fae_table;
 };
 
@@ -490,6 +498,10 @@ enum bt_conn_le_cs_ch3c_shape {
 
 /** Channel sounding configuration */
 struct bt_conn_le_cs_config {
+	/** HCI Status from LE CS Config Complete event.
+	 *  The remaining parameters could be invalid if status is not BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
 	/** CS configuration ID */
 	uint8_t id;
 	/** Main CS mode type */
@@ -1598,6 +1610,10 @@ enum bt_conn_le_cs_tone_antenna_config_selection {
 };
 
 struct bt_conn_le_cs_procedure_enable_complete {
+	/** HCI Status from LE CS Procedure Enable Complete event.
+	 *  The remaining parameters could be invalid if status is not BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
 	/* The ID associated with the desired configuration (0 to 3) */
 	uint8_t config_id;
 
@@ -1876,7 +1892,10 @@ struct bt_conn_cb {
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
-	 *  This callback notifies the application that the remote channel
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Capabilities Exchange procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, the remote channel
 	 *  sounding capabilities have been received from the peer.
 	 *
 	 *  @param conn Connection object.
@@ -1887,7 +1906,10 @@ struct bt_conn_cb {
 
 	/** @brief LE CS Read Remote FAE Table Complete event.
 	 *
-	 *  This callback notifies the application that the remote mode-0
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Mode-0 FAE Table Request procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, the remote mode-0
 	 *  FAE Table has been received from the peer.
 	 *
 	 *  @param conn Connection object.
@@ -1899,7 +1921,9 @@ struct bt_conn_cb {
 	/** @brief LE CS Config created.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Configuration procedure has completed and a new CS config is created
+	 *  Configuration procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, a new CS config is created.
 	 *
 	 *  @param conn Connection object.
 	 *  @param config CS configuration.
@@ -1909,7 +1933,7 @@ struct bt_conn_cb {
 	/** @brief LE CS Config removed.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Configuration procedure has completed and a CS config is removed
+	 *  Configuration procedure has completed and a CS config is removed.
 	 *
 	 *  @param conn Connection object.
 	 *  @param config_id ID of the CS configuration that was removed.
@@ -1930,16 +1954,26 @@ struct bt_conn_cb {
 	/** @brief LE CS Security Enabled.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Security Enable procedure has completed
+	 *  Security Enable procedure has completed without an error.
 	 *
 	 *  @param conn Connection object.
 	 */
 	void (*le_cs_security_enabled)(struct bt_conn *conn);
 
+	/** @brief LE CS Security Enable Failed.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Security Enable procedure has completed with an error.
+	 *
+	 *  @param conn Connection object.
+	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 */
+	void (*le_cs_security_enable_failed)(struct bt_conn *conn, uint8_t err);
+
 	/** @brief LE CS Procedure Enabled.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Procedure Enable procedure has completed
+	 *  Procedure Enable procedure has completed.
 	 *
 	 *  @param conn Connection object.
 	 *  @param params CS Procedure Enable parameters

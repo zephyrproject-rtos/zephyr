@@ -3506,6 +3506,23 @@ void notify_cs_security_enable_available(struct bt_conn *conn)
 	}
 }
 
+void notify_cs_security_enable_failed(struct bt_conn *conn, uint8_t err)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_security_enable_failed) {
+			callback->le_cs_security_enable_failed(conn, err);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_security_enable_failed) {
+			cb->le_cs_security_enable_failed(conn, err);
+		}
+	}
+}
+
 void notify_cs_procedure_enable_available(struct bt_conn *conn,
 					  struct bt_conn_le_cs_procedure_enable_complete *params)
 {
