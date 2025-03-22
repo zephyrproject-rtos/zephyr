@@ -83,7 +83,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, flash_addr=False)
+        return RunnerCaps(commands={'flash'}, dev_id=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
