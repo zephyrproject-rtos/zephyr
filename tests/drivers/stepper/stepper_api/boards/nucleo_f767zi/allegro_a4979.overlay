@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		stepper =  &allegro_a4979;
+	};
+};
+
+/ {
+	allegro_a4979: allegro_a4979 {
+		status = "okay";
+		compatible = "allegro,a4979";
+
+		dir-gpios = <&arduino_header 18 0>; /* D12 */
+		step-gpios = <&arduino_header 19 0>; /* D13 */
+		reset-gpios = <&arduino_header 15 0>; /* D9 */
+		en-gpios  = <&arduino_header 14 0>; /* D8 */
+		m0-gpios = <&arduino_header 16 0>; /* D10 */
+		m1-gpios = <&arduino_header 17 0>; /* D11 */
+		counter = <&counter2>;
+	};
+};
+
+&timers2 {
+	status = "okay";
+	counter2: counter {
+		status = "okay";
+	};
+};
