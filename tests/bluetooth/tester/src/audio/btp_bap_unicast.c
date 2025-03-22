@@ -1673,12 +1673,6 @@ int btp_bap_unicast_init(void)
 		return err;
 	}
 
-	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
-	if (err != 0) {
-		LOG_DBG("Failed to register client callbacks: %d", err);
-		return err;
-	}
-
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
 		LOG_DBG("Failed to register client callbacks: %d", err);
