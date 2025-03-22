@@ -1,0 +1,9 @@
+# Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenHW Group CVA6 core in 64 bit configuration
+
+compatible: "openhwgroup,cva64a6"
+
+include: riscv,cpus.yaml
