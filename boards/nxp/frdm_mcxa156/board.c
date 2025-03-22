@@ -165,6 +165,12 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c0))
+	/* Attach FRO_HF_DIV clock to I3C, 96MHz / 4 = 24MHz. */
+	CLOCK_SetClockDiv(kCLOCK_DivI3C0_FCLK, 4U);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_I3C0FCLK);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1u);
 	CLOCK_AttachClk(kFRO12M_to_ADC0);
