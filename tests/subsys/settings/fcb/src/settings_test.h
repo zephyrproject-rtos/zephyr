@@ -35,7 +35,7 @@ extern int test_export_block;
 
 extern int c2_var_count;
 
-extern struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT];
+extern const struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT];
 
 extern char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
 extern char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
@@ -46,7 +46,7 @@ void ctest_clear_call_state(void);
 int ctest_get_call_state(void);
 
 void config_wipe_srcs(void);
-void config_wipe_fcb(struct flash_sector *fs, int cnt);
+void config_wipe_fcb(const struct flash_sector *fs, int cnt);
 
 void test_config_fill_area(
 	char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN],
