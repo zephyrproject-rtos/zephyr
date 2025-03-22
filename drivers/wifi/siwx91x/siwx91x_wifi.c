@@ -290,6 +290,8 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 
 	if (params->channel != WIFI_CHANNEL_ANY) {
 		wifi_config.channel.channel = params->channel;
+	} else {
+		wifi_config.channel.channel = 0;
 	}
 
 	wifi_config.ssid.length = params->ssid_length,
@@ -306,16 +308,32 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 static int siwx91x_disconnect(const struct device *dev)
 {
 	struct siwx91x_dev *sidev = dev->data;
-	int ret;
+	int ret = 0;
+
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Interface not in STA mode");
+		return -EINVAL;
+	}
+
+	if (sidev->state != WIFI_STATE_COMPLETED) {
+		LOG_ERR("Command given in invalid state");
+		return -EBUSY;
+	}
 
 	ret = sl_wifi_disconnect(SL_WIFI_CLIENT_INTERFACE);
-	if (ret) {
+	if (ret != SL_STATUS_OK) {
 		return -EIO;
 	}
+
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_on(sidev->iface);
 	}
+
 	sidev->state = WIFI_STATE_DISCONNECTED;
+	wifi_mgmt_raise_disconnect_result_event(sidev->iface, WIFI_REASON_DISCONN_SUCCESS);
+
 	return 0;
 }
 
