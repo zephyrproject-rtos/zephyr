@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.l2cap.ecred.peer:
+  bluetooth.host.l2cap.ecred.build_peer:
     build_only: true
     tags:
       - bluetooth

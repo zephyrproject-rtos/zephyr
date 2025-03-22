@@ -2324,8 +2324,8 @@ def test_projectbuilder_run(
     pytest_mock = mock.Mock(spec=Pytest)
     harness_mock = mock.Mock()
 
-    def mock_harness(name):
-        if name == 'Pytest':
+    def mock_harness(inst):
+        if instance_mock.testsuite.harness == 'pytest':
             return pytest_mock
         else:
             return harness_mock

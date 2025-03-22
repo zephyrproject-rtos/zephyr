@@ -38,6 +38,9 @@ schema;scenario-schema:
     "build_only":
       type: bool
       required: false
+    "no_build":
+      type: bool
+      required: false
     "build_on_all":
       type: bool
       required: false
@@ -180,6 +183,39 @@ schema;scenario-schema:
         "bsim_exe_name":
           type: str
           required: false
+        "bsim_verbosity":
+          type: int
+          required: false
+        "bsim_sim_length":
+          type: float
+          required: false
+        "bsim_devices":
+          type: seq
+          required: false
+          sequence:
+            - type: map
+              mapping:
+                "test_id":
+                  type: str
+                  required: true
+                "exe":
+                  type: str
+                  required: false
+                "options":
+                  type: seq
+                  required: false
+                  sequence:
+                    - type: str
+        "bsim_options":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "bsim_phy_options":
+          type: seq
+          required: false
+          sequence:
+            - type: str
     "min_ram":
       type: int
       required: false
