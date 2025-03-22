@@ -38,6 +38,10 @@
  * - Bit 11: Weak pull down selection, Weak Pulldown to VDDIOH (1MOhm)
  *          0: Disable
  *          1: Enable
+ *
+ * - Bit 12: Enable the I/O as a wakeup from low-power modes (SLEEP, DEEPSLEEP, BACKUP).
+ *          0: Disable
+ *          1: Enable
  * @{
  */
 
@@ -61,6 +65,10 @@
 /** GPIO bias weak pull down selection, to VDDIOH (1MOhm) */
 #define MAX32_GPIO_WEAK_PULL_DOWN_POS (11U)
 #define MAX32_GPIO_WEAK_PULL_DOWN     (1U << MAX32_GPIO_WEAK_PULL_DOWN_POS)
+
+/** GPIO wakeup enable */
+#define MAX32_GPIO_WAKEUP_EN_POS (12U)
+#define MAX32_GPIO_WAKEUP_EN     (1U << MAX32_GPIO_WAKEUP_EN_POS)
 
 /** @} */
 
