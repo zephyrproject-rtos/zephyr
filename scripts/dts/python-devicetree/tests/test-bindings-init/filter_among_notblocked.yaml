@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
 # This binding file blocks all properties not blocked
 # in simple_filter.yaml: we should end up with no property at all.
