@@ -200,7 +200,7 @@ ZTEST(device_runtime_api, test_api)
 		 */
 		k_thread_create(&get_runner_td, get_runner_stack,
 				K_THREAD_STACK_SIZEOF(get_runner_stack), get_runner,
-				NULL, NULL, NULL, CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0,
+				NULL, NULL, NULL, CONFIG_PM_DEVICE_RUNTIME_WQ_PRIO, 0,
 				K_NO_WAIT);
 		k_yield();
 
