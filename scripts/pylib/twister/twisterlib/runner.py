@@ -1350,7 +1350,7 @@ class ProjectBuilder(FilterBuilder):
         files_to_keep = self._get_binaries()
         files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
 
-        if self.instance.sysbuild:
+        if self.instance.sysbuild and self.instance.domains:
             files_to_keep.append('domains.yaml')
             for domain in self.instance.domains.get_domains():
                 files_to_keep += self._get_artifact_allow_list_for_domain(domain.name)
@@ -1390,7 +1390,7 @@ class ProjectBuilder(FilterBuilder):
         # Get binaries for a single-domain build
         binaries += self._get_binaries_from_runners()
         # Get binaries in the case of a multiple-domain build
-        if self.instance.sysbuild:
+        if self.instance.sysbuild and self.instance.domains:
             for domain in self.instance.domains.get_domains():
                 binaries += self._get_binaries_from_runners(domain.name)
 
