@@ -1,0 +1,15 @@
+identifier: adafruit_feather_esp32/esp32/procpu
+name: Adafruit ESP32 Feather
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+vendor: adafruit
