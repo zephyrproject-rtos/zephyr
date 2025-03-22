@@ -34,7 +34,7 @@ jobs:
 
       - name: Run backport issue checker
         env:
-          GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/release/list_backports.py \
             -o ${{ github.event.repository.owner.login }} \
