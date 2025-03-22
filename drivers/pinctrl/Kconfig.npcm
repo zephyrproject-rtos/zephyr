@@ -1,0 +1,13 @@
+# NPCM Pin Controller configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+
+config PINCTRL_NPCM
+	bool "Nuvoton NPCM enhanced Super I/O (eSIO) pin controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_PINCTRL_ENABLED
+	help
+		This option enables the pin controller driver for NPCM family of
+		processors.
