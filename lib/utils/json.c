@@ -201,7 +201,7 @@ static void *lexer_number(struct json_lexer *lex)
 	while (true) {
 		int chr = next(lex);
 
-		if (isdigit(chr) != 0 || chr == '.') {
+		if (isdigit(chr) != 0 || chr == '.' || chr == 'e' || chr == '+' || chr == '-') {
 			continue;
 		}
 
