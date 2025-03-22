@@ -1,0 +1,18 @@
+sample:
+  description: An Earliest Deadline First with Constant Bandwidth Server CBS sample
+  name: EDF with CBS sample
+common:
+  tags:
+    - EDF
+    - CBS
+tests:
+  sample.cbs.edf:
+    build_only: true
+    platform_allow:
+      - qemu_riscv32
+      - qemu_cortex_a53
+    integration_platforms:
+      - qemu_riscv32
+    tags:
+      - cbs
+      - edf
