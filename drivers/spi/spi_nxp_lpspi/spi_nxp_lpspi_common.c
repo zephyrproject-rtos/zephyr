@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,49 @@
 LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
+
+#if defined(LPSPI_RSTS) || defined(LPSPI_CLOCKS)
+static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+#endif
+
+#ifdef LPSPI_RSTS
+static const reset_ip_name_t lpspi_resets[] = LPSPI_RSTS;
+
+static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type *const base)
+{
+	reset_ip_name_t rst = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			rst = lpspi_resets[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(rst != -1);
+	return rst;
+
+}
+#endif
+
+#ifdef LPSPI_CLOCKS
+static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
+
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
+{
+	clock_ip_name_t clk = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			clk = lpspi_clocks[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(clk != -1);
+	return clk;
+}
+#endif
 
 void lpspi_wait_tx_fifo_empty(const struct device *dev)
 {
@@ -26,6 +69,56 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 	return 0;
 }
 
+static inline void lpspi_master_config(const struct device *dev,
+				       const struct spi_config *spi_cfg,
+				       uint32_t clock_freq)
+{
+	const struct spi_mcux_config *config = dev->config;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	lpspi_master_config_t master_config;
+
+	LPSPI_MasterGetDefaultConfig(&master_config);
+
+	master_config.bitsPerFrame = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+				     ? kLPSPI_ClockPolarityActiveLow
+				     : kLPSPI_ClockPolarityActiveHigh;
+	master_config.cpha = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+				     ? kLPSPI_ClockPhaseSecondEdge
+				     : kLPSPI_ClockPhaseFirstEdge;
+	master_config.direction =
+		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kLPSPI_LsbFirst : kLPSPI_MsbFirst;
+	master_config.baudRate = spi_cfg->frequency;
+	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
+	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
+	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+	master_config.whichPcs = spi_cfg->slave + kLPSPI_Pcs0;
+	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
+				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
+	master_config.pinCfg = config->data_pin_config;
+	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
+							      kLpspiDataOutRetained;
+
+	LPSPI_MasterInit(base, &master_config, clock_freq);
+}
+
+static inline void lpspi_slave_config(const struct device *dev,
+				      const struct spi_config *spi_cfg)
+{
+	const struct spi_mcux_config *config = dev->config;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	base->CFGR1 = LPSPI_CFGR1_OUTCFG(config->output_config ? 1 : 0) |
+		      LPSPI_CFGR1_PINCFG(config->data_pin_config ? 1 : 0) |
+		      LPSPI_CFGR1_PCSPOL((spi_cfg->operation & SPI_CS_ACTIVE_HIGH) ? 1 : 0);
+
+	base->TCR = LPSPI_TCR_CPOL((SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) ? 1 : 0) |
+		    LPSPI_TCR_CPHA((SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) ? 1 : 0) |
+		    LPSPI_TCR_LSBF((spi_cfg->operation & SPI_TRANSFER_LSB) ? 1 : 0) |
+		    LPSPI_TCR_FRAMESZ(SPI_WORD_SIZE_GET(spi_cfg->operation) - 1) |
+		    LPSPI_TCR_PCS(spi_cfg->slave);
+}
+
 int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_config *config = dev->config;
@@ -33,8 +126,8 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	struct spi_context *ctx = &data->ctx;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	uint8_t op_mode = SPI_OP_MODE_GET(spi_cfg->operation);
 	bool configured = ctx->config != NULL;
-	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
 	int ret;
 
@@ -96,30 +189,11 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 	data->ctx.config = spi_cfg;
 
-	LPSPI_MasterGetDefaultConfig(&master_config);
-
-	master_config.bitsPerFrame = word_size;
-	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-				     ? kLPSPI_ClockPolarityActiveLow
-				     : kLPSPI_ClockPolarityActiveHigh;
-	master_config.cpha = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-				     ? kLPSPI_ClockPhaseSecondEdge
-				     : kLPSPI_ClockPhaseFirstEdge;
-	master_config.direction =
-		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kLPSPI_LsbFirst : kLPSPI_MsbFirst;
-	master_config.baudRate = spi_cfg->frequency;
-	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
-	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
-	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
-	master_config.whichPcs = spi_cfg->slave + kLPSPI_Pcs0;
-	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
-				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
-	master_config.pinCfg = config->data_pin_config;
-	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
-							      kLpspiDataOutRetained;
-
-	LPSPI_MasterInit(base, &master_config, clock_freq);
-	LPSPI_SetDummyData(base, 0);
+	if (op_mode == SPI_OP_MODE_MASTER) {
+		lpspi_master_config(dev, spi_cfg, clock_freq);
+	} else {
+		lpspi_slave_config(dev, spi_cfg);
+	}
 
 	if (IS_ENABLED(CONFIG_DEBUG)) {
 		base->CR |= LPSPI_CR_DBGEN_MASK;
@@ -128,8 +202,20 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	return 0;
 }
 
+static void lpspi_module_system_init(LPSPI_Type *base)
+{
+#ifdef LPSPI_CLOCKS
+	CLOCK_EnableClock(lpspi_get_clock(base));
+#endif
+
+#ifdef LPSPI_RSTS
+	RESET_ReleasePeripheralReset(lpspi_get_reset(base));
+#endif
+}
+
 int spi_nxp_init_common(const struct device *dev)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int err = 0;
@@ -142,6 +228,8 @@ int spi_nxp_init_common(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+	lpspi_module_system_init(base);
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
