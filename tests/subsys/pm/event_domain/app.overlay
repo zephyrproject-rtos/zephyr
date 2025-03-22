@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_event_device0: event_device0 {
+		compatible = "vnd,event-device";
+		event-state-request-latency-us = <0>;
+		event-state-count = <3>;
+	};
+
+	test_event_device1: event_device1 {
+		compatible = "vnd,event-device";
+		event-state-request-latency-us = <0>;
+		event-state-count = <2>;
+	};
+
+	event-domains {
+		test_event_domain0: event_domain0 {
+			compatible = "event-domain";
+			event-latencies-us = <260 30 9>;
+			event-devices = <&test_event_device0 &test_event_device1>;
+			event-device-states = <0 0>, <1 1>, <2 1>;
+		};
+	};
+};

@@ -1,0 +1,5 @@
+description: Nordic local configuration registers
+
+compatible: "nordic,nrf-lrcconf"
+
+include: base.yaml
