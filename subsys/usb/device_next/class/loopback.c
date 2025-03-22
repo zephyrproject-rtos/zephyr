@@ -157,49 +157,42 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 {
 	struct udc_buf_info *bi = (struct udc_buf_info *)net_buf_user_data(buf);
 	struct lb_data *data = usbd_class_get_private(c_data);
-
-	LOG_DBG("Transfer finished %s -> ep 0x%02x, len %u, err %d",
-		c_data->name, bi->ep, buf->len, err);
+	const size_t len = buf->len;
+	const uint8_t ep = bi->ep;
+	int ret = 0;
 
 	if (bi->ep == lb_get_bulk_out(c_data)) {
 		atomic_clear_bit(&data->state, LB_FUNCTION_OUT_ENGAGED);
+		if (err == 0) {
+			memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
+		}
 	}
 
 	if (bi->ep == lb_get_bulk_in(c_data)) {
 		atomic_clear_bit(&data->state, LB_FUNCTION_IN_ENGAGED);
 	}
 
-	if (err) {
-		if (err == -ECONNABORTED) {
-			LOG_INF("request ep 0x%02x, len %u cancelled",
-				bi->ep, buf->len);
-		} else {
-			LOG_ERR("request ep 0x%02x, len %u failed",
-				bi->ep, buf->len);
-		}
-
-		net_buf_unref(buf);
-
-		return err;
+	net_buf_unref(buf);
+	if (err == -ECONNABORTED) {
+		LOG_INF("Transfer ep 0x%02x, len %u cancelled", ep, len);
+	} else if (err != 0) {
+		LOG_ERR("Transfer ep 0x%02x, len %u failed", ep, len);
+		ret = err;
+	} else {
+		LOG_DBG("Transfer ep 0x%02x, len %u finished", ep, len);
 	}
 
-	if (bi->ep == lb_get_bulk_out(c_data)) {
-		memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
-		net_buf_unref(buf);
-		if (!atomic_test_bit(&data->state, LB_FUNCTION_BULK_MANUAL)) {
+	if (!atomic_test_bit(&data->state, LB_FUNCTION_BULK_MANUAL)) {
+		if (ep == lb_get_bulk_out(c_data)) {
 			lb_submit_bulk_out(c_data);
 		}
-	}
 
-	if (bi->ep == lb_get_bulk_in(c_data)) {
-		bi->ep = lb_get_bulk_out(c_data);
-		net_buf_unref(buf);
-		if (!atomic_test_bit(&data->state, LB_FUNCTION_BULK_MANUAL)) {
+		if (ep == lb_get_bulk_in(c_data)) {
 			lb_submit_bulk_in(c_data);
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static void lb_update(struct usbd_class_data *c_data,
