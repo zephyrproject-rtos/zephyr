@@ -43,7 +43,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: cache-pip-linux
       if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}
@@ -51,7 +51,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: cache-pip-mac
       if: startsWith(runner.os, 'macOS')
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/Library/Caches/pip
         # Trailing '-' was just to get a different cache name
@@ -60,7 +60,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
     - name: cache-pip-win
       if: startsWith(runner.os, 'Windows')
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}
