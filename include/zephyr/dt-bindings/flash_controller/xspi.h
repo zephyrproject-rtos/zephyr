@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_XSPI_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_XSPI_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_XSPI_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_XSPI_H_
 
 /**
  * @name XSPI definition for the xSPI peripherals
@@ -28,4 +28,4 @@
 /* Double Transfer Rate */
 #define XSPI_DTR_TRANSFER                 2
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_XSPI_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_XSPI_H_ */
