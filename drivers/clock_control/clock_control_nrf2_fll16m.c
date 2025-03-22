@@ -21,7 +21,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define FLAG_HFXO_STARTED BIT(FLAGS_COMMON_BITS)
 
 #define FLL16M_MODE_OPEN_LOOP   0
-#define FLL16M_MODE_CLOSED_LOOP 1
+#define FLL16M_MODE_CLOSED_LOOP 1 /* <-- DO NOT IMPLEMENT, CAN CAUSE HARDWARE BUG */
 #define FLL16M_MODE_BYPASS      2
 #define FLL16M_MODE_DEFAULT     FLL16M_MODE_OPEN_LOOP
 
@@ -29,7 +29,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define FLL16M_HFXO_ACCURACY DT_PROP(FLL16M_HFXO_NODE, accuracy_ppm)
 #define FLL16M_OPEN_LOOP_ACCURACY DT_INST_PROP(0, open_loop_accuracy_ppm)
-#define FLL16M_CLOSED_LOOP_BASE_ACCURACY DT_INST_PROP(0, closed_loop_base_accuracy_ppm)
 #define FLL16M_MAX_ACCURACY FLL16M_HFXO_ACCURACY
 
 #define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
@@ -42,9 +41,6 @@ static struct clock_options {
 	{
 		.accuracy = FLL16M_OPEN_LOOP_ACCURACY,
 		.mode = FLL16M_MODE_OPEN_LOOP,
-	},
-	{
-		.mode = FLL16M_MODE_CLOSED_LOOP,
 	},
 	{
 		/* Bypass mode uses HFXO */
@@ -225,27 +221,6 @@ static int api_get_rate_fll16m(const struct device *dev,
 static int fll16m_init(const struct device *dev)
 {
 	struct fll16m_dev_data *dev_data = dev->data;
-	nrf_bicr_lfosc_mode_t lfosc_mode;
-
-	clock_options[1].accuracy = FLL16M_CLOSED_LOOP_BASE_ACCURACY;
-
-	/* Closed-loop mode uses LFXO as source if present, HFXO otherwise */
-	lfosc_mode = nrf_bicr_lfosc_mode_get(BICR);
-
-	if (lfosc_mode != NRF_BICR_LFOSC_MODE_UNCONFIGURED &&
-	    lfosc_mode != NRF_BICR_LFOSC_MODE_DISABLED) {
-		int ret;
-		uint16_t accuracy;
-
-		ret = lfosc_get_accuracy(&accuracy);
-		if (ret < 0) {
-			return ret;
-		}
-
-		clock_options[1].accuracy += accuracy;
-	} else {
-		clock_options[1].accuracy += FLL16M_HFXO_ACCURACY;
-	}
 
 	return clock_config_init(&dev_data->clk_cfg,
 				 ARRAY_SIZE(dev_data->clk_cfg.onoff),
