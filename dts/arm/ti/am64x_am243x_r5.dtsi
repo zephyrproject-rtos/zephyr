@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include "am64x_am243x_main.dtsi"
+#include "am64x_am243x_mcu.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+		};
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ATCM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	btcm: memory@41010000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "BTCM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	sram: memory@70080000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70080000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	vim: interrupt-controller@2fff0000 {
+		#address-cells = <1>;
+		compatible = "ti,vim";
+		reg = <0x2fff0000 0x4000>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+		status = "okay";
+	};
+
+	/* Timer0 */
+	systick_timer: timer@2400000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2400000 DT_SIZE_K(1)>;
+		interrupts = <0 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "okay";
+	};
+
+	mbox0: mailbox@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		interrupts = <0 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		usr-id = <3>;
+		#mbox-cells = <1>;
+	};
+
+	mbox1: mailbox@29010000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29010000 0x200>;
+		interrupts = <0 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		usr-id = <3>;
+		#mbox-cells = <1>;
+	};
+};
+
+&uart0 {
+	interrupts = <0 210 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart1 {
+	interrupts = <0 211 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart2 {
+	interrupts = <0 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart3 {
+	interrupts = <0 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart4 {
+	interrupts = <0 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart5 {
+	interrupts = <0 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&uart6 {
+	interrupts = <0 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c0 {
+	interrupts = <0 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c1 {
+	interrupts = <0 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c2 {
+	interrupts = <0 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&i2c3 {
+	interrupts = <0 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_uart0 {
+	interrupts = <0 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_uart1 {
+	interrupts = <0 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_i2c0 {
+	interrupts = <0 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_i2c1 {
+	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
