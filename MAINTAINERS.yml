@@ -2760,8 +2760,11 @@ NEORV32 platform:
     - drivers/*/*neorv32*
     - dts/bindings/*/*neorv32*
     - soc/neorv32/
+    - tests/boards/neorv32/
   labels:
     - "platform: NEORV32"
+  tests:
+    - boards.neorv32
 
 OSDP:
   status: maintained
