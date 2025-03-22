@@ -1650,6 +1650,10 @@ def test_prop_type_casting():
 	refs = <&{/target} &{/target2}>;
 	refs2 = <&{/target}>, <&{/target2}>;
 	path = &{/target};
+	compound1 = < 1 >, [ 02 ];
+	compound2 = "foo", < >;
+	compound3 = <&{/target} 1 &{/target2} 3>;
+	compound4 = <&{/target} 1 &{/target2} 3>, "4";
 	manualpath = "/target";
 	missingpath = "/missing";
 
@@ -1872,6 +1876,25 @@ def test_prop_type_casting():
         "missingpath",
         "property 'missingpath' on / in .* points to the non-existent node "
         '"/missing"')
+
+    # Test Property.to_compound()
+
+    def verify_to_compound(prop, expected_types, expected_values):
+        def node_to_path(n):
+            return n if isinstance(n, (int | str)) else n.path
+        actual_types = list(map(type, dt.root.props[prop].to_compound()))
+        actual_values = list(map(node_to_path, dt.root.props[prop].to_compound()))
+        assert actual_types == expected_types, \
+            f"{prop} gives wrong types"
+        assert actual_values == expected_values, \
+            f"{prop} gives wrong values"
+
+    verify_to_compound("compound1", [int, int], [1, 2])
+    verify_to_compound("compound2", [str], ['foo'])
+    verify_to_compound("compound3", [dtlib.Node, int, dtlib.Node, int],
+                                    ['/target', 1, '/target2', 3])
+    verify_to_compound("compound4", [dtlib.Node, int, dtlib.Node, int, str],
+                                    ['/target', 1, '/target2', 3, "4"])
 
     # Test top-level to_num() and to_nums()
 
