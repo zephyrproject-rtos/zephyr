@@ -1,0 +1,5 @@
+board:
+  name: versalnet_rpu
+  vendor: amd
+  socs:
+  - name: amd_versalnet_rpu

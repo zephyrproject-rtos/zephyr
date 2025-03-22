@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_AMD_VERSALNET
+	bool
+
+config SOC_AMD_VERSALNET_RPU
+	bool
+	select SOC_AMD_VERSALNET
+	help
+	  AMD Versal NET SoC
+
+config SOC_FAMILY
+	default "amd_versalnet" if SOC_AMD_VERSALNET
+
+config SOC
+	default "amd_versalnet_rpu" if SOC_AMD_VERSALNET_RPU
