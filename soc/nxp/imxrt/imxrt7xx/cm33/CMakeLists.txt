@@ -5,6 +5,7 @@
 #
 
 zephyr_compile_definitions_ifdef(CONFIG_NXP_LP_FLEXCOMM LPFLEXCOMM_INIT_NOT_USED_IN_DRIVER=1)
+zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER USB_DEVICE_CONFIG_BUFFER_PROPERTY_CACHEABLE=1)
 
 zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE)
 
