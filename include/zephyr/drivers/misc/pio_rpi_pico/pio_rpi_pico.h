@@ -9,6 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_MISC_PIO_PICO_RPI_PIO_PICO_RPI_H_
 #define ZEPHYR_DRIVERS_MISC_PIO_PICO_RPI_PIO_PICO_RPI_H_
 
+#include <zephyr/devicetree.h>
 #include <zephyr/devicetree/gpio.h>
 
 #include <hardware/pio.h>
@@ -127,6 +128,14 @@
  */
 #define DT_INST_PIO_PIN_BY_NAME(inst, name) \
 	DT_PIO_PIN_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Get PIO object from a PIO device.
+ *
+ * @param node_id node identifier of the PIO device
+ */
+#define PIO_OBJECT_FROM_DT_NODE(node_id) \
+	(PIO)(DT_REG_ADDR(node_id))
 
 /**
  * Get PIO object
