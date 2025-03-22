@@ -57,6 +57,7 @@ static struct clock_options {
 struct lfclk_dev_data {
 	STRUCT_CLOCK_CONFIG(lfclk, ARRAY_SIZE(clock_options)) clk_cfg;
 	struct k_timer timer;
+	uint16_t min_accuracy;
 	uint16_t max_accuracy;
 	uint8_t clock_options_cnt;
 };
@@ -64,6 +65,14 @@ struct lfclk_dev_data {
 struct lfclk_dev_config {
 	uint32_t fixed_frequency;
 };
+
+uint16_t nrf_clock_control_lfclk_min_accuracy(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct lfclk_dev_data *dev_data = dev->data;
+
+	return dev_data->min_accuracy;
+}
 
 static void clock_evt_handler(nrfs_clock_evt_t const *p_evt, void *context)
 {
@@ -250,6 +259,15 @@ static int lfclk_init(const struct device *dev)
 		default:
 			LOG_ERR("Unexpected LFOSC mode");
 			return -EINVAL;
+		}
+	}
+
+	/* compute minimum accuracy of all available clock options */
+	dev_data->min_accuracy = clock_options[0].accuracy;
+
+	for (uint8_t i = 1U; i < dev_data->clock_options_cnt; i++) {
+		if (clock_options[i].accuracy > dev_data->min_accuracy) {
+			dev_data->min_accuracy = clock_options[i].accuracy;
 		}
 	}
 
