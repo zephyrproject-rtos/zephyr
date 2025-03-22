@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Please keep in sync with cmake/linker_script/common/kobject-data.cmake */
+
 #ifdef CONFIG_USERSPACE
 
 	z_kobject_data_begin = .;

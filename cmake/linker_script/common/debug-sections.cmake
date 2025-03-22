@@ -1,4 +1,7 @@
-# Content of this file originates from include/zephyr/linker/debug-sections.ld
+# SPDX-License-Identifier: Apache-2.0
+# The contents of this file is based on include/zephyr/linker/debug-sections.ld
+# Please keep in sync
+
 # Following sections are obtained via 'ld --verbose'
 
 # Stabs debugging sections.
