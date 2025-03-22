@@ -653,6 +653,7 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 			continue;
 		}
 
+		rpi_pico_bit_clr((mm_reg_t)&base->buf_status, BIT(i));
 		/* Odd bits in the register correspond to OUT endpoints */
 		if (i & 1U) {
 			ep = USB_EP_DIR_OUT | (i >> 1U);
@@ -662,7 +663,6 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 			rpi_pico_handle_buff_status_in(dev, ep);
 		}
 
-		rpi_pico_bit_clr((mm_reg_t)&base->buf_status, BIT(i));
 		buf_status &= ~BIT(i);
 	}
 }
