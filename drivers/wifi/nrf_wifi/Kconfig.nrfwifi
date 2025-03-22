@@ -86,7 +86,7 @@ config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
 config NRF70_SYSTEM_WITH_RAW_MODES
-	bool
+	bool "nRF70 system mode with raw modes"
 	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
 	depends on WIFI_NRF7002 || WIFI_NRF7001
 	help
