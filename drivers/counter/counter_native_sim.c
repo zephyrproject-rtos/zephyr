@@ -124,6 +124,14 @@ static int ctr_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int ctr_reset(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	hw_counter_reset();
+	return 0;
+}
+
 static uint32_t ctr_get_pending_int(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -237,6 +245,7 @@ static DEVICE_API(counter, ctr_api) = {
 	.start = ctr_start,
 	.stop = ctr_stop,
 	.get_value = ctr_get_value,
+	.reset = ctr_reset,
 	.set_alarm = ctr_set_alarm,
 	.cancel_alarm = ctr_cancel_alarm,
 	.set_top_value = ctr_set_top_value,
