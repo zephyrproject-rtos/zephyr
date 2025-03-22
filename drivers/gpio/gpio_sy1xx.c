@@ -18,9 +18,10 @@ LOG_MODULE_REGISTER(sy1xx_gpio, CONFIG_GPIO_LOG_LEVEL);
 #include <pinctrl_soc.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#define SY1XX_GPIO_GET_OFFS 0x00
-#define SY1XX_GPIO_SET_OFFS 0x1c
-#define SY1XX_GPIO_CLR_OFFS 0x20
+#define SY1XX_GPIO_GET_IN_OFFS  0x00
+#define SY1XX_GPIO_GET_OUT_OFFS 0x04
+#define SY1XX_GPIO_SET_OFFS     0x1c
+#define SY1XX_GPIO_CLR_OFFS     0x20
 
 struct sy1xx_gpio_config {
 	/* Base address for GPIO port*/
@@ -104,7 +105,7 @@ int sy1xx_gpio_driver_port_get_raw(const struct device *dev, gpio_port_value_t *
 {
 	const struct sy1xx_gpio_config *const cfg = dev->config;
 
-	*value = sys_read32(cfg->port_base_addr | SY1XX_GPIO_GET_OFFS);
+	*value = sys_read32(cfg->port_base_addr | SY1XX_GPIO_GET_IN_OFFS);
 	return 0;
 }
 
@@ -143,7 +144,7 @@ int sy1xx_gpio_driver_port_toggle_bits(const struct device *dev, gpio_port_pins_
 {
 	const struct sy1xx_gpio_config *const cfg = dev->config;
 
-	uint32_t current = sys_read32(cfg->port_base_addr | SY1XX_GPIO_GET_OFFS);
+	uint32_t current = sys_read32(cfg->port_base_addr | SY1XX_GPIO_GET_OUT_OFFS);
 
 	sy1xx_gpio_driver_port_set_masked_raw(dev, pins, ~current);
 	return 0;
