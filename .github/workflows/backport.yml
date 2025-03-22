@@ -33,6 +33,6 @@ jobs:
       - name: Backport
         uses: zephyrproject-rtos/action-backport@7e74f601d11eaca577742445e87775b5651a965f # v2.0.3-3
         with:
-          github_token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_labels: Backport
           labels_template: '["Backport"]'
