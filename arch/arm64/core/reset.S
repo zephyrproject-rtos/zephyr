@@ -58,9 +58,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	b	out
 #endif /* CONFIG_ARMV8_R */
 2:
-	/* Disable alignment fault checking */
+	/* Disable alignment fault checking, disable D-Cache, I-Cache, MMU for safety */
 	mrs	x0, sctlr_el2
-	bic	x0, x0, SCTLR_A_BIT
+	mov	x1, #(SCTLR_A_BIT | SCTLR_C_BIT | SCTLR_M_BIT | SCTLR_I_BIT)
+	bic	x0, x0, x1
 	msr	sctlr_el2, x0
 	isb
 
