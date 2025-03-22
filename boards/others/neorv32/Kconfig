@@ -1,7 +1,13 @@
 # Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NEORV32
+config BOARD_NEORV32_NEORV32_MINIMALBOOT
+	bool
+	select RISCV_ISA_RV32I
+	select ATOMIC_OPERATIONS_C
+
+config BOARD_NEORV32_NEORV32_UP5KDEMO
+	bool
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M
 	select ATOMIC_OPERATIONS_C

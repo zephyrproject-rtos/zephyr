@@ -15,14 +15,25 @@ For more information about the NEORV32, see the following websites:
 
 The currently supported version is NEORV32 v1.11.2.
 
-Supported Features
-==================
+Supported Board Targets
+=======================
 
-The ``neorv32`` board target can be used a generic definition for NEORV32
-based boards. Customization to fit custom NEORV32 implementations can be done
-using :ref:`devicetree overlays <use-dt-overlays>`.
+The following NEORV32 board targets are supported by Zephyr:
+
+- ``neorv32/neorv32/minimalboot``
+- ``neorv32/neorv32/up5kdemo``
+
+Each of these match one of the NEORV32 processor templates provided alongside the NEORV32 RTL.
+These board targets can be customized out-of-tree to match custom NEORV32 implementations using
+:ref:`board extensions <extend-board>` or :ref:`devicetree overlays <use-dt-overlays>`.
 
 .. zephyr:board-supported-hw::
+
+Supported Features
+******************
+
+The following NEORV32 features are supported by Zephyr. These are pre-configured for the supported
+board targets, but can be customized to match custom NEORV32 implementations.
 
 System Clock
 ============
@@ -35,48 +46,63 @@ node.
 CPU
 ===
 
-The default board configuration assumes the NEORV32 CPU implementation has the
-following RISC-V ISA extensions enabled:
+The SoC configuration assumes the NEORV32 CPU implementation has the following RISC-V ISA extensions
+enabled:
 
-- I (Base Integer Instruction Set, 32-bit)
-- M (Integer Multiplication and Division)
+- Zicntr (Extension for Base Counters and Timers)
 - Zicsr (Control and Status Register (CSR) Instructions, always enabled)
 - Zifencei (Instruction-fetch fence, always enabled)
+
+Other supported RISC-V ISA extensions must be enabled via Kconfig on the board level, and the
+``riscv,isa`` devicetree property of the ``cpu0`` node must be set accordingly.
+
+Core Local Interruptor
+======================
+
+The NEORV32 Core Local Interruptor (CLINT) and its machine timer (MTIMER) are supported but disabled
+by default. For NEORV32 SoC implementations supporting these, support can be enabled by setting
+the ``status`` properties of the ``clint`` and ``mtimer`` devicetree node to ``okay``.
 
 Internal Instruction Memory
 ===========================
 
-The default board configuration assumes the NEORV32 SoC implementation has a 64k
-byte internal instruction memory (IMEM) for code execution. The size of the
-instruction memory can be overridden by changing the ``reg`` property of the
-``imem`` devicetree node.
+The internal instruction memory (IMEM) for code execution is supported but disabled by default. For
+NEORV32 SoC implementations supporting IMEM, support can be enabled by setting the size via the
+``reg`` property of the ``imem`` devicetree node and setting its ``status`` property to ``okay``.
 
 Internal Data Memory
 ====================
 
-The default board configuration assumes the NEORV32 SoC implementation has a 64k
-byte internal data memory (DMEM). The size of the data memory can be overridden
-by changing the ``reg`` property of the ``dmem`` devicetree node.
+The internal data memory (DMEM) is supported but disabled by default. For NEORV32 SoC
+implementations supporting DMEM, support can be enabled by setting the size via the ``reg`` property
+of the ``dmem`` devicetree node and setting its ``status`` property to ``okay``.
 
 Serial Port
 ===========
 
-The default configuration assumes the NEORV32 SoC implements UART0 for use as
-system console.
+The NEORV32 serial ports (UART0 and UART1) are supported but disabled by default. For NEORV32 SoC
+implementations supporting either of the UARTs, support can be enabled by setting the ``status``
+properties of the ``uart0`` and/or ``uart1`` devicetree node to ``okay``.
 
 .. note::
+   The board targets provide a console on UART0 with a baud rate of 19200 to match that of the
+   standard NEORV32 bootloader. The baudrate can be changed by modifying the ``current-speed``
+   property of the ``uart0`` devicetree node.
 
-   The default configuration uses a baud rate of 19200 to match that of the
-   standard NEORV32 bootloader. The baudrate can be changed by modifying the
-   ``current-speed`` property of the ``uart0`` devicetree node.
+General Purpose Input/Output
+============================
+
+The NEORV32 GPIO port is supported but disabled by default. For NEORV32 SoC implementations
+supporting the GPIOs, support can be enabled by setting the ``status`` property of the ``gpio``
+devicetree node to ``okay``. The number of supported GPIOs can be set via the ``ngpios`` devicetree
+property.
 
 True Random-Number Generator
 ============================
 
-The True Random-Number Generator (TRNG) of the NEORV32 is supported, but
-disabled by default. For NEORV32 SoC implementations supporting the TRNG,
-support can be enabled by setting the ``status`` property of the ``trng``
-devicetree node to ``okay``.
+The True Random-Number Generator (TRNG) of the NEORV32 is supported, but disabled by default. For
+NEORV32 SoC implementations supporting the TRNG, support can be enabled by setting the ``status``
+property of the ``trng`` devicetree node to ``okay``.
 
 Programming and Debugging
 *************************
@@ -112,7 +138,7 @@ implementation with the On-Chip Debugger (OCD) and bootloader enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/<variant>
    :goals: flash
 
 The default board configuration uses an :ref:`openocd-debug-host-tools`
@@ -122,7 +148,7 @@ example for using the Flyswatter JTAG @ 2 kHz:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/<variant>
    :goals: flash
    :flash-args: --config interface/ftdi/flyswatter.cfg --config neorv32.cfg --cmd-pre-init 'adapter speed 2000'
 
@@ -131,7 +157,7 @@ After flashing, you should see message similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32/neorv32
+   Hello World! neorv32/neorv32/<variant>
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal block RAM in the FPGA. It will
@@ -150,7 +176,7 @@ can be passed at build time:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/<variant>
    :goals: build
    :gen-args: -DCMAKE_PROGRAM_PATH=<path/to/neorv32/sw/image_gen/>
 
@@ -169,7 +195,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/<variant>
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -178,7 +204,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32/neorv32
+   Hello World! neorv32/neorv32/<variant>
 
 .. _The NEORV32 RISC-V Processor GitHub:
    https://github.com/stnolting/neorv32
