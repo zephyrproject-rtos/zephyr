@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Mohamed ElShahawi (extremegtx@hotmail.com)
- * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2023-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,13 +51,7 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
-	defined(CONFIG_SOC_SERIES_ESP32C6)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
@@ -66,14 +60,6 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
-
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
-	defined(CONFIG_SOC_SERIES_ESP32C6)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 struct uart_esp32_config {
 	const struct device *clock_dev;
@@ -962,7 +948,7 @@ static int uart_esp32_init(const struct device *dev)
 	ret = esp_intr_alloc(config->irq_source,
 			ESP_PRIO_TO_FLAGS(config->irq_priority) |
 			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(ISR_HANDLER)uart_esp32_isr,
+			(intr_handler_t)uart_esp32_isr,
 			(void *)dev,
 			NULL);
 	if (ret < 0) {
@@ -1071,7 +1057,7 @@ static DEVICE_API(uart, uart_esp32_api) = {
 		ESP_UART_UHCI_INIT(idx)};                                                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, uart_esp32_init, NULL, &uart_esp32_data_##idx,                  \
-			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_1,                            \
+			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_2,                            \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);

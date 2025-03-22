@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
-	defined(CONFIG_SOC_SERIES_ESP32C6)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -42,7 +36,6 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define CPU_ID()  0
-#define ISR_HANDLER isr_handler_t
 #elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
@@ -51,7 +44,6 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define CPU_ID()  0
-#define ISR_HANDLER isr_handler_t
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 /* gpio structs in esp32c6 are also different */
 #define out out.out_data_orig
@@ -60,10 +52,8 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define CPU_ID()  0
-#define ISR_HANDLER isr_handler_t
 #else
 #define CPU_ID() arch_curr_cpu()->id
-#define ISR_HANDLER intr_handler_t
 #endif
 
 #ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
@@ -482,8 +472,9 @@ static int gpio_esp32_init(const struct device *dev)
 	if (!isr_connected) {
 		int ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
 			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)),
-			(ISR_HANDLER)gpio_esp32_isr,
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)) |
+				ESP_INTR_FLAG_IRAM,
+			(intr_handler_t)gpio_esp32_isr,
 			(void *)dev,
 			NULL);
 
