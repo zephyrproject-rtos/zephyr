@@ -18,6 +18,7 @@
 #define ZEPHYR_INCLUDE_USB_CLASS_USBD_UAC2_H_
 
 #include <zephyr/device.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 /**
  * @brief USB Audio Class 2 device API

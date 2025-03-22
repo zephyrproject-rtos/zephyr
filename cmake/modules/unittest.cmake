@@ -67,6 +67,7 @@ list(APPEND INCL_GENERATED_HEADERS
   ${INCL_GENERATED_DIR}/offsets.h
   ${INCL_GENERATED_DIR}/syscall_list.h
   ${INCL_GENERATED_DIR}/syscall_macros.h
+  ${INCL_GENERATED_DIR}/util_expr_bits_generated.h
   ${INCL_GENERATED_SYSCALL_DIR}/kernel.h
   ${INCL_GENERATED_SYSCALL_DIR}/kobject.h
   ${INCL_GENERATED_SYSCALL_DIR}/log_core.h
