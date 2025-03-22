@@ -639,21 +639,24 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 
 /** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
 struct bt_cap_unicast_to_broadcast_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
 	/** The source unicast group with the streams. */
 	struct bt_bap_unicast_group *unicast_group;
 
 	/**
 	 * @brief Whether or not to encrypt the streams.
 	 *
-	 * If set to true, then the broadcast code in @p broadcast_code
-	 * will be used to encrypt the streams.
+	 * If set to true, then the broadcast code in
+	 * @p bt_cap_unicast_to_broadcast_param.broadcast_code will be used to encrypt the streams.
 	 */
 	bool encrypt;
 
 	/**
 	 * @brief 16-octet broadcast code.
 	 *
-	 * Only valid if @p encrypt is true.
+	 * Only valid if @p bt_cap_unicast_to_broadcast_param.encrypt is true.
 	 *
 	 * If the value is a string or a the value is less than 16 octets,
 	 * the remaining octets shall be 0.
@@ -671,10 +674,7 @@ struct bt_cap_unicast_to_broadcast_param {
  * The streams in the unicast group will be stopped and the unicast group
  * will be deleted. This can only be done for source streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_CAP_COMMANDER,CONFIG_BT_BAP_BROADCAST_ASSISTANT,CONFIG_BT_BAP_BROADCAST_SOURCE,CONFIG_BT_BAP_UNICAST_CLIENT}
  *
  * @param param         The parameters for the handover.
  * @param source        The resulting broadcast source.
@@ -715,10 +715,7 @@ struct bt_cap_broadcast_to_unicast_param {
  * The streams in the broadcast source will be stopped and the broadcast source
  * will be deleted.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param[in]  param          The parameters for the handover.
  * @param[out] unicast_group  The resulting broadcast source.
