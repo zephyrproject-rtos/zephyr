@@ -4,13 +4,23 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_SDKNG_UNSUPPORTED
+	bool
+	help
+	  Indicates whether the SDKNG supports the current SoC
+
+config MCUX_HW_DEVICE_CORE
+	string
+	help
+	  Indicates the current device core id
+
 config HAS_MCUX
 	bool
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
 		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_NXP_RW || \
 		SOC_FAMILY_NXP_MCX
 
-if HAS_MCUX
+if	HAS_MCUX
 
 config MCUX_CORE_SUFFIX
 	string
