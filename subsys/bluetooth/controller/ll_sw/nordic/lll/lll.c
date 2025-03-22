@@ -612,16 +612,7 @@ void lll_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 uint32_t lll_event_offset_get(struct ull_hdr *ull)
 {
-	if (0) {
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-	} else if (ull->ticks_prepare_to_start & XON_BITMASK) {
-		return MAX(ull->ticks_active_to_start,
-			   ull->ticks_preempt_to_start);
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	} else {
-		return MAX(ull->ticks_active_to_start,
-			   ull->ticks_prepare_to_start);
-	}
+	return HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 }
 
 uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
@@ -1108,9 +1099,8 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		p = &next->prepare_param;
 		ull = HDR_LLL2ULL(p->param);
 		preempt_anchor = p->ticks_at_expire;
-		preempt_to = MAX(ull->ticks_active_to_start,
-				 ull->ticks_prepare_to_start) -
-			     ull->ticks_preempt_to_start;
+		preempt_to = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
+			     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 
 		ticks_at_preempt_new = preempt_anchor + preempt_to;
 		ticks_at_preempt_new &= HAL_TICKER_CNTR_MASK;
@@ -1134,9 +1124,8 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		p = &first->prepare_param;
 		ull = HDR_LLL2ULL(p->param);
 		preempt_anchor = p->ticks_at_expire;
-		preempt_to = MAX(ull->ticks_active_to_start,
-				 ull->ticks_prepare_to_start) -
-			     ull->ticks_preempt_to_start;
+		preempt_to = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
+			     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 
 		ticks_at_preempt_new = preempt_anchor + preempt_to;
 		ticks_at_preempt_new &= HAL_TICKER_CNTR_MASK;

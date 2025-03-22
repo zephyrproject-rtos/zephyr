@@ -316,13 +316,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
 	conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
 
-	/* TODO: active_to_start feature port */
-	conn->ull.ticks_active_to_start = 0U;
-	conn->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	/* Remember peer and own identity address */
 	conn->peer_id_addr_type = peer_addr_type;
@@ -802,8 +795,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	ll_rx_put_sched(link, rx);
 
-	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
-				conn->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
