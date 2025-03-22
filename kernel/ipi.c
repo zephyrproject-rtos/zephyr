@@ -7,6 +7,9 @@
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
+#ifdef CONFIG_ZVM
+#include <zephyr/zvm/zvm.h>
+#endif
 
 #ifdef CONFIG_TRACE_SCHED_IPI
 extern void z_trace_sched_ipi(void);
@@ -99,6 +102,10 @@ void z_sched_ipi(void)
 #ifdef CONFIG_TRACE_SCHED_IPI
 	z_trace_sched_ipi();
 #endif /* CONFIG_TRACE_SCHED_IPI */
+
+#ifdef CONFIG_ZVM
+	zvm_ipi_handler();
+#endif /* CONFIG_ZVM */
 
 #ifdef CONFIG_TIMESLICING
 	if (thread_is_sliceable(_current)) {

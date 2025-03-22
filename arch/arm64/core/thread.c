@@ -130,9 +130,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
 
+#if defined(CONFIG_ZVM) && defined(CONFIG_HAS_ARM_VHE)
+	pInitCtx->spsr = SPSR_MODE_EL2H | DAIF_FIQ_BIT;
+	/* init thread's vcpu_struct */
+	thread->vcpu_struct = NULL;
+#else
 	/* Keep using SP_EL1 */
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ_BIT;
-
+#endif
 	/* thread birth happens through the exception return path */
 	thread->arch.exception_depth = 1;
 

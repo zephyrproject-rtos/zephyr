@@ -32,6 +32,7 @@ add_subdirectory(task_wdt)
 add_subdirectory(testsuite)
 add_subdirectory(tracing)
 add_subdirectory(usb)
+add_subdirectory(zvm)
 
 add_subdirectory_ifdef(CONFIG_ARM_SIP_SVC_SUBSYS sip_svc)
 add_subdirectory_ifdef(CONFIG_BINDESC bindesc)
