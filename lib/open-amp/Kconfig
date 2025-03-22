@@ -34,3 +34,35 @@ config OPENAMP_RSC_TABLE_IPM_TX_ID
 	help
 	   This option specifies the IPM TX channel ID used in a VRING
 	   for interprocessor communication
+
+config OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH
+	int "Vendor specific length of the resource"
+	default 0
+	range 0 4
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Length, in words, of the vendor specific resource supported by remote processor.
+
+config OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_0
+	hex "Vendor specific features supported by remoteproc"
+	depends on (OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 0)
+	help
+	  Specify the vendor specific features supported by remote processor
+
+config OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_1
+	hex "Vendor specific features supported by remoteproc"
+	depends on (OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 1)
+	help
+	  Specify the vendor specific features supported by remote processor
+
+config OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_2
+	hex "Vendor specific features supported by remoteproc"
+	depends on (OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 2)
+	help
+	  Specify the vendor specific features supported by remote processor
+
+config OPENAMP_RSC_TABLE_VENDOR_DATA_FEATURES_3
+	hex "Vendor specific features supported by remoteproc"
+	depends on (OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 3)
+	help
+	  Specify the vendor specific features supported by remote processor
