@@ -975,6 +975,7 @@ Display drivers:
   collaborators:
     - jfischer-no
     - danieldegrasse
+    - VynDragon
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -3249,6 +3250,7 @@ RISCV arch:
     - carlocaione
     - npitre
     - ycsin
+    - VynDragon
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -5127,6 +5129,8 @@ West:
   maintainers:
     - nzmichaelh
     - kholia
+  collaborators:
+    - VynDragon
   files:
     - modules/hal_wch/
 
