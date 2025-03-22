@@ -5,7 +5,12 @@
  */
 
 / {
-	ntc {
+
+	aliases {
+		light-sensor = &grove_light;
+	};
+
+	grove_light: grove_light {
 		compatible = "seeed,grove-light";
 		io-channels = <&arduino_adc 0>;
 	};
