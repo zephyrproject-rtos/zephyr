@@ -632,18 +632,11 @@ class Reporting:
             )
             logger.info("-+" * 40)
 
-    def summary(self, results, ignore_unrecognized_sections, duration):
+    def summary(self, results, duration):
         failed = 0
         run = 0
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FAIL:
-                failed += 1
-            elif not ignore_unrecognized_sections and instance.metrics.get("unrecognized"):
-                logger.error(
-                    f"{Fore.RED}FAILED{Fore.RESET}:"
-                    f" {instance.name} has unrecognized binary sections:"
-                    f" {instance.metrics.get('unrecognized', [])!s}"
-                )
                 failed += 1
 
             # FIXME: need a better way to identify executed tests

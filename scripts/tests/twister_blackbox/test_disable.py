@@ -14,6 +14,7 @@ import sys
 import re
 
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from twisterlib.size_calc import SizeCalculator
 from twisterlib.testplan import TestPlan
 
 
@@ -126,3 +127,38 @@ class TestDisable:
 
         assert str(sys_exit.value) == expected_exit_code, \
             f"Twister return not expected ({expected_exit_code}) exit code: ({sys_exit.value})"
+
+    @pytest.mark.parametrize(
+        'flags, expect_log',
+        [
+            ([], True),
+            (['--disable-unrecognized-section-test'], False)
+        ],
+        ids=['no disable flag', 'disabled']
+    )
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    # This mock makes all read only sections unrecognized, so the test fails.
+    @mock.patch.object(SizeCalculator, 'ro_sections', [])
+    def test_disable_unrecognized_section_test(self, capfd, out_path, flags, expect_log):
+        test_platforms = ['intel_adl_crb']
+        path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
+        args = ['-i', '--outdir', out_path, '-T', path] + \
+               flags + \
+               ['--enable-size-report'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with (
+            mock.patch.object(sys, 'argv', [sys.argv[0]] + args),
+            pytest.raises(SystemExit) as sys_exit
+        ):
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '0'
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        assert ('has unrecognized binary sections' in err) == expect_log
