@@ -138,3 +138,9 @@
 &wdt {
 	status = "okay";
 };
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

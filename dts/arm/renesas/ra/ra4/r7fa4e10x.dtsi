@@ -11,6 +11,7 @@
 /delete-node/ &spi1;
 /delete-node/ &agt4;
 /delete-node/ &adc1;
+/delete-node/ &dac1;
 /delete-node/ &iic1;
 /delete-node/ &pwm0;
 
@@ -258,4 +259,8 @@
 	port-irq5-pins = <1 10>;
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

@@ -90,6 +90,12 @@
 	pinctrl-names = "default";
 };
 
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &port_irq4 {
 	interrupts = <27 12>;
 	status = "okay";
