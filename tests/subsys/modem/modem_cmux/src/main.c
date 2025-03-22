@@ -27,6 +27,8 @@
 #define EVENT_CMUX_DLCI1_CLOSED		BIT(7)
 #define EVENT_CMUX_DLCI2_CLOSED		BIT(8)
 #define EVENT_CMUX_DISCONNECTED		BIT(9)
+#define CMUX_BASIC_HRD_SMALL_SIZE	6
+#define CMUX_BASIC_HRD_LARGE_SIZE	7
 
 /*************************************************************************************************/
 /*                                          Instances                                            */
@@ -194,6 +196,8 @@ static uint8_t cmux_frame_dlci2_ppp_18[] = {0xF9, 0x0B, 0xEF, 0x25, 0x7E, 0xFF, 
 static uint8_t cmux_frame_data_dlci2_ppp_18[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21,
 						 0x7D, 0x22, 0x7D, 0x21, 0x7D, 0x20,
 						 0x7D, 0x24, 0x7D, 0x3C, 0x90, 0x7E};
+
+static uint8_t cmux_frame_data_large[127] = { [0 ... 126] = 0xAA };
 
 const static struct modem_backend_mock_transaction transaction_control_cld = {
 	.get = cmux_frame_control_cld_cmd,
@@ -862,6 +866,24 @@ ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
 			    cmux_frame_data_dlci2_at_newline,
 			    sizeof(cmux_frame_data_dlci2_at_newline)) == 0,
 		     "Incorrect data received");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_split_large_data)
+{
+	int ret;
+	uint32_t events;
+
+	ret = modem_pipe_transmit(dlci2_pipe, cmux_frame_data_large,
+				  sizeof(cmux_frame_data_large));
+	zassert_true(ret == CONFIG_MODEM_CMUX_MTU, "Failed to split large data %d", ret);
+
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI2_TRANSMIT_IDLE, false, K_MSEC(200));
+	zassert_equal(events, EVENT_CMUX_DLCI2_TRANSMIT_IDLE,
+		      "Transmit idle event not received for DLCI2 pipe");
+
+	ret = modem_backend_mock_get(&bus_mock, buffer2, sizeof(buffer2));
+	zassert_true(ret == CONFIG_MODEM_CMUX_MTU + CMUX_BASIC_HRD_SMALL_SIZE,
+		     "Incorrect number of bytes transmitted %d", ret);
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);
