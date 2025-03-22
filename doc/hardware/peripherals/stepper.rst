@@ -14,6 +14,7 @@ Configure Stepper Driver
   and :c:func:`stepper_get_actual_position`.
 - Set **step interval** in nanoseconds between steps using :c:func:`stepper_set_microstep_interval`
 - **Enable** the stepper driver using :c:func:`stepper_enable`.
+- **Disable** the stepper driver using :c:func:`stepper_disable`.
 
 Control Stepper
 ===============
