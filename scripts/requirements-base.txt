@@ -18,12 +18,12 @@ canopen
 packaging
 progress
 patool
-psutil
+psutil>=5.6.6
 pylink-square
 pyserial
-requests
+requests>=2.32.0
 semver
-tqdm
+tqdm>=4.67.1
 
 # for ram/rom reports
 anytree
