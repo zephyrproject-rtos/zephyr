@@ -311,7 +311,7 @@ extern "C" {
 
 #define sys_port_trace_k_heap_init(heap)
 #define sys_port_trace_k_heap_aligned_alloc_enter(heap, timeout)
-#define sys_port_trace_k_heap_aligned_alloc_blocking(heap, timeout)
+#define sys_port_trace_k_heap_alloc_helper_blocking(heap, timeout)
 #define sys_port_trace_k_heap_aligned_alloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_alloc_enter(heap, timeout)
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)
