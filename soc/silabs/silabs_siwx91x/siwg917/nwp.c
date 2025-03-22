@@ -20,9 +20,12 @@
 #include "rsi_ble_common_config.h"
 #endif
 
+#define AP_MAX_NUM_STA 4
+
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
-int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
+int siwg91x_get_nwp_config(siwx91x_boot_config_t boot_cfg,
+			   sl_wifi_device_configuration_t *get_config)
 {
 	sl_wifi_device_configuration_t default_config = {
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
@@ -42,7 +45,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
-	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+	if (boot_cfg.oper_mode == WIFI_STA_MODE) {
 		boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
 
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) &&
@@ -86,9 +89,22 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 			SL_SI91X_BLE_ENABLE_ADV_EXTN |
 			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
 #endif
-	} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+	} else if (boot_cfg.oper_mode == WIFI_AP_MODE) {
 		boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
 		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+
+		if (boot_cfg.hidden_ssid) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
+		}
+
+		if (boot_cfg.max_num_sta > AP_MAX_NUM_STA) {
+			LOG_ERR("Device supports max %d stations only", AP_MAX_NUM_STA);
+			return -EINVAL;
+		}
+
+		boot_config->custom_feature_bit_map |=
+			SL_SI91X_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(boot_cfg.max_num_sta);
 
 		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 			LOG_WRN("Bluetooth is not supported in AP mode");
@@ -105,20 +121,20 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
-			if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+			if (boot_cfg.oper_mode == WIFI_STA_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
-			} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+			} else if (boot_cfg.oper_mode == WIFI_AP_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
 			}
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+			if (boot_cfg.oper_mode == WIFI_STA_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
-			} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+			} else if (boot_cfg.oper_mode == WIFI_AP_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
 			}
@@ -131,20 +147,14 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 	return 0;
 }
 
-int siwx91x_nwp_mode_switch(uint8_t oper_mode)
+int siwx91x_nwp_mode_switch(siwx91x_boot_config_t boot_cfg)
 {
 	sl_wifi_device_configuration_t nwp_config;
-	sl_status_t status;
+	int status;
 
-	switch (oper_mode) {
-	case WIFI_STA_MODE:
-		siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &nwp_config);
-		break;
-	case WIFI_AP_MODE:
-		siwg91x_get_nwp_config(SL_SI91X_ACCESS_POINT_MODE, &nwp_config);
-		break;
-	default:
-		return -EINVAL;
+	status = siwg91x_get_nwp_config(boot_cfg, &nwp_config);
+	if (status < 0) {
+		return status;
 	}
 
 	/* FIXME: Calling sl_wifi_deinit() impacts Bluetooth if coexistence is enabled */
@@ -164,9 +174,11 @@ int siwx91x_nwp_mode_switch(uint8_t oper_mode)
 static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
+	siwx91x_boot_config_t boot_cfg = { };
 	sl_status_t status;
 
-	siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &network_config);
+	boot_cfg.oper_mode = WIFI_STA_MODE;
+	siwg91x_get_nwp_config(boot_cfg, &network_config);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
 	 */
