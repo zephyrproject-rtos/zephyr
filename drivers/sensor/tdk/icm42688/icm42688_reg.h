@@ -285,6 +285,8 @@
 #define MCLK_POLL_INTERVAL_US 250
 #define MCLK_POLL_ATTEMPTS    100
 #define SOFT_RESET_TIME_MS    2 /* 1ms + elbow room */
+#define ICM42688_BUS_I2C      (1<<0)
+#define ICM42688_BUS_SPI      (1<<1)
 
 /* FIFO header */
 #define FIFO_HEADER_ACCEL BIT(6)

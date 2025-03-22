@@ -331,7 +331,7 @@ struct icm42688_dev_data {
 #ifdef CONFIG_ICM42688_STREAM
 	struct rtio_iodev_sqe *streaming_sqe;
 	struct rtio *r;
-	struct rtio_iodev *spi_iodev;
+	struct rtio_iodev *rtio_iodev;
 	uint8_t int_status;
 	uint16_t fifo_count;
 	uint64_t timestamp;
@@ -345,15 +345,6 @@ struct icm42688_dev_data {
 #endif /* CONFIG_ICM42688_TRIGGER */
 
 	int16_t readings[7];
-};
-
-/**
- * @brief Device config (struct device)
- */
-struct icm42688_dev_cfg {
-	struct spi_dt_spec spi;
-	struct gpio_dt_spec gpio_int1;
-	struct gpio_dt_spec gpio_int2;
 };
 
 /**
