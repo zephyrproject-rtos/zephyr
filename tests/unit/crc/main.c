@@ -12,6 +12,28 @@
 #include "../../../lib/crc/crc32c_sw.c"
 #include "../../../lib/crc/crc7_sw.c"
 #include "../../../lib/crc/crc24_sw.c"
+#include "../../../lib/crc/crc32k_4_2_sw.c"
+
+ZTEST(crc, test_crc32_k_4_2)
+{
+	uint8_t test1[] = "A";
+	uint8_t test2[] = "123456789";
+	uint8_t test3[] = "Zephyr";
+
+	const uint32_t TEST2_CRC = 0x3ee83603;
+
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test1, sizeof(test1) - 1), 0x2d098604);
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test2, sizeof(test2) - 1), TEST2_CRC);
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test3, sizeof(test3) - 1), 0xacf334b2);
+
+	/* test iteration */
+	uint32_t crc = 0xFFFFFFFF;
+
+	for (size_t i = 0; i < sizeof(test2) - 1; i++) {
+		crc = crc32_k_4_2_update(crc, &test2[i], 1);
+	}
+	zassert_equal(crc, TEST2_CRC);
+}
 
 ZTEST(crc, test_crc32c)
 {
