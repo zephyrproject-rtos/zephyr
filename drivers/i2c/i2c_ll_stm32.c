@@ -587,15 +587,39 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 
-#define I2C_DMA_INIT(index, dir)                                                                   \
-	.dir##_dma = {.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                    \
-				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),              \
-			       .dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),       \
-					(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1))},
+#define I2C_DMA_INIT(index, dir, src, dest)				\
+	.dir##_dma = {							\
+		.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),\
+				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),\
+		.dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),\
+				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),\
+		.dma_cfg = {						\
+			.dma_slot = STM32_DMA_SLOT(index, dir, slot),	\
+			.channel_direction = STM32_DMA_CONFIG_DIRECTION(\
+						STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+			.cyclic =  STM32_DMA_CONFIG_CYCLIC(		\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),  \
+			.channel_priority = STM32_DMA_CONFIG_PRIORITY(	\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+			.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(\
+						STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+			.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+			.source_burst_length = 1, 			\
+			.dest_burst_length = 1,				\
+		},							\
+		.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(\
+			STM32_DMA_CHANNEL_CONFIG(index, dir)),		\
+		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+		.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(	\
+					STM32_DMA_FEATURES(index, dir)),\
+	},
+				
 
 #else
 
-#define I2C_DMA_INIT(index, dir)
+#define I2C_DMA_INIT(index, dir, src, dest)
 
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
@@ -624,8 +648,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),		\
 		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,\
 		 .n_timings = ARRAY_SIZE(i2c_timings_##index),))	\
-	I2C_DMA_INIT(index, tx) \
-	I2C_DMA_INIT(index, rx) \
+	I2C_DMA_INIT(index, tx, PERIPHERAL, MEMORY) 			\
+	I2C_DMA_INIT(index, rx, MEMORY, PERIPHERAL) 			\
 };									\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
