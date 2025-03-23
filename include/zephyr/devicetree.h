@@ -5694,5 +5694,6 @@
 #include <zephyr/devicetree/port-endpoint.h>
 #include <zephyr/devicetree/display.h>
 #include <zephyr/devicetree/hwspinlock.h>
+#include <zephyr/devicetree/map.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */
