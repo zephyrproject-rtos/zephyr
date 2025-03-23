@@ -898,6 +898,55 @@ class PinCtrl:
         "See the class docstring"
         return str_as_token(self.name) if self.name is not None else None
 
+@dataclass
+class MapEntry:
+    """
+    Represents a single entry parsed from a ``*-map`` property. For example,
+    the value '<0 0 &gpio0 14 0>' from 'gpio-map = <0 0 &gpio0 14 0>, <1 0 &gpio0 0 0>;'
+    becomes one ``MapEntry`` instance.
+
+    These attributes are available on ``MapEntry`` objects:
+
+    node:
+      The Node instance whose property contains the map entry.
+
+    child_addresses:
+      A list of integers describing the unit address portion that precedes the
+      child specifier.  ``interrupt-map`` entries, for example, begin with the
+      child unit address whose length is determined by ``#address-cells`` on the
+      nexus node or its parent.  When no address cells are defined this list is
+      empty.
+
+    child_specifiers:
+      A list of integers read from the child side of the map entry after any
+      address words.  These are the specifier cells that precede the parent
+      phandle.
+
+    parent:
+      The parent Node instance.
+
+    parent_addresses:
+      The unit address portion that follows the parent phandle.  Its length is
+      derived from the parent's ``#address-cells`` (with the same parent lookup
+      fallback as in the devicetree specification).  Empty when no address cells
+      are provided.
+
+    parent_specifiers:
+      A list of integers describing the parent side of the mapping after any
+      parent address cells.  These values correspond to the ``*-cells``
+      definition in the parent's binding.
+
+    basename:
+      The base name of the ``*-map`` property, which also describes the
+      specifier space for the mapping.
+    """
+    node: 'Node'
+    child_addresses: list[int]
+    child_specifiers: list[int]
+    parent: 'Node'
+    parent_addresses: list[int]
+    parent_specifiers: list[int]
+    basename: str
 
 class Node:
     """
@@ -1044,6 +1093,11 @@ class Node:
       A list of ControllerAndData objects for the GPIOs hogged by the node. The
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
+
+    maps:
+      A dictionary that the list of MapEntry instances associated with a string key.
+      The key is the basename-part of the node property name, the value is
+      the entries of the property value.
 
     is_pci_device:
       True if the node is a PCI device.
@@ -1314,6 +1368,103 @@ class Node:
                 node=self, controller=controller,
                 data=self._named_cells(controller, item, "gpio"),
                 name=None, basename="gpio"))
+
+        return res
+
+    @property
+    def maps(self) -> dict[str, list[MapEntry]]:
+        "See the class docstring"
+
+        res: dict[str, list[MapEntry]] = {}
+
+        def count_specifier_cells(node: dtlib_Node, specifier: str) -> int:
+            """Return the number of specifier cells for *specifier* in *node*."""
+
+            cells_prop = f"#{specifier}-cells"
+
+            if cells_prop not in node.props:
+                _err(f"{node!r} lacks required '{cells_prop}' property")
+
+            return node.props[cells_prop].to_num()
+
+        def count_address_cells(node: dtlib_Node) -> int:
+            """Return the number of interrupt address cells for *node*."""
+
+            if "#address-cells" in node.props:
+                return node.props["#address-cells"].to_num()
+
+            if node.parent and "#address-cells" in node.parent.props:
+                return node.parent.props["#address-cells"].to_num()
+
+            return 0
+
+        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+            specifier_space = prop.name[:-4]  # Strip '-map'
+            entries : list[MapEntry] = []
+            raw = prop.value
+            while raw:
+                if len(raw) < 4:
+                    # Not enough room for phandle
+                    _err("bad value for " + repr(prop))
+
+                child_address_cells = 0
+                if specifier_space == "interrupt":
+                    child_address_cells = count_address_cells(prop.node)
+
+                child_specifier_cells = count_specifier_cells(prop.node, specifier_space)
+                child_total_cells = child_address_cells + child_specifier_cells
+
+                if len(raw) < 4 * child_total_cells:
+                    _err("bad value for " + repr(prop))
+
+                child_cells = to_nums(raw[: 4 * child_total_cells])
+                child_addresses = child_cells[:child_address_cells]
+                child_specifiers = child_cells[child_address_cells:]
+
+                raw = raw[4 * child_total_cells :]
+                phandle = to_num(raw[:4])
+                raw = raw[4:]
+
+                parent_node = prop.node.dt.phandle2node.get(phandle)
+                if parent_node is None:
+                    _err(f"parent node cannot be found from phandle:{phandle}")
+
+                parent: Node = self.edt._node2enode[parent_node]
+                if parent is None:
+                    _err("parent cannot be found from: " + repr(parent_node))
+
+                parent_address_cells = 0
+                if specifier_space == "interrupt":
+                    parent_address_cells = count_address_cells(parent_node)
+
+                parent_specifier_cells = count_specifier_cells(parent_node, specifier_space)
+                parent_total_cells = parent_address_cells + parent_specifier_cells
+
+                if len(raw) < 4 * parent_total_cells:
+                    _err("bad value for " + repr(prop))
+
+                parent_cells = to_nums(raw[: 4 * parent_total_cells])
+                parent_addresses = parent_cells[:parent_address_cells]
+                parent_specifiers = parent_cells[parent_address_cells:]
+
+                raw = raw[4 * parent_total_cells :]
+
+                entries.append(
+                    MapEntry(
+                        node=self,
+                        child_addresses=child_addresses,
+                        child_specifiers=child_specifiers,
+                        parent=parent,
+                        parent_addresses=parent_addresses,
+                        parent_specifiers=parent_specifiers,
+                        basename=specifier_space,
+                    )
+                )
+
+            if len(raw) != 0:
+                _err(f"unexpected prop.value remainings: {raw}")
+
+            res[specifier_space] = entries
 
         return res
 
