@@ -3211,14 +3211,16 @@ def _size_cells(node: dtlib_Node) -> int:
     return 1  # Default value per DT spec.
 
 
+def _cells(node: dtlib_Node, name: str) -> int:
+    # Returns the #<name>-cells property value on 'node', erroring out if
+    # 'node' has no #<name>-cells property
+
+    if f"#{name}-cells" not in node.props:
+        _err(f"{node!r} lacks #{name}-cells")
+    return node.props[f"#{name}-cells"].to_num()
+
 def _interrupt_cells(node: dtlib_Node) -> int:
-    # Returns the #interrupt-cells property value on 'node', erroring out if
-    # 'node' has no #interrupt-cells property
-
-    if "#interrupt-cells" not in node.props:
-        _err(f"{node!r} lacks #interrupt-cells")
-    return node.props["#interrupt-cells"].to_num()
-
+    return _cells(node, "interrupt")
 
 def _slice(node: dtlib_Node,
            prop_name: str,
