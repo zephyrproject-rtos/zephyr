@@ -103,6 +103,12 @@ operations that are potentially blocking (e.g. taking a semaphore) must be
 used with care, since the workqueue cannot process subsequent work items in
 its queue until the handler function finishes executing.
 
+.. warning::
+
+   The system workqueue can not safely be used to perform operations which are
+   potentially blocking, as there is no guarantee that work items submitted to
+   it do not depend on subsequent work items in the queue to unblock them.
+
 The single argument that is passed to a handler function can be ignored if it
 is not required. If the handler function requires additional information about
 the work it is to perform, the work item can be embedded in a larger data
