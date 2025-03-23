@@ -65,7 +65,7 @@ config MODEM_MAXIMUM_TR_RC_SIZE
 
 config MODEM_QUECTEL_BG95_APN
 	string "APN for establishing network connection"
-	default "airtelgprs.com"
+	default "airteliot.com"
 	help
 	  This setting is used in the AT+CGDCONT command to set the APN name
 	  for the network connection context.  This value is specific to

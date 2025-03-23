@@ -346,7 +346,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				/* Wait for more data */
 				break;
 			} else if (ret > 0) {
-				LOG_DBG("match direct cmd [%s] (ret:%d)",
+				LOG_INF("match direct cmd [%s] (ret:%d)",
 					log_strdup(cmd->cmd), ret);
 				data->rx_buf = net_buf_skip(data->rx_buf, ret);
 			}
@@ -376,9 +376,9 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				data->match_buf_len - 1, match_len);
 		}
 
-#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
-		LOG_HEXDUMP_DBG(data->match_buf, match_len, "RECV");
-#endif
+//#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+		LOG_HEXDUMP_INF(data->match_buf, match_len, "RECV");
+//#endif
 
 		k_sem_take(&data->sem_parse_lock, K_FOREVER);
 
@@ -532,20 +532,20 @@ int modem_cmd_send_ext(struct modem_iface *iface,
 		}
 	}
 
-#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
-	LOG_HEXDUMP_DBG(buf, strlen(buf), "SENT DATA");
+//#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+	LOG_HEXDUMP_INF(buf, strlen(buf), "SENT DATA");
 
 	if (data->eol_len > 0) {
 		if (data->eol[0] != '\r') {
 			/* Print the EOL only if it is not \r, otherwise there
 			 * is just too much printing.
 			 */
-			LOG_HEXDUMP_DBG(data->eol, data->eol_len, "SENT EOL");
+			LOG_HEXDUMP_INF(data->eol, data->eol_len, "SENT EOL");
 		}
 	} else {
 		LOG_DBG("EOL not set!!!");
 	}
-#endif
+//#endif
 	if (sem) {
 		k_sem_reset(sem);
 	}

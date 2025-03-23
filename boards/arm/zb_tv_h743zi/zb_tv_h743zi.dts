@@ -60,9 +60,9 @@
 
     vbatt {
 		compatible = "voltage-divider";
-		io-channels = <&adc1 15>;
-		output-ohms = <10760>;
-		full-ohms = <(10760 + 97600)>;
+		io-channels = <&adc1 0>;
+		output-ohms = <47000>;
+		full-ohms = <(47000 + 220000)>;
         //power-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -353,7 +353,7 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_inp15_pa3>;
+    pinctrl-0 = <&adc1_inp16_pa0>;
     pinctrl-names = "default";
 	status = "okay";
 };

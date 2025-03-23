@@ -64,9 +64,9 @@
 
     vbatt {
 		compatible = "voltage-divider";
-		io-channels = <&adc1 15>;
-		output-ohms = <10760>;
-		full-ohms = <(10760 + 97600)>;
+		io-channels = <&adc1 0>;
+		output-ohms = <47000>;
+		full-ohms = <(47000 + 220000)>;
         //power-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -259,6 +259,7 @@ zephyr_udc0: &usbotg_hs {
     quectel_bg95: quectel_bg95 {
         compatible = "quectel,bg95";
 	    label = "quectel-bg95";
+        status = "okay";
         // 3V8 power
 		mdm-power-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
         // pwr/rst
@@ -269,8 +270,7 @@ zephyr_udc0: &usbotg_hs {
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
     pinctrl-names = "default";
-	//current-speed = <9600>;
-	current-speed = <19200>;
+	current-speed = <9600>;
 	status = "okay";
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
@@ -358,7 +358,7 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_inp15_pa3>;
+    pinctrl-0 = <&adc1_inp16_pa0>;
     pinctrl-names = "default";
 	status = "okay";
 };

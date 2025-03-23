@@ -132,7 +132,7 @@ static int on_cmd_sockread_common(int socket_fd,
 
 	/* check to make sure we have all of the data. */
 	if (net_buf_frags_len(data->rx_buf) < (socket_data_length + bytes_to_skip)) {
-		LOG_DBG("Not enough data -- wait!");
+		LOG_INF("Not enough data -- wait!");
 		return -EAGAIN;
 	}
 
@@ -467,7 +467,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	ret = k_sem_take(&mdata.sem_tx_ready, K_MSEC(5000));
 	if (ret < 0) {
 		/* Didn't get the data prompt - Exit. */
-		LOG_DBG("Timeout waiting for tx");
+		LOG_INF("Timeout waiting for tx");
 		goto exit;
 	}
 
@@ -479,13 +479,13 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	k_sem_reset(&mdata.sem_response);
 	ret = k_sem_take(&mdata.sem_response, timeout);
 	if (ret < 0) {
-		LOG_DBG("No send response");
+		LOG_INF("No send response");
 		goto exit;
 	}
 
 	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
 	if (ret != 0) {
-		LOG_DBG("Failed to send data");
+		LOG_INF("Failed to send data");
 	}
 
 exit:
@@ -568,7 +568,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char   sendbuf[sizeof("AT+QIRD=##,####")] = {0};
-	int    ret;
+	int    ret, next_packet_size;
 	struct socket_read_data sock_data;
 
 	/* Modem command to read the data. */
@@ -583,6 +583,11 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		errno = ENOTSUP;
 		return -1;
 	}
+
+    if (!(flags & ZSOCK_MSG_DONTWAIT)) {
+        modem_socket_wait_data(&mdata.socket_config, sock);
+    }
+    LOG_INF("QIRD LEN: %d\n", len);
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, len);
 
@@ -685,12 +690,14 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	int		    ret;
 	char		    ip_str[NET_IPV6_ADDR_LEN];
 
+    LOG_INF("%s, %d", __func__, __LINE__);
 	if (sock->id < mdata.socket_config.base_socket_num - 1) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
 			sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	if (sock->is_connected == true) {
 		LOG_ERR("Socket is already connected!! socket_id(%d), socket_fd:%d",
@@ -698,6 +705,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		errno = EISCONN;
 		return -1;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* Find the correct destination port. */
 	if (addr->sa_family == AF_INET6) {
@@ -705,12 +713,14 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	} else if (addr->sa_family == AF_INET) {
 		dst_port = ntohs(net_sin(addr)->sin_port);
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* UDP is not supported. */
 	if (sock->ip_proto == IPPROTO_UDP) {
 		errno = ENOTSUP;
 		return -1;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	k_sem_reset(&mdata.sem_sock_conn);
 
@@ -722,6 +732,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		errno = -ret;
 		return -1;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* Formulate the complete string. */
 	snprintk(buf, sizeof(buf), "AT+QIOPEN=%d,%d,\"%s\",\"%s\",%d,0,0", 1, sock->sock_fd, protocol,
@@ -738,6 +749,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		errno = -ret;
 		return -1;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* set command handlers */
 	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
@@ -745,6 +757,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	if (ret < 0) {
 		goto exit;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* Wait for QI+OPEN */
 	ret = k_sem_take(&mdata.sem_sock_conn, MDM_CMD_CONN_TIMEOUT);
@@ -754,6 +767,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		socket_close(sock);
 		goto exit;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
 	if (ret != 0) {
@@ -761,12 +775,14 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		socket_close(sock);
 		goto exit;
 	}
+    LOG_INF("%s, %d", __func__, __LINE__);
 
 	/* Connected successfully. */
 	sock->is_connected = true;
 	errno = 0;
 	return 0;
 
+    LOG_INF("%s, %d", __func__, __LINE__);
 exit:
 	(void) modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
 					     NULL, 0U, false);
@@ -803,7 +819,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	ssize_t sent = 0;
 	int rc;
 
-	LOG_DBG("msg_iovlen:%zd flags:%d", msg->msg_iovlen, flags);
+	LOG_INF("msg_iovlen:%zd flags:%d", msg->msg_iovlen, flags);
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		const char *buf = msg->msg_iov[i].iov_base;
