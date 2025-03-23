@@ -2,9 +2,18 @@ name: "CodeQL"
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
+      - v*-branch
+      - collab-*
   schedule:
     - cron: '34 16 * * 3'
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
 permissions:
   contents: read
 jobs:
