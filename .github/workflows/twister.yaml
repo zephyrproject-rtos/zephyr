@@ -13,7 +13,7 @@ on:
       - collab-*
   schedule:
     # Run at 17:00 UTC on every Saturday
-    - cron: '0 17 * * 6'
+    - cron: '30 15 * * 7'
 
 permissions:
   contents: read
