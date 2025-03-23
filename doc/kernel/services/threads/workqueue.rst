@@ -109,6 +109,9 @@ its queue until the handler function finishes executing.
    potentially blocking, as there is no guarantee that work items submitted to
    it do not depend on subsequent work items in the queue to unblock them.
 
+   :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_NO_BLOCK` enforces that no work
+   items submitted to the system workqueue perform any blocking operations.
+
 The single argument that is passed to a handler function can be ignored if it
 is not required. If the handler function requires additional information about
 the work it is to perform, the work item can be embedded in a larger data

@@ -523,6 +523,10 @@ static inline void z_vrfy_k_thread_resume(k_tid_t thread)
 
 static void unready_thread(struct k_thread *thread)
 {
+	if (IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_BLOCK) && k_is_in_sys_work()) {
+		k_oops();
+	}
+
 	if (z_is_thread_queued(thread)) {
 		dequeue_thread(thread);
 	}
