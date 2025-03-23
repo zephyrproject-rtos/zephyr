@@ -19,7 +19,7 @@
 
 in_addr_t inet_addr(const char *cp)
 {
-	int val = 0;
+	unsigned int val = 0;
 	int len = 0;
 	int dots = 0;
 	int digits = 0;
