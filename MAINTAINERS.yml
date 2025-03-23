@@ -3002,6 +3002,20 @@ Networking:
   tests:
     - sample.net.gptp
 
+"Networking: Latmon":
+  status: maintained
+  maintainers:
+    - ldts
+  files:
+    - doc/connectivity/networking/api/latmon.rst
+    - include/zephyr/net/latmon.h
+    - samples/net/latmon/
+    - subsys/net/lib/latmon/
+  labels:
+    - "area: Networking"
+  tests:
+    - sample.net.latmon
+
 "Networking: LWM2M":
   status: maintained
   maintainers:
