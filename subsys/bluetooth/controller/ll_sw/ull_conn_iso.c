@@ -311,6 +311,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 					    uint16_t *handle_iter)
 {
 	struct ll_conn_iso_stream *cis_next = NULL;
+	struct ll_conn_iso_stream *cis_curr;
 	struct ll_conn_iso_group *cig;
 	uint32_t cis_offset_curr;
 	uint32_t cis_offset_next;
@@ -322,16 +323,15 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 		/* First in the iteration, start with a minimum offset value and
 		 * find the first CIS offset of the active CIS.
 		 */
+		cis_curr = NULL;
 		cis_offset_curr = 0U;
 	} else {
 		/* Subsequent iteration, get reference to current CIS and use
 		 * its CIS offset to find the next active CIS with offset
 		 * greater than the current CIS.
 		 */
-		struct ll_conn_iso_stream *cis_curr;
-
 		cis_curr = ll_conn_iso_stream_get(*handle_iter);
-		cis_offset_curr = cis_curr->offset;
+		cis_offset_curr = cis_curr->lll.offset;
 	}
 
 	cis_offset_next = UINT32_MAX;
@@ -346,7 +346,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 
 		/* Match CIS contexts associated with the CIG */
 		if (cis->group == cig) {
-			if (cis->offset <= cis_offset_curr) {
+			if (cis_curr && (cis->lll.offset <= cis_offset_curr)) {
 				/* Skip already returned CISes with offsets less
 				 * than the current CIS.
 				 */
@@ -357,9 +357,9 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 			 * lower than previous that we remember as the next CIS
 			 * in ascending order.
 			 */
-			if (cis->offset < cis_offset_next) {
+			if (cis->lll.offset < cis_offset_next) {
 				cis_next = cis;
-				cis_offset_next = cis_next->offset;
+				cis_offset_next = cis_next->lll.offset;
 
 				if (handle_iter) {
 					(*handle_iter) = handle;
