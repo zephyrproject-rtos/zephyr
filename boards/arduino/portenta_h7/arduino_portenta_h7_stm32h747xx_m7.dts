@@ -8,7 +8,7 @@
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include "arduino_portenta_h7-common.dtsi"
-#include <../boards/common/usb/cdc_acm_serial.dtsi>
+/* #include <../boards/common/usb/cdc_acm_serial.dtsi> */
 
 / {
 	model = "Arduino Portenta H7 board";
