@@ -1182,6 +1182,19 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 bool k_is_in_isr(void);
 
 /**
+ * @brief Determine if code is running from system work item
+ *
+ * This routine allows the caller to customize its actions, depending on
+ * whether it is running from a system workqueue item.
+ *
+ * @funcprops \isr_ok
+ *
+ * @return false if not invoked from a system workqueue item.
+ * @return true if invoked from a system workqueue item.
+ */
+bool k_is_in_sys_work(void);
+
+/**
  * @brief Determine if code is running in a preemptible thread.
  *
  * This routine allows the caller to customize its actions, depending on

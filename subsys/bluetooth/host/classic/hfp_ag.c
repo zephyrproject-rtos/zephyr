@@ -215,7 +215,7 @@ static struct bt_ag_tx *bt_ag_tx_alloc(void)
 	 * so if we're in the same workqueue but there are no immediate
 	 * contexts available, there's no chance we'll get one by waiting.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (k_is_in_sys_work()) {
 		return k_fifo_get(&ag_tx_free, K_NO_WAIT);
 	}
 

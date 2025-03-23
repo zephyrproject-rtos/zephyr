@@ -410,7 +410,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	/* Since the commands are now processed in the syswq, we cannot suspend
 	 * and wait. We have to send the command from the current context.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (k_is_in_sys_work()) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
