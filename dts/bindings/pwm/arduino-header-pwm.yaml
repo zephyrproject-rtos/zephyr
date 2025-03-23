@@ -1,0 +1,14 @@
+# Copyright (C) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PWM channels exposed on Arduino headers.
+
+  Arduino's PWM pin names shares the same definition as Digital pins one.
+  That is, the mapping of PWM output on pin D3 on Arduino UNO R3 header is
+
+    pwm-map = <9 0 0 &pwm0 1 0 0>;
+
+compatible: "arduino-header-pwm"
+
+include: [base.yaml, pwm-nexus.yaml]
