@@ -187,12 +187,49 @@ static bool fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
 /**
  * Cleans up open file handle and state when upload is finished.
  */
-static void fs_mgmt_upload_download_finish_check(void)
+static void fs_mgmt_upload_download_finish_check(struct smp_streamer *ctxt)
 {
 	if (fs_mgmt_ctxt.len > 0 && fs_mgmt_ctxt.off >= fs_mgmt_ctxt.len) {
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		struct fs_mgmt_file_access file_access_data;
+		char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
+		enum mgmt_cb_return status;
+		int32_t err_rc;
+		uint16_t err_group;
+		zcbor_state_t *zse = ctxt->writer->zs;
+
+		strcpy(path, fs_mgmt_ctxt.path);
+		file_access_data.filename = path;
+		LOG_ERR("fs_mgmt.c path: %s", file_access_data.filename);
+		switch (fs_mgmt_ctxt.state) {
+		case STATE_DOWNLOAD:
+			file_access_data.access = FS_MGMT_FILE_ACCESS_READ;
+			break;
+
+		case STATE_UPLOAD:
+			file_access_data.access = FS_MGMT_FILE_ACCESS_WRITE;
+			break;
+
+		default:
+			break;
+		}
+#else
+		ARG_UNUSED(ctxt);
+#endif
+
 		/* File upload/download has finished, clean up */
 		k_work_cancel_delayable(&fs_mgmt_ctxt.file_close_work);
 		fs_mgmt_cleanup();
+
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		/* Warn application that file download/upload is done. */
+		status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS_DONE,
+			 &file_access_data, sizeof(file_access_data), &err_rc, &err_group);
+
+		if (status != MGMT_CB_OK) {
+			smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+		}
+#endif
 	} else {
 		k_work_reschedule(&fs_mgmt_ctxt.file_close_work, FILE_CLOSE_IDLE_TIME);
 	}
@@ -335,7 +372,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	     ((off != 0)							||
 		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, fs_mgmt_ctxt.len)));
 
-	fs_mgmt_upload_download_finish_check();
+	fs_mgmt_upload_download_finish_check(ctxt);
 
 end:
 	rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
@@ -553,7 +590,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 	/* Send the response. */
 	ok = fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off);
-	fs_mgmt_upload_download_finish_check();
+	fs_mgmt_upload_download_finish_check(ctxt);
 
 end:
 	rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
