@@ -1,0 +1,9 @@
+board:
+  name: bl54l15u_dvk
+  full_name: BL54L15u DVK
+  vendor: ezurio
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
