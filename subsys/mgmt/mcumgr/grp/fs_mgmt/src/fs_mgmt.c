@@ -190,9 +190,39 @@ static bool fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
 static void fs_mgmt_upload_download_finish_check(void)
 {
 	if (fs_mgmt_ctxt.len > 0 && fs_mgmt_ctxt.off >= fs_mgmt_ctxt.len) {
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
+		struct fs_mgmt_file_access file_access_data = {
+			.filename = path,
+		};
+		int32_t err_rc;
+		uint16_t err_group;
+
+		strcpy(path, fs_mgmt_ctxt.path);
+
+		switch (fs_mgmt_ctxt.state) {
+		case STATE_DOWNLOAD:
+			file_access_data.access = FS_MGMT_FILE_ACCESS_READ;
+			break;
+
+		case STATE_UPLOAD:
+			file_access_data.access = FS_MGMT_FILE_ACCESS_WRITE;
+			break;
+
+		default:
+			break;
+		}
+#endif
+
 		/* File upload/download has finished, clean up */
 		k_work_cancel_delayable(&fs_mgmt_ctxt.file_close_work);
 		fs_mgmt_cleanup();
+
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		/* Warn application that file download/upload is done. */
+		(void)mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS_DONE, &file_access_data,
+					   sizeof(file_access_data), &err_rc, &err_group);
+#endif
 	} else {
 		k_work_reschedule(&fs_mgmt_ctxt.file_close_work, FILE_CLOSE_IDLE_TIME);
 	}
