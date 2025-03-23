@@ -205,6 +205,27 @@ static const struct json_obj_descr outer_descr[] = {
 				num_elements, element_descr, ARRAY_SIZE(element_descr))
 };
 
+struct test_alignment_nested {
+	bool bool1;
+	int int1;
+	bool bool2;
+};
+
+struct test_alignment_bool {
+	struct test_alignment_nested array[3];
+	size_t num_elements;
+};
+
+static const struct json_obj_descr alignment_nested_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, bool1, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, int1, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, bool2, JSON_TOK_TRUE),
+};
+
+static const struct json_obj_descr alignment_bool_descr[] = {
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_alignment_bool, array, 3, num_elements,
+				 alignment_nested_descr, ARRAY_SIZE(alignment_nested_descr)) };
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
@@ -1360,6 +1381,29 @@ ZTEST(lib_json_test, test_json_array_alignment)
 	zassert_equal(o.array[1].int1, 4, "Element 1 int1 not decoded correctly");
 	zassert_equal(o.array[1].int2, 5, "Element 1 int2 not decoded correctly");
 	zassert_equal(o.array[1].int3, 6, "Element 1 int3 not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_array_alignment_bool)
+{
+	char encoded[] = "{\"array\":["
+			 "{\"bool1\":true,\"int1\":1,\"bool2\":false},"
+			 "{\"bool1\":true,\"int1\":2,\"bool2\":false}"
+			 "]}";
+
+	struct test_alignment_bool o = { 0 };
+	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, alignment_bool_descr,
+				     ARRAY_SIZE(alignment_bool_descr), &o);
+
+	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
+
+	zassert_equal(o.array[0].bool1, true, "Element 0 bool1 not decoded correctly");
+	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
+	zassert_equal(o.array[0].bool2, false, "Element 0 bool2 not decoded correctly");
+
+	zassert_equal(o.array[1].bool1, true, "Element 1 bool1 not decoded correctly");
+	zassert_equal(o.array[1].int1, 2, "Element 1 int1 not decoded correctly");
+	zassert_equal(o.array[1].bool2, false, "Element 1 bool2 not decoded correctly");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
