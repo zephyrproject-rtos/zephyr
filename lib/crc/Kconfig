@@ -1,4 +1,5 @@
 # Copyright (c) 2016,2023 Intel Corporation
+# Copyright (c) 2024 Intercreate, Inc.
 # SPDX-License-Identifier: Apache-2.0
 #
 config CRC
@@ -13,4 +14,10 @@ config CRC_SHELL
 	select POSIX_C_LIB_EXT
 	help
 	  Enable CRC checking for memory regions from the shell.
+
+config CRC32_K_4_2_TABLE_256
+	bool "Use 256-length table for CRC32-K/4.2"
+	help
+	  Enable the 256-length instead of 16-length table for CRC32-K/4.2.
+
 endif # CRC
