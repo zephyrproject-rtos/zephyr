@@ -4,6 +4,12 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
+    - name: ArduinoCore-zephyr
+      revision: next
+      path: modules/lib/ArduinoCore-zephyr
+      remote: upstream
+      groups:
+        - optional
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
