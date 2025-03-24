@@ -240,7 +240,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	/* If max stddev is lower than a single clock cycle then round it up. */
 	uint32_t max_stddev = MAX(k_cyc_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
 
-	TC_PRINT("timer clock rate %d, kernel tick rate %d\n",
+	TC_PRINT("timer clock rate %u, kernel tick rate %d\n",
 		 sys_clock_hw_cycles_per_sec(), CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 	if ((USEC_PER_SEC / CONFIG_TIMER_TEST_PERIOD) > CONFIG_SYS_CLOCK_TICKS_PER_SEC) {
 		TC_PRINT("test timer period (%u us) is smaller than "
@@ -282,8 +282,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 ", \"total_drift_us\":%.6f"
 		 ", \"expected_period_cycles\":%.0f"
 		 ", \"expected_period_drift_us\":%.6f"
-		 ", \"sys_clock_hw_cycles_per_sec\":%d"
-		 ", \"CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC\":%d"
+		 ", \"sys_clock_hw_cycles_per_sec\":%u"
+		 ", \"CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC\":%u"
 		 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%d"
 		 ", \"CONFIG_TIMER_TEST_PERIOD\":%d"
 		 ", \"CONFIG_TIMER_TEST_SAMPLES\":%d"
@@ -304,7 +304,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 expected_period,
 		 expected_period_drift,
 		 sys_clock_hw_cycles_per_sec(),
-		 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+		 (uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 		 CONFIG_SYS_CLOCK_TICKS_PER_SEC,
 		 CONFIG_TIMER_TEST_PERIOD,
 		 CONFIG_TIMER_TEST_SAMPLES,
