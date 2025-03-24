@@ -4100,7 +4100,7 @@ void hci_event_prio(struct net_buf *buf)
 
 static void rx_queue_put(struct net_buf *buf)
 {
-	net_buf_slist_put(&bt_dev.rx_queue, buf);
+	sys_slist_append(&bt_dev.rx_queue, &buf->node);
 
 #if defined(CONFIG_BT_RECV_WORKQ_SYS)
 	const int err = k_work_submit(&rx_work);
@@ -4227,10 +4227,10 @@ static void rx_work_handler(struct k_work *work)
 	struct net_buf *buf;
 
 	LOG_DBG("Getting net_buf from queue");
-	buf = net_buf_slist_get(&bt_dev.rx_queue);
-	if (!buf) {
+	if (sys_slist_is_empty(&bt_dev.rx_queue)) {
 		return;
 	}
+	buf = CONTAINER_OF(sys_slist_get_not_empty(&bt_dev.rx_queue), struct net_buf, node);
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 

@@ -58,7 +58,7 @@ static struct net_buf *alloc_reassembly_buf(uint16_t conn_handle)
 		(struct reassembly_buf_meta_data *)buf->user_data;
 
 	buf_meta_data->conn_handle = conn_handle;
-	net_buf_slist_put(&reassembly_bufs, buf);
+	sys_slist_append(&reassembly_bufs, &buf->node);
 
 	LOG_DBG("Allocated new reassembly buffer for conn handle %d", conn_handle);
 	return buf;

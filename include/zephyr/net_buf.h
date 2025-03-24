@@ -1468,19 +1468,23 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve);
 /**
  * @brief Put a buffer into a list
  *
+ * @deprecated No longer necessary, use sys_slist_append() instead.
+ *
  * @param list Which list to append the buffer to.
  * @param buf Buffer.
  */
-void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
+__deprecated void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
 
 /**
  * @brief Get a buffer from a list.
+ *
+ * @deprecated No longer necessary, use sys_slist_get() instead.
  *
  * @param list Which list to take the buffer from.
  *
  * @return New buffer or NULL if the FIFO is empty.
  */
-struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
+__deprecated struct net_buf *__must_check net_buf_slist_get(sys_slist_t *list);
 
 /**
  * @brief Decrements the reference count of a buffer.

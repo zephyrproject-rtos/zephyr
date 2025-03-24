@@ -2285,7 +2285,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	LOG_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
 
 	/* Store buffer in the outstanding queue */
-	net_buf_slist_put(&chan->att->prep_queue, data.buf);
+	sys_slist_append(&chan->att->prep_queue, &data.buf->node);
 
 	/* Generate response */
 	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_PREPARE_WRITE_RSP);
@@ -2396,7 +2396,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
 						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
 
-		buf = net_buf_slist_get(&chan->att->prep_queue);
+		buf = CONTAINER_OF(sys_slist_get(&chan->att->prep_queue), struct net_buf, node);
 		data = net_buf_user_data(buf);
 		handle = data->handle;
 
@@ -3112,7 +3112,8 @@ static void att_reset(struct bt_att *att)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = net_buf_slist_get(&att->prep_queue))) {
+	while (!sys_slist_is_empty(&att->prep_queue)) {
+		buf = CONTAINER_OF(sys_slist_get_not_empty(&att->prep_queue), struct net_buf, node);
 		net_buf_unref(buf);
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */

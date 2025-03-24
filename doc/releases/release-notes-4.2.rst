@@ -60,6 +60,9 @@ Removed APIs and options
 
 Deprecated APIs and options
 
+* Deprecated the ``net_buf_slist_put()`` and ``net_buf_slist_get()`` API functions,
+  as they are no longer needed. Use ``sys_slist_get()``/``sys_slist_append()``.
+
 * The scheduler Kconfig options CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB were
   renamed and deprecated. Use :kconfig:option:`CONFIG_SCHED_SIMPLE` and
   :kconfig:option:`CONFIG_WAITQ_SIMPLE` instead.
