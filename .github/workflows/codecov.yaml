@@ -104,7 +104,6 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          pip install gcovr==6.0
           ./scripts/twister -E ${{matrix.normalized}}-testplan.json
           ls -la
           ./scripts/twister \
@@ -143,6 +142,17 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Download Artifacts
         uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
@@ -185,7 +195,6 @@ jobs:
       - name: Merge coverage files
         run: |
           pushd ./coverage/reports
-          pip install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
           popd
@@ -201,7 +210,6 @@ jobs:
       - name: Generate Coverage Report
         if: always()
         run: |
-          pip install xlsxwriter ijson
           python3 ./scripts/ci/coverage/coverage_analysis.py \
             -t native_sim-testplan.json \
             -m MAINTAINERS.yml \
