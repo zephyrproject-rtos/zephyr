@@ -5064,6 +5064,15 @@ West:
   labels:
     - "area: West"
 
+"West project: Arduino-Core-Zephyr":
+  status: maintained
+  maintainers:
+    - dhruvag2000
+  files:
+    - snippets/arduino-core/
+  labels:
+    - manifest-arduino-api
+
 "West project: acpica":
   status: maintained
   maintainers:
