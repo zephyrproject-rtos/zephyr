@@ -345,6 +345,17 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	memset(&data, 0, sizeof(struct stored_data));
+	/* test load_one: path "ps/ss/ss/val2". Only data.val2 should
+	 * receive a value
+	 */
+	val = 2;
+	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+	rc = settings_load_one("ps/ss/ss/val2", &data.val2, sizeof(uint8_t));
+	zassert_true(rc >= 0, "settings_load_one failed");
+	err = (data.val1 == 0) && (data.val2 == 2) && (data.val3 == 0);
+	zassert_true(err, "wrong data value found %u != 2", data.val2);
+
 	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
 	zassert_true(rc, "deregistering val1_settings failed");
