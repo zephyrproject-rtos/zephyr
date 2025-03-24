@@ -587,33 +587,6 @@ struct wifi_connect_req_params {
 	enum wifi_frequency_bandwidths bandwidth;
 };
 
-/** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
- * in the connect result event for detailed status.
- */
-enum wifi_conn_status {
-	/** Connection successful */
-	WIFI_STATUS_CONN_SUCCESS = 0,
-	/** Connection failed - generic failure */
-	WIFI_STATUS_CONN_FAIL,
-	/** Connection failed - wrong password
-	 * Few possible reasons for 4-way handshake failure that we can guess are as follows:
-	 * 1) Incorrect key
-	 * 2) EAPoL frames lost causing timeout
-	 *
-	 * #1 is the likely cause, so, we convey to the user that it is due to
-	 * Wrong passphrase/password.
-	 */
-	WIFI_STATUS_CONN_WRONG_PASSWORD,
-	/** Connection timed out */
-	WIFI_STATUS_CONN_TIMEOUT,
-	/** Connection failed - AP not found */
-	WIFI_STATUS_CONN_AP_NOT_FOUND,
-	/** Last connection status */
-	WIFI_STATUS_CONN_LAST_STATUS,
-	/** Connection disconnected status */
-	WIFI_STATUS_DISCONN_FIRST_STATUS = WIFI_STATUS_CONN_LAST_STATUS,
-};
-
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
  * in the disconnect result event for detailed reason.
  */

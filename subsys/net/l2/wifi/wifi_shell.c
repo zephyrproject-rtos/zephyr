@@ -315,7 +315,9 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 	const struct shell *sh = context.sh;
 
 	if (status->status) {
-		PR_WARNING("Connection request failed (%d)\n", status->status);
+		PR_WARNING("Connection request failed (%s/%d)\n",
+			   wifi_conn_status_txt(status->status),
+			   status->status);
 	} else {
 		PR("Connected\n");
 	}
