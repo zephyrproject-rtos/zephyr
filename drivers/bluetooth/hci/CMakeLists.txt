@@ -25,6 +25,10 @@ if(CONFIG_DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED)
   zephyr_blobs_verify(MODULE hal_infineon REQUIRED)
 endif()
 
+if(CONFIG_DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED)
+  zephyr_blobs_verify(MODULE hal_renesas REQUIRED)
+endif()
+
 endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 zephyr_library_sources_ifdef(CONFIG_BT_ESP32       hci_esp32.c)
