@@ -314,6 +314,12 @@ New APIs and options
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE`
 
 
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
+
 New Boards
 **********
 
