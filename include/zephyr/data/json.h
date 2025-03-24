@@ -35,6 +35,7 @@ enum json_tokens {
 	JSON_TOK_ARRAY_START = '[',
 	JSON_TOK_ARRAY_END = ']',
 	JSON_TOK_STRING = '"',
+	JSON_TOK_STRING_BUF = 's',
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
@@ -110,6 +111,9 @@ struct json_obj_descr {
 			const struct json_obj_descr *element_descr;
 			size_t n_elements;
 		} array;
+		struct {
+			size_t size;
+		} field;
 	};
 };
 
@@ -159,6 +163,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name_len = sizeof(#field_name_) - 1, \
 		.type = type_, \
 		.offset = offsetof(struct_, field_name_), \
+		.field = { \
+			.size = SIZEOF_FIELD(struct_, field_name_) \
+		}, \
 	}
 
 /**
@@ -449,6 +456,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name_len = sizeof(json_field_name_) - 1, \
 		.type = type_, \
 		.offset = offsetof(struct_, struct_field_name_), \
+		.field = { \
+			.size = SIZEOF_FIELD(struct_, struct_field_name_) \
+		}, \
 	}
 
 /**
