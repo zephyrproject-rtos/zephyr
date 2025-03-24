@@ -1359,9 +1359,8 @@ static void uart_stm32_isr(const struct device *dev)
 		LL_USART_DisableIT_TC(usart);
 		/* Generate TX_DONE event when transmission is done */
 		async_evt_tx_done(data);
-
 #ifdef CONFIG_PM
-		uart_stm32_pm_policy_state_lock_put(dev);
+		uart_stm32_pm_policy_state_lock_put_unconditional();
 #endif
 	} else if (LL_USART_IsEnabledIT_RXNE(usart) &&
 			LL_USART_IsActiveFlag_RXNE(usart)) {
@@ -1674,7 +1673,7 @@ static int uart_stm32_async_tx(const struct device *dev,
 #ifdef CONFIG_PM
 
 	/* Do not allow system to suspend until transmission has completed */
-	uart_stm32_pm_policy_state_lock_get(dev);
+	uart_stm32_pm_policy_state_lock_get_unconditional();
 #endif
 
 	/* Enable TX DMA requests */
