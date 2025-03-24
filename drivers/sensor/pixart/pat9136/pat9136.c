@@ -434,6 +434,9 @@ static int pat9136_init(const struct device *dev)
 	BUILD_ASSERT(DT_PROP(DT_DRV_INST(inst), resolution) >= 0 &&				   \
 		     DT_PROP(DT_DRV_INST(inst), resolution) <= 0xC7,				   \
 		     "Resolution must be in range 0-199");					   \
+	BUILD_ASSERT(DT_PROP(DT_DRV_INST(inst), cooldown_timer_ms) <				   \
+		     DT_PROP(DT_DRV_INST(inst), backup_timer_ms),				   \
+		     "Cooldown timer must be less than backup timer");				   \
 												   \
 	RTIO_DEFINE(pat9136_rtio_ctx_##inst, 16, 16);						   \
 	SPI_DT_IODEV_DEFINE(pat9136_bus_##inst,							   \
@@ -444,6 +447,7 @@ static int pat9136_init(const struct device *dev)
 	static const struct pat9136_config pat9136_cfg_##inst = {				   \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 		.backup_timer_period = DT_PROP(DT_DRV_INST(inst), backup_timer_ms),		   \
+		.cooldown_timer_period = DT_PROP(DT_DRV_INST(inst), cooldown_timer_ms),		   \
 		.resolution = DT_INST_PROP(inst, resolution),					   \
 	};											   \
 												   \
