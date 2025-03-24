@@ -178,7 +178,6 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          pip install junitparser junit2html
           junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
           junit2html junit.xml junit.html
 
