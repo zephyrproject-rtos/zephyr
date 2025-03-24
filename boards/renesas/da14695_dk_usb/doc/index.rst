@@ -10,13 +10,6 @@ The DA14695 Development Kit USB is a low cost development board for DA14695.
 The development kit comes with an integrated debugger and an USB hub
 to have both the on-chip USB and the J-Link connected via a single port.
 
-.. figure:: da14695-00hqdevkt-u-usb-board.jpg
-     :width: 442px
-     :align: center
-     :alt: DA14695 Development Kit USB
-
-     DA14695 Development Kit USB (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
 
