@@ -1,5 +1,6 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
 # Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Aerlync Labs Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,6 +19,7 @@ import sys
 import tempfile
 import textwrap
 import traceback
+import os
 
 from dataclasses import dataclass
 from west import log
@@ -697,6 +699,15 @@ def dump_context(command, args, unknown_args):
         log.wrn('no --build-dir given or found; output will be limited')
         runners_yaml = None
     else:
+        # To handle --sysbuild domains.
+        domains_yaml = os.path.join(build_dir, 'domains.yaml')
+        if os.path.exists(domains_yaml):
+            with open(domains_yaml, 'r') as f:
+                domains = yaml.safe_load(f)
+            default_domain = domains.get('default')
+            if default_domain:
+                build_dir = os.path.join(build_dir, default_domain)
+
         build_conf = BuildConfiguration(build_dir)
         board = build_conf.get('CONFIG_BOARD_TARGET')
         yaml_path = runners_yaml_path(build_dir, board)
