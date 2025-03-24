@@ -6053,7 +6053,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		uint64_t pkt_seq_num;
 
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
-		event_count = cis->lll.event_count + event_offset;
+		event_count = cis->lll.event_count_prepare + event_offset;
 		pkt_seq_num = event_count + 1U;
 
 		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
@@ -6096,7 +6096,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						   ISO_INT_UNIT_US));
 
 #else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
-		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
+		sdu_frag_tx.target_event = cis->lll.event_count_prepare + event_offset;
 		sdu_frag_tx.grp_ref_point =
 			isoal_get_wrapped_time_us(cig->cig_ref_point,
 						  (event_offset *
