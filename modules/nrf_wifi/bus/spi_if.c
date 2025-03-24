@@ -23,8 +23,10 @@ LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 
 static struct qspi_config *spim_config;
 
-static const struct spi_dt_spec spi_spec =
+static struct spi_dt_spec spi_spec =
 SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+
+static uint32_t spi_dt_freq;
 
 static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 {
@@ -176,6 +178,9 @@ int _spim_wait_while_rpu_awake(void)
 		return -1;
 	}
 
+	/* Restore QSPI clock frequency from DTS */
+	spi_spec.config.frequency = spi_dt_freq;
+
 	return val;
 }
 
@@ -208,6 +213,9 @@ int spim_wait_while_rpu_wake_write(void)
 
 int spim_cmd_rpu_wakeup(uint32_t data)
 {
+	/* Waking RPU works reliably only with lowest frequency (8MHz) */
+	spi_spec.config.frequency = MHZ(8);
+
 	return spim_write_reg(0x3F, data);
 }
 
@@ -242,6 +250,8 @@ int spim_init(struct qspi_config *config)
 	if (spi_spec.config.frequency >= MHZ(16)) {
 		spim_config->qspi_slave_latency = 1;
 	}
+
+	spi_dt_freq = spi_spec.config.frequency;
 
 	LOG_INF("SPIM %s: freq = %d MHz", spi_spec.bus->name,
 		spi_spec.config.frequency / MHZ(1));
