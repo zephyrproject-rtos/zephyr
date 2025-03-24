@@ -249,10 +249,6 @@ static void smp_lorawan_start(void)
 		LOG_ERR("Failed to init LoRaWAN MCUmgr SMP transport: %d", rc);
 	}
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_REASSEMBLY
-	smp_reassembly_init(&smp_lorawan_transport);
-#endif
-
 #ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
 	k_thread_create(&smp_lorawan_thread, smp_lorawan_stack,
 			K_KERNEL_STACK_SIZEOF(smp_lorawan_stack),
