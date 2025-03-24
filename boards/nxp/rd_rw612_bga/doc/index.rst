@@ -25,6 +25,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+.. note::
+
+   Power modes 1, 2 and 3 are supported when using System Power Management.
+
 Display Support
 ***************
 
