@@ -24,6 +24,7 @@
 		compatible = "usb-ulpi-phy";
 		reset-gpios = < &gpioj 4 GPIO_ACTIVE_LOW >;
 		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 26U)>;
 	};
 
 	aliases {
