@@ -235,7 +235,7 @@ struct coredump_backend_api {
 	coredump_backend_start_t		start;
 
 	/* Signal to backend of the end of coredump. */
-	coredump_backend_end_t		end;
+	coredump_backend_end_t			end;
 
 	/* Raw buffer output */
 	coredump_backend_buffer_output_t	buffer_output;
