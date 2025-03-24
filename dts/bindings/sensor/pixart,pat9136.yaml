@@ -33,3 +33,13 @@ properties:
       even if no motion is present, when Data-Ready streaming trigger is
       configured.
       Default is 1000X the fastest frame rate (20,000 fps).
+
+  cooldown-timer-ms:
+    type: int
+    default: 10
+    description: |
+      The cooldown timer in milliseconds used to prevent flooding the system
+      with interrupts (potentially at max 20,000 fps) while Data-Ready
+      streaming trigger is configured.
+      Default is 200X the fastest frame rate (20,000 fps).
+      Must be less than backup-timer-ms.

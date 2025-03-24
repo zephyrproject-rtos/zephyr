@@ -11,6 +11,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/work.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/sensor/pat9136.h>
 
 #include "pat9136.h"
@@ -27,8 +28,18 @@ static void start_drdy_backup_timer(const struct device *dev)
 	struct pat9136_data *data = dev->data;
 	const struct pat9136_config *cfg = dev->config;
 
-	k_timer_start(&data->stream.timer,
+	k_timer_start(&data->stream.timer.backup,
 		      K_MSEC(cfg->backup_timer_period),
+		      K_NO_WAIT);
+}
+
+static void start_drdy_cooldown_timer(const struct device *dev)
+{
+	struct pat9136_data *data = dev->data;
+	const struct pat9136_config *cfg = dev->config;
+
+	k_timer_start(&data->stream.timer.cooldown.timer,
+		      K_MSEC(cfg->cooldown_timer_period),
 		      K_NO_WAIT);
 }
 
@@ -83,6 +94,18 @@ static void pat9136_stream_get_data(const struct device *dev)
 		LOG_WRN("No RTIO submission with an INT GPIO event");
 		return;
 	}
+
+	/** This sensor may trigger data at a very fast pace (20,000 fps) and this
+	 * may not be useful for the application. Instead, it may affect its
+	 * proper functioning. Therefore, this timer keeps the INT line disabled
+	 * (which happens on every submission) until the cool-down the time has expired.
+	 * This, in order to "throttle" the interrupt-servicing rate of this sensor
+	 * (see: pat9136_stream_cooldown_timeout).
+	 *
+	 * Please note that this does not mean the sensor discards data: as the
+	 * value is accumulative until read by the application.
+	 */
+	start_drdy_cooldown_timer(dev);
 
 	struct pat9136_encoded_data *buf;
 	uint32_t buf_len;
@@ -223,7 +246,7 @@ static void pat9136_gpio_callback(const struct device *gpio_dev,
 	const struct pat9136_config *cfg = dev->config;
 	int err;
 
-	/* Disable interrupts */
+	/* Disable interrupts until cool-down expires */
 	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
 					      GPIO_INT_MODE_DISABLED);
 	if (err) {
@@ -238,7 +261,7 @@ static void pat9136_stream_drdy_timeout(struct k_timer *timer)
 {
 	struct pat9136_stream *stream = CONTAINER_OF(timer,
 						     struct pat9136_stream,
-						     timer);
+						     timer.backup);
 	const struct device *dev = stream->dev;
 	const struct pat9136_config *cfg = dev->config;
 	int err;
@@ -252,6 +275,31 @@ static void pat9136_stream_drdy_timeout(struct k_timer *timer)
 	}
 
 	pat9136_stream_get_data(dev);
+}
+
+static void pat9136_stream_cooldown_timeout(struct k_timer *timer)
+{
+	struct pat9136_stream *stream = CONTAINER_OF(timer,
+						     struct pat9136_stream,
+						     timer.cooldown.timer);
+	const struct device *dev = stream->dev;
+	const struct pat9136_config *cfg = dev->config;
+	int err;
+
+	/** Disarm Cooldown timer as it has expired. Needs another
+	 * submission to re-enable.
+	 */
+	if (!atomic_cas(&stream->timer.cooldown.armed, 1, 0)) {
+		return;
+	}
+
+	/* Re-enable interrupts */
+	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+					      GPIO_INT_LEVEL_ACTIVE);
+	if (err) {
+		LOG_ERR("Failed to enable interrupt");
+		return;
+	}
 }
 
 static inline bool settings_changed(const struct pat9136_stream *a,
@@ -323,16 +371,19 @@ void pat9136_stream_submit(const struct device *dev,
 			rtio_iodev_sqe_err(iodev_sqe, err);
 			return;
 		}
-	}
 
-	/* Re-enable interrupts */
-	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-						GPIO_INT_LEVEL_ACTIVE);
-	if (err) {
-		LOG_ERR("Failed to enable interrupt");
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
-		return;
+		/** Re-enable interrupts if settings changed. Otherwise wait
+		 * for cooldown timeout in the event of periodic streaming
+		 * submission.
+		 */
+		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+						      GPIO_INT_LEVEL_ACTIVE);
+		if (err) {
+			LOG_ERR("Failed to enable interrupt");
+			data->stream.iodev_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, err);
+			return;
+		}
 	}
 
 	/** Back-up timer allows us to keep checking in with the sensor in
@@ -342,6 +393,9 @@ void pat9136_stream_submit(const struct device *dev,
 	if (data->stream.settings.enabled.drdy) {
 		start_drdy_backup_timer(dev);
 	}
+
+	/** Arm cooldown timer once for each submission. */
+	atomic_set(&data->stream.timer.cooldown.armed, 1);
 }
 
 int pat9136_stream_init(const struct device *dev)
@@ -379,7 +433,10 @@ int pat9136_stream_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_timer_init(&data->stream.timer, pat9136_stream_drdy_timeout, NULL);
+	k_timer_init(&data->stream.timer.backup, pat9136_stream_drdy_timeout, NULL);
+	k_timer_init(&data->stream.timer.cooldown.timer, pat9136_stream_cooldown_timeout, NULL);
+
+	atomic_clear(&data->stream.timer.cooldown.armed);
 
 	return err;
 }
