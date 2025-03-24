@@ -198,14 +198,12 @@ ZTEST(spi_loopback, test_spi_null_tx_buf)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	static const uint8_t expected_nop_return_buf[BUF_SIZE] = { 0 };
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
-							      NULL, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      buffer_rx, BUF_SIZE);
 
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
 
-	spi_loopback_transceive(spec, &tx, &rx);
+	spi_loopback_transceive(spec, NULL, &rx);
 
 	spi_loopback_compare_bufs(expected_nop_return_buf, buffer_rx, BUF_SIZE,
 				  buffer_print_rx, buffer_print_rx);
