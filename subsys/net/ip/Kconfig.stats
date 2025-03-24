@@ -162,4 +162,11 @@ config NET_STATISTICS_VIA_PROMETHEUS
 	  Enable this option to expose the network statistics
 	  to Prometheus monitoring system.
 
+config NET_STATISTICS_VPN
+	bool "VPN statistics"
+	depends on NET_VPN
+	default y
+	help
+	  Keep track of VPN related statistics
+
 endif # NET_STATISTICS
