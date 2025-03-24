@@ -32,6 +32,12 @@
 	};
 
 	soc {
+		pinctrl: pin-controller@41030000 {
+			compatible = "renesas,rzg-pinctrl";
+			reg = <0x41030000 DT_SIZE_K(64)>;
+			reg-names = "pinctrl";
+		};
+
 		scif0: serial@4004b800 {
 			compatible = "renesas,rz-scif-uart";
 			channel = <0>;
