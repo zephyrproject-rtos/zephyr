@@ -26,7 +26,6 @@ static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
 	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
 }
 
-
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {
@@ -201,9 +200,7 @@ static void lpspi_isr(const struct device *dev)
 		return;
 	}
 
-	if (spi_context_rx_len_left(ctx) == 1) {
-		base->TCR &= ~LPSPI_TCR_CONT_MASK;
-	} else if (spi_context_rx_on(ctx)) {
+	if (spi_context_rx_on(ctx)) {
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
 		size_t expected_rx_left = rx_fifo_len < ctx->rx_len ? ctx->rx_len - rx_fifo_len : 0;
 		size_t max_fill = MIN(expected_rx_left, config->rx_fifo_size);
@@ -213,7 +210,11 @@ static void lpspi_isr(const struct device *dev)
 					max_fill - tx_current_fifo_len : 0;
 
 		lpspi_fill_tx_fifo_nop(dev);
-	} else {
+	}
+
+	if (spi_context_rx_len_left(ctx) == 1) {
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
+	} else if (spi_context_rx_len_left(ctx) == 0) {
 		spi_context_complete(ctx, dev, 0);
 		NVIC_ClearPendingIRQ(config->irqn);
 		base->TCR &= ~LPSPI_TCR_CONT_MASK;
@@ -270,7 +271,10 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	LPSPI_EnableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable |
 				     (uint32_t)kLPSPI_RxInterruptEnable);
 
-	return spi_context_wait_for_completion(ctx);
+	ret = spi_context_wait_for_completion(ctx);
+	if (ret >= 0) {
+		return ret;
+	}
 
 error:
 	spi_context_release(ctx, ret);
