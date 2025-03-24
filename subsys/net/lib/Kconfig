@@ -53,4 +53,12 @@ source "subsys/net/lib/prometheus/Kconfig"
 
 source "subsys/net/lib/wifi_credentials/Kconfig"
 
+# Hidden option for VPN usage. Can be selected by the application
+# to setup VPN enablers in the network stack.
+config NET_VPN
+	bool
+	help
+	  Setup VPN enablers in the network stack. Meant to
+	  be enabled by the VPN implementation.
+
 endmenu
