@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Michael Hope
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
