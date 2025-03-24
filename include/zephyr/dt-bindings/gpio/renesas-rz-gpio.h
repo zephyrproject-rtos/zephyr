@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +9,7 @@
 /*********************************RZ/A,G,V**************************************/
 
 /**
- * @brief RZAGV specific GPIO Flags
+ * @brief RZ/A,G,V-specific GPIO Flags
  * The pin driving ability flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:
  * - Bit 8..9: Pin driving ability value
