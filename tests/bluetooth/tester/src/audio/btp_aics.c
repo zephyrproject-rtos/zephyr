@@ -60,7 +60,7 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 	/* octet 2 */
 	tester_set_bit(rp->data, BTP_AICS_DESCRIPTION_GET);
 
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = sizeof(*rp) + 3;
 
 	return BTP_STATUS_SUCCESS;
 }

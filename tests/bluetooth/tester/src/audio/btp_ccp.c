@@ -59,7 +59,7 @@ static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_CCP_RETRIEVE_CALL);
 	tester_set_bit(rp->data, BTP_CCP_JOIN_CALLS);
 
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp) + 4;
 
 	return BTP_STATUS_SUCCESS;
 }
