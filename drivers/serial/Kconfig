@@ -205,6 +205,7 @@ rsource "Kconfig.pl011"
 rsource "Kconfig.psoc6"
 rsource "Kconfig.ql_usbserialport_s3b"
 rsource "Kconfig.rcar"
+rsource "Kconfig.realtek_rts5912"
 rsource "Kconfig.renesas_ra"
 rsource "Kconfig.renesas_ra8"
 rsource "Kconfig.renesas_rz"
@@ -214,6 +215,7 @@ rsource "Kconfig.rv32m1_lpuart"
 rsource "Kconfig.rzt2m"
 rsource "Kconfig.sam0"
 rsource "Kconfig.sedi"
+rsource "Kconfig.si32"
 rsource "Kconfig.sifive"
 rsource "Kconfig.silabs_eusart"
 rsource "Kconfig.silabs_usart"
@@ -224,16 +226,11 @@ rsource "Kconfig.sy1xx"
 rsource "Kconfig.test"
 rsource "Kconfig.uart_sam"
 rsource "Kconfig.usart_sam"
+rsource "Kconfig.wch_usart"
 rsource "Kconfig.xec"
 rsource "Kconfig.xen"
 rsource "Kconfig.xlnx"
 rsource "Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
-
-source "drivers/serial/Kconfig.si32"
-
-source "drivers/serial/Kconfig.wch_usart"
-
-source "drivers/serial/Kconfig.realtek_rts5912"
 
 endif # SERIAL
