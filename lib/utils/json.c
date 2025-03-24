@@ -345,6 +345,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_OBJECT_START:
 	case JSON_TOK_ARRAY_START:
 	case JSON_TOK_STRING:
+	case JSON_TOK_STRING_BUF:
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_INT64:
 	case JSON_TOK_UINT64:
@@ -455,6 +456,21 @@ static int skip_field(struct json_obj *obj, struct json_obj_key_value *kv)
 			}
 		}
 	}
+
+	return 0;
+}
+
+static int decode_string_buf(const struct json_token *token, char *str, size_t size)
+{
+	size_t len = token->end - token->start;
+
+	/* buffer 'str' must be large enough to fit string and null-terminator */
+	if (size <= len) {
+		return -EINVAL;
+	}
+
+	memcpy(str, token->start, len);
+	str[len] = '\0';
 
 	return 0;
 }
@@ -626,6 +642,10 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return true;
 	}
 
+	if (type1 == JSON_TOK_STRING && type2 == JSON_TOK_STRING_BUF) {
+		return true;
+	}
+
 	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_OBJ_ARRAY) {
 		return true;
 	}
@@ -715,6 +735,11 @@ static int64_t decode_value(struct json_obj *obj,
 
 		return 0;
 	}
+	case JSON_TOK_STRING_BUF: {
+		char *str = field;
+
+		return decode_string_buf(value, str, descr->field.size);
+	}
 	default:
 		return -EINVAL;
 	}
@@ -739,6 +764,8 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
+	case JSON_TOK_STRING_BUF:
+		return descr->field.size;
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
@@ -1147,7 +1174,7 @@ static int arr_encode(const struct json_obj_descr *elem_descr,
 	return append_bytes("]", 1, data);
 }
 
-static int str_encode(const char **str, json_append_bytes_t append_bytes,
+static int str_encode(const char *str, json_append_bytes_t append_bytes,
 		      void *data)
 {
 	int ret;
@@ -1157,7 +1184,7 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 		return ret;
 	}
 
-	ret = json_escape_internal(*str, append_bytes, data);
+	ret = json_escape_internal(str, append_bytes, data);
 	if (!ret) {
 		return append_bytes("\"", 1, data);
 	}
@@ -1326,7 +1353,12 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE:
 		return bool_encode(ptr, append_bytes, data);
-	case JSON_TOK_STRING:
+	case JSON_TOK_STRING: {
+		const char **str = ptr;
+
+		return str_encode(*str, append_bytes, data);
+	}
+	case JSON_TOK_STRING_BUF:
 		return str_encode(ptr, append_bytes, data);
 	case JSON_TOK_ARRAY_START:
 		return arr_encode(descr->array.element_descr, ptr,
@@ -1369,8 +1401,7 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	}
 
 	for (i = 0; i < descr_len; i++) {
-		ret = str_encode((const char **)&descr[i].field_name,
-				 append_bytes, data);
+		ret = str_encode(descr[i].field_name, append_bytes, data);
 		if (ret < 0) {
 			return ret;
 		}
