@@ -25,6 +25,7 @@ _west_cmds() {
   local -a zephyr_ext_cmds=(
   'completion[display shell completion scripts]'
   'boards[display information about supported boards]'
+  'shields[display information about supported shields]'
   'build[compile a Zephyr application]'
   'sign[sign a Zephyr binary for bootloader chain-loading]'
   'flash[flash and run a binary on a board]'
@@ -112,6 +113,18 @@ _get_west_boards() {
   _west_boards=(${(@s/ /)_west_boards})
 
   _describe 'boards' _west_boards
+}
+
+_get_west_shields() {
+  _west_shields=( $(__west_x shields --format='{name}') )
+  for i in {1..${#_west_shields[@]}}; do
+    local name="${_west_shields[$i]%%|*}"
+    local transformed_shield="${_west_shields[$i]//|//}"
+    _west_shields[$i]="${transformed_shield//,/ ${name}/}"
+  done
+  _west_shields=(${(@s/ /)_west_shields})
+
+  _describe 'shields' _west_shields
 }
 
 _west_init() {
@@ -228,6 +241,16 @@ _west_boards() {
   _arguments -S $opts
 }
 
+_west_shields() {
+  local -a opts=(
+  {-f,--format}'[format string]:format string:'
+  {-n,--name}'[name regex]:regex:'
+  '*--board-root[Add a board root]:board root:_directories'
+  )
+
+  _arguments -S $opts
+}
+
 _west_build() {
   local -a opts=(
   '(-b --board)'{-b,--board}'[board to build for]:board:_get_west_boards'
@@ -243,6 +266,7 @@ _west_build() {
   {-o,--build-opt}'[options to pass to build tool (make or ninja)]:tool opt:'
   '(-n --just-print --dry-run --recon)'{-n,--just-print,--dry-run,--recon}"[just print build commands, don't run them]"
   '(-p --pristine)'{-p,--pristine}'[pristine build setting]:pristine:(auto always never)'
+  '--shield[shield to build for]:shield:_get_west_shields'
   )
   _arguments -S $opts \
       "1:source_dir:_directories"
