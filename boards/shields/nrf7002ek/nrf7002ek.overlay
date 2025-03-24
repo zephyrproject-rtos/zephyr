@@ -18,7 +18,7 @@
 		compatible = "nordic,nrf7002-spi";
 		status = "okay";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(8)>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
 
 		/* Include common nRF70 overlays */
 		#include "nrf7002ek_common.dtsi"
