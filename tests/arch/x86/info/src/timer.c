@@ -44,7 +44,7 @@ void timer(void)
 	printk("TIMER: unknown");
 #endif
 
-	printk(", configured frequency = %dHz\n",
+	printk(", configured frequency = %uHz\n",
 		sys_clock_hw_cycles_per_sec());
 
 #if defined(CONFIG_COUNTER_CMOS)
