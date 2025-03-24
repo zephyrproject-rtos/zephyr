@@ -1165,7 +1165,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		sdu.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
 						(event_offset * cig->iso_interval *
 							ISO_INT_UNIT_US));
-		sdu.target_event = cis->lll.event_count + event_offset;
+		sdu.target_event = cis->lll.event_count_prepare + event_offset;
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
@@ -1595,7 +1595,7 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 	cig_sync_delay = cig->sync_delay;
 	cis_sync_delay = cis->sync_delay;
 	burst_number = cis->lll.rx.bn;
-	event_count = cis->lll.event_count;
+	event_count = cis->lll.event_count_prepare;
 
 	if (role) {
 		/* Peripheral */
