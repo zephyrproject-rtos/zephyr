@@ -1196,7 +1196,7 @@ static void mfy_cis_offset_get(void *param)
 	 * CIG interval.
 	 */
 	if (offset_min_us > cig_interval_us) {
-		cis->lll.event_count--;
+		cis->lll.event_count_prepare--;
 	}
 
 	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_min_us);
