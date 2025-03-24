@@ -313,11 +313,20 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 	const struct wifi_status *status =
 		(const struct wifi_status *) cb->info;
 	const struct shell *sh = context.sh;
+	int st = status->status;
 
-	if (status->status) {
+	if (st) {
+		if (st < 0) {
+			/* Errno values are negative, try to map to
+			 * wifi status values.
+			 */
+			if (st == -ETIMEDOUT) {
+				st = WIFI_STATUS_CONN_TIMEOUT;
+			}
+		}
+
 		PR_WARNING("Connection request failed (%s/%d)\n",
-			   wifi_conn_status_txt(status->status),
-			   status->status);
+			   wifi_conn_status_txt(st), st);
 	} else {
 		PR("Connected\n");
 	}
