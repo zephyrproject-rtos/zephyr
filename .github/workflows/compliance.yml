@@ -46,18 +46,13 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
-        python-version: 3.11
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: cache-pip
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/compliance.yml') }}
-
-    - name: Install python dependencies
+    - name: Install Python packages
       run: |
-        pip install -r scripts/requirements-compliance.txt
-        pip install west
+        pip install -r scripts/requirements-actions.txt --require-hashes
 
     - name: west setup
       run: |
