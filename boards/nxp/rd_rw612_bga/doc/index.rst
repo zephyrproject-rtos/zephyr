@@ -63,7 +63,7 @@ Supported Features
 | OS_TIMER  | on-chip    | os timer                          |
 +-----------+------------+-----------------------------------+
 | PM        | on-chip    | power management; uses SoC Power  |
-|           |            | Modes 1 and 2                     |
+|           |            | Modes 1, 2 and 3                  |
 +-----------+------------+-----------------------------------+
 | BLE       | on-chip    | Bluetooth                         |
 +-----------+------------+-----------------------------------+
