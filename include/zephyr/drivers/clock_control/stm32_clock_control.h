@@ -53,6 +53,8 @@
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+#include <zephyr/dt-bindings/clock/stm32mp13_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U0X)
