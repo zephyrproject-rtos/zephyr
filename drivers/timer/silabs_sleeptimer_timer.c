@@ -121,9 +121,15 @@ static int sleeptimer_init(void)
 	sl_status_t status = SL_STATUS_OK;
 	struct sleeptimer_timer_data *timer = &g_sleeptimer_timer_data;
 
+#ifdef CONFIG_SOC_FAMILY_SILABS_SIWX91X	
+	IRQ_CONNECT(DT_IRQ(DT_RTC, irq), DT_IRQ(DT_RTC, priority),
+		    CONCAT(DT_STRING_UPPER_TOKEN_BY_IDX(DT_RTC, interrupt_names, 0), _Handler),
+		    0, 0);
+#else			
 	IRQ_CONNECT(DT_IRQ(DT_RTC, irq), DT_IRQ(DT_RTC, priority),
 		    CONCAT(DT_STRING_UPPER_TOKEN_BY_IDX(DT_RTC, interrupt_names, 0), _IRQHandler),
 		    0, 0);
+#endif
 
 	sl_sleeptimer_init();
 

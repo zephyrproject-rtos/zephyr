@@ -285,6 +285,17 @@
 			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
 			status = "disabled";
 		};
+
+		sysrtc0: sysrtc@24048c00 {
+ 			compatible = "silabs,gecko-stimer";
+ 			reg = <0x24048c00 0x78>;
+ 			interrupts = <22 0>; 
+ 			interrupt-parent = <&nvic>;
+ 			interrupt-names = "irq022";
+ 			clock-frequency = <32768>;
+ 			prescaler = <1>;
+ 			status = "disabled";
+ 		};		
 	};
 };
 

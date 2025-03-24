@@ -1,0 +1,7 @@
+# Kconfig entries for SOC_FAMILY_SILABS_SIWX91X
+
+config SOC_SILABS_SLEEPTIMER
+	bool
+	select CODE_DATA_RELOCATION
+	help
+	  Set if the Sleeptimer HAL module is used for SIWX91X.

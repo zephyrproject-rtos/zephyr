@@ -113,3 +113,7 @@
 &wifi0 {
 	status = "okay";
 };
+
+&sysrtc0 {
+     status = "okay";
+ };
