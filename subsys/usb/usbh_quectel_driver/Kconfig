@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Quectel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_QUECTEL_DRIVER
+	bool "USB subsys controller drivers"
+	default y if DT_HAS_USBH_QUECTEL_DRIVER_ENABLED
+	default n
+	help
+	  USB subsys controller drivers
+	  
+source "subsys/usb/usbh_quectel_driver/driver/Kconfig.stm32"

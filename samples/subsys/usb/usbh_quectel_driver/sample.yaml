@@ -1,0 +1,16 @@
+sample:
+  description: Use the USB HOST function to communicate with the slave device in the form of a virtual serial port
+    application
+  name: usbh quectel driver
+common:
+  tags: introduction
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - ""
+tests:
+  sample.basic.helloworld:
+    tags: introduction

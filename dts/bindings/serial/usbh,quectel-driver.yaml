@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Quectel Wireless Solutions Co
+# SPDX-License-Identifier: Apache-2.0
+
+description: USBH QUECTEL DRIVER
+
+compatible: "usbh,quectel-driver"
+
+include: uart-controller.yaml
+
