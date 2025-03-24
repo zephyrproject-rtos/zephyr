@@ -1603,6 +1603,9 @@ const static struct ipc_service_backend backend_ops = {
 /**
  * Access to all parts of the status section in shared memory
  */
+#define CHANNEL_STATUS_ALIGN_SIZE(i, size) ROUND_UP(size, \
+	MAX(sizeof(atomic_val_t), DT_INST_PROP(i, force_atomic_size)))
+
 #define GET_CHANNEL_STATUS_SEND_BM_SIZE(i, local_blocks) ATOMIC_BITMAP_SIZE(local_blocks)
 #define GET_CHANNEL_STATUS_PROC_BM_SIZE(i, remote_blocks) ATOMIC_BITMAP_SIZE(remote_blocks)
 #define GET_CHANNEL_STATUS_SEND_BM_SIZEOF(i, local_blocks) \
@@ -1612,10 +1615,10 @@ const static struct ipc_service_backend backend_ops = {
 
 #define GET_CHANNEL_STATUS_OFFSET(i, local_blocks, remote_blocks) \
 	ROUND_UP(GET_ICMSG_MIN_SIZE(i, (local_blocks), (remote_blocks)), GET_CACHE_ALIGNMENT(i))
-#define GET_CHANNEL_STATUS_SIZE(i, local_blocks, remote_blocks) \
-	(sizeof(struct channel_status) +                        \
-	 GET_CHANNEL_STATUS_SEND_BM_SIZEOF(i, local_blocks) +   \
-	 GET_CHANNEL_STATUS_PROC_BM_SIZEOF(i, remote_blocks))
+#define GET_CHANNEL_STATUS_SIZE(i, local_blocks, remote_blocks)                             \
+	(CHANNEL_STATUS_ALIGN_SIZE(i, sizeof(struct channel_status)) +                      \
+	 CHANNEL_STATUS_ALIGN_SIZE(i, GET_CHANNEL_STATUS_SEND_BM_SIZEOF(i, local_blocks)) + \
+	 CHANNEL_STATUS_ALIGN_SIZE(i, GET_CHANNEL_STATUS_PROC_BM_SIZEOF(i, remote_blocks)))
 #define GET_CHANNEL_STATUS_END(i, local_blocks, remote_blocks) \
 	(GET_CHANNEL_STATUS_OFFSET(i, local_blocks, remote_blocks) + \
 	 GET_CHANNEL_STATUS_SIZE(i, local_blocks, remote_blocks))
@@ -1626,13 +1629,20 @@ const static struct ipc_service_backend backend_ops = {
 		GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks),     \
 		GET_CHANNEL_REMOTE_BLOCKS(direction, rx_blocks, tx_blocks))))
 
-#define GET_CHANNEL_STATUS_SEND_BM_PTR(i, direction, rx_blocks, tx_blocks) \
-	(GET_CHANNEL_STATUS_WAITING_CNT_PTR(i, direction, rx_blocks, tx_blocks) + 1)
+#define GET_CHANNEL_STATUS_SEND_BM_PTR(i, direction, rx_blocks, tx_blocks)       \
+	((atomic_t *)((uintptr_t)GET_CHANNEL_STATUS_WAITING_CNT_PTR(i,           \
+								    direction,   \
+								    rx_blocks,   \
+								    tx_blocks) + \
+	  CHANNEL_STATUS_ALIGN_SIZE(i, sizeof(struct channel_status))))
 
-#define GET_CHANNEL_STATUS_PROC_BM_PTR(i, direction, rx_blocks, tx_blocks)     \
-	(GET_CHANNEL_STATUS_SEND_BM_PTR(i, direction, rx_blocks, tx_blocks) +  \
-	 GET_CHANNEL_STATUS_SEND_BM_SIZE(i,                                    \
-		GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks)))
+#define GET_CHANNEL_STATUS_PROC_BM_PTR(i, direction, rx_blocks, tx_blocks)   \
+	((atomic_t *)((uintptr_t)GET_CHANNEL_STATUS_SEND_BM_PTR(i,           \
+								direction,   \
+								rx_blocks,   \
+								tx_blocks) + \
+	 CHANNEL_STATUS_ALIGN_SIZE(i, GET_CHANNEL_STATUS_SEND_BM_SIZE(i,     \
+		GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks)))))
 
 /**
  * Calculate aligned block size by evenly dividing remaining space after removing
