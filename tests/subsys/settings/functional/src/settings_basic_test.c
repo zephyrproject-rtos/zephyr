@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
-#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
+#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS) || defined(CONFIG_SETTINGS_ZMS)
 #include <zephyr/storage/flash_map.h>
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
