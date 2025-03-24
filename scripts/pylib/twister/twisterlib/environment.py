@@ -133,7 +133,7 @@ Artificially long but functional example:
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load a list of tests and platforms to be run"
+        help="Load a list of tests and platforms to be run "
              "from a JSON file ('testplan.json' schema)."
     )
 
@@ -234,7 +234,7 @@ Artificially long but functional example:
 
     test_or_build.add_argument(
         "--prep-artifacts-for-testing", action="store_true",
-        help="Generate artifacts for testing, do not attempt to run the"
+        help="Generate artifacts for testing, do not attempt to run the "
               "code on targets.")
 
     parser.add_argument(
@@ -410,7 +410,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     )
 
     parser.add_argument("--level", action="store",
-        help="Test level to be used. By default, no levels are used for filtering"
+        help="Test level to be used. By default, no levels are used for filtering "
              "and do the selection based on existing filters.")
 
     parser.add_argument(
@@ -622,7 +622,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
-        help="Generate a detailed report with all skipped test cases"
+        help="Generate a detailed report with all skipped test cases "
              "including those that are filtered based on testsuite definition."
         )
 
@@ -694,7 +694,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument(
         "--quarantine-verify",
         action="store_true",
-        help="Use the list of test scenarios under quarantine and run them"
+        help="Use the list of test scenarios under quarantine and run them "
              "to verify their current status.")
 
     parser.add_argument(
