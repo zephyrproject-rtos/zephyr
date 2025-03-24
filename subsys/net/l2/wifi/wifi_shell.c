@@ -719,7 +719,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'b':
 			if (iface_mode == WIFI_MODE_INFRA ||
-				iface_mode == WIFI_MODE_AP) {
+			    iface_mode == WIFI_MODE_AP) {
 				switch (atoi(state->optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -730,6 +730,13 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				case 6:
 					params->band = WIFI_FREQ_BAND_6_GHZ;
 					break;
+				case 0:
+					/* Allow default value when connecting */
+					if (iface_mode == WIFI_MODE_INFRA) {
+						params->band = WIFI_FREQ_BAND_UNKNOWN;
+						break;
+					}
+					__fallthrough;
 				default:
 					PR_ERROR("Invalid band: %d\n", atoi(state->optarg));
 					return -EINVAL;
