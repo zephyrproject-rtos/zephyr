@@ -123,6 +123,19 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
+#if defined(CONFIG_NET_VPN)
+	struct {
+		/** Original network interface */
+		struct net_if *iface;
+		/** Pointer to IP header of the encrypted pkt */
+		union net_ip_header ip_hdr;
+		/** Pointer to UDP header of the encrypted pkt */
+		union net_proto_header proto_hdr;
+		/** Peer id */
+		int peer_id;
+	} vpn;
+#endif
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
 	/**
 	 * TX or RX timestamp if available
@@ -409,6 +422,52 @@ static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 	ARG_UNUSED(iface);
 #endif
 }
+
+#if defined(CONFIG_NET_VPN)
+static inline struct net_if *net_pkt_vpn_iface(struct net_pkt *pkt)
+{
+	return pkt->vpn.iface;
+}
+
+static inline void net_pkt_set_vpn_iface(struct net_pkt *pkt,
+					 struct net_if *iface)
+{
+	pkt->vpn.iface = iface;
+}
+
+static inline union net_ip_header *net_pkt_vpn_ip_hdr(struct net_pkt *pkt)
+{
+	return &pkt->vpn.ip_hdr;
+}
+
+static inline void net_pkt_set_vpn_ip_hdr(struct net_pkt *pkt,
+					  union net_ip_header *ip_hdr)
+{
+	pkt->vpn.ip_hdr = *ip_hdr;
+}
+
+static inline union net_proto_header *net_pkt_vpn_udp_hdr(struct net_pkt *pkt)
+{
+	return &pkt->vpn.proto_hdr;
+}
+
+static inline void net_pkt_set_vpn_udp_hdr(struct net_pkt *pkt,
+					   union net_proto_header *proto_hdr)
+{
+	pkt->vpn.proto_hdr = *proto_hdr;
+}
+
+static inline int net_pkt_vpn_peer_id(struct net_pkt *pkt)
+{
+	return pkt->vpn.peer_id;
+}
+
+static inline void net_pkt_set_vpn_peer_id(struct net_pkt *pkt,
+					   int peer_id)
+{
+	pkt->vpn.peer_id = peer_id;
+}
+#endif /* CONFIG_NET_VPN */
 
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {
