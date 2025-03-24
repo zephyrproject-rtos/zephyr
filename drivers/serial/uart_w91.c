@@ -69,8 +69,9 @@ struct uart_irq_state_change_req {
 	uint8_t state;
 };
 
-#define UART_MSG_QUEUE_SIZE 16
-#define MSG_SIZE            sizeof(const struct device *)
+#define UART_TX_READY_TIMEOUT_MS 100
+#define UART_MSG_QUEUE_SIZE      16
+#define MSG_SIZE                 sizeof(const struct device *)
 
 K_MSGQ_DEFINE(uart_irq_msgq, MSG_SIZE, UART_MSG_QUEUE_SIZE, 4);
 static bool uart_irq_thread_initialized;
@@ -83,7 +84,7 @@ K_THREAD_STACK_DEFINE(uart_irq_thread_stack, CONFIG_TELINK_W91_UART_IRQ_THREAD_S
 struct uart_w91_data {
 	struct uart_config cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct uart_irq_status irq_status;
+	volatile struct uart_irq_status irq_status;
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
@@ -293,7 +294,11 @@ static int uart_w91_read(const struct device *dev, uint8_t *rx_data, const int s
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, uart_w91_read, (uint16_t *)&size,
 			&rx_resp, CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
-	return rx_resp.err;
+	if (rx_resp.err < 0) {
+		return rx_resp.err;
+	}
+
+	return rx_resp.len;
 }
 
 /* API implementation: config_get */
@@ -309,9 +314,7 @@ static int uart_w91_config_get(const struct device *dev, struct uart_config *cfg
 /* API implementation: poll_in */
 static int uart_w91_poll_in(const struct device *dev, unsigned char *c)
 {
-	int err = uart_w91_read(dev, (uint8_t *)c, sizeof(*c));
-
-	return err;
+	return uart_w91_read(dev, (uint8_t *)c, sizeof(*c));
 }
 
 /* API implementation: poll_out */
@@ -340,9 +343,19 @@ static int uart_w91_fifo_fill(const struct device *dev, const uint8_t *tx_data, 
 	int err = -ETIMEDOUT;
 	struct uart_w91_data *data = dev->data;
 
-	if (!data->irq_status.tx_enable || !data->irq_status.tx_ready) {
-		LOG_ERR("tx (fifo_fill) is not ready\n");
-		return -EACCES;
+	if (!data->irq_status.tx_enable) {
+		LOG_ERR("irq tx is disabled, must be enabled to use fifo_fill\n");
+		return -EPERM;
+	}
+
+	int64_t t = k_uptime_get();
+
+	while (!data->irq_status.tx_ready) {
+		if ((k_uptime_get() - t) > UART_TX_READY_TIMEOUT_MS) {
+			LOG_ERR("tx (fifo_fill) is not ready\n");
+			return -EAGAIN;
+		}
+		k_msleep(1);
 	}
 
 	data->irq_status.tx_ready = false;
@@ -362,21 +375,19 @@ static int uart_w91_fifo_fill(const struct device *dev, const uint8_t *tx_data, 
 /* API implementation: fifo_read */
 static int uart_w91_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
-	int err = -ETIMEDOUT;
 	struct uart_w91_data *data = dev->data;
 
-	if (!data->irq_status.rx_enable || !data->irq_status.rx_ready) {
-		return 0;
+	if (!data->irq_status.rx_enable) {
+		LOG_ERR("irq rx is disabled, must be enabled to use fifo_read\n");
+		return -EPERM;
 	}
 
-	err = uart_w91_read(dev, rx_data, size);
-	if (err) {
-		LOG_ERR("rx (fifo_read) failed(%d)\n", err);
-
-		return 0;
+	if (!data->irq_status.rx_ready) {
+		LOG_ERR("rx buffer is not ready for fifo_read\n");
+		return -EAGAIN;
 	}
 
-	return size;
+	return uart_w91_read(dev, rx_data, size);
 }
 
 /* APIs implementation: irq_state_change */
