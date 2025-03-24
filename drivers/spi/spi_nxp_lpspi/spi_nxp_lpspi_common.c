@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 int spi_nxp_init_common(const struct device *dev)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int err = 0;
@@ -152,6 +153,8 @@ int spi_nxp_init_common(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	LPSPI_Reset(base);
 
 	config->irq_config_func(dev);
 
