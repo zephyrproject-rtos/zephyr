@@ -215,7 +215,32 @@ xtensa_arch_kernel_oops_epc:
 .global xtensa_switch
 .align 4
 xtensa_switch:
+#ifdef CONFIG_USERSPACE
+	entry a1, 32
+
+	s32i a4, a1, 0
+	s32i a5, a1, 4
+	s32i a6, a1, 8
+	s32i a7, a1, 12
+
+	/* Switch page tables */
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+#ifdef CONFIG_XTENSA_MMU
+	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
+
+	l32i a7, a1, 12
+	l32i a6, a1, 8
+	l32i a5, a1, 4
+	l32i a4, a1, 0
+#else
 	entry a1, 16
+#endif
+
 	SPILL_ALL_WINDOWS
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 
@@ -269,21 +294,6 @@ noflush:
 	l32i a2, a1, 0
 	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
-
-#ifdef CONFIG_USERSPACE
-	/* Switch page tables */
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
-#ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
-#endif
-
-	l32i a2, a3, 0
-	l32i a2, a2, 0
-#endif
 
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
