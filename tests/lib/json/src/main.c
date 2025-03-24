@@ -15,12 +15,14 @@ struct test_nested {
 	int nested_int;
 	bool nested_bool;
 	const char *nested_string;
+	char nested_string_buf[10];
 	int64_t nested_int64;
 	uint64_t nested_uint64;
 };
 
 struct test_struct {
 	const char *some_string;
+	char some_string_buf[10];
 	int some_int;
 	bool some_bool;
 	int64_t some_int64;
@@ -41,6 +43,7 @@ struct test_struct {
 
 struct elt {
 	const char *name;
+	const char name_buf[10];
 	int height;
 };
 
@@ -92,6 +95,8 @@ static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string,
 			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string_buf,
+			    JSON_TOK_STRING_BUF),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int64,
 			    JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_uint64,
@@ -100,6 +105,7 @@ static const struct json_obj_descr nested_descr[] = {
 
 static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string_buf, JSON_TOK_STRING_BUF),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int64,
@@ -129,6 +135,7 @@ static const struct json_obj_descr test_descr[] = {
 
 static const struct json_obj_descr elt_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct elt, name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct elt, name_buf, JSON_TOK_STRING_BUF),
 	JSON_OBJ_DESCR_PRIM(struct elt, height, JSON_TOK_NUMBER),
 };
 
@@ -284,6 +291,7 @@ ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
+		.some_string_buf = "z 123\uABCD",
 		.some_int = 42,
 		.some_int64 = 1152921504606846977,
 		.another_int64 = -2305843009213693937,
@@ -294,6 +302,7 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_int = -1234,
 			.nested_bool = false,
 			.nested_string = "this should be escaped: \t",
+			.nested_string_buf = "esc: \t",
 			.nested_int64 = 4503599627370496,
 			.nested_uint64 = 18446744073709551610U,
 		},
@@ -314,16 +323,18 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_int = 1234,
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
+			.nested_string_buf = "no escape",
 			.nested_int64 = 4503599627370496,
 			.nested_uint64 = 18446744073709551610U,
 		},
 		.nested_obj_array = {
-			{1, true, "true"},
-			{0, false, "false"}
+			{1, true, "true", "true"},
+			{0, false, "false", "false"}
 		},
 		.obj_array_len = 2
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
+		"\"some_string_buf\":\"z 123\uABCD\","
 		"\"some_int\":42,\"some_bool\":true,"
 		"\"some_int64\":1152921504606846977,"
 		"\"another_int64\":-2305843009213693937,"
@@ -332,6 +343,7 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
 		"\"this should be escaped: \\t\","
+		"\"nested_string_buf\":\"esc: \\t\","
 		"\"nested_int64\":4503599627370496,"
 		"\"nested_uint64\":18446744073709551610},"
 		"\"some_array\":[1,4,8,16,32],"
@@ -341,11 +353,12 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\","
+		"\"nested_string_buf\":\"no escape\","
 		"\"nested_int64\":4503599627370496,"
 		"\"nested_uint64\":18446744073709551610},"
 		"\"nested_obj_array\":["
-		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_int64\":0,\"nested_uint64\":0},"
-		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_int64\":0,\"nested_uint64\":0}]"
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_string_buf\":\"true\",\"nested_int64\":0,\"nested_uint64\":0},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_string_buf\":\"false\",\"nested_int64\":0,\"nested_uint64\":0}]"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -366,6 +379,7 @@ ZTEST(lib_json_test, test_json_decoding)
 {
 	struct test_struct ts;
 	char encoded[] = "{\"some_string\":\"zephyr 123\\uABCD456\","
+		"\"some_string_buf\":\"z\\uABCD\","
 		"\"some_int\":\t42\n,"
 		"\"some_bool\":true    \t  "
 		"\n"
@@ -378,6 +392,7 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"nested_int\":-1234,\n\n"
 		"\"nested_bool\":false,\t"
 		"\"nested_string\":\"this should be escaped: \\t\","
+		"\"nested_string_buf\":\"esc: \\t\","
 		"\"nested_int64\":9223372036854775807,"
 		"\"extra_nested_array\":[0,-1]},"
 		"\"extra_struct\":{\"nested_bool\":false},"
@@ -389,10 +404,11 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\","
+		"\"nested_string_buf\":\"no escape\","
 		"\"nested_int64\":-9223372036854775806},"
 		"\"nested_obj_array\":["
-		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\"},"
-		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\"}]"
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_string_buf\":\"true\"},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_string_buf\":\"false\"}]"
 		"}\n";
 	const int expected_array[] = { 11, 22, 33, 45, 299 };
 	const int expected_other_array[] = { 2, 3, 5, 7 };
@@ -406,6 +422,8 @@ ZTEST(lib_json_test, test_json_decoding)
 
 	zassert_str_equal(ts.some_string, "zephyr 123\\uABCD456",
 			  "String not decoded correctly");
+	zassert_str_equal(ts.some_string_buf, "z\\uABCD",
+			  "String (array) not decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer not decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean not decoded correctly");
 	zassert_equal(ts.some_int64, -4611686018427387904,
@@ -421,6 +439,9 @@ ZTEST(lib_json_test, test_json_decoding)
 	zassert_str_equal(ts.some_nested_struct.nested_string,
 			  "this should be escaped: \\t",
 			  "Nested string not decoded correctly");
+	zassert_str_equal(ts.some_nested_struct.nested_string_buf,
+			  "esc: \\t",
+			  "Nested string-array not decoded correctly");
 	zassert_equal(ts.some_array_len, 5,
 		      "Array doesn't have correct number of items");
 	zassert_true(!memcmp(ts.some_array, expected_array,
@@ -444,6 +465,9 @@ ZTEST(lib_json_test, test_json_decoding)
 	zassert_str_equal(ts.xnother_nexx.nested_string,
 			  "no escape necessary",
 			  "Named nested string not decoded correctly");
+	zassert_str_equal(ts.xnother_nexx.nested_string_buf,
+			  "no escape",
+			  "Named nested string-array not decoded correctly");
 	zassert_equal(ts.obj_array_len, 2,
 		      "Array of objects does not have correct number of items");
 	zassert_equal(ts.nested_obj_array[0].nested_int, 1,
@@ -452,12 +476,16 @@ ZTEST(lib_json_test, test_json_decoding)
 		      "Boolean value in first object array element not decoded correctly");
 	zassert_str_equal(ts.nested_obj_array[0].nested_string, "true",
 			  "String in first object array element not decoded correctly");
+	zassert_str_equal(ts.nested_obj_array[0].nested_string_buf, "true",
+			  "String buffer in first object array element not decoded correctly");
 	zassert_equal(ts.nested_obj_array[1].nested_int, 0,
 		      "Integer in second object array element not decoded correctly");
 	zassert_equal(ts.nested_obj_array[1].nested_bool, false,
 		      "Boolean value in second object array element not decoded correctly");
 	zassert_str_equal(ts.nested_obj_array[1].nested_string, "false",
 			  "String in second object array element not decoded correctly");
+	zassert_str_equal(ts.nested_obj_array[1].nested_string_buf, "false",
+			  "String buffer in second object array element not decoded correctly");
 }
 
 ZTEST(lib_json_test, test_json_limits)
@@ -829,17 +857,24 @@ ZTEST(lib_json_test, test_json_encoding_array_array)
 {
 	struct obj_array_array obj_array_array_ts = {
 		.objects_array = {
-			[0] = { { .name = "Sim\303\263n Bol\303\255var", .height = 168 } },
-			[1] = { { .name = "Pel\303\251",                 .height = 173 } },
-			[2] = { { .name = "Usain Bolt",                  .height = 195 } },
+			[0] = {{.name = "Sim\303\263n Bol\303\255var",
+				.name_buf = "Sim\303\263n",
+				.height = 168}},
+			[1] = {{.name = "Pel\303\251",
+				.name_buf = "Pel\303\251",
+				.height = 173}},
+			[2] = {{.name = "Usain Bolt",
+				.name_buf = "Usain",
+				.height = 195}},
 		},
 		.objects_array_len = 3,
 	};
 	char encoded[] = "{\"objects_array\":["
-		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		"{\"name\":\"Pel\303\251\",\"height\":173},"
-		"{\"name\":\"Usain Bolt\",\"height\":195}"
-		"]}";
+			 "{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+			 "{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+			 "{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195}"
+			 "]}";
+
 	char buffer[sizeof(encoded)];
 	int ret;
 
@@ -855,9 +890,9 @@ ZTEST(lib_json_test, test_json_decoding_array_array)
 	int ret;
 	struct obj_array_array obj_array_array_ts;
 	char encoded[] = "{\"objects_array\":["
-			  "{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"},"
-			  "{\"height\":173,\"name\":\"Pel\303\251\"},"
-			  "{\"height\":195,\"name\":\"Usain Bolt\"}]"
+			  "{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\"},"
+			  "{\"height\":173,\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\"},"
+			  "{\"height\":195,\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\"}]"
 			  "}";
 
 	ret = json_obj_parse(encoded, sizeof(encoded),
@@ -872,16 +907,23 @@ ZTEST(lib_json_test, test_json_decoding_array_array)
 	zassert_str_equal(obj_array_array_ts.objects_array[0].objects.name,
 			  "Sim\303\263n Bol\303\255var",
 			  "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.objects_array[0].objects.name_buf,
+			  "Sim\303\263n",
+			  "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[0].objects.height, 168,
 		      "Sim\303\263n Bol\303\255var height not decoded correctly");
 
 	zassert_str_equal(obj_array_array_ts.objects_array[1].objects.name,
 			  "Pel\303\251", "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.objects_array[1].objects.name_buf,
+			  "Pel\303\251", "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[1].objects.height, 173,
 		      "Pel\303\251 height not decoded correctly");
 
 	zassert_str_equal(obj_array_array_ts.objects_array[2].objects.name,
 			  "Usain Bolt", "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.objects_array[2].objects.name_buf,
+			  "Usain", "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[2].objects.height, 195,
 		      "Usain Bolt height not decoded correctly");
 }
@@ -890,30 +932,60 @@ ZTEST(lib_json_test, test_json_obj_arr_encoding)
 {
 	struct obj_array oa = {
 		.elements = {
-			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
-			[1] = { .name = "Muggsy Bogues",               .height = 160 },
-			[2] = { .name = "Pel\303\251",                 .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
-			[4] = { .name = "Alex Honnold",                .height = 180 },
-			[5] = { .name = "Hazel Findlay",               .height = 157 },
-			[6] = { .name = "Daila Ojeda",                 .height = 158 },
-			[7] = { .name = "Albert Einstein",             .height = 172 },
-			[8] = { .name = "Usain Bolt",                  .height = 195 },
-			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
+			[0] = {
+				.name = "Sim\303\263n Bol\303\255var",
+				.name_buf = "Sim\303\263n",
+				.height = 168 },
+			[1] = {
+				.name = "Muggsy Bogues",
+				.name_buf = "Muggsy",
+				.height = 160 },
+			[2] = {
+				.name = "Pel\303\251",
+				.name_buf = "Pel\303\251",
+				.height = 173 },
+			[3] = {
+				.name = "Hakeem Olajuwon",
+				.name_buf = "Hakeem",
+				.height = 213 },
+			[4] = {
+				.name = "Alex Honnold",
+				.name_buf = "Alex",
+				.height = 180 },
+			[5] = {
+				.name = "Hazel Findlay",
+				.name_buf = "Hazel",
+				.height = 157 },
+			[6] = {
+				.name = "Daila Ojeda",
+				.name_buf = "Daila",
+				.height = 158 },
+			[7] = {
+				.name = "Albert Einstein",
+				.name_buf = "Albert",
+				.height = 172 },
+			[8] = {
+				.name = "Usain Bolt",
+				.name_buf = "Usain",
+				.height = 195 },
+			[9] = {
+				.name = "Paavo Nurmi",
+				.name_buf = "Paavo",
+				.height = 174 },
 		},
 		.num_elements = 10,
 	};
 	char encoded[] = "{\"elements\":["
-		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pel\303\251\",\"height\":173},"
-		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
-		"{\"name\":\"Alex Honnold\",\"height\":180},"
-		"{\"name\":\"Hazel Findlay\",\"height\":157},"
-		"{\"name\":\"Daila Ojeda\",\"height\":158},"
-		"{\"name\":\"Albert Einstein\",\"height\":172},"
-		"{\"name\":\"Usain Bolt\",\"height\":195},"
-		"{\"name\":\"Paavo Nurmi\",\"height\":174}"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		"{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		"{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		"{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213},"
+		"{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		"{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		"{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		"{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172},"
+		"{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195},"
+		"{\"name\":\"Paavo Nurmi\",\"name_buf\":\"Paavo\",\"height\":174}"
 		"]}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -929,10 +1001,11 @@ ZTEST(lib_json_test, test_json_arr_obj_decoding)
 {
 	int ret;
 	struct obj_array obj_array_array_ts;
-	char encoded[] = "[{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"},"
-					"{\"height\":173,\"name\":\"Pel\303\251\"},"
-					"{\"height\":195,\"name\":\"Usain Bolt\"}"
-					"]";
+	char encoded[] = "[{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\","
+			 "\"name_buf\":\"Sim\303\263n\"},"
+			 "{\"height\":173,\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\"},"
+			 "{\"height\":195,\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\"}"
+			 "]";
 
 	ret = json_arr_parse(encoded, sizeof(encoded),
 			     obj_array_descr,
@@ -945,16 +1018,23 @@ ZTEST(lib_json_test, test_json_arr_obj_decoding)
 	zassert_str_equal(obj_array_array_ts.elements[0].name,
 			  "Sim\303\263n Bol\303\255var",
 			  "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.elements[0].name_buf,
+			  "Sim\303\263n",
+			  "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.elements[0].height, 168,
 		      "Sim\303\263n Bol\303\255var height not decoded correctly");
 
 	zassert_str_equal(obj_array_array_ts.elements[1].name, "Pel\303\251",
 			  "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.elements[1].name_buf, "Pel\303\251",
+			  "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.elements[1].height, 173,
 		      "Pel\303\251 height not decoded correctly");
 
 	zassert_str_equal(obj_array_array_ts.elements[2].name, "Usain Bolt",
 			  "String not decoded correctly");
+	zassert_str_equal(obj_array_array_ts.elements[2].name_buf, "Usain",
+			  "String buffer not decoded correctly");
 	zassert_equal(obj_array_array_ts.elements[2].height, 195,
 		      "Usain Bolt height not decoded correctly");
 }
@@ -963,30 +1043,60 @@ ZTEST(lib_json_test, test_json_arr_obj_encoding)
 {
 	struct obj_array oa = {
 		.elements = {
-			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
-			[1] = { .name = "Muggsy Bogues",               .height = 160 },
-			[2] = { .name = "Pel\303\251",                 .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
-			[4] = { .name = "Alex Honnold",                .height = 180 },
-			[5] = { .name = "Hazel Findlay",               .height = 157 },
-			[6] = { .name = "Daila Ojeda",                 .height = 158 },
-			[7] = { .name = "Albert Einstein",             .height = 172 },
-			[8] = { .name = "Usain Bolt",                  .height = 195 },
-			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
+			[0] = {
+				.name = "Sim\303\263n Bol\303\255var",
+				.name_buf = "Sim\303\263n",
+				.height = 168 },
+			[1] = {
+				.name = "Muggsy Bogues",
+				.name_buf = "Muggsy",
+				.height = 160 },
+			[2] = {
+				.name = "Pel\303\251",
+				.name_buf = "Pel\303\251",
+				.height = 173 },
+			[3] = {
+				.name = "Hakeem Olajuwon",
+				.name_buf = "Hakeem",
+				.height = 213 },
+			[4] = {
+				.name = "Alex Honnold",
+				.name_buf = "Alex",
+				.height = 180 },
+			[5] = {
+				.name = "Hazel Findlay",
+				.name_buf = "Hazel",
+				.height = 157 },
+			[6] = {
+				.name = "Daila Ojeda",
+				.name_buf = "Daila",
+				.height = 158 },
+			[7] = {
+				.name = "Albert Einstein",
+				.name_buf = "Albert",
+				.height = 172 },
+			[8] = {
+				.name = "Usain Bolt",
+				.name_buf = "Usain",
+				.height = 195 },
+			[9] = {
+				.name = "Paavo Nurmi",
+				.name_buf = "Paavo",
+				.height = 174 },
 		},
 		.num_elements = 10,
 	};
 	char encoded[] = "["
-		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pel\303\251\",\"height\":173},"
-		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
-		"{\"name\":\"Alex Honnold\",\"height\":180},"
-		"{\"name\":\"Hazel Findlay\",\"height\":157},"
-		"{\"name\":\"Daila Ojeda\",\"height\":158},"
-		"{\"name\":\"Albert Einstein\",\"height\":172},"
-		"{\"name\":\"Usain Bolt\",\"height\":195},"
-		"{\"name\":\"Paavo Nurmi\",\"height\":174}"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		"{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		"{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		"{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213},"
+		"{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		"{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		"{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		"{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172},"
+		"{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195},"
+		"{\"name\":\"Paavo Nurmi\",\"name_buf\":\"Paavo\",\"height\":174}"
 		"]";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -1005,29 +1115,59 @@ ZTEST(lib_json_test, test_json_obj_arr_decoding)
 {
 	struct obj_array oa;
 	char encoded[] = "{\"elements\":["
-		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pel\303\251\",\"height\":173},"
-		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
-		"{\"name\":\"Alex Honnold\",\"height\":180},"
-		"{\"name\":\"Hazel Findlay\",\"height\":157},"
-		"{\"name\":\"Daila Ojeda\",\"height\":158},"
-		"{\"name\":\"Albert Einstein\",\"height\":172},"
-		"{\"name\":\"Usain Bolt\",\"height\":195},"
-		"{\"name\":\"Paavo Nurmi\",\"height\":174}"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		"{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		"{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		"{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213},"
+		"{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		"{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		"{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		"{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172},"
+		"{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195},"
+		"{\"name\":\"Paavo Nurmi\",\"name_buf\":\"Paavo\",\"height\":174}"
 		"]}";
 	const struct obj_array expected = {
 		.elements = {
-			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
-			[1] = { .name = "Muggsy Bogues",               .height = 160 },
-			[2] = { .name = "Pel\303\251",                 .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
-			[4] = { .name = "Alex Honnold",                .height = 180 },
-			[5] = { .name = "Hazel Findlay",               .height = 157 },
-			[6] = { .name = "Daila Ojeda",                 .height = 158 },
-			[7] = { .name = "Albert Einstein",             .height = 172 },
-			[8] = { .name = "Usain Bolt",                  .height = 195 },
-			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
+			[0] = {
+				.name = "Sim\303\263n Bol\303\255var",
+				.name_buf = "Sim\303\263n",
+				.height = 168 },
+			[1] = {
+				.name = "Muggsy Bogues",
+				.name_buf = "Muggsy",
+				.height = 160 },
+			[2] = {
+				.name = "Pel\303\251",
+				.name_buf = "Pel\303\251",
+				.height = 173 },
+			[3] = {
+				.name = "Hakeem Olajuwon",
+				.name_buf = "Hakeem",
+				.height = 213 },
+			[4] = {
+				.name = "Alex Honnold",
+				.name_buf = "Alex",
+				.height = 180 },
+			[5] = {
+				.name = "Hazel Findlay",
+				.name_buf = "Hazel",
+				.height = 157 },
+			[6] = {
+				.name = "Daila Ojeda",
+				.name_buf = "Daila",
+				.height = 158 },
+			[7] = {
+				.name = "Albert Einstein",
+				.name_buf = "Albert",
+				.height = 172 },
+			[8] = {
+				.name = "Usain Bolt",
+				.name_buf = "Usain",
+				.height = 195 },
+			[9] = {
+				.name = "Paavo Nurmi",
+				.name_buf = "Paavo",
+				.height = 174 },
 		},
 		.num_elements = 10,
 	};
@@ -1059,14 +1199,17 @@ ZTEST(lib_json_test, test_json_2dim_arr_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Sim\303\263n Bol\303\255var",
+						.name_buf = "Sim\303\263n",
 						.height = 168
 					},
 					[1] = {
 						.name = "Pel\303\251",
+						.name_buf = "Pel\303\251",
 						.height = 173
 					},
 					[2] = {
 						.name = "Usain Bolt",
+						.name_buf = "Usain",
 						.height = 195
 					},
 				},
@@ -1076,10 +1219,12 @@ ZTEST(lib_json_test, test_json_2dim_arr_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Muggsy Bogues",
+						.name_buf = "Muggsy",
 						.height = 160
 					},
 					[1] = {
 						.name = "Hakeem Olajuwon",
+						.name_buf = "Hakeem",
 						.height = 213
 					},
 				},
@@ -1089,18 +1234,22 @@ ZTEST(lib_json_test, test_json_2dim_arr_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Alex Honnold",
+						.name_buf = "Alex",
 						.height = 180
 					},
 					[1] = {
 						.name = "Hazel Findlay",
+						.name_buf = "Hazel",
 						.height = 157
 					},
 					[2] = {
 						.name = "Daila Ojeda",
+						.name_buf = "Daila",
 						.height = 158
 					},
 					[3] = {
 						.name = "Albert Einstein",
+						.name_buf = "Albert",
 						.height = 172
 					},
 				},
@@ -1110,15 +1259,15 @@ ZTEST(lib_json_test, test_json_2dim_arr_obj_encoding)
 		.objects_array_array_len = 3,
 	};
 	char encoded[] = "{\"objects_array_array\":["
-		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		 "{\"name\":\"Pel\303\251\",\"height\":173},"
-		 "{\"name\":\"Usain Bolt\",\"height\":195}],"
-		"[{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		 "{\"name\":\"Hakeem Olajuwon\",\"height\":213}],"
-		"[{\"name\":\"Alex Honnold\",\"height\":180},"
-		 "{\"name\":\"Hazel Findlay\",\"height\":157},"
-		 "{\"name\":\"Daila Ojeda\",\"height\":158},"
-		 "{\"name\":\"Albert Einstein\",\"height\":172}]"
+		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		 "{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		 "{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195}],"
+		"[{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		 "{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213}],"
+		"[{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		 "{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		 "{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		 "{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172}]"
 		"]}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -1140,14 +1289,17 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Sim\303\263n Bol\303\255var",
+						.name_buf = "Sim\303\263n",
 						.height = 168
 					},
 					[1] = {
 						.name = "Pel\303\251",
+						.name_buf = "Pel\303\251",
 						.height = 173
 					},
 					[2] = {
 						.name = "Usain Bolt",
+						.name_buf = "Usain",
 						.height = 195
 					},
 				},
@@ -1157,10 +1309,12 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Muggsy Bogues",
+						.name_buf = "Muggsy",
 						.height = 160
 					},
 					[1] = {
 						.name = "Hakeem Olajuwon",
+						.name_buf = "Hakeem",
 						.height = 213
 					},
 				},
@@ -1170,18 +1324,22 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Alex Honnold",
+						.name_buf = "Alex",
 						.height = 180
 					},
 					[1] = {
 						.name = "Hazel Findlay",
+						.name_buf = "Hazel",
 						.height = 157
 					},
 					[2] = {
 						.name = "Daila Ojeda",
+						.name_buf = "Daila",
 						.height = 158
 					},
 					[3] = {
 						.name = "Albert Einstein",
+						.name_buf = "Albert",
 						.height = 172
 					},
 				},
@@ -1193,15 +1351,15 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_obj_encoding)
 
 	char encoded[] = "{\"name\":\"Paavo Nurmi\",\"val\":123,"
 		"\"obj_array_2dim\":["
-		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		 "{\"name\":\"Pel\303\251\",\"height\":173},"
-		 "{\"name\":\"Usain Bolt\",\"height\":195}],"
-		"[{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		 "{\"name\":\"Hakeem Olajuwon\",\"height\":213}],"
-		"[{\"name\":\"Alex Honnold\",\"height\":180},"
-		 "{\"name\":\"Hazel Findlay\",\"height\":157},"
-		 "{\"name\":\"Daila Ojeda\",\"height\":158},"
-		 "{\"name\":\"Albert Einstein\",\"height\":172}]"
+		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		 "{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		 "{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195}],"
+		"[{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		 "{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213}],"
+		"[{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		 "{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		 "{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		 "{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172}]"
 		"]}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -1223,14 +1381,17 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_named_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Sim\303\263n Bol\303\255var",
+						.name_buf = "Sim\303\263n",
 						.height = 168
 					},
 					[1] = {
 						.name = "Pel\303\251",
+						.name_buf = "Pel\303\251",
 						.height = 173
 					},
 					[2] = {
 						.name = "Usain Bolt",
+						.name_buf = "Usain",
 						.height = 195
 					},
 				},
@@ -1240,10 +1401,12 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_named_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Muggsy Bogues",
+						.name_buf = "Muggsy",
 						.height = 160
 					},
 					[1] = {
 						.name = "Hakeem Olajuwon",
+						.name_buf = "Hakeem",
 						.height = 213
 					},
 				},
@@ -1253,18 +1416,22 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_named_obj_encoding)
 				.elements = {
 					[0] = {
 						.name = "Alex Honnold",
+						.name_buf = "Alex",
 						.height = 180
 					},
 					[1] = {
 						.name = "Hazel Findlay",
+						.name_buf = "Hazel",
 						.height = 157
 					},
 					[2] = {
 						.name = "Daila Ojeda",
+						.name_buf = "Daila",
 						.height = 158
 					},
 					[3] = {
 						.name = "Albert Einstein",
+						.name_buf = "Albert",
 						.height = 172
 					},
 				},
@@ -1276,15 +1443,15 @@ ZTEST(lib_json_test, test_json_2dim_arr_extra_named_obj_encoding)
 
 	char encoded[] = "{\"name\":\"Paavo Nurmi\",\"val\":123,"
 		"\"data\":["
-		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		 "{\"name\":\"Pel\303\251\",\"height\":173},"
-		 "{\"name\":\"Usain Bolt\",\"height\":195}],"
-		"[{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		 "{\"name\":\"Hakeem Olajuwon\",\"height\":213}],"
-		"[{\"name\":\"Alex Honnold\",\"height\":180},"
-		 "{\"name\":\"Hazel Findlay\",\"height\":157},"
-		 "{\"name\":\"Daila Ojeda\",\"height\":158},"
-		 "{\"name\":\"Albert Einstein\",\"height\":172}]"
+		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		 "{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		 "{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195}],"
+		"[{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		 "{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213}],"
+		"[{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		 "{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		 "{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		 "{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172}]"
 		"]}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -1301,15 +1468,15 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 {
 	struct obj_array_2dim oaa;
 	char encoded[] = "{\"objects_array_array\":["
-		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
-		 "{\"name\":\"Pel\303\251\",\"height\":173},"
-		 "{\"name\":\"Usain Bolt\",\"height\":195}],"
-		"[{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		 "{\"name\":\"Hakeem Olajuwon\",\"height\":213}],"
-		"[{\"name\":\"Alex Honnold\",\"height\":180},"
-		 "{\"name\":\"Hazel Findlay\",\"height\":157},"
-		 "{\"name\":\"Daila Ojeda\",\"height\":158},"
-		 "{\"name\":\"Albert Einstein\",\"height\":172}]"
+		"[{\"name\":\"Sim\303\263n Bol\303\255var\",\"name_buf\":\"Sim\303\263n\",\"height\":168},"
+		 "{\"name\":\"Pel\303\251\",\"name_buf\":\"Pel\303\251\",\"height\":173},"
+		 "{\"name\":\"Usain Bolt\",\"name_buf\":\"Usain\",\"height\":195}],"
+		"[{\"name\":\"Muggsy Bogues\",\"name_buf\":\"Muggsy\",\"height\":160},"
+		 "{\"name\":\"Hakeem Olajuwon\",\"name_buf\":\"Hakeem\",\"height\":213}],"
+		"[{\"name\":\"Alex Honnold\",\"name_buf\":\"Alex\",\"height\":180},"
+		 "{\"name\":\"Hazel Findlay\",\"name_buf\":\"Hazel\",\"height\":157},"
+		 "{\"name\":\"Daila Ojeda\",\"name_buf\":\"Daila\",\"height\":158},"
+		 "{\"name\":\"Albert Einstein\",\"name_buf\":\"Albert\",\"height\":172}]"
 		"]}";
 	const struct obj_array_2dim expected = {
 		.objects_array_array = {
@@ -1317,14 +1484,17 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 				.elements = {
 					[0] = {
 						.name = "Sim\303\263n Bol\303\255var",
+						.name_buf = "Sim\303\263n",
 						.height = 168
 					},
 					[1] = {
 						.name = "Pel\303\251",
+						.name_buf = "Pel\303\251",
 						.height = 173
 					},
 					[2] = {
 						.name = "Usain Bolt",
+						.name_buf = "Usain",
 						.height = 195
 					},
 				},
@@ -1334,10 +1504,12 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 				.elements = {
 					[0] = {
 						.name = "Muggsy Bogues",
+						.name_buf = "Muggsy",
 						.height = 160
 					},
 					[1] = {
 						.name = "Hakeem Olajuwon",
+						.name_buf = "Hakeem",
 						.height = 213
 					},
 				},
@@ -1347,18 +1519,22 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 				.elements = {
 					[0] = {
 						.name = "Alex Honnold",
+						.name_buf = "Alex",
 						.height = 180
 					},
 					[1] = {
 						.name = "Hazel Findlay",
+						.name_buf = "Hazel",
 						.height = 157
 					},
 					[2] = {
 						.name = "Daila Ojeda",
+						.name_buf = "Daila",
 						.height = 158
 					},
 					[3] = {
 						.name = "Albert Einstein",
+						.name_buf = "Albert",
 						.height = 172
 					},
 				},
@@ -1389,11 +1565,60 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 			zassert_true(!strcmp(oaa.objects_array_array[i].elements[j].name,
 					     expected.objects_array_array[i].elements[j].name),
 				     "Element [%d][%d] name not decoded correctly", i, j);
+			zassert_true(!strcmp(oaa.objects_array_array[i].elements[j].name_buf,
+					     expected.objects_array_array[i].elements[j].name_buf),
+				     "Element [%d][%d] name array not decoded correctly", i, j);
 			zassert_equal(oaa.objects_array_array[i].elements[j].height,
 				      expected.objects_array_array[i].elements[j].height,
 				      "Element [%d][%d] height not decoded correctly", i, j);
 		}
 	}
+}
+
+ZTEST(lib_json_test, test_json_string_array_size)
+{
+	int ret;
+	struct elt elt_ts;
+	char encoded[] = "{\"name_buf\":\"a12345678\"}";
+
+	ret = json_obj_parse(encoded, sizeof(encoded),
+			     elt_descr,
+			     ARRAY_SIZE(elt_descr),
+			     &elt_ts);
+
+	/* size of name_buf is 10 */
+	zassert_str_equal(elt_ts.name_buf,
+			  "a12345678", "String not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_string_array_empty)
+{
+	int ret;
+	struct elt elt_ts;
+	char encoded[] = "{\"name_buf\":\"\"}";
+
+	ret = json_obj_parse(encoded, sizeof(encoded),
+			     elt_descr,
+			     ARRAY_SIZE(elt_descr),
+			     &elt_ts);
+
+	/* size of name_buf is 10 */
+	zassert_str_equal(elt_ts.name_buf, "", "String not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_string_array_max)
+{
+	int ret;
+	struct elt elt_ts;
+	char encoded[] = "{\"name_buf\":\"a123456789\"}";
+
+	ret = json_obj_parse(encoded, sizeof(encoded),
+			     elt_descr,
+			     ARRAY_SIZE(elt_descr),
+			     &elt_ts);
+
+	/* string does not fit into name_buf */
+	zassert_equal(ret, -EINVAL, "Decoding has to fail");
 }
 
 struct encoding_test {
