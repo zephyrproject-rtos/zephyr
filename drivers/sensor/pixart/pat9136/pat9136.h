@@ -51,7 +51,13 @@ struct pat9136_stream {
 	struct gpio_callback cb;
 	const struct device *dev;
 	struct rtio_iodev_sqe *iodev_sqe;
-	struct k_timer timer;
+	struct {
+		struct k_timer backup;
+		struct {
+			atomic_t armed;
+			struct k_timer timer;
+		} cooldown;
+	} timer;
 	struct {
 		struct {
 			bool drdy : 1;
@@ -78,6 +84,7 @@ struct pat9136_config {
 	struct gpio_dt_spec int_gpio;
 	uint16_t resolution;
 	uint32_t backup_timer_period;
+	uint32_t cooldown_timer_period;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_PAT9136_H_ */
