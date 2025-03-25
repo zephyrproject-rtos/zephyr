@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+DT_CHOSEN_Z_CRC := zephyr,crc
+
+menuconfig CRC_NEW
+	bool "Cyclic redundancy check (CRC) Support"
+	help
+	  Enable support for CRC, a method used to detect errors in data.
+
+if CRC_NEW
+
+config CRC_SOFTWARE_BASED
+	bool "CRC software-based"
+	default y if !$(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	select CRC
+	help
+	  Use a software-based CRC implementation, which is flexible and suitable
+	  for platforms without dedicated CRC hardware.
+
+config CRC_HARDWARE_ACCELERATOR
+	bool "CRC hardware accelerator"
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	select CRC_HW
+	help
+	  Utilize hardware acceleration for CRC computation, improving
+	  performance when supported by the platform.
+
+endif # CRC_NEW
