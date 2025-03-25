@@ -274,6 +274,87 @@ ZTEST(util, test_UTIL_AND) {
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
+ZTEST(util, test_UTIL_CONCAT_OR) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_VALUE_SEVEN 7
+	#define TEST_VALUE_ZERO 0
+
+	if (!(UTIL_CONCAT_OR(TEST_FLAG_A, TEST_FLAG_B))) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (all valid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (one valid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_A)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (single valid)");
+	}
+
+	if (UTIL_CONCAT_OR(TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (single invalid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_C, TEST_FLAG_D, TEST_FLAG_A, TEST_FLAG_B)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (negative first)");
+	}
+
+	zassert_equal(1, UTIL_CONCAT_OR(TEST_VALUE_SEVEN, TEST_VALUE_ZERO));
+
+	zassert_equal(0, UTIL_CONCAT_OR(TEST_VALUE_ZERO, TEST_VALUE_ZERO,
+					TEST_VALUE_ZERO));
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_VALUE_SEVEN
+	#undef TEST_VALUE_ZERO
+}
+
+ZTEST(util, test_UTIL_CONCAT_AND) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_VALUE_ZERO 0
+	#define TEST_VALUE_ONE 1
+	#define TEST_VALUE_SEVEN 7
+
+	if (!UTIL_CONCAT_AND(TEST_FLAG_A, TEST_FLAG_B)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (all valid)");
+	}
+
+	if (!UTIL_CONCAT_AND(TEST_FLAG_A)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (single valid)");
+	}
+
+	if (UTIL_CONCAT_AND(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (one invalid)");
+	}
+
+	if (UTIL_CONCAT_AND(TEST_FLAG_C, TEST_FLAG_D)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (no valid)");
+	}
+
+	zassert_equal(1, UTIL_CONCAT_AND(TEST_VALUE_ONE, TEST_VALUE_SEVEN));
+
+	zassert_equal(0,
+		UTIL_CONCAT_AND(TEST_VALUE_ONE, TEST_VALUE_SEVEN, TEST_VALUE_ZERO));
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_VALUE_ZERO
+	#undef TEST_VALUE_ONE
+	#undef TEST_VALUE_SEVEN
+}
+
 ZTEST(util, test_IF_ENABLED) {
 	#define TEST_FLAG_A 1
 	#define TEST_FLAG_B 0

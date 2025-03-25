@@ -538,6 +538,29 @@ extern "C" {
  */
 #define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
 
+/**
+ * @brief Concatenates all arguments with "&&" between them into a single token
+ *
+ * This macro does primitive concatenation and doesn't try to process the
+ * parameters in preprocessor.
+ *
+ * @param ... Arguments to concatenate with @p && between them
+ * @return A concatenation of all the arguments with @p || between them or a
+ *         single argument
+ */
+#define UTIL_CONCAT_AND(...) Z_UTIL_CONCAT_AND(__VA_ARGS__)
+
+/**
+ * @brief Concatenates all arguments with "||" between them into a single token
+ *
+ * This macro does primitive concatenation and doesn't try to process the
+ * parameters in preprocessor.
+ *
+ * @param ... Arguments to concatenate with @p || between them
+ * @return A concatenation of all the arguments with @p || between them or a
+ *         single argument
+ */
+#define UTIL_CONCAT_OR(...) Z_UTIL_CONCAT_OR(__VA_ARGS__)
 
 /**
  * @brief Generates a sequence of code with configurable separator.
