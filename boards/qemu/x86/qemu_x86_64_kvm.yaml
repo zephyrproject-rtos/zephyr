@@ -1,0 +1,16 @@
+identifier: qemu_x86_64_kvm
+name: QEMU Emulation for X86_64 (KVM enabled)
+type: qemu
+arch: x86
+toolchain:
+  - zephyr
+supported:
+  - smp
+simulation:
+  - name: qemu
+testing:
+  default: false
+  ignore_tags:
+    - benchmark
+    - kernel
+vendor: qemu
