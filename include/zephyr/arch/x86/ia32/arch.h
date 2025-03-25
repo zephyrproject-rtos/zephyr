@@ -59,7 +59,7 @@
  */
 #define MK_ISR_NAME(x) __isr__##x
 
-#define Z_DYN_STUB_SIZE			4
+#define Z_DYN_STUB_SIZE			8
 #define Z_DYN_STUB_OFFSET		0
 #define Z_DYN_STUB_LONG_JMP_EXTRA_SIZE	3
 #define Z_DYN_STUB_PER_BLOCK		32
@@ -210,6 +210,7 @@ typedef struct s_isrList {
 		".pushsection " IRQSTUBS_TEXT_SECTION "\n\t" \
 		".global %c[isr]_irq%c[irq]_stub\n\t" \
 		"%c[isr]_irq%c[irq]_stub:\n\t" \
+		"endbr32\n\t" \
 		"pushl %[isr_param]\n\t" \
 		"pushl %[isr]\n\t" \
 		"jmp _interrupt_enter\n\t" \

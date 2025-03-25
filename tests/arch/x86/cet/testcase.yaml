@@ -1,0 +1,12 @@
+common:
+  ignore_faults: true
+  tags:
+    - kernel
+    - cet
+  filter: CONFIG_X86_CPU_HAS_CET
+
+tests:
+  arch.x86.cet.kernel.ibt:
+    arch_allow: x86
+    extra_configs:
+      - CONFIG_X86_CET_IBT=y
