@@ -5,7 +5,7 @@ description: PCIe Controller in ECAM mode
 
 compatible: "pci-host-ecam-generic"
 
-include: pcie-controller.yaml
+include: [pcie-controller.yaml, interrupt-nexus.yaml]
 
 properties:
   reg:
@@ -21,12 +21,6 @@ properties:
       As described in IEEE Std 1275-1994, but must provide at least a
       definition of non-prefetchable memory. One or both of prefetchable Memory
       and IO Space may also be provided.
-
-  interrupt-map-mask:
-    type: array
-
-  interrupt-map:
-    type: compound
 
   bus-range:
     type: array

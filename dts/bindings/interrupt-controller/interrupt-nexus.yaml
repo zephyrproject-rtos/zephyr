@@ -1,0 +1,20 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for interrupt nexus nodes
+
+properties:
+  interrupt-map:
+    type: compound
+    required: true
+
+  interrupt-map-mask:
+    type: array
+
+  interrupt-map-pass-thru:
+    type: array
+
+  "#interrupt-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a interrupt specifier
