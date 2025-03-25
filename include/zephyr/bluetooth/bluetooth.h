@@ -1741,7 +1741,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * @param addr Advertiser LE address and type.
  * @param rssi Strength of advertiser signal.
  * @param adv_type Type of advertising response from advertiser.
- *                 Uses the BT_GAP_ADV_TYPE_* values.
+ *                 Uses the @ref bt_gap_adv_type values.
  * @param buf Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
@@ -2584,7 +2584,7 @@ struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertising packet type.
 	 *
-	 * Uses the BT_GAP_ADV_TYPE_* value.
+	 * Uses the @ref bt_gap_adv_type value.
 	 *
 	 * May indicate that this is a scan response if the type is
 	 * @ref BT_GAP_ADV_TYPE_SCAN_RSP.
@@ -2594,7 +2594,7 @@ struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertising packet properties bitfield.
 	 *
-	 * Uses the BT_GAP_ADV_PROP_* values.
+	 * Uses the @ref bt_gap_adv_prop values.
 	 * May indicate that this is a scan response if the value contains the
 	 * @ref BT_GAP_ADV_PROP_SCAN_RESPONSE bit.
 	 *
