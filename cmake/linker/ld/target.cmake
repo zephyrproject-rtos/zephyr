@@ -4,6 +4,10 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 find_package(GnuLd REQUIRED)
 set(CMAKE_LINKER ${GNULD_LINKER})
 
+compiler_rt_library(library_dir library_name "")
+set_linker_property(PROPERTY rt_library "-l${library_name}")
+set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
+
 if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
    ${GNULD_LINKER_IS_BFD})
   # ld.bfd was found so let's explicitly use that for linking, see #32237
@@ -157,10 +161,12 @@ macro(toolchain_linker_finalize)
 
   set(cpp_link "${common_link}")
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
-    if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
+    compiler_file_path(CRTBEGIN_PATH crtbegin.o "")
+    compiler_file_path(CRTEND_PATH crtend.o "")
+    if(CONFIG_CPP_EXCEPTIONS AND CRTBEGIN_PATH AND CRTEND_PATH)
       # When building with C++ Exceptions, it is important that crtbegin and crtend
       # are linked at specific locations.
-      set(cpp_link "<LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o ${link_libraries} ${LIBGCC_DIR}/crtend.o")
+      set(cpp_link "<LINK_FLAGS> ${CRTBEGIN_PATH} ${link_libraries} ${CRTEND_PATH}")
     endif()
   endif()
   set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${cpp_link}")

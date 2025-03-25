@@ -11,15 +11,9 @@ find_program(CMAKE_LINKER xt-ld ${LD_SEARCH_PATH})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
-if(CONFIG_CPP_EXCEPTIONS)
-  # When building with C++ Exceptions, it is important that crtbegin and crtend
-  # are linked at specific locations.
-  # The location is so important that we cannot let this be controlled by normal
-  # link libraries, instead we must control the link command specifically as
-  # part of toolchain.
-  set(CMAKE_CXX_LINK_EXECUTABLE
-      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LIBGCC_DIR}/crtend.o")
-endif()
+compiler_rt_library(library_dir library_name "")
+set_linker_property(PROPERTY rt_library "-l${library_name}")
+set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
@@ -150,10 +144,23 @@ macro(toolchain_linker_finalize)
   endforeach()
   string(REPLACE ";" " " zephyr_std_libs "${zephyr_std_libs}")
 
- set(common_link "<LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
- set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
- set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> ${common_link}")
- set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
+  set(link_libraries "<OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
+  set(common_link "<LINK_FLAGS> ${link_libraries}")
+  set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
+  set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> ${common_link}")
+
+  set(cpp_link "${common_link}")
+  compiler_file_path(crtbegin.o CRTBEGIN_PATH "")
+  compiler_file_path(crtend.o CRTEND_PATH "")
+  if(CONFIG_CPP_EXCEPTIONS AND CRTBEGIN_PATH AND CRTEND_PATH)
+    # When building with C++ Exceptions, it is important that crtbegin and crtend
+    # are linked at specific locations.
+    # The location is so important that we cannot let this be controlled by normal
+    # link libraries, instead we must control the link command specifically as
+    # part of toolchain.
+    set(cpp_link "<LINK_FLAGS> ${CRTBEGIN_PATH} ${link_libraries} ${CRTEND_PATH}")
+  endif()
+  set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${cpp_link}")
 endmacro()
 
 # xt-ld is Xtensa's own version of binutils' ld.

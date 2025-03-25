@@ -4,6 +4,8 @@
 
 find_program(CMAKE_C_COMPILER gcc)
 
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/functions.cmake)
+
 if(CONFIG_CPP)
   set(cplusplus_compiler g++)
 else()

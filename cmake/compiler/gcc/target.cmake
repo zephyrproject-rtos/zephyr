@@ -2,6 +2,8 @@
 
 set_ifndef(C++ g++)
 
+include(${CMAKE_CURRENT_LIST_DIR}/functions.cmake)
+
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
@@ -97,22 +99,6 @@ if(SYSROOT_DIR)
 
   set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
 endif()
-
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-get_property(optimization TARGET compiler PROPERTY optimization)
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${optimization} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-assert_exists(LIBGCC_FILE_NAME)
-
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
-
-assert_exists(LIBGCC_DIR)
-
-set_linker_property(PROPERTY lib_include_dir "-L\"${LIBGCC_DIR}\"")
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and

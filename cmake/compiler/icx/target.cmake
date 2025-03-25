@@ -18,6 +18,10 @@ endif()
 find_program(CMAKE_C_COMPILER   icx   ${find_program_icx_args})
 find_program(CMAKE_CXX_COMPILER clang++ ${find_program_icx_args})
 
+# Inherit functions from GCC as Zephyr's xcc toolchain infrastructure is
+# compatible and can re-use the functions.
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/functions.cmake)
+
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 foreach(file_name include/stddef.h)
@@ -44,21 +48,6 @@ if(CONFIG_64BIT)
   list(APPEND TOOLCHAIN_C_FLAGS "-m64")
 else()
   list(APPEND TOOLCHAIN_C_FLAGS "-m32")
-endif()
-
-
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
-
-list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-if(LIBGCC_DIR)
-  list(APPEND TOOLCHAIN_LIBS gcc)
 endif()
 
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
