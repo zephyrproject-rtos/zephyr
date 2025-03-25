@@ -836,7 +836,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	uint16_t event_counter;
 	struct ll_conn *conn;
 	uint16_t instant;
 
@@ -852,11 +851,13 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	/* ACL connection of the new CIS */
 	conn = ll_conn_get(cis->lll.acl_handle);
-	event_counter = ull_conn_event_counter(conn);
-	instant = MAX(*conn_event_count, event_counter + 1);
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint16_t event_counter;
 	uint32_t cis_offset;
+
+	event_counter = ull_conn_event_counter(conn);
+	instant = MAX(*conn_event_count, event_counter + 1);
 
 	cis_offset = *cis_offset_min;
 
@@ -896,6 +897,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+	instant = *conn_event_count;
 
 	if (false) {
 
