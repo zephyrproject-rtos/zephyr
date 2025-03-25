@@ -3,7 +3,11 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-if(CONFIG_X86_64)
+if(CONFIG_BOARD_QEMU_X86_64_KVM)
+  set(QEMU_BINARY_SUFFIX x86_64)
+  set(QEMU_CPU_TYPE host,+x2apic)
+  list(APPEND QEMU_EXTRA_FLAGS -rtc clock=vm --enable-kvm)
+elseif(CONFIG_X86_64)
   set(QEMU_BINARY_SUFFIX x86_64)
   set(QEMU_CPU_TYPE qemu64,+x2apic)
   if("${CONFIG_MP_MAX_NUM_CPUS}" STREQUAL "1")

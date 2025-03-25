@@ -31,3 +31,10 @@ boards:
     vendor: intel
     socs:
       - name: atom
+
+  - name: qemu_x86_64_kvm
+    full_name: QEMU Emulation for X86 64bit, KVM enabled
+    socs:
+      - name: atom
+        variants:
+          - name: 'nokpti'
