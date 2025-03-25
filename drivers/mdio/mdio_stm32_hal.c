@@ -40,7 +40,13 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
 	ret = HAL_ETH_ReadPHYRegister(heth, prtad, regad, &read);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_ReadPHYRegister(heth, regad, &read);
+#endif
 
 	k_sem_give(&dev_data->sem);
 
@@ -62,7 +68,13 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
 	ret = HAL_ETH_WritePHYRegister(heth, prtad, regad, data);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_WritePHYRegister(heth, regad, data);
+#endif
 
 	k_sem_give(&dev_data->sem);
 
