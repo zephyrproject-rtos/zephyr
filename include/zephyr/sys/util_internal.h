@@ -376,6 +376,18 @@
 #define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
 #define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
 
+/* Used by CASE_IF_ENABLED */
+#define Z_CASE_IF_ENABLED(_flag, _label, ...) \
+	Z_CASE_IF_ENABLED_ALL((_flag), _label, __VA_ARGS__)
+
+/* Used by CASE_IF_ENABLED_ALL */
+#define Z_CASE_IF_ENABLED_ALL(_flags, _label, ...) \
+	Z_IF_ENABLED_ALL((case _label: { __VA_ARGS__ }), __DEBRACKET _flags)
+
+/* Used by CASE_IF_ENABLED_ANY */
+#define Z_CASE_IF_ENABLED_ANY(_flags, _label, ...) \
+	Z_IF_ENABLED_ANY((case _label: { __VA_ARGS__ }), __DEBRACKET _flags)
+
 /* Used by Z_IS_EQ */
 #include "util_internal_is_eq.h"
 

@@ -377,6 +377,143 @@ skipped:
 	#undef TEST_FLAG_D
 }
 
+ZTEST(util, test_CASE_IF_ENABLED) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED(TEST_FLAG_A, TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED not emitted (default reached)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED(TEST_FLAG_B, TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED emitted (invalid case)");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
+}
+
+ZTEST(util, test_CASE_IF_ENABLED_ALL) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true,
+			"CASE_IF_ENABLED_ALL not emitted (all valid)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_C), TEST_LABEL_FAILURE,
+		zassert_false(true,
+			"CASE_IF_ENABLED_ALL should not emit (one invalid)");
+		break;
+	)
+	default:
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_C, TEST_FLAG_D), TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED_ALL should not emit");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
+}
+
+ZTEST(util, test_CASE_IF_ENABLED_ANY) {
+
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED_ANY not emitted (all valid)");
+		break;
+	}
+
+	a = TEST_LABEL_SUCCESS;
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_C), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED_ANY not emitted (one valid)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_C, TEST_FLAG_D),
+		TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED_ANY should not emit");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
+}
+
 ZTEST(util, test_LISTIFY) {
 	int ab0 = 1;
 	int ab1 = 1;

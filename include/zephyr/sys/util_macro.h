@@ -812,6 +812,167 @@ extern "C" {
 #define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
 
 /**
+ * @brief Macro to emit a case in a switch-statement if the @p _flag is
+ *        defined to 1
+ *
+ * @note The content will only be emitted if a the configuration is
+ *       defined to 1, otherwise the whole case in the switch will
+ *       be expressed as an empty token. This means that the content will
+ *       only compiled and error-checked when the checked configurations yields
+ *       an emitted case in the switch-statement.
+ *
+ * Example:
+ *
+ *     enum { CASE_FOO = 1 };
+ *
+ *     switch(some_var) {
+ *     CASE_IF_ENABLED(CONFIG_FOO, CASE_FOO,
+ *             a++;
+ *             b++;
+ *             break;
+ *     )
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * This will emit the following if @p CONFIG_FOO is defined to 1:
+ *
+ *     switch (some_var) {
+ *     case CASE_FOO: {
+ *             a++;
+ *             b++;
+ *             break;
+ *     }
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * Otherwise it will emit the following:
+ *
+ *     switch (some_var) {
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * @param _flag  Configuration to check
+ * @param _label Label to emit in switch-statement
+ * @param ...    Content of the case
+ *
+ * @return Case with label and content if @p _flag is enabled and set 1,
+ *         otherwise an empty token
+ */
+#define CASE_IF_ENABLED(_flag, _label, ...) \
+	Z_CASE_IF_ENABLED(_flag, _label, __VA_ARGS__)
+
+/**
+ * @brief Macro to emit a case in a switch-statement if a list of @p _flags
+ *        are all defined to 1
+ *
+ * @note The content will only be emitted if all @p _flags are defined and
+ *       set to 1, otherwise the whole case in the switch will be expressed
+ *       as an empty token. This means that the content will only compiled and
+ *       error-checked when the checked configurations yields an emitted case
+ *       in the switch-statement.
+ *
+ * Example:
+ *
+ *     enum { CASE_FOO = 1 };
+ *
+ *     switch(some_var) {
+ *     CASE_IF_ENABLED(CONFIG_FOO, CONFIG_BAR, CASE_FOO,
+ *             a++;
+ *             b++;
+ *             break;
+ *     )
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * Will emit the following if both @p CONFIG_FOO and @p CONFIG_BAR are defined
+ * to 1:
+ *
+ *     switch (some_var) {
+ *     case CASE_FOO: {
+ *             a++;
+ *             b++;
+ *             break;
+ *     }
+ *     default:
+ *            return -EIO;
+ *     }
+ *
+ * Otherwise it will emit the following:
+ *
+ *     switch (some_var) {
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * @param _flags Configurations to check; must be in parentheses
+ * @param _label Label to emit in switch-statement
+ * @param ...    Content of the case
+ *
+ * @return Case with label and content if all @p _flags are enabled and set 1,
+ *         otherwise an empty token
+ */
+#define CASE_IF_ENABLED_ALL(_flags, _label, ...) \
+	Z_CASE_IF_ENABLED_ALL(_flags, _label, __VA_ARGS__)
+
+/**
+ * @brief Macro to emit a case in a switch-statement if any @p _flags are
+ *        defined to 1
+ *
+ * @note The content will only be emitted if any @p _flags are defined to 1,
+ *       otherwise the whole case in the switch will be expressed as an
+ *       empty token. This means that the content will only compiled and
+ *       error-checked when the checked configurations yields an emitted case in
+ *       the switch-statement.
+ *
+ * Example:
+ *
+ *     enum { CASE_FOO = 1 };
+ *
+ *     switch(some_var) {
+ *     CASE_IF_ENABLED_ANY((CONFIG_FOO, CONFIG_BAR), CASE_FOO,
+ *             a++;
+ *             b++;
+ *             break;
+ *     )
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * This will emit the following if any of the configurations @p CONFIG_FOO,
+ * @p CONFIG_BAR are defined to 1:
+ *
+ *     switch (some_var) {
+ *     case CASE_FOO: {
+ *             a++;
+ *             b++;
+ *             break;
+ *     }
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * Otherwise it will emit the following:
+ *
+ *     switch (som_var) {
+ *     default:
+ *             return -EIO;
+ *     }
+ *
+ * @param _flags Configurations to check; must be in parentheses
+ * @param _label Label to emit in switch-statement
+ * @param ...    Content of the case
+ *
+ * @return Case with label and content if any @p _flags are enabled and set 1,
+ *         otherwise an empty token
+ */
+#define CASE_IF_ENABLED_ANY(_flags, _label, ...) \
+	Z_CASE_IF_ENABLED_ANY(_flags, _label, __VA_ARGS__)
+
+/**
  * @}
  */
 
