@@ -55,6 +55,14 @@ For using variable size network buffer, the following overlay file can be used:
     $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise-variable-bufs.conf
 
 
+To facilitate installation of the certificates, a helper script is provided in the ``samples/net/wifi/test_certs`` directory. The script can be used to install the certificates at runtime.
+
+.. code-block:: bash
+
+    $ ./scripts/utils/wifi_ent_cert_installer.py -p samples/net/wifi/test_certs/rsa2k
+
+The script will install the certificates in the ``rsa2k`` directory to the TLS credentials store in the device over UART and using TLS credentials shell commands.
+
 
 To initiate Wi-Fi connection, the following command can be used:
 
