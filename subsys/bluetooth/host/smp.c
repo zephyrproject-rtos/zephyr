@@ -809,10 +809,17 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Clear flags first in case canceling of timeout fails. The SMP context
 	 * shall be marked as timed out in that case.
 	 */
 	atomic_set(smp->flags, 0);
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	/* If canceling fails the timeout handler will set the timeout flag and
 	 * mark the it as timed out. No new pairing procedures shall be started
@@ -964,10 +971,17 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
