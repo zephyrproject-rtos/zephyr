@@ -33,11 +33,13 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 			     size_t val_len);
 static void *settings_zms_storage_get(struct settings_store *cs);
 static int settings_zms_get_last_hash_ids(struct settings_zms *cf);
+static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *name);
 
 static struct settings_store_itf settings_zms_itf = {.csi_load = settings_zms_load,
 						     .csi_load_one = settings_zms_load_one,
 						     .csi_save = settings_zms_save,
-						     .csi_storage_get = settings_zms_storage_get};
+						     .csi_storage_get = settings_zms_storage_get,
+						     .csi_get_val_len = settings_zms_get_val_len};
 
 static ssize_t settings_zms_read_fn(void *back_end, void *data, size_t len)
 {
@@ -526,6 +528,44 @@ no_ll_update:
 			return rc;
 		}
 	}
+	return 0;
+}
+
+static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *name)
+{
+	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
+	char r_name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	ssize_t rc = 0;
+	uint32_t name_hash;
+
+	/* verify that name is not NULL */
+	if (!name) {
+		return -EINVAL;
+	}
+
+	name_hash = sys_hash32(name, strlen(name)) & ZMS_HASH_MASK;
+	for (int i = 0; i <= cf->hash_collision_num; i++) {
+		name_hash = ZMS_UPDATE_COLLISION_NUM(name_hash, i);
+		/* Get the name entry from ZMS */
+		rc = zms_read(&cf->cf_zms, ZMS_NAME_ID_FROM_HASH(name_hash), r_name,
+			      sizeof(r_name) - 1);
+		if (rc <= 0) {
+			/* Name doesn't exist */
+			continue;
+		}
+		/* Found a name, this might not include a trailing \0 */
+		r_name[rc] = '\0';
+		if (strcmp(name, r_name)) {
+			/* Names are not equal let's continue to the next collision hash
+			 * if it exists.
+			 */
+			continue;
+		}
+		/* At this steps the names are equal, let's read the data size*/
+		return zms_get_data_length(&cf->cf_zms,
+					   ZMS_NAME_ID_FROM_HASH(name_hash) + ZMS_DATA_ID_OFFSET);
+	}
+
 	return 0;
 }
 

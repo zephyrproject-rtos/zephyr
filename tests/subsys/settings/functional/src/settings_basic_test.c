@@ -240,12 +240,21 @@ ZTEST(settings_functional, test_register_and_loading)
 {
 	int rc, err;
 	uint8_t val = 0;
+	ssize_t val_len = 0;
 
 	rc = settings_subsys_init();
 	zassert_true(rc == 0, "subsys init failed");
 
 
+	/* Check that key that corresponds to val2 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val2 exists in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 1), "Failure: key should exist");
 
 	memset(&data, 0, sizeof(struct stored_data));
 
@@ -279,7 +288,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val3 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/val3", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val3 exists in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings now data.val2 and data.val1 should receive a
 	 * value
@@ -310,7 +328,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val1 do not exist in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/val1", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val1 exists in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings all data should receive a value loaded */
 	rc = settings_load();
