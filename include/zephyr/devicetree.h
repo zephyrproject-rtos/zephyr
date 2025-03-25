@@ -4920,6 +4920,54 @@
 		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_BOOL_STATUS_OKAY_, prop)))
 
 /**
+ * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
+ *        boolean property that exists. If all nodes are disabled, this
+ *        will return 1.
+ * *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo;
+ *             bar;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(foo) // 1
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bar) // 0
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(baz) // 0
+ * @endcode
+ */
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY(prop) \
+	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_BOOL_STATUS_OKAY_, prop))
+
+/**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
  *        and status `okay`
  *
@@ -5216,6 +5264,21 @@
  */
 #define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
 	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+
+/** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has no boolean property
+ * @p prop with value 1.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance property value is 0,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
+	IF_DISABLED(DT_INST_PROP(idx, prop), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
