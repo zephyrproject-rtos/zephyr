@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_METRO_RP2350
+	select SOC_RP2350B_M33 if BOARD_ADAFRUIT_METRO_RP2350_RP2350B_M33
