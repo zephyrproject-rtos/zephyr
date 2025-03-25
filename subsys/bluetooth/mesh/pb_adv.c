@@ -1071,6 +1071,12 @@ static int prov_link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 	return 0;
 }
 
+static void prov_link_cancel(void)
+{
+	bt_mesh_beacon_disable();
+	bt_mesh_scan_disable();
+}
+
 static void prov_link_close(enum prov_bearer_link_status status)
 {
 	int err;
@@ -1109,6 +1115,7 @@ const struct prov_bearer bt_mesh_pb_adv = {
 	.type = BT_MESH_PROV_ADV,
 	.link_open = prov_link_open,
 	.link_accept = prov_link_accept,
+	.link_cancel = prov_link_cancel,
 	.link_close = prov_link_close,
 	.send = prov_send_adv,
 	.clear_tx = prov_clear_tx,

@@ -76,6 +76,12 @@ struct prov_bearer {
 	 */
 	int (*link_accept)(const struct prov_bearer_cb *cb, void *cb_data);
 
+	/** @brief Disable link establishment as a provisionee.
+	 *
+	 *  Stops accepting link open messages and sending unprovisioned beacons.
+	 */
+	void (*link_cancel)(void);
+
 	/** @brief Send a packet on an established link.
 	 *
 	 *  @param buf     Payload buffer. Requires @ref
