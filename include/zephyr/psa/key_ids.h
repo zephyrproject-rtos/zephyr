@@ -45,8 +45,8 @@ typedef uint32_t psa_key_id_t;
 #define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE  0x100 /* 256 */
 
 /** PSA key ID range to be used by TF-M ITS */
-#define ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20010100
-#define ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_SIZE  0x10000 /* 64 Ki */
+#define ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20010100
+#define ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_SIZE  0x10000 /* 64 Ki */
 
 /** PSA key ID range to be used by the end-user application. */
 #define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x30000000

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2019 Laczen
+ * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -37,12 +39,10 @@ static struct settings_store default_settings_its = {.cs_itf = &settings_its_itf
 
 static int increment_uid(psa_storage_uid_t *uid)
 {
-	if (*uid < ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN ||
-	    *uid >= (ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN +
-		     ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_SIZE)) {
-		LOG_ERR("UID out of range! %lld > %d", *uid,
-			ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN +
-				ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_SIZE);
+	if (*uid < ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_BEGIN ||
+	    *uid >= (ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_BEGIN +
+		     ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_SIZE) - 1) {
+		LOG_ERR("UID out of range!");
 		return -EINVAL;
 	}
 
@@ -54,7 +54,7 @@ static int store_entries(void)
 {
 	int err;
 	psa_status_t status;
-	psa_storage_uid_t uid = ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN;
+	psa_storage_uid_t uid = ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_BEGIN;
 	size_t remaining = sizeof(entries);
 	size_t chunk_size = CONFIG_TFM_ITS_MAX_ASSET_SIZE;
 	const uint8_t *metadata_bytes = (const uint8_t *)&entries;
@@ -94,7 +94,7 @@ static int load_entries(void)
 	int err;
 	psa_status_t status;
 	size_t bytes_read;
-	psa_storage_uid_t uid = ZEPHYR_PSA_TFM_ITS_KEY_ID_RANGE_BEGIN;
+	psa_storage_uid_t uid = ZEPHYR_PSA_SETTINGS_TFM_ITS_KEY_ID_RANGE_BEGIN;
 	size_t remaining = sizeof(entries);
 	size_t chunk_size = CONFIG_TFM_ITS_MAX_ASSET_SIZE;
 	uint8_t *metadata_bytes = (uint8_t *)&entries;
@@ -189,12 +189,30 @@ static int settings_its_save(struct settings_store *cs, const char *name, const 
 	}
 
 	int index;
+	bool delete;
 
-	/* Search metadata to see if entry already exists */
+	/* Find out if we are doing a delete */
+	delete = ((value == NULL) || (val_len == 0));
+
+	/* Lock mutex before manipulating settings array */
+	k_mutex_lock(&worker_mutex, K_FOREVER);
+
+	/*
+	 * Search metadata to see if entry already exists. Array is compacted, so first blank entry
+	 * signals end of settings.
+	 */
 	for (index = 0; index < CONFIG_SETTINGS_TFM_ITS_NUM_ENTRIES; index++) {
 		if (strncmp(entries[index].name, name, SETTINGS_MAX_NAME_LEN) == 0) {
 			break;
-		} else if (strnlen(entries[index].name, SETTINGS_MAX_NAME_LEN) == 0) {
+		} else if (entries[index].val_len == 0) {
+
+			/* Setting already deleted */
+			if (delete) {
+				LOG_DBG("%s: %s Already deleted!", __func__, name);
+				k_mutex_unlock(&worker_mutex);
+				return 0;
+			}
+
 			/* New setting being entered */
 			entries_count++;
 			break;
@@ -203,11 +221,29 @@ static int settings_its_save(struct settings_store *cs, const char *name, const 
 
 	LOG_DBG("ITS Save - index %d: name %s, val_len %d", index, name, val_len);
 
-	/* Update metadata */
-	strncpy(entries[index].name, name, SETTINGS_MAX_NAME_LEN);
-	memcpy(entries[index].value, value, val_len);
-	entries[index].val_len = val_len;
+	if (delete) {
+		/* Clear metadata */
+		memset(entries[index].name, 0, SETTINGS_MAX_NAME_LEN);
+		memset(entries[index].value, 0, SETTINGS_MAX_VAL_LEN);
+		entries[index].val_len = 0;
 
+		/* If setting not at end of array, shift entries */
+		if (index < entries_count - 1) {
+			memcpy(&entries[index], &entries[index + 1],
+			       (entries_count - index - 1) * sizeof(struct setting_entry));
+			/* Remove duplicate entry at end of array */
+			memset(&entries[entries_count - 1], 0, sizeof(struct setting_entry));
+		}
+
+		entries_count--;
+	} else {
+		/* Update metadata */
+		strncpy(entries[index].name, name, SETTINGS_MAX_NAME_LEN);
+		memcpy(entries[index].value, value, val_len);
+		entries[index].val_len = val_len;
+	}
+
+	k_mutex_unlock(&worker_mutex);
 	k_work_schedule(&worker, K_MSEC(CONFIG_SETTINGS_TFM_ITS_LAZY_PERSIST_DELAY_MS));
 
 	return 0;
