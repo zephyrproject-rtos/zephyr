@@ -151,5 +151,23 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
   )
 endif() # CONFIG_WISECONNECT_NETWORK_STACK
 
+if(CONFIG_SOC_SILABS_SLEEPTIMER)
+  zephyr_include_directories(
+    ${SISDK_DIR}/platform/service/sleeptimer/inc
+    ${SISDK_DIR}/platform/service/sleeptimer/src
+    ${SISDK_DIR}/platform/service/sleeptimer/config
+  )
+
+  zephyr_library_sources(
+    ${SISDK_DIR}/platform/service/sleeptimer/src/sl_sleeptimer.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_SLEEPTIMER_PRESENT
+    SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
+    SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
+  )
+endif() # CONFIG_SOC_SILABS_SLEEPTIMER
+
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)

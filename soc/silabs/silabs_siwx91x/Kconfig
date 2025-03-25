@@ -9,3 +9,8 @@ config SOC_FAMILY_SILABS_SIWX91X
 	select CPU_HAS_ARM_MPU
 	select HAS_SILABS_WISECONNECT
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+config SOC_SILABS_SLEEPTIMER
+	bool
+	help
+	  The Sleeptimer HAL module is used for SIWX91X.

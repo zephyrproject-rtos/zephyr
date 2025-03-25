@@ -107,6 +107,10 @@
 	};
 };
 
+&sysrtc0  {
+	status = "okay";
+};
+
 &bt_hci0 {
 	status = "okay";
 };
