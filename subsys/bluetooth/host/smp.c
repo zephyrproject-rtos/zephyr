@@ -829,6 +829,11 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 {
 	struct bt_keys *conflict;
 
+	/* Check whether key has been added to resolving list. */
+	if (keys->state & BT_KEYS_ID_ADDED) {
+		bt_id_del(keys);
+	}
+
 	conflict = bt_id_find_conflict(keys);
 	if (conflict != NULL) {
 		int err;
@@ -994,6 +999,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	 */
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_find_addr(conn->id, &addr);
+	if (keys != NULL) {
+		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
+		bt_keys_clear(keys);
+	}
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
