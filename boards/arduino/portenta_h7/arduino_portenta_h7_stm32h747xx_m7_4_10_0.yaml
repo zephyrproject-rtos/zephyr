@@ -1,5 +1,5 @@
-identifier: arduino_portenta_h7/stm32h747xx/m7
-name: Arduino Portenta H7 (M7)
+identifier: arduino_portenta_h7@4.10.0/stm32h747xx/m7
+name: Arduino Portenta H7 (M7) rev. 4.10.0
 type: mcu
 arch: arm
 toolchain:
@@ -14,5 +14,6 @@ supported:
   - spi
   - qspi
   - memc
+  - usb_cdc
   - usb_device
 vendor: arduino
