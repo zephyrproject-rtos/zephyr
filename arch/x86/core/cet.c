@@ -18,6 +18,12 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_X86_64
+#define TOKEN_OFFSET 5
+#else
+#define TOKEN_OFFSET 4
+#endif
+
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 int z_x86_thread_attach_shadow_stack(k_tid_t thread,
 				     z_x86_shadow_stack_t *stack,
@@ -36,7 +42,7 @@ int z_x86_thread_attach_shadow_stack(k_tid_t thread,
 	}
 
 	thread->arch.shstk_addr = stack + (stack_size -
-					   5 * sizeof(*stack)) / sizeof(*stack);
+					   TOKEN_OFFSET * sizeof(*stack)) / sizeof(*stack);
 	thread->arch.shstk_size = stack_size;
 	thread->arch.shstk_base = stack;
 

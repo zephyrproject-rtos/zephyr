@@ -286,6 +286,14 @@ static void dump_regs(const struct arch_esf *esf)
 		esf->cs & 0xFFFFU, get_cr3(esf));
 
 	LOG_ERR("EIP: 0x%08x", esf->eip);
+#ifdef CONFIG_HW_SHADOW_STACK
+	{
+	uintptr_t ssp;
+
+		__asm__ volatile("rdsspd %0" : "=r"(ssp));
+		LOG_ERR("SSP: 0x%08lx", ssp);
+	}
+#endif /* CONFIG_HW_SHADOW_STACK */
 }
 #endif /* CONFIG_X86_64 */
 
