@@ -263,7 +263,10 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 	const struct gpio_mcux_lpc_config *config = dev->config;
 	enum nxp_pint_trigger interrupt_mode = NXP_PINT_NONE;
 	uint32_t port = config->port_no;
+	bool wake = ((trig & GPIO_INT_WAKEUP) == GPIO_INT_WAKEUP);
 	int ret;
+
+	trig &= ~GPIO_INT_WAKEUP;
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -292,7 +295,7 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 	}
 
 	/* PINT treats GPIO pins as continuous. Each port has 32 pins */
-	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, (trig & GPIO_INT_WAKEUP));
+	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, wake);
 	if (ret < 0) {
 		return ret;
 	}
