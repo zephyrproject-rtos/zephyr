@@ -33,4 +33,5 @@ void z_x86_cet_shadow_stack_panic(void);
 #endif
 
 #endif /* _ASMLANGUAGE */
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_CET_H */
