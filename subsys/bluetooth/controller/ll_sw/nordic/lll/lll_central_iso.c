@@ -144,11 +144,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	LL_ASSERT(cis_lll);
 
-	/* Unconditionally set the established flag.
+	/* Unconditionally set the prepared flag.
 	 * This flag ensures current CIG event does not pick up a new CIS becoming active when the
 	 * ACL overlaps at the instant with this already started CIG events.
 	 */
-	cis_lll->established = 1U;
+	cis_lll->prepared = 1U;
 
 	/* Save first active CIS offset */
 	cis_offset_first = cis_lll->offset;
@@ -366,12 +366,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	do {
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
 		if (cis_lll && cis_lll->active) {
-			/* Unconditionally set the established flag.
+			/* Unconditionally set the prepared flag.
 			 * This flag ensures current CIG event does not pick up a new CIS becoming
 			 * active when the ACL overlaps at the instant with this already started
 			 * CIG events.
 			 */
-			cis_lll->established = 1U;
+			cis_lll->prepared = 1U;
 
 			/* Pick the event_count calculated in the ULL prepare */
 			cis_lll->event_count = cis_lll->event_count_prepare;
@@ -417,7 +417,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
 									    &cis_handle_curr);
-			if (next_cis_lll && next_cis_lll->established) {
+			if (next_cis_lll && next_cis_lll->prepared) {
 				payload_count_flush_or_inc_on_close(next_cis_lll);
 			}
 		} while (next_cis_lll);
@@ -599,7 +599,7 @@ static void isr_tx(void *param)
 		cis_handle = cis_handle_curr;
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
-		} while (next_cis_lll && !next_cis_lll->established);
+		} while (next_cis_lll && !next_cis_lll->prepared);
 
 		if (!next_cis_lll) {
 			return;
@@ -843,7 +843,7 @@ isr_rx_next_subevent:
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
 									    &cis_handle_curr);
-		} while (next_cis_lll && !next_cis_lll->established);
+		} while (next_cis_lll && !next_cis_lll->prepared);
 
 		if (!next_cis_lll) {
 			goto isr_rx_done;
