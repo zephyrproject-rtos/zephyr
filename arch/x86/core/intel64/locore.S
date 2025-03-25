@@ -863,6 +863,48 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq %rax, _thread_offset_to_ss(%rsi)
 #endif
 
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
+	jz __sh_stk_out_irq
+
+	/* We are on a interrupt shadow stack, which contains the three
+	 * entries needed to iretq. However, we may return to other
+	 * thread, not the one interrupted. So we need to place these
+	 * entries on the interrupted thread shadow stack, so it can be
+	 * restored later.
+	 */
+
+	rdsspq %rax
+
+	/* Load entries from current shadow stack */
+	movq (%rax), %r10 /* SSP */
+	movq 8(%rax), %r11 /* LIP */
+	movq 16(%rax), %r9 /* CS */
+
+	movq %r10, %rax /* rax now points to old shadow stack */
+
+	/* Save CS */
+	wrssq %r9, -8(%rax)
+
+	/* Save LIP */
+	wrssq %r11, -16(%rax)
+
+	/* Save SSP */
+	wrssq %r10, -24(%rax)
+
+	/* Create and "push" new token */
+	movq %rax, %r10
+	subq $24, %r10
+	orq $1, %r10
+	wrssq %r10, -32(%rax)
+
+	/* Finally, save SSP on thread struct */
+	subq $32, %rax
+	movq %rax, _thread_offset_to_shstk_addr(%rsi)
+
+__sh_stk_out_irq:
+#endif
+
 irq_dispatch:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	pushq %rcx
@@ -895,6 +937,23 @@ irq_dispatch:
 	movq ___cpu_t_current_OFFSET(%rsi), %rdi
 	call z_get_next_switch_handle
 	movq %rax, %rdi
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	/* __resume will change to next thread shadow stack (if any), so
+	 * we need to mark IRQ shadow stack as free (not busy).
+	 */
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz 1f
+
+	movq $3, %rax /* Discard SSP, LIP and CS from shadow stack */
+	incsspq %rax
+	rdsspq %rax
+	clrssbsy (%rax) /* Free shadow stack */
+1:
+#endif
+
 	jmp __resume
 
 irq_exit_nested:

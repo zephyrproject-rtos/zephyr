@@ -7,6 +7,7 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_
 
 #include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/cet.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -30,6 +31,17 @@ struct x86_cpuboot {
 };
 
 typedef struct x86_cpuboot x86_cpuboot_t;
+
+struct x86_interrupt_ssp_table {
+	uintptr_t not_used;
+	uintptr_t ist1;
+	uintptr_t ist2;
+	uintptr_t ist3;
+	uintptr_t ist4;
+	uintptr_t ist5;
+	uintptr_t ist6;
+	uintptr_t ist7;
+};
 
 extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 
@@ -73,6 +85,32 @@ extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 		.fn = z_prep_c,									\
 		.arg = &x86_cpu_boot_arg,							\
 	}
+
+#define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
+	z_x86_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)					\
+	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
+	name[size / sizeof(z_x86_shadow_stack_t)] =						\
+		{ [size / sizeof(z_x86_shadow_stack_t) - 1] =					\
+			(uintptr_t)name + size - 1 * sizeof(z_x86_shadow_stack_t)		\
+		}
+
+#define X86_INTERRUPT_SHADOW_STACK_DEFINE(n, _)							\
+	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_irq_shadow_stack##n,					\
+				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);			\
+	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_nmi_shadow_stack##n,					\
+				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);			\
+	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_exception_shadow_stack##n,				\
+				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE)
+
+#define SHSTK_LAST_ENTRY (CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE / sizeof(z_x86_shadow_stack_t) - 1)
+
+#define X86_INTERRUPT_SSP_TABLE_INIT(n, _)							\
+	{											\
+		.ist1 = (uintptr_t)&z_x86_irq_shadow_stack##n[SHSTK_LAST_ENTRY],		\
+		.ist6 = (uintptr_t)&z_x86_nmi_shadow_stack##n[SHSTK_LAST_ENTRY],		\
+		.ist7 = (uintptr_t)&z_x86_exception_shadow_stack##n[SHSTK_LAST_ENTRY],	\
+	}
+
 
 #define STACK_ARRAY_IDX(n, _) n
 
