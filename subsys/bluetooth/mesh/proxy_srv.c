@@ -983,6 +983,8 @@ int bt_mesh_proxy_gatt_enable(void)
 		}
 	}
 
+	bt_mesh_adv_gatt_update();
+
 	return 0;
 }
 
