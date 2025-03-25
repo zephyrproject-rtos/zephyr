@@ -199,6 +199,19 @@ static void counter_max32_wut_isr(const struct device *dev)
 	MXC_WUT_ClearFlags(cfg->regs);
 }
 
+static void counter_max32_wut_hw_init(const struct device *dev)
+{
+	const struct max32_wut_config *cfg = dev->config;
+
+	Wrap_MXC_SYS_Select32KClockSource(cfg->clock_source);
+
+	cfg->irq_func(dev);
+
+	if (cfg->wakeup_source) {
+		MXC_LP_EnableWUTAlarmWakeup();
+	}
+}
+
 static int counter_max32_wut_init(const struct device *dev)
 {
 	const struct max32_wut_config *cfg = dev->config;
@@ -206,7 +219,7 @@ static int counter_max32_wut_init(const struct device *dev)
 	mxc_wut_pres_t pres;
 	mxc_wut_cfg_t wut_cfg;
 
-	Wrap_MXC_SYS_Select32KClockSource(cfg->clock_source);
+	counter_max32_wut_hw_init(dev);
 
 	prescaler_lo = FIELD_GET(GENMASK(2, 0), LOG2(cfg->prescaler));
 	prescaler_hi = FIELD_GET(BIT(3), LOG2(cfg->prescaler));
@@ -222,30 +235,16 @@ static int counter_max32_wut_init(const struct device *dev)
 
 	MXC_WUT_SetCount(cfg->regs, 0);
 
-	cfg->irq_func(dev);
-
-	if (cfg->wakeup_source) {
-		MXC_LP_EnableWUTAlarmWakeup();
-	}
-
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
 static int counter_max32_wut_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int ret;
-
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-
-		ret = counter_max32_wut_init(dev);
-		if (ret != 0) {
-			return ret;
-		}
-
+		counter_max32_wut_hw_init(dev);
 		break;
-
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	default:
