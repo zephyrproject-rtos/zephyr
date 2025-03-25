@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker frontend of Arm Ethos-U NPU driver
+
+compatible: "nuvoton,numaker-npu"
+
+include: ["arm,ethos-u.yaml", reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
+
+  flush-mask:
+    type: int
+    default: 2
+    description: |
+      Base pointer cache flush mask passed to ethos-u core driver
+      ethosu_set_basep_cache_mask(). Default is to follow ethos-u
+      core driver for scratch region.
+
+  invalidate-mask:
+    type: int
+    default: 2
+    description: |
+      Base pointer cache invalidation mask passed to ethos-u core driver
+      ethosu_set_basep_cache_mask(). Default is to follow ethos-u
+      core driver for scratch region.
