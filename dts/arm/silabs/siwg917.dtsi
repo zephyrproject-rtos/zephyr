@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
+#include <freq.h>
 
 / {
 	chosen {
@@ -283,6 +284,16 @@
 			interrupts = <20 0>;
 			interrupt-names = "watchdog";
 			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
+			status = "disabled";
+		};
+
+		sysrtc0: sysrtc@24048c00 {
+			compatible = "silabs,gecko-stimer";
+			reg = <0x24048c00 0x78>;
+			interrupts = <22 0>;
+			interrupt-names = "sysrtc";
+			clock-frequency = <DT_FREQ_K(32)>;
+			prescaler = <1>;
 			status = "disabled";
 		};
 	};
