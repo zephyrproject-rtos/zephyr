@@ -50,14 +50,7 @@ module.
     $ cp client2.pem samples/net/wifi/test_certs/
     $ cp client-key2.pem samples/net/wifi/test_certs/
     $ cp ca2.pem samples/net/wifi/test_certs/
-    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise.conf
-
-For using variable size network buffer, the following overlay file can be used:
-
-.. code-block:: bash
-
-    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise-variable-bufs.conf
-
+    $ west build -p -b <board> samples/net/wifi -S wifi-enterprise
 
 Run time certificates
 ---------------------
