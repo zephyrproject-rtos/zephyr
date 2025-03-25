@@ -1,0 +1,43 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+		};
+	};
+
+	ddr_code: memory0@80100000 {
+		compatible = "mmio-sram";
+	};
+
+	ddr_sys: memory1@80a00000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		rcc: rcc@44200000  {
+			compatible = "st,stm32mp2-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x44200000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
