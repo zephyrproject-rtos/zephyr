@@ -294,6 +294,50 @@ extern "C" {
 	COND_CODE_1(_flag, _code, ())
 
 /**
+ * @brief Insert code if all @p _flags are defined and equals 1.
+ *
+ * Like IF_ENABLED(), this emits code if @p _flags are all defined  and
+ * set to 1; it expands to nothing otherwise.
+ *
+ * Example:
+ *
+ *     IF_ENABLED_ALL((CONFIG_FLAG_A, CONFIG_FLAG_B), uint32_t foo;)
+ *
+ * If @p CONFIG_FLAG_A and @p CONFIG_FLAG_B are defined to 1, this expands to:
+ *
+ *     uint32_t foo;
+ *
+ * and to nothing otherwise.
+ *
+ * @param _flags evaluated flags; must be in parentheses
+ * @param ... Emitted code if all @p _flags are defined to 1
+ */
+#define IF_ENABLED_ALL(_flags, ...) \
+	Z_IF_ENABLED_ALL((__VA_ARGS__), __DEBRACKET _flags)
+
+/**
+ * @brief Insert code if any @p _flags are defined to 1.
+ *
+ * Like IF_ENABLED(), this emits code if any @p _flags are defined to 1;
+ * it expands to nothing otherwise.
+ *
+ * Example:
+ *
+ *     IF_ENABLED_ANY((CONFIG_FLAG_A, CONFIG_FLAG_B), uint32_t foo;)
+ *
+ * If @p CONFIG_FLAG_A or @p CONFIG_FLAG_B defined to 1, this expands to:
+ *
+ *     uint32_t foo;
+ *
+ * and to nothing otherwise.
+ *
+ * @param _flags evaluated flags; must be in parentheses
+ * @param ... Emitted code if any @p _flags expands to 1
+ */
+#define IF_ENABLED_ANY(_flags, ...) \
+	Z_IF_ENABLED_ANY((__VA_ARGS__), __DEBRACKET _flags)
+
+/**
  * @brief Insert code if @p _flag is not defined as 1.
  *
  * This expands to nothing if @p _flag is defined and equal to 1;

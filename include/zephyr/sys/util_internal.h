@@ -125,6 +125,148 @@
 #define Z_IS_ENABLED_ANY_31(a, ...) COND_CODE_1(a, (1), (Z_IS_ENABLED_ANY_30(__VA_ARGS__,)))
 #define Z_IS_ENABLED_ANY_32(a, ...) COND_CODE_1(a, (1), (Z_IS_ENABLED_ANY_31(__VA_ARGS__,)))
 
+/* Helper macro for IF_ENABLED_ALL */
+#define Z_IF_ENABLED_ALL(_code, ...) \
+	Z_IF_ENABLED_ALL_N(NUM_VA_ARGS(__VA_ARGS__), _code, __VA_ARGS__)
+#define Z_IF_ENABLED_ALL_N(N, _code, ...) \
+	UTIL_CAT(Z_IF_ENABLED_ALL_, N)(_code, __VA_ARGS__)
+#define IF_ENABLED_ALL_0(_code, ...)
+#define Z_IF_ENABLED_ALL_1(_code, a, ...) \
+	COND_CODE_1(a, _code, ())
+#define Z_IF_ENABLED_ALL_2(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_1(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_3(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_2(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_4(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_3(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_5(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_4(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_6(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_5(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_7(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_6(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_8(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_7(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_9(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_8(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_10(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_9(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_11(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_10(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_12(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_11(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_13(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_12(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_14(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_13(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_15(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_14(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_16(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_15(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_17(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_16(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_18(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_17(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_19(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_18(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_20(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_19(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_21(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_20(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_22(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_21(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_23(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_22(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_24(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_23(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_25(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_24(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_26(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_25(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_27(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_26(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_28(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_27(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_29(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_28(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_30(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_29(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_31(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_30(_code, __VA_ARGS__,)), ())
+#define Z_IF_ENABLED_ALL_32(_code, a, ...) \
+	COND_CODE_1(a, (Z_IF_ENABLED_ALL_31(_code, __VA_ARGS__,)), ())
+
+/* Helper macro for IF_ENABLED_ANY */
+#define Z_IF_ENABLED_ANY(_code, ...) \
+	Z_IF_ENABLED_ANY_N(NUM_VA_ARGS(__VA_ARGS__), _code, __VA_ARGS__)
+#define Z_IF_ENABLED_ANY_N(N, _code, ...) \
+	UTIL_CAT(Z_IF_ENABLED_ANY_, N)(_code, __VA_ARGS__)
+#define Z_IF_ENABLED_ANY_0(_code, ...)
+#define Z_IF_ENABLED_ANY_1(_code, a, ...) \
+	COND_CODE_1(a, _code, ())
+#define Z_IF_ENABLED_ANY_2(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_1(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_3(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_2(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_4(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_3(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_5(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_4(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_6(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_5(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_7(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_6(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_8(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_7(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_9(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_8(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_10(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_9(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_11(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_10(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_12(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_11(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_13(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_12(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_14(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_13(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_15(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_14(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_16(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_15(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_17(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_16(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_18(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_17(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_19(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_18(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_20(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_19(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_21(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_20(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_22(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_21(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_23(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_22(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_24(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_23(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_25(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_24(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_26(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_25(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_27(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_26(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_28(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_27(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_29(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_28(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_30(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_29(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_31(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_30(_code, __VA_ARGS__,)))
+#define Z_IF_ENABLED_ANY_32(_code, a, ...) \
+	COND_CODE_1(a, _code, (Z_IF_ENABLED_ANY_31(_code, __VA_ARGS__,)))
+
 /* Implementation of IS_EQ(). Returns 1 if _0 and _1 are the same integer from
  * 0 to 4096, 0 otherwise.
  */

@@ -275,21 +275,106 @@ ZTEST(util, test_UTIL_AND) {
 }
 
 ZTEST(util, test_IF_ENABLED) {
-	#define test_IF_ENABLED_FLAG_A 1
-	#define test_IF_ENABLED_FLAG_B 0
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 0
 
-	IF_ENABLED(test_IF_ENABLED_FLAG_A, (goto skipped;))
+	IF_ENABLED(TEST_FLAG_A, (goto skipped;))
 	/* location should be skipped if IF_ENABLED macro is correct. */
 	zassert_false(true, "location should be skipped");
 skipped:
-	IF_ENABLED(test_IF_ENABLED_FLAG_B, (zassert_false(true, "");))
-
-	IF_ENABLED(test_IF_ENABLED_FLAG_C, (zassert_false(true, "");))
+	IF_ENABLED(TEST_FLAG_B, (zassert_false(true, "");))
 
 	zassert_true(true, "");
 
-	#undef test_IF_ENABLED_FLAG_A
-	#undef test_IF_ENABLED_FLAG_B
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+}
+
+ZTEST(util, test_IF_ENABLED_ALL) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B),
+		goto skipped;
+	)
+
+	/* location should be skipped (TEST_FLAG_A/B are 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	IF_ENABLED_ALL((TEST_FLAG_A),
+		goto skipped_1;
+	)
+
+	/* location should be skipped (TEST_FLAG_A is 1). */
+	zassert_false(true, "location should be skipped (single valid)");
+skipped_1:
+	IF_ENABLED_ALL((TEST_FLAG_C),
+		zassert_false(true, "Unexpected (single invalid)");
+	)
+
+	IF_ENABLED_ALL((TEST_FLAG_A, test_IF_ENABLED_FLAG_C),
+		zassert_false(true, "Unexpected (one invalid)");
+	)
+
+	IF_ENABLED_ALL((TEST_FLAG_C, TEST_FLAG_D),
+		zassert_false(true, "Unexpected (no valid)");
+	)
+
+	/* Verify that emitted code supports comma separated parameters */
+	struct { int a; int b; int c; } test_struct = {
+		IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B), .a = 2, .b = 3,)
+		.c = 4,
+	};
+
+	zassert_true(test_struct.a == 2 && test_struct.b == 3,
+		     "IF_ENABLED_ALL: Comma-separated emit failed (all valid)");
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+}
+
+ZTEST(util, test_IF_ENABLED_ANY) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B),
+		goto skipped;
+	)
+
+	/* location should be skipped (TEST_FLAG_A/C is 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	IF_ENABLED_ANY((TEST_FLAG_C, TEST_FLAG_D),
+		zassert_false(true, "Unexpected (no valid)");
+	)
+
+	IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B),
+		zassert_true(true, "Unexpected (one valid)");
+	)
+
+	/* Verify that emitted code supports comma separated parameters */
+	struct { int a; int b; int c; } test_struct = {
+		IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_C), .a = 2, .b = 3,)
+		.c = 4,
+	};
+
+	zassert_true(test_struct.a == 2 && test_struct.b == 3,
+		     "IF_ENABLED_ALL: Comma-separated emit failed (one valid)");
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
 }
 
 ZTEST(util, test_LISTIFY) {
