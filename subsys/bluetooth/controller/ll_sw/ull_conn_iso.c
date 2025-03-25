@@ -1079,6 +1079,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	/* Initialize CIS event lazy at CIS create */
 	cis->lll.lazy_active = 0U;
+	cis->lll.established = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Start CIS peripheral CIG ticker */
@@ -1182,6 +1183,7 @@ static void mfy_cis_lazy_fill(void *param)
 	 * CIG before the CIS gets active that be decremented when event_count
 	 * is incremented in ull_conn_iso_ticker_cb().
 	 */
+	cis->lll.established = 0U;
 	cis->lll.active = 1U;
 	cis->lll.lazy_active = lazy;
 }
@@ -1371,6 +1373,11 @@ static void cis_tx_lll_flush(void *param)
 
 	lll = param;
 	lll->active = 0U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	lll->established = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 
 	cis = ll_conn_iso_stream_get(lll->handle);
 	cig = cis->group;

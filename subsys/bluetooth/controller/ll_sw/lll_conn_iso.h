@@ -58,6 +58,11 @@ struct lll_conn_iso_stream {
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	/* A CIS LLL is active and established in a CIG radio event when ACL instant has passed
+	 * which set the `active` flag and then when CIG event prepare has picked up the set
+	 * `active` flag.
+	 */
+	uint8_t established:1;
 	/* Lazy at CIS active. Number of previously skipped CIG events that is
 	 * determined when CIS is made active and subtracted from total CIG
 	 * events that where skipped when this CIS gets to use radio for the
