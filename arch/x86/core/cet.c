@@ -70,3 +70,13 @@ void z_x86_ibt_enable(void)
 	z_x86_msr_write(X86_S_CET_MSR, msr);
 }
 #endif
+
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+void z_x86_cet_shadow_stack_panic(k_tid_t *thread)
+{
+	LOG_ERR("Shadow stack enabled, but outgoing thread [%p] struct "
+		"missing shadow stack pointer", thread);
+
+	k_panic();
+}
+#endif
