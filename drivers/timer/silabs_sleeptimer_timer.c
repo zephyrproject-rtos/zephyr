@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 /* With CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, this global variable holds the clock frequency,
  * and must be written by the driver at init.
  */
-extern int z_clock_hw_cycles_per_sec;
+extern unsigned int z_clock_hw_cycles_per_sec;
 
 /* Global timer state */
 struct sleeptimer_timer_data {
