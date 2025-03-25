@@ -116,3 +116,12 @@ tests:
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
+  drivers.flash.common.non_quad_mode:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
