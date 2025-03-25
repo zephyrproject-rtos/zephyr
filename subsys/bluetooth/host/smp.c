@@ -822,6 +822,24 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 }
 
+static void smp_br_id_add_replace(struct bt_keys *keys)
+{
+	struct bt_keys *conflict;
+
+	conflict = bt_id_find_conflict(keys);
+	if (conflict != NULL) {
+		int err;
+
+		LOG_DBG("Un-pairing old conflicting bond and finalizing new.");
+
+		err = bt_unpair(conflict->id, &conflict->addr);
+		__ASSERT_NO_MSG(!err);
+	}
+
+	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
+	bt_id_add(keys);
+}
+
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -852,8 +870,12 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 			}
 		}
 	} else {
-		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		bool bond_flag = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
+
+		if (keys) {
+			smp_br_id_add_replace(keys);
+		}
 
 		if (bond_flag && keys) {
 			bt_keys_store(keys);
