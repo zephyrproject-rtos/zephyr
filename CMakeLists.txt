@@ -248,7 +248,8 @@ endif()
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
-toolchain_linker_add_compiler_options(${OPTIMIZATION_FLAG})
+compiler_simple_options(simple_options)
+toolchain_linker_add_compiler_options(${OPTIMIZATION_FLAG} ${simple_options})
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
@@ -2342,6 +2343,9 @@ add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
   cmake/makefile_exports
   )
+
+# Ask the compiler to set the lib_include_dir and rt_library properties
+compiler_set_linker_properties()
 
 toolchain_linker_finalize()
 
