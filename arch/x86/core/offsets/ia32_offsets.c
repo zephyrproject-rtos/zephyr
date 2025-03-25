@@ -52,6 +52,12 @@ GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 GEN_OFFSET_SYM(_thread_arch_t, shstk_addr);
 GEN_OFFSET_SYM(_thread_arch_t, shstk_size);
 GEN_OFFSET_SYM(_thread_arch_t, shstk_base);
+
+GEN_OFFSET_SYM(_kernel_t, cpus);
+GEN_OFFSET_SYM(_cpu_t, arch);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_addr);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_size);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_base);
 #endif
 
 /**
