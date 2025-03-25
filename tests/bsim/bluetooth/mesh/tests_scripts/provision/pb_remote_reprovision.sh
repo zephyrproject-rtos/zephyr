@@ -16,11 +16,11 @@ RunTest mesh_prov_pb_remote_reprovision \
 	prov_provisioner_pb_remote_client_reprovision \
 	prov_device_pb_remote_server_unproved \
 	prov_device_reprovision \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1
 
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_reprovision_psa \
 	prov_provisioner_pb_remote_client_reprovision \
 	prov_device_pb_remote_server_unproved \
 	prov_device_reprovision \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1

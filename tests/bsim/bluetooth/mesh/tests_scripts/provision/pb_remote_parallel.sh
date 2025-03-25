@@ -16,7 +16,7 @@ RunTest mesh_prov_pb_remote_parallel \
 	prov_device_pb_remote_server_unproved \
 	prov_device_no_oob \
 	prov_device_no_oob \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1
 
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_parallel_psa \
@@ -24,4 +24,4 @@ RunTest mesh_prov_pb_remote_parallel_psa \
 	prov_device_pb_remote_server_unproved \
 	prov_device_no_oob \
 	prov_device_no_oob \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1
