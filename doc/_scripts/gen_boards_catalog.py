@@ -138,7 +138,7 @@ def gather_board_devicetrees(twister_out_dir):
                 revision = board_info.get('revision', '')
 
                 board_target = board_name
-                if revision:
+                if revision is not None:
                     board_target = f"{board_target}@{revision}"
                 if qualifier:
                     board_target = f"{board_target}/{qualifier}"
