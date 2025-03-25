@@ -28,5 +28,9 @@ static inline void z_x86_setup_interrupt_ssp_table(uintptr_t issp_table)
 }
 #endif
 
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+void z_x86_cet_shadow_stack_panic(void);
+#endif
+
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_CET_H */
