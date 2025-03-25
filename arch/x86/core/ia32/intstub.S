@@ -357,6 +357,7 @@ handle_idle:
  */
 SECTION_FUNC(PINNED_TEXT, z_SpuriousIntNoErrCodeHandler)
 
+	endbr32
 	pushl	$0			/* push dummy err code onto stk */
 
 	/* fall through to z_SpuriousIntHandler */
@@ -364,6 +365,7 @@ SECTION_FUNC(PINNED_TEXT, z_SpuriousIntNoErrCodeHandler)
 
 SECTION_FUNC(PINNED_TEXT, z_SpuriousIntHandler)
 
+	endbr32
 	cld				/* Clear direction flag */
 
 	/* Create the ESF */
@@ -391,6 +393,7 @@ SECTION_FUNC(PINNED_TEXT, z_SpuriousIntHandler)
 
 #if CONFIG_IRQ_OFFLOAD
 SECTION_FUNC(PINNED_TEXT, _irq_sw_handler)
+	endbr32
 	push $0
 	push $z_irq_do_offload
 	jmp _interrupt_enter
@@ -429,6 +432,10 @@ stub_num = 0
 	.rept Z_DYN_STUB_PER_BLOCK
 		.if stub_num < CONFIG_X86_DYNAMIC_IRQ_STUBS
 			INT_STUB_NUM stub_num
+			/*
+			 * 4-byte endbr32
+			 */
+			endbr32
 			/*
 			 * 2-byte push imm8.
 			 */

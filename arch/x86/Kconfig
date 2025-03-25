@@ -111,6 +111,9 @@ config X86_CPU_HAS_SSE42
 config X86_CPU_HAS_SSE4A
 	bool
 
+config X86_CPU_HAS_CET
+	bool
+
 if FPU || X86_64
 
 config X86_MMX
@@ -491,6 +494,18 @@ config X86_EFI_CONSOLE
 config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE
 	default 4096 if X86_MMU
+
+config X86_CET
+	bool "Control-flow Enforcement Technology"
+	depends on X86_CPU_HAS_CET
+	help
+	  This option enables Control-flow Enforcement Technology (CET) support.
+
+config X86_CET_IBT
+	bool "Indirect Branch Tracking"
+	depends on X86_CET && PICOLIBC_USE_MODULE
+	help
+	  This option enables Indirect Branch Tracking (IBT) support.
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
