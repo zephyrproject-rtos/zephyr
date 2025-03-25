@@ -881,7 +881,7 @@ __syscall int device_init(const struct device *dev);
  * acquired (e.g. pins, memory, clocks, DMA channels, etc.) and its status will
  * be left as in its reset state.
  *
- * @warning It is the responsability of the caller to ensure that the device is
+ * @warning It is the responsibility of the caller to ensure that the device is
  * ready to be de-initialized.
  *
  * @param dev device to be de-initialized.
