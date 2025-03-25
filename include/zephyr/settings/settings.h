@@ -290,6 +290,14 @@ int settings_load_subtree(const char *subtree);
 ssize_t settings_load_one(const char *name, void *buf, size_t buf_len);
 
 /**
+ * Get the data length of the value relative to the key
+ *
+ * @param[in] key Name/key of the settings item.
+ * @return length of value if item exists, 0 if not and negative value on failure.
+ */
+ssize_t settings_get_val_len(const char *key);
+
+/**
  * Callback function used for direct loading.
  * Used by @ref settings_load_subtree_direct function.
  *
@@ -477,6 +485,15 @@ struct settings_store_itf {
 	 *  - name - Key in string format.
 	 *  - buf - Buffer where data should be copied.
 	 *  - buf_len - Length of buf.
+	 */
+
+	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
+	/**< Gets the value's length associated to the Key defined by name.
+	 * It returns 0 if the Key/Value doesn't exist.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node.
+	 *  - name - Key in string format.
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);
