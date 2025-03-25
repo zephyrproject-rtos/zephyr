@@ -1048,6 +1048,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		keys->flags &= ~BT_KEYS_AUTHENTICATED;
 	}
 
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
+		keys->flags |= BT_KEYS_SC;
+	} else {
+		keys->flags &= ~BT_KEYS_SC;
+	}
+
 	LOG_DBG("LTK derived from LinkKey");
 }
 
