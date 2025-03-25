@@ -21,6 +21,10 @@
 #include <zephyr/drivers/interrupt_controller/sysapic.h>
 #include <cet_asm.inc>
 
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+#include <soc_cet.h>
+#endif
+
 	/* exports (internal APIs) */
 
 	GTEXT(_interrupt_enter)
@@ -152,11 +156,23 @@ SECTION_FUNC(PINNED_TEXT, _interrupt_enter)
 	cmpl $0, _thread_offset_to_shstk_addr(%ebp)
 	jz __sh_stk_verify
 
-	/* Create restore SSP token. Note that first scratch register will
-	 * contain SSP after this macro runs.
+	/* Create restore SSP token. We can't use saveprevssp as it may
+	 * conflict with the prepare_shadow_stack_switch from an SoC.
+	 * Note that first scratch register will contain SSP after this
+	 * macro runs.
 	 */
 	save_ssp_restore_token %ebx, %edi
 	movl %ebx, _thread_offset_to_shstk_addr(%ebp)
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %eax
+	pushl %edx
+	pushl %ecx
+	soc_prepare_irq_shadow_stack_switch
+	popl %ecx
+	popl %edx
+	popl %eax
+#endif
 
 	movl _kernel_offset_to_shstk_addr(%ecx), %edi
 	rstorssp (%edi)
@@ -287,6 +303,12 @@ alreadyOnIntStack:
 	 */
 	save_ssp_restore_token %edi, %ebx
 
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %edi
+	soc_prepare_shadow_stack_switch
+	popl %edi
+#endif
+
 	popl %ebp /* Get previous SSP token */
 	rstorssp (%ebp)
 	discard_previous_ssp_token %ebp
@@ -350,6 +372,12 @@ noReschedule:
 	 * same location. But we need to have a token there.
 	 */
 	save_ssp_restore_token %edi, %ebx
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %ebp
+	soc_prepare_shadow_stack_switch
+	popl %ebp
+#endif
 
 	popl %ebp /* Get previous SSP token position */
 	rstorssp (%ebp)
