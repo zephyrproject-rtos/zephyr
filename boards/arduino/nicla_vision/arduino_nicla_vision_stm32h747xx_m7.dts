@@ -32,6 +32,7 @@
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
 		compatible = "usb-ulpi-phy";
+		clocks = <&rcc STM32_CLOCK(AHB1, 26U)>;
 		#phy-cells = <0>;
 	};
 };
