@@ -2333,6 +2333,9 @@ add_subdirectory_ifdef(
   cmake/makefile_exports
   )
 
+# Ask the compiler to set the lib_include_dir and rt_library properties
+compiler_set_linker_properties()
+
 toolchain_linker_finalize()
 
 # export build information
