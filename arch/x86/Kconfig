@@ -529,6 +529,14 @@ config X86_CET_IRQ_SHADOW_STACK_SIZE
 	  This option sets the size of the shadow stack used for interrupt
 	  and exception handling.
 
+config X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	bool "Verify kernel shadow stack"
+	depends on X86_CET_SHADOW_STACK
+	help
+	  When enabled, when a thread is swapped out, the kernel will verify
+	  if its shadow stack pointer is not null with shadow stack enabled -
+	  which would mean some attempt to tamper with the shadow stack.
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
 

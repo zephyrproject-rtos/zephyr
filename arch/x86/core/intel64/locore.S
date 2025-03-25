@@ -376,7 +376,7 @@ z_x86_switch:
 
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
-	jz __sh_stk_out
+	jz __sh_stk_verify
 
 	movq %gs:(__x86_tss64_t_exception_shstk_addr_OFFSET), %rax
 	testq $1, (%rax)
@@ -420,7 +420,21 @@ __switching_from_exception:
 	 * can be used again in case of a new exception.
 	 */
 	clrssbsy (%rax)
+	jmp __sh_stk_out
 
+__sh_stk_verify:
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	/* Outgoing thread doesn't have a SSP, so shadow stack is disabled for
+	 *  it. Let's just check if shadow stack is enabled now, which would
+	 *  imply something is tampering with the pointer.
+	 */
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz __sh_stk_out
+	movq %rsi, %rdi
+	call z_x86_cet_shadow_stack_panic
+#endif
 __sh_stk_out:
 #endif
 
@@ -882,7 +896,7 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
-	jz __sh_stk_out_irq
+	jz __sh_stk_verify_irq
 
 	/* We are on a interrupt shadow stack, which contains the three
 	 * entries needed to iretq. However, we may return to other
@@ -918,6 +932,25 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	/* Finally, save SSP on thread struct */
 	subq $32, %rax
 	movq %rax, _thread_offset_to_shstk_addr(%rsi)
+
+	jmp __sh_stk_out_irq
+
+__sh_stk_verify_irq:
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	/* Outgoing thread doesn't have a SSP, so shadow stack is disabled for
+	 * it. Let's just check if shadow stack is enabled now, which would
+	 * imply something is tampering with the pointer.
+	 */
+
+	pushq %rcx
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	popq %rcx
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz __sh_stk_out_irq
+	movq %rsi, %rdi
+	call z_x86_cet_shadow_stack_panic
+#endif
 
 __sh_stk_out_irq:
 #endif
