@@ -3,7 +3,7 @@
 
 config SILABS_SLEEPTIMER_TIMER
 	bool "Silabs Sleeptimer system clock driver"
-	depends on SOC_FAMILY_SILABS_S2
+	depends on SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_SIWX91X
 	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
 	select SOC_SILABS_SLEEPTIMER
 	select TICKLESS_CAPABLE
