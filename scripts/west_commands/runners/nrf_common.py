@@ -325,6 +325,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')):
                 return 'Network'
+            if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUSEC') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUSEC')):
+                return 'Secure'
             raise RuntimeError(f'Core not found for family: {self.family}')
 
         if self.family in ('nrf53'):
