@@ -215,18 +215,29 @@ get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed
 get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
 get_property(OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
 
+get_property(OPTIMIZE_LINK_FOR_NO_OPTIMIZATIONS_FLAG TARGET linker PROPERTY no_optimization)
+get_property(OPTIMIZE_LINK_FOR_DEBUG_FLAG TARGET linker PROPERTY optimization_debug)
+get_property(OPTIMIZE_LINK_FOR_SPEED_FLAG TARGET linker PROPERTY optimization_speed)
+get_property(OPTIMIZE_LINK_FOR_SIZE_FLAG  TARGET linker PROPERTY optimization_size)
+get_property(OPTIMIZE_LINK_FOR_SIZE_AGGRESSIVE_FLAG TARGET linker PROPERTY optimization_size_aggressive)
+
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
 if(CONFIG_NO_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(OPTIMIZATION_LINK_FLAG ${OPTIMIZE_LINK_FOR_NO_OPTIMIZATIONS_FLAG})
 elseif(CONFIG_DEBUG_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+  set(OPTIMIZATION_LINK_FLAG ${OPTIMIZE_LINK_FOR_DEBUG_FLAG})
 elseif(CONFIG_SPEED_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
+  set(OPTIMIZATION_LINK_FLAG ${OPTIMIZE_LINK_FOR_SPEED_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
+  set(OPTIMIZATION_LINK_FLAG ${OPTIMIZE_LINK_FOR_SIZE_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(OPTIMIZATION_LINK_FLAG ${OPTIMIZE_LINK_FOR_SIZE_AGGRESSIVE_FLAG})
 else()
   message(FATAL_ERROR
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
@@ -242,6 +253,7 @@ endif()
 # Apply the final optimization flag(s)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
+add_link_options(${OPTIMIZATION_LINK_FLAG})
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
