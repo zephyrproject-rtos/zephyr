@@ -14,6 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 
+#include <zephyr/kernel_structs.h>
 #include <zephyr/arch/x86/intel64/exception.h>
 #include <zephyr/arch/x86/intel64/thread.h>
 #include <zephyr/arch/x86/thread_stack.h>
