@@ -262,6 +262,9 @@ struct bt_smp_br {
 	/* Remote key distribution */
 	uint8_t			remote_dist;
 
+	/* Local keys have been distributed */
+	uint8_t			local_distributed;
+
 	/* Encryption Key Size used for connection */
 	uint8_t 			enc_key_size;
 
@@ -1089,12 +1092,13 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (smp->local_dist & BT_SMP_DIST_ID_KEY) {
+	if ((smp->local_dist & BT_SMP_DIST_ID_KEY) &&
+	    ((smp->local_distributed & BT_SMP_DIST_ID_KEY) == 0)) {
 		struct bt_smp_ident_info *id_info;
 		struct bt_smp_ident_addr_info *id_addr_info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_ID_KEY;
+		smp->local_distributed |= BT_SMP_DIST_ID_KEY;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
 					sizeof(*id_info));
@@ -1123,11 +1127,12 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+	if ((smp->local_dist & BT_SMP_DIST_SIGN) &&
+	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0)) {
 		struct bt_smp_signing_info *info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+		smp->local_distributed |= BT_SMP_DIST_SIGN;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
