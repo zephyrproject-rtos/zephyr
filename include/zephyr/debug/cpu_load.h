@@ -48,6 +48,17 @@ int cpu_load_get(bool reset);
  */
 void cpu_load_log_control(bool enable);
 
+// Optional callback for cpu_load_full_utilization_cb_reg
+typedef void (*cpu_full_load_cb_t)(void);
+
+/** @brief Optional registration of callback for full CPU utilization detection.
+ *
+ * @retval 0 - Callback registered.
+ * @retval -ESRCH if CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL is zero.
+ *
+ */
+int cpu_load_full_utilization_cb_reg(cpu_full_load_cb_t cb);
+
 /**
  * @}
  */
