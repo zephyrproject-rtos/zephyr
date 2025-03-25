@@ -18,3 +18,5 @@ properties:
     required: true
   phy-connection-type:
     required: true
+  phy-handle:
+    required: true
