@@ -922,7 +922,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 		cis->offset = *cis_offset_min;
 	}
 
-	cis->lll.established = 0U;
+	cis->lll.prepared = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	cis->central.instant = instant;
