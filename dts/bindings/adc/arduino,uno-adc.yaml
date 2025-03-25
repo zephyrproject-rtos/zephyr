@@ -13,20 +13,4 @@ description: |
 
 compatible: "arduino,uno-adc"
 
-include: base.yaml
-
-properties:
-  io-channel-map:
-    type: compound
-    required: true
-
-  io-channel-map-mask:
-    type: array
-
-  io-channel-map-pass-thru:
-    type: array
-
-  "#io-channel-cells":
-    type: int
-    required: true
-    description: Number of items to expect in an ADC specifier
+include: [base.yaml, io-channel-nexus.yaml]
