@@ -34,7 +34,7 @@ struct max32_wut_config {
 	mxc_wut_regs_t *regs;
 	int clock_source;
 	int prescaler;
-	void (*irq_func)(const struct device *dev);
+	void (*irq_config)(const struct device *dev);
 	uint32_t irq_number;
 	bool wakeup_source;
 };
@@ -205,7 +205,7 @@ static void counter_max32_wut_hw_init(const struct device *dev)
 
 	Wrap_MXC_SYS_Select32KClockSource(cfg->clock_source);
 
-	cfg->irq_func(dev);
+	cfg->irq_config(dev);
 
 	if (cfg->wakeup_source) {
 		MXC_LP_EnableWUTAlarmWakeup();
@@ -291,7 +291,7 @@ static const struct counter_driver_api counter_max32_wut_driver_api = {
 		.clock_source =                                                                    \
 			DT_PROP_OR(TIMER(_num), clock_source, ADI_MAX32_PRPH_CLK_SRC_ERTCO),       \
 		.prescaler = DT_PROP(TIMER(_num), prescaler),                                      \
-		.irq_func = max32_wut_irq_init_##_num,                                             \
+		.irq_config = max32_wut_irq_init_##_num,                                           \
 		.irq_number = DT_IRQN(TIMER(_num)),                                                \
 		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                              \
 	};                                                                                         \
