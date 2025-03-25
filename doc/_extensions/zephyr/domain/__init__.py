@@ -724,6 +724,7 @@ class BoardDirective(SphinxDirective):
             board_node = BoardNode(id=board_name)
             board_node["full_name"] = board["full_name"]
             board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
+            board_node["revision_default"] = board["revision_default"]
             board_node["supported_features"] = board["supported_features"]
             board_node["archs"] = board["archs"]
             board_node["socs"] = board["socs"]
@@ -825,18 +826,39 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 </div>"""
         result_nodes.append(nodes.raw("", html_contents, format="html"))
 
+        tables_container = nodes.container(ids=[f"{board_node['id']}-hw-features"])
+        result_nodes.append(tables_container)
+
+        board_json = json.dumps(
+            {
+                "board_name": board_node["id"],
+                "revision_default": board_node["revision_default"],
+                "targets": list(supported_features.keys()),
+            }
+        )
+        result_nodes.append(
+            nodes.raw(
+                "",
+                f"""<script>board_data = {board_json}</script>""",
+                format="html",
+            )
+        )
+
         for target, features in sorted(supported_features.items()):
             if not features:
                 continue
 
-            target_heading = nodes.section(ids=[f"{board_node['id']}-{target}-hw-features"])
+            target_heading = nodes.section(ids=[f"{board_node['id']}-{target}-hw-features-section"])
             heading = nodes.title()
             heading += nodes.literal(text=target)
             heading += nodes.Text(" target")
             target_heading += heading
-            result_nodes.append(target_heading)
+            tables_container += target_heading
 
-            table = nodes.table(classes=["colwidths-given", "hardware-features"])
+            table = nodes.table(
+                classes=["colwidths-given", "hardware-features"],
+                ids=[f"{board_node['id']}-{target}-hw-features-table"],
+            )
             tgroup = nodes.tgroup(cols=4)
 
             tgroup += nodes.colspec(colwidth=15, classes=["type"])
@@ -965,7 +987,7 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
             tgroup += tbody
             table += tgroup
-            result_nodes.append(table)
+            tables_container += table
 
         return result_nodes
 
