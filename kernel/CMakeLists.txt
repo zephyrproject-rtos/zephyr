@@ -105,6 +105,7 @@ kernel_sources_ifdef(CONFIG_MULTITHREADING
   stack.c
   system_work_q.c
   work.c
+  workq.c
   condvar.c
   thread.c
   sched.c
