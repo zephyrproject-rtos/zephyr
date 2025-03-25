@@ -3521,9 +3521,9 @@ Nuvoton NPCX Platforms:
   maintainers:
     - MulinChao
     - ChiHuaL
-  collaborators:
     - TomChang19
     - alvsun
+  collaborators:
     - sjg20
     - keith-zephyr
     - jackrosenthal
