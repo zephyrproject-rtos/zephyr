@@ -8,7 +8,7 @@
 #include <soc.h>
 
 #ifdef CONFIG_SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
-extern int z_clock_hw_cycles_per_sec;
+extern unsigned int z_clock_hw_cycles_per_sec;
 
 void soc_early_init_hook(void)
 {
