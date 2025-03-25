@@ -12,7 +12,7 @@ RunTest mesh_prov_pb_adv_multi \
 	prov_device_no_oob \
 	prov_device_no_oob \
 	prov_device_no_oob \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1
 
 overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest mesh_prov_pb_gatt_multi \
@@ -20,7 +20,7 @@ RunTest mesh_prov_pb_gatt_multi \
 	prov_device_no_oob \
 	prov_device_no_oob \
 	prov_device_no_oob \
-	-- -argstest prov-brearer=2
+	-- -argstest prov-bearer=2
 
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_adv_multi_psa \
@@ -28,4 +28,4 @@ RunTest mesh_prov_pb_adv_multi_psa \
 	prov_device_no_oob \
 	prov_device_no_oob \
 	prov_device_no_oob \
-	-- -argstest prov-brearer=1
+	-- -argstest prov-bearer=1
