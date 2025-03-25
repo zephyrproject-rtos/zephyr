@@ -85,16 +85,6 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-static void mdio_stm32_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_stm32_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int mdio_stm32_init(const struct device *dev)
 {
 	struct mdio_stm32_data *const dev_data = dev->data;
@@ -114,8 +104,6 @@ static int mdio_stm32_init(const struct device *dev)
 static DEVICE_API(mdio, mdio_stm32_api) = {
 	.read = mdio_stm32_read,
 	.write = mdio_stm32_write,
-	.bus_enable = mdio_stm32_bus_enable,
-	.bus_disable = mdio_stm32_bus_disable,
 };
 
 #define MDIO_STM32_HAL_DEVICE(inst)								\
