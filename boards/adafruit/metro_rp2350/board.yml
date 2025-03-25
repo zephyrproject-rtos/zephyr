@@ -1,0 +1,6 @@
+board:
+  name: adafruit_metro_rp2350
+  full_name: Adafruit Metro RP2350
+  vendor: adafruit
+  socs:
+  - name: rp2350b
