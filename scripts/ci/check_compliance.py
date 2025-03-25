@@ -1003,6 +1003,7 @@ flagged.
                               # toolchain Kconfig which is sourced based on
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
+        "BAR",
         "BINDESC_", # Used in documentation as a prefix
         "BOARD_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "BOARD_MPS2_AN521_CPUTEST", # Used for board and SoC extension feature tests
@@ -1052,6 +1053,8 @@ flagged.
         "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "FFT",  # Used as an example in cmake/extensions.cmake
         "FLAG",  # Used as an example
+        "FLAG_A", # Used as an example
+        "FLAG_B", # Used as an example
         "FOO",
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
