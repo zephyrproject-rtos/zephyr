@@ -1500,7 +1500,7 @@ static int cmd_id_reset(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		shell_error(sh, "Identity identifier not specified");
+		shell_error(sh, "Identity handle not specified");
 		return -ENOEXEC;
 	}
 
@@ -1534,7 +1534,7 @@ static int cmd_id_delete(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		shell_error(sh, "Identity identifier not specified");
+		shell_error(sh, "Identity handle not specified");
 		return -ENOEXEC;
 	}
 
