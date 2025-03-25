@@ -901,8 +901,15 @@ void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 		ctx->data.cis_create.cis_offset_max = cis_offset_max;
 	}
 
+	/* FIXME: We do not pick the instant from the response; if we do, then
+	 *        we need to calculate again a new offset because the ACL and
+	 *        ISO intervals can be dissimilar and hence will be a different
+	 *        CIS offset when sending the CIS_IND PDU at this instant.
+	 *
+
 	ctx->data.cis_create.conn_event_count =
 		sys_le16_to_cpu(pdu->llctrl.cis_rsp.conn_event_count);
+	 */
 }
 
 void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
