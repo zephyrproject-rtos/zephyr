@@ -94,6 +94,7 @@ struct default_param {
 	size_t *val_len;
 };
 
+/* Default callback to set a Key/Value pair */
 static int settings_set_default_cb(const char *name, size_t len, settings_read_cb read_cb,
 				   void *cb_arg, void *param)
 {
@@ -106,6 +107,60 @@ static int settings_set_default_cb(const char *name, size_t len, settings_read_c
 	if (name_len == 0) {
 		rc = read_cb(cb_arg, dest->buf, MIN(dest->buf_len, len));
 		*dest->val_len = len;
+	}
+
+	return rc;
+}
+
+/* Default callback to get the value's length of the Key defined by name. Returns 0 if Key
+ * doesn't exist.
+ */
+static int settings_get_val_len_default_cb(const char *name, size_t len,
+					   [[maybe_unused]] settings_read_cb read_cb,
+					   [[maybe_unused]] void *cb_arg, void *param)
+{
+	const char *next;
+	size_t name_len;
+	size_t *val_len = (size_t *)param;
+
+	name_len = settings_name_next(name, &next);
+	if (name_len == 0) {
+		*val_len = len;
+	}
+
+	return 0;
+}
+
+/* Gets the value's size if the Key defined by name is in the persistent storage,
+ * if not found returns 0.
+ */
+ssize_t settings_get_val_len(const char *name)
+{
+	struct settings_store *cs;
+	int rc = 0;
+	size_t val_len = 0;
+
+	/*
+	 * for every config store that supports this function
+	 * get the value's length.
+	 */
+	k_mutex_lock(&settings_lock, K_FOREVER);
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+		if (cs->cs_itf->csi_get_val_len) {
+			val_len = cs->cs_itf->csi_get_val_len(cs, name);
+		} else {
+			const struct settings_load_arg arg = {
+				.subtree = name,
+				.cb = &settings_get_val_len_default_cb,
+				.param = &val_len
+			};
+			rc = cs->cs_itf->csi_load(cs, &arg);
+		}
+	}
+	k_mutex_unlock(&settings_lock);
+
+	if (rc >= 0) {
+		return val_len;
 	}
 
 	return rc;
