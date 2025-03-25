@@ -12,7 +12,7 @@
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 static struct k_thread tdata[NUM_THREAD];
 
-#define IDLE_THRESH 20
+#define IDLE_THRESH k_ms_to_ticks_floor64(200)
 
 /*sleep duration tickless*/
 #define SLEEP_TICKLESS	 k_ticks_to_ms_floor64(IDLE_THRESH)
