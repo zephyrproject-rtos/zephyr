@@ -13,6 +13,7 @@ if ARM_ETHOS_U
 menu "Arm Ethos-U NPU configuration"
 choice  ARM_ETHOS_U_NPU_CONFIG
 	prompt "Arm Ethos-U NPU configuration"
+	default ARM_ETHOS_U55_256 if SOC_SERIES_M55M1X
 	default ARM_ETHOS_U55_128
 config ARM_ETHOS_U55_64
 	bool "using Ethos-U55 with 64 macs"
