@@ -18,6 +18,10 @@
 #include <offsets_short.h>
 #include <cet_asm.inc>
 
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+#include <soc_cet.h>
+#endif
+
 	/* exports (internal APIs) */
 
 	GTEXT(arch_swap)
@@ -392,6 +396,12 @@ __sh_stk_out:
 	rdmsr
 	orl $X86_S_CET_MSR_SHSTK_EN, %eax
 	wrmsr
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %edi
+	soc_prepare_shadow_stack_switch
+	popl %edi
+#endif
 
 	rstorssp (%ebx)
 	discard_previous_ssp_token %ebx
