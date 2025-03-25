@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2025 Pete Johanson
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350b-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P1>;
+			input-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P20>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <I2C0_SCL_P21>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH1_P41>, <ADC_CH2_P42>, <ADC_CH3_P43>,
+				 <ADC_CH4_P44>, <ADC_CH5_P45>, <ADC_CH6_P46>;
+			input-enable;
+		};
+	};
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PWM_1B_P3>, <PWM_2B_P5>, <PWM_3A_P6>, <PWM_4B_P9>, <PWM_5A_P10>,
+				<PWM_5B_P11>;
+		};
+	};
+
+	pio0_spi0_default: pio0_spi0_default {
+		/* gpio 10 is used for chip select, not assigned to the PIO */
+		group1 {
+			pinmux = <PIO0_P11>, <PIO0_P12>;
+		};
+	};
+
+	pio1_ws2812_default: pio1_ws2812_default {
+		group1 {
+			pinmux = <PIO1_P25>;
+		};
+	};
+};
