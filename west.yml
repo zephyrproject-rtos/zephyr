@@ -25,6 +25,8 @@ manifest:
       url-base: https://github.com/BabbleSim
     - name: github_ambiqmicro
       url-base: https://github.com/AmbiqMicro
+    - name: eembc
+      url-base: https://github.com/eembc
 
   group-filter: [-babblesim, -optional]
 
@@ -35,6 +37,12 @@ manifest:
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica
+    - name: ambiqhal_ambiq
+      remote: github_ambiqmicro
+      path: modules/hal/ambiq
+      revision: c6f54a9587fcdc3cd10a9af5db0b602f34d5304f
+      groups:
+        - hal
     - name: babblesim_base
       remote: babblesim
       repo-path: base
@@ -135,6 +143,12 @@ manifest:
       path: modules/hal/cmsis_6
       groups:
         - hal
+    - name: coremark
+      remote: eembc
+      path: modules/benchmark/coremark
+      revision: d5fad6bd094899101a4e5fd53af7298160ced6ab
+      groups:
+        - benchmark
     - name: edtt
       revision: b9ca3c7030518f07b7937dacf970d37a47865a76
       path: tools/edtt
@@ -153,12 +167,6 @@ manifest:
     - name: hal_afbr
       revision: 4e1eea7ea283db9d9ce529b0e9f89c0b5c2660e3
       path: modules/hal/afbr
-      groups:
-        - hal
-    - name: ambiqhal_ambiq
-      remote: github_ambiqmicro
-      path: modules/hal/ambiq
-      revision: c6f54a9587fcdc3cd10a9af5db0b602f34d5304f
       groups:
         - hal
     - name: hal_atmel

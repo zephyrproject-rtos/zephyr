@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "share/sysbuild/Kconfig"
+
+config IMAGE_2_BOARD
+	string "Second additional board name to build sample for"
+
+config IMAGE_3_BOARD
+	string "Third additional board name to build sample for"

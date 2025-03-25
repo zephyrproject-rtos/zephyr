@@ -73,7 +73,7 @@ And also there are supports for some third-party libs:
 +----------+------------------+--------------------+------------------------------------------+
 |    Lib   |     Apollo510    |   Stable codes at  |              Sample                      |
 +==========+==================+====================+==========================================+
-| coremark |         -        |    ambiq-coremark  | samples\\benchmarks\\coremark            |
+| coremark |         -        |    apollo510-dev   | samples\\benchmarks\\coremark            |
 +----------+------------------+--------------------+------------------------------------------+
 |   fatfs  |         -        |    apollo510-dev   | samples\\drivers\\subsys\\fs\\fs\_sample |
 +----------+------------------+--------------------+------------------------------------------+

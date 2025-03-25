@@ -4976,6 +4976,17 @@ West:
   labels:
     - "area: ACPI"
 
+"West project: ambiqhal_ambiq":
+  status: odd fixes
+  collaborators:
+    - aaronyegx
+    - AlessandroLuo
+    - RichardSWheatley
+  files:
+    - modules/hal_ambiq/
+  labels:
+    - "platform: Ambiq"
+
 "West project: babblesim_base":
   status: maintained
   maintainers:
@@ -5136,6 +5147,16 @@ West:
   labels:
     - "area: CMSIS_6"
 
+"West project: coremark":
+  status: maintained
+  maintainers:
+    - AlessandroLuo
+  files:
+    - modules/coremark/
+    - samples/benchmarks/coremark/
+  labels:
+    - "area: coremark"
+
 "West project: edtt":
   status: maintained
   maintainers:
@@ -5179,17 +5200,6 @@ West:
   files: []
   labels:
     - "platform: Broadcom"
-
-"West project: ambiqhal_ambiq":
-  status: odd fixes
-  collaborators:
-    - aaronyegx
-    - AlessandroLuo
-    - RichardSWheatley
-  files:
-    - modules/hal_ambiq/
-  labels:
-    - "platform: Ambiq"
 
 "West project: hal_atmel":
   status: maintained

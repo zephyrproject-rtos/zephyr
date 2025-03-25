@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Zephyr Kernel"
+	source "Kconfig.zephyr"
+endmenu
+
+menu "CoreMark sample"
+
+config APP_MODE_FLASH_AND_RUN
+	bool "Run CoreMark benchmark on start up"
+	help
+	  If enabled, CoreMark will start execution immediately after CPU start up.
+	  Otherwise, it will wait button to be pressed.
+
+endmenu

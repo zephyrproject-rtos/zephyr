@@ -1,0 +1,86 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig COREMARK
+	bool "Coremark benchmark"
+
+if COREMARK
+
+config COREMARK_ITERATIONS
+	int "Number of the iterations to run"
+	range 100 10000
+	default 1000
+	help
+	  Option is used to specify the number of the iterations to run the benchmark.
+	  Coremark should execute at least 10 seconds to have the valid results.
+	  The minimum number of interations depends on the platform and its configuration.
+
+config COREMARK_THREADS_NUMBER
+	int "Number of the threads for the parallel benchmark execution"
+	default 1
+	range 1 4
+	help
+	  Specify the number of the threads to use for the coremark execution.
+	  1 - means the execution only from the main thread.
+
+choice COREMARK_RUN_TYPE
+	prompt "Coremark run type"
+	default COREMARK_RUN_TYPE_PERFORMANCE
+	help
+	   Specify the purpose of the coremark execution. Depending on the type
+	   different memory size is required to operate with.
+
+config COREMARK_RUN_TYPE_PERFORMANCE
+	bool "Performance run"
+
+config COREMARK_RUN_TYPE_PROFILE
+	bool "Profile run"
+
+config COREMARK_RUN_TYPE_VALIDATION
+	bool "Validation run"
+
+endchoice # COREMARK_RUN_TYPE
+
+config COREMARK_DATA_SIZE
+	int "Total size for the data algorithms will operate on"
+	default 500 if COREMARK_RUN_TYPE_VALIDATION
+	default 1200 if COREMARK_RUN_TYPE_PROFILE
+	default 2000 if COREMARK_RUN_TYPE_PERFORMANCE
+	range 100 2000
+	help
+	  Specifies size for the data algorithms. You can choose different values
+	  for it. But note, that for registering your results it is required to
+	  run CoreMark with default values for PROFILE and PERFORMANCE run types.
+
+choice COREMARK_MEMORY_METHOD
+	prompt "Memory Method"
+	default COREMARK_MEMORY_METHOD_STACK
+	help
+	  Option defines the method to get a block of memory.
+
+config COREMARK_MEMORY_METHOD_STACK
+	bool "Stack"
+	help
+	  Main thread stack is used for this memory method. Be sure, that there
+	  is enough memory allocated with MAIN_STACK_SIZE option. Size depends
+	  on data size, coremarks operates on and number of threads. It should
+	  be higher than:
+	    COREMARK_DATA_SIZE * COREMARK_THREADS_NUMBER + main thread context.
+
+config COREMARK_MEMORY_METHOD_STATIC
+	bool "Static"
+
+config COREMARK_MEMORY_METHOD_MALLOC
+	bool "Malloc"
+	help
+	  in order to use this option you need to set up system heap size using
+	  HEAP_MEM_POOL_SIZE option. Size depends on number of parallel
+	  contexts executed and COREMARK_RUN_TYPE. It should be higher than
+	  COREMARK_DATA_SIZE * COREMARK_THREADS_NUMBER.
+
+endchoice # COREMARK_MEMORY_METHOD
+
+endif
