@@ -41,6 +41,17 @@
 #define _thread_offset_to_preempFloatReg \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempFloatReg_OFFSET)
 
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+#define _thread_offset_to_shstk_addr \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_shstk_addr_OFFSET)
+
+#define _thread_offset_to_shstk_size \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_shstk_size_OFFSET)
+
+#define _thread_offset_to_shstk_base \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_shstk_base_OFFSET)
+#endif
+
 /* end - threads */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_OFFSETS_SHORT_ARCH_H_ */

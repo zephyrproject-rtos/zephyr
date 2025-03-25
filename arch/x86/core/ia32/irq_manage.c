@@ -22,6 +22,14 @@
 #include <zephyr/tracing/tracing.h>
 #include <kswap.h>
 #include <zephyr/arch/x86/ia32/segmentation.h>
+#include <kernel_arch_data.h>
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+X86_IRQ_SHADOW_STACK_DEFINE(z_x86_irq_shadow_stack,
+			    CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);
+#endif
+
+#define TOKEN_OFFSET 4
 
 extern void z_SpuriousIntHandler(void *handler);
 extern void z_SpuriousIntNoErrCodeHandler(void *handler);
@@ -42,6 +50,19 @@ void arch_isr_direct_footer_swap(unsigned int key)
 {
 	(void)z_swap_irqlock(key);
 }
+
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+void z_x86_set_irq_shadow_stack(void)
+{
+	size_t stack_size = CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE;
+	z_x86_shadow_stack_t *stack = z_x86_irq_shadow_stack;
+
+	_kernel.cpus[0].arch.shstk_addr = stack +
+		(stack_size - TOKEN_OFFSET * sizeof(*stack)) / sizeof(*stack);
+	_kernel.cpus[0].arch.shstk_size = stack_size;
+	_kernel.cpus[0].arch.shstk_base = stack;
+}
+#endif
 
 #if CONFIG_X86_DYNAMIC_IRQ_STUBS > 0
 
