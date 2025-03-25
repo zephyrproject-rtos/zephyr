@@ -325,6 +325,7 @@ def get_catalog(generate_hw_features=False):
             "vendor": vendor,
             "archs": list(archs),
             "socs": list(socs),
+            "revision_default": board.revision_default,
             "supported_features": supported_features,
             "image": guess_image(board),
         }
