@@ -257,6 +257,8 @@ SECTIONS
     /* Claim RAM for ILM mappings; must be 4k-aligned and each mapping is 4k in size */
     SECTION_PROLOGUE(ilm_ram,(NOLOAD),ALIGN(0x1000))
 	{
+		/* On IT51XXX chip, scratch RAM must start at RAM_BASE+0x1000 */
+		. += 0x1000;
 		__ilm_ram_start = .;
 		. += __ilm_flash_end - __ilm_flash_start;
 		__ilm_ram_end = .;

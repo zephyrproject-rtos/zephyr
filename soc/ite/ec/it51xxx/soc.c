@@ -102,11 +102,8 @@ void soc_prep_hook(void)
 	struct gpio_ite_ec_regs *const gpio_regs = GPIO_ITE_EC_REGS_BASE;
 	struct gctrl_ite_ec_regs *const gctrl_regs = GCTRL_ITE_EC_REGS_BASE;
 
-	/* Scratch ROM0 is 4kb size */
-	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
-
-	/* Scratch ROM0 is 4kb size */
-	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
+	/* Scratch SRAM0 uses the 4KB based form 0x801000h */
+	gctrl_regs->GCTRL_SCR0BAR = IT51XXX_SEL_SRAM0_BASE_4K;
 
 	/* bit4: wake up CPU if it is in low power mode and an interrupt is pending. */
 	gctrl_regs->GCTRL_SPCTRL9 |= IT51XXX_GCTRL_ALTIE;
