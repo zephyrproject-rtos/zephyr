@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Analog Devices Inc.
+ * Copyright (c) 2025 Baylibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sw0 = &button0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&max22190_gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "User button";
+		};
+	};
+};
+
+&sdp_spi {
+	status = "okay";
+	pinctrl-names = "default";
+
+	max22190_gpio0: max22190_gpio@0 {
+		compatible = "adi,max22190-gpio";
+		reg = <0>;
+
+		spi-max-frequency = <1000000>;
+		status = "okay";
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "okay";
+
+		max22190-mode = <1>; /* modes range from 0-4 */
+
+		drdy-gpios = <&gpioj 12 GPIO_ACTIVE_LOW>; /* SDP-GPIO5 - PMOD-PIN8 */
+		fault-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>; /* SDP-SERIAL_INT - PMOD-PIN7 */
+		latch-gpios = <&gpioj 13 GPIO_ACTIVE_LOW>; /* SDP-GPIO6 - PMOD-PIN9 */
+
+		filter-wbes = <1 0 0 0  0 0 0 0>; /* wirebreak WBEx */
+		filter-fbps = <0 0 0 0  0 0 0 0>; /* programmable filter INx */
+		filter-delays = <50 100 400 800 1600 3200 12800 20000>; /* 1000 us == 1ms */
+	};
+};
