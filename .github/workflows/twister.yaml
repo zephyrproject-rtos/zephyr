@@ -24,7 +24,102 @@ concurrency:
 
 jobs:
   twister-build-prep:
-    uses: ./.github/workflows/twister-prep.yaml
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: ubuntu-24.04
+    outputs:
+      subset: ${{ steps.output-services.outputs.subset }}
+      size: ${{ steps.output-services.outputs.size }}
+      fullrun: ${{ steps.output-services.outputs.fullrun }}
+    env:
+      MATRIX_SIZE: 10
+      PUSH_MATRIX_SIZE: 20
+      WEEKLY_MATRIX_SIZE: 200
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      TESTS_PER_BUILDER: 900
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: zephyr
+          persist-credentials: false
+
+      - name: Set up Python
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: install-packages
+        working-directory: zephyr
+        if: github.event_name == 'pull_request'
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Setup Zephyr project
+        if: github.event_name == 'pull_request'
+        uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+        with:
+          app-path: zephyr
+          toolchains: all
+
+      - name: Environment Setup
+        working-directory: zephyr
+        if: github.event_name == 'pull_request'
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+          git log  --pretty=oneline | head -n 10
+
+      - name: Generate Test Plan with Twister
+        working-directory: zephyr
+        if: github.event_name == 'pull_request'
+        id: test-plan
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER
+          if [ -s .testplan ]; then
+            cat .testplan >> $GITHUB_ENV
+          else
+            echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
+          fi
+          rm -f testplan.json .testplan
+
+      - name: Determine matrix size
+        id: output-services
+        run: |
+          if [ "${{github.event_name}}" = "push" ]; then
+            subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
+            size=${MATRIX_SIZE}
+          elif [ "${{github.event_name}}" = "pull_request" ]; then
+            if [ -n "${TWISTER_NODES}" ]; then
+              subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
+            else
+              subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            fi
+            size=${TWISTER_NODES}
+          elif [ "${{github.event_name}}" = "schedule" -a "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
+            subset="[$(seq -s',' 1 ${WEEKLY_MATRIX_SIZE})]"
+            size=${WEEKLY_MATRIX_SIZE}
+          else
+            size=0
+          fi
+
+          echo "subset=${subset}" >> $GITHUB_OUTPUT
+          echo "size=${size}" >> $GITHUB_OUTPUT
+          echo "fullrun=${TWISTER_FULL}" >> $GITHUB_OUTPUT
 
   twister-build:
     runs-on:
