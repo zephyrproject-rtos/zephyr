@@ -37,7 +37,7 @@ connected devices are available in [#cs_setup_phase]_ and [#cs_start]_.
 Requirements
 ************
 
-* Two boards with Bluetooth LE and Channel Sounding support (such as an :ref:`nRF54L15 <nrf54l15dk_nrf54l15>`)
+* Two boards with Bluetooth LE and Channel Sounding support (such as an :zephyr:board:`nrf54l15dk`)
 * A controller that supports the Channel Sounding feature
 
 Building and Running
