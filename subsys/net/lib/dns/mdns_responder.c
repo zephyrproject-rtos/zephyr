@@ -237,7 +237,6 @@ static int get_socket(sa_family_t family)
 	ret = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ret < 0) {
 		ret = -errno;
-		NET_DBG("Cannot get socket (%d)", ret);
 	}
 
 	return ret;
@@ -1344,9 +1343,9 @@ static int init_listener(void)
 
 		v6 = get_socket(AF_INET6);
 		if (v6 < 0) {
-			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
 				"IPv6", MAX_IPV6_IFACE_COUNT,
-				"IPv6", CONFIG_NET_MAX_CONTEXTS);
+				"IPv6", CONFIG_NET_MAX_CONTEXTS, v6);
 			continue;
 		}
 
@@ -1441,9 +1440,9 @@ static int init_listener(void)
 
 		v4 = get_socket(AF_INET);
 		if (v4 < 0) {
-			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
 				"IPv4", MAX_IPV4_IFACE_COUNT,
-				"IPv4", CONFIG_NET_MAX_CONTEXTS);
+				"IPv4", CONFIG_NET_MAX_CONTEXTS, v4);
 			continue;
 		}
 
