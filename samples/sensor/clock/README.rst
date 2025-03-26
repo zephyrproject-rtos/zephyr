@@ -13,7 +13,7 @@ and utilize the Sensor Clock API.
 Building and Running
 ********************
 
-The sample below uses the :ref:`nrf52840dk_nrf52840` and :ref:`nrf52833dk_nrf52833` boards.
+The sample below uses the :zephyr:board:`nrf52840dk` and :zephyr:board:`nrf52833dk` boards.
 
 To run this sample, ensure the following configurations:
 
