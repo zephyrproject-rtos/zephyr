@@ -456,13 +456,19 @@ config CPU_LOAD_LOG_PERIODICALLY
 	help
 	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
 
+config CPU_LOAD_DETECT_FULL_UTILIZATION
+	bool "Detect full utilization"
+	depends on CPU_LOAD
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	help
+	  Outputs using printk in the timer expiry function if the idle thread has not
+	  been run for the given CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL.
+	  As normal LOG functions and low pri threads may not run if a CPU is under 100 % load,
+	  this provides some insight to the user what is happening.
+	  Output is not guaranteed if the system is e.g. busy in a high pri ISR.
+
 config CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL
 	int "Interval period (in milliseconds)"
-	depends on CPU_LOAD
-	default 0
-	help
-	   Outputs using printk in the timer expiry function if the idle thread has not
-	   been run for the given interval.
-	   As normal LOG functions and low pri threads may not run if a CPU is under 100 % load,
-	   this provides some insight to the user what is happening.
-	   Output is not guaranteed if the system is e.g. busy in a high pri ISR.
+	depends on CPU_LOAD_DETECT_FULL_UTILIZATION
+	default 1000

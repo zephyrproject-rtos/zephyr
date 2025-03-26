@@ -7,6 +7,8 @@
 #include <zephyr/debug/cpu_load.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
+#include <kthread.h>
+#include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cpu_load);
 
@@ -52,7 +54,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	k_thread_runtime_stats_get(thread, &info.usage);
 	if (info.usage.execution_cycles == last_cycles) {
 		printk("CPU at full load during last %d ms \n",
-		       CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL);
+		       CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL);
 	}
 
 	last_cycles = info.usage.execution_cycles;
@@ -85,7 +87,7 @@ static int cpu_load_init(void)
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	if (CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL > 0) {
+	if (CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL > 0) {
 		k_timer_start(&detect_timer, K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY),
 			      K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY));
 	}
@@ -153,7 +155,7 @@ int cpu_load_get(bool reset)
 
 int cpu_load_full_utilization_cb_reg(cpu_full_load_cb_t cb)
 {
-	if (CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL == 0) {
+	if (CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL == 0) {
 		return -ESRCH;
 	}
 

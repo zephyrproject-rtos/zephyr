@@ -113,7 +113,7 @@ ZTEST(cpu_load, test_detect_full_utilization_low_load)
 {
 	int ret = cpu_load_full_utilization_cb_reg(low_load_cb);
 	zassert_equal(ret, 0);
-	for (int i = 0; i < CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 2, i++) {
+	for (int i = 0; i < CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 2; i++) {
 		k_msleep(1);
 	}
 }
@@ -122,8 +122,8 @@ ZTEST(cpu_load, test_detect_full_utilization_max_load)
 {
 	int ret = cpu_load_full_utilization_cb_reg(full_load_cb);
 	zassert_equal(ret, 0);
-	k_busy_wait(CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 2);
-	zassert_equal(num_full_load_calls, CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL);
+	k_busy_wait(CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 2);
+	zassert_equal(num_full_load_calls, CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL);
 }
 
 ZTEST_SUITE(cpu_load, NULL, NULL, NULL, NULL, NULL);
