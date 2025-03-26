@@ -30,9 +30,10 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
+      - qemu_cortex_m3
     integration_platforms:
       - nrf52840dk/nrf52840
+      - qemu_cortex_m3
     extra_configs:
-      - CONFIG_CPU_LOAD=y
       - CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION=y
       - CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL=100

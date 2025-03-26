@@ -23,9 +23,7 @@ const struct device *counter = COND_CODE_1(CONFIG_CPU_LOAD_USE_COUNTER,
 static uint32_t enter_ts;
 static uint32_t cyc_start;
 static uint32_t ticks_idle;
-
 static struct k_work_delayable cpu_load_log;
-static cpu_full_load_cb_t full_load_cb = NULL;
 
 void cpu_load_log_control(bool enable)
 {
@@ -41,6 +39,9 @@ void cpu_load_log_control(bool enable)
 	}
 }
 
+#if CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION
+static cpu_full_load_cb_t full_load_cb = NULL;
+
 static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 {
 	struct k_thread *thread = (struct k_thread *)cthread;
@@ -53,8 +54,10 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 
 	k_thread_runtime_stats_get(thread, &info.usage);
 	if (info.usage.execution_cycles == last_cycles) {
-		printk("CPU at full load during last %d ms \n",
-		       CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL);
+		printk("CPU at full load during last interval \n");
+		if (full_load_cb != NULL) {
+			full_load_cb();
+		}
 	}
 
 	last_cycles = info.usage.execution_cycles;
@@ -67,7 +70,23 @@ void detect_timer_handler(struct k_timer *dummy)
 
 K_TIMER_DEFINE(detect_timer, detect_timer_handler, NULL);
 
-#if CONFIG_CPU_LOAD_USE_COUNTER || CONFIG_CPU_LOAD_LOG_PERIODICALLY
+int cpu_load_full_utilization_cb_reg(cpu_full_load_cb_t cb)
+{
+	full_load_cb = cb;
+	return 0;
+}
+
+#else
+int cpu_load_full_utilization_cb_reg(cpu_full_load_cb_t cb)
+{
+	return -ENOTSUP;
+}
+#endif
+
+
+
+
+#if CONFIG_CPU_LOAD_USE_COUNTER || CONFIG_CPU_LOAD_LOG_PERIODICALLY || CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION
 static void cpu_load_log_fn(struct k_work *work)
 {
 	int load = cpu_load_get(true);
@@ -87,10 +106,11 @@ static int cpu_load_init(void)
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	if (CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL > 0) {
-		k_timer_start(&detect_timer, K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY),
-			      K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY));
-	}
+	#if CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION
+		k_timer_start(&detect_timer,
+			      K_MSEC(CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL),
+			      K_MSEC(CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL));
+	#endif
 
 	if (CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0) {
 		k_work_init_delayable(&cpu_load_log, cpu_load_log_fn);
@@ -151,14 +171,4 @@ int cpu_load_get(bool reset)
 	}
 
 	return res;
-}
-
-int cpu_load_full_utilization_cb_reg(cpu_full_load_cb_t cb)
-{
-	if (CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL == 0) {
-		return -ESRCH;
-	}
-
-	full_load_cb = cb;
-	return 0;
 }
