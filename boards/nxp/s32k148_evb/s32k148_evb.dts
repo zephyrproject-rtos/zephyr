@@ -179,3 +179,15 @@
 	vref-mv = <5000>;
 	status = "okay";
 };
+
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+};

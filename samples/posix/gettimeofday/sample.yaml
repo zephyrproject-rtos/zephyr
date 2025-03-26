@@ -13,3 +13,8 @@ common:
 tests:
   sample.posix.gettimeofday:
     harness: net
+    platform_exclude: s32k148_evb/s32k148
+  sample.posix.gettimeofday.s32k148_evb:
+    harness: net
+    extra_args: SHIELD=nxp_adtja1101
+    platform_allow: s32k148_evb/s32k148
