@@ -1585,7 +1585,7 @@ BUILD_ASSERT(DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, mii) ||
 
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
-		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
+		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 		.Init = {
 #if !defined(CONFIG_ETH_STM32_HAL_API_V2)
 #if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
