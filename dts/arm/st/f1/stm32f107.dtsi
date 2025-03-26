@@ -29,6 +29,13 @@
 				 <&rcc STM32_CLOCK(AHB1, 15U)>,
 				 <&rcc STM32_CLOCK(AHB1, 16U)>;
 			status = "disabled";
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };
