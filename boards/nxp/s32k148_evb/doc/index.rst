@@ -37,6 +37,11 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+.. note::
+   Before using the Ethernet interface, please take note of the following:
+
+   - For boards with the part number ``LSF24D`` at ``U16``, ``R553`` needs to be depopulated.
+
 Connections and IOs
 ===================
 
