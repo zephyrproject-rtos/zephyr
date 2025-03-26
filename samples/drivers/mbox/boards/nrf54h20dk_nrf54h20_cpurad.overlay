@@ -17,4 +17,8 @@
 
 &cpurad_bellboard {
 	status = "okay";
+	/* When other cpurad_bellboard channel is selected for RX,
+	 * make sure it's enabled in the interrupt mask.
+	 * See `nordic,interrupt-mapping` property.
+	 */
 };
