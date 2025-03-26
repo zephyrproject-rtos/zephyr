@@ -198,6 +198,10 @@ config NRF70_UTIL
 	depends on SHELL
 	bool "Utility shell in nRF70 driver"
 
+config NRF70_DEBUG_SHELL
+	depends on SHELL
+	bool "Debug shell in nRF70 driver"
+
 config NRF70_QSPI_LOW_POWER
 	bool "low power mode in QSPI"
 	default y if NRF_WIFI_LOW_POWER
