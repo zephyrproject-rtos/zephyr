@@ -18,7 +18,10 @@ from gen_devicetree_rest import VndLookup
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
-EDT_PICKLE_PATH = "zephyr/edt.pickle"
+EDT_PICKLE_PATHS = [
+    "zephyr/edt.pickle",
+    "hello_world/zephyr/edt.pickle"  # for board targets using sysbuild
+]
 
 logger = logging.getLogger(__name__)
 
@@ -124,9 +127,14 @@ def gather_board_devicetrees(twister_out_dir):
     build_info_files = list(twister_out_dir.glob("*/**/build_info.yml"))
 
     for build_info_file in build_info_files:
-        # Look for corresponding zephyr.dts
-        edt_pickle_file = build_info_file.parent / EDT_PICKLE_PATH
-        if not edt_pickle_file.exists():
+        edt_pickle_file = None
+        for pickle_path in EDT_PICKLE_PATHS:
+            maybe_file = build_info_file.parent / pickle_path
+            if maybe_file.exists():
+                edt_pickle_file = maybe_file
+                break
+
+        if not edt_pickle_file:
             continue
 
         try:
@@ -165,7 +173,7 @@ def run_twister_cmake_only(outdir):
         "-T", "samples/hello_world/",
         "--all",
         "-M",
-        "--keep-artifacts", "zephyr/edt.pickle",
+        *[arg for path in EDT_PICKLE_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
         "--outdir", str(outdir),
     ]
