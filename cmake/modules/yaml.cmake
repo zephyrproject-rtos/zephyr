@@ -129,12 +129,12 @@ function(internal_yaml_list_append var genex key)
           endif()
           list(POP_FRONT ARG_YAML_LIST map_value)
           string(REGEX REPLACE "([^\\])," "\\1;" pair_list "${map_value}")
-          set(qouted_map_value)
+          set(quoted_map_value)
           foreach(pair ${pair_list})
             if(NOT pair MATCHES "[^ ]*:[^ ]*")
               message(FATAL_ERROR "yaml_set(MAP ${map_value} ) is malformed.\n"
                     "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\"\n"
-                    "If value contains comma ',' then ensure the value field is properly qouted "
+                    "If value contains comma ',' then ensure the value field is properly quoted "
                     "and escaped"
               )
             endif()
@@ -145,10 +145,10 @@ function(internal_yaml_list_append var genex key)
               message(FATAL_ERROR "value: ${value} is not properly quoted")
             endif()
             string(REGEX REPLACE "\\\\," "," value "${value}")
-            list(APPEND qouted_map_value "\"${map_key}\": \"${value}\"")
+            list(APPEND quoted_map_value "\"${map_key}\": \"${value}\"")
           endforeach()
-          list(JOIN qouted_map_value "," qouted_map_value)
-          string(JSON json_content SET "${json_content}" ${key} ${i} "{${qouted_map_value}}")
+          list(JOIN quoted_map_value "," quoted_map_value)
+          string(JSON json_content SET "${json_content}" ${key} ${i} "{${quoted_map_value}}")
         endforeach()
       else()
         math(EXPR stop "${index} + ${length} - 1")
@@ -499,7 +499,7 @@ function(yaml_save)
   FILE(WRITE ${yaml_file} "${yaml_out}")
 
   set(save_target ${ARG_YAML_NAME}_yaml_saved)
-  if (NOT TARGET ${save_target})
+  if(NOT TARGET ${save_target})
     # Create a target for the completion of the YAML save operation.
     # This will be a dummy unless genexes are used.
     add_custom_target(${save_target} ALL DEPENDS ${yaml_file})
@@ -509,16 +509,16 @@ function(yaml_save)
     )
   endif()
 
-  if (genex)
+  if(genex)
     get_property(genex_save_count TARGET ${save_target} PROPERTY genex_save_count)
-    if (${genex_save_count} EQUAL 0)
+    if(${genex_save_count} EQUAL 0)
       # First yaml_save() for this context with genexes enabled
       add_custom_command(
         OUTPUT ${yaml_file}
-        DEPENDS $<TARGET_PROPERTY:${save_target},json_file>
+        DEPENDS $<TARGET_PROPERTY:${save_target},expanded_file>
         COMMAND ${CMAKE_COMMAND}
-                -DJSON_FILE="$<TARGET_PROPERTY:${save_target},json_file>"
-                -DYAML_FILE="${yaml_file}"
+                -DEXPANDED_FILE="$<TARGET_PROPERTY:${save_target},expanded_file>"
+                -DOUTPUT_FILE="${yaml_file}"
                 -DTEMP_FILES="$<TARGET_PROPERTY:${save_target},temp_files>"
                 -P ${ZEPHYR_BASE}/cmake/yaml-filter.cmake
       )
@@ -529,13 +529,13 @@ function(yaml_save)
 
     cmake_path(SET yaml_path "${yaml_file}")
     cmake_path(GET yaml_path STEM yaml_file_no_ext)
-    set(json_file ${yaml_file_no_ext}_${genex_save_count}.json)
-    set_property(TARGET ${save_target} PROPERTY json_file ${json_file})
+    set(expanded_file ${yaml_file_no_ext}_${genex_save_count}.json)
+    set_property(TARGET ${save_target} PROPERTY expanded_file ${expanded_file})
 
-    # comment this to keep the temporary JSON files
-    set_property(TARGET ${save_target} APPEND PROPERTY temp_files ${json_file})
+    # comment this to keep the temporary files
+    set_property(TARGET ${save_target} APPEND PROPERTY temp_files ${expanded_file})
 
-    FILE(GENERATE OUTPUT ${json_file}
+    FILE(GENERATE OUTPUT ${expanded_file}
       CONTENT "${json_content}"
     )
   endif()
@@ -595,7 +595,7 @@ function(to_yaml in_json level yaml genex)
       # - with unexpanded generator expressions: save as YAML comment
       # - if it matches the special prefix: convert to YAML list
       # - otherwise: save as YAML scalar
-      if (subjson MATCHES "\\$<.*>" AND ${genex})
+      if(subjson MATCHES "\\$<.*>" AND ${genex})
         # Yet unexpanded generator expression: save as comment
         string(SUBSTRING ${indent_${level}} 1 -1 short_indent)
         set(${yaml} "${${yaml}}#${short_indent}${member}: ${subjson}\n")
