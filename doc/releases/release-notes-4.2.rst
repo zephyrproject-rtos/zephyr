@@ -129,6 +129,13 @@ New APIs and options
 
   * :c:func:`stepper_stop()`
 
+
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
+
 New Boards
 **********
 
