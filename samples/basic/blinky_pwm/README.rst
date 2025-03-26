@@ -63,7 +63,7 @@ In these other cases, however, manual wiring is necessary:
 Building and Running
 ********************
 
-To build and flash this sample for the :ref:`nrf52840dk_nrf52840`:
+To build and flash this sample for the :zephyr:board:`nrf52840dk`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky_pwm

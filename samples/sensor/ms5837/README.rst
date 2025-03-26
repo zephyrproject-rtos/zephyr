@@ -42,7 +42,7 @@ Build this sample using the following commands:
    :goals: build
    :compact:
 
-See :ref:`nrf52840dk_nrf52840` on how to flash the build.
+See :zephyr:board:`nrf52840dk` on how to flash the build.
 
 References
 **********

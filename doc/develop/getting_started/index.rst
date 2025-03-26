@@ -523,7 +523,7 @@ another sample.
    When building for such boards it is necessary to specify the SoC or CPU
    cluster for which the sample must be built.
    For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
-   the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
+   the :zephyr:board:`nrf5340dk` the board must be provided as:
    ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
    details.
 

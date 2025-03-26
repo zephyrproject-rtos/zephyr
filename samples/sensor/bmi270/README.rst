@@ -30,7 +30,7 @@ Building and Running
 This project outputs sensor data to the console. It requires a BMI270
 sensor. It should work with any platform featuring a I2C peripheral interface.
 It does not work on QEMU.
-In this example below the :ref:`nrf52840dk_nrf52840` board is used.
+In this example below the :zephyr:board:`nrf52840dk` board is used.
 
 
 .. zephyr-app-commands::

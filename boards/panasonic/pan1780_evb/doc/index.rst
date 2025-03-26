@@ -7,7 +7,7 @@ The PAN1780 Evaluation Board is a development tool for the PAN1780 module which
 is based on the nRF52840 chipset from Nordic Semiconductor.
 
 It is basically a clone of the official nRF52840 development kit (PCA10056)
-from Nordic Semiconductor. Please refer to :ref:`nrf52840dk_nrf52840` for
+from Nordic Semiconductor. Please refer to :zephyr:board:`nrf52840dk` for
 further information.
 
 You can find more information about the PAN1780 module and the PAN1780
