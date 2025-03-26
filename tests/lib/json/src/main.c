@@ -16,6 +16,8 @@ struct test_nested {
 	bool nested_bool;
 	const char *nested_string;
 	char nested_string_buf[10];
+	int8_t nested_int8;
+	uint8_t nested_uint8;
 	int64_t nested_int64;
 	uint64_t nested_uint64;
 };
@@ -25,6 +27,7 @@ struct test_struct {
 	char some_string_buf[10];
 	int some_int;
 	bool some_bool;
+	int16_t some_int16;
 	int64_t some_int64;
 	int64_t another_int64;
 	int64_t some_uint64;
@@ -62,6 +65,21 @@ struct test_int_limits {
 	uint64_t uint64_max;
 	uint64_t uint64_cero;
 	uint64_t uint64_min;
+	uint32_t uint32_max;
+	uint32_t uint32_cero;
+	uint32_t uint32_min;
+	int16_t int16_max;
+	int16_t int16_cero;
+	int16_t int16_min;
+	uint16_t uint16_max;
+	uint16_t uint16_cero;
+	uint16_t uint16_min;
+	int8_t int8_max;
+	int8_t int8_cero;
+	int8_t int8_min;
+	uint8_t uint8_max;
+	uint8_t uint8_cero;
+	uint8_t uint8_min;
 };
 
 struct test_float {
@@ -97,6 +115,8 @@ static const struct json_obj_descr nested_descr[] = {
 			    JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string_buf,
 			    JSON_TOK_STRING_BUF),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int8, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_uint8, JSON_TOK_UINT),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int64,
 			    JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_uint64,
@@ -108,6 +128,7 @@ static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string_buf, JSON_TOK_STRING_BUF),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int16, JSON_TOK_INT),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int64,
 			    JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, another_int64,
@@ -154,6 +175,21 @@ static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_max, JSON_TOK_UINT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_cero, JSON_TOK_UINT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_min, JSON_TOK_UINT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint32_max, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint32_cero, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint32_min, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int16_max, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int16_cero, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int16_min, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint16_max, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint16_cero, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint16_min, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int8_max, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int8_cero, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int8_min, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint8_max, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint8_cero, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint8_min, JSON_TOK_UINT),
 };
 
 static const struct json_obj_descr obj_float_descr[] = {
@@ -287,12 +323,39 @@ static const struct json_obj_descr alignment_bool_descr[] = {
 	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_alignment_bool, array, 3, num_elements,
 				 alignment_nested_descr, ARRAY_SIZE(alignment_nested_descr)) };
 
+enum int8_enum { I8_MIN = INT8_MIN, I8_MAX = INT8_MAX };
+enum uint8_enum { U8_MIN = 0, U8_MAX = UINT8_MAX };
+enum int16_enum { I16_MIN = INT16_MIN, I16_MAX = INT16_MAX };
+enum uint16_enum { U16_MIN = 0, U16_MAX = UINT16_MAX };
+enum int32_enum { I32_MIN = INT32_MIN, I32_MAX = INT32_MAX };
+enum uint32_enum { U32_MIN = 0, U32_MAX = UINT32_MAX };
+
+struct test_enums {
+	enum int8_enum i8;
+	enum uint8_enum u8;
+	enum int16_enum i16;
+	enum uint16_enum u16;
+	enum int32_enum i32;
+	enum uint32_enum u32;
+};
+
+static const struct json_obj_descr enums_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_enums, i8, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_enums, u8, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_enums, i16, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_enums, u16, JSON_TOK_UINT),
+	JSON_OBJ_DESCR_PRIM(struct test_enums, i32, JSON_TOK_INT),
+	JSON_OBJ_DESCR_PRIM(struct test_enums, u32, JSON_TOK_UINT),
+};
+
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
 		.some_string_buf = "z 123\uABCD",
 		.some_int = 42,
+		.some_int16 = 16,
 		.some_int64 = 1152921504606846977,
 		.another_int64 = -2305843009213693937,
 		.some_uint64 = 18446744073709551615U,
@@ -303,6 +366,8 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_bool = false,
 			.nested_string = "this should be escaped: \t",
 			.nested_string_buf = "esc: \t",
+			.nested_int8 = -123,
+			.nested_uint8 = 231,
 			.nested_int64 = 4503599627370496,
 			.nested_uint64 = 18446744073709551610U,
 		},
@@ -324,6 +389,8 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
 			.nested_string_buf = "no escape",
+			.nested_int8 = 123,
+			.nested_uint8 = 231,
 			.nested_int64 = 4503599627370496,
 			.nested_uint64 = 18446744073709551610U,
 		},
@@ -335,7 +402,7 @@ ZTEST(lib_json_test, test_json_encoding)
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
 		"\"some_string_buf\":\"z 123\uABCD\","
-		"\"some_int\":42,\"some_bool\":true,"
+		"\"some_int\":42,\"some_bool\":true,\"some_int16\":16,"
 		"\"some_int64\":1152921504606846977,"
 		"\"another_int64\":-2305843009213693937,"
 		"\"some_uint64\":18446744073709551615,"
@@ -344,6 +411,8 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"nested_bool\":false,\"nested_string\":"
 		"\"this should be escaped: \\t\","
 		"\"nested_string_buf\":\"esc: \\t\","
+		"\"nested_int8\":-123,"
+		"\"nested_uint8\":231,"
 		"\"nested_int64\":4503599627370496,"
 		"\"nested_uint64\":18446744073709551610},"
 		"\"some_array\":[1,4,8,16,32],"
@@ -354,11 +423,13 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\","
 		"\"nested_string_buf\":\"no escape\","
+		"\"nested_int8\":123,"
+		"\"nested_uint8\":231,"
 		"\"nested_int64\":4503599627370496,"
 		"\"nested_uint64\":18446744073709551610},"
 		"\"nested_obj_array\":["
-		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_string_buf\":\"true\",\"nested_int64\":0,\"nested_uint64\":0},"
-		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_string_buf\":\"false\",\"nested_int64\":0,\"nested_uint64\":0}]"
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_string_buf\":\"true\",\"nested_int8\":0,\"nested_uint8\":0,\"nested_int64\":0,\"nested_uint64\":0},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_string_buf\":\"false\",\"nested_int8\":0,\"nested_uint8\":0,\"nested_int64\":0,\"nested_uint64\":0}]"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -381,6 +452,7 @@ ZTEST(lib_json_test, test_json_decoding)
 	char encoded[] = "{\"some_string\":\"zephyr 123\\uABCD456\","
 		"\"some_string_buf\":\"z\\uABCD\","
 		"\"some_int\":\t42\n,"
+		"\"some_int16\":\t16\n,"
 		"\"some_bool\":true    \t  "
 		"\n"
 		"\r   ,"
@@ -393,6 +465,7 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"nested_bool\":false,\t"
 		"\"nested_string\":\"this should be escaped: \\t\","
 		"\"nested_string_buf\":\"esc: \\t\","
+		"\"nested_int8\":123,"
 		"\"nested_int64\":9223372036854775807,"
 		"\"extra_nested_array\":[0,-1]},"
 		"\"extra_struct\":{\"nested_bool\":false},"
@@ -405,6 +478,7 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\","
 		"\"nested_string_buf\":\"no escape\","
+		"\"nested_int8\":-123,"
 		"\"nested_int64\":-9223372036854775806},"
 		"\"nested_obj_array\":["
 		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_string_buf\":\"true\"},"
@@ -425,6 +499,7 @@ ZTEST(lib_json_test, test_json_decoding)
 	zassert_str_equal(ts.some_string_buf, "z\\uABCD",
 			  "String (array) not decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer not decoded correctly");
+	zassert_equal(ts.some_int16, 16, "Positive integer not decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean not decoded correctly");
 	zassert_equal(ts.some_int64, -4611686018427387904,
 		      "int64 not decoded correctly");
@@ -432,6 +507,8 @@ ZTEST(lib_json_test, test_json_decoding)
 		      "int64 not decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int, -1234,
 		      "Nested negative integer not decoded correctly");
+	zassert_equal(ts.some_nested_struct.nested_int8, 123,
+		      "Nested int8 not decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int64, 9223372036854775807,
 		      "Nested int64 not decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_bool, false,
@@ -458,6 +535,8 @@ ZTEST(lib_json_test, test_json_decoding)
 		     "Decoded named array not with expected values");
 	zassert_equal(ts.xnother_nexx.nested_int, 1234,
 		      "Named nested integer not decoded correctly");
+	zassert_equal(ts.xnother_nexx.nested_int8, -123,
+		      "Named nested int8 not decoded correctly");
 	zassert_equal(ts.xnother_nexx.nested_int64, -9223372036854775806,
 		      "Named nested int64 not decoded correctly");
 	zassert_equal(ts.xnother_nexx.nested_bool, true,
@@ -499,7 +578,22 @@ ZTEST(lib_json_test, test_json_limits)
 			 "\"int64_min\":-9223372036854775808,"
 			 "\"uint64_max\":18446744073709551615,"
 			 "\"uint64_cero\":0,"
-			 "\"uint64_min\":0"
+			 "\"uint64_min\":0,"
+			 "\"uint32_max\":4294967295,"
+			 "\"uint32_cero\":0,"
+			 "\"uint32_min\":0,"
+			 "\"int16_max\":32767,"
+			 "\"int16_cero\":0,"
+			 "\"int16_min\":-32768,"
+			 "\"uint16_max\":65535,"
+			 "\"uint16_cero\":0,"
+			 "\"uint16_min\":0,"
+			 "\"int8_max\":127,"
+			 "\"int8_cero\":0,"
+			 "\"int8_min\":-128,"
+			 "\"uint8_max\":255,"
+			 "\"uint8_cero\":0,"
+			 "\"uint8_min\":0"
 			 "}";
 
 	struct test_int_limits limits = {
@@ -512,6 +606,21 @@ ZTEST(lib_json_test, test_json_limits)
 		.uint64_max = UINT64_MAX,
 		.uint64_cero = 0,
 		.uint64_min = 0,
+		.uint32_max = UINT32_MAX,
+		.uint32_cero = 0,
+		.uint32_min = 0,
+		.int16_max = INT16_MAX,
+		.int16_cero = 0,
+		.int16_min = INT16_MIN,
+		.uint16_max = UINT16_MAX,
+		.uint16_cero = 0,
+		.uint16_min = 0,
+		.int8_max = INT8_MAX,
+		.int8_cero = 0,
+		.int8_min = INT8_MIN,
+		.uint8_max = UINT8_MAX,
+		.uint8_cero = 0,
+		.uint8_min = 0,
 	};
 
 	char buffer[sizeof(encoded)];
@@ -2008,6 +2117,67 @@ ZTEST(lib_json_test, test_json_array_alignment_bool)
 	zassert_equal(o.array[1].bool1, true, "Element 1 bool1 not decoded correctly");
 	zassert_equal(o.array[1].int1, 2, "Element 1 int1 not decoded correctly");
 	zassert_equal(o.array[1].bool2, false, "Element 1 bool2 not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_invalid_int)
+{
+	struct sub_test {
+		char str[30];
+		int result;
+	};
+	struct sub_test encoded[] = {
+		{ "{\"int8_cero\":128}", -EINVAL },
+		{ "{\"int8_cero\":-129}", -EINVAL },
+		{ "{\"uint8_cero\":257}", -EINVAL },
+		{ "{\"int16_cero\":32768}", -EINVAL },
+		{ "{\"int16_cero\":-32769}", -EINVAL },
+		{ "{\"uint16_cero\":65536}", -EINVAL },
+	};
+
+	struct test_int_limits ts;
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(encoded); i++) {
+		ret = json_obj_parse(encoded[i].str, strlen(encoded[i].str),
+				     obj_limits_descr, ARRAY_SIZE(obj_limits_descr), &ts);
+		zassert_equal(ret, encoded[i].result,
+			      "Decoding '%s' result %d, expected %d",
+			      encoded[i].str, ret, encoded[i].result);
+	}
+}
+
+ZTEST(lib_json_test, test_json_enums)
+{
+	int ret = 0;
+	char encoded[] = "{\"i8\":-128,"
+			 "\"u8\":255,"
+			 "\"i16\":-32768,"
+			 "\"u16\":65535,"
+			 "\"i32\":-2147483648,"
+			 "\"u32\":4294967295"
+			 "}";
+
+	struct test_enums enums = {
+		.i8 = I8_MIN,
+		.u8 = U8_MAX,
+		.i16 = I16_MIN,
+		.u16 = U16_MAX,
+		.i32 = I32_MIN,
+		.u32 = U32_MAX,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_enums enums_decoded = {0};
+
+	ret = json_obj_encode_buf(enums_descr, ARRAY_SIZE(enums_descr),
+				&enums, buffer, sizeof(buffer));
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, enums_descr,
+			     ARRAY_SIZE(enums_descr), &enums_decoded);
+
+	zassert_str_equal(encoded, buffer,
+			  "Enums not encoded correctly");
+	zassert_true(!memcmp(&enums, &enums_decoded, sizeof(enums)),
+		     "Enums not decoded correctly");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
