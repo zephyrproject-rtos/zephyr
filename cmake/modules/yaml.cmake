@@ -96,13 +96,6 @@ function(internal_yaml_list_append var genex key)
       internal_yaml_list_initializer(subjson TRUE)
       if(${arraylength} GREATER 0)
         math(EXPR arraystop "${arraylength} - 1")
-        list(GET ARG_YAML_LIST 0 entry_0)
-        if(entry_0 STREQUAL MAP)
-          message(FATAL_ERROR "${function}(GENEX ${argument} ) is not valid at this position.\n"
-                    "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\""
-            )
-        endif()
-
         foreach(i RANGE 0 ${arraystop})
           string(JSON item GET "${json_content}" ${key} ${i})
           list(APPEND subjson ${item})
@@ -544,9 +537,7 @@ function(yaml_save)
   endif()
 endfunction()
 
-function(to_yaml in_json level yaml mode)
-  zephyr_string(ESCAPE json "${in_json}")
-
+function(to_yaml json level yaml mode)
   if(mode STREQUAL "DIRECT")
     # Direct output mode, no genexes: write a standard YAML
     set(expand_lists TRUE)
@@ -569,7 +560,10 @@ function(to_yaml in_json level yaml mode)
     message(FATAL_ERROR "to_yaml(... ${mode} ) is malformed.")
   endif()
 
-  if(level GREATER 0)
+  if(level EQUAL 0)
+    # Top-level call, initialize the YAML output variable
+    set(${yaml} "" PARENT_SCOPE)
+  else()
     math(EXPR level_dec "${level} - 1")
     set(indent_${level} "${indent_${level_dec}}  ")
   endif()
