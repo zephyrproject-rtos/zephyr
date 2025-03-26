@@ -475,7 +475,7 @@ function(test_setting_map_list_entry_commas)
     test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
                 COMMENT "list values mismatch."
     )
-    test_assert(TEST "'${readback_str}'" STREQUAL "${new_entry_str_${index}}"
+    test_assert(TEST "${readback_str}" STREQUAL "${new_entry_str_${index}}"
                 COMMENT "list values mismatch."
     )
   endforeach()
