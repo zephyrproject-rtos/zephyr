@@ -39,11 +39,9 @@
 #include <stm32_ll_exti.h>
 #endif /* CONFIG_PM */
 
-#ifdef CONFIG_DCACHE
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -1395,11 +1393,13 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM_MPU_RAM_NOCACHE) == 0;
 	if (buf_within_nocache) {
 		return true;
 	}
+#endif /* CONFIG_MEM_ATTR */
 
 	buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
 		((buf + len_bytes - 1) <= ((uintptr_t)__rodata_region_end));
