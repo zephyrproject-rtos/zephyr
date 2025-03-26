@@ -375,14 +375,14 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	if (device_is_ready(eth_esp32_phy_dev)) {
+		/* Do not start the interface until PHY link is up */
+		net_if_carrier_off(iface);
+
 		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed,
 				      (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
-
-	/* Do not start the interface until PHY link is up */
-	net_if_carrier_off(iface);
 }
 
 static const struct ethernet_api eth_esp32_api = {
