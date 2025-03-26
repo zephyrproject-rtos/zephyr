@@ -45,6 +45,41 @@ properties:
       property value should ensure the flags properly describe the
       signal that is presented to the driver.
 
+  measurement-mode:
+    type: int
+    required: true
+    description: |
+      Specify Measurement Mode setting.
+    enum:
+      - 1 # AFBR_S50_DT_MODE_SHORT_RANGE
+      - 2 # AFBR_S50_DT_MODE_LONG_RANGE
+      - 5 # AFBR_S50_DT_MODE_HIGH_SPEED_SHORT_RANGE
+      - 6 # AFBR_S50_DT_MODE_HIGH_SPEED_LONG_RANGE
+      - 9 # AFBR_S50_DT_MODE_HIGH_PRECISION_SHORT_RANGE
+      - 129 # AFBR_S50_DT_MODE_SHORT_RANGE_LASER_CLASS_2
+      - 130 # AFBR_S50_DT_MODE_LONG_RANGE_LASER_CLASS_2
+      - 133 # AFBR_S50_DT_MODE_HIGH_SPEED_SHORT_RANGE_LASER_CLASS_2
+      - 134 # AFBR_S50_DT_MODE_HIGH_SPEED_LONG_RANGE_LASER_CLASS_2
+      - 137 # AFBR_S50_DT_MODE_HIGH_PRECISION_SHORT_RANGE_LASER_CLASS_2
+
+  dual-freq-mode:
+    type: int
+    required: true
+    description: |
+      Specify Dual Frequency Mode setting.
+    enum:
+      - 0 # AFBR_S50_DT_DFM_MODE_OFF
+      - 1 # AFBR_S50_DT_DFM_MODE_4X
+      - 2 # AFBR_S50_DT_DFM_MODE_8X
+
+  odr:
+    type: int
+    default: 10
+    description: |
+      Specify the default output data rate expressed in samples per second (Hz).
+      Default configuration used from all sample-codes provided by vendor.
+      Please note the range is limited with Dual Frequency Mode enabled (up to 100 Hz).
+
   spi-mosi-gpios:
     type: phandle-array
     required: true
