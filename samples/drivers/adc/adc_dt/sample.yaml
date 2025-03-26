@@ -41,6 +41,7 @@ tests:
       - raytac_an54l15q_db/nrf54l15/cpuapp
       - frdm_mcxa166
       - frdm_mcxa276
+      - s32k148_evb
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
