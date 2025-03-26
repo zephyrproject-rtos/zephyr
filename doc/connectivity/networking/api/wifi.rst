@@ -30,11 +30,15 @@ Wi-Fi PSA crypto supported build
 
 To enable PSA crypto API supported Wi-Fi build, the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT` and the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` need to be set.
 
-Wi-Fi Enterprise test: X.509 Certificate header generation
-**********************************************************
+Wi-Fi Enterprise test: X.509 Certificate management
+***************************************************
 
-Wi-Fi enterprise security requires use of X.509 certificates, test certificates
-in PEM format are committed to the repo at :zephyr_file:`samples/net/wifi/test_certs` and the during the
+Wi-Fi enterprise security requires use of X.509 certificates, two methods of installing certificates are supported:
+
+Compile time certificates
+-------------------------
+
+Test certificates in PEM format are committed to the repo at :zephyr_file:`samples/net/wifi/test_certs` and the during the
 build process the certificates are converted to a C header file that is included by the Wi-Fi shell
 module.
 
@@ -54,6 +58,12 @@ For using variable size network buffer, the following overlay file can be used:
 
     $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise-variable-bufs.conf
 
+
+Run time certificates
+---------------------
+
+The Wi-Fi shell module uses TLS credentials subsystem to store and manage the certificates. The certificates can be added at runtime using the shell commands, see :ref:`tls_credentials_shell` for more details.
+The sample or application need to enable the :kconfig:option:`CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES` option to use this feature.
 
 
 To initiate Wi-Fi connection, the following command can be used:
