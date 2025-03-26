@@ -13,3 +13,15 @@ properties:
 
   clocks:
     required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+        - "eri": receive error
+        - "rxi": receive data full
+        - "txi": transmit data empty
+        - "tei": transmit end
