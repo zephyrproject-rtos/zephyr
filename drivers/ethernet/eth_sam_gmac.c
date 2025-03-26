@@ -1901,16 +1901,13 @@ static void eth0_iface_init(struct net_if *iface)
 #endif
 #endif
 	if (device_is_ready(cfg->phy_dev)) {
+		net_if_carrier_off(iface);
+
 		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed,
 				      (void *)dev);
 
 	} else {
 		LOG_ERR("PHY device not ready");
-	}
-
-	/* Do not start the interface until PHY link is up */
-	if (!(dev_data->link_up)) {
-		net_if_carrier_off(iface);
 	}
 
 	init_done = true;
