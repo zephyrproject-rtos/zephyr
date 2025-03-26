@@ -1053,6 +1053,28 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			break;
 		}
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
+		case DHCPV4_OPTIONS_BROADCAST: {
+			struct in_addr bcast;
+
+			/* Broadcast address option may present 1 address */
+			if (length != 4) {
+				NET_ERR("options_broadcast, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, bcast.s4_addr, 4)) {
+				NET_ERR("options_broadcast, short packet");
+				return false;
+			}
+
+			NET_DBG("options_broadcast: %s (ignored)",
+				net_sprint_ipv4_addr(&bcast));
+			break;
+		}
+#endif /* CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED */
+
 #if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
