@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2025 ispace, inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+
+#include <arm/armv7-r.dtsi>
+#include <arm/ti/tms570.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+
+	model = "Hercules TMS570LC43x LaunchPad Development Kit";
+	compatible = "ti,hercules-tms570-launchpad", "ti,tms570";
+
+	chosen {
+		zephyr,console = &sci1;
+		zephyr,shell-uart = &sci1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led_b7;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_b7: led_b7 {
+			gpios = <&gpio_b 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sci1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <>;
+	pinctrl-names = "default";
+};
+
+&sci3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&sci3_rx &sci3_tx>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	sci3_rx: sci3_rx {
+		pinmux = <29 17>;
+	};
+
+	sci3_tx: sci3_tx {
+		pinmux = <31 9>;
+	};
+};

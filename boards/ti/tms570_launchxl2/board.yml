@@ -1,0 +1,6 @@
+board:
+  name: tms570_launchxl2
+  full_name: Hercules TMS570LC43x LaunchPad
+  vendor: ti
+  socs:
+  - name: ti_tms570lc43x
