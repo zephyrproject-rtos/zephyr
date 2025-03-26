@@ -6,9 +6,9 @@
 # YAML needs to happen after cmake has completed processing.
 #
 # This scripts expects as input:
-# - JSON_FILE: the name of the input file, in JSON format, that contains
+# - EXPANDED_FILE: the name of the input file, in JSON format, that contains
 #              the expanded generator expressions.
-# - YAML_FILE: the name of the final output YAML file.
+# - OUTPUT_FILE: the name of the final output YAML file.
 # - TEMP_FILES: a list of temporary files that need to be removed after
 #               the conversion is done.
 #
@@ -23,13 +23,13 @@ set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
 include(yaml)
 
-file(READ ${JSON_FILE} json_content)
+file(READ ${EXPANDED_FILE} json_content)
 to_yaml("${json_content}" 0 yaml_out TRUE)
-file(WRITE ${YAML_FILE} "${yaml_out}")
+file(WRITE ${OUTPUT_FILE} "${yaml_out}")
 
-# Remove unused temporary files. JSON_FILE needs to be kept, or the
+# Remove unused temporary files. EXPANDED_FILE needs to be kept, or the
 # build system will complain there is no rule to rebuild it
-list(REMOVE_ITEM TEMP_FILES ${JSON_FILE})
+list(REMOVE_ITEM TEMP_FILES ${EXPANDED_FILE})
 foreach(file ${TEMP_FILES})
   file(REMOVE ${file})
 endforeach()
