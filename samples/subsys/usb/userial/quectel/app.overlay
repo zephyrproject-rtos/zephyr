@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Quectel Wireless Solutions Co
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	usbh_quectel_driver {
+		compatible = "quectel,stm32-userial-driver";
+		status = "okay";
+	};
+};
+

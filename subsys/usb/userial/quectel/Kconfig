@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Quectel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Users can define other mcu to drive quectel moodules here
+
+config USERIAL_QUECTEL
+	bool "USB serial port using MCU as host and quectel as device"
+	default y if USERIAL_STM32_DRIVE_QUECTEL
+	default n
+	help
+	  USB subsys userial drivers
+	  
+source "subsys/usb/userial/quectel/driver/Kconfig.stm32"

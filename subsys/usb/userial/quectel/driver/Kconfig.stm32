@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Quectel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USERIAL_STM32_DRIVE_QUECTEL
+	bool "USB serial port using stm32 as host and quectel as device"
+	depends on DT_HAS_QUECTEL_STM32_USERIAL_DRIVER_ENABLED
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_HCD
+	select PINCTRL
+	default y
+	help
+	  STM32 USBH controller driver.
