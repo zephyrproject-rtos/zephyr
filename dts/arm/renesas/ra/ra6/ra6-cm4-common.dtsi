@@ -616,6 +616,22 @@
 			status = "disabled";
 		};
 
+		eth: ethernet@40064100 {
+			compatible = "renesas,ra-ethernet";
+			reg = <0x40064100 0xfc>;
+			interrupts = <51 0>;
+			local-mac-address = [00 11 22 33 44 55];
+			phy-connection-type = "rmii";
+			status = "disabled";
+		};
+
+		mdio: mdio {
+			compatible = "renesas,ra-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@407e0000 {
 			compatible = "renesas,ra-flash-hp-controller";
 			reg = <0x407e0000 0x10000>;
