@@ -76,20 +76,18 @@
 #define PIN_NUM_MAX ((uint8_t)7u)
 
 /* IRQ Enable registers */
-#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 #define reg_irq_risc0_en(i)      REG_ADDR8(0x140c08 + (i << 4))
 #define reg_irq_risc1_en(i)      REG_ADDR8(0x140c09 + (i << 4))
-#endif
-
-#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
-#define GPIO_SET_LOW_LEVEL(gpio, pin)   WRITE_BIT(gpio->output_clr, pin, 1)
-#define GPIO_SET_HIGH_LEVEL(gpio, pin)  WRITE_BIT(gpio->output, pin, 1)
 #endif
 
 /* GPIO Wakeup Enable registers */
 #if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 #define reg_wakeup_trig_pol_base 0x3f
 #define reg_wakeup_trig_en_base  0x45
+
+#define GPIO_SET_LOW_LEVEL(gpio, pin)  WRITE_BIT(gpio->output_clr, pin, 1)
+#define GPIO_SET_HIGH_LEVEL(gpio, pin) WRITE_BIT(gpio->output, pin, 1)
 #else
 #error "SOC version is not supported"
 #endif
@@ -116,9 +114,6 @@
 #define IRQ_GPIO5                ((uint8_t)39u)
 #define IRQ_GPIO6                ((uint8_t)40u)
 #define IRQ_GPIO7                ((uint8_t)41u)
-#define IRQ_GPIO                 IRQ_GPIO0
-#define IRQ_GPIO2_RISC0          IRQ_GPIO1
-#define IRQ_GPIO2_RISC1          IRQ_GPIO2
 #endif
 
 /* tlx GPIO registers structure */
@@ -180,6 +175,7 @@ struct gpio_tlx_config {
 	void (*pirq_connect)(void);
 };
 
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 struct gpio_tlx_retention_data {
 	struct gpio_tlx_t gpio_tlx_periph_config;
 	uint8_t gpio_tlx_irq_conf;
@@ -188,6 +184,16 @@ struct gpio_tlx_retention_data {
 	uint8_t risc0_irq_conf;
 	uint8_t risc1_irq_conf;
 };
+#elif CONFIG_SOC_RISCV_TELINK_TL321X
+struct gpio_tlx_retention_data {
+	struct gpio_tlx_t gpio_tlx_periph_config;
+	uint8_t gpio_tlx_irq_conf;
+	uint8_t analog_in_conf;
+	uint8_t analog_pupd_conf[2];
+	uint8_t level_irq_conf;
+	uint8_t src_mask_irq_conf;
+};
+#endif
 
 /* GPIO driver data structure */
 struct gpio_tlx_data {
@@ -330,7 +336,23 @@ static inline uint8_t gpio_tlx_irq_en_get(const struct device *dev)
 		status = reg_irq_risc1_en(GET_PORT_NUM(gpio));
 	}
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
-	status = reg_gpio_irq_en((uint32_t)gpio, irq);
+	if (irq == IRQ_GPIO0) {
+		status = gpio->irq0;
+	} else if (irq == IRQ_GPIO1) {
+		status = gpio->irq1;
+	} else if (irq == IRQ_GPIO2) {
+		status = gpio->irq2;
+	} else if (irq == IRQ_GPIO3) {
+		status = gpio->irq3;
+	} else if (irq == IRQ_GPIO4) {
+		status = gpio->irq4;
+	} else if (irq == IRQ_GPIO5) {
+		status = gpio->irq5;
+	} else if (irq == IRQ_GPIO6) {
+		status = gpio->irq6;
+	} else if (irq == IRQ_GPIO7) {
+		status = gpio->irq7;
+	}
 #endif
 	return status;
 }
@@ -348,6 +370,7 @@ static inline void gpio_tlx_irq_status_clr(uint8_t irq)
 	} else if (irq == IRQ_GPIO2_RISC1) {
 		status = FLD_GPIO_IRQ_GPIO2RISC1_CLR;
 	}
+	reg_gpio_irq_clr = status;
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
 	gpio_irq_e status = 0;
 
@@ -357,10 +380,19 @@ static inline void gpio_tlx_irq_status_clr(uint8_t irq)
 		status = GPIO_IRQ_IRQ1;
 	} else if (irq == IRQ_GPIO2) {
 		status = GPIO_IRQ_IRQ2;
+	} else if (irq == IRQ_GPIO3) {
+		status = GPIO_IRQ_IRQ3;
+	} else if (irq == IRQ_GPIO4) {
+		status = GPIO_IRQ_IRQ4;
+	} else if (irq == IRQ_GPIO5) {
+		status = GPIO_IRQ_IRQ5;
+	} else if (irq == IRQ_GPIO6) {
+		status = GPIO_IRQ_IRQ6;
+	} else if (irq == IRQ_GPIO7) {
+		status = GPIO_IRQ_IRQ7;
 	}
+	gpio_clr_irq_status(status);
 #endif
-
-	reg_gpio_irq_clr = status;
 }
 
 /* Set pin's irq type */
@@ -417,6 +449,21 @@ void gpio_tlx_irq_set(const struct device *dev, gpio_pin_t pin,
 	} else if (irq_num == IRQ_GPIO2) {
 		irq_lvl = GPIO_IRQ_IRQ2;
 		irq_mask = GPIO_IRQ_IRQ2;
+	} else if (irq_num == IRQ_GPIO3) {
+		irq_lvl = GPIO_IRQ_IRQ3;
+		irq_mask = GPIO_IRQ_IRQ3;
+	} else if (irq_num == IRQ_GPIO4) {
+		irq_lvl = GPIO_IRQ_IRQ4;
+		irq_mask = GPIO_IRQ_IRQ4;
+	} else if (irq_num == IRQ_GPIO5) {
+		irq_lvl = GPIO_IRQ_IRQ5;
+		irq_mask = GPIO_IRQ_IRQ5;
+	} else if (irq_num == IRQ_GPIO6) {
+		irq_lvl = GPIO_IRQ_IRQ6;
+		irq_mask = GPIO_IRQ_IRQ6;
+	} else if (irq_num == IRQ_GPIO7) {
+		irq_lvl = GPIO_IRQ_IRQ7;
+		irq_mask = GPIO_IRQ_IRQ7;
 	}
 
 	/* Set polarity and level */
@@ -769,11 +816,11 @@ static int gpio_tlx_manage_callback(const struct device *dev,
 
 static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct gpio_tlx_config *cfg	= dev->config;
-	struct gpio_tlx_data *data			= dev->data;
-	uint8_t irq_num						= GET_IRQ_NUM(dev);
-	uint8_t irq_priority				= GET_IRQ_PRIORITY(dev);
-	struct gpio_tlx_t *gpio				= (struct gpio_tlx_t *)cfg->gpio_base;
+	const struct gpio_tlx_config *cfg = dev->config;
+	struct gpio_tlx_data *data = dev->data;
+	uint8_t irq_num = GET_IRQ_NUM(dev);
+	uint8_t irq_priority = GET_IRQ_PRIORITY(dev);
+	struct gpio_tlx_t *gpio = (struct gpio_tlx_t *)cfg->gpio_base;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -809,17 +856,23 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 				}
 
 				reg_gpio_irq_ctrl = data->gpio_tlx_retention.gpio_tlx_irq_conf;
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 				reg_irq_risc0_en(GET_PORT_NUM(gpio))
 				= data->gpio_tlx_retention.risc0_irq_conf;
 				reg_irq_risc1_en(GET_PORT_NUM(gpio))
 				= data->gpio_tlx_retention.risc1_irq_conf;
-
+#elif CONFIG_SOC_RISCV_TELINK_TL321X
+				GPIO_IRQ_LEVEL_REG = data->gpio_tlx_retention.level_irq_conf;
+				GPIO_IRQ_SRC_MASK_REG = data->gpio_tlx_retention.src_mask_irq_conf;
+#endif
 				/* The idea behind this code is to set the pending IRQ based on
 				 * pin level. The wakeup by GPIO doesn't set the interrupt pending
 				 * bit so we need to trigger the IRQ manually. To achieve this we
 				 * temporary switch the IRQ trigger to level mode, getting the
 				 * pending bit and restoring the edge mode
 				 */
+
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 				if (irq_num == IRQ_GPIO) {
 					BM_SET(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC0) {
@@ -827,10 +880,11 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 				} else if (irq_num == IRQ_GPIO2_RISC1) {
 					BM_SET(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				}
-
+#endif
 				riscv_plic_irq_enable(IRQ_TO_L2(irq_num));
 				riscv_plic_set_priority(IRQ_TO_L2(irq_num), irq_priority);
 
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 				if (irq_num == IRQ_GPIO) {
 					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				} else if (irq_num == IRQ_GPIO2_RISC0) {
@@ -838,6 +892,7 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 				} else if (irq_num == IRQ_GPIO2_RISC1) {
 					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_CORE_INTERRUPT_EN);
 				}
+#endif
 			}
 		}
 		break;
@@ -847,11 +902,15 @@ static int gpio_tlx_pm_action(const struct device *dev, enum pm_device_action ac
 		sizeof(data->gpio_tlx_retention.gpio_tlx_periph_config));
 		data->gpio_tlx_retention.gpio_tlx_irq_conf
 		= reg_gpio_irq_ctrl;
+#if CONFIG_SOC_RISCV_TELINK_TL721X
 		data->gpio_tlx_retention.risc0_irq_conf
 		= reg_irq_risc0_en(GET_PORT_NUM(gpio));
 		data->gpio_tlx_retention.risc1_irq_conf
 		= reg_irq_risc1_en(GET_PORT_NUM(gpio));
-
+#elif CONFIG_SOC_RISCV_TELINK_TL321X
+		data->gpio_tlx_retention.level_irq_conf = GPIO_IRQ_LEVEL_REG;
+		data->gpio_tlx_retention.src_mask_irq_conf = GPIO_IRQ_SRC_MASK_REG;
+#endif
 		if (IS_PORT_C(gpio)) {
 			data->gpio_tlx_retention.analog_in_conf
 			= analog_read_reg8(areg_gpio_pc_ie);
