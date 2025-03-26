@@ -11,6 +11,14 @@ properties:
   interrupts:
     required: true
 
+  interrupt-names:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+        - "err": channel error
+        - "tx": transmission completion from channel
+        - "rx": successful reception in a Common FIFO in RX mode
+
   clocks:
     required: true
 
