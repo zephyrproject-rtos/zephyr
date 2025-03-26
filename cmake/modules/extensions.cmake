@@ -3051,15 +3051,14 @@ endfunction()
 # This function extends the CMake string function by providing additional
 # manipulation options for the <mode> argument:
 #
-# ESCAPE:   Ensure that any single '\', except '\"', in the input string is
-#           escaped with the escape char '\'. For example the string 'foo\bar'
-#           will be escaped so that it becomes 'foo\\bar'.
-#           Backslashes which are already escaped will not be escaped further,
-#           for example 'foo\\bar' will not be modified.
-#           This is useful for handling of windows path separator in strings or
-#           when strings contains newline escapes such as '\n' and this can
-#           cause issues when writing to a file where a '\n' is desired in the
-#           string instead of a newline.
+# ESCAPE: Ensure that every character of the input arguments is considered
+#         by CMake as a literal by prefixing the escape character '\' where
+#         appropriate. This is useful for handling Windows path separators in
+#         strings, or when it is desired to write "\n" as an actual string of
+#         four characters instead of a single newline.
+#         Note that this operation must be performed exactly once during the
+#         lifetime of a string, or previous escape characters will be treated
+#         as literals and escaped further.
 #
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
@@ -3092,10 +3091,13 @@ function(zephyr_string)
       string(TOUPPER ${work_string} work_string)
     endif()
   elseif(ZEPHYR_STRING_ESCAPE)
-    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
-    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
-    # which then becomes a single '\' in the final string.
-    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    # Escape every instance of '\' or '"' in the <input> arguments.
+    # Note that:
+    #  - backslashes must be replaced first to avoid duplicating the '\' in \"
+    #  - "\\\\" is seen by CMake as \\, meaning an escaped '\', which then
+    #    becomes a single '\' in the final string.
+    string(REGEX REPLACE "\\\\" "\\\\\\\\" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    string(REGEX REPLACE "\"" "\\\\\"" work_string "${work_string}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
