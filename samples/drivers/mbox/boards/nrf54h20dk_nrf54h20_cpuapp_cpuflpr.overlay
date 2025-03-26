@@ -13,6 +13,10 @@
 
 &cpuapp_bellboard {
 	status = "okay";
+	/* When other cpuapp_bellboard channel is selected for RX,
+	 * make sure it's enabled in the interrupt mask.
+	 * See `nordic,interrupt-mapping` property.
+	 */
 };
 
 &cpuflpr_vevif {
