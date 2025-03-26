@@ -32,6 +32,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  */
 __no_optimization void func_3(uint32_t *addr)
 {
+	/* clang-format off */
 #if defined(CONFIG_BOARD_M2GL025_MIV) || \
 	defined(CONFIG_BOARD_HIFIVE1) || \
 	defined(CONFIG_BOARD_HIFIVE_UNLEASHED) || \
@@ -41,6 +42,7 @@ __no_optimization void func_3(uint32_t *addr)
 	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ISH) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
+	/* clang-format on */
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.
 	 * Needed on ADSP as well, since null pointer derefence doesn't
