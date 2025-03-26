@@ -14,6 +14,7 @@ module-dep = LOG
 module-str = Log level for Ethernet PHY driver
 module-help = Sets log level for Ethernet PHY Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
+source "drivers/ethernet/phy/Kconfig.tja11xx"
 source "drivers/ethernet/phy/Kconfig.tja1103"
 source "drivers/ethernet/phy/Kconfig.dm8806"
 source "drivers/ethernet/phy/Kconfig.microchip_t1s"
