@@ -586,7 +586,9 @@ function(to_yaml in_json level yaml genex)
             string(REPLACE "\n" "\n${indent_${level}}   " indent_yaml "${non_indent_yaml}")
             set(${yaml} "${${yaml}}${indent_${level}} - ${indent_yaml}\n")
           else()
-            set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+            # Assume a string, escape single quotes.
+            string(REPLACE "'" "''" item "${item}")
+            set(${yaml} "${${yaml}}${indent_${level}} - '${item}'\n")
           endif()
         endforeach()
       endif()
@@ -595,10 +597,12 @@ function(to_yaml in_json level yaml genex)
       # - with unexpanded generator expressions: save as YAML comment
       # - if it matches the special prefix: convert to YAML list
       # - otherwise: save as YAML scalar
+      # Single quotes must be escaped in the value.
+      string(REPLACE "'" "''" subjson "${subjson}")
       if(subjson MATCHES "\\$<.*>" AND ${genex})
         # Yet unexpanded generator expression: save as comment
         string(SUBSTRING ${indent_${level}} 1 -1 short_indent)
-        set(${yaml} "${${yaml}}#${short_indent}${member}: ${subjson}\n")
+        set(${yaml} "${${yaml}}#${short_indent}${member}: '${subjson}'\n")
       elseif(subjson MATCHES "^@YAML-LIST@")
         # List-as-string: convert to list
         set(${yaml} "${${yaml}}${indent_${level}}${member}:")
@@ -608,12 +612,12 @@ function(to_yaml in_json level yaml genex)
         else()
           set(${yaml} "${${yaml}}\n")
           foreach(item ${subjson})
-            set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+            set(${yaml} "${${yaml}}${indent_${level}} - '${item}'\n")
           endforeach()
         endif()
       else()
         # Raw strings: save as is
-        set(${yaml} "${${yaml}}${indent_${level}}${member}: ${subjson}\n")
+        set(${yaml} "${${yaml}}${indent_${level}}${member}: '${subjson}'\n")
       endif()
     else()
       # Other JSON data type -> YAML scalar, as-is
