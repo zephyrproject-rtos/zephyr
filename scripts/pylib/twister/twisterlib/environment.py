@@ -459,6 +459,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
+    parser.add_argument("--force-toolchain-variant",
+                        help="Use provided toolchain variant and do not attempt to auto-detect "
+                             "the toolchain using cmake. Useful when creating test plans "
+                             "without the need for the Zephyr SDK to be installed.")
+
     footprint_group.add_argument(
         "--create-rom-ram-report",
         action="store_true",
@@ -1106,7 +1111,10 @@ class TwisterEnv:
 
     def discover(self):
         self.check_zephyr_version()
-        self.get_toolchain()
+        if self.options.force_toolchain_variant:
+            self.toolchain = self.options.force_toolchain_variant
+        else:
+            self.get_toolchain()
         self.run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
