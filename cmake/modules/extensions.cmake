@@ -3095,10 +3095,10 @@ function(zephyr_string)
   endif()
 
   if(ZEPHYR_STRING_ESCAPE)
-    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
-    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
-    # which then becomes a single '\' in the final string.
-    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    # Escape every instance of '\' or '"' in the string. "\\1" is the matched
+    # character. "\\\\" is seen by CMake as \\, meaning an escaped '\', which
+    # then becomes a single '\' in the final string.
+    string(REGEX REPLACE "([\"\\])" "\\\\\\1" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
