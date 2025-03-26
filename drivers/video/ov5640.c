@@ -466,7 +466,21 @@ static const struct ov5640_reg init_params_dvp[] = {
 	{0x3a15, 0xae},
 };
 
-static const struct ov5640_reg csi2_low_res_params[] = {
+static const struct ov5640_reg csi2_qqvga_res_params[] = {
+	{0x3800, 0x00}, {0x3801, 0x10}, {0x3802, 0x00}, {0x3803, 0x0E}, {0x3804, 0x0a},
+	{0x3805, 0x2f}, {0x3806, 0x07}, {0x3807, 0xa5}, {0x3808, 0x00}, {0x3809, 0xa0},
+	{0x380a, 0x00}, {0x380b, 0x78}, {0x380c, 0x06}, {0x380d, 0x40}, {0x380e, 0x03},
+	{0x380f, 0xe6}, {0x3810, 0x00}, {0x3811, 0x02}, {0x3812, 0x00}, {0x3813, 0x04},
+	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x02}, {0x460c, 0x22}};
+
+static const struct ov5640_reg csi2_qvga_res_params[] = {
+	{0x3800, 0x00}, {0x3801, 0x10}, {0x3802, 0x00}, {0x3803, 0x0E}, {0x3804, 0x0a},
+	{0x3805, 0x2f}, {0x3806, 0x07}, {0x3807, 0xa5}, {0x3808, 0x01}, {0x3809, 0x40},
+	{0x380a, 0x00}, {0x380b, 0xf0}, {0x380c, 0x06}, {0x380d, 0x40}, {0x380e, 0x03},
+	{0x380f, 0xe8}, {0x3810, 0x00}, {0x3811, 0x02}, {0x3812, 0x00}, {0x3813, 0x04},
+	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x02}, {0x460c, 0x22}};
+
+static const struct ov5640_reg csi2_vga_res_params[] = {
 	{0x3800, 0x00}, {0x3801, 0x00}, {0x3802, 0x00}, {0x3803, 0x04}, {0x3804, 0x0a},
 	{0x3805, 0x3f}, {0x3806, 0x07}, {0x3807, 0x9b}, {0x3808, 0x02}, {0x3809, 0x80},
 	{0x380a, 0x01}, {0x380b, 0xe0}, {0x380c, 0x07}, {0x380d, 0x68}, {0x380e, 0x03},
@@ -486,12 +500,36 @@ static const struct ov5640_mipi_frmrate_config mipi_hd_frmrate_params[] = {
 static const struct ov5640_mipi_frmrate_config mipi_vga_frmrate_params[] = {
 	{15, 0x22, 0x38, 24000000}, {30, 0x14, 0x38, 24000000}, {60, 0x14, 0x70, 48000000}};
 
+static const struct ov5640_mipi_frmrate_config mipi_qvga_frmrate_params[] = {
+	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
+
+static const struct ov5640_mipi_frmrate_config mipi_qqvga_frmrate_params[] = {
+	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
+
 static const struct ov5640_mode_config csi2_modes[] = {
+	{
+		.width = 160,
+		.height = 120,
+		.array_size_res_params = ARRAY_SIZE(csi2_qqvga_res_params),
+		.res_params = csi2_qqvga_res_params,
+		.mipi_frmrate_config = mipi_qqvga_frmrate_params,
+		.max_frmrate = OV5640_60_FPS,
+		.def_frmrate = OV5640_30_FPS,
+	},
+	{
+		.width = 320,
+		.height = 240,
+		.array_size_res_params = ARRAY_SIZE(csi2_qvga_res_params),
+		.res_params = csi2_qvga_res_params,
+		.mipi_frmrate_config = mipi_qvga_frmrate_params,
+		.max_frmrate = OV5640_60_FPS,
+		.def_frmrate = OV5640_30_FPS,
+	},
 	{
 		.width = 640,
 		.height = 480,
-		.array_size_res_params = ARRAY_SIZE(csi2_low_res_params),
-		.res_params = csi2_low_res_params,
+		.array_size_res_params = ARRAY_SIZE(csi2_vga_res_params),
+		.res_params = csi2_vga_res_params,
 		.mipi_frmrate_config = mipi_vga_frmrate_params,
 		.max_frmrate = OV5640_60_FPS,
 		.def_frmrate = OV5640_30_FPS,
@@ -575,6 +613,8 @@ static const struct video_format_cap csi2_fmts[] = {
 	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
 	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
 	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
+	OV5640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
+	OV5640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),
 	{0}};
 
 static const struct video_format_cap dvp_fmts[] = {
