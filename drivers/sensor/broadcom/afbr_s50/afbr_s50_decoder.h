@@ -16,7 +16,7 @@
 struct afbr_s50_edata {
 	struct {
 		uint64_t timestamp;
-		uint8_t channels : 1;
+		uint8_t channels : 2;
 		uint8_t events : 1;
 	} header;
 	argus_results_t payload;
