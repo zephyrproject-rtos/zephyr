@@ -1,0 +1,5 @@
+board:
+  name: tms570_launchxl2
+  vendor: ti
+  socs:
+  - name: tms570lc43x

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 ispace, inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+
+#include <arm/armv7-r.dtsi>
+#include <arm/ti/tms570.dtsi>
+
+/ {
+
+	model = "Hercules TMS570LC43x LaunchPad Development Kit";
+	compatible = "ti,hercules-tms570-launchpad", "ti,tms570";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
