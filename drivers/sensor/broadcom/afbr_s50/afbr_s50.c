@@ -42,13 +42,20 @@ struct afbr_s50_data {
 	struct afbr_s50_platform_data platform;
 };
 
-/* Only used to get DTS bindings, otherwise passed onto platform struct */
 struct afbr_s50_config {
-	struct gpio_dt_spec cs;
-	struct gpio_dt_spec clk;
-	struct gpio_dt_spec mosi;
-	struct gpio_dt_spec miso;
-	struct gpio_dt_spec irq;
+	/* GPIOs only used to get DTS bindings, otherwise passed onto platform struct */
+	struct {
+		struct gpio_dt_spec cs;
+		struct gpio_dt_spec clk;
+		struct gpio_dt_spec mosi;
+		struct gpio_dt_spec miso;
+		struct gpio_dt_spec irq;
+	} gpio;
+	struct {
+		uint32_t odr;
+		uint8_t dual_freq_mode;
+		uint8_t measurement_mode;
+	} settings;
 };
 
 static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
@@ -266,6 +273,7 @@ int afbr_s50_platform_init(struct afbr_s50_platform_data *platform_data)
 static int afbr_s50_init(const struct device *dev)
 {
 	struct afbr_s50_data *data = dev->data;
+	const struct afbr_s50_config *cfg = dev->config;
 	status_t status;
 	int err;
 
@@ -281,16 +289,28 @@ static int afbr_s50_init(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	status = Argus_Init(data->platform.argus.handle, data->platform.argus.id);
+	/** InitMode */
+	status = Argus_InitMode(data->platform.argus.handle,
+				data->platform.argus.id,
+				cfg->settings.measurement_mode);
 	if (status != STATUS_OK) {
 		LOG_ERR("Failed to initialize device");
 		return -EIO;
 	}
 
-	status = Argus_SetConfigurationFrameTime(data->platform.argus.handle,
-						 100000);
+	status = Argus_SetConfigurationDFMMode(data->platform.argus.handle,
+					       cfg->settings.dual_freq_mode);
 	if (status != STATUS_OK) {
-		LOG_ERR("Failed to set frame time");
+		LOG_ERR("Failed to set DFM mode: %d", status);
+		return -EIO;
+	}
+
+	uint32_t period_us = USEC_PER_SEC / cfg->settings.odr;
+
+	status = Argus_SetConfigurationFrameTime(data->platform.argus.handle,
+						 period_us);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to set frame time: %d", status);
 		return -EIO;
 	}
 
@@ -341,6 +361,16 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 
 #define AFBR_S50_INIT(inst)									   \
 												   \
+	BUILD_ASSERT(DT_INST_PROP(inst, odr) > 0, "Please set valid ODR");			   \
+	BUILD_ASSERT((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
+		     ((DT_INST_PROP(inst, measurement_mode) & ARGUS_MODE_FLAG_HIGH_SPEED) != 0),   \
+		     "High Speed mode is not compatible with Dual-Frequency mode enabled. "	   \
+		     "Please disable it on device-tree or change measurement modes");		   \
+	BUILD_ASSERT((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
+		     (DT_INST_PROP(inst, odr) > 100),						   \
+		     "ODR is too high for Dual-Frequency mode. Please reduce it to "		   \
+		     "100Hz or less");								   \
+												   \
 	RTIO_DEFINE(afbr_s50_rtio_ctx_##inst, 8, 8);						   \
 	SPI_DT_IODEV_DEFINE(afbr_s50_bus_##inst,						   \
 			    DT_DRV_INST(inst),							   \
@@ -349,10 +379,17 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 			    0U);								   \
 												   \
 	static const struct afbr_s50_config afbr_s50_cfg_##inst = {				   \
-		.irq = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),				   \
-		.clk = GPIO_DT_SPEC_INST_GET_OR(inst, spi_sck_gpios, {0}),			   \
-		.miso = GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}),			   \
-		.mosi = GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}),			   \
+		.gpio = {									   \
+			.irq = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
+			.clk = GPIO_DT_SPEC_INST_GET_OR(inst, spi_sck_gpios, {0}),		   \
+			.miso = GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}),		   \
+			.mosi = GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}),		   \
+		},										   \
+		.settings = {									   \
+			.odr = DT_INST_PROP(inst, odr),						   \
+			.dual_freq_mode = DT_INST_PROP(inst, dual_freq_mode),			   \
+			.measurement_mode = DT_INST_PROP(inst, measurement_mode),		   \
+		},										   \
 	};											   \
 												   \
 	PINCTRL_DT_DEV_CONFIG_DECLARE(DT_INST_PARENT(inst));					   \
@@ -370,11 +407,11 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 					.spi = {						   \
 						.cs =						   \
 						&_spi_dt_spec_##afbr_s50_bus_##inst.config.cs.gpio,\
-						.clk = &afbr_s50_cfg_##inst.clk,		   \
-						.mosi = &afbr_s50_cfg_##inst.mosi,		   \
-						.miso = &afbr_s50_cfg_##inst.miso,		   \
+						.clk = &afbr_s50_cfg_##inst.gpio.clk,		   \
+						.mosi = &afbr_s50_cfg_##inst.gpio.mosi,		   \
+						.miso = &afbr_s50_cfg_##inst.gpio.miso,		   \
 					},							   \
-					.irq = &afbr_s50_cfg_##inst.irq,			   \
+					.irq = &afbr_s50_cfg_##inst.gpio.irq,			   \
 				},								   \
 			},									   \
 		},										   \
