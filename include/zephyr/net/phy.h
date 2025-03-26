@@ -167,7 +167,9 @@ __subsystem struct ethphy_driver_api {
 	/** Configure link */
 	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds);
 
-	/** Set callback to be invoked when link state changes. */
+	/** Set callback to be invoked when link state changes. Driver has to invoke
+	 * callback once after setting it, even if link state has not changed.
+	 */
 	int (*link_cb_set)(const struct device *dev, phy_callback_t cb, void *user_data);
 
 	/** Read PHY register */
@@ -247,7 +249,11 @@ static inline int phy_get_link_state(const struct device *dev, struct phy_link_s
  *
  * Sets a callback that is invoked when link state changes. This is the
  * preferred method for ethernet drivers to be notified of the PHY link
- * state change.
+ * state change. The callback will be invoked once after setting it,
+ * even if link state has not changed. There can only one callback
+ * function set and active at a time. This function is mainly used
+ * by ethernet drivers to register a callback to be notified of
+ * link state changes and should therefore not be used by applications.
  *
  * @param[in]  dev        PHY device structure
  * @param      callback   Callback handler
