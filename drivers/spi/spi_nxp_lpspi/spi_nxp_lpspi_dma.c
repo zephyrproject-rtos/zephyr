@@ -224,7 +224,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 
 	ret = spi_mcux_dma_next_fill(dev);
 	if (ret) {
-		return ret;
+		goto out;
 	}
 
 	LPSPI_FlushFifo(base, true, true);
