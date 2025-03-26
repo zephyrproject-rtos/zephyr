@@ -14,3 +14,9 @@ tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:
       - CONFIG_POSIX_API=y
+    platform_exclude: s32k148_evb/s32k148
+  sample.net.sockets.dumb_http_server.s32k148_evb:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+    extra_args: SHIELD=nxp_adtja1101
+    platform_allow: s32k148_evb/s32k148
