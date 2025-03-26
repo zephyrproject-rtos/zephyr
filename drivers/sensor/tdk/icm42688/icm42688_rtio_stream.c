@@ -11,7 +11,6 @@
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
-#include "icm42688_dev_cfg.h"
 
 LOG_MODULE_DECLARE(ICM42688_RTIO);
 
@@ -293,7 +292,7 @@ void icm42688_fifo_event(const struct device *dev)
 {
 	struct icm42688_dev_data *drv_data = dev->data;
 	struct rtio_iodev *rtio_iodev = drv_data->rtio_iodev;
-	struct rtio *r = drv_data->r;
+	struct rtio *r = drv_data->rtio_ctx;
 	uint64_t cycles;
 	int rc;
 

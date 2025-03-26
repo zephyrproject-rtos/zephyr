@@ -113,48 +113,49 @@ static int icm42688_emul_io_spi(const struct emul *target, const struct spi_conf
 }
 
 static const struct spi_emul_api icm42688_emul_spi_api = {
-    .io = icm42688_emul_io_spi,
+	.io = icm42688_emul_io_spi,
 };
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 static int icm42688_emul_io_i2c(const struct emul *target, struct i2c_msg msgs[], int num_msgs,
-                int addr)
+				int addr)
 {
-    struct icm42688_emul_data *data = (struct icm42688_emul_data *)target->data;
+	struct icm42688_emul_data *data = (struct icm42688_emul_data *)target->data;
 
-    /* The LSM6DSO uses big-endian read 8, read 16, and write 8 transactions */
+	/* The LSM6DSO uses big-endian read 8, read 16, and write 8 transactions */
 
-    __ASSERT_NO_MSG(msgs != NULL);
-    __ASSERT_NO_MSG(num_msgs < 3);
-    __ASSERT_NO_MSG(msgs[0].buf != NULL);
-    __ASSERT_NO_MSG(msgs[1].buf != NULL);
+	__ASSERT_NO_MSG(msgs != NULL);
+	__ASSERT_NO_MSG(num_msgs < 3);
+	__ASSERT_NO_MSG(msgs[0].buf != NULL);
+	__ASSERT_NO_MSG(msgs[1].buf != NULL);
 
-    uint8_t regn;
-    regn = msgs[0].buf[0];
-    regn &= GENMASK(6, 0);
+	uint8_t regn;
+	regn = msgs[0].buf[0];
+	regn &= GENMASK(6, 0);
 
-    if (1 == num_msgs) {
+    LOG_INF("num_msgs: %d",num_msgs);
 
-        uint8_t value;
+	if (1 == num_msgs) {
+		uint8_t value;
+        LOG_INF("write len: %d", msgs[0].len);
+		__ASSERT_NO_MSG(msgs[0].len > 0);
+		value = msgs[0].buf[1];
+        LOG_INF("write value: %d", msgs[0].buf[1]);
+		icm42688_emul_handle_write(target, regn, value);
 
-        __ASSERT_NO_MSG(msgs[1].len > 0);
-        value = msgs[0].buf[1];
-        icm42688_emul_handle_write(target, regn, value);
+	} else if (2 == num_msgs) {
+		/* Reading operation */
+		__ASSERT_NO_MSG(msgs[1].len > 0);
 
-    } else if (2 == num_msgs) {
+		for (uint16_t i = 0; i < msgs[1].len; ++i) {
+			((uint8_t *)msgs[1].buf)[i] = data->reg[regn + i];
+		}
+	} else {
+		LOG_ERR("Invalid I2C transfer: %d", msgs[1].flags);
+	}
 
-        /* Reading operation */
-        __ASSERT_NO_MSG(msgs[1].len > 0);
-
-        for (uint16_t i = 0; i < msgs[1].len; ++i) {
-            ((uint8_t *)msgs[1].buf)[i] = data->reg[regn + i];
-        }
-    } else {
-        LOG_ERR("Invalid I2C transfer: %d", msgs[1].flags);
-    }
-
-    return 0;
+	return 0;
 }
 
 static const struct i2c_emul_api icm42688_emul_i2c_api = {
@@ -465,10 +466,10 @@ static const struct emul_sensor_driver_api icm42688_emul_sensor_driver_api = {
 	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
 			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_driver_api)
 
-#define ICM42688_EMUL(n)                                                                       \
+#define ICM42688_EMUL(n)                                                                           \
 	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \
 	static const struct icm42688_emul_cfg icm42688_emul_cfg_##n;                               \
-    COND_CODE_1(DT_INST_ON_BUS(n, spi),                                                        \
+	COND_CODE_1(DT_INST_ON_BUS(n, spi),                                                        \
     (ICM42688_EMUL_DEFINE(n, icm42688_emul_spi_api)),                                          \
     (ICM42688_EMUL_DEFINE(n, icm42688_emul_i2c_api)))
 

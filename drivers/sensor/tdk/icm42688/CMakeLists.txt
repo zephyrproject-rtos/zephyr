@@ -7,8 +7,6 @@ zephyr_library_sources(
     icm42688_common.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_ICM42688_BUS_I2C icm42688_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_ICM42688_BUS_SPI icm42688_spi.c)
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API icm42688_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_ICM42688_DECODER icm42688_decoder.c)
 zephyr_library_sources_ifdef(CONFIG_ICM42688_STREAM icm42688_rtio_stream.c)

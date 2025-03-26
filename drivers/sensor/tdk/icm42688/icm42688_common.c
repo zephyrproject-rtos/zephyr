@@ -8,27 +8,36 @@
  */
 
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include "icm42688.h"
 #include "icm42688_reg.h"
-#include "icm42688_dev_cfg.h"
+#include "icm42688_bus.h"
 #include "icm42688_trigger.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42688_LL, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline int reg_write(const struct device *dev, uint16_t reg, uint8_t val)
+{
+    LOG_INF("value to write: %d", val);
+	return icm42688_bus_write(dev, reg, &val, 1);
+}
+
+static inline int reg_read(const struct device *dev, uint16_t reg, uint8_t *val)
+{
+	return icm42688_bus_read(dev, reg, val, 1);
+}
+
 int icm42688_reset(const struct device *dev)
 {
 	int res;
 	uint8_t value;
-	const struct icm42688_dev_cfg *dev_cfg = dev->config;
 
 	/* start up time for register read/write after POR is 1ms and supply ramp time is 3ms */
 	k_msleep(3);
 
 	/* perform a soft reset to ensure a clean slate, reset bit will auto-clear */
-	res = dev_cfg->io_ops->single_write(dev, REG_DEVICE_CONFIG, BIT_SOFT_RESET);
+	res = reg_write(dev, REG_DEVICE_CONFIG, BIT_SOFT_RESET);
 
 	if (res) {
 		LOG_ERR("write REG_SIGNAL_PATH_RESET failed");
@@ -39,7 +48,7 @@ int icm42688_reset(const struct device *dev)
 	k_msleep(SOFT_RESET_TIME_MS);
 
 	/* clear reset done int flag */
-	res = dev_cfg->io_ops->read(dev, REG_INT_STATUS, &value, 1);
+	res = reg_read(dev, REG_INT_STATUS, &value);
 
 	if (res) {
 		return res;
@@ -50,7 +59,7 @@ int icm42688_reset(const struct device *dev)
 		return -EINVAL;
 	}
 
-	res = dev_cfg->io_ops->read(dev, REG_WHO_AM_I, &value, 1);
+	res = reg_read(dev, REG_WHO_AM_I, &value);
 	if (res) {
 		return res;
 	}
@@ -122,24 +131,22 @@ static uint16_t icm42688_compute_fifo_wm(const struct icm42688_cfg *cfg)
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 {
 	struct icm42688_dev_data *dev_data = dev->data;
-	const struct icm42688_dev_cfg *dev_cfg = dev->config;
 	int res;
 
 	/* Disable interrupts, reconfigured at end */
-	res = dev_cfg->io_ops->single_write(dev, REG_INT_SOURCE0, 0);
+	res = reg_write(dev, REG_INT_SOURCE0, 0);
 
 	/* if fifo is enabled right now, disable and flush */
 	if (dev_data->cfg.fifo_en) {
-		res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG,
-						FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_BYPASS));
+		res = reg_write(dev, REG_FIFO_CONFIG,
+				FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_BYPASS));
 
 		if (res != 0) {
 			LOG_ERR("Error writing FIFO_CONFIG");
 			return -EINVAL;
 		}
 
-		res = dev_cfg->io_ops->single_write(dev, REG_SIGNAL_PATH_RESET,
-						FIELD_PREP(BIT_FIFO_FLUSH, 1));
+		res = reg_write(dev, REG_SIGNAL_PATH_RESET, FIELD_PREP(BIT_FIFO_FLUSH, 1));
 
 		if (res != 0) {
 			LOG_ERR("Error flushing fifo");
@@ -155,7 +162,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			    FIELD_PREP(BIT_TEMP_DIS, cfg->temp_dis);
 
 	LOG_DBG("PWR_MGMT0 (0x%x) 0x%x", REG_PWR_MGMT0, pwr_mgmt0);
-	res = dev_cfg->io_ops->single_write(dev, REG_PWR_MGMT0, pwr_mgmt0);
+	res = reg_write(dev, REG_PWR_MGMT0, pwr_mgmt0);
 
 	if (res != 0) {
 		LOG_ERR("Error writing PWR_MGMT0");
@@ -171,7 +178,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 				FIELD_PREP(MASK_ACCEL_UI_FS_SEL, cfg->accel_fs);
 
 	LOG_DBG("ACCEL_CONFIG0 (0x%x) 0x%x", REG_ACCEL_CONFIG0, accel_config0);
-	res = dev_cfg->io_ops->single_write(dev, REG_ACCEL_CONFIG0, accel_config0);
+	res = reg_write(dev, REG_ACCEL_CONFIG0, accel_config0);
 	if (res != 0) {
 		LOG_ERR("Error writing ACCEL_CONFIG0");
 		return -EINVAL;
@@ -181,7 +188,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			       FIELD_PREP(MASK_GYRO_UI_FS_SEL, cfg->gyro_fs);
 
 	LOG_DBG("GYRO_CONFIG0 (0x%x) 0x%x", REG_GYRO_CONFIG0, gyro_config0);
-	res = dev_cfg->io_ops->single_write(dev, REG_GYRO_CONFIG0, gyro_config0);
+	res = reg_write(dev, REG_GYRO_CONFIG0, gyro_config0);
 	if (res != 0) {
 		LOG_ERR("Error writing GYRO_CONFIG0");
 		return -EINVAL;
@@ -197,7 +204,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	uint8_t fifo_config_bypass = FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_BYPASS);
 
 	LOG_DBG("FIFO_CONFIG (0x%x) 0x%x", REG_FIFO_CONFIG, fifo_config_bypass);
-	res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG, fifo_config_bypass);
+	res = reg_write(dev, REG_FIFO_CONFIG, fifo_config_bypass);
 	if (res != 0) {
 		LOG_ERR("Error writing FIFO_CONFIG");
 		return -EINVAL;
@@ -206,17 +213,17 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	/* Disable FSYNC */
 	uint8_t tmst_config;
 
-	res = dev_cfg->io_ops->single_write(dev, REG_FSYNC_CONFIG, 0);
+	res = reg_write(dev, REG_FSYNC_CONFIG, 0);
 	if (res != 0) {
 		LOG_ERR("Error writing FSYNC_CONFIG");
 		return -EINVAL;
 	}
-	res = dev_cfg->io_ops->read(dev, REG_TMST_CONFIG, &tmst_config, 1);
+	res = reg_read(dev, REG_TMST_CONFIG, &tmst_config);
 	if (res != 0) {
 		LOG_ERR("Error reading TMST_CONFIG");
 		return -EINVAL;
 	}
-	res = dev_cfg->io_ops->single_write(dev, REG_TMST_CONFIG, tmst_config & ~BIT(1));
+	res = reg_write(dev, REG_TMST_CONFIG, tmst_config & ~BIT(1));
 	if (res != 0) {
 		LOG_ERR("Error writing TMST_CONFIG");
 		return -EINVAL;
@@ -226,8 +233,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	if (IS_ENABLED(CONFIG_ICM42688_TRIGGER)) {
 		res = icm42688_trigger_enable_interrupt(dev, cfg);
 	} else {
-		res = dev_cfg->io_ops->single_write(dev, REG_INT_CONFIG,
-						BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+		res = reg_write(dev, REG_INT_CONFIG, BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
 	}
 	if (res) {
 		LOG_ERR("Error writing to INT_CONFIG");
@@ -242,7 +248,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			      FIELD_PREP(BIT_INT_TDEASSERT_DISABLE, 1);
 	}
 
-	res = dev_cfg->io_ops->single_write(dev, REG_INT_CONFIG1, int_config1);
+	res = reg_write(dev, REG_INT_CONFIG1, int_config1);
 	if (res) {
 		LOG_ERR("Error writing to INT_CONFIG1");
 		return res;
@@ -256,14 +262,12 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		 * temp/accel/gyro en fields in cfg
 		 */
 		uint8_t fifo_cfg1 =
-			FIELD_PREP(BIT_FIFO_TEMP_EN, 1) |
-			FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
-			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) |
-			FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1) |
+			FIELD_PREP(BIT_FIFO_TEMP_EN, 1) | FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
+			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) | FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1) |
 			FIELD_PREP(BIT_FIFO_HIRES_EN, 1);
 
 		LOG_DBG("FIFO_CONFIG1 (0x%x) 0x%x", REG_FIFO_CONFIG1, fifo_cfg1);
-		res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG1, fifo_cfg1);
+		res = reg_write(dev, REG_FIFO_CONFIG1, fifo_cfg1);
 		if (res != 0) {
 			LOG_ERR("Error writing FIFO_CONFIG1");
 			return -EINVAL;
@@ -274,7 +278,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		uint8_t fifo_wml = fifo_wm & 0xFF;
 
 		LOG_DBG("FIFO_CONFIG2( (0x%x)) (WM Low) 0x%x", REG_FIFO_CONFIG2, fifo_wml);
-		res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG2, fifo_wml);
+		res = reg_write(dev, REG_FIFO_CONFIG2, fifo_wml);
 		if (res != 0) {
 			LOG_ERR("Error writing FIFO_CONFIG2");
 			return -EINVAL;
@@ -283,7 +287,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		uint8_t fifo_wmh = (fifo_wm >> 8) & 0x0F;
 
 		LOG_DBG("FIFO_CONFIG3 (0x%x) (WM High) 0x%x", REG_FIFO_CONFIG3, fifo_wmh);
-		res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG3, fifo_wmh);
+		res = reg_write(dev, REG_FIFO_CONFIG3, fifo_wmh);
 		if (res != 0) {
 			LOG_ERR("Error writing FIFO_CONFIG3");
 			return -EINVAL;
@@ -293,13 +297,13 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		uint8_t fifo_config = FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_STREAM);
 
 		LOG_DBG("FIFO_CONFIG (0x%x) 0x%x", REG_FIFO_CONFIG, 1 << 6);
-		res = dev_cfg->io_ops->single_write(dev, REG_FIFO_CONFIG, fifo_config);
+		res = reg_write(dev, REG_FIFO_CONFIG, fifo_config);
 
 		/* Config interrupt source to only be fifo wm/full */
 		uint8_t int_source0 = BIT_FIFO_FULL_INT1_EN | BIT_FIFO_THS_INT1_EN;
 
 		LOG_DBG("INT_SOURCE0 (0x%x) 0x%x", REG_INT_SOURCE0, int_source0);
-		res = dev_cfg->io_ops->single_write(dev, REG_INT_SOURCE0, int_source0);
+		res = reg_write(dev, REG_INT_SOURCE0, int_source0);
 		if (res) {
 			return res;
 		}
@@ -310,7 +314,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		uint8_t int_source0 = BIT_UI_DRDY_INT1_EN;
 
 		LOG_DBG("INT_SOURCE0 (0x%x) 0x%x", REG_INT_SOURCE0, int_source0);
-		res = dev_cfg->io_ops->single_write(dev, REG_INT_SOURCE0, int_source0);
+		res = reg_write(dev, REG_INT_SOURCE0, int_source0);
 		if (res) {
 			return res;
 		}
@@ -335,10 +339,9 @@ int icm42688_safely_configure(const struct device *dev, struct icm42688_cfg *cfg
 
 int icm42688_read_all(const struct device *dev, uint8_t data[14])
 {
-	const struct icm42688_dev_cfg *dev_cfg = dev->config;
 	int res;
 
-	res = dev_cfg->io_ops->read(dev, REG_TEMP_DATA1, data, 14);
+	res = icm42688_bus_read(dev, REG_TEMP_DATA1, data, 14);
 
 	return res;
 }
