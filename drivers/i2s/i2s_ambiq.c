@@ -77,7 +77,14 @@ static __aligned(32) struct {
 } i2s_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
 	__attribute__((__section__(".dtcm_data")));
 
-static void i2s_ambiq_isr(const struct device *dev)
+static __aligned(32) struct {
+    __aligned(32) uint32_t buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
+                                    // should be 2 x block_size
+} i2s_rx_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
+    __attribute__((__section__(".dtcm_data")));
+
+
+static void i2s_ambiq_isr0(const struct device *dev)
 {
 	uint32_t ui32Status;
 	struct i2s_ambiq_data *data = dev->data;
@@ -91,7 +98,25 @@ static void i2s_ambiq_isr(const struct device *dev)
 	}
 
 	if (ui32Status & AM_HAL_I2S_INT_RXDMACPL) {
-		k_sem_give(&data->rx_done_sem);
+        k_sem_give(&data->rx_done_sem);
+	}
+}
+
+static void i2s_ambiq_isr1(const struct device *dev)
+{
+	uint32_t ui32Status;
+	struct i2s_ambiq_data *data = dev->data;
+
+	am_hal_i2s_interrupt_status_get(data->i2s_handler, &ui32Status, true);
+	am_hal_i2s_interrupt_clear(data->i2s_handler, ui32Status);
+	am_hal_i2s_interrupt_service(data->i2s_handler, ui32Status, &(data->i2s_hal_cfg));
+
+	if (ui32Status & AM_HAL_I2S_INT_TXDMACPL) {
+		k_sem_give(&data->tx_ready_sem);
+	}
+
+	if (ui32Status & AM_HAL_I2S_INT_RXDMACPL) {
+        k_sem_give(&data->rx_done_sem);
 	}
 }
 
@@ -169,19 +194,21 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
             return -EINVAL;
             break;
     }
-
+#if 0
     if((i2s_config->options & I2S_OPT_FRAME_CLK_MASTER) == I2S_OPT_FRAME_CLK_MASTER) {
         data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_MASTER;
     }
     else {
         data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_SLAVE;
     }
-
+#endif
     if(dir == I2S_DIR_TX) {
         data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_TX;
+        data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_MASTER;
     }
     else if(dir == I2S_DIR_RX) {
         data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_RX;
+        data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_SLAVE;
     }
     else {
         LOG_ERR("Unsupported direction %d", dir);
@@ -227,9 +254,18 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
     //
 	// Configure DMA and target address.
 	//
-	data->i2s_transfer.ui32TxTotalCount = data->block_size / sizeof(uint32_t);  // I2S DMA buffer count is the number of 32-bit datawidth.
-	data->i2s_transfer.ui32TxTargetAddr = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[0]);
-	data->i2s_transfer.ui32TxTargetAddrReverse = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[data->sample_num]);
+    if(dir == I2S_DIR_TX) {
+        data->i2s_transfer.ui32TxTotalCount = data->block_size / sizeof(uint32_t);  // I2S DMA buffer count is the number of 32-bit datawidth.
+        data->i2s_transfer.ui32TxTargetAddr = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[0]);
+        data->i2s_transfer.ui32TxTargetAddrReverse = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[data->sample_num]);
+        LOG_ERR("TX target : 0x%x", data->i2s_transfer.ui32TxTargetAddr);
+    }
+    else {
+        data->i2s_transfer.ui32RxTotalCount = data->block_size / sizeof(uint32_t);  // I2S DMA buffer count is the number of 32-bit datawidth.
+        data->i2s_transfer.ui32RxTargetAddr = (uint32_t)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[0]);
+        data->i2s_transfer.ui32RxTargetAddrReverse = (uint32_t)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[data->sample_num]);
+        LOG_ERR("RX target : 0x%x", data->i2s_transfer.ui32RxTargetAddr);
+    }
 
     memcpy(&(data->i2s_user_config), i2s_config, sizeof(struct i2s_config));
 
@@ -341,7 +377,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer,
 		return -EIO;
 	}
 
-	ret = k_sem_take(&data->rx_done_sem, K_NO_WAIT);
+	ret = k_sem_take(&(data->rx_done_sem), K_MSEC(100));
 
 	if (ret != 0) {
 		LOG_DBG("No audio data to be read %d", ret);
@@ -358,6 +394,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer,
 
         memcpy(data->mem_slab_buffer, (void *)i2s_data_buf, data->block_size);
 		*size = data->block_size;
+        *buffer = data->mem_slab_buffer;
 	}
 
 	return ret;
@@ -383,12 +420,13 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 	}                                                                                          \
 	static void i2s_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2s_ambiq_isr,         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2s_ambiq_isr##n,         \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
 	static struct i2s_ambiq_data i2s_ambiq_data##n = {                               \
 		.tx_ready_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.tx_ready_sem, 1, 1),      \
+		.rx_done_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.rx_done_sem, 0, 1),      \
 		.inst_idx = n,                                                                     \
 		.block_size = 0,                                                                   \
 		.sample_num = 0,                                                                   \

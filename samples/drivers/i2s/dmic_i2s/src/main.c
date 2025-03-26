@@ -14,16 +14,18 @@
 LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 
 #define I2S_TX  DT_ALIAS(i2s_tx)
+#define I2S_RX  DT_ALIAS(i2s_rx)
 
 #define SAMPLE_FREQUENCY    16000
 
-#define SAMPLE_BIT_WIDTH    (16U)
-//#define SAMPLE_BIT_WIDTH    (24U)
+//#define SAMPLE_BIT_WIDTH    (16U)
+#define SAMPLE_BIT_WIDTH    (24U)
 //#define SAMPLE_BIT_WIDTH    (32U)
 
 #define NUMBER_OF_CHANNELS  2
 
 #define DMIC_INPUT_ENABLE   0
+#define I2S_TX_RX_LOOPBACK  1
 
 #if (!DMIC_INPUT_ENABLE)
 #define SINE_WAVE_DATA_IN       0
@@ -46,10 +48,16 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 #define BLOCK_COUNT 4
 
 K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+#if I2S_TX_RX_LOOPBACK
+K_MEM_SLAB_DEFINE_STATIC(mem_slab_rx, BLOCK_SIZE, BLOCK_COUNT, 4);
+#endif
 
 int main(void)
 {
 	const struct device *const i2s_dev = DEVICE_DT_GET(I2S_TX);
+#if I2S_TX_RX_LOOPBACK
+	const struct device *const i2s_rx_dev = DEVICE_DT_GET(I2S_RX);
+#endif
 #if DMIC_INPUT_ENABLE
 	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
 #endif
@@ -72,6 +80,13 @@ int main(void)
 		LOG_ERR("%s is not ready\n", i2s_dev->name);
 		return 0;
 	}
+
+#if I2S_TX_RX_LOOPBACK
+	if (!device_is_ready(i2s_rx_dev)) {
+		LOG_ERR("%s is not ready\n", i2s_rx_dev->name);
+		return 0;
+	}
+#endif
 
 #if DMIC_INPUT_ENABLE
 	struct pcm_stream_cfg stream = {
@@ -97,7 +112,7 @@ int main(void)
 
 	dmic_config_param.channel.req_num_chan = NUMBER_OF_CHANNELS;
 
-    #if (NUMBER_OF_CHANNELS == 1)
+#if (NUMBER_OF_CHANNELS == 1)
         dmic_config_param.channel.req_chan_map_lo =
             dmic_build_channel_map(0, 0, PDM_CHAN_LEFT);
 #elif (NUMBER_OF_CHANNELS == 2)
@@ -137,6 +152,17 @@ int main(void)
 		LOG_ERR("Failed to configure i2s TX: %d\n", ret);
 		return 0;
 	}
+
+#if I2S_TX_RX_LOOPBACK
+    i2s_config_param.options = I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE;
+    i2s_config_param.mem_slab = &mem_slab_rx;
+    
+    ret = i2s_configure(i2s_rx_dev, I2S_DIR_RX, &i2s_config_param);
+    if (ret < 0) {
+		LOG_ERR("Failed to configure i2s RX: %d\n", ret);
+		return 0;
+	}
+#endif
 
 #if DMIC_INPUT_ENABLE
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_START);
@@ -207,7 +233,7 @@ int main(void)
             int16_t *i2s_data_buf_16bit = (int16_t *)mem_block;
             for (int i = 0; i < SAMPLES_PER_BLOCK; i++)
             {
-                i2s_data_buf_16bit[i] = (i & 0xFF);
+                i2s_data_buf_16bit[i] = (i & 0xFF) | 0xCD00;
             }
         }
         else
@@ -228,9 +254,37 @@ int main(void)
         }
 
         if (!started) {
+#if I2S_TX_RX_LOOPBACK
+            i2s_trigger(i2s_rx_dev, I2S_DIR_RX, I2S_TRIGGER_START);
+#endif
             i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
             started = true;
         }
+
+#if I2S_TX_RX_LOOPBACK
+        void *rx_buffer;
+        uint32_t rx_size = 0;
+        ret = i2s_read(i2s_rx_dev, &rx_buffer, &rx_size);
+        uint8_t *rx_buffer_ptr = (uint8_t *)rx_buffer;
+
+        if (ret < 0) {
+            LOG_ERR("Failed to read data: %d\n", ret);
+            break;
+        }
+
+        for (int i = 0; i < rx_size; i++) {
+            if(rx_buffer_ptr[i] != ((i & 0xFF)| 0xCD00)) {
+//                LOG_ERR("rx_buffer[%d] = %d\n", i, rx_buffer_ptr[i]);
+//                printk("0x%x [%d] = %d\n", rx_buffer_ptr, i, rx_buffer_ptr[i]);
+                printk(".");
+                break;
+            }
+            else {
+                printk(",");
+            }
+        }
+        k_mem_slab_free(&mem_slab_rx, rx_buffer);
+#endif
     }
 
     if (i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP) < 0) {
