@@ -107,6 +107,10 @@ static int mdio_stm32_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+	HAL_ETH_SetMDIOClockRange(&dev_data->heth);
+#endif
+
 	k_sem_init(&dev_data->sem, 1, 1);
 
 	return 0;
