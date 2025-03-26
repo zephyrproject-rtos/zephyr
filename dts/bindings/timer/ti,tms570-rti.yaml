@@ -1,0 +1,8 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Real-time interrupt for TMS570
+
+compatible: "ti,tms570-rti"
+
+include: [base.yaml]

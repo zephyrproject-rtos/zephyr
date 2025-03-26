@@ -32,10 +32,10 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 100
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 16000000
+	default 1000000
 
 config FLASH_BASE_ADDRESS
-	default 1000000
+	default 0x00000000
 
 config FLASH_SIZE
 	default 4096

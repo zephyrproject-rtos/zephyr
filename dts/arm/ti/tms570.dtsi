@@ -3,7 +3,7 @@
 *
 * SPDX-License-Identifier: Apache-2.0
 */
-
+#include <freq.h>
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
 
@@ -29,6 +29,20 @@
 		*              -> VCLK (75 MHz)
 		*                  -> RTICLK (75 MHz, divider is bypassed when VCLK is the source)
 		*/
+
+		clk_vclk: clk_vclk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(75)>;
+			status = "okay";
+		};
+
+		clk_rticlk: clk_rticlk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(75)>;
+			status = "okay";
+		};
 	};
 
 	soc {
@@ -46,6 +60,12 @@
 			      <0xFFFFFFE4 4>,	   /* SYS_EXCEPTION */
 			      <0xFFFFFC98 4>,	   /* WATCHDOG_STATUS */
 			      <0xFFFFEC00 44>;	   /* DCC */
+		};
+
+		rti: rti@fffffc00 {
+			compatible = "ti,tms570-rti";
+			reg = <0xfffffc00 256>;
+			status = "okay";
 		};
 
 		sram0: memory@8000000 {
