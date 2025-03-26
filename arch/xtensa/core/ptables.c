@@ -1126,19 +1126,6 @@ void xtensa_swap_update_page_tables(struct k_thread *incoming)
 		&(incoming->mem_domain_info.mem_domain->arch);
 
 	xtensa_set_paging(domain->asid, ptables);
-
-#ifdef CONFIG_XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
-	struct k_mem_domain *mem_domain = incoming->mem_domain_info.mem_domain;
-
-	for (int idx = 0; idx < mem_domain->num_partitions; idx++) {
-		struct k_mem_partition *part = &mem_domain->partitions[idx];
-		uintptr_t end = part->start + part->size;
-
-		for (uintptr_t addr = part->start; addr < end; addr += CONFIG_MMU_PAGE_SIZE) {
-			xtensa_dtlb_vaddr_invalidate((void *)addr);
-		}
-	}
-#endif
 }
 
 #endif /* CONFIG_USERSPACE */
