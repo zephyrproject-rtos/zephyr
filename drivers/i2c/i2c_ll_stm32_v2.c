@@ -21,12 +21,12 @@
 #include <zephyr/pm/device_runtime.h>
 #include "i2c_ll_stm32.h"
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 #include <zephyr/cache.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
+#endif
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -683,7 +683,7 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
 	bool buf_within_nocache = false;
@@ -710,7 +710,7 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 
 	return buf_within_nocache;
 }
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
 
 static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
@@ -727,13 +727,13 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_err = 0U;
 	data->current.msg = msg;
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 	if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
 		LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
 			msg->len);
 		sys_cache_data_flush_range((void *)msg->buf, msg->len);
 	}
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA*/
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -806,13 +806,13 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		is_timeout = true;
 	}
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 	if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
 		LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
 			msg->buf, msg->len);
 		sys_cache_data_invd_range((void *)msg->buf, msg->len);
 	}
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo || is_timeout) {
