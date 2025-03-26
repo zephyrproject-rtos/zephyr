@@ -1566,8 +1566,8 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
-	.pclken = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bus),
-		   .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bits)},
+	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
+		   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits)},
 	.pclken_tx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
 		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits)},
 	.pclken_rx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),

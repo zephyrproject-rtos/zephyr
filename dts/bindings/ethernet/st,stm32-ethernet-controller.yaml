@@ -1,0 +1,18 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST STM32 Ethernet controller, contains the Ethernet MAC
+  and the MDIO as a child nodes.
+
+compatible: "st,stm32-ethernet-controller"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true

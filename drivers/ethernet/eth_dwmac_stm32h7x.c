@@ -33,8 +33,8 @@ static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 static const struct stm32_pclken pclken = {
-	.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bus),
-	.enr = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bits),
+	.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
+	.enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits),
 };
 static const struct stm32_pclken pclken_tx = {
 	.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
@@ -81,7 +81,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	reg_val = sys_read32(reg_addr);
 	sys_write32(reg_val | 0x03800000, reg_addr);
 
-	p->base_addr = DT_INST_REG_ADDR(0);
+	p->base_addr = DT_REG_ADDR(DT_INST_PARENT(0));
 	return 0;
 }
 
