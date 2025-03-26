@@ -6,8 +6,9 @@
 if BOARD_MIMXRT1170_EVK
 
 # Use External Memory Configuration Data (XMCD) by default when booting primary core (M7)
-config EXTERNAL_MEM_CONFIG_DATA
-	default y if CPU_CORTEX_M7
+choice MEM_CONFIG_DATA
+	default EXTERNAL_MEM_CONFIG_DATA
+endchoice
 
 config NXP_IMX_EXTERNAL_SDRAM
 	default y if CPU_CORTEX_M7

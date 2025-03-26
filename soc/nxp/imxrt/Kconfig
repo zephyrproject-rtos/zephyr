@@ -100,6 +100,10 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	  the application entry point and device configuration data. The boot
 	  ROM requires a fixed IVT offset for each type of boot device.
 
+choice MEM_CONFIG_DATA
+	bool "MEM_CONFIG_DATA"
+	default EXTERNAL_MEM_CONFIG_DATA
+
 config DEVICE_CONFIGURATION_DATA
 	bool "Device configuration data"
 	help
@@ -110,7 +114,6 @@ config DEVICE_CONFIGURATION_DATA
 
 config EXTERNAL_MEM_CONFIG_DATA
 	bool "External Memory Configuration Data"
-	depends on !DEVICE_CONFIGURATION_DATA
 	help
 	  External memory configuration data (XMDC) provides an alternative
 	  configuration sequences which allows to intilialize the external memory
@@ -118,6 +121,8 @@ config EXTERNAL_MEM_CONFIG_DATA
 	  external memories (such as SDRAM) with more advanced option.
 	  This is a new alternative boot header compared to DCD, and DCD must be disabled
 	  in order to select this option.
+
+endchoice
 
 config EXTERNAL_MEM_CONFIG_OFFSET
 	hex "External memory configuration offset"
