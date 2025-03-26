@@ -297,7 +297,7 @@ static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 	return true;
 }
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+
 void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 {
 	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
@@ -307,7 +307,6 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 
 	net_if_add_tx_timestamp(ctx->pkt);
 }
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
@@ -359,11 +358,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			    net_pkt_is_tx_timestamping(pkt);
 	if (timestamped_frame) {
 		/* Enable transmit timestamp */
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 		HAL_ETH_PTP_InsertTxTimestamp(heth);
-#else
-		dma_tx_desc->Status |= ETH_DMATXDESC_TTSE;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
@@ -484,35 +479,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL) && !defined(CONFIG_ETH_STM32_HAL_API_V2)
-	if (timestamped_frame) {
-		/* Retrieve transmission timestamp from last DMA TX descriptor */
-		__IO ETH_DMADescTypeDef *last_dma_tx_desc = dma_tx_desc;
-
-		while (!(last_dma_tx_desc->Status & ETH_DMATXDESC_LS) &&
-				last_dma_tx_desc->Buffer2NextDescAddr) {
-			last_dma_tx_desc =
-				(ETH_DMADescTypeDef *)last_dma_tx_desc->Buffer2NextDescAddr;
-		}
-
-		while (IS_ETH_DMATXDESC_OWN(last_dma_tx_desc) != (uint32_t)RESET) {
-			/* Wait for transmission */
-			k_yield();
-		}
-
-		if (last_dma_tx_desc->Status & ETH_DMATXDESC_LS &&
-				last_dma_tx_desc->Status & ETH_DMATXDESC_TTSS) {
-			pkt->timestamp.second = last_dma_tx_desc->TimeStampHigh;
-			pkt->timestamp.nanosecond = last_dma_tx_desc->TimeStampLow;
-		} else {
-			/* Invalid value */
-			pkt->timestamp.second = UINT64_MAX;
-			pkt->timestamp.nanosecond = UINT32_MAX;
-		}
-		net_if_add_tx_timestamp(pkt);
-	}
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL && !CONFIG_ETH_STM32_HAL_API_V2 */
-
 	res = 0;
 error:
 
@@ -552,9 +518,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ETH_TimeStampTypeDef ts_registers;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	/* Default to invalid value. */
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
@@ -591,22 +555,10 @@ static struct net_pkt *eth_rx(const struct device *dev)
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-
 	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
 		timestamp.second = ts_registers.TimeStampHigh;
 		timestamp.nanosecond = ts_registers.TimeStampLow;
 	}
-#else
-	__IO ETH_DMADescTypeDef *last_dma_rx_desc;
-
-	last_dma_rx_desc = heth->RxFrameInfos.LSRxDesc;
-	if (last_dma_rx_desc->TimeStampHigh != UINT32_MAX ||
-			last_dma_rx_desc->TimeStampLow != UINT32_MAX) {
-		timestamp.second = last_dma_rx_desc->TimeStampHigh;
-		timestamp.nanosecond = last_dma_rx_desc->TimeStampLow;
-	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
