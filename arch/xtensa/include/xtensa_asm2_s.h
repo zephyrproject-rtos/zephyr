@@ -316,16 +316,9 @@ _xstack_call0_\@:
 	mov a1, a2
 	rsr.ZSR_EPS a2
 	wsr.ps a2
-	call4 _xstack_call1_\@
+	callx4 a7		/* call handler */
 	mov a2, a6		/* copy return value */
 	retw
-.align 4
-_xstack_call1_\@:
-	/* Remember the handler is going to do our ENTRY, so the
-	 * handler pointer is still in A6 (not A2) even though this is
-	 * after the second CALL4.
-	 */
-	jx a7
 _xstack_returned_\@:
 .endm
 
