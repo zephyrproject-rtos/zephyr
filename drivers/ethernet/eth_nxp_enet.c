@@ -525,10 +525,6 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		ENET_SetMII(data->base, speed, duplex);
 	}
 
-	if (!data->iface) {
-		return;
-	}
-
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
 	if (!state->is_up) {
@@ -544,8 +540,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
-	const struct device *phy_dev = config->phy_dev;
-	struct phy_link_state state;
 
 	net_if_set_link_addr(iface, data->mac_addr,
 			     sizeof(data->mac_addr),
@@ -562,35 +556,11 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
-	/* In case the phy driver doesn't report a state change due to link being up
-	 * before calling phy_configure, we should check the state ourself, and then do a
-	 * pseudo-callback
-	 */
-	phy_get_link_state(phy_dev, &state);
-
-	nxp_enet_phy_cb(phy_dev, &state, (void *)dev);
+	phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
 
 	config->irq_config_func();
 
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
-}
-
-static int nxp_enet_phy_init(const struct device *dev)
-{
-	const struct nxp_enet_mac_config *config = dev->config;
-	int ret = 0;
-
-	ret = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
-	if (ret) {
-		return ret;
-	}
-
-	ret = phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
-	if (ret) {
-		return ret;
-	}
-
-	return ret;
 }
 
 void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
@@ -818,7 +788,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	ENET_ActiveRead(data->base);
 
-	err = nxp_enet_phy_init(dev);
+	err = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
 	if (err) {
 		return err;
 	}
