@@ -67,5 +67,10 @@
 			};
 		};
 
+		pinctrl: pin-controller@ffff1c00 {
+			compatible = "ti,tms570-pinmux";
+			reg = <0xffff1c00 0x400>;
+			status = "okay";
+		};
 	};
 };
