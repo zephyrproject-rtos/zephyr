@@ -491,7 +491,11 @@ function(yaml_save)
 
   zephyr_get_scoped(genex ${ARG_YAML_NAME} GENEX)
   zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
-  to_yaml("${json_content}" 0 yaml_out ${genex})
+  if(genex)
+    to_yaml("${json_content}" 0 yaml_out DIRECT_GENEX)
+   else()
+    to_yaml("${json_content}" 0 yaml_out DIRECT)
+   endif()
 
   if(EXISTS ${yaml_file})
     FILE(RENAME ${yaml_file} ${yaml_file}.bak)
@@ -529,20 +533,42 @@ function(yaml_save)
 
     cmake_path(SET yaml_path "${yaml_file}")
     cmake_path(GET yaml_path STEM yaml_file_no_ext)
-    set(expanded_file ${yaml_file_no_ext}_${genex_save_count}.json)
+    set(expanded_file ${yaml_file_no_ext}_${genex_save_count}.yaml)
     set_property(TARGET ${save_target} PROPERTY expanded_file ${expanded_file})
 
     # comment this to keep the temporary files
     set_property(TARGET ${save_target} APPEND PROPERTY temp_files ${expanded_file})
 
-    FILE(GENERATE OUTPUT ${expanded_file}
-      CONTENT "${json_content}"
-    )
+    to_yaml("${json_content}" 0 yaml_out TEMP_GENEX)
+    FILE(GENERATE OUTPUT ${expanded_file} CONTENT "${yaml_out}")
   endif()
 endfunction()
 
-function(to_yaml in_json level yaml genex)
+function(to_yaml in_json level yaml mode)
   zephyr_string(ESCAPE json "${in_json}")
+
+  if(mode STREQUAL "DIRECT")
+    # Direct output mode, no genexes: write a standard YAML
+    set(expand_lists TRUE)
+    set(escape_quotes TRUE)
+    set(comment_genexes FALSE)
+  elseif(mode STREQUAL "DIRECT_GENEX" OR mode STREQUAL "FINAL_GENEX")
+    # Direct output mode with genexes enabled, or final write of post-processed
+    # file: write a standard YAML, comment entries with genexes if they are
+    # (still) present in the file
+    set(expand_lists TRUE)
+    set(escape_quotes TRUE)
+    set(comment_genexes TRUE)
+  elseif(mode STREQUAL "TEMP_GENEX")
+    # Temporary output mode for genex expansion: save single quotes with no
+    # special processing, since they will be fixed up by yaml-filter.cmake
+    set(expand_lists FALSE)
+    set(escape_quotes FALSE)
+    set(comment_genexes FALSE)
+  else()
+    message(FATAL_ERROR "to_yaml(... ${mode} ) is malformed.")
+  endif()
+
   if(level GREATER 0)
     math(EXPR level_dec "${level} - 1")
     set(indent_${level} "${indent_${level_dec}}  ")
@@ -564,7 +590,7 @@ function(to_yaml in_json level yaml genex)
       # JSON object -> YAML dictionary
       set(${yaml} "${${yaml}}${indent_${level}}${member}:\n")
       math(EXPR sublevel "${level} + 1")
-      to_yaml("${subjson}" ${sublevel} ${yaml} ${genex})
+      to_yaml("${subjson}" ${sublevel} ${yaml} ${mode})
     elseif(type STREQUAL ARRAY)
       # JSON array -> YAML list
       set(${yaml} "${${yaml}}${indent_${level}}${member}:")
@@ -581,13 +607,15 @@ function(to_yaml in_json level yaml genex)
           string(JSON length ERROR_VARIABLE ignore LENGTH "${item}")
           if(length)
             set(non_indent_yaml)
-            to_yaml("${item}" 0 non_indent_yaml FALSE)
+            to_yaml("${item}" 0 non_indent_yaml ${mode})
             string(REGEX REPLACE "\n$" "" non_indent_yaml "${non_indent_yaml}")
             string(REPLACE "\n" "\n${indent_${level}}   " indent_yaml "${non_indent_yaml}")
             set(${yaml} "${${yaml}}${indent_${level}} - ${indent_yaml}\n")
           else()
-            # Assume a string, escape single quotes.
-            string(REPLACE "'" "''" item "${item}")
+            # Assume a string, escape single quotes when required (see comment below).
+            if(escape_quotes)
+              string(REPLACE "'" "''" item "${item}")
+            endif()
             set(${yaml} "${${yaml}}${indent_${level}} - '${item}'\n")
           endif()
         endforeach()
@@ -597,13 +625,17 @@ function(to_yaml in_json level yaml genex)
       # - with unexpanded generator expressions: save as YAML comment
       # - if it matches the special prefix: convert to YAML list
       # - otherwise: save as YAML scalar
-      # Single quotes must be escaped in the value.
-      string(REPLACE "'" "''" subjson "${subjson}")
-      if(subjson MATCHES "\\$<.*>" AND ${genex})
+      # Single quotes must be escaped in the value _unless_ this will be used
+      # to expand generator expressions, because then the escaping will be
+      # addressed once in the yaml-filter.cmake script.
+      if(escape_quotes)
+        string(REPLACE "'" "''" subjson "${subjson}")
+      endif()
+      if(subjson MATCHES "\\$<.*>" AND comment_genexes)
         # Yet unexpanded generator expression: save as comment
         string(SUBSTRING ${indent_${level}} 1 -1 short_indent)
         set(${yaml} "${${yaml}}#${short_indent}${member}: '${subjson}'\n")
-      elseif(subjson MATCHES "^@YAML-LIST@")
+      elseif(subjson MATCHES "^@YAML-LIST@" AND expand_lists)
         # List-as-string: convert to list
         set(${yaml} "${${yaml}}${indent_${level}}${member}:")
         list(POP_FRONT subjson)
