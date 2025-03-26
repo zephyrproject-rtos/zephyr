@@ -89,6 +89,13 @@ config NET_DHCPV4_OPTION_DNS_ADDRESS
 	  If this option is set, then the DNS server can be set from the
 	  DHCPv4 option.
 
+config NET_DHCPV4_OPTION_PRINT_IGNORED
+	bool "Print information about ignored options"
+	help
+	  If this option is set, then we print information about options that we
+	  received and ignored. If this is not set, then we print these as unknown
+	  options.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
