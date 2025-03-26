@@ -316,8 +316,45 @@ _xstack_call0_\@:
 	mov a1, a2
 	rsr.ZSR_EPS a2
 	wsr.ps a2
+
+#ifdef CONFIG_USERSPACE
+	/* Save "context handle" in A3 as we need it to determine
+	 * if we need to swap page table later.
+	 */
+	mov a3, a6
+#endif
+
 	callx4 a7		/* call handler */
 	mov a2, a6		/* copy return value */
+
+#ifdef CONFIG_USERSPACE
+	rsil a6, XCHAL_NUM_INTLEVELS
+
+	/* If "next" handle to be restored is the same as
+	 * the current handle, there is no need to swap page
+	 * tables or MPU entries since we will return to
+	 * the same thread that was interrupted.
+	 */
+	beq a2, a3, _xstack_skip_table_swap_\@
+
+	/* Need to switch page tables because the "next" handle
+	 * returned above is not the same handle as we started
+	 * with. This means we are being restored to another
+	 * thread.
+	 */
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+
+#ifdef CONFIG_XTENSA_MMU
+	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
+
+_xstack_skip_table_swap_\@:
+#endif /* CONFIG_USERSPACE */
+
 	retw
 _xstack_returned_\@:
 .endm
@@ -473,7 +510,6 @@ _do_call_\@:
 	 */
 	beq a6, a1, _restore_\@
 
-#ifndef CONFIG_USERSPACE
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
@@ -486,39 +522,6 @@ _do_call_\@:
 
 	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
-#else
-	/* With userspace, we cannot simply restore A1 stack pointer
-	 * at this pointer because we need to swap page tables to
-	 * the incoming thread, and we do not want to call that
-	 * function with thread's stack. So we stash the new stack
-	 * pointer into A2 first, then move it to A1 after we have
-	 * swapped the page table.
-	 */
-	mov a2, a6
-
-	/* Need to switch page tables because the "next" handle
-	 * returned above is not the same handle as we started
-	 * with. This means we are being restored to another
-	 * thread.
-	 */
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
-
-#ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
-#endif
-	l32i a1, a1, 0
-	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
-	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
-
-	SPILL_ALL_WINDOWS
-
-	/* Moved stashed stack pointer to A1 to restore stack. */
-	mov a1, a2
-#endif
 
 _restore_\@:
 	j _restore_context
