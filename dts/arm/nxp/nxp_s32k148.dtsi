@@ -30,6 +30,33 @@
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(124)>;
 		};
+
+		enet: ethernet@40079000 {
+			compatible = "nxp,enet";
+			reg = <0x40079000 0x628>;
+			clocks = <&clock NXP_S32_ENET_CLK>;
+
+			enet_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <73 0>, <74 0>, <75 0>;
+				interrupt-names = "TX", "RX", "ERR";
+				nxp,mdio = <&enet_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				phy-connection-type = "rmii";
+			};
+
+			enet_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
+				interrupts = <72 0>;
+				clocks = <&clock NXP_S32_ENET_CLK>;
+			};
+		};
 	};
 };
 
