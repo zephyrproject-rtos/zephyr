@@ -43,6 +43,19 @@ static struct spi_dt_spec *loopback_specs[2] = {&spi_slow, &spi_fast};
 static char *spec_names[2] = {"SLOW", "FAST"};
 static int spec_idx;
 
+/* Driver may need to reconfigure due to different spi config for the
+ * some of the tests. If we use the same memory location for the spec,
+ * it will be treated like the same owner of the bus as previously,
+ * and many drivers will think it is the same spec and skip reconfiguring.
+ * Even declaring a copy of the spec on the stack will most likely have it end up at the same
+ * location on the stack every time and have the same problem.
+ * It's not clear from the API if this is expected but it is a common trick that is de facto
+ * standardized by the use of the private spi_context header, so for now consider it
+ * expected behavior in this test, and write the test accordingly. The point of those cases is
+ * not to test the specifics of bus ownership in the API, so we just deal with it.
+ */
+struct spi_dt_spec spec_copies[5];
+
 /*
  ********************
  * SPI test buffers *
@@ -71,6 +84,18 @@ static __aligned(32) char buffer2_rx[BUF2_SIZE] __NOCACHE;
 static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char large_buffer_tx[BUF3_SIZE] __NOCACHE;
 static __aligned(32) char large_buffer_rx[BUF3_SIZE] __NOCACHE;
+
+#define BUFWIDE_SIZE 12
+static const uint16_t tx_data_16[] = {0x1234, 0x5678, 0x9ABC, 0xDEF0,
+				      0xFF00, 0x00FF, 0xAAAA, 0x5555,
+				      0xF0F0, 0x0F0F, 0xA5A5, 0x5A5A};
+static __aligned(32) uint16_t buffer_tx_16[BUFWIDE_SIZE] __NOCACHE;
+static __aligned(32) uint16_t buffer_rx_16[BUFWIDE_SIZE] __NOCACHE;
+static const uint32_t tx_data_32[] = {0x12345678, 0x56781234, 0x9ABCDEF0, 0xDEF09ABC,
+				      0xFFFF0000, 0x0000FFFF, 0x00FF00FF, 0xFF00FF00,
+				      0xAAAA5555, 0x5555AAAA, 0xAA55AA55, 0x55AA55AA};
+static __aligned(32) uint32_t buffer_tx_32[BUFWIDE_SIZE] __NOCACHE;
+static __aligned(32) uint32_t buffer_rx_32[BUFWIDE_SIZE] __NOCACHE;
 
 /*
  ********************
@@ -109,7 +134,12 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 
 	zassert_ok(pm_device_runtime_get(spec->bus));
 	ret = spi_transceive_dt(spec, tx, rx);
+	if (ret == -EINVAL || ret == -ENOTSUP) {
+		TC_PRINT("Spi config invalid for this controller - skip\n");
+		goto out;
+	}
 	zassert_ok(ret, "SPI transceive failed, code %d", ret);
+out:
 	zassert_ok(pm_device_runtime_put(spec->bus));
 }
 
@@ -396,6 +426,90 @@ ZTEST(spi_loopback, test_spi_same_buf_cmd)
 				  buffer_print_tx, buffer_print_rx);
 }
 
+
+static void spi_loopback_test_word_size(struct spi_dt_spec *spec,
+					const void *tx_data,
+					void *rx_buffer,
+					const void *compare_data,
+					size_t buffer_size,
+					struct spi_dt_spec *spec_copy,
+					uint8_t word_size)
+{
+	struct spi_config config_copy = spec->config;
+
+	config_copy.operation &= ~SPI_WORD_SIZE_MASK;
+	config_copy.operation |= SPI_WORD_SET(word_size);
+	spec_copy->config = config_copy;
+	spec_copy->bus = spec->bus;
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      tx_data, buffer_size);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      rx_buffer, buffer_size);
+
+	spi_loopback_transceive(spec_copy, &tx, &rx);
+
+	zassert_false(memcmp(compare_data, rx_buffer, buffer_size),
+		      "%d-bit word buffer contents are different", word_size);
+}
+
+/* Test case for 7-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_7)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, tx_data, buffer_rx, tx_data,
+				    sizeof(tx_data), &spec_copies[0], 7);
+}
+
+/* Test case for 9-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_9)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	static __aligned(32) uint16_t tx_data_9[BUFWIDE_SIZE];
+
+	for (int i = 0; i < BUFWIDE_SIZE; i++) {
+		tx_data_9[i] = tx_data_16[i] & 0x1FF;
+	}
+
+	spi_loopback_test_word_size(spec, tx_data_9, buffer_rx_16, tx_data_9,
+				    sizeof(tx_data_9), &spec_copies[1], 9);
+}
+
+/* Test case for 16-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_16)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, buffer_tx_16, buffer_rx_16, tx_data_16,
+				    sizeof(buffer_tx_16), &spec_copies[2], 16);
+}
+
+/* Test case for 24-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_24)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	static __aligned(32) uint32_t tx_data_24[BUFWIDE_SIZE];
+
+	for (int i = 0; i < BUFWIDE_SIZE; i++) {
+		tx_data_24[i] = tx_data_32[i] & 0xFFFFFF;
+	}
+
+	spi_loopback_test_word_size(spec, tx_data_24, buffer_rx_32, tx_data_24,
+				    sizeof(tx_data_24), &spec_copies[3], 24);
+}
+
+/* Test case for 32-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_32)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, buffer_tx_32, buffer_rx_32, tx_data_32,
+				    sizeof(buffer_tx_32), &spec_copies[4], 32);
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -507,6 +621,10 @@ static void *spi_loopback_common_setup(void)
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
 	memset(large_buffer_tx, 0, sizeof(large_buffer_tx));
 	memcpy(large_buffer_tx, large_tx_data, sizeof(large_tx_data));
+	memset(buffer_tx_16, 0, sizeof(buffer_tx_16));
+	memcpy(buffer_tx_16, tx_data_16, sizeof(tx_data_16));
+	memset(buffer_tx_32, 0, sizeof(buffer_tx_32));
+	memcpy(buffer_tx_32, tx_data_32, sizeof(tx_data_32));
 	return NULL;
 }
 
