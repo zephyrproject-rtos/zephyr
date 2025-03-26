@@ -16,7 +16,33 @@
 	compatible = "ti,hercules-tms570-launchpad", "ti,tms570";
 
 	chosen {
+		zephyr,console = &sci1;
+		zephyr,shell-uart = &sci1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+};
+
+&sci1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <>;
+	pinctrl-names = "default";
+};
+
+&sci3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&sci3_rx &sci3_tx>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	sci3_rx: sci3_rx {
+		pinmux = <29 17>;
+	};
+
+	sci3_tx: sci3_tx {
+		pinmux = <31 9>;
 	};
 };
