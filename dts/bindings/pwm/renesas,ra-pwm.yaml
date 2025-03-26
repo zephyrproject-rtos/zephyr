@@ -24,6 +24,10 @@ properties:
 
   interrupt-names:
     required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      - "gtioca": input capture match
+      - "overflow": counter overflow
 
   "#pwm-cells":
     const: 3
