@@ -347,6 +347,8 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_STRING:
 	case JSON_TOK_STRING_BUF:
 	case JSON_TOK_NUMBER:
+	case JSON_TOK_INT:
+	case JSON_TOK_UINT:
 	case JSON_TOK_INT64:
 	case JSON_TOK_UINT64:
 	case JSON_TOK_FLOAT:
@@ -475,7 +477,7 @@ static int decode_string_buf(const struct json_token *token, char *str, size_t s
 	return 0;
 }
 
-static int decode_num(const struct json_token *token, int32_t *num)
+static int decode_int32(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
 	 * so using strtol() here.
@@ -488,6 +490,30 @@ static int decode_num(const struct json_token *token, int32_t *num)
 
 	errno = 0;
 	*num = strtol(token->start, &endptr, 10);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int decode_uint32(const struct json_token *token, uint32_t *num)
+{
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtoul(token->start, &endptr, 10);
 
 	*token->end = prev_end;
 
@@ -612,6 +638,142 @@ static int decode_double(const struct json_token *token, double *num)
 #endif
 }
 
+static int decode_int8(const struct json_token *token, int8_t *num)
+{
+	int32_t num_i32;
+	int res;
+
+	res = decode_int32(token, &num_i32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_i32 < INT8_MIN || num_i32 > INT8_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_i32;
+
+	return 0;
+}
+
+static int decode_uint8(const struct json_token *token, uint8_t *num)
+{
+	uint32_t num_u32;
+	int res;
+
+	res = decode_uint32(token, &num_u32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_u32 > UINT8_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_u32;
+
+	return 0;
+}
+
+static int decode_int16(const struct json_token *token, int16_t *num)
+{
+	int32_t num_i32;
+	int res;
+
+	res = decode_int32(token, &num_i32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_i32 < INT16_MIN || num_i32 > INT16_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_i32;
+
+	return 0;
+}
+
+static int decode_uint16(const struct json_token *token, uint16_t *num)
+{
+	uint32_t num_u32;
+	int res;
+
+	res = decode_uint32(token, &num_u32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_u32 > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_u32;
+
+	return 0;
+}
+
+static int decode_int(const struct json_token *token, void *field, size_t size)
+{
+	switch (size) {
+	case 1: {
+		int8_t *num = field;
+
+		return decode_int8(token, num);
+	}
+	case 2: {
+		int16_t *num = field;
+
+		return decode_int16(token, num);
+	}
+	case 4: {
+		int32_t *num = field;
+
+		return decode_int32(token, num);
+	}
+	case 8: {
+		int64_t *num = field;
+
+		return decode_int64(token, num);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int decode_uint(const struct json_token *token, void *field, size_t size)
+{
+	switch (size) {
+	case 1: {
+		uint8_t *num = field;
+
+		return decode_uint8(token, num);
+	}
+	case 2: {
+		uint16_t *num = field;
+
+		return decode_uint16(token, num);
+	}
+	case 4: {
+		uint32_t *num = field;
+
+		return decode_uint32(token, num);
+	}
+	case 8: {
+		uint64_t *num = field;
+
+		return decode_uint64(token, num);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
@@ -627,6 +789,14 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	}
 
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_DOUBLE_FP) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_INT) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_UINT) {
 		return true;
 	}
 
@@ -697,7 +867,13 @@ static int64_t decode_value(struct json_obj *obj,
 	case JSON_TOK_NUMBER: {
 		int32_t *num = field;
 
-		return decode_num(value, num);
+		return decode_int32(value, num);
+	}
+	case JSON_TOK_INT: {
+		return decode_int(value, field, descr->field.size);
+	}
+	case JSON_TOK_UINT: {
+		return decode_uint(value, field, descr->field.size);
 	}
 	case JSON_TOK_INT64: {
 		int64_t *num = field;
@@ -764,6 +940,8 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
+	case JSON_TOK_INT:
+	case JSON_TOK_UINT:
 	case JSON_TOK_STRING_BUF:
 		return descr->field.size;
 	case JSON_TOK_TRUE:
@@ -1192,13 +1370,30 @@ static int str_encode(const char *str, json_append_bytes_t append_bytes,
 	return ret;
 }
 
-static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
-		      void *data)
+static int int32_encode(const int32_t *num, json_append_bytes_t append_bytes,
+			void *data)
 {
 	char buf[3 * sizeof(int32_t)];
 	int ret;
 
 	ret = snprintk(buf, sizeof(buf), "%d", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int uint32_encode(const uint32_t *num, json_append_bytes_t append_bytes,
+			 void *data)
+{
+	char buf[3 * sizeof(uint32_t)];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%u", *num);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1302,6 +1497,72 @@ static int double_encode(const double *num, json_append_bytes_t append_bytes, vo
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int int_encode(const void *ptr, size_t size, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	switch (size) {
+	case 1: {
+		const int8_t *num_8 = ptr;
+		int32_t num = *num_8;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 2: {
+		const int16_t *num_16 = ptr;
+		int32_t num = *num_16;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 4: {
+		const int32_t *num_32 = ptr;
+		int32_t num = *num_32;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 8: {
+		const int64_t *num_64 = ptr;
+		int64_t num = *num_64;
+
+		return int64_encode(&num, append_bytes, data);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int uint_encode(const void *ptr, size_t size, json_append_bytes_t append_bytes,
+		       void *data)
+{
+	switch (size) {
+	case 1: {
+		const uint8_t *num_8 = ptr;
+		uint32_t num = *num_8;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 2: {
+		const uint16_t *num_16 = ptr;
+		uint32_t num = *num_16;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 4: {
+		const uint32_t *num_32 = ptr;
+		uint32_t num = *num_32;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 8: {
+		const uint64_t *num_64 = ptr;
+		uint64_t num = *num_64;
+
+		return uint64_encode(&num, append_bytes, data);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
@@ -1368,7 +1629,11 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       descr->object.sub_descr_len,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
-		return num_encode(ptr, append_bytes, data);
+		return int32_encode(ptr, append_bytes, data);
+	case JSON_TOK_INT:
+		return int_encode(ptr, descr->field.size, append_bytes, data);
+	case JSON_TOK_UINT:
+		return uint_encode(ptr, descr->field.size, append_bytes, data);
 	case JSON_TOK_INT64:
 		return int64_encode(ptr, append_bytes, data);
 	case JSON_TOK_UINT64:
