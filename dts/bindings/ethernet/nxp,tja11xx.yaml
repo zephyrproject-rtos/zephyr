@@ -11,13 +11,3 @@ properties:
   reg:
     required: true
     description: PHY address
-
-  master-slave:
-    type: string
-    description: |
-      100BASE-T1 Specifies that either phy has to run in master / slave mode
-      Default selects the mode set by the pinstrapping on the hardware design.
-    enum:
-      - "default"
-      - "master"
-      - "slave"

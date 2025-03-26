@@ -23,14 +23,13 @@
 LOG_MODULE_REGISTER(phy_tja11xx, CONFIG_PHY_LOG_LEVEL);
 
 /* Extended control register */
-#define TJA1101_EXTENDED_CONTROL           0x0017U
+#define TJA11XX_EXTENDED_CONTROL           0x0017U
 /* Configuration register 1 */
-#define TJA1101_CONFIGURATION_1            0x0018U
+#define TJA11XX_CONFIGURATION_1            0x0018U
 
 struct phy_tja11xx_config {
 	const struct device *mdio;
 	uint8_t phy_addr;
-	uint8_t master_slave;
 };
 
 struct phy_tja11xx_data {
@@ -193,7 +192,7 @@ static int phy_tja11xx_init(const struct device *dev)
 	data->state.is_up = false;
 	data->state.speed = LINK_FULL_100BASE_T;
 
-	ret = phy_tja11xx_reg_write(dev, TJA1101_EXTENDED_CONTROL, 0x1804);
+	ret = phy_tja11xx_reg_write(dev, TJA11XX_EXTENDED_CONTROL, 0x1804);
 	if (ret < 0) {
 		return ret;
 	}
@@ -203,12 +202,12 @@ static int phy_tja11xx_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = phy_tja11xx_reg_write(dev, TJA1101_CONFIGURATION_1, 0x8A00);
+	ret = phy_tja11xx_reg_write(dev, TJA11XX_CONFIGURATION_1, 0x8A00);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = phy_tja11xx_reg_write(dev, TJA1101_EXTENDED_CONTROL, 0x9804);
+	ret = phy_tja11xx_reg_write(dev, TJA11XX_EXTENDED_CONTROL, 0x9804);
 	if (ret < 0) {
 		return ret;
 	}
@@ -244,7 +243,6 @@ static const struct ethphy_driver_api phy_tja11xx_api = {
 	static const struct phy_tja11xx_config phy_tja11xx_config_##n = {                          \
 		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
-		.master_slave = DT_INST_ENUM_IDX(n, master_slave),                                 \
 	};                                                                                         \
 	static struct phy_tja11xx_data phy_tja11xx_data_##n = {                                    \
 		.sem = Z_SEM_INITIALIZER(phy_tja11xx_data_##n.sem, 1, 1),                          \
