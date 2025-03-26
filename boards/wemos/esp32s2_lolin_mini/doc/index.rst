@@ -27,6 +27,14 @@ The features include the following:
   - DAC
   - LED PWM with up to 8 channels
 
+Hardware
+********
+
+Supported Features
+------------------
+
+.. zephyr:board-supported-hw::
+
 System requirements
 *******************
 
