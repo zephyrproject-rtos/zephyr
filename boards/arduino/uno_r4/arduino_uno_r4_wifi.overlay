@@ -61,6 +61,17 @@
 			   <20 0 &ioport1 1 0>,   /* D14 */
 			   <21 0 &ioport1 0 0>;   /* D15 */
 	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc0 9>,    /* A0 = P009 = CH09 */
+				 <1 &adc0 0>,    /* A1 = P000 = CH00 */
+				 <2 &adc0 1>,    /* A2 = P001 = CH01 */
+				 <3 &adc0 2>,    /* A3 = P002 = CH02 */
+				 <4 &adc0 21>,   /* A4 = P101 = CH21 */
+				 <5 &adc0 22>;   /* A5 = P100 = CH22 */
+	};
 };
 
 &spi0 {
