@@ -76,6 +76,7 @@ source "drivers/ethernet/Kconfig.xmc4xxx"
 source "drivers/ethernet/Kconfig.test"
 source "drivers/ethernet/Kconfig.lan9250"
 source "drivers/ethernet/Kconfig.sy1xx_mac"
+source "drivers/ethernet/Kconfig.xilinx_axienet"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 

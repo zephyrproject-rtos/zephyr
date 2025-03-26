@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -132,7 +133,7 @@ struct rtc_stm32_alrm {
 #endif /* STM32_RTC_ALARM_ENABLED */
 
 struct rtc_stm32_data {
-	struct k_mutex lock;
+	struct k_spinlock lock;
 #ifdef STM32_RTC_ALARM_ENABLED
 	struct rtc_stm32_alrm rtc_alrm_a;
 	struct rtc_stm32_alrm rtc_alrm_b;
@@ -335,7 +336,7 @@ static int rtc_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
-	struct rtc_stm32_data *data = dev->data;
+	__maybe_unused struct rtc_stm32_data *data = dev->data;
 
 	int err = 0;
 
@@ -379,8 +380,6 @@ static int rtc_stm32_init(const struct device *dev)
 		/* Do nothing - loop itself burns enough cycles */
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
-
-	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
@@ -426,11 +425,11 @@ static int rtc_stm32_init(const struct device *dev)
 
 	ll_func_exti_enable_rtc_alarm_it(RTC_STM32_EXTI_LINE);
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-	memset(&(data->rtc_alrm_a), 0, sizeof(struct rtc_stm32_alrm));
-	memset(&(data->rtc_alrm_b), 0, sizeof(struct rtc_stm32_alrm));
-	k_mutex_unlock(&data->lock);
-#endif /* STM32_RTC_ALARM_ENABLED */
+	K_SPINLOCK(&data->lock) {
+		memset(&(data->rtc_alrm_a), 0, sizeof(struct rtc_stm32_alrm));
+		memset(&(data->rtc_alrm_b), 0, sizeof(struct rtc_stm32_alrm));
+	}
+#endif /* CONFIG_RTC_ALARM */
 
 	return err;
 }
@@ -441,7 +440,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_TimeTypeDef rtc_time;
 	LL_RTC_DateTypeDef rtc_date;
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
-	int err = 0;
 
 	if (real_year < RTC_YEAR_REF) {
 		/* RTC does not support years before 2000 */
@@ -453,22 +451,10 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&data->lock, K_NO_WAIT);
-	if (err) {
-		return err;
-	}
-
-	LOG_DBG("Setting clock");
-
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
-
 	/* Enter Init mode inside the LL_RTC_Time and Date Init functions */
 	rtc_time.Hours = bin2bcd(timeptr->tm_hour);
 	rtc_time.Minutes = bin2bcd(timeptr->tm_min);
 	rtc_time.Seconds = bin2bcd(timeptr->tm_sec);
-	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 
 	/* Set Date after Time to be sure the DR is correctly updated on stm32F2 serie. */
 	rtc_date.Year = bin2bcd((real_year - RTC_YEAR_REF));
@@ -478,6 +464,16 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	/* WeekDay sunday (tm_wday = 0) is not represented by the same value in hardware,
 	 * all the other values are consistent with what is expected by hardware.
 	 */
+
+	LOG_DBG("Setting clock");
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
+	LL_PWR_EnableBkUpAccess();
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+
+	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 	LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_date);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
@@ -494,8 +490,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F2X */
 
-	k_mutex_unlock(&data->lock);
-
 	LOG_DBG("Calendar set : %d/%d/%d - %dh%dm%ds",
 			LL_RTC_DATE_GetDay(RTC),
 			LL_RTC_DATE_GetMonth(RTC),
@@ -505,7 +499,9 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 			LL_RTC_TIME_GetSecond(RTC)
 	);
 
-	return err;
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
@@ -524,18 +520,14 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 		return -EINVAL;
 	}
 
-	int err = k_mutex_lock(&data->lock, K_NO_WAIT);
-
-	if (err) {
-		return err;
-	}
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (!LL_RTC_IsActiveFlag_INITS(RTC)) {
 		/* INITS flag is set when the calendar has been initialiazed. This flag is
 		 * reset only on backup domain reset, so it can be read after a system
 		 * reset to check if the calendar has been initialized.
 		 */
-		k_mutex_unlock(&data->lock);
+		k_spin_unlock(&data->lock, key);
 		return -ENODATA;
 	}
 
@@ -555,7 +547,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 		} while (rtc_time != LL_RTC_TIME_Get(RTC));
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
 
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->lock, key);
 
 	/* tm_year is the value since 1900 and Rtc year is from 2000 */
 	timeptr->tm_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + (RTC_YEAR_REF - TM_YEAR_REF);
@@ -757,7 +749,7 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (id == RTC_STM32_ALRM_A) {
 		p_rtc_alrm = &(data->rtc_alrm_a);
@@ -785,7 +777,7 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
 		timeptr->tm_min, timeptr->tm_sec, *mask);
 
 unlock:
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->lock, key);
 
 	return err;
 }
@@ -799,7 +791,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	LL_RTC_TimeTypeDef *p_ll_rtc_alrm_time;
 	int err = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (id == RTC_STM32_ALRM_A) {
 		p_rtc_alrm = &(data->rtc_alrm_a);
@@ -918,7 +910,7 @@ disable_bkup_access:
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 unlock:
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->lock, key);
 
 	if (id == RTC_STM32_ALRM_A) {
 		LOG_DBG("Alarm A : %dh%dm%ds   mask = 0x%x",
@@ -946,7 +938,7 @@ static int rtc_stm32_alarm_set_callback(const struct device *dev, uint16_t id,
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int err = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (id == RTC_STM32_ALRM_A) {
 		p_rtc_alrm = &(data->rtc_alrm_a);
@@ -963,7 +955,7 @@ static int rtc_stm32_alarm_set_callback(const struct device *dev, uint16_t id,
 	p_rtc_alrm->user_data = user_data;
 
 unlock:
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->lock, key);
 
 	return err;
 }
@@ -974,7 +966,7 @@ static int rtc_stm32_alarm_is_pending(const struct device *dev, uint16_t id)
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int ret = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (id == RTC_STM32_ALRM_A) {
 		p_rtc_alrm = &(data->rtc_alrm_a);
@@ -992,7 +984,7 @@ static int rtc_stm32_alarm_is_pending(const struct device *dev, uint16_t id)
 	__enable_irq();
 
 unlock:
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->lock, key);
 	return ret;
 }
 #endif /* STM32_RTC_ALARM_ENABLED */

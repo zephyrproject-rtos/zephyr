@@ -110,11 +110,12 @@ struct udc_dwc2_data {
 	struct k_event xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
-	uint32_t txf_set;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	uint32_t rx_siz[16];
+	uint16_t txf_set;
+	uint16_t pending_tx_flush;
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
@@ -668,7 +669,32 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 	/* Clear NAK and set endpoint enable */
 	doepctl = sys_read32(doepctl_reg);
-	doepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+	doepctl |= USB_DWC2_DEPCTL_EPENA;
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_data *data = dev->data;
+
+		/* During OUT Data Stage every packet has to have CNAK set.
+		 * In Buffer DMA mode the OUT endpoint is armed during IN Data
+		 * Stage to accept either Status stage or new SETUP token. The
+		 * Status stage (premature or not) can only be received if CNAK
+		 * was set. In Completer mode the OUT endpoint armed during OUT
+		 * Status stage needs CNAK.
+		 *
+		 * Setting CNAK in other cases opens up possibility for Buffer
+		 * DMA controller to lock up completely if the endpoint is
+		 * enabled (to receive SETUP data) when the host is transmitting
+		 * subsequent control transfer OUT Data Stage packet (SETUP DATA
+		 * is unconditionally ACKed regardless of software state).
+		 */
+		if (data->stage == CTRL_PIPE_STAGE_DATA_OUT ||
+		    data->stage == CTRL_PIPE_STAGE_DATA_IN ||
+		    data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
+			doepctl |= USB_DWC2_DEPCTL_CNAK;
+		}
+	} else {
+		/* Non-control endpoint, set CNAK for all transfers */
+		doepctl |= USB_DWC2_DEPCTL_CNAK;
+	}
 
 	if (dwc2_ep_is_iso(cfg)) {
 		xfersize = USB_MPS_TO_TPL(cfg->mps);
@@ -1484,6 +1510,7 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 static void udc_dwc2_ep_disable(const struct device *dev,
 				struct udc_ep_config *const cfg, bool stall)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
@@ -1492,6 +1519,40 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
+
+	if (priv->hibernated) {
+		/* Currently USB stack calls this function while hibernated,
+		 * for example if usbd_disable() is called. We cannot access the
+		 * real registers when hibernated, so just modify backup values
+		 * that will be restored on hibernation exit.
+		 */
+		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+			dxepctl = priv->backup.doepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			} else {
+				dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			}
+
+			priv->backup.doepctl[ep_idx] = dxepctl;
+		} else {
+			dxepctl = priv->backup.diepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			}
+
+			priv->backup.diepctl[ep_idx] = dxepctl;
+
+			priv->pending_tx_flush |= BIT(usb_dwc2_get_depctl_txfnum(dxepctl));
+		}
+
+		return;
+	}
 
 	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
@@ -1624,15 +1685,6 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 
 	sys_write32(dxepctl, dxepctl_reg);
 	dwc2_set_epint(dev, cfg, false);
-
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		struct net_buf *buf = udc_buf_get_all(dev, cfg->addr);
-
-		/* Release the buffer allocated in dwc2_ctrl_feed_dout() */
-		if (buf) {
-			net_buf_unref(buf);
-		}
-	}
 
 	return 0;
 }
@@ -1839,10 +1891,16 @@ static int dwc2_core_soft_reset(const struct device *dev)
 		}
 
 		k_busy_wait(1);
+
+		if (dwc2_quirk_is_phy_clk_off(dev)) {
+			/* Software reset won't finish without PHY clock */
+			return -EIO;
+		}
 	} while (sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRST &&
 		 !(sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRSTDONE));
 
-	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST | USB_DWC2_GRSTCTL_CSFTRSTDONE);
+	/* CSFTRSTDONE is W1C so the write must have the bit set to clear it */
+	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST);
 
 	return 0;
 }
@@ -2141,10 +2199,9 @@ static int udc_dwc2_disable(const struct device *dev)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
+	struct net_buf *buf;
 	int err;
 
-	/* Enable soft disconnect */
-	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Disable device %p", dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
@@ -2162,9 +2219,26 @@ static int udc_dwc2_disable(const struct device *dev)
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
 		priv->hibernated = 0;
+		priv->pending_tx_flush = 0;
 	}
 
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
+	/* Enable soft disconnect */
+	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
+
+	/* OUT endpoint 0 cannot be disabled by software. The buffer allocated
+	 * in dwc2_ctrl_feed_dout() can only be freed after core reset if the
+	 * core was in Buffer DMA mode.
+	 *
+	 * Soft Reset does timeout if PHY clock is not running. However, just
+	 * triggering Soft Reset seems to be enough on shutdown clean up.
+	 */
+	dwc2_core_soft_reset(dev);
+	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	if (buf) {
+		net_buf_unref(buf);
+	}
 
 	err = dwc2_quirk_disable(dev);
 	if (err) {
@@ -2926,6 +3000,13 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 		}
 	}
+
+	while (priv->pending_tx_flush) {
+		unsigned int fifo = find_lsb_set(priv->pending_tx_flush) - 1;
+
+		priv->pending_tx_flush &= ~BIT(fifo);
+		dwc2_flush_tx_fifo(dev, fifo);
+	}
 }
 
 static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
@@ -2970,8 +3051,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 		if (!priv->hibernated) {
 			LOG_DBG("New transfer(s) in the queue");
-			eps = k_event_test(&priv->xfer_new, UINT32_MAX);
-			k_event_clear(&priv->xfer_new, eps);
+			eps = k_event_clear(&priv->xfer_new, UINT32_MAX);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
@@ -2993,8 +3073,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 
 		if (!priv->hibernated) {
-			eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
-			k_event_clear(&priv->xfer_finished, eps);
+			eps = k_event_clear(&priv->xfer_finished, UINT32_MAX);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;

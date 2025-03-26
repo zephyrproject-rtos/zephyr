@@ -67,7 +67,7 @@
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
-		KEEP(*(SORT(.z_init_[_A-Z0-9]*)))
+		KEEP(*(SORT(.z_init_*)))
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 

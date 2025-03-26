@@ -34,16 +34,10 @@ static inline int64_t ts_to_ns(const struct timespec *ts)
 	return ts->tv_sec * NSEC_PER_SEC + ts->tv_nsec;
 }
 
-static inline void tv_to_ts(const struct timeval *tv, struct timespec *ts)
-{
-	ts->tv_sec = tv->tv_sec;
-	ts->tv_nsec = tv->tv_usec * NSEC_PER_USEC;
-}
-
 #define _tp_op(_a, _b, _op) (ts_to_ns(_a) _op ts_to_ns(_b))
 
 #define _decl_op(_type, _name, _op)                                                                \
-	static inline _type _name(const struct timespec *_a, const struct timespec *_b)            \
+	__used static inline _type _name(const struct timespec *_a, const struct timespec *_b)     \
 	{                                                                                          \
 		return _tp_op(_a, _b, _op);                                                        \
 	}
@@ -56,8 +50,8 @@ _decl_op(bool, tp_ge, >=);     /* a >= b */
 _decl_op(int64_t, tp_diff, -); /* a - b */
 
 /* lo <= (a - b) < hi */
-static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct timespec *b,
-				       int64_t lo, int64_t hi)
+__used static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct timespec *b,
+					      int64_t lo, int64_t hi)
 {
 	int64_t diff = tp_diff(a, b);
 

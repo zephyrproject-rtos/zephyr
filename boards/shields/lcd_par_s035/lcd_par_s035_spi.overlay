@@ -1,0 +1,68 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/spi/spi.h>
+
+/{
+	chosen {
+		zephyr,display = &st7796s;
+		zephyr,touch = &gt911_lcd_par_s035;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_lcd_par_s035>;
+		swap-xy;
+		invert-y;
+	};
+};
+
+&nxp_pmod_touch_panel_i2c {
+	status = "okay";
+
+	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&nxp_lcd_pmod_connector 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&zephyr_mipi_dbi_spi {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	st7796s: st7796s@0 {
+		compatible = "sitronix,st7796s";
+		reg = <0>;
+		/*
+		 * Display supports minimum write cycle time of 66ns. This
+		 * means we can clock the LCDIC module at 30MHz, as
+		 * the minimum write duration will be 2x the module
+		 * clock. Note that this frequency is too fast for reading
+		 * from the display module
+		 */
+		mipi-max-frequency = <30000000>;
+		mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+		duplex = <SPI_HALF_DUPLEX>;
+		height = <320>;
+		width = <480>;
+		invert-mode = "1-dot";
+		frmctl1 = [80 10];
+		bpc = [1F 50 00 20];
+		dfc = [8A 07 3B];
+		pwr1 = [80 64];
+		pwr2 = <0x13>;
+		pwr3 = <0xA7>;
+		vcmpctl = <0x09>;
+		doca = [40 8A 00 00 29 19 A5 33];
+		pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+		madctl = <0x28>;
+		color-invert;
+	};
+};

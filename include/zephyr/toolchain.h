@@ -126,28 +126,6 @@
 #endif
 
 /**
- * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
- * @brief Begin of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#endif
-
-/**
- * @def TOOLCHAIN_IGNORE_WSHADOW_END
- * @brief End of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_END
-#define TOOLCHAIN_IGNORE_WSHADOW_END
-#endif
-
-/**
  * @def TOOLCHAIN_PRAGMA
  * @brief Helper for using pragma in macros.
  */
@@ -320,6 +298,24 @@
  */
 #ifndef TOOLCHAIN_ENABLE_GCC_WARNING
 #define TOOLCHAIN_ENABLE_GCC_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_IAR_WARNING
+ * @brief Disable the specified compiler warning for IAR compilers.
+ */
+#ifndef TOOLCHAIN_DISABLE_IAR_WARNING
+#define TOOLCHAIN_DISABLE_IAR_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_IAR_WARNING
+ * @brief Re-enable the specified compiler warning for IAR compilers.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_IAR_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_IAR_WARNING
+#define TOOLCHAIN_ENABLE_IAR_WARNING(warning)
 #endif
 
 /*

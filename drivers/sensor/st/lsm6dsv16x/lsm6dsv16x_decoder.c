@@ -66,7 +66,7 @@ static const uint32_t sflp_period_ns[] = {
  * Expand val to q31_t according to its range; this is achieved multiplying by 2^31/2^range.
  */
 #define Q31_SHIFT_VAL(val, range) \
-	(q31_t) (round((val) * ((int64_t)1 << (31 - (range)))))
+	(q31_t) (roundf((val) * ((int64_t)1 << (31 - (range)))))
 
 /*
  * Expand micro_val (a generic micro unit) to q31_t according to its range; this is achieved
@@ -75,12 +75,18 @@ static const uint32_t sflp_period_ns[] = {
 #define Q31_SHIFT_MICROVAL(micro_val, range) \
 	(q31_t) ((int64_t)(micro_val) * ((int64_t)1 << (31 - (range))) / 1000000LL)
 
-/* bit range for Accelerometer for a given fs */
+/* bit range for Accelerometer for a given accel_fs_idx value */
 static const int8_t accel_range[] = {
-	[LSM6DSV16X_DT_FS_2G] = 5,
-	[LSM6DSV16X_DT_FS_4G] = 6,
-	[LSM6DSV16X_DT_FS_8G] = 7,
-	[LSM6DSV16X_DT_FS_16G] = 8,
+	/* LSM6DSV16X_DT_FS_2G */
+	5,
+	/* LSM6DSV16X_DT_FS_4G / LSM6DSV32X_DT_FS_4G*/
+	6,
+	/* LSM6DSV16X_DT_FS_8G / LSM6DSV32X_DT_FS_8G */
+	7,
+	/* LSM6DSV16X_DT_FS_16G / LSM6DSV32X_DT_FS_16G */
+	8,
+	/* LSM6DSV32X_DT_FS_32G */
+	9,
 };
 
 /* bit range for Gyroscope for a given fs */
@@ -108,14 +114,20 @@ static const int8_t temp_range = 9;
 	(int32_t)((ug_lsb) * SENSOR_G / 1000000LL)
 
 /*
- * Accelerometer scaling factors table (indexed by full scale)
+ * Accelerometer scaling factors table for a given accel_fs_idx value
  * GAIN_UNIT_XL is expressed in ug/LSB.
  */
 static const int32_t accel_scaler[] = {
-	[LSM6DSV16X_DT_FS_2G] = SENSOR_SCALE_UG_TO_UMS2(GAIN_UNIT_XL),
-	[LSM6DSV16X_DT_FS_4G] = SENSOR_SCALE_UG_TO_UMS2(2 * GAIN_UNIT_XL),
-	[LSM6DSV16X_DT_FS_8G] = SENSOR_SCALE_UG_TO_UMS2(4 * GAIN_UNIT_XL),
-	[LSM6DSV16X_DT_FS_16G] = SENSOR_SCALE_UG_TO_UMS2(8 * GAIN_UNIT_XL),
+	/* LSM6DSV16X_DT_FS_2G */
+	SENSOR_SCALE_UG_TO_UMS2(GAIN_UNIT_XL),
+	/* LSM6DSV16X_DT_FS_4G / LSM6DSV32X_DT_FS_4G */
+	SENSOR_SCALE_UG_TO_UMS2(2 * GAIN_UNIT_XL),
+	/* LSM6DSV16X_DT_FS_8G / LSM6DSV32X_DT_FS_8G*/
+	SENSOR_SCALE_UG_TO_UMS2(4 * GAIN_UNIT_XL),
+	/* LSM6DSV16X_DT_FS_16G / LSM6DSV32X_DT_FS_16G */
+	SENSOR_SCALE_UG_TO_UMS2(8 * GAIN_UNIT_XL),
+	/* LSM6DSV32X_DT_FS_32G */
+	SENSOR_SCALE_UG_TO_UMS2(16 * GAIN_UNIT_XL),
 };
 
 /* Calculate scaling factor to transform micro-dps/LSB unit into micro-rads/LSB */
@@ -318,7 +330,7 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 		case LSM6DSV16X_XL_NC_TAG: {
 			struct sensor_three_axis_data *out = data_out;
 			int16_t x, y, z;
-			const int32_t scale = accel_scaler[header->accel_fs];
+			const int32_t scale = accel_scaler[header->accel_fs_idx];
 
 			xl_count++;
 			if ((uintptr_t)buffer < *fit) {
@@ -339,7 +351,7 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			y = *(int16_t *)&buffer[3];
 			z = *(int16_t *)&buffer[5];
 
-			out->shift = accel_range[header->accel_fs];
+			out->shift = accel_range[header->accel_fs_idx];
 
 			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
 			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
@@ -561,7 +573,7 @@ static int lsm6dsv16x_decode_sample(const uint8_t *buffer, struct sensor_chan_sp
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ: {
-		const int32_t scale = accel_scaler[header->accel_fs];
+		const int32_t scale = accel_scaler[header->accel_fs_idx];
 
 		if (edata->has_accel == 0) {
 			return -ENODATA;
@@ -572,7 +584,7 @@ static int lsm6dsv16x_decode_sample(const uint8_t *buffer, struct sensor_chan_sp
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		out->shift = accel_range[header->accel_fs];
+		out->shift = accel_range[header->accel_fs_idx];
 
 		out->readings[0].x = Q31_SHIFT_MICROVAL(scale * edata->acc[0], out->shift);
 		out->readings[0].y = Q31_SHIFT_MICROVAL(scale * edata->acc[1], out->shift);

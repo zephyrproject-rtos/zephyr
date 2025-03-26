@@ -595,12 +595,14 @@ class TestPlan:
 
     def handle_quarantined_tests(self, instance: TestInstance, plat: Platform):
         if self.quarantine:
-            simulator = plat.simulator_by_name(self.options)
+            sim_name = plat.simulation
+            if sim_name != "na" and (simulator := plat.simulator_by_name(self.options.sim_name)):
+                sim_name = simulator.name
             matched_quarantine = self.quarantine.get_matched_quarantine(
                 instance.testsuite.id,
                 plat.name,
                 plat.arch,
-                simulator.name if simulator is not None else 'na'
+                sim_name
             )
             if matched_quarantine and not self.options.quarantine_verify:
                 instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
@@ -733,7 +735,7 @@ class TestPlan:
             logger.info("Selecting default platforms per testsuite scenario")
             default_platforms = True
         elif emu_filter:
-            logger.info("Selecting emulation platforms per testsuite scenraio")
+            logger.info("Selecting emulation platforms per testsuite scenario")
             emulation_platforms = True
         elif vendor_filter:
             vendor_platforms = True
@@ -767,32 +769,35 @@ class TestPlan:
             platforms = self.platforms
 
         platform_config = self.test_config.get('platforms', {})
+        # test configuration options
+        test_config_options = self.test_config.get('options', {})
+        integration_mode_list = test_config_options.get('integration_mode', [])
+
         logger.info("Building initial testsuite list...")
 
         keyed_tests = {}
-
         for _, ts in self.testsuites.items():
-            if (
-                ts.build_on_all
-                and not platform_filter
-                and platform_config.get('increased_platform_scope', True)
-            ):
-                platform_scope = self.platforms
-            elif ts.integration_platforms:
-                integration_platforms = list(
+            if ts.integration_platforms:
+                _integration_platforms = list(
                     filter(lambda item: item.name in ts.integration_platforms, self.platforms)
                 )
-                if self.options.integration:
-                    platform_scope = integration_platforms
+            else:
+                _integration_platforms = []
+
+            if (ts.build_on_all and not platform_filter and
+                platform_config.get('increased_platform_scope', True)):
+                # if build_on_all is set, we build on all platforms
+                platform_scope = self.platforms
+            elif ts.integration_platforms and self.options.integration:
+                # if integration is set, we build on integration platforms
+                platform_scope = _integration_platforms
+            elif ts.integration_platforms and not platform_filter:
+                # if integration platforms are set, we build on those and integration mode is set
+                # for this test suite, we build on integration platforms
+                if any(ts.id.startswith(i) for i in integration_mode_list):
+                    platform_scope = _integration_platforms
                 else:
-                    platform_scope = platforms
-                    if not platform_filter:
-                        tco = self.test_config.get('options', {})
-                        im = tco.get('integration_mode', [])
-                        if any(ts.id.startswith(i) for i in im):
-                            platform_scope = integration_platforms
-                        else:
-                            platform_scope += integration_platforms
+                    platform_scope = platforms + _integration_platforms
             else:
                 platform_scope = platforms
 

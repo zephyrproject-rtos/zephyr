@@ -50,6 +50,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			scmi_devpd: protocol@11 {
+				compatible = "arm,scmi-power";
+				reg = <0x11>;
+				#power-domain-cells = <1>;
+			};
+
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;
@@ -458,6 +464,72 @@
 			reg = <0x44610000 DT_SIZE_K(4)>;
 			interrupts = <205 0>;
 			#mbox-cells = <1>;
+		};
+
+		mu7: mailbox@42440000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42440000 DT_SIZE_K(4)>;
+			interrupts = <207 0>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		irqsteer: interrupt-controller@44680000 {
+			compatible = "nxp,irqsteer-intc";
+			reg = <0x44680000 DT_SIZE_K(64)>;
+
+			#size-cells = <0>;
+			#address-cells = <1>;
+
+			irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				interrupts-extended = <&nvic 224 0>;
+			};
+		};
+
+		netc: ethernet@4ca00000 {
+			reg = <0x4ca00000 0x1000000>;
+			interrupt-parent = <&irqsteer_master0>;
+			interrupts = <13 0 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			emdio: mdio@4cce0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cce0000 0x1c44>;
+				clocks = <&scmi_clk IMX95_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			enetc_psi0: ethernet@4cc00000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc00000 0x10000>;
+				mac-index = <0>;
+				si-index = <0>;
+				status = "disabled";
+			};
+
+			enetc_psi1: ethernet@4cc40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc40000 0x10000>;
+				mac-index = <1>;
+				si-index = <1>;
+				status = "disabled";
+			};
+
+			enetc_psi2: ethernet@4cc80000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc80000 0x10000>;
+				mac-index = <2>;
+				si-index = <2>;
+				status = "disabled";
+			};
 		};
 	};
 };

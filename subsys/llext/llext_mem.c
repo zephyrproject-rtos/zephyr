@@ -71,7 +71,34 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	}
 	ext->mem_size[mem_idx] = region_alloc;
 
-	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+	/*
+	 * Calculate the minimum region size and alignment that can satisfy
+	 * MMU/MPU requirements. This only applies to regions that contain
+	 * program-accessible data (not to string tables, for example).
+	 */
+	if (region->sh_flags & SHF_ALLOC) {
+		if (IS_ENABLED(CONFIG_ARM_MPU)) {
+			/* On ARM with an MPU, regions must be sized and
+			 * aligned to the same power of two (larger than 32).
+			 */
+			uintptr_t block_sz = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
+
+			block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
+			region_alloc = block_sz;
+			region_align = block_sz;
+		} else if (IS_ENABLED(CONFIG_MMU)) {
+			/* MMU targets map memory in page-sized chunks. Round
+			 * the region to multiples of those.
+			 */
+			region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+			region_align = MAX(region_align, LLEXT_PAGE_SIZE);
+		}
+	}
+
+	if (ldr->storage == LLEXT_STORAGE_WRITABLE ||           /* writable storage         */
+	    (ldr->storage == LLEXT_STORAGE_PERSISTENT &&        /* || persistent storage    */
+	     !(region->sh_flags & SHF_WRITE) &&                 /*    && read-only region   */
+	     !(region->sh_flags & SHF_LLEXT_HAS_RELOCS))) {     /*    && no relocs to apply */
 		/*
 		 * Try to reuse data areas from the ELF buffer, if possible.
 		 * If any of the following tests fail, a normal allocation
@@ -114,24 +141,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		return -EFAULT;
 	}
 
-	/*
-	 * Calculate the desired region size and alignment for a new allocation.
-	 */
-	if (IS_ENABLED(CONFIG_ARM_MPU)) {
-		/* On ARM with an MPU, regions must be sized and aligned to the same
-		 * power of two (larger than 32).
-		 */
-		uintptr_t block_size = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
-
-		block_size = 1 << LOG2CEIL(block_size); /* align to next power of two */
-		region_alloc = block_size;
-		region_align = block_size;
-	} else {
-		/* Otherwise, round the region to multiples of LLEXT_PAGE_SIZE. */
-		region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
-		region_align = MAX(region_align, LLEXT_PAGE_SIZE);
-	}
-
+	/* Allocate a suitably aligned area for the region. */
 	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
 	if (!ext->mem[mem_idx]) {
 		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
@@ -269,8 +279,9 @@ void llext_free_regions(struct llext *ext)
 {
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
-		if (ext->mmu_permissions_set && ext->mem_size[i] != 0) {
-			/* restore default RAM permissions */
+		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
+		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA)) {
+			/* restore default RAM permissions of changed regions */
 			k_mem_update_flags(ext->mem[i],
 					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),
 					   K_MEM_PERM_RW);

@@ -299,6 +299,7 @@ BeagleBoard Platforms:
     - ayush1325
     - con-pax
     - vaishnavachath
+    - glneo
   files:
     - boards/beagle/
   labels:
@@ -364,9 +365,9 @@ Bluetooth Controller:
     - carlescufi
     - thoh-ot
     - ppryga
-    - mtpr-ot
     - wopu-ot
     - erbr-ot
+    - Tronil
   files:
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/img/ctlr*
@@ -438,6 +439,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
     - tests/bluetooth/audio/
+    - tests/bluetooth/classic/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
@@ -534,6 +536,7 @@ Bluetooth Classic:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
+    - tests/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
@@ -975,6 +978,7 @@ Display drivers:
   collaborators:
     - jfischer-no
     - danieldegrasse
+    - VynDragon
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -3249,6 +3253,7 @@ RISCV arch:
     - carlocaione
     - npitre
     - ycsin
+    - VynDragon
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -4246,6 +4251,7 @@ TI K3 Platforms:
   collaborators:
     - gramsay0
     - dnltz
+    - glneo
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
@@ -5000,9 +5006,6 @@ West:
     - bperseghetti
   files:
     - modules/hal_nxp/
-    - modules/Kconfig.imx
-    - modules/Kconfig.mcux
-    - modules/Kconfig.nxp_s32
   labels:
     - "platform: NXP"
 
@@ -5127,6 +5130,8 @@ West:
   maintainers:
     - nzmichaelh
     - kholia
+  collaborators:
+    - VynDragon
   files:
     - modules/hal_wch/
 

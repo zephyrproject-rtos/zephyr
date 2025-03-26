@@ -7,6 +7,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,7 +216,8 @@ static inline int check_ip(struct net_pkt *pkt)
 	family = net_pkt_family(pkt);
 	ret = 0;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IPV6) {
 		/* Drop IPv6 packet if hop limit is 0 */
 		if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
 			NET_DBG("DROP: IPv6 hop limit");
@@ -288,7 +290,8 @@ static inline int check_ip(struct net_pkt *pkt)
 			goto drop;
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET &&
+		   net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		/* Drop IPv4 packet if ttl is 0 */
 		if (NET_IPV4_HDR(pkt)->ttl == 0) {
 			NET_DBG("DROP: IPv4 ttl");
@@ -363,6 +366,34 @@ drop:
 	return ret;
 }
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+static inline bool process_multicast(struct net_pkt *pkt)
+{
+	struct net_context *ctx = net_pkt_context(pkt);
+	sa_family_t family = net_pkt_family(pkt);
+
+	if (ctx == NULL) {
+		return false;
+	}
+
+#if defined(CONFIG_NET_IPV4)
+	if (family == AF_INET) {
+		const struct in_addr *dst = (const struct in_addr *)&NET_IPV4_HDR(pkt)->dst;
+
+		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
+	}
+#endif
+#if defined(CONFIG_NET_IPV6)
+	if (family == AF_INET6) {
+		const struct in6_addr *dst = (const struct in6_addr *)&NET_IPV6_HDR(pkt)->dst;
+
+		return net_ipv6_is_addr_mcast(dst) && net_context_get_ipv6_mcast_loop(ctx);
+	}
+#endif
+	return false;
+}
+#endif
+
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	int status;
@@ -391,6 +422,7 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * we just silently drop the packet by returning 0.
 		 */
 		if (status == -ENOMSG) {
+			net_pkt_unref(pkt);
 			ret = 0;
 			goto err;
 		}
@@ -405,6 +437,35 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		ret = 0;
 		goto err;
 	}
+
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+	if (process_multicast(pkt)) {
+		struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
+
+		if (clone != NULL) {
+			net_pkt_set_iface(clone, net_pkt_iface(pkt));
+			if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
+				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+					switch (net_pkt_family(pkt)) {
+#if defined(CONFIG_NET_IPV4)
+					case AF_INET:
+						net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+						break;
+#endif
+#if defined(CONFIG_NET_IPV6)
+					case AF_INET6:
+						net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+						break;
+#endif
+					}
+				}
+				net_pkt_unref(clone);
+			}
+		} else {
+			NET_DBG("Failed to clone multicast packet");
+		}
+	}
+#endif
 
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;

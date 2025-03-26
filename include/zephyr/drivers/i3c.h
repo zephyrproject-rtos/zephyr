@@ -854,7 +854,7 @@ __subsystem struct i3c_driver_api {
  */
 struct i3c_device_id {
 	/** Device Provisioned ID */
-	const uint64_t pid:48;
+	uint64_t pid:48;
 };
 
 /**
@@ -890,13 +890,13 @@ struct i3c_device_desc {
 	sys_snode_t node;
 
 	/** I3C bus to which this target device is attached */
-	const struct device * const bus;
+	const struct device *bus;
 
 	/** Device driver instance of the I3C device */
-	const struct device * const dev;
+	const struct device *dev;
 
 	/** Device Provisioned ID */
-	const uint64_t pid;
+	uint64_t pid;
 
 	/**
 	 * Static address for this target device.
@@ -910,7 +910,7 @@ struct i3c_device_desc {
 	 * device (as both are to tell target device to use static
 	 * address as dynamic address).
 	 */
-	const uint8_t static_addr;
+	uint8_t static_addr;
 
 	/**
 	 * Initial dynamic address.
@@ -945,18 +945,6 @@ struct i3c_device_desc {
 	 * 0 if address has not been assigned.
 	 */
 	uint8_t dynamic_addr;
-
-#if defined(CONFIG_I3C_USE_GROUP_ADDR) || defined(__DOXYGEN__)
-	/**
-	 * Group address for this target device. Set during:
-	 * - Reset Group Address(es) (RSTGRPA)
-	 * - Set Group Address (SETGRPA)
-	 *
-	 * 0 if group address has not been assigned.
-	 * Only available if @kconfig{CONFIG_I3C_USE_GROUP_ADDR} is set.
-	 */
-	uint8_t group_addr;
-#endif /* CONFIG_I3C_USE_GROUP_ADDR */
 
 	/**
 	 * Bus Characteristic Register (BCR)
@@ -1107,13 +1095,13 @@ struct i3c_i2c_device_desc {
 	const struct device *bus;
 
 	/** Static address for this I2C device. */
-	const uint16_t addr;
+	uint16_t addr;
 
 	/**
 	 * Legacy Virtual Register (LVR)
 	 * @see @ref I3C_LVR
 	 */
-	const uint8_t lvr;
+	uint8_t lvr;
 
 	/** @cond INTERNAL_HIDDEN */
 	/**

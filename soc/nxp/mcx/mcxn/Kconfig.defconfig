@@ -3,6 +3,9 @@
 
 if SOC_SERIES_MCXN
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 
@@ -11,9 +14,6 @@ config NUM_IRQS
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
-
-config ZTEST_NO_YIELD
-	default y if (PM && ZTEST)
 
 config MCUX_LPTMR_TIMER
 	default n if (DT_HAS_NXP_OS_TIMER_ENABLED || DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED)

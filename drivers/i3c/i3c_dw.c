@@ -2352,6 +2352,9 @@ static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action
 
 static DEVICE_API(i3c, dw_i3c_api) = {
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 
 	.configure = dw_i3c_configure,
 	.config_get = dw_i3c_config_get,
@@ -2377,6 +2380,10 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.ibi_disable = dw_i3c_controller_disable_ibi,
 	.ibi_raise = dw_i3c_target_ibi_raise,
 #endif /* CONFIG_I3C_USE_IBI */
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
+#endif
 };
 
 #define I3C_DW_IRQ_HANDLER(n)                                                                      \

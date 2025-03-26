@@ -105,7 +105,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: orthosie1ev
+   :board: we_orthosie1ev
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -154,16 +154,16 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: orthosie1ev
+   :board: we_orthosie1ev
    :goals: build
 
-The usual ``flash`` target will work with the ``orthosie1ev`` board
+The usual ``flash`` target will work with the ``we_orthosie1ev`` board
 configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: orthosie1ev
+   :board: we_orthosie1ev
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -178,7 +178,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! orthosie1ev
+   Hello World! we_orthosie1ev
 
 Debugging
 *********
@@ -195,7 +195,7 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: orthosie1ev
+   :board: we_orthosie1ev
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -203,7 +203,7 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: orthosie1ev
+   :board: we_orthosie1ev
    :goals: debug
 
 References

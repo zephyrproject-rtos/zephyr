@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <neorv32.dtsi>
+#include <mem.h>
+
+/ {
+	model = "NEORV32 UP5KDemo";
+	compatible = "neorv32";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+	};
+
+	chosen {
+		zephyr,flash = &imem;
+		zephyr,sram = &dmem;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED_0";
+		};
+
+		led1: led1 {
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			label = "LED_1";
+		};
+
+		led2: led2 {
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			label = "LED_2";
+		};
+
+		led3: led3 {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "LED_3";
+		};
+	};
+};
+
+&cpu0 {
+	riscv,isa = "rv32im_zicsr_zifencei";
+};
+
+&bootrom {
+	status = "okay";
+};
+
+&imem {
+	status = "okay";
+	reg = <0x0 DT_SIZE_K(64)>;
+};
+
+&dmem {
+	status = "okay";
+	reg = <0x80000000 DT_SIZE_K(64)>;
+};
+
+&clint {
+	status = "okay";
+};
+
+&mtimer {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <19200>;
+};
+
+&gpio {
+	status = "okay";
+	ngpios = <32>;
+};

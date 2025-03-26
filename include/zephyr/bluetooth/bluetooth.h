@@ -61,9 +61,9 @@ extern "C" {
  */
 
 /**
- * Convenience macro for specifying the default identity. This helps
- * make the code more readable, especially when only one identity is
- * supported.
+ * Identity handle referring to the first identity address. This is a convenience macro for
+ * specifying the default identity address. This helps make the code more readable, especially when
+ * only one identity address is supported.
  */
 #define BT_ID_DEFAULT 0
 
@@ -95,7 +95,12 @@ struct bt_df_per_adv_sync_iq_samples_report;
  * @note Used in @ref bt_le_ext_adv_cb.
  */
 struct bt_le_ext_adv_sent_info {
-	/** The number of advertising events completed. */
+	/**
+	 * If the advertising set was started with a non-zero
+	 * @ref bt_le_ext_adv_start_param.num_events, this field
+	 * contains the number of times this advertising set has
+	 * been sent since it was enabled.
+	 */
 	uint8_t num_sent;
 };
 
@@ -193,12 +198,11 @@ struct bt_le_per_adv_response_info {
  */
 struct bt_le_ext_adv_cb {
 	/**
-	 * @brief The advertising set has finished sending adv data.
+	 * @brief The advertising set was disabled after reaching limit
 	 *
-	 * This callback notifies the application that the advertising set has
-	 * finished sending advertising data.
-	 * The advertising set can either have been stopped by a timeout or
-	 * because the specified number of advertising events has been reached.
+	 * This callback is invoked when the limit set in
+	 * @ref bt_le_ext_adv_start_param.timeout or
+	 * @ref bt_le_ext_adv_start_param.num_events is reached.
 	 *
 	 * @param adv  The advertising set object.
 	 * @param info Information about the sent event.
@@ -312,7 +316,7 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Disable Bluetooth. Can't be called before bt_enable has completed.
  *
- * This API will clear all configured identities and keys that are not persistently
+ * This API will clear all configured identity addresses and keys that are not persistently
  * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
  * with settings_load() before reenabling the stack.
  *
@@ -392,36 +396,35 @@ uint16_t bt_get_appearance(void);
 int bt_set_appearance(uint16_t new_appearance);
 
 /**
- * @brief Get the currently configured identities.
+ * @brief Get the currently configured identity addresses.
  *
  * Returns an array of the currently configured identity addresses. To
- * make sure all available identities can be retrieved, the number of
+ * make sure all available identity addresses can be retrieved, the number of
  * elements in the @a addrs array should be CONFIG_BT_ID_MAX. The identity
- * identifier that some APIs expect (such as advertising parameters) is
- * simply the index of the identity in the @a addrs array.
+ * handle that some APIs expect (such as @ref bt_le_adv_param) is
+ * simply the index of the identity address in the @a addrs array.
  *
- * If @a addrs is passed as NULL, then returned @a count contains the
- * count of all available identities that can be retrieved with a
+ * If @a addrs is passed as NULL, then the returned @a count contains the
+ * count of all available identity addresses that can be retrieved with a
  * subsequent call to this function with non-NULL @a addrs parameter.
  *
- * @note Deleted identities may show up as @ref BT_ADDR_LE_ANY in the returned
- * array.
+ * @note Deleted identity addresses may show up as @ref BT_ADDR_LE_ANY in the returned array.
  *
- * @param addrs Array where to store the configured identities.
- * @param count Should be initialized to the array size. Once the function
- *              returns it will contain the number of returned identities.
+ * @param addrs Array where to store the configured identity addresses.
+ * @param count Should be initialized to the array size. Once the function returns
+ *              it will contain the number of returned identity addresses.
  */
 void bt_id_get(bt_addr_le_t *addrs, size_t *count);
 
 /**
- * @brief Create a new identity.
+ * @brief Create a new identity address.
  *
- * Create a new identity using the given address and IRK. This function can be
- * called before calling bt_enable(). However, the new identity will only be
+ * Create a new identity address using the given address and IRK. This function can be
+ * called before calling bt_enable(). However, the new identity address will only be
  * stored persistently in flash when this API is used after bt_enable(). The
  * reason is that the persistent settings are loaded after bt_enable() and would
  * therefore cause potential conflicts with the stack blindly overwriting what's
- * stored in flash. The identity will also not be written to flash in case a
+ * stored in flash. The identity address will also not be written to flash in case a
  * pre-defined address is provided, since in such a situation the app clearly
  * has some place it got the address from and will be able to repeat the
  * procedure on every power cycle, i.e. it would be redundant to also store the
@@ -430,11 +433,11 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * Generating random static address or random IRK is not supported when calling
  * this function before bt_enable().
  *
- * If the application wants to have the stack randomly generate identities
+ * If the application wants to have the stack randomly generate identity addresses
  * and store them in flash for later recovery, the way to do it would be
  * to first initialize the stack (using bt_enable), then call settings_load(),
- * and after that check with bt_id_get() how many identities were recovered.
- * If an insufficient amount of identities were recovered the app may then
+ * and after that check with bt_id_get() how many identity addresses were recovered.
+ * If an insufficient amount of identity addresses were recovered the app may then
  * call bt_id_create() to create new ones.
  *
  * If supported by the HCI driver (indicated by setting
@@ -443,71 +446,66 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * before calling bt_enable(). Subsequent calls always add/generate random
  * static addresses.
  *
- * @param addr Address to use for the new identity. If NULL or initialized
- *             to BT_ADDR_LE_ANY the stack will generate a new random
- *             static address for the identity and copy it to the given
- *             parameter upon return from this function (in case the
- *             parameter was non-NULL).
+ * @param addr Address to use for the new identity address. If NULL or initialized
+ *             to BT_ADDR_LE_ANY the stack will generate a new random static address
+ *             for the identity address and copy it to the given parameter upon return
+ *             from this function (in case the parameter was non-NULL).
  * @param irk  Identity Resolving Key (16 bytes) to be used with this
- *             identity. If set to all zeroes or NULL, the stack will
- *             generate a random IRK for the identity and copy it back
+ *             identity address. If set to all zeroes or NULL, the stack will
+ *             generate a random IRK for the identity address and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
  *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
- * @return Identity identifier (>= 0) in case of success, or a negative
- *         error code on failure.
+ * @return Identity handle (>= 0) in case of success, or a negative error code on failure.
  */
 int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
 
 /**
- * @brief Reset/reclaim an identity for reuse.
+ * @brief Reset/reclaim an identity address for reuse.
  *
  * The semantics of the @a addr and @a irk parameters of this function
  * are the same as with bt_id_create(). The difference is the first
- * @a id parameter that needs to be an existing identity (if it doesn't
- * exist this function will return an error). When given an existing
- * identity this function will disconnect any connections created using it,
- * remove any pairing keys or other data associated with it, and then create
- * a new identity in the same slot, based on the @a addr and @a irk
- * parameters.
+ * @a id parameter that needs to be an existing identity handle (if it doesn't
+ * exist this function will return an error). When given an existing identity handle
+ * this function will disconnect any connections (to the corresponding identity address)
+ * created using it, remove any pairing keys or other data associated with it, and then
+ * create a new identity address in the same slot, based on the @a addr and @a irk parameters.
  *
- * @note the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ * @note The default identity address (corresponding to BT_ID_DEFAULT) cannot be reset, and this
  * API will return an error if asked to do that.
  *
- * @param id   Existing identity identifier.
- * @param addr Address to use for the new identity. If NULL or initialized
- *             to BT_ADDR_LE_ANY the stack will generate a new static
- *             random address for the identity and copy it to the given
- *             parameter upon return from this function (in case the
- *             parameter was non-NULL).
+ * @param id   Existing identity handle.
+ * @param addr Address to use for the new identity address. If NULL or initialized
+ *             to BT_ADDR_LE_ANY the stack will generate a new static random
+ *             address for the identity address and copy it to the given
+ *             parameter upon return from this function.
  * @param irk  Identity Resolving Key (16 bytes) to be used with this
- *             identity. If set to all zeroes or NULL, the stack will
- *             generate a random IRK for the identity and copy it back
+ *             identity address. If set to all zeroes or NULL, the stack will
+ *             generate a random IRK for the identity address and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
  *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
- * @return Identity identifier (>= 0) in case of success, or a negative
- *         error code on failure.
+ * @return Identity handle (>= 0) in case of success, or a negative error code on failure.
  */
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
 
 /**
- * @brief Delete an identity.
+ * @brief Delete an identity address.
  *
- * When given a valid identity this function will disconnect any connections
- * created using it, remove any pairing keys or other data associated with
- * it, and then flag is as deleted, so that it can not be used for any
- * operations. To take back into use the slot the identity was occupying the
- * bt_id_reset() API needs to be used.
+ * When given a valid identity handle this function will disconnect any connections
+ * (to the corresponding identity address) created using it, remove any pairing keys
+ * or other data associated with it, and then flag is as deleted, so that it can not
+ * be used for any operations. To take back into use the slot the identity address was
+ * occupying, the bt_id_reset() API needs to be used.
  *
- * @note the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ * @note The default identity address (corresponding to BT_ID_DEFAULT) cannot be deleted, and this
  * API will return an error if asked to do that.
  *
- * @param id   Existing identity identifier.
+ * @param id   Existing identity handle.
  *
  * @return 0 in case of success, or a negative error code on failure.
  */
@@ -904,7 +902,7 @@ enum advertising_options {
 	BT_LE_ADV_OPT_CODED = BIT(12),
 
 	/**
-	 * @brief Advertise without a device address (identity or RPA).
+	 * @brief Advertise without a device address (identity address or RPA).
 	 *
 	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
 	 * set as @ref bt_le_adv_param.options.
@@ -993,7 +991,9 @@ enum advertising_options {
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
 	/**
-	 * @brief Local identity.
+	 * @brief Local identity handle.
+	 *
+	 * The index of the identity address in the local Bluetooth controller.
 	 *
 	 * @note When extended advertising @kconfig{CONFIG_BT_EXT_ADV} is not
 	 *       enabled or not supported by the controller it is not possible
@@ -1554,24 +1554,48 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
  */
 struct bt_le_ext_adv_start_param {
 	/**
-	 * @brief Advertiser timeout (N * 10 ms).
+	 * @brief Maximum advertising set duration (N * 10 ms)
 	 *
-	 * Application will be notified by the advertiser sent callback.
-	 * Set to zero for no timeout.
+	 * The advertising set can be automatically disabled after a
+	 * certain amount of time has passed since it first appeared on
+	 * air.
 	 *
-	 * When using high duty cycle directed connectable advertising then
-	 * this parameters must be set to a non-zero value less than or equal
-	 * to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+	 * Set to zero for no limit. Set in units of 10 ms.
 	 *
-	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the timeout
-	 * must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
+	 * When the advertising set is automatically disabled because of
+	 * this limit, @ref bt_le_ext_adv_cb.sent will be called.
+	 *
+	 * When using high duty cycle directed connectable advertising
+	 * then this parameters must be set to a non-zero value less
+	 * than or equal to the maximum of
+	 * @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+	 *
+	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the
+	 * timeout must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
+	 *
+	 * For background information, see parameter "Duration" in
+	 * Bluetooth Core Specification Version 6.0 Vol. 4 Part E,
+	 * Section 7.8.56.
 	 */
 	uint16_t timeout;
+
 	/**
-	 * @brief Number of advertising events.
+	 * @brief Maximum number of extended advertising events to be
+	 * sent
 	 *
-	 * Application will be notified by the advertisement sent callback, once num_events are
-	 * reached. Set to zero for no limit.
+	 * The advertiser can be automatically disabled once the whole
+	 * advertisement (i.e. extended advertising event) has been sent
+	 * a certain number of times. The number of advertising PDUs
+	 * sent may be higher and is not relevant.
+	 *
+	 * Set to zero for no limit.
+	 *
+	 * When the advertising set is automatically disabled because of
+	 * this limit, @ref bt_le_ext_adv_cb.sent will be called.
+	 *
+	 * For background information, see parameter
+	 * "Max_Extended_Advertising_Events" in Bluetooth Core
+	 * Specification Version 6.0 Vol. 4 Part E, Section 7.8.56.
 	 */
 	uint8_t  num_events;
 };
@@ -1686,7 +1710,7 @@ uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
 
 /** @brief Advertising set info structure. */
 struct bt_le_ext_adv_info {
-	/* Local identity */
+	/** Local identity handle. */
 	uint8_t                    id;
 
 	/** Currently selected Transmit Power (dBM). */
@@ -1717,7 +1741,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * @param addr Advertiser LE address and type.
  * @param rssi Strength of advertiser signal.
  * @param adv_type Type of advertising response from advertiser.
- *                 Uses the BT_GAP_ADV_TYPE_* values.
+ *                 Uses the @ref bt_gap_adv_type values.
  * @param buf Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
@@ -2560,7 +2584,7 @@ struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertising packet type.
 	 *
-	 * Uses the BT_GAP_ADV_TYPE_* value.
+	 * Uses the @ref bt_gap_adv_type value.
 	 *
 	 * May indicate that this is a scan response if the type is
 	 * @ref BT_GAP_ADV_TYPE_SCAN_RSP.
@@ -2570,7 +2594,7 @@ struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertising packet properties bitfield.
 	 *
-	 * Uses the BT_GAP_ADV_PROP_* values.
+	 * Uses the @ref bt_gap_adv_prop values.
 	 * May indicate that this is a scan response if the value contains the
 	 * @ref BT_GAP_ADV_PROP_SCAN_RESPONSE bit.
 	 *
@@ -2720,7 +2744,7 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  *
  * @note The LE scanner by default does not use the Identity Address of the
  *       local device when @kconfig{CONFIG_BT_PRIVACY} is disabled. This is to
- *       prevent the active scanner from disclosing the identity information
+ *       prevent the active scanner from disclosing the identity address information
  *       when requesting additional information from advertisers.
  *       In order to enable directed advertiser reports then
  *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
@@ -2909,12 +2933,12 @@ struct bt_le_oob {
  *       - Creating a connection in progress, wait for the connected callback.
  *      In addition when extended advertising @kconfig{CONFIG_BT_EXT_ADV} is
  *      not enabled or not supported by the controller:
- *       - Advertiser is enabled using a Random Static Identity Address for a
- *         different local identity.
- *       - The local identity conflicts with the local identity used by other
+ *       - Advertiser is enabled using a Random Static Identity Address as a
+ *         different local identity address.
+ *       - The local identity address conflicts with the local identity address used by other
  *         roles.
  *
- * @param[in]  id  Local identity, in most cases BT_ID_DEFAULT.
+ * @param[in]  id  Local identity handle, in most cases BT_ID_DEFAULT.
  * @param[out] oob LE OOB information
  *
  * @return Zero on success or error code otherwise, positive in case of
@@ -2952,7 +2976,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 /**
  * @brief Clear pairing information.
  *
- * @param id    Local identity (mostly just BT_ID_DEFAULT).
+ * @param id    Local identity handle (mostly just BT_ID_DEFAULT).
  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
  *              devices.
  *
@@ -2969,7 +2993,7 @@ struct bt_bond_info {
 /**
  * @brief Iterate through all existing bonds.
  *
- * @param id         Local identity (mostly just BT_ID_DEFAULT).
+ * @param id         Local identity handle (mostly just BT_ID_DEFAULT).
  * @param func       Function to call for each bond.
  * @param user_data  Data to pass to the callback function.
  */
@@ -3093,7 +3117,7 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
  * @details Valid Bluetooth LE identity addresses are either public address or random static
  * address.
  *
- * @param id   Local identity (typically @ref BT_ID_DEFAULT).
+ * @param id   Local identity handle (typically @ref BT_ID_DEFAULT).
  * @param addr Bluetooth LE device address.
  *
  * @return true if @p addr is bonded with local @p id

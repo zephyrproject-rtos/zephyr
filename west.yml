@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 202c59552dc98e5cd02386313e1977ecb17a131f
+      revision: 1892bfe6ffc859885bc2b0f2e06b6ad9ee436e6b
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_intel
-      revision: 0355bb816263c54eed23c7781034447af5d8200c
+      revision: 0447cd22e74d7ca243653f21cfd6e38c016630c6
       path: modules/hal/intel
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9dc7449014a7380355612453b31be479cb3a6833
+      revision: 6d316e701d4388001d12b65dbae3a8e5f434a5c2
       path: modules/hal/nxp
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: cbaf9b554988614ce11805a9b2f03f6bb0310b8b
+      revision: a959f1bbfc3ee7f99326e14b1f8e0aca8b9947eb
       groups:
         - hal
     - name: hal_rpi_pico
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 04ccc7798343ff51509c5d5276e3bce4375f50e6
+      revision: edd82557d92d85a9e79c9568a562600c712dfb52
       path: modules/hal/stm32
       groups:
         - hal
@@ -318,7 +318,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: b84bd7314a239f818e78f6927f5673247816df53
+      revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 662ed74dce955e6c243f91c45a66768f5971e3cb

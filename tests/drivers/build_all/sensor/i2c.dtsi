@@ -25,6 +25,7 @@
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
 #include <zephyr/dt-bindings/sensor/tmp116.h>
+#include <zephyr/dt-bindings/sensor/tmp114.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1029,6 +1030,7 @@ test_i2c_nct75: test_i2c_nct75@8c {
 test_i2c_tmp114: tmp114@8d {
 	compatible = "ti,tmp114";
 	reg = <0x8d>;
+	odr = <TMP114_DT_ODR_250_MS>;
 };
 
 test_i2c_ina226: ina226@8e {
@@ -1255,4 +1257,10 @@ test_i2c_xbr818: xbr818@aa {
 test_i2c_veml6031: veml6031@ab {
 	compatible = "vishay,veml6031";
 	reg = <0xab>;
+};
+
+test_i2c_bmm350: bmm350@ac {
+	compatible = "bosch,bmm350";
+	reg = <0xac>;
+	drdy-gpios = <&test_gpio 0 0>;
 };

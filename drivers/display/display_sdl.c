@@ -81,9 +81,10 @@ static int sdl_display_init(const struct device *dev)
 	}
 
 	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
-					 use_accelerator, &disp_data->window, &disp_data->renderer,
-					 &disp_data->mutex, &disp_data->texture,
-					 &disp_data->read_texture, &disp_data->background_texture,
+					 use_accelerator, &disp_data->window, dev,
+					 &disp_data->renderer, &disp_data->mutex,
+					 &disp_data->texture, &disp_data->read_texture,
+					 &disp_data->background_texture,
 					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
 					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
 					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
@@ -504,7 +505,8 @@ static int sdl_display_clear(const struct device *dev)
 		size = config->width * config->height * 2U;
 		break;
 	default:
-		LOG_ERR("Pixel format not supported");
+		__ASSERT_MSG_INFO("Pixel format not supported");
+		return -EINVAL;
 	}
 	LOG_DBG("size: %zu, bgcolor: %hhu", size, bgcolor);
 	memset(disp_data->buf, bgcolor, size);

@@ -464,11 +464,21 @@ endmacro()
 
 # Provides amend functionality to a Zephyr library for out-of-tree usage.
 #
+# Usage:
+#   zephyr_library_amend([<dir>])
+#
 # When called from a Zephyr module, the corresponding zephyr library defined
 # within Zephyr will be looked up.
 #
-# Note, in order to ensure correct library when amending, the folder structure in the
-# Zephyr module must resemble the structure used in Zephyr, as example:
+# <dir>: Use '<dir>' as out-of-tree base directory from where the Zephyr
+#        library name shall be generated.
+#        <dir> can be used in cases where the structure for the library is not
+#        placed directly at the ZEPHYR_MODULE's root directory or for cases
+#        where the module integration file is located in a 'MODULE_EXT_ROOT'.
+#
+# Note, in order to ensure correct library when amending, the folder structure
+# in the Zephyr module or '<dir>' base directory must resemble the structure
+# used in Zephyr, as example:
 #
 # Example: to amend the zephyr library created in
 # ZEPHYR_BASE/drivers/entropy/CMakeLists.txt
@@ -497,7 +507,11 @@ macro(zephyr_library_amend)
     message(FATAL_ERROR "Function only available for Zephyr modules.")
   endif()
 
-  zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
+  if(${ARGC} EQUAL 1)
+    zephyr_library_get_current_dir_lib_name(${ARGV0} lib_name)
+  else()
+    zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
+  endif()
 
   set(ZEPHYR_CURRENT_LIBRARY ${lib_name})
 endmacro()
@@ -5240,8 +5254,8 @@ endfunction()
 # This is useful content such as struct devices.
 #
 # For example: zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
-# will create an input section matching `.z_init_PRE_KERNEL_1?_` and
-# `.z_init_PRE_KERNEL_1??_`.
+# will create an input section matching `.z_init_PRE_KERNEL_P_1_SUB_?_`,
+# `.z_init_PRE_KERNEL_P_1_SUB_??_`, and `.z_init_PRE_KERNEL_P_1_SUB_???_`.
 #
 # SECTION <section>: Section in which the objects shall be placed
 # LEVEL <level>    : Priority level, all input sections matching the level
@@ -5265,13 +5279,18 @@ function(zephyr_linker_section_obj_level)
 
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}?_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_?_*"
     SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
     KEEP SORT NAME
   )
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}??_*"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_??_*"
+    KEEP SORT NAME
+  )
+  zephyr_linker_section_configure(
+    SECTION ${OBJ_SECTION}
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_???_*"
     KEEP SORT NAME
   )
 endfunction()

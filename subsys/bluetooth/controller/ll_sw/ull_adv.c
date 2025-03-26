@@ -1275,16 +1275,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 	/* Initialize ULL context before radio event scheduling is started. */
 	ull_hdr_init(&adv->ull);
 
-	/* TODO: active_to_start feature port */
-	adv->ull.ticks_active_to_start = 0;
-	adv->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
-	ticks_slot_offset = MAX(adv->ull.ticks_active_to_start,
-				adv->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;

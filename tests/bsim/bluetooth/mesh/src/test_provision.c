@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define WAIT_TIME 120 /*seconds*/
 #define IS_RPR_PRESENT  (CONFIG_BT_MESH_RPR_SRV && CONFIG_BT_MESH_RPR_CLI)
 #define IMPOSTER_MODEL_ID 0xe000
+/* Rough estimate of the time it should take the provisionee to stop sending unprov beacons. */
+#define PROV_DELTA_THRESH_MS 100
 
 enum test_flags {
 	IS_PROVISIONER,
@@ -101,6 +103,7 @@ static uint32_t link_close_timestamp;
 
 /* Set prov_bearer to non-zero invalid value. */
 static bt_mesh_prov_bearer_t prov_bearer = 0xF8;
+static bt_mesh_prov_bearer_t prov_to_use;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -108,9 +111,17 @@ static void test_args_parse(int argc, char *argv[])
 		{
 			.dest = &prov_bearer,
 			.type = 'i',
-			.name = "{invalid, PB-ADV, PB-GATT}",
-			.option = "prov-brearer",
+			.name = "{invalid, PB-ADV, PB-GATT, (PB-ADV | PB-GATT)}",
+			.option = "prov-bearer",
 			.descript = "Provisioning bearer that is to be used."
+		},
+		{
+			.dest = &prov_to_use,
+			.type = 'i',
+			.name = "{PB-ADV, PB-GATT}",
+			.option = "prov-to-use",
+			.descript = "Provisioning bearer that is to be used in the case that "
+				    "multiple provisioning bearers are enabled in prov_bearer."
 		},
 	};
 
@@ -279,6 +290,42 @@ static void test_terminate(void)
 	}
 }
 
+static uint64_t prov_started_time_ms;
+static uint8_t prov_uuid[16];
+
+static void provision(uint8_t uuid[16], bt_mesh_prov_bearer_t bearer)
+{
+	int err;
+
+	switch (bearer) {
+	case BT_MESH_PROV_ADV:
+		err = bt_mesh_provision_adv(uuid, 0, prov_addr, 0);
+		break;
+	case BT_MESH_PROV_GATT:
+		err = bt_mesh_provision_gatt(uuid, 0, prov_addr, 0);
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	if (!err) {
+		LOG_INF("Provisioning over %s started.",
+			bearer == BT_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
+		prov_started_time_ms = k_uptime_get();
+		memcpy(prov_uuid, uuid, 16);
+	}
+}
+
+static void provisionee_beacon_check(uint8_t uuid[16], bt_mesh_prov_bearer_t bearer)
+{
+	if (memcmp(uuid, prov_uuid, 16) == 0) {
+		ASSERT_FALSE_MSG((prov_started_time_ms &&
+				  (k_uptime_delta(&prov_started_time_ms) > PROV_DELTA_THRESH_MS)),
+				 "Received %s beacon from provisionee after provisioning started.",
+				 bearer == BT_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
+	}
+}
+
 static void unprovisioned_beacon(uint8_t uuid[16],
 				 bt_mesh_prov_oob_info_t oob_info,
 				 uint32_t *uri_hash)
@@ -290,7 +337,12 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 	if (uuid_to_provision && memcmp(uuid, uuid_to_provision, 16)) {
 		return;
 	}
-	bt_mesh_provision_adv(uuid, 0, prov_addr, 0);
+
+	provisionee_beacon_check(uuid, BT_MESH_PROV_ADV);
+
+	if (!prov_to_use || prov_to_use == BT_MESH_PROV_ADV) {
+		provision(uuid, BT_MESH_PROV_ADV);
+	}
 }
 
 static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info)
@@ -303,7 +355,11 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 		return;
 	}
 
-	bt_mesh_provision_gatt(uuid, 0, prov_addr, 0);
+	provisionee_beacon_check(uuid, BT_MESH_PROV_GATT);
+
+	if (!prov_to_use || prov_to_use == BT_MESH_PROV_GATT) {
+		provision(uuid, BT_MESH_PROV_GATT);
+	}
 }
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
@@ -328,6 +384,8 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 {
 	LOG_INF("Device 0x%04x provisioned", prov_addr);
 	current_dev_addr = prov_addr++;
+	prov_started_time_ms = 0;
+	memset(prov_uuid, 0, 16);
 	k_sem_give(&prov_sem);
 }
 
@@ -344,6 +402,7 @@ static void prov_reset(void)
 
 static bt_mesh_input_action_t gact;
 static uint8_t gsize;
+static bool oob_wait_unprov_int;
 static int input(bt_mesh_input_action_t act, uint8_t size)
 {
 	/* The test system requests the input OOB data earlier than
@@ -354,7 +413,9 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 	gact = act;
 	gsize = size;
 
-	k_work_reschedule(&oob_timer, K_SECONDS(1));
+	k_work_reschedule(&oob_timer, oob_wait_unprov_int
+					      ? K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT + 1)
+					      : K_SECONDS(1));
 
 	return 0;
 }
@@ -741,6 +802,49 @@ static void test_provisioner_oob_public_key(void)
 static void test_provisioner_oob_auth_no_oob_public_key(void)
 {
 	oob_provisioner(true, false);
+
+	PASS();
+}
+
+static void test_provisioner_pb_cancel(void)
+{
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
+
+	prov.static_val = 0;
+	prov.static_val_len = 0;
+	prov.output_size = 0;
+	prov.output_actions = 0;
+	prov.input_size = 8;
+	prov.input_actions = BT_MESH_ENTER_NUMBER;
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+
+	PASS();
+}
+
+static void test_device_pb_cancel(void)
+{
+	oob_wait_unprov_int = true;
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	prov.static_val = 0;
+	prov.static_val_len = 0;
+	prov.output_size = 0;
+	prov.output_actions = 0;
+	prov.input_size = 8;
+	prov.input_actions = BT_MESH_ENTER_NUMBER;
+
+	ASSERT_OK(bt_mesh_prov_enable(prov_bearer));
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
 
 	PASS();
 }
@@ -1809,6 +1913,7 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE_WBACKCHANNEL(device, oob_public_key,
 			       "Device: provisioning use oob public key"),
 	TEST_CASE(device, reprovision, "Device: provisioning, reprovision"),
+	TEST_CASE_WBACKCHANNEL(device, pb_cancel, "Device: provisioning, cancel prov bearers."),
 #if IS_RPR_PRESENT
 	TEST_CASE(device, pb_remote_server_unproved,
 		  "Device: used for remote provisioning, starts unprovisioned"),
@@ -1839,6 +1944,8 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(
 		provisioner, reprovision,
 		"Provisioner: provisioning, resetting and reprovisioning multiple times."),
+	TEST_CASE_WBACKCHANNEL(
+		provisioner, pb_cancel, "Provisioner: provisioning, cancel prov bearers."),
 #if IS_RPR_PRESENT
 	TEST_CASE(provisioner, pb_remote_client_reprovision,
 		  "Provisioner: pb-remote provisioning, resetting and reprov-ing multiple times."),

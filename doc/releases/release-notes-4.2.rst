@@ -55,17 +55,33 @@ Removed APIs and options
 
 * Removed the deprecated ``include/zephyr/net/buf.h`` header file.
 
+* Removed the ``--disable-unrecognized-section-test`` Twister option. Test has been removed and the
+  option became the default behavior.
+
+* Removed the deprecated ``kscan`` subsystem.
+
 Deprecated APIs and options
+===========================
 
 * The scheduler Kconfig options CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB were
   renamed and deprecated. Use :kconfig:option:`CONFIG_SCHED_SIMPLE` and
   :kconfig:option:`CONFIG_WAITQ_SIMPLE` instead.
 
-===========================
+* The :kconfig:option:`CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE` Kconfig option has been removed.
+  The required header size should be included in the message size, configured using
+  :kconfig:option:`CONFIG_LWM2M_COAP_MAX_MSG_SIZE`. Special care should be taken to ensure that
+  used CoAP block size :kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_SIZE` can fit given message size
+  with headers. Previous headroom was 48 bytes.
+
+* TLS credential type ``TLS_CREDENTIAL_SERVER_CERTIFICATE`` was renamed and
+  deprecated, use :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` instead.
 
 * ``arduino_uno_r4_minima`` and ``arduino_uno_r4_wifi`` board targets have been deprecated in favor
   of a new ``arduino_uno_r4`` board with revisions (``arduino_uno_r4@minima`` and
   ``arduino_uno_r4@wifi``).
+
+* ``esp32c6_devkitc`` board target has been deprecated and renamed to
+  ``esp32c6_devkitc/esp32c6/hpcore``.
 
 New APIs and options
 ====================
@@ -93,6 +109,8 @@ New APIs and options
     * :c:macro:`BT_BAP_ADV_PARAM_BROADCAST_SLOW`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_FAST`
     * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW`
+    * :c:func:`bt_csip_set_member_set_size_and_rank`
+    * :c:func:`bt_csip_set_member_get_info`
 
   * Host
 
@@ -101,12 +119,11 @@ New APIs and options
     * :c:func:`bt_br_bond_exists`
     * :c:func:`bt_conn_lookup_addr_br`
     * :c:func:`bt_conn_get_dst_br`
+    * LE Connection Subrating is no longer experimental.
 
 * Display
 
   * :c:func:`display_clear`
-
-    * LE Connection Subrating is no longer experimental.
 
 * Networking:
 
@@ -114,9 +131,17 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_IPV4_MTU`
 
+  * MQTT
+
+    * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
+
+* Counter
+
+  * :c:func:`counter_reset`
 
 New Boards
 **********
@@ -127,12 +152,205 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Adafruit Industries, LLC
+
+   * :zephyr:board:`adafruit_feather_esp32s3_tft` (``adafruit_feather_esp32s3_tft``)
+   * :zephyr:board:`adafruit_feather_esp32s3` (``adafruit_feather_esp32s3``)
+
+* FANKE Technology Co., Ltd.
+
+   * :zephyr:board:`fk743m5_xih6` (``fk743m5_xih6``)
+
+* Nuvoton Technology Corporation
+
+   * :zephyr:board:`numaker_m55m1` (``numaker_m55m1``)
+
+* Octavo Systems LLC
+
+   * :zephyr:board:`osd32mp1_brk` (``osd32mp1_brk``)
+
+* Pimoroni Ltd.
+
+   * :zephyr:board:`pico_plus2` (``pico_plus2``)
+
+* Renesas Electronics Corporation
+
+   * :zephyr:board:`rza3ul_smarc` (``rza3ul_smarc``)
+   * :zephyr:board:`rzn2l_rsk` (``rzn2l_rsk``)
+   * :zephyr:board:`rzt2l_rsk` (``rzt2l_rsk``)
+
+* STMicroelectronics
+
+   * :zephyr:board:`stm32h757i_eval` (``stm32h757i_eval``)
+
+* Silicon Laboratories
+
+   * :zephyr:board:`slwrb4180b` (``slwrb4180b``)
+
+* Texas Instruments
+
+   * :zephyr:board:`sk_am64` (``sk_am64``)
+
+* WIZnet Co., Ltd.
+
+   * :zephyr:board:`w5500_evb_pico2` (``w5500_evb_pico2``)
+
+* WinChipHead
+
+   * :zephyr:board:`ch32v003f4p6_dev_board` (``ch32v003f4p6_dev_board``)
+   * :zephyr:board:`linkw` (``linkw``)
+
 New Drivers
 ***********
 
 ..
   Same as above for boards, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* :abbr:`ADC (Analog to Digital Converter)`
+
+   * :dtcompatible:`adi,ad4050-adc`
+   * :dtcompatible:`adi,ad4052-adc`
+   * :dtcompatible:`renesas,rz-adc`
+
+* Clock control
+
+   * :dtcompatible:`wch,ch32v20x_30x-pll-clock`
+
+* Comparator
+
+   * :dtcompatible:`renesas,ra-acmphs`
+   * :dtcompatible:`renesas,ra-acmphs-global`
+
+* Counter
+
+   * :dtcompatible:`zephyr,native-sim-counter`
+
+* CPU
+
+   * :dtcompatible:`wch,qingke-v4c`
+   * :dtcompatible:`zephyr,native-sim-cpu`
+
+* Cryptographic accelerator
+
+   * :dtcompatible:`ti,cc23x0-aes`
+
+* Display
+
+   * :dtcompatible:`sitronix,st7567`
+
+* :abbr:`DMA (Direct Memory Access)`
+
+   * :dtcompatible:`renesas,rz-dma`
+   * :dtcompatible:`wch,wch-dma`
+
+* Ethernet
+
+   * :dtcompatible:`st,stm32n6-ethernet`
+   * :dtcompatible:`ti,dp83867`
+   * :dtcompatible:`xlnx,axi-ethernet-1.00.a`
+
+* Flash controller
+
+   * :dtcompatible:`silabs,series2-flash-controller`
+
+* File system
+
+   * :dtcompatible:`zephyr,fstab,fatfs`
+
+* :abbr:`GPIO (General Purpose Input/Output)` and Headers
+
+   * :dtcompatible:`adi,max14915-gpio`
+   * :dtcompatible:`nxp,lcd-pmod`
+   * :dtcompatible:`raspberrypi,pico-gpio-port`
+   * :dtcompatible:`renesas,ra-parallel-graphics-header`
+
+* :abbr:`I2C (Inter-Integrated Circuit)`
+
+   * :dtcompatible:`cdns,i2c`
+   * :dtcompatible:`renesas,rz-riic`
+   * :dtcompatible:`sensry,sy1xx-i2c`
+
+* Input
+
+   * :dtcompatible:`realtek,rts5912-kbd`
+   * :dtcompatible:`st,stm32-tsc`
+   * :dtcompatible:`tsc-keys`
+
+* Mailbox
+
+   * :dtcompatible:`renesas,rz-mhu-mbox`
+
+* :abbr:`MDIO (Management Data Input/Output)`
+
+   * :dtcompatible:`xlnx,axi-ethernet-1.00.a-mdio`
+
+* Memory controller
+
+   * :dtcompatible:`realtek,rts5912-bbram`
+
+* :abbr:`MFD (Multi-Function Device)`
+
+   * :dtcompatible:`adi,maxq10xx`
+   * :dtcompatible:`x-powers,axp2101`
+
+* Miscellaneous
+
+   * :dtcompatible:`renesas,rz-sci`
+
+* Multi-bit SPI
+
+   * :dtcompatible:`snps,designware-ssi`
+
+* :abbr:`MTD (Memory Technology Device)`
+
+   * :dtcompatible:`jedec,mspi-nor`
+
+* Networking
+
+   * :dtcompatible:`nordic,nrf-nfct-v2`
+
+* Pin control
+
+   * :dtcompatible:`renesas,rza-pinctrl`
+   * :dtcompatible:`renesas,rzn-pinctrl`
+   * :dtcompatible:`renesas,rzt-pinctrl`
+   * :dtcompatible:`wch,20x_30x-afio`
+
+* :abbr:`PWM (Pulse Width Modulation)`
+
+   * :dtcompatible:`silabs,siwx91x-pwm`
+
+* Regulator
+
+   * :dtcompatible:`x-powers,axp2101-regulator`
+
+* :abbr:`RNG (Random Number Generator)`
+
+   * :dtcompatible:`adi,maxq10xx-trng`
+   * :dtcompatible:`zephyr,native-sim-rng`
+
+* :abbr:`RTC (Real Time Clock)`
+
+   * :dtcompatible:`realtek,rts5912-rtc`
+
+* Sensors
+
+   * :dtcompatible:`bosch,bmm350`
+   * :dtcompatible:`invensense,icm45686`
+   * :dtcompatible:`pixart,paa3905`
+   * :dtcompatible:`vishay,veml6031`
+
+* Serial controller
+
+   * :dtcompatible:`renesas,rz-sci-uart`
+   * :dtcompatible:`zephyr,native-pty-uart`
+
+* Watchdog
+
+   * :dtcompatible:`realtek,rts5912-watchdog`
+   * :dtcompatible:`renesas,ra-wdt`
+   * :dtcompatible:`silabs,siwx91x-wdt`
 
 New Samples
 ***********
@@ -141,7 +359,13 @@ New Samples
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+* :zephyr:code-sample:`bmg160`
+* :zephyr:code-sample:`debug-ulp`
+* :zephyr:code-sample:`fatfs-fstab`
+* :zephyr:code-sample:`renesas_comparator`
+* :zephyr:code-sample:`rz-openamp-linux-zephyr`
 * :zephyr:code-sample:`stepper`
+* :zephyr:code-sample:`veml6031`
 
 Other notable changes
 *********************
@@ -149,3 +373,9 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Added support for Armv8.1-M MPU's PXN (Privileged Execute Never) attribute.
+  With this, the MPU attributes for ``__ramfunc`` and ``__ram_text_reloc`` were modified such that,
+  PXN attribute is set for these regions if compiled with ``CONFIG_ARM_MPU_PXN`` and ``CONFIG_USERSPACE``.
+  This results in a change in behaviour for code being executed from these regions because,
+  if these regions have pxn attribute set in them, they cannot be executed in privileged mode.
