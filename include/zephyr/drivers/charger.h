@@ -376,6 +376,38 @@ static inline int z_impl_charger_get_prop(const struct device *dev, const charge
 }
 
 /**
+ * @brief Fetch a multiple battery charger property
+ *
+ * @param dev Pointer to the battery charger device
+ * @param props Array of the type of property to be fetched from device, each index corresponds
+ * to the same index of the vals input array.
+ * @param vals Pointer to array of charger_propval union
+ * @param len number of properties in props and vals array
+ *
+ * @retval 0 if successful
+ * @retval < 0 if getting property failed
+ */
+__syscall int charger_get_props(const struct device *dev, const charger_prop_t *props,
+			       union charger_propval *vals, size_t len);
+
+static inline int z_impl_charger_get_props(const struct device *dev, const charger_prop_t *props,
+					  union charger_propval *vals, size_t len)
+{
+	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
+
+	for (size_t i = 0; i < len; i++) {
+		int ret = api->get_property(dev, props[i], vals + i);
+
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+
+/**
  * @brief Set a battery charger property
  *
  * @param dev Pointer to the battery charger device
@@ -395,6 +427,38 @@ static inline int z_impl_charger_set_prop(const struct device *dev, const charge
 
 	return api->set_property(dev, prop, val);
 }
+
+/**
+ * @brief Set multiple battery charger property
+ *
+ * @param dev Pointer to the battery charger device
+ * @param props Array of the type of property to be set, each index corresponds
+ * to the same index of the vals input array.
+ * @param vals Pointer to array of charger_propval union
+ * @param len number of properties in props array
+ *
+ * @retval 0 if successful
+ * @retval < 0 if setting property failed
+ */
+__syscall int charger_set_props(const struct device *dev, const charger_prop_t *props,
+			       const union charger_propval *vals, size_t len);
+
+static inline int z_impl_charger_set_props(const struct device *dev, const charger_prop_t *props,
+					  const union charger_propval *vals, size_t len)
+{
+	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
+
+	for (size_t i = 0; i < len; i++) {
+		int ret = api->set_property(dev, props[i], vals + i);
+
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 
 /**
  * @brief Enable or disable a charge cycle
