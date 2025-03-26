@@ -1092,6 +1092,24 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				(length > sizeof(hostname) - 1) ? " and truncated" : "");
 			break;
 		}
+		case DHCPV4_OPTIONS_DOMAIN_NAME: {
+			char domain_name[NET_HOSTNAME_SIZE] = { 0 };
+
+			if (length < 1) {
+				NET_ERR("options_domain_name, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, domain_name, MIN(length,
+							       sizeof(domain_name) - 1))) {
+				NET_ERR("options_domain_name, short packet");
+				return false;
+			}
+
+			NET_DBG("options_domain_name: %s (ignored%s)", domain_name,
+				(length > sizeof(domain_name) - 1) ? " and truncated" : "");
+			break;
+		}
 #endif /* CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED */
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
