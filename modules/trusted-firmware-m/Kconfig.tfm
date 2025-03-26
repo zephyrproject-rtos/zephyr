@@ -26,6 +26,7 @@ config TFM_BOARD
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l15_cpuapp" if SOC_NRF54L15_CPUAPP
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l10_cpuapp" if SOC_NRF54L10_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.

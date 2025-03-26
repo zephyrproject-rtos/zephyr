@@ -5,6 +5,9 @@ board:
   socs:
     - name: nrf54l05
     - name: nrf54l10
+      variants:
+        - name: ns
+          cpucluster: cpuapp
     - name: nrf54l15
       variants:
         - name: xip
