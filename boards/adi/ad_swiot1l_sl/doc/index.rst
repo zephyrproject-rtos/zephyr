@@ -8,10 +8,6 @@ control, and intelligent buildings.
 
 The Zephyr port is running on the MAX32650 MCU.
 
-.. image:: img/ad_swiot1l_sl.webp
-   :align: center
-   :alt: AD-SWIOT1L-SL Front
-
 Hardware
 ********
 
