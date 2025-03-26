@@ -3203,6 +3203,21 @@ PHYTEC Platforms:
   labels:
     - "platform: PHYTEC"
 
+Pixel library:
+  status: maintained
+  maintainers:
+    - josuah
+  files:
+    - include/zephyr/pixel/
+    - lib/pixel/
+    - tests/lib/pixel/
+    - samples/lib/pixel/
+  labels:
+    - "area: Pixel Library"
+  tests:
+    - libraries.pixel
+  description: Library for pixel manipulation and image processing
+
 PMCI:
   status: maintained
   maintainers:
