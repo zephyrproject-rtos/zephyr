@@ -30,7 +30,7 @@ mappings used by this sample.
 Building and Running
 ********************
 
-Build the application for the :ref:`nrf52840dk_nrf52840` board, and connect
+Build the application for the :zephyr:board:`nrf52840dk` board, and connect
 a LP5562 LED driver on the bus I2C0 at the address 0x30.
 
 .. zephyr-app-commands::
@@ -40,6 +40,6 @@ a LP5562 LED driver on the bus I2C0 at the address 0x30.
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`nrf52840dk_nrf52840` board documentation.
+:zephyr:board:`nrf52840dk` board documentation.
 
 .. _LP5562 Manual: http://www.ti.com/lit/ds/symlink/lp5562.pdf
