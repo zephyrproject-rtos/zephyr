@@ -31,7 +31,7 @@ Hardware
 ********
 
 Supported Features
-------------------
+==================
 
 .. zephyr:board-supported-hw::
 
@@ -39,7 +39,7 @@ System requirements
 *******************
 
 Prerequisites
--------------
+=============
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
 below to retrieve those files.
@@ -53,7 +53,7 @@ below to retrieve those files.
    It is recommended running the command above after :file:`west update`.
 
 Building & Flashing
--------------------
+===================
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
