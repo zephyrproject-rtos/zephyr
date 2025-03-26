@@ -97,6 +97,18 @@ Detailed Protocol Specification
 
 The ICBMsg protocol transfers messages using dynamically allocated blocks of shared memory.
 Internally, it uses ICMsg for control messages.
+Small status area in shared memory is used to share additional information that allows hot restart
+of the communication after one side resets.
+Status area limits the number of control messages used for a transfer increasing
+the efficiency of the communication.
+
+No memory clearing on initialization
+------------------------------------
+
+The ICBMsg does not clear the shared memory on initialization.
+All the existing state is treated as initialized state.
+This allows to saferly restart the communication from one side only.
+
 
 Shared Memory Organization
 --------------------------
@@ -105,9 +117,10 @@ The ICBMsg uses two shared memory regions, ``rx-region`` for message receiving, 
 The regions do not need to be next to each other, placed in any specific order, or be of the same size.
 Those regions are interchanged on each core.
 
-Each shared memory region is divided into following two parts:
+Each shared memory region is divided into following painformation about blocks usage rts:
 
 * **ICMsg area** - An area reserved by ICMsg instance and used to transfer the control messages.
+* **Status area** - An area containing information about the current buffers usage.
 * **Blocks area** - An area containing allocatable blocks carrying the content of the messages.
   This area is divided into even-sized blocks aligned to cache boundaries.
 
@@ -120,6 +133,7 @@ Inputs:
 * ``local_blocks`` - Number of blocks in this region.
 * ``remote_blocks`` - Number of blocks in the opposite region.
 * ``alignment`` - Memory cache alignment.
+* ``force_atomic_size`` - Forced atomic size for architectures where communicating CPUs uses different atomic_t variable sizes.
 
 The algorithm:
 
@@ -134,9 +148,33 @@ The algorithm:
    * ICMsg header size (refer to the ICMsg specification)
    * ICMsg message size for 4 bytes of content (refer to the ICMsg specification) multiplied by ``local_blocks + remote_blocks + 2``
 
+#. Calculate address of the status area. Note that the actual size may be higher becouse of block alignment:
+
+   ``status_area_begin = ROUND_UP(icmsg_min_size, alignment)``
+
+#. Calculate the required size of status area and its end address:
+
+   ``status_area_size = CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(waiting_cnt) + CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(send_bm)) + CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(processed_bm))``
+
+   Status area contains following fields:
+
+   * ``waiting_cnt`` - Number of threads that are waiting for free block on TX side
+   * ``send_bm`` - Bitmask of blocks that are currently being sent
+   * ``processed_bm`` - Bitmask of blocks that are already processed
+
+   The size of the status area is calculated as:
+
+   ``status_area_size = CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(waiting_cnt) + CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(send_bm)) + CHANNEL_STATUSUS_ALIGN_SIZE(sizeof(processed_bm))``
+
+   ``status_area_end = status_area_begin + status_area_size``
+
+   Where ``CHANNEL_STATUSUS_ALIGN_SIZE`` is a macro that calculates the size of the status area:
+
+   ``CHANNEL_STATUSUS_ALIGN_SIZE(x) = ROUND_UP(x, MAX(sizeof(atomic_t), force_atomic_size))``
+
 #. Calculate available size for block area. Note that the actual size may be smaller because of block alignment:
 
-   ``blocks_area_available_size = region_size_aligned - icmsg_min_size``
+   ``blocks_area_available_size = region_size_aligned - status_area_end``
 
 #. Calculate single block size:
 
@@ -153,6 +191,7 @@ The algorithm:
 The result:
 
 * ``region_begin_aligned`` - The start of ICMsg area.
+* ``status_area_begin`` - The start of status area.
 * ``blocks_area_begin`` - End of ICMsg area and the start of block area.
 * ``block_size`` - Single block size.
 * ``region_end_aligned`` - End of blocks area.
@@ -177,7 +216,7 @@ The following steps describe it:
 #. The sender reserves blocks from his ``tx-region`` blocks area that can hold at least ``K + 4`` bytes.
    The additional ``+ 4`` bytes are reserved for the header, which contains the exact size of the message.
    The blocks must be continuous (one after another).
-   The sender is responsible for block allocation management.
+   See :ref:`Block allocation` for details.
    It is up to the implementation to decide what to do if no blocks are available.
 #. The sender fills the header with a 32-bit integer value, ``K`` (little-endian).
 #. The sender fills the remaining part of the blocks with his data.
@@ -187,16 +226,128 @@ The following steps describe it:
 #. The control message travels to the receiver.
 #. The receiver reads message size and data from his ``rx-region`` starting from the block number received in the control message.
 #. The receiver processes the message.
-#. The receiver sends ``MSG_RELEASE_DATA`` or ``MSG_RELEASE_BOUND`` control message over ICMsg containing the starting block number
-   (the same as inside received control message).
+#. After the message is processed and no longer needed, the receiver marks the fact in the status area in processed_bm field.
+#. The receiver sends ``MSG_RELEASE_BOUND`` always or ``MSG_RELEASE_DATA`` only if the field ``waiting_cnt`` in status area shows that any thread on transmitter side waits for buffer.
+   The stating block number is important only for bound releasing. For data releasing it would be ignored by the sender.
 #. The control message travels back to the sender.
-#. The sender releases the blocks starting from the block number provided in the control message.
-   The number of blocks to release can be calculated using a size from the header.
+#. If bound releasing message was received the sender, the endpoint bond is considered complete.
+   If it was data releasing message and any thread is waiting for buffer, the sender unblocks it and then the free blocks internal variable is updated.
+   see :ref:`Block allocation` for details.
 
 .. image:: icbmsg_message.svg
    :align: center
 
 |
+
+.. _Block allocation:
+
+Block allocation
+----------------
+
+Block allocation is done with two factors in mind:
+
+#. Any communicating core can reboot at any time (for example by WDT reset).
+   If a core reboots, the communication would be restarted as a new session, but the buffers that are currently in use (processed by receiver side) cannot be broken.
+#. Buffer allocations should be as fast as possible.
+
+Any block can be in one of 3 states:
+
+#. ``free`` - The block is unused and can be allocated,
+#. ``allocated`` - The block is currently being used by the sender,
+#. ``sent`` - The block is currently being used by the receiver.
+
+Receiver in not writing anything into the block, so it is not necessary to inform it about the fact that the block is in ``allocated`` state.
+This information is keept on the sender side only.
+The only information we need to share is that the block is in ``sent`` state.
+
+The internal and shared variables used to manage the blocks are presented on the following diagram:
+
+.. image:: icbmsg_status_allocation.svg
+   :align: center
+
+Allowing core reboot at any time
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When it comes to the core rebooting it is important to share the information about buffer usage between cores.
+To archive this in the moment when the communication channel is estabilished the state of the memory is considered valid.
+No buffer is cleared on initialization.
+This allows to safely restart the communication from one side only not breaking the data in the buffers that may be in a middle of processing on second core.
+
+To do so two fields are placed in status area:
+#. ``send_bm`` - Bitmask of blocks that are currently being sent.
+#. ``processed_bm`` - Bitmask of blocks that are already processed.
+
+To calculate the allocated blocks the fallowind formula is used:
+
+``blocks_in_sent_state`` = ``send_bm`` ^ ``processed_bm``
+
+As the core that is being initiated does not use any buffers, during the initialization it copies the ``send_bm`` to its ``processed_bm`` effectively marking all blocks free for the sender.
+
+
+Fast buffer allocation
+^^^^^^^^^^^^^^^^^^^^^^
+
+When it comes to speed considerations, the following assumptions are made:
+
+#. Access to shared memory is slower thant access to internal variables.
+#. The control message turnaround is slower than accessing the shared memory.
+
+Thous we have to limit number of control messages exchanged at first and then we should limit number of access to schared memory.
+
+Receiver does not send ``MSG_RELEASE_DATA`` control message if there is no thread waiting for buffer.
+The information about number of threads waiting for a buffer is kept in ``waiting_cnt`` field in status area.
+Sender increases its value if it cannot find a free buffer.
+
+To limit the number of schared memory access, sender keeps track of the allocated blocks in its own ``tx_usage_bm``.
+It marks the allocated blocks and does not care if it was released by the receiver.
+Only if there is no space for newly requested block the synchronization procedure is performed.
+First the ``waiting_cnt`` is increased not to miss ``MSG_RELEASE_DATA`` from receiver.
+Then the sender reads its own ``send_bm`` and receiver ``processed_bm`` calculating the used blocks by the formula:
+
+``tx_usage_bm = (send_bm ^ processed_bm) | tx_allocated_bm``
+
+If the block can be allocated now the sended decreases ``waiting_cnt`` and updates its ``tx_usage_bm``.
+The allocation is also marked in ``tx_allocated_bm``.
+If the block still cannot be allocated the thread is blocked, waiting for ``MSG_RELEASE_DATA``.
+After the ``MSG_RELEASE_DATA`` is received the thread is unblocked and the ``tx_usage_bm`` is updated again.
+The process repeats until the block is allocated or the timeout is reached.
+
+Just before sending the block, after all the write is finished by the sender,
+the bits in shared memory ``send_bm`` related for the block are inverted and the same bits in ``tx_allocated_bm`` are cleared.
+
+The only receiver task for the buffer allocation management is to inverse the bits in ``processed_bm`` related to the block after the message is processed.
+Note that the block can be in hold state to be processed later.
+The holded blocks are marked in ``rx_hold_bm`` by the receiver internally and are marked as processed later when requested by the application.
+
+Finally, when the receiver marks blocks as processed it always check if ``waiting_cnt`` is not zero to notify the sender if it waits for free block.
+
+All this processes are carefully organized to be processed atomically, using read - modify - cas mechanism.
+This makes sure for example that ``waiting_cnt`` is checked in the right moment not to miss its change during the ``processed_bm`` change.
+
+Status block memory layout
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The most obvious memory layout for the status block would be like the one presented in following image:
+
+.. image:: icbmsg_status_layout_1_1.svg
+   :align: center
+
+In such a configuration we keep every information inside a buffer which it relates to.
+It means that on sender side we have to write to ``send_bm`` and read from ``processed_bm`` inside the same memory area.
+Rx side would use then ``send_bm`` and writes processed block information to ``processed_bm`` in the same memory area.
+It all looks good as long as we are not considering the cache cocherency management.
+For such a configuration to be safe, the ``processed_bm`` should be cache page aligned and then the ``Blocks area`` should be also aligned to cache page size.
+
+To mitigate this problem the optimised memory layout was used, where we keep all writes on sender side while reading only on receiver side:
+
+.. image:: icbmsg_status_layout_optimised.svg
+   :align: center
+
+The ``processed_bm`` was moved between receiver and sender side.
+Now the receiver writes to ``Tx`` memory area the information about processed blocks.
+This means that we have all the writes to status block on the ``Tx`` memory and all the reads on ``Rx`` memory.
+The direction of access is also the same as the direction of reads and writes in the blocks region.
+It means that from the cache coherency perspective the ``blocks area`` start address does not need to be aligned to cache page size.
 
 Control Messages
 ----------------
@@ -240,7 +391,7 @@ MSG_RELEASE_DATA
      - byte 2
    * - MSG_RELEASE_DATA
      - unused
-     - block number
+     - block number, ignored on receiver side
    * - 0x01
      -
      - 0x00 ÷ N-1
