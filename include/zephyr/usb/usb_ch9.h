@@ -136,6 +136,13 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 #define USB_SFS_REMOTE_WAKEUP		0x01
 #define USB_SFS_TEST_MODE		0x02
 
+/** USB Test Mode Selectors defined in spec. Table 9-7 */
+#define USB_SFS_TEST_MODE_J		0x01
+#define USB_SFS_TEST_MODE_K		0x02
+#define USB_SFS_TEST_MODE_SE0_NAK	0x03
+#define USB_SFS_TEST_MODE_PACKET	0x04
+#define USB_SFS_TEST_MODE_FORCE_ENABLE	0x05
+
 /** Bits used for GetStatus response defined in spec. Figure 9-4 */
 #define USB_GET_STATUS_SELF_POWERED	BIT(0)
 #define USB_GET_STATUS_REMOTE_WAKEUP	BIT(1)
