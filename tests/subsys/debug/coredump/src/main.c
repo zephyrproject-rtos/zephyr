@@ -37,6 +37,7 @@ __no_optimization void func_3(uint32_t *addr)
 	defined(CONFIG_BOARD_HIFIVE1) || \
 	defined(CONFIG_BOARD_HIFIVE_UNLEASHED) || \
 	defined(CONFIG_BOARD_HIFIVE_UNMATCHED) || \
+	defined(CONFIG_BOARD_MPFS_ICICLE) || \
 	defined(CONFIG_BOARD_LONGAN_NANO) || \
 	defined(CONFIG_BOARD_QEMU_XTENSA) || \
 	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
