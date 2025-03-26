@@ -4727,6 +4727,44 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 }
 
+static struct bt_l2cap_br_chan *bt_l2cap_br_lookup_ident(struct bt_conn *conn, uint8_t ident)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BR_CHAN(chan)->ident == ident) {
+			return BR_CHAN(chan);
+		}
+	}
+
+	return NULL;
+}
+
+static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_chan *chan;
+
+	do {
+		chan = bt_l2cap_br_lookup_ident(conn, ident);
+		if (chan != NULL) {
+			int err = -EINVAL;
+
+			/* Only send disconnect req when the L2CAP channel has been connected. */
+			if ((chan->state == BT_L2CAP_CONFIG) ||
+			    (chan->state == BT_L2CAP_CONNECTED)) {
+				err = bt_l2cap_br_chan_disconnect(&chan->chan);
+			}
+
+			if (err) {
+				/* Fail to send disconnect request. Remove channel directly. */
+				bt_l2cap_chan_remove(conn, &chan->chan);
+				bt_l2cap_br_chan_del(&chan->chan);
+			}
+		}
+	} while (chan != NULL);
+}
+
 static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_hdr *hdr,
 				struct net_buf *buf)
 {
@@ -4761,6 +4799,9 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 		break;
 	case BT_L2CAP_CONN_RSP:
 		l2cap_br_conn_rsp(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_CMD_REJECT:
+		l2cap_br_reject_rsp(l2cap, hdr->ident, buf);
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
