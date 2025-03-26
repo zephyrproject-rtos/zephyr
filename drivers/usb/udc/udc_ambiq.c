@@ -48,6 +48,11 @@ K_MSGQ_DEFINE(drv_msgq, sizeof(struct udc_ambiq_event), CONFIG_UDC_AMBIQ_MAX_QME
 #define EP_FS_MPS 64U
 #define EP_HS_MPS 512U
 
+#define USB_TEST_MODE_FEAT_SEL_TESTJ  1UL
+#define USB_TEST_MODE_FEAT_SEL_TESTK  2UL
+#define USB_TEST_MODE_FEAT_SEL_TESTSN 3UL
+#define USB_TEST_MODE_FEAT_SEL_TESTPM 4UL
+
 struct udc_ambiq_data {
 	struct k_thread thread_data;
 	void *usb_handle;
@@ -403,16 +408,16 @@ static int udc_ambiq_test_mode(const struct device *dev, const uint8_t mode, con
 	struct udc_ambiq_data *priv = udc_get_private(dev);
 
 	switch (mode) {
-	case USB_DWC2_DCTL_TSTCTL_TESTJ:
+	case USB_TEST_MODE_FEAT_SEL_TESTJ:
 		am_usb_test_mode = AM_HAL_USB_TEST_J;
 		break;
-	case USB_DWC2_DCTL_TSTCTL_TESTK:
+	case USB_TEST_MODE_FEAT_SEL_TESTK:
 		am_usb_test_mode = AM_HAL_USB_TEST_K;
 		break;
-	case USB_DWC2_DCTL_TSTCTL_TESTSN:
+	case USB_TEST_MODE_FEAT_SEL_TESTSN:
 		am_usb_test_mode = AM_HAL_USB_TEST_SE0_NAK;
 		break;
-	case USB_DWC2_DCTL_TSTCTL_TESTPM:
+	case USB_TEST_MODE_FEAT_SEL_TESTPM:
 		am_usb_test_mode = AM_HAL_USB_TEST_PACKET;
 		break;
 	default:
