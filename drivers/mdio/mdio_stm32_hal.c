@@ -88,10 +88,59 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
+#ifdef CONFIG_ETH_STM32_HAL_API_V1
+static void eth_set_mdio_clock_range_for_hal_v1(ETH_HandleTypeDef *heth)
+{
+	uint32_t tmpreg1 = 0U;
+
+	/* Get the ETHERNET MACMIIAR value */
+	tmpreg1 = (heth->Instance)->MACMIIAR;
+	/* Clear CSR Clock Range CR[2:0] bits */
+	tmpreg1 &= ETH_MACMIIAR_CR_MASK;
+
+	/* Set CR bits depending on CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC value */
+#ifdef SOC_SERIES_STM32F1X
+	if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 20000000U) &&
+	    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < 35000000U)) {
+		/* CSR Clock Range between 20-35 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_DIV16;
+	} else if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 35000000U) &&
+		   (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < 60000000U)) {
+		/* CSR Clock Range between 35-60 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_DIV26;
+	} else {
+		/* CSR Clock Range between 60-72 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_DIV42;
+	}
+#else  /* SOC_SERIES_STM32F2X */
+	if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 20000000U) &&
+	    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < 35000000U)) {
+		/* CSR Clock Range between 20-35 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_Div16;
+	} else if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 35000000U) &&
+		   (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < 60000000U)) {
+		/* CSR Clock Range between 35-60 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_Div26;
+	} else if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 60000000U) &&
+		   (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < 100000000U)) {
+		/* CSR Clock Range between 60-100 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_Div42;
+	} else {
+		/* CSR Clock Range between 100-120 MHz */
+		tmpreg1 |= (uint32_t)ETH_MACMIIAR_CR_Div62;
+	}
+#endif /* SOC_SERIES_STM32F2X */
+
+	/* Write to ETHERNET MAC MIIAR: Configure the ETHERNET CSR Clock Range */
+	(heth->Instance)->MACMIIAR = (uint32_t)tmpreg1;
+}
+#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
+
 static int mdio_stm32_init(const struct device *dev)
 {
 	struct mdio_stm32_data *const dev_data = dev->data;
 	const struct mdio_stm32_config *const config = dev->config;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int ret;
 
 	/* enable clock */
@@ -108,7 +157,13 @@ static int mdio_stm32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_ETH_STM32_HAL_API_V2
-	HAL_ETH_SetMDIOClockRange(&dev_data->heth);
+	HAL_ETH_SetMDIOClockRange(heth);
+#else
+	/* The legacy V1 HAL API does not provide a way to set the MDC clock range
+	 * via a separated function call. Implement an equivalent function ourselves
+	 * based on what the V1 HAL performs in HAL_ETH_Init().
+	 */
+	eth_set_mdio_clock_range_for_hal_v1(heth);
 #endif
 
 	k_sem_init(&dev_data->sem, 1, 1);
