@@ -8,10 +8,6 @@ designed specifically for high performance battery powered applications.
 
 The Zephyr port is running on the MAX32650 MCU.
 
-.. image:: img/max32650evkit.webp
-   :align: center
-   :alt: MAX32650 EVKIT Front
-
 Hardware
 ********
 

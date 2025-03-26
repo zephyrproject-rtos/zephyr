@@ -8,10 +8,6 @@ for high-performance, battery-powered applications.
 
 The Zephyr port is running on the MAX32650 MCU.
 
-.. image:: img/max32650fthr.webp
-   :align: center
-   :alt: MAX32650 FTHR Front
-
 Hardware
 ********
 

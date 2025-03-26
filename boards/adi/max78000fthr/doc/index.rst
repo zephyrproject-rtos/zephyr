@@ -12,10 +12,6 @@ platform for quick proof-of-concepts and early software development to enhance t
 
 The Zephyr port is running on the MAX78000 MCU.
 
-.. image:: img/max78000fthr_img1.webp
-   :align: center
-   :alt: MAX78000 FTHR
-
 Hardware
 ********
 
