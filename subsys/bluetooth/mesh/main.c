@@ -237,6 +237,8 @@ void bt_mesh_dev_key_cand_remove(void)
 	}
 
 	LOG_DBG("");
+	bt_mesh_key_destroy(&bt_mesh.dev_key_cand);
+	memset(&bt_mesh.dev_key_cand, 0, sizeof(struct bt_mesh_key));
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_net_dev_key_cand_store();
@@ -397,6 +399,10 @@ void bt_mesh_reset(void)
 
 	bt_mesh_key_destroy(&bt_mesh.dev_key);
 	memset(&bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV)) {
+		bt_mesh_dev_key_cand_remove();
+	}
 
 	bt_mesh_beacon_disable();
 
