@@ -4822,6 +4822,53 @@
 		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_PROP_STATUS_OKAY_, prop)))
 
 /**
+ * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
+ *        property. If all nodes are disabled, this will return 1.
+ *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo = <1>;
+ *             bar = <2>;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo = <2>;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz = <1>;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo) // 1
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(bar) // 0
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz) // 0
+ * @endcode
+ */
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY(prop) \
+	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_PROP_STATUS_OKAY_, prop))
+
+/**
  * @brief Check if any device node with status `okay` has a given
  *        property.
  *
@@ -5264,6 +5311,20 @@
  */
 #define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
 	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+
+/** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has no property @p prop.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance has the property,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
  *
