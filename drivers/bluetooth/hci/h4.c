@@ -193,6 +193,11 @@ static inline void copy_hdr(struct h4_data *h4)
 
 static void reset_rx(struct h4_data *h4)
 {
+	if (h4->rx.buf) {
+		net_buf_unref(h4->rx.buf);
+		h4->rx.buf = NULL;
+	}
+
 	h4->rx.type = BT_HCI_H4_NONE;
 	h4->rx.remaining = 0U;
 	h4->rx.have_hdr = false;
