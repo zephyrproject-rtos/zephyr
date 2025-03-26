@@ -585,6 +585,17 @@ config BT_SMP_DISABLE_LEGACY_JW_PASSKEY
 	  This option disables Just Works and Passkey legacy pairing methods to
 	  increase security.
 
+config BT_SMP_ALLOW_UNAUTH_OVERWRITE_AUTHENTICATED
+	bool "Allow unauthenticated pairing for previous authenticated paired device"
+	help
+	  This option allows all unauthenticated pairing attempts made by the
+	  peer where an authenticated bond already exists.
+	  This would enable cases where an attacker could copy the peer device
+	  address to connect and start an unauthenticated pairing procedure
+	  to replace the existing bond. When this option is disabled in order
+	  to create a new bond the old bond has to be explicitly deleted with
+	  bt_unpair.
+
 config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	bool "Allow unauthenticated pairing for paired device"
 	help
