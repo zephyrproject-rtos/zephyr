@@ -1,8 +1,5 @@
 .. zephyr:board:: nrf54l09pdk
 
-nRF54L09 PDK
-############
-
 Overview
 ********
 
@@ -36,25 +33,7 @@ internal or external capacitors.
 Supported Features
 ==================
 
-The ``nrf54l09pdk/nrf54l09/cpuapp`` board target supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| RRAM      | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| GRTC      | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
