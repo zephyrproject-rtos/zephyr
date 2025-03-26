@@ -11,10 +11,6 @@ to SPI bridge provides rapid access to onboard memory, allowing large networks o
 
 The Zephyr port is running on the MAX78000 MCU.
 
-.. image:: img/max78000evkit_img1.webp
-   :align: center
-   :alt: MAX78000 EVKIT
-
 Hardware
 ********
 
