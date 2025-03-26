@@ -21,15 +21,15 @@
 
 #define DT_DRV_COMPAT arm_gic_v3
 
-#define GIC_V3_NODE	DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
+#define GIC_V3_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
 
-#define GIC_REDISTRIBUTOR_STRIDE	DT_PROP_OR(GIC_V3_NODE, redistributor_stride, 0)
-#define GIC_NUM_REDISTRIBUTOR_REGIONS	DT_PROP_OR(GIC_V3_NODE, redistributor_regions, 1)
+#define GIC_REDISTRIBUTOR_STRIDE      DT_PROP_OR(GIC_V3_NODE, redistributor_stride, 0)
+#define GIC_NUM_REDISTRIBUTOR_REGIONS DT_PROP_OR(GIC_V3_NODE, redistributor_regions, 1)
 
-#define GIC_REG_REGION(idx, node_id)				\
-	{							\
-		.base = DT_REG_ADDR_BY_IDX(node_id, idx),	\
-		.size = DT_REG_SIZE_BY_IDX(node_id, idx),	\
+#define GIC_REG_REGION(idx, node_id)                                                               \
+	{                                                                                          \
+		.base = DT_REG_ADDR_BY_IDX(node_id, idx),                                          \
+		.size = DT_REG_SIZE_BY_IDX(node_id, idx),                                          \
 	}
 
 /*
@@ -44,17 +44,15 @@ struct gic_reg_region {
  * GIC register regions info table
  */
 static struct gic_reg_region gic_reg_regions[] = {
-	LISTIFY(DT_NUM_REGS(GIC_V3_NODE), GIC_REG_REGION, (,), GIC_V3_NODE)
-};
-
+	LISTIFY(DT_NUM_REGS(GIC_V3_NODE), GIC_REG_REGION, (,), GIC_V3_NODE) };
 
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
-#define IGROUPR_VAL	0xFFFFFFFFU
+#define IGROUPR_VAL 0xFFFFFFFFU
 #else
-#define IGROUPR_VAL	0x0U
+#define IGROUPR_VAL 0x0U
 #endif
 
 /*
@@ -62,10 +60,10 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
  * deal with (one configuration byte per interrupt). PENDBASE has to
  * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
  */
-#define ITS_MAX_LPI_NRBITS	16 /* 64K LPIs */
+#define ITS_MAX_LPI_NRBITS 16 /* 64K LPIs */
 
-#define LPI_PROPBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits), KB(64))
-#define LPI_PENDBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits) / 8, KB(64))
+#define LPI_PROPBASE_SZ(nrbits) ROUND_UP(BIT(nrbits), KB(64))
+#define LPI_PENDBASE_SZ(nrbits) ROUND_UP(BIT(nrbits) / 8, KB(64))
 
 #ifdef CONFIG_GIC_V3_ITS
 static uintptr_t lpi_prop_table;
@@ -152,8 +150,7 @@ static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 }
 #endif
 
-void arm_gic_irq_set_priority(unsigned int intid,
-			      unsigned int prio, uint32_t flags)
+void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t flags)
 {
 #ifdef CONFIG_GIC_V3_ITS
 	if (intid >= 8192) {
@@ -301,8 +298,7 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
-		   uint16_t target_list)
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
 {
 	uint32_t aff3, aff2, aff1;
 	uint64_t sgi_val;
@@ -318,8 +314,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 #else
 	aff3 = MPIDR_AFFLVL(target_aff, 3);
 #endif
-	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
-				   SGIR_IRM_TO_AFF, target_list);
+	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id, SGIR_IRM_TO_AFF, target_list);
 
 	barrier_dsync_fence_full();
 	write_sysreg(sgi_val, ICC_SGI1R);
@@ -361,8 +356,8 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
  */
 static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 {
-	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)),
-				       ITS_MAX_LPI_NRBITS);
+	unsigned int lpi_id_bits =
+		MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), ITS_MAX_LPI_NRBITS);
 	uintptr_t lpi_pend_table;
 	uint64_t reg;
 	uint32_t ctlr;
@@ -393,8 +388,7 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
 	      (GIC_BASER_CACHE_RAWAWB << GITR_PENDBASER_INNER_CACHE_SHIFT) |
 	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
-	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) |
-	      GITR_PENDBASER_PTZ;
+	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) | GITR_PENDBASER_PTZ;
 	sys_write64(reg, rdist + GICR_PENDBASER);
 	/* TOFIX: check SHAREABILITY validity */
 
@@ -434,8 +428,7 @@ static void gicv3_cpuif_init(void)
 	/*
 	 * Configure default priorities for SGI 0:15 and PPI 0:15.
 	 */
-	for (intid = 0; intid < GIC_SPI_INT_BASE;
-	     intid += GIC_NUM_PRI_PER_REG) {
+	for (intid = 0; intid < GIC_SPI_INT_BASE; intid += GIC_NUM_PRI_PER_REG) {
 		sys_write32(GIC_INT_DEF_PRI_X4, IPRIORITYR(base, intid));
 	}
 
@@ -451,8 +444,8 @@ static void gicv3_cpuif_init(void)
 	icc_sre = read_sysreg(ICC_SRE_EL1);
 
 	if (!(icc_sre & ICC_SRE_ELx_SRE_BIT)) {
-		icc_sre = (icc_sre | ICC_SRE_ELx_SRE_BIT |
-			   ICC_SRE_ELx_DIB_BIT | ICC_SRE_ELx_DFB_BIT);
+		icc_sre =
+			(icc_sre | ICC_SRE_ELx_SRE_BIT | ICC_SRE_ELx_DIB_BIT | ICC_SRE_ELx_DFB_BIT);
 		write_sysreg(icc_sre, ICC_SRE_EL1);
 		icc_sre = read_sysreg(ICC_SRE_EL1);
 
@@ -501,46 +494,38 @@ static void gicv3_dist_init(void)
 	 */
 	sys_set_bit(GICD_CTLR, GICD_CTRL_NS);
 	__ASSERT(sys_test_bit(GICD_CTLR, GICD_CTRL_NS),
-		"Current GIC does not support single security state");
+		 "Current GIC does not support single security state");
 #endif
 
 	/*
 	 * Default configuration of all SPIs
 	 */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_INTR_PER_REG) {
+	for (intid = GIC_SPI_INT_BASE; intid < num_ints; intid += GIC_NUM_INTR_PER_REG) {
 		idx = intid / GIC_NUM_INTR_PER_REG;
 		/* Disable interrupt */
-		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
-			    ICENABLER(base, idx));
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, idx));
 		/* Clear pending */
-		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
-			    ICPENDR(base, idx));
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, idx));
 		sys_write32(IGROUPR_VAL, IGROUPR(base, idx));
-		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
-			    IGROUPMODR(base, idx));
-
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, idx));
 	}
 	/* wait for rwp on GICD */
 	gic_wait_rwp(GIC_SPI_INT_BASE);
 
 	/* Configure default priorities for all SPIs. */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_PRI_PER_REG) {
+	for (intid = GIC_SPI_INT_BASE; intid < num_ints; intid += GIC_NUM_PRI_PER_REG) {
 		sys_write32(GIC_INT_DEF_PRI_X4, IPRIORITYR(base, intid));
 	}
 
 	/* Configure all SPIs as active low, level triggered by default */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_CFG_PER_REG) {
+	for (intid = GIC_SPI_INT_BASE; intid < num_ints; intid += GIC_NUM_CFG_PER_REG) {
 		idx = intid / GIC_NUM_CFG_PER_REG;
 		sys_write32(0, ICFGR(base, idx));
 	}
 
 #ifdef CONFIG_ARMV8_A_NS
 	/* Enable distributor with ARE */
-	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS),
-		    GICD_CTLR);
+	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS), GICD_CTLR);
 #elif defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
 	 * For GIC single security state, the config GIC_SINGLE_SECURITY_STATE
@@ -552,8 +537,7 @@ static void gicv3_dist_init(void)
 	 * similarly the GICD_CTLR_ENABLE_G1 and GICD_CTLR_ENABLE_G1NS share
 	 * BIT(1), we can reuse them.
 	 */
-	sys_write32(BIT(GICD_CTRL_ARE_S) | BIT(GICD_CTLR_ENABLE_G1NS),
-		    GICD_CTLR);
+	sys_write32(BIT(GICD_CTRL_ARE_S) | BIT(GICD_CTLR_ENABLE_G1NS), GICD_CTLR);
 #else
 	/* enable Group 1 secure interrupts */
 	sys_set_bit(GICD_CTLR, GICD_CTLR_ENABLE_G1S);
@@ -668,8 +652,8 @@ int arm_gic_init(const struct device *dev)
 
 	return 0;
 }
-DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)
