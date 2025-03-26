@@ -459,7 +459,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
-    parser.add_argument("--force-toolchain-variant",
+    parser.add_argument("--force-toolchain-variant", action="store", default=None,
                         help="Use provided toolchain variant and do not attempt to auto-detect "
                              "the toolchain using cmake. Useful when creating test plans "
                              "without the need for the Zephyr SDK to be installed.")
@@ -1111,7 +1111,7 @@ class TwisterEnv:
 
     def discover(self):
         self.check_zephyr_version()
-        if self.options.force_toolchain_variant:
+        if self.options.force_toolchain_variant is not None:
             self.toolchain = self.options.force_toolchain_variant
         else:
             self.get_toolchain()

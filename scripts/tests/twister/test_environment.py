@@ -336,7 +336,8 @@ def test_twisterenv_init(options, expected_env):
 
 def test_twisterenv_discover():
     options = mock.Mock(
-        ninja=True
+        ninja=True,
+        force_toolchain_variant=None
     )
 
     original_abspath = os.path.abspath
