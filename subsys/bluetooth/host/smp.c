@@ -810,6 +810,12 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		return;
 	}
 
+	/* Remove the bonding information */
+	link_key = bt_keys_find_link_key(&conn->le.dst.a);
+	if (link_key != NULL) {
+		bt_keys_link_key_clear(link_key);
+	}
+
 	/*
 	 * At this point remote device identity is known so we can use
 	 * destination address here
@@ -854,6 +860,11 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 	} else {
 		link_key->flags &= ~BT_LINK_KEY_AUTHENTICATED;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+		/* Store the link key */
+		bt_keys_link_key_store(link_key);
 	}
 }
 
