@@ -752,6 +752,47 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CLASSIC)
+static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
+{
+	struct bt_conn *conn;
+	struct bt_keys_link_key *link_key;
+	struct bt_keys *keys;
+
+	if (!smp->chan.chan.conn) {
+		return false;
+	}
+
+	conn = smp->chan.chan.conn;
+	keys = conn->le.keys;
+	if (keys == NULL) {
+		return false;
+	}
+
+	/* Check whether it is has been bonded */
+	link_key = bt_keys_find_link_key(&conn->le.dst.a);
+	if (link_key == NULL) {
+		return true;
+	}
+
+	if (link_key->flags & BT_LINK_KEY_DEBUG) {
+		LOG_DBG("Debug LK can be overwrote");
+		return true;
+	}
+
+	if ((link_key->flags & BT_LINK_KEY_AUTHENTICATED) &&
+	    ((keys->flags & BT_KEYS_AUTHENTICATED) == 0)) {
+		LOG_DBG("Stronger LK (MITM) cannot be overwrote by weaker LTK");
+		return false;
+	}
+
+	if ((link_key->flags & BT_LINK_KEY_SC) && ((keys->flags & BT_KEYS_SC) == 0)) {
+		LOG_DBG("Stronger LK (SC) cannot be overwrote by weaker LTK");
+		return false;
+	}
+
+	return true;
+}
+
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -763,6 +804,11 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	LOG_DBG("");
 
 	/* TODO handle errors? */
+
+	if (!ltk_derive_link_key_allowed(smp)) {
+		LOG_DBG("LK cannot be derived by LTK");
+		return;
+	}
 
 	/*
 	 * At this point remote device identity is known so we can use
