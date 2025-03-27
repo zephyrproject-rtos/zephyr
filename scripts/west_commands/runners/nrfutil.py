@@ -17,11 +17,11 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 reset=True, tool_opt=None, force=False, recover=False,
-                 suit_starter=False, ext_mem_config_file=None):
+                 erase_pages=False, reset=True, tool_opt=None, force=False,
+                 recover=False, suit_starter=False, ext_mem_config_file=None):
 
-        super().__init__(cfg, family, softreset, pinreset, dev_id, erase, reset,
-                         tool_opt, force, recover)
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
+                         erase_pages, reset, tool_opt, force, recover)
 
         self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
@@ -50,7 +50,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
                                    args.pinreset, args.dev_id, erase=args.erase,
-                                   reset=args.reset,
+                                   erase_pages=args.erase_pages, reset=args.reset,
                                    tool_opt=args.tool_opt, force=args.force,
                                    recover=args.recover,
                                    suit_starter=args.suit_manifest_starter,
@@ -65,7 +65,6 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
-
 
     def _exec(self, args):
         jout_all = []
