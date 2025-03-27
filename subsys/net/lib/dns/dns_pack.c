@@ -386,7 +386,7 @@ int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 		lb_size = msg[pos];
 
 		/* pointer */
-		if (lb_size > DNS_LABEL_MAX_SIZE) {
+		if ((lb_size & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
 			uint8_t mask = DNS_LABEL_MAX_SIZE;
 
 			if (pos + 1 >= msg_size) {
@@ -409,6 +409,9 @@ int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 			}
 
 			continue;
+		} else if (lb_size & NS_CMPRSFLGS) {
+			rc = -EINVAL;
+			break;
 		}
 
 		/* validate that the label (i.e. size + elements),
@@ -498,7 +501,7 @@ static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 	}
 
 	while ((val = *curr_src++)) {
-		if (val & NS_CMPRSFLGS) {
+		if ((val & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
 			/* Follow pointer */
 			int pos;
 
