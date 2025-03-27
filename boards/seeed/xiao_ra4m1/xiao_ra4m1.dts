@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2025 Pete Johanson
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4m1ab3cne.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include "xiao_ra4m1-pinctrl.dtsi"
+
+/ {
+	model = "Seeed XIAO-RA4M1";
+	compatible = "renesas,ra4m1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport0 11 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		watchdog0 = &wdt;
+	};
+};
+
+&uclk {
+	clocks = <&hoco>;
+	div = <1>;
+	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&hoco {
+	status = "okay";
+	clock-frequency = <48000000>;
+};
+
+&pclkblock {
+	clocks = <&hoco>;
+};
+
+&iclk {
+	div = <1>;
+};
+
+&pclka {
+	div = <1>;
+};
+
+&pclkb {
+	div = <2>;
+};
+
+&pclkc {
+	div = <1>;
+};
+
+&pclkd {
+	div = <1>;
+};
+
+&fclk {
+	div = <2>;
+};
+
+&sci2 {
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};
+
+#include "seeed_xiao_connector.dtsi"
