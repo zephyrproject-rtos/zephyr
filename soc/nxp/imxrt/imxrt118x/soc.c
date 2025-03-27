@@ -259,13 +259,57 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_M7_Systick, &rootCfg);
 #endif
 
-#if defined(CONFIG_UART_MCUX_LPUART) && \
-	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1)) \
+#if defined(CONFIG_UART_MCUX_LPUART)
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1)) \
 	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2)))
 	/* Configure LPUART0102 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_LPUART0102_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart0102, &rootCfg);
 #endif
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart3)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart4)))
+	/* Configure LPUART0304 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPUART0304_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart0304, &rootCfg);
+#endif
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart5)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart6)))
+	/* Configure LPUART0506 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPUART0506_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart0506, &rootCfg);
+#endif
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart7)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart8)))
+	/* Configure LPUART0708 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPUART0708_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart0708, &rootCfg);
+#endif
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart9)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart10)))
+	/* Configure LPUART0910 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPUART0910_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart0910, &rootCfg);
+#endif
+
+#if	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart11)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart12)))
+	/* Configure LPUART1112 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPUART1112_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpuart1112, &rootCfg);
+#endif
+
+#endif /* CONFIG_UART_MCUX_LPUART */
 
 #if defined(CONFIG_I2C_MCUX_LPI2C) && \
 	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1)) \
