@@ -17,8 +17,6 @@ gpio0: gpio@1100000 {
 	interrupts = <69 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	pinctrl-0 = <&gpio0_default>;
-	pinctrl-names = "default";
 };
 
 gpio1: gpio@1101000 {
@@ -27,8 +25,6 @@ gpio1: gpio@1101000 {
 	interrupts = <70 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	pinctrl-0 = <&gpio1_default>;
-	pinctrl-names = "default";
 };
 
 gpio2: gpio@1102000 {
@@ -37,8 +33,6 @@ gpio2: gpio@1102000 {
 	interrupts = <71 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	pinctrl-0 = <&gpio2_default>;
-	pinctrl-names = "default";
 };
 
 gpio3: gpio@1103000 {

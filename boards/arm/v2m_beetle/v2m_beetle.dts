@@ -101,8 +101,6 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			clocks = <&syscon>;
-			pinctrl-0 = <&gpio0_default>;
-			pinctrl-names = "default";
 		};
 
 		gpio1: gpio@40011000 {
@@ -112,8 +110,6 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			clocks = <&syscon>;
-			pinctrl-0 = <&gpio1_default>;
-			pinctrl-names = "default";
 		};
 
 		gpio2: gpio@40012000 {
