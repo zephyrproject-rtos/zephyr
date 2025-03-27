@@ -484,6 +484,25 @@ Check if your SoC is listed in `probe-rs Supported Devices`_.
 
 .. _stm32cubeprog-flash-host-tools:
 
+Renesas Flash Programmer (RFP) Host Tools
+*****************************************
+
+Renesas provides `Renesas Flash Programmer`_ as an official programming tool for Renesas boards
+using the Renesas standard boot firmware. It is available as a GUI and CLI.
+
+For boards configured with the ``rfp`` west runner, the RFP CLI can be easily used to flash Zephyr.
+
+Supported west commands:
+
+1. flash
+
+Once downloaded, if ``rfp-cli`` is not placed somewhere in your system PATH, you can pass the location
+to ``rfp-cli`` when flashing:
+
+.. code-block:: console
+
+   west flash --rfp-cli ~/Downloads/RFP_CLI_Linux_V31800_x64/linux-x64/rfp-cli
+
 STM32CubeProgrammer Flash Host Tools
 ************************************
 
@@ -571,6 +590,9 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
 
 .. _NXP S32 Design Studio for S32 Platform:
    https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM
+
+.. _Renesas Flash Programmer:
+   https://www.renesas.com/en/software-tool/renesas-flash-programmer-programming-gui
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
