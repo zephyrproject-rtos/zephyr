@@ -30,16 +30,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-
-#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
-
-#ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
 #include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
 
 #include "spi_ll_stm32.h"
 
@@ -1082,7 +1075,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 }
 
 #ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
 {
 	bool buf_within_nocache = false;
 
@@ -1095,9 +1088,11 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	/* Check if buffer is in nocache memory region defined in DT */
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+#endif /* CONFIG_MEM_ATTR */
 
 	return buf_within_nocache;
 }
