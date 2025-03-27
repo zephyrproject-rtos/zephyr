@@ -24,6 +24,11 @@ tests:
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
+  debug.coredump.backends.in_memory:
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    extra_args: CONF_FILE=prj_in_memory.conf
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=y
   debug.coredump.backends.other:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_backend_other.conf
