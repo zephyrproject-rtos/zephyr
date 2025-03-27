@@ -52,7 +52,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return -ENOTSUP;
 	}
 
-	if (word_size < 8 || (word_size % 32 == 1)) {
+	if (word_size < 2 || (word_size % 32 == 1)) {
 		/* Zephyr word size == hardware FRAME size (not word size)
 		 * Max frame size: 4096 bits
 		 *   (zephyr field is 6 bit wide for max 64 bit size, no need to check)
@@ -98,7 +98,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 	LPSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.bitsPerFrame = word_size;
+	master_config.bitsPerFrame = word_size < 8 ? 8 : word_size; /* minimum FRAMSZ is 8 */
 	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 				     ? kLPSPI_ClockPolarityActiveLow
 				     : kLPSPI_ClockPolarityActiveHigh;
