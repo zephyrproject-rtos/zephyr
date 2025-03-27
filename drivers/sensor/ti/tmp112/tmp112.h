@@ -41,6 +41,16 @@
 /* scale in micro degrees Celsius */
 #define TMP112_TEMP_SCALE       62500
 
+/* RAW min/max temperature values - LSB=TMP112_TEMP_SCALE */
+/* 128C */
+#define TMP112_TEMP_MAX    2047
+/* -55C */
+#define TMP112_TEMP_MIN    -880
+/* 150C */
+#define TMP112_TEMP_MAX_EM 2400
+/* -55C */
+#define TMP112_TEMP_MIN_EM TMP112_TEMP_MIN
+
 struct tmp112_data {
 	int16_t sample;
 	uint16_t config_reg;
@@ -49,6 +59,8 @@ struct tmp112_data {
 struct tmp112_config {
 	const struct i2c_dt_spec bus;
 	uint8_t cr;
+	int32_t t_low_micro_c;
+	int32_t t_high_micro_c;
 	bool extended_mode : 1;
 };
 
