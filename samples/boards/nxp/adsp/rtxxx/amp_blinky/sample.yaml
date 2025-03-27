@@ -1,0 +1,18 @@
+sample:
+  name: i.MX RTxxx AMP blinky sample
+  description:
+    LED blinking application using the i.MX RTxxx devices as AMP systems.
+common:
+  sysbuild: true
+  min_ram: 1024
+  min_flash: 1024
+  platform_allow:
+    - mimxrt685_evk/mimxrt685s/cm33
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World! (.*)"
+tests:
+  sample.nxp.adsp.amp_blinky:
+    tags: tests
