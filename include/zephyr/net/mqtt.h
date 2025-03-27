@@ -80,8 +80,10 @@ enum mqtt_evt_type {
 	/** Ping Response from server. */
 	MQTT_EVT_PINGRESP,
 
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** Authentication packet received from server. MQTT 5.0 only. */
 	MQTT_EVT_AUTH,
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief MQTT version protocol level. */
@@ -244,11 +246,13 @@ struct mqtt_binstr {
 
 /** @brief Abstracts aliased topic. */
 struct mqtt_topic_alias {
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** UTF-8 encoded topic name. */
 	uint8_t topic_buf[CONFIG_MQTT_TOPIC_ALIAS_STRING_MAX];
 
 	/** Topic name size. */
 	uint16_t topic_size;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Abstracts MQTT UTF-8 encoded topic that can be subscribed
@@ -388,6 +392,7 @@ struct mqtt_connack_param {
 
 /** @brief Common MQTT 5.0 properties shared across all ack-type messages. */
 struct mqtt_common_ack_properties {
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/** MQTT 5.0, chapter 3.4.2.2.3 User Property. */
 	struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
 
@@ -401,6 +406,7 @@ struct mqtt_common_ack_properties {
 		/** User Property property was present. */
 		bool has_user_prop;
 	} rx;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT publish acknowledgment (PUBACK). */
@@ -621,8 +627,9 @@ struct mqtt_disconnect_param {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
-#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
+/** @brief Parameters for auth message. */
 struct mqtt_auth_param {
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
 	/* MQTT 5.0, chapter 3.15.2.1 Authenticate Reason Code */
 	enum mqtt_auth_reason_code reason_code;
 
@@ -651,8 +658,8 @@ struct mqtt_auth_param {
 			bool has_user_prop;
 		} rx;
 	} prop;
-};
 #endif /* CONFIG_MQTT_VERSION_5_0 */
+};
 
 /**
  * @brief Defines event parameters notified along with asynchronous events
