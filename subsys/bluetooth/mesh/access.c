@@ -1830,8 +1830,8 @@ int bt_mesh_model_correspond(const struct bt_mesh_model *corresponding_mod,
 
 	MOD_REL_LIST_FOR_EACH(i) {
 		if (mod_rel_list[i].type < RELATION_TYPE_EXT &&
-		    mod_rel_list[i].type > cor_id) {
-			cor_id = mod_rel_list[i].type;
+		    mod_rel_list[i].type >= cor_id) {
+			cor_id = mod_rel_list[i].type + 1;
 		}
 
 		if ((IS_MOD_BASE(base_mod, i, base_offset) ||
