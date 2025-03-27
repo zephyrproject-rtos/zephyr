@@ -146,7 +146,7 @@ void bt_keys_link_key_store(struct bt_keys_link_key *link_key)
 	}
 }
 
-void bt_foreach_bond_br(void (*func)(const struct bt_bond_info *info, void *user_data),
+void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *user_data),
 			void *user_data)
 {
 	__ASSERT_NO_MSG(func != NULL);
@@ -155,10 +155,9 @@ void bt_foreach_bond_br(void (*func)(const struct bt_bond_info *info, void *user
 		const struct bt_keys_link_key *key = &key_pool[i];
 
 		if (!bt_addr_eq(&key->addr, BT_ADDR_ANY)) {
-			struct bt_bond_info info;
+			struct bt_br_bond_info info;
 
-			info.addr.type = BT_ADDR_LE_PUBLIC;
-			bt_addr_copy(&info.addr.a, &key->addr);
+			bt_addr_copy(&info.addr, &key->addr);
 			func(&info, user_data);
 		}
 	}

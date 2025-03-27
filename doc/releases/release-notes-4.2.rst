@@ -120,6 +120,10 @@ New APIs and options
     * :c:func:`bt_conn_lookup_addr_br`
     * :c:func:`bt_conn_get_dst_br`
     * LE Connection Subrating is no longer experimental.
+    * Remove deletion of the classic bonding information from :c:func:`bt_unpair`, and add
+      :c:func:`bt_br_unpair`.
+    * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
+      :c:func:`bt_br_foreach_bond`.
 
 * Display
 

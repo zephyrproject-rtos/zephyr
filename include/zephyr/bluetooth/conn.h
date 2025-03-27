@@ -2464,6 +2464,17 @@ struct bt_conn_auth_info_cb {
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
 
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief Notify that bond of classic has been deleted.
+	 *
+	 *  This callback notifies the application that the bond information of classic
+	 *  for the remote peer has been deleted
+	 *
+	 *  @param peer Remote address.
+	 */
+	void (*br_bond_deleted)(const bt_addr_t *peer);
+#endif /* CONFIG_BT_CLASSIC */
+
 	/** Internally used field for list handling */
 	sys_snode_t node;
 };
