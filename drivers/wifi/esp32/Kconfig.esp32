@@ -75,6 +75,7 @@ config ESP32_WIFI_STA_SCAN_ALL
 config ESP32_WIFI_NET_ALLOC_SPIRAM
 	bool "Allocate memory of WiFi and NET in SPIRAM"
 	depends on ESP_SPIRAM
+	default y if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
 	  for application stack.
