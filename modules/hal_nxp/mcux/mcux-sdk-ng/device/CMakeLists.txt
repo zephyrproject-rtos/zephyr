@@ -39,9 +39,18 @@ endif()
 set(CONFIG_MCUX_COMPONENT_device.system ON)
 set(CONFIG_MCUX_COMPONENT_device.CMSIS ON)
 set(CONFIG_MCUX_COMPONENT_driver.clock ON)
-set(CONFIG_MCUX_COMPONENT_driver.power ON)
 set(CONFIG_MCUX_COMPONENT_driver.reset ON)
 set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+
+# Exclude fsl_power.c for DSP domains
+if(NOT ${CONFIG_MCUX_CORE_SUFFIX} MATCHES "_dsp")
+  set(CONFIG_MCUX_COMPONENT_driver.power ON)
+endif()
+
+# Include fsl_dsp.c for Cortex-M domains of RTxxx devices
+if(CONFIG_SOC_MIMXRT685S AND NOT ${CONFIG_MCUX_CORE_SUFFIX} MATCHES "_dsp")
+  set(CONFIG_MCUX_COMPONENT_driver.dsp ON)
+endif()
 
 # load device variables
 include(${mcux_device_folder}/variable.cmake)
