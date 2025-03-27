@@ -1,7 +1,7 @@
 /**
- * @file drivers/stepper/stepper_drv8424.h
+ * @file drivers/stepper/stepper_drv84xx.h
  *
- * @brief Public API for DRV8424 Stepper Controller Specific Functions
+ * @brief Public API for DRV84XX Stepper Controller Specific Functions
  *
  */
 
@@ -26,7 +26,7 @@ extern "C" {
  * @retval 0 Success
  * @retval <0 Error code dependent on the gpio controller of the microstep pins
  */
-int drv8424_microstep_recovery(const struct device *dev);
+int drv84xx_microstep_recovery(const struct device *dev);
 
 #ifdef __cplusplus
 }

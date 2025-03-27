@@ -12,7 +12,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/stepper.h>
 
-struct drv8424_api_fixture {
+struct drv84xx_api_fixture {
 	const struct device *dev;
 	stepper_event_callback_t callback;
 };
@@ -20,7 +20,7 @@ struct drv8424_api_fixture {
 struct k_poll_signal stepper_signal;
 struct k_poll_event stepper_event;
 
-static void drv8424_api_print_event_callback(const struct device *dev, enum stepper_event event,
+static void drv84xx_api_print_event_callback(const struct device *dev, enum stepper_event event,
 					     void *dummy)
 {
 	switch (event) {
@@ -41,11 +41,11 @@ static void drv8424_api_print_event_callback(const struct device *dev, enum step
 	}
 }
 
-static void *drv8424_api_setup(void)
+static void *drv84xx_api_setup(void)
 {
-	static struct drv8424_api_fixture fixture = {
-		.dev = DEVICE_DT_GET(DT_NODELABEL(drv8424)),
-		.callback = drv8424_api_print_event_callback,
+	static struct drv84xx_api_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_ALIAS(stepper)),
+		.callback = drv84xx_api_print_event_callback,
 	};
 
 	k_poll_signal_init(&stepper_signal);
@@ -56,21 +56,21 @@ static void *drv8424_api_setup(void)
 	return &fixture;
 }
 
-static void drv8424_api_before(void *f)
+static void drv84xx_api_before(void *f)
 {
-	struct drv8424_api_fixture *fixture = f;
+	struct drv84xx_api_fixture *fixture = f;
 	(void)stepper_set_reference_position(fixture->dev, 0);
 	(void)stepper_set_micro_step_res(fixture->dev, 1);
 	k_poll_signal_reset(&stepper_signal);
 }
 
-static void drv8424_api_after(void *f)
+static void drv84xx_api_after(void *f)
 {
-	struct drv8424_api_fixture *fixture = f;
+	struct drv84xx_api_fixture *fixture = f;
 	(void)stepper_disable(fixture->dev);
 }
 
-ZTEST_F(drv8424_api, test_micro_step_res_set)
+ZTEST_F(drv84xx_api, test_micro_step_res_set)
 {
 	(void)stepper_set_micro_step_res(fixture->dev, 4);
 	enum stepper_micro_step_resolution res;
@@ -79,7 +79,7 @@ ZTEST_F(drv8424_api, test_micro_step_res_set)
 		      res);
 }
 
-ZTEST_F(drv8424_api, test_actual_position_set)
+ZTEST_F(drv84xx_api, test_actual_position_set)
 {
 	int32_t pos = 100u;
 	(void)stepper_set_reference_position(fixture->dev, pos);
@@ -87,7 +87,7 @@ ZTEST_F(drv8424_api, test_actual_position_set)
 	zassert_equal(pos, 100u, "Actual position should be %u but is %u", 100u, pos);
 }
 
-ZTEST_F(drv8424_api, test_is_not_moving_when_disabled)
+ZTEST_F(drv84xx_api, test_is_not_moving_when_disabled)
 {
 	int32_t steps = 100;
 	bool moving = true;
@@ -100,7 +100,7 @@ ZTEST_F(drv8424_api, test_is_not_moving_when_disabled)
 	zassert_false(moving, "Driver should not be in state is_moving after being disabled");
 }
 
-ZTEST_F(drv8424_api, test_position_not_updating_when_disabled)
+ZTEST_F(drv84xx_api, test_position_not_updating_when_disabled)
 {
 	int32_t steps = 1000;
 	int32_t position_1 = 0;
@@ -118,7 +118,7 @@ ZTEST_F(drv8424_api, test_position_not_updating_when_disabled)
 		      position_2);
 }
 
-ZTEST_F(drv8424_api, test_is_not_moving_when_reenabled_after_movement)
+ZTEST_F(drv84xx_api, test_is_not_moving_when_reenabled_after_movement)
 {
 	int32_t steps = 1000;
 	bool moving = true;
@@ -133,7 +133,7 @@ ZTEST_F(drv8424_api, test_is_not_moving_when_reenabled_after_movement)
 	(void)stepper_is_moving(fixture->dev, &moving);
 	zassert_false(moving, "Driver should not be in state is_moving after being reenabled");
 }
-ZTEST_F(drv8424_api, test_position_not_updating_when_reenabled_after_movement)
+ZTEST_F(drv84xx_api, test_position_not_updating_when_reenabled_after_movement)
 {
 	int32_t steps = 1000;
 	int32_t position_1 = 0;
@@ -153,7 +153,7 @@ ZTEST_F(drv8424_api, test_position_not_updating_when_reenabled_after_movement)
 		      position_2);
 }
 
-ZTEST_F(drv8424_api, test_move_to_positive_direction_movement)
+ZTEST_F(drv84xx_api, test_move_to_positive_direction_movement)
 {
 	int32_t pos = 50;
 
@@ -173,7 +173,7 @@ ZTEST_F(drv8424_api, test_move_to_positive_direction_movement)
 	zassert_equal(pos, 50u, "Target position should be %d but is %d", 50u, pos);
 }
 
-ZTEST_F(drv8424_api, test_move_to_negative_direction_movement)
+ZTEST_F(drv84xx_api, test_move_to_negative_direction_movement)
 {
 	int32_t pos = -50;
 
@@ -193,7 +193,7 @@ ZTEST_F(drv8424_api, test_move_to_negative_direction_movement)
 	zassert_equal(pos, -50, "Target position should be %d but is %d", -50, pos);
 }
 
-ZTEST_F(drv8424_api, test_move_to_identical_current_and_target_position)
+ZTEST_F(drv84xx_api, test_move_to_identical_current_and_target_position)
 {
 	int32_t pos = 0;
 
@@ -213,7 +213,7 @@ ZTEST_F(drv8424_api, test_move_to_identical_current_and_target_position)
 	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
 }
 
-ZTEST_F(drv8424_api, test_move_to_is_moving_true_while_moving)
+ZTEST_F(drv84xx_api, test_move_to_is_moving_true_while_moving)
 {
 	int32_t pos = 50;
 	bool moving = false;
@@ -226,7 +226,7 @@ ZTEST_F(drv8424_api, test_move_to_is_moving_true_while_moving)
 	zassert_true(moving, "Driver should be in state is_moving while moving");
 }
 
-ZTEST_F(drv8424_api, test_move_to_is_moving_false_when_completed)
+ZTEST_F(drv84xx_api, test_move_to_is_moving_false_when_completed)
 {
 	int32_t pos = 50;
 	bool moving = false;
@@ -247,7 +247,7 @@ ZTEST_F(drv8424_api, test_move_to_is_moving_false_when_completed)
 	zassert_false(moving, "Driver should not be in state is_moving after finishing");
 }
 
-ZTEST_F(drv8424_api, test_move_to_no_movement_when_disabled)
+ZTEST_F(drv84xx_api, test_move_to_no_movement_when_disabled)
 {
 	int32_t pos = 50;
 	int32_t curr_pos = 50;
@@ -264,7 +264,7 @@ ZTEST_F(drv8424_api, test_move_to_no_movement_when_disabled)
 		      curr_pos);
 }
 
-ZTEST_F(drv8424_api, test_move_by_positive_step_count)
+ZTEST_F(drv84xx_api, test_move_by_positive_step_count)
 {
 	int32_t steps = 50;
 
@@ -284,7 +284,7 @@ ZTEST_F(drv8424_api, test_move_by_positive_step_count)
 	zassert_equal(steps, 50u, "Target position should be %d but is %d", 50u, steps);
 }
 
-ZTEST_F(drv8424_api, test_move_by_negative_step_count)
+ZTEST_F(drv84xx_api, test_move_by_negative_step_count)
 {
 	int32_t steps = -50;
 
@@ -304,7 +304,7 @@ ZTEST_F(drv8424_api, test_move_by_negative_step_count)
 	zassert_equal(steps, -50, "Target position should be %d but is %d", -50, steps);
 }
 
-ZTEST_F(drv8424_api, test_move_by_zero_steps_no_movement)
+ZTEST_F(drv84xx_api, test_move_by_zero_steps_no_movement)
 {
 	int32_t steps = 0;
 
@@ -324,7 +324,7 @@ ZTEST_F(drv8424_api, test_move_by_zero_steps_no_movement)
 	zassert_equal(steps, 0, "Target position should be %d but is %d", 0, steps);
 }
 
-ZTEST_F(drv8424_api, test_move_by_zero_step_interval)
+ZTEST_F(drv84xx_api, test_move_by_zero_step_interval)
 {
 	int32_t steps = 100;
 	int32_t ret = 0;
@@ -340,7 +340,7 @@ ZTEST_F(drv8424_api, test_move_by_zero_step_interval)
 	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
 }
 
-ZTEST_F(drv8424_api, test_move_by_is_moving_true_while_moving)
+ZTEST_F(drv84xx_api, test_move_by_is_moving_true_while_moving)
 {
 	int32_t steps = 50;
 	bool moving = false;
@@ -353,7 +353,7 @@ ZTEST_F(drv8424_api, test_move_by_is_moving_true_while_moving)
 	zassert_true(moving, "Driver should be in state is_moving");
 }
 
-ZTEST_F(drv8424_api, test_move_by_is_moving_false_when_completed)
+ZTEST_F(drv84xx_api, test_move_by_is_moving_false_when_completed)
 {
 	int32_t steps = 50;
 	bool moving = true;
@@ -374,7 +374,7 @@ ZTEST_F(drv8424_api, test_move_by_is_moving_false_when_completed)
 	zassert_false(moving, "Driver should not be in state is_moving after completion");
 }
 
-ZTEST_F(drv8424_api, test_move_by_no_movement_when_disabled)
+ZTEST_F(drv84xx_api, test_move_by_no_movement_when_disabled)
 {
 	int32_t steps = 100;
 	int32_t curr_pos = 100;
@@ -391,7 +391,7 @@ ZTEST_F(drv8424_api, test_move_by_no_movement_when_disabled)
 		      curr_pos);
 }
 
-ZTEST_F(drv8424_api, test_run_positive_direction_correct_position)
+ZTEST_F(drv84xx_api, test_run_positive_direction_correct_position)
 {
 	uint64_t step_interval = 20000000;
 	int32_t steps = 0;
@@ -406,7 +406,7 @@ ZTEST_F(drv8424_api, test_run_positive_direction_correct_position)
 		     steps);
 }
 
-ZTEST_F(drv8424_api, test_run_negative_direction_correct_position)
+ZTEST_F(drv84xx_api, test_run_negative_direction_correct_position)
 {
 	uint64_t step_interval = 20000000;
 	int32_t steps = 0;
@@ -421,7 +421,7 @@ ZTEST_F(drv8424_api, test_run_negative_direction_correct_position)
 		     "Current position should be between -6 and -4 but is %d", steps);
 }
 
-ZTEST_F(drv8424_api, test_run_zero_step_interval_correct_position)
+ZTEST_F(drv84xx_api, test_run_zero_step_interval_correct_position)
 {
 	uint64_t step_interval = 0;
 	int32_t steps = 0;
@@ -435,7 +435,7 @@ ZTEST_F(drv8424_api, test_run_zero_step_interval_correct_position)
 		      steps);
 }
 
-ZTEST_F(drv8424_api, test_run_is_moving_true_when_step_interval_greater_zero)
+ZTEST_F(drv84xx_api, test_run_is_moving_true_when_step_interval_greater_zero)
 {
 	uint64_t step_interval = 20000000;
 	bool moving = false;
@@ -448,7 +448,7 @@ ZTEST_F(drv8424_api, test_run_is_moving_true_when_step_interval_greater_zero)
 	(void)stepper_disable(fixture->dev);
 }
 
-ZTEST_F(drv8424_api, test_run_no_movement_when_disabled)
+ZTEST_F(drv84xx_api, test_run_no_movement_when_disabled)
 {
 	uint64_t step_interval = 20000000;
 	int32_t steps = 50;
@@ -465,4 +465,4 @@ ZTEST_F(drv8424_api, test_run_no_movement_when_disabled)
 		      steps);
 }
 
-ZTEST_SUITE(drv8424_api, NULL, drv8424_api_setup, drv8424_api_before, drv8424_api_after, NULL);
+ZTEST_SUITE(drv84xx_api, NULL, drv84xx_api_setup, drv84xx_api_before, drv84xx_api_after, NULL);

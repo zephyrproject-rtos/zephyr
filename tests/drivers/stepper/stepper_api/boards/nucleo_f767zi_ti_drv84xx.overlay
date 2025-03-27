@@ -15,7 +15,7 @@
 
 	 motor_1: motor_1 {
 		 status = "okay";
-		 compatible = "ti,drv8424";
+		 compatible = "ti,drv84xx";
 
 
 		 dir-gpios = <&arduino_header 18 0>; /* D12 */

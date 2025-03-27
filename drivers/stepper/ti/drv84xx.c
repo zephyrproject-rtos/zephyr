@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_drv8424
+#define DT_DRV_COMPAT ti_drv84xx
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/stepper/stepper_drv8424.h>
+#include <zephyr/drivers/stepper/stepper_drv84xx.h>
 #include "../step_dir/step_dir_stepper_common.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(drv8424, CONFIG_STEPPER_LOG_LEVEL);
+LOG_MODULE_REGISTER(drv84xx, CONFIG_STEPPER_LOG_LEVEL);
 
 /* Enable and wake up times of the drv84xx stepper controller family. Only after they have elapsed
  * are controller output signals guaranteed to be valid.
@@ -21,12 +21,12 @@ LOG_MODULE_REGISTER(drv8424, CONFIG_STEPPER_LOG_LEVEL);
 #define DRV84XX_WAKE_UP_TIME K_USEC(1200)
 
 /**
- * @brief DRV8424 stepper driver configuration data.
+ * @brief DRV84XX stepper driver configuration data.
  *
  * This structure contains all of the devicetree specifications for the pins
- * needed by a given DRV8424 stepper driver.
+ * needed by a given DRV84XX stepper driver.
  */
-struct drv8424_config {
+struct drv84xx_config {
 	struct step_dir_stepper_common_config common;
 	struct gpio_dt_spec sleep_pin;
 	struct gpio_dt_spec en_pin;
@@ -36,7 +36,7 @@ struct drv8424_config {
 };
 
 /* Struct for storing the states of output pins. */
-struct drv8424_pin_states {
+struct drv84xx_pin_states {
 	uint8_t sleep: 1;
 	uint8_t en: 1;
 	uint8_t m0: 2;
@@ -46,18 +46,18 @@ struct drv8424_pin_states {
 /**
  * @brief DRV84XX stepper driver data.
  */
-struct drv8424_data {
+struct drv84xx_data {
 	const struct step_dir_stepper_common_data common;
 	const struct device *dev;
 	bool enabled;
-	struct drv8424_pin_states pin_states;
+	struct drv84xx_pin_states pin_states;
 	enum stepper_micro_step_resolution ustep_res;
 	struct gpio_callback fault_cb_data;
 };
 
-STEP_DIR_STEPPER_STRUCT_CHECK(struct drv8424_config, struct drv8424_data);
+STEP_DIR_STEPPER_STRUCT_CHECK(struct drv84xx_config, struct drv84xx_data);
 
-static int drv8424_set_microstep_pin(const struct device *dev, const struct gpio_dt_spec *pin,
+static int drv84xx_set_microstep_pin(const struct device *dev, const struct gpio_dt_spec *pin,
 				     int value)
 {
 	int ret;
@@ -97,23 +97,23 @@ static int drv8424_set_microstep_pin(const struct device *dev, const struct gpio
 /*
  * If microstep setter fails, attempt to recover into previous state.
  */
-int drv8424_microstep_recovery(const struct device *dev)
+int drv84xx_microstep_recovery(const struct device *dev)
 {
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	int ret;
 
 	uint8_t m0_value = data->pin_states.m0;
 	uint8_t m1_value = data->pin_states.m1;
 
-	ret = drv8424_set_microstep_pin(dev, &config->m0_pin, m0_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->m0_pin, m0_value);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
 			ret);
 		return ret;
 	}
 
-	ret = drv8424_set_microstep_pin(dev, &config->m1_pin, m1_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->m1_pin, m1_value);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
 			ret);
@@ -123,7 +123,7 @@ int drv8424_microstep_recovery(const struct device *dev)
 	return 0;
 }
 
-static int drv8424_check_en_sleep_pin(const struct drv8424_config *config)
+static int drv84xx_check_en_sleep_pin(const struct drv84xx_config *config)
 {
 	bool has_sleep_pin = config->sleep_pin.port != NULL;
 	bool has_enable_pin = config->en_pin.port != NULL;
@@ -137,10 +137,10 @@ static int drv8424_check_en_sleep_pin(const struct drv8424_config *config)
 	return 0;
 }
 
-static int drv8424_set_en_pin_state(const struct device *dev, bool enable)
+static int drv84xx_set_en_pin_state(const struct device *dev, bool enable)
 {
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	bool has_enable_pin = config->en_pin.port != NULL;
 	int ret;
 
@@ -156,11 +156,11 @@ static int drv8424_set_en_pin_state(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int drv8424_set_sleep_pin_state(const struct device *dev, bool enable)
+static int drv84xx_set_sleep_pin_state(const struct device *dev, bool enable)
 {
 	int ret;
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	bool has_sleep_pin = config->sleep_pin.port != NULL;
 
 	if (has_sleep_pin) {
@@ -175,27 +175,27 @@ static int drv8424_set_sleep_pin_state(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int drv8424_enable(const struct device *dev)
+static int drv84xx_enable(const struct device *dev)
 {
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	bool has_enable_pin = config->en_pin.port != NULL;
 	bool has_sleep_pin = config->sleep_pin.port != NULL;
 	bool has_fault_pin = config->fault_pin.port != NULL;
 	k_timeout_t enable_timeout;
 	int ret;
 
-	ret = drv8424_check_en_sleep_pin(config);
+	ret = drv84xx_check_en_sleep_pin(config);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv8424_set_sleep_pin_state(dev, true);
+	ret = drv84xx_set_sleep_pin_state(dev, true);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv8424_set_en_pin_state(dev, true);
+	ret = drv84xx_set_en_pin_state(dev, true);
 	if (ret != 0) {
 		return ret;
 	}
@@ -225,24 +225,24 @@ static int drv8424_enable(const struct device *dev)
 	return ret;
 }
 
-static int drv8424_disable(const struct device *dev)
+static int drv84xx_disable(const struct device *dev)
 {
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	bool has_fault_pin = config->fault_pin.port != NULL;
 	int ret;
 
-	ret = drv8424_check_en_sleep_pin(config);
+	ret = drv84xx_check_en_sleep_pin(config);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv8424_set_sleep_pin_state(dev, false);
+	ret = drv84xx_set_sleep_pin_state(dev, false);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv8424_set_en_pin_state(dev, false);
+	ret = drv84xx_set_en_pin_state(dev, false);
 	if (ret != 0) {
 		return ret;
 	}
@@ -262,15 +262,23 @@ static int drv8424_disable(const struct device *dev)
 	return ret;
 }
 
-static int drv8424_set_micro_step_res(const struct device *dev,
+static int drv84xx_set_micro_step_res(const struct device *dev,
 				      enum stepper_micro_step_resolution micro_step_res)
 {
-	const struct drv8424_config *config = dev->config;
-	struct drv8424_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
+	struct drv84xx_data *data = dev->data;
 	int ret;
 
 	uint8_t m0_value = 0;
 	uint8_t m1_value = 0;
+
+	if ((config->m0_pin.port == NULL) || (config->m1_pin.port == NULL)) {
+
+		LOG_ERR("%s: Failed to set microstep resolution: microstep pins are not defined "
+			"(error: %d)",
+			dev->name, -ENOTSUP);
+		return -ENOTSUP;
+	}
 
 	/* 0: low
 	 * 1: high
@@ -318,12 +326,12 @@ static int drv8424_set_micro_step_res(const struct device *dev,
 		return -ENOTSUP;
 	};
 
-	ret = drv8424_set_microstep_pin(dev, &config->m0_pin, m0_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->m0_pin, m0_value);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv8424_set_microstep_pin(dev, &config->m1_pin, m1_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->m1_pin, m1_value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -335,17 +343,17 @@ static int drv8424_set_micro_step_res(const struct device *dev,
 	return 0;
 }
 
-static int drv8424_get_micro_step_res(const struct device *dev,
+static int drv84xx_get_micro_step_res(const struct device *dev,
 				      enum stepper_micro_step_resolution *micro_step_res)
 {
-	struct drv8424_data *data = dev->data;
+	struct drv84xx_data *data = dev->data;
 	*micro_step_res = data->ustep_res;
 	return 0;
 }
 
-static int drv8424_move_to(const struct device *dev, int32_t target)
+static int drv84xx_move_to(const struct device *dev, int32_t target)
 {
-	struct drv8424_data *data = dev->data;
+	struct drv84xx_data *data = dev->data;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move to target position, device is not enabled");
@@ -355,9 +363,9 @@ static int drv8424_move_to(const struct device *dev, int32_t target)
 	return step_dir_stepper_common_move_to(dev, target);
 }
 
-static int drv8424_move_by(const struct device *dev, int32_t steps)
+static int drv84xx_move_by(const struct device *dev, int32_t steps)
 {
-	struct drv8424_data *data = dev->data;
+	struct drv84xx_data *data = dev->data;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move by delta, device is not enabled");
@@ -367,9 +375,9 @@ static int drv8424_move_by(const struct device *dev, int32_t steps)
 	return step_dir_stepper_common_move_by(dev, steps);
 }
 
-static int drv8424_run(const struct device *dev, enum stepper_direction direction)
+static int drv84xx_run(const struct device *dev, enum stepper_direction direction)
 {
-	struct drv8424_data *data = dev->data;
+	struct drv84xx_data *data = dev->data;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to run stepper, device is not enabled");
@@ -381,15 +389,15 @@ static int drv8424_run(const struct device *dev, enum stepper_direction directio
 
 void fault_event(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct drv8424_data *data = CONTAINER_OF(cb, struct drv8424_data, fault_cb_data);
+	struct drv84xx_data *data = CONTAINER_OF(cb, struct drv84xx_data, fault_cb_data);
 
 	stepper_trigger_callback(data->dev, STEPPER_EVENT_FAULT_DETECTED);
 }
 
-static int drv8424_init(const struct device *dev)
+static int drv84xx_init(const struct device *dev)
 {
-	const struct drv8424_config *const config = dev->config;
-	struct drv8424_data *const data = dev->data;
+	const struct drv84xx_config *const config = dev->config;
+	struct drv84xx_data *const data = dev->data;
 	int ret;
 
 	/* Configure sleep pin if it is available */
@@ -412,25 +420,31 @@ static int drv8424_init(const struct device *dev)
 		data->pin_states.en = 0U;
 	}
 
-	/* Configure microstep pin 0 */
-	ret = gpio_pin_configure_dt(&config->m0_pin, GPIO_OUTPUT_INACTIVE);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
-		return ret;
+	/* Configure microstep pin 0 if it is available */
+	if (config->m0_pin.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->m0_pin, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
+			return ret;
+		}
+		data->pin_states.m0 = 0U;
 	}
-	data->pin_states.m0 = 0U;
 
-	/* Configure microstep pin 1 */
-	ret = gpio_pin_configure_dt(&config->m1_pin, GPIO_OUTPUT_INACTIVE);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
-		return ret;
+	/* Configure microstep pin 1 if it is available */
+	if (config->m1_pin.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->m1_pin, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
+			return ret;
+		}
+		data->pin_states.m1 = 0U;
 	}
-	data->pin_states.m1 = 0U;
 
-	ret = drv8424_set_micro_step_res(dev, data->ustep_res);
-	if (ret != 0) {
-		return ret;
+	if ((config->m0_pin.port != NULL) && (config->m1_pin.port != NULL)) {
+		ret = drv84xx_set_micro_step_res(dev, data->ustep_res);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	ret = step_dir_stepper_common_init(dev);
@@ -461,41 +475,41 @@ static int drv8424_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper, drv8424_stepper_api) = {
-	.enable = drv8424_enable,
-	.disable = drv8424_disable,
-	.move_by = drv8424_move_by,
-	.move_to = drv8424_move_to,
+static DEVICE_API(stepper, drv84xx_stepper_api) = {
+	.enable = drv84xx_enable,
+	.disable = drv84xx_disable,
+	.move_by = drv84xx_move_by,
+	.move_to = drv84xx_move_to,
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = drv8424_run,
+	.run = drv84xx_run,
 	.stop = step_dir_stepper_common_stop,
-	.set_micro_step_res = drv8424_set_micro_step_res,
-	.get_micro_step_res = drv8424_get_micro_step_res,
+	.set_micro_step_res = drv84xx_set_micro_step_res,
+	.get_micro_step_res = drv84xx_get_micro_step_res,
 	.set_event_callback = step_dir_stepper_common_set_event_callback,
 };
 
-#define DRV8424_DEVICE(inst)                                                                       \
+#define DRV84XX_DEVICE(inst)                                                                       \
                                                                                                    \
-	static const struct drv8424_config drv8424_config_##inst = {                               \
+	static const struct drv84xx_config drv84xx_config_##inst = {                               \
 		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
 		.sleep_pin = GPIO_DT_SPEC_INST_GET_OR(inst, sleep_gpios, {0}),                     \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
-		.m0_pin = GPIO_DT_SPEC_INST_GET(inst, m0_gpios),                                   \
-		.m1_pin = GPIO_DT_SPEC_INST_GET(inst, m1_gpios),                                   \
+		.m0_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m0_gpios, {0}),                           \
+		.m1_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m1_gpios, {0}),                           \
 		.fault_pin = GPIO_DT_SPEC_INST_GET_OR(inst, fault_gpios, {0}),                     \
 	};                                                                                         \
                                                                                                    \
-	static struct drv8424_data drv8424_data_##inst = {                                         \
+	static struct drv84xx_data drv84xx_data_##inst = {                                         \
 		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
 		.ustep_res = DT_INST_PROP(inst, micro_step_res),                                   \
-		.dev = DEVICE_DT_GET(DT_INST(inst, DT_DRV_COMPAT)),                                \
+		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &drv8424_init, NULL, &drv8424_data_##inst,                     \
-			      &drv8424_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
-			      &drv8424_stepper_api);
+	DEVICE_DT_INST_DEFINE(inst, &drv84xx_init, NULL, &drv84xx_data_##inst,                     \
+			      &drv84xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
+			      &drv84xx_stepper_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DRV8424_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(DRV84XX_DEVICE)
