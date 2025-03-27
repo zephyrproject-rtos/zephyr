@@ -83,9 +83,9 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 #endif
 }
 
-int stm32_exti_is_pending(uint32_t line)
+bool stm32_exti_is_pending(uint32_t line)
 {
-	int ret = 0;
+	bool ret = false;
 	const uint32_t line_num = ll_exti_line_to_linenum(line);
 
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -102,7 +102,7 @@ int stm32_exti_is_pending(uint32_t line)
 #endif /* CONFIG_EXTI_STM32_HAS_96_LINES */
 	} else {
 		LOG_ERR("Invalid line: %d", line);
-		ret = -EINVAL;
+		__ASSERT(0, "Invalid line");
 	}
 
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
@@ -150,7 +150,7 @@ static inline stm32_gpio_irq_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
  */
 static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line)
 {
-	return LOG2(line);
+	return BIT(line % 32);
 }
 
 /**
@@ -174,7 +174,7 @@ static void stm32_exti_isr(const void *exti_range)
 		line = linenum_to_ll_exti_line(line_num);
 
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line) > 0) {
+		if (stm32_exti_is_pending(line)) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
@@ -534,7 +534,7 @@ static inline int stm32_exti_intc_set_irq_callback(stm32_gpio_irq_line_t line,
 
 	/* if callback already exists/maybe-running return busy */
 	if (data->cb[line_num].cb != NULL) {
-		LOG_ERR("Callback already exists for line %d", line);
+		LOG_WRN("Callback already exists for line %d", line);
 		return -EBUSY;
 	}
 

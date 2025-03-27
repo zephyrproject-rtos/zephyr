@@ -33,10 +33,6 @@ typedef enum {
 	STM32_EXTI_TRIG_FALLING = 0x2,
 	/* Trigger on both rising and falling edge */
 	STM32_EXTI_TRIG_BOTH = 0x3,
-	/* Trigger on high level */
-	STM32_EXTI_TRIG_HIGH_LEVEL = 0x4,
-	/* Trigger on low level */
-	STM32_EXTI_TRIG_LOW_LEVEL = 0x5
 } stm32_exti_trigger_type;
 
 /**
@@ -97,8 +93,9 @@ int stm32_exti_disable(uint32_t line);
  * @brief Checks interrupt pending bit for specified EXTI line
  *
  * @param line EXTI line number
+ * @returns true if @p line is pending, false otherwise
  */
-int stm32_exti_is_pending(uint32_t line);
+bool stm32_exti_is_pending(uint32_t line);
 
 /**
  * @brief Clears interrupt pending bit for specified EXTI line

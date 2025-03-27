@@ -158,7 +158,7 @@ static inline void ll_func_exti_clear_rtc_alarm_flag(uint32_t exti_line)
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
 #else
-	if (stm32_exti_is_pending(exti_line) > 0) {
+	if (stm32_exti_is_pending(exti_line)) {
 		stm32_exti_clear_pending(exti_line);
 	}
 #endif

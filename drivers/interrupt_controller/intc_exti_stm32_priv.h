@@ -25,8 +25,11 @@ extern "C" {
 
 #define EXTI_CLEAR_RISING_FLAG_0_31(line)  LL_EXTI_ClearRisingFlag_0_31(line)
 #define EXTI_CLEAR_FALLING_FLAG_0_31(line) LL_EXTI_ClearFallingFlag_0_31(line)
-#define LL_EXTI_ClearFlag_0_31(line) \
-	{ EXTI_CLEAR_RISING_FLAG_0_31(line); EXTI_CLEAR_FALLING_FLAG_0_31(line); }
+#define LL_EXTI_ClearFlag_0_31(line)		\
+	{										\
+		EXTI_CLEAR_RISING_FLAG_0_31(line);	\
+		EXTI_CLEAR_FALLING_FLAG_0_31(line);	\
+	}
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) */
 
