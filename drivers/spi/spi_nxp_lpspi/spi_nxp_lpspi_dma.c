@@ -196,6 +196,7 @@ done:
 	spi_context_cs_control(ctx, false);
 	LPSPI_FlushFifo(base, true, true);
 	spi_context_complete(ctx, spi_dev, status);
+	spi_context_release(ctx, status);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -232,6 +233,9 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
 	ret = spi_context_wait_for_completion(ctx);
+	if (ret >= 0) {
+		return ret;
+	}
 out:
 	spi_context_release(ctx, ret);
 	return ret;
