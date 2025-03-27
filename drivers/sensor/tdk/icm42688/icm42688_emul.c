@@ -458,13 +458,13 @@ static const struct emul_sensor_driver_api icm42688_emul_sensor_driver_api = {
 	.get_sample_range = icm42688_emul_backend_get_sample_range,
 };
 
-#define ICM42688_EMUL_DEFINE(n, api)                                                      \
-	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                   \
+#define ICM42688_EMUL_DEFINE(n, api)                                                               \
+	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
 			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_driver_api)
 
-#define ICM42688_EMUL(n)                                                                  \
-	static struct icm42688_emul_data icm42688_emul_data_##n;                              \
-	static const struct icm42688_emul_cfg icm42688_emul_cfg_##n;                          \
+#define ICM42688_EMUL(n)                                                                           \
+	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \
+	static const struct icm42688_emul_cfg icm42688_emul_cfg_##n;                               \
 	COND_CODE_1(DT_INST_ON_BUS(n, spi),                                                   \
 	(ICM42688_EMUL_DEFINE(n, icm42688_emul_spi_api)),                                     \
 	(ICM42688_EMUL_DEFINE(n, icm42688_emul_i2c_api)))
