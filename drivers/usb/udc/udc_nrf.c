@@ -473,9 +473,6 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 			/* Device -> Host */
 			m_ep_dma_waiting &= ~(1U << ep2bit(ep));
 			m_ep_ready |= 1U << ep2bit(ep);
-
-			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_ABORTED);
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	}
 
@@ -1308,12 +1305,6 @@ static size_t nrf_usbd_legacy_epout_size_get(nrf_usbd_common_ep_t ep)
 	return NRF_USBD->SIZE.EPOUT[NRF_USBD_COMMON_EP_NUM(ep)];
 }
 
-static bool nrf_usbd_legacy_ep_is_busy(nrf_usbd_common_ep_t ep)
-{
-	return (0 != ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
-		      (1U << ep2bit(ep))));
-}
-
 static void nrf_usbd_legacy_ep_stall(nrf_usbd_common_ep_t ep)
 {
 	__ASSERT_NO_MSG(!NRF_USBD_COMMON_EP_IS_ISO(ep));
@@ -1511,19 +1502,6 @@ static void udc_event_xfer_in(const struct device *dev,
 		}
 
 		udc_submit_ep_event(dev, buf, 0);
-		break;
-
-	case NRF_USBD_COMMON_EP_ABORTED:
-		LOG_WRN("aborted IN ep 0x%02x", ep);
-		buf = udc_buf_get_all(ep_cfg);
-
-		if (buf == NULL) {
-			LOG_DBG("ep 0x%02x queue is empty", ep);
-			return;
-		}
-
-		udc_ep_set_busy(ep_cfg, false);
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		break;
 
 	default:
@@ -1870,23 +1848,15 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	bool busy = nrf_usbd_legacy_ep_is_busy(cfg->addr);
+	struct net_buf *buf;
 
 	nrf_usbd_legacy_ep_abort(cfg->addr);
-	if (USB_EP_DIR_IS_OUT(cfg->addr) || !busy) {
-		struct net_buf *buf;
 
-		/*
-		 * HAL driver does not generate event for an OUT endpoint
-		 * or when IN endpoint is not busy.
-		 */
-		buf = udc_buf_get_all(cfg);
-		if (buf) {
-			udc_submit_ep_event(dev, buf, -ECONNABORTED);
-		} else {
-			LOG_INF("ep 0x%02x queue is empty", cfg->addr);
-		}
-
+	buf = udc_buf_get_all(cfg);
+	if (buf) {
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
+	} else {
+		LOG_INF("ep 0x%02x queue is empty", cfg->addr);
 	}
 
 	udc_ep_set_busy(cfg, false);
