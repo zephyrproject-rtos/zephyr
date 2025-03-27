@@ -46,6 +46,7 @@ def test_runner_imports():
         'qemu',
         'renode',
         'renode-robot',
+        'rfp',
         'silabs_commander',
         'spi_burn',
         'stm32cubeprogrammer',
