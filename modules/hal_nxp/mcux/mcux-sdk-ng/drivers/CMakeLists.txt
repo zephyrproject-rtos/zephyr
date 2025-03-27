@@ -9,9 +9,12 @@ function(set_variable_ifdef feature_toggle variable)
 endfunction()
 
 # fsl_common driver
-zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c
-                       ${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
 zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/common)
+zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c)
+
+if(NOT ${CONFIG_MCUX_CORE_SUFFIX} MATCHES "_dsp")
+  zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
+endif()
 
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2    CONFIG_MCUX_COMPONENT_driver.src_2)
 set_variable_ifdef(CONFIG_GPIO_MCUX_IGPIO       CONFIG_MCUX_COMPONENT_driver.igpio)
