@@ -34,7 +34,7 @@ enum i2c_addr_len {
 struct i2c_ipc_cfg {
 	enum i2c_role role;
 	enum i2c_addr_len addr_len;
-	uint32_t master_clock;
+	uint32_t bitrate;
 	uint16_t slave_addr;
 	uint8_t dma_en;
 	uint8_t pull_up_en;
@@ -76,7 +76,7 @@ static size_t pack_i2c_w91_ipc_configure(uint8_t inst, void *unpack_data, uint8_
 	struct i2c_ipc_cfg *p_i2c_cfg = unpack_data;
 	size_t pack_data_len = sizeof(uint32_t) + sizeof(p_i2c_cfg->role) +
 			       sizeof(p_i2c_cfg->addr_len) + sizeof(p_i2c_cfg->dma_en) +
-			       sizeof(p_i2c_cfg->master_clock) + sizeof(p_i2c_cfg->pull_up_en);
+			       sizeof(p_i2c_cfg->bitrate) + sizeof(p_i2c_cfg->pull_up_en);
 	if (pack_data != NULL) {
 		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_I2C_CONFIGURE_EVENT, inst);
 
@@ -84,7 +84,7 @@ static size_t pack_i2c_w91_ipc_configure(uint8_t inst, void *unpack_data, uint8_
 		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->role);
 		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->addr_len);
 		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->dma_en);
-		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->master_clock);
+		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->bitrate);
 		IPC_DISPATCHER_PACK_FIELD(pack_data, p_i2c_cfg->pull_up_en);
 	}
 	return pack_data_len;
@@ -92,7 +92,7 @@ static size_t pack_i2c_w91_ipc_configure(uint8_t inst, void *unpack_data, uint8_
 
 IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(i2c_w91_ipc_configure);
 
-static int i2c_w91_ipc_configure(const struct device *dev, uint32_t clock_speed)
+static int i2c_w91_ipc_configure(const struct device *dev, uint32_t bitrate)
 {
 	int err = -1;
 	struct i2c_ipc_cfg i2c_config;
@@ -100,7 +100,7 @@ static int i2c_w91_ipc_configure(const struct device *dev, uint32_t clock_speed)
 	i2c_config.role = I2C_ROLE_MASTER;
 	i2c_config.addr_len = I2C_ADDR_LEN_7BIT;
 	i2c_config.dma_en = 0;
-	i2c_config.master_clock = clock_speed;
+	i2c_config.bitrate = bitrate;
 	i2c_config.pull_up_en = 1;
 	struct ipc_based_driver *ipc_data = &((struct i2c_w91_data *)dev->data)->ipc;
 
@@ -210,7 +210,7 @@ static int i2c_w91_configure(const struct device *dev, uint32_t dev_config)
 {
 	ARG_UNUSED(dev);
 
-	uint32_t i2c_speed = 0u;
+	uint32_t bitrate;
 
 	/* check address size */
 	if (dev_config & I2C_ADDR_10_BITS) {
@@ -227,11 +227,11 @@ static int i2c_w91_configure(const struct device *dev, uint32_t dev_config)
 	/* check i2c speed */
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		i2c_speed = 100000u;
+		bitrate = 100000u;
 		break;
 
 	case I2C_SPEED_FAST:
-		i2c_speed = 400000U;
+		bitrate = 400000U;
 		break;
 
 	case I2C_SPEED_FAST_PLUS:
@@ -242,7 +242,7 @@ static int i2c_w91_configure(const struct device *dev, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 
-	return i2c_w91_ipc_configure(dev, i2c_speed);
+	return i2c_w91_ipc_configure(dev, bitrate);
 }
 
 /* API implementation: transfer */
