@@ -22,29 +22,24 @@ extern "C" {
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/dsp/types.h> /* float32_t, float64_t */
 
 /* Use static variables instead of calloc() */
 #define CO_USE_GLOBALS
 
 /* Use Zephyr provided crc16 implementation */
-#define CO_USE_OWN_CRC16
-
-/* Use SDO buffer size from Kconfig */
-#define CO_SDO_BUFFER_SIZE CONFIG_CANOPENNODE_SDO_BUFFER_SIZE
-
-/* Use trace buffer size from Kconfig */
-#define CO_TRACE_BUFFER_SIZE_FIXED CONFIG_CANOPENNODE_TRACE_BUFFER_SIZE
-
-#ifdef CONFIG_CANOPENNODE_LEDS
-#define CO_USE_LEDS 1
-#endif
+#define CO_CONFIG_CRC16 (CO_CONFIG_CRC16_ENABLE | CO_CONFIG_CRC16_EXTERNAL)
 
 #ifdef CONFIG_LITTLE_ENDIAN
 #define CO_LITTLE_ENDIAN
 #else
 #define CO_BIG_ENDIAN
 #endif
+
+#define CO_SWAP_16(x) sys_le16_to_cpu(x)
+#define CO_SWAP_32(x) sys_le32_to_cpu(x)
+#define CO_SWAP_64(x) sys_le64_to_cpu(x)
 
 typedef bool          bool_t;
 typedef char          char_t;
@@ -60,8 +55,25 @@ typedef struct canopen_rx_msg {
 	uint8_t DLC;
 } CO_CANrxMsg_t;
 
-typedef void (*CO_CANrxBufferCallback_t)(void *object,
-					 const CO_CANrxMsg_t *message);
+static inline uint16_t
+CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
+{
+	return rxMsg->ident;
+}
+
+static inline uint8_t
+CO_CANrxMsg_readDLC(const CO_CANrxMsg_t *rxMsg)
+{
+	return rxMsg->DLC;
+}
+
+static inline uint8_t *
+CO_CANrxMsg_readData(const CO_CANrxMsg_t *rxMsg)
+{
+	return ((CO_CANrxMsg_t *)(rxMsg))->data;
+}
+
+typedef void (*CO_CANrxBufferCallback_t)(void *object, void *message);
 
 typedef struct canopen_rx {
 	int filter_id;
@@ -85,40 +97,68 @@ typedef struct canopen_tx {
 
 typedef struct canopen_module {
 	const struct device *dev;
+	void *em;
 	CO_CANrx_t *rx_array;
 	CO_CANtx_t *tx_array;
 	uint16_t rx_size;
 	uint16_t tx_size;
+	uint16_t CANerrorStatus;
 	uint32_t errors;
-	void *em;
 	bool_t configured : 1;
 	bool_t CANnormal : 1;
 	bool_t first_tx_msg : 1;
 } CO_CANmodule_t;
 
+/**
+ * @brief CANopen object dictionary storage types.
+ */
+enum canopen_storage {
+	CANOPEN_STORAGE_RAM,
+	CANOPEN_STORAGE_ROM,
+	CANOPEN_STORAGE_EEPROM,
+};
+
+typedef struct canopen_storage_entry {
+	void *addr;
+	size_t len;
+	uint8_t subIndexOD;
+	uint8_t attr;
+
+	enum canopen_storage type;
+} CO_storage_entry_t;
+
 void canopen_send_lock(void);
 void canopen_send_unlock(void);
-#define CO_LOCK_CAN_SEND()   canopen_send_lock()
-#define CO_UNLOCK_CAN_SEND() canopen_send_unlock()
+#define CO_LOCK_CAN_SEND(module)   canopen_send_lock()
+#define CO_UNLOCK_CAN_SEND(module) canopen_send_unlock()
 
 void canopen_emcy_lock(void);
 void canopen_emcy_unlock(void);
-#define CO_LOCK_EMCY()   canopen_emcy_lock()
-#define CO_UNLOCK_EMCY() canopen_emcy_unlock()
+#define CO_LOCK_EMCY(module)   canopen_emcy_lock()
+#define CO_UNLOCK_EMCY(module) canopen_emcy_unlock()
 
 void canopen_od_lock(void);
 void canopen_od_unlock(void);
-#define CO_LOCK_OD()   canopen_od_lock()
-#define CO_UNLOCK_OD() canopen_od_unlock()
+#define CO_LOCK_OD(module)   canopen_od_lock()
+#define CO_UNLOCK_OD(module) canopen_od_unlock()
 
 /*
  * CANopenNode RX callbacks run in interrupt context, no memory
  * barrier needed.
  */
-#define CANrxMemoryBarrier()
-#define IS_CANrxNew(rxNew) ((uintptr_t)rxNew)
-#define SET_CANrxNew(rxNew) { CANrxMemoryBarrier(); rxNew = (void *)1L; }
-#define CLEAR_CANrxNew(rxNew) { CANrxMemoryBarrier(); rxNew = (void *)0L; }
+#define CO_MemoryBarrier()
+#define CO_FLAG_READ(rxNew)  ((rxNew) != NULL)
+#define CO_FLAG_SET(rxNew)   { CO_MemoryBarrier(); rxNew = (void *)1L; }
+#define CO_FLAG_CLEAR(rxNew) { CO_MemoryBarrier(); rxNew = (void *)0L; }
+
+/*
+ * CANopenNode firmware download macro definition override
+ */
+void canopen_set_firmware_download(bool_t in_progress);
+bool_t canopen_firmware_download_in_progress(void);
+
+#define CO_STATUS_FIRMWARE_DOWNLOAD_IN_PROGRESS \
+	canopen_firmware_download_in_progress()
 
 #ifdef __cplusplus
 }
