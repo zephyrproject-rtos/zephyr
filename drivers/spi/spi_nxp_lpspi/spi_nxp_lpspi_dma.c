@@ -102,6 +102,14 @@ static inline int spi_mcux_dma_rxtx_load(const struct device *dev)
 	size_t next_chunk_size = spi_context_max_continuous_chunk(ctx);
 	int ret = 0;
 
+	if (next_chunk_size == 0) {
+		/* In case both buffers are 0 length, we should not even be here
+		 * and attempting to set up a DMA transfer like this will cause
+		 * errors that lock up the system in some cases with eDMA.
+		 */
+		return -ENODATA;
+	}
+
 	ret = spi_mcux_dma_tx_load(dev, ctx->tx_buf, next_chunk_size);
 	if (ret != 0) {
 		return ret;
@@ -223,7 +231,11 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	spi_context_cs_control(ctx, true);
 
 	ret = spi_mcux_dma_next_fill(dev);
-	if (ret) {
+	if (ret == -ENODATA) {
+		/* No transfer to do? So just exit */
+		ret = 0;
+		goto out;
+	} else if (ret) {
 		goto out;
 	}
 
