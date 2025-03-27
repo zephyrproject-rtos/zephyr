@@ -38,8 +38,8 @@ extern "C" {
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd,
-				uint8_t *buf, uint32_t num_bytes)
+static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd, uint8_t *buf,
+				    uint32_t num_bytes)
 {
 	struct i3c_msg msg;
 
@@ -66,8 +66,8 @@ static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd,
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd,
-				uint8_t *buf, uint32_t num_bytes)
+static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd, uint8_t *buf,
+				   uint32_t num_bytes)
 {
 	struct i3c_msg msg;
 
@@ -99,9 +99,9 @@ static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd,
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_write_read(struct i3c_device_desc *target,
-				 const void *write_buf, size_t num_write, uint8_t read_cmd,
-				 void *read_buf, size_t num_read, uint8_t write_cmd)
+static inline int i3c_hdr_ddr_write_read(struct i3c_device_desc *target, const void *write_buf,
+					 size_t num_write, uint8_t read_cmd, void *read_buf,
+					 size_t num_read, uint8_t write_cmd)
 {
 	struct i3c_msg msg[2];
 
