@@ -272,7 +272,7 @@ choice BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 	prompt "Security requirements"
 	default DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	help
-	  Select security requirementsf for writing device name by remote GATT
+	  Select security requirements for writing device name by remote GATT
 	  clients.
 
 config DEVICE_NAME_GATT_WRITABLE_NONE
@@ -300,7 +300,7 @@ choice BT_DEVICE_APPEARANCE_GATT_WRITABLE
 	prompt "Security requirements"
 	default DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 	help
-	  Select security requirementsf for writing device name by remote GATT
+	  Select security requirements for writing device name by remote GATT
 	  clients.
 
 config BT_DEVICE_APPEARANCE_GATT_WRITABLE_NONE
