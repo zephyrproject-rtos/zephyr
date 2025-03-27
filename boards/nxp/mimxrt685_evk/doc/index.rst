@@ -326,11 +326,12 @@ also possible to debug the HiFi 4 DSP in tandem with the CM33 core using the
 for details.
 
 As the HiFi 4 DSP is positioned as a secondary core, explicit initialisation
-must be done in order for it to be functional. The ``nxp_rtxxx_adsp_ctrl``,
+must be done in order for it to be functional. The ``nxp_rtxxx_dsp_ctrl``,
 instantiated in the RT685's CM33 domain, takes care of this. Power domains
 and clocks are set up upon it initialising. This is sufficient for
 attaching a debugger to the core. For the use in an AMP system, this driver
-handles code loading and run control.
+handles code loading and run control. AMP usecases are demonstrated in sample
+projects located in ``samples/boards/nxp/adsp/rtxxx``.
 
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
