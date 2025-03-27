@@ -844,7 +844,11 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		bt_keys_link_key_clear(link_key);
 	}
 
-	link_key->flags |= BT_LINK_KEY_SC;
+	if (conn->le.keys->flags & BT_KEYS_SC) {
+		link_key->flags |= BT_LINK_KEY_SC;
+	} else {
+		link_key->flags &= ~BT_LINK_KEY_SC;
+	}
 
 	if (conn->le.keys->flags & BT_KEYS_AUTHENTICATED) {
 		link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
