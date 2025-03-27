@@ -193,9 +193,10 @@ const static struct device *udc_nrf_dev;
  *
  * @return Initialized event constant variable.
  */
-#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)                                  \
-	const nrf_usbd_common_evt_t name = {NRF_USBD_COMMON_EVT_EPTRANSFER,                        \
-				      .data = {.eptransfer = {.ep = endpont, .status = ep_stat}}}
+#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)              \
+	const struct udc_nrf_evt name = {.type = UDC_NRF_EVT_HAL,              \
+		.hal_evt = {NRF_USBD_COMMON_EVT_EPTRANSFER,                    \
+		.data = {.eptransfer = {.ep = endpont, .status = ep_stat}}}}
 
 /* Check it the bit positions values match defined DATAEPSTATUS bit positions */
 BUILD_ASSERT(
@@ -220,15 +221,6 @@ BUILD_ASSERT(
  * @brief Current driver state.
  */
 static nrfx_drv_state_t m_drv_state = NRFX_DRV_STATE_UNINITIALIZED;
-
-/**
- * @brief Event handler for the driver.
- *
- * Event handler that would be called on events.
- *
- * @note Currently it cannot be null if any interrupt is activated.
- */
-static nrf_usbd_common_event_handler_t m_event_handler;
 
 /**
  * @brief Detected state of the bus.
@@ -601,7 +593,7 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 			p_state->more_transactions = false;
 			p_state->status = NRF_USBD_COMMON_EP_ABORTED;
 			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_ABORTED);
-			m_event_handler(&evt);
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	}
 
@@ -666,9 +658,8 @@ static void ev_usbreset_handler(void)
 	m_bus_suspend = false;
 	m_last_setup_dir = NRF_USBD_COMMON_EPOUT0;
 
-	const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_RESET};
-
-	m_event_handler(&evt);
+	LOG_INF("Reset");
+	udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 }
 
 static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
@@ -691,7 +682,7 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 			 * the whole transfer is finished in this moment
 			 */
 			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-			m_event_handler(&evt);
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	} else if (ep == NRF_USBD_COMMON_EPOUT0) {
 		nrf_usbd_legacy_setup_data_clear();
@@ -700,10 +691,6 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 
 static void ev_sof_handler(void)
 {
-	nrf_usbd_common_evt_t evt = {
-		NRF_USBD_COMMON_EVT_SOF,
-		.data = {.sof = {.framecnt = (uint16_t)NRF_USBD->FRAMECNTR}}};
-
 	/* Process isochronous endpoints */
 	uint32_t iso_ready_mask = (1U << ep2bit(NRF_USBD_COMMON_EPIN8));
 
@@ -713,7 +700,7 @@ static void ev_sof_handler(void)
 	}
 	m_ep_ready |= iso_ready_mask;
 
-	m_event_handler(&evt);
+	udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 }
 
 /**
@@ -735,7 +722,7 @@ static void usbd_ep_data_handler(nrf_usbd_common_ep_t ep, uint8_t bitpos)
 			LOG_DBG("USBD event: EndpointData: In finished");
 			/* No more data to be send - transmission finished */
 			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-			m_event_handler(&evt);
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	} else {
 		/* OUT endpoint (Host -> Device) */
@@ -743,7 +730,7 @@ static void usbd_ep_data_handler(nrf_usbd_common_ep_t ep, uint8_t bitpos)
 			LOG_DBG("USBD event: EndpointData: Out waiting");
 			/* No buffer prepared - send event to the application */
 			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_WAITING);
-			m_event_handler(&evt);
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	}
 }
@@ -768,9 +755,11 @@ static void ev_setup_handler(void)
 	m_ep_ready &= ~(1U << ep2bit(NRF_USBD_COMMON_EPOUT0));
 	m_ep_ready |= 1U << ep2bit(NRF_USBD_COMMON_EPIN0);
 
-	const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_SETUP};
-
-	m_event_handler(&evt);
+	const struct udc_nrf_evt evt = {
+		.type = UDC_NRF_EVT_HAL,
+		.hal_evt = { .type = NRF_USBD_COMMON_EVT_SETUP, },
+	};
+	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 }
 
 static void ev_usbevent_handler(void)
@@ -787,16 +776,22 @@ static void ev_usbevent_handler(void)
 	if (event & USBD_EVENTCAUSE_SUSPEND_Msk) {
 		LOG_DBG("USBD event: SUSPEND");
 		m_bus_suspend = true;
-		const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_SUSPEND};
 
-		m_event_handler(&evt);
+		const struct udc_nrf_evt evt = {
+			.type = UDC_NRF_EVT_HAL,
+			.hal_evt = { .type = NRF_USBD_COMMON_EVT_SUSPEND, },
+		};
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 	if (event & USBD_EVENTCAUSE_RESUME_Msk) {
 		LOG_DBG("USBD event: RESUME");
 		m_bus_suspend = false;
-		const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_RESUME};
 
-		m_event_handler(&evt);
+		const struct udc_nrf_evt evt = {
+			.type = UDC_NRF_EVT_HAL,
+			.hal_evt = { .type = NRF_USBD_COMMON_EVT_RESUME, },
+		};
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 	if (event & USBD_EVENTCAUSE_USBWUALLOWED_Msk) {
 		LOG_DBG("USBD event: WUREQ (%s)", m_bus_suspend ? "In Suspend" : "Active");
@@ -808,9 +803,11 @@ static void ev_usbevent_handler(void)
 				<< USBD_DPDMVALUE_STATE_Pos;
 			NRF_USBD->TASKS_DPDMDRIVE = 1;
 
-			const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_WUREQ};
-
-			m_event_handler(&evt);
+			const struct udc_nrf_evt evt = {
+				.type = UDC_NRF_EVT_HAL,
+				.hal_evt = { .type = NRF_USBD_COMMON_EVT_WUREQ, },
+			};
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
 	}
 }
@@ -924,7 +921,7 @@ static void usbd_dmareq_process(void)
 					m_ep_dma_waiting &= ~(1U << pos);
 					NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep,
 						NRF_USBD_COMMON_EP_OVERLOAD);
-					m_event_handler(&evt);
+					k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 					/* This endpoint will not be transmitted now, repeat the
 					 * loop
 					 */
@@ -1143,15 +1140,12 @@ static void nrf_usbd_irq_handler(void)
 /** @} */
 /** @} */
 
-static nrfx_err_t nrf_usbd_legacy_init(nrf_usbd_common_event_handler_t event_handler)
+static nrfx_err_t nrf_usbd_legacy_init(void)
 {
-	__ASSERT_NO_MSG(event_handler);
-
 	if (m_drv_state != NRFX_DRV_STATE_UNINITIALIZED) {
 		return NRFX_ERROR_INVALID_STATE;
 	}
 
-	m_event_handler = event_handler;
 	m_drv_state = NRFX_DRV_STATE_INITIALIZED;
 
 	uint8_t n;
@@ -1186,7 +1180,6 @@ static void nrf_usbd_legacy_uninit(void)
 {
 	__ASSERT_NO_MSG(m_drv_state == NRFX_DRV_STATE_INITIALIZED);
 
-	m_event_handler = NULL;
 	m_drv_state = NRFX_DRV_STATE_UNINITIALIZED;
 }
 
@@ -2065,37 +2058,6 @@ static void udc_nrf_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
-{
-	switch (hal_evt->type) {
-	case NRF_USBD_COMMON_EVT_RESET:
-		LOG_INF("Reset");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_SOF:
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_SUSPEND:
-	case NRF_USBD_COMMON_EVT_RESUME:
-	case NRF_USBD_COMMON_EVT_WUREQ:
-	case NRF_USBD_COMMON_EVT_EPTRANSFER:
-	case NRF_USBD_COMMON_EVT_SETUP: {
-		struct udc_nrf_evt evt = {
-			.type = UDC_NRF_EVT_HAL,
-			.hal_evt = *hal_evt,
-		};
-
-		/* Forward these two to the thread since mutually exclusive
-		 * access to the controller is necessary.
-		 */
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-		break;
-	}
-	default:
-		break;
-	}
-}
-
 static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 {
 	switch (pwr_evt) {
@@ -2296,7 +2258,7 @@ static int udc_nrf_enable(const struct device *dev)
 	unsigned int key;
 	int ret;
 
-	ret = nrf_usbd_legacy_init(usbd_event_handler);
+	ret = nrf_usbd_legacy_init();
 	if (ret != NRFX_SUCCESS) {
 		LOG_ERR("nRF USBD driver initialization failed");
 		return -EIO;
