@@ -43,18 +43,15 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME,
 };
 
-/* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
- * of 512 bytes. The value must be adjusted according to the number of OUT
- * endpoints.
- */
-#define UDC_DWC2_GRXFSIZ_FS_DEFAULT	(15U + 512U/4U)
+/* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet */
+#define UDC_DWC2_GRXFSIZ_FS_DEFAULT(mps) (15U + 2 * ((mps / 4U) + 1))
+
 /* Default Rx FIFO size in 32-bit words calculated to support High-Speed with:
  *   * 1 control endpoint in Completer/Buffer DMA mode: 13 locations
  *   * Global OUT NAK: 1 location
- *   * Space for 3 * 1024 packets: ((1024/4) + 1) * 3 = 774 locations
  * Driver adds 2 locations for each OUT endpoint to this value.
  */
-#define UDC_DWC2_GRXFSIZ_HS_DEFAULT	(13 + 1 + 774)
+#define UDC_DWC2_GRXFSIZ_HS_DEFAULT(mps) (13 + 1 + (((mps / 4) + 1) * 3))
 
 /* TX FIFO0 depth in 32-bit words (used by control IN endpoint)
  * Try 2 * bMaxPacketSize0 to allow simultaneous operation with a fallback to
@@ -395,7 +392,7 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 
 	if (dwc2_in_buffer_dma_mode(dev)) {
 		/* Control OUT buffers must be multiple of bMaxPacketSize0 */
-		alloc_len = ROUND_UP(length, 64);
+		alloc_len = ROUND_UP(length, USB_CONTROL_EP_MPS);
 	}
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, alloc_len);
@@ -1921,6 +1918,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
+	uint16_t out_mps = 0;
 	uint32_t val;
 	int ret;
 	bool hs_phy;
@@ -2078,6 +2076,11 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
 			mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, i);
 
+			/* Finding max out EP packet size */
+			if (out_mps < config->ep_cfg_out[priv->outeps].caps.mps) {
+				out_mps = config->ep_cfg_out[priv->outeps].caps.mps;
+			}
+
 			sys_write32(USB_DWC2_DEPCTL_SNAK, doepctl_reg);
 			priv->outeps++;
 		}
@@ -2109,9 +2112,9 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		 * on some target.
 		 */
 		if (hs_phy) {
-			default_depth = UDC_DWC2_GRXFSIZ_HS_DEFAULT;
+			default_depth = UDC_DWC2_GRXFSIZ_HS_DEFAULT(out_mps);
 		} else {
-			default_depth = UDC_DWC2_GRXFSIZ_FS_DEFAULT;
+			default_depth = UDC_DWC2_GRXFSIZ_FS_DEFAULT(out_mps);
 		}
 		default_depth += priv->outeps * 2U;
 
@@ -2137,13 +2140,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+				   USB_EP_TYPE_CONTROL, USB_CONTROL_EP_MPS, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+				   USB_EP_TYPE_CONTROL, USB_CONTROL_EP_MPS, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -2280,7 +2283,6 @@ static int dwc2_driver_preinit(const struct device *dev)
 	const struct udc_dwc2_config *config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
-	uint16_t mps = 1023;
 	uint32_t numdeveps;
 	uint32_t ineps;
 	int err;
@@ -2296,8 +2298,13 @@ static int dwc2_driver_preinit(const struct device *dev)
 	data->caps.mps0 = UDC_MPS0_64;
 
 	(void)dwc2_quirk_caps(dev);
-	if (data->caps.hs) {
-		mps = 1024;
+
+	if (data->caps.mps == 0) {
+		if (data->caps.hs) {
+			data->caps.mps = 1024;
+		} else {
+			data->caps.mps = 512;
+		}
 	}
 
 	/*
@@ -2323,13 +2330,13 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 		if (i == 0) {
 			config->ep_cfg_out[n].caps.control = 1;
-			config->ep_cfg_out[n].caps.mps = 64;
+			config->ep_cfg_out[n].caps.mps = USB_CONTROL_EP_MPS;
 		} else {
 			config->ep_cfg_out[n].caps.bulk = 1;
 			config->ep_cfg_out[n].caps.interrupt = 1;
 			config->ep_cfg_out[n].caps.iso = 1;
 			config->ep_cfg_out[n].caps.high_bandwidth = data->caps.hs;
-			config->ep_cfg_out[n].caps.mps = mps;
+			config->ep_cfg_out[n].caps.mps = data->caps.mps;
 		}
 
 		config->ep_cfg_out[n].caps.out = 1;
@@ -2359,13 +2366,13 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 		if (i == 0) {
 			config->ep_cfg_in[n].caps.control = 1;
-			config->ep_cfg_in[n].caps.mps = 64;
+			config->ep_cfg_in[n].caps.mps = USB_CONTROL_EP_MPS;
 		} else {
 			config->ep_cfg_in[n].caps.bulk = 1;
 			config->ep_cfg_in[n].caps.interrupt = 1;
 			config->ep_cfg_in[n].caps.iso = 1;
 			config->ep_cfg_in[n].caps.high_bandwidth = data->caps.hs;
-			config->ep_cfg_in[n].caps.mps = mps;
+			config->ep_cfg_in[n].caps.mps = data->caps.mps;
 		}
 
 		config->ep_cfg_in[n].caps.in = 1;
@@ -3197,6 +3204,25 @@ static const struct udc_api udc_dwc2_api = {
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\
 		    (DT_INST_REG_ADDR_BY_NAME(n, core)))
 
+#if !defined(UDC_DWC2_IRQ_DT_INST_DEFINE)
+#define UDC_DWC2_IRQ_DT_INST_DEFINE(n)	\
+	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    udc_dwc2_isr_handler,				\
+			    DEVICE_DT_INST_GET(n),				\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
+	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
+	{									\
+		irq_disable(DT_INST_IRQN(n));					\
+	}
+#endif
+
 #define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)					\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
@@ -3241,21 +3267,7 @@ static const struct udc_api udc_dwc2_api = {
 		k_thread_name_set(&priv->thread_data, dev->name);		\
 	}									\
 										\
-	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    udc_dwc2_isr_handler,				\
-			    DEVICE_DT_INST_GET(n),				\
-			    DW_IRQ_FLAGS(n));					\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
-	{									\
-		irq_disable(DT_INST_IRQN(n));					\
-	}									\
+	UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
 										\
 	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
 	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\
