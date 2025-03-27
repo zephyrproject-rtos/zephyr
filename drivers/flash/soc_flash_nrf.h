@@ -25,6 +25,9 @@ struct flash_context {
 #if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
 	uint32_t flash_addr_next;
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
+#if defined(CONFIG_SOC_FLASH_NRF_CUSTOM_CONTEXT)
+	void *custom_context;
+#endif
 }; /*< Context type for f. @ref write_op @ref erase_op */
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
