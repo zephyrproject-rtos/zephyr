@@ -1,0 +1,50 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  harness: power
+  harness_config:
+    fixture: pm_probe
+    pytest_dut_scope: session
+    power_measurements:
+      elements_to_trim: 100
+      min_peak_distance: 40
+      min_peak_height: 0.008
+      peak_padding: 40
+      measurement_duration: 6
+      num_of_transitions: 4
+      expected_rms_values: [56.0, 4.0, 1.4, 0.26, 140]
+      tolerance_percentage: 10
+
+tests:
+  pm.power_states:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+
+  pm.power_states.pm_device:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+    extra_args:
+      - CONFIG_PM_DEVICE=y
+
+  pm.power_states.pm_device_runtime:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+    extra_args:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+
+  pm.power_states.pm_device_system_managed:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+    extra_args:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_SYSTEM_MANAGED=y
