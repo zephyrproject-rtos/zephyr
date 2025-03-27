@@ -3618,9 +3618,11 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/**/*gecko*
-    - drivers/**/*silabs*
-    - drivers/**/*siwx91x*
+    - drivers/*/*gecko*
+    - drivers/*/*silabs*
+    - drivers/*/*siwx91x*
+    - drivers/*/*/*silabs*
+    - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
   labels:
     - "platform: Silabs"
@@ -5681,8 +5683,8 @@ Testing with Renode:
     - cmake/emu/renode.cmake
     - soc/renode/
     - boards/renode/
-    - boards/**/*/support/*.repl
-    - boards/**/*/support/*.resc
+    - boards/*/*/support/*.repl
+    - boards/*/*/support/*.resc
   labels:
     - "area: Renode"
 
