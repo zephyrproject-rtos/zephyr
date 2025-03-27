@@ -26,6 +26,7 @@ struct drv8424_config {
 	struct gpio_dt_spec en_pin;
 	struct gpio_dt_spec m0_pin;
 	struct gpio_dt_spec m1_pin;
+	struct gpio_dt_spec fault_pin;
 };
 
 /* Struct for storing the states of output pins. */
@@ -37,15 +38,15 @@ struct drv8424_pin_states {
 };
 
 /**
- * @brief DRV8424 stepper driver data.
- *
- * This structure contains mutable data used by a DRV8424 stepper driver.
+ * @brief DRV84XX stepper driver data.
  */
 struct drv8424_data {
 	const struct step_dir_stepper_common_data common;
+	const struct device *dev;
 	bool enabled;
 	struct drv8424_pin_states pin_states;
 	enum stepper_micro_step_resolution ustep_res;
+	struct gpio_callback fault_cb_data;
 };
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct drv8424_config, struct drv8424_data);
@@ -116,6 +117,7 @@ int drv8424_microstep_recovery(const struct device *dev)
 	return 0;
 }
 
+/* It is safe to call enable-off from an interrupt context, but not enable-on. */
 static int drv8424_enable(const struct device *dev, bool enable)
 {
 	int ret;
@@ -123,6 +125,8 @@ static int drv8424_enable(const struct device *dev, bool enable)
 	struct drv8424_data *data = dev->data;
 	bool has_enable_pin = config->en_pin.port != NULL;
 	bool has_sleep_pin = config->sleep_pin.port != NULL;
+	bool has_fault_pin = config->fault_pin.port != NULL;
+	k_timeout_t enable_timeout;
 
 	/* Check availability of sleep and enable pins, as these might be hardwired. */
 	if (!has_sleep_pin && !has_enable_pin) {
@@ -132,15 +136,6 @@ static int drv8424_enable(const struct device *dev, bool enable)
 		return -ENOTSUP;
 	}
 
-	if (has_sleep_pin) {
-		ret = gpio_pin_set_dt(&config->sleep_pin, !enable);
-		if (ret != 0) {
-			LOG_ERR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
-			return ret;
-		}
-		data->pin_states.sleep = enable ? 0U : 1U;
-	}
-
 	if (has_enable_pin) {
 		ret = gpio_pin_set_dt(&config->en_pin, enable);
 		if (ret != 0) {
@@ -148,6 +143,41 @@ static int drv8424_enable(const struct device *dev, bool enable)
 			return ret;
 		}
 		data->pin_states.en = enable ? 1U : 0U;
+		/* Enable time */
+		enable_timeout = K_USEC(5);
+	}
+
+	if (has_sleep_pin) {
+		ret = gpio_pin_set_dt(&config->sleep_pin, !enable);
+		if (ret != 0) {
+			LOG_ERR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
+			return ret;
+		}
+		data->pin_states.sleep = enable ? 0U : 1U;
+		/* Wake Up time */
+		enable_timeout = K_USEC(1200);
+	}
+
+	if (has_fault_pin) {
+		if (enable) {
+			/* Wait after enable/wakeup until the fault pin is guaranteed to be in the
+			 * proper state.
+			 */
+			k_sleep(enable_timeout);
+			ret = gpio_add_callback(config->fault_pin.port, &data->fault_cb_data);
+			if (ret != 0) {
+				LOG_ERR("%s: Failed to add fault callback (error: %d)", dev->name,
+					ret);
+				return ret;
+			}
+		} else {
+			ret = gpio_remove_callback(config->fault_pin.port, &data->fault_cb_data);
+			if (ret != 0) {
+				LOG_ERR("%s: Failed to remove fault callback (error: %d)",
+					dev->name, ret);
+				return ret;
+			}
+		}
 	}
 
 	data->enabled = enable;
@@ -276,6 +306,13 @@ static int drv8424_run(const struct device *dev, enum stepper_direction directio
 	return step_dir_stepper_common_run(dev, direction);
 }
 
+void fault_event(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	struct drv8424_data *data = CONTAINER_OF(cb, struct drv8424_data, fault_cb_data);
+
+	stepper_trigger_callback(data->dev, STEPPER_EVENT_FAULT_DETECTED);
+}
+
 static int drv8424_init(const struct device *dev)
 {
 	const struct drv8424_config *const config = dev->config;
@@ -329,6 +366,25 @@ static int drv8424_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure fault pin if it is available */
+	if (config->fault_pin.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->fault_pin, GPIO_INPUT);
+		if (ret != 0) {
+			LOG_ERR("%s: Failed to configure fault_pin (error: %d)", dev->name, ret);
+			return ret;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(&config->fault_pin,
+						      GPIO_INT_EDGE_TO_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
+				config->fault_pin.port->name, config->fault_pin.pin);
+			return ret;
+		}
+
+		gpio_init_callback(&data->fault_cb_data, fault_event, BIT(config->fault_pin.pin));
+	}
+
 	return 0;
 }
 
@@ -355,11 +411,13 @@ static DEVICE_API(stepper, drv8424_stepper_api) = {
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
 		.m0_pin = GPIO_DT_SPEC_INST_GET(inst, m0_gpios),                                   \
 		.m1_pin = GPIO_DT_SPEC_INST_GET(inst, m1_gpios),                                   \
+		.fault_pin = GPIO_DT_SPEC_INST_GET_OR(inst, fault_gpios, {0}),                     \
 	};                                                                                         \
                                                                                                    \
 	static struct drv8424_data drv8424_data_##inst = {                                         \
 		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
 		.ustep_res = DT_INST_PROP(inst, micro_step_res),                                   \
+		.dev = DEVICE_DT_GET(DT_INST(inst, DT_DRV_COMPAT)),                                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &drv8424_init, NULL, &drv8424_data_##inst,                     \
