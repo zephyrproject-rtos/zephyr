@@ -6,8 +6,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	zephyr,user {
-		stepper-motors = <&drv8424 0>;
+	aliases {
+		stepper =  &drv8424;
 	};
 };
 
@@ -40,7 +40,7 @@
 / {
 	drv8424: drv8424 {
 		status = "okay";
-		compatible = "ti,drv8424";
+		compatible = "ti,drv84xx";
 
 		dir-gpios = <&arduino_header 9 0>; /* D3 */
 		step-gpios = <&arduino_header 10 0>; /* D4 */
