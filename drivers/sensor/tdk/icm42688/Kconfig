@@ -21,12 +21,12 @@ if ICM42688
 config ICM42688_BUS_SPI
 	bool
 	select SPI
-    select SPI_RTIO
+	select SPI_RTIO
 
 config ICM42688_BUS_I2C
 	bool
-    select I2C
-    select I2C_RTIO
+	select I2C
+	select I2C_RTIO
 
 config EMUL_ICM42688
 	bool "Emulator for the ICM42688"
@@ -71,7 +71,6 @@ endchoice
 config ICM42688_STREAM
 	bool "Use hardware FIFO to stream data via I2C"
 	select ICM42688_TRIGGER
-	default n
 	depends on SENSOR_ASYNC_API
 	help
 	  Use this config option to enable streaming sensor data via RTIO subsystem.

@@ -153,17 +153,17 @@ int icm42688_trigger_init(const struct device *dev)
 int icm42688_trigger_enable_interrupt(const struct device *dev, struct icm42688_cfg *new_cfg)
 {
 	int res;
-    uint8_t value;
+	uint8_t value;
 
 	/* pulse-mode (auto clearing), push-pull and active-high */
-    value = BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY;
+	value = BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY;
 	res = icm42688_bus_write(dev, REG_INT_CONFIG, &value, 1);
 	if (res != 0) {
 		return res;
 	}
 
 	/* Deassert async reset for proper INT pin operation, see datasheet 14.50 */
-    value = 0;
+	value = 0;
 	res = icm42688_bus_write(dev, REG_INT_CONFIG1, &value, 1);
 	if (res != 0) {
 		return res;

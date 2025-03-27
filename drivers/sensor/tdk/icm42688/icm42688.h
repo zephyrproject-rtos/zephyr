@@ -319,8 +319,8 @@ struct icm42688_trigger_entry {
  */
 struct icm42688_dev_data {
 	struct icm42688_cfg cfg;
-    struct rtio *rtio_ctx;
-    struct rtio_iodev *rtio_iodev;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *rtio_iodev;
 #ifdef CONFIG_ICM42688_TRIGGER
 #if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM42688_THREAD_STACK_SIZE);

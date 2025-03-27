@@ -48,7 +48,7 @@ static inline int icm42688_bus_read(const struct device *dev, uint16_t reg, uint
 	address = address | REG_SPI_READ_BIT;
 #endif
 
-	rtio_sqe_prep_write(write_sqe, iodev, RTIO_PRIO_HIGH, &address, 1, NULL);
+	rtio_sqe_prep_tiny_write(write_sqe, iodev, RTIO_PRIO_HIGH, &address, 1, NULL);
 	write_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
 #ifdef CONFIG_ICM42688_BUS_I2C
@@ -62,11 +62,11 @@ static inline int icm42688_bus_read(const struct device *dev, uint16_t reg, uint
 
 	do {
 		cqe = rtio_cqe_consume(ctx);
-		if (NULL != cqe) {
+		if (cqe != NULL) {
 			err = cqe->result;
 			rtio_cqe_release(ctx, cqe);
 		}
-	} while (NULL != cqe);
+	} while (cqe != NULL);
 
 	return err;
 }
@@ -102,7 +102,7 @@ static inline int icm42688_bus_write(const struct device *dev, uint16_t reg, con
 		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_write(write_reg_sqe, iodev, RTIO_PRIO_HIGH, &address, 1, NULL);
+	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_HIGH, &address, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_write(write_buf_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
 	err = rtio_submit(ctx, 2);
@@ -117,6 +117,7 @@ static inline int icm42688_bus_write(const struct device *dev, uint16_t reg, con
 
 	uint8_t msg[len + 1];
 	msg[0] = address;
+	
 	memcpy(&msg[1], buf, len);
 	rtio_sqe_prep_write(write_reg_sqe, iodev, RTIO_PRIO_HIGH, msg, sizeof(msg), NULL);
 	write_reg_sqe->iodev_flags = RTIO_IODEV_I2C_STOP;
@@ -129,11 +130,11 @@ static inline int icm42688_bus_write(const struct device *dev, uint16_t reg, con
 
 	do {
 		cqe = rtio_cqe_consume(ctx);
-		if (NULL != cqe) {
+		if (cqe != NULL) {
 			err = cqe->result;
 			rtio_cqe_release(ctx, cqe);
 		}
-	} while (NULL != cqe);
+	} while (cqe != NULL);
 
 	return err;
 }

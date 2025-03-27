@@ -134,14 +134,10 @@ static int icm42688_emul_io_i2c(const struct emul *target, struct i2c_msg msgs[]
 	regn = msgs[0].buf[0];
 	regn &= GENMASK(6, 0);
 
-    LOG_INF("num_msgs: %d",num_msgs);
-
 	if (1 == num_msgs) {
 		uint8_t value;
-        LOG_INF("write len: %d", msgs[0].len);
 		__ASSERT_NO_MSG(msgs[0].len > 0);
 		value = msgs[0].buf[1];
-        LOG_INF("write value: %d", msgs[0].buf[1]);
 		icm42688_emul_handle_write(target, regn, value);
 
 	} else if (2 == num_msgs) {
@@ -462,15 +458,15 @@ static const struct emul_sensor_driver_api icm42688_emul_sensor_driver_api = {
 	.get_sample_range = icm42688_emul_backend_get_sample_range,
 };
 
-#define ICM42688_EMUL_DEFINE(n, api)                                                               \
+#define ICM42688_EMUL_DEFINE(n, api)                                                           \
 	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
 			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_driver_api)
 
-#define ICM42688_EMUL(n)                                                                           \
+#define ICM42688_EMUL(n)                                                                       \
 	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \
 	static const struct icm42688_emul_cfg icm42688_emul_cfg_##n;                               \
 	COND_CODE_1(DT_INST_ON_BUS(n, spi),                                                        \
-    (ICM42688_EMUL_DEFINE(n, icm42688_emul_spi_api)),                                          \
-    (ICM42688_EMUL_DEFINE(n, icm42688_emul_i2c_api)))
+	(ICM42688_EMUL_DEFINE(n, icm42688_emul_spi_api)),                                          \
+	(ICM42688_EMUL_DEFINE(n, icm42688_emul_i2c_api)))
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42688_EMUL)

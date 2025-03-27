@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(ICM42688_LL, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int reg_write(const struct device *dev, uint16_t reg, uint8_t val)
 {
-    LOG_INF("value to write: %d", val);
 	return icm42688_bus_write(dev, reg, &val, 1);
 }
 
