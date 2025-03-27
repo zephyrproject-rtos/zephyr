@@ -279,7 +279,8 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
-	lpspi_data->word_size_bytes = SPI_WORD_SIZE_GET(spi_cfg->operation) / BITS_PER_BYTE;
+	lpspi_data->word_size_bytes =
+		DIV_ROUND_UP(SPI_WORD_SIZE_GET(spi_cfg->operation), BITS_PER_BYTE);
 	if (lpspi_data->word_size_bytes > 4) {
 		LOG_ERR("Maximum 4 byte word size");
 		ret = -EINVAL;
