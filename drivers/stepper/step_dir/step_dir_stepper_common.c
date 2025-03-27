@@ -53,7 +53,7 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 	return 0;
 }
 
-static void stepper_trigger_callback(const struct device *dev, enum stepper_event event)
+void stepper_trigger_callback(const struct device *dev, enum stepper_event event)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
