@@ -25,6 +25,63 @@
 #define MAX_BANDS_STR_LEN 64
 #define MACSTR "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static const char ca_cert_test[] = {
+	#include <wifi_enterprise_test_certs/ca.pem.inc>
+	'\0'
+};
+
+static const char client_cert_test[] = {
+	#include <wifi_enterprise_test_certs/client.pem.inc>
+	'\0'
+};
+
+static const char client_key_test[] = {
+	#include <wifi_enterprise_test_certs/client-key.pem.inc>
+	'\0'
+};
+
+static const char ca_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/ca2.pem.inc>
+	'\0'};
+
+static const char client_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/client2.pem.inc>
+	'\0'};
+
+static const char client_key2_test[] = {
+	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
+	'\0'};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface)
+{
+	struct wifi_enterprise_creds_params params = {0};
+
+	params.ca_cert = (uint8_t *)ca_cert_test;
+	params.ca_cert_len = ARRAY_SIZE(ca_cert_test);
+	params.client_cert = (uint8_t *)client_cert_test;
+	params.client_cert_len = ARRAY_SIZE(client_cert_test);
+	params.client_key = (uint8_t *)client_key_test;
+	params.client_key_len = ARRAY_SIZE(client_key_test);
+	params.ca_cert2 = (uint8_t *)ca_cert2_test;
+	params.ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
+	params.client_cert2 = (uint8_t *)client_cert2_test;
+	params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
+	params.client_key2 = (uint8_t *)client_key2_test;
+	params.client_key2_len = ARRAY_SIZE(client_key2_test);
+
+	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
+		shell_warn(sh, "Set enterprise credentials failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
 static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 {
 	int ret = 0;
@@ -52,6 +109,23 @@ static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 			      ", password: \"%.*s\", password_len: %d", (int)creds.password_len,
 			      creds.password, creds.password_len);
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS) {
+		if (creds.header.key_passwd_length > 0) {
+			shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT,
+				      ", key_passwd: \"%.*s\", key_passwd_len: %d",
+				      creds.header.key_passwd_length, creds.header.key_passwd,
+				      creds.header.key_passwd_length);
+		}
+		if (creds.header.aid_length > 0) {
+			shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT,
+				      ", anon_id: \"%.*s\", anon_id_len: %d",
+				      creds.header.aid_length, creds.header.anon_id,
+				      creds.header.aid_length);
+		}
+	}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
 	if (creds.header.flags & WIFI_CREDENTIALS_FLAG_BSSID) {
 		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, ", bssid: " MACSTR,
@@ -265,6 +339,19 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 		shell_help(sh);
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+
+	/* Load the enterprise credentials if needed */
+	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS ||
+	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+	    creds.header.type == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
+		cmd_wifi_set_enterprise_creds(sh, iface);
+	}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
 	return wifi_credentials_set_personal_struct(&creds);
 }
