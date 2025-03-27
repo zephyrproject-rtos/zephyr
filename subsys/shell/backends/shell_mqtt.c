@@ -65,16 +65,6 @@ static inline void sh_mqtt_context_unlock(void)
 	(void)k_mutex_unlock(&sh_mqtt->lock);
 }
 
-static void sh_mqtt_rx_rb_flush(void)
-{
-	uint8_t c;
-	uint32_t size = ring_buf_size_get(&sh_mqtt->rx_rb);
-
-	while (size > 0) {
-		size = ring_buf_get(&sh_mqtt->rx_rb, &c, 1U);
-	}
-}
-
 bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 {
 	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
@@ -600,8 +590,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 			/* errno value, return */
 			if (rc < 0) {
-				(void)ring_buf_put_finish(&sh->rx_rb, 0U);
-				sh_mqtt_rx_rb_flush();
+				ring_buf_reset(&sh->rx_rb);
 				return;
 			}
 
