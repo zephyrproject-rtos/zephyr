@@ -204,6 +204,7 @@ done:
 	spi_context_cs_control(ctx, false);
 	LPSPI_FlushFifo(base, true, true);
 	spi_context_complete(ctx, spi_dev, status);
+	spi_context_release(ctx, status);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -224,12 +225,6 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
-	if (!(IS_ENABLED(CONFIG_SOC_FAMILY_NXP_IMXRT) || IS_ENABLED(CONFIG_SOC_FAMILY_KINETIS))) {
-		base->TCR |= LPSPI_TCR_CONT_MASK;
-	}
-
-	spi_context_cs_control(ctx, true);
-
 	ret = spi_mcux_dma_next_fill(dev);
 	if (ret == -ENODATA) {
 		/* No transfer to do? So just exit */
@@ -239,11 +234,20 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		goto out;
 	}
 
+	if (!(IS_ENABLED(CONFIG_SOC_FAMILY_NXP_IMXRT) || IS_ENABLED(CONFIG_SOC_FAMILY_KINETIS))) {
+		base->TCR |= LPSPI_TCR_CONT_MASK;
+	}
+
+	spi_context_cs_control(ctx, true);
+
 	LPSPI_FlushFifo(base, true, true);
 
 	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
 	ret = spi_context_wait_for_completion(ctx);
+	if (ret >= 0) {
+		return ret;
+	}
 out:
 	spi_context_release(ctx, ret);
 	return ret;
