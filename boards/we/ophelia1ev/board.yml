@@ -1,6 +1,6 @@
 board:
   name: we_ophelia1ev
   full_name: Ophelia-I EV NRF52805
-  vendor: wurth
+  vendor: we
   socs:
   - name: nrf52805
