@@ -138,6 +138,7 @@ const char *nrf_wifi_get_drv_version(void);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
+struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx_by_idx(int index);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		void *event_data,
