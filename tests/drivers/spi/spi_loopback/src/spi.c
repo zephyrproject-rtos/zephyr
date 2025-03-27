@@ -321,6 +321,17 @@ ZTEST(spi_loopback, test_spi_complete_large_transfers)
 			"Large Buffer contents are different");
 }
 
+ZTEST(spi_loopback, test_nop_nil_bufs)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1, NULL, 0);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1, NULL, 0);
+
+	spi_loopback_transceive(spec, &tx, &rx);
+
+	/* nothing really to check here, check is done in spi_loopback_transceive */
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -328,14 +339,13 @@ static struct k_poll_event async_evt =
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &async_sig);
 static K_SEM_DEFINE(caller, 0, 1);
+static K_SEM_DEFINE(start_async, 0, 1);
 static int result = 1;
 
 static void spi_async_call_cb(void *p1,
 			      void *p2,
 			      void *p3)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	struct k_poll_event *evt = p1;
@@ -344,6 +354,8 @@ static void spi_async_call_cb(void *p1,
 	TC_PRINT("Polling...");
 
 	while (1) {
+		k_sem_take(&start_async, K_FOREVER);
+
 		zassert_false(k_poll(evt, 1, K_MSEC(2000)), "one or more events are not ready");
 
 		result = evt->signal->result;
@@ -371,6 +383,8 @@ ZTEST(spi_loopback, test_spi_async_call)
 	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
+	k_sem_give(&start_async);
+
 	int ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 
 	if (ret == -ENOTSUP) {
@@ -396,8 +410,10 @@ ZTEST(spi_loopback, test_spi_async_call)
 
 ZTEST(spi_extra_api_features, test_spi_lock_release)
 {
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1, NULL, 0);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1, NULL, 0);
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      NULL, BUF_SIZE);
 	struct spi_dt_spec *lock_spec = &spi_slow;
 	struct spi_dt_spec *try_spec = &spi_fast;
 
@@ -441,8 +457,16 @@ static void run_after_suite(void *unused)
 	spec_idx++;
 }
 
+static void run_after_lock(void *unused)
+{
+	spi_release_dt(&spi_fast);
+	spi_release_dt(&spi_slow);
+	spi_slow.config.operation &= ~SPI_LOCK_ON;
+	spi_fast.config.operation &= ~SPI_LOCK_ON;
+}
+
 ZTEST_SUITE(spi_loopback, NULL, spi_loopback_setup, NULL, NULL, run_after_suite);
-ZTEST_SUITE(spi_extra_api_features, NULL, spi_loopback_common_setup, NULL, NULL, NULL);
+ZTEST_SUITE(spi_extra_api_features, NULL, spi_loopback_common_setup, NULL, NULL, run_after_lock);
 
 struct k_thread async_thread;
 k_tid_t async_thread_id;
