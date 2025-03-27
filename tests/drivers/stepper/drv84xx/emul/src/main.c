@@ -13,37 +13,37 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio/gpio_emul.h>
 
-struct drv8424_emul_fixture {
+struct drv84xx_emul_fixture {
 	const struct device *dev;
 };
 
-struct gpio_dt_spec en_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv8424), en_gpios, {0});
-struct gpio_dt_spec slp_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv8424), sleep_gpios, {0});
+struct gpio_dt_spec en_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), en_gpios, {0});
+struct gpio_dt_spec slp_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), sleep_gpios, {0});
 
-static void *drv8424_emul_setup(void)
+static void *drv84xx_emul_setup(void)
 {
-	static struct drv8424_emul_fixture fixture = {
-		.dev = DEVICE_DT_GET(DT_NODELABEL(drv8424)),
+	static struct drv84xx_emul_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_NODELABEL(drv84xx)),
 	};
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
 }
 
-static void drv8424_emul_before(void *f)
+static void drv84xx_emul_before(void *f)
 {
-	struct drv8424_emul_fixture *fixture = f;
+	struct drv84xx_emul_fixture *fixture = f;
 	(void)stepper_set_reference_position(fixture->dev, 0);
 	(void)stepper_set_micro_step_res(fixture->dev, 1);
 }
 
-static void drv8424_emul_after(void *f)
+static void drv84xx_emul_after(void *f)
 {
-	struct drv8424_emul_fixture *fixture = f;
+	struct drv84xx_emul_fixture *fixture = f;
 	(void)stepper_disable(fixture->dev);
 }
 
-ZTEST_F(drv8424_emul, test_enable_on_gpio_pins)
+ZTEST_F(drv84xx_emul, test_enable_on_gpio_pins)
 {
 	int value = 0;
 	(void)stepper_enable(fixture->dev);
@@ -58,7 +58,7 @@ ZTEST_F(drv8424_emul, test_enable_on_gpio_pins)
 	}
 }
 
-ZTEST_F(drv8424_emul, test_enable_off_gpio_pins)
+ZTEST_F(drv84xx_emul, test_enable_off_gpio_pins)
 {
 	int value = 0;
 	/* Enable first to ensure that disable works correctly and the check is not against values
@@ -77,4 +77,4 @@ ZTEST_F(drv8424_emul, test_enable_off_gpio_pins)
 	}
 }
 
-ZTEST_SUITE(drv8424_emul, NULL, drv8424_emul_setup, drv8424_emul_before, drv8424_emul_after, NULL);
+ZTEST_SUITE(drv84xx_emul, NULL, drv84xx_emul_setup, drv84xx_emul_before, drv84xx_emul_after, NULL);
