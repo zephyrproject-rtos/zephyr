@@ -66,7 +66,8 @@
 static const uint8_t gpio_rz_int[GPIO_RZ_MAX_PORT_NUM] = {0,  4,  9,  13, 17, 23, 28, 33, 38, 43,
 							  47, 52, 56, 58, 63, 66, 70, 72, 76};
 
-#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L)
+#elif defined(CONFIG_SOC_SERIES_RZN2L) || defined(CONFIG_SOC_SERIES_RZT2L) ||                      \
+	defined(CONFIG_SOC_SERIES_RZT2M)
 #include <zephyr/dt-bindings/gpio/renesas-rztn-gpio.h>
 #define GPIO_RZ_IOPORT_REG_REGION_GET(p) (R_BSP_IoRegionGet(p) == BSP_IO_REGION_NOT_SAFE ? 1 : 0)
 
