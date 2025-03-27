@@ -132,6 +132,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NEORV32_GPTMR
 	DEVS_FOR_DT_COMPAT(neorv32_gptmr)
 #endif
+#ifdef CONFIG_COUNTER_RA_AGT
+	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
