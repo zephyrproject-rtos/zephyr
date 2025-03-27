@@ -575,46 +575,23 @@ static void ev_sof_handler(void)
 	udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 }
 
-/**
- * @brief React on data transfer finished.
- *
- * Auxiliary internal function.
- * @param ep     Endpoint number.
- * @param bitpos Bit position for selected endpoint number.
- */
-static void usbd_ep_data_handler(nrf_usbd_common_ep_t ep, uint8_t bitpos)
+static void usbd_in_packet_sent(uint8_t ep)
 {
-	LOG_DBG("USBD event: EndpointData: %x", ep);
-	/* Mark endpoint ready for next DMA access */
-	m_ep_ready |= (1U << bitpos);
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(udc_nrf_dev, ep);
+	struct net_buf *buf = udc_buf_peek(ep_cfg);
 
-	if (NRF_USBD_COMMON_EP_IS_IN(ep)) {
-		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(udc_nrf_dev, ep);
-		struct net_buf *buf = udc_buf_peek(ep_cfg);
+	net_buf_pull(buf, usbd_ep_amount_get(ep));
 
-		/* IN endpoint (Device -> Host) */
-
-		net_buf_pull(buf, usbd_ep_amount_get(ep));
-
-		if (buf->len) {
-			/* More packets will be sent, nothing to do here */
-		} else if (udc_ep_buf_has_zlp(buf)) {
-			/* Actual payload sent, only ZLP left */
-			udc_ep_buf_clear_zlp(buf);
-		} else {
-			LOG_DBG("USBD event: EndpointData: In finished");
-			/* No more data to be send - transmission finished */
-			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-		}
+	if (buf->len) {
+		/* More packets will be sent, nothing to do here */
+	} else if (udc_ep_buf_has_zlp(buf)) {
+		/* Actual payload sent, only ZLP left */
+		udc_ep_buf_clear_zlp(buf);
 	} else {
-		/* OUT endpoint (Host -> Device) */
-		if (0 == (m_ep_dma_waiting & (1U << bitpos))) {
-			LOG_DBG("USBD event: EndpointData: Out waiting");
-			/* No buffer prepared - send event to the application */
-			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_WAITING);
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-		}
+		LOG_DBG("USBD event: EndpointData: In finished");
+		/* No more data to be send - transmission finished */
+		NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 }
 
@@ -697,16 +674,29 @@ static void ev_usbevent_handler(void)
 
 static void ev_epdata_handler(uint32_t dataepstatus)
 {
-	LOG_DBG("USBD event: EndpointEPStatus: %x", dataepstatus);
+	if (dataepstatus) {
+		LOG_DBG("USBD event: EndpointEPStatus: %x", dataepstatus);
 
-	/* All finished endpoint have to be marked as busy */
+		/* Mark endpoints ready for next DMA access */
+		m_ep_ready |= dataepstatus;
+
+		/* Peripheral automatically enables endpoint for data reception
+		 * after OUT endpoint DMA transfer. This makes the device ACK
+		 * the OUT DATA even if the stack did not enqueue any buffer.
+		 *
+		 * This behaviour most likely cannot be avoided and therefore
+		 * there's nothing more to do for OUT endpoints.
+		 */
+		dataepstatus &= NRF_USBD_COMMON_EPIN_BIT_MASK;
+	}
+
+	/* Prepare next packet on IN endpoints */
 	while (dataepstatus) {
 		uint8_t bitpos = NRF_CTZ(dataepstatus);
-		nrf_usbd_common_ep_t ep = bit2ep(bitpos);
 
-		dataepstatus &= ~(1UL << bitpos);
+		dataepstatus &= ~BIT(bitpos);
 
-		(void)(usbd_ep_data_handler(ep, bitpos));
+		usbd_in_packet_sent(bit2ep(bitpos));
 	}
 }
 
@@ -1561,13 +1551,6 @@ static void udc_event_xfer_out(const struct device *dev,
 	struct net_buf *buf;
 
 	switch (event->data.eptransfer.status) {
-	case NRF_USBD_COMMON_EP_WAITING:
-		/*
-		 * There is nothing to do here, new transfer
-		 * will be tried in both cases later.
-		 */
-		break;
-
 	case NRF_USBD_COMMON_EP_OK:
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 		buf = udc_buf_get(ep_cfg);
@@ -1596,7 +1579,10 @@ static void udc_event_xfer_out(const struct device *dev,
 static int usbd_ctrl_feed_dout(const struct device *dev,
 			       const size_t length)
 {
-
+	struct udc_nrf_evt evt = {
+		.type = UDC_NRF_EVT_XFER,
+		.ep = USB_CONTROL_EP_OUT,
+	};
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
 
@@ -1605,8 +1591,10 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	k_fifo_put(&cfg->fifo, buf);
+	udc_buf_put(cfg, buf);
 	udc_nrf_clear_control_out(dev);
+
+	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 
 	return 0;
 }
