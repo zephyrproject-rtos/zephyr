@@ -117,7 +117,7 @@ static inline int icm42688_bus_write(const struct device *dev, uint16_t reg, con
 
 	uint8_t msg[len + 1];
 	msg[0] = address;
-	
+
 	memcpy(&msg[1], buf, len);
 	rtio_sqe_prep_write(write_reg_sqe, iodev, RTIO_PRIO_HIGH, msg, sizeof(msg), NULL);
 	write_reg_sqe->iodev_flags = RTIO_IODEV_I2C_STOP;
