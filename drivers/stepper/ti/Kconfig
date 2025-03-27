@@ -5,4 +5,4 @@ config STEPPER_TI
 	bool
 	depends on STEPPER
 
-rsource "Kconfig.drv8424"
+rsource "Kconfig.drv84xx"
