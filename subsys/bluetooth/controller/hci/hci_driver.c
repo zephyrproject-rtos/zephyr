@@ -25,7 +25,7 @@
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#endif
+#endif /* CONFIG_CLOCK_CONTROL_NRF */
 
 #include "hal/debug.h"
 
@@ -72,12 +72,9 @@ struct hci_driver_data {
 	bt_hci_recv_t recv;
 };
 
-static struct k_sem sem_prio_recv;
+static struct k_sem sem_recv;
 static struct k_fifo recv_fifo;
 
-struct k_thread prio_recv_thread_data;
-static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
-			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
 static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_CTLR_RX_STACK_SIZE);
 
@@ -85,67 +82,9 @@ static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_CTLR_RX_STACK_SIZE);
 static struct k_poll_signal hbuf_signal;
 static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
-#endif
-
-#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
-#define BT_HCI_EVT_FLAG_RECV      BIT(1)
-
-/** @brief Get HCI event flags.
- *
- * Helper for the HCI driver to get HCI event flags that describes rules that.
- * must be followed.
- *
- * @param evt HCI event code.
- *
- * @return HCI event flags for the specified event.
- */
-static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
-{
-	switch (evt) {
-	case BT_HCI_EVT_DISCONN_COMPLETE:
-		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
-		/* fallthrough */
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-#if defined(CONFIG_BT_CONN)
-	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
-		__fallthrough;
-#endif /* defined(CONFIG_BT_CONN) */
-#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
-		return BT_HCI_EVT_FLAG_RECV_PRIO;
-	default:
-		return BT_HCI_EVT_FLAG_RECV;
-	}
-}
-
-/* Copied here from `hci_raw.c`, which would be used in
- * conjunction with this driver when serializing HCI over wire.
- * This serves as a converter from the historical (removed from
- * tree) 'recv blocking' API to the normal single-receiver
- * `bt_recv` API.
- */
-static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
-{
-	struct hci_driver_data *data = dev->data;
-
-	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
-		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
-
-		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
-		    (evt_flags & BT_HCI_EVT_FLAG_RECV)) {
-			/* Avoid queuing the event twice */
-			return 0;
-		}
-	}
-
-	return data->recv(dev, buf);
-}
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BT_CTLR_ISO)
-
 #define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_SDU_TS_HDR_SIZE)
 
 isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
@@ -176,7 +115,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 				 const struct isoal_emitted_sdu      *sdu)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_driver_data *data = dev->data;
+	const struct hci_driver_data *data = dev->data;
 	struct bt_hci_iso_sdu_ts_hdr *sdu_hdr;
 	uint16_t packet_status_flag;
 	struct bt_hci_iso_hdr *hdr;
@@ -279,21 +218,68 @@ isoal_status_t sink_sdu_write_hci(void *dbuf,
 
 	return ISOAL_STATUS_OK;
 }
-#endif
+#endif /* CONFIG_BT_CTLR_ISO */
 
-void hci_recv_fifo_reset(void)
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+struct k_thread prio_recv_thread_data;
+static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
+			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
+
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
+ *
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * @param evt HCI event code.
+ *
+ * @return HCI event flags for the specified event.
+ */
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 {
-	/* NOTE: As there is no equivalent API to wake up a waiting thread and
-	 * reinitialize the queue so it is empty, we use the cancel wait and
-	 * initialize the queue. As the Tx thread and Rx thread are co-operative
-	 * we should be relatively safe doing the below.
-	 * Added k_sched_lock and k_sched_unlock, as native_sim seems to
-	 * swap to waiting thread on call to k_fifo_cancel_wait!.
-	 */
-	k_sched_lock();
-	k_fifo_cancel_wait(&recv_fifo);
-	k_fifo_init(&recv_fifo);
-	k_sched_unlock();
+	switch (evt) {
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
+		/* fallthrough */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
+	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
+		__fallthrough;
+#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	default:
+		return BT_HCI_EVT_FLAG_RECV;
+	}
+}
+
+/* Copied here from `hci_raw.c`, which would be used in
+ * conjunction with this driver when serializing HCI over wire.
+ * This serves as a converter from the historical (removed from
+ * tree) 'recv blocking' API to the normal single-receiver
+ * `bt_recv` API.
+ */
+static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
+{
+	const struct hci_driver_data *data = dev->data;
+
+	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
+		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
+
+		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
+		    (evt_flags & BT_HCI_EVT_FLAG_RECV)) {
+			/* Avoid queuing the event twice */
+			return 0;
+		}
+	}
+
+	return data->recv(dev, buf);
 }
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
@@ -341,8 +327,6 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		uint8_t num_cmplt;
 		uint16_t handle;
 
-		iso_received = false;
-
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		node_rx = ll_iso_rx_get();
 		if (node_rx) {
@@ -358,21 +342,29 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			k_fifo_put(&recv_fifo, node_rx);
 
 			iso_received = true;
+		} else {
+			iso_received = false;
 		}
-#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#else /* !CONFIG_BT_CTLR_SYNC_ISO && !CONFIG_BT_CTLR_CONN_ISO */
+		iso_received = false;
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO && !CONFIG_BT_CTLR_CONN_ISO */
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
-	defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+			int err;
 
 			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 					     false, K_FOREVER);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
 			LOG_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
-			bt_recv_prio(dev, buf);
+
+			err = bt_recv_prio(dev, buf);
+			LL_ASSERT(err == 0);
+
 			k_yield();
-#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 		}
 
 		if (node_rx) {
@@ -388,13 +380,17 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx, &evt_flags);
 			if (buf) {
+				int err;
+
 				LOG_DBG("Priority event");
 				if (!(evt_flags & BT_HCI_EVT_FLAG_RECV)) {
 					node_rx->hdr.next = NULL;
 					ll_rx_mem_release((void **)&node_rx);
 				}
 
-				bt_recv_prio(dev, buf);
+				err = bt_recv_prio(dev, buf);
+				LL_ASSERT(err == 0);
+
 				/* bt_recv_prio would not release normal evt
 				 * buf.
 				 */
@@ -425,10 +421,112 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		 * Blocking-take of the semaphore; we take it once ULL mayfly
 		 * has let it go in ll_rx_sched().
 		 */
-		k_sem_take(&sem_prio_recv, K_FOREVER);
+		k_sem_take(&sem_recv, K_FOREVER);
 		/* Now, ULL mayfly has something to give to us */
 		LOG_DBG("sem taken");
 	}
+}
+
+#else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+static void node_rx_recv(const struct device *dev)
+{
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+	const struct hci_driver_data *data = dev->data;
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
+
+	struct node_rx_pdu *node_rx;
+	bool iso_received = false;
+
+	do {
+		uint8_t num_cmplt;
+		uint16_t handle;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+		node_rx = ll_iso_rx_get();
+		if (node_rx != NULL) {
+			ll_iso_rx_dequeue();
+
+			/* Find out and store the class for this node */
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
+
+			/* Send the rx node up to Host thread,
+			 * recv_thread()
+			 */
+			LOG_DBG("ISO RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
+
+			iso_received = true;
+		} else {
+			iso_received = false;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+		/* While there are completed rx nodes */
+		num_cmplt = ll_rx_get((void *)&node_rx, &handle);
+		while (num_cmplt != 0U) {
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+			struct net_buf *buf;
+
+			LL_ASSERT(node_rx == NULL);
+
+			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
+					     false, K_FOREVER);
+			hci_num_cmplt_encode(buf, handle, num_cmplt);
+
+			LOG_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
+
+			data->recv(dev, buf);
+			k_yield();
+
+#else /* !CONFIG_BT_CONN && !CONFIG_BT_CTLR_ADV_ISO */
+			LL_ASSERT(0);
+#endif /* !CONFIG_BT_CONN && !CONFIG_BT_CTLR_ADV_ISO */
+
+			num_cmplt = ll_rx_get((void *)&node_rx, &handle);
+		}
+
+		if (node_rx != NULL) {
+			/* Until now we've only peeked, now we really do
+			 * the handover
+			 */
+			ll_rx_dequeue();
+
+			/* Find out and store the class for this node */
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
+
+			/* Send the rx node up to Host thread, recv_thread()
+			 */
+			LOG_DBG("RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
+		}
+
+		/* There may still be completed nodes, continue pushing all those up to Host before
+		 * waiting/polling for sem_recv.
+		 */
+	} while (iso_received || (node_rx != NULL));
+}
+
+static int bt_recv(const struct device *dev, struct net_buf *buf)
+{
+	const struct hci_driver_data *data = dev->data;
+
+	return data->recv(dev, buf);
+}
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+void hci_recv_fifo_reset(void)
+{
+	/* NOTE: As there is no equivalent API to wake up a waiting thread and
+	 * reinitialize the queue so it is empty, we use the cancel wait and
+	 * initialize the queue. As the Tx thread and Rx thread are co-operative
+	 * we should be relatively safe doing the below.
+	 * Added k_sched_lock and k_sched_unlock, as native_sim seems to
+	 * swap to waiting thread on call to k_fifo_cancel_wait!.
+	 */
+	k_sched_lock();
+	k_fifo_cancel_wait(&recv_fifo);
+	k_fifo_init(&recv_fifo);
+	k_sched_unlock();
 }
 
 static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
@@ -458,7 +556,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 		hci_acl_encode(node_rx, buf);
 		break;
-#endif
+#endif /* CONFIG_BT_CONN */
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	case HCI_CLASS_ISO_DATA: {
 		if (false) {
@@ -569,7 +668,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 			break;
 		}
 	}
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 	/* process regular node from radio */
 	buf = encode_node(node_rx, class);
@@ -665,7 +764,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 
 	return buf;
 }
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 /**
  * @brief Blockingly pull from Controller thread's recv_fifo
@@ -674,46 +773,86 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 static void recv_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct hci_driver_data *data = dev->data;
+	const struct hci_driver_data *data = dev->data;
 
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+	enum {
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+		EVENT_SIGNAL,
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		EVENT_SEM,
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		EVENT_FIFO,
+		EVENT_MAX,
+	};
+
 	/* @todo: check if the events structure really needs to be static */
-	static struct k_poll_event events[2] = {
+	static struct k_poll_event events[EVENT_MAX] = {
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&hbuf_signal, 0),
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&sem_recv, 0),
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&recv_fifo, 0),
 	};
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL || !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 	while (1) {
 		struct node_rx_pdu *node_rx = NULL;
 		struct net_buf *buf = NULL;
 
 		LOG_DBG("blocking");
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 		int err;
 
-		err = k_poll(events, 2, K_FOREVER);
+		err = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 		LL_ASSERT(err == 0 || err == -EINTR);
-		if (events[0].state == K_POLL_STATE_SIGNALED) {
-			events[0].signal->signaled = 0U;
-		} else if (events[1].state ==
-			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-			node_rx = k_fifo_get(events[1].fifo, K_NO_WAIT);
+
+		if (false) {
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+		} else if (events[EVENT_SIGNAL].state == K_POLL_STATE_SIGNALED) {
+			events[EVENT_SIGNAL].signal->signaled = 0U;
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		} else if (events[EVENT_SEM].state == K_POLL_STATE_SEM_AVAILABLE) {
+			err = k_sem_take(events[EVENT_SEM].sem, K_NO_WAIT);
+			LL_ASSERT(err == 0);
+
+			node_rx_recv(dev);
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		} else if (events[EVENT_FIFO].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
+			node_rx = k_fifo_get(events[EVENT_FIFO].fifo, K_NO_WAIT);
 		}
 
-		events[0].state = K_POLL_STATE_NOT_READY;
-		events[1].state = K_POLL_STATE_NOT_READY;
+		for (size_t i = 0; i < ARRAY_SIZE(events); i++) {
+			events[i].state = K_POLL_STATE_NOT_READY;
+		}
 
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		/* process host buffers first if any */
 		buf = process_hbuf(node_rx);
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
-#else
+#else /* !CONFIG_BT_HCI_ACL_FLOW_CONTROL && CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
-#endif
+#endif /* !CONFIG_BT_HCI_ACL_FLOW_CONTROL && CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
 		LOG_DBG("unblocked");
 
 		if (node_rx && !buf) {
@@ -748,20 +887,26 @@ static int cmd_handle(const struct device *dev, struct net_buf *buf)
 {
 	struct node_rx_pdu *node_rx = NULL;
 	struct net_buf *evt;
+	int err = 0;
 
 	evt = hci_cmd_handle(buf, (void **) &node_rx);
 	if (evt) {
 		LOG_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv_prio(dev, evt);
 
-		if (node_rx) {
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		err = bt_recv_prio(dev, evt);
+#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+		err = bt_recv(dev, evt);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		if ((err == 0) && (node_rx != NULL)) {
 			LOG_DBG("RX node enqueue");
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
 		}
 	}
 
-	return 0;
+	return err;
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -773,7 +918,12 @@ static int acl_handle(const struct device *dev, struct net_buf *buf)
 	err = hci_acl_handle(buf, &evt);
 	if (evt) {
 		LOG_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv_prio(dev, evt);
+
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		err = bt_recv_prio(dev, evt);
+#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+		err = bt_recv(dev, evt);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 	}
 
 	return err;
@@ -789,7 +939,12 @@ static int iso_handle(const struct device *dev, struct net_buf *buf)
 	err = hci_iso_handle(buf, &evt);
 	if (evt) {
 		LOG_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv_prio(dev, evt);
+
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		err = bt_recv_prio(dev, evt);
+#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+		err = bt_recv(dev, evt);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 	}
 
 	return err;
@@ -845,9 +1000,9 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 	DEBUG_INIT();
 
 	k_fifo_init(&recv_fifo);
-	k_sem_init(&sem_prio_recv, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&sem_recv, 0, K_SEM_MAX_LIMIT);
 
-	err = ll_init(&sem_prio_recv);
+	err = ll_init(&sem_recv);
 	if (err) {
 		LOG_ERR("LL initialization failed: %d", err);
 		return err;
@@ -858,15 +1013,17 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	k_poll_signal_init(&hbuf_signal);
 	hci_init(&hbuf_signal);
-#else
+#else /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 	hci_init(NULL);
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(recv_thread_stack),
@@ -888,8 +1045,10 @@ static int hci_driver_close(const struct device *dev)
 	err = ll_deinit();
 	LL_ASSERT(!err);
 
+#if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 	/* Abort prio RX thread */
 	k_thread_abort(&prio_recv_thread_data);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 	/* Abort RX thread */
 	k_thread_abort(&recv_thread_data);
