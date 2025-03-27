@@ -275,6 +275,7 @@ int openthread_rcp_reset(struct openthread_rcp_data *ot_rcp)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -301,6 +302,7 @@ int openthread_rcp_ieee_eui64(struct openthread_rcp_data *ot_rcp, uint8_t ieee_e
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -328,6 +330,7 @@ int openthread_rcp_capabilities(struct openthread_rcp_data *ot_rcp,
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -354,6 +357,7 @@ int openthread_rcp_enable_src_match(struct openthread_rcp_data *ot_rcp, bool ena
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -380,6 +384,7 @@ int openthread_rcp_ack_fpb(struct openthread_rcp_data *ot_rcp, uint16_t addr, bo
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -406,6 +411,7 @@ int openthread_rcp_ack_fpb_ext(struct openthread_rcp_data *ot_rcp, uint8_t addr[
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -432,6 +438,7 @@ static int openthread_rcp_ack_fpb_short_clear(struct openthread_rcp_data *ot_rcp
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -458,6 +465,7 @@ static int openthread_rcp_ack_fpb_ext_clear(struct openthread_rcp_data *ot_rcp)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -496,6 +504,7 @@ int openthread_rcp_mac_frame_counter(struct openthread_rcp_data *ot_rcp, uint32_
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -522,6 +531,7 @@ int openthread_rcp_panid(struct openthread_rcp_data *ot_rcp, uint16_t pan_id)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -548,6 +558,7 @@ int openthread_rcp_short_addr(struct openthread_rcp_data *ot_rcp, uint16_t addr)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -574,6 +585,7 @@ int openthread_rcp_ext_addr(struct openthread_rcp_data *ot_rcp, uint8_t addr[8])
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -600,6 +612,7 @@ int openthread_rcp_tx_power(struct openthread_rcp_data *ot_rcp, int8_t pwr_dbm)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -626,6 +639,7 @@ int openthread_rcp_enable(struct openthread_rcp_data *ot_rcp, bool enable)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -652,6 +666,7 @@ int openthread_rcp_receive_enable(struct openthread_rcp_data *ot_rcp, bool enabl
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -678,6 +693,7 @@ int openthread_rcp_channel(struct openthread_rcp_data *ot_rcp, uint8_t channel)
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 
@@ -701,9 +717,22 @@ int openthread_rcp_transmit(struct openthread_rcp_data *ot_rcp, struct spinel_fr
 							    response.data_size, frame)) {
 				processed = true;
 				result = 0;
+				if (frame->data && frame->data_length) {
+					void *p = malloc(frame->data_length);
+
+					if (p) {
+						memcpy(p, frame->data, frame->data_length);
+						frame->data = p;
+					} else {
+						frame->data = NULL;
+						frame->data_length = 0;
+						LOG_ERR("spinel can't allocate ack frame data");
+					}
+				}
 			} else {
 				LOG_WRN("spinel trash received during %s", __func__);
 			}
+			free(response.data);
 		}
 	}
 

@@ -296,6 +296,7 @@ static int w91_zb_tx(const struct device *dev, enum ieee802154_tx_mode mode, str
 		if (ack_pkt) {
 			net_pkt_unref(ack_pkt);
 		}
+		free(frame.data);
 	} else {
 		if (data->event_handler) {
 			data->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
