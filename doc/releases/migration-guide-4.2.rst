@@ -120,6 +120,15 @@ Ethernet
 * Removed Kconfig option ``ETH_STM32_HAL_MII`` (:github:`86074`).
   PHY interface type is now selected via the ``phy-connection-type`` property in the device tree.
 
+* The :dtcompatible:`st,stm32-ethernet` driver now requires the ``phy-handle`` phandle to be
+  set to the according PHY node in the device tree (:github:`87593`).
+
+* The Kconfig options ``ETH_STM32_HAL_PHY_ADDRESS``, ``ETH_STM32_CARRIER_CHECK``,
+  ``ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS``, ``ETH_STM32_AUTO_NEGOTIATION_ENABLE``,
+  ``ETH_STM32_SPEED_10M``, ``ETH_STM32_MODE_HALFDUPLEX`` have been removed, as they are no longer
+  needed, and the driver now uses the ethernet phy api to communicate with the phy driver, which
+  is resposible for configuring the phy settings (:github:`87593`).
+
 * ``ethernet_native_posix`` has been renamed ``ethernet_native_tap``, and with it its
   kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
   deprecated in favor of :kconfig:option:`CONFIG_ETH_NATIVE_TAP` (:github:`86578`).
