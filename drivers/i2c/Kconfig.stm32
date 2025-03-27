@@ -24,6 +24,7 @@ config I2C_STM32_V2
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V2_ENABLED
 	select I2C_STM32_INTERRUPT if I2C_TARGET
+	select HAS_I2C_RTIO
 	help
 	  Driver variant matching `st,stm32-i2c-v2` compatible.
 	  If I2C_TARGET is enabled it selects I2C_STM32_INTERRUPT, since target mode
