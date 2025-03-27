@@ -7,14 +7,14 @@
 
 / {
 	aliases {
-		stepper =  &ti_drv8424;
+		stepper =  &ti_drv84xx;
 	};
 };
 
 / {
-	ti_drv8424: ti_drv8424 {
+	ti_drv84xx: ti_drv84xx {
 		status = "okay";
-		compatible = "ti,drv8424";
+		compatible = "ti,drv84xx";
 		micro-step-res = <8>;
 		dir-gpios = <&gpio1 0 0>;
 		step-gpios = <&gpio1 1 0>;
