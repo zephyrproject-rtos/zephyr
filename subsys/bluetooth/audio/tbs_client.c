@@ -852,7 +852,7 @@ static void tbs_client_discover_complete(struct bt_conn *conn, int err)
 
 static bool can_add_string_to_net_buf(const struct net_buf_simple *buf, size_t len)
 {
-	return buf->len + len + sizeof('\0') <= buf->size;
+	return buf->len + len + sizeof(char) /* NULL terminator size */ <= buf->size;
 }
 
 /**
@@ -880,7 +880,8 @@ static int handle_string_long_read(struct bt_tbs_instance *inst, uint8_t err, co
 				 * terminator
 				 */
 				LOG_DBG("Truncating string");
-				length = net_buf_simple_tailroom(&inst->net_buf) - sizeof('\0');
+				length = net_buf_simple_tailroom(&inst->net_buf) -
+					 sizeof(char) /* NULL terminator size */;
 				net_buf_simple_add_mem(&inst->net_buf, data, length);
 
 				/* Ensure that the data is correctly truncated */
