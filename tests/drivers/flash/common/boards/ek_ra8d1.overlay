@@ -18,3 +18,9 @@
 		};
 	};
 };
+
+&ospi0 {
+	ospi-nor-flash@90000000 {
+		status = "disabled";
+	};
+};
