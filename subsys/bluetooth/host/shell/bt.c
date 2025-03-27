@@ -3795,13 +3795,8 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BT_CLASSIC)
-		addr.type = BT_ADDR_LE_PUBLIC;
-		err = bt_addr_from_str(argv[1], &addr.a);
-#else
 		shell_print(sh, "Both address and address type needed");
 		return -ENOEXEC;
-#endif
 	} else {
 		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	}
@@ -4238,6 +4233,16 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	bt_shell_print("Bond deleted for %s, id %u", addr, id);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static void br_bond_deleted(const bt_addr_t *peer)
+{
+	char addr[BT_ADDR_STR_LEN];
+
+	bt_addr_to_str(peer, addr, sizeof(addr));
+	bt_shell_print("Classic bond deleted for %s", addr);
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 #if defined(CONFIG_BT_PASSKEY_KEYPRESS)
@@ -4338,6 +4343,9 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_failed = auth_pairing_failed,
 	.pairing_complete = auth_pairing_complete,
 	.bond_deleted = bond_deleted,
+#if defined(CONFIG_BT_CLASSIC)
+	.br_bond_deleted = br_bond_deleted,
+#endif /* CONFIG_BT_CLASSIC */
 };
 
 static int cmd_auth(const struct shell *sh, size_t argc, char *argv[])
