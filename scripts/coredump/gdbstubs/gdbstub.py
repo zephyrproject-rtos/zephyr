@@ -15,9 +15,9 @@ logger = logging.getLogger("gdbstub")
 
 
 class GdbStub(abc.ABC):
-    def __init__(self, logfile, elffile):
+    def __init__(self, logfile, elffiles):
         self.logfile = logfile
-        self.elffile = elffile
+        self.elffile = elffiles[0]
         self.socket = None
         self.gdb_signal = None
         self.thread_ptrs = list()
@@ -28,8 +28,9 @@ class GdbStub(abc.ABC):
         for r in logfile.get_memory_regions():
             mem_regions.append(r)
 
-        for r in elffile.get_memory_regions():
-            mem_regions.append(r)
+        for elffile in elffiles:
+            for r in elffile.get_memory_regions():
+                mem_regions.append(r)
 
         self.mem_regions = mem_regions
 

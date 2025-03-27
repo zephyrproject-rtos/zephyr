@@ -86,8 +86,8 @@ class GdbStub_x86(GdbStub):
 
     GDB_G_PKT_NUM_REGS = 16
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
         self.registers = None
         self.exception_vector = None
         self.exception_code = None

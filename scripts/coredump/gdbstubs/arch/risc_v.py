@@ -57,8 +57,8 @@ class GdbStub_RISC_V(GdbStub):
 
     GDB_G_PKT_NUM_REGS = 33
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
 

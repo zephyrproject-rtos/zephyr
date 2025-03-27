@@ -105,8 +105,8 @@ class GdbStub_x86_64(GdbStub):
         RegNum.GS,
     }
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
         self.registers = None
         self.exception_vector = None
         self.exception_code = None
