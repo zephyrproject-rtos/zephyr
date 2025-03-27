@@ -859,6 +859,27 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 	return 0;
 }
 
+static void bond_info(const struct bt_br_bond_info *info, void *user_data)
+{
+	char addr[BT_ADDR_STR_LEN];
+	int *bond_count = user_data;
+
+	bt_addr_to_str(&info->addr, addr, sizeof(addr));
+	bt_shell_print("Remote Identity: %s", addr);
+	(*bond_count)++;
+}
+
+static int cmd_bonds(const struct shell *sh, size_t argc, char *argv[])
+{
+	int bond_count = 0;
+
+	shell_print(sh, "Bonded devices:");
+	bt_br_foreach_bond(bond_info, &bond_count);
+	shell_print(sh, "Total %d", bond_count);
+
+	return 0;
+}
+
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 {
 	bt_addr_t addr;
@@ -933,6 +954,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
+	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR"]", cmd_clear, 2, 0),
 	SHELL_CMD_ARG(discovery, NULL, "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
