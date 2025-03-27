@@ -7,14 +7,12 @@
 /dts-v1/;
 
 #include <freq.h>
-
 #include <raspberrypi/rpi_pico/rp2040.dtsi>
-#include "../common/pico_spe-pinctrl-common.dtsi"
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
-
-#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "pico_spe-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -28,6 +26,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			label = "LED";
@@ -37,6 +36,7 @@
 	pwm_leds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
@@ -150,7 +150,6 @@
 		int-gpios = <&gpio0 21 (GPIO_ACTIVE_LOW)>;
 		rst-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		status = "okay";
-
 		local-mac-address = [ CA 2F B7 10 23 78];
 
 		lan865x_mdio: lan865x_mdio {

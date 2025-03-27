@@ -196,7 +196,7 @@ This configuration also works with an environment that is set up by the `pico_se
 
 If **RPI_PICO_DEBUG_ADAPTER** was not assigned, ``cmsis-dap`` is used by default.
 The other supported adapters are ``raspberrypi-swd``, ``jlink`` and ``blackmagicprobe``.
-How to connect ``cmsis-dap`` and ``raspberrypi-swd`` is described in `Getting Started with Pico-SPE`_.
+How to connect ``cmsis-dap`` and ``raspberrypi-swd`` is described in `Getting Started with Pico-SPE-Series`_.
 Any other SWD debug adapter maybe also work with this configuration.
 
 The value of **RPI_PICO_DEBUG_ADAPTER** is cached, so it can be omitted from
@@ -275,11 +275,12 @@ Inside gdb, run:
 You can then start debugging the board.
 
 .. target-notes::
+
 .. _pico_setup.sh:
-  https://raw.githubusercontent.com/raspberrypi/pico-setup/master/pico_setup.sh
+   https://raw.githubusercontent.com/raspberrypi/pico-setup/master/pico_setup.sh
 
 .. _Getting Started with Pico-SPE-Series:
-  https://kws-computer.de/go/pico-spe-getting-started
+   https://kws-computer.de/go/pico-spe-getting-started
 
 .. _Pico-SPE Documentation:
-  https://kws-computer.de/go/pico-spe-datasheet
+   https://kws-computer.de/go/pico-spe-datasheet
