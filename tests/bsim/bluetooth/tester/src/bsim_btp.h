@@ -244,6 +244,60 @@ static inline void bsim_btp_wait_for_gap_sec_level_changed(bt_addr_le_t *address
 	net_buf_unref(buf);
 }
 
+static inline void bsim_btp_hauc_init(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_HAP;
+	cmd_hdr->opcode = BTP_HAP_HAUC_INIT;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* command is empty */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_hauc_discover(const bt_addr_le_t *address)
+{
+	struct btp_hap_hauc_discover_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_HAP;
+	cmd_hdr->opcode = BTP_HAP_HAUC_DISCOVER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_hauc_discovery_complete(bt_addr_le_t *address)
+{
+	struct btp_hap_hauc_discovery_complete_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_HAP, BT_HAP_EV_HAUC_DISCOVERY_COMPLETE, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	net_buf_unref(buf);
+}
+
 static inline void bsim_btp_vcp_discover(const bt_addr_le_t *address)
 {
 	struct btp_vcp_discover_cmd *cmd;
