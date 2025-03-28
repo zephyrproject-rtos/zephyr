@@ -350,7 +350,8 @@ static int dma_stm32_configure(const struct device *dev,
 	struct dma_stm32_stream *stream =
 				&dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
-	LL_DMA_InitTypeDef DMA_InitStruct;
+	uint32_t ll_priority;
+	uint32_t ll_direction;
 	int ret;
 
 	/*  Linked list Node  and structure initialization */
@@ -360,7 +361,6 @@ static int dma_stm32_configure(const struct device *dev,
 
 	LL_DMA_ListStructInit(&DMA_InitLinkedListStruct);
 	LL_DMA_NodeStructInit(&NodeConfig);
-	LL_DMA_StructInit(&DMA_InitStruct);
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -431,31 +431,32 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
-	DMA_InitStruct.SrcAddress = config->head_block->source_address;
-	DMA_InitStruct.DestAddress = config->head_block->dest_address;
+	LL_DMA_ConfigAddresses(dma, dma_stm32_id_to_stream(id), config->head_block->source_address,
+			       config->head_block->dest_address);
+
 	NodeConfig.SrcAddress = config->head_block->source_address;
 	NodeConfig.DestAddress = config->head_block->dest_address;
 	NodeConfig.BlkDataLength = config->head_block->block_size;
 
-	ret = dma_stm32_get_priority(config->channel_priority,
-				     &DMA_InitStruct.Priority);
+	ret = dma_stm32_get_priority(config->channel_priority, &ll_priority);
 	if (ret < 0) {
 		return ret;
 	}
+	LL_DMA_SetChannelPriorityLevel(dma, dma_stm32_id_to_stream(id), ll_priority);
 
-	ret = dma_stm32_get_direction(config->channel_direction,
-				      &DMA_InitStruct.Direction);
+	ret = dma_stm32_get_direction(config->channel_direction, &ll_direction);
 	if (ret < 0) {
 		return ret;
 	}
+	LL_DMA_SetDataTransferDirection(dma, dma_stm32_id_to_stream(id), ll_direction);
 
 	/* This part is for source */
 	switch (config->head_block->source_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		DMA_InitStruct.SrcIncMode = LL_DMA_SRC_INCREMENT;
+		LL_DMA_SetSrcIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_SRC_INCREMENT);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		DMA_InitStruct.SrcIncMode = LL_DMA_SRC_FIXED;
+		LL_DMA_SetSrcIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_SRC_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
@@ -464,16 +465,16 @@ static int dma_stm32_configure(const struct device *dev,
 			config->head_block->source_addr_adj);
 		return -EINVAL;
 	}
-	LOG_DBG("Channel (%d) src inc (%x).",
-				id, DMA_InitStruct.SrcIncMode);
+	LOG_DBG("Channel (%d) src inc (%x).", id,
+		LL_DMA_GetSrcIncMode(dma, dma_stm32_id_to_stream(id)));
 
 	/* This part is for dest */
 	switch (config->head_block->dest_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		DMA_InitStruct.DestIncMode = LL_DMA_DEST_INCREMENT;
+		LL_DMA_SetDestIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_DEST_INCREMENT);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		DMA_InitStruct.DestIncMode = LL_DMA_DEST_FIXED;
+		LL_DMA_SetDestIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_DEST_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
@@ -482,35 +483,35 @@ static int dma_stm32_configure(const struct device *dev,
 			config->head_block->dest_addr_adj);
 		return -EINVAL;
 	}
-	LOG_DBG("Channel (%d) dest inc (%x).",
-				id, DMA_InitStruct.DestIncMode);
+	LOG_DBG("Channel (%d) dest inc (%x).", id,
+		LL_DMA_GetDestIncMode(dma, dma_stm32_id_to_stream(id)));
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
 	/* Set the data width, when source_data_size equals dest_data_size */
 	int index = find_lsb_set(config->source_data_size) - 1;
 
-	DMA_InitStruct.SrcDataWidth = table_src_size[index];
+	LL_DMA_SetSrcDataWidth(dma, dma_stm32_id_to_stream(id), table_src_size[index]);
 
 	index = find_lsb_set(config->dest_data_size) - 1;
-	DMA_InitStruct.DestDataWidth = table_dst_size[index];
+	LL_DMA_SetDestDataWidth(dma, dma_stm32_id_to_stream(id), table_dst_size[index]);
 
-	DMA_InitStruct.BlkDataLength = config->head_block->block_size;
+	LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), config->head_block->block_size);
 
 	/* The request ID is stored in the dma_slot */
-	DMA_InitStruct.Request = config->dma_slot;
+	LL_DMA_SetPeriphRequest(dma, dma_stm32_id_to_stream(id), config->dma_slot);
 
 	if (config->head_block->source_reload_en == 0) {
 		/* Initialize the DMA structure in non-cyclic mode only */
-		LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+		LL_DMA_SetLinkedListAddrOffset(dma, dma_stm32_id_to_stream(id), 0);
 	} else {/* cyclic mode */
 		/* Setting GPDMA request */
-		NodeConfig.DestDataWidth = DMA_InitStruct.DestDataWidth;
-		NodeConfig.SrcDataWidth = DMA_InitStruct.SrcDataWidth;
-		NodeConfig.DestIncMode = DMA_InitStruct.DestIncMode;
-		NodeConfig.SrcIncMode = DMA_InitStruct.SrcIncMode;
-		NodeConfig.Direction = DMA_InitStruct.Direction;
-		NodeConfig.Request = DMA_InitStruct.Request;
+		NodeConfig.DestDataWidth = table_dst_size[index];
+		NodeConfig.SrcDataWidth = table_src_size[index];
+		NodeConfig.DestIncMode = LL_DMA_GetDestIncMode(dma, dma_stm32_id_to_stream(id));
+		NodeConfig.SrcIncMode = LL_DMA_GetSrcIncMode(dma, dma_stm32_id_to_stream(id));
+		NodeConfig.Direction = ll_direction;
+		NodeConfig.Request = config->dma_slot;
 
 		/* Continuous transfers with Linked List */
 		stream->cyclic = true;
