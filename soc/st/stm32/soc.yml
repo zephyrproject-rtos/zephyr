@@ -193,6 +193,11 @@ family:
   - name: stm32mp13x
     socs:
     - name: stm32mp135fxx
+  - name: stm32mp2x
+    socs:
+    - name: stm32mp257fxx
+      cpuclusters:
+      - name: m33
   - name: stm32n6x
     socs:
     - name: stm32n657xx
