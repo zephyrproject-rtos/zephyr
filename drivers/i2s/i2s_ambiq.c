@@ -75,13 +75,15 @@ static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
 								    // should be 2 x block_size
 } i2s_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".dtcm_data")));
+//	__attribute__((__section__(".dtcm_data"))); // To using deep sleep, this should be changed to SSRAM.
+	__attribute__((__section__(".data")));      // SSRAM allocation
 
 static __aligned(32) struct {
     __aligned(32) uint32_t buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
                                     // should be 2 x block_size
 } i2s_rx_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-    __attribute__((__section__(".dtcm_data")));
+//    __attribute__((__section__(".dtcm_data"))); // To using deep sleep, this should be changed to SSRAM.
+	__attribute__((__section__(".data")));        // SSRAM allocation
 
 
 static void i2s_ambiq_isr0(const struct device *dev)
@@ -194,7 +196,8 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
             return -EINVAL;
             break;
     }
-#if 0
+
+#if 0   // This condition is always true as master. Need to update later.
     if((i2s_config->options & I2S_OPT_FRAME_CLK_MASTER) == I2S_OPT_FRAME_CLK_MASTER) {
         data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_MASTER;
     }
@@ -202,6 +205,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
         data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_SLAVE;
     }
 #endif
+
     if(dir == I2S_DIR_TX) {
         data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_TX;
         data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_MASTER;
@@ -255,16 +259,18 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	// Configure DMA and target address.
 	//
     if(dir == I2S_DIR_TX) {
-        data->i2s_transfer.ui32TxTotalCount = data->block_size / sizeof(uint32_t);  // I2S DMA buffer count is the number of 32-bit datawidth.
-        data->i2s_transfer.ui32TxTargetAddr = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[0]);
-        data->i2s_transfer.ui32TxTargetAddrReverse = (uint32_t)&(i2s_dma_tcb_buf[data->inst_idx].buf[data->sample_num]);
-        LOG_ERR("TX target : 0x%x", data->i2s_transfer.ui32TxTargetAddr);
+        uint8_t *tx_buf_8 = (uint8_t *)&(i2s_dma_tcb_buf[data->inst_idx].buf[0]);
+        data->i2s_transfer.ui32TxTotalCount = data->sample_num;  // I2S DMA buffer count is the number of 32-bit datawidth.
+        data->i2s_transfer.ui32TxTargetAddr = (uint32_t)tx_buf_8;
+        data->i2s_transfer.ui32TxTargetAddrReverse = (uint32_t)&tx_buf_8[data->block_size];
+        LOG_INF("TX addr : 0x%x Cnt : %d Rev : 0x%x", data->i2s_transfer.ui32TxTargetAddr, data->i2s_transfer.ui32TxTotalCount, data->i2s_transfer.ui32TxTargetAddrReverse);
     }
     else {
-        data->i2s_transfer.ui32RxTotalCount = data->block_size / sizeof(uint32_t);  // I2S DMA buffer count is the number of 32-bit datawidth.
-        data->i2s_transfer.ui32RxTargetAddr = (uint32_t)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[0]);
-        data->i2s_transfer.ui32RxTargetAddrReverse = (uint32_t)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[data->sample_num]);
-        LOG_ERR("RX target : 0x%x", data->i2s_transfer.ui32RxTargetAddr);
+        uint8_t *rx_buf_8 = (uint8_t *)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[0]);
+        data->i2s_transfer.ui32RxTotalCount = data->sample_num;  // I2S DMA buffer count is the number of 32-bit datawidth.
+        data->i2s_transfer.ui32RxTargetAddr = (uint32_t)rx_buf_8;
+        data->i2s_transfer.ui32RxTargetAddrReverse = (uint32_t)&rx_buf_8[data->block_size];
+        LOG_INF("RX addr : 0x%x Cnt : %d Rev : 0x%x", data->i2s_transfer.ui32RxTargetAddr, data->i2s_transfer.ui32RxTotalCount, data->i2s_transfer.ui32RxTargetAddrReverse);
     }
 
     memcpy(&(data->i2s_user_config), i2s_config, sizeof(struct i2s_config));

@@ -38,7 +38,6 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 #define BYTES_PER_SAMPLE    sizeof(int32_t)
 #endif
 
-
 /* Such block length provides an echo with the delay of 10 ms. */
 #define SAMPLE_BLOCKS_MS    10
 #define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY * SAMPLE_BLOCKS_MS / 1000) * NUMBER_OF_CHANNELS)
@@ -48,8 +47,61 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 #define BLOCK_COUNT 4
 
 K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+
 #if I2S_TX_RX_LOOPBACK
-K_MEM_SLAB_DEFINE_STATIC(mem_slab_rx, BLOCK_SIZE, BLOCK_COUNT, 4);
+uint8_t rx_temp_buf[BLOCK_SIZE * 100];
+uint32_t rx_buf_index = 0;
+
+static bool check_i2s_data(uint32_t rxtx_sample_num, void* rx_databuf)
+{
+    int i, index_0 = 0;
+    uint16_t *rx_databuf_16 = (uint16_t *)rx_databuf;
+    uint32_t *rx_databuf_32 = (uint32_t *)rx_databuf;
+
+    //
+    // Find the first element of Tx buffer in Rx buffer, and return the index.
+    // Rx will delay N samples.
+    //
+#if (SAMPLE_BIT_WIDTH == 16)
+    for (i = 0; i < rxtx_sample_num; i++)
+    {
+        if (rx_databuf_16[i] == 0xCD00)
+        {
+            index_0 = i;
+            break;
+        }
+    }
+
+    for (i = 0; i < (rxtx_sample_num - index_0); i++)
+    {
+        if ( rx_databuf_16[i + index_0] != (0xCD00 | ((i % SAMPLES_PER_BLOCK) & 0xFF)) )
+        {
+            printk("idx %d 0x%x buf[%d] = 0x%x 0x%x\n", index_0, rx_databuf_16[i + index_0 - 1], i, rx_databuf_16[i + index_0], rx_databuf_16[i + index_0 + 1]);
+            return false;
+        }
+    }
+#else
+    for (i = 0; i < rxtx_sample_num; i++)
+    {
+        if (rx_databuf_32[i] == 0xCD0000)
+        {
+            index_0 = i;
+            break;
+        }
+    }
+
+    for (i = 0; i < (rxtx_sample_num - index_0); i++)
+    {
+        if ( rx_databuf_32[i + index_0] != (0xCD0000 | ((i % SAMPLES_PER_BLOCK) & 0xFF)) )
+        {
+            printk("idx %d 0x%x buf[%d] = 0x%x 0x%x\n", index_0, rx_databuf_32[i + index_0 - 1], i, rx_databuf_32[i + index_0], rx_databuf_32[i + index_0 + 1]);
+            return false;
+        }
+    }
+#endif
+
+    return true;
+}
 #endif
 
 int main(void)
@@ -65,27 +117,27 @@ int main(void)
 	struct i2s_config i2s_config_param;
 	int ret;
 
-#if DMIC_INPUT_ENABLE
-    LOG_INF("dmic i2s sample\n");
-
-    if (!device_is_ready(dmic_dev)) {
-		LOG_ERR("%s is not ready", dmic_dev->name);
-		return 0;
-	}
-#else
-    LOG_INF("dmic i2s sample - i2s tx only mode\n");
-#endif
-
 	if (!device_is_ready(i2s_dev)) {
 		LOG_ERR("%s is not ready\n", i2s_dev->name);
 		return 0;
 	}
 
-#if I2S_TX_RX_LOOPBACK
-	if (!device_is_ready(i2s_rx_dev)) {
+#if DMIC_INPUT_ENABLE
+    LOG_INF("dmic i2s sample - pdm to i2s\n");
+
+    if (!device_is_ready(dmic_dev)) {
+		LOG_ERR("%s is not ready", dmic_dev->name);
+		return 0;
+	}
+#elif I2S_TX_RX_LOOPBACK
+    LOG_INF("dmic i2s sample - i2s loopback\n");
+
+    if (!device_is_ready(i2s_rx_dev)) {
 		LOG_ERR("%s is not ready\n", i2s_rx_dev->name);
 		return 0;
 	}
+#else
+    LOG_INF("dmic i2s sample - i2s tx only mode\n");
 #endif
 
 #if DMIC_INPUT_ENABLE
@@ -143,9 +195,9 @@ int main(void)
     i2s_config_param.block_size = BLOCK_SIZE;
     i2s_config_param.timeout = TIMEOUT;
 
-	LOG_INF("I2S sample rate: %u, block_size: %u, block window %d ms",
-		i2s_config_param.frame_clk_freq, i2s_config_param.block_size, SAMPLE_BLOCKS_MS);
-
+	LOG_INF("i2s sample rate: %u, ch num: %d", i2s_config_param.frame_clk_freq, i2s_config_param.channels);
+    LOG_INF("block_size: %u, block window %d ms", i2s_config_param.block_size, SAMPLE_BLOCKS_MS);
+    
     ret = i2s_configure(i2s_dev, I2S_DIR_TX, &i2s_config_param);
 
     if (ret < 0) {
@@ -155,7 +207,7 @@ int main(void)
 
 #if I2S_TX_RX_LOOPBACK
     i2s_config_param.options = I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE;
-    i2s_config_param.mem_slab = &mem_slab_rx;
+    i2s_config_param.mem_slab = &mem_slab;
     
     ret = i2s_configure(i2s_rx_dev, I2S_DIR_RX, &i2s_config_param);
     if (ret < 0) {
@@ -164,6 +216,9 @@ int main(void)
 	}
 #endif
 
+    bool started = false;
+    LOG_INF("start streams\n");
+
 #if DMIC_INPUT_ENABLE
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_START);
 	if (ret < 0) {
@@ -171,9 +226,6 @@ int main(void)
 		return ret;
 	}
 #endif
-
-    bool started = false;
-    LOG_INF("start streams\n");
 
     while (1) {
         int ret;
@@ -265,25 +317,26 @@ int main(void)
         void *rx_buffer;
         uint32_t rx_size = 0;
         ret = i2s_read(i2s_rx_dev, &rx_buffer, &rx_size);
-        uint8_t *rx_buffer_ptr = (uint8_t *)rx_buffer;
 
         if (ret < 0) {
             LOG_ERR("Failed to read data: %d\n", ret);
             break;
         }
 
-        for (int i = 0; i < rx_size; i++) {
-            if(rx_buffer_ptr[i] != ((i & 0xFF)| 0xCD00)) {
-//                LOG_ERR("rx_buffer[%d] = %d\n", i, rx_buffer_ptr[i]);
-//                printk("0x%x [%d] = %d\n", rx_buffer_ptr, i, rx_buffer_ptr[i]);
-                printk(".");
-                break;
+#if SEQ_NUM_DATA_IN
+        memcpy(&rx_temp_buf[rx_buf_index], rx_buffer, rx_size);
+        rx_buf_index += rx_size;
+        if(rx_buf_index >= (BLOCK_SIZE * 100)) {
+            if(check_i2s_data(SAMPLES_PER_BLOCK * 100, (void *)rx_temp_buf)) {
+                LOG_INF("%d bytes passed", BLOCK_SIZE * 100);
             }
             else {
-                printk(",");
+                LOG_INF("Failed");
             }
+            rx_buf_index = 0;
         }
-        k_mem_slab_free(&mem_slab_rx, rx_buffer);
+#endif
+        k_mem_slab_free(&mem_slab, rx_buffer);
 #endif
     }
 
