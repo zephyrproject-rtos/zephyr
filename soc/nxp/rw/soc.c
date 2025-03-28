@@ -230,6 +230,22 @@ __weak __ramfunc void clock_init(void)
 	 */
 	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 4);
+
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM0);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM1);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM2);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM14);
+	#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lcdic)) && CONFIG_MIPI_DBI_NXP_LCDIC
