@@ -8,3 +8,5 @@
 #include "mocks/id.h"
 
 DEFINE_FAKE_VOID_FUNC(bt_id_del, struct bt_keys *);
+
+DEFINE_FAKE_VOID_FUNC(bt_id_pending_keys_update);
