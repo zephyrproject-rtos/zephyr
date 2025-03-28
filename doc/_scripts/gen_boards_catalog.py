@@ -15,10 +15,12 @@ import list_hardware
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
 EDT_PICKLE_PATH = "zephyr/edt.pickle"
+RUNNERS_YAML_PATH = "zephyr/runners.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -105,20 +107,23 @@ def guess_doc_page(board_or_shield):
     return doc_file
 
 
-def gather_board_devicetrees(twister_out_dir):
-    """Gather EDT objects for each board from twister output directory.
+def gather_board_build_info(twister_out_dir):
+    """Gather EDT objects and runners info for each board from twister output directory.
 
     Args:
         twister_out_dir: Path object pointing to twister output directory
 
     Returns:
-        A dictionary mapping board names to a dictionary of board targets and their EDT objects.
-        The structure is: {board_name: {board_target: edt_object}}
+        A tuple of two dictionaries:
+           - A dictionary mapping board names to a dictionary of board targets and their EDT objects.
+             The structure is: {board_name: {board_target: edt_object}}
+           - A dictionary mapping board names to a dictionary of board targets and their runners info.
+             The structure is: {board_name: {board_target: runners_info}}
     """
     board_devicetrees = {}
-
+    board_runners = {}
     if not twister_out_dir.exists():
-        return board_devicetrees
+        return board_devicetrees, board_runners
 
     # Find all build_info.yml files in twister-out
     build_info_files = list(twister_out_dir.glob("*/**/build_info.yml"))
@@ -127,6 +132,11 @@ def gather_board_devicetrees(twister_out_dir):
         # Look for corresponding zephyr.dts
         edt_pickle_file = build_info_file.parent / EDT_PICKLE_PATH
         if not edt_pickle_file.exists():
+            continue
+
+        # Look for corresponding runners.yaml
+        runners_yaml_file = build_info_file.parent / RUNNERS_YAML_PATH
+        if not runners_yaml_file.exists():
             continue
 
         try:
@@ -147,10 +157,14 @@ def gather_board_devicetrees(twister_out_dir):
                     edt = pickle.load(f)
                     board_devicetrees.setdefault(board_name, {})[board_target] = edt
 
+                with open(runners_yaml_file) as f:
+                    runners_yaml = yaml.safe_load(f)
+                    board_runners.setdefault(board_name, {})[board_target] = runners_yaml
+
         except Exception as e:
             logger.error(f"Error processing build info file {build_info_file}: {e}")
 
-    return board_devicetrees
+    return board_devicetrees, board_runners
 
 
 def run_twister_cmake_only(outdir):
@@ -163,9 +177,12 @@ def run_twister_cmake_only(outdir):
         sys.executable,
         f"{ZEPHYR_BASE}/scripts/twister",
         "-T", "samples/hello_world/",
-        "--all",
+        "--vendor", "bbc",
+        "--vendor", "adafruit",
+        "--vendor", "arduino",
         "-M",
         "--keep-artifacts", "zephyr/edt.pickle",
+        "--keep-artifacts", RUNNERS_YAML_PATH,
         "--cmake-only",
         "--outdir", str(outdir),
     ]
@@ -218,12 +235,13 @@ def get_catalog(generate_hw_features=False):
     systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
     board_devicetrees = {}
+    board_runners = {}
 
     if generate_hw_features:
         logger.info("Running twister in cmake-only mode to get Devicetree files for all boards")
         with tempfile.TemporaryDirectory() as tmp_dir:
             run_twister_cmake_only(tmp_dir)
-            board_devicetrees = gather_board_devicetrees(Path(tmp_dir))
+            board_devicetrees, board_runners = gather_board_build_info(Path(tmp_dir))
     else:
         logger.info("Skipping generation of supported hardware features.")
 
@@ -306,6 +324,20 @@ def get_catalog(generate_hw_features=False):
                 # Store features for this specific target
                 supported_features[board_target] = features
 
+        runner_info = {}
+        if board.name in board_runners:
+            # print(board_runners[board.name])
+            r = board_runners[board.name][board_target]
+            runner_info["runners"] = r.get("runners")
+            runner_info["flash-runner"] = r.get("flash-runner")
+            runner_info["debug-runner"] = r.get("debug-runner")
+
+            print(f"Board {board.name} has {len(runner_info['runners'])} runners")
+            for runner in runner_info["runners"]:
+                print(f"  {runner}")
+            print(f"Flash runner: {runner_info['flash-runner']}")
+            print(f"Debug runner: {runner_info['debug-runner']}")
+
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
         archs = set()
@@ -318,7 +350,6 @@ def get_catalog(generate_hw_features=False):
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
-        # Infer supported runners from board.cmake file
         runners = set()
         board_cmake = board.dir / "board.cmake"
         if board_cmake.exists():
@@ -337,7 +368,10 @@ def get_catalog(generate_hw_features=False):
             "socs": list(socs),
             "supported_features": supported_features,
             "image": guess_image(board),
-            "runners": list(runners),
+            # runners
+            "supported_runners": runner_info.get("runners", []),
+            "flash_runner": runner_info.get("flash-runner", ""),
+            "debug_runner": runner_info.get("debug-runner", ""),
         }
 
     socs_hierarchy = {}
@@ -346,8 +380,18 @@ def get_catalog(generate_hw_features=False):
         series = soc.series or "<no series>"
         socs_hierarchy.setdefault(family, {}).setdefault(series, []).append(soc.name)
 
+    available_runners = {}
+    for runner in ZephyrBinaryRunner.get_runners():
+        available_runners[runner.name()] = {
+            "name": runner.name(),
+            "commands": runner.capabilities().commands,
+        }
+
+    print(available_runners)
+
     return {
         "boards": board_catalog,
         "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
         "socs": socs_hierarchy,
+        "runners": available_runners,
     }
