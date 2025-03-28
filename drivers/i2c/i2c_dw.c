@@ -53,148 +53,6 @@ static inline uint32_t get_regs(const struct device *dev)
 	return (uint32_t)DEVICE_MMIO_GET(dev);
 }
 
-#ifdef CONFIG_I2C_DW_LPSS_DMA
-void i2c_dw_enable_idma(const struct device *dev, bool enable)
-{
-	uint32_t reg;
-	uint32_t reg_base = get_regs(dev);
-
-	if (enable) {
-		write_dma_cr(DW_IC_DMA_ENABLE, reg_base);
-		reg = sys_read32(reg_base + DW_IC_REG_DMA_CR);
-	} else {
-		reg = read_dma_cr(reg_base);
-		reg &= ~DW_IC_DMA_ENABLE;
-		write_dma_cr(reg, reg_base);
-		reg = sys_read32(reg_base + DW_IC_REG_DMA_CR);
-	}
-}
-
-void cb_i2c_idma_transfer(const struct device *dma, void *user_data, uint32_t channel, int status)
-{
-	const struct device *dev = (const struct device *)user_data;
-	const struct i2c_dw_rom_config *const rom = dev->config;
-	struct i2c_dw_dev_config *const dw = dev->data;
-
-	dma_stop(rom->dma_dev, channel);
-	i2c_dw_enable_idma(dev, false);
-
-	if (status) {
-		dw->xfr_status = true;
-	} else {
-		dw->xfr_status = false;
-	}
-}
-
-void i2c_dw_set_fifo_th(const struct device *dev, uint8_t fifo_depth)
-{
-	uint32_t reg_base = get_regs(dev);
-
-	write_tdlr(fifo_depth, reg_base);
-	write_rdlr(fifo_depth - 1, reg_base);
-}
-
-inline void *i2c_dw_dr_phy_addr(const struct device *dev)
-{
-	struct i2c_dw_dev_config *const dw = dev->data;
-
-	return (void *)(dw->phy_addr + DW_IC_REG_DATA_CMD);
-}
-
-int32_t i2c_dw_idma_rx_transfer(const struct device *dev)
-{
-	struct i2c_dw_dev_config *const dw = dev->data;
-	const struct i2c_dw_rom_config *const rom = dev->config;
-
-	struct dma_config dma_cfg = {0};
-	struct dma_block_config dma_block_cfg = {0};
-
-	if (!device_is_ready(rom->dma_dev)) {
-		LOG_DBG("DMA device is not ready");
-		return -ENODEV;
-	}
-
-	dma_cfg.dma_slot = 1U;
-	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
-	dma_cfg.source_data_size = 1U;
-	dma_cfg.dest_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_burst_length = 1U;
-	dma_cfg.dma_callback = cb_i2c_idma_transfer;
-	dma_cfg.user_data = (void *)dev;
-	dma_cfg.complete_callback_en = 0U;
-	dma_cfg.error_callback_dis = 0U;
-	dma_cfg.block_count = 1U;
-	dma_cfg.head_block = &dma_block_cfg;
-
-	dma_block_cfg.block_size = dw->xfr_len;
-	dma_block_cfg.dest_address = (uint64_t)&dw->xfr_buf[0];
-	dma_block_cfg.source_address = (uint64_t)i2c_dw_dr_phy_addr(dev);
-	dw->xfr_status = false;
-
-	if (dma_config(rom->dma_dev, DMA_INTEL_LPSS_RX_CHAN, &dma_cfg)) {
-		LOG_DBG("Error transfer");
-		return -EIO;
-	}
-
-	if (dma_start(rom->dma_dev, DMA_INTEL_LPSS_RX_CHAN)) {
-		LOG_DBG("Error transfer");
-		return -EIO;
-	}
-
-	i2c_dw_enable_idma(dev, true);
-	i2c_dw_set_fifo_th(dev, 1);
-
-	return 0;
-}
-
-int32_t i2c_dw_idma_tx_transfer(const struct device *dev, uint64_t data)
-{
-	const struct i2c_dw_rom_config *const rom = dev->config;
-	struct i2c_dw_dev_config *const dw = dev->data;
-
-	struct dma_config dma_cfg = {0};
-	struct dma_block_config dma_block_cfg = {0};
-
-	if (!device_is_ready(rom->dma_dev)) {
-		LOG_DBG("DMA device is not ready");
-		return -ENODEV;
-	}
-
-	dma_cfg.dma_slot = 0U;
-	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
-	dma_cfg.source_data_size = 1U;
-	dma_cfg.dest_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_burst_length = 1U;
-	dma_cfg.dma_callback = cb_i2c_idma_transfer;
-	dma_cfg.user_data = (void *)dev;
-	dma_cfg.complete_callback_en = 0U;
-	dma_cfg.error_callback_dis = 0U;
-	dma_cfg.block_count = 1U;
-	dma_cfg.head_block = &dma_block_cfg;
-
-	dma_block_cfg.block_size = 1;
-	dma_block_cfg.source_address = (uint64_t)&data;
-	dma_block_cfg.dest_address = (uint64_t)i2c_dw_dr_phy_addr(dev);
-	dw->xfr_status = false;
-
-	if (dma_config(rom->dma_dev, DMA_INTEL_LPSS_TX_CHAN, &dma_cfg)) {
-		LOG_DBG("Error transfer");
-		return -EIO;
-	}
-
-	if (dma_start(rom->dma_dev, DMA_INTEL_LPSS_TX_CHAN)) {
-		LOG_DBG("Error transfer");
-		return -EIO;
-	}
-	i2c_dw_enable_idma(dev, true);
-	i2c_dw_set_fifo_th(dev, 1);
-
-	return 0;
-}
-#endif
-
 static inline void i2c_dw_data_ask(const struct device *dev)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
@@ -266,13 +124,6 @@ static void i2c_dw_data_read(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t reg_base = get_regs(dev);
 
-#ifdef CONFIG_I2C_DW_LPSS_DMA
-	if (test_bit_status_rfne(reg_base) && (dw->xfr_len > 0)) {
-		i2c_dw_idma_rx_transfer(dev);
-		dw->xfr_len = 0;
-		dw->rx_pending = 0;
-	}
-#else
 	while (test_bit_status_rfne(reg_base) && (dw->xfr_len > 0)) {
 		dw->xfr_buf[0] = (uint8_t)read_cmd_data(reg_base);
 
@@ -284,7 +135,6 @@ static void i2c_dw_data_read(const struct device *dev)
 			break;
 		}
 	}
-#endif
 	/* Nothing to receive anymore */
 	if (dw->xfr_len == 0U) {
 		dw->state &= ~I2C_DW_CMD_RECV;
@@ -322,11 +172,7 @@ static int i2c_dw_data_send(const struct device *dev)
 			data |= IC_DATA_CMD_STOP;
 		}
 
-#ifdef CONFIG_I2C_DW_LPSS_DMA
-		i2c_dw_idma_tx_transfer(dev, data);
-#else
 		write_cmd_data(data, reg_base);
-#endif
 		dw->xfr_len--;
 		dw->xfr_buf++;
 
@@ -386,16 +232,6 @@ static void i2c_dw_isr(const struct device *port)
 
 	/* Check if we are configured as a master device */
 	if (test_bit_con_master_mode(reg_base)) {
-#ifdef CONFIG_I2C_DW_LPSS_DMA
-		uint32_t stat = sys_read32(reg_base + IDMA_REG_INTR_STS);
-
-		if (stat & IDMA_TX_RX_CHAN_MASK) {
-			const struct i2c_dw_rom_config *const rom = port->config;
-			/* Handle the DMA interrupt */
-			dma_intel_lpss_isr(rom->dma_dev);
-		}
-#endif
-
 		/* Bail early if there is any error. */
 		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER | DW_INTR_STAT_RX_OVER |
 		     DW_INTR_STAT_RX_UNDER) &
@@ -1147,7 +983,7 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #if defined(CONFIG_RESET)
-#define RESET_DW_CONFIG(n)                                                    \
+#define RESET_DW_CONFIG(n)                                                                         \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                          \
 		   (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
