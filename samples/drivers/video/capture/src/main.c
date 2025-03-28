@@ -182,12 +182,13 @@ int main(void)
 
 	while (!video_query_ctrl(video_dev, &cq)) {
 		LOG_INF("%*s id=0x%08x (type=%d) : min/max=%d/%d step=%d def=%d flags=0x%x", 32,
-			cq.name, cq.id, cq.type, cq.min, cq.max, cq.step, cq.def, cq.flags);
+			cq.name, cq.id, cq.type, cq.range.min, cq.range.max, cq.range.step,
+			cq.range.def, cq.flags);
 		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 	}
 
 	/* Set controls */
-	struct video_control ctrl = {VIDEO_CID_HFLIP, 1};
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
 		video_set_ctrl(video_dev, &ctrl);

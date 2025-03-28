@@ -127,7 +127,7 @@ ZTEST(video_common, test_video_frmival)
 
 ZTEST(video_common, test_video_ctrl)
 {
-	struct video_control ctrl = {VIDEO_CID_PRIVATE_BASE + 0x01, 30};
+	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
 
 	/* Emulated vendor specific control, expected to be supported by all imagers */
 	zexpect_ok(video_set_ctrl(imager_dev, &ctrl));
