@@ -51,13 +51,18 @@ struct bma4xx_hw_operations {
 	int (*update_reg)(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t value);
 };
 
-struct bma4xx_data {
+struct bma4xx_runtime_config {
+	bool fifo_en;
 	/** Current full-scale range setting as a register value */
 	uint8_t accel_fs_range;
 	/** Current bandwidth parameter (BWP) as a register value */
 	uint8_t accel_bwp;
 	/** Current output data rate as a register value */
 	uint8_t accel_odr;
+};
+
+struct bma4xx_data {
+	struct bma4xx_runtime_config cfg;
 	/** Pointer to bus-specific I/O API */
 	const struct bma4xx_hw_operations *hw_ops;
 	/** Chip ID value stored in BMA4XX_REG_CHIP_ID */
@@ -92,5 +97,29 @@ struct bma4xx_encoded_data {
 
 int bma4xx_spi_init(const struct device *dev);
 int bma4xx_i2c_init(const struct device *dev);
+
+/**
+ * @brief (Re)Configure the sensor with the given configuration
+ *
+ * @param dev bma4xx device pointer
+ * @param cfg bma4xx_runtime_config pointer
+ *
+ * @retval 0 success
+ * @retval -errno Error
+ */
+int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg);
+
+/**
+ * @brief Safely (re)Configure the sensor with the given configuration
+ *
+ * Will rollback to prior configuration if new configuration is invalid
+ *
+ * @param dev bma4xx device pointer
+ * @param cfg bma4xx_runtime_config pointer
+ *
+ * @retval 0 success
+ * @retval -errno Error
+ */
+int bma4xx_safely_configure(const struct device *dev, struct bma4xx_runtime_config *cfg);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMA4XX_BMA4XX_H_ */

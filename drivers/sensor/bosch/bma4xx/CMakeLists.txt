@@ -3,5 +3,6 @@
 zephyr_library()
 
 zephyr_library_sources(bma4xx.c)
+zephyr_library_sources(bma4xx_common.c)
 zephyr_library_sources(bma4xx_i2c.c)
 zephyr_library_sources(bma4xx_spi.c)
