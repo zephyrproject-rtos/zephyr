@@ -49,29 +49,11 @@ void bgo_callback(flash_callback_args_t *p_args)
 
 static bool flash_ra_valid_range(struct flash_hp_ra_data *flash_data, off_t offset, size_t len)
 {
-#if defined(CONFIG_DUAL_BANK_MODE)
-	if (flash_data->FlashRegion == DATA_FLASH) {
-		if ((offset < 0) || (offset >= flash_data->area_size) ||
-		    (flash_data->area_size - offset < len) || (len > UINT32_MAX - offset)) {
-			return false;
-		}
-	} else {
-		if ((offset < 0) || (offset >= FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) ||
-		    (offset >= FLASH_HP_CF_DUAL_LOW_END_ADDRESS &&
-		     offset < FLASH_HP_BANK2_OFFSET) ||
-		    ((len + offset) > FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) ||
-		    ((len + offset) > FLASH_HP_CF_DUAL_LOW_END_ADDRESS &&
-		     (len + offset) < FLASH_HP_BANK2_OFFSET) ||
-		    (len > UINT32_MAX - offset)) {
-			return false;
-		}
-	}
-#else
 	if ((offset < 0) || (offset >= flash_data->area_size) ||
 	    (flash_data->area_size - offset < len) || (len > UINT32_MAX - offset)) {
 		return false;
 	}
-#endif
+
 	return true;
 }
 
@@ -126,17 +108,10 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 	}
 
 	if (flash_data->FlashRegion == CODE_FLASH) {
-#if defined(CONFIG_DUAL_BANK_MODE)
-		if ((offset + len) == (uint32_t)FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) {
-			page_info_len.index = FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_END + 1;
-			is_contain_end_block = true;
-		}
-#else
 		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash0))) {
 			page_info_len.index = FLASH_HP_CF_BLOCK_32KB_LINEAR_END + 1;
 			is_contain_end_block = true;
 		}
-#endif
 	} else {
 		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash1))) {
 			page_info_len.index = FLASH_HP_DF_BLOCK_END;
@@ -271,35 +246,6 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 
 		*layout_size = 1;
 	} else {
-#if defined(CONFIG_DUAL_BANK_MODE)
-		flash_ra_layout[0].pages_count =
-			(FLASH_HP_CF_BLOCK_8KB_LOW_END - FLASH_HP_CF_BLOCK_8KB_LOW_START) + 1;
-		flash_ra_layout[0].pages_size = FLASH_HP_CF_BLOCK_8KB_SIZE;
-
-		flash_ra_layout[1].pages_count = (FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_END -
-						  FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_START) +
-						 1;
-		flash_ra_layout[1].pages_size = FLASH_HP_CF_BLOCK_32KB_SIZE;
-
-		flash_ra_layout[2].pages_count = FLASH_HP_CF_NUM_BLOCK_RESERVED;
-		flash_ra_layout[2].pages_size =
-			(FLASH_HP_BANK2_OFFSET -
-			 (flash_ra_layout[0].pages_count * flash_ra_layout[0].pages_size) -
-			 (flash_ra_layout[1].pages_count * flash_ra_layout[1].pages_size)) /
-			FLASH_HP_CF_NUM_BLOCK_RESERVED;
-
-		flash_ra_layout[3].pages_count =
-			(FLASH_HP_CF_BLOCK_8KB_HIGH_END - FLASH_HP_CF_BLOCK_8KB_HIGH_START) + 1;
-		flash_ra_layout[3].pages_size = FLASH_HP_CF_BLOCK_8KB_SIZE;
-
-		/* The final block is the dummy block */
-		flash_ra_layout[4].pages_count = (FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_END + 1 -
-						  FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_START) +
-						 1;
-		flash_ra_layout[4].pages_size = FLASH_HP_CF_BLOCK_32KB_SIZE;
-
-		*layout_size = 5;
-#else
 		flash_ra_layout[0].pages_count =
 			(FLASH_HP_CF_BLOCK_8KB_LOW_END - FLASH_HP_CF_BLOCK_8KB_LOW_START) + 1;
 		flash_ra_layout[0].pages_size = FLASH_HP_CF_BLOCK_8KB_SIZE;
@@ -309,7 +255,6 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 		flash_ra_layout[1].pages_size = FLASH_HP_CF_BLOCK_32KB_SIZE;
 
 		*layout_size = 2;
-#endif
 	}
 
 	*layout = flash_ra_layout;
