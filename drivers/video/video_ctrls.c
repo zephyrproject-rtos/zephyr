@@ -151,6 +151,17 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
+	if (ctrl->flags & VIDEO_CTRL_FLAG_VOLATILE) {
+		if (DEVICE_API_GET(video, ctrl->vdev->dev)->get_volatile_ctrl == NULL) {
+			return -ENOSYS;
+		}
+
+		/* Call driver's get_volatile_ctrl */
+		return DEVICE_API_GET(video, ctrl->vdev->dev)
+			->get_volatile_ctrl(ctrl->vdev->dev, control);
+	}
+
+	/* Read control value in cache memory */
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
 		control->val64 = ctrl->val64;
 	} else {
