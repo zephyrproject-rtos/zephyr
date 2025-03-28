@@ -56,7 +56,7 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	uint32_t root_clk_rate, ui_clk_rate, sensor_byte_clk, best_match;
 	int ret, ind = 0;
 	struct video_format fmt;
-	struct video_control sensor_rate = {VIDEO_CID_PIXEL_RATE, -1};
+	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_get_format(config->sensor_dev, ep, &fmt);
 	if (ret) {
@@ -228,7 +228,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 	uint64_t est_pixel_rate;
 	struct video_frmival cur_frmival;
 	struct video_format cur_fmt;
-	struct video_control sensor_rate = {VIDEO_CID_PIXEL_RATE, -1};
+	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_enum_frmival(config->sensor_dev, ep, fie);
 	if (ret) {

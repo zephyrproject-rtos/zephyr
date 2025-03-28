@@ -362,7 +362,8 @@ static int video_sw_generator_init_controls(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	return video_init_ctrl(&data->ctrls.vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	return video_init_ctrl(&data->ctrls.vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
 static int video_sw_generator_init(const struct device *dev)

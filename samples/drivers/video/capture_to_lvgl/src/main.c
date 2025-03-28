@@ -107,7 +107,7 @@ int main(void)
 	}
 
 	/* Set controls */
-	struct video_control ctrl = {VIDEO_CID_HFLIP, 1};
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
 
 	if (IS_ENABLED(CONFIG_VIDEO_HFLIP)) {
 		video_set_ctrl(video_dev, &ctrl);
