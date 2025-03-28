@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common MIWU group-interrupt mapping configurations in npck */
+#include <nuvoton/npck/npck-miwus-int-map.dtsi>
+
+/* Specific MIWU group-interrupt mapping configurations in npck3 series */
+/ {
+	/* Mapping between MIWU group and interrupts */
+	npcx-miwus-int-map {
+	};
+};
