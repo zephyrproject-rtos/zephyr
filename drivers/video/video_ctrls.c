@@ -15,23 +15,29 @@
 
 LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
 
-static inline int check_range(enum video_ctrl_type type, int32_t min, int32_t max, uint32_t step,
-			      int32_t def)
+static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range range)
 {
 	switch (type) {
 	case VIDEO_CTRL_TYPE_BOOLEAN:
-		if (step != 1 || max > 1 || min < 0) {
+		if (range.step != 1 || range.max > 1 || range.min < 0) {
 			return -ERANGE;
 		}
 		return 0;
 	case VIDEO_CTRL_TYPE_INTEGER:
+		if (range.step == 0 || range.min > range.max ||
+		    !IN_RANGE(range.def, range.min, range.max)) {
+			return -ERANGE;
+		}
+		return 0;
 	case VIDEO_CTRL_TYPE_INTEGER64:
-		if (step == 0 || min > max || !IN_RANGE(def, min, max)) {
+		if (range.step64 == 0 || range.min64 > range.max64 ||
+		    !IN_RANGE(range.def64, range.min64, range.max64)) {
 			return -ERANGE;
 		}
 		return 0;
 	case VIDEO_CTRL_TYPE_MENU:
-		if (!IN_RANGE(min, 0, max) || !IN_RANGE(def, min, max)) {
+		if (!IN_RANGE(range.min, 0, range.max) ||
+		    !IN_RANGE(range.def, range.min, range.max)) {
 			return -ERANGE;
 		}
 		return 0;
@@ -63,8 +69,8 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	}
 }
 
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id, int32_t min,
-		    int32_t max, uint32_t step, int32_t def)
+int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+		    struct video_ctrl_range range)
 {
 	int ret;
 	uint32_t flags;
@@ -83,7 +89,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 
 	set_type_flag(id, &type, &flags);
 
-	ret = check_range(type, min, max, step, def);
+	ret = check_range(type, range);
 	if (ret) {
 		return ret;
 	}
@@ -92,11 +98,13 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	ctrl->id = id;
 	ctrl->type = type;
 	ctrl->flags = flags;
-	ctrl->min = min;
-	ctrl->max = max;
-	ctrl->step = step;
-	ctrl->def = def;
-	ctrl->val = def;
+	ctrl->range = range;
+
+	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = range.def64;
+	} else {
+		ctrl->val = range.def;
+	}
 
 	/* Insert in an ascending order of ctrl's id */
 	SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, vc, node) {
@@ -143,7 +151,11 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
-	control->val = ctrl->val;
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		control->val64 = ctrl->val64;
+	} else {
+		control->val = ctrl->val;
+	}
 
 	return 0;
 }
@@ -163,7 +175,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
-	if (!IN_RANGE(control->val, ctrl->min, ctrl->max)) {
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
+		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
+		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
 		LOG_ERR("Control value is invalid\n");
 		return -EINVAL;
 	}
@@ -180,7 +194,11 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 
 update:
 	/* Only update the ctrl in memory once everything is OK */
-	ctrl->val = control->val;
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = control->val64;
+	} else {
+		ctrl->val = control->val;
+	}
 
 	return 0;
 }
@@ -255,10 +273,8 @@ fill_query:
 	cq->id = ctrl->id;
 	cq->type = ctrl->type;
 	cq->flags = ctrl->flags;
-	cq->min = ctrl->min;
-	cq->max = ctrl->max;
-	cq->step = ctrl->step;
-	cq->def = ctrl->def;
+	cq->range = ctrl->range;
+
 	cq->name = video_get_ctrl_name(cq->id);
 
 	return 0;
