@@ -1,5 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
 # SPDX-License-Identifier: Apache-2.0
+
+# For some test cases native_sim and qemu have been marked as excluded platforms until the
+# corresponding stepper drivers have been fixed.
 
 common:
   tags:
@@ -7,33 +11,16 @@ common:
     - stepper
     - api
 tests:
-  drivers.stepper.stepper_api.adi_tmc2209:
+  drivers.stepper.stepper_api.allegro_a4979.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_allegro_a4979
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209.overlay"
-    extra_configs:
-      - CONFIG_GPIO=y
-      - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
-      - CONFIG_TEST_MS_RESOLUTION=16
-      - CONFIG_USTEPS_PER_SECOND=50
-    platform_allow:
-      - native_sim/native/64
-  drivers.stepper.stepper_api.allegro_a4979:
-    extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979.overlay"
-    extra_configs:
-      - CONFIG_GPIO=y
-      - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
-      - CONFIG_TEST_MS_RESOLUTION=4
-      - CONFIG_USTEPS_PER_SECOND=50
-    platform_allow:
-      - native_sim/native/64
-  drivers.stepper.stepper_api.ti_drv8424:
-    extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv8424.overlay"
-      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi_ti_drv8424.overlay"
-      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B_ti_drv8424.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/allegro_a4979.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/allegro_a4979.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/allegro_a4979.overlay"
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
@@ -44,16 +31,108 @@ tests:
       - native_sim/native/64
       - nucleo_f767zi/stm32f767xx
       - mimxrt1060_evk@B/mimxrt1062/qspi
-  drivers.stepper.stepper_api.zephyr_gpio_stepper:
+  drivers.stepper.stepper_api.adi_tmc2209.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_adi_tmc2209
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_zephyr_gpio_stepper.overlay"
-      - platform:nucleo_g071rb/stm32g071xx:DTC_OVERLAY_FILE="boards/nucleo_g071rb_zephyr_gpio_stepper.overlay"
-      - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64_zephyr_gpio_stepper.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/adi_tmc2209.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/adi_tmc2209.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/adi_tmc2209.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_TEST_MS_RESOLUTION=16
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+    platform_exclude:
+      - native_sim/native/64
+  drivers.stepper.stepper_api.adi_tmc2209.work:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_work
+      - stepper_adi_tmc2209
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/adi_tmc2209_workqueue.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/adi_tmc2209_workqueue.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/adi_tmc2209_workqueue.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_TEST_MS_RESOLUTION=16
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+    platform_exclude:
+      - native_sim/native/64
+  drivers.stepper.stepper_api.ti_drv8424.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_ti_drv8424
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/ti_drv8424.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/ti_drv8424.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/ti_drv8424.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_I2C=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_TEST_MS_RESOLUTION=4
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - native_sim/native/64
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_api.ti_drv8424.work:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_work
+      - stepper_ti_drv8424
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/ti_drv8424_workqueue.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/ti_drv8424_workqueue.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/ti_drv8424_workqueue.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_I2C=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_TEST_MS_RESOLUTION=4
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+    platform_exclude:
+      - native_sim/native/64
+  drivers.stepper.stepper_api.zephyr_gpio_stepper:
+    tags:
+      - stepper_const_velocity
+      - stepper_gpio_stepper
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim/zephyr_gpio_stepper.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/zephyr_gpio_stepper.overlay"
+      - platform:nucleo_g071rb/stm32g071xx:DTC_OVERLAY_FILE="boards/nucleo_g071rb/zephyr_gpio_stepper.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/zephyr_gpio_stepper.overlay"
+      - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64/zephyr_gpio_stepper.overlay"
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_TEST_MS_RESOLUTION=2
       - CONFIG_USTEPS_PER_SECOND=50
     platform_allow:
-      - native_sim/native/64
+      - nucleo_f767zi/stm32f767xx
       - nucleo_g071rb/stm32g071xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+    platform_exclude:
+      - native_sim/native/64
       - qemu_x86_64/atom
