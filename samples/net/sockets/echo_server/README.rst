@@ -56,6 +56,10 @@ echo-server directory:
   This overlay config enables support for Virtual LAN.
   See :ref:`networking_samples_common` for details.
 
+- :file:`overlay-vpn.conf`
+  This overlay config enables support for Wireguard VPN.
+  See :ref:`networking_samples_common` for details.
+
 Build echo-server sample application like this:
 
 .. zephyr-app-commands::

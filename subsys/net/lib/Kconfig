@@ -47,6 +47,8 @@ source "subsys/net/lib/dhcpv6/Kconfig"
 
 source "subsys/net/lib/trickle/Kconfig"
 
+source "subsys/net/lib/wireguard/Kconfig"
+
 source "subsys/net/lib/zperf/Kconfig"
 
 source "subsys/net/lib/prometheus/Kconfig"

@@ -123,6 +123,10 @@ enum net_event_l4_cmd {
 	NET_EVENT_L4_CMD_HOSTNAME_CHANGED,
 	NET_EVENT_L4_CMD_CAPTURE_STARTED,
 	NET_EVENT_L4_CMD_CAPTURE_STOPPED,
+	NET_EVENT_L4_CMD_VPN_CONNECTED,
+	NET_EVENT_L4_CMD_VPN_DISCONNECTED,
+	NET_EVENT_L4_CMD_VPN_PEER_ADD,
+	NET_EVENT_L4_CMD_VPN_PEER_DEL,
 };
 
 /** @endcond */
@@ -357,6 +361,22 @@ enum net_event_l4_cmd {
 /** Network packet capture is stopped. */
 #define NET_EVENT_CAPTURE_STOPPED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_CAPTURE_STOPPED)
+
+/** Event emitted when VPN network connectivity is available. */
+#define NET_EVENT_VPN_CONNECTED				\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_CONNECTED)
+
+/** Event emitted when VPN network connectivity is lost. */
+#define NET_EVENT_VPN_DISCONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_DISCONNECTED)
+
+/** Event emitted when a VPN peer is added to the system. */
+#define NET_EVENT_VPN_PEER_ADD				\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_PEER_ADD)
+
+/** Event emitted when a VPN peer is removed from the system. */
+#define NET_EVENT_VPN_PEER_DEL				\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_PEER_DEL)
 
 /**
  * @brief Network Management event information structure

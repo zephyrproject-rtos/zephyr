@@ -161,3 +161,9 @@ tests:
       - native_sim/native/64
     extra_args:
       - EXTRA_CONF_FILE="overlay-ws-console.conf"
+  sample.net.sockets.echo_server.vpn:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-vpn.conf"

@@ -18,3 +18,12 @@ static inline int init_vlan(void)
 	return 0;
 }
 #endif /* CONFIG_NET_VLAN */
+
+#if defined(CONFIG_WIREGUARD)
+int init_vpn(void);
+#else
+static inline int init_vpn(void)
+{
+	return 0;
+}
+#endif /* CONFIG_WIREGUARD */

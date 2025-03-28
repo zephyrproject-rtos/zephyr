@@ -63,6 +63,8 @@ enum virtual_interface_config_type {
 	VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_MTU,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_LINK_TYPE,
+	VIRTUAL_INTERFACE_CONFIG_TYPE_PRIVATE_KEY,
+	VIRTUAL_INTERFACE_CONFIG_TYPE_PUBLIC_KEY,
 };
 
 struct virtual_interface_link_types {
@@ -72,6 +74,10 @@ struct virtual_interface_link_types {
 				  (1))];
 };
 
+#if !defined(NET_VIRTUAL_MAX_PUBLIC_KEY_LEN)
+#define NET_VIRTUAL_MAX_PUBLIC_KEY_LEN 32U
+#endif
+
 struct virtual_interface_config {
 	sa_family_t family;
 	union {
@@ -79,6 +85,14 @@ struct virtual_interface_config {
 		struct in6_addr peer6addr;
 		int mtu;
 		struct virtual_interface_link_types link_types;
+		struct {
+			size_t len;
+			uint8_t *data;
+		} private_key;
+		struct {
+			size_t len;
+			uint8_t data[NET_VIRTUAL_MAX_PUBLIC_KEY_LEN];
+		} public_key;
 	};
 };
 

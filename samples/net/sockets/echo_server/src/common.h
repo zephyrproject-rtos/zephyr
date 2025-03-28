@@ -7,6 +7,8 @@
 
 #include "net_sample_common.h"
 
+#include "net_sample_common.h"
+
 #define MY_PORT 4242
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || defined(CONFIG_NET_TCP) || \
 	defined(CONFIG_COVERAGE_GCOV)
