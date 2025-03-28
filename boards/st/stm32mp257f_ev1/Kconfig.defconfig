@@ -1,0 +1,11 @@
+# STM32MP257 evaluation board configuration
+
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32MP257F_EV1
+
+config BOARD
+        default "stm32mp257f_ev1"
+
+endif # BOARD_STM32MP257F_EV1

@@ -1,0 +1,23 @@
+identifier: stm32mp257f_ev1
+name: STM32MP257F_EV1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - mpu
+    - tinycrypt
+    - crypto
+    - aes
+    - cmm
+    - shell
+    - LED
+    - gpio
+    - nfc
+ram: 256
+flash: 128
+vendor: st
