@@ -21,12 +21,10 @@
 #include <zephyr/pm/device_runtime.h>
 #include "i2c_ll_stm32.h"
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 #include <zephyr/cache.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -697,12 +695,14 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	/* Check if buffer is in nocache memory region defined in DT */
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
 	if (buf_within_nocache) {
 		return true;
 	}
+#endif /* CONFIG_MEM_ATTR */
 
 	/* Check if buffer is in RO region (Flash..) */
 	buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
