@@ -3499,6 +3499,21 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 	return bt_le_set_phy(conn, all_phys, param->pref_tx_phy,
 			     param->pref_rx_phy, phy_opts);
 }
+
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	uint8_t all_phys = 0U;
+
+	if (pref_tx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_TX_ANY;
+	}
+
+	if (pref_rx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_RX_ANY;
+	}
+
+	return bt_le_set_default_phy(all_phys, pref_tx_phy, pref_rx_phy);
+}
 #endif
 
 #if defined(CONFIG_BT_CENTRAL)
