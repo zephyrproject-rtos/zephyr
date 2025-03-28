@@ -36,40 +36,15 @@ For more information about the LPC55S06 SoC and LPCXPresso55S06 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s06 board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s06 board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
+.. note::
 
-Other hardware features are not currently enabled.
-
-Currently available targets for this board are:
-
-- *lpcxpresso55s06*
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
+   already supported, which can also be re-used on this lpcxpresso55s06 board:
 
 Connections and IOs
 ===================
