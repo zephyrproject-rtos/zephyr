@@ -799,7 +799,8 @@ int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 		goto cleanup;
 	}
 
-	ret = zsock_send(client_ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
+	ret = zsock_sendto(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0,
+			   &msg->ctx->remote_addr, NET_SOCKADDR_MAX_SIZE);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);
