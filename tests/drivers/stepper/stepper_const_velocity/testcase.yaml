@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - api
+tests:
+  drivers.stepper.stepper_const_velocity.allegro_a4979.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_allegro_a4979
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/allegro_a4979.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/allegro_a4979.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_const_velocity.adi_tmc2209.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_adi_tmc2209
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/adi_tmc2209.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/adi_tmc2209.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_const_velocity.adi_tmc2209.work:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_work
+      - stepper_adi_tmc2209
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/adi_tmc2209_workqueue.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/adi_tmc2209_workqueue.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_const_velocity.ti_drv8424.counter:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_counter
+      - stepper_ti_drv8424
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/ti_drv8424.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/ti_drv8424.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_I2C=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_const_velocity.ti_drv8424.work:
+    tags:
+      - stepper_step_dir
+      - stepper_const_velocity
+      - stepper_step_dir_timing_work
+      - stepper_ti_drv8424
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/ti_drv8424_workqueue.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/ti_drv8424_workqueue.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_I2C=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+  drivers.stepper.stepper_const_velocity.zephyr_gpio_stepper:
+    tags:
+      - stepper_const_velocity
+      - stepper_gpio_stepper
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/zephyr_gpio_stepper.overlay"
+      - platform:nucleo_g071rb/stm32g071xx:DTC_OVERLAY_FILE="boards/nucleo_g071rb/zephyr_gpio_stepper.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/zephyr_gpio_stepper.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_USTEPS_PER_SECOND=50
+    platform_allow:
+      - nucleo_f767zi/stm32f767xx
+      - nucleo_g071rb/stm32g071xx
+      - mimxrt1060_evk@B/mimxrt1062/qspi
