@@ -56,7 +56,7 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	uint32_t root_clk_rate, ui_clk_rate, sensor_byte_clk, best_match;
 	int ret, ind = 0;
 	struct video_format fmt;
-	struct video_control sensor_rate = {VIDEO_CID_PIXEL_RATE, -1};
+	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_get_format(config->sensor_dev, ep, &fmt);
 	if (ret) {
@@ -65,13 +65,13 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	}
 
 	video_get_ctrl(config->sensor_dev, &sensor_rate);
-	if (!IN_RANGE(sensor_rate.val, 0, MAX_SUPPORTED_PIXEL_RATE)) {
-		LOG_ERR("Sensor pixel rate is not supported");
+	if (!IN_RANGE(sensor_rate.val64, 0, MAX_SUPPORTED_PIXEL_RATE)) {
+		LOG_ERR("Sensor pixel rate is not supported %lld", sensor_rate.val64);
 		return -ENOTSUP;
 	}
 
 	bpp = video_bits_per_pixel(fmt.pixelformat);
-	sensor_byte_clk = sensor_rate.val * bpp / drv_data->csi2rxConfig.laneNum / BITS_PER_BYTE;
+	sensor_byte_clk = sensor_rate.val64 * bpp / drv_data->csi2rxConfig.laneNum / BITS_PER_BYTE;
 
 	ret = clock_control_get_rate(drv_data->clock_dev, drv_data->clock_root, &root_clk_rate);
 	if (ret) {
@@ -91,10 +91,10 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 		return ret;
 	}
 
-	if (sensor_rate.val > ui_clk_rate) {
+	if (sensor_rate.val64 > ui_clk_rate) {
 		ret = clock_control_set_rate(
 			drv_data->clock_dev, drv_data->clock_ui,
-			(clock_control_subsys_rate_t)(uint32_t)sensor_rate.val);
+			(clock_control_subsys_rate_t)(uint32_t)sensor_rate.val64);
 		if (ret) {
 			return ret;
 		}
@@ -103,7 +103,7 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	/* Find the supported sensor_pixel_rate closest to the desired one */
 	best_match = tHsSettleEscClk_configs[ind].pixel_rate;
 	for (uint8_t i = 0; i < ARRAY_SIZE(tHsSettleEscClk_configs); i++) {
-		if (ABS(tHsSettleEscClk_configs[i].pixel_rate, sensor_rate.val) <
+		if (ABS(tHsSettleEscClk_configs[i].pixel_rate, sensor_rate.val64) <
 		    ABS(tHsSettleEscClk_configs[i].pixel_rate, best_match)) {
 			best_match = tHsSettleEscClk_configs[i].pixel_rate;
 			ind = i;
@@ -228,7 +228,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 	uint64_t est_pixel_rate;
 	struct video_frmival cur_frmival;
 	struct video_format cur_fmt;
-	struct video_control sensor_rate = {VIDEO_CID_PIXEL_RATE, -1};
+	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_enum_frmival(config->sensor_dev, ep, fie);
 	if (ret) {
@@ -254,7 +254,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 
 	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
 		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->discrete, &cur_fmt, fie->format, sensor_rate.val,
+			&cur_frmival, &fie->discrete, &cur_fmt, fie->format, sensor_rate.val64,
 			drv_data->csi2rxConfig.laneNum);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
 			return -EINVAL;
@@ -263,7 +263,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 	} else {
 		/* Check the lane rate of the lower bound framerate */
 		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->stepwise.min, &cur_fmt, fie->format, sensor_rate.val,
+			&cur_frmival, &fie->stepwise.min, &cur_fmt, fie->format, sensor_rate.val64,
 			drv_data->csi2rxConfig.laneNum);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
 			return -EINVAL;
@@ -271,13 +271,13 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 
 		/* Check the lane rate of the upper bound framerate */
 		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->stepwise.max, &cur_fmt, fie->format, sensor_rate.val,
+			&cur_frmival, &fie->stepwise.max, &cur_fmt, fie->format, sensor_rate.val64,
 			drv_data->csi2rxConfig.laneNum);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
 			fie->stepwise.max.denominator =
 				(mipi_csi2rx_cal_frame_size(&cur_fmt) * MAX_SUPPORTED_PIXEL_RATE *
 				 cur_frmival.denominator) /
-				(mipi_csi2rx_cal_frame_size(fie->format) * sensor_rate.val *
+				(mipi_csi2rx_cal_frame_size(fie->format) * sensor_rate.val64 *
 				 cur_frmival.numerator);
 			fie->stepwise.max.numerator = 1;
 		}
