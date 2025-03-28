@@ -623,6 +623,106 @@ ZTEST(spi_loopback, test_spi_word_size_32)
 				    sizeof(buffer_tx_32), &spec_copies[4], 32);
 }
 
+static K_THREAD_STACK_DEFINE(thread_stack[3], 512);
+static struct k_thread thread[3];
+
+static K_SEM_DEFINE(thread_sem, 0, 3);
+static K_SEM_DEFINE(sync_sem, 0, 1);
+
+static uint8_t __aligned(32) tx_buffer[3][32];
+static uint8_t __aligned(32) rx_buffer[3][32];
+
+static void spi_transfer_thread(void *p1, void *p2, void *p3)
+{
+	struct spi_dt_spec *spec = (struct spi_dt_spec *)p1;
+	uint8_t *tx_buf_ptr = (uint8_t *)p2;
+	uint8_t *rx_buf_ptr = (uint8_t *)p3;
+
+	/* Wait for all threads to be ready */
+	k_sem_give(&thread_sem);
+	k_sem_take(&sync_sem, K_FOREVER);
+
+	/* Perform SPI transfer */
+	const struct spi_buf_set tx_bufs = {
+		.buffers = &(struct spi_buf) {
+			.buf = tx_buf_ptr,
+			.len = 32,
+		},
+		.count = 1,
+	};
+	const struct spi_buf_set rx_bufs = {
+		.buffers = &(struct spi_buf) {
+			.buf = rx_buf_ptr,
+			.len = 32,
+		},
+		.count = 1,
+	};
+
+	zassert_equal(spi_transceive_dt(spec, &tx_bufs, &rx_bufs), 0,
+		      "SPI concurrent transfer failed");
+
+	zassert_mem_equal(tx_buf_ptr, rx_buf_ptr, 32,
+			 "SPI concurrent transfer data mismatch");
+}
+
+/* Test case for concurrent SPI transfers */
+static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
+{
+	/* Create three threads */
+	for (int i = 0; i < 3; i++) {
+		memset(tx_buffer[i], 0xaa, sizeof(tx_buffer[i]));
+		memset(rx_buffer[i], 0, sizeof(rx_buffer[i]));
+		k_thread_create(&thread[i], thread_stack[i],
+				K_THREAD_STACK_SIZEOF(thread_stack[i]),
+				spi_transfer_thread, specs[i],
+				tx_buffer[i], rx_buffer[i],
+				K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	}
+
+	/* Wait for all threads to be ready */
+	for (int i = 0; i < 3; i++) {
+		k_sem_take(&thread_sem, K_FOREVER);
+	}
+
+	/* Start all threads simultaneously */
+	for (int i = 0; i < 3; i++) {
+		k_sem_give(&sync_sem);
+	}
+
+	/* Wait for threads to complete */
+	for (int i = 0; i < 3; i++) {
+		k_thread_join(&thread[i], K_FOREVER);
+	}
+}
+
+/* test for multiple threads accessing the driver / bus with the same spi_config */
+ZTEST(spi_loopback, test_spi_concurrent_transfer_same_spec)
+{
+	struct spi_dt_spec *specs[3] = {
+		loopback_specs[spec_idx],
+		loopback_specs[spec_idx],
+		loopback_specs[spec_idx]
+	};
+	test_spi_concurrent_transfer_helper(specs);
+}
+
+/* test for multiple threads accessing the driver / bus with different spi_config
+ * (different address of the config is what's important here
+ */
+ZTEST(spi_loopback, test_spi_concurrent_transfer_different_spec)
+{
+	struct spi_dt_spec *specs[3] = {
+		&spec_copies[0],
+		&spec_copies[1],
+		&spec_copies[2]
+	};
+	spec_copies[0] = *loopback_specs[spec_idx];
+	spec_copies[1] = *loopback_specs[spec_idx];
+	spec_copies[2] = *loopback_specs[spec_idx];
+
+	test_spi_concurrent_transfer_helper(specs);
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
