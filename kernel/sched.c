@@ -1108,6 +1108,13 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 
 	(void)z_swap(&_sched_spinlock, key);
 
+	/* Reading system clock might be costly (register access) so avoid it if possible.
+	 * If thread timeout is expired then whole sleep time passed.
+	 */
+	if (z_is_expired_thread_timeout(_current)) {
+		return 0;
+	}
+
 	/* We require a 32 bit unsigned subtraction to care a wraparound */
 	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
 
