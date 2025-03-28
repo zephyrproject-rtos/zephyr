@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4m2-elc.h>
 
 /delete-node/ &spi1;
 
