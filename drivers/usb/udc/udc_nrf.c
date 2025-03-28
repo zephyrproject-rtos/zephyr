@@ -499,25 +499,6 @@ static void udc_nrf_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void udc_sof_check_iso_out(const struct device *dev)
-{
-	const uint8_t iso_out_addr = 0x08;
-	struct udc_nrf_evt evt = {
-		.type = UDC_NRF_EVT_XFER,
-		.ep = iso_out_addr,
-	};
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, iso_out_addr);
-	if (ep_cfg == NULL) {
-		return;
-	}
-
-	if (ep_cfg->stat.enabled && !k_fifo_is_empty(&ep_cfg->fifo)) {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-	}
-}
-
 static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 {
 	switch (hal_evt->type) {
@@ -527,7 +508,6 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 		break;
 	case NRF_USBD_COMMON_EVT_SOF:
 		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
-		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
 	case NRF_USBD_COMMON_EVT_SUSPEND:
 	case NRF_USBD_COMMON_EVT_RESUME:
