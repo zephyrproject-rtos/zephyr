@@ -414,6 +414,17 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+config NOCACHE_MEMORY_IS_LOADABLE
+	bool "Make uncached memory region loadable"
+	depends on NOCACHE_MEMORY
+	default n
+	help
+	  By default the "nocache" region is not loadable, i.e. variables
+	  placed inside it will not be initialized by the startup code.
+	  While this is Ok for most use cases, there are some niche cases
+	  where you have variables in the "nocache" region, which need to
+	  be initialized by the startup code.
+
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
 	select OVERRIDE_FRAME_POINTER_DEFAULT
