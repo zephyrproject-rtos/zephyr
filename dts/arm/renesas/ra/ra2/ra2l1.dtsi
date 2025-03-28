@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2021-2024 MUNIC SA
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * Renesas RA2L1 MCU series device tree
  *
@@ -12,6 +12,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra2l1-elc.h>
 
 / {
 	cpus {
@@ -44,6 +45,14 @@
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
 			status = "okay";
+		};
+
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x6c>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
 		};
 
 		flcn: flash-controller@407ec000 {

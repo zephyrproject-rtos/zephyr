@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4m1-elc.h>
 
 / {
 	soc {

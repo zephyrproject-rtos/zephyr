@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4l1-elc.h>
 #include <freq.h>
 
 / {
@@ -37,6 +38,14 @@
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
 			status = "okay";
+		};
+
+		elc: elc@40082000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40082000 0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
 		};
 
 		sram0: memory@20000000 {

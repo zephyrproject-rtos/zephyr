@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 TOKITA Hiroshi
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,14 @@
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
 			status = "okay";
+		};
+
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x6c>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
 		};
 
 		ioport0: gpio@40040000 {
