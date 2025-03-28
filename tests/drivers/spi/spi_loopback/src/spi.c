@@ -214,6 +214,69 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 				  buffer_print_tx2, buffer_print_rx2);
 }
 
+/* same as the test_spi_complete_multiple test, but seeing if there is any unreasonable latency */
+ZTEST(spi_loopback, test_spi_complete_multiple_timed)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
+							      buffer_tx, BUF_SIZE,
+							      buffer2_tx, BUF2_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      buffer_rx, BUF_SIZE,
+							      buffer2_rx, BUF2_SIZE);
+	uint32_t freq = spec->config.frequency;
+	uint32_t start_time, end_time, cycles_spent;
+	uint64_t time_spent_us, expected_transfer_time_us;
+
+	/* since this is a test program, there shouldn't be much to interfere with measurement */
+	start_time = k_cycle_get_32();
+	spi_loopback_transceive(spec, &tx, &rx);
+	end_time = k_cycle_get_32();
+
+	if (end_time >= start_time) {
+		cycles_spent = end_time - start_time;
+	} else {
+		/* number of cycles from start to counter reset + rest of cycles */
+		cycles_spent = (UINT32_MAX - start_time) + end_time;
+	}
+
+	time_spent_us = k_cyc_to_us_ceil64(cycles_spent);
+
+	/* Number of bits to transfer * usec per bit */
+	expected_transfer_time_us = (uint64_t)(BUF_SIZE + BUF2_SIZE) * BITS_PER_BYTE *
+						USEC_PER_SEC / freq;
+
+	TC_PRINT("Transfer took %llu us vs theoretical minimum %llu us\n",
+			time_spent_us, expected_transfer_time_us);
+
+	/* For comparing the lower bound, some kernel timer implementations
+	 * do not actually update the elapsed cycles until a tick boundary,
+	 * so we need to account for that by subtracting one tick from the comparison metric
+	 */
+	uint64_t us_per_kernel_tick = k_ticks_to_us_ceil64(1);
+	uint32_t minimum_transfer_time_us;
+
+	if (expected_transfer_time_us > us_per_kernel_tick) {
+		minimum_transfer_time_us = expected_transfer_time_us - us_per_kernel_tick;
+	} else {
+		minimum_transfer_time_us = 0;
+	}
+
+	/* Fail if transfer is faster than theoretically possible */
+	zassert_true(time_spent_us >= minimum_transfer_time_us,
+			"Transfer faster than theoretically possible");
+
+	TC_PRINT("Latency measurement: %llu us\n", time_spent_us - expected_transfer_time_us);
+
+	/* Allow some overhead, but not too much */
+	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
+
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+	spi_loopback_compare_bufs(buffer2_tx, buffer2_rx, BUF2_SIZE,
+				  buffer_print_tx2, buffer_print_rx2);
+}
+
 void spi_loopback_test_mode(struct spi_dt_spec *spec, bool cpol, bool cpha)
 {
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
