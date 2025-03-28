@@ -26,11 +26,6 @@ typedef enum __packed {
 } bt_avrcp_subunit_id_t;
 
 typedef enum __packed {
-	BT_AVRCP_SUBUNIT_TYPE_PANEL = 0x9,
-	BT_AVRCP_SUBUNIT_TYPE_UNIT = 0x1F,
-} bt_avrcp_subunit_type_t;
-
-typedef enum __packed {
 	BT_AVRCP_OPC_VENDOR_DEPENDENT = 0x0,
 	BT_AVRCP_OPC_UNIT_INFO = 0x30,
 	BT_AVRCP_OPC_SUBUNIT_INFO = 0x31,
@@ -49,6 +44,13 @@ struct bt_avrcp_header {
 	uint8_t opcode; /** Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
 } __packed;
 
+/* bt_avrcp flags: the flags defined here represent AVRCP state */
+enum {
+	BT_AVRCP_TG_REQ,        /* AVRCP TG a request is ongoing*/
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_AVRCP_NUM_FLAGS,
+};
 /** The 4-bit command type or the 4-bit response code. */
 #define BT_AVRCP_HDR_GET_CTYPE_OR_RSP(hdr)        FIELD_GET(GENMASK(3, 0), ((hdr)->byte0))
 /** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
