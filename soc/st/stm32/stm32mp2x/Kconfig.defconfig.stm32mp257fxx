@@ -1,0 +1,11 @@
+# STMicroelectronics STM32MP257FXX_M33 MCU
+#
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32MP257FXX_M33
+
+config NUM_IRQS
+	default 320
+
+endif # SOC_STM32MP257FXX_M33
