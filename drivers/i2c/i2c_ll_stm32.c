@@ -595,6 +595,32 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),\
 		},
 
+void i2c_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
+			uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA TX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
+void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
+			uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA RX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
 #define I2C_DMA_DATA_INIT(index, dir, src, dest)			\
 	.dma_##dir##_cfg = {						\
 		.dma_slot = STM32_DMA_SLOT(index, dir, slot),		\
@@ -610,6 +636,7 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 				STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.source_burst_length = 1,				\
 		.dest_burst_length = 1,					\
+		.dma_callback = i2c_stm32_dma_##dir##_cb,		\
 	},								\
 
 #else
