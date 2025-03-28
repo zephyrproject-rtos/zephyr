@@ -1182,59 +1182,77 @@ static int ov5640_init_controls(const struct device *dev)
 	struct ov5640_data *drv_data = dev->data;
 	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN, 0, 1023, 1, 0);
+	ret = video_init_ctrl(
+		&ctrls->gain, dev, VIDEO_CID_GAIN,
+		(struct video_ctrl_range){.min = 0, .max = 1023, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS, -15, 15, 1, 0);
+	ret = video_init_ctrl(
+		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
+		(struct video_ctrl_range){.min = -15, .max = 15, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST, 0, 255, 1, 0);
+	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
+			      (struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->hue, dev, VIDEO_CID_HUE, 0, 359, 1, 0);
+	ret = video_init_ctrl(&ctrls->hue, dev, VIDEO_CID_HUE,
+			      (struct video_ctrl_range){.min = 0, .max = 359, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION, 0, 255, 1, 64);
+	ret = video_init_ctrl(
+		&ctrls->saturation, dev, VIDEO_CID_SATURATION,
+		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 64});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->light_freq, dev, VIDEO_CID_POWER_LINE_FREQUENCY,
-			      VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED,
-			      VIDEO_CID_POWER_LINE_FREQUENCY_AUTO, 1,
-			      VIDEO_CID_POWER_LINE_FREQUENCY_50HZ);
+	ret = video_init_ctrl(
+		&ctrls->light_freq, dev, VIDEO_CID_POWER_LINE_FREQUENCY,
+		(struct video_ctrl_range){.min = VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED,
+					  .max = VIDEO_CID_POWER_LINE_FREQUENCY_AUTO,
+					  .step = 1,
+					  .def = VIDEO_CID_POWER_LINE_FREQUENCY_50HZ});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-			      ARRAY_SIZE(test_pattern_val) - 1, 1, 0);
+	ret = video_init_ctrl(
+		&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
+		(struct video_ctrl_range){
+			.min = 0, .max = ARRAY_SIZE(test_pattern_val) - 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
 	return video_init_ctrl(
-		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE, mipi_vga_frmrate_params[0].pixelrate,
-		mipi_hd_frmrate_params[ARRAY_SIZE(mipi_hd_frmrate_params) - 1].pixelrate, 1,
-		drv_data->cur_pixrate);
+		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
+		(struct video_ctrl_range){
+			.min64 = mipi_qqvga_frmrate_params[0].pixelrate,
+			.max64 = mipi_hd_frmrate_params[ARRAY_SIZE(mipi_hd_frmrate_params) - 1]
+					 .pixelrate,
+			.step64 = 1,
+			.def64 = mipi_hd_frmrate_params[1].pixelrate});
 }
 
 static int ov5640_init(const struct device *dev)
