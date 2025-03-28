@@ -28,6 +28,7 @@
 #include "hci_core.h"
 #include "smp.h"
 #include "settings.h"
+#include "id.h"
 #include "keys.h"
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
@@ -435,11 +436,19 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
+static void add_id_cb(struct k_work *work)
+{
+	bt_id_pending_keys_update();
+}
+
+static K_WORK_DEFINE(add_id_work, add_id_cb);
+
 static void id_add(struct bt_keys *keys, void *user_data)
 {
 	__ASSERT_NO_MSG(keys != NULL);
 
-	bt_id_add(keys);
+	bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+	k_work_submit(&add_id_work);
 }
 
 static int keys_commit(void)

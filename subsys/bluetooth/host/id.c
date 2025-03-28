@@ -921,7 +921,7 @@ static void pending_id_update(struct bt_keys *keys, void *data)
 	}
 }
 
-static void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
+void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
 {
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 	keys->state |= flag;
