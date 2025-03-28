@@ -42,4 +42,7 @@ config SPI_DW_ACCESS_WORD_ONLY
 config PM_DEVICE_POWER_DOMAIN
 	default n if PM_DEVICE
 
+config PM_DEVICE_RUNTIME
+	default y if PM_DEVICE
+
 endif # SOC_SERIES_NRF54HX
