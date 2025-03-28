@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 TOKITA Hiroshi
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <arm/renesas/ra/ra2/ra2xx.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra2a1-elc.h>
 
 /delete-node/ &sci2;
 /delete-node/ &sci3;
