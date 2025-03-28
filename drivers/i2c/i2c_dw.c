@@ -1,11 +1,9 @@
-/* dw_i2c.c - I2C file for Design Ware */
-
 /*
- * Copyright (c) 2015 Intel Corporation
- * Copyright (c) 2022 Andrei-Edward Popa
+ * Copyright (c) 2025 Realtek, SIBG-SD7
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <stdlib.h>
@@ -18,39 +16,72 @@
 #include <zephyr/arch/cpu.h>
 #include <string.h>
 
-#if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
-#endif
-#if defined(CONFIG_RESET)
-#include <zephyr/drivers/reset.h>
-#endif
-
+#include <zephyr/dt-bindings/pinctrl/realtek-rts5912-pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_rts5912.h>
 #include <errno.h>
 #include <zephyr/sys/sys_io.h>
 
 #include <zephyr/sys/util.h>
-
-#if defined(CONFIG_I2C_DW_LPSS_DMA)
-#include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/dma/dma_intel_lpss.h>
-#endif
-
-#ifdef CONFIG_IOAPIC
-#include <zephyr/drivers/interrupt_controller/ioapic.h>
-#endif
-
-#include "i2c_dw.h"
-#include "i2c_dw_registers.h"
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <reg/reg_gpio.h>
+#include "i2c_realtek_rts5912.h"
+#include "i2c_realtek_rts5912_api.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-LOG_MODULE_REGISTER(i2c_dw);
+LOG_MODULE_REGISTER(i2c_rts5912, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
+
+#define REALTEK_DW_PINMUX_GET_GPIO_PIN(n)                                                          \
+	(((((n) >> REALTEK_DW_GPIO_LOW_POS) & REALTEK_DW_GPIO_LOW_MSK)) |                          \
+	 (((((n) >> REALTEK_DW_GPIO_HIGH_POS) & REALTEK_DW_GPIO_HIGH_MSK)) << 5))
+
+#define RECOVERY_TIME 30 /* in ms */
 
 static inline uint32_t get_regs(const struct device *dev)
 {
 	return (uint32_t)DEVICE_MMIO_GET(dev);
+}
+
+static int i2c_dw_error_chk(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+	union ic_interrupt_register intr_stat;
+	union ic_txabrt_register ic_txabrt_src;
+	uint32_t value;
+	/* Cache ic_intr_stat and txabrt_src for processing,
+	 * so there is no need to read the register multiple times.
+	 */
+	intr_stat.raw = read_intr_stat(reg_base);
+	ic_txabrt_src.raw = read_txabrt_src(reg_base);
+	/* NACK and SDA_STUCK are below TX_Abort */
+	if (intr_stat.bits.tx_abrt) {
+		/* check 7bit NACK Tx Abort */
+		if (ic_txabrt_src.bits.ADDR7BNACK) {
+			dw->state |= I2C_DW_NACK;
+			LOG_ERR("NACK on %s", dev->name);
+		}
+		/* check SDA stuck low Tx abort, need to do bus recover */
+		if (ic_txabrt_src.bits.SDASTUCKLOW) {
+			dw->state |= I2C_DW_SDA_STUCK;
+			LOG_ERR("SDA Stuck Low on %s", dev->name);
+		}
+		/* clear DW_INTR_STAT_TX_ABRT */
+		value = read_clr_tx_abrt(reg_base);
+	}
+	/* check SCL stuck low */
+	if (intr_stat.bits.scl_stuck_low) {
+		dw->state |= I2C_DW_SCL_STUCK;
+		LOG_ERR("SCL Stuck Low on %s", dev->name);
+	}
+	if (dw->state & I2C_DW_ERR_MASK) {
+		dw->need_setup = 1;
+		LOG_ERR("IO Fail on %s", dev->name);
+		return -EIO;
+	}
+	return 0;
 }
 
 static inline void i2c_dw_data_ask(const struct device *dev)
@@ -113,6 +144,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 
 		write_cmd_data(data, reg_base);
 
+		if (i2c_dw_error_chk(dev)) {
+			return;
+		}
+
 		dw->rx_pending++;
 		dw->request_bytes--;
 		cnt--;
@@ -127,6 +162,10 @@ static void i2c_dw_data_read(const struct device *dev)
 	while (test_bit_status_rfne(reg_base) && (dw->xfr_len > 0)) {
 		dw->xfr_buf[0] = (uint8_t)read_cmd_data(reg_base);
 
+		if (i2c_dw_error_chk(dev)) {
+			return;
+		}
+
 		dw->xfr_buf++;
 		dw->xfr_len--;
 		dw->rx_pending--;
@@ -135,11 +174,173 @@ static void i2c_dw_data_read(const struct device *dev)
 			break;
 		}
 	}
+
 	/* Nothing to receive anymore */
 	if (dw->xfr_len == 0U) {
 		dw->state &= ~I2C_DW_CMD_RECV;
 		return;
 	}
+}
+
+static int i2c_dw_recover_bus(const struct device *dev)
+{
+	static volatile GPIO_Type *pinctrl_base =
+		(volatile GPIO_Type *)(DT_REG_ADDR(DT_NODELABEL(pinctrl)));
+
+	struct i2c_dw_dev_config *const dw = dev->data;
+	volatile uint32_t *GPIO_SDA = (volatile uint32_t *)&(pinctrl_base->GCR[dw->sda_gpio]);
+	volatile uint32_t *GPIO_SCL = (volatile uint32_t *)&(pinctrl_base->GCR[dw->scl_gpio]);
+	uint32_t GPIO_SDA_TEMP = *GPIO_SDA;
+	uint32_t GPIO_SCL_TEMP = *GPIO_SCL;
+	uint32_t reg_base = get_regs(dev);
+	uint32_t value;
+	uint32_t start;
+	int ret = true;
+
+	LOG_DBG("starting bus recover");
+	LOG_DBG("sda_gpio=%d, GPIO_SDA=0x%08x", dw->sda_gpio, *GPIO_SDA);
+	LOG_DBG("scl_gpio=%d, GPIO_SCL=0x%08x", dw->scl_gpio, *GPIO_SCL);
+
+	if (k_sem_take(&dw->bus_sem, K_FOREVER)) {
+		LOG_ERR("bus lock fail");
+		return -1;
+	}
+
+	LOG_DBG("bus locked");
+	/* disable all interrupt mask */
+	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
+	/* enable controller to make sure function works */
+	set_bit_enable_en(reg_base);
+
+	if (dw->last_state & I2C_DW_SDA_STUCK) {
+		/*
+		 * initiate the SDA Recovery Mechanism
+		 * (that is, send at most 9 SCL clocks and STOP to release the
+		 * SDA line) and then this bit gets auto clear
+		 */
+		LOG_DBG("CLK Recovery Start");
+		/* initiate the Master Clock Reset */
+		start = k_uptime_get_32();
+		set_bit_enable_clk_reset(reg_base);
+		while (test_bit_enable_clk_reset(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* check if SCL bus clk is not reset */
+		if (test_bit_enable_clk_reset(reg_base)) {
+			LOG_ERR("ERROR: CLK recovery Fail");
+			ret = false;
+		} else {
+			LOG_DBG("CLK Recovery Success");
+		}
+
+		LOG_DBG("SDA Recovery Start");
+		start = k_uptime_get_32();
+		set_bit_enable_sdarecov(reg_base);
+		while (test_bit_enable_sdarecov(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* Check if bus is not clear */
+		if (test_bit_status_sdanotrecov(reg_base)) {
+			LOG_ERR("ERROR: SDA Recovery Fail");
+			ret = false;
+		} else {
+			LOG_DBG("SDA Recovery Success");
+		}
+	} else if (dw->last_state & I2C_DW_SCL_STUCK) {
+		/* the controller initiates the transfer abort */
+		LOG_DBG("ABORT transfer");
+		start = k_uptime_get_32();
+		set_bit_enable_abort(reg_base);
+		while (test_bit_enable_abort(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* check if Controller is not abort */
+		if (test_bit_enable_abort(reg_base)) {
+			LOG_ERR("ERROR: ABORT Fail!");
+			ret = false;
+		} else {
+			LOG_DBG("ABORT seccuess");
+		}
+	}
+	value = read_clr_intr(reg_base);
+	value = read_clr_tx_abrt(reg_base);
+	/* disable controller */
+	clear_bit_enable_en(reg_base);
+
+	/* set SCL line to GPIO input mode */
+	*GPIO_SCL = 0x8002;
+	k_busy_wait(500);
+	/* check does SCL line released to high level */
+	if ((*GPIO_SCL & GPIO_GCR_PINSTS_Msk) == 0) {
+		LOG_ERR("SCL still in Low! scl_gpio=%d, GPIO_SCL=0x%08x", dw->scl_gpio, *GPIO_SCL);
+		*GPIO_SCL = GPIO_SCL_TEMP;
+		/* unlock the bus */
+		k_sem_give(&dw->bus_sem);
+		return -1;
+	}
+	/* set high level to scl and sda line */
+	*GPIO_SCL = 0x28003;
+	*GPIO_SDA = 0x28003;
+	k_busy_wait(10);
+
+	/* send a ACK */
+	*GPIO_SDA = 0x8003;
+	k_busy_wait(10);
+	*GPIO_SCL = 0x8003;
+	k_busy_wait(10);
+	*GPIO_SDA = 0x28003;
+	k_busy_wait(10);
+	/* send dummy clock */
+	for (int i = 0; i < 9; i++) {
+		*GPIO_SCL = 0x00028003;
+		k_busy_wait(50);
+		*GPIO_SCL = 0x00008003;
+		k_busy_wait(50);
+	}
+	/* send a stop bit */
+	*GPIO_SDA = 0x8003;
+	k_busy_wait(10);
+	*GPIO_SCL = 0x28003;
+	k_busy_wait(10);
+	*GPIO_SDA = 0x28003;
+	k_busy_wait(10);
+
+	/* set GPIO functoin to I2C */
+	*GPIO_SCL = GPIO_SCL_TEMP;
+	*GPIO_SDA = GPIO_SDA_TEMP;
+	LOG_DBG("SCL=0x%08x, SDA=0x%08x", *GPIO_SCL, *GPIO_SDA);
+
+	/* enable controller */
+	set_bit_enable_en(reg_base);
+
+	start = k_uptime_get_32();
+	set_bit_enable_abort(reg_base);
+	while (test_bit_enable_abort(reg_base) && (k_uptime_get_32() - start < RECOVERY_TIME)) {
+		;
+	}
+	if (test_bit_enable_abort(reg_base)) {
+		LOG_ERR("ERROR: ABORT Fail!");
+		ret = false;
+	} else {
+		LOG_DBG("ABORT seccuess");
+	}
+	/* disable controller */
+	clear_bit_enable_en(reg_base);
+	/* reset last state */
+	dw->last_state = I2C_DW_STATE_READY;
+	/* unlock the bus */
+	k_sem_give(&dw->bus_sem);
+	LOG_DBG("bus unlock");
+	if (!ret) {
+		LOG_ERR("ERROR: Bus Recover Fail, a slave device may be faulty or require a power "
+			"reset");
+		return -1;
+	}
+	LOG_DBG("BUS Recover success");
+	return 0;
 }
 
 static int i2c_dw_data_send(const struct device *dev)
@@ -176,7 +377,7 @@ static int i2c_dw_data_send(const struct device *dev)
 		dw->xfr_len--;
 		dw->xfr_buf++;
 
-		if (test_bit_intr_stat_tx_abrt(reg_base)) {
+		if (i2c_dw_error_chk(dev)) {
 			return -EIO;
 		}
 	}
@@ -191,6 +392,7 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 
 	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
+
 	value = read_clr_intr(reg_base);
 
 	k_sem_give(&dw->device_sync_sem);
@@ -206,6 +408,7 @@ static void i2c_dw_isr(const struct device *port)
 {
 	struct i2c_dw_dev_config *const dw = port->data;
 	union ic_interrupt_register intr_stat;
+	union ic_txabrt_register ic_txabrt;
 	uint32_t value;
 	int ret = 0;
 	uint32_t reg_base = get_regs(port);
@@ -213,8 +416,8 @@ static void i2c_dw_isr(const struct device *port)
 	/* Cache ic_intr_stat for processing, so there is no need to read
 	 * the register multiple times.
 	 */
-	intr_stat.raw = read_intr_stat(reg_base);
-
+	intr_stat.raw = read_rawintr_stat(reg_base);
+	ic_txabrt.raw = read_txabrt_src(reg_base);
 	/*
 	 * Causes of an interrupt:
 	 *   - STOP condition is detected
@@ -226,17 +429,21 @@ static void i2c_dw_isr(const struct device *port)
 	 *   - Received FIFO has underrun
 	 *   - Transmit data is required (tx_req)
 	 *   - Receive data is available (rx_avail)
+	 *   - scl_low_for_while (scl_stuck_low)
 	 */
 
-	LOG_DBG("I2C: interrupt received");
+	LOG_DBG("I2C: interrupt received reg = 0x%x, raw = 0x%x", reg_base, intr_stat.raw);
 
 	/* Check if we are configured as a master device */
 	if (test_bit_con_master_mode(reg_base)) {
 		/* Bail early if there is any error. */
-		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER | DW_INTR_STAT_RX_OVER |
-		     DW_INTR_STAT_RX_UNDER) &
+		if ((DW_INTR_STAT_SCL_STUCK_LOW | DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER |
+		     DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_UNDER) &
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
+			LOG_ERR("CMD ERROR on %s", port->name);
+			i2c_dw_error_chk(port);
+			dw->need_setup = true;
 			goto done;
 		}
 
@@ -261,7 +468,6 @@ static void i2c_dw_isr(const struct device *port)
 			} else {
 				i2c_dw_data_ask(port);
 			}
-
 			/* If STOP is not expected, finish processing this
 			 * message if there is nothing left to do anymore.
 			 */
@@ -274,9 +480,9 @@ static void i2c_dw_isr(const struct device *port)
 		/* STOP detected: finish processing this message */
 		if (intr_stat.bits.stop_det) {
 			value = read_clr_stop_det(reg_base);
+			dw->need_setup = 1;
 			goto done;
 		}
-
 	} else {
 #ifdef CONFIG_I2C_TARGET
 		const struct i2c_target_callbacks *slave_cb = dw->slave_cfg->callbacks;
@@ -292,13 +498,10 @@ static void i2c_dw_isr(const struct device *port)
 					slave_cb->write_requested(dw->slave_cfg);
 				}
 			}
-			/* FIFO needs to be drained here so we don't miss the next interrupt */
-			do {
-				data = i2c_dw_read_byte_non_blocking(port);
-				if (slave_cb->write_received) {
-					slave_cb->write_received(dw->slave_cfg, data);
-				}
-			} while (test_bit_status_rfne(reg_base));
+			data = i2c_dw_read_byte_non_blocking(port);
+			if (slave_cb->write_received) {
+				slave_cb->write_received(dw->slave_cfg, data);
+			}
 		}
 
 		if (intr_stat.bits.rd_req) {
@@ -341,7 +544,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 
 	/* Clear interrupts */
 	value = read_clr_intr(reg_base);
-
 	/* Set master or slave mode - (initialization = slave) */
 	if (I2C_MODE_CONTROLLER & dw->app_config) {
 		/*
@@ -356,6 +558,9 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	}
 
 	ic_con.bits.restart_en = 1U;
+	ic_con.bits.bus_clear = 1U;
+	write_sdatimeout(0x27AC40, reg_base);
+	write_scltimeout(0x27AC40, reg_base);
 
 	/* Set addressing mode - (initialization = 7 bit) */
 	if (I2C_ADDR_10_BITS & dw->app_config) {
@@ -374,12 +579,17 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 
 		break;
 	case I2C_SPEED_FAST:
-		__fallthrough;
-	case I2C_SPEED_FAST_PLUS:
-		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
+		LOG_DBG("I2C: speed set to FAST");
 		write_fs_scl_lcnt(dw->lcnt, reg_base);
 		write_fs_scl_hcnt(dw->hcnt, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_FAST;
+
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		LOG_DBG("I2C: speed set to FAST_PLUS");
+		write_fs_scl_lcnt(dw->lcnt, reg_base);
+		write_fs_scl_hcnt(dw->hcnt, reg_base);
+		ic_con.bits.speed = I2C_DW_SPEED_FAST_PLUS;
 
 		break;
 	case I2C_SPEED_HIGH:
@@ -400,7 +610,7 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 
 	LOG_DBG("I2C: lcnt = %d", dw->lcnt);
 	LOG_DBG("I2C: hcnt = %d", dw->hcnt);
-
+	LOG_DBG("slave_address = %02x", slave_address);
 	/* Set the IC_CON register */
 	write_con(ic_con.raw, reg_base);
 
@@ -459,55 +669,50 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	uint8_t pflags;
 	int ret;
 	uint32_t reg_base = get_regs(dev);
-	uint32_t value = 0;
 
 	__ASSERT_NO_MSG(msgs);
 	if (!num_msgs) {
 		return 0;
 	}
 
-	ret = k_mutex_lock(&dw->bus_mutex, K_FOREVER);
+	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* First step, check if there is current activity */
-	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
+	if ((test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) && dw->need_setup) {
 		ret = -EBUSY;
 		goto error;
 	}
 
-	dw->state |= I2C_DW_BUSY;
-
-	ret = i2c_dw_setup(dev, slave_address);
-	if (ret) {
-		goto error;
+	if (dw->last_state & I2C_DW_STUCK_ERR_MASK) {
+		/* try to recovery */
+		if (i2c_dw_recover_bus(dev)) {
+			dw->state = dw->last_state;
+			ret = -ETIME;
+			goto error;
+		}
 	}
 
-	/* Enable controller */
-	set_bit_enable_en(reg_base);
+	dw->state |= I2C_DW_BUSY;
 
-	/*
-	 * While waiting at device_sync_sem, kernel can switch to idle
-	 * task which in turn can call pm_system_suspend() hook of Power
-	 * Management App (PMA).
-	 * pm_device_busy_set() call here, would indicate to PMA that it should
-	 * not execute PM policies that would turn off this ip block, causing an
-	 * ongoing hw transaction to be left in an inconsistent state.
-	 * Note : This is just a sample to show a possible use of the API, it is
-	 * upto the driver expert to see, if he actually needs it here, or
-	 * somewhere else, or not needed as the driver's suspend()/resume()
-	 * can handle everything
-	 */
+	if (dw->need_setup == 1) {
+		LOG_DBG("setup, %x", reg_base);
+		ret = i2c_dw_setup(dev, slave_address);
+		if (ret) {
+			goto error;
+		}
+
+		/* Enable controller */
+		set_bit_enable_en(reg_base);
+		dw->need_setup = 0;
+	}
+
 	pm_device_busy_set(dev);
 
 	/* Process all the messages */
 	while (msg_left > 0) {
-		/* Workaround for I2C scanner as DW HW does not support 0 byte transfers.*/
-		if ((cur_msg->len == 0) && (cur_msg->buf != NULL)) {
-			cur_msg->len = 1;
-		}
-
 		pflags = dw->xfr_flags;
 
 		dw->xfr_buf = cur_msg->buf;
@@ -541,25 +746,19 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		}
 
 		/* Wait for transfer to be done */
-		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_DW_RW_TIMEOUT_MS));
-		if (ret != 0) {
-			if (test_bit_con_master_mode(reg_base)) {
-				/* Trigger abort and wait for it to complete. */
-				set_bit_enable_abort(reg_base);
-				(void)k_sem_take(&dw->device_sync_sem, K_MSEC(1));
+		k_sem_take(&dw->device_sync_sem, K_FOREVER);
+
+		if (dw->state & I2C_DW_ERR_MASK) {
+			if ((dw->state & I2C_DW_SDA_STUCK) || (dw->state & I2C_DW_SCL_STUCK)) {
+				ret = -ETIME;
+			} else if ((dw->state & I2C_DW_NACK) || (dw->state & I2C_DW_CMD_ERROR)) {
+				ret = -EIO;
 			}
-			write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
-			value = read_clr_intr(reg_base);
-			ret = -ETIMEDOUT;
-			k_sem_reset(&dw->device_sync_sem);
 			break;
 		}
 
-		if (dw->state & I2C_DW_CMD_ERROR) {
-			ret = -EIO;
-			break;
-		}
-
+		/* avoid some i2c devices can't read data success */
+		k_busy_wait(350);
 		/* Something wrong if there is something left to do */
 		if (dw->xfr_len > 0) {
 			ret = -EIO;
@@ -573,104 +772,112 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	pm_device_busy_clear(dev);
 
 error:
+	dw->last_state = dw->state;
 	dw->state = I2C_DW_STATE_READY;
-	k_mutex_unlock(&dw->bus_mutex);
+	k_sem_give(&dw->bus_sem);
 
 	return ret;
 }
 
+#ifdef CONFIG_I2C_CALLBACK
 static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
-	const struct i2c_dw_rom_config *const rom = dev->config;
 	uint32_t value = 0U;
 	uint32_t rc = 0U;
 	uint32_t reg_base = get_regs(dev);
 
 	dw->app_config = config;
 
-	/* Make sure we have a supported speed for the DesignWare model */
+	/* Make sure we have a supported speed for the Realtek model */
 	/* and have setup the clock frequency and speed mode */
 	switch (I2C_SPEED_GET(dw->app_config)) {
 	case I2C_SPEED_STANDARD:
-		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
+		/* Following the directions on RTS5912 spec page 59, IC_SS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		value = I2C_STD_LCNT + rom->lcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 7)) {
+		if (I2C_STD_LCNT <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
+		} else {
+			value = I2C_STD_LCNT;
 		}
 
 		dw->lcnt = value;
 
-		/* Following the directions on DW spec page 59, IC_SS_SCL_HCNT
+		/* Following the directions on RTS5912 spec page 59, IC_SS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		value = I2C_STD_HCNT + rom->hcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 5)) {
+		if (I2C_STD_HCNT <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
+		} else {
+			value = I2C_STD_HCNT;
 		}
 
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_FAST:
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
+		/* Following the directions on RTS5912 spec page 59, IC_FS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		value = I2C_FS_LCNT + rom->lcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 7)) {
+		if (I2C_FS_LCNT <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
+		} else {
+			value = I2C_FS_LCNT;
 		}
 
 		dw->lcnt = value;
 
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
+		/* Following the directions on RTS5912 spec page 59, IC_FS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		value = I2C_FS_HCNT + rom->hcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 5)) {
+		if (I2C_FS_HCNT <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
+		} else {
+			value = I2C_FS_HCNT;
 		}
 
 		dw->hcnt = value;
+
 		break;
 	case I2C_SPEED_FAST_PLUS:
 		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
+		 * Following the directions on RTS5912 spec page 59, IC_FS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
-		value = I2C_FSP_LCNT + rom->lcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 7)) {
+		if (I2C_FSP_LCNT <= (read_fs_spklen(reg_base) + 7)) {
 			value = read_fs_spklen(reg_base) + 8;
+		} else {
+			value = I2C_FSP_LCNT;
 		}
 
 		dw->lcnt = value;
 
 		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
+		 * Following the directions on RTS5912 spec page 59, IC_FS_SCL_HCNT
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
-		value = I2C_FSP_HCNT + rom->hcnt_offset;
-		if (value <= (read_fs_spklen(reg_base) + 5)) {
+		if (I2C_FSP_HCNT <= (read_fs_spklen(reg_base) + 5)) {
 			value = read_fs_spklen(reg_base) + 6;
+		} else {
+			value = I2C_FSP_HCNT;
 		}
 
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_HIGH:
 		if (dw->support_hs_mode) {
-			value = I2C_HS_LCNT + rom->lcnt_offset;
-			if (value <= (read_hs_spklen(reg_base) + 7)) {
+			if (I2C_HS_LCNT <= (read_hs_spklen(reg_base) + 7)) {
 				value = read_hs_spklen(reg_base) + 8;
+			} else {
+				value = I2C_HS_LCNT;
 			}
 
 			dw->lcnt = value;
 
-			value = I2C_HS_HCNT + rom->hcnt_offset;
-			if (value <= (read_hs_spklen(reg_base) + 5)) {
+			if (I2C_HS_HCNT <= (read_hs_spklen(reg_base) + 5)) {
 				value = read_hs_spklen(reg_base) + 6;
+			} else {
+				value = I2C_HS_HCNT;
 			}
 
 			dw->hcnt = value;
@@ -782,7 +989,7 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 	dw->slave_cfg = cfg;
 	ret = i2c_dw_set_slave_mode(dev, cfg->address);
 	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ | DW_INTR_MASK_TX_ABRT |
-				DW_INTR_MASK_STOP_DET,
+				DW_INTR_MASK_STOP_DET | DW_INTR_MASK_START_DET,
 			reg_base);
 
 	return ret;
@@ -866,9 +1073,7 @@ static DEVICE_API(i2c, funcs) = {
 	.target_register = i2c_dw_slave_register,
 	.target_unregister = i2c_dw_slave_unregister,
 #endif /* CONFIG_I2C_TARGET */
-#ifdef CONFIG_I2C_RTIO
-	.iodev_submit = i2c_iodev_submit_fallback,
-#endif
+	.recover_bus = i2c_dw_recover_bus,
 };
 
 static int i2c_dw_initialize(const struct device *dev)
@@ -877,71 +1082,35 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_con_register ic_con;
 	int ret = 0;
+	int tmp = 0;
 
-#if defined(CONFIG_RESET)
-	if (rom->reset.dev) {
-		ret = reset_line_toggle_dt(&rom->reset);
-		if (ret) {
-			return ret;
-		}
-	}
-#endif
-
-#if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
-#endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	if (rom->pcie) {
-		struct pcie_bar mbar;
-
-		if (rom->pcie->bdf == PCIE_BDF_NONE) {
-			return -EINVAL;
-		}
-
-		pcie_probe_mbar(rom->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
-
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
-
-		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
-
-#ifdef CONFIG_I2C_DW_LPSS_DMA
-		uintptr_t base;
-
-		base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
-		dma_intel_lpss_set_base(rom->dma_dev, base);
-		dma_intel_lpss_setup(rom->dma_dev);
-
-		/* Assign physical & virtual address to dma instance */
-		dw->phy_addr = mbar.phys_addr;
-		dw->base_addr = (uint32_t)(DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET);
-		sys_write32((uint32_t)dw->phy_addr,
-			    DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_REMAP_LOW);
-		sys_write32((uint32_t)(dw->phy_addr >> DMA_INTEL_LPSS_ADDR_RIGHT_SHIFT),
-			    DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_REMAP_HI);
-		LOG_DBG("i2c instance physical addr: [0x%lx], virtual addr: [0x%lx]", dw->phy_addr,
-			dw->base_addr);
-#endif
-	} else
-#endif
-	{
-		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	if (!device_is_ready(rom->clk_dev)) {
+		return -ENODEV;
+	}
+	ret = clock_control_on(rom->clk_dev, (clock_control_subsys_t)&rom->sccon_cfg);
+	if (ret != 0) {
+		return ret;
 	}
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
-	k_mutex_init(&dw->bus_mutex);
+	k_sem_init(&dw->bus_sem, 1, 1);
 
 	uint32_t reg_base = get_regs(dev);
-
+	/* clear enable register */
 	clear_bit_enable_en(reg_base);
+	/* disable block mode */
+	clear_bit_enable_block(reg_base);
 
-	/* verify that we have a valid DesignWare register first */
+	/* verify that we have a valid Realtek register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
-		LOG_DBG("I2C: DesignWare magic key not found, check base "
+		LOG_DBG("I2C: Realtek magic key not found, check base "
 			"address. Stopping initialization");
 		return -EIO;
 	}
@@ -970,95 +1139,51 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	dw->state = I2C_DW_STATE_READY;
-
+	dw->need_setup = 1;
+	if (rom->pcfg->states->pin_cnt == 2) {
+		dw->scl_gpio = REALTEK_DW_PINMUX_GET_GPIO_PIN((uint32_t)rom->pcfg->states->pins[0]);
+		dw->sda_gpio = REALTEK_DW_PINMUX_GET_GPIO_PIN((uint32_t)rom->pcfg->states->pins[1]);
+		if (dw->scl_gpio > dw->sda_gpio) {
+			tmp = dw->scl_gpio;
+			dw->scl_gpio = dw->sda_gpio;
+			dw->sda_gpio = tmp;
+		}
+		LOG_DBG("sda_gpio=%d, scl_gpio=%d", dw->sda_gpio, dw->scl_gpio);
+	}
 	return ret;
 }
 
-#if defined(CONFIG_PINCTRL)
+#define DEV_CONFIG_CLK_DEV_INIT(n)                                                                 \
+	.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                          \
+	.sccon_cfg = {                                                                             \
+		.clk_grp = DT_INST_CLOCKS_CELL_BY_NAME(n, i2c, clk_grp),                           \
+		.clk_idx = DT_INST_CLOCKS_CELL_BY_NAME(n, i2c, clk_idx),                           \
+	}
 #define PINCTRL_DW_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
 #define PINCTRL_DW_CONFIG(n) .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DW_DEFINE(n)
-#define PINCTRL_DW_CONFIG(n)
-#endif
 
-#if defined(CONFIG_RESET)
-#define RESET_DW_CONFIG(n)                                                                         \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                          \
-		   (.reset = RESET_DT_SPEC_INST_GET(n),))
-#else
-#define RESET_DW_CONFIG(n)
-#endif
-
-#define I2C_DW_INIT_PCIE0(n)
-#define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
-#define I2C_DW_INIT_PCIE(n)  _CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_DEFINE_PCIE0(n)
-#define I2C_DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
-#define I2C_PCIE_DEFINE(n)  _CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
-#define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define I2C_DW_IRQ_FLAGS_SENSE(n)  _CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))
-#define I2C_DW_IRQ_FLAGS(n)        I2C_DW_IRQ_FLAGS_SENSE(n)(n)
-
-/* not PCI(e) */
-#define I2C_DW_IRQ_CONFIG_PCIE0(n)                                                                 \
+#define I2C_DW_IRQ_CONFIG(n)                                                                       \
 	static void i2c_config_##n(const struct device *port)                                      \
 	{                                                                                          \
 		ARG_UNUSED(port);                                                                  \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_dw_isr,                 \
-			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-/* PCI(e) with auto IRQ detection */
-#define I2C_DW_IRQ_CONFIG_PCIE1(n)                                                                 \
-	static void i2c_config_##n(const struct device *port)                                      \
-	{                                                                                          \
-		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
-			     "Only runtime IRQ configuration is supported");                       \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                \
-			     "DW I2C PCI needs CONFIG_DYNAMIC_INTERRUPTS");                        \
-		const struct i2c_dw_rom_config *const dev_cfg = port->config;                      \
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
-			return;                                                                    \
-		}                                                                                  \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority),        \
-					 (void (*)(const void *))i2c_dw_isr,                       \
-					 DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));              \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                          \
-	}
+#define I2C_CONFIG_REG_INIT(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
 
-#define I2C_DW_IRQ_CONFIG(n) _CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
-#define I2C_CONFIG_REG_INIT_PCIE1(n)
-#define I2C_CONFIG_REG_INIT(n) _CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_CONFIG_DMA_INIT(n)                                                                     \
-	COND_CODE_1(CONFIG_I2C_DW_LPSS_DMA,				\
-	(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),			\
-	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),	\
-	())), ())
-
-#define I2C_DEVICE_INIT_DW(n)                                                                      \
+#define I2C_DEVICE_INIT_RTS5912(n)                                                                 \
 	PINCTRL_DW_DEFINE(n);                                                                      \
-	I2C_PCIE_DEFINE(n);                                                                        \
 	static void i2c_config_##n(const struct device *port);                                     \
-	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
+	static const struct i2c_dw_rom_config i2c_config_rts5912_##n = {                           \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
-		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
-		RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)                        \
-			I2C_CONFIG_DMA_INIT(n)};                                                   \
+		PINCTRL_DW_CONFIG(n) DEV_CONFIG_CLK_DEV_INIT(n)};                                  \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
-				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
+				  &i2c_config_rts5912_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,  \
 				  &funcs);                                                         \
 	I2C_DW_IRQ_CONFIG(n)
 
-DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_DW)
+DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_RTS5912)
