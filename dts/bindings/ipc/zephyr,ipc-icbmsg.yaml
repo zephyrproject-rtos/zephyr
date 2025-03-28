@@ -20,3 +20,14 @@ properties:
     description: number of allocable RX blocks
     required: true
     type: int
+
+  force-atomic-size:
+    description: Force atomic size in bytes
+    type: int
+    default: 0
+    description: |
+      ICBMsg uses atomic_t variables in status block.
+      As atomic_t variable size is architecture dependent, this property
+      makes sure that the alignment of status block fields are the same on each core.
+      It needs to be set to the biggest size of atomic_t variable used in the system.
+      Leave it set to 0 (default) if both cores use the same size of atomic operations.
