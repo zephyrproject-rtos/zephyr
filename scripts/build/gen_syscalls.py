@@ -411,7 +411,7 @@ def analyze_fn(match_group, fn, userspace_only):
     func, args = match_group
 
     try:
-        if args == "void":
+        if args == "void" or len(args) == 0:
             args = []
         else:
             args = [typename_split(a) for a in args.split(",")]
