@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
+/* The esp32c3 doesn't have on board ETH Phy, we can use it's MAC though*/
+#ifdef CONFIG_SOC_SERIES_ESP32C3
+	#include <esp_mac.h>
+#endif
+
 #include "eth_enc28j60_priv.h"
 #include "eth.h"
 
@@ -835,6 +840,17 @@ static int eth_enc28j60_init(const struct device *dev)
 		LOG_INF("Random MAC Addr %02x:%02x:%02x:%02x:%02x:%02x", context->mac_address[0],
 			context->mac_address[1], context->mac_address[2], context->mac_address[3],
 			context->mac_address[4], context->mac_address[5]);
+#ifdef CONFIG_SOC_SERIES_ESP32C3
+	/* If the devicetree mac address is set to all zeros ... then look up the ESP supplied one, and use it */
+	} else if (MAC_ALL_ZEROS(context)){
+		if (esp_read_mac(context->mac_address, ESP_MAC_ETH)) {
+			LOG_ERR("%s: Get ESP32C3 Eth mac failed", dev->name);
+			return -EADDRNOTAVAIL;
+		};
+		LOG_INF("ESP32C3 MAC Addr %02x:%02x:%02x:%02x:%02x:%02x", context->mac_address[0],
+			context->mac_address[1], context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);		
+#endif		
 	} else {
 		/* Assign octets not previously taken from devicetree */
 		context->mac_address[0] = MICROCHIP_OUI_B0;

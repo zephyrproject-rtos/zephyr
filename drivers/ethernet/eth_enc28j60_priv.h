@@ -228,6 +228,14 @@ struct eth_enc28j60_config {
 	bool random_mac;
 };
 
+#define MAC_ALL_ZEROS(ctx) (!\
+	(  ctx->mac_address[0] \
+	|| ctx->mac_address[1] \
+	|| ctx->mac_address[2] \
+	|| ctx->mac_address[3] \
+	|| ctx->mac_address[4] \
+	|| ctx->mac_address[5] ))
+
 struct eth_enc28j60_runtime {
 	struct net_if *iface;
 	K_KERNEL_STACK_MEMBER(thread_stack,
