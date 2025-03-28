@@ -15,9 +15,6 @@
 #define CHECK_EQ(val1, val2)                 ((val1) == (val2) ? 1 : 0)
 #define GET_SIZE(COND, value, default_value) ((COND) ? (value) : (default_value))
 
-#define FLASH_HP_BANK2_OFFSET                                                                      \
-	(BSP_FEATURE_FLASH_HP_CF_DUAL_BANK_START - BSP_FEATURE_FLASH_CODE_FLASH_START)
-
 #define FLASH_HP_CF_BLOCK_8KB_SIZE  BSP_FEATURE_FLASH_HP_CF_REGION0_BLOCK_SIZE
 #define FLASH_HP_CF_BLOCK_32KB_SIZE BSP_FEATURE_FLASH_HP_CF_REGION1_BLOCK_SIZE
 #define FLASH_HP_DF_BLOCK_SIZE      BSP_FEATURE_FLASH_HP_DF_BLOCK_SIZE
@@ -32,27 +29,6 @@
 #define FLASH_HP_CF_BLOCK_32KB_LINEAR_END   (DT_PROP(DT_NODELABEL(flash), block_32kb_linear_end))
 
 #define FLASH_HP_DF_BLOCK_END (DT_REG_SIZE(DT_NODELABEL(flash1)) / FLASH_HP_DF_BLOCK_SIZE)
-
-#if defined(CONFIG_DUAL_BANK_MODE)
-#define FLASH_HP_CF_NUM_BLOCK_RESERVED         (DT_PROP(DT_NODELABEL(flash), reserved_area_num))
-#define FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_START  (8)
-#define FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_START (78)
-
-#define FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_END (DT_PROP(DT_NODELABEL(flash), block_32kb_dual_low_end))
-#define FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_END                                                       \
-	(DT_PROP(DT_NODELABEL(flash), block_32kb_dual_high_end))
-
-#define FLASH_HP_CF_DUAL_HIGH_START_ADDRESS BSP_FEATURE_FLASH_HP_CF_DUAL_BANK_START
-
-#define FLASH_HP_CF_DUAL_LOW_END_ADDRESS                                                           \
-	(DT_REG_SIZE(DT_NODELABEL(flash0)) -                                                       \
-	 ((FLASH_HP_CF_BLOCK_32KB_LINEAR_END - FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_END) *              \
-	  FLASH_HP_CF_BLOCK_32KB_SIZE))
-
-#define FLASH_HP_CF_DUAL_HIGH_END_ADDRESS                                                          \
-	(DT_REG_SIZE(DT_NODELABEL(flash0)) +                                                       \
-	 (FLASH_HP_CF_NUM_BLOCK_RESERVED * FLASH_HP_CF_BLOCK_32KB_SIZE))
-#endif
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED)
 #define FLASH_HP_FCU_CONFIG_SET_BPS     (0x1300A1C0U)
