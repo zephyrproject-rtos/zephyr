@@ -43,12 +43,15 @@ struct video_ctrl {
 	uint32_t id;
 	enum video_ctrl_type type;
 	unsigned long flags;
-	int32_t min, max, def, val;
-	uint32_t step;
+	struct video_ctrl_range range;
+	union {
+		int32_t val;
+		int64_t val64;
+	};
 	sys_dnode_t node;
 };
 
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id, int32_t min,
-		    int32_t max, uint32_t step, int32_t def);
+int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+		    struct video_ctrl_range range);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_CTRLS_H_ */

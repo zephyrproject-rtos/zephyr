@@ -940,52 +940,63 @@ static int ov2640_init_controls(const struct device *dev)
 	struct ov2640_data *drv_data = dev->data;
 	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE, 0, 1, 1, 1);
+	ret = video_init_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE, 0, 1, 1, 1);
+	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN, 0, 1, 1, 1);
+	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS, -2, 2, 1, 0);
+	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
+			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST, -2, 2, 1, 0);
+	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
+			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION, -2, 2, 1, 0);
+	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
+			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->jpeg, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY, 5, 100, 1, 50);
+	ret = video_init_ctrl(
+		&ctrls->jpeg, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
+		(struct video_ctrl_range){.min = 5, .max = 100, .step = 1, .def = 50});
 	if (ret) {
 		return ret;
 	}
 
-	return video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0, 1, 1, 0);
+	return video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
 static int ov2640_init(const struct device *dev)

@@ -1136,12 +1136,14 @@ static int gc2145_init_controls(const struct device *dev)
 	struct gc2145_data *drv_data = dev->data;
 	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
 
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
 static int gc2145_init(const struct device *dev)
