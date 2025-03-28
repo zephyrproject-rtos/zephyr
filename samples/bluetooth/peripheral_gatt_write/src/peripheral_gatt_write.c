@@ -67,6 +67,14 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	(void)bt_conn_auth_cb_register(&auth_callbacks);
 #endif /* CONFIG_BT_SMP */
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	err = bt_conn_le_set_default_phy(BT_GAP_LE_PHY_1M, BT_GAP_LE_PHY_1M);
+	if (err) {
+		printk("Failed to set default PHY (err %d)\n", err);
+		return 0U;
+	}
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);

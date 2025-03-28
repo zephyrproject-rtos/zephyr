@@ -1194,6 +1194,24 @@ static int hci_le_read_phy(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
+int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	struct bt_hci_cp_le_set_default_phy *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->all_phys = all_phys;
+	cp->tx_phys = pref_tx_phy;
+	cp->rx_phys = pref_rx_phy;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_PHY, buf, NULL);
+}
+
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts)
 {
