@@ -318,12 +318,12 @@ typedef int (*video_api_flush_t)(const struct device *dev, enum video_endpoint_i
 typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
 
 /**
- * @typedef video_api_set_ctrl_t
- * @brief Set a video control value.
+ * @typedef video_api_ctrl_t
+ * @brief Set/Get a video control value.
  *
- * See video_set_ctrl() for argument descriptions.
+ * See video_set_ctrl() or video_get_ctrl() for argument descriptions.
  */
-typedef int (*video_api_set_ctrl_t)(const struct device *dev, struct video_control *ctrl);
+typedef int (*video_api_ctrl_t)(const struct device *dev, struct video_control *ctrl);
 
 /**
  * @typedef video_api_get_caps_t
@@ -353,7 +353,8 @@ __subsystem struct video_driver_api {
 	video_api_enqueue_t enqueue;
 	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
-	video_api_set_ctrl_t set_ctrl;
+	video_api_ctrl_t set_ctrl;
+	video_api_ctrl_t get_volatile_ctrl;
 	video_api_set_signal_t set_signal;
 	video_api_set_frmival_t set_frmival;
 	video_api_get_frmival_t get_frmival;
