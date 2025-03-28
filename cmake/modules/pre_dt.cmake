@@ -28,6 +28,12 @@ include(extensions)
 # - ZEPHYR_BASE: path to zephyr repository (added to DTS_ROOT)
 # - SHIELD_DIRS: paths to shield definitions (added to DTS_ROOT)
 
+# Include board specific device-tree flags before parsing.
+foreach(dir ${BOARD_DIRECTORIES})
+  include(${dir}/pre_dt_board.cmake OPTIONAL)
+endforeach()
+set(dir)
+
 # Using a function avoids polluting the parent scope unnecessarily.
 function(pre_dt_module_run)
   # Convert relative paths to absolute paths relative to the application
