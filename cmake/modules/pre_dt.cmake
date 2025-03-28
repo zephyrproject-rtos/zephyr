@@ -39,7 +39,7 @@ function(pre_dt_module_run)
   list(APPEND
     DTS_ROOT
     ${APPLICATION_SOURCE_DIR}
-    ${BOARD_DIR}
+    ${BOARD_DIRECTORIES}
     ${SHIELD_DIRS}
     ${ZEPHYR_BASE}
     )
