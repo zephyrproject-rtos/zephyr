@@ -101,6 +101,19 @@ config THREAD_ANALYZER_AUTO_STACK_SIZE
 	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
 	default 1024
 
+config THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
+	bool "Override default thread analysis thread priority"
+	help
+	  Option to change the default value of thread analysis thread priority.
+
+if THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
+config THREAD_ANALYZER_AUTO_THREAD_PRIORITY
+	int "Thread analysis thread priority"
+	default 0
+	help
+	  Set thread priority of the thread analysis
+endif # THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
+
 endif # THREAD_ANALYZER_AUTO
 
 endif # THREAD_ANALYZER
