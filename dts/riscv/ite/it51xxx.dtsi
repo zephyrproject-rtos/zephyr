@@ -971,6 +971,14 @@
 			#wuc-cells = <1>;
 		};
 
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0x80>;
+		};
+
 		i2cbase: i2cbase@f04100 {
 			compatible = "ite,it51xxx-i2cbase";
 			reg = <0x00f04100 1
