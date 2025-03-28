@@ -18,6 +18,12 @@
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
+#if CONFIG_THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
+#define AUTO_THREAD_PRIO CONFIG_THREAD_ANALYZER_AUTO_THREAD_PRIORITY
+#else
+#define AUTO_THREAD_PRIO K_LOWEST_APPLICATION_THREAD_PRIO
+#endif
+
 #if defined(CONFIG_THREAD_ANALYZER_USE_PRINTK)
 #define THREAD_ANALYZER_PRINT(...) printk(__VA_ARGS__)
 #define THREAD_ANALYZER_FMT(str)   str "\n"
@@ -265,7 +271,7 @@ static int thread_analyzer_init(void)
 				      CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
 				      thread_analyzer_auto,
 				      (void *) (uint32_t) i, NULL, NULL,
-				      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
+				      AUTO_THREAD_PRIO, 0, K_FOREVER);
 		if (!tid) {
 			LOG_ERR("k_thread_create() failed for core %u", i);
 			continue;
@@ -297,7 +303,7 @@ K_THREAD_DEFINE(thread_analyzer,
 		CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
 		thread_analyzer_auto,
 		NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO,
+		AUTO_THREAD_PRIO,
 		0, 0);
 
 #endif /* CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES */
