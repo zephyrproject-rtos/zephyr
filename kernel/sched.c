@@ -546,7 +546,7 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
 	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		z_add_thread_timeout(thread, timeout);
+		(void)z_add_thread_timeout(thread, timeout);
 	}
 }
 
@@ -1103,7 +1103,7 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
 	unready_thread(_current);
-	z_add_thread_timeout(_current, timeout);
+	(void)z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_sleeping(_current);
 
 	(void)z_swap(&_sched_spinlock, key);

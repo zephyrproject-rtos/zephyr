@@ -27,8 +27,7 @@ static inline void z_init_timeout(struct _timeout *to)
 	sys_dnode_init(&to->node);
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
-		   k_timeout_t timeout);
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
 
 int z_abort_timeout(struct _timeout *to);
 
@@ -52,9 +51,9 @@ static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 
 extern void z_thread_timeout(struct _timeout *timeout);
 
-static inline void z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
+static inline k_ticks_t z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
 {
-	z_add_timeout(&thread->base.timeout, z_thread_timeout, ticks);
+	return z_add_timeout(&thread->base.timeout, z_thread_timeout, ticks);
 }
 
 static inline void z_abort_thread_timeout(struct k_thread *thread)

@@ -77,7 +77,7 @@ static void timeout_reset(void)
 {
 	uint32_t ticks = rand32() % MAX_EVENT_DELAY_TICKS;
 
-	z_add_timeout(&timeout, dev_timer_expired, Z_TIMEOUT_TICKS(ticks));
+	(void)z_add_timeout(&timeout, dev_timer_expired, Z_TIMEOUT_TICKS(ticks));
 }
 
 void message_dev_init(void)
@@ -93,7 +93,7 @@ void message_dev_init(void)
 
 	max_duty_cyc = (2 * avg_cyc_per_event * AVERAGE_LOAD_TARGET_PCT) / 100;
 
-	z_add_timeout(&timeout, dev_timer_expired, K_NO_WAIT);
+	(void)z_add_timeout(&timeout, dev_timer_expired, K_NO_WAIT);
 }
 
 void message_dev_fetch(struct msg *m)
