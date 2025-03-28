@@ -366,8 +366,9 @@ static int emul_imager_init_controls(const struct device *dev)
 {
 	struct emul_imager_data *drv_data = dev->data;
 
-	return video_init_ctrl(&drv_data->ctrls.custom, dev, EMUL_IMAGER_CID_CUSTOM, 0, 255, 1,
-			       128);
+	return video_init_ctrl(
+		&drv_data->ctrls.custom, dev, EMUL_IMAGER_CID_CUSTOM,
+		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 128});
 }
 
 int emul_imager_init(const struct device *dev)
