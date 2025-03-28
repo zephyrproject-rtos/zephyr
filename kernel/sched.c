@@ -1091,19 +1091,13 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 		return 0;
 	}
 
-	if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
-		expected_wakeup_ticks = timeout.ticks + sys_clock_tick_get_32();
-	} else {
-		expected_wakeup_ticks = Z_TICK_ABS(timeout.ticks);
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
 	unready_thread(_current);
-	z_add_thread_timeout(_current, timeout);
+	expected_wakeup_ticks = (uint32_t)z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_sleeping(_current);
 
 	(void)z_swap(&_sched_spinlock, key);
