@@ -44,58 +44,9 @@ Supported Features
 NXP considers the LPCXpresso55S69 as the superset board for the LPC55xx
 series of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55xx series.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The lpcxpresso55s69 board
-configuration supports the following hardware features:
+this board with new support for Zephyr features.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WWDT      | on-chip    | windowed watchdog timer             |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| MAILBOX   | on-chip    | ipm                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| USB HS    | on-chip    | USB High Speed device               |
-+-----------+------------+-------------------------------------+
-| USB FS    | on-chip    | USB Full Speed device               |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| SDIF      | on-chip    | sdhc                                |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma (on CPU0)                       |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Targets available
 ==================
