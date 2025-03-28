@@ -214,18 +214,68 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 				  buffer_print_tx2, buffer_print_rx2);
 }
 
-ZTEST(spi_loopback, test_spi_complete_loop)
+void spi_loopback_test_mode(struct spi_dt_spec *spec, bool cpol, bool cpha)
 {
-	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      buffer_tx, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      buffer_rx, BUF_SIZE);
+	uint32_t original_op = spec->config.operation;
+
+	if (cpol) {
+		spec->config.operation |= SPI_MODE_CPOL;
+	} else {
+		spec->config.operation &= ~SPI_MODE_CPOL;
+	}
+
+	if (cpha) {
+		spec->config.operation |= SPI_MODE_CPHA;
+	} else {
+		spec->config.operation &= ~SPI_MODE_CPHA;
+	}
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
+	spec->config.operation = original_op;
+
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
-				  buffer_print_tx, buffer_print_rx);
+		buffer_print_tx, buffer_print_rx);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_0)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[0];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, false, false);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_1)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[1];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, false, true);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_2)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[2];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, true, false);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_3)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[3];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, true, true);
 }
 
 ZTEST(spi_loopback, test_spi_null_tx_buf)
