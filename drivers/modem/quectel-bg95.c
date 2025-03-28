@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(modem_quectel_bg95, CONFIG_MODEM_LOG_LEVEL);
 #define MDM_UART_NODE			DT_INST_BUS(0)
 #define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
-#define MDM_CMD_CONN_TIMEOUT K_SECONDS(180)
+#define MDM_CMD_CONN_TIMEOUT K_SECONDS(60)
 #define MDM_DFOTA_TIMEOUT    K_SECONDS(480)
 
 #define MAX_HTTP_CMD_SIZE 64  //32
@@ -2670,8 +2670,6 @@ int quectel_bg95_gps_init(struct device *dev, struct usr_gps_cfg *cfg)
 ret:
     k_sem_give(&mdata.mdm_lock);
 
-    (void) quectel_bg95_gps_auto(dev, NULL);
-
 	return ret;
 }
 
@@ -2679,6 +2677,8 @@ ret:
 /* need to call gps_init after agps */
 int quectel_bg95_agps(struct device *dev, struct usr_gps_cfg *cfg)
 {
+    (void) quectel_bg95_gps_auto(dev, cfg);
+
 #if 0
 	char buf[64];
 	int ret = 0;

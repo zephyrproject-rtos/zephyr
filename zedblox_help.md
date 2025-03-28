@@ -80,9 +80,10 @@ Eg:
 west flash --skip-rebuild --build-dir /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/D4_zbtv_v1.0.3 --hex-file /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/D4_zbtv_v1.0.3/zephyr/zephyr.signed.hex
 #######################################################################
 
-west flash -d build-mcuboot; sleep 10; west flash -d build-zb_setup; sleep 180; west flash --build-dir /home/sviraaj/all_repositories/zephyr_new/zephyrproject/build-zb_actipod_app
 
 west build -p -c -b zb_tv_h743zi zephyr/zbacrux_setup -d build-zb_setup -- -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\" -DCONFIG_DEVICE_ID=\"ZB_AX__00\"
+
+west flash -d build-mcuboot; sleep 10; west flash -d build-zb_setup; sleep 180;west flash --build-dir/home/sviraaj/all_repositories/zephyr_new/zephyrproject/build-  zb_actipod_app
 
 west flash --skip-rebuild --build-dir \=D15_Selco_v1_beta/ --hex-file \=D15_Selco_v1_beta/zephyr/zephyr.signed.hex 
 
