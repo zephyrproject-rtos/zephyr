@@ -53,21 +53,7 @@ that can operate at speeds of up to 1.4 GHz.
 Supported Features
 ==================
 
-The ``imx91_evk`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v3    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========
