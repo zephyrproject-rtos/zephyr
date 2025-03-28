@@ -1226,6 +1226,20 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param);
 
+/** @brief Update the default PHY parameters to be used for all subsequent
+ * connections over the LE transport.
+ *
+ *  Update the preferred transmit and receive PHYs of LE transport.
+ *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
+ *  For possible PHY values see @ref bt_gap_le_phy.
+ *
+ *  @param pref_tx_phy  Preferred transmitter phy prarameters.
+ *  @param pref_rx_phy  Preferred receiver phy prameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
+
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
  *  Disconnect an active connection with the specified reason code or cancel
