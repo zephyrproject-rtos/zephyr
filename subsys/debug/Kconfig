@@ -443,7 +443,7 @@ DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
 
 config CPU_LOAD_USE_COUNTER
 	bool "Use counter"
-	depends on $(dt_chosen_enabled,DT_CHOSEN_Z_CPU_LOAD_COUNTER)
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
 	default y
 	select COUNTER
 	help
