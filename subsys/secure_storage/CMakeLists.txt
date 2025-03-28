@@ -46,3 +46,7 @@ if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CUSTOM
  OR CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_CUSTOM)
   make_available(its/transform/aead_get.h)
 endif()
+
+if(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM)
+  make_available(its/store/settings_get.h)
+endif()
