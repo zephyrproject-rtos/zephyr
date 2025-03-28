@@ -723,6 +723,40 @@ static int zms_add_gc_done_ate(struct zms_fs *fs)
 	return zms_flash_ate_wrt(fs, &gc_done_ate);
 }
 
+/* This function verifies that the cycle_cnt of the close ATE will not be equal
+ * to the cycle_cnt of the empty ATE after incrementing it.
+ * This is possible only in these extreme conditions:
+ * 1- A Garbage collection operation is interrupted due to a power cut
+ * 2- When rebooting, the sector is erased (cycle_cnt incremented)
+ * 3- Garbage collection restarts again and got interrupted again by a power cut
+ * 4- Steps [2..3] occurred 255 times in a row
+ * At this point the sector that we should erase becomes closed.
+ */
+static inline int zms_verify_and_increment_cycle_cnt(struct zms_fs *fs, uint64_t addr,
+						     uint8_t *cycle_cnt)
+{
+	int rc;
+	uint64_t close_addr;
+	struct zms_ate close_ate;
+
+	close_addr = zms_close_ate_addr(fs, addr);
+	/* Read the second ate in the sector to get the close ATE */
+	rc = zms_flash_ate_rd(fs, close_addr, &close_ate);
+	if (rc < 0) {
+		return rc;
+	}
+
+	*cycle_cnt = (*cycle_cnt + 1) % BIT(8);
+	/* Verify that the close cycle_cnt is not equal to the incremented value.
+	 * If they are equal increment it again.
+	 */
+	if (close_ate.cycle_cnt == *cycle_cnt) {
+		*cycle_cnt = (*cycle_cnt + 1) % BIT(8);
+	}
+
+	return 0;
+}
+
 static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 {
 	struct zms_ate empty_ate;
@@ -748,8 +782,12 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 		return rc;
 	}
 
-	/* increase cycle counter */
-	empty_ate.cycle_cnt = (cycle_cnt + 1) % BIT(8);
+	/* Increase cycle counter */
+	rc = zms_verify_and_increment_cycle_cnt(fs, addr, &cycle_cnt);
+	if (rc < 0) {
+		return rc;
+	}
+	empty_ate.cycle_cnt = cycle_cnt;
 	zms_ate_crc8_update(&empty_ate);
 
 	/* Adding empty ate to this sector changes fs->ate_wra value
