@@ -72,6 +72,8 @@ Supported Features
 | LCDIC     | on-chip    | mipi-dbi. Tested with             |
 |           |            | :ref:`lcd_par_s035`               |
 +-----------+------------+-----------------------------------+
+| I2S       | on-chip    | i2s                               |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 

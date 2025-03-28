@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -309,4 +309,13 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 &nbu {
 	status = "okay";
 	wakeup-source;
+};
+
+&flexcomm1 {
+	compatible = "nxp,lpc-i2s";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
 };
