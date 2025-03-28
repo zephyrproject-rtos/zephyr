@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common Low-Voltage level configurations in npck */
+#include <nuvoton/npck/npck-lvol-ctrl-map.dtsi>
+
+/* Specific Low-Voltage level configurations in npck3 series */
+/ {
+	def-lvol-conf-list {
+		compatible = "nuvoton,npcx-lvolctrl-conf";
+	};
+};
