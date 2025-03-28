@@ -193,7 +193,41 @@ struct video_control {
 	/** control id */
 	uint32_t id;
 	/** control value */
-	int32_t val;
+	union {
+		int32_t val;
+		int64_t val64;
+	};
+};
+
+/**
+ * @struct video_control_range
+ * @brief Video control range structure
+ *
+ * Describe range of a control including min, max, step and default values
+ */
+struct video_ctrl_range {
+	/** control minimum value, inclusive */
+	union {
+		int32_t min;
+		int64_t min64;
+	};
+	/** control maximum value, inclusive */
+	union {
+		int32_t max;
+		int64_t max64;
+	};
+	/** control value step */
+	union {
+		int32_t step;
+		int64_t step64;
+	};
+	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
+	 * _INTEGER_MENU, not valid for other types
+	 */
+	union {
+		int32_t def;
+		int64_t def64;
+	};
 };
 
 /**
@@ -211,16 +245,8 @@ struct video_ctrl_query {
 	const char *name;
 	/** control flags */
 	uint32_t flags;
-	/** control minimum value, inclusive */
-	int32_t min;
-	/** control maximum value, inclusive */
-	int32_t max;
-	/** control value step */
-	int32_t step;
-	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
-	 * _INTEGER_MENU, not valid for other types
-	 */
-	int32_t def;
+	/** control range */
+	struct video_ctrl_range range;
 };
 
 /**
