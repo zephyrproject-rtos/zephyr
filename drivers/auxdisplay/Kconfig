@@ -20,6 +20,7 @@ module = AUXDISPLAY
 module-str = auxdisplay
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/auxdisplay/Kconfig.gpio"
 source "drivers/auxdisplay/Kconfig.hd44780"
 source "drivers/auxdisplay/Kconfig.itron"
 source "drivers/auxdisplay/Kconfig.jhd1313"
