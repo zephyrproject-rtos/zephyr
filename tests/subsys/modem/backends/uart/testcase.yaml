@@ -14,6 +14,11 @@ tests:
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
 
+  modem.backends.uart.async.hwfc:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_ENABLED=y
+
   modem.backends.uart.isr:
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
