@@ -14,7 +14,7 @@ It is intended for boards that include RTC hardware support.
 
 **Note:** This sample does **not** print the time to the console.
 
-.. figure:: img/rtc_display_demo.JPG
+.. figure:: img/rtc_display_demo.jpg
    :alt: RTC OLED Display Demo
    :width: 500px
    :align: center
