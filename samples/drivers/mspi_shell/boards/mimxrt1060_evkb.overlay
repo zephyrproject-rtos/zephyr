@@ -1,0 +1,26 @@
+/ {
+	chosen {
+		zephyr,sram = &ocram;
+		zephyr,flash = &itcm;
+		/delete-property/ zephyr,flash-controller;
+		/delete-property/ zephyr,code-partition;
+	};
+};
+
+/* Change FlexSPI compatible */
+&flexspi {
+	compatible = "nxp,flexspi";
+	status = "okay";
+	nxp,combination-supported;
+	nxp,sckb-invert-supported;
+	nxp,ahb-prefetch;
+	nxp,ahb-read-addr-opt;
+	nxp,rx-clock-source = "loopback-dqs";
+	/delete-property/ ahb-prefetch;
+	/delete-property/ ahb-bufferable;
+	/delete-property/ ahb-cacheable;
+	/delete-property/ ahb-read-addr-opt;
+	/delete-property/ rx-clock-source;
+	/* Remove flash device, it isn't supported */
+	/delete-node/ is25wp064@0;
+};
