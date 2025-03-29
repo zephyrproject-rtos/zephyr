@@ -79,6 +79,20 @@ config MODBUS_FC08_DIAGNOSTIC
 	help
 	  Enable function code 08 Diagnostic support
 
+config MODBUS_LOCKING
+	bool "Interface locking support"
+	default n
+	help
+	  Enable interface locking API
+
+config MODBUS_SERVER_LOCKING
+	bool "Server locking support"
+	depends on MODBUS_SERVER
+	select MODBUS_LOCKING
+	default n
+	help
+	  Enable server locking to allow for atomic request handling
+
 module = MODBUS
 module-str = Modbus Support
 module-help = Sets log level for Modbus support
