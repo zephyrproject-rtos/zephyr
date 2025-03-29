@@ -4,6 +4,10 @@
 
 rsource "*/Kconfig"
 
+if SOC_FAMILY_SILABS_SIWX91X
+	source "soc/silabs/silabs_siwx91x/Kconfig"
+endif
+
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 config SOC_GECKO_SDID
