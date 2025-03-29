@@ -42,10 +42,9 @@
 /* NPCX7 Clock configuration */
 #define MAX_OFMCLK 100000000
 
-#include <reg/reg_access.h>
-#include <reg/reg_def.h>
+#include "reg_def.h"
+#include "clock_def.h"
 #include <soc_dt.h>
-#include <soc_clock.h>
 #include <soc_pins.h>
 #include <soc_power.h>
 
