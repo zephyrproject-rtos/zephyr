@@ -75,7 +75,7 @@ def get_files(filter=None, paths=None):
     out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
     files = out.splitlines()
     for file in list(files):
-        if not os.path.isfile(os.path.join(GIT_TOP, file)):
+        if not (GIT_TOP / file).exists():
             # Drop submodule directories from the list.
             files.remove(file)
     return files
@@ -207,8 +207,8 @@ class CheckPatch(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        checkpatch = os.path.join(ZEPHYR_BASE, 'scripts', 'checkpatch.pl')
-        if not os.path.exists(checkpatch):
+        checkpatch = ZEPHYR_BASE / 'scripts' / 'checkpatch.pl'
+        if not checkpatch.exists():
             self.skip(f'{checkpatch} not found')
 
         # check for Perl installation on Windows
@@ -411,8 +411,7 @@ class KconfigCheck(ComplianceTest):
         """
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
-        zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
-                                          "zephyr_module.py")
+        zephyr_module_path = ZEPHYR_BASE / "scripts" / "zephyr_module.py"
         cmd = [sys.executable, zephyr_module_path,
                '--kconfig-out', modules_file,
                '--sysbuild-kconfig-out', sysbuild_modules_file,
@@ -423,9 +422,9 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output.decode("utf-8"))
 
-        modules_dir = ZEPHYR_BASE + '/modules'
+        modules_dir = ZEPHYR_BASE / 'modules'
         modules = [name for name in os.listdir(modules_dir) if
-                   os.path.exists(os.path.join(modules_dir, name, 'Kconfig'))]
+                   modules_dir / name / 'Kconfig']
 
         with open(modules_file, 'r') as fp_module_file:
             content = fp_module_file.read()
@@ -434,7 +433,7 @@ class KconfigCheck(ComplianceTest):
             for module in modules:
                 fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
                     re.sub('[^a-zA-Z0-9]', '_', module).upper(),
-                    modules_dir + '/' + module + '/Kconfig'
+                    modules_dir / module / 'Kconfig'
                 ))
             fp_module_file.write(content)
 
@@ -468,12 +467,11 @@ class KconfigCheck(ComplianceTest):
         """
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
-        zephyr_drv_kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "dts",
-                                               "gen_driver_kconfig_dts.py")
+        zephyr_drv_kconfig_path = ZEPHYR_BASE / "scripts" / "dts" / "gen_driver_kconfig_dts.py"
         binding_paths = []
-        binding_paths.append(os.path.join(ZEPHYR_BASE, "dts", "bindings"))
+        binding_paths.append(ZEPHYR_BASE / "dts" / "bindings")
 
-        dts_root_paths = self.get_module_setting_root('dts', settings_file)
+        dts_root_paths = get_module_setting_root('dts', settings_file)
         for p in dts_root_paths:
             binding_paths.append(p / "dts" / "bindings")
 
@@ -506,10 +504,10 @@ class KconfigCheck(ComplianceTest):
         kconfig_sysbuild_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.sysbuild')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
 
-        board_roots = self.get_module_setting_root('board', settings_file)
-        board_roots.insert(0, Path(ZEPHYR_BASE))
-        soc_roots = self.get_module_setting_root('soc', settings_file)
-        soc_roots.insert(0, Path(ZEPHYR_BASE))
+        board_roots = get_module_setting_root('board', settings_file)
+        board_roots.insert(0, ZEPHYR_BASE)
+        soc_roots = get_module_setting_root('soc', settings_file)
+        soc_roots.insert(0, ZEPHYR_BASE)
         root_args = argparse.Namespace(**{'board_roots': board_roots,
                                           'soc_roots': soc_roots, 'board': None,
                                           'board_dir': []})
@@ -572,7 +570,7 @@ class KconfigCheck(ComplianceTest):
 
         kconfig_file = os.path.join(kconfig_dir, 'arch', 'Kconfig')
 
-        root_args = argparse.Namespace(**{'arch_roots': [Path(ZEPHYR_BASE)], 'arch': None})
+        root_args = argparse.Namespace(**{'arch_roots': [ZEPHYR_BASE], 'arch': None})
         v2_archs = list_hardware.find_v2_archs(root_args)
 
         with open(kconfig_file, 'w') as fp:
@@ -586,20 +584,20 @@ class KconfigCheck(ComplianceTest):
         """
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
-        kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "kconfig")
-        if not os.path.exists(kconfig_path):
+        kconfig_path = ZEPHYR_BASE / "scripts" / "kconfig"
+        if not kconfig_path.exists():
             self.error(kconfig_path + " not found")
 
         kconfiglib_dir = tempfile.mkdtemp(prefix="kconfiglib_")
 
-        sys.path.insert(0, kconfig_path)
+        sys.path.insert(0, str(kconfig_path))
         # Import globally so that e.g. kconfiglib.Symbol can be referenced in
         # tests
         global kconfiglib
         import kconfiglib
 
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = ZEPHYR_BASE
+        os.environ["srctree"] = str(ZEPHYR_BASE)
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
@@ -881,7 +879,7 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
             self.failure(f"Undefined Kconfig symbols:\n\n {undef_ref_warnings}")
 
     def check_soc_name_sync(self, kconf):
-        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        root_args = argparse.Namespace(**{'soc_roots': [ZEPHYR_BASE]})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
         soc_names = {soc.name for soc in v2_systems.get_socs()}
@@ -950,7 +948,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         grep_stdout = git("grep", "--line-number", "-I", "--null",
                           "--perl-regexp", regex, "--", ":!/doc/releases",
                           ":!/doc/security/vulnerabilities.rst",
-                          cwd=Path(GIT_TOP))
+                          cwd=GIT_TOP)
 
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
@@ -1247,7 +1245,7 @@ class Nits(ComplianceTest):
     def check_kconfig_header(self, fname):
         # Checks for a spammy copy-pasted header format
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             contents = f.read()
 
         # 'Kconfig - yada yada' has a copy-pasted redundant filename at the
@@ -1273,7 +1271,7 @@ failure.
         # Checks for 'source "$(ZEPHYR_BASE)/Kconfig[.zephyr]"', which can be
         # be simplified to 'source "Kconfig[.zephyr]"'
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             # Look for e.g. rsource as well, for completeness
             match = re.search(
                 r'^\s*(?:o|r|or)?source\s*"\$\(?ZEPHYR_BASE\)?/(Kconfig(?:\.zephyr)?)"',
@@ -1288,7 +1286,7 @@ and all 'source's are relative to it.""".format(match.group(1), fname))
     def check_redundant_document_separator(self, fname):
         # Looks for redundant '...' document separators in bindings
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             if re.search(r"^\.\.\.", f.read(), re.MULTILINE):
                 self.failure(f"""\
 Redundant '...' document separator in {fname}. Binding YAML files are never
@@ -1297,7 +1295,7 @@ concatenated together, so no document separators are needed.""")
     def check_source_file(self, fname):
         # Generic nits related to various source files
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             contents = f.read()
 
         if not contents.endswith("\n"):
@@ -1516,7 +1514,7 @@ class ImageSize(ComplianceTest):
         BOARD_SIZE_LIMIT = 100 << 10
 
         for file in get_files(filter="d"):
-            full_path = os.path.join(GIT_TOP, file)
+            full_path = GIT_TOP / file
             mime_type = magic.from_file(full_path, mime=True)
 
             if not mime_type.startswith("image/"):
@@ -1597,7 +1595,7 @@ class YAMLLint(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        config_file = os.path.join(ZEPHYR_BASE, ".yamllint")
+        config_file = ZEPHYR_BASE / ".yamllint"
 
         for file in get_files(filter="d"):
             if Path(file).suffix not in ['.yaml', '.yml']:
@@ -1819,7 +1817,7 @@ class TextEncoding(ComplianceTest):
         m = magic.Magic(mime=True, mime_encoding=True)
 
         for file in get_files(filter="d"):
-            full_path = os.path.join(GIT_TOP, file)
+            full_path = GIT_TOP / file
             mime_type = m.from_file(full_path)
 
             if not mime_type.startswith("text/"):
@@ -1929,11 +1927,12 @@ def _main(args):
 
         # Propagate this decision to child processes.
         os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+    ZEPHYR_BASE = Path(ZEPHYR_BASE)
 
     # The absolute path of the top-level git directory. Initialize it here so
     # that issues running Git can be reported to GitHub.
     global GIT_TOP
-    GIT_TOP = git("rev-parse", "--show-toplevel")
+    GIT_TOP = Path(git("rev-parse", "--show-toplevel"))
 
     # The commit range passed in --commit, e.g. "HEAD~3"
     global COMMIT_RANGE
