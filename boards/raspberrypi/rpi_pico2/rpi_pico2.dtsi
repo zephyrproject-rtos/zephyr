@@ -141,6 +141,10 @@ gpio0_lo: &gpio0 {
 	status = "okay";
 };
 
+&sha256 {
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	status = "okay";
 };
