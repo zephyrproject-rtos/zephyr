@@ -79,9 +79,7 @@
 #define CACHE_IA_INTR_SOURCE                68  /* Cache Invalid Access, LEVEL */
 #define MAX_INTR_SOURCE                     69  /* total number of interrupt sources */
 
-/* For Xtensa architecture, zero will allocate low/medium
- * levels of priority (ESP_INTR_FLAG_LOWMED)
- */
+/* Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED) */
 #define IRQ_DEFAULT_PRIORITY	0
 
 #define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */

@@ -3,7 +3,6 @@
 zephyr_sources_ifdef(CONFIG_SOC_ESP32C6_HPCORE
   vectors.S
   soc_irq.S
-  soc_irq.c
   soc.c
   ../common/loader.c
   )
