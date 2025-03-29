@@ -41,6 +41,12 @@
  */
 #ifdef CONFIG_MINIMAL_LIBC
 
+/*
+ * Predefined __INTN_C/__UINTN_C macros are provided by clang starting in version 20.
+ * Avoid redefining these macros if a sufficiently modern clang is being used.
+ */
+#if __clang_major__ < 20
+
 #define __int_c(v, suffix) v ## suffix
 #define int_c(v, suffix) __int_c(v, suffix)
 #define uint_c(v, suffix) __int_c(v ## U, suffix)
@@ -131,6 +137,8 @@
 
 #define __INTMAX_C(x)	int_c(x, __INTMAX_C_SUFFIX__)
 #define __UINTMAX_C(x)	int_c(x, __UINTMAX_C_SUFFIX__)
+
+#endif /* __clang_major__ < 20 */
 
 #endif /* CONFIG_MINIMAL_LIBC */
 
