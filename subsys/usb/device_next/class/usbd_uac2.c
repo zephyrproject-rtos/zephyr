@@ -890,7 +890,7 @@ static void *uac2_get_desc(struct usbd_class_data *const c_data,
 	struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return cfg->hs_descriptors;
 	}
 
