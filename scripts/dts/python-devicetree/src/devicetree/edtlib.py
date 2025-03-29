@@ -868,6 +868,42 @@ class PinCtrl:
         return str_as_token(self.name) if self.name is not None else None
 
 
+@dataclass
+class Map:
+    """
+    Represents a "map" on a node.
+
+    node:
+      The Node instance this map is from
+
+    specifier:
+      The specifier of the map properties.
+
+    map:
+      The <name>-map values
+
+    child_cell:
+      The number of the child cells
+
+    child_addr:
+      The length of the child address cells
+
+    parent_cells:
+      The list of the number of each parent cells
+
+    parent_addrs:
+      The list of the length of each parent address cells
+    """
+
+    node: 'Node'
+    specifier: str
+    map: list[Union[int, str, 'Node']]
+    child_cell: int
+    child_addr: int
+    parent_cells: list[int]
+    parent_addrs: list[int]
+
+
 class Node:
     """
     Represents a devicetree node, augmented with information from bindings, and
@@ -1442,6 +1478,7 @@ class Node:
         )
         self._init_interrupts()
         self._init_pinctrls()
+        self._init_maps()
 
     def _init_props(self, default_prop_types: bool = False,
                     err_on_deprecated: bool = False) -> None:
@@ -1727,6 +1764,40 @@ class Node:
             self.regs.append(Register(self, None, addr, size))
 
         _add_names(node, "reg", self.regs)
+
+    def _init_maps(self) -> None:
+        # Initializes self.maps
+
+        props = self._node.props
+
+        self.maps = []
+
+        def conv_enode(x):
+            return self.edt._node2enode.get(x) if isinstance(x, dtlib_Node) else x
+
+        def get_address_cells(n):
+            try:
+                return _cells(n, "address")
+            except Exception:
+                return _address_cells(n)
+
+        for k in [k for k in props.keys() if k.endswith('-map')]:
+            name = k[:-4]
+            map_list = list(map(conv_enode, props[k].to_compound()))
+
+            child_cell = _cells(self._node, name)
+            parent_cells = [_cells(x._node, name) for x in map_list if isinstance(x, Node)]
+
+            child_addr = 0
+            parent_addrs = [0] * len(parent_cells)
+
+            if name == "interrupt":
+                child_addr = get_address_cells(self._node)
+                parent_addrs = [get_address_cells(x._node) for x in map_list if isinstance(x, Node)]
+
+            self.maps.append(
+                Map(self, name, map_list, child_cell, child_addr, parent_cells, parent_addrs)
+            )
 
     def _init_pinctrls(self) -> None:
         # Initializes self.pinctrls from any pinctrl-<index> properties
@@ -3211,14 +3282,16 @@ def _size_cells(node: dtlib_Node) -> int:
     return 1  # Default value per DT spec.
 
 
+def _cells(node: dtlib_Node, name: str) -> int:
+    # Returns the #<name>-cells property value on 'node', erroring out if
+    # 'node' has no #<name>-cells property
+
+    if f"#{name}-cells" not in node.props:
+        _err(f"{node!r} lacks #{name}-cells")
+    return node.props[f"#{name}-cells"].to_num()
+
 def _interrupt_cells(node: dtlib_Node) -> int:
-    # Returns the #interrupt-cells property value on 'node', erroring out if
-    # 'node' has no #interrupt-cells property
-
-    if "#interrupt-cells" not in node.props:
-        _err(f"{node!r} lacks #interrupt-cells")
-    return node.props["#interrupt-cells"].to_num()
-
+    return _cells(node, "interrupt")
 
 def _slice(node: dtlib_Node,
            prop_name: str,

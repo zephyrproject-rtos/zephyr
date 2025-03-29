@@ -582,6 +582,53 @@ class Property:
 
         return ret  # The separate 'return' appeases the type checker.
 
+    def to_compound(self) -> list[Union[int, str, 'Node']]:
+        """
+        Returns a list with the numbers, strings and nodes..
+        A DT error is raised if the property contains anything other types.
+        This can be used to parse the properties of a phandle with cells.
+        """
+
+        varlist: list[Union[int, str, 'Node']] = []
+        phandle2node = self.node.dt.phandle2node
+
+        for i, (pos, marker_type, _ref) in enumerate(self._markers):
+            if i < len(self._markers) - 1:
+                next_marker = self._markers[i + 1]
+            else:
+                next_marker = None
+
+            # End of current marker
+            end = next_marker[0] if next_marker else len(self.value)
+
+            if marker_type is _MarkerType.STRING:
+                # end - 1 to strip off the null terminator
+                varlist.append(self.value[pos:end - 1].decode('utf-8'))
+            else:
+                if marker_type is _MarkerType.PHANDLE:
+                    node = phandle2node[int.from_bytes(self.value[pos : pos + 4], "big")]
+                    varlist.append(node)
+                    pos += 4
+                elif marker_type in (
+                    _MarkerType.UINT8,
+                    _MarkerType.UINT16,
+                    _MarkerType.UINT32,
+                    _MarkerType.UINT64,
+                ):
+                    elm_size = _TYPE_TO_N_BYTES[marker_type]
+                else:
+                    _err(
+                        f"expected property '{self.name}' on {self.node.path} "
+                        f"should contain only PHANDLE and numbers"
+                    )
+
+                while pos != end:
+                    num = int.from_bytes(self.value[pos : pos + elm_size], "big")
+                    varlist.append(num)
+                    pos += elm_size
+
+        return varlist
+
     def __str__(self):
         s = "".join(label + ": " for label in self.labels) + self.name
         if not self.value:
