@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&pico_i2c1 {
+&i2c1 {
 	waveshare_pico_ups: ina219@43 {
 		status = "okay";
 		compatible = "ti,ina219";

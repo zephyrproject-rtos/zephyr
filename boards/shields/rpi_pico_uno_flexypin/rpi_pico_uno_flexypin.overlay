@@ -37,5 +37,5 @@
 };
 
 arduino_spi: &pico_spi {};
-arduino_i2c: &pico_i2c0 {};
+arduino_i2c: &pico_i2c {};
 arduino_serial: &pico_serial {};
