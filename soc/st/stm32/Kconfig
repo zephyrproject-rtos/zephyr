@@ -30,6 +30,12 @@ config STM32_BACKUP_SRAM
 	help
 	  Enable support for STM32 backup SRAM.
 
+config STM32_BOOTLOADER
+	bool "STM32 Bootloader Support"
+	depends on RETENTION_BOOT_MODE && DT_HAS_ST_STM32_BOOTLOADER_ENABLED
+	help
+	  Enable support for jumping into the STM32 when the bootmode is set.
+
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"
 	help
