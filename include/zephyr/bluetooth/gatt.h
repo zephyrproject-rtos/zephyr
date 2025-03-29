@@ -683,7 +683,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc);
 /** @brief to be used as return values for @ref bt_gatt_attr_func_t and @ref bt_gatt_read_func_t
  *  type callbacks.
  */
-enum {
+enum bt_gatt_iter {
 	BT_GATT_ITER_STOP = 0,
 	BT_GATT_ITER_CONTINUE,
 };
