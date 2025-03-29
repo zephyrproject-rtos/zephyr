@@ -278,7 +278,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	/* Check if periodic advertising is associated with advertising set */
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
