@@ -6,14 +6,14 @@
 
 &i2c1 {
 
-	ti_tmp116: ti_tmp116@4b {
-		compatible = "ti,tmp116";
+	ti_tmp11x: ti_tmp11x@4b {
+		compatible = "ti,tmp11x";
 		reg = <0x4B>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		eeprom: ti_tmp116_eeprom@0 {
-			compatible = "ti,tmp116-eeprom";
+		eeprom: ti_tmp11x_eeprom@0 {
+			compatible = "ti,tmp11x-eeprom";
 			reg = <0x0>;
 			read-only;
 		};
