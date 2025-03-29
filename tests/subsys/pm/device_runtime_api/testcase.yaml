@@ -15,3 +15,8 @@ tests:
     - native_sim
     extra_configs:
     - CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ=y
+  pm.device_runtime.async_disabled.api:
+    platform_allow:
+    - native_sim
+    extra_configs:
+    - CONFIG_PM_DEVICE_RUNTIME_ASYNC=n
