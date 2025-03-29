@@ -229,7 +229,7 @@ unlock:
 	(void)gpio_pin_configure_dt(&config_bitbang->clk, GPIO_DISCONNECTED);
 	(void)gpio_pin_configure_dt(&config_bitbang->pico, GPIO_DISCONNECTED);
 #ifdef CONFIG_PINCTRL
-	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	(void)pinctrl_apply_state(config_bitbang->pincfg, PINCTRL_STATE_DEFAULT);
 #endif /* CONFIG_PINCTRL */
 
 	k_spin_unlock(&data->lock, key);
