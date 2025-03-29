@@ -20,6 +20,9 @@
 #include "sl_wifi.h"
 #include "sl_net.h"
 
+#define SIWX91X_PS_MAX_MONITOR_INTERVAL_MS 1000
+#define SIWX91X_PS_MAX_LISTEN_INTERVAL_MS  1000
+
 #define SIWX91X_INTERFACE_MASK (0x03)
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
@@ -709,6 +712,270 @@ static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
 }
 #endif
 
+struct siwx91x_ps_profile {
+	/* HIGH_PERFORMANCE by default */
+	sl_si91x_performance_profile_t req_ps_mode;
+	uint16_t listen_interval;
+} siwx91x_ps_cfg;
+
+static int siwx91x_get_beacon_interval(const struct device *dev)
+{
+	sl_wifi_operational_statistics_t sl_stat = { };
+	struct siwx91x_dev *sidev = dev->data;
+	sl_status_t status;
+
+	if (sidev->state != WIFI_STATE_COMPLETED) {
+		/* fail reason */
+		LOG_ERR("Device not connected");
+		return -EIO;
+	}
+
+	status = sl_wifi_get_operational_statistics(SL_WIFI_CLIENT_INTERFACE, &sl_stat);
+	if (status != SL_STATUS_OK) {
+		LOG_ERR("Failed to get beacon interval: 0x%x", status);
+		return -EINVAL;
+	}
+
+	return sys_get_le16(sl_stat.beacon_interval);
+}
+
+static int siwx91x_get_listen_interval(const struct device *dev, uint16_t *listen_interval)
+{
+	int beacon_interval;
+
+	__ASSERT(listen_interval, "listen_interval cannot be NULL");
+
+	beacon_interval = siwx91x_get_beacon_interval(dev);
+	if (beacon_interval < 0) {
+		return beacon_interval;
+	}
+
+	/* Convert beacon interval to MSEC */
+	*listen_interval = siwx91x_ps_cfg.listen_interval * beacon_interval;
+
+	if (*listen_interval > SIWX91X_PS_MAX_LISTEN_INTERVAL_MS) {
+		LOG_WRN("Listen interval exceeded, capping to max limit");
+		*listen_interval = SIWX91X_PS_MAX_LISTEN_INTERVAL_MS;
+	}
+
+	return 0;
+}
+
+static int siwx91x_configure_ps_mode(const struct device *dev, enum wifi_ps state,
+				     sl_wifi_performance_profile_t *sl_ps_profile)
+{
+	int ret;
+
+	__ASSERT(sl_ps_profile, "sl_ps_profile cannot be NULL");
+
+	switch(state) {
+	case WIFI_PS_ENABLED:
+		if (sl_ps_profile->profile == HIGH_PERFORMANCE) {
+			if (siwx91x_ps_cfg.req_ps_mode == HIGH_PERFORMANCE) {
+				sl_ps_profile->profile = ASSOCIATED_POWER_SAVE_LOW_LATENCY;
+			} else {
+				sl_ps_profile->profile = siwx91x_ps_cfg.req_ps_mode;
+			}
+		} else {
+			return -EALREADY;
+		}
+
+		/* Listen interval based wakeup */
+		if (sl_ps_profile->dtim_aligned_type == 0) {
+			ret = siwx91x_get_listen_interval(dev, &sl_ps_profile->listen_interval);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		break;
+	case WIFI_PS_DISABLED:
+		if (sl_ps_profile->profile == HIGH_PERFORMANCE) {
+			return -EALREADY;
+		}
+
+		sl_ps_profile->profile = HIGH_PERFORMANCE;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+{
+	sl_wifi_performance_profile_t sl_ps_profile = { };
+	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_interface_t interface;
+	int status;
+
+	__ASSERT(params, "params cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		params->fail_reason = WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
+		LOG_ERR("Wi-Fi not in station mode");
+		return -ENOTSUP;
+	}
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
+	get_wifi_current_performance_profile(&sl_ps_profile);
+
+	switch (params->type) {
+	case WIFI_PS_PARAM_STATE:
+		status = siwx91x_configure_ps_mode(dev, params->enabled, &sl_ps_profile);
+		if (status < 0) {
+			return status;
+		}
+
+		break;
+	case WIFI_PS_PARAM_MODE:
+		if (params->mode != WIFI_PS_MODE_LEGACY) {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
+			/* Only legacy mode is supported */
+			return -ENOTSUP;
+		}
+
+		break;
+	case WIFI_PS_PARAM_LISTEN_INTERVAL:
+		if (params->listen_interval == 0) {
+			/* Enable DTIM wakeup */
+			sl_ps_profile.dtim_aligned_type = 1;
+			sl_ps_profile.listen_interval = 0;
+		} else if (params->listen_interval > 0) {
+			siwx91x_ps_cfg.listen_interval = params->listen_interval;
+		} else {
+			params->fail_reason = WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID;
+			return -EINVAL;
+		}
+
+		break;
+	case WIFI_PS_PARAM_WAKEUP_MODE:
+		if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_DTIM) {
+			sl_ps_profile.dtim_aligned_type = 1;
+			sl_ps_profile.listen_interval = 0;
+		} else if (params->wakeup_mode == WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL) {
+			sl_ps_profile.dtim_aligned_type = 0;
+		}
+
+		break;
+	case WIFI_PS_PARAM_TIMEOUT:
+		if (params->timeout_ms < DEFAULT_MONITOR_INTERVAL ||
+		    params->timeout_ms > SIWX91X_PS_MAX_MONITOR_INTERVAL_MS) {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+			return -EINVAL;
+		}
+
+		sl_ps_profile.monitor_interval = (uint16_t)params->timeout_ms;
+		break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		if (params->exit_strategy == WIFI_PS_EXIT_EVERY_TIM) {
+			if (siwx91x_ps_cfg.req_ps_mode == ASSOCIATED_POWER_SAVE_LOW_LATENCY) {
+				return 0;
+			}
+
+			siwx91x_ps_cfg.req_ps_mode = ASSOCIATED_POWER_SAVE_LOW_LATENCY;
+		} else if (params->exit_strategy == WIFI_PS_EXIT_CUSTOM_ALGO) {
+			if (siwx91x_ps_cfg.req_ps_mode == ASSOCIATED_POWER_SAVE) {
+				return 0;
+			}
+
+			siwx91x_ps_cfg.req_ps_mode = ASSOCIATED_POWER_SAVE;
+		} else {
+			params->fail_reason = WIFI_PS_PARAM_FAIL_INVALID_EXIT_STRATEGY;
+			return -EINVAL;
+		}
+
+		if (sl_ps_profile.profile == HIGH_PERFORMANCE) {
+			return 0;
+		}
+
+		sl_ps_profile.profile = siwx91x_ps_cfg.req_ps_mode;
+		break;
+	default:
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		LOG_ERR("Invalid command");
+		return -ENOTSUP;
+	}
+
+	status = sl_wifi_set_performance_profile(&sl_ps_profile);
+	if (status != SL_STATUS_OK) {
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		LOG_ERR("Failed to set power save profile: 0x%x", status);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+{
+	sl_wifi_performance_profile_t sl_ps_profile;
+	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_interface_t interface;
+	int beacon_interval;
+	sl_status_t status;
+
+	__ASSERT(config, "config cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Wi-Fi not in station mode");
+		return -EINVAL;
+	}
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
+	status = sl_wifi_get_performance_profile(&sl_ps_profile);
+	if (status != SL_STATUS_OK) {
+		LOG_ERR("Failed to get power save profile: 0x%x", status);
+		return -EINVAL;
+	}
+
+	switch (sl_ps_profile.profile) {
+	case HIGH_PERFORMANCE:
+		config->ps_params.enabled = WIFI_PS_DISABLED;
+		break;
+	case ASSOCIATED_POWER_SAVE_LOW_LATENCY:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+		break;
+	case ASSOCIATED_POWER_SAVE:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+		break;
+	default:
+		break;
+	}
+
+	if (sl_ps_profile.dtim_aligned_type == 1) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	} else if (sl_ps_profile.dtim_aligned_type == 0) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
+		beacon_interval = siwx91x_get_beacon_interval(dev);
+		if (beacon_interval > 0) {
+			/* converts MSEC to beacon unit */
+			config->ps_params.listen_interval =
+				(sl_ps_profile.listen_interval / beacon_interval);
+		}
+	}
+
+	/* Device supports only legacy power-save mode */
+	config->ps_params.mode = WIFI_PS_MODE_LEGACY;
+	config->ps_params.timeout_ms = sl_ps_profile.monitor_interval;
+
+	return 0;
+}
+
 static void siwx91x_iface_init(struct net_if *iface)
 {
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
@@ -755,6 +1022,8 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats		= siwx91x_stats,
 #endif
+	.set_power_save		= siwx91x_set_power_save,
+	.get_power_save_config	= siwx91x_get_power_save_config,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
