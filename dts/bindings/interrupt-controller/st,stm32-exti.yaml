@@ -17,7 +17,9 @@ properties:
   num-lines:
     type: int
     required: true
-    description: Number of lines supported by the interrupt controller.
+    description: |
+      Number of lines supported by the interrupt controller.
+      The value shall be the highest EXTI interrupt line number over all dts entries.
 
   line-ranges:
     type: array
