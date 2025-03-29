@@ -190,6 +190,28 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kXTAL32K_to_CLK32K);
 #endif
 
+/* Any flexcomm can be I2S */
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay)) && CONFIG_I2S
+	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){0, kCLOCK_FrgPllDiv, 255, 0});
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay)) && CONFIG_I2S
+	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){1, kCLOCK_FrgPllDiv, 255, 0});
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM1);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2s, okay)) && CONFIG_I2S
+	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){2, kCLOCK_FrgPllDiv, 255, 0});
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM2);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2s, okay)) && CONFIG_I2S
+	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){3, kCLOCK_FrgPllDiv, 255, 0});
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM3);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2s, okay)) && CONFIG_I2S
+	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){14, kCLOCK_FrgPllDiv, 255, 0});
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM14);
+#endif
+
 /* Clock flexcomms when used as SPI */
 #ifdef CONFIG_SPI
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay))
