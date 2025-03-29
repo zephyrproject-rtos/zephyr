@@ -149,6 +149,7 @@
 				multiplex-ratio = <0>;
 				prechargep = <0>;
 				remap-value = <0>;
+				phase-length = <0>;
 			};
 
 			test_mipi_dbi_ssd1322: ssd1322@9 {
