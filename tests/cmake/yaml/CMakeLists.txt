@@ -242,6 +242,46 @@ function(test_setting_list_strings)
   endforeach()
 endfunction()
 
+function(test_setting_list_string_escapes)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_value "'A'" "n\\ew" "li\"st" "o'f" "s\"tr\\in'gs")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string LIST ${new_value}
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the value.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  test_assert(TEST 5 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  foreach(a e IN ZIP_LISTS readback new_value)
+    # cmake_parse_arguments() breaks horribly when given strings that include
+    # escapes, making it impossible to use test_assert() here. Or, for that
+    # matter, even trying to print them in message(). Thanks, CMake!
+    if("${e}" STREQUAL "${a}")
+      message("${CMAKE_CURRENT_FUNCTION}(): Passed")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}(): Failed\n"
+        "Test: list values mismatch."
+      )
+    endif()
+  endforeach()
+endfunction()
+
 function(test_append_list_strings)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -475,7 +515,7 @@ function(test_setting_map_list_entry_commas)
     test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
                 COMMENT "list values mismatch."
     )
-    test_assert(TEST "'${readback_str}'" STREQUAL "${new_entry_str_${index}}"
+    test_assert(TEST "${readback_str}" STREQUAL "${new_entry_str_${index}}"
                 COMMENT "list values mismatch."
     )
   endforeach()
@@ -728,6 +768,7 @@ test_save_new_file()
 test_setting_int()
 test_setting_string()
 test_setting_list_strings()
+test_setting_list_string_escapes()
 test_setting_list_int()
 test_setting_map_list_entry()
 test_setting_map_list_entry_windows()
