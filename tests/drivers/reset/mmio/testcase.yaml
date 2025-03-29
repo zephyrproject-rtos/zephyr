@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.reset.mmio:
+    platform_allow:
+      - qemu_cortex_m3
