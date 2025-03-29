@@ -112,8 +112,8 @@ static int udc_mcux_ep_feed(const struct device *dev,
 	}
 
 	udc_mcux_lock(dev);
-	if (!udc_ep_is_busy(dev, cfg->addr)) {
-		udc_ep_set_busy(dev, cfg->addr, true);
+	if (!udc_ep_is_busy(cfg)) {
+		udc_ep_set_busy(cfg, true);
 		udc_mcux_unlock(dev);
 
 		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
@@ -130,7 +130,7 @@ static int udc_mcux_ep_feed(const struct device *dev,
 
 		udc_mcux_lock(dev);
 		if (status != kStatus_USB_Success) {
-			udc_ep_set_busy(dev, cfg->addr, false);
+			udc_ep_set_busy(cfg, false);
 		}
 		udc_mcux_unlock(dev);
 	} else {
@@ -147,7 +147,7 @@ static int udc_mcux_ep_try_feed(const struct device *dev,
 {
 	struct net_buf *feed_buf;
 
-	feed_buf = udc_buf_peek(dev, cfg->addr);
+	feed_buf = udc_buf_peek(cfg);
 	if (feed_buf) {
 		int ret = udc_mcux_ep_feed(dev, cfg, feed_buf);
 
@@ -322,13 +322,14 @@ static int udc_mcux_handler_non_ctrl_out(const struct device *dev, uint8_t ep,
 static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
 				uint8_t *mcux_buf, uint16_t mcux_len)
 {
+	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
 	int err;
 	struct net_buf *buf;
 
-	buf = udc_buf_get(dev, ep);
+	buf = udc_buf_get(cfg);
 
 	udc_mcux_lock(dev);
-	udc_ep_set_busy(dev, ep, false);
+	udc_ep_set_busy(cfg, false);
 	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
@@ -375,10 +376,11 @@ static bool udc_mcux_handler_zlt(const struct device *dev, uint8_t ep, struct ne
 static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 				uint8_t *mcux_buf, uint16_t mcux_len)
 {
+	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
 	int err;
 	struct net_buf *buf;
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
@@ -388,10 +390,10 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 		return 0;
 	}
 
-	buf = udc_buf_get(dev, ep);
+	buf = udc_buf_get(cfg);
 
 	udc_mcux_lock(dev);
-	udc_ep_set_busy(dev, ep, false);
+	udc_ep_set_busy(cfg, false);
 	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
@@ -593,13 +595,13 @@ static int udc_mcux_ep_dequeue(const struct device *dev,
 	struct net_buf *buf;
 
 	cfg->stat.halted = false;
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
 	udc_mcux_lock(dev);
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 	udc_mcux_unlock(dev);
 
 	return 0;

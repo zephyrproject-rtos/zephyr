@@ -96,13 +96,14 @@ static void udc_nrf_clear_control_out(const struct device *dev)
 
 static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 {
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	struct net_buf *buf;
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(ep_cfg)) {
 		return;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		nrf_usbd_common_transfer_t xfer = {
 			.p_data = {.tx = buf->data},
@@ -117,7 +118,7 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
 		} else {
-			udc_ep_set_busy(dev, ep, true);
+			udc_ep_set_busy(ep_cfg, true);
 		}
 	}
 }
@@ -150,9 +151,10 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 
 static void udc_event_fake_status_in(const struct device *dev)
 {
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
-	buf = udc_buf_get(dev, USB_CONTROL_EP_IN);
+	buf = udc_buf_get(ep_cfg);
 	if (unlikely(buf == NULL)) {
 		LOG_DBG("ep 0x%02x queue is empty", USB_CONTROL_EP_IN);
 		return;
@@ -165,19 +167,22 @@ static void udc_event_fake_status_in(const struct device *dev)
 static void udc_event_xfer_in(const struct device *dev,
 			      nrf_usbd_common_evt_t const *const event)
 {
+	struct udc_ep_config *ep_cfg;
 	uint8_t ep = event->data.eptransfer.ep;
 	struct net_buf *buf;
 
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+
 	switch (event->data.eptransfer.status) {
 	case NRF_USBD_COMMON_EP_OK:
-		buf = udc_buf_get(dev, ep);
+		buf = udc_buf_get(ep_cfg);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x queue is empty", ep);
 			__ASSERT_NO_MSG(false);
 			return;
 		}
 
-		udc_ep_set_busy(dev, ep, false);
+		udc_ep_set_busy(ep_cfg, false);
 		if (ep == USB_CONTROL_EP_IN) {
 			udc_event_xfer_ctrl_in(dev, buf);
 			return;
@@ -188,14 +193,14 @@ static void udc_event_xfer_in(const struct device *dev,
 
 	case NRF_USBD_COMMON_EP_ABORTED:
 		LOG_WRN("aborted IN ep 0x%02x", ep);
-		buf = udc_buf_get_all(dev, ep);
+		buf = udc_buf_get_all(ep_cfg);
 
 		if (buf == NULL) {
 			LOG_DBG("ep 0x%02x queue is empty", ep);
 			return;
 		}
 
-		udc_ep_set_busy(dev, ep, false);
+		udc_ep_set_busy(ep_cfg, false);
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		break;
 
@@ -225,13 +230,14 @@ static void udc_event_xfer_ctrl_out(const struct device *dev,
 
 static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 {
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	struct net_buf *buf;
 
-	if (udc_ep_is_busy(dev, ep)) {
+	if (udc_ep_is_busy(ep_cfg)) {
 		return;
 	}
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		nrf_usbd_common_transfer_t xfer = {
 			.p_data = {.rx = buf->data},
@@ -245,7 +251,7 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
 		} else {
-			udc_ep_set_busy(dev, ep, true);
+			udc_ep_set_busy(ep_cfg, true);
 		}
 	} else {
 		LOG_DBG("ep 0x%02x waiting, queue is empty", ep);
@@ -255,6 +261,7 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 static void udc_event_xfer_out(const struct device *dev,
 			       nrf_usbd_common_evt_t const *const event)
 {
+	struct udc_ep_config *ep_cfg;
 	uint8_t ep = event->data.eptransfer.ep;
 	nrf_usbd_common_ep_status_t err_code;
 	struct net_buf *buf;
@@ -274,14 +281,15 @@ static void udc_event_xfer_out(const struct device *dev,
 			LOG_ERR("OUT transfer failed %d", err_code);
 		}
 
-		buf = udc_buf_get(dev, ep);
+		ep_cfg = udc_get_ep_cfg(dev, ep);
+		buf = udc_buf_get(ep_cfg);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x ok, queue is empty", ep);
 			return;
 		}
 
 		net_buf_add(buf, len);
-		udc_ep_set_busy(dev, ep, false);
+		udc_ep_set_busy(ep_cfg, false);
 		if (ep == USB_CONTROL_EP_OUT) {
 			udc_event_xfer_ctrl_out(dev, buf);
 		} else {
@@ -614,7 +622,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 		 * HAL driver does not generate event for an OUT endpoint
 		 * or when IN endpoint is not busy.
 		 */
-		buf = udc_buf_get_all(dev, cfg->addr);
+		buf = udc_buf_get_all(cfg);
 		if (buf) {
 			udc_submit_ep_event(dev, buf, -ECONNABORTED);
 		} else {
@@ -623,7 +631,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	return 0;
 }
