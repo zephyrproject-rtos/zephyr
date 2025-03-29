@@ -212,7 +212,8 @@ static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
 	sys_rand_get(linkaddr, len);
 
-	linkaddr[0] |= 0x02; /* force LAA bit */
+	linkaddr[0] |= 0x02;  /* force LAA bit */
+	linkaddr[0] &= ~0x01; /* clear multicast bit */
 }
 
 int net_virtual_interface_attach(struct net_if *virtual_iface,
