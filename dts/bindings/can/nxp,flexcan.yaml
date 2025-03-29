@@ -1,3 +1,4 @@
+# Copyright 2024 NXP
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
@@ -39,3 +40,7 @@ properties:
     type: int
     required: true
     description: CAN engine clock source
+
+  sjw:
+    type: int
+    description: Resynchronization jump width (ISO 11898-1)
