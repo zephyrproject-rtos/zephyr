@@ -101,6 +101,113 @@ ZTEST(util, test_sign_extend_64) {
 	zassert_equal(sign_extend_64(u64, 60), 0xfffffffffffffff);
 }
 
+ZTEST(util, test_IS_ENABLED) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 0
+
+	if (IS_ENABLED(TEST_FLAG_A)) {
+		goto skipped;
+	}
+
+	/* location should be skipped (TEST_FLAG_A is 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	if (IS_ENABLED(TEST_FLAG_B)) {
+		zassert_false(true, "IS_ENABLED should not be emitted (invalid)");
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+}
+
+ZTEST(util, test_IS_ENABLED_ALL) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	if (IS_ENABLED_ALL(TEST_FLAG_A, TEST_FLAG_B)) {
+		goto skipped;
+	}
+
+	/* location should be skipped (TEST_FLAG_A/B are 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	if (IS_ENABLED_ALL(TEST_FLAG_A)) {
+		goto skipped_1;
+	}
+
+	/* location should be skipped (TEST_FLAG_A is 1). */
+	zassert_false(true, "location should be skipped (single valid)");
+skipped_1:
+	if (IS_ENABLED_ALL(TEST_FLAG_C)) {
+		zassert_false(
+			false,
+			"IS_ENABLED_ALL should not emit (single invalid)");
+	}
+
+	if (IS_ENABLED_ALL(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_false(true, "IS_ENABLED_ALL should not emit (one invalid)");
+	}
+
+
+	if (IS_ENABLED_ALL(TEST_FLAG_C, TEST_FLAG_D)) {
+		zassert_false(true, "IS_ENABLED_ALL should not emit (no valid)");
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+}
+
+ZTEST(util, test_IS_ENABLED_ANY) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	if (IS_ENABLED_ANY(TEST_FLAG_A, TEST_FLAG_B)) {
+		goto skipped;
+	}
+
+	/* location should be skipped (TEST_FLAG_A/B are 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	if (IS_ENABLED_ANY(TEST_FLAG_A)) {
+		goto skipped_1;
+	}
+
+	/* Location should be skipped (TEST_FLAG_A is 1)*/
+	zassert_false(true, "location should be skipped (single valid)");
+skipped_1:
+	if (IS_ENABLED_ANY(TEST_FLAG_C)) {
+		zassert_false(true,
+			"IS_ENABLED_ANY should not emit (single invalid)");
+	}
+
+	if (IS_ENABLED_ANY(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_true(true,
+			"IS_ENABLED_ANY should emit (single valid)");
+	}
+
+	if (IS_ENABLED_ANY(TEST_FLAG_C, TEST_FLAG_D)) {
+		zassert_false(true,
+			"IS_ENABLED_ANY should not emit (no valid)");
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+}
+
 ZTEST(util, test_COND_CODE_1) {
 	#define TEST_DEFINE_1 1
 	#define TEST_DEFINE_0 0
@@ -167,22 +274,325 @@ ZTEST(util, test_UTIL_AND) {
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
-ZTEST(util, test_IF_ENABLED) {
-	#define test_IF_ENABLED_FLAG_A 1
-	#define test_IF_ENABLED_FLAG_B 0
+ZTEST(util, test_UTIL_CONCAT_OR) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_VALUE_SEVEN 7
+	#define TEST_VALUE_ZERO 0
 
-	IF_ENABLED(test_IF_ENABLED_FLAG_A, (goto skipped;))
+	if (!(UTIL_CONCAT_OR(TEST_FLAG_A, TEST_FLAG_B))) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (all valid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (one valid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_A)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (single valid)");
+	}
+
+	if (UTIL_CONCAT_OR(TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (single invalid)");
+	}
+
+	if (!UTIL_CONCAT_OR(TEST_FLAG_C, TEST_FLAG_D, TEST_FLAG_A, TEST_FLAG_B)) {
+		zassert_false(true, "UTIL_CONCAT_OR failed (negative first)");
+	}
+
+	zassert_equal(1, UTIL_CONCAT_OR(TEST_VALUE_SEVEN, TEST_VALUE_ZERO));
+
+	zassert_equal(0, UTIL_CONCAT_OR(TEST_VALUE_ZERO, TEST_VALUE_ZERO,
+					TEST_VALUE_ZERO));
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_VALUE_SEVEN
+	#undef TEST_VALUE_ZERO
+}
+
+ZTEST(util, test_UTIL_CONCAT_AND) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_VALUE_ZERO 0
+	#define TEST_VALUE_ONE 1
+	#define TEST_VALUE_SEVEN 7
+
+	if (!UTIL_CONCAT_AND(TEST_FLAG_A, TEST_FLAG_B)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (all valid)");
+	}
+
+	if (!UTIL_CONCAT_AND(TEST_FLAG_A)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (single valid)");
+	}
+
+	if (UTIL_CONCAT_AND(TEST_FLAG_A, TEST_FLAG_C)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (one invalid)");
+	}
+
+	if (UTIL_CONCAT_AND(TEST_FLAG_C, TEST_FLAG_D)) {
+		zassert_false(true, "UTIL_CONCAT_AND failed (no valid)");
+	}
+
+	zassert_equal(1, UTIL_CONCAT_AND(TEST_VALUE_ONE, TEST_VALUE_SEVEN));
+
+	zassert_equal(0,
+		UTIL_CONCAT_AND(TEST_VALUE_ONE, TEST_VALUE_SEVEN, TEST_VALUE_ZERO));
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_VALUE_ZERO
+	#undef TEST_VALUE_ONE
+	#undef TEST_VALUE_SEVEN
+}
+
+ZTEST(util, test_IF_ENABLED) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 0
+
+	IF_ENABLED(TEST_FLAG_A, (goto skipped;))
 	/* location should be skipped if IF_ENABLED macro is correct. */
 	zassert_false(true, "location should be skipped");
 skipped:
-	IF_ENABLED(test_IF_ENABLED_FLAG_B, (zassert_false(true, "");))
-
-	IF_ENABLED(test_IF_ENABLED_FLAG_C, (zassert_false(true, "");))
+	IF_ENABLED(TEST_FLAG_B, (zassert_false(true, "");))
 
 	zassert_true(true, "");
 
-	#undef test_IF_ENABLED_FLAG_A
-	#undef test_IF_ENABLED_FLAG_B
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+}
+
+ZTEST(util, test_IF_ENABLED_ALL) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B),
+		goto skipped;
+	)
+
+	/* location should be skipped (TEST_FLAG_A/B are 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	IF_ENABLED_ALL((TEST_FLAG_A),
+		goto skipped_1;
+	)
+
+	/* location should be skipped (TEST_FLAG_A is 1). */
+	zassert_false(true, "location should be skipped (single valid)");
+skipped_1:
+	IF_ENABLED_ALL((TEST_FLAG_C),
+		zassert_false(true, "Unexpected (single invalid)");
+	)
+
+	IF_ENABLED_ALL((TEST_FLAG_A, test_IF_ENABLED_FLAG_C),
+		zassert_false(true, "Unexpected (one invalid)");
+	)
+
+	IF_ENABLED_ALL((TEST_FLAG_C, TEST_FLAG_D),
+		zassert_false(true, "Unexpected (no valid)");
+	)
+
+	/* Verify that emitted code supports comma separated parameters */
+	struct { int a; int b; int c; } test_struct = {
+		IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B), .a = 2, .b = 3,)
+		.c = 4,
+	};
+
+	zassert_true(test_struct.a == 2 && test_struct.b == 3,
+		     "IF_ENABLED_ALL: Comma-separated emit failed (all valid)");
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+}
+
+ZTEST(util, test_IF_ENABLED_ANY) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+
+	IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B),
+		goto skipped;
+	)
+
+	/* location should be skipped (TEST_FLAG_A/C is 1). */
+	zassert_false(true, "location should be skipped");
+skipped:
+	IF_ENABLED_ANY((TEST_FLAG_C, TEST_FLAG_D),
+		zassert_false(true, "Unexpected (no valid)");
+	)
+
+	IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B),
+		zassert_true(true, "Unexpected (one valid)");
+	)
+
+	/* Verify that emitted code supports comma separated parameters */
+	struct { int a; int b; int c; } test_struct = {
+		IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_C), .a = 2, .b = 3,)
+		.c = 4,
+	};
+
+	zassert_true(test_struct.a == 2 && test_struct.b == 3,
+		     "IF_ENABLED_ALL: Comma-separated emit failed (one valid)");
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+}
+
+ZTEST(util, test_CASE_IF_ENABLED) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED(TEST_FLAG_A, TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED not emitted (default reached)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED(TEST_FLAG_B, TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED emitted (invalid case)");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
+}
+
+ZTEST(util, test_CASE_IF_ENABLED_ALL) {
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_B), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true,
+			"CASE_IF_ENABLED_ALL not emitted (all valid)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_A, TEST_FLAG_C), TEST_LABEL_FAILURE,
+		zassert_false(true,
+			"CASE_IF_ENABLED_ALL should not emit (one invalid)");
+		break;
+	)
+	default:
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ALL((TEST_FLAG_C, TEST_FLAG_D), TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED_ALL should not emit");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
+}
+
+ZTEST(util, test_CASE_IF_ENABLED_ANY) {
+
+	#define TEST_FLAG_A 1
+	#define TEST_FLAG_B 1
+	#define TEST_FLAG_C 0
+	#define TEST_FLAG_D 0
+	#define TEST_LABEL_SUCCESS 1
+	#define TEST_LABEL_FAILURE 2
+
+	int a = TEST_LABEL_SUCCESS;
+
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_B), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED_ANY not emitted (all valid)");
+		break;
+	}
+
+	a = TEST_LABEL_SUCCESS;
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_A, TEST_FLAG_C), TEST_LABEL_SUCCESS,
+		break;
+	)
+	default:
+		zassert_false(true, "CASE_IF_ENABLED_ANY not emitted (one valid)");
+		break;
+	}
+
+	a = TEST_LABEL_FAILURE;
+	switch (a) {
+	CASE_IF_ENABLED_ANY((TEST_FLAG_C, TEST_FLAG_D),
+		TEST_LABEL_FAILURE,
+		zassert_false(true, "CASE_IF_ENABLED_ANY should not emit");
+		break;
+	)
+	default:
+		break;
+	}
+
+	zassert_true(true, "");
+
+	#undef TEST_FLAG_A
+	#undef TEST_FLAG_B
+	#undef TEST_FLAG_C
+	#undef TEST_FLAG_D
+	#undef TEST_LABEL_SUCCESS
+	#undef TEST_LABEL_FAILURE
 }
 
 ZTEST(util, test_LISTIFY) {
