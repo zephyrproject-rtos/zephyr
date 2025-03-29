@@ -83,6 +83,8 @@ style:
 
 .. code-block:: yaml
 
+   title: I'm sure you need a short title.
+
    description: |
      My very long string
      goes here.
