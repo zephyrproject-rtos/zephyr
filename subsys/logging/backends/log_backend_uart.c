@@ -225,8 +225,15 @@ const struct log_backend_api log_backend_uart_api = {
 	.format_set = format_set,
 };
 
+#ifdef CONFIG_LOG_BACKEND_UART_ASYNC
+#define NOCACHE_ATTR __nocache
+#else
+#define ALIGN_BUF
+#define NOCACHE_ATTR
+#endif /* CONFIG_LOG_BACKEND_UART_ASYNC */
+
 #define LBU_DEFINE(node_id, ...)                                                                   \
-	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];               \
+	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR;  \
 	LOG_OUTPUT_DEFINE(lbu_output##__VA_ARGS__, char_out, lbu_buffer##__VA_ARGS__,              \
 			  CONFIG_LOG_BACKEND_UART_BUFFER_SIZE);                                    \
                                                                                                    \
@@ -237,8 +244,8 @@ const struct log_backend_api log_backend_uart_api = {
 	static const struct lbu_cb_ctx lbu_cb_ctx##__VA_ARGS__ = {                                 \
 		.output = &lbu_output##__VA_ARGS__,                                                \
 		COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), (),                              \
-				(.uart_dev = DEVICE_DT_GET(node_id),))                             \
-		.data = &lbu_data##__VA_ARGS__,                                                    \
+				(.uart_dev = DEVICE_DT_GET(node_id),)) .data =     \
+							   &lbu_data##__VA_ARGS__,                 \
 	};                                                                                         \
                                                                                                    \
 	LOG_BACKEND_DEFINE(log_backend_uart##__VA_ARGS__, log_backend_uart_api,                    \
