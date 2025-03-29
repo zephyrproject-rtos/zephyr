@@ -369,6 +369,18 @@ void arch_cpu_atomic_idle(unsigned int key)
 	riscv_idle(CHIP_PLL_DOZE, key);
 }
 
+void soc_prep_hook(void)
+{
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+	/*
+	 * Disables the I2C0 alternate function before executing the PLL sequence change
+	 * to ensure that the EC can enter sleep mode successfully.
+	 */
+	IT8XXX2_GPIO_GPCRB3 = GPCR_PORT_PIN_MODE_INPUT;
+	IT8XXX2_GPIO_GPCRB4 = GPCR_PORT_PIN_MODE_INPUT;
+#endif
+}
+
 static int ite_it8xxx2_init(void)
 {
 	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
