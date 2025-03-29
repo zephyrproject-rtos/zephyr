@@ -340,6 +340,7 @@ New Drivers
    * :dtcompatible:`invensense,icm45686`
    * :dtcompatible:`pixart,paa3905`
    * :dtcompatible:`vishay,veml6031`
+   * :dtcompatible:`we,wsen-itds-2533020201601`
 
 * Serial controller
 
