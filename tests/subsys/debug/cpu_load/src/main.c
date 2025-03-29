@@ -96,4 +96,38 @@ ZTEST(cpu_load, test_periodic_report)
 }
 #endif /* CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0 */
 
+#if CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION
+void low_load_cb(void)
+{
+	/*Should never be called*/
+	zassert_true(false, NULL);
+}
+
+static uint32_t num_full_load_calls;
+
+void full_load_cb(void)
+{
+	TC_PRINT("called in callback");
+	num_full_load_calls++;
+}
+
+ZTEST(cpu_load, test_detect_full_utilization_low_load)
+{
+	int ret = cpu_load_full_utilization_cb_reg(low_load_cb);
+	zassert_equal(ret, 0);
+	for (int i = 0; i < CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 2; i++) {
+		k_msleep(1);
+	}
+}
+
+ZTEST(cpu_load, test_detect_full_utilization_max_load)
+{
+	int ret = cpu_load_full_utilization_cb_reg(full_load_cb);
+	zassert_equal(ret, 0);
+	k_busy_wait(CONFIG_CPU_LOAD_DETECT_FULL_UTILIZATION_INTERVAL * 4 * 1000);
+	TC_PRINT("called %d", num_full_load_calls);
+	zassert_between_inclusive(num_full_load_calls, 2, 7);
+}
+#endif
+
 ZTEST_SUITE(cpu_load, NULL, NULL, NULL, NULL, NULL);
