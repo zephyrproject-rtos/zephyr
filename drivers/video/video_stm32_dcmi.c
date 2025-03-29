@@ -20,6 +20,8 @@
 
 #include <stm32_ll_dma.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
 #if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 2
@@ -352,28 +354,6 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 	return ret;
 }
 
-static inline int video_stm32_dcmi_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_stm32_dcmi_config *config = dev->config;
-	int ret;
-
-	/* Forward to source dev if any */
-	ret = video_set_ctrl(config->sensor_dev, cid, value);
-
-	return ret;
-}
-
-static inline int video_stm32_dcmi_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_stm32_dcmi_config *config = dev->config;
-	int ret;
-
-	/* Forward to source dev if any */
-	ret = video_get_ctrl(config->sensor_dev, cid, value);
-
-	return ret;
-}
-
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
@@ -381,8 +361,6 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,
-	.set_ctrl = video_stm32_dcmi_set_ctrl,
-	.get_ctrl = video_stm32_dcmi_get_ctrl,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
@@ -521,3 +499,5 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
+
+VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), video_stm32_dcmi_config_0.sensor_dev);
