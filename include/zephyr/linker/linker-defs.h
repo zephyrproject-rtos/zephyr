@@ -225,6 +225,9 @@ extern char __sg_size[];
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
+#if CONFIG_NOCACHE_MEMORY_IS_LOADABLE
+extern char _nocache_load_start[];
+#endif /* CONFIG_NOCACHE_MEMORY_IS_LOADABLE */
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
