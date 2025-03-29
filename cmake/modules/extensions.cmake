@@ -4809,7 +4809,7 @@ function(zephyr_linker_dts_section)
 
   dt_reg_addr(addr PATH ${DTS_SECTION_PATH})
 
-  zephyr_linker_section(NAME ${name} ADDRESS ${addr} VMA ${name} TYPE NOLOAD)
+  zephyr_linker_section(NAME ${name} VMA ${name} TYPE NOLOAD)
 
 endfunction()
 
