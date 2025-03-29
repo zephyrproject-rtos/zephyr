@@ -68,6 +68,8 @@ using either ``arduino_giga_r1/stm32h747xx/m7`` or ``arduino_giga_r1/stm32h747xx
 
 See :ref:`build_an_application` for more information about application builds.
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
