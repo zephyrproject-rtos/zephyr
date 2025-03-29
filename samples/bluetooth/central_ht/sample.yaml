@@ -9,6 +9,7 @@ tests:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
     tags: bluetooth
+    sysbuild: true
     integration_platforms:
       - qemu_cortex_m3
   sample.bluetooth.central_ht.nxp:
