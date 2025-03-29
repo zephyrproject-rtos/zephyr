@@ -36,6 +36,7 @@ choice SETTINGS_BACKEND
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
 	default SETTINGS_FILE if FILE_SYSTEM
+	default SETTINGS_ITS if TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	default SETTINGS_NONE
 	help
 	  Storage back-end to be used by the settings subsystem.
@@ -89,6 +90,11 @@ config SETTINGS_CUSTOM
 	bool "CUSTOM"
 	help
 	  Use a custom settings storage back-end.
+
+config SETTINGS_ITS
+	bool "Internal Trusted Storage (ITS)"
+	help
+	  Enables ITS storage support
 
 config SETTINGS_NONE
 	bool "NONE"
@@ -179,5 +185,23 @@ config SETTINGS_SHELL
 	  reading the settings requires quite a big stack buffer, so the stack
 	  size of the shell thread may need to be increased to accommodate this
 	  feature.
+
+config SETTINGS_ITS_NUM_ENTRIES
+	int "Number of possible entries for settings"
+	default 10
+	depends on SETTINGS_ITS
+	help
+	  Configures the settings static struct length stored to PSA ITS. A
+	  Bluetooth device supporting one paired device requires 10 entries.
+
+config SETTINGS_ITS_LAZY_PERSIST_DELAY_MS
+	int "Number of seconds delay before persisting settings"
+	default 500
+	depends on SETTINGS_ITS
+	help
+	  Configures the delay between saving a setting and persisting the struct
+	  to storage. Useful in cases where a PSA ITS write may block a time
+	  sensitive event which requires a sequence of settings writes. Bluetooth
+	  pairing for example.
 
 endif # SETTINGS
