@@ -74,7 +74,7 @@ run the :zephyr_file:`scripts/tracing/trace_capture_usb.py` script on the host:
 
 .. code-block:: console
 
-	sudo python3 trace_capture_usb.py -v 0x2FE9 -p 0x100 -o channel0_0
+	sudo python3 trace_capture_usb.py -v 0x2FE3 -p 0x0001 -o channel0_0
 
 The VID and PID of USB device can be configured, just adjusting it accordingly.
 
