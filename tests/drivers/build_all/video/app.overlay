@@ -32,7 +32,7 @@
 			clock-frequency = <100000>;
 
 			test_i2c_mt9m114: mt9m114@0 {
-				compatible = "aptina,mt9m114";
+				compatible = "onnn,mt9m114";
 				reg = <0>;
 			};
 
