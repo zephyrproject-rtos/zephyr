@@ -600,6 +600,14 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 	  cooperative and a sequence of work items is expected to complete
 	  without yielding.
 
+config SYSTEM_WORKQUEUE_NO_BLOCK
+	bool "Select whether system work queue enforces non-blocking work items"
+	help
+	  By default, the system work queue does not enforce work items
+	  passed to it to not perform blocking operations. Selecting this
+	  enforces that blocking operations are not performed by invoking
+	  a kernel oops if such operations are attempted.
+
 endmenu
 
 menu "Barrier Operations"

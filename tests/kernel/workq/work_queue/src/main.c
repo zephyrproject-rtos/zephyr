@@ -33,6 +33,13 @@ LOG_MODULE_REGISTER(test);
 	k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(WORK_ITEM_WAIT) + _TICK_ALIGN)
 
 /*
+ * System work queue is not allowed to unready threads. k_busy_wait() is
+ * used to simulate work. It is higly inprecise, use way lower wait to
+ * account for this.
+ */
+#define WORK_ITEM_BUSY_WAIT ((WORK_ITEM_WAIT * USEC_PER_MSEC) / 4)
+
+/*
  * Wait 50ms between work submissions, to ensure co-op and prempt
  * preempt thread submit alternatively.
  */
@@ -97,7 +104,7 @@ static void work_handler(struct k_work *work)
 			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
 	LOG_DBG(" - Running test item %d", ti->key);
-	k_msleep(WORK_ITEM_WAIT);
+	k_busy_wait(WORK_ITEM_BUSY_WAIT);
 
 	results[num_results++] = ti->key;
 }
@@ -211,7 +218,7 @@ static void resubmit_work_handler(struct k_work *work)
 	struct delayed_test_item *ti =
 			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
-	k_msleep(WORK_ITEM_WAIT);
+	k_busy_wait(WORK_ITEM_BUSY_WAIT);
 
 	results[num_results++] = ti->key;
 

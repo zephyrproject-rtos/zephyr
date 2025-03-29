@@ -1175,3 +1175,9 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
+
+bool k_is_in_sys_work(void)
+{
+	return k_current_get() == k_work_queue_thread_get(&k_sys_work_q) &&
+	       flag_test(&k_sys_work_q.flags, K_WORK_QUEUE_BUSY_BIT);
+}
