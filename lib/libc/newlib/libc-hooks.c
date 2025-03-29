@@ -243,7 +243,7 @@ int _open(const char *name, int flags, ...)
 {
 	return -1;
 }
-__weak FUNC_ALIAS(_open, open, int);
+__weak int open(const char *name, int mode, ...) ALIAS_OF(_open);
 
 int _close(int file)
 {
