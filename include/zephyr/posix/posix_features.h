@@ -246,113 +246,196 @@
 /* #define _XOPEN_UUCP (-1L) */
 
 /* Maximum values */
+#undef _POSIX_CLOCKRES_MIN
 #define _POSIX_CLOCKRES_MIN (20000000L)
 
 /* Minimum values */
+#undef _POSIX_AIO_LISTIO_MAX
 #define _POSIX_AIO_LISTIO_MAX               (2)
+#undef _POSIX_AIO_MAX
 #define _POSIX_AIO_MAX                      (1)
+#undef _POSIX_ARG_MAX
 #define _POSIX_ARG_MAX                      (4096)
+#undef _POSIX_CHILD_MAX
 #define _POSIX_CHILD_MAX                    (25)
+#undef _POSIX_DELAYTIMER_MAX
 #define _POSIX_DELAYTIMER_MAX \
 	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_DELAYTIMER_MAX), (0))
+#undef _POSIX_HOST_NAME_MAX
 #define _POSIX_HOST_NAME_MAX \
 	COND_CODE_1(CONFIG_POSIX_NETWORKING, (CONFIG_POSIX_HOST_NAME_MAX), (0))
+#undef _POSIX_LINK_MAX
 #define _POSIX_LINK_MAX                     (8)
+#undef _POSIX_LOGIN_NAME_MAX
 #define _POSIX_LOGIN_NAME_MAX               (9)
+#undef _POSIX_MAX_CANON
 #define _POSIX_MAX_CANON                    (255)
+#undef _POSIX_MAX_INPUT
 #define _POSIX_MAX_INPUT                    (255)
+#undef _POSIX_MQ_OPEN_MAX
 #define _POSIX_MQ_OPEN_MAX \
 	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (CONFIG_POSIX_MQ_OPEN_MAX), (0))
+#undef _POSIX_MQ_PRIO_MAX
 #define _POSIX_MQ_PRIO_MAX                  (32)
+#undef _POSIX_NAME_MAX
 #define _POSIX_NAME_MAX                     (14)
+#undef _POSIX_NGROUPS_MAX
 #define _POSIX_NGROUPS_MAX                  (8)
+#undef _POSIX_OPEN_MAX
 #define _POSIX_OPEN_MAX                     CONFIG_POSIX_OPEN_MAX
+#undef _POSIX_PATH_MAX
 #define _POSIX_PATH_MAX                     (256)
+#undef _POSIX_PIPE_BUF
 #define _POSIX_PIPE_BUF                     (512)
+#undef _POSIX_RE_DUP_MAX
 #define _POSIX_RE_DUP_MAX                   (255)
+#undef _POSIX_RTSIG_MAX
 #define _POSIX_RTSIG_MAX \
 	COND_CODE_1(CONFIG_POSIX_REALTIME_SIGNALS, (CONFIG_POSIX_RTSIG_MAX), (0))
+#undef _POSIX_SEM_NSEMS_MAX
 #define _POSIX_SEM_NSEMS_MAX \
 	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_NSEMS_MAX), (0))
+#undef _POSIX_SEM_VALUE_MAX
 #define _POSIX_SEM_VALUE_MAX \
 	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_VALUE_MAX), (0))
+#undef _POSIX_SIGQUEUE_MAX
 #define _POSIX_SIGQUEUE_MAX                 (32)
+#undef _POSIX_SSIZE_MAX
 #define _POSIX_SSIZE_MAX                    (32767)
+#undef _POSIX_SS_REPL_MAX
 #define _POSIX_SS_REPL_MAX                  (4)
+#undef _POSIX_STREAM_MAX
 #define _POSIX_STREAM_MAX                   (8)
+#undef _POSIX_SYMLINK_MAX
 #define _POSIX_SYMLINK_MAX                  (255)
+#undef _POSIX_SYMLOOP_MAX
 #define _POSIX_SYMLOOP_MAX                  (8)
+#undef _POSIX_THREAD_DESTRUCTOR_ITERATIONS
 #define _POSIX_THREAD_DESTRUCTOR_ITERATIONS (4)
+#undef _POSIX_THREAD_KEYS_MAX
 #define _POSIX_THREAD_KEYS_MAX \
 	COND_CODE_1(CONFIG_POSIX_THREADS, (CONFIG_POSIX_THREAD_KEYS_MAX), (0))
+#undef _POSIX_THREAD_THREADS_MAX
 #define _POSIX_THREAD_THREADS_MAX \
 	COND_CODE_1(CONFIG_POSIX_THREADS, (CONFIG_POSIX_THREAD_THREADS_MAX), (0))
+#undef _POSIX_TIMER_MAX
 #define _POSIX_TIMER_MAX \
 	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_TIMER_MAX), (0))
+#undef _POSIX_TRACE_EVENT_NAME_MAX
 #define _POSIX_TRACE_EVENT_NAME_MAX         (30)
+#undef _POSIX_TRACE_NAME_MAX
 #define _POSIX_TRACE_NAME_MAX               (8)
+#undef _POSIX_TRACE_SYS_MAX
 #define _POSIX_TRACE_SYS_MAX                (8)
+#undef _POSIX_TRACE_USER_EVENT_MAX
 #define _POSIX_TRACE_USER_EVENT_MAX         (32)
+#undef _POSIX_TTY_NAME_MAX
 #define _POSIX_TTY_NAME_MAX                 (9)
+#undef _POSIX_TZNAME_MAX
 #define _POSIX_TZNAME_MAX                   (6)
+#undef _POSIX2_BC_BASE_MAX
 #define _POSIX2_BC_BASE_MAX                 (99)
+#undef _POSIX2_BC_DIM_MAX
 #define _POSIX2_BC_DIM_MAX                  (2048)
+#undef _POSIX2_BC_SCALE_MAX
 #define _POSIX2_BC_SCALE_MAX                (99)
+#undef _POSIX2_BC_STRING_MAX
 #define _POSIX2_BC_STRING_MAX               (1000)
+#undef _POSIX2_CHARCLASS_NAME_MAX
 #define _POSIX2_CHARCLASS_NAME_MAX          (14)
+#undef _POSIX2_COLL_WEIGHTS_MAX
 #define _POSIX2_COLL_WEIGHTS_MAX            (2)
+#undef _POSIX2_EXPR_NEST_MAX
 #define _POSIX2_EXPR_NEST_MAX               (32)
+#undef _POSIX2_LINE_MAX
 #define _POSIX2_LINE_MAX                    (2048)
+#undef _XOPEN_IOV_MAX
 #define _XOPEN_IOV_MAX                      (16)
+#undef _XOPEN_NAME_MAX
 #define _XOPEN_NAME_MAX                     (255)
+#undef _XOPEN_PATH_MAX
 #define _XOPEN_PATH_MAX                     (1024)
 
 /* Other invariant values */
+#undef NL_LANGMAX
 #define NL_LANGMAX (14)
+#undef NL_MSGMAX
 #define NL_MSGMAX  (32767)
+#undef NL_SETMAX
 #define NL_SETMAX  (255)
+#undef NL_TEXTMAX
 #define NL_TEXTMAX (_POSIX2_LINE_MAX)
+#undef NZERO
 #define NZERO      (20)
 
 /* Runtime invariant values */
+#undef AIO_LISTIO_MAX
 #define AIO_LISTIO_MAX     _POSIX_AIO_LISTIO_MAX
+#undef AIO_MAX
 #define AIO_MAX            _POSIX_AIO_MAX
+#undef AIO_PRIO_DELTA_MAX
 #define AIO_PRIO_DELTA_MAX (0)
+#undef DELAYTIMER_MAX
 #define DELAYTIMER_MAX     _POSIX_DELAYTIMER_MAX
+#undef HOST_NAME_MAX
 #define HOST_NAME_MAX      _POSIX_HOST_NAME_MAX
+#undef LOGIN_NAME_MAX
 #define LOGIN_NAME_MAX     _POSIX_LOGIN_NAME_MAX
+#undef MQ_OPEN_MAX
 #define MQ_OPEN_MAX        _POSIX_MQ_OPEN_MAX
+#undef MQ_PRIO_MAX
 #define MQ_PRIO_MAX        _POSIX_MQ_PRIO_MAX
 
 #ifndef ATEXIT_MAX
 #define ATEXIT_MAX 8
 #endif
 
+#undef PAGE_SIZE
 #define PAGE_SIZE CONFIG_POSIX_PAGE_SIZE
+#undef PAGESIZE
 #define PAGESIZE PAGE_SIZE
 
+#undef PTHREAD_DESTRUCTOR_ITERATIONS
 #define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#undef PTHREAD_KEYS_MAX
 #define PTHREAD_KEYS_MAX              _POSIX_THREAD_KEYS_MAX
+#undef PTHREAD_THREADS_MAX
 #define PTHREAD_THREADS_MAX           _POSIX_THREAD_THREADS_MAX
+#undef RTSIG_MAX
 #define RTSIG_MAX                     _POSIX_RTSIG_MAX
+#undef SEM_NSEMS_MAX
 #define SEM_NSEMS_MAX       _POSIX_SEM_NSEMS_MAX
+#undef SEM_VALUE_MAX
 #define SEM_VALUE_MAX       _POSIX_SEM_VALUE_MAX
+#undef SIGQUEUE_MAX
 #define SIGQUEUE_MAX        _POSIX_SIGQUEUE_MAX
+#undef STREAM_MAX
 #define STREAM_MAX          _POSIX_STREAM_MAX
+#undef SYMLOOP_MAX
 #define SYMLOOP_MAX         _POSIX_SYMLOOP_MAX
+#undef TIMER_MAX
 #define TIMER_MAX           _POSIX_TIMER_MAX
+#undef TTY_NAME_MAX
 #define TTY_NAME_MAX        _POSIX_TTY_NAME_MAX
 #ifndef TZNAME_MAX
+#undef TZNAME_MAX
 #define TZNAME_MAX          _POSIX_TZNAME_MAX
 #endif
 
 /* Pathname variable values */
+#undef FILESIZEBITS
 #define FILESIZEBITS             (32)
+#undef POSIX_ALLOC_SIZE_MIN
 #define POSIX_ALLOC_SIZE_MIN     (256)
+#undef POSIX_REC_INCR_XFER_SIZE
 #define POSIX_REC_INCR_XFER_SIZE (1024)
+#undef POSIX_REC_MAX_XFER_SIZE
 #define POSIX_REC_MAX_XFER_SIZE  (32767)
+#undef POSIX_REC_MIN_XFER_SIZE
 #define POSIX_REC_MIN_XFER_SIZE  (1)
+#undef POSIX_REC_XFER_ALIGN
 #define POSIX_REC_XFER_ALIGN     (4)
+#undef SYMLINK_MAX
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
 
 #endif /* INCLUDE_ZEPHYR_POSIX_POSIX_FEATURES_H_ */
