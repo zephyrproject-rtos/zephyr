@@ -9,8 +9,10 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/firmware/scmi/clk.h>
+#include <zephyr/drivers/firmware/scmi/cpu.h>
 #include <zephyr/drivers/firmware/scmi/power.h>
 #include <zephyr/dt-bindings/clock/imx95_clock.h>
+#include <zephyr/dt-bindings/cpu/imx95_cpu.h>
 #include <zephyr/dt-bindings/power/imx95_power.h>
 #include <soc.h>
 
@@ -33,6 +35,7 @@ static int soc_init(void)
 	struct scmi_protocol *proto = clk_dev->data;
 	struct scmi_clock_rate_config clk_cfg = {0};
 	struct scmi_power_state_config pwr_cfg = {0};
+	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
 	uint32_t power_state = POWER_DOMAIN_STATE_OFF;
 	uint64_t enetref_clk = 250000000; /* 250 MHz*/
 	int ret;
@@ -53,6 +56,13 @@ static int soc_init(void)
 		}
 	}
 
+	cpu_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
+
+	ret = scmi_cpu_sleep_mode_set(&cpu_cfg);
+	if (ret) {
+		return ret;
+	}
 	/* ENETREF clock init */
 	ret = scmi_clock_parent_set(proto, IMX95_CLK_ENETREF, IMX95_CLK_SYSPLL1_PFD0);
 	if (ret) {
