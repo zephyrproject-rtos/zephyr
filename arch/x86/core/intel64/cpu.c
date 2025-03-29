@@ -44,7 +44,9 @@ struct x86_cpuboot x86_cpuboot[] = {
 };
 
 #ifdef CONFIG_X86_CET_SHADOW_STACK
-LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_INTERRUPT_SHADOW_STACK_DEFINE, (;));
+#define _CPU_IDX(n, _) n
+FOR_EACH(X86_INTERRUPT_SHADOW_STACK_DEFINE, (;),
+	 LISTIFY(CONFIG_MP_MAX_NUM_CPUS, _CPU_IDX, (,)));
 
 struct x86_interrupt_ssp_table issp_table[] = {
 	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_INTERRUPT_SSP_TABLE_INIT, (,)),
@@ -138,6 +140,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 #endif /* CONFIG_X86_CET_IBT */
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 	z_x86_setup_interrupt_ssp_table((uintptr_t)&issp_table[cpuboot->cpu_id]);
+	cpuboot->gs_base->shstk_addr = &issp_table[cpuboot->cpu_id].ist1;
 #endif /* CONFIG_X86_CET_SHADOW_STACK */
 
 #endif /* CONFIG_X86_CET */
