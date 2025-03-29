@@ -1,0 +1,8 @@
+# AT-START-F405 board configuration
+
+# Copyright (c) 2018 Philémon Jaermann
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AT_START_F405
+
+endif # BOARD_AT_START_F405
