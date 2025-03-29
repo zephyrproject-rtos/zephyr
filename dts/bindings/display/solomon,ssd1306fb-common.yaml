@@ -49,6 +49,12 @@ properties:
       If connected directly the MCU pin should be configured
       as active low.
 
+  panel-supply-gpios:
+    type: phandle-array
+    description: Panel supply activation pin.
+
+      GPIO control for the high-power supply side of the display panel.
+
   inversion-on:
     type: boolean
     description: Turn on display color inverting
