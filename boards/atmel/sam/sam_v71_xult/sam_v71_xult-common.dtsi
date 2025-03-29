@@ -180,8 +180,18 @@
 	pinctrl-names = "default";
 
 	eeprom: eeprom@5f {
-		compatible = "atmel,24mac402";
+		compatible = "atmel,at24", "atmel,24mac402";
 		reg = <0x5f>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		mac_address: mac_address@9a {
+			reg = <0x9a 0x06>;
+		};
 	};
 };
 
@@ -236,7 +246,8 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
 
-	mac-eeprom = <&eeprom>;
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy>;
 };
 
