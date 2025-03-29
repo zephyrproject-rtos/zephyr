@@ -6,8 +6,7 @@ common:
   platform_allow:
     - mps3/corstone300/an547
     - mps3/corstone300/fvp
-    # TODO: enable this after CONFIG_USERSPACE is supported for mps3/corstone310
-    # - mps3/corstone310/fvp
+    - mps3/corstone310/fvp
 tests:
   # To verify that region marked with PXN attribute can be executed from unprivileged code
   # and cannot be executed from privileged code
