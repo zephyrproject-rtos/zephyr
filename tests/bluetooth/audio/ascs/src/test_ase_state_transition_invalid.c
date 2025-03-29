@@ -60,14 +60,12 @@ static void test_ase_state_transition_invalid_before(void *f)
 		(struct test_ase_state_transition_invalid_fixture *)f;
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		&mock_bap_unicast_server_cb
 	};
 	int err;
 
 	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	memset(fixture, 0, sizeof(struct test_ase_state_transition_invalid_fixture));
@@ -81,14 +79,15 @@ static void test_ase_state_transition_invalid_after(void *f)
 {
 	int err;
 
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	/* Sleep to trigger any pending state changes from unregister_cb */
-	k_sleep(K_SECONDS(1));
-
 	err = bt_bap_unicast_server_unregister();
-	zassert_equal(err, 0, "Unexpected err response %d", err);
+
+	/* In case of a failure due to pending state change, try again */
+	while (err != 0 && err != -EALREADY) {
+		/* Only -EBUSY indicate pending state change */
+		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
+		k_sleep(K_MSEC(10));
+		err = bt_bap_unicast_server_unregister();
+	}
 }
 
 static void test_ase_state_transition_invalid_teardown(void *f)
