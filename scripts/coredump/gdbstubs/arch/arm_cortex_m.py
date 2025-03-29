@@ -43,8 +43,8 @@ class GdbStub_ARM_CortexM(GdbStub):
 
     GDB_G_PKT_NUM_REGS = 17
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
 
