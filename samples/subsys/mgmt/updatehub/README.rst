@@ -454,7 +454,7 @@ The below list of hardware have been used by UpdateHub team.
    :width: 800px
 
    :zephyr:board:`frdm_k64f`, "1, 2, 3, 4"
-   :ref:`nrf52840dk_nrf52840`, "2, 3, 4, 5, 6"
+   :zephyr:board:`nrf52840dk`, "2, 3, 4, 5, 6"
    :zephyr:board:`nucleo_f767zi`, "1, 2, 3, 4"
 
 

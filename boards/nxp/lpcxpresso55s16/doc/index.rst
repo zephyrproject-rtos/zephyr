@@ -48,37 +48,7 @@ NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s16 board:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Other hardware features are not currently enabled.
 

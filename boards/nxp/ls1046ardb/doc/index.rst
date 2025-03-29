@@ -50,15 +50,7 @@ Supported Features
 NXP LS1046A RDB board default configuration supports the following
 hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| GIC-400   | on-chip    | GICv2 interrupt controller           |
-+-----------+------------+--------------------------------------+
-| ARM TIMER | on-chip    | System Clock                         |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | NS16550 compatible serial port       |
-+-----------+------------+--------------------------------------+
+.. zephyr:board-supported-hw::
 
 Other hardware features have not been enabled yet for this board.
 

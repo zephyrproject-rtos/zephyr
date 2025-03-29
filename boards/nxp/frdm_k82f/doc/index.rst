@@ -58,47 +58,7 @@ NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the frdm_k64f board may have additional features
 already supported, which can also be re-used on this frdm_k82f board:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| FLASH     | off-chip   | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FTFA      | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/frdm_k82f/frdm_k82f_defconfig`
