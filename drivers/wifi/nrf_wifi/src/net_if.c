@@ -41,6 +41,8 @@ void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						unsigned int event_len)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	unsigned int vif_ctx_cnt = 0;
 
 	if (!os_vif_ctx) {
 		LOG_ERR("%s: Invalid parameters",
@@ -57,9 +59,18 @@ void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 	(void)event_len;
 
 	vif_ctx_zep = os_vif_ctx;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	vif_ctx_cnt = nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx);
 
-	vif_ctx_zep->set_if_event_received = true;
-	vif_ctx_zep->set_if_status = event->return_value;
+	/* Notify all vif */
+	for(int idx = 0; idx < vif_ctx_cnt; ++idx) {
+		vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(idx);
+		if(vif_ctx_zep)
+		{
+			vif_ctx_zep->set_if_event_received = true;
+			vif_ctx_zep->set_if_status = event->return_value;
+		}
+	}
 
 out:
 	return;
@@ -760,8 +771,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	}
 
 	k_mutex_init(&vif_ctx_zep->vif_lock);
-	rpu_ctx_zep->vif_ctx_zep[vif_ctx_zep->vif_idx].if_type =
-		add_vif_info.iftype;
+	vif_ctx_zep->if_type = add_vif_info.iftype;
 
 	/* Check if user has provided a valid MAC address, if not
 	 * fetch it from OTP.
