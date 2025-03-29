@@ -10,7 +10,11 @@
 #include <stdint.h>
 
 extern uint32_t diagonal3224[];
+extern uint32_t kerning_1_12rectspace1123[];
+extern uint32_t kerning_1_2rectspace1123[];
+extern uint32_t kerning_1_rightclip_1_2rectspace1123[];
 extern uint32_t kerning_3_12rectspace1016[];
+extern uint32_t kerning_3_2dot0101[];
 extern uint32_t kerning_3_2rectspace1016[];
 extern uint32_t kerning_3_rightclip_1_2rectspace1016[];
 extern uint32_t outside_bottom_left[];
