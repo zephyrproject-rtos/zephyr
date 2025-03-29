@@ -33,33 +33,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``mr_canhubk3`` board configuration supports the following hardware features:
-
-============  ==========  ================================
-Interface     Controller  Driver/Component
-============  ==========  ================================
-SIUL2         on-chip     | pinctrl
-                          | gpio
-                          | external interrupt controller
-WKPU          on-chip     interrupt controller
-LPUART        on-chip     serial
-QSPI          on-chip     flash
-FLEXCAN       on-chip     can
-LPI2C         on-chip     i2c
-ADC SAR       on-chip     adc
-LPSPI         on-chip     spi
-WDT           FS26 SBC    watchdog
-SWT           on-chip     watchdog
-EMAC          on-chip     ethernet
-                          mdio
-eMIOS         on-chip     pwm
-EDMA          on-chip     dma
-FLEXIO PWM    on-chip     pwm
-STM           on-chip     counter
-============  ==========  ================================
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/mr_canhubk3/mr_canhubk3_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

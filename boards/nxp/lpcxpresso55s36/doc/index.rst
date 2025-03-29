@@ -43,43 +43,11 @@ Supported Features
 NXP considers the LPCXpresso55S36 as a superset board for the LPC55(S)3x
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The lpcxpresso55s36 board
-configuration supports the hardware features below.  Another similar superset
+this board with new support for Zephyr features.  Another similar superset
 board is the :zephyr:board:`lpcxpresso55s69`, and that board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s36 board:
+already supported, which can also be re-used on this lpcxpresso55s36 board.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB FS    | on-chip    | USB Full Speed device               |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently enabled.
-
-Currently available targets for this board are:
-
-- *lpcxpresso55s36*
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
