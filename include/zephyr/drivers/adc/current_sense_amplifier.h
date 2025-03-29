@@ -16,6 +16,7 @@ struct current_sense_amplifier_dt_spec {
 	uint16_t sense_gain_mult;
 	uint16_t sense_gain_div;
 	struct gpio_dt_spec power_gpio;
+	bool enable_calibration;
 };
 
 /**
@@ -35,6 +36,7 @@ struct current_sense_amplifier_dt_spec {
 		.sense_gain_mult = DT_PROP(node_id, sense_gain_mult),                              \
 		.sense_gain_div = DT_PROP(node_id, sense_gain_div),                                \
 		.power_gpio = GPIO_DT_SPEC_GET_OR(node_id, power_gpios, {0}),                      \
+		.enable_calibration = DT_PROP_OR(node_id, enable_calibration, false),              \
 	}
 
 /**
