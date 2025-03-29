@@ -20,8 +20,10 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #define PM_DOMAIN(_pm) NULL
 #endif
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_WQ_STACK_SIZE);
 static struct k_work_q pm_device_runtime_wq;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 #define EVENT_STATE_ACTIVE	BIT(PM_DEVICE_STATE_ACTIVE)
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
@@ -82,8 +84,10 @@ static int runtime_suspend(const struct device *dev, bool async,
 
 	if (async) {
 		/* queue suspend */
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 		pm->base.state = PM_DEVICE_STATE_SUSPENDING;
 		(void)k_work_schedule_for_queue(&pm_device_runtime_wq, &pm->work, delay);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 	} else {
 		/* suspend now */
 		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
@@ -103,6 +107,7 @@ unlock:
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 static void runtime_suspend_work(struct k_work *work)
 {
 	int ret;
@@ -132,6 +137,7 @@ static void runtime_suspend_work(struct k_work *work)
 
 	__ASSERT(ret == 0, "Could not suspend device (%d)", ret);
 }
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 static int get_sync_locked(const struct device *dev)
 {
@@ -229,6 +235,7 @@ int pm_device_runtime_get(const struct device *dev)
 
 	pm->base.usage++;
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	/*
 	 * Check if the device has a pending suspend operation (not started
 	 * yet) and cancel it. This way we avoid unnecessary operations because
@@ -254,6 +261,7 @@ int pm_device_runtime_get(const struct device *dev)
 			(void)k_sem_take(&pm->lock, K_FOREVER);
 		}
 	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 	if (pm->base.usage > 1U) {
 		goto unlock;
@@ -352,6 +360,7 @@ int pm_device_runtime_put(const struct device *dev)
 
 int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 {
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	int ret;
 
 	if (dev->pm_base == NULL) {
@@ -372,6 +381,9 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
 
 	return ret;
+#else
+	return -ENOSYS;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
 __boot_func
@@ -443,7 +455,9 @@ int pm_device_runtime_enable(const struct device *dev)
 	/* lazy init of PM fields */
 	if (pm->dev == NULL) {
 		pm->dev = dev;
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 		k_work_init_delayable(&pm->work, runtime_suspend_work);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 	}
 
 	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
@@ -516,6 +530,7 @@ int pm_device_runtime_disable(const struct device *dev)
 		(void)k_sem_take(&pm->lock, K_FOREVER);
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	if (!k_is_pre_kernel()) {
 		if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
 			((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
@@ -533,6 +548,7 @@ int pm_device_runtime_disable(const struct device *dev)
 			(void)k_sem_take(&pm->lock, K_FOREVER);
 		}
 	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 	/* wake up the device if suspended */
 	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
@@ -543,8 +559,9 @@ int pm_device_runtime_disable(const struct device *dev)
 
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
 	}
-
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 clear_bit:
+#endif
 	atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 
 unlock:
@@ -574,6 +591,8 @@ int pm_device_runtime_usage(const struct device *dev)
 	return dev->pm_base->usage;
 }
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+
 static int pm_device_runtime_wq_init(void)
 {
 	const struct k_work_queue_config cfg = {.name = "PM DEVICE RUNTIME WQ"};
@@ -588,3 +607,5 @@ static int pm_device_runtime_wq_init(void)
 }
 
 SYS_INIT(pm_device_runtime_wq_init, POST_KERNEL, CONFIG_PM_DEVICE_RUNTIME_WQ_INIT_PRIO);
+
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */

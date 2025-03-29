@@ -102,6 +102,14 @@ config PM_DEVICE_RUNTIME
 	  usage even while the CPU or system is running.
 
 if PM_DEVICE_RUNTIME
+config PM_DEVICE_RUNTIME_ASYNC
+	bool "Asynchronous device runtime power management"
+	default y
+	help
+	  Use this option to enable support for asynchronous operation
+	  in the power management device runtime.
+
+if PM_DEVICE_RUNTIME_ASYNC
 config PM_DEVICE_RUNTIME_WQ_STACK_SIZE
 	int "Stack size for pm runtime async workqueue"
 	default 1024
@@ -118,6 +126,7 @@ config PM_DEVICE_RUNTIME_WQ_INIT_PRIO
 	default 50
 	help
 	  Init priority level to setup the device runtime workqueue.
+endif # PM_DEVICE_RUNTIME_ASYNC
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
