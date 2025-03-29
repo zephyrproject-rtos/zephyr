@@ -873,7 +873,21 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	while (len) {
 		ssize_t out_len = zsock_send(client->fd, buf, len, 0);
 
-		if (out_len < 0) {
+		if ((out_len == 0) || (out_len < 0 && errno == EAGAIN)) {
+			struct zsock_pollfd pfd;
+			int pollres;
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+			pollres = zsock_poll(&pfd, 1, 0);
+			if (pollres == 0) {
+				return -ETIMEDOUT;
+			} else if (pollres > 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (out_len < 0) {
 			return -errno;
 		}
 
