@@ -1,0 +1,13 @@
+identifier: versal2_rpu
+name: AMD Development board for Versal Gen 2 RPU
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - scsi
+  - ufs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd
