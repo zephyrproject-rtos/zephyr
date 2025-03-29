@@ -5,25 +5,21 @@ on:
     outputs:
       subset:
         description: subset
-        value: ${{ jobs.prep_push.outputs.subset != '' && jobs.prep_push.outputs.subset ||  jobs.prep_pr.outputs.subset }}
+        value: ${{ jobs.prep.outputs.subset }}
       size:
         description: size
-        value: ${{ jobs.prep_push.outputs.size != '' && jobs.prep_push.outputs.size || jobs.prep_pr.outputs.size }}
+        value: ${{ jobs.prep.outputs.size }}
       fullrun:
         description: fullrun
-        value: ${{ jobs.prep_push.outputs.fullrun != '' && jobs.prep_push.outputs.fullrun || jobs.prep_pr.outputs.size }}
+        value: ${{ jobs.prep.outputs.fullrun }}
 
 permissions:
   contents: read
 
 jobs:
-  prep_pr:
-    if: github.repository_owner == 'zephyrproject-rtos' && github.event_name == 'pull_request'
-    runs-on:
-      group: zephyr-runner-v2-linux-x64-4xlarge
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
-      options: '--entrypoint /bin/bash'
+  prep:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: ubuntu-24.04
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
@@ -38,34 +34,29 @@ jobs:
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
-      - name: Apply container owner mismatch workaround
-        run: |
-          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
-          #        match the container user UID because of the way GitHub
-          #        Actions runner is implemented. Remove this workaround when
-          #        GitHub comes up with a fundamental fix for this problem.
-          git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
-      - name: Print cloud service information
-        run: |
-          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
-          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
-          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
-
-      - name: Clone cached Zephyr repository
-        continue-on-error: true
-        run: |
-          git clone --shared /repo-cache/zephyrproject/zephyr .
-          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
-
       - name: Checkout
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Python
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: install-packages
+        if: github.event_name == 'pull_request'
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Environment Setup
+        if: github.event_name == 'pull_request'
         run: |
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
@@ -75,14 +66,14 @@ jobs:
           git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
-          west config manifest.group-filter -- +ci,+optional
+          west config manifest.group-filter -- +ci,+optional,-hal
+          west config manifest.project-filter -- -nrf_hw_models
           west config --global update.narrow true
           west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
-
       - name: Generate Test Plan with Twister
+        if: github.event_name == 'pull_request'
         id: test-plan
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -98,46 +89,16 @@ jobs:
       - name: Determine matrix size
         id: output-services
         run: |
-          if [ -n "${TWISTER_NODES}" ]; then
-            subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
-          else
-            subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
-          fi
-          size=${TWISTER_NODES}
-
-          echo "subset=${subset}" >> $GITHUB_OUTPUT
-          echo "size=${size}" >> $GITHUB_OUTPUT
-          echo "fullrun=${TWISTER_FULL}" >> $GITHUB_OUTPUT
-
-  prep_push:
-    if: github.repository_owner == 'zephyrproject-rtos' && (github.event_name == 'push' || github.event_name == 'schedule')
-    runs-on: ubuntu-22.04
-    outputs:
-      subset: ${{ steps.output-services.outputs.subset }}
-      size: ${{ steps.output-services.outputs.size }}
-      fullrun: ${{ steps.output-services.outputs.fullrun }}
-    env:
-      MATRIX_SIZE: 10
-      PUSH_MATRIX_SIZE: 20
-      WEEKLY_MATRIX_SIZE: 200
-      BSIM_OUT_PATH: /opt/bsim/
-      BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TESTS_PER_BUILDER: 900
-      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
-      BASE_REF: ${{ github.base_ref }}
-    steps:
-      - name: Print cloud service information
-        run: |
-          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
-          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
-          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
-
-      - name: Determine matrix size
-        id: output-services
-        run: |
           if [ "${{github.event_name}}" = "push" ]; then
             subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
+          elif [ "${{github.event_name}}" = "pull_request" ]; then
+            if [ -n "${TWISTER_NODES}" ]; then
+              subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
+            else
+              subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            fi
+            size=${TWISTER_NODES}
           elif [ "${{github.event_name}}" = "schedule" -a "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
             subset="[$(seq -s',' 1 ${WEEKLY_MATRIX_SIZE})]"
             size=${WEEKLY_MATRIX_SIZE}

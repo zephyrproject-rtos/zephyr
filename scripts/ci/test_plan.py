@@ -136,7 +136,7 @@ class Filters:
 
     def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
-        cmd = [f"{zephyr_base}/scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        cmd = [f"{zephyr_base}/scripts/twister", "-c", "--force-toolchain-variant", "zephyr"] + options + ["--save-tests", fname ]
         if not self.detailed_test_id:
             cmd += ["--no-detailed-test-id"]
         if self.testsuite_root and use_testsuite_root:
