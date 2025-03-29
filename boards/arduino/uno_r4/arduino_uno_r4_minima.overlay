@@ -6,6 +6,7 @@
 
 #include "arduino_uno_r4_minima-pinctrl.dtsi"
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
@@ -15,7 +16,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led: led {
-			gpios = <&ioport1 11 GPIO_ACTIVE_HIGH>;
+			gpios = <&arduino_header ARDUINO_HEADER_R3_D13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -23,7 +24,7 @@
 		compatible = "pwm-leds";
 		status = "disabled";
 		pwm_led: pwm_led {
-			pwms = <&pwm3 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			pwms = <&arduino_pwm ARDUINO_HEADER_R3_D13 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
 		};
 	};
@@ -60,6 +61,23 @@
 			   <19 0 &ioport1 11 0>,  /* D13 */
 			   <20 0 &ioport1 1 0>,   /* D14 */
 			   <21 0 &ioport1 0 0>;   /* D15 */
+	};
+
+	arduino_pwm: connector-pwm {
+		compatible = "arduino-header-pwm";
+		#pwm-cells = <3>;
+		pwm-map = <8 0 0 &pwm1 0 0 0>,    /* D2 =  P105 = GPT1_A */
+			  <9 0 0 &pwm1 1 0 0>,    /* D3 =  P104 = GPT1_B */
+			  <10 0 0 &pwm2 0 0 0>,   /* D4 =  P103 = GPT2 A */
+			  <11 0 0 &pwm2 1 0 0>,   /* D5 =  P102 = GPT2_B */
+			  <12 0 0 &pwm0 1 0 0>,   /* D6 =  P106 = GPT0_B */
+			  <13 0 0 &pwm0 0 0 0>,   /* D7 =  P107 = GPT0_A */
+			  <14 0 0 &pwm7 0 0 0>,   /* D8 =  P304 = GPT7_A */
+			  <15 0 0 &pwm7 1 0 0>,   /* D9 =  P303 = GPT7_B */
+			  <16 0 0 &pwm3 1 0 0>,   /* D10 = P112 = GPT3_B */
+			  <19 0 0 &pwm3 0 0 0>;   /* D13 = P111 = GPT3_A */
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
 	};
 };
 
