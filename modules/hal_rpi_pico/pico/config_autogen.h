@@ -29,8 +29,12 @@
 /* Convert uses of asm, which is not supported in c99, to __asm */
 #define asm __asm
 
-/* Disable binary info */
+/* Configure binary info */
+#ifndef CONFIG_RPI_PICO_BINARY_INFO
 #define PICO_NO_BINARY_INFO 1
+#else
+#define PICO_NO_BINARY_INFO 0
+#endif
 
 #ifdef CONFIG_DT_HAS_RASPBERRYPI_PICO_XOSC_ENABLED
 #include <zephyr/devicetree.h>
