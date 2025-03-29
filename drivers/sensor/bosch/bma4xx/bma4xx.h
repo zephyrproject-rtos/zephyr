@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 #include "bma4xx_defs.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -25,6 +26,9 @@
  * Types
  */
 
+#define BMA4XX_BUS_I2C 0
+#define BMA4XX_BUS_SPI 1
+
 union bma4xx_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
@@ -38,6 +42,9 @@ union bma4xx_bus_cfg {
 struct bma4xx_config {
 	int (*bus_init)(const struct device *dev);
 	const union bma4xx_bus_cfg bus_cfg;
+	uint8_t bus_type;
+
+	const struct gpio_dt_spec gpio_interrupt;
 };
 
 /** Used to implement bus-specific R/W operations. See bma4xx_i2c.c and
@@ -53,6 +60,14 @@ struct bma4xx_hw_operations {
 
 struct bma4xx_runtime_config {
 	bool fifo_en;
+	int32_t batch_ticks;
+
+	bool interrupt1_fifo_wm;
+	bool interrupt1_fifo_full;
+
+	uint8_t accel_pwr_mode;
+	uint8_t aux_pwr_mode;
+
 	/** Current full-scale range setting as a register value */
 	uint8_t accel_fs_range;
 	/** Current bandwidth parameter (BWP) as a register value */
@@ -67,35 +82,110 @@ struct bma4xx_data {
 	const struct bma4xx_hw_operations *hw_ops;
 	/** Chip ID value stored in BMA4XX_REG_CHIP_ID */
 	uint8_t chip_id;
-};
-
-/*
- * RTIO types
- */
-
-struct bma4xx_decoder_header {
+	struct rtio *r;
+	struct rtio_iodev *iodev;
+#ifdef CONFIG_BMA4XX_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	uint8_t int_status;
+	uint16_t fifo_count;
 	uint64_t timestamp;
-	uint8_t is_fifo: 1;
-	uint8_t accel_fs: 2;
-	uint8_t reserved: 5;
-} __attribute__((__packed__));
-
-struct bma4xx_encoded_data {
-	struct bma4xx_decoder_header header;
-	struct {
-		/** Set if `accel_xyz` has data */
-		uint8_t has_accel: 1;
-		/** Set if `temp` has data */
-		uint8_t has_temp: 1;
-		uint8_t reserved: 6;
-	} __attribute__((__packed__));
-	int16_t accel_xyz[3];
-#ifdef CONFIG_BMA4XX_TEMPERATURE
-	int8_t temp;
-#endif /* CONFIG_BMA4XX_TEMPERATURE */
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+#endif /* CONFIG_BMA4XX_STREAM */
 };
 
+static inline void bma4xx_accel_reg_to_hz(uint8_t odr, struct sensor_value *out)
+{
+	switch (odr) {
+	case BMA4XX_ODR_RESERVED:
+		out->val1 = 0;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_0_78125:
+		out->val1 = 0;
+		out->val2 = 781250;
+		break;
+	case BMA4XX_ODR_1_5625:
+		out->val1 = 1;
+		out->val2 = 562500;
+		break;
+	case BMA4XX_ODR_3_125:
+		out->val1 = 3;
+		out->val2 = 125000;
+		break;
+	case BMA4XX_ODR_6_25:
+		out->val1 = 6;
+		out->val2 = 250000;
+		break;
+	case BMA4XX_ODR_12_5:
+		out->val1 = 12;
+		out->val2 = 500000;
+		break;
+	case BMA4XX_ODR_25:
+		out->val1 = 25;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_50:
+		out->val1 = 50;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_100:
+		out->val1 = 100;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_200:
+		out->val1 = 200;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_400:
+		out->val1 = 400;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_800:
+		out->val1 = 800;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_1600:
+		out->val1 = 1600;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_3200:
+		out->val1 = 3200;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_6400:
+		out->val1 = 6400;
+		out->val2 = 0;
+		break;
+	case BMA4XX_ODR_12800:
+		out->val1 = 12800;
+		out->val2 = 0;
+		break;
+	default:
+		out->val1 = -EINVAL;
+		out->val2 = -EINVAL;
+		break;
+	}
+}
+
+/**
+ * @brief Initialize the SPI bus
+ *
+ * @param dev bma4xx device pointer
+ *
+ * @retval 0 success
+ * @retval -errdev Error
+ */
 int bma4xx_spi_init(const struct device *dev);
+
+/**
+ * @brief Initialize the I2C bus
+ *
+ * @param dev bma4xx device pointer
+ *
+ * @retval 0 success
+ * @retval -errdev Error
+ */
 int bma4xx_i2c_init(const struct device *dev);
 
 /**
