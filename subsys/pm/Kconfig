@@ -126,6 +126,15 @@ if PM_DEVICE_RUNTIME
 config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
 	bool
 
+config PM_DEVICE_RUNTIME_ASYNC
+	bool "Asynchronous device runtime power management"
+	default y
+	help
+	  Use this option to enable support for asynchronous operation
+	  in the power management device runtime.
+
+if PM_DEVICE_RUNTIME_ASYNC
+
 choice PM_DEVICE_RUNTIME_WQ
 	prompt "Work queue to be used by pm device runtime async"
 	default PM_DEVICE_RUNTIME_USE_DEDICATED_WQ if PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
@@ -164,6 +173,7 @@ config PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO
 endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 endchoice
 
+endif # PM_DEVICE_RUNTIME_ASYNC
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
