@@ -8508,6 +8508,10 @@ void hci_disconn_complete_encode(struct pdu_data *pdu_data, uint16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->reason = *((uint8_t *)pdu_data);
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+	hci_disconn_complete_process(handle);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 }
 
 void hci_disconn_complete_process(uint16_t handle)
