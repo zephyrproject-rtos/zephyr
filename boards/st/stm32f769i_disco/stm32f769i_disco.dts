@@ -263,5 +263,6 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	phys = <&otghs_ulpi_phy>;
+	physel = "USB_OTG_HS_PHY_ULPI";
 	status = "okay";
 };
