@@ -8,9 +8,6 @@
 #
 # To see a list of typical targets execute "make usage"
 # More info can be located in ./README.rst
-# Comments in this file are targeted only to the developer, do not
-# expect to learn how to build the kernel reading this file.
-
 if(NOT DEFINED ZEPHYR_BINARY_DIR)
   message(FATAL_ERROR "A user error has occurred.
 cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
@@ -2332,3 +2329,92 @@ build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
 build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
 
 yaml_save(NAME build_info)
+# Locate the .west/config file (assuming it's in the workspace root, i.e., $PWD)
+set(WEST_CONFIG_FILE "$ENV{PWD}/.west/config")
+
+# Read the config file content and extract signing parameters
+if(EXISTS ${WEST_CONFIG_FILE})
+    file(READ ${WEST_CONFIG_FILE} WEST_CONFIG_CONTENT)
+    # Extract sign_firmware value from [sign] section
+    string(REGEX MATCH "sign_firmware = ([0-1])" SIGN_FIRMWARE_MATCH "${WEST_CONFIG_CONTENT}")
+    if(CMAKE_MATCH_1)
+        set(SIGN_FIRMWARE ${CMAKE_MATCH_1})
+    else()
+        set(SIGN_FIRMWARE 0)  # Default to 0 if not found
+    endif()
+
+    # Extract tool path from [sign.customtool] section, ensure absolute path
+    string(REGEX MATCH "tool-path = ([^\n]+)" TOOL_PATH_MATCH "${WEST_CONFIG_CONTENT}")
+    if(CMAKE_MATCH_1)
+        set(CUSTOM_SIGN_TOOL_PATH "${CMAKE_MATCH_1}")
+    else()
+        # Use absolute path based on $ENV{PWD}
+        set(CUSTOM_SIGN_TOOL_PATH "$ENV{PWD}/zephyr/scripts/west_commands/sign_rps.py")
+    endif()
+
+    # Extract m4_ota_key from [sign.customtool] section
+    string(REGEX MATCH "m4-ota-key = ([^\n]+)" M4_OTA_KEY_MATCH "${WEST_CONFIG_CONTENT}")
+    set(M4_OTA_KEY "${CMAKE_MATCH_1}")
+
+    # Extract m4_private_key from [sign.customtool] section
+    string(REGEX MATCH "m4-private-key = ([^\n]+)" M4_PRIVATE_KEY_MATCH "${WEST_CONFIG_CONTENT}")
+    set(M4_PRIVATE_KEY "${CMAKE_MATCH_1}")
+else()
+    message(WARNING "West config file not found at ${WEST_CONFIG_FILE}. Using default signing settings.")
+    set(SIGN_FIRMWARE 0)  # Default to 0 if config file is missing
+endif()
+
+# Ensure CUSTOM_SIGN_TOOL_PATH is absolute
+if(NOT IS_ABSOLUTE "${CUSTOM_SIGN_TOOL_PATH}")
+    set(CUSTOM_SIGN_TOOL_PATH "$ENV{PWD}/zephyr/scripts/west_commands/sign_rps.py")
+endif()
+
+message(STATUS "SIGN_FIRMWARE = ${SIGN_FIRMWARE}")
+message(STATUS "CUSTOM_SIGN_TOOL_PATH = ${CUSTOM_SIGN_TOOL_PATH}")
+message(STATUS "M4_OTA_KEY = ${M4_OTA_KEY}")
+message(STATUS "M4_PRIVATE_KEY = ${M4_PRIVATE_KEY}")
+
+# Define paths for input, intermediate, and output files
+set(ZEPHYR_BIN "${CMAKE_BINARY_DIR}/zephyr/zephyr.bin.rps")  # Input file
+set(ZEPHYR_SIGNED_RPS "${CMAKE_BINARY_DIR}/zephyr/zephyr.signed.rps")  # Blank signed file
+set(ZEPHYR_BIN_RPS "${CMAKE_BINARY_DIR}/zephyr/zephyr.bin.rps")  # Final output file
+
+# Conditionally define the custom signing command
+if(SIGN_FIRMWARE EQUAL 1)
+    # Define the custom signing command with conditions
+    add_custom_command(
+        OUTPUT ${ZEPHYR_BIN_RPS} ${ZEPHYR_SIGNED_RPS}
+        COMMAND ${CMAKE_COMMAND} -E echo "Checking custom signing conditions after build..."
+        COMMAND sh -c "if [ -f '${ZEPHYR_BIN}' ] && [ ! -f '${ZEPHYR_SIGNED_RPS}' ]; then \
+            echo 'Conditions met: sign_firmware=1, zephyr.bin exists, zephyr.signed.bin does not exist'; \
+            touch '${ZEPHYR_SIGNED_RPS}' && \
+            ${PYTHON_EXECUTABLE} '${CUSTOM_SIGN_TOOL_PATH}' \
+                --input '${ZEPHYR_BIN}' \
+                --output '${ZEPHYR_BIN_RPS}' \
+                --m4_ota_key '${M4_OTA_KEY}' \
+                --m4_private_key '${M4_PRIVATE_KEY}'; \
+            else \
+                echo 'Skipping signing: conditions not met'; \
+                echo 'zephyr.bin exists? ' && ls -l '${ZEPHYR_BIN}' || echo 'No'; \
+                echo 'zephyr.signed.bin exists? ' && ls -l '${ZEPHYR_SIGNED_RPS}' || echo 'No'; \
+            fi"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS ${logical_target_for_zephyr_elf}  # Ensure this runs after the final ELF is built
+        COMMENT "Custom signing of ${ZEPHYR_BIN} to ${ZEPHYR_BIN_RPS}, creating blank ${ZEPHYR_SIGNED_RPS}"
+        VERBATIM
+    )
+
+    # Add a custom target to trigger the signing
+    add_custom_target(custom_signing
+        DEPENDS ${ZEPHYR_BIN_RPS} ${ZEPHYR_SIGNED_RPS}
+    )
+
+    # Ensure signing runs post-build by adding it to the final target dependencies
+    add_custom_target(final_custom_signing ALL
+        DEPENDS ${logical_target_for_zephyr_elf} custom_signing
+        COMMENT "Ensuring custom signing runs post-build"
+    )
+else()
+    message(STATUS "Custom firmware signing skipped (sign_firmware = 0)")
+endif()
+
