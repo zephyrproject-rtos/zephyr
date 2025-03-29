@@ -1264,3 +1264,9 @@ test_i2c_bmm350: bmm350@ac {
 	reg = <0xac>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_paj7620: paj7620@ad {
+	compatible = "pixart,paj7620";
+	reg = <0xad>;
+	int-gpios = <&test_gpio 0 0>;
+};
