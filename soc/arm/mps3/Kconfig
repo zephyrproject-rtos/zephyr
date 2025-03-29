@@ -4,6 +4,7 @@
 
 config SOC_SERIES_MPS3
 	select ARM
+	select PINCTRL
 	select GPIO_MMIO32 if GPIO
 
 config SOC_MPS3_CORSTONE300
