@@ -72,8 +72,12 @@ jobs:
         git log  --pretty=oneline | head -n 10
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
-        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat \
-        -c origin/${BASE_REF}..
+        excludes="-e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat"
+        # The signed-off-by check for dependabot should be skipped
+        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
+          excludes="$excludes -e Identity"
+        fi
+        ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
