@@ -152,7 +152,7 @@ static int current_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
-	data->sequence.calibrate = true;
+	data->sequence.calibrate = config->enable_calibration;
 
 	return 0;
 }
