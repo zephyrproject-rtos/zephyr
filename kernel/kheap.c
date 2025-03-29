@@ -63,22 +63,23 @@ SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_
 SYS_INIT_NAMED(statics_init_post, statics_init, POST_KERNEL, 0);
 #endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
-void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
-			k_timeout_t timeout)
+typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
+
+static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes,
+				 k_timeout_t timeout,
+				 sys_heap_allocator_t *sys_heap_allocator)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
 
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
-
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	bool blocked_alloc = false;
 
 	while (ret == NULL) {
-		ret = sys_heap_aligned_alloc(&heap->heap, align, bytes);
+		ret = sys_heap_allocator(&heap->heap, align, bytes);
 
 		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
 		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -88,7 +89,7 @@ void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 		if (!blocked_alloc) {
 			blocked_alloc = true;
 
-			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_heap, aligned_alloc, heap, timeout);
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_heap, alloc_helper, heap, timeout);
 		} else {
 			/**
 			 * @todo	Trace attempt to avoid empty trace segments
@@ -100,8 +101,6 @@ void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 		key = k_spin_lock(&heap->lock);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, aligned_alloc, heap, timeout, ret);
-
 	k_spin_unlock(&heap->lock, key);
 	return ret;
 }
@@ -110,9 +109,32 @@ void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, alloc, heap, timeout);
 
-	void *ret = k_heap_aligned_alloc(heap, sizeof(void *), bytes, timeout);
+	void *ret = z_heap_alloc_helper(heap, 0, bytes, timeout,
+					sys_heap_noalign_alloc);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, alloc, heap, timeout, ret);
+
+	return ret;
+}
+
+void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
+			k_timeout_t timeout)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
+
+	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
+					sys_heap_aligned_alloc);
+
+	/*
+	 * modules/debug/percepio/TraceRecorder/kernelports/Zephyr/include/tracing_tracerecorder.h
+	 * contains a concealed non-parameterized direct reference to a local
+	 * variable through the SYS_PORT_TRACING_OBJ_FUNC_EXIT macro below
+	 * that is no longer in scope. Provide a dummy stub for compilation
+	 * to still succeed until that module's layering violation is fixed.
+	 */
+	bool blocked_alloc = false; ARG_UNUSED(blocked_alloc);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, aligned_alloc, heap, timeout, ret);
 
 	return ret;
 }
@@ -148,7 +170,7 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	while (ret == NULL) {
-		ret = sys_heap_aligned_realloc(&heap->heap, ptr, sizeof(void *), bytes);
+		ret = sys_heap_realloc(&heap->heap, ptr, bytes);
 
 		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
 		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {

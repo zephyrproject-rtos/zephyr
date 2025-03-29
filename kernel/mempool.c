@@ -9,11 +9,19 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
 
-static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size)
+typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
+
+static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
+			    sys_heap_allocator_t sys_heap_allocator)
 {
 	void *mem;
 	struct k_heap **heap_ref;
 	size_t __align;
+	k_spinlock_key_t key;
+
+	/* A power of 2 as well as 0 is OK */
+	__ASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
 
 	/*
 	 * Adjust the size to make room for our heap reference.
@@ -26,7 +34,14 @@ static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size
 	}
 	__align = align | sizeof(heap_ref);
 
-	mem = k_heap_aligned_alloc(heap, __align, size, K_NO_WAIT);
+	/*
+	 * No point calling k_heap_malloc/k_heap_aligned_alloc with K_NO_WAIT.
+	 * Better bypass them and go directly to sys_heap_*() instead.
+	 */
+	key = k_spin_lock(&heap->lock);
+	mem = sys_heap_allocator(&heap->heap, __align, size);
+	k_spin_unlock(&heap->lock, key);
+
 	if (mem == NULL) {
 		return NULL;
 	}
@@ -64,16 +79,9 @@ K_HEAP_DEFINE(_system_heap, K_HEAP_MEM_POOL_SIZE);
 
 void *k_aligned_alloc(size_t align, size_t size)
 {
-	__ASSERT(align / sizeof(void *) >= 1
-		&& (align % sizeof(void *)) == 0,
-		"align must be a multiple of sizeof(void *)");
-
-	__ASSERT((align & (align - 1)) == 0,
-		"align must be a power of 2");
-
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_aligned_alloc, _SYSTEM_HEAP);
 
-	void *ret = z_heap_aligned_alloc(_SYSTEM_HEAP, align, size);
+	void *ret = z_alloc_helper(_SYSTEM_HEAP, align, size, sys_heap_aligned_alloc);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_aligned_alloc, _SYSTEM_HEAP, ret);
 
@@ -84,7 +92,7 @@ void *k_malloc(size_t size)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_malloc, _SYSTEM_HEAP);
 
-	void *ret = k_aligned_alloc(sizeof(void *), size);
+	void *ret = z_alloc_helper(_SYSTEM_HEAP, 0, size, sys_heap_noalign_alloc);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_malloc, _SYSTEM_HEAP, ret);
 
@@ -117,6 +125,7 @@ void *k_calloc(size_t nmemb, size_t size)
 void *k_realloc(void *ptr, size_t size)
 {
 	struct k_heap *heap, **heap_ref;
+	k_spinlock_key_t key;
 	void *ret;
 
 	if (size == 0) {
@@ -137,7 +146,13 @@ void *k_realloc(void *ptr, size_t size)
 		return NULL;
 	}
 
-	ret = k_heap_realloc(heap, ptr, size, K_NO_WAIT);
+	/*
+	 * No point calling k_heap_realloc() with K_NO_WAIT here.
+	 * Better bypass it and go directly to sys_heap_realloc() instead.
+	 */
+	key = k_spin_lock(&heap->lock);
+	ret = sys_heap_realloc(&heap->heap, ptr, size);
+	k_spin_unlock(&heap->lock, key);
 
 	if (ret != NULL) {
 		heap_ref = ret;
@@ -157,7 +172,8 @@ void k_thread_system_pool_assign(struct k_thread *thread)
 #define _SYSTEM_HEAP	NULL
 #endif /* K_HEAP_MEM_POOL_SIZE */
 
-void *z_thread_aligned_alloc(size_t align, size_t size)
+static void *z_thread_alloc_helper(size_t align, size_t size,
+				   sys_heap_allocator_t sys_heap_allocator)
 {
 	void *ret;
 	struct k_heap *heap;
@@ -169,10 +185,20 @@ void *z_thread_aligned_alloc(size_t align, size_t size)
 	}
 
 	if (heap != NULL) {
-		ret = z_heap_aligned_alloc(heap, align, size);
+		ret = z_alloc_helper(heap, align, size, sys_heap_allocator);
 	} else {
 		ret = NULL;
 	}
 
 	return ret;
+}
+
+void *z_thread_aligned_alloc(size_t align, size_t size)
+{
+	return z_thread_alloc_helper(align, size, sys_heap_aligned_alloc);
+}
+
+void *z_thread_malloc(size_t size)
+{
+	return z_thread_alloc_helper(0, size, sys_heap_noalign_alloc);
 }

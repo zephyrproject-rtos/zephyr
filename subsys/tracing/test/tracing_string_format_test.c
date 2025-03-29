@@ -381,7 +381,7 @@ void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
 
-void sys_trace_k_heap_aligned_alloc_blocking(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+void sys_trace_k_heap_alloc_helper_blocking(struct k_heap *h, size_t bytes, k_timeout_t timeout)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
