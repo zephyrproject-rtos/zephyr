@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+/ {
+	waveshare_pico_lcd_1_14_buttons: waveshare-pico_lcd_1_14-buttons {
+		compatible = "gpio-keys";
+
+		key_a: key_a {
+			label = "User key A";
+			gpios = <&pico_header 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_A>;
+		};
+
+		key_b: key_b {
+			label = "User key B";
+			gpios = <&pico_header 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_B>;
+		};
+	};
+
+	waveshare_pico_lcd_1_14_joystick: waveshare-pico_lcd_1_14-joystick {
+		compatible = "gpio-keys";
+
+		joystick_enter: joystick_enter {
+			label = "User joystick ENTER";
+			gpios = <&pico_header 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		joystick_right: joystick_right {
+			label = "User joystick RIGHT";
+			gpios = <&pico_header 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		joystick_up: joystick_up {
+			label = "User joystick UP";
+			gpios = <&pico_header  2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joystick_down: joystick_down {
+			label = "User joystick DOWN";
+			gpios = <&pico_header  18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joystick_left: joystick_left {
+			label = "User joystick LEFT";
+			gpios = <&pico_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+	};
+
+	aliases {
+		sw0 = &key_a;
+		sw1 = &key_b;
+	};
+};
