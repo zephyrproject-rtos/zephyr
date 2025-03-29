@@ -219,6 +219,10 @@ Networking
   is optional and not used with older MQTT versions - MQTT 3.1.1 users should pass
   NULL as an argument.
 
+* The enum ``ETHERNET_DSA_MASTER_PORT`` and ``ETHERNET_DSA_SLAVE_PORT`` in
+  :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
+  to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
+
 SPI
 ===
 

@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/lldp.h>
 #include <zephyr/drivers/hwinfo.h>
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
 #endif
 
@@ -767,7 +767,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			}
 			while ((pkt = eth_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 				iface = dsa_net_recv(iface, &pkt);
 #endif
 				res = net_recv_data(iface, pkt);
@@ -1345,7 +1345,7 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	dsa_register_master_tx(iface, &eth_tx);
 #endif
 
@@ -1403,8 +1403,8 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
-#if defined(CONFIG_NET_DSA)
-		| ETHERNET_DSA_MASTER_PORT
+#if defined(CONFIG_NET_DSA_DEPRECATED)
+		| ETHERNET_DSA_CONDUIT_PORT
 #endif
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 		| ETHERNET_HW_FILTERING
@@ -1545,7 +1545,7 @@ static const struct ethernet_api eth_api = {
 	.get_phy = eth_stm32_hal_get_phy,
 #endif
 	.get_config = eth_stm32_hal_get_config,
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	.send = dsa_tx,
 #else
 	.send = eth_tx,
