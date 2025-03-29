@@ -4459,6 +4459,11 @@ TDK Sensors:
   maintainers:
     - teburd
     - MaureenHelm
+    - afontaine-invn
+    - rbuisson-invn
+  collaborators:
+    - sriccardi-invn
+    - gjabouley-invn
   files:
     - drivers/sensor/tdk/
   labels:
