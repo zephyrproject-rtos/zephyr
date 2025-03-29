@@ -102,6 +102,14 @@ static inline int spi_mcux_dma_rxtx_load(const struct device *dev)
 	size_t next_chunk_size = spi_context_max_continuous_chunk(ctx);
 	int ret = 0;
 
+	if (next_chunk_size == 0) {
+		/* In case both buffers are 0 legnth, we should not even be here
+		 * and attempting to set up a DMA transfer like this will cause
+		 * errors that lock up the system in some cases with eDMA.
+		 */
+		return -ENODATA;
+	}
+
 	ret = spi_mcux_dma_tx_load(dev, ctx->tx_buf, next_chunk_size);
 	if (ret != 0) {
 		return ret;
@@ -196,6 +204,7 @@ done:
 	spi_context_cs_control(ctx, false);
 	LPSPI_FlushFifo(base, true, true);
 	spi_context_complete(ctx, spi_dev, status);
+	spi_context_release(ctx, status);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -232,6 +241,9 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
 	ret = spi_context_wait_for_completion(ctx);
+	if (ret >= 0) {
+		return ret;
+	}
 out:
 	spi_context_release(ctx, ret);
 	return ret;
