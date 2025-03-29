@@ -1097,6 +1097,21 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param i2c_iodev I2C iodev defined with I2C_DT_IODEV_DEFINE
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_iodev(const struct rtio_iodev *i2c_iodev)
+{
+	struct i2c_dt_spec *spec = (struct i2c_dt_spec *)i2c_iodev->data;
+
+	return i2c_is_ready_dt(spec);
+}
+
+/**
  * @brief Copy the i2c_msgs into a set of RTIO requests
  *
  * @param r RTIO context
