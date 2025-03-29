@@ -385,3 +385,19 @@ pmod_sd_shield: &sdhc0 {};
 &wdt {
 	status = "okay";
 };
+
+&ulpt0 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
