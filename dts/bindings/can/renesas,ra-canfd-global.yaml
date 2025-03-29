@@ -11,6 +11,13 @@ properties:
   interrupts:
     required: true
 
+  interrupt-name:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+        - "rxf": RX FIFO buffer successful reception
+        - "glerr": global error
+
   clocks:
     required: true
 
