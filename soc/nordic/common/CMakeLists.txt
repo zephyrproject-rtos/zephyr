@@ -9,6 +9,7 @@ zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@SystemInit@")
 # This file is used when the CMake linker script generator is disabled.
 zephyr_linker_sources(SECTIONS platform_init.ld)
 
+zephyr_library_sources_ifdef(CONFIG_ARM reboot.c)
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 if(CONFIG_ARM)
   zephyr_library_sources_ifdef(CONFIG_NRF_PLATFORM_HALTIUM soc_lrcconf.c)
