@@ -5,20 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
-#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/misc/pio_rpi_pico/pio_rpi_pico.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/reset.h>
 
 #define DT_DRV_COMPAT raspberrypi_pico_pio
-
-struct pio_rpi_pico_config {
-	PIO pio;
-	const struct device *clk_dev;
-	clock_control_subsys_t clk_id;
-	const struct reset_dt_spec reset;
-};
 
 int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm)
 {
@@ -32,13 +22,6 @@ int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm)
 
 	*sm = (size_t)retval;
 	return 0;
-}
-
-PIO pio_rpi_pico_get_pio(const struct device *dev)
-{
-	const struct pio_rpi_pico_config *config = dev->config;
-
-	return config->pio;
 }
 
 static int pio_rpi_pico_init(const struct device *dev)
