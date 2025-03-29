@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Jorge A. Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_LATMON
+	bool "Latency monitoring support"
+	help
+	  This option enables the latency monitoring support for Zephyr
+	select NET_IPV4
+	select NET_ARP
+	select NET_TCP
+	select NET_UDP
+	select NET_DHCPV4
+	select NET_SOCKETS
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_LOG
+	select POSIX_API
+	select NET_SHELL
+	select TEST_RANDOM_GENERATOR
+
+
+module = LATMON
+module-str = Latency monitoring Service
+module-help = This option enables the latency monitoring support for Zephyr
+source "subsys/net/Kconfig.template.log_config.net"
