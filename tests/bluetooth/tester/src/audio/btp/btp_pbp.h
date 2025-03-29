@@ -34,8 +34,8 @@ struct btp_pbp_broadcast_scan_start_cmd {
 struct btp_pbp_broadcast_scan_stop_cmd {
 } __packed;
 
-#define BTP_PBP_EV_PUBLIC_BROADCAST_ANOUNCEMENT_FOUND 0x80
-struct btp_pbp_ev_public_broadcast_anouncement_found_rp {
+#define BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND 0x80
+struct btp_pbp_ev_public_broadcast_announcement_found_ev {
 	bt_addr_le_t address;
 	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
 	uint8_t advertiser_sid;

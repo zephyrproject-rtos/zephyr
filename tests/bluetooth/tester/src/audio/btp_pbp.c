@@ -45,7 +45,7 @@ static bool scan_get_data(struct bt_data *data, void *user_data)
 	uint32_t broadcast_id;
 	uint8_t *metadata;
 	struct bt_uuid_16 adv_uuid;
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev = user_data;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev = user_data;
 
 	switch (data->type) {
 	case BT_DATA_BROADCAST_NAME:
@@ -89,7 +89,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 	net_buf_simple_clone(ad, &ad_copy);
 	bt_data_parse(&ad_copy, scan_get_broadcast_name_len, &broadcast_name_len);
 
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev_ptr;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev_ptr;
 
 	tester_rsp_buffer_lock();
 	tester_rsp_buffer_allocate(sizeof(*ev_ptr) + broadcast_name_len, (uint8_t **)&ev_ptr);
@@ -105,7 +105,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 
 	if (sys_get_le24(ev_ptr->broadcast_id) != BT_BAP_INVALID_BROADCAST_ID &&
 	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0) {
-		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANOUNCEMENT_FOUND,
+		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
 			     ev_ptr, sizeof(*ev_ptr) + broadcast_name_len);
 	}
 
