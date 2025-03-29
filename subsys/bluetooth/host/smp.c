@@ -262,6 +262,9 @@ struct bt_smp_br {
 	/* Remote key distribution */
 	uint8_t			remote_dist;
 
+	/* Local keys have been distributed */
+	uint8_t			local_distributed;
+
 	/* Encryption Key Size used for connection */
 	uint8_t 			enc_key_size;
 
@@ -806,10 +809,17 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Clear flags first in case canceling of timeout fails. The SMP context
 	 * shall be marked as timed out in that case.
 	 */
 	atomic_set(smp->flags, 0);
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	/* If canceling fails the timeout handler will set the timeout flag and
 	 * mark the it as timed out. No new pairing procedures shall be started
@@ -820,6 +830,29 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	atomic_set(smp->allowed_cmds, 0);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+}
+
+static void smp_br_id_add_replace(struct bt_keys *keys)
+{
+	struct bt_keys *conflict;
+
+	/* Check whether key has been added to resolving list. */
+	if (keys->state & BT_KEYS_ID_ADDED) {
+		bt_id_del(keys);
+	}
+
+	conflict = bt_id_find_conflict(keys);
+	if (conflict != NULL) {
+		int err;
+
+		LOG_DBG("Un-pairing old conflicting bond and finalizing new.");
+
+		err = bt_unpair(conflict->id, &conflict->addr);
+		__ASSERT_NO_MSG(!err);
+	}
+
+	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
+	bt_id_add(keys);
 }
 
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
@@ -852,8 +885,12 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 			}
 		}
 	} else {
-		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		bool bond_flag = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
+
+		if (keys) {
+			smp_br_id_add_replace(keys);
+		}
 
 		if (bond_flag && keys) {
 			bt_keys_store(keys);
@@ -934,10 +971,17 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
@@ -969,6 +1013,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	 */
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_find_addr(conn->id, &addr);
+	if (keys != NULL) {
+		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
+		bt_keys_clear(keys);
+	}
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
@@ -1010,6 +1060,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		keys->flags |= BT_KEYS_AUTHENTICATED;
 	} else {
 		keys->flags &= ~BT_KEYS_AUTHENTICATED;
+	}
+
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
+		keys->flags |= BT_KEYS_SC;
+	} else {
+		keys->flags &= ~BT_KEYS_SC;
 	}
 
 	LOG_DBG("LTK derived from LinkKey");
@@ -1067,12 +1123,13 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (smp->local_dist & BT_SMP_DIST_ID_KEY) {
+	if ((smp->local_dist & BT_SMP_DIST_ID_KEY) &&
+	    ((smp->local_distributed & BT_SMP_DIST_ID_KEY) == 0)) {
 		struct bt_smp_ident_info *id_info;
 		struct bt_smp_ident_addr_info *id_addr_info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_ID_KEY;
+		smp->local_distributed |= BT_SMP_DIST_ID_KEY;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
 					sizeof(*id_info));
@@ -1101,11 +1158,12 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+	if ((smp->local_dist & BT_SMP_DIST_SIGN) &&
+	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0)) {
 		struct bt_smp_signing_info *info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+		smp->local_distributed |= BT_SMP_DIST_SIGN;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
