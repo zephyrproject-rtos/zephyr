@@ -18,6 +18,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_mii, CONFIG_PHY_LOG_LEVEL);
 
+#define ANY_DYNAMIC_LINK UTIL_NOT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(fixed_link))
+#define ANY_FIXED_LINK   DT_ANY_INST_HAS_PROP_STATUS_OKAY(fixed_link)
+
 struct phy_mii_dev_config {
 	uint8_t phy_addr;
 	bool no_reset;
@@ -30,10 +33,12 @@ struct phy_mii_dev_data {
 	const struct device *dev;
 	phy_callback_t cb;
 	void *cb_data;
-	struct k_work_delayable monitor_work;
 	struct phy_link_state state;
 	struct k_sem sem;
+#if ANY_DYNAMIC_LINK
+	struct k_work_delayable monitor_work;
 	bool gigabit_supported;
+#endif
 };
 
 /* Offset to align capabilities bits of 1000BASE-T Control and Status regs */
@@ -41,9 +46,9 @@ struct phy_mii_dev_data {
 
 #define MII_INVALID_PHY_ID UINT32_MAX
 
-static int phy_mii_get_link_state(const struct device *dev,
-				  struct phy_link_state *state);
+static void invoke_link_cb(const struct device *dev);
 
+#if ANY_DYNAMIC_LINK
 static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
@@ -271,20 +276,6 @@ static int update_link_state(const struct device *dev)
 	return 0;
 }
 
-static void invoke_link_cb(const struct device *dev)
-{
-	struct phy_mii_dev_data *const data = dev->data;
-	struct phy_link_state state;
-
-	if (data->cb == NULL) {
-		return;
-	}
-
-	phy_mii_get_link_state(dev, &state);
-
-	data->cb(data->dev, &state, data->cb_data);
-}
-
 static void monitor_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -305,8 +296,7 @@ static void monitor_work_handler(struct k_work *work)
 	}
 
 	/* Submit delayed work */
-	k_work_reschedule(&data->monitor_work,
-			  K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	k_work_reschedule(dwork, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
 static int phy_mii_read(const struct device *dev, uint16_t reg_addr,
@@ -407,6 +397,7 @@ static int phy_mii_cfg_link(const struct device *dev,
 
 	return 0;
 }
+#endif /* ANY_DYNAMIC_LINK */
 
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state)
@@ -420,6 +411,20 @@ static int phy_mii_get_link_state(const struct device *dev,
 	k_sem_give(&data->sem);
 
 	return 0;
+}
+
+static void invoke_link_cb(const struct device *dev)
+{
+	struct phy_mii_dev_data *const data = dev->data;
+	struct phy_link_state state;
+
+	if (data->cb == NULL) {
+		return;
+	}
+
+	phy_mii_get_link_state(dev, &state);
+
+	data->cb(dev, &state, data->cb_data);
 }
 
 static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
@@ -439,81 +444,83 @@ static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 	return 0;
 }
 
-static int phy_mii_initialize(const struct device *dev)
+#ifdef ANY_FIXED_LINK
+static int phy_mii_initialize_fixed_link(const struct device *dev)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	struct phy_mii_dev_data *const data = dev->data;
-	uint32_t phy_id;
-
-	k_sem_init(&data->sem, 1, 1);
-
-	data->dev = dev;
-	data->cb = NULL;
 
 	/**
 	 * If this is a *fixed* link then we don't need to communicate
 	 * with a PHY. We set the link parameters as configured
 	 * and set link state to up.
 	 */
-	if (cfg->fixed) {
-		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE_T,
-			LINK_FULL_10BASE_T,
-			LINK_HALF_100BASE_T,
-			LINK_FULL_100BASE_T,
-			LINK_HALF_1000BASE_T,
-			LINK_FULL_1000BASE_T,
-		};
 
-		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
-		data->state.is_up = true;
-	} else {
-		data->state.is_up = false;
+	const static int speed_to_phy_link_speed[] = {
+		LINK_HALF_10BASE_T,
+		LINK_FULL_10BASE_T,
+		LINK_HALF_100BASE_T,
+		LINK_FULL_100BASE_T,
+		LINK_HALF_1000BASE_T,
+		LINK_FULL_1000BASE_T,
+	};
 
-		mdio_bus_enable(cfg->mdio);
-
-		if (cfg->no_reset == false) {
-			reset(dev);
-		}
-
-		if (get_id(dev, &phy_id) == 0) {
-			if (phy_id == MII_INVALID_PHY_ID) {
-				LOG_ERR("No PHY found at address %d",
-					cfg->phy_addr);
-
-				return -EINVAL;
-			}
-
-			LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
-		}
-
-		data->gigabit_supported = is_gigabit_supported(dev);
-
-		/* Advertise all speeds */
-		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T |
-				      LINK_FULL_10BASE_T |
-				      LINK_HALF_100BASE_T |
-				      LINK_FULL_100BASE_T |
-				      LINK_HALF_1000BASE_T |
-				      LINK_FULL_1000BASE_T);
-
-		k_work_init_delayable(&data->monitor_work,
-					monitor_work_handler);
-
-		monitor_work_handler(&data->monitor_work.work);
-	}
+	data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
+	data->state.is_up = true;
 
 	return 0;
 }
+#endif /* ANY_FIXED_LINK */
+
+#if ANY_DYNAMIC_LINK
+static int phy_mii_initialize_dynamic_link(const struct device *dev)
+{
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	struct phy_mii_dev_data *const data = dev->data;
+	uint32_t phy_id;
+
+	data->state.is_up = false;
+
+	mdio_bus_enable(cfg->mdio);
+
+	if (cfg->no_reset == false) {
+		reset(dev);
+	}
+
+	if (get_id(dev, &phy_id) == 0) {
+		if (phy_id == MII_INVALID_PHY_ID) {
+			LOG_ERR("No PHY found at address %d", cfg->phy_addr);
+
+			return -EINVAL;
+		}
+
+		LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
+	}
+
+	data->gigabit_supported = is_gigabit_supported(dev);
+
+	/* Advertise all speeds */
+	phy_mii_cfg_link(dev, LINK_HALF_10BASE_T | LINK_FULL_10BASE_T | LINK_HALF_100BASE_T |
+			      LINK_FULL_100BASE_T | LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+
+	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
+
+	monitor_work_handler(&data->monitor_work.work);
+
+	return 0;
+}
+#endif /* ANY_DYNAMIC_LINK */
 
 #define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
 
 static DEVICE_API(ethphy, phy_mii_driver_api) = {
 	.get_link = phy_mii_get_link_state,
-	.cfg_link = phy_mii_cfg_link,
 	.link_cb_set = phy_mii_link_cb_set,
+#if ANY_DYNAMIC_LINK
+	.cfg_link = phy_mii_cfg_link,
 	.read = phy_mii_read,
 	.write = phy_mii_write,
+#endif
 };
 
 #define PHY_MII_CONFIG(n)						 \
@@ -526,11 +533,22 @@ static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
 };
 
+#define PHY_MII_DATA(n)							 \
+static struct phy_mii_dev_data phy_mii_dev_data_##n = {			 \
+	.dev = DEVICE_DT_INST_GET(n),					 \
+	.cb = NULL,							 \
+	.sem = Z_SEM_INITIALIZER(phy_mii_dev_data_##n.sem, 1, 1),	 \
+};
+
+#define PHY_MII_INIT(n)							 \
+	COND_CODE_1(IS_FIXED_LINK(n), (&phy_mii_initialize_fixed_link),	 \
+		   (&phy_mii_initialize_dynamic_link))
+
 #define PHY_MII_DEVICE(n)						\
 	PHY_MII_CONFIG(n);						\
-	static struct phy_mii_dev_data phy_mii_dev_data_##n;		\
+	PHY_MII_DATA(n);						\
 	DEVICE_DT_INST_DEFINE(n,					\
-			      &phy_mii_initialize,			\
+			      PHY_MII_INIT(n),				\
 			      NULL,					\
 			      &phy_mii_dev_data_##n,			\
 			      &phy_mii_dev_config_##n, POST_KERNEL,	\
