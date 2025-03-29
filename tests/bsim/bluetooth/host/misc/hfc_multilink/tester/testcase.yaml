@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.misc.hfc_multilink.tester:
+  bluetooth.host.misc.hfc_multilink.build_tester:
     build_only: true
     tags:
       - bluetooth

@@ -1,11 +1,34 @@
+common:
+  no_build: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+  timeout: 30
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 60e6
+    bsim_exe_name: tests_bsim_bluetooth_host_central_prj_conf
+
 tests:
-  bluetooth.host.central:
+  bluetooth.host.central.build:
     build_only: true
-    tags:
-      - bluetooth
-    platform_allow:
-      - nrf52_bsim/native
-      - nrf5340bsim/nrf5340/cpunet
-    harness: bsim
+    no_build: false
+
+  bluetooth.host.central.central_connect_timeout:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_central_prj_conf
+      bsim_devices:
+        - test_id: central_connect_timeout
+
+  bluetooth.host.central.central_connect_when_connecting:
+    harness_config:
+      bsim_devices:
+        - test_id: central_connect_when_connecting
+
+  bluetooth.host.central.central_connect_to_existing:
+    harness_config:
+      bsim_devices:
+        - test_id: central_connect_to_existing
+        - test_id: peripheral_dummy

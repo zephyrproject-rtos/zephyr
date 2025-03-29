@@ -19,6 +19,8 @@ RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.52.xml \
 TESTS_FILE=tests/bsim/bluetooth/tests.nrf52bsim.txt \
 tests/bsim/run_parallel.sh
 
+west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/ -p nrf52_bsim/native
+
 # nrf5340bsim/nrf5340/cpunet set:
 nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpunet.sh
 
@@ -26,6 +28,8 @@ BOARD=nrf5340bsim/nrf5340/cpunet \
 RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.53_cpunet.xml \
 TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpunet.txt \
 tests/bsim/run_parallel.sh
+
+west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/ -p nrf5340bsim/nrf5340/cpunet
 
 # nrf5340 split stack set:
 nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpuapp.sh
