@@ -85,7 +85,8 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID))
+				 BIT(BT_DEV_PRESET_ID) | \
+				 BIT(BT_DEV_DISABLE))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
