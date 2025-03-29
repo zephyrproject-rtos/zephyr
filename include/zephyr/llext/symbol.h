@@ -91,8 +91,9 @@ struct llext_symtable {
 #ifdef LL_EXTENSION_BUILD
 /* Extension build: add exported symbols to llext table */
 #define Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)			\
-	static const struct llext_const_symbol					\
+	const struct llext_const_symbol						\
 			Z_GENERIC_SECTION(.exported_sym) __used			\
+			__attribute__((__visibility__("default")))		\
 			__llext_sym_ ## sym_name = {				\
 		.name = STRINGIFY(sym_name), .addr = (const void *)&sym_ident,	\
 	}
