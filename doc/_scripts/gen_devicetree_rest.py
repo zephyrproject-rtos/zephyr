@@ -580,7 +580,14 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
 
     {bus_help}
     ''', string_io)
-    print(to_code_block(binding.description.strip()), file=string_io)
+
+    if binding.title:
+        description = ("\n\n"
+                       .join([binding.title, binding.description])
+                       .strip())
+    else:
+        description = binding.description.strip()
+    print(to_code_block(description), file=string_io)
 
     # Properties.
     print_block('''\
