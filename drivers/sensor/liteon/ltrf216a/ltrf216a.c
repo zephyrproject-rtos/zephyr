@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ltr_f216a
+#define DT_DRV_COMPAT liteon_ltrf216a
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>

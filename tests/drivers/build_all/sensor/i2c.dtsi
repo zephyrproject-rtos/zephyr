@@ -821,7 +821,7 @@ test_i2c_mc3419: mc3419@75 {
 };
 
 test_i2c_ltrf216a0: ltrf216a@76 {
-	compatible = "ltr,f216a";
+	compatible = "liteon,ltrf216a";
 	reg = <0x76>;
 };
 
@@ -1263,4 +1263,9 @@ test_i2c_bmm350: bmm350@ac {
 	compatible = "bosch,bmm350";
 	reg = <0xac>;
 	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ltr329: ltr329@aa {
+	compatible = "liteon,ltr329";
+	reg = <0xad>;
 };
