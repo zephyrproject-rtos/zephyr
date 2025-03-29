@@ -27,14 +27,21 @@ static inline void z_init_timeout(struct _timeout *to)
 	sys_dnode_init(&to->node);
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
-		   k_timeout_t timeout);
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
 
 int z_abort_timeout(struct _timeout *to);
 
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
 	return !sys_dnode_is_linked(&to->node);
+}
+
+static inline bool z_is_expired_timeout(const struct _timeout *to)
+{
+	/* When timeout is aborted then dticks is not reset. It can be used to detect
+	 * if timeout was aborted or expired.
+	 */
+	return to->dticks == 0;
 }
 
 static inline void z_init_thread_timeout(struct _thread_base *thread_base)
@@ -44,14 +51,19 @@ static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 
 extern void z_thread_timeout(struct _timeout *timeout);
 
-static inline void z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
+static inline k_ticks_t z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
 {
-	z_add_timeout(&thread->base.timeout, z_thread_timeout, ticks);
+	return z_add_timeout(&thread->base.timeout, z_thread_timeout, ticks);
 }
 
 static inline void z_abort_thread_timeout(struct k_thread *thread)
 {
 	z_abort_timeout(&thread->base.timeout);
+}
+
+static inline bool z_is_expired_thread_timeout(struct k_thread *thread)
+{
+	return z_is_expired_timeout(&thread->base.timeout);
 }
 
 int32_t z_get_next_timeout_expiry(void);

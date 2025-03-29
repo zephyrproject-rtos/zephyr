@@ -72,8 +72,8 @@ void z_reset_time_slice(struct k_thread *thread)
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
 	if (thread_is_sliceable(thread)) {
-		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_time(thread) - 1));
+		(void)z_add_timeout(&slice_timeouts[cpu], slice_timeout,
+				    K_TICKS(slice_time(thread) - 1));
 	}
 }
 

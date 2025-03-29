@@ -73,8 +73,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 */
 		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
-		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			      next);
+		(void)z_add_timeout(&timer->timeout, z_timer_expiration_handler, next);
 	}
 
 	/* update timer's status */
@@ -179,8 +178,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	timer->period = period;
 	timer->status = 0U;
 
-	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+	(void)z_add_timeout(&timer->timeout, z_timer_expiration_handler, duration);
 
 	k_spin_unlock(&lock, key);
 }

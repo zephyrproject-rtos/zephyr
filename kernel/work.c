@@ -955,7 +955,7 @@ static int schedule_for_queue_locked(struct k_work_q **queuep,
 	dwork->queue = *queuep;
 
 	/* Add timeout */
-	z_add_timeout(&dwork->timeout, work_timeout, delay);
+	(void)z_add_timeout(&dwork->timeout, work_timeout, delay);
 
 	return ret;
 }
