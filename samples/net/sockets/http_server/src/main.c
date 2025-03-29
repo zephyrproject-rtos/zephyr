@@ -19,6 +19,8 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
+#include <sample_usbd.h>
+#include <zephyr/net/net_config.h>
 
 #include "ws.h"
 
@@ -347,14 +349,27 @@ static void setup_tls(void)
 #endif /* defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE) */
 }
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-int init_usb(void);
-#else
-static inline int init_usb(void)
+static int init_usb(void)
 {
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd;
+	int err;
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		return err;
+	}
+
+	(void)net_config_init_app(NULL, "Initializing network");
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
+
 	return 0;
 }
-#endif /* CONFIG_USB_DEVICE_STACK */
 
 int main(void)
 {
