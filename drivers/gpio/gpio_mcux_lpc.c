@@ -416,6 +416,8 @@ static int gpio_mcux_lpc_manage_cb(const struct device *port,
 
 static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct gpio_mcux_lpc_config *config = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		break;
@@ -424,8 +426,6 @@ static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		const struct gpio_mcux_lpc_config *config = dev->config;
-
 		GPIO_PortInit(config->gpio_base, config->port_no);
 		break;
 	default:
