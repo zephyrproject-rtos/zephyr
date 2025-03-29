@@ -57,8 +57,10 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_CONNECT_CMUX,
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
-	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
+	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
+	MODEM_CELLULAR_STATE_AWAIT_DATA_MODE,
 	MODEM_CELLULAR_STATE_CARRIER_ON,
 	MODEM_CELLULAR_STATE_INIT_POWER_OFF,
 	MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
@@ -161,6 +163,7 @@ struct modem_cellular_config {
 	uint16_t shutdown_time_ms;
 	bool autostarts;
 	const struct modem_chat_script *init_chat_script;
+	const struct modem_chat_script *attach_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 	const struct modem_chat_script *shutdown_chat_script;
@@ -190,10 +193,14 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "open dlci1";
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 		return "open dlci2";
+	case MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT:
+		return "run attach script";
 	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
 		return "await registered";
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
 		return "run dial script";
+	case MODEM_CELLULAR_STATE_AWAIT_DATA_MODE:
+		return "await data mode";
 	case MODEM_CELLULAR_STATE_CARRIER_ON:
 		return "carrier on";
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
@@ -985,7 +992,7 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
 		data->cmd_pipe = data->dlci2_pipe;
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
@@ -1000,6 +1007,87 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *
 static int modem_cellular_on_open_dlci2_state_leave(struct modem_cellular_data *data)
 {
 	modem_pipe_release(data->dlci2_pipe);
+	return 0;
+}
+
+static int modem_cellular_on_run_attach_script_state_enter(struct modem_cellular_data *data)
+{
+	/* We're using the 'EVENT_TIMEOUT' to start the attach_chat_script */
+	modem_cellular_start_timer(data, K_MSEC(100));
+	return 0;
+}
+
+static void modem_cellular_run_attach_script_event_handler(struct modem_cellular_data *data,
+							 enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_run_script_async(&data->chat, config->attach_chat_script);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int modem_cellular_on_run_attach_script_state_leave(struct modem_cellular_data *data)
+{
+	modem_cellular_stop_timer(data);
+	modem_chat_release(&data->chat);
+	return 0;
+}
+
+static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data *data)
+{
+	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+	return 0;
+}
+
+static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
+						  enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		if (false == modem_cellular_is_registered(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		} else {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_run_script_async(&data->chat, config->periodic_chat_script);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_data *data)
+{
+	modem_chat_release(&data->chat);
 	return 0;
 }
 
@@ -1023,7 +1111,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DATA_MODE);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
@@ -1041,7 +1129,7 @@ static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_d
 	return 0;
 }
 
-static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data *data)
+static int modem_cellular_on_await_data_mode_state_enter(struct modem_cellular_data *data)
 {
 	if (modem_ppp_attach(data->ppp, data->dlci1_pipe) < 0) {
 		return -EAGAIN;
@@ -1051,7 +1139,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	return modem_chat_attach(&data->chat, data->dlci2_pipe);
 }
 
-static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
+static void modem_cellular_await_data_mode_event_handler(struct modem_cellular_data *data,
 						  enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config =
@@ -1080,7 +1168,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	}
 }
 
-static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_data *data)
+static int modem_cellular_on_await_data_mode_state_leave(struct modem_cellular_data *data)
 {
 	modem_cellular_stop_timer(data);
 	return 0;
@@ -1110,7 +1198,7 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_DEREGISTERED:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
@@ -1304,12 +1392,20 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_open_dlci2_state_enter(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
-		ret = modem_cellular_on_run_dial_script_state_enter(data);
+	case MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT:
+		ret = modem_cellular_on_run_attach_script_state_enter(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
 		ret = modem_cellular_on_await_registered_state_enter(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
+		ret = modem_cellular_on_run_dial_script_state_enter(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_DATA_MODE:
+		ret = modem_cellular_on_await_data_mode_state_enter(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_CARRIER_ON:
@@ -1365,12 +1461,20 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 		ret = modem_cellular_on_open_dlci2_state_leave(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
-		ret = modem_cellular_on_run_dial_script_state_leave(data);
+	case MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT:
+		ret = modem_cellular_on_run_attach_script_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
 		ret = modem_cellular_on_await_registered_state_leave(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
+		ret = modem_cellular_on_run_dial_script_state_leave(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_DATA_MODE:
+		ret = modem_cellular_on_await_data_mode_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_CARRIER_ON:
@@ -1464,12 +1568,20 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 		modem_cellular_open_dlci2_event_handler(data, evt);
 		break;
 
-	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
-		modem_cellular_run_dial_script_event_handler(data, evt);
+	case MODEM_CELLULAR_STATE_RUN_ATTACH_SCRIPT:
+		modem_cellular_run_attach_script_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
 		modem_cellular_await_registered_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
+		modem_cellular_run_dial_script_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_DATA_MODE:
+		modem_cellular_await_data_mode_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_CARRIER_ON:
@@ -1837,14 +1949,20 @@ static int modem_cellular_init(const struct device *dev)
 }
 
 /*
- * Every modem uses two custom scripts to initialize the modem and dial out.
+ * Every modem uses three custom scripts to initialize the modem, attach to a
+ * network and dial out.
  *
  * The first script is named <dt driver compatible>_init_chat_script, with its
  * script commands named <dt driver compatible>_init_chat_script_cmds. This
  * script is sent to the modem after it has started up, and must configure the
  * modem to use CMUX.
  *
- * The second script is named <dt driver compatible>_dial_chat_script, with its
+ * The second script is named <dt driver compatible>_attach_chat_script, with
+ * its script commands named <dr driver compatible>_attach_chat_script_cmds.
+ * This script is sent to the modem after it is initialized, and must configure
+ * the modem to register to a network.
+ *
+ * The third script is named <dt driver compatible>_dial_chat_script, with its
  * script commands named <dt driver compatible>_dial_chat_script_cmds. This
  * script is sent on a DLCI channel in command mode, and must request the modem
  * dial out and put the DLCI channel into data mode.
@@ -1878,13 +1996,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_init_chat_script, quectel_bg95_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_attach_chat_script, quectel_bg95_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_dial_chat_script, quectel_bg95_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1925,13 +2048,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_init_chat_script, quectel_eg25_g_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg25_g_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_attach_chat_script, quectel_eg25_g_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg25_g_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_dial_chat_script, quectel_eg25_g_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1971,13 +2099,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_init_chat_script, simcom_sim7080_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_attach_chat_script, simcom_sim7080_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_dial_chat_script, simcom_sim7080_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -2016,13 +2149,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_attach_chat_script, u_blox_sara_r4_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_dial_chat_script, u_blox_sara_r4_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -2067,13 +2205,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_init_chat_script, u_blox_sara_r5_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_attach_chat_script, u_blox_sara_r5_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_dial_chat_script, u_blox_sara_r5_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -2126,13 +2269,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_init_chat_script, u_blox_lara_r6_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_attach_chat_script, u_blox_lara_r6_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_dial_chat_script, u_blox_lara_r6_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -2183,17 +2331,25 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_init_chat_script, swir_hl7800_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCNXCFG=1,\"GPRS\",\""
+						   CONFIG_MODEM_CELLULAR_APN
+						   "\",,,\"IPV4\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+WPPP=0", ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_attach_chat_script, swir_hl7800_attach_chat_script_cmds,
+				  abort_matches, modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCNXCFG=1,\"GPRS\",\""
-							 CONFIG_MODEM_CELLULAR_APN
-							 "\",,,\"IPV4\"",
-							 ok_match),
-				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+WPPP=0", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_dial_chat_script, swir_hl7800_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
@@ -2203,8 +2359,6 @@ MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_periodic_chat_script,
 			 swir_hl7800_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
-MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_dial_chat_script, swir_hl7800_dial_chat_script_cmds,
-			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(telit_me910g1) || DT_HAS_COMPAT_STATUS_OKAY(telit_me310g1)
@@ -2248,6 +2402,12 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_mex10g1_init_chat_script_cmds,
 
 MODEM_CHAT_SCRIPT_DEFINE(telit_mex10g1_init_chat_script, telit_mex10g1_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_mex10g1_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_mex10g1_attach_chat_script, telit_mex10g1_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_mex10g1_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
@@ -2296,9 +2456,15 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_attach_chat_script,
+			 nordic_nrf91_slm_attach_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=2", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_dial_chat_script, nordic_nrf91_slm_dial_chat_script_cmds,
@@ -2332,12 +2498,17 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_init_chat_script, sqn_gm02s_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_attach_chat_script_cmds,
+				MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+						   "\""CONFIG_MODEM_CELLULAR_APN"\"",
+						   ok_match),
+				MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CFUN=1", 10000));
+
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_attach_chat_script, sqn_gm02s_attach_chat_script_cmds,
+		   abort_matches, modem_cellular_chat_callback_handler, 15);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CFUN=1", 10000),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_dial_chat_script, sqn_gm02s_dial_chat_script_cmds,
@@ -2409,6 +2580,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
 				       set_baudrate_script,                                        \
 				       init_script,                                                \
+				       attach_script,                                              \
 				       dial_script,                                                \
 				       periodic_script,                                            \
 				       shutdown_script)                                            \
@@ -2424,6 +2596,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.autostarts       = (start),                                                       \
 		.set_baudrate_chat_script    = (set_baudrate_script),                              \
 		.init_chat_script            = (init_script),                                      \
+		.attach_chat_script          = (attach_script),                                    \
 		.dial_chat_script            = (dial_script),                                      \
 		.periodic_chat_script = (periodic_script),                                         \
 		.shutdown_chat_script  = (shutdown_script),                                        \
@@ -2454,6 +2627,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
 				       NULL,                                                       \
 				       &quectel_bg95_init_chat_script,                             \
+				       &quectel_bg95_attach_chat_script,                           \
 				       &quectel_bg95_dial_chat_script,                             \
 				       &quectel_bg95_periodic_chat_script, NULL)
 
@@ -2473,6 +2647,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 500, 15000, 5000, false,                        \
 				       NULL,                                                       \
 				       &quectel_eg25_g_init_chat_script,                           \
+				       &quectel_eg25_g_attach_chat_script,                         \
 				       &quectel_eg25_g_dial_chat_script,                           \
 				       &quectel_eg25_g_periodic_chat_script, NULL)
 
@@ -2492,6 +2667,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
 				       NULL,                                                       \
 				       &simcom_sim7080_init_chat_script,                           \
+				       &simcom_sim7080_attach_chat_script,                         \
 				       &simcom_sim7080_dial_chat_script,                           \
 				       &simcom_sim7080_periodic_chat_script, NULL)
 
@@ -2511,6 +2687,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
 				       NULL,                                                       \
 				       &u_blox_sara_r4_init_chat_script,                           \
+				       &u_blox_sara_r4_attach_chat_script,                         \
 				       &u_blox_sara_r4_dial_chat_script,                           \
 				       &u_blox_sara_r4_periodic_chat_script, NULL)
 
@@ -2530,6 +2707,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 1500, 13000, true,                         \
 				       NULL,                                                       \
 				       &u_blox_sara_r5_init_chat_script,                           \
+				       &u_blox_sara_r5_attach_chat_script,                         \
 				       &u_blox_sara_r5_dial_chat_script,                           \
 				       &u_blox_sara_r5_periodic_chat_script, NULL)
 
@@ -2549,6 +2727,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 9000, 5000, false,                         \
 				       &u_blox_lara_r6_set_baudrate_chat_script,                   \
 				       &u_blox_lara_r6_init_chat_script,                           \
+				       &u_blox_lara_r6_attach_chat_script,                         \
 				       &u_blox_lara_r6_dial_chat_script,                           \
 				       &u_blox_lara_r6_periodic_chat_script,                       \
 				       NULL)
@@ -2569,6 +2748,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
 				       NULL,                                                       \
 				       &swir_hl7800_init_chat_script,                              \
+				       &swir_hl7800_attach_chat_script,                            \
 				       &swir_hl7800_dial_chat_script,                              \
 				       &swir_hl7800_periodic_chat_script, NULL)
 
@@ -2587,6 +2767,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 15000, 5000, false,                        \
 				       NULL,                                                       \
 				       &telit_mex10g1_init_chat_script,                            \
+				       &telit_mex10g1_attach_chat_script,                          \
 				       &telit_mex10g1_dial_chat_script,                            \
 				       &telit_mex10g1_periodic_chat_script,                        \
 				       NULL)
@@ -2606,6 +2787,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 0 /* unused */, 1000, 15000, false,             \
 				       NULL,                                                       \
 				       &telit_mex10g1_init_chat_script,                            \
+				       &telit_mex10g1_attach_chat_script,                          \
 				       &telit_mex10g1_dial_chat_script,                            \
 				       &telit_mex10g1_periodic_chat_script,                        \
 				       &telit_me310g1_shutdown_chat_script)
@@ -2624,6 +2806,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 100, 100, 2000, 10000, false,                         \
 				       NULL,                                                       \
 				       &nordic_nrf91_slm_init_chat_script,                         \
+				       &nordic_nrf91_slm_attach_chat_script,                       \
 				       &nordic_nrf91_slm_dial_chat_script,                         \
 				       &nordic_nrf91_slm_periodic_chat_script, NULL)
 
@@ -2643,6 +2826,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 2000, 5000, true,                          \
 				       NULL,                                                       \
 				       &sqn_gm02s_init_chat_script,                                \
+				       &sqn_gm02s_attach_chat_script,                              \
 				       &sqn_gm02s_dial_chat_script,                                \
 				       &sqn_gm02s_periodic_chat_script, NULL)
 
