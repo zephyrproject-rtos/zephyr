@@ -1,0 +1,21 @@
+sample:
+  name: FCB Sample
+
+common:
+  tags: fcb
+  filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Booted 0 times"
+      - "Saving boot_cnt 1 to FCB"
+      - "New boot_cnt value written to flash"
+      - "Rebooting in 1 second"
+
+tests:
+  sample.fcb.basic:
+    platform_allow:
+      - stm32f4_disco/stm32f407xx
+    integration_platforms:
+      - stm32f4_disco/stm32f407xx
