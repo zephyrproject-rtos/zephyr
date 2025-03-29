@@ -46,9 +46,18 @@
 		step-gpios = <&arduino_header 19 0>; /* D13 */
 		sleep-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
 		en-gpios  = <&arduino_header 14 0>; /* D8 */
-		m0-gpios = <&mikroe_stepper_gpios 0 0>;
-		m1-gpios = <&mikroe_stepper_gpios 1 0>;
-		counter = <&counter2>;
+		// m0-gpios = <&mikroe_stepper_gpios 0 0>;
+		// m1-gpios = <&mikroe_stepper_gpios 1 0>;
+		m0-gpios = <&arduino_header 12 0>;
+		m1-gpios = <&arduino_header 12 0>;
+		// counter = <&counter2>;
+		step-generator = <&counter2>;
+		step-counter = <&counter5>;
+
+		pinctrl-0 = < &tim2_ch1_pa0 >;
+		pinctrl-names = "default";
+		trigger-input = <0>;
+		output-channel = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -59,6 +68,19 @@
 &timers2 {
 	status = "okay";
 	counter2: counter {
+		status = "okay";
+	};
+
+	// pwm2: pwm{
+	// 	status = "okay";
+	// 	pinctrl-0 = < &tim2_ch1_pa0 >;
+	// 	pinctrl-names = "default";
+	// };
+};
+
+&timers5 {
+	status = "okay";
+	counter5: counter {
 		status = "okay";
 	};
 };
