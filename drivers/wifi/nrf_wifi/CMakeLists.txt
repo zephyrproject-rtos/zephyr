@@ -62,6 +62,10 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_UTIL
   src/wifi_util.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_NRF70_DEBUG
+  src/wifi_debug.c
+)
+
 zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
 # These are XIP related anomalies and aren't applicable for nRF7002 and cause
 # throughput issues.
