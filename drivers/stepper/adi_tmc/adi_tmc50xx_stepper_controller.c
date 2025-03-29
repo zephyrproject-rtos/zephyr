@@ -258,9 +258,9 @@ static void rampstat_work_handler(struct k_work *work)
 
 #endif
 
-static int tmc50xx_stepper_enable(const struct device *dev, const bool enable)
+static int tmc50xx_stepper_enable(const struct device *dev)
 {
-	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
+	LOG_DBG("Enabling Stepper motor controller %s", dev->name);
 	const struct tmc50xx_stepper_config *config = dev->config;
 	uint32_t reg_value;
 	int err;
@@ -270,17 +270,26 @@ static int tmc50xx_stepper_enable(const struct device *dev, const bool enable)
 		return -EIO;
 	}
 
-	if (enable) {
-		reg_value |= TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
-	} else {
-		reg_value &= ~TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
-	}
+	reg_value |= TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
 
-	err = tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
+	return tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
+}
+
+static int tmc50xx_stepper_disable(const struct device *dev)
+{
+	LOG_DBG("Disabling Stepper motor controller %s", dev->name);
+	const struct tmc50xx_stepper_config *config = dev->config;
+	uint32_t reg_value;
+	int err;
+
+	err = tmc50xx_read(config->controller, TMC50XX_CHOPCONF(config->index), &reg_value);
 	if (err != 0) {
 		return -EIO;
 	}
-	return 0;
+
+	reg_value &= ~TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
+
+	return tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
 }
 
 static int tmc50xx_stepper_is_moving(const struct device *dev, bool *is_moving)
@@ -681,6 +690,20 @@ static int tmc50xx_stepper_init(const struct device *dev)
 	return 0;
 }
 
+static DEVICE_API(stepper, tmc50xx_stepper_api) = {
+	.enable = tmc50xx_stepper_enable,
+	.disable = tmc50xx_stepper_disable,
+	.is_moving = tmc50xx_stepper_is_moving,
+	.move_by = tmc50xx_stepper_move_by,
+	.set_micro_step_res = tmc50xx_stepper_set_micro_step_res,
+	.get_micro_step_res = tmc50xx_stepper_get_micro_step_res,
+	.set_reference_position = tmc50xx_stepper_set_reference_position,
+	.get_actual_position = tmc50xx_stepper_get_actual_position,
+	.move_to = tmc50xx_stepper_move_to,
+	.run = tmc50xx_stepper_run,
+	.set_event_callback = tmc50xx_stepper_set_event_callback,
+};
+
 #define TMC50XX_SHAFT_CONFIG(child)								\
 	(DT_PROP(child, invert_direction) << TMC50XX_GCONF_SHAFT_SHIFT(DT_REG_ADDR(child))) |
 
@@ -705,23 +728,10 @@ static int tmc50xx_stepper_init(const struct device *dev)
 	static struct tmc50xx_stepper_data tmc50xx_stepper_data_##child = {			\
 		.stepper = DEVICE_DT_GET(child),};
 
-#define TMC50XX_STEPPER_API_DEFINE(child)							\
-	static DEVICE_API(stepper, tmc50xx_stepper_api_##child) = {				\
-		.enable = tmc50xx_stepper_enable,						\
-		.is_moving = tmc50xx_stepper_is_moving,						\
-		.move_by = tmc50xx_stepper_move_by,						\
-		.set_micro_step_res = tmc50xx_stepper_set_micro_step_res,			\
-		.get_micro_step_res = tmc50xx_stepper_get_micro_step_res,			\
-		.set_reference_position = tmc50xx_stepper_set_reference_position,		\
-		.get_actual_position = tmc50xx_stepper_get_actual_position,			\
-		.move_to = tmc50xx_stepper_move_to,						\
-		.run = tmc50xx_stepper_run,							\
-		.set_event_callback = tmc50xx_stepper_set_event_callback, };
-
 #define TMC50XX_STEPPER_DEFINE(child)								\
 	DEVICE_DT_DEFINE(child, tmc50xx_stepper_init, NULL, &tmc50xx_stepper_data_##child,	\
 			 &tmc50xx_stepper_config_##child, POST_KERNEL,				\
-			 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_api_##child);
+			 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_api);
 
 #define TMC50XX_DEFINE(inst)									\
 	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc50xx can drive two steppers at max");	\
@@ -739,7 +749,6 @@ static int tmc50xx_stepper_init(const struct device *dev)
 		.clock_frequency = DT_INST_PROP(inst, clock_frequency),};			\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_CONFIG_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DATA_DEFINE);				\
-	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_API_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DEFINE);					\
 	DEVICE_DT_INST_DEFINE(inst, tmc50xx_init, NULL, &tmc50xx_data_##inst,			\
 			      &tmc50xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
