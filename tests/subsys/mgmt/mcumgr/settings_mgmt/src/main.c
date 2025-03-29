@@ -31,8 +31,7 @@
 #define TEST_RESPONSE_ERROR_DATA_LENGTH sizeof(test_response_error_data)
 #define TEST_RESPONSE_ERROR_LENGTH (sizeof(struct smp_hdr) + TEST_RESPONSE_ERROR_DATA_LENGTH)
 
-#define TEST_RESPONSE_READ_DATA_LENGTH (sizeof(test_response_read_data_start) + \
-					sizeof(test_response_read_data_end))
+#define TEST_RESPONSE_READ_DATA_LENGTH 6
 #define TEST_RESPONSE_READ_LENGTH (sizeof(struct smp_hdr) + TEST_RESPONSE_READ_DATA_LENGTH)
 
 static struct net_buf *nb;
@@ -64,14 +63,6 @@ static const uint8_t test_response_ok_data[2] = {
 
 static const uint8_t test_response_error_data[8] = {
 	0xbf, 0x62, 0x72, 0x63, 0x19, 0x01, 0x00, 0xff
-};
-
-static const uint8_t test_response_read_data_start[5] = {
-	0xbf, 0x63, 0x76, 0x61, 0x6c
-};
-
-static const uint8_t test_response_read_data_end[1] = {
-	0xff
 };
 
 static void cleanup_test(void *p)
