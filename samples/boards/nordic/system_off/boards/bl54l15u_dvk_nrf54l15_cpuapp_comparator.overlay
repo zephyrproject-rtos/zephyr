@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ */
+
+&comp {
+	compatible = "nordic,nrf-lpcomp";
+	psel = "AIN4";
+	refsel = "VDD_4_8";
+	status = "okay";
+};
