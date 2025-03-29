@@ -1,0 +1,9 @@
+# Copyright (c) 2025, STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: stm32mp135f_dk
+  vendor: st
+  socs:
+    - name: stm32mp135fxx
