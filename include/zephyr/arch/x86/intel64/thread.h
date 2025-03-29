@@ -84,6 +84,8 @@ struct x86_tss64 {
 	 */
 
 	struct _cpu *cpu;
+	uintptr_t *shstk_addr;
+
 #ifdef CONFIG_USERSPACE
 	/* Privilege mode stack pointer value when doing a system call */
 	char *psp;
