@@ -9,7 +9,28 @@ choice LINKER_SCRIPT
 	default CMAKE_LINKER_GENERATOR
 endchoice
 
-menu "IAR library options"
+menu "IAR options"
+
+choice IAR_INIT
+	bool "Static initialization method"
+	depends on XIP
+	default IAR_ZEPHYR_INIT
+
+config IAR_DATA_INIT
+	bool "IAR handles initialization of static variables"
+	select SKIP_BSS_CLEAR # IAR also handles zero initialization?
+	help
+	  Instead of `z_prep_c` calling Zephyrs `z_data_copy`
+	  we call IARs own proprietary initialization method
+	  which can save time and space.
+
+config IAR_ZEPHYR_INIT
+	bool "Zephyr handles initialization of static variables"
+	help
+	  The traditional `z_data_copy`
+
+endchoice
+
 
 config IAR_SEMIHOSTING
 	bool "Use the IAR semihosting implementation."
