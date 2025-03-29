@@ -17,7 +17,7 @@ config ESP32_USE_UNSUPPORTED_REVISION
 
 config ESP_SIMPLE_BOOT
 	bool "Simple Boot method"
-	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
+	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT && !MCUBOOT_ESPRESSIF
 	help
 	  The Simple Boot is a booting method that doesn't need a 2nd stage bootloader.
 	  Output is a single image that should be flashed at an offset defined by used SOC.
