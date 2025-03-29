@@ -795,6 +795,12 @@ irq:
 
 	incl ___cpu_t_nested_OFFSET(%rsi)
 	subq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	pushq %rsi
+	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rsi
+	subq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rsi)
+	popq %rsi
+#endif
 	cmpl $CONFIG_ISR_DEPTH, ___cpu_t_nested_OFFSET(%rsi)
 	jz 1f
 	sti
@@ -929,6 +935,10 @@ irq_dispatch:
 
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
+#ifdef CONFIG_X86_CET_SHADOW_STACK
+	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rax
+	addq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rax)
+#endif
 	decl ___cpu_t_nested_OFFSET(%rsi)
 	jnz irq_exit_nested
 
