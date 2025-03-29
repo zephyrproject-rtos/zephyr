@@ -14,6 +14,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 #include <hal/nrf_rramc.h>
+#include <haly/nrfy_rramc.h>
+#include <zephyr/pm/event_device.h>
 
 #include <zephyr/../../drivers/flash/soc_flash_nrf.h>
 
@@ -372,8 +374,35 @@ static int nrf_rram_init(const struct device *dev)
 	nrf_rramc_ready_next_timeout_set(NRF_RRAMC, &params);
 #endif
 
+	pm_event_device_init(PM_EVENT_DEVICE_DT_INST_GET(0));
 	return 0;
 }
+
+static void nrf_rram_request_latency(const struct device *dev, uint8_t event_state)
+{
+	static NRF_RRAMC_Type *regs = (NRF_RRAMC_Type *)DT_INST_REG_ADDR(0);
+
+	ARG_UNUSED(dev);
+
+	switch (event_state) {
+	case 0:
+		regs->POWER.LOWPOWERCONFIG = 3;
+		break;
+
+	case 1:
+		regs->POWER.LOWPOWERCONFIG = 0;
+		break;
+
+	case 2:
+		regs->POWER.LOWPOWERCONFIG = 2;
+		break;
+
+	default:
+		break;
+	}
+}
+
+PM_EVENT_DEVICE_DT_INST_DEFINE(0, nrf_rram_request_latency, 0, 3);
 
 DEVICE_DT_INST_DEFINE(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		      &nrf_rram_api);

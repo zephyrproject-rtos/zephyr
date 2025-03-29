@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MISC_NORDIC
+	bool
+
+config NORDIC_NRF_CPU
+	bool "Nordic nRF CPU driver"
+	default y
+	select IDLE_ENTER_HOOK
+	select MISC_NORDIC
+	depends on (SOC_SERIES_NRF51X || \
+		    SOC_SERIES_NRF52X || \
+		    SOC_SERIES_NRF53X || \
+		    SOC_SERIES_NRF54LX)
+
+config NORDIC_NRF_POWER
+	bool "Nordic nRF POWER driver"
+	default y
+	select NRFX_POWER
+	select MISC_NORDIC
+	depends on DT_HAS_NORDIC_NRF_POWER_ENABLED
+
+config NORDIC_NRF_LRCCONF
+	bool "Nordic nRF LRRCONF driver"
+	default y
+	select MISC_NORDIC
+	depends on DT_HAS_NORDIC_NRF_LRCCONF_ENABLED
