@@ -30,6 +30,61 @@ RTCs usually contain one or more alarms which can be configured to
 trigger at a given time. These alarms are commonly used to wake up the
 system from a low power state.
 
+Devicetree bindings
+*******************
+
+RTC bindings must include the ``rtc-device.yaml`` binding, which
+includes the ``base.yaml`` binding and the required ``alarms-count``
+property.
+
+.. code-block:: yaml
+
+   include: rtc-device.yaml
+
+Device driver design
+********************
+
+Driver init
+===========
+
+RTCs are never powered off by the system. On init, drivers should
+expect the RTC is either:
+
+* Powered, configured, and running.
+* Powered, unconfigured, and stopped.
+
+On init, drivers shall ensure the RTC is configured correctly, while
+preserving the time, alarms, and running status.
+
+Time is set by calling :c:func:`rtc_set_time`, at which point the
+RTC will start running. Alarms pending status is cleared by
+:c:func:`rtc_alarm_is_pending` or by an alarm callback resulting
+from :c:func:`rtc_alarm_set_callback`.
+
+GPIO routed interrupts
+======================
+
+RTCs with connected interrupt output pins shall configure and enable
+them on init. The host may enable and disable interrupts for its
+GPIOs, but RTC interrupt output pins must remain enabled.
+
+This ensures consistent behavior between internally and externally
+connected RTCs, and allows for system wakeup through GPIO on any
+enabled RTC event like alarms or update.
+
+.. note::
+
+   RTCs with unconnected interrupt output pins are not allowed to
+   periodically poll the RTC to emulate it being connected.
+   :c:func:`rtc_alarm_set_callback` and
+   :c:func:`rtc_update_set_callback` shall return ``-ENOTSUP`` in
+   this case.
+
+Clock output
+============
+
+If supported, the clock output configuration is defined in the
+devicetree. The output is configured by the driver on init.
 
 Configuration Options
 *********************
