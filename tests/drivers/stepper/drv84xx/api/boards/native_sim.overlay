@@ -6,9 +6,15 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	aliases {
+		stepper =  &drv8424;
+	};
+};
+
+/ {
 	drv8424: drv8424 {
 		status = "okay";
-		compatible = "ti,drv8424";
+		compatible = "ti,drv84xx";
 
 
 		dir-gpios = <&gpio1 0 0>; /* D3 */
