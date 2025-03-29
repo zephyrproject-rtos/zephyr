@@ -138,10 +138,10 @@ def gather_board_devicetrees(twister_out_dir):
                 revision = board_info.get('revision', '')
 
                 board_target = board_name
-                if qualifier:
-                    board_target = f"{board_name}/{qualifier}"
-                if revision:
+                if revision is not None:
                     board_target = f"{board_target}@{revision}"
+                if qualifier:
+                    board_target = f"{board_target}/{qualifier}"
 
                 with open(edt_pickle_file, 'rb') as f:
                     edt = pickle.load(f)
@@ -325,6 +325,7 @@ def get_catalog(generate_hw_features=False):
             "vendor": vendor,
             "archs": list(archs),
             "socs": list(socs),
+            "revision_default": board.revision_default,
             "supported_features": supported_features,
             "image": guess_image(board),
         }
