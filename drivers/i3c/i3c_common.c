@@ -251,7 +251,7 @@ int i3c_attach_i3c_device(struct i3c_device_desc *target)
 	/* check to see if the device has already been attached */
 	I3C_BUS_FOR_EACH_I3CDEV(target->bus, i3c_desc) {
 		if (i3c_desc == target) {
-			return -EINVAL;
+			return -EALREADY;
 		}
 	}
 
@@ -262,7 +262,7 @@ int i3c_attach_i3c_device(struct i3c_device_desc *target)
 	 */
 	if (addr) {
 		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, addr)) {
-			return -EINVAL;
+			return -EADDRNOTAVAIL;
 		}
 	}
 
@@ -286,7 +286,7 @@ int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr
 	int status = 0;
 
 	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, target->dynamic_addr)) {
-		return -EINVAL;
+		return -EADDRNOTAVAIL;
 	}
 
 	if (api->reattach_i3c_device != NULL) {
@@ -342,12 +342,12 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target)
 	/* check to see if the device has already been attached */
 	I3C_BUS_FOR_EACH_I2CDEV(target->bus, i3c_i2c_desc) {
 		if (i3c_i2c_desc == target) {
-			return -EINVAL;
+			return -EALREADY;
 		}
 	}
 
 	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, target->addr)) {
-		return -EINVAL;
+		return -EADDRNOTAVAIL;
 	}
 
 	sys_slist_append(&data->attached_dev.devices.i2c, &target->node);
@@ -631,12 +631,11 @@ uint8_t i3c_odd_parity(uint8_t p)
 	return (0x9669 >> p) & 1;
 }
 
-int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested)
+int i3c_device_controller_handoff(struct i3c_device_desc *target, bool requested)
 {
 	int ret;
 	union i3c_ccc_getstatus status = {0};
 	struct i3c_ccc_events i3c_events;
-	struct i3c_ccc_address handoff_address;
 
 	/*
 	 * If the Active Controller intends to pass the Controller Role to a selected Secondary
@@ -728,15 +727,9 @@ int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool req
 	 * After the Active Controller has prepared for Handoff, the Active Controller shall
 	 * then issue a GETACCCR CCC
 	 */
-	ret = i3c_ccc_do_getacccr(target, &handoff_address);
+	ret = i3c_bus_getacccr(target);
 	if (ret != 0) {
 		return ret;
-	}
-
-	/* Verify Odd Parity and Correct Dynamic Address Reply */
-	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
-	    (handoff_address.addr >> 1 != target->dynamic_addr)) {
-		return -EIO;
 	}
 
 	return ret;
@@ -745,25 +738,15 @@ int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool req
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
-	struct i3c_ccc_getbcr bcr = {0};
-	struct i3c_ccc_getdcr dcr = {0};
 
 	/* GETBCR */
-	ret = i3c_ccc_do_getbcr(target, &bcr);
+	ret = i3c_bus_getbcr(target);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* GETDCR */
-	ret = i3c_ccc_do_getdcr(target, &dcr);
-	if (ret != 0) {
-		return ret;
-	}
-
-	target->bcr = bcr.bcr;
-	target->dcr = dcr.dcr;
-
-	return 0;
+	return i3c_bus_getdcr(target);
 }
 
 int i3c_device_adv_info_get(struct i3c_device_desc *target)
@@ -845,8 +828,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
  *
  * @retval 0 if successful.
  */
-static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *dev_list,
-			   bool *need_daa, bool *need_aasa)
+static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_dev_list *dev_list,
+				   bool *need_daa, bool *need_aasa)
 {
 	int i, ret;
 
@@ -857,7 +840,7 @@ static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
 		struct i3c_driver_data *bus_data = (struct i3c_driver_data *)dev->data;
-		struct i3c_ccc_address dyn_addr;
+		uint8_t dynamic_addr;
 
 		/*
 		 * A device without static address => need to do
@@ -880,8 +863,6 @@ static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *
 			continue;
 		}
 
-		LOG_DBG("SETDASA for 0x%x", desc->static_addr);
-
 		/*
 		 * check that initial dynamic address is free before setting it
 		 * if configured
@@ -898,27 +879,19 @@ static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *
 		}
 
 		/*
-		 * Note that the 7-bit address needs to start at bit 1
-		 * (aka left-justified). So shift left by 1;
+		 * If the device has a static address, set the dynamic address
+		 * to the static address if there is no requested dynamic address.
 		 */
-		dyn_addr.addr =
-			(desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr)
-			<< 1;
+		dynamic_addr =
+			desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr;
 
-		ret = i3c_ccc_do_setdasa(desc, dyn_addr);
-		if (ret == 0) {
-			desc->dynamic_addr = dyn_addr.addr >> 1;
-			if (desc->dynamic_addr != desc->static_addr) {
-				if (i3c_reattach_i3c_device(desc, desc->static_addr) != 0) {
-					LOG_ERR("Failed to reattach %s (%d)", desc->dev->name, ret);
-				}
-			}
-		} else {
+		ret = i3c_bus_setdasa(desc, dynamic_addr);
+		if (ret != 0) {
+			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
 			/* SETDASA failed, detach it from the controller */
 			if (i3c_detach_i3c_device(desc) != 0) {
 				LOG_ERR("Failed to detach %s (%d)", desc->dev->name, ret);
 			}
-			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
 		}
 	}
 
@@ -937,7 +910,360 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 
 	return false;
 }
+
+#ifdef CONFIG_I3C_CONTROLLER
+int i3c_bus_rstdaa_all(const struct device *dev)
+{
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_ccc_do_rstdaa_all(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: RSTDAA error (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* reset all devices' DA */
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		desc->dynamic_addr = 0;
+		LOG_DBG("%s: Reset dynamic address for device %s", dev->name, desc->dev->name);
+	}
+
+	return ret;
+}
+
+int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)desc->bus->data;
+	struct i3c_ccc_address dyn_addr;
+	int ret;
+
+	/* check if the addressed is free */
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+		LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name, dynamic_addr);
+		return -EADDRNOTAVAIL;
+	}
+
+	/*
+	 * Note that the 7-bit address needs to start at bit 1
+	 * (aka left-justified). So shift left by 1;
+	 */
+	dyn_addr.addr = dynamic_addr << 1;
+
+	ret = i3c_ccc_do_setdasa(desc, dyn_addr);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: SETDASA error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's dynamic address */
+	desc->dynamic_addr = dynamic_addr;
+	if (desc->dynamic_addr != desc->static_addr) {
+		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
+		if (ret < 0) {
+			LOG_ERR("%s: %s: unable to reattach device (%d)", desc->bus->name,
+				desc->dev->name, ret);
+			return ret;
+		}
+	}
+	LOG_DBG("%s: %s: SETDASA to 0x%02x", desc->bus->name, desc->dev->name, desc->dynamic_addr);
+
+	return ret;
+}
+
+int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
+{
+	struct i3c_driver_data *data = (struct i3c_driver_data *)desc->bus->data;
+	struct i3c_ccc_address dyn_addr;
+	uint8_t old_da;
+	int ret;
+
+	/* check if the addressed is free */
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+		LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name, dynamic_addr);
+		return -EADDRNOTAVAIL;
+	}
+
+	/*
+	 * Note that the 7-bit address needs to start at bit 1
+	 * (aka left-justified). So shift left by 1;
+	 */
+	dyn_addr.addr = dynamic_addr << 1;
+
+	ret = i3c_ccc_do_setnewda(desc, dyn_addr);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: SETNEWDA error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's dynamic address */
+	old_da = desc->dynamic_addr;
+	desc->dynamic_addr = dynamic_addr;
+	/* reattach device address */
+	ret = i3c_reattach_i3c_device(desc, old_da);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: unable to reattach device", desc->bus->name, desc->dev->name);
+		return ret;
+	}
+	LOG_DBG("%s: %s: SETNEWDA to 0x%02x", desc->bus->name, desc->dev->name, desc->dynamic_addr);
+
+	return ret;
+}
+
+int i3c_bus_setaasa(const struct device *dev)
+{
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_ccc_do_setaasa_all(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: unable to send CCC SETAASA", dev->name);
+		return ret;
+	}
+
+	/*
+	 * set all devices DA to SA if it is known that it supports SETAASA and doesn't currently
+	 * have a dynamic address
+	 */
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		if ((desc->flags & I3C_SUPPORTS_SETAASA) && (desc->dynamic_addr == 0) &&
+		    (desc->static_addr != 0)) {
+			desc->dynamic_addr = desc->static_addr;
+			LOG_DBG("%s: %s: SETAASA to 0x%02x", dev->name, desc->dev->name,
+				desc->dynamic_addr);
+		}
+	}
+
+	return ret;
+}
+
+int i3c_bus_getbcr(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_getbcr getbcr;
+	int ret;
+
+	ret = i3c_ccc_do_getbcr(desc, &getbcr);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETBCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's BCR */
+	desc->bcr = getbcr.bcr;
+	LOG_DBG("%s: %s: GETBCR 0x%02x", desc->bus->name, desc->dev->name, desc->bcr);
+
+	return ret;
+}
+
+int i3c_bus_getdcr(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_getdcr getdcr;
+	int ret;
+
+	ret = i3c_ccc_do_getdcr(desc, &getdcr);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETDCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's DCR */
+	desc->dcr = getdcr.dcr;
+	LOG_DBG("%s: %s: GETDCR 0x%02x", desc->bus->name, desc->dev->name, desc->dcr);
+
+	return ret;
+}
+
+int i3c_bus_getpid(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_getpid getpid;
+	int ret;
+
+	ret = i3c_ccc_do_getpid(desc, &getpid);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETPID error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's PID */
+	desc->pid = sys_get_be48(getpid.pid);
+	LOG_DBG("%s: %s: GETPID 0x%012llx", desc->bus->name, desc->dev->name,
+		sys_get_be48(getpid.pid));
+
+	return ret;
+}
+
+int i3c_bus_getmrl(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_mrl mrl;
+	int ret;
+
+	ret = i3c_ccc_do_getmrl(desc, &mrl);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's MRL */
+	desc->data_length.mrl = mrl.len;
+	if (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
+		desc->data_length.max_ibi = mrl.ibi_len;
+		LOG_DBG("%s: %s: GETMRL 0x%04x IBI len 0x%02x", desc->bus->name, desc->dev->name,
+			desc->data_length.mrl, desc->data_length.max_ibi);
+	} else {
+		desc->data_length.max_ibi = 0;
+		LOG_DBG("%s: %s: GETMRL 0x%04x", desc->bus->name, desc->dev->name,
+			desc->data_length.mrl);
+	}
+
+	return ret;
+}
+
+int i3c_bus_getmwl(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_mwl mwl;
+	int ret;
+
+	ret = i3c_ccc_do_getmwl(desc, &mwl);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* update the target's MWL */
+	desc->data_length.mwl = mwl.len;
+	LOG_DBG("%s: %s: GETMWL 0x%04x", desc->bus->name, desc->dev->name, desc->data_length.mwl);
+
+	return ret;
+}
+
+int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len)
+{
+	struct i3c_ccc_mrl mrl_cmd;
+	int ret;
+
+	mrl_cmd.len = mrl;
+
+	ret = i3c_ccc_do_setmrl(desc, &mrl_cmd);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: SETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	desc->data_length.mrl = mrl_cmd.len;
+	if (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
+		desc->data_length.max_ibi = ibi_len;
+		LOG_DBG("%s: %s: SETMRL 0x%04x IBI len 0x%04x", desc->bus->name, desc->dev->name,
+			desc->data_length.mrl, desc->data_length.max_ibi);
+	} else {
+		desc->data_length.max_ibi = 0;
+		LOG_DBG("%s: %s: SETMRL 0x%04x", desc->bus->name, desc->dev->name,
+			desc->data_length.mrl);
+	}
+
+	return ret;
+}
+
+int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl)
+{
+	struct i3c_ccc_mwl mwl_cmd;
+	int ret;
+
+	mwl_cmd.len = mwl;
+
+	ret = i3c_ccc_do_setmwl(desc, &mwl_cmd);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: SETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	desc->data_length.mwl = mwl_cmd.len;
+	LOG_DBG("%s: %s: SETMWL 0x%04x", desc->bus->name, desc->dev->name, desc->data_length.mwl);
+
+	return ret;
+}
+
+int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len, bool has_ibi_size)
+{
+	struct i3c_device_desc *desc;
+	const struct i3c_ccc_mrl setmrl = {
+		.len = mrl,
+		.ibi_len = ibi_len,
+	};
+	int ret;
+
+	ret = i3c_ccc_do_setmrl_all(dev, &setmrl, has_ibi_size);
+	if (ret < 0) {
+		LOG_ERR("%s: SETMRL error (%d)", dev->name, ret);
+		return ret;
+	}
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		desc->data_length.mrl = setmrl.len;
+		/*
+		 * Set mrl ibi len, if payload has data bytes and ibi len was transmitted
+		 * otherwise, set to 0, or leave as is if ibi len was not transmitted
+		 */
+		if (has_ibi_size) {
+			if (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
+				desc->data_length.max_ibi = setmrl.ibi_len;
+				LOG_DBG("%s: %s: SETMRL 0x%04x IBI len 0x%02x", desc->bus->name,
+					desc->dev->name, desc->data_length.mrl,
+					desc->data_length.max_ibi);
+			} else {
+				desc->data_length.max_ibi = 0;
+				LOG_DBG("%s: %s: SETMRL 0x%04x", desc->bus->name, desc->dev->name,
+					desc->data_length.mrl);
+			}
+		}
+	}
+
+	return ret;
+}
+
+int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl)
+{
+	const struct i3c_ccc_mwl setmwl = {
+		.len = mwl,
+	};
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_ccc_do_setmwl_all(dev, &setmwl);
+	if (ret < 0) {
+		LOG_ERR("%s: unable to send CCC SETMWL BC.", dev->name);
+		return ret;
+	}
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		desc->data_length.mwl = setmwl.len;
+		LOG_DBG("%s: %s: SETMWL 0x%04x", desc->bus->name, desc->dev->name,
+			desc->data_length.mwl);
+	}
+
+	return ret;
+}
 #ifdef CONFIG_I3C_TARGET
+int i3c_bus_getacccr(struct i3c_device_desc *desc)
+{
+	struct i3c_ccc_address handoff_address;
+	int ret;
+
+	ret = i3c_ccc_do_getacccr(desc, &handoff_address);
+	if (ret != 0) {
+		LOG_ERR("%s: %s: GETACCCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		return ret;
+	}
+
+	/* Verify Odd Parity and Correct Dynamic Address Reply */
+	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
+	    (handoff_address.addr >> 1 != desc->dynamic_addr)) {
+		LOG_ERR("%s: %s: GETACCCR invalid response", desc->bus->name, desc->dev->name);
+		return -EPROTO;
+	}
+
+	return ret;
+}
+
 int i3c_bus_deftgts(const struct device *dev)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
@@ -1011,6 +1337,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	return ret;
 }
 #endif /* CONFIG_I3C_TARGET */
+#endif /* CONFIG_I3C_CONTROLLER */
 int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 {
 	int i, ret = 0;
@@ -1043,7 +1370,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	}
 #endif
 
-	if (i3c_ccc_do_rstdaa_all(dev) != 0) {
+	if (i3c_bus_rstdaa_all(dev) != 0) {
 		LOG_DBG("Broadcast RSTDAA was NACK.");
 	}
 
@@ -1061,7 +1388,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/*
 	 * Set static addresses as dynamic addresses.
 	 */
-	ret = i3c_bus_setdasa(dev, dev_list, &need_daa, &need_aasa);
+	ret = i3c_bus_prepare_setdasa(dev, dev_list, &need_daa, &need_aasa);
 	if (ret != 0) {
 		goto err_out;
 	}
@@ -1070,23 +1397,9 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	 * Perform Set All Addresses to Static Address if possible.
 	 */
 	if (need_aasa) {
-		ret = i3c_ccc_do_setaasa_all(dev);
+		ret = i3c_bus_setaasa(dev);
 		if (ret != 0) {
 			LOG_ERR("failed to perform setaasa");
-		} else {
-			for (i = 0; i < dev_list->num_i3c; i++) {
-				struct i3c_device_desc *desc = &dev_list->i3c[i];
-				/*
-				 * Only set for devices that support SETAASA and do not
-				 * request a different dynamic address than its SA
-				 */
-				if ((desc->flags & I3C_SUPPORTS_SETAASA) &&
-				    (desc->static_addr != 0) &&
-				    ((desc->init_dynamic_addr == 0) ||
-				     desc->init_dynamic_addr == desc->static_addr)) {
-					desc->dynamic_addr = desc->static_addr;
-				}
-			}
 		}
 	}
 
