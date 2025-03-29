@@ -1,0 +1,48 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic TDM (Time division multiplexed audio interface)
+
+compatible: "nordic,nrf-tdm"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml, "memory-region.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  mck-frequency:
+    type: int
+    description: |
+      Frequency of the MCK clock. Configured independently of SCK.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.
+
+  clock-source:
+    type: string
+    default: "PCLK"
+    description: |
+      Clock source to be used by the TDM peripheral. The following options
+      are available:
+      - "PCLK": Peripheral clock
+      - "ACLK": Audio PLL clock with configurable frequency (frequency for
+        this clock must be set via the "hfclkaudio-frequency" property
+        in the "nordic,nrf-clock" node); this clock source is only available
+        in the nRF53 Series SoCs and it requires the use of HFXO
+    enum:
+      - "PCLK"
+      - "ACLK"
