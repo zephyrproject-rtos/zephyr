@@ -8,29 +8,29 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/eeprom.h>
-#include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/drivers/sensor/tmp11x.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
-#define TMP116_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_tmp116)
-#define TMP116_EEPROM_NODE DT_CHILD(TMP116_NODE, ti_tmp116_eeprom_0)
+#define TMP11X_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_tmp11x)
+#define TMP11X_EEPROM_NODE DT_CHILD(TMP11X_NODE, ti_tmp11x_eeprom_0)
 
-static uint8_t eeprom_content[EEPROM_TMP116_SIZE];
+static uint8_t eeprom_content[EEPROM_TMP11X_SIZE];
 
 int main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET(TMP116_NODE);
-	const struct device *const eeprom = DEVICE_DT_GET(TMP116_EEPROM_NODE);
+	const struct device *const dev = DEVICE_DT_GET(TMP11X_NODE);
+	const struct device *const eeprom = DEVICE_DT_GET(TMP11X_EEPROM_NODE);
 	struct sensor_value temp_value;
 
 	/* offset to be added to the temperature
-	 * only supported by TMP117
+	 * only supported by TMP117 and TMP119
 	 */
 	struct sensor_value offset_value;
 	int ret;
 
-	__ASSERT(device_is_ready(dev), "TMP116 device not ready");
-	__ASSERT(device_is_ready(eeprom), "TMP116 eeprom device not ready");
+	__ASSERT(device_is_ready(dev), "tmp11x device not ready");
+	__ASSERT(device_is_ready(eeprom), "tmp11x eeprom device not ready");
 
 	printk("Device %s - %p is ready\n", dev->name, dev);
 
@@ -56,7 +56,7 @@ int main(void)
 			      SENSOR_ATTR_OFFSET, &offset_value);
 	if (ret) {
 		printk("sensor_attr_set failed ret = %d\n", ret);
-		printk("SENSOR_ATTR_OFFSET is only supported by TMP117\n");
+		printk("SENSOR_ATTR_OFFSET is only supported by TMP117 and TMP119\n");
 	}
 	while (1) {
 		ret = sensor_sample_fetch(dev);
