@@ -12,13 +12,13 @@ astroid==3.3.9 \
     --hash=sha256:622cc8e3048684aa42c820d9d218978021c3c3d174fb03a9f0d615921744f550 \
     --hash=sha256:d05bfd0acba96a7bd43e222828b7d9bc1e138aaeb0649707908d3702a9831248
     # via pylint
-awscli==1.38.20 \
-    --hash=sha256:0e5a842df2a655928d3774c19d9e9551d7925738ef7ebcd4ec3e6c154127effa \
-    --hash=sha256:90c7b9c1918d48b8a5dd8176eaf839b2a5ac57005782eade012466b9e9bed01f
+awscli==1.38.23 \
+    --hash=sha256:43815c87b655d1cb8b41be2c40ce8c47348999a93f8b52f6c462fa4ada5768e3 \
+    --hash=sha256:8d4746235f4565760cadcb8b303d9d6756dbba1edd7bae8e219ef0910ed61cf4
     # via -r requirements-actions.in
-botocore==1.37.20 \
-    --hash=sha256:9295385740f9d30f9b679f76ee51f49b80ae73183d84d499c1c3f1d54d820f54 \
-    --hash=sha256:c34f4f25fda7c4f726adf5a948590bd6bd7892c05278d31e344b5908e7b43301
+botocore==1.37.23 \
+    --hash=sha256:3a249c950cef9ee9ed7b2278500ad83a4ad6456bc433a43abd1864d1b61b2acb \
+    --hash=sha256:ffbe1f5958adb1c50d72d3ad1018cb265fe349248c08782d334601c0814f0e38
     # via
     #   awscli
     #   s3transfer
@@ -321,6 +321,10 @@ gcovr==8.3 \
     --hash=sha256:d613a90aeea967b4972fbff69587bf8995ee3cd80df2556983b73141f30642d2 \
     --hash=sha256:faa371f9c4a7f78c9800da655107d4f99f04b718d1c0d9f48cafdcbef0049079
     # via -r requirements-actions.in
+gitdb==4.0.12 \
+    --hash=sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571 \
+    --hash=sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf
+    # via gitpython
 gitlint==0.19.1 \
     --hash=sha256:26bb085959148d99fbbc178b4e56fda6c3edd7646b7c2a24d8ee1f8e036ed85d \
     --hash=sha256:b5b70fb894e80849b69abbb65ee7dbb3520fc3511f202a6e6b6ddf1a71ee8f61
@@ -329,6 +333,10 @@ gitlint-core==0.19.1 \
     --hash=sha256:7bf977b03ff581624a9e03f65ebb8502cc12dfaa3e92d23e8b2b54bbdaa29992 \
     --hash=sha256:f41effd1dcbc06ffbfc56b6888cce72241796f517b46bd9fd4ab1b145056988c
     # via gitlint
+gitpython==3.1.44 \
+    --hash=sha256:9e0e10cda9bed1ee64bc9a6de50e7e38a9c9943241cd7f585f6df3ed28011110 \
+    --hash=sha256:c87e30b26253bf5418b01b0660f818967f3c503193838337fe5e573331249269
+    # via -r requirements-actions.in
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
@@ -1160,6 +1168,10 @@ six==1.17.0 \
     # via
     #   anytree
     #   python-dateutil
+smmap==5.0.2 \
+    --hash=sha256:26ea65a03958fa0c8a1c7e8c7a58fdc77221b8910f6be2131affade476898ad5 \
+    --hash=sha256:b30115f0def7d7531d22a0fb6502488d879e75b260a9db4d0819cfb25403af5e
+    # via gitdb
 sphinx-lint==1.0.0 \
     --hash=sha256:6117a0f340b2dc73eadfc57db7531d4477e0929f92a0c1a2f61e6edbc272f0bc \
     --hash=sha256:6eafdb44172ce526f405bf36c713eb246f1340ec2d667e7298e2487ed76decd2
@@ -1213,9 +1225,9 @@ tomlkit==0.13.2 \
     --hash=sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde \
     --hash=sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79
     # via pylint
-tox==4.24.2 \
-    --hash=sha256:92e8290e76ad4e15748860a205865696409a2d014eedeb796a34a0f3b5e7336e \
-    --hash=sha256:d5948b350f76fae436d6545a5e87c2b676ab7a0d7d88c1308651245eadbe8aea
+tox==4.25.0 \
+    --hash=sha256:4dfdc7ba2cc6fdc6688dde1b21e7b46ff6c41795fb54586c91a3533317b5255c \
+    --hash=sha256:dd67f030317b80722cf52b246ff42aafd3ed27ddf331c415612d084304cf5e52
     # via -r requirements-actions.in
 typing-extensions==4.13.0 \
     --hash=sha256:0a4ac55a5820789d87e297727d229866c9650f6521b64206413c4fbada24d95b \
