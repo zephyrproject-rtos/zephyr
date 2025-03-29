@@ -266,3 +266,12 @@ zephyr_mipi_dbi_spi: &lcdic {
 nxp_pmod_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 };
+
+&flexcomm1 {
+	compatible = "nxp,lpc-i2s";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+};

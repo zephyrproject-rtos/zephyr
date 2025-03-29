@@ -1,8 +1,10 @@
 #
-# Copyright 2022-2023 NXP
+# Copyright 2022-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+
+zephyr_library_sources(init.c)
 
 if(CONFIG_NXP_RW6XX_BOOT_HEADER)
   if(NOT DEFINED CONFIG_BOARD_RD_RW612_BGA)
