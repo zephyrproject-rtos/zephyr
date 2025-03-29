@@ -59,5 +59,12 @@
 				/* Flash size is specified in SOC/SIP dtsi */
 			};
 		};
+
+		lp_uart: uart@600b1400 {
+			compatible = "espressif,esp32-lpuart";
+			reg = <0x600b1400 DT_SIZE_K(4)>;
+			status = "disabled";
+		};
+
 	};
 };
