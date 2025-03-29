@@ -251,6 +251,8 @@
 			compatible = "renesas,ra-usbfs";
 			reg = <0x40090000 0x2000>;
 			num-bidir-endpoints = <10>;
+			interrupts = <12 1>, <13 1>;
+			interrupt-names = "usbfs-i", "usbfs-r";
 			phys = <&usbfs_phy>;
 			phys-clock = <&uclk>;
 			status = "disabled";
