@@ -7,6 +7,7 @@ elasticsearch
 exceptiongroup>=1.0.0rc8
 gcovr
 gitlint>=0.19.1
+gitpython>=3.1.41
 ijson
 intelhex
 junit2html
