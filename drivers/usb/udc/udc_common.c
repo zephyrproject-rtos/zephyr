@@ -744,6 +744,7 @@ int udc_enable(const struct device *dev)
 	}
 
 	data->stage = CTRL_PIPE_STAGE_SETUP;
+	data->setup = NULL;
 
 	ret = api->enable(dev);
 	if (ret == 0) {
@@ -1009,6 +1010,14 @@ void udc_ctrl_update_stage(const struct device *dev,
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
 		uint16_t length  = udc_data_stage_length(buf);
+
+		if (data->setup) {
+			/* Host started new control transfer before the previous
+			 * one finished. This was most likely due to a timeout.
+			 * Release old setup buffer as it is no longer needed.
+			 */
+			net_buf_unref(data->setup);
+		}
 
 		data->setup = buf;
 
