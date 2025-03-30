@@ -83,22 +83,6 @@ static inline int init_ws(void)
 }
 #endif /* CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE */
 
-#if defined(CONFIG_NET_L2_IPIP)
-int init_tunnel(void);
-bool is_tunnel(struct net_if *iface);
-#else
-static inline int init_tunnel(void)
-{
-	return 0;
-}
-
-static inline bool is_tunnel(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-	return false;
-}
-#endif /* CONFIG_NET_L2_IPIP */
-
 #if defined(CONFIG_USB_DEVICE_STACK) || defined(CONFIG_USB_DEVICE_STACK_NEXT)
 int init_usb(void);
 #else
