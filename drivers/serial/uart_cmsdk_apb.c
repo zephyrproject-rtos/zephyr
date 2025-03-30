@@ -401,9 +401,7 @@ static void uart_cmsdk_apb_irq_err_disable(const struct device *dev)
  */
 static int uart_cmsdk_apb_irq_is_pending(const struct device *dev)
 {
-	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
-
-	return (dev_cfg->uart->intstatus & (UART_RX_IN | UART_TX_IN));
+	return uart_cmsdk_apb_irq_rx_ready(dev) || uart_cmsdk_apb_irq_tx_ready(dev);
 }
 
 /**
