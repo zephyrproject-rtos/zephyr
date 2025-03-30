@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
+LOG_MODULE_DECLARE(net_samples_common, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
 
@@ -88,16 +88,16 @@ int init_tunnel(void)
 
 	memset(&ud, 0, sizeof(ud));
 
-	if (CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR[0] == '\0') {
+	if (CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR[0] == '\0') {
 		LOG_INF("Tunnel peer address not set.");
 		return 0;
 	}
 
-	if (!net_ipaddr_parse(CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR,
-			      strlen(CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR),
+	if (!net_ipaddr_parse(CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR,
+			      strlen(CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR),
 			      &peer)) {
 		LOG_ERR("Tunnel peer address \"%s\" invalid.",
-			CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR);
+			CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
 		return -EINVAL;
 	}
 
@@ -130,7 +130,7 @@ int init_tunnel(void)
 
 	if (ud.peer == NULL) {
 		LOG_ERR("Peer address %s unreachable",
-			CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR);
+			CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
 		return -ENETUNREACH;
 	}
 
@@ -146,7 +146,7 @@ int init_tunnel(void)
 	if (ret < 0 && ret != -ENOTSUP) {
 		LOG_ERR("Cannot set peer address %s to "
 			"interface %d (%d)",
-			CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR,
+			CONFIG_NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR,
 			net_if_get_by_iface(ud.tunnel),
 			ret);
 	}
@@ -161,10 +161,10 @@ int init_tunnel(void)
 	}
 
 	ret = setup_iface(ud.tunnel,
-			  CONFIG_NET_SAMPLE_TUNNEL_MY_ADDR);
+			  CONFIG_NET_SAMPLE_COMMON_TUNNEL_MY_ADDR);
 	if (ret < 0) {
 		LOG_ERR("Cannot set IP address %s to tunnel interface",
-			CONFIG_NET_SAMPLE_TUNNEL_MY_ADDR);
+			CONFIG_NET_SAMPLE_COMMON_TUNNEL_MY_ADDR);
 		return -EINVAL;
 	}
 
