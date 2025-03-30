@@ -9,12 +9,14 @@
  */
 
 #include <zephyr/kernel.h>
+/* For z_stack_space_get() */
 #include <kernel_internal.h>
 #include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
+#include <zephyr/init.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
@@ -111,8 +113,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	size_t unused;
 	int err;
 	int ret;
-
-
 
 	name = k_thread_name_get((k_tid_t)thread);
 	if (!name || name[0] == '\0') {
@@ -270,7 +270,7 @@ static int thread_analyzer_init(void)
 		tid = k_thread_create(&analyzer_thread[i], analyzer_thread_stacks[i],
 				      CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
 				      thread_analyzer_auto,
-				      (void *) (uint32_t) i, NULL, NULL,
+				      (void *) (uintptr_t) i, NULL, NULL,
 				      AUTO_THREAD_PRIO, 0, K_FOREVER);
 		if (!tid) {
 			LOG_ERR("k_thread_create() failed for core %u", i);
