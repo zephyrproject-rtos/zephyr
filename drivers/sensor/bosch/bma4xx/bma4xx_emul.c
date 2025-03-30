@@ -125,11 +125,11 @@ static int bma4xx_emul_write_byte(const struct emul *target, int reg, uint8_t va
 		data->regs[reg] = val;
 		return 0;
 	case BMA4XX_REG_POWER_CTRL:
-		if ((val & ~BMA4XX_BIT_ACC_EN) != 0) {
+		if ((val & ~BMA4XX_BIT_POWER_CTRL_ACC_EN) != 0) {
 			LOG_ERR("unhandled bits in POWER_CTRL write: %#x", val);
 			return -ENOTSUP;
 		}
-		data->regs[reg] = (val & BMA4XX_BIT_ACC_EN) != 0;
+		data->regs[reg] = (val & BMA4XX_BIT_POWER_CTRL_ACC_EN) != 0;
 		return 0;
 	case BMA4XX_REG_CMD:
 		if (val == BMA4XX_CMD_FIFO_FLUSH) { /* fifo_flush */
@@ -245,7 +245,7 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, struct sen
 	}
 
 	/* Set data ready flag */
-	data->regs[BMA4XX_REG_INT_STAT_1] |= BMA4XX_ACC_DRDY_INT;
+	data->regs[BMA4XX_REG_INT_STAT_1] |= BMA4XX_BIT_INT_STAT_1_ACC_DRDY_INT;
 
 	return 0;
 }

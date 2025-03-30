@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2023 Google LLC
  * Copyright (c) 2024 Croxel Inc.
+ * Copyright (c) 2024 Cienet
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,8 +275,9 @@ static int bma4xx_chip_init(const struct device *dev)
 	}
 
 	/* Enable accelerometer */
-	status = bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_POWER_CTRL, BMA4XX_BIT_ACC_EN,
-					    BMA4XX_BIT_ACC_EN);
+	status =
+		bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_POWER_CTRL, BMA4XX_BIT_POWER_CTRL_ACC_EN,
+					   BMA4XX_BIT_POWER_CTRL_ACC_EN);
 	if (status) {
 		LOG_ERR("Could not enable accel: %d", status);
 		return status;
