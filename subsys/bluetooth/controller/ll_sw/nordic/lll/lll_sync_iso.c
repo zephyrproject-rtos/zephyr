@@ -1523,11 +1523,9 @@ static void isr_rx_done(void *param)
 		lll->payload_tail = payload_index;
 	} while (latency_event--);
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (node_rx) {
 		iso_rx_sched();
 	}
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
