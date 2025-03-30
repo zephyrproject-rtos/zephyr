@@ -37,6 +37,8 @@ void *nsi_host_realloc(void *ptr, unsigned long size);
 void nsi_host_srandom(unsigned int seed);
 char *nsi_host_strdup(const char *s);
 long nsi_host_write(int fd, const void *buffer, unsigned long size);
+void nsi_signal_handler_install(int signal, void (*handler)(int status));
+void nsi_fd_async(int fd);
 
 #ifdef __cplusplus
 }

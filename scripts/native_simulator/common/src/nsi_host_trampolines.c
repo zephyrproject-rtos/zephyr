@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <signal.h>
 
 void *nsi_host_calloc(unsigned long nmemb, unsigned long size)
 {
@@ -74,4 +75,23 @@ char *nsi_host_strdup(const char *s)
 long nsi_host_write(int fd, const void *buffer, unsigned long size)
 {
 	return write(fd, buffer, size);
+}
+
+void nsi_signal_handler_install(int signal, void (*handler)(int status))
+{
+	struct sigaction saio;
+
+	/* Install the signal handler */
+	saio.sa_handler = handler;
+	saio.sa_flags = 0;
+	saio.sa_restorer = NULL;
+	sigaction(signal, &saio, NULL);
+}
+
+void nsi_fd_async(int fd)
+{
+	/* Set the file descriptor owner so we can receive events */
+	fcntl(fd, F_SETOWN, getpid());
+	/* Make the file descriptor asynchronous */
+	fcntl(fd, F_SETFL, O_ASYNC);
 }
