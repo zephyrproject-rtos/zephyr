@@ -18,10 +18,10 @@
 LOG_MODULE_REGISTER(uvc_sample, LOG_LEVEL_INF);
 
 const struct device *const uvc_dev = DEVICE_DT_GET(DT_NODELABEL(uvc));
-const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 
 int main(void)
 {
+	const struct device *video_dev;
 	struct usbd_context *sample_usbd;
 	struct video_buffer *vbuf;
 	struct video_format fmt = {0};
@@ -30,8 +30,16 @@ int main(void)
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
 
-	if (!device_is_ready(video_dev)) {
-		LOG_ERR("video source %s failed to initialize", video_dev->name);
+#if DT_HAS_CHOSEN(zephyr_camera)
+	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+#elif defined(CONFIG_VIDEO_SW_GENERATOR)
+	video_dev = device_get_binding("VIDEO_SW_GENERATOR");
+#else
+#error A video source is required.
+#endif
+	if (video_dev == NULL || !device_is_ready(video_dev)) {
+		LOG_ERR("video source %s is not ready or failed to initialize",
+			video_dev == NULL ? "(nil)" : video_dev->name);
 		return -ENODEV;
 	}
 

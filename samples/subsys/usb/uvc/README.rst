@@ -34,6 +34,17 @@ The sample can be built as follows:
    :goals: build flash
    :compact:
 
+If the video sensor is not present, the software test pattern generator can be used
+instead, and the sample can be built for any board with a supported USB device
+controller and sufficient RAM as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/uvc
+   :board: rpi_pico
+   :goals: build flash
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=video-emul.overlay
+   :compact:
+
 The device is expected to be detected as a webcam device:
 
 .. tabs::
