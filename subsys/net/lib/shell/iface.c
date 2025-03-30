@@ -503,20 +503,22 @@ skip_ipv6:
 
 #if defined(CONFIG_NET_DHCPV6)
 	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
-		PR("DHCPv6 renewal time (T1) : %llu ms\n",
-		   iface->config.dhcpv6.t1);
-		PR("DHCPv6 rebind time (T2)  : %llu ms\n",
-		   iface->config.dhcpv6.t2);
-		PR("DHCPv6 expire time       : %llu ms\n",
-		   iface->config.dhcpv6.expire);
-		if (iface->config.dhcpv6.params.request_addr) {
-			PR("DHCPv6 address           : %s\n",
-			   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
-		}
+		if (iface->config.dhcpv6.state != NET_DHCPV6_DISABLED) {
+			PR("DHCPv6 renewal time (T1) : %llu ms\n",
+			   iface->config.dhcpv6.t1);
+			PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+			   iface->config.dhcpv6.t2);
+			PR("DHCPv6 expire time       : %llu ms\n",
+			   iface->config.dhcpv6.expire);
+			if (iface->config.dhcpv6.params.request_addr) {
+				PR("DHCPv6 address           : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+			}
 
-		if (iface->config.dhcpv6.params.request_prefix) {
-			PR("DHCPv6 prefix            : %s\n",
-			   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+			if (iface->config.dhcpv6.params.request_prefix) {
+				PR("DHCPv6 prefix            : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+			}
 		}
 
 		PR("DHCPv6 state             : %s\n",
