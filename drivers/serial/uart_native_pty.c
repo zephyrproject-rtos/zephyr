@@ -170,13 +170,11 @@ static int np_uart_stdin_poll_in(const struct device *dev, unsigned char *p_char
 		return -1;
 	}
 
-	rc = np_uart_stdin_poll_in_bottom(in_f, p_char);
+	rc = np_uart_stdin_poll_in_bottom(in_f, p_char, 1);
 	if (rc == -2) {
 		disconnected = true;
-		return -1;
 	}
-
-	return rc;
+	return rc == 1 ? 0 : -1;
 }
 
 /**
