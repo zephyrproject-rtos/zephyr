@@ -48,15 +48,38 @@ struct native_pty_status {
 	char *auto_attach_cmd; /* If auto_attach, which command to launch the terminal emulator */
 	bool wait_pts;         /* Hold writes to the uart/pts until a client is connected/ready */
 	bool cmd_request_stdinout; /* User requested to connect this UART to the stdin/out */
+#ifdef CONFIG_UART_ASYNC_API
+	struct  {
+		const struct device *dev;
+		struct k_work_delayable tx_done;
+		uart_callback_t user_callback;
+		void *user_data;
+		const uint8_t *tx_buf;
+		size_t tx_len;
+	} async;
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 static void np_uart_poll_out(const struct device *dev, unsigned char out_char);
 static int np_uart_poll_in(const struct device *dev, unsigned char *p_char);
 static int np_uart_init(const struct device *dev);
 
+#ifdef CONFIG_UART_ASYNC_API
+static void np_uart_tx_done_work(struct k_work *work);
+static int np_uart_callback_set(const struct device *dev, uart_callback_t callback,
+				void *user_data);
+static int np_uart_tx(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout);
+static int np_uart_tx_abort(const struct device *dev);
+#endif /* CONFIG_UART_ASYNC_API */
+
 static DEVICE_API(uart, np_uart_driver_api) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_poll_in,
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = np_uart_callback_set,
+	.tx = np_uart_tx,
+	.tx_abort = np_uart_tx_abort,
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 #define NATIVE_PTY_INSTANCE(inst)                                        \
@@ -118,6 +141,11 @@ static int np_uart_init(const struct device *dev)
 		d->in_fd = tty_fn;
 		d->out_fd = tty_fn;
 	}
+
+#ifdef CONFIG_UART_ASYNC_API
+	k_work_init_delayable(&d->async.tx_done, np_uart_tx_done_work);
+	d->async.dev = dev;
+#endif
 
 	return 0;
 }
@@ -206,6 +234,85 @@ static int np_uart_poll_in(const struct device *dev, unsigned char *p_char)
 		return np_uart_pty_poll_in(dev, p_char);
 	}
 }
+
+#ifdef CONFIG_UART_ASYNC_API
+
+static int np_uart_callback_set(const struct device *dev, uart_callback_t callback, void *user_data)
+{
+	struct native_pty_status *data = dev->data;
+
+	data->async.user_callback = callback;
+	data->async.user_data = user_data;
+
+	return 0;
+}
+
+static void np_uart_tx_done_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct native_pty_status *data =
+		CONTAINER_OF(dwork, struct native_pty_status, async.tx_done);
+	struct uart_event evt;
+	unsigned int key = irq_lock();
+
+	evt.type = UART_TX_DONE;
+	evt.data.tx.buf = data->async.tx_buf;
+	evt.data.tx.len = data->async.tx_len;
+
+	(void)nsi_host_write(data->out_fd, evt.data.tx.buf, evt.data.tx.len);
+
+	data->async.tx_buf = NULL;
+
+	if (data->async.user_callback) {
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
+	}
+	irq_unlock(key);
+}
+
+static int np_uart_tx(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout)
+{
+	struct native_pty_status *data = dev->data;
+
+	if (data->async.tx_buf) {
+		/* Port is busy */
+		return -EBUSY;
+	}
+	data->async.tx_buf = buf;
+	data->async.tx_len = len;
+
+	/* Run the callback on the next tick to give the caller time to use the return value */
+	k_work_reschedule(&data->async.tx_done, K_TICKS(1));
+	return 0;
+}
+
+static int np_uart_tx_abort(const struct device *dev)
+{
+	struct native_pty_status *data = dev->data;
+	struct k_work_sync sync;
+	struct uart_event evt;
+	bool not_idle;
+
+	/* Cancel the callback */
+	not_idle = k_work_cancel_delayable_sync(&data->async.tx_done, &sync);
+	if (!not_idle) {
+		return -EFAULT;
+	}
+
+	/* Generate TX_DONE event with number of bytes transmitted */
+	evt.type = UART_TX_DONE;
+	evt.data.tx.buf = data->async.tx_buf;
+	evt.data.tx.len = 0;
+	if (data->async.user_callback) {
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
+	}
+
+	/* Reset state */
+	data->async.tx_buf = NULL;
+	return 0;
+}
+
+#endif /* CONFIG_UART_ASYNC_API */
+
 
 #define NATIVE_PTY_SET_AUTO_ATTACH_CMD(inst, cmd)      \
 	native_pty_status_##inst.auto_attach_cmd = cmd;
