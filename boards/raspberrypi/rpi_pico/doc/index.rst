@@ -207,7 +207,7 @@ The Raspberry Pi Pico has an SWD interface that can be used to program
 and debug the onboard SoC. This interface can be used with OpenOCD.
 To use it, OpenOCD version 0.12.0 or later is needed.
 
-If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and more),
+If you are using a Debian based system (including Raspberry Pi OS, Ubuntu. and more),
 using the `pico_setup.sh`_ script is a convenient way to set up the forked version of OpenOCD.
 
 Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
