@@ -148,7 +148,7 @@ Enhanced Serial Peripheral Interface (eSPI)
 GPIO
 ====
 
-* To support the RP2350B, which has many pins, the RaspberryPi-GPIO configuration has
+* To support the RP2350B, which has many pins, the Raspberry Pi-GPIO configuration has
   been changed. The previous role of :dtcompatible:`raspberrypi,rpi-gpio` has been migrated to
   :dtcompatible:`raspberrypi,rpi-gpio-port`, and :dtcompatible:`raspberrypi,rpi-gpio` is
   now left as a placeholder and mapper.
