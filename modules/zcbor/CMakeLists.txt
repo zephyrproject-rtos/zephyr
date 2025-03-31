@@ -8,6 +8,7 @@ if(CONFIG_ZCBOR)
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_common.c
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_decode.c
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_encode.c
+    ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_print.c
   )
 
   zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
