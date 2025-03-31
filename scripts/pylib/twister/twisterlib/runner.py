@@ -1666,8 +1666,8 @@ class ProjectBuilder(FilterBuilder):
                             extra_dtc_overlay_files, cmake_extra_args,
                             build_dir):
         # Retain quotes around config options
-        config_options = [arg for arg in extra_args if arg.startswith("CONFIG_")]
-        args = [arg for arg in extra_args if not arg.startswith("CONFIG_")]
+        config_options = [arg for arg in extra_args if arg.startswith(("CONFIG_", "SB_CONFIG_"))]
+        args = [arg for arg in extra_args if not arg.startswith(("CONFIG_", "SB_CONFIG_"))]
 
         args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
 
