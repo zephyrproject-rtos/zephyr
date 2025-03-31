@@ -61,6 +61,8 @@ for a complete list of nRF5340 Audio DK board hardware features.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

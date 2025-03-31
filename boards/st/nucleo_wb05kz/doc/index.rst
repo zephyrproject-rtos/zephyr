@@ -63,6 +63,8 @@ For more details, please refer to the `Nucleo WB05KZ board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WB05KZ board includes an ST-LINK-V3EC embedded debug tool interface.
 
 Applications for the ``nucleo_w05kz`` board target can be built and flashed

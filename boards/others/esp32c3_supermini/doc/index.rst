@@ -62,6 +62,8 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 

@@ -68,6 +68,8 @@ I.e. for the multi-core ``nsim/nsim_hs5x/smp`` platform there is only
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

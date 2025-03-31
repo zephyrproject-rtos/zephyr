@@ -63,6 +63,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample
 (note you may use ``qemu_arc/qemu_em``, ``qemu_arc/qemu_hs``,  ``qemu_arc/qemu_hs5x`` or

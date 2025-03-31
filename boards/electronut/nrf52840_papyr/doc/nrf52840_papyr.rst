@@ -89,6 +89,8 @@ Other pins used by the e-paper display are:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52840_papyr`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); Black Magic

@@ -185,6 +185,8 @@ VBAT can be provided via the left ST Morpho connector's pin 33.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H563ZI board includes an ST-LINK/V3EC embedded debug tool interface.
 This probe allows to flash the board using various tools.
 

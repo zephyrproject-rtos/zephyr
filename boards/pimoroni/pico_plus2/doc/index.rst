@@ -40,6 +40,8 @@ See :ref:`rpi_pico_pio_based_features`
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The overall explanation regarding flashing and debugging is the same as or ``rpi_pico``.
 See :ref:`rpi_pico_flashing_using_openocd` and :ref:`rpi_pico_flashing_using_uf2`
 in ``rpi_pico`` documentation.

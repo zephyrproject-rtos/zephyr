@@ -121,6 +121,8 @@ Ethernet over USB is configured as the default network interface
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F412ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

@@ -206,6 +206,8 @@ USB port2 (FS) is supported.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``stm32h7s78_dk`` board configuration can be built and

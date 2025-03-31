@@ -152,6 +152,8 @@ transceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32F3DISCOVERY Discovery kit includes a ST-LINK/V2 or ST-LINK/V2-B embedded
 debug tool interface.
 

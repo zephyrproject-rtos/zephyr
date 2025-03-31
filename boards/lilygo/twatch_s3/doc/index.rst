@@ -48,6 +48,8 @@ Supported Features
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Prerequisites
 =============
 

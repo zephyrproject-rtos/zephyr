@@ -67,6 +67,8 @@ The default configuration can be found in
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

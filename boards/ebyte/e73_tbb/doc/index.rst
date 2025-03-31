@@ -135,6 +135,8 @@ NFC_ANT
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

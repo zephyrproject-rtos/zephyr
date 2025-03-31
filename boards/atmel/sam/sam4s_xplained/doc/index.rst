@@ -48,6 +48,8 @@ The section flashing uses the UART from the Segger USB debug connection.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM4S Xplained board comes with Segger
 `J-Link OB <https://www.segger.com/jlink-ob.html>`_. This provides a debug
 interface to the SAM4S16C chip. You can use Ozone or JLink to communicate with

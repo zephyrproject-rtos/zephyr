@@ -79,6 +79,8 @@ Finally, a trigger option must be enabled in Kconfig (either
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 

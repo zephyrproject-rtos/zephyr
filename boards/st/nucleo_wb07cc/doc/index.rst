@@ -63,6 +63,8 @@ For more details, please refer to the `Nucleo WB07CC board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WB07CC board includes an ST-LINK-V3EC embedded debug tool interface.
 
 Applications for the ``nucleo_wb07cc`` board target can be built and flashed

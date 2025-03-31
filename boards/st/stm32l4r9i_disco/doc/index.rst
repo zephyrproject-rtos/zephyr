@@ -50,6 +50,8 @@ ST-LINK Virtual COM port interface. Default communication settings are 115200 8N
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32L4R9I Discovery board includes an ST-LINK/V2-1 debug tool.
 
 Applications for the ``stm32l4r9i_disco`` board configuration can be

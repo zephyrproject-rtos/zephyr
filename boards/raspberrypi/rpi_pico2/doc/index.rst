@@ -40,6 +40,8 @@ The default pin mapping is unchanged from the Pico 1 (see :ref:`rpi_pico_pin_map
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 As with the Pico 1, the SWD interface can be used to program and debug the
 device, e.g. using OpenOCD with the `Raspberry Pi Debug Probe <https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html>`_ .
 

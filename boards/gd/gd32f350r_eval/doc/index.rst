@@ -46,6 +46,8 @@ is USART0 with TX connected at PA9 and RX at PA10.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before programming your board make sure to configure boot and serial jumpers as follows:
 
 - J4:  Select 2-3 for both (labeled as ``L``)

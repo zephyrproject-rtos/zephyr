@@ -50,6 +50,8 @@ of the `Panasonic Wireless Connectivity Development Hub`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Please use the ``pan1783_evb_cpuapp``, ``pan1783a_evb_cpuapp`` or
 ``pan1783a_pa_evb_cpuapp`` for application core and ``pan1783_evb_cpunet``,
 ``pan1783a_evb_cpunet`` or ``pan1783a_pa_evb_cpunet`` board configuration

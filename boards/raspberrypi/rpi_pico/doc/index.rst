@@ -133,6 +133,8 @@ Raspberry Pi Pico's PIO is a programmable chip that can implement a variety of p
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``rpi_pico`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

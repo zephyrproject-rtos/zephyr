@@ -29,6 +29,8 @@ as ``pull-up-gpios``.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board requires the Arduino variant of bossac. You will not
 be able to flash with the bossac included with the zephyr-sdk, or
 using shumatech's mainline build.

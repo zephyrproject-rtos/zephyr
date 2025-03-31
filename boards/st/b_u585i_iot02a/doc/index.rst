@@ -242,6 +242,8 @@ do it by removing ``SB6`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 B_U585I_IOT02A Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 

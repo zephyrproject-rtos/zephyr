@@ -188,6 +188,8 @@ do it by removing ``SB13`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H7S3L8 board includes an ST-LINK/V3 embedded debug tool interface.
 
 .. note::

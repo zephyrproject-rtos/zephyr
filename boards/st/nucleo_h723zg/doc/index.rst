@@ -128,6 +128,8 @@ connected to pins PD0 (RX) and PD1 (TX).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H723ZG board includes an ST-LINK/V3 embedded debug tool interface.
 
 .. note::

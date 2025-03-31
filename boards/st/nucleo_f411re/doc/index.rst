@@ -108,6 +108,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F411RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f411re`` board configuration can be built and

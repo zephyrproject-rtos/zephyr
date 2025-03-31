@@ -119,6 +119,8 @@ using 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ``nucleo_f722ze`` can be flashed and debugged in the typical manner.
 The Nucleo F722ZE board includes an ST-LINK V2-1 debugger.
 

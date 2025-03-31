@@ -51,6 +51,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

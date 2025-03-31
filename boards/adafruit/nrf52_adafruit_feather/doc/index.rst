@@ -58,6 +58,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ``nrf52_adafruit_feather`` board is available in two different versions:
 
 - `Adafruit Feather nRF52 Pro with myNewt Bootloader`_

@@ -138,6 +138,8 @@ remaining are used by the A9 core or not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The M4 core does not have a flash memory and is not provided a clock
 at power-on-reset. Therefore it needs to be started by the A9 core.
 The A9 core is responsible to load the M4 binary application into the RAM,

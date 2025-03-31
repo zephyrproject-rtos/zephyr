@@ -133,6 +133,8 @@ settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32F7508-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 
 Applications for the ``stm32f7508_dk`` board configuration can be built and

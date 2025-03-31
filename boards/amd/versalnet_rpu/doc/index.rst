@@ -52,6 +52,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::

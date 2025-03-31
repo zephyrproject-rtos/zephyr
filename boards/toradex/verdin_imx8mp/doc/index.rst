@@ -172,6 +172,8 @@ used/tested.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Verdin iMX8M Plus board doesn't have QSPI flash for the M7, and it needs to be started by the
 A53 core. The A53 core is responsible to load the M7 binary application into the RAM, put the M7 in
 reset, set the M7 Program Counter and Stack Pointer, and get the M7 out of reset. The A53 can

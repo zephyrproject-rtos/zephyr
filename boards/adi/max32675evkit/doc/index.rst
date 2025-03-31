@@ -344,6 +344,8 @@ respectively. If the pushbutton is pressed, the attached port pin is pulled low.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

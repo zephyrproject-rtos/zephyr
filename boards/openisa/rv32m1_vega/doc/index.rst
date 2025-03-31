@@ -285,6 +285,8 @@ default for console and logging.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. _rv32m1-programming-hw:
 
 .. important::

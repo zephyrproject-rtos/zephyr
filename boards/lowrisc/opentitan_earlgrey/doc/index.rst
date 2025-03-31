@@ -48,6 +48,8 @@ Other hardware features are not yet supported on Zephyr porting.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 First, build and install Verilator as described in the `OpenTitan Verilator
 Setup`_ guide .
 

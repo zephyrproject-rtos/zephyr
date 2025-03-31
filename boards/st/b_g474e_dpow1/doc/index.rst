@@ -76,6 +76,8 @@ For more details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``b_g474e_dpow1`` board configuration can be built and

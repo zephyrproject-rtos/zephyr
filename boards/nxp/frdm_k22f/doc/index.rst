@@ -128,6 +128,8 @@ Only USB device function is supported in Zephyr at the moment.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 

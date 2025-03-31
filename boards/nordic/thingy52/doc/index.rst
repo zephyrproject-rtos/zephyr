@@ -300,6 +300,8 @@ CCS811
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

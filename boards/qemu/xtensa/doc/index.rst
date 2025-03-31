@@ -9,6 +9,8 @@ configuration provides support for the Xtensa simulation environment.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 

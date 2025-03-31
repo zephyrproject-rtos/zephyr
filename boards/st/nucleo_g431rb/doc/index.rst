@@ -146,6 +146,8 @@ low power mode.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo G431RB board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``nucleo_g431rb`` board configuration can be built and

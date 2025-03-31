@@ -54,6 +54,8 @@ pinouts and the schematic.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Prerequisites
 =============
 

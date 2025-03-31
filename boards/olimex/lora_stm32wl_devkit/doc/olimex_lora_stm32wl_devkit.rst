@@ -39,6 +39,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``olimex_lora_stm32wl_devkit`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 

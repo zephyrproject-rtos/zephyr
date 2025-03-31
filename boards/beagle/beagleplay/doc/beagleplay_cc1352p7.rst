@@ -121,6 +121,8 @@ CC1352 reset is connected to AM62 GPIO0_14.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

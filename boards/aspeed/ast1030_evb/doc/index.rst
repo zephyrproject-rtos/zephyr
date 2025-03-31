@@ -48,6 +48,8 @@ UART5 is configured for serial logs.  The default serial setup is 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board comes with a JTAG port which facilitates debugging using a single physical connection.
 
 Flashing

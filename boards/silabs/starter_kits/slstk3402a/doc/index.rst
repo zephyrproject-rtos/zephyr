@@ -98,6 +98,8 @@ The EFM32PG12 SoC has four USARTs and one Low Energy UART (LEUART).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
    in Simplicity Studio.

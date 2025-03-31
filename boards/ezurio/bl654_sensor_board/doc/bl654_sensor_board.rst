@@ -83,6 +83,8 @@ be blobbed.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bl654_sensor_board`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running. An external

@@ -131,6 +131,8 @@ Requires an external CAN or CANFD transceiver.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H743ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_h743zi`` board configuration can be built and

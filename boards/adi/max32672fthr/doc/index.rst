@@ -164,6 +164,8 @@ J7 Pinout
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

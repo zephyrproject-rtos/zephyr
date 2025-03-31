@@ -33,6 +33,8 @@ Detailed information about pinouts is available in the `schematics document`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

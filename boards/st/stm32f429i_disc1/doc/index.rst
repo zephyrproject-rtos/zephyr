@@ -122,6 +122,8 @@ and host OTG operation, but only device mode has been tested with Zephyr at this
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32F429I-DISC1 Discovery kit includes a ST-LINK/V2-B embedded debug tool interface.
 Applications for the ``stm32f429i_disc1`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and

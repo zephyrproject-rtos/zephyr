@@ -83,6 +83,8 @@ driven by TCC2 instead of by GPIO.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM C21N Xplained Pro comes with a Atmel Embedded Debugger (EDBG). This
 provides a debug interface to the SAMC21 chip and is supported by
 OpenOCD.

@@ -84,6 +84,8 @@ The BT510 incorporates an I2C Silabs SI7055 temperature sensor. Refer to the `Si
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bt510`` board configuration can be built, flashed, and
 debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.

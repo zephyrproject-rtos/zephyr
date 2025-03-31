@@ -27,6 +27,8 @@ which options are configured and so will be used on invocation of the simulator.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

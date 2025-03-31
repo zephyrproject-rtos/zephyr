@@ -65,6 +65,8 @@ Zephyr console output is available as follows:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bl654_usb`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details). The
 ``bl654_usb`` board cannot be used for debugging. The compatible BL654 DVK

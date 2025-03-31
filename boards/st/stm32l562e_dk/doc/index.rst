@@ -230,6 +230,8 @@ They can be tested using :zephyr:code-sample:`lvgl` sample:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``stm32l562e_dk`` board configuration can be built and

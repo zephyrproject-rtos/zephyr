@@ -73,6 +73,8 @@ serial port that echos characters back to the host PC.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Feather ships with a the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 

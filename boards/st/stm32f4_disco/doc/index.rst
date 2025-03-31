@@ -125,6 +125,8 @@ enable console output you should use a serial cable and connect it to UART2 pins
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 
 Applications for the ``stm32f4_disco`` board configuration can be built and

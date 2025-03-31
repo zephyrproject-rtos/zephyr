@@ -96,6 +96,8 @@ Other hardware features are currently not supported by the port.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 RZ/G3S-EVKIT is designed to start different systems on different cores.
 It uses Yocto as the build system to build Linux system and boot loaders
 to run BL2 TF-A on Cortex-A55 System Core before starting Zephyr. The minimal steps are described below.

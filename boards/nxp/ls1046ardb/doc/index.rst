@@ -57,6 +57,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use the following configuration to run basic Zephyr applications and
 kernel tests on LS1046A RDB board. For example, with the :zephyr:code-sample:`synchronization` sample:
 

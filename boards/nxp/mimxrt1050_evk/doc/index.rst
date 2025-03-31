@@ -275,6 +275,8 @@ depending on which flash to set as ``zephyr,flash``:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Newer revisions of this board use :ref:`lpc-link2-onboard-debug-probe`,
    while older revisions use the :ref:`opensda-onboard-debug-probe`.

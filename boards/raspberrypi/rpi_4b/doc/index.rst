@@ -16,6 +16,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 TF Card
 =======
 
