@@ -15,6 +15,7 @@ common:
     - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
+    - ophelia4ev/nrf54l15/cpuapp
     - nrf52_bsim
   integration_platforms:
     - nrf52840dk/nrf52840
