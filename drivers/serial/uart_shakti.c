@@ -155,9 +155,7 @@ static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	if (uart->status & STS_RX_NOT_EMPTY)
-		return -1;
-
+	while ((uart->status & STS_RX_NOT_EMPTY) == 0);
 	volatile uint32_t read_val = uart->rx;
 	*c = (unsigned char)(read_val & RXDATA_MASK);
 
