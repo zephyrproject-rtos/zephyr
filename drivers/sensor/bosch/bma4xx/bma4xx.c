@@ -20,6 +20,7 @@
 LOG_MODULE_REGISTER(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 #include "bma4xx.h"
 #include "bma4xx_decoder.h"
+#include "bma4xx_rtio.h"
 
 /**
  * @brief Helper for converting m/s^2 offset values into register values
@@ -302,130 +303,6 @@ static int bma4xx_chip_init(const struct device *dev)
 }
 
 /*
- * Sample fetch and conversion
- */
-
-/**
- * @brief Read accelerometer data from the BMA4xx
- */
-static int bma4xx_sample_fetch(const struct device *dev, uint8_t accel_xyz_raw_data[6])
-{
-	struct bma4xx_data *bma4xx = dev->data;
-	int status;
-
-	/* Burst read regs DATA_8 through DATA_13, which holds the accel readings */
-	status = bma4xx->hw_ops->read_data(dev, BMA4XX_REG_DATA_8, accel_xyz_raw_data,
-					   BMA4XX_REG_DATA_13 - BMA4XX_REG_DATA_8 + 1);
-	if (status < 0) {
-		LOG_ERR("Cannot read accel data: %d", status);
-		return status;
-	}
-
-	return 0;
-}
-
-#ifdef CONFIG_BMA4XX_TEMPERATURE
-/**
- * @brief Read temperature register on BMA4xx
- */
-static int bma4xx_temp_fetch(const struct device *dev, int8_t *temp)
-{
-	struct bma4xx_data *bma4xx = dev->data;
-	int status;
-
-	status = bma4xx->hw_ops->read_reg(dev, BMA4XX_REG_TEMPERATURE, temp);
-	if (status) {
-		LOG_ERR("could not read temp reg: %d", status);
-		return status;
-	}
-
-	LOG_DBG("temp reg val is %d", *temp);
-	return 0;
-}
-#endif
-
-/*
- * RTIO submit and encoding
- */
-
-static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct bma4xx_data *bma4xx = dev->data;
-	struct bma4xx_encoded_data *edata;
-	uint8_t *buf;
-	uint32_t buf_len;
-	uint32_t min_buf_len = sizeof(struct bma4xx_encoded_data);
-	uint64_t cycles;
-	int rc;
-
-	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
-	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
-	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
-	/* Prepare response */
-	edata = (struct bma4xx_encoded_data *)buf;
-	edata->header.is_fifo = false;
-	edata->header.accel_fs = bma4xx->cfg.accel_fs_range;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
-
-	rc = bma4xx_sample_fetch(dev, edata->accel_xyz_raw_data);
-	if (rc != 0) {
-		LOG_ERR("Failed to fetch accel samples");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
-#ifdef CONFIG_BMA4XX_TEMPERATURE
-	rc = bma4xx_temp_fetch(dev, &edata->temp);
-	if (rc != 0) {
-		LOG_ERR("Failed to fetch temp sample");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-#endif /* CONFIG_BMA4XX_TEMPERATURE */
-
-	rtio_iodev_sqe_ok(iodev_sqe, 0);
-}
-
-static void bma4xx_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct device *dev = cfg->sensor;
-
-	/* TODO: Add streaming support */
-	if (!cfg->is_streaming) {
-		bma4xx_submit_one_shot(dev, iodev_sqe);
-	} else {
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-	}
-}
-
-static void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
-{
-	struct rtio_work_req *req = rtio_work_req_alloc();
-
-	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
-		return;
-	}
-
-	rtio_work_req_submit(req, iodev_sqe, bma4xx_submit_sync);
-}
-
-/*
  * Sensor driver API
  */
 
@@ -439,32 +316,51 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
  * Device instantiation macros
  */
 
+#define BMA4XX_RTIO_I2C_DEFINE(inst)                                                               \
+	I2C_DT_IODEV_DEFINE(bma4xx_iodev_##inst, DT_DRV_INST(inst));                               \
+	RTIO_DEFINE(bma4xx_rtio_##inst, 8, 8);
+
+#define BMA4XX_RTIO_SPI_DEFINE(inst)                                                               \
+	SPI_DT_IODEV_DEFINE(bma4xx_iodev_##inst, DT_DRV_INST(inst));                               \
+	RTIO_DEFINE(bma4xx_rtio_##inst, 8, 8);
+
+#define BMA4XX_DEFINE_RTIO(inst)                                                                   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMA4XX_RTIO_SPI_DEFINE(inst)), \
+	(BMA4XX_RTIO_I2C_DEFINE(inst)))
+
 /* Initializes a struct bma4xx_config for an instance on a SPI bus.
  * SPI operation is not currently supported.
  */
-
 #define BMA4XX_CONFIG_SPI(inst)                                                                    \
-	{                                                                                          \
-		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0), .bus_init = &bma_spi_init,        \
-	}
+	.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0), .bus_init = &bma4xx_spi_init,             \
+	.bus_type = BMA4XX_BUS_SPI,
 
 /* Initializes a struct bma4xx_config for an instance on an I2C bus. */
 #define BMA4XX_CONFIG_I2C(inst)                                                                    \
-	{                                                                                          \
-		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_init = &bma4xx_i2c_init,           \
-	}
+	.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_init = &bma4xx_i2c_init,                   \
+	.bus_type = BMA4XX_BUS_I2C,
+
+#define BMA4XX_DEFINE_BUS(inst)                                                                    \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)))
+
+#define BMA4XX_DEFINE_DATA(inst)                                                                   \
+	BMA4XX_DEFINE_RTIO(inst);                                                                  \
+	static struct bma4xx_data bma4xx_driver_##inst = {                                         \
+		.r = &bma4xx_rtio_##inst,                                                          \
+		.iodev = &bma4xx_iodev_##inst,                                                     \
+	};
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BMA4XX_DEFINE(inst)                                                                        \
-	static struct bma4xx_data bma4xx_data_##inst;                                              \
-	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(                      \
-		DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)));  \
+#define BMA4XX_INIT(inst)                                                                          \
+	BMA4XX_DEFINE_DATA(inst);                                                                  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,            \
+	static const struct bma4xx_config bma4xx_config_##inst = {BMA4XX_DEFINE_BUS(inst)};        \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_driver_##inst,          \
 				     &bma4xx_config_##inst, POST_KERNEL,                           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bma4xx_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(BMA4XX_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(BMA4XX_INIT);
