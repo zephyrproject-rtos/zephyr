@@ -132,6 +132,8 @@ The M4 Core is configured to run at a 400 MHz clock speed.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The i.MX8MM doesn't have QSPI flash for the M4 and it needs
 to be started by the A53 core. The A53 core is responsible to load the M4 binary
 application into the RAM, putting the M4 in reset, setting the M4 Program Counter and

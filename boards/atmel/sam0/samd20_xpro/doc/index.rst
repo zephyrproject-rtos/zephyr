@@ -53,6 +53,8 @@ SERCOM0 is available on the EXT1 connector.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM D20 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMD20 chip and is supported by
 OpenOCD.

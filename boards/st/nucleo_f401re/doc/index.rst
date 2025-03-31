@@ -110,6 +110,8 @@ Nucleo F401RE board has up to 3 I2Cs. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F401RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f401re`` board configuration can be built and

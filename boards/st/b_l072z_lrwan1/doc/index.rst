@@ -151,6 +151,8 @@ the USB data lines to the MCU, short solder bridges SB15 and SB16.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 B-L072Z-LRWAN1 Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``b_l072z_lrwan1`` board configuration can be built and

@@ -50,6 +50,8 @@ Security components
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 innblue21 supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 

@@ -48,6 +48,8 @@ For more details please refer to the `datasheet`_, `full pinout`_ and the `schem
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``arduino_nicla_sense_me`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
