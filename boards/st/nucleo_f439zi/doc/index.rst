@@ -22,6 +22,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nucleo F439ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

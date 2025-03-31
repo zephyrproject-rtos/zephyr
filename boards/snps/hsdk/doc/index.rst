@@ -343,6 +343,8 @@ For hardware feature details, refer to : `Designware HS Development Kit website
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

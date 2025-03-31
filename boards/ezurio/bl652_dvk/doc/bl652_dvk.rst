@@ -162,6 +162,8 @@ J32/J22 Digital I/O
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

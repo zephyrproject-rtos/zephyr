@@ -59,6 +59,8 @@ SIM select switch
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Norik Octopus SoM can be programmed and debugged using the exposed SWD pins.
 
 Building an application

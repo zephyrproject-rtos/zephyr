@@ -88,6 +88,8 @@ SERCOM5 is connected to an 8 megabit SPI flash.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM D21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMD21 chip and is supported by
 OpenOCD.

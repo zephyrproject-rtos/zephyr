@@ -156,6 +156,8 @@ EXTENSION 2
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board does not include any embedded debug tool interface, instead you
 will have to use an external probe connected to the available 20-pin JTAG
 connector to program and debug the board. Both JTAG and SWD are supported.

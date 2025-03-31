@@ -40,6 +40,8 @@ More information about Nano and DAPLink can be found at the `RedBear Github`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf51_blenano`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
