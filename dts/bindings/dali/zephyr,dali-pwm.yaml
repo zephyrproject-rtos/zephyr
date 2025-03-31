@@ -1,0 +1,34 @@
+description: PWM based DALI interface
+
+compatible: "zephyr,dali-pwm"
+
+include: base.yaml
+
+properties:
+    pwms:
+      type: phandle-array
+      required: true
+
+    tx-rx-delay-us:
+      type: int
+      required: false
+      description: |
+        The time in micro seconds the rx signal is still high after the tx signal has gone to low.
+        A higher value results in less false positive collision detection. If the value is too high,
+        collisions cannot be detected. Should be around 30-100.
+
+    tx-flank-shift-ns:
+      type: int
+      description: |
+        Difference in propagation delay in ns between the falling and rising edge.
+        If for example the high to low delay is 8us and low to high is 22us, then enter
+        (-14000) here. Keep in low µs range.
+      required: false
+
+    rx-flank-shift-ns:
+      type: int
+      description: |
+        Difference in propagation delay in ns between the falling and rising edge.
+        If for example the high to low delay is 47us and low to high is 15us, then enter
+        (32000) here. Keep in low µs range.
+      required: false

@@ -1,0 +1,25 @@
+/* add the DALI-interface via Click-adapter-board */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-nrf";
+		status = "okay";
+		counter = <&timer2>;
+		channel-tx = < 0 >;
+		channel-stop = < 1 >;
+		tx-gpios = <&gpio0 0x1E GPIO_ACTIVE_HIGH>;
+		rx-gpios = <&gpio0 0x1F GPIO_ACTIVE_HIGH>;
+		tx-flank-shift-us = <(-44)>;
+		rx-flank-shift-us = <(-60)>;
+	};
+};
+
+&timer2 {
+	status = "okay";
+	prescaler = < (0x04) >;
+	zli;
+};
+
+&gpio0 {
+	status = "okay";
+};

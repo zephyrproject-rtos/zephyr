@@ -1,0 +1,23 @@
+config DALI
+	bool "support for DALI bus"
+	default y
+	help
+	  Enable generic support for DALI bus (IEC 62386).
+
+if DALI
+
+config MAX_FRAMES_IN_QUEUE
+	int "Max frames in DALI recv queue"
+	default 3
+	range 1 16
+	help
+	  How many frames should be buffered in the recv queue
+
+rsource "Kconfig.lpc11u6x"
+rsource "Kconfig.pwm"
+rsource "Kconfig.nrf"
+
+module = DALI_LOW_LEVEL
+module-str = dali_low_level
+source "subsys/logging/Kconfig.template.log_config"
+endif # DALI
