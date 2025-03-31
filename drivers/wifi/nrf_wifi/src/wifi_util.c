@@ -14,6 +14,9 @@
 #include "fmac_main.h"
 #include "wifi_util.h"
 
+#include "rpu_lmac_phy_stats.h"
+#include "rpu_umac_stats.h"
+
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 struct nrf_wifi_ctx_zep *ctx = &rpu_drv_priv_zep.rpu_ctx_zep;
 
@@ -963,6 +966,129 @@ unlock:
 }
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
+static int nrf_wifi_dump_stats(const struct shell *sh,
+				   struct nrf_wifi_hal_dev_ctx *hal_dev_ctx,
+				   const char *name,
+				   struct rpu_stat_global *rpu_stat_g)
+{
+	int i;
+	int j;
+	int ret = 0;
+
+	for (i = 0; rpu_stat_g[i].stats != NULL; i++) {
+		struct rpu_stat_from_mem *rpu_stat = rpu_stat_g[i].stats;
+
+		shell_fprintf(sh, SHELL_INFO, "RPU %s - %s\n", name, rpu_stat_g[i].name);
+		shell_fprintf(sh, SHELL_INFO, "======================\n");
+
+		for (j = 0; rpu_stat[j].name[0] != '\0'; j++) {
+			uint32_t value = 0;
+
+			if (hal_rpu_mem_read(hal_dev_ctx, &value,
+						 rpu_stat[j].addr, sizeof(value)) != 0) {
+				shell_fprintf(sh, SHELL_ERROR,
+						  "Failed to read stat %s\n",
+							  rpu_stat[j].name);
+				continue;
+			}
+
+			shell_fprintf(sh, SHELL_INFO, "%s: %u\n",
+					  rpu_stat[j].name,
+					  value);
+		}
+
+		shell_fprintf(sh, SHELL_INFO, "\n");
+	}
+
+	return ret;
+}
+
+static int nrf_wifi_util_dump_rpu_stats_mem(const struct shell *sh,
+					size_t argc,
+					const char *argv[])
+{
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx;
+	struct nrf_wifi_hal_dev_ctx *hal_dev_ctx;
+	struct rpu_sys_op_stats stats;
+	enum rpu_stats_type stats_type = RPU_STATS_TYPE_ALL;
+	int ret;
+
+	if (argc == 2) {
+		const char *type  = argv[1];
+
+		if (!strcmp(type, "umac")) {
+			stats_type = RPU_STATS_TYPE_UMAC;
+		} else if (!strcmp(type, "lmac")) {
+			stats_type = RPU_STATS_TYPE_LMAC;
+		} else if (!strcmp(type, "all")) {
+			stats_type = RPU_STATS_TYPE_ALL;
+		} else {
+			shell_fprintf(sh,
+				      SHELL_ERROR,
+				      "Invalid stats type %s\n",
+				      type);
+			return -ENOEXEC;
+		}
+	}
+
+	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
+	if (!ctx->rpu_ctx) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "RPU context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
+	}
+	fmac_dev_ctx = ctx->rpu_ctx;
+	if (!fmac_dev_ctx) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "RPU context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
+	}
+	hal_dev_ctx = fmac_dev_ctx->hal_dev_ctx;
+	if (!hal_dev_ctx) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "HAL context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
+	}
+
+
+	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
+
+	if (stats_type == RPU_STATS_TYPE_UMAC || stats_type == RPU_STATS_TYPE_ALL) {
+		nrf_wifi_hal_proc_ctx_set(hal_dev_ctx, RPU_PROC_TYPE_MCU_UMAC);
+		ret = nrf_wifi_dump_stats(sh, hal_dev_ctx, "UMAC", rpu_all_umac_stats);
+		if (ret != 0) {
+			shell_fprintf(sh,
+				      SHELL_ERROR,
+				      "Failed to dump UMAC stats\n");
+			goto unlock;
+		}
+	}
+
+	if (stats_type == RPU_STATS_TYPE_LMAC || stats_type == RPU_STATS_TYPE_ALL) {
+		nrf_wifi_hal_proc_ctx_set(hal_dev_ctx, RPU_PROC_TYPE_MCU_LMAC);
+		ret = nrf_wifi_dump_stats(sh, hal_dev_ctx, "LMAC", rpu_all_lmac_stats);
+		if (ret != 0) {
+			shell_fprintf(sh,
+				      SHELL_ERROR,
+				      "Failed to dump LMAC stats\n");
+			goto unlock;
+		}
+	}
+
+	/* Reset the proc context to default */
+	nrf_wifi_hal_proc_ctx_set(hal_dev_ctx, RPU_PROC_TYPE_MCU_LMAC);
+
+unlock:
+	k_mutex_unlock(&ctx->rpu_lock);
+	return ret;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	nrf_wifi_util_subcmds,
 	SHELL_CMD_ARG(he_ltf,
@@ -1066,6 +1192,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      1,
 		      0),
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+	SHELL_CMD_ARG(rpu_stats_mem,
+		      NULL,
+		      "Display RPU stats by reading from memory "
+		      "Parameters: umac or lmac or or all (default)",
+		      nrf_wifi_util_dump_rpu_stats_mem,
+		      1,
+		      1),
 	SHELL_SUBCMD_SET_END);
 
 
