@@ -95,6 +95,8 @@ assigned to UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32F411E-DISCO Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 
 Applications for the ``stm32f411e_disco`` board configuration can be built and

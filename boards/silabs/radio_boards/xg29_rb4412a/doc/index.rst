@@ -24,6 +24,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``xg29_rb4412a`` board target can be built, flashed, and debugged in the
 usual way. See :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.

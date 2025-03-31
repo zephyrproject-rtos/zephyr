@@ -120,6 +120,8 @@ Security components
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 nRF5340 application core supports the Armv8-M Security Extension.
 Applications built for the raytac_mdbt53v_db_40_nrf5340_cpuapp board by
 default boot in the Secure state.

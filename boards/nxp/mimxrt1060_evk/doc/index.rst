@@ -303,6 +303,8 @@ depending on which flash to set as ``zephyr,flash``:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.

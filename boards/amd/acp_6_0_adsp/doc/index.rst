@@ -69,6 +69,8 @@ The bottom three variables are specific to acp_6_0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

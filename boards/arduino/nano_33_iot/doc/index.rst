@@ -66,6 +66,8 @@ serial port that echos characters back to the host PC.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nano 33 IOT ships the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 

@@ -85,6 +85,8 @@ Connections and IOs
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

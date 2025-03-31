@@ -170,6 +170,8 @@ settings are 115200 8N1.
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 For debugging zephyr applications or burning them into a flash, you will need to
 connect Andes ICE from host computer to ADP-XC7K board and execute the
 Andes ICE management software, ICEman, on this host computer.
