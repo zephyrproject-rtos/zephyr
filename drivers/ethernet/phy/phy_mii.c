@@ -230,8 +230,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 
 	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
 		if (data->autoneg_timeout-- == 0U) {
-			LOG_DBG("PHY (%d) auto-negotiate timedout",
-				    cfg->phy_addr);
+			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
 		return -EINPROGRESS;
@@ -328,9 +327,8 @@ static void monitor_work_handler(struct k_work *work)
 		k_work_reschedule(&data->autoneg_work,
 				  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
 	} else {
-	/* Submit delayed work */
-	k_work_reschedule(&data->monitor_work,
-			  K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+		/* Submit delayed work */
+		k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 	}
 }
 
