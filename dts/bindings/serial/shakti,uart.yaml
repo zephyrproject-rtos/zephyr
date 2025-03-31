@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018, SiFive Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    This binding gives a base representation of the shakti UART
+
+compatible: "shakti,uart"
+
+include: [uart-controller.yaml]
+
+properties:
+    reg:
+      required: true
+    interrupts:
+      required: false
+    base:
+      type: int
+      required: true

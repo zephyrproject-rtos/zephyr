@@ -1,0 +1,12 @@
+# Need to do changes suitable for shakti's plic
+
+
+# Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHAKTI_PLIC
+	bool "Platform Level Interrupt Controller (PLIC)"
+	default y
+	help
+	  Platform Level Interrupt Controller provides support
+	  for external interrupt lines defined by the RISC-V SoC.

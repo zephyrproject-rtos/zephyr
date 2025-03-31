@@ -1,0 +1,9 @@
+# Configuration options for dummy display
+
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# SPDX-License-Identifier: Apache-2.0
+
+config DUMMY_DISPLAY
+	bool "Dummy display driver"
+	help
+	  Enable dummy display driver compliant with display driver API.

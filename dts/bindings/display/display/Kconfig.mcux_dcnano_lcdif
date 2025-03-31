@@ -1,0 +1,61 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig DISPLAY_MCUX_DCNANO_LCDIF
+	bool "MCUX DCNano LCDIF driver"
+	default y
+	depends on DT_HAS_NXP_DCNANO_LCDIF_ENABLED
+	help
+	  Enable support for mcux DCNano LCDIF driver.
+
+
+if DISPLAY_MCUX_DCNANO_LCDIF
+
+config MCUX_DCNANO_LCDIF_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 1
+	range 0 2
+	help
+	  Number of framebuffers to allocate in DCNANO driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+
+config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
+	bool "Maintain cache coherency"
+	default y
+	help
+	  Maintain cache coherency for LCDIF framebuffer. This is generally
+	  required, unless an external framebuffer is utilized with custom
+	  caching settings, or caching is disabled.
+
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+	bool "Use external memory for framebuffer"
+	imply MEMC
+	help
+	  Use external memory for framebuffer. Configures the LCDIF to write
+	  framebuffer data to a memory mapped external device.
+
+	  Note that no specific linker section is used for this framebuffer, so
+	  if the application uses the external memory for other purposes, care
+	  should be taken to ensure that the memory allocated for the LCDIF
+	  does not overlap with other data. Each allocated LCDIF buffer will
+	  utilize (lcd_width * lcd_height * bytes_per_pixel) bytes of data,
+	  and buffers will be allocated contiguously.
+
+if MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
+	hex "LCDIF framebuffer address"
+	help
+	  Address of memory mapped external framebuffer.
+	  Must be 128 byte aligned
+
+endif # MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+
+endif # DISPLAY_MCUX_ELCDIF

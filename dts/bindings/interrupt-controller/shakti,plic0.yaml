@@ -1,0 +1,20 @@
+# Copyright (c) 2018, SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Shakti RISCV-V platform-local interrupt controller
+
+compatible: "shakti,plic0"
+
+include: riscv,plic0.yaml
+
+properties:
+  riscv,ndev:
+    type: int
+    description: Number of external interrupts supported
+    required: true
+  base:
+    type: int
+    required: true   
+  interrupt-shift:
+    type: int
+    required: false

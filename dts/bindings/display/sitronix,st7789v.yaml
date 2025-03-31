@@ -77,6 +77,10 @@ properties:
     required: true
     description: Gamma Setting
 
+  inversion-off:
+    type: boolean
+    description: Inversion Off
+
   porch-param:
     type: uint8-array
     required: true

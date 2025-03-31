@@ -9,7 +9,7 @@
 #include <ksched.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
-
+#include<../../soc/riscv/riscv-privileged/mpfs/soc.h>
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;

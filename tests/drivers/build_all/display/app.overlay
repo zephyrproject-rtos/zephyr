@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/led/led.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -23,6 +25,39 @@
 			status = "okay";
 		};
 
+		test_mipi_dbi {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			test_mipi_dbi_ili9342c: ili9342c@0 {
+				compatible = "ilitek,ili9342c";
+				reg = <0>;
+				mipi-max-frequency = <25000000>;
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <320>;
+				height = <240>;
+			};
+
+			test_mipi_dbi_st7796s: st7796s@1 {
+				compatible = "sitronix,st7796s";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				height = <320>;
+				width = <480>;
+				/* Use dummy values for PCG and NGC,
+				 * As this won't drive a real panel
+				 */
+				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+			};
+		};
+
+
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -32,18 +67,54 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1>;
 
-			test_spi_ili9342c: ili9342c@0 {
-				compatible = "ilitek,ili9342c";
-				reg = <0>;
-				spi-max-frequency = <25000000>;
-				cmd-data-gpios = <&test_gpio 0 0>;
-				pixel-format = <0>;
-				rotation = <270>;
-				width = <320>;
+			test_spi_gc9x01x: gc9x01x@1 {
+				compatible = "galaxycore,gc9x01x";
+				reg = <1>;
+				spi-max-frequency = <100000000>;
+				cmd-data-gpios = <&test_gpio 1 0>;
+				reset-gpios = <&test_gpio 2 0>;
+				pixel-format = <16>;
+
+				width = <240>;
 				height = <240>;
 			};
+
+			test_led_strip_0: lpd8806@2 {
+				compatible = "greeled,lpd8806";
+				reg = <2>;
+				spi-max-frequency = <2000000>;
+				chain-length = <1>;
+				color-mapping = <LED_COLOR_ID_RED
+						 LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_BLUE>;
+			};
+
+			test_led_strip_1: ws2812_spi@3 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <3>;
+				spi-max-frequency = <2000000>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <1>;
+				chain-length = <256>;
+				color-mapping = <0 1 2>;
+				reset-delay = <280>;
+			};
+		};
+
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+			status = "okay";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
 		};
 	};
 };
