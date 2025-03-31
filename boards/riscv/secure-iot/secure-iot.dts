@@ -82,3 +82,43 @@ chosen {
 &gpio0 {
 	status = "okay";
 };
+
+&pwm0 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm1 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm2 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm3 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm4 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm5 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm6 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
+
+&pwm7 {
+	status = "okay";
+	db_configure = <0 4 5000>;
+};
