@@ -78,6 +78,7 @@ add_custom_target(code_data_relocation_target)
 # bin_file         "zephyr.bin" file for flashing
 # hex_file         "zephyr.hex" file for flashing
 # elf_file         "zephyr.elf" file for flashing or debugging
+# mot_file         "zephyr.mot" file for flashing
 # yaml_contents    generated contents of runners.yaml
 #
 # Note: there are quotes around "zephyr.bin" etc. because the actual
@@ -170,6 +171,7 @@ set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
+set(KERNEL_MOT_NAME  ${KERNEL_NAME}.mot)
 set(KERNEL_SYMBOLS_NAME    ${KERNEL_NAME}.symbols)
 
 # Enable dynamic library support when required by LLEXT.
