@@ -66,6 +66,10 @@ enum charger_property {
 	CHARGER_PROP_BATTERY_VOLTAGE_NOW,
 	/** Present battery current in uA */
 	CHARGER_PROP_BATTERY_CURRENT_NOW,
+	/** Present charger voltage in uV */
+	CHARGER_PROP_VOLTAGE_NOW,
+	/** Present charger current in uA */
+	CHARGER_PROP_CURRENT_NOW,
 	/**
 	 * Configuration of the input current regulation target in µA
 	 *
@@ -319,6 +323,10 @@ union charger_propval {
 	uint32_t bat_voltage_now_uv;
 	/** CHARGER_PROP_BATTERY_CURRENT_NOW */
 	int32_t bat_current_now_ua;
+	/** CHARGER_PROP_VOLTAGE_NOW */
+	uint32_t voltage_now_uv;
+	/** CHARGER_PROP_CURRENT_NOW */
+	int32_t current_now_ua;
 	/** CHARGER_PROP_INPUT_REGULATION_CURRENT_UA */
 	uint32_t input_current_regulation_current_ua;
 	/** CHARGER_PROP_INPUT_REGULATION_VOLTAGE_UV */
