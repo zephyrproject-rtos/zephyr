@@ -61,3 +61,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE=max31790.overlay
   drivers.pwm.rts5912.build:
     platform_allow: rts5912_evb
+  drivers.pwm.max2221x.build:
+    platform_allow: nucleo_l476rg
+    extra_args: DTC_OVERLAY_FILE=max2221x.overlay
