@@ -113,9 +113,9 @@ static int bma4xx_odr_to_reg(uint32_t microhertz, uint8_t *reg_val)
  * Set the sensor's acceleration offset (per axis). Use bma4xx_commit_nvm() to save these
  * offsets to nonvolatile memory so they are automatically set during power-on-reset.
  */
-static int bma4xx_attr_set_odr(const struct device *dev, const struct sensor_value *val)
+static int bma4xx_attr_set_odr(const struct sensor_value *val,
+			       struct bma4xx_runtime_config *new_config)
 {
-	struct bma4xx_data *bma4xx = dev->data;
 	int status;
 	uint8_t reg_val;
 
@@ -125,13 +125,8 @@ static int bma4xx_attr_set_odr(const struct device *dev, const struct sensor_val
 		return status;
 	}
 
-	status = bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_ACCEL_CONFIG, BMA4XX_MASK_ACC_CONF_ODR,
-					    reg_val);
-	if (status < 0) {
-		return status;
-	}
+	new_config->accel_odr = reg_val;
 
-	bma4xx->accel_odr = reg_val;
 	return 0;
 }
 
@@ -165,9 +160,9 @@ static int bma4xx_fs_to_reg(int32_t range_ug, uint8_t *reg_val)
 /**
  * Set the sensor's full-scale range
  */
-static int bma4xx_attr_set_range(const struct device *dev, const struct sensor_value *val)
+static int bma4xx_attr_set_range(const struct sensor_value *val,
+				 struct bma4xx_runtime_config *new_config)
 {
-	struct bma4xx_data *bma4xx = dev->data;
 	int status;
 	uint8_t reg_val;
 
@@ -177,30 +172,25 @@ static int bma4xx_attr_set_range(const struct device *dev, const struct sensor_v
 		return status;
 	}
 
-	status = bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_ACCEL_RANGE, BMA4XX_MASK_ACC_RANGE,
-					    reg_val);
-	if (status < 0) {
-		return status;
-	}
+	new_config->accel_fs_range = reg_val;
 
-	bma4xx->accel_fs_range = reg_val;
 	return 0;
 }
 
 /**
  * Set the sensor's bandwidth parameter (one of BMA4XX_BWP_*)
  */
-static int bma4xx_attr_set_bwp(const struct device *dev, const struct sensor_value *val)
+static int bma4xx_attr_set_bwp(const struct sensor_value *val,
+			       struct bma4xx_runtime_config *new_config)
 {
 	/* Require that `val2` is unused, and that `val1` is in range of a valid BWP */
 	if (val->val2 || val->val1 < BMA4XX_BWP_OSR4_AVG1 || val->val1 > BMA4XX_BWP_RES_AVG128) {
 		return -EINVAL;
 	}
 
-	struct bma4xx_data *bma4xx = dev->data;
+	new_config->accel_bwp = (((uint8_t)val->val1) << BMA4XX_SHIFT_ACC_CONF_BWP);
 
-	return bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_ACCEL_CONFIG, BMA4XX_MASK_ACC_CONF_BWP,
-					  (((uint8_t)val->val1) << BMA4XX_SHIFT_ACC_CONF_BWP));
+	return 0;
 }
 
 /**
@@ -209,19 +199,43 @@ static int bma4xx_attr_set_bwp(const struct device *dev, const struct sensor_val
 static int bma4xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
-	switch (attr) {
-	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return bma4xx_attr_set_odr(dev, val);
-	case SENSOR_ATTR_FULL_SCALE:
-		return bma4xx_attr_set_range(dev, val);
-	case SENSOR_ATTR_OFFSET:
-		return bma4xx_attr_set_offset(dev, chan, val);
-	case SENSOR_ATTR_CONFIGURATION:
-		/* Use for setting the bandwidth parameter (BWP) */
-		return bma4xx_attr_set_bwp(dev, val);
+	const struct bma4xx_data *data = dev->data;
+	struct bma4xx_runtime_config new_config = data->cfg;
+	int res = 0;
+
+	__ASSERT_NO_MSG(val != NULL);
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+			res = bma4xx_attr_set_odr(val, &new_config);
+		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+			res = bma4xx_attr_set_range(val, &new_config);
+		} else if (attr == SENSOR_ATTR_OFFSET) {
+			res = bma4xx_attr_set_offset(dev, chan, val);
+		} else if (attr == SENSOR_ATTR_CONFIGURATION) {
+			/* Use for setting the bandwidth parameter (BWP) */
+			res = bma4xx_attr_set_bwp(val, &new_config);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -ENOTSUP;
+		}
+		break;
 	default:
-		return -ENOTSUP;
+		LOG_ERR("Unsupported channel");
+		res = -EINVAL;
+		break;
 	}
+
+	if (res) {
+		LOG_ERR("Failed to set attribute");
+		return res;
+	}
+
+	return bma4xx_safely_configure(dev, &new_config);
 }
 
 /**
@@ -262,9 +276,9 @@ static int bma4xx_chip_init(const struct device *dev)
 	k_sleep(K_USEC(1000));
 
 	/* Default is: range = +/-4G, ODR = 100 Hz, BWP = "NORM_AVG4" */
-	bma4xx->accel_fs_range = BMA4XX_RANGE_4G;
-	bma4xx->accel_bwp = BMA4XX_BWP_NORM_AVG4;
-	bma4xx->accel_odr = BMA4XX_ODR_100;
+	bma4xx->cfg.accel_fs_range = BMA4XX_RANGE_4G;
+	bma4xx->cfg.accel_bwp = BMA4XX_BWP_NORM_AVG4;
+	bma4xx->cfg.accel_odr = BMA4XX_ODR_100;
 
 	/* Switch to performance power mode */
 	status = bma4xx->hw_ops->update_reg(dev, BMA4XX_REG_ACCEL_CONFIG, BMA4XX_BIT_ACC_PERF_MODE,
@@ -376,7 +390,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	/* Prepare response */
 	edata = (struct bma4xx_encoded_data *)buf;
 	edata->header.is_fifo = false;
-	edata->header.accel_fs = bma4xx->accel_fs_range;
+	edata->header.accel_fs = bma4xx->cfg.accel_fs_range;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	edata->has_accel = 0;
 	edata->has_temp = 0;
