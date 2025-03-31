@@ -156,6 +156,7 @@ source "drivers/i2c/Kconfig.stm32"
 source "drivers/i2c/Kconfig.sy1xx"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.test"
+source "drivers/i2c/Kconfig.wch"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.xilinx_axi"
 # zephyr-keep-sorted-stop
