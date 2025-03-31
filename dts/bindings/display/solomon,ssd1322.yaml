@@ -90,9 +90,9 @@ properties:
     type: boolean
     description: Dual COM mode.
 
-  greyscale-enhancement:
+  grayscale-enhancement:
     type: boolean
-    description: Enable greyscale enhancement on some displays, partially undocumented.
+    description: Enable grayscale enhancement on some displays, partially undocumented.
 
   inversion-on:
     type: boolean
