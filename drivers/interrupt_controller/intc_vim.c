@@ -1,5 +1,6 @@
 /* Copyright (C) 2023 BeagleBoard.org Foundation
  * Copyright (C) 2023 S Prashanth
+ * Copyright (C) 2025 Siemens Mobility GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,8 +57,7 @@ void z_vim_irq_eoi(unsigned int irq)
 
 void z_vim_irq_init(void)
 {
-	uint32_t num_of_irqs = sys_read32(VIM_INFO_INTERRUPTS_MASK);
-
+	uint32_t num_of_irqs = sys_read32(VIM_INFO) & VIM_INFO_INTERRUPTS_MASK;
 	LOG_DBG("VIM: Number of IRQs = %u\n", num_of_irqs);
 }
 
