@@ -604,6 +604,12 @@ config NXP_WIFI_RTS_THRESHOLD
 	help
 	  This option enables the set of rts threshold support.
 
+config NXP_WIFI_CHANNEL_LOAD
+	bool "Set CHANNEL LOAD Support"
+	default y
+	help
+	  This option enables the set of channel load support.
+
 config NXP_WIFI_INACTIVITY_TIMEOUT_EXT
 	bool "Inactivity Timeout Ext Support"
 	default y
