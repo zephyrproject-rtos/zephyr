@@ -13,17 +13,17 @@
 		/* Use the native LIBC constructor code so that any native
 		 * constructors get run before main is invoked
 		 */
-		__init_array_start = .;
+		PLACE_SYMBOL_HERE(__init_array_start);
 #else
-		__zephyr_init_array_start = .;
+		PLACE_SYMBOL_HERE(__zephyr_init_array_start);
 #endif
 		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*)
 			SORT_BY_INIT_PRIORITY(.ctors.*)))
 		KEEP (*(.init_array .ctors))
 #ifdef CONFIG_NATIVE_APPLICATION
-		__init_array_end = .;
+		PLACE_SYMBOL_HERE(__init_array_end);
 #else
-		__zephyr_init_array_end = .;
+		PLACE_SYMBOL_HERE(__zephyr_init_array_end);
 #endif
 
 #ifdef CONFIG_NATIVE_LIBC
@@ -35,7 +35,7 @@
 		 * In this way, in native_simulator based targets, the host glibc process
 		 * initialization code will not call the constructors before Zephyr loads.
 		 */
-		__CTOR_LIST__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_LIST__);
 #ifdef CONFIG_64BIT
 		QUAD(0)
 		QUAD(0)
@@ -43,7 +43,7 @@
 		LONG(0)
 		LONG(0)
 #endif
-		__CTOR_END__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_END__);
 #ifndef CONFIG_NATIVE_APPLICATION
 		/*
 		 * Similar to the schenanigans required for the __CTOR_LIST__ and
@@ -51,8 +51,8 @@
 		 * to the same address to define an empty list. This prevents the glibc
 		 * startup code from calling any global constructors before Zephyr loads.
 		 */
-		__init_array_start = .;
-		__init_array_end = .;
+		PLACE_SYMBOL_HERE(__init_array_start);
+		PLACE_SYMBOL_HERE(__init_array_end);
 #endif
 #endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
