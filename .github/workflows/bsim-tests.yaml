@@ -27,6 +27,7 @@ on:
       - "include/zephyr/net/ieee802154*"
       - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
+      - '!**.rst'
 
 permissions:
   contents: read
