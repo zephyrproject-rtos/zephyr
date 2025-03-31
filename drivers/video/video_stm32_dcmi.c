@@ -501,3 +501,5 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_driver_api);
 
 VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), video_stm32_dcmi_config_0.sensor_dev);
+
+VIDEO_MDEV_DEFINE(dcmi, DEVICE_DT_INST_GET(0));

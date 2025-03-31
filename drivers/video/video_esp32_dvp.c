@@ -452,6 +452,8 @@ DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POS
 
 VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), esp32_config.source_dev);
 
+VIDEO_MDEV_DEFINE(esp32, DEVICE_DT_INST_GET(0));
+
 static int video_esp32_cam_init_master_clock(void)
 {
 	int ret = 0;
