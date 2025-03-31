@@ -19,6 +19,28 @@ LOG_MODULE_DECLARE(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 	((chan) == SENSOR_CHAN_ACCEL_X || (chan) == SENSOR_CHAN_ACCEL_Y ||                         \
 	 (chan) == SENSOR_CHAN_ACCEL_Z || (chan) == SENSOR_CHAN_ACCEL_XYZ)
 
+#ifdef CONFIG_BMA4XX_STREAM
+
+static uint64_t accel_period_ns[] = {
+	[BMA4XX_ODR_0_78125] = UINT64_C(100000000000000) / 78125,
+	[BMA4XX_ODR_1_5625] = UINT64_C(10000000000000) / 15625,
+	[BMA4XX_ODR_3_125] = UINT64_C(10000000000000) / 31250,
+	[BMA4XX_ODR_6_25] = UINT64_C(10000000000000) / 62500,
+	[BMA4XX_ODR_12_5] = UINT64_C(1000000000000) / 12500,
+	[BMA4XX_ODR_25] = UINT64_C(1000000000) / 25,
+	[BMA4XX_ODR_50] = UINT64_C(1000000000) / 50,
+	[BMA4XX_ODR_100] = UINT64_C(1000000000) / 100,
+	[BMA4XX_ODR_200] = UINT64_C(1000000000) / 200,
+	[BMA4XX_ODR_400] = UINT64_C(1000000000) / 400,
+	[BMA4XX_ODR_800] = UINT64_C(1000000000) / 800,
+	[BMA4XX_ODR_1600] = UINT64_C(10000000) / 16,
+	[BMA4XX_ODR_3200] = UINT64_C(10000000) / 32,
+	[BMA4XX_ODR_6400] = UINT64_C(10000000) / 64,
+	[BMA4XX_ODR_12800] = UINT64_C(10000000) / 128,
+};
+
+#endif /* CONFIG_BMA4XX_STREAM */
+
 /*
  * RTIO decoder
  */
@@ -171,6 +193,24 @@ static void bma4xx_convert_raw_accel_to_q31(int16_t raw_val, q31_t *out)
 	*out = CLAMP(((int64_t)value * scale) >> 11, INT32_MIN, INT32_MAX);
 }
 
+#ifdef CONFIG_BMA4XX_STREAM
+
+static void bma4xx_unpack_accel_data(const uint8_t *pkt, uint8_t data_start_index, q31_t *out)
+{
+	uint8_t offset = BMA4XX_FIFO_HEADER_LENGTH + (data_start_index * 2);
+	const bool has_aux = FIELD_GET(BMA4XX_BIT_FIFO_HEADER_AUX, pkt[0]) == 1;
+
+	if (has_aux) {
+		offset += BMA4XX_FIFO_M_LENGTH;
+	}
+
+	int16_t value = (pkt[offset + 1] << 4) | FIELD_GET(GENMASK(7, 4), pkt[offset]);
+
+	bma4xx_convert_raw_accel_to_q31((int16_t)value, out);
+}
+
+#endif /* CONFIG_BMA4XX_STREAM */
+
 #ifdef CONFIG_BMA4XX_TEMPERATURE
 /**
  * @brief Convert the 8-bit temp register value into a Q31 celsius value
@@ -256,9 +296,97 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec
 	}
 }
 
+#ifdef CONFIG_BMA4XX_STREAM
+
+static int bma4xx_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec ch, uint32_t *fit,
+			      uint16_t max_count, void *data_out)
+{
+	const struct bma4xx_fifo_data *edata = (const struct bma4xx_fifo_data *)buffer;
+	const uint8_t *buffer_end = buffer + sizeof(struct bma4xx_fifo_data) + edata->fifo_count;
+	int accel_frame_count = 0;
+	int count = 0;
+
+	if ((uintptr_t)buffer_end <= *fit || ch.chan_idx != 0) {
+		return 0;
+	}
+
+	if (!IS_ACCEL(ch.chan_type)) {
+		return -ENOTSUP;
+	}
+
+	((struct sensor_data_header *)data_out)->base_timestamp_ns = edata->header.timestamp;
+
+	buffer += sizeof(struct bma4xx_fifo_data);
+
+	while (count < max_count && buffer < buffer_end) {
+		const bool has_accel = FIELD_GET(BMA4XX_BIT_FIFO_HEADER_ACCEL, buffer[0]) == 1;
+		const bool has_aux = FIELD_GET(BMA4XX_BIT_FIFO_HEADER_AUX, buffer[0]) == 1;
+		const uint8_t *frame_end = buffer;
+
+		if (FIELD_GET(BMA4XX_BIT_FIFO_HEADER_REGULAR, buffer[0])) {
+			if (has_accel && has_aux) {
+				frame_end += BMA4XX_FIFO_MA_LENGTH + BMA4XX_FIFO_HEADER_LENGTH;
+				accel_frame_count++;
+			} else if (has_accel) {
+				frame_end += BMA4XX_FIFO_A_LENGTH + BMA4XX_FIFO_HEADER_LENGTH;
+				accel_frame_count++;
+			} else if (has_aux) {
+				frame_end += BMA4XX_FIFO_M_LENGTH + BMA4XX_FIFO_HEADER_LENGTH;
+			}
+		} else if (FIELD_GET(BMA4XX_BIT_FIFO_HEADER_CONTROL, buffer[0])) {
+			if (FIELD_GET(BMA4XX_BIT_FIFO_HEADER_SENSORTIME, buffer[0])) {
+				frame_end += BMA4XX_FIFO_ST_LENGTH + BMA4XX_FIFO_HEADER_LENGTH;
+			} else if (FIELD_GET(BMA4XX_BIT_FIFO_HEAD_OVER_READ_MSB, buffer[0])) {
+				frame_end = buffer_end;
+			} else {
+				frame_end += BMA4XX_FIFO_CF_LENGTH + BMA4XX_FIFO_HEADER_LENGTH;
+			}
+		}
+
+		if ((uintptr_t)buffer < *fit) {
+			/* This frame was already decoded, move on to the next frame */
+			buffer = frame_end;
+			continue;
+		}
+
+		if (has_accel) {
+			struct sensor_three_axis_data *data =
+				(struct sensor_three_axis_data *)data_out;
+
+			uint64_t period_ns = accel_period_ns[edata->accel_odr];
+
+			bma4xx_get_shift(
+				(struct sensor_chan_spec){.chan_type = SENSOR_CHAN_ACCEL_XYZ,
+							  .chan_idx = 3},
+				edata->header.accel_fs, &data->shift);
+			data->readings[count].timestamp_delta = (accel_frame_count - 1) * period_ns;
+			bma4xx_unpack_accel_data(buffer, 0, &data->readings[count].x);
+			bma4xx_unpack_accel_data(buffer, 1, &data->readings[count].y);
+			bma4xx_unpack_accel_data(buffer, 2, &data->readings[count].z);
+		}
+
+		buffer = frame_end;
+		*fit = (uintptr_t)frame_end;
+		count++;
+	}
+
+	return count;
+}
+
+#endif /* CONFIG_BMA4XX_STREAM */
+
 static int bma4xx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec ch, uint32_t *fit,
 				 uint16_t max_count, void *data_out)
 {
+#ifdef CONFIG_BMA4XX_STREAM
+
+	const struct bma4xx_decoder_header *header = (const struct bma4xx_decoder_header *)buffer;
+
+	if (header->is_fifo) {
+		return bma4xx_fifo_decode(buffer, ch, fit, max_count, data_out);
+	}
+#endif
+
 	return bma4xx_one_shot_decode(buffer, ch, fit, max_count, data_out);
 }
 
