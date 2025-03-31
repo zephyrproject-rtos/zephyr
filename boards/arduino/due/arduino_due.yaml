@@ -8,6 +8,7 @@ toolchain:
 flash: 512
 ram: 96
 supported:
+  - adc
   - arduino_i2c
   - gpio
   - watchdog
