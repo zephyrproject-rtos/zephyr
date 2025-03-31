@@ -413,6 +413,9 @@ void net_if_stats_reset_all(void)
 static inline void init_iface(struct net_if *iface)
 {
 	const struct net_if_api *api = net_if_get_device(iface)->api;
+#if defined(CONFIG_NET_DSA)
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+#endif
 
 	if (!api || !api->init) {
 		NET_ERR("Iface %p driver API init NULL", iface);
@@ -428,7 +431,12 @@ static inline void init_iface(struct net_if *iface)
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_flag_set(iface, NET_IF_IPV6);
 #endif
-
+#if defined(CONFIG_NET_DSA)
+	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+		net_if_flag_clear(iface, NET_IF_IPV4);
+		net_if_flag_clear(iface, NET_IF_IPV6);
+	}
+#endif
 	net_virtual_init(iface);
 
 	NET_DBG("On iface %p", iface);
