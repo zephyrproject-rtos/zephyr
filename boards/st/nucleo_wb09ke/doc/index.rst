@@ -63,6 +63,8 @@ For more details, please refer to the `Nucleo WB09KE board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WB09KE board includes an ST-LINK-V3EC embedded debug tool interface.
 
 Applications for the ``nucleo_w09ke`` board target can be built and flashed

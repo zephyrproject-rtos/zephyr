@@ -203,6 +203,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WL55JC board includes an STLINK-V3 embedded debug tool interface.
 
 Applications for the ``nucleo_wl55jc`` board configuration can be built the

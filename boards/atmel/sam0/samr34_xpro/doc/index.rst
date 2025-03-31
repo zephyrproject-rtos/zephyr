@@ -94,6 +94,8 @@ The SAMR34 MCU has 6 SERCOM based SPIs, with two configured as SPI in this BSP.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM R34 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMR34 chip and is supported by
 OpenOCD.

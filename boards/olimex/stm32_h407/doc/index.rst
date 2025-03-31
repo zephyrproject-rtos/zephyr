@@ -298,6 +298,9 @@ which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The OLIMEX-STM32-H407 board does not include an embedded debug tool
 interface. You will need to use ST tools or an external JTAG probe.
 In the following examples the Olimex ARM-USB-OCD-H is used.

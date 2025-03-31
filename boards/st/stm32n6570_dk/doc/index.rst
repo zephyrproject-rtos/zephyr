@@ -149,6 +149,8 @@ USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
 

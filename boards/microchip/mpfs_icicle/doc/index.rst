@@ -10,6 +10,8 @@ More information can be found on the `Microchip website <https://www.microchip.c
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

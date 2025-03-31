@@ -133,6 +133,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H745ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
 
 Applications for the ``nucleo_h745zi_q`` board should be built per core target,

@@ -150,6 +150,8 @@ The TX/RX wires are connected with pins 25/27 of CN9 connector.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F446ZE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f446ze`` board configuration can be built and

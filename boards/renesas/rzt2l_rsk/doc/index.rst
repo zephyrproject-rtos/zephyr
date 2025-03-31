@@ -66,6 +66,8 @@ The Zephyr console uses UART0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``rzt2l_rsk`` board can be
 built, flashed, and debugged in the usual way. See :ref:`build_an_application`
 and :ref:`application_run` for more details on building and running.

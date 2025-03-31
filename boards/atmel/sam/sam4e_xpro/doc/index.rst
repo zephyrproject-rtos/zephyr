@@ -51,6 +51,8 @@ chip.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing the Zephyr project onto SAM4E MCU requires the `OpenOCD tool`_.
 By default a factory new SAM4E chip will boot SAM-BA boot loader located in
 the ROM, not the flashed image. This is determined by the value of GPNVM1
