@@ -483,4 +483,6 @@ DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
 
 VIDEO_DEVICE_DEFINE(csi, DEVICE_DT_INST_GET(0), video_mcux_csi_config_0.source_dev);
 
+VIDEO_MDEV_DEFINE(csi, DEVICE_DT_INST_GET(0));
+
 #endif

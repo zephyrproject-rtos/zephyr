@@ -383,6 +383,8 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 			      &sdma_config_##inst, POST_KERNEL,                                    \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);            \
                                                                                                    \
-	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), sdma_config_##inst.sensor_dev);
+	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), sdma_config_##inst.sensor_dev); \
+                                                                                                   \
+	VIDEO_MDEV_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst));
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)

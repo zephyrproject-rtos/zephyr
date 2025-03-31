@@ -820,6 +820,26 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_frmival_enum *match);
 
 /**
+ * @brief Get a video device by index
+ *
+ * The video subsystem keeps a list of registered video devices that application
+ * can use for streaming. This function is to get a video device in this list by
+ * specifying an index.
+ *
+ * @param i Index of the video device to get
+ */
+const struct device *video_get_dev(uint8_t i);
+
+/**
+ * @brief Get the number of registered video devices
+ *
+ * The video subsystem keeps a list of registered video devices that application
+ * can use for streaming. This function is to retrieve the size of this list.
+ *
+ */
+uint8_t video_get_devs_num(void);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.

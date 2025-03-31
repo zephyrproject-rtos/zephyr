@@ -31,7 +31,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &st7789v;
-		zephyr,camera = &lcd_cam;
 	};
 
 	buttons {

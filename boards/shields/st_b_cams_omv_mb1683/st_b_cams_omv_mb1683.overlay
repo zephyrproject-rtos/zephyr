@@ -7,12 +7,6 @@
 
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
-/ {
-	chosen {
-		zephyr,camera = &st_cam_dvp;
-	};
-};
-
 &st_cam_i2c {
 
 	ov5640: ov5640@3c {

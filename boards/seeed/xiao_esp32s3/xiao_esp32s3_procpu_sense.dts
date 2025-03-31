@@ -11,10 +11,6 @@
 / {
 	model = "Seeed Xiao ESP32S3 PROCPU Sense";
 	compatible = "seeed,xiao-esp32s3";
-
-	chosen {
-		zephyr,camera = &lcd_cam;
-	};
 };
 
 &i2c1 {
