@@ -69,32 +69,6 @@ struct bma4xx_data {
 	uint8_t chip_id;
 };
 
-/*
- * RTIO types
- */
-
-struct bma4xx_decoder_header {
-	uint64_t timestamp;
-	uint8_t is_fifo: 1;
-	uint8_t accel_fs: 2;
-	uint8_t reserved: 5;
-} __attribute__((__packed__));
-
-struct bma4xx_encoded_data {
-	struct bma4xx_decoder_header header;
-	struct {
-		/** Set if `accel_xyz` has data */
-		uint8_t has_accel: 1;
-		/** Set if `temp` has data */
-		uint8_t has_temp: 1;
-		uint8_t reserved: 6;
-	} __attribute__((__packed__));
-	int16_t accel_xyz[3];
-#ifdef CONFIG_BMA4XX_TEMPERATURE
-	int8_t temp;
-#endif /* CONFIG_BMA4XX_TEMPERATURE */
-};
-
 int bma4xx_spi_init(const struct device *dev);
 int bma4xx_i2c_init(const struct device *dev);
 
