@@ -185,6 +185,12 @@
 	pinctrl-names = "default";
 };
 
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_pa18 &uart1_tx_pa17>;
+	pinctrl-names = "default";
+};
 &pwm0 {
 	status = "okay";
 	pinctrl-0 = <&timg0c0_pa12>;
@@ -224,4 +230,8 @@
 	ti,pwm-mode = "CENTER_ALIGN";
 	ti,pulse-cycle = <3>;
 	ti,period = <10>;
+};
+
+&dma {
+	status = "okay";
 };
