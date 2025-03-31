@@ -16,3 +16,20 @@ properties:
 
   pinctrl-names:
     required: true
+
+  dmas:
+    description: |
+      TX & RX dma specifiers used by async UART.
+
+      The dmas are referenced in the UART node using the following syntax:
+      dmas = <&dma_controller dma_channel dma_trigger_for_peripheral>
+      dmas = <&dma 0 18)>, <&dma 1 17>;
+      where the first entry is for the TX, and the second for RX.
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. Should be set to "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
