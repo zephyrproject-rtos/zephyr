@@ -55,7 +55,8 @@ void soc_early_init_hook(void)
 	}
 }
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS) \
+	&& !defined(CONFIG_MCUBOOT)
 static void smu_fault(void)
 {
 	PR_FAULT_INFO("***** SMU FAULT *****");
@@ -82,7 +83,8 @@ void soc_prep_hook(void)
 	 * This makes the secure-only app behave more like a non-secure app, allowing the use of
 	 * libraries that only expect to use non-secure peripherals, such as the radio subsystem.
 	 */
-#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS) \
+	&& !defined(CONFIG_MCUBOOT)
 #if defined(CMU_CLKEN1_SMU)
 	CMU_S->CLKEN1_SET = CMU_CLKEN1_SMU;
 #endif
