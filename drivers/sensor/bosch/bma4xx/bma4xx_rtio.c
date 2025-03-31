@@ -66,7 +66,10 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	/* Prepare response */
 	edata = (struct bma4xx_encoded_data *)buf;
 
-	edata->header.is_fifo = false;
+	if (IS_ENABLED(CONFIG_BMA4XX_STREAM)) {
+		edata->header.is_fifo = false;
+	}
+
 	edata->header.accel_fs = bma4xx->cfg.accel_fs_range;
 
 	rc = sensor_clock_get_cycles(&cycles);
@@ -142,6 +145,8 @@ void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 
 	if (!cfg->is_streaming) {
 		bma4xx_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_BMA4XX_STREAM)) {
+		bma4xx_submit_stream(dev, iodev_sqe);
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
