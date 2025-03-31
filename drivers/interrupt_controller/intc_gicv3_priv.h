@@ -104,11 +104,11 @@
 #define GITR_PENDBASER_OUTER_CACHE_MASK   0x7UL
 #define GITR_PENDBASER_PTZ                BIT64(62)
 
-/* GITCD_IROUTER */
+/* GICD_IROUTER */
 #define GIC_DIST_IROUTER 0x6000
 #define IROUTER(base, n) (base + GIC_DIST_IROUTER + (n) * 8)
 
-/* GITCD_IROUTERnE for GICv3.1 Extended SPI Range */
+/* GICD_IROUTERnE for GICv3.1 Extended SPI Range */
 #define GIC_DIST_IROUTERnE 0x8000
 #define IROUTERnE(base, n) (base + GIC_DIST_IROUTERnE + (n) * 8)
 
