@@ -22,7 +22,7 @@
 
 #define DT_DRV_COMPAT bosch_bma4xx
 
-LOG_MODULE_REGISTER(bma4xx_emul, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 
 struct bma4xx_emul_data {
 	/* Holds register data. */
@@ -44,6 +44,7 @@ void bma4xx_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint
 void bma4xx_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t *val, size_t count)
 {
 	struct bma4xx_emul_data *data = target->data;
+	LOG_INF("*** bma4xx_emul_get_reg: %x, %d", reg_addr, count);
 
 	__ASSERT_NO_MSG(reg_addr + count <= BMA4XX_NUM_REGS);
 	memcpy(val, data->regs + reg_addr, count);
@@ -151,6 +152,7 @@ static int bma4xx_emul_init(const struct emul *target, const struct device *pare
 
 	data->regs[BMA4XX_REG_CHIP_ID] = BMA4XX_CHIP_ID_BMA422;
 	data->regs[BMA4XX_REG_ACCEL_RANGE] = BMA4XX_RANGE_4G;
+	data->regs[BMA4XX_REG_EVENT] = 0x01;
 
 	return 0;
 }
@@ -208,6 +210,8 @@ void bma4xx_emul_set_accel_data(const struct emul *target, q31_t value, int8_t s
 	intermediate = (unshifted * BIT(11)) / (g << range_g);
 
 	intermediate /= accel_range;
+
+	intermediate = intermediate > 0 ? intermediate + 1 : intermediate;
 
 	reg_val = CLAMP(intermediate, -2048, 2047);
 
@@ -270,34 +274,36 @@ static int bma4xx_emul_backend_get_sample_range(const struct emul *target,
 
 	struct bma4xx_emul_data *data = target->data;
 
+	int16_t upper_bound_scale = (BIT(11) - 1);
+
 	switch (data->regs[BMA4XX_REG_ACCEL_RANGE]) {
 	case BMA4XX_RANGE_2G:
 		*shift = 5;
-		*upper = (q31_t)(2 * 9.80665 * BIT(31 - 5));
-		*lower = -*upper;
-		/* (1 << (31 - shift) >> 12) * 2 (where 2 comes from 2g range) */
-		*epsilon = BIT(31 - 5 - 12 + 1);
+		*upper = (q31_t)(2 * 9.80665 * upper_bound_scale * BIT(31 - 11 - 5));
+		*lower = -(q31_t)(2 * 9.80665 * BIT(31 - 5));
+		/* (1 << (31 - shift) >> 11) * 2 (where 2 comes from 2g range) */
+		*epsilon = 9.80665 * BIT(31 - 5 - 11 + 1);
 		break;
 	case BMA4XX_RANGE_4G:
 		*shift = 6;
-		*upper = (q31_t)(4 * 9.80665 * BIT(31 - 6));
-		*lower = -*upper;
-		/* (1 << (31 - shift) >> 12) * 4 (where 4 comes from 4g range) */
-		*epsilon = BIT(31 - 6 - 12 + 2);
+		*upper = (q31_t)(4 * 9.80665 * upper_bound_scale * BIT(31 - 11 - 6));
+		*lower = -(q31_t)(4 * 9.80665 * BIT(31 - 6));
+		/* (1 << (31 - shift) >> 11) * 4 (where 4 comes from 4g range) */
+		*epsilon = 9.80665 * BIT(31 - 6 - 11 + 2);
 		break;
 	case BMA4XX_RANGE_8G:
 		*shift = 7;
-		*upper = (q31_t)(8 * 9.80665 * BIT(31 - 7));
-		*lower = -*upper;
-		/* (1 << (31 - shift) >> 12) * 8 (where 8 comes from 8g range) */
-		*epsilon = BIT(31 - 7 - 12 + 3);
+		*upper = (q31_t)(8 * 9.80665 * upper_bound_scale * BIT(31 - 11 - 7));
+		*lower = -(q31_t)(8 * 9.80665 * BIT(31 - 7));
+		/* (1 << (31 - shift) >> 11) * 8 (where 8 comes from 8g range) */
+		*epsilon = 9.80665 * BIT(31 - 7 - 11 + 3);
 		break;
 	case BMA4XX_RANGE_16G:
 		*shift = 8;
-		*upper = (q31_t)(16 * 9.80665 * BIT(31 - 8));
-		*lower = -*upper;
-		/* (1 << (31 - shift) >> 12) * 16 (where 16 comes from 16g range) */
-		*epsilon = BIT(31 - 8 - 12 + 4);
+		*upper = (q31_t)(16 * 9.80665 * upper_bound_scale * BIT(31 - 11 - 8));
+		*lower = -(q31_t)(16 * 9.80665 * BIT(31 - 8));
+		/* (1 << (31 - shift) >> 11) * 16 (where 16 comes from 16g range) */
+		*epsilon = 9.80665 * BIT(31 - 8 - 11 + 4);
 		break;
 	default:
 		return -ENOTSUP;
