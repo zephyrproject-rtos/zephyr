@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: pull/25/head
+      revision: pull/26/head
       path: modules/hal/cmsis
       groups:
         - hal
