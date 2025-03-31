@@ -25,6 +25,9 @@
  * Types
  */
 
+#define BMA4XX_BUS_I2C 0
+#define BMA4XX_BUS_SPI 1
+
 union bma4xx_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
@@ -38,6 +41,7 @@ union bma4xx_bus_cfg {
 struct bma4xx_config {
 	int (*bus_init)(const struct device *dev);
 	const union bma4xx_bus_cfg bus_cfg;
+	uint8_t bus_type;
 };
 
 /** Used to implement bus-specific R/W operations. See bma4xx_i2c.c and
@@ -67,6 +71,8 @@ struct bma4xx_data {
 	const struct bma4xx_hw_operations *hw_ops;
 	/** Chip ID value stored in BMA4XX_REG_CHIP_ID */
 	uint8_t chip_id;
+	struct rtio *r;
+	struct rtio_iodev *iodev;
 };
 
 int bma4xx_spi_init(const struct device *dev);
