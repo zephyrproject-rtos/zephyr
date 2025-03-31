@@ -68,6 +68,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: west setup
         run: |
           west init -l . || true
@@ -104,7 +115,7 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ./scripts/twister --save-tests ${{matrix.normalized}}-testplan.json
           ls -la
           ./scripts/twister \
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
