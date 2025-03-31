@@ -17,6 +17,9 @@ config LV_DPI_DEF
 config LV_Z_BITS_PER_PIXEL
 	default 1
 
+config LV_Z_COLOR_MONO_HW_INVERSION
+	default y
+
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_1
 endchoice
