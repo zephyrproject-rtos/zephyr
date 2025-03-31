@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
- * Copyright (c) 2024, tinyVision.ai Inc.
+ * Copyright (c) 2024-2025, tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,16 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+
+#include "video_common.h"
+
+LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
@@ -163,4 +172,136 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			match->index = fie.index - 1;
 		}
 	}
+}
+
+int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t flags, uint32_t *data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, flags);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, flags);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, flags);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, flags);
+	uint8_t buf_w[sizeof(uint16_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		*data = 0;
+		data_ptr = (uint8_t *)data + sizeof(data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		*data = 0;
+		data_ptr = (uint8_t *)data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		ret = i2c_write_read_dt(i2c, buf_w, addr_size, &data_ptr[i], 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to read from register 0x%x", addr + i);
+			return ret;
+		}
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size, "Data written to the I2C device...");
+		LOG_HEXDUMP_DBG(&data_ptr[i], 1, "... data read back from the I2C device");
+	}
+
+	*data = big_endian ? sys_be32_to_cpu(*data) : sys_le32_to_cpu(*data);
+
+	return 0;
+}
+
+static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size)
+{
+	int ret = 0;
+
+	for (int i = 0; i < CONFIG_VIDEO_I2C_RETRY_NUM; i++) {
+		ret = i2c_write_dt(i2c, buf_w, size);
+		if (ret == 0) {
+			return 0;
+		}
+
+		k_sleep(K_MSEC(1));
+	}
+
+	LOG_HEXDUMP_ERR(buf_w, size, "failed to write register configuration over I2C");
+
+	return ret;
+}
+
+int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t flags, uint32_t data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, flags);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, flags);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, flags);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, flags);
+	uint8_t buf_w[sizeof(uint16_t) + sizeof(uint32_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		data = sys_cpu_to_be32(data);
+		data_ptr = (uint8_t *)&data + sizeof(data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		data = sys_cpu_to_le32(data);
+		data_ptr = (uint8_t *)&data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		/* The address is always big-endian as per CCI standard */
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		buf_w[addr_size] = data_ptr[i];
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size + 1, "Data written to the I2C device");
+
+		ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to write to register 0x%x", addr + i);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_field(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t field_mask,
+			  uint32_t field_value)
+{
+	uint32_t reg;
+	int ret;
+
+	ret = video_read_cci_reg(i2c, reg_addr, &reg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return video_write_cci_reg(i2c, reg_addr, (reg & ~field_mask) | field_value);
+}
+
+int video_write_cci_multi(const struct i2c_dt_spec *i2c, const struct video_reg *regs)
+{
+	int ret;
+
+	for (int i = 0; regs[i].addr != 0; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
+		if (ret != 0) {
+			LOG_ERR("Failed to write 0x%04x to register 0x%02x",
+				regs[i].data, regs[i].addr);
+			return ret;
+		}
+	}
+
+	return 0;
 }

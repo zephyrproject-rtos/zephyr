@@ -50,6 +50,14 @@ config VIDEO_BUFFER_SMH_ATTRIBUTE
 	  1: SMH_REG_ATTR_NON_CACHEABLE
 	  2: SMH_REG_ATTR_EXTERNAL
 
+config VIDEO_I2C_RETRY_NUM
+	int "Number of attempts for retrying I2C communication if it failed"
+	default 3
+	help
+	  The default is there to reduce the chance of failure (i.e. occasional EMI) without
+	  flooding the I2C bus upon error with too many retries. There is a 1ms wait time between
+	  every retry.
+
 source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
