@@ -102,6 +102,16 @@
 			};
 		};
 
+		i2c1: i2c@40005400 {
+			compatible = "wch,i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <30>, <31>;
+		};
+
 		usart1: uart@40013800 {
 			compatible = "wch,usart";
 			reg = <0x40013800 0x10>;
