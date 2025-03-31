@@ -76,6 +76,13 @@ static void rtio_iodev_test_complete(struct rtio_iodev_test_data *data, int stat
 	rtio_iodev_test_next(data, true);
 }
 
+static void rtio_iodev_await_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
+{
+	struct rtio_iodev_test_data *data = userdata;
+
+	rtio_iodev_test_complete(data, 0);
+}
+
 static void rtio_iodev_timer_fn(struct k_timer *tm)
 {
 	struct rtio_iodev_test_data *data = CONTAINER_OF(tm, struct rtio_iodev_test_data, timer);
@@ -97,6 +104,9 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 		/* For reads the test device copies from the given userdata */
 		memcpy(buf, ((uint8_t *)iodev_sqe->sqe.userdata), 16);
 		rtio_iodev_test_complete(data, 0);
+		break;
+	case RTIO_OP_AWAIT:
+		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_iodev_await_signaled, data);
 		break;
 	default:
 		rtio_iodev_test_complete(data, -ENOTSUP);
