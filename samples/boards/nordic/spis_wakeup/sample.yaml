@@ -1,0 +1,22 @@
+common:
+  sysbuild: true
+  depends_on: spi
+
+sample:
+  name: SPI wakeup sample
+tests:
+  sample.drivers.spis.wakeup:
+    tags:
+      - spi
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: console
+    harness_config:
+      fixture: spi_loopback
+      type: multi_line
+      ordered: true
+      regex:
+        - ".*SPIS: waiting for SPI transfer"
+        - ".*SPIS: woken up by"
