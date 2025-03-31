@@ -98,6 +98,17 @@
 		input-enable;
 	};
 
+	/omit-if-no-ref/ uart1_rx_pa18: uart_rx_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart1_tx_pa17: uart_tx_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+	};
+
 	/omit-if-no-ref/ spi1_sclk_pb9: spi1_sclk_pb9 {
 		pinmux = <MSP_PINMUX(26,MSPM0_PIN_FUNCTION_3)>;
 	};
