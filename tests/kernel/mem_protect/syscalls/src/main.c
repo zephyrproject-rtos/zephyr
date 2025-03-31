@@ -32,6 +32,14 @@
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
 
+#if !defined(CONFIG_TIMESLICING) || (CONFIG_TIMESLICE_SIZE == 0)
+#define YIELD_KERNEL		z_impl_k_yield()
+#define YIELD_USER		k_yield()
+#else
+#define YIELD_KERNEL
+#define YIELD_USER
+#endif
+
 #define NR_THREADS	(arch_num_cpus() * 4)
 #define MAX_NR_THREADS	(CONFIG_MP_MAX_NUM_CPUS * 4)
 #define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -53,6 +61,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
+	YIELD_KERNEL;
+
 	return k_usermode_string_nlen(src, maxlen, err);
 }
 
@@ -62,9 +72,14 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 	size_t ret;
 
 	ret = z_impl_string_nlen((char *)src, maxlen, &err_copy);
+
+	YIELD_KERNEL;
+
 	if (!err_copy && K_SYSCALL_MEMORY_READ(src, ret + 1)) {
 		err_copy = -1;
 	}
+
+	YIELD_KERNEL;
 
 	K_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
 
@@ -74,6 +89,8 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 
 int z_impl_string_alloc_copy(char *src)
 {
+	YIELD_KERNEL;
+
 	if (!strcmp(src, kernel_string)) {
 		return 0;
 	} else {
@@ -86,12 +103,19 @@ static inline int z_vrfy_string_alloc_copy(char *src)
 	char *src_copy;
 	int ret;
 
+	YIELD_KERNEL;
+
 	src_copy = k_usermode_string_alloc_copy((char *)src, BUF_SIZE);
 	if (!src_copy) {
 		return -1;
 	}
 
+	YIELD_KERNEL;
+
 	ret = z_impl_string_alloc_copy(src_copy);
+
+	YIELD_KERNEL;
+
 	k_free(src_copy);
 
 	return ret;
@@ -102,6 +126,8 @@ int z_impl_string_copy(char *src, int id)
 {
 	ARG_UNUSED(id);
 
+	YIELD_KERNEL;
+
 	if (!strcmp(src, kernel_string)) {
 		return 0;
 	} else {
@@ -111,7 +137,11 @@ int z_impl_string_copy(char *src, int id)
 
 static inline int z_vrfy_string_copy(char *src, int id)
 {
+	YIELD_KERNEL;
+
 	int ret = k_usermode_string_copy(kernel_buf[id], (char *)src, BUF_SIZE);
+
+	YIELD_KERNEL;
 
 	if (ret) {
 		return ret;
@@ -126,18 +156,24 @@ static inline int z_vrfy_string_copy(char *src, int id)
  */
 int z_impl_to_copy(char *dest)
 {
+	YIELD_KERNEL;
+
 	memcpy(dest, kernel_string, BUF_SIZE);
 	return 0;
 }
 
 static inline int z_vrfy_to_copy(char *dest)
 {
+	YIELD_KERNEL;
+
 	return k_usermode_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 #include <zephyr/syscalls/to_copy_mrsh.c>
 
 int z_impl_syscall_arg64(uint64_t arg)
 {
+	YIELD_USER;
+
 	/* "Hash" (heh) the return to avoid accidental false positives
 	 * due to using common/predictable values.
 	 */
@@ -161,6 +197,8 @@ uint64_t z_impl_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
 	uint64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
 	uint64_t ret = 0xae751a24ef464cc0ULL;
 
+	YIELD_USER;
+
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
 		ret = (ret << 11) | (ret >> 53);
@@ -183,6 +221,8 @@ uint32_t z_impl_more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
 {
 	uint32_t ret = 0x4ef464cc;
 	uint32_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+
+	YIELD_USER;
 
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
@@ -362,16 +402,27 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 		zassert_equal(ret, strlen(user_string),
 			      "incorrect length returned");
 
+		YIELD_USER;
+
 		ret = string_alloc_copy("this is a kernel string");
 		zassert_equal(ret, 0, "string should have matched");
+
+		YIELD_USER;
 
 		ret = string_copy("this is a kernel string", (int)id);
 		zassert_equal(ret, 0, "string should have matched");
 
+		YIELD_USER;
+
 		ret = to_copy(buf);
 		zassert_equal(ret, 0, "copy should have been a success");
+
+		YIELD_USER;
+
 		ret = strcmp(buf, user_string);
 		zassert_equal(ret, 0, "string should have matched");
+
+		YIELD_USER;
 
 		run_test_arg64();
 
@@ -379,6 +430,8 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 			printk("%ld", id);
 			count = 0;
 		}
+
+		YIELD_USER;
 	}
 }
 
