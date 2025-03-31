@@ -13,4 +13,8 @@
 
 void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
+void bma4xx_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
+
+void bma4xx_fifo_event(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMA4XX_RTIO_H_ */
