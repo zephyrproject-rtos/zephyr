@@ -785,6 +785,12 @@ config BUILD_OUTPUT_UF2
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_MOT
+	bool "Build a binary in MOT format"
+	help
+	  Build a MOT binary zephyr/zephyr.mot in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
 if BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_UF2_FAMILY_ID
