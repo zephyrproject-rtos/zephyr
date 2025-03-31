@@ -103,6 +103,8 @@ the number 2 is used in the mikroBUS connector.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Pico-Pi i.MX7D doesn't have QSPI flash for the M4 and it needs to be started by
 the A7 core. The A7 core is responsible to load the M4 binary application into
 the RAM, put the M4 in reset, set the M4 Program Counter and Stack Pointer, and

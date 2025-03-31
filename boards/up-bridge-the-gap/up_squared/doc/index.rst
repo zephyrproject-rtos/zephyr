@@ -44,6 +44,8 @@ for connection diagrams.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use the following procedures for booting an image on a UP Squared board.
 
 .. contents::

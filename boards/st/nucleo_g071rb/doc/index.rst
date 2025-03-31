@@ -94,6 +94,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo G071RB board includes an ST-LINK/V3 embedded debug tool interface.
 
 Applications for the ``nucleo_g071rb`` board configuration can be built and

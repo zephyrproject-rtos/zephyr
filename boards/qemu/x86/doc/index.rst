@@ -67,6 +67,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``qemu_x86`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

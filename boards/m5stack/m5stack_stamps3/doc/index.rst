@@ -134,6 +134,8 @@ below to retrieve those files.
 Building & Flashing
 -------------------
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 

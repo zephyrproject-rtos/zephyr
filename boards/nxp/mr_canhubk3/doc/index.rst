@@ -249,6 +249,8 @@ The 100Base-T1 signals are available in connector ``P9`` and can be converted to
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``mr_canhubk3`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 

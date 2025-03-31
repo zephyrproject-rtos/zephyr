@@ -35,6 +35,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``adafruit_macropad_rp2040`` board target can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

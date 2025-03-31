@@ -80,6 +80,8 @@ The Zephyr console output is assigned to UART1. The default communication settin
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``fk743m5_xih6`` board target can be built and flashed in the usual
 way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
