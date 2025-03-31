@@ -17,6 +17,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - mec172xevb_assy6906
       - gd32f350r_eval
       - gd32f450i_eval
