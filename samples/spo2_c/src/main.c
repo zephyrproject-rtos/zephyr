@@ -1,3 +1,19 @@
+/**
+ * Project                           : Smartwatch
+ * Name of the file                  : spo2_polling.cpp
+ * Brief Description of file         : This is a Baremetal SpO2 sensor (using polling) Driver file for Mindgrove Silicon.
+ * Name of Author                    : Harini Sree.S
+ * Email ID                          : harini@mindgrovetech.in
+ *
+ * @file spo2_polling.cpp
+ * @author Harini Sree. S (harini@mindgrovetech.in)
+ * @brief This is a Baremetal SpO2 sensor Driver file for Mindgrove Silicon.
+ * @date 2024-01-29
+ *
+ * @copyright Copyright (c) Mindgrove Technologies Pvt. Ltd 2023. All rights reserved.
+ *
+ */
+
 #include "spo2.h"
 
 #define REPORTING_PERIOD_MS     1000

@@ -1,7 +1,23 @@
+/**
+ * Project                           : Smartwatch
+ * Name of the file                  : spo2_polling.cpp
+ * Brief Description of file         : This is a Baremetal SpO2 sensor (using polling) Driver file for Mindgrove Silicon.
+ * Name of Author                    : Harini Sree.S
+ * Email ID                          : harini@mindgrovetech.in
+ *
+ * @file spo2_polling.cpp
+ * @author Harini Sree. S (harini@mindgrovetech.in)
+ * @brief This is a Baremetal SpO2 sensor Driver file for Mindgrove Silicon.This file contains the code to print the temperature using the SpO2 module.The module compatible for this code is MAX30100.
+ * @date 2024-01-29
+ *
+ * @copyright Copyright (c) Mindgrove Technologies Pvt. Ltd 2023. All rights reserved.
+ *
+ */
+
 #include "spo2.h"
 
 #define REPORTING_PERIOD_MS     1000
-#define DELAY_FREQ_BASE 40000000
+#define DELAY_FREQ_BASE 		40000000
 
 /** 
  * @fn spo2_write
