@@ -232,15 +232,10 @@ colorama==0.4.6 \
     # via
     #   awscli
     #   click
-    #   colorlog
     #   pylint
     #   pytest
     #   tox
     #   west
-colorlog==6.9.0 \
-    --hash=sha256:5906e71acd67cb07a71e779c47c4bcb45fb8c2993eebe9e5adcd6a6f1b283eff \
-    --hash=sha256:bfba54a1b93b94f54e1f4fe48395725a3d92fd2a4af702f6bd70946bdc0c6ac2
-    # via gcovr
 cryptography==44.0.2 \
     --hash=sha256:04abd71114848aa25edb28e225ab5f268096f44cf0127f3d36975bdf1bdf3390 \
     --hash=sha256:0529b1d5a0105dd3731fa65680b45ce49da4d8115ea76e9da77a875396727b41 \
@@ -317,9 +312,9 @@ filelock==3.18.0 \
     # via
     #   tox
     #   virtualenv
-gcovr==8.3 \
-    --hash=sha256:d613a90aeea967b4972fbff69587bf8995ee3cd80df2556983b73141f30642d2 \
-    --hash=sha256:faa371f9c4a7f78c9800da655107d4f99f04b718d1c0d9f48cafdcbef0049079
+gcovr==6.0 \
+    --hash=sha256:2e52019fdb76c6e327f48c2a2d8555fb5e362570b79cc74c5498804d1ce54a60 \
+    --hash=sha256:8638d5f44def10e38e3166c8a33bef6643ec204687e0ac7d345ce41a98c5750b
     # via -r requirements-actions.in
 gitdb==4.0.12 \
     --hash=sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571 \
@@ -1215,7 +1210,6 @@ tomli==2.2.1 \
     --hash=sha256:f4039b9cbc3048b2416cc57ab3bda989a6fcf9b36cf8937f01a6e731b64f80d7
     # via
     #   -r requirements-actions.in
-    #   gcovr
     #   mypy
     #   pylint
     #   pyproject-api
@@ -1250,9 +1244,9 @@ urllib3==2.3.0 \
     #   elastic-transport
     #   pygithub
     #   requests
-virtualenv==20.29.3 \
-    --hash=sha256:3e3d00f5807e83b234dfb6122bf37cfadf4be216c53a49ac059d02414f819170 \
-    --hash=sha256:95e39403fcf3940ac45bc717597dba16110b74506131845d9b687d5e73d947ac
+virtualenv==20.30.0 \
+    --hash=sha256:800863162bcaa5450a6e4d721049730e7f2dae07720e0902b0e4040bd6f9ada8 \
+    --hash=sha256:e34302959180fca3af42d1800df014b35019490b119eba981af27f2fa486e5d6
     # via tox
 west==1.3.0 \
     --hash=sha256:89320034be87099d16e75f4760ac0d1ed67e8978928e468ab993e3fba0cfe92f \
