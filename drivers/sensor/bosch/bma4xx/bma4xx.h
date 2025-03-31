@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 #include "bma4xx_defs.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -42,6 +43,8 @@ struct bma4xx_config {
 	int (*bus_init)(const struct device *dev);
 	const union bma4xx_bus_cfg bus_cfg;
 	uint8_t bus_type;
+
+	const struct gpio_dt_spec gpio_interrupt;
 };
 
 /** Used to implement bus-specific R/W operations. See bma4xx_i2c.c and
@@ -57,6 +60,14 @@ struct bma4xx_hw_operations {
 
 struct bma4xx_runtime_config {
 	bool fifo_en;
+	int32_t batch_ticks;
+
+	bool interrupt1_fifo_wm;
+	bool interrupt1_fifo_full;
+
+	uint8_t accel_pwr_mode;
+	uint8_t aux_pwr_mode;
+
 	/** Current full-scale range setting as a register value */
 	uint8_t accel_fs_range;
 	/** Current bandwidth parameter (BWP) as a register value */
@@ -73,9 +84,51 @@ struct bma4xx_data {
 	uint8_t chip_id;
 	struct rtio *r;
 	struct rtio_iodev *iodev;
+#ifdef CONFIG_BMA4XX_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	uint8_t int_status;
+	uint16_t fifo_count;
+	uint64_t timestamp;
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+#endif /* CONFIG_BMA4XX_STREAM */
 };
 
+static inline int bma4xx_accel_reg_to_hz(uint8_t odr, struct sensor_value *out)
+{
+	static const struct sensor_value odr_values[] = {
+		{0, 0},    {0, 781250}, {1, 562500}, {3, 125000}, {6, 250000}, {12, 500000},
+		{25, 0},   {50, 0},     {100, 0},    {200, 0},    {400, 0},    {800, 0},
+		{1600, 0}, {3200, 0},   {6400, 0},   {12800, 0},
+	};
+
+	if (odr >= ARRAY_SIZE(odr_values)) {
+		return -EINVAL;
+	}
+
+	*out = odr_values[odr];
+
+	return 0;
+}
+
+/**
+ * @brief Initialize the SPI bus
+ *
+ * @param dev bma4xx device pointer
+ *
+ * @retval 0 success
+ * @retval -errdev Error
+ */
 int bma4xx_spi_init(const struct device *dev);
+
+/**
+ * @brief Initialize the I2C bus
+ *
+ * @param dev bma4xx device pointer
+ *
+ * @retval 0 success
+ * @retval -errdev Error
+ */
 int bma4xx_i2c_init(const struct device *dev);
 
 /**
