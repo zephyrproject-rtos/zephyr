@@ -407,6 +407,10 @@ ZTEST(syscalls_extended, test_syscall_switch_stress)
 		k_thread_abort(&stress_threads[i]);
 	}
 
+	for (i = 0; i < NR_THREADS; i++) {
+		k_thread_join(&stress_threads[i], K_FOREVER);
+	}
+
 	printk("\n");
 }
 
