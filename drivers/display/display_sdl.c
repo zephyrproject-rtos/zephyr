@@ -7,8 +7,10 @@
 
 #define DT_DRV_COMPAT zephyr_sdl_dc
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 
+#include <nsi_tracing.h>
 #include <string.h>
 #include <stdlib.h>
 #include <soc.h>
@@ -21,6 +23,26 @@
 LOG_MODULE_REGISTER(display_sdl);
 
 static uint32_t sdl_display_zoom_pct;
+
+enum sdl_display_op {
+	SDL_WRITE,
+	SDL_BLANKING_OFF,
+	SDL_BLANKING_ON,
+};
+
+struct sdl_display_write {
+	uint16_t x;
+	uint16_t y;
+	const struct display_buffer_descriptor *desc;
+};
+
+struct sdl_display_task {
+	enum sdl_display_op op;
+	union {
+		struct sdl_display_write write;
+	};
+};
+
 
 struct sdl_display_config {
 	uint16_t height;
@@ -38,6 +60,12 @@ struct sdl_display_data {
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
 	uint8_t *read_buf;
+	struct k_thread sdl_thread;
+
+	K_KERNEL_STACK_MEMBER(sdl_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+	struct k_msgq *task_msgq;
+	struct k_sem task_sem;
+	struct k_mutex task_mutex;
 };
 
 static inline uint32_t mono_pixel_order(uint32_t order)
@@ -49,14 +77,73 @@ static inline uint32_t mono_pixel_order(uint32_t order)
 	}
 }
 
+static void exec_sdl_task(const struct device *dev, const struct sdl_display_task *task)
+{
+	struct sdl_display_data *disp_data = dev->data;
+
+	switch (task->op) {
+	case SDL_WRITE:
+		sdl_display_write_bottom(task->write.desc->height, task->write.desc->width,
+					 task->write.x, task->write.y, disp_data->renderer,
+					 disp_data->mutex, disp_data->texture,
+					 disp_data->background_texture, disp_data->buf,
+					 disp_data->display_on,
+					 task->write.desc->frame_incomplete);
+		break;
+	case SDL_BLANKING_OFF:
+		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
+						disp_data->background_texture);
+		break;
+	case SDL_BLANKING_ON:
+		sdl_display_blanking_on_bottom(disp_data->renderer);
+		break;
+	default:
+		LOG_ERR("Unknown SDL task");
+		break;
+	}
+}
+
+static void sdl_task_thread(void *p1, void *p2, void *p3)
+{
+	const struct device *dev = p1;
+	struct sdl_display_data *disp_data = dev->data;
+	const struct sdl_display_config *config = dev->config;
+	struct sdl_display_task task;
+	bool use_accelerator =
+		IS_ENABLED(CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR);
+
+	if (sdl_display_zoom_pct == UINT32_MAX) {
+		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
+	}
+
+	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
+					 use_accelerator, &disp_data->window, dev,
+					 &disp_data->renderer, &disp_data->mutex,
+					 &disp_data->texture, &disp_data->read_texture,
+					 &disp_data->background_texture,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+
+	if (rc != 0) {
+		nsi_print_error_and_exit("Failed to create SDL display");
+		return;
+	}
+
+	disp_data->display_on = false;
+
+	while (1) {
+		k_msgq_get(disp_data->task_msgq, &task, K_FOREVER);
+		exec_sdl_task(dev, &task);
+		k_sem_give(&disp_data->task_sem);
+	}
+}
+
 static int sdl_display_init(const struct device *dev)
 {
-	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
-	bool use_accelerator = true;
-	LOG_DBG("Initializing display driver");
 
-	IF_DISABLED(CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR, (use_accelerator = false));
+	LOG_DBG("Initializing display driver");
 
 	disp_data->current_pixel_format =
 #if defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888)
@@ -76,25 +163,12 @@ static int sdl_display_init(const struct device *dev)
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		;
 
-	if (sdl_display_zoom_pct == UINT32_MAX) {
-		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
-	}
-
-	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
-					 use_accelerator, &disp_data->window, dev,
-					 &disp_data->renderer, &disp_data->mutex,
-					 &disp_data->texture, &disp_data->read_texture,
-					 &disp_data->background_texture,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
-
-	if (rc != 0) {
-		LOG_ERR("Failed to create SDL display");
-		return -EIO;
-	}
-
-	disp_data->display_on = false;
+	k_sem_init(&disp_data->task_sem, 0, 1);
+	k_mutex_init(&disp_data->task_mutex);
+	k_thread_create(&disp_data->sdl_thread, disp_data->sdl_thread_stack,
+			K_KERNEL_STACK_SIZEOF(disp_data->sdl_thread_stack),
+			sdl_task_thread, (void *)dev, NULL, NULL,
+			CONFIG_SDL_DISPLAY_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	return 0;
 }
@@ -253,6 +327,14 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 {
 	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
+	struct sdl_display_task task = {
+		.op = SDL_WRITE,
+		.write = {
+			.x = x,
+			.y = y,
+			.desc = desc,
+		},
+	};
 
 	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
@@ -273,6 +355,7 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
 		sdl_display_write_argb8888(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_888) {
@@ -289,10 +372,14 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_l8(disp_data->buf, desc, buf);
 	}
 
-	sdl_display_write_bottom(desc->height, desc->width, x, y, disp_data->renderer,
-				 disp_data->mutex, disp_data->texture,
-				 disp_data->background_texture, disp_data->buf,
-				 disp_data->display_on, desc->frame_incomplete);
+	if (k_current_get() == &disp_data->sdl_thread) {
+		exec_sdl_task(dev, &task);
+	} else {
+		k_msgq_put(disp_data->task_msgq, &task, K_FOREVER);
+		k_sem_take(&disp_data->task_sem, K_FOREVER);
+	}
+
+	k_mutex_unlock(&disp_data->task_mutex);
 
 	return 0;
 }
@@ -445,6 +532,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	memset(disp_data->read_buf, 0, desc->pitch * desc->height * 4);
 
 	err = sdl_display_read_bottom(desc->height, desc->width, x, y, disp_data->renderer,
@@ -452,6 +540,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 				      disp_data->texture, disp_data->read_texture);
 
 	if (err) {
+		k_mutex_unlock(&disp_data->task_mutex);
 		return err;
 	}
 
@@ -470,6 +559,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		sdl_display_read_l8(disp_data->read_buf, desc, buf);
 	}
+	k_mutex_unlock(&disp_data->task_mutex);
 
 	return 0;
 }
@@ -509,7 +599,9 @@ static int sdl_display_clear(const struct device *dev)
 		return -EINVAL;
 	}
 	LOG_DBG("size: %zu, bgcolor: %hhu", size, bgcolor);
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	memset(disp_data->buf, bgcolor, size);
+	k_mutex_unlock(&disp_data->task_mutex);
 
 	return 0;
 }
@@ -517,13 +609,22 @@ static int sdl_display_clear(const struct device *dev)
 static int sdl_display_blanking_off(const struct device *dev)
 {
 	struct sdl_display_data *disp_data = dev->data;
+	struct sdl_display_task task = {
+		.op = SDL_BLANKING_OFF,
+	};
 
 	LOG_DBG("Turning display blacking off");
-
 	disp_data->display_on = true;
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 
-	sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-					disp_data->background_texture);
+	if (k_current_get() == &disp_data->sdl_thread) {
+		exec_sdl_task(dev, &task);
+	} else {
+		k_msgq_put(disp_data->task_msgq, &task, K_FOREVER);
+		k_sem_take(&disp_data->task_sem, K_FOREVER);
+	}
+
+	k_mutex_unlock(&disp_data->task_mutex);
 
 	return 0;
 }
@@ -531,12 +632,23 @@ static int sdl_display_blanking_off(const struct device *dev)
 static int sdl_display_blanking_on(const struct device *dev)
 {
 	struct sdl_display_data *disp_data = dev->data;
+	struct sdl_display_task task = {
+		.op = SDL_BLANKING_ON,
+	};
 
 	LOG_DBG("Turning display blanking on");
-
 	disp_data->display_on = false;
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 
-	sdl_display_blanking_on_bottom(disp_data->renderer);
+	if (k_current_get() == &disp_data->sdl_thread) {
+		exec_sdl_task(dev, &task);
+	} else {
+		k_msgq_put(disp_data->task_msgq, &task, K_FOREVER);
+		k_sem_take(&disp_data->task_sem, K_FOREVER);
+	}
+
+	k_mutex_unlock(&disp_data->task_mutex);
+
 	return 0;
 }
 
@@ -609,9 +721,11 @@ static DEVICE_API(display, sdl_display_api) = {
 				   * DT_INST_PROP(n, width)];		\
 	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height)	\
 					* DT_INST_PROP(n, width)];	\
+	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4); \
 	static struct sdl_display_data sdl_data_##n = {			\
 		.buf = sdl_buf_##n,					\
 		.read_buf = sdl_read_buf_##n,				\
+		.task_msgq = &sdl_task_msgq_##n,			\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL,		\

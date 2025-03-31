@@ -80,4 +80,10 @@ config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2
 	help
 	  The color of the even cells in the transparency grid.
 
+config SDL_DISPLAY_THREAD_PRIORITY
+	int "SDL display thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Drawing thread priority.
+
 endif # SDL_DISPLAY
