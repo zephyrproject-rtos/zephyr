@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Centro de Inovacao EDGE
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+
+	prescaler = <9>;
+	startup-time = <64>;
+	settling-time = <3>;
+	tracking-time = <2>;
+
+	/* External ADC(+) */
+	channel@6 { // Connector A1
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <6>;
+		zephyr,vref-mv = <3300>;
+	};
+	channel@7 { // Connector A0
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <7>;
+		zephyr,vref-mv = <3300>;
+	};
+};
