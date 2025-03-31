@@ -49,12 +49,16 @@
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
 #define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
 
-#define MAX_TICKS                                                                                  \
-	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
-
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+/* To allow use of CCADD we need to limit max cycles to 31 bits. */
+#define MAX_CYCLES BIT_MASK(31)
+#define MAX_TICKS (MAX_CYCLES / CYC_PER_TICK)
 
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
+
+/* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
+ * from previous CC value.
+ */
+#define LATENCY_THR_TICKS 100
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
@@ -64,8 +68,11 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 
 static struct k_spinlock lock;
 static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
+static uint32_t last_elapsed;
+static uint64_t cc_value; /* Value that is expected to be in CC register. */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
+static bool in_announce;
 static nrfx_grtc_channel_t system_clock_channel_data = {
 	.handler = sys_clock_timeout_handler,
 	.p_context = NULL,
@@ -145,15 +152,11 @@ static void compare_int_unlock(int32_t chan, bool key)
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context)
 {
 	ARG_UNUSED(id);
+	ARG_UNUSED(cc_val);
 	ARG_UNUSED(p_context);
 	uint64_t dticks;
-	uint64_t now = counter();
 
-	if (unlikely(now < cc_val)) {
-		return;
-	}
-
-	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
+	dticks = counter_sub(cc_value, last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -164,7 +167,9 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 		system_timeout_set_abs(last_count + CYC_PER_TICK);
 	}
 
+	in_announce = true;
 	sys_clock_announce((int32_t)dticks);
+	in_announce = false;
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -446,7 +451,14 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return (uint32_t)(counter_sub(counter(), last_count) / CYC_PER_TICK);
+	if (in_announce) {
+		last_elapsed = 0;
+		return 0;
+	}
+
+	last_elapsed = (uint32_t)counter_sub(counter(), last_count);
+
+	return last_elapsed / CYC_PER_TICK;
 }
 
 static int sys_clock_driver_init(void)
@@ -484,6 +496,9 @@ static int sys_clock_driver_init(void)
 		return -ENOMEM;
 	}
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
+
+	nrfx_grtc_channel_cb_set(system_clock_channel_data.channel,
+				 sys_clock_timeout_handler, NULL);
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -543,18 +558,46 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks, 0));
+	uint32_t cyc;
+	uint32_t ch = system_clock_channel_data.channel;
 
-	uint64_t delta_time = ticks * CYC_PER_TICK;
+	if ((uint32_t)ticks > MAX_TICKS) {
+		cyc = MAX_CYCLES;
+	} else {
+		cyc = ticks * CYC_PER_TICK;
+	}
 
-	uint64_t target_time = counter() + delta_time;
+	if (in_announce) {
+		/* CC contains just expired value. It can be used as a base for setting
+		 * new value. CCADD feature can be used. It requires only a single 32 bit
+		 * register write so it is faster than 64 bit CC value setting.
+		 */
+		cc_value += cyc;
+		nrfx_grtc_syscounter_cc_rel_set(ch, cyc, NRFX_GRTC_CC_RELATIVE_COMPARE);
+	} else {
+		uint64_t prev_cc_val = cc_value;
+		bool safe_setting = false;
 
-	/* Rounded down target_time to the tick boundary
-	 * (but not less than one tick after the last)
-	 */
-	target_time = MAX((target_time - last_count)/CYC_PER_TICK, 1)*CYC_PER_TICK + last_count;
+		/* timeout module is calling sys_clock_elapsed when adding a new timeout
+		 * so this value can be reused here.
+		 */
+		cc_value = last_count + last_elapsed + cyc;
 
-	system_timeout_set_abs(target_time);
+		/* In case of timeout abort it may happen that CC is being set to a value
+		 * that later than previous CC. If previous CC value is not far in the
+		 * future, there is a risk that COMPARE event will be triggered for that
+		 * previous CC value. If there is such risk safe procedure must be applied
+		 * which is more time consuming but ensures that there will be no spurious
+		 * event.
+		 */
+		if (prev_cc_val < cc_value) {
+			uint64_t now = last_count + last_elapsed;
+
+			safe_setting = (prev_cc_val - now) < LATENCY_THR_TICKS;
+		}
+
+		nrfx_grtc_syscounter_cc_abs_set(ch, cc_value, safe_setting);
+	}
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
