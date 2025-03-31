@@ -57,9 +57,48 @@ void soc_early_init_hook(void)
 
 	/* Enable Dcache */
 	sys_cache_data_enable();
+#if (CONFIG_COREMARK == 1)
+	am_hal_pwrctrl_pwrmodctl_cpdlp_t sDefaultCpdlpConfig = {
+		.eRlpConfig = AM_HAL_PWRCTRL_RLP_ON,
+		.eElpConfig = AM_HAL_PWRCTRL_ELP_RET,
+		.eClpConfig = AM_HAL_PWRCTRL_CLP_ON
+	};
 
+	am_hal_pwrctrl_pwrmodctl_cpdlp_config(sDefaultCpdlpConfig);
+
+	/* Use LFRC instead of XT */
+	am_hal_rtc_osc_select(AM_HAL_RTC_OSC_LFRC);
+
+	/* Configure XTAL for deepsleep */
+	am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_XTAL_PWDN_DEEPSLEEP, 0);
+
+	am_hal_rtc_osc_disable();
+
+	VCOMP->PWDKEY = VCOMP_PWDKEY_PWDKEY_Key;
+	/* Temporary fix to set DBGCTRL Register to 0 */
+	MCUCTRL->DBGCTRL = 0;
+
+	/* Powering down various peripheral power domains */
+	am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_DEBUG);
+	am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_CRYPTO);
+	am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_OTP);
+
+	am_hal_pwrctrl_mcu_memory_config_t McuMemCfg = {
+		.eROMMode = AM_HAL_PWRCTRL_ROM_AUTO,
+		.eDTCMCfg = AM_HAL_PWRCTRL_ITCM32K_DTCM128K,
+		.eRetainDTCM = AM_HAL_PWRCTRL_MEMRETCFG_TCMPWDSLP_NORETAIN,
+		.eNVMCfg = AM_HAL_PWRCTRL_NVM0_ONLY,
+		.bKeepNVMOnInDeepSleep = false};
+
+	am_hal_pwrctrl_mcu_memory_config(&McuMemCfg);
+
+	MCUCTRL->MRAMCRYPTOPWRCTRL_b.MRAM0LPREN = 1;
+	MCUCTRL->MRAMCRYPTOPWRCTRL_b.MRAM0SLPEN = 0;
+	MCUCTRL->MRAMCRYPTOPWRCTRL_b.MRAM0PWRCTRL = 1;
+#else
 #ifdef CONFIG_CORTEX_M_DWT
 	am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DEBUG);
+#endif
 #endif
 }
 
