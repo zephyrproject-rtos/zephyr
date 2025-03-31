@@ -5,7 +5,7 @@ description: STM32 Digital Temperature Sensor.
 
 compatible: "st,stm32-digi-temp"
 
-include: base.yaml
+include: [sensor-device.yaml, base.yaml]
 
 properties:
   reg:

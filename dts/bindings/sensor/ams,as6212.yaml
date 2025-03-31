@@ -7,7 +7,7 @@ description: |
 
 compatible: "ams,as6212"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   alert-gpios:

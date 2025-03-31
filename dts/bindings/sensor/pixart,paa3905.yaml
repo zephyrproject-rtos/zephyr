@@ -6,7 +6,7 @@ description: PA3905 optical flow sensor
 
 compatible: "pixart,paa3905"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
   resolution:
