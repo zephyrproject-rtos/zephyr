@@ -9,10 +9,10 @@
 	 * The linker will error out complaining that the location pointer
 	 * is moving backwards if the reserved room isn't large enough.
 	 */
-	_kobject_text_area_start = .;
+	PLACE_SYMBOL_HERE(_kobject_text_area_start);
 	*(".kobject_data.literal*")
 	*(".kobject_data.text*")
-	_kobject_text_area_end = .;
+	PLACE_SYMBOL_HERE(_kobject_text_area_end);
 	_kobject_text_area_used = _kobject_text_area_end - _kobject_text_area_start;
 #ifndef LINKER_ZEPHYR_FINAL
 #ifdef CONFIG_DYNAMIC_OBJECTS
