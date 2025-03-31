@@ -166,6 +166,15 @@ config ARCH_POSIX
 	help
 	  POSIX (native) architecture
 
+config RX
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Renesas RX architecture
+
 config ARCH_IS_SET
 	bool
 	help
