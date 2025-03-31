@@ -42,6 +42,9 @@ if(CONFIG_FPU)
       set(FPU_FOR_Cortex-M55.no_mve   auto)
       # We don't have this one?
       set(FPU_FOR_Cortex-M55.no_dsp   auto)
+      set(FPU_FOR_Cortex-M85          VFPv5_d16)
+      set(FPU_FOR_Cortex-M85.no_dsp   VFPv5_d16)
+      set(FPU_FOR_Cortex-M85.no_mve   VFPv5_d16)
 
       set(ICCARM_FPU ${FPU_FOR_${ICCARM_CPU}})
     endif()
