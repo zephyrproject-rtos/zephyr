@@ -2,7 +2,11 @@
 
 zephyr_library()
 
-zephyr_library_sources(bma4xx.c)
-zephyr_library_sources(bma4xx_common.c)
-zephyr_library_sources(bma4xx_i2c.c)
-zephyr_library_sources(bma4xx_spi.c)
+zephyr_library_sources(
+    bma4xx.c
+    bma4xx_common.c
+    bma4xx_decoder.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_I2C bma4xx_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_SPI bma4xx_spi.c)
