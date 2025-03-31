@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Lukasz Hawrylko
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +27,7 @@ LOG_MODULE_REGISTER(ssd1322, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1322_SET_DISPLAY_OFFSET   0xA2
 #define SSD1322_BLANKING_ON          0xA4
 #define SSD1322_BLANKING_OFF         0xA6
+#define SSD1322_BLANKING_OFF_INVERSE 0xA7
 #define SSD1322_EXIT_PARTIAL         0xA9
 #define SSD1322_DISPLAY_OFF          0xAE
 #define SSD1322_DISPLAY_ON           0xAF
@@ -38,7 +40,15 @@ LOG_MODULE_REGISTER(ssd1322, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1322_SET_VCOMH            0xBE
 #define SSD1322_SET_CONTRAST         0xC1
 #define SSD1322_SET_MUX_RATIO        0xCA
-#define SSD1322_COMMAND_LOCK         0xFD
+
+#define SSD1322_SET_ENHANCE         0xD1
+#define SSD1322_SET_ENHANCE_ENABLE  0x82
+#define SSD1322_SET_ENHANCE_DISABLE 0xA2
+#define SSD1322_SET_ENHANCE_END     0x20
+
+#define SSD1322_COMMAND_LOCK        0xFD
+#define SSD1322_COMMAND_LOCK_UNLOCK 0x12
+#define SSD1322_COMMAND_LOCK_LOCK   0x16
 
 #define BITS_PER_SEGMENT  4
 #define SEGMENTS_PER_BYTE (8 / BITS_PER_SEGMENT)
@@ -58,7 +68,14 @@ struct ssd1322_config {
 	bool remap_nibble;
 	bool remap_com_odd_even_split;
 	bool remap_com_dual;
+	bool greyscale_enhancement;
+	bool color_inversion;
 	uint8_t segments_per_pixel;
+	uint8_t oscillator_freq;
+	uint8_t precharge_voltage;
+	uint8_t vcomh_voltage;
+	uint8_t phase_length;
+	uint8_t precharge_period;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
 };
@@ -78,7 +95,11 @@ static int ssd1322_blanking_on(const struct device *dev)
 
 static int ssd1322_blanking_off(const struct device *dev)
 {
-	return ssd1322_write_command(dev, SSD1322_BLANKING_OFF, NULL, 0);
+	const struct ssd1322_config *config = dev->config;
+
+	return ssd1322_write_command(
+		dev, config->color_inversion ? SSD1322_BLANKING_OFF_INVERSE : SSD1322_BLANKING_OFF,
+		NULL, 0);
 }
 
 /*
@@ -235,31 +256,34 @@ static int ssd1322_init_device(const struct device *dev)
 	}
 	k_usleep(100);
 
+	/* Unlock display */
+	data[0] = SSD1322_COMMAND_LOCK_UNLOCK;
+	ret = ssd1322_write_command(dev, SSD1322_COMMAND_LOCK, data, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = ssd1322_write_command(dev, SSD1322_DISPLAY_OFF, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = 0x91;
-	ret = ssd1322_write_command(dev, SSD1322_SET_CLOCK_DIV, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_CLOCK_DIV, &config->oscillator_freq, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = config->mux_ratio - 1;
-	ret = ssd1322_write_command(dev, SSD1322_SET_MUX_RATIO, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_MUX_RATIO, &config->mux_ratio, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = config->start_line;
-	ret = ssd1322_write_command(dev, SSD1322_SET_START_LINE, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_START_LINE, &config->start_line, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = config->row_offset;
-	ret = ssd1322_write_command(dev, SSD1322_SET_DISPLAY_OFFSET, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_DISPLAY_OFFSET, &config->row_offset, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -288,31 +312,36 @@ static int ssd1322_init_device(const struct device *dev)
 		return ret;
 	}
 
-	data[0] = 0xE2;
-	ret = ssd1322_write_command(dev, SSD1322_SET_PHASE_LENGTH, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_PHASE_LENGTH, &config->phase_length, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = 0x1F;
-	ret = ssd1322_write_command(dev, SSD1322_SET_PRECHARGE, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_PRECHARGE, &config->precharge_voltage, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = 0x08;
-	ret = ssd1322_write_command(dev, SSD1322_SET_SECOND_PRECHARGE, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_SECOND_PRECHARGE, &config->precharge_period,
+				    1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data[0] = 0x07;
-	ret = ssd1322_write_command(dev, SSD1322_SET_VCOMH, data, 1);
+	ret = ssd1322_write_command(dev, SSD1322_SET_VCOMH, &config->vcomh_voltage, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = ssd1322_write_command(dev, SSD1322_EXIT_PARTIAL, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data[0] = config->greyscale_enhancement ? SSD1322_SET_ENHANCE_ENABLE
+						: SSD1322_SET_ENHANCE_DISABLE;
+	data[1] = SSD1322_SET_ENHANCE_END;
+	ret = ssd1322_write_command(dev, SSD1322_SET_ENHANCE, data, 2);
 	if (ret < 0) {
 		return ret;
 	}
@@ -371,6 +400,7 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 		.row_offset = DT_PROP(node_id, row_offset),                                        \
 		.start_line = DT_PROP(node_id, start_line),                                        \
 		.mux_ratio = DT_PROP(node_id, mux_ratio),                                          \
+		.greyscale_enhancement = DT_PROP(node_id, greyscale_enhancement),                  \
 		.remap_row_first = DT_PROP(node_id, remap_row_first),                              \
 		.remap_columns = DT_PROP(node_id, remap_columns),                                  \
 		.remap_rows = DT_PROP(node_id, remap_rows),                                        \
@@ -378,6 +408,12 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 		.remap_com_odd_even_split = DT_PROP(node_id, remap_com_odd_even_split),            \
 		.remap_com_dual = DT_PROP(node_id, remap_com_dual),                                \
 		.segments_per_pixel = DT_PROP(node_id, segments_per_pixel),                        \
+		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \
+		.precharge_voltage = DT_PROP(node_id, precharge_voltage),                          \
+		.vcomh_voltage = DT_PROP(node_id, vcomh_voltage),                                  \
+		.phase_length = DT_PROP(node_id, phase_length),                                    \
+		.precharge_period = DT_PROP(node_id, precharge_period),                            \
+		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = {.mode = MIPI_DBI_MODE_SPI_4WIRE,                                    \
 			       .config = MIPI_DBI_SPI_CONFIG_DT(                                   \
