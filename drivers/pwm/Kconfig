@@ -99,4 +99,6 @@ source "drivers/pwm/Kconfig.xmc4xxx_ccu4"
 source "drivers/pwm/Kconfig.xmc4xxx_ccu8"
 # zephyr-keep-sorted-stop
 
+source "drivers/pwm/Kconfig.max2221x"
+
 endif # PWM
