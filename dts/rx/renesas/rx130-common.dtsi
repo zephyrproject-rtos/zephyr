@@ -25,7 +25,23 @@
 			compatible = "renesas,rxv1";
 			device_type = "cpu";
 			reg = <0>;
+			cpu-power-states = <&idle &standby>;
 			status = "okay";
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <300>;
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <3000>;
+				exit-latency-us = <500>;
+			};
 		};
 	};
 
