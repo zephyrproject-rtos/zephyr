@@ -16,6 +16,8 @@ tests:
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuflpr
       - esp32_devkitc_wrover/esp32/procpu
       - esp8684_devkitm
       - esp32c3_devkitm
@@ -53,6 +55,7 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
@@ -61,6 +64,7 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
@@ -69,6 +73,7 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuflpr
+      - ophelia4ev/nrf54l15/cpuflpr
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
@@ -76,6 +81,7 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuflpr
+      - ophelia4ev/nrf54l15/cpuflpr
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y

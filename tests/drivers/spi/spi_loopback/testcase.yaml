@@ -248,16 +248,19 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_16mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_32mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.ke1xz_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and

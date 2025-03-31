@@ -27,6 +27,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
@@ -44,6 +45,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
@@ -61,6 +63,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
@@ -74,10 +77,12 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.build_all.comparator.nrf_lpcomp.int_ref:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_lpcomp/int_ref.overlay"
@@ -88,6 +93,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
       - nrf54h20dk/nrf54h20/cpuapp
