@@ -4,6 +4,8 @@
 description: |
     NXP P3T1755 digital temperature sensor.
 
+include: sensor-device.yaml
+
 properties:
   oneshot-mode:
     type: boolean
