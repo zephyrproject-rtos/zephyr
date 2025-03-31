@@ -66,21 +66,21 @@ struct i2c_stm32_config {
 struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
-#endif
+#endif /* CONFIG_I2C_STM32_INTERRUPT */
 	struct k_sem bus_mutex;
 	uint32_t dev_config;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 	/* Store the current timing structure set by runtime config */
 	struct i2c_config_timing current_timing;
-#endif
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2) */
 #ifdef CONFIG_I2C_STM32_V1
 	uint16_t slave_address;
-#endif
+#endif /* CONFIG_I2C_STM32_V1 */
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
 		unsigned int flags;
-#endif
+#endif /* CONFIG_I2C_STM32_V1 */
 		unsigned int is_write;
 		unsigned int is_arlo;
 		unsigned int is_nack;
@@ -94,16 +94,16 @@ struct i2c_stm32_data {
 	struct i2c_target_config *slave_cfg;
 #ifdef CONFIG_I2C_STM32_V2
 	struct i2c_target_config *slave2_cfg;
-#endif
+#endif /* CONFIG_I2C_STM32_V2 */
 	bool slave_attached;
-#endif
+#endif /* CONFIG_I2C_TARGET */
 	bool is_configured;
 	bool smbalert_active;
 	enum i2c_stm32_mode mode;
 #ifdef CONFIG_SMBUS_STM32_SMBALERT
 	i2c_stm32_smbalert_cb_func_t smbalert_cb_func;
 	const struct device *smbalert_cb_dev;
-#endif
+#endif /* CONFIG_SMBUS_STM32_SMBALERT */
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
@@ -111,22 +111,21 @@ struct i2c_stm32_data {
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 };
 
-int stm32_i2c_transaction(const struct device *dev,
-			    struct i2c_msg msg, uint8_t *next_msg_flags,
-			    uint16_t periph);
-int stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
+int i2c_stm32_transaction(const struct device *dev,
+			  struct i2c_msg msg, uint8_t *next_msg_flags,
+			  uint16_t periph);
+int i2c_stm32_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
-int i2c_stm32_get_config(const struct device *dev, uint32_t *config);
 
-void stm32_i2c_event_isr(void *arg);
-void stm32_i2c_error_isr(void *arg);
+void i2c_stm32_event_isr(void *arg);
+void i2c_stm32_error_isr(void *arg);
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void stm32_i2c_combined_isr(void *arg);
-#endif
+void i2c_stm32_combined_isr(void *arg);
+#endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #ifdef CONFIG_I2C_TARGET
 int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
 int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
-#endif
+#endif /* CONFIG_I2C_TARGET */
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */
