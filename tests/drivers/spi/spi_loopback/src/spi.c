@@ -56,6 +56,8 @@ static int spec_idx;
  */
 struct spi_dt_spec spec_copies[5];
 
+
+
 /*
  ********************
  * SPI test buffers *
@@ -125,6 +127,64 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), cs_loopback_gpios)
+
+static const struct gpio_dt_spec cs_loopback_gpio =
+			GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), cs_loopback_gpios, {0});
+static struct gpio_callback cs_cb_data;
+static K_SEM_DEFINE(cs_sem, 0, UINT_MAX);
+
+static void spi_loopback_gpio_cs_loopback_prepare(void)
+{
+	k_sem_reset(&cs_sem);
+}
+
+static int spi_loopback_gpio_cs_loopback_check(int expected_triggers)
+{
+	return k_sem_count_get(&cs_sem) != expected_triggers;
+}
+
+static void cs_callback(const struct device *port,
+		     struct gpio_callback *cb,
+		     gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(pins);
+
+	/* Give semaphore to indicate CS triggered */
+	k_sem_give(&cs_sem);
+}
+
+static int spi_loopback_gpio_cs_loopback_init(void)
+{
+	const struct gpio_dt_spec *gpio = &cs_loopback_gpio;
+	int ret;
+
+	if (!gpio_is_ready_dt(gpio)) {
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+	if (ret) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_BOTH);
+	if (ret) {
+		return ret;
+	}
+
+	gpio_init_callback(&cs_cb_data, cs_callback, BIT(gpio->pin));
+
+	return gpio_add_callback(gpio->port, &cs_cb_data);
+}
+#else
+#define spi_loopback_gpio_cs_loopback_init(...) (0)
+#define spi_loopback_gpio_cs_loopback_prepare(...)
+#define spi_loopback_gpio_cs_loopback_check(...) (0)
+#endif
+
 /* just a wrapper of the driver transceive call with ztest error assert */
 static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 				    const struct spi_buf_set *const tx,
@@ -133,12 +193,15 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 	int ret;
 
 	zassert_ok(pm_device_runtime_get(spec->bus));
+	spi_loopback_gpio_cs_loopback_prepare();
 	ret = spi_transceive_dt(spec, tx, rx);
 	if (ret == -EINVAL || ret == -ENOTSUP) {
 		TC_PRINT("Spi config invalid for this controller - skip\n");
 		goto out;
 	}
 	zassert_ok(ret, "SPI transceive failed, code %d", ret);
+	/* There should be two CS triggers during the transaction, start and end */
+	zassert_false(spi_loopback_gpio_cs_loopback_check(2));
 out:
 	zassert_ok(pm_device_runtime_put(spec->bus));
 }
@@ -820,6 +883,66 @@ ZTEST(spi_extra_api_features, test_spi_lock_release)
 	lock_spec->config.operation &= ~SPI_LOCK_ON;
 }
 
+ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
+{
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      NULL, BUF_SIZE);
+	struct spi_dt_spec *hold_spec = &spi_slow;
+	int ret = 0;
+
+	hold_spec->config.operation |= SPI_HOLD_ON_CS;
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret == -ENOTSUP || ret == -EINVAL) {
+		TC_PRINT("SPI hold on CS not supported");
+		ret = 0;
+		goto early_exit;
+	} else if (ret) {
+		goto early_exit;
+	}
+	/* Should get start assertion is 1 CS edge but no end */
+	if (spi_loopback_gpio_cs_loopback_check(1)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret) {
+		goto early_exit;
+	}
+	/* CS is already asserted, and we still have hold on, so no edges */
+	if (spi_loopback_gpio_cs_loopback_check(0)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret) {
+		goto early_exit;
+	}
+	/* This time we don't have hold flag but it starts held, so only end trigger */
+	if (spi_loopback_gpio_cs_loopback_check(1)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	/* now just do a normal transfer to make sure there was no leftover effects */
+	spi_loopback_transceive(hold_spec, &tx, &rx);
+
+	return;
+
+early_exit:
+	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
+	zassert_false(ret, "SPI transceive failed, code %d", ret);
+}
+
 /*
  *************************
  * Test suite definition *
@@ -859,6 +982,7 @@ static void run_after_lock(void *unused)
 	spi_release_dt(&spi_slow);
 	spi_slow.config.operation &= ~SPI_LOCK_ON;
 	spi_fast.config.operation &= ~SPI_LOCK_ON;
+	spi_slow.config.operation &= ~SPI_HOLD_ON_CS;
 }
 
 ZTEST_SUITE(spi_loopback, NULL, spi_loopback_setup, NULL, NULL, run_after_suite);
@@ -890,6 +1014,8 @@ void test_main(void)
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
+
+	zassert_false(spi_loopback_gpio_cs_loopback_init());
 
 	ztest_run_all(NULL, false, ARRAY_SIZE(loopback_specs), 1);
 
