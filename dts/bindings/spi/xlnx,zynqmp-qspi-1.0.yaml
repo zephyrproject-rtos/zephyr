@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Calian Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx ZynqMP Quad SPI interface
+
+compatible: "xlnx,zynqmp-qspi-1.0"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    description: SPI reference clock frequency in Hz
+    type: int
+    required: true
+
+  shared-data-bus:
+    type: boolean
+    description: |
+      Indicates that both "lower" and "upper" chip selects are used with
+      the "lower" data bus, rather than each using a dedicated data bus.
