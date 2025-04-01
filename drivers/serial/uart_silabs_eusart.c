@@ -358,6 +358,30 @@ uart_silabs_eusart_ll2cfg_hwctrl(EUSART_HwFlowControl_TypeDef fc)
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+static void uart_silabs_eusart_configure_peripheral(const struct device *dev, bool enable)
+{
+	const struct uart_silabs_eusart_config *config = dev->config;
+	const struct uart_silabs_eusart_data *data = dev->data;
+	const struct uart_config *uart_cfg = &data->uart_cfg;
+	EUSART_UartInit_TypeDef eusartInit = EUSART_UART_INIT_DEFAULT_HF;
+	EUSART_AdvancedInit_TypeDef advancedSettings = EUSART_ADVANCED_INIT_DEFAULT;
+
+	eusartInit.baudrate = uart_cfg->baudrate;
+	eusartInit.parity = uart_silabs_eusart_cfg2ll_parity(uart_cfg->parity);
+	eusartInit.stopbits = uart_silabs_eusart_cfg2ll_stopbits(uart_cfg->stop_bits);
+	eusartInit.databits =
+		uart_silabs_eusart_cfg2ll_databits(uart_cfg->data_bits, uart_cfg->parity);
+	advancedSettings.hwFlowControl = uart_silabs_eusart_cfg2ll_hwctrl(uart_cfg->flow_ctrl);
+	eusartInit.advancedSettings = &advancedSettings;
+	eusartInit.enable = eusartDisable;
+
+	EUSART_UartInitHf(config->eusart, &eusartInit);
+
+	if (enable) {
+		EUSART_Enable(config->eusart, eusartEnable);
+	}
+}
+
 /**
  * @brief Main initializer for UART
  *
@@ -368,11 +392,6 @@ static int uart_silabs_eusart_init(const struct device *dev)
 {
 	int err;
 	const struct uart_silabs_eusart_config *config = dev->config;
-	struct uart_silabs_eusart_data *data = dev->data;
-	struct uart_config *uart_cfg = &data->uart_cfg;
-
-	EUSART_UartInit_TypeDef eusartInit = EUSART_UART_INIT_DEFAULT_HF;
-	EUSART_AdvancedInit_TypeDef advancedSettings = EUSART_ADVANCED_INIT_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable EUSART clock */
@@ -386,16 +405,7 @@ static int uart_silabs_eusart_init(const struct device *dev)
 		return err;
 	}
 
-	/* Init EUSART */
-	eusartInit.baudrate = uart_cfg->baudrate;
-	eusartInit.parity = uart_silabs_eusart_cfg2ll_parity(uart_cfg->parity);
-	eusartInit.stopbits = uart_silabs_eusart_cfg2ll_stopbits(uart_cfg->stop_bits);
-	eusartInit.databits =
-		uart_silabs_eusart_cfg2ll_databits(uart_cfg->data_bits, uart_cfg->parity);
-	advancedSettings.hwFlowControl = uart_silabs_eusart_cfg2ll_hwctrl(uart_cfg->flow_ctrl);
-	eusartInit.advancedSettings = &advancedSettings;
-
-	EUSART_UartInitHf(config->eusart, &eusartInit);
+	uart_silabs_eusart_configure_peripheral(dev, true);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
