@@ -9,11 +9,34 @@ Zephyr 3.7.2
 
 This is an LTS maintenance release with fixes.
 
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+* `CVE-2025-27809 <https://www.cve.org/CVERecord?id=CVE-2025-27809>`_
+  `TLS clients may unwittingly skip server authentication
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
+* `CVE-2025-27810 <https://www.cve.org/CVERecord?id=CVE-2025-27810>`_
+  `Potential authentication bypass in TLS handshake
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
 Issues fixed
 ************
 
 These GitHub issues were addressed since the previous 3.7.1 tagged release:
 
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.3 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+
+Mbed TLS 3.6 is an LTS release that will be supported
+with security and bug fixes until at least March 2027.
 
 .. _zephyr_3.7.1:
 
