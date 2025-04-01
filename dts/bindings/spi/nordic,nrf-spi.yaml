@@ -5,4 +5,6 @@ description: Nordic nRF family SPI (SPI master)
 
 compatible: "nordic,nrf-spi"
 
-include: nordic,nrf-spi-common.yaml
+include:
+  - spi-controller.yaml
+  - nordic,nrf-spi-common.yaml
