@@ -13,3 +13,7 @@
 		in-polling-period-us = <1000>;
 	};
 };
+
+&zephyr_udc0 {
+	status = "okay";
+};
