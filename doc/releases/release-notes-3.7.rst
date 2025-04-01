@@ -14,6 +14,14 @@ Issues fixed
 
 These GitHub issues were addressed since the previous 3.7.1 tagged release:
 
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.3 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+
+Mbed TLS 3.6 is an LTS release that will be supported
+with security and bug fixes until at least March 2027.
 
 .. _zephyr_3.7.1:
 
