@@ -506,7 +506,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
 
-	if (cfg->if_desc_data != NULL) {
+	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
 			LOG_ERR("Failed to add interface string descriptor");
 		} else {
