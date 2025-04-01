@@ -308,6 +308,18 @@
 			interrupts = <16 0>;
 			current-speed = <115200>;
 			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			dmas = <&dma 0 18>, <&dma 1 17>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		dma: dma@4042a000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x4042a000 0x2000>;
+			interrupts = <31 0>;
+			dma-channels = <7>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 

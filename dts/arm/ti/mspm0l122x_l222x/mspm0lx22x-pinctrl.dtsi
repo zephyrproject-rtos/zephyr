@@ -12,6 +12,17 @@
 		input-enable;
 	};
 
+	/omit-if-no-ref/ uart1_tx_pb4: uart_tx_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+	};
+
+	/omit-if-no-ref/ uart1_rx_pb5: uart_rx_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+		input-enable;
+	};
+
 	/omit-if-no-ref/ i2c0_scl_pa1_pull_up: i2c0_scl_pa1_pull_up {
 		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_3)>;
 		input-enable;

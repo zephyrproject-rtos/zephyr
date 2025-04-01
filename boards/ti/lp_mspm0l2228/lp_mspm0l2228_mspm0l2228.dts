@@ -124,6 +124,17 @@
 	pinctrl-names = "default";
 };
 
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_tx_pb4 &uart1_rx_pb5>;
+	pinctrl-names = "default";
+};
+
+&dma {
+	status = "okay";
+};
+
 &i2c0 {
 	pinctrl-0 = <&i2c0_scl_pa1_pull_up &i2c0_sda_pa0_pull_up>;
 	pinctrl-names = "default";
