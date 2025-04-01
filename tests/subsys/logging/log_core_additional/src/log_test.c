@@ -171,6 +171,7 @@ static void log_setup(bool backend2_enable)
 static bool log_test_process(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		log_flush();
 		/* waiting for all logs have been handled */
 		k_sem_take(&log_sem, K_FOREVER);
 		return false;
