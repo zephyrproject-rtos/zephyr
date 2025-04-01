@@ -23,6 +23,74 @@ void bsim_btp_uart_init(void);
 void bsim_btp_send_to_tester(const uint8_t *data, size_t len);
 void bsim_btp_wait_for_evt(uint8_t service, uint8_t opcode, struct net_buf **out_buf);
 
+static inline void bsim_btp_ccp_discover(const bt_addr_le_t *address)
+{
+	struct btp_ccp_discover_tbs_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CCP;
+	cmd_hdr->opcode = BTP_CCP_DISCOVER_TBS;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_ccp_originate_call(const bt_addr_le_t *address, uint8_t inst_index,
+					       const char *uri)
+{
+	struct btp_ccp_originate_call_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CCP;
+	cmd_hdr->opcode = BTP_CCP_ORIGINATE_CALL;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	cmd->inst_index = inst_index;
+	cmd->uri_len = strlen(uri) + 1 /* NULL terminator */;
+	net_buf_simple_add_mem(&cmd_buffer, uri, cmd->uri_len);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_ccp_discovered(void)
+{
+	struct btp_ccp_discovered_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_CCP, BTP_CCP_EV_DISCOVERED, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_ccp_call_states(void)
+{
+	struct btp_ccp_call_states_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CALL_STATES, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	net_buf_unref(buf);
+}
+
 static inline void bsim_btp_core_register(uint8_t id)
 {
 	struct btp_core_register_service_cmd *cmd;
