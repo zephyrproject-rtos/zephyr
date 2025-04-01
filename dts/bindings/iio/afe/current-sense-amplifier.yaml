@@ -38,6 +38,18 @@ properties:
     description: |
       Amplifier gain divider. The default is <1>. The maximum value is <65535>.
 
+  zero-current-voltage-mv:
+    type: int
+    default: 0
+    description: |
+      The zero-current voltage in millivolts. Defaults to <0>, with a range of <-32768> to <32767>.
+
+      Some current sense amplifiers output a voltage proportional to current, independent of a
+      current sense resistor (e.g., Hall-effect current sensors). These sensors often have a
+      nonzero offset voltage that corresponds to zero current.
+
+      To use this binding with such sensors, `sense-resistor-milli-ohms` should be set to 1.
+
   power-gpios:
     type: phandle-array
     description: |
