@@ -27,3 +27,7 @@ properties:
     type: int
     description: Address of the phy controller
     required: true
+
+  data-flash:
+    type: int
+    description: Address of data-flash
