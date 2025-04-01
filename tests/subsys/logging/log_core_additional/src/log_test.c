@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2020-2025 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,13 +95,6 @@ static void process(const struct log_backend *const backend,
 			      "Unexpected log severity");
 	}
 
-	cb->counter++;
-	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		if (cb->counter == cb->total_logs) {
-			k_sem_give(&log_sem);
-		}
-	}
-
 	if (k_is_user_context()) {
 		zassert_equal(log_msg_get_domain(&(msg->log)), domain,
 				"Unexpected domain id");
@@ -112,6 +105,13 @@ static void process(const struct log_backend *const backend,
 
 	flags = log_backend_std_get_flags();
 	log_output_msg_process(&log_output, &msg->log, flags);
+
+	cb->counter++;
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		if (cb->counter == cb->total_logs) {
+			k_sem_give(&log_sem);
+		}
+	}
 }
 
 static void panic(const struct log_backend *const backend)
