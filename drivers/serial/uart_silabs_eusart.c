@@ -15,6 +15,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <em_eusart.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
@@ -41,9 +42,14 @@ struct eusart_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_SILABS_EUSART_ASYNC)
 	void (*irq_config_func)(const struct device *dev);
-#endif
+};
+
+enum eusart_pm_lock {
+	EUSART_PM_LOCK_TX,
+	EUSART_PM_LOCK_TX_POLL,
+	EUSART_PM_LOCK_RX,
+	EUSART_PM_LOCK_COUNT,
 };
 
 struct eusart_data {
@@ -61,7 +67,64 @@ struct eusart_data {
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
+#ifdef CONFIG_PM
+	ATOMIC_DEFINE(pm_lock, EUSART_PM_LOCK_COUNT);
+#endif
 };
+
+static int eusart_pm_action(const struct device *dev, enum pm_device_action action);
+
+/**
+ * @brief Get PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was taken, false otherwise
+ */
+static bool eusart_pm_lock_get(const struct device *dev, enum eusart_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct eusart_data *data = dev->data;
+	bool was_locked = atomic_test_and_set_bit(data->pm_lock, lock);
+
+	if (!was_locked) {
+		/* Lock out low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return !was_locked;
+#else
+	return false;
+#endif
+}
+
+/**
+ * @brief Release PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was released, false otherwise
+ */
+static bool eusart_pm_lock_put(const struct device *dev, enum eusart_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct eusart_data *data = dev->data;
+	bool was_locked = atomic_test_and_clear_bit(data->pm_lock, lock);
+
+	if (was_locked) {
+		/* Unlock low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return was_locked;
+#else
+	return false;
+#endif
+}
 
 static int eusart_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -79,6 +142,9 @@ static void eusart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct eusart_config *config = dev->config;
 
+	if (eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX_POLL)) {
+		EUSART_IntEnable(config->eusart, EUSART_IF_TXC);
+	}
 	/* EUSART_Tx function already waits for the transmit buffer being empty
 	 * and waits for the bus to be free to transmit.
 	 */
@@ -145,6 +211,7 @@ static void eusart_irq_tx_enable(const struct device *dev)
 {
 	const struct eusart_config *config = dev->config;
 
+	eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX);
 	EUSART_IntClear(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
 	EUSART_IntEnable(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
 }
@@ -155,6 +222,7 @@ static void eusart_irq_tx_disable(const struct device *dev)
 
 	EUSART_IntDisable(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
 	EUSART_IntClear(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX);
 }
 
 static int eusart_irq_tx_complete(const struct device *dev)
@@ -179,6 +247,7 @@ static void eusart_irq_rx_enable(const struct device *dev)
 {
 	const struct eusart_config *config = dev->config;
 
+	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 	EUSART_IntClear(config->eusart, EUSART_IEN_RXFL);
 	EUSART_IntEnable(config->eusart, EUSART_IEN_RXFL);
 }
@@ -189,6 +258,7 @@ static void eusart_irq_rx_disable(const struct device *dev)
 
 	EUSART_IntDisable(config->eusart, EUSART_IEN_RXFL);
 	EUSART_IntClear(config->eusart, EUSART_IEN_RXFL);
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 }
 
 static int eusart_irq_rx_ready(const struct device *dev)
@@ -428,6 +498,8 @@ static int eusart_async_tx(const struct device *dev, const uint8_t *tx_data, siz
 	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
 	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
 
+	eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX);
+
 	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
 	EUSART_IntEnable(config->eusart, EUSART_IF_TXC);
 
@@ -470,6 +542,7 @@ static int eusart_async_tx_abort(const struct device *dev)
 
 	EUSART_IntDisable(config->eusart, EUSART_IF_TXC);
 	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX);
 
 	k_work_cancel_delayable(&data->dma_tx.timeout_work);
 
@@ -520,6 +593,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 		return -EFAULT;
 	}
 
+	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 	EUSART_IntClear(config->eusart, EUSART_IF_RXOF | EUSART_IF_RXTO);
 	EUSART_IntEnable(config->eusart, EUSART_IF_RXOF);
 	EUSART_IntEnable(config->eusart, EUSART_IF_RXTO);
@@ -549,6 +623,7 @@ static int eusart_async_rx_disable(const struct device *dev)
 	EUSART_IntDisable(eusart, EUSART_IF_RXOF);
 	EUSART_IntDisable(eusart, EUSART_IF_RXTO);
 	EUSART_IntClear(eusart, EUSART_IF_RXOF | EUSART_IF_RXTO);
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 
 	k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
@@ -683,16 +758,20 @@ static int eusart_async_init(const struct device *dev)
 }
 #endif /* CONFIG_UART_SILABS_EUSART_ASYNC */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_SILABS_EUSART_ASYNC)
 static void eusart_isr(const struct device *dev)
 {
-	struct eusart_data *data = dev->data;
-#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
+	__maybe_unused struct eusart_data *data = dev->data;
 	const struct eusart_config *config = dev->config;
 	EUSART_TypeDef *eusart = config->eusart;
 	uint32_t flags = EUSART_IntGet(eusart);
-	struct dma_status stat;
-#endif
+	__maybe_unused struct dma_status stat;
+
+	if (flags & EUSART_IF_TXC) {
+		if (eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX_POLL)) {
+			EUSART_IntDisable(eusart, EUSART_IEN_TXC);
+			EUSART_IntClear(eusart, EUSART_IF_TXC);
+		}
+	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
@@ -728,13 +807,13 @@ static void eusart_isr(const struct device *dev)
 		if (data->dma_tx.counter == data->dma_tx.buffer_length) {
 			EUSART_IntDisable(eusart, EUSART_IF_TXC);
 			EUSART_IntClear(eusart, EUSART_IF_TXC);
+			eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX);
 		}
 
 		eusart_async_evt_tx_done(data);
 	}
 #endif /* CONFIG_UART_SILABS_EUSART_ASYNC */
 }
-#endif
 
 static EUSART_Parity_TypeDef eusart_cfg2ll_parity(enum uart_config_parity parity)
 {
@@ -942,16 +1021,9 @@ static int eusart_init(const struct device *dev)
 		return err;
 	}
 
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	eusart_configure_peripheral(dev, false);
 
-	eusart_configure_peripheral(dev, true);
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_SILABS_EUSART_ASYNC)
 	config->irq_config_func(dev);
-#endif
 
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	err = eusart_async_init(dev);
@@ -960,31 +1032,53 @@ static int eusart_init(const struct device *dev)
 	}
 #endif
 
-	return 0;
+	return pm_device_driver_init(dev, eusart_pm_action);
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int eusart_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	__maybe_unused const struct eusart_config *config = dev->config;
+	__maybe_unused struct eusart_data *data = dev->data;
+	const struct eusart_config *config = dev->config;
+	int err;
 
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Wait for TX FIFO to flush before suspending */
-		while (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXIDLE)) {
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0 && err != -EALREADY) {
+			return err;
 		}
-		break;
 
-	case PM_DEVICE_ACTION_RESUME:
-		break;
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 
-	default:
+		EUSART_Enable(config->eusart, eusartEnable);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
+		/* Entering suspend requires there to be no active asynchronous calls. */
+		__ASSERT_NO_MSG(!data->dma_rx.enabled);
+		__ASSERT_NO_MSG(!data->dma_tx.enabled);
+#endif
+		EUSART_Enable(config->eusart, eusartDisable);
+
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+	} else {
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
-#endif
 
 static DEVICE_API(uart, eusart_driver_api) = {
 	.poll_in = eusart_poll_in,
@@ -1042,7 +1136,7 @@ static DEVICE_API(uart, eusart_driver_api) = {
 #define EUSART_DMA_CHANNEL(index, dir)
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_SILABS_EUSART_ASYNC)
+
 #define SILABS_EUSART_IRQ_HANDLER_FUNC(idx) .irq_config_func = eusart_config_func_##idx,
 #define SILABS_EUSART_IRQ_HANDLER(idx)                                                             \
 	static void eusart_config_func_##idx(const struct device *dev)                             \
@@ -1057,10 +1151,6 @@ static DEVICE_API(uart, eusart_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, rx, irq));                                     \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));                                     \
 	}
-#else
-#define SILABS_EUSART_IRQ_HANDLER_FUNC(idx)
-#define SILABS_EUSART_IRQ_HANDLER(idx)
-#endif
 
 #define SILABS_EUSART_INIT(idx)                                                                    \
 	SILABS_EUSART_IRQ_HANDLER(idx);                                                            \
