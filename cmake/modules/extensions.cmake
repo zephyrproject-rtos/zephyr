@@ -3049,7 +3049,7 @@ endfunction()
 #
 # Zephyr string function extension.
 # This function extends the CMake string function by providing additional
-# manipulation arguments to CMake string.
+# manipulation options for the <mode> argument:
 #
 # ESCAPE:   Ensure that any single '\', except '\"', in the input string is
 #           escaped with the escape char '\'. For example the string 'foo\bar'
@@ -3063,14 +3063,15 @@ endfunction()
 #
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
-#           converted to underscores '_'.
+#           converted to underscores '_'. Multiple arguments are concatenated.
 #
 # SANITIZE TOUPPER: Ensure that the output string does not contain any special
-#                   characters. Special characters, such as -, +, =, $, etc. are
-#                   converted to underscores '_'.
+#                   characters. Special characters, such as -, +, =, $, etc.
+#                   are converted to underscores '_'. Multiple arguments are
+#                   concatenated.
 #                   The sanitized string will be returned in UPPER case.
 #
-# returns the updated string
+# Returns the updated string in <out-var>.
 function(zephyr_string)
   set(options SANITIZE TOUPPER ESCAPE)
   cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
@@ -3084,17 +3085,13 @@ function(zephyr_string)
   list(GET ZEPHYR_STRING_UNPARSED_ARGUMENTS 0 return_arg)
   list(REMOVE_AT ZEPHYR_STRING_UNPARSED_ARGUMENTS 0)
 
-  list(JOIN ZEPHYR_STRING_UNPARSED_ARGUMENTS "" work_string)
-
   if(ZEPHYR_STRING_SANITIZE)
+    list(JOIN ZEPHYR_STRING_UNPARSED_ARGUMENTS "" work_string)
     string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" work_string ${work_string})
-  endif()
-
-  if(ZEPHYR_STRING_TOUPPER)
-    string(TOUPPER ${work_string} work_string)
-  endif()
-
-  if(ZEPHYR_STRING_ESCAPE)
+    if(ZEPHYR_STRING_TOUPPER)
+      string(TOUPPER ${work_string} work_string)
+    endif()
+  elseif(ZEPHYR_STRING_ESCAPE)
     # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
     # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
     # which then becomes a single '\' in the final string.
