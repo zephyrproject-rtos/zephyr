@@ -62,8 +62,11 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_UTIL
   src/wifi_util.c
 )
 
+if(CONFIG_NRF70_UTIL OR CONFIG_NRF70_DEBUG_SHELL)
+  zephyr_library_sources(src/shell.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_NRF70_DEBUG_SHELL
-  src/shell.c
   src/debug_shell.c
 )
 
