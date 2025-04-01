@@ -83,33 +83,33 @@ static int uart_silabs_eusart_err_check(const struct device *dev)
 static int uart_silabs_eusart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	const struct uart_silabs_eusart_config *config = dev->config;
-	int num_tx = 0;
+	int i = 0;
 
-	while ((len - num_tx > 0) && (EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXFL)) {
-		config->eusart->TXDATA = (uint32_t)tx_data[num_tx++];
+	while ((i < len) && (EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXFL)) {
+		config->eusart->TXDATA = (uint32_t)tx_data[i++];
 	}
 
 	if (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXFL)) {
 		EUSART_IntClear(config->eusart, EUSART_IF_TXFL);
 	}
 
-	return num_tx;
+	return i;
 }
 
 static int uart_silabs_eusart_fifo_read(const struct device *dev, uint8_t *rx_data, const int len)
 {
 	const struct uart_silabs_eusart_config *config = dev->config;
-	int num_rx = 0;
+	int i = 0;
 
-	while ((len - num_rx > 0) && (EUSART_StatusGet(config->eusart) & EUSART_STATUS_RXFL)) {
-		rx_data[num_rx++] = (uint8_t)config->eusart->RXDATA;
+	while ((i < len) && (EUSART_StatusGet(config->eusart) & EUSART_STATUS_RXFL)) {
+		rx_data[i++] = (uint8_t)config->eusart->RXDATA;
 	}
 
 	if (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_RXFL)) {
 		EUSART_IntClear(config->eusart, EUSART_IF_RXFL);
 	}
 
-	return num_rx;
+	return i;
 }
 
 static void uart_silabs_eusart_irq_tx_enable(const struct device *dev)
@@ -135,7 +135,7 @@ static int uart_silabs_eusart_irq_tx_complete(const struct device *dev)
 
 	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
 
-	return (flags & EUSART_IF_TXC) != 0;
+	return !!(flags & EUSART_IF_TXC);
 }
 
 static int uart_silabs_eusart_irq_tx_ready(const struct device *dev)
@@ -215,7 +215,7 @@ static void uart_silabs_eusart_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static inline EUSART_Parity_TypeDef uart_silabs_eusart_cfg2ll_parity(enum uart_config_parity parity)
+static EUSART_Parity_TypeDef uart_silabs_eusart_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
 	case UART_CFG_PARITY_ODD:
@@ -241,8 +241,7 @@ static inline enum uart_config_parity uart_silabs_eusart_ll2cfg_parity(EUSART_Pa
 	}
 }
 
-static inline EUSART_Stopbits_TypeDef
-uart_silabs_eusart_cfg2ll_stopbits(enum uart_config_stop_bits sb)
+static EUSART_Stopbits_TypeDef uart_silabs_eusart_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 {
 	switch (sb) {
 	case UART_CFG_STOP_BITS_0_5:
@@ -275,8 +274,8 @@ uart_silabs_eusart_ll2cfg_stopbits(EUSART_Stopbits_TypeDef sb)
 	}
 }
 
-static inline EUSART_Databits_TypeDef
-uart_silabs_eusart_cfg2ll_databits(enum uart_config_data_bits db, enum uart_config_parity p)
+static EUSART_Databits_TypeDef uart_silabs_eusart_cfg2ll_databits(enum uart_config_data_bits db,
+								  enum uart_config_parity p)
 {
 	switch (db) {
 	case UART_CFG_DATA_BITS_7:
@@ -324,14 +323,7 @@ uart_silabs_eusart_ll2cfg_databits(EUSART_Databits_TypeDef db, EUSART_Parity_Typ
 	}
 }
 
-/**
- * @brief  Get LL hardware flow control define from
- *         Zephyr hardware flow control option.
- * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS and UART_CFG_FLOW_CTRL_RS485.
- * @param  fc: Zephyr hardware flow control option.
- * @retval eusartHwFlowControlCtsAndRts, or eusartHwFlowControlNone.
- */
-static inline EUSART_HwFlowControl_TypeDef
+static EUSART_HwFlowControl_TypeDef
 uart_silabs_eusart_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
@@ -341,13 +333,6 @@ uart_silabs_eusart_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 	return eusartHwFlowControlNone;
 }
 
-/**
- * @brief  Get Zephyr hardware flow control option from
- *         LL hardware flow control define.
- * @note   Supports only eusartHwFlowControlCtsAndRts.
- * @param  fc: LL hardware flow control definition.
- * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_FLOW_CTRL_NONE.
- */
 static inline enum uart_config_flow_control
 uart_silabs_eusart_ll2cfg_hwctrl(EUSART_HwFlowControl_TypeDef fc)
 {
@@ -382,12 +367,6 @@ static void uart_silabs_eusart_configure_peripheral(const struct device *dev, bo
 	}
 }
 
-/**
- * @brief Main initializer for UART
- *
- * @param dev UART device to be initialized
- * @return int 0
- */
 static int uart_silabs_eusart_init(const struct device *dev)
 {
 	int err;
@@ -421,11 +400,9 @@ static int uart_silabs_eusart_pm_action(const struct device *dev, enum pm_device
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef EUSART_STATUS_TXIDLE
 		/* Wait for TX FIFO to flush before suspending */
 		while (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXIDLE)) {
 		}
-#endif
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
@@ -462,8 +439,8 @@ static DEVICE_API(uart, uart_silabs_eusart_driver_api) = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_IRQ_HANDLER_FUNC(idx) .irq_config_func = uart_silabs_eusart_config_func_##idx,
-#define UART_IRQ_HANDLER(idx)                                                                      \
+#define SILABS_EUSART_IRQ_HANDLER_FUNC(idx) .irq_config_func = uart_silabs_eusart_config_func_##idx,
+#define SILABS_EUSART_IRQ_HANDLER(idx)                                                                      \
 	static void uart_silabs_eusart_config_func_##idx(const struct device *dev)                 \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, rx, irq),                                     \
@@ -477,20 +454,21 @@ static DEVICE_API(uart, uart_silabs_eusart_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));                                     \
 	}
 #else
-#define UART_IRQ_HANDLER_FUNC(idx)
-#define UART_IRQ_HANDLER(idx)
+#define SILABS_EUSART_IRQ_HANDLER_FUNC(idx)
+#define SILABS_EUSART_IRQ_HANDLER(idx)
 #endif
 
-#define UART_INIT(idx)                                                                             \
-	UART_IRQ_HANDLER(idx)                                                                      \
+#define SILABS_EUSART_INIT(idx)                                                                    \
+	SILABS_EUSART_IRQ_HANDLER(idx);                                                            \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	PM_DEVICE_DT_INST_DEFINE(idx, uart_silabs_eusart_pm_action);                               \
                                                                                                    \
 	static const struct uart_silabs_eusart_config uart_silabs_eusart_cfg_##idx = {             \
 		.eusart = (EUSART_TypeDef *)DT_INST_REG_ADDR(idx),                                 \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),                                        \
-		UART_IRQ_HANDLER_FUNC(idx)                                                         \
+		SILABS_EUSART_IRQ_HANDLER_FUNC(idx)                                                \
 	};                                                                                         \
                                                                                                    \
 	static struct uart_silabs_eusart_data uart_silabs_eusart_data_##idx = {                    \
@@ -505,11 +483,9 @@ static DEVICE_API(uart, uart_silabs_eusart_driver_api) = {
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
-	PM_DEVICE_DT_INST_DEFINE(idx, uart_silabs_eusart_pm_action);                               \
-                                                                                                   \
 	DEVICE_DT_INST_DEFINE(idx, uart_silabs_eusart_init, PM_DEVICE_DT_INST_GET(idx),            \
 			      &uart_silabs_eusart_data_##idx, &uart_silabs_eusart_cfg_##idx,       \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                           \
 			      &uart_silabs_eusart_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(UART_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SILABS_EUSART_INIT)
