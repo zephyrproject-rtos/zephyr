@@ -77,6 +77,12 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(128)>;
 		};
+
+		aclk: aclk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(24)>;
+		};
 	};
 
 	soc {
