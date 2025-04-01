@@ -85,9 +85,6 @@ if(WEST OR ZEPHYR_MODULES)
     endforeach()
   endif()
 
-  # Append ZEPHYR_BASE as a default ext root at lowest priority
-  list(APPEND MODULE_EXT_ROOT ${ZEPHYR_BASE})
-
   if(EXISTS ${cmake_modules_file})
     file(STRINGS ${cmake_modules_file} zephyr_modules_txt ENCODING UTF-8)
   endif()
@@ -114,9 +111,12 @@ if(WEST OR ZEPHYR_MODULES)
     list(APPEND SYSBUILD_MODULE_NAMES ${module_name})
   endforeach()
 
+  # Prepend ZEPHYR_BASE as a default ext root at lowest priority
+  list(PREPEND MODULE_EXT_ROOT ${ZEPHYR_BASE})
+
   # MODULE_EXT_ROOT is process order which means Zephyr module roots processed
-  # later wins. therefore we reverse the list before processing.
-  list(REVERSE MODULE_EXT_ROOT)
+  # later wins. Thus processing Zephyr first, and modules thereafter allows them
+  # to overrule default glue folder settings provided by higher level modules.cmake.
   foreach(root ${MODULE_EXT_ROOT})
     set(module_cmake_file_path modules/modules.cmake)
     if(NOT EXISTS ${root}/${module_cmake_file_path})
