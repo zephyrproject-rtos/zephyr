@@ -41,6 +41,74 @@ static inline void bsim_btp_core_register(uint8_t id)
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
 
+static inline void bsim_btp_csip_discover(const bt_addr_le_t *address)
+{
+	struct btp_csip_discover_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CSIP;
+	cmd_hdr->opcode = BTP_CSIP_DISCOVER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_csip_set_coordinator_lock(void)
+{
+	struct btp_csip_set_coordinator_lock_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CSIP;
+	cmd_hdr->opcode = BTP_CSIP_SET_COORDINATOR_LOCK;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->addr_cnt = 0U; /* Zephyr BT Tester only supports this value being 0 */
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_csip_discovered(bt_addr_le_t *address)
+{
+	struct btp_csip_discovered_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_CSIP, BTP_CSIP_DISCOVERED_EV, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_lock(void)
+{
+	struct btp_csip_lock_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_CSIP, BTP_CSIP_LOCK_EV, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	net_buf_unref(buf);
+}
+
 static inline void bsim_btp_gap_set_discoverable(uint8_t discoverable)
 {
 	struct btp_gap_set_discoverable_cmd *cmd;
