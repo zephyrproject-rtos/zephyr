@@ -34,6 +34,7 @@ test_current: current_amp {
 	sense-resistor-milli-ohms = <1>;
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
+	zero-current-voltage-mv = <0>;
 };
 
 test_composite_fuel_gauge: composite_fuel_gauge {
