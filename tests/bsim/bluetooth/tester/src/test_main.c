@@ -7,6 +7,8 @@
 
 #include "bstests.h"
 
+extern struct bst_test_list *test_csip_central_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_csip_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_gap_central_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_gap_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_hap_central_install(struct bst_test_list *tests);
@@ -17,6 +19,8 @@ extern struct bst_test_list *test_vcp_central_install(struct bst_test_list *test
 extern struct bst_test_list *test_vcp_peripheral_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
+	test_csip_central_install,
+	test_csip_peripheral_install,
 	test_gap_central_install,
 	test_gap_peripheral_install,
 	test_hap_central_install,
