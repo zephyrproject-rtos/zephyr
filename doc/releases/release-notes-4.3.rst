@@ -83,7 +83,8 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
-* :cve:`2025-9408`: Under embargo until 2025-11-10
+* :cve:`2025-9408` `Zephyr project bug tracker GHSA-3r6j-5mp3-75wr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3r6j-5mp3-75wr>`_
 * :cve:`2025-9557`: Under embargo until 2025-11-24
 * :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
