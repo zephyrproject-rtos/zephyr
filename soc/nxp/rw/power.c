@@ -16,7 +16,7 @@
 
 #include "fsl_power.h"
 
-#ifdef CONFIG_MCUX_ELS_PKC
+#if defined(CONFIG_MCUX_ELS_PKC) && !defined(CONFIG_BUILD_WITH_TFM)
 #include "mcux_els.h"
 #include "mcux_pkc.h"
 #endif
@@ -212,10 +212,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			restore_mpu_state();
 #endif /* CONFIG_MPU */
 			clock_init();
-#ifdef CONFIG_MCUX_ELS_PKC
+#if defined(CONFIG_MCUX_ELS_PKC) && !defined(CONFIG_BUILD_WITH_TFM)
 			ELS_PowerDownWakeupInit(ELS);
 			PKC_PowerDownWakeupInit(PKC);
-#endif /* CONFIG_MCUX_ELS_PKC */
+#endif
 
 			sys_clock_idle_exit();
 		}
