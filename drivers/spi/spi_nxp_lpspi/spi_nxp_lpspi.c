@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
@@ -30,7 +30,7 @@ static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t num_bytes = MIN(lpspi_data->word_size_bytes, ctx->rx_len);
@@ -50,7 +50,7 @@ static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t of
 /* Reads a maximum number of words from RX fifo and writes them to the remainder of the RX buf */
 static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t max_read)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	size_t buf_len = DIV_ROUND_UP(ctx->rx_len, lpspi_data->word_size_bytes);
@@ -69,7 +69,7 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 static inline void lpspi_handle_rx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t rx_fsr = rx_fifo_cur_len(base);
@@ -98,7 +98,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 
 static inline uint32_t lpspi_next_tx_word(const struct device *dev, int offset)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	const uint8_t *byte = ctx->tx_buf + offset;
@@ -115,7 +115,7 @@ static inline uint32_t lpspi_next_tx_word(const struct device *dev, int offset)
 static inline void lpspi_fill_tx_fifo(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	size_t bytes_in_xfer = lpspi_data->fill_len * lpspi_data->word_size_bytes;
 	size_t offset;
@@ -130,7 +130,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev)
 static void lpspi_fill_tx_fifo_nop(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 
 	for (int i = 0; i < lpspi_data->fill_len; i++) {
@@ -142,8 +142,8 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev)
 
 static void lpspi_next_tx_fill(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	size_t max_chunk;
@@ -163,7 +163,7 @@ static void lpspi_next_tx_fill(const struct device *dev)
 static inline void lpspi_handle_tx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 
@@ -182,8 +182,8 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 static void lpspi_isr(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t status_flags = base->SR;
@@ -229,7 +229,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
@@ -280,7 +280,7 @@ error:
 	return ret;
 }
 
-static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
+static int lpspi_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
@@ -288,7 +288,7 @@ static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_c
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
+static int lpspi_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
@@ -297,20 +297,20 @@ static int spi_mcux_transceive_async(const struct device *dev, const struct spi_
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static DEVICE_API(spi, spi_mcux_driver_api) = {
-	.transceive = spi_mcux_transceive_sync,
+static DEVICE_API(spi, lpspi_driver_api) = {
+	.transceive = lpspi_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
-	.transceive_async = spi_mcux_transceive_async,
+	.transceive_async = lpspi_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_mcux_release,
+	.release = spi_lpspi_release,
 };
 
-static int spi_mcux_init(const struct device *dev)
+static int lpspi_init(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 	int err = 0;
 
 	err = spi_nxp_init_common(dev);
@@ -325,23 +325,23 @@ static int spi_mcux_init(const struct device *dev)
 
 #define LPSPI_INIT(n)                                                                              \
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
-	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
+	SPI_LPSPI_CONFIG_INIT(n)                                                              \
                                                                                                    \
 	static struct lpspi_driver_data lpspi_##n##_driver_data;                                   \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
+	static struct lpspi_data lpspi_data_##n = {                                             \
 		SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                  \
 		.driver_data = &lpspi_##n##_driver_data,                                           \
 	};                                                                                         \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n,                      \
-				  &spi_mcux_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-				  &spi_mcux_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, lpspi_init, NULL, &lpspi_data_##n,                            \
+				  &lpspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+				  &lpspi_driver_api);
 
-#define SPI_MCUX_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
+#define SPI_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 
-#define SPI_MCUX_LPSPI_INIT(n)                                                                     \
+#define SPI_LPSPI_INIT(n)                                                                     \
 	COND_CODE_1(CONFIG_SPI_MCUX_LPSPI_DMA,				   \
-						(SPI_MCUX_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
+						(SPI_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
 
-DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_LPSPI_INIT)
