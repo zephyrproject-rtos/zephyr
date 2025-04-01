@@ -14,7 +14,6 @@ config UART_SILABS_EUSART
 	select DMA if UART_ASYNC_API
 	select PINCTRL
 	select CLOCK_CONTROL
-	select PM_DEVICE if PM
 	help
 	  Enable the eusart uart driver.
 
