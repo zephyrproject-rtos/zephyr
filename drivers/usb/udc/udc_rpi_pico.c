@@ -62,21 +62,21 @@ struct rpi_pico_data {
 	 * 15..0 for OUT endpoints.
 	 */
 	struct k_event events;
-	struct k_event xfer_new;
-	struct k_event xfer_finished;
+	atomic_t xfer_new;
+	atomic_t xfer_finished;
 	struct rpi_pico_ep_data out_ep[USB_NUM_ENDPOINTS];
 	struct rpi_pico_ep_data in_ep[USB_NUM_ENDPOINTS];
 	bool rwu_pending;
 	uint8_t setup[8];
 };
 
-static inline uint32_t udc_ep_to_bmsk(const uint8_t ep)
+static inline int udc_ep_to_bnum(const uint8_t ep)
 {
 	if (USB_EP_DIR_IS_IN(ep)) {
-		return BIT(16UL + USB_EP_GET_IDX(ep));
+		return 16UL + USB_EP_GET_IDX(ep);
 	}
 
-	return BIT(USB_EP_GET_IDX(ep));
+	return USB_EP_GET_IDX(ep);
 }
 
 static inline uint8_t udc_pull_ep_from_bmsk(uint32_t *const bitmap)
@@ -507,7 +507,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 	if (evt & BIT(RPI_PICO_EVT_XFER_FINISHED)) {
 		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
 
-		eps = k_event_clear(&priv->xfer_finished, UINT32_MAX);
+		eps = atomic_clear(&priv->xfer_finished);
 
 		while (eps) {
 			ep = udc_pull_ep_from_bmsk(&eps);
@@ -531,7 +531,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 	if (evt & BIT(RPI_PICO_EVT_XFER_NEW)) {
 		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
 
-		eps = k_event_clear(&priv->xfer_new, UINT32_MAX);
+		eps = atomic_clear(&priv->xfer_new);
 
 		while (eps) {
 			ep = udc_pull_ep_from_bmsk(&eps);
@@ -604,7 +604,7 @@ static void rpi_pico_handle_buff_status_in(const struct device *dev, const uint8
 			__ASSERT(err == 0, "Failed to start new IN transaction");
 			udc_ep_buf_clear_zlp(buf);
 		} else {
-			k_event_post(&priv->xfer_finished, udc_ep_to_bmsk(ep));
+			atomic_set_bit(&priv->xfer_finished, udc_ep_to_bnum(ep));
 			k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
 		}
 	}
@@ -634,7 +634,7 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 		err = rpi_pico_prep_rx(dev, buf, ep_cfg);
 		__ASSERT(err == 0, "Failed to start new OUT transaction");
 	} else {
-		k_event_post(&priv->xfer_finished, udc_ep_to_bmsk(ep));
+		atomic_set_bit(&priv->xfer_finished, udc_ep_to_bnum(ep));
 		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
 	}
 }
@@ -828,7 +828,7 @@ static int udc_rpi_pico_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
-		k_event_post(&priv->xfer_new, udc_ep_to_bmsk(cfg->addr));
+		atomic_set_bit(&priv->xfer_new, udc_ep_to_bnum(cfg->addr));
 		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
 	}
 
@@ -984,7 +984,7 @@ static int udc_rpi_pico_ep_clear_halt(const struct device *dev,
 	if (udc_ep_is_busy(cfg)) {
 		rpi_pico_handle_xfer_next(dev, cfg);
 	} else if (udc_buf_peek(cfg)) {
-		k_event_post(&priv->xfer_new, udc_ep_to_bmsk(cfg->addr));
+		atomic_set_bit(&priv->xfer_new, udc_ep_to_bnum(cfg->addr));
 		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
 	}
 
@@ -1144,8 +1144,8 @@ static int udc_rpi_pico_driver_preinit(const struct device *dev)
 
 	k_mutex_init(&data->mutex);
 	k_event_init(&priv->events);
-	k_event_init(&priv->xfer_new);
-	k_event_init(&priv->xfer_finished);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_MPS0_64;
