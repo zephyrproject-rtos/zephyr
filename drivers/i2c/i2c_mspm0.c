@@ -115,6 +115,9 @@ static int i2c_mspm0_configure(const struct device *dev, uint32_t dev_config)
 	case I2C_SPEED_FAST:
 		desiredSpeed = 400000;
 		break;
+	case I2C_SPEED_FAST_PLUS:
+		desiredSpeed = 1000000;
+		break;
 	default:
 		k_sem_give(&data->i2c_busy_sem);
 		return -EINVAL;
