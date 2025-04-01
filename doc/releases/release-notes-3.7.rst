@@ -2,6 +2,19 @@
 
 .. _zephyr_3.7:
 
+.. _zephyr_3.7.2:
+
+Zephyr 3.7.2
+############
+
+This is an LTS maintenance release with fixes.
+
+Issues fixed
+************
+
+These GitHub issues were addressed since the previous 3.7.1 tagged release:
+
+
 .. _zephyr_3.7.1:
 
 Zephyr 3.7.1
