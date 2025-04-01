@@ -67,7 +67,8 @@ static struct nrf5_802154_data nrf5_data;
 static const struct device *nrf5_dev;
 #endif
 
-#define DRX_SLOT_RX 0 /* Delayed reception window ID */
+#define DRX_SLOT_RX_PRIMARY 0 /* Primary delayed reception window ID */
+#define DRX_SLOT_RX_SECONDARY 1 /* Secondary delayed reception window ID */
 
 #define NSEC_PER_TEN_SYMBOLS (10 * IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS)
 
@@ -855,6 +856,38 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 }
 #endif /* CONFIG_NRF_802154_ENCRYPTION */
 
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+
+static void nrf5_receive_at(const struct ieee802154_config *config)
+{
+	bool primary_cancel = nrf_802154_receive_at_scheduled_cancel(DRX_SLOT_RX_PRIMARY);
+	bool secondary_cancel = nrf_802154_receive_at_scheduled_cancel(DRX_SLOT_RX_SECONDARY);
+
+	if (!primary_cancel && !secondary_cancel) {
+		/* Edge case: In between the primary and secondary slot cancellation
+		 *            the secondary RX slot might have started. Due to ordering
+		 *            of the above two cancellations we can assume that the primary
+		 *            slot is already free.
+		 */
+		primary_cancel = true;
+	}
+
+	uint32_t slot_id = primary_cancel ? DRX_SLOT_RX_PRIMARY : DRX_SLOT_RX_SECONDARY;
+
+	/* Note that even if the nrf_802154_receive_at function is not called in time
+	 * (for example due to the call being blocked by higher priority threads) and
+	 * the delayed reception window is not scheduled, the CSL phase will still be
+	 * calculated as if the following reception windows were at times
+	 * anchor_time + n * csl_period. The previously set
+	 * anchor_time will be used for calculations.
+	 */
+	nrf_802154_receive_at(config->rx_slot.start / NSEC_PER_USEC,
+			      config->rx_slot.duration / NSEC_PER_USEC,
+			      config->rx_slot.channel, slot_id);
+}
+
+#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
+
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
@@ -1011,16 +1044,7 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 	case IEEE802154_CONFIG_RX_SLOT: {
-		/* Note that even if the nrf_802154_receive_at function is not called in time
-		 * (for example due to the call being blocked by higher priority threads) and
-		 * the delayed reception window is not scheduled, the CSL phase will still be
-		 * calculated as if the following reception windows were at times
-		 * anchor_time + n * csl_period. The previously set
-		 * anchor_time will be used for calculations.
-		 */
-		nrf_802154_receive_at(config->rx_slot.start / NSEC_PER_USEC,
-				      config->rx_slot.duration / NSEC_PER_USEC,
-				      config->rx_slot.channel, DRX_SLOT_RX);
+		nrf5_receive_at(config);
 	} break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD: {
@@ -1136,7 +1160,8 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 	const struct device *dev = nrf5_get_device();
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	if (id == DRX_SLOT_RX && error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
+	if ((id == DRX_SLOT_RX_PRIMARY || id == DRX_SLOT_RX_SECONDARY)
+	    && error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 		if (!nrf5_data.rx_on_when_idle) {
 			/* Transition to RxOff done automatically by the driver */
 			return;
