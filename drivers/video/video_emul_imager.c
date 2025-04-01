@@ -18,21 +18,25 @@
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/logging/log.h>
 
+#include "video_common.h"
+
 LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 
-#define EMUL_IMAGER_REG_SENSOR_ID 0x00
+#define EMUL_IMAGER_REG8(addr) ((addr) | VIDEO_REG_ADDR8_DATA8)
+
+#define EMUL_IMAGER_REG_SENSOR_ID EMUL_IMAGER_REG8(0x00)
 #define EMUL_IMAGER_SENSOR_ID     0x99
-#define EMUL_IMAGER_REG_CTRL      0x01
-#define EMUL_IMAGER_REG_INIT1     0x02
-#define EMUL_IMAGER_REG_INIT2     0x03
-#define EMUL_IMAGER_REG_TIMING1   0x04
-#define EMUL_IMAGER_REG_TIMING2   0x05
-#define EMUL_IMAGER_REG_TIMING3   0x06
-#define EMUL_IMAGER_REG_CUSTOM    0x07
-#define EMUL_IMAGER_REG_FORMAT    0x0a
-#define EMUL_IMAGER_PATTERN_OFF   0x00
-#define EMUL_IMAGER_PATTERN_BARS1 0x01
-#define EMUL_IMAGER_PATTERN_BARS2 0x02
+#define EMUL_IMAGER_REG_CTRL      EMUL_IMAGER_REG8(0x01)
+#define EMUL_IMAGER_REG_INIT1     EMUL_IMAGER_REG8(0x02)
+#define EMUL_IMAGER_REG_INIT2     EMUL_IMAGER_REG8(0x03)
+#define EMUL_IMAGER_REG_TIMING1   EMUL_IMAGER_REG8(0x04)
+#define EMUL_IMAGER_REG_TIMING2   EMUL_IMAGER_REG8(0x05)
+#define EMUL_IMAGER_REG_TIMING3   EMUL_IMAGER_REG8(0x06)
+#define EMUL_IMAGER_REG_CUSTOM    EMUL_IMAGER_REG8(0x07)
+#define EMUL_IMAGER_REG_FORMAT    EMUL_IMAGER_REG8(0x0a)
+#define EMUL_IMAGER_PATTERN_OFF   EMUL_IMAGER_REG8(0x00)
+#define EMUL_IMAGER_PATTERN_BARS1 EMUL_IMAGER_REG8(0x01)
+#define EMUL_IMAGER_PATTERN_BARS2 EMUL_IMAGER_REG8(0x02)
 
 /* Custom control that is just an I2C write for example and test purpose */
 #define EMUL_IMAGER_CID_CUSTOM (VIDEO_CID_PRIVATE_BASE + 0x01)
@@ -42,18 +46,13 @@ enum emul_imager_fmt_id {
 	YUYV_320x240,
 };
 
-struct emul_imager_reg {
-	uint16_t addr;
-	uint8_t value;
-};
-
 struct emul_imager_mode {
 	uint8_t fps;
 	/* List of registers lists to configure the various properties of the sensor.
 	 * This permits to deduplicate the list of registers in case some lare sections
 	 * are repeated across modes, such as the resolution for different FPS.
 	 */
-	const struct emul_imager_reg *regs[3];
+	const struct video_reg *regs[3];
 	/* More fields can be added according to the needs of the sensor driver */
 };
 
@@ -71,39 +70,39 @@ struct emul_imager_data {
 };
 
 /* All the I2C registers sent on various scenario */
-static const struct emul_imager_reg emul_imager_init_regs[] = {
+static const struct video_reg emul_imager_init_regs[] = {
 	{EMUL_IMAGER_REG_CTRL, 0x00},
 	{EMUL_IMAGER_REG_INIT1, 0x10},
 	{EMUL_IMAGER_REG_INIT2, 0x00},
 	/* Undocumented registers from the vendor */
-	{0x80, 0x01},
-	{0x84, 0x01},
-	{0x85, 0x20},
-	{0x89, 0x7f},
+	{EMUL_IMAGER_REG8(0x80), 0x01},
+	{EMUL_IMAGER_REG8(0x84), 0x01},
+	{EMUL_IMAGER_REG8(0x85), 0x20},
+	{EMUL_IMAGER_REG8(0x89), 0x7f},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_rgb565[] = {
+static const struct video_reg emul_imager_rgb565[] = {
 	{EMUL_IMAGER_REG_FORMAT, 0x01},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_yuyv[] = {
+static const struct video_reg emul_imager_yuyv[] = {
 	{EMUL_IMAGER_REG_FORMAT, 0x02},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_320x240[] = {
+static const struct video_reg emul_imager_320x240[] = {
 	{EMUL_IMAGER_REG_TIMING1, 0x32},
 	{EMUL_IMAGER_REG_TIMING2, 0x24},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_15fps[] = {
+static const struct video_reg emul_imager_15fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 15},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_30fps[] = {
+static const struct video_reg emul_imager_30fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 30},
 	{0},
 };
-static const struct emul_imager_reg emul_imager_60fps[] = {
+static const struct video_reg emul_imager_60fps[] = {
 	{EMUL_IMAGER_REG_TIMING3, 60},
 	{0},
 };
@@ -147,53 +146,13 @@ static const struct video_format_cap fmts[] = {
 	{0},
 };
 
-/* Emulated I2C register interface, to replace with actual I2C calls for real hardware */
-static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr, uint8_t *value)
-{
-	const struct emul_imager_config *cfg = dev->config;
-
-	return i2c_write_read_dt(&cfg->i2c, &reg_addr, 1, value, 1);
-}
-
-/* Helper to read a full integer directly from a register */
-static int emul_imager_read_int(const struct device *const dev, uint8_t reg_addr, int *value)
-{
-	uint8_t val8 = 0;
-	int ret;
-
-	ret = emul_imager_read_reg(dev, reg_addr, &val8);
-	*value = val8;
-	return ret;
-}
-
-/* Some sensors will need reg8 or reg16 variants. */
-static int emul_imager_write_reg(const struct device *const dev, uint8_t reg_addr, uint8_t value)
-{
-	const struct emul_imager_config *cfg = dev->config;
-	uint8_t buf_w[] = {reg_addr, value};
-
-	return i2c_write_dt(&cfg->i2c, buf_w, 2);
-}
-
-static int emul_imager_write_multi(const struct device *const dev,
-				   const struct emul_imager_reg *regs)
-{
-	int ret;
-
-	for (int i = 0; regs[i].addr != 0; i++) {
-		ret = emul_imager_write_reg(dev, regs[i].addr, regs[i].value);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	return 0;
-}
-
 static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
+	const struct emul_imager_config *cfg = dev->config;
+
 	switch (cid) {
 	case EMUL_IMAGER_CID_CUSTOM:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, (int)value);
+		return video_write_cci_reg(&cfg->i2c, EMUL_IMAGER_REG_CUSTOM, (int)value);
 	default:
 		return -ENOTSUP;
 	}
@@ -201,17 +160,26 @@ static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void
 
 static int emul_imager_get_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
+	const struct emul_imager_config *cfg = dev->config;
+	uint32_t reg = 0;
+	int ret;
+
 	switch (cid) {
 	case EMUL_IMAGER_CID_CUSTOM:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_CUSTOM, value);
+		ret = video_read_cci_reg(&cfg->i2c, EMUL_IMAGER_REG_CUSTOM, &reg);
+		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	*(uint32_t *)value = reg;
+	return ret;
 }
 
 /* Customize this function according to your "struct emul_imager_mode". */
 static int emul_imager_set_mode(const struct device *dev, const struct emul_imager_mode *mode)
 {
+	const struct emul_imager_config *cfg = dev->config;
 	struct emul_imager_data *data = dev->data;
 	int ret;
 
@@ -223,7 +191,7 @@ static int emul_imager_set_mode(const struct device *dev, const struct emul_imag
 
 	/* Apply all the configuration registers for that mode */
 	for (int i = 0; i < 2; i++) {
-		ret = emul_imager_write_multi(dev, mode->regs[i]);
+		ret = video_write_cci_multi(&cfg->i2c, mode->regs[i]);
 		if (ret < 0) {
 			goto err;
 		}
@@ -359,7 +327,9 @@ static int emul_imager_get_caps(const struct device *dev, enum video_endpoint_id
 
 static int emul_imager_set_stream(const struct device *dev, bool enable)
 {
-	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
+	const struct emul_imager_config *cfg = dev->config;
+
+	return video_write_cci_reg(&cfg->i2c, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
 }
 
 static DEVICE_API(video, emul_imager_driver_api) = {
@@ -378,7 +348,7 @@ int emul_imager_init(const struct device *dev)
 {
 	const struct emul_imager_config *cfg = dev->config;
 	struct video_format fmt;
-	uint8_t sensor_id;
+	uint32_t sensor_id;
 	int ret;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
@@ -386,13 +356,13 @@ int emul_imager_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = emul_imager_read_reg(dev, EMUL_IMAGER_REG_SENSOR_ID, &sensor_id);
+	ret = video_read_cci_reg(&cfg->i2c, EMUL_IMAGER_REG_SENSOR_ID, &sensor_id);
 	if (ret < 0 || sensor_id != EMUL_IMAGER_SENSOR_ID) {
 		LOG_ERR("Failed to get a correct sensor ID 0x%x",  sensor_id);
 		return ret;
 	}
 
-	ret = emul_imager_write_multi(dev, emul_imager_init_regs);
+	ret = video_write_cci_multi(&cfg->i2c, emul_imager_init_regs);
 	if (ret < 0) {
 		LOG_ERR("Could not set initial registers");
 		return ret;
@@ -431,7 +401,7 @@ static int emul_imager_transfer_i2c(const struct emul *target, struct i2c_msg ms
 				    int addr)
 {
 	static uint8_t fake_regs[UINT8_MAX] = {
-		[EMUL_IMAGER_REG_SENSOR_ID] = EMUL_IMAGER_SENSOR_ID,
+		[EMUL_IMAGER_REG_SENSOR_ID & VIDEO_REG_ADDR_MASK] = EMUL_IMAGER_SENSOR_ID,
 	};
 
 	if (num_msgs == 0) {
