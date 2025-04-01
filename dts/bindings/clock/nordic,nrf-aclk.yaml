@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic Audio clock node
+
+compatible: "nordic,nrf-aclk"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    description: |
+      Frequency of the Audio clock in Hz.
