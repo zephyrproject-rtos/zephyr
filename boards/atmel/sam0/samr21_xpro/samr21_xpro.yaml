@@ -1,6 +1,7 @@
 # Copyright (c) 2019 Benjamin Valentin
-# Copyright (c) 2019-2024 Gerson Fernando Budke
+# Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
+
 identifier: samr21_xpro
 name: SAM R21 Xplained Pro
 type: mcu

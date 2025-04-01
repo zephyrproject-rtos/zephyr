@@ -9,14 +9,19 @@
 / {
 	aliases {
 		tc-6 = &tc6;
+
+		tcc-0 = &tcc0;
+		tcc-1 = &tcc1;
+		tcc-2 = &tcc2;
 	};
 
 	soc {
 		usb0: usb@41005000 {
 			compatible = "atmel,sam0-usb";
-			status = "disabled";
 			reg = <0x41005000 0x1000>;
 			interrupts = <7 0>;
+			status = "disabled";
+
 			num-bidir-endpoints = <8>;
 		};
 
@@ -24,6 +29,8 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x41004800 0x50>;
 			interrupts = <6 0>;
+			status = "disabled";
+
 			#dma-cells = <2>;
 		};
 
@@ -33,6 +40,7 @@
 			interrupts = <21 0>;
 			clocks = <&gclk 0x1d>, <&pm 0x20 14>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 		};
 
 		tcc0: tcc@42002000 {
@@ -41,6 +49,7 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 26>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -52,6 +61,7 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&pm 0x20 9>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <24>;
@@ -63,6 +73,7 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 27>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
