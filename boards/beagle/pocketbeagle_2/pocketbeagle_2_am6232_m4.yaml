@@ -1,0 +1,10 @@
+identifier: pocketbeagle_2/am6232/m4
+name: BeagleBoard.org PocketBeagle 2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: beagle
+supported:
+  - uart
