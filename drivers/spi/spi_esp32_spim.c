@@ -201,6 +201,40 @@ static int spi_esp32_init_dma(const struct device *dev)
 	return 0;
 }
 
+static int spi_esp32_deinit_dma(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+
+	spi_hal_deinit(&data->hal);
+
+	data->hal_config.dma_in = NULL;
+	data->hal_config.dma_out = NULL;
+	data->hal_config.dma_enabled = false;
+	data->hal_config.tx_dma_chan = 0;
+	data->hal_config.rx_dma_chan = 0;
+	data->hal_config.dmadesc_n = 0;
+	data->hal_config.dmadesc_rx = NULL;
+	data->hal_config.dmadesc_tx = NULL;
+
+#ifdef SOC_GDMA_SUPPORTED
+	gdma_ll_tx_disconnect_from_periph();
+	gdma_ll_rx_disconnect_from_periph();
+#endif /* SOC_GDMA_SUPPORTED */
+#ifdef CONFIG_SOC_SERIES_ESP32
+	/* Disonnect SPI and DMA*/
+	DPORT_CLEAR_PERI_REG_MASK(DPORT_SPI_DMA_CHAN_SEL_REG,
+				  GENMASK((cfg->dma_host + 1) * 2 + 1, (cfg->dma_host + 1) * 2));
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+	if (clock_control_off(cfg->clock_dev, (clock_control_subsys_t)cfg->dma_clk_src)) {
+		LOG_ERR("Could not disable DMA clock");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int spi_esp32_init(const struct device *dev)
 {
 	int err;
@@ -262,6 +296,48 @@ static int spi_esp32_init(const struct device *dev)
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
+}
+
+static int spi_esp32_deinit(const struct device *dev)
+{
+	int err;
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("spi device not ready");
+		return -ENODEV;
+	}
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, NULL);
+
+	spi_esp32_complete(dev, data, cfg->spi, 0);
+
+	err = spi_context_cs_deconfigure_all(&data->ctx);
+	if (err < 0) {
+		goto out;
+	}
+
+#ifdef CONFIG_SPI_ESP32_INTERRUPT
+	esp_intr_free(cfg->irq_source);
+#endif
+
+	if (cfg->dma_enabled) {
+		spi_esp32_deinit_dma(dev);
+	}
+
+	err = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+	if (err < 0) {
+		LOG_ERR("Error disabling SPI clock");
+		goto out;
+	}
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	err = 0;
+
+out:
+	return err;
 }
 
 static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
@@ -546,7 +622,7 @@ static DEVICE_API(spi, spi_api) = {
 		.clock_source = SPI_CLK_SRC_DEFAULT,	\
 	};	\
 		\
-	SPI_DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
+	SPI_DEVICE_DT_INST_DEINIT_DEFINE(idx, spi_esp32_init, spi_esp32_deinit, \
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
