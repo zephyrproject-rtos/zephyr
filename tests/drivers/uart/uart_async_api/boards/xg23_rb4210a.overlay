@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /*
+  * Connect EXP4 (PC0) and EXP6 (PC1) of the Expansion Pin header
+  */
+/ {
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,uart-pipe = &usart0;
+		/delete-property/ zephyr,display;
+	};
+};
+
+&pinctrl{
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PC1>; /* WPK EXP4 (PC1) */
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <EUSART1_RX_PC2>; /* WPK EXP6 (PC2) */
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA8>;
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <USART0_RX_PA9>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &eusart1 {
+	compatible = "silabs,eusart-uart";
+	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
+		<&dma0 DMA_REQSEL_EUSART1RXFL>;
+	dma-names = "tx", "rx";
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	/delete-property/ cs-gpios;
+};
+
+/delete-node/ &ls0xx_ls013b7dh03;
+/delete-node/ &mx25r80;
+
+&eusart0 {
+	status = "disabled";
+};
+
+&usart0 {
+	compatible = "silabs,usart-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
