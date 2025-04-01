@@ -1,0 +1,23 @@
+# Copyright 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Multi Channel SPI controller for OMAP and K3 SoCs
+
+compatible: "ti,omap-mcspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ti,spi-num-cs:
+    type: int
+    default: 1
+    description: |
+      Number of chipselects supported by controller
+
+  ti,d1-miso-d0-mosi:
+    type: boolean
+    description: |
+      Sets d0 as MOSI and d1 as MISO if true, vice versa otherwise.
