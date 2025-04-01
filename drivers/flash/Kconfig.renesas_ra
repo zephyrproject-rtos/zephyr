@@ -30,4 +30,13 @@ config DUAL_BANK_MODE
 	help
 	  Enable dual bank mode
 
+config CHECK_BEFORE_READING
+	bool "Verify area before reading it"
+	default $(dt_nodelabel_bool_prop,flash1,erased-undefined)
+	help
+	  Do a blank check flash command before reading an area.
+	  This feature prevents erroneous reading. Values read from an
+	  area of the data flash that has been erased but not programmed
+	  are undefined.
+
 endif # RA_FLASH_HP
