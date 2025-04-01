@@ -1264,3 +1264,9 @@ test_i2c_bmm350: bmm350@ac {
 	reg = <0xac>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_rrh46410: rrh46410@ad {
+	compatible = "renesas,rrh46410";
+	reg = <0xad>;
+	reset-gpios = <&test_gpio 0 0>;
+};
