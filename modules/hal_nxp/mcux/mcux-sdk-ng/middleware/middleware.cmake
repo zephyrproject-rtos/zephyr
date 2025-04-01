@@ -39,5 +39,3 @@ endif()
 add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
   ${CMAKE_CURRENT_BINARY_DIR}/usb
 )
-
-add_subdirectory_ifdef(CONFIG_BT_H4_NXP_CTLR ${CMAKE_CURRENT_LIST_DIR}/bt_controller)
