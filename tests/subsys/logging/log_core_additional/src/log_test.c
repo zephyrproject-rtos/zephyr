@@ -278,7 +278,7 @@ ZTEST(test_log_core_additional, test_log_early_logging)
 		LOG_WRN("log warn before backend active");
 		LOG_ERR("log error before backend active");
 
-		TC_PRINT("Activate backend with context");
+		TC_PRINT("Activate backend with context\n");
 		memset(&backend1_cb, 0, sizeof(backend1_cb));
 		backend1_cb.total_logs = 3;
 		log_backend_enable(&backend1, &backend1_cb, LOG_LEVEL_DBG);
@@ -382,7 +382,7 @@ ZTEST(test_log_core_additional, test_multiple_backends)
 {
 	int cnt;
 
-	TC_PRINT("Test multiple backends");
+	TC_PRINT("Test multiple backends\n");
 	/* enable both backend1 and backend2 */
 	log_setup(true);
 	STRUCT_SECTION_COUNT(log_backend, &cnt);
