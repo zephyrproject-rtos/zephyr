@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Pico Plus2 is pin-compatible with the RPi-Pico, so reuse. */
+/* Pico Plus2 is pin-compatible with the Raspberry Pi Pico, so reuse. */
 #include "rpi_pico.overlay"
