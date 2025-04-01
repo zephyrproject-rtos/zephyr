@@ -149,18 +149,11 @@ static bool instance_is_valid(const char *instance)
 	size_t instance_size;
 
 	if (instance == NULL) {
-		NET_DBG("instance is NULL");
-		return false;
+		/* Instance can be empty in case of query */
+		return true;
 	}
 
 	instance_size = strlen(instance);
-	if (instance_size < DNS_SD_INSTANCE_MIN_SIZE) {
-		NET_DBG("instance '%s' is too small (%zu, min: %u)",
-			instance, instance_size,
-			DNS_SD_INSTANCE_MIN_SIZE);
-		return false;
-	}
-
 	if (instance_size > DNS_SD_INSTANCE_MAX_SIZE) {
 		NET_DBG("instance '%s' is too big (%zu, max: %u)",
 			instance, instance_size,
@@ -179,7 +172,7 @@ static bool instance_is_valid(const char *instance)
 		}
 	}
 
-	return instance_size;
+	return true;
 }
 
 static bool service_is_valid(const char *service)
