@@ -94,15 +94,6 @@ const static struct device *udc_nrf_dev;
 #define NRF_USBD_COMMON_ISO_DEBUG 1
 #endif
 
-#ifndef NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG
-/* Also generate debug information for failed transfers.
- * It might be useful but may generate a lot of useless debug messages
- * in some library usages (for example when transfer is generated and the
- * result is used to check whatever endpoint was busy.
- */
-#define NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG 1
-#endif
-
 #ifndef NRF_USBD_COMMON_USE_WORKAROUND_FOR_ANOMALY_211
 /* Anomaly 211 - Device remains in SUSPEND too long when host resumes
  * a bus activity (sending SOF packets) without a RESUME condition.
@@ -215,25 +206,26 @@ static volatile bool m_bus_suspend;
 /* Data Stage direction used to map EP0DATADONE to actual endpoint */
 static uint8_t m_ep0_data_dir;
 
-/**
- * @brief Mark endpoint readiness for DMA transfer.
+/* Set bit indicates that endpoint is ready for DMA transfer.
  *
- * Bits in this variable are cleared and set in interrupts.
- * 1 means that endpoint is ready for DMA transfer.
- * 0 means that DMA transfer cannot be performed on selected endpoint.
+ * OUT endpoint is ready when DATA packet has been ACKed by device.
+ * IN endpoint is ready when IN endpoint buffer has no pending data.
+ *
+ * When endpoint is ready it responds with NAK to any further traffic.
  */
 static uint32_t m_ep_ready;
 
-/**
- * @brief Mark endpoint with prepared data to transfer by DMA.
- *
- * This variable can be set in interrupt context or within critical section.
- * It would be cleared only from USBD interrupt.
- *
- * Mask prepared USBD data for transmission.
- * It is cleared when no more data to transmit left.
+/* Set bit indicates that endpoint is waiting for DMA transfer, i.e. there is
+ * USB stack buffer queued for the transfer.
  */
 static uint32_t m_ep_dma_waiting;
+
+/* Set bit indicates that endpoint is armed.
+ *
+ * OUT endpoint armed means that valid DATA packet from host will be ACKed.
+ * IN endpoint armed means that device will respond with DATA packet.
+ */
+static uint32_t m_ep_armed;
 
 /* Semaphore to guard EasyDMA access.
  * In USBD there is only one DMA channel working in background, and new transfer
@@ -405,6 +397,35 @@ static inline void usbd_dma_pending_clear(void)
 	}
 }
 
+static void disarm_endpoint(uint8_t ep)
+{
+	if (ep == USB_CONTROL_EP_OUT || ep == USB_CONTROL_EP_IN) {
+		/* EP0 cannot be disarmed. This is not a problem because SETUP
+		 * token automatically disarms EP0 IN and EP0 OUT.
+		 */
+		return;
+	}
+
+	if (NRF_USBD_COMMON_EP_IS_ISO(ep)) {
+		/* Isochronous endpoints cannot be disarmed */
+		return;
+	}
+
+	if (!(m_ep_armed & BIT(ep2bit(ep)))) {
+		/* Endpoint is not armed, nothing to do */
+		return;
+	}
+
+	m_ep_armed &= ~BIT(ep2bit(ep));
+
+	/* Disarm the endpoint if there is any data buffered. For OUT endpoints
+	 * disarming means that the endpoint won't ACK (will NAK) DATA packet.
+	 */
+	*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x800)) = 0x7B6 +
+		2 * (USB_EP_GET_IDX(ep) - 1) + USB_EP_DIR_IS_OUT(ep) * 0x10;
+	*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)) |= BIT(1);
+}
+
 /**
  * @brief Abort pending transfer on selected endpoint.
  *
@@ -422,43 +443,24 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 {
 	unsigned int irq_lock_key = irq_lock();
 
-	if (NRF_USBD_COMMON_EP_IS_OUT(ep)) {
-		/* Host -> Device */
-		if ((~m_ep_dma_waiting) & (1U << ep2bit(ep))) {
-			/* If the bit in m_ep_dma_waiting in cleared - nothing would be
-			 * processed inside transfer processing
-			 */
-			nrf_usbd_legacy_transfer_out_drop(ep);
+	disarm_endpoint(ep);
+
+	/* Do not process any data until endpoint is enqueued again */
+	m_ep_dma_waiting &= ~BIT(ep2bit(ep));
+
+	if (!NRF_USBD_COMMON_EP_IS_ISO(ep)) {
+		if (NRF_USBD_COMMON_EP_IS_OUT(ep)) {
+			m_ep_ready &= ~BIT(ep2bit(ep));
 		} else {
-			m_ep_dma_waiting &= ~(1U << ep2bit(ep));
-			m_ep_ready &= ~(1U << ep2bit(ep));
-		}
-	} else {
-		if (!NRF_USBD_COMMON_EP_IS_ISO(ep)) {
-			/* Workaround: Disarm the endpoint if there is any data buffered. */
-			if (ep != NRF_USBD_COMMON_EPIN0) {
-				*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x800)) =
-					0x7B6 + (2u * (NRF_USBD_COMMON_EP_NUM(ep) - 1));
-				uint8_t temp =
-					*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804));
-				temp |= (1U << 1);
-				*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)) |= temp;
-				(void)(*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)));
-			} else {
-				*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x800)) = 0x7B4;
-				uint8_t temp =
-					*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804));
-				temp |= (1U << 2);
-				*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)) |= temp;
-				(void)(*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)));
-			}
-		}
-		if ((m_ep_dma_waiting | (~m_ep_ready)) & (1U << ep2bit(ep))) {
-			/* Device -> Host */
-			m_ep_dma_waiting &= ~(1U << ep2bit(ep));
-			m_ep_ready |= 1U << ep2bit(ep);
+			m_ep_ready |= BIT(ep2bit(ep));
 		}
 	}
+
+	/* Disarming endpoint is inherently a race between the driver and host.
+	 * Clear EPDATASTATUS to prevent interrupt handler from processing the
+	 * data if disarming lost the race (i.e. host finished first).
+	 */
+	NRF_USBD->EPDATASTATUS = BIT(ep2bit(ep));
 
 	irq_unlock(irq_lock_key);
 }
@@ -529,7 +531,6 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 	/* DMA finished, track if total bytes transferred is even or odd */
 	m_dma_odd ^= usbd_ep_amount_get(ep) & 1;
 	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
 
 	if ((m_ep_dma_waiting & BIT(ep2bit(ep))) == 0) {
 		if (NRF_USBD_COMMON_EP_IS_OUT(ep) || (ep == NRF_USBD_COMMON_EPIN8)) {
@@ -543,6 +544,13 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 		/* Allow receiving next OUT Data Stage chunk */
 		NRF_USBD->TASKS_EP0RCVOUT = 1;
 	}
+
+	if (NRF_USBD_COMMON_EP_IS_IN(ep) ||
+	    (ep >= NRF_USBD_COMMON_EPOUT1 && ep <= NRF_USBD_COMMON_EPOUT7)) {
+		m_ep_armed |= BIT(ep2bit(ep));
+	}
+
+	k_sem_give(&dma_available);
 }
 
 static void ev_sof_handler(void)
@@ -555,6 +563,8 @@ static void ev_sof_handler(void)
 		iso_ready_mask |= (1U << ep2bit(NRF_USBD_COMMON_EPOUT8));
 	}
 	m_ep_ready |= iso_ready_mask;
+
+	m_ep_armed &= ~USBD_EPISO_BIT_MASK;
 
 	udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 }
@@ -591,6 +601,9 @@ static void ev_setup_handler(void)
 			      (1U << ep2bit(NRF_USBD_COMMON_EPIN0)));
 	m_ep_ready &= ~(1U << ep2bit(NRF_USBD_COMMON_EPOUT0));
 	m_ep_ready |= 1U << ep2bit(NRF_USBD_COMMON_EPIN0);
+
+	m_ep_armed &= ~(BIT(ep2bit(USB_CONTROL_EP_OUT)) |
+			BIT(ep2bit(USB_CONTROL_EP_IN)));
 
 	k_event_post(&drv_evt, BIT(UDC_NRF_EVT_SETUP));
 }
@@ -639,7 +652,12 @@ static void ev_epdata_handler(uint32_t dataepstatus)
 		LOG_DBG("USBD event: EndpointEPStatus: %x", dataepstatus);
 
 		/* Mark endpoints ready for next DMA access */
-		m_ep_ready |= dataepstatus;
+		m_ep_ready |= dataepstatus & ~USBD_EPISO_BIT_MASK;
+
+		/* IN endpoints are no longer armed after host read the data.
+		 * OUT endpoints are no longer armed before DMA reads the data.
+		 */
+		m_ep_armed &= ~(dataepstatus & ~USBD_EPISO_BIT_MASK);
 
 		/* Peripheral automatically enables endpoint for data reception
 		 * after OUT endpoint DMA transfer. This makes the device ACK
@@ -995,6 +1013,7 @@ static void nrf_usbd_legacy_enable(void)
 
 	m_ep_ready = (((1U << NRF_USBD_COMMON_EPIN_CNT) - 1U) << NRF_USBD_COMMON_EPIN_BITPOS_0);
 	m_ep_dma_waiting = 0;
+	m_ep_armed = 0;
 	m_dma_odd = 0;
 	__ASSERT_NO_MSG(k_sem_count_get(&dma_available) == 1);
 	usbd_dma_pending_clear();
@@ -1176,15 +1195,6 @@ static void nrf_usbd_legacy_ep_enable(nrf_usbd_common_ep_t ep)
 	} else {
 		NRF_USBD->EPOUTEN |= BIT(ep_num);
 	}
-
-	if (ep >= NRF_USBD_COMMON_EPOUT1 && ep <= NRF_USBD_COMMON_EPOUT7) {
-		unsigned int irq_lock_key = irq_lock();
-
-		nrf_usbd_legacy_transfer_out_drop(ep);
-		m_ep_dma_waiting &= ~(1U << ep2bit(ep));
-
-		irq_unlock(irq_lock_key);
-	}
 }
 
 static void nrf_usbd_legacy_ep_disable(nrf_usbd_common_ep_t ep)
@@ -1209,29 +1219,39 @@ static void nrf_usbd_legacy_ep_disable(nrf_usbd_common_ep_t ep)
 	usbd_int_rise();
 }
 
-static nrfx_err_t nrf_usbd_legacy_ep_transfer(nrf_usbd_common_ep_t ep)
+static void nrf_usbd_start_transfer(uint8_t ep)
 {
-	nrfx_err_t ret;
 	const uint8_t ep_bitpos = ep2bit(ep);
 	unsigned int irq_lock_key = irq_lock();
 
-	if ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
-		   (1U << ep_bitpos)) {
-		/* IN (Device -> Host) transfer has to be transmitted out to allow new transmission
-		 */
-		ret = NRFX_ERROR_BUSY;
-		if (NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG) {
-			LOG_DBG("Transfer failed: EP is busy");
+	if (ep >= NRF_USBD_COMMON_EPOUT1 && ep <= NRF_USBD_COMMON_EPOUT7) {
+		if (!(m_ep_armed & BIT(ep_bitpos)) &&
+		    !(m_ep_ready & BIT(ep_bitpos))) {
+			/* Allow receiving DATA packet on OUT endpoint */
+			NRF_USBD->SIZE.EPOUT[NRF_USBD_COMMON_EP_NUM(ep)] = 0;
+			m_ep_armed |= BIT(ep_bitpos);
 		}
-	} else {
-		m_ep_dma_waiting |= 1U << ep_bitpos;
-		ret = NRFX_SUCCESS;
-		usbd_int_rise();
+	} else if (ep == NRF_USBD_COMMON_EPIN8) {
+		/* ISO IN endpoint can be already armed if application is double
+		 * buffering ISO IN data. When the endpoint is already armed it
+		 * must not be ready for next DMA transfer (until SOF).
+		 */
+		__ASSERT(!(m_ep_armed & BIT(ep_bitpos)) ||
+			 !(m_ep_ready & BIT(ep_bitpos)),
+			 "ISO IN must not be armed and ready");
+	} else if (NRF_USBD_COMMON_EP_IS_IN(ep)) {
+		/* IN endpoint must not have data armed */
+		__ASSERT(!(m_ep_armed & BIT(ep_bitpos)),
+			 "ep 0x%02x already armed", ep);
 	}
 
-	irq_unlock(irq_lock_key);
+	__ASSERT(!(m_ep_dma_waiting & BIT(ep_bitpos)),
+		 "ep 0x%02x already waiting", ep);
 
-	return ret;
+	m_ep_dma_waiting |= BIT(ep_bitpos);
+	usbd_int_rise();
+
+	irq_unlock(irq_lock_key);
 }
 
 static size_t nrf_usbd_legacy_epout_size_get(nrf_usbd_common_ep_t ep)
@@ -1325,15 +1345,8 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
-		nrfx_err_t err;
-
-		err = nrf_usbd_legacy_ep_transfer(ep);
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
-			/* REVISE: remove from endpoint queue? ASSERT? */
-		} else {
-			udc_ep_set_busy(ep_cfg, true);
-		}
+		nrf_usbd_start_transfer(ep);
+		udc_ep_set_busy(ep_cfg, true);
 	}
 }
 
@@ -1428,15 +1441,8 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
-		nrfx_err_t err;
-
-		err = nrf_usbd_legacy_ep_transfer(ep);
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
-			/* REVISE: remove from endpoint queue? ASSERT? */
-		} else {
-			udc_ep_set_busy(ep_cfg, true);
-		}
+		nrf_usbd_start_transfer(ep);
+		udc_ep_set_busy(ep_cfg, true);
 	} else {
 		LOG_DBG("ep 0x%02x waiting, queue is empty", ep);
 	}
