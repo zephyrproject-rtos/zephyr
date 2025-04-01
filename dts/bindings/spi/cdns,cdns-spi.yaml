@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SPI IP node
+
+compatible: "cdns,spi-r1p6"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: Input reference clock for spi core
+
+  cdns,num-ss-bits:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    description: Number of slave select bits implemented
+
+  is-decoded-cs:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: Decoded slave implemented or not
