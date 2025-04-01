@@ -163,9 +163,9 @@ class TestPlan:
             inherit = level.get('inherits', [])
             _level = self.get_level(level['name'])
             if inherit:
-                for inherted_level in inherit:
-                    _inherited = self.get_level(inherted_level)
-                    assert _inherited, "Unknown inherited level {inherted_level}"
+                for inherited_level in inherit:
+                    _inherited = self.get_level(inherited_level)
+                    assert _inherited, "Unknown inherited level {inherited_level}"
                     _inherited_scenarios = _inherited.scenarios
                     level_scenarios = _level.scenarios if _level else []
                     level_scenarios.extend(_inherited_scenarios)
