@@ -323,25 +323,63 @@ state of the software when it was released.
 Long Term Support and Maintenance
 ++++++++++++++++++++++++++++++++++
 
-A Zephyr LTS release is published every 2 years and is branched and maintained
-independently from the main tree for at least 2.5 years after it was
-released. Support and maintenance for an LTS release stops at least half a year
-after the following LTS release is published.
+The Zephyr Project Long Term Support (LTS) Lifecycle is designed to have two
+supported LTS releases available for use at any point in time with a reasonable
+support window for product lifecycle support.
+
+A new Zephyr LTS release is published approximately every 2.5 to 3 years. Each LTS
+release is branched and maintained independently from the main development tree
+for an extended period, typically around 5 years.
+
+To ensure continuous support and facilitate migration, the support duration for an
+LTS release (LTS <n>) is maintained, at a minimum, until the *start* of the
+initial release of the second subsequent LTS release (LTS <n+2>). The Zephyr
+project will schedule a final maintenance release for LTS <n> at the same time or
+shortly after the initial release of LTS <n+2>, at which point the Project shall
+end official support for LTS <n>. This strategy ensures a significant overlap
+(roughly 2 years) between consecutive LTS releases.
 
 .. figure:: lts.svg
     :align: center
-    :alt: Long Term Support Release
+    :alt: Long Term Support Release Lifecycle
     :figclass: align-center
     :width: 80%
 
-    Long Term Support Release
+    Long Term Support Release Lifecycle (Illustrates ~3 year cycle, ~5 year support, ~2 year overlap)
+    *(Note: This diagram needs to be updated to reflect the revised LTS cycle, duration, and overlap described here.)*
 
-Changes and fixes flow in both directions. However, changes from main branch to an
-LTS branch will be limited to fixes that apply to both branches and for existing
-features only.
+Changes and fixes generally flow from the main development branch to active LTS
+branches, limited to fixes applicable to both and relevant for existing LTS
+features. Critical fixes developed specifically for an LTS branch should also be
+ported to the main branch.
 
-All fixes for an LTS branch that apply to the mainline tree shall be submitted to
-mainline tree as well.
+*   LTS <n>: The current LTS release.
+*   LTS <n+1>: The LTS release following LTS <n>.
+*   LTS <n+2>: The LTS release following LTS <n+1>.
+
+LTS Support Phases
+++++++++++++++++++
+
+During the approximately 5-year lifetime of an LTS release, the level of support
+provided by the Zephyr Project transitions through distinct phases:
+
+* **Phase 1 (Approx. Years 0-2): Full Support**
+    * Receives general bug fixes and security fixes.
+    * Includes fixes for platform/driver issues within the scope of the LTS.
+* **Phase 2 (Approx. Years 3-5): Maintenance Support**
+    * Focus shifts primarily to Security fixes and critical OS Stability fixes.
+    * General bug fixes and platform/driver fixes are typically not backported unless critical or related to security/stability.
+*   **Phase 3 (Beyond Year 5): Optional Extended Support**
+    * Official support from the Zephyr Project ends.
+    * Extended support may be available through third-party vendors or commercial support providers (details TBD and outside the scope of direct Zephyr Project maintenance).
+
+.. figure:: lts_support_phases.png
+    :align: center
+    :alt: LTS Support Phases
+    :figclass: align-center
+    :width: 80%
+
+    LTS Support Phases Timeline *(Note: A suitable diagram illustrating these phases, potentially based on Slide 4 of the PDF, should be created and added here as `lts_support_phases.png`)*
 
 Auditable Code Base
 ===================

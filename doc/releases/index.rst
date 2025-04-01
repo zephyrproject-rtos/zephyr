@@ -23,21 +23,29 @@ Release Life Cycle and Maintenance
 Periodic Releases
 =================
 
-The Zephyr project provides periodic releases every 4 months leading to the
-long term support releases approximately every 2 years. Periodic and non-LTS
-releases are maintained with updates, bug fixes and security related updates
-for at least two cycles, meaning that the project supports the most recent two
-releases in addition to the most recent LTS.
+The Zephyr project provides periodic releases every 4 months. These releases
+lead up to the long term support (LTS) releases, which occur approximately
+every 2.5 to 3 years. Periodic, non-LTS releases are maintained with critical
+bug fixes and security related updates for at least two release cycles (approximately 8 months).
+The project generally supports the two most recent periodic releases in addition
+to all currently active LTS releases
 
-Long Term Support and Maintenance
-=================================
+Long Term Support (LTS)
+=======================
 
-A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
-published every 2 years and is branched and maintained independently from the
-main tree for at least 2.5 years after it was released.
+A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release represents
+a stable baseline recommended for product development. A new LTS version is
+published approximately every 2.5 to 3 years.
 
-Support and maintenance for an LTS release stops at least half a year
-after the following LTS release is published.
+Each LTS release is branched and maintained independently from the main
+development tree for an extended period, **approximately 5 years** from its
+initial release date. The goal is to always have two supported LTS releases
+available concurrently.
+
+To achieve this overlap, support and maintenance for an LTS release (LTS <n>)
+continue, at a minimum, until the **initial release of the second subsequent LTS
+release (LTS <n+2>)**. At that point, a final maintenance rollup for LTS <n>
+may be provided, and official support from the Zephyr Project ends.
 
 Security Fixes
 ==============
@@ -45,7 +53,7 @@ Security Fixes
 Each security issue fixed within Zephyr is backported or submitted to the
 following releases:
 
-- Currently supported Long Term Support (LTS) release.
+- Currently supported Long Term Support (LTS) release(s).
 
 - The most recent two releases.
 
