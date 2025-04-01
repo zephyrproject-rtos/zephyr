@@ -4,5 +4,5 @@
  * Copyright (c) 2024 TOKITA Hiroshi
  */
 
-/* Pico Plus2 is pin-compatible with the RPi-Pico2, so reuse. */
+/* Pico Plus2 is pin-compatible with the Raspberry Pi Pico 2, so reuse. */
 #include "rpi_pico2_rp2350a_m33.overlay"
