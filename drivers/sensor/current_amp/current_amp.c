@@ -173,6 +173,10 @@ static int current_init(const struct device *dev)
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),             \
 				     &current_amp_##inst##_data, &current_amp_##inst##_config,     \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);      \
+                                                                                                   \
+	BUILD_ASSERT((DT_INST_PROP(inst, zero_current_voltage_mv) == 0) ||                         \
+			     (DT_INST_PROP(inst, sense_resistor_milli_ohms) == 1),                 \
+		     "zero_current_voltage_mv requires sense_resistor_milli_ohms == 1");
 
 DT_INST_FOREACH_STATUS_OKAY(CURRENT_SENSE_AMPLIFIER_INIT)
