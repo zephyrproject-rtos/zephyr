@@ -3,7 +3,9 @@
 
 # Common fields for Nordic nRF family SPI peripherals
 
-include: [spi-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
+include:
+  - pinctrl-device.yaml
+  - nordic-clockpin.yaml
 
 properties:
   reg:
@@ -26,8 +28,11 @@ properties:
       property must be set at SoC level DTS files.
 
   overrun-character:
+    type: int
     default: 0xff
     description: |
+      The overrun character (ORC) is used when all bytes from the TX buffer
+      are sent, but the transfer continues due to RX.
       Configurable, defaults to 0xff (line high), the most common value used
       in SPI transfers.
 
