@@ -277,7 +277,6 @@ static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoin
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
 	fie->discrete.numerator = 1;
 	fie->discrete.denominator = mode->fps;
-	fie->index++;
 
 	return mode->fps == 0;
 }
