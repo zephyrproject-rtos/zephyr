@@ -70,10 +70,8 @@ The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
 ******************************
-The following CVEs are addressed by this release:
 
-More detailed information can be found in:
-https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+The following CVEs are addressed by this release:
 
 * :cve:`2025-1673` `Zephyr project bug tracker GHSA-jjhx-rrh4-j8mx
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjhx-rrh4-j8mx>`_
@@ -83,6 +81,9 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 * :cve:`2025-1675` `Zephyr project bug tracker GHSA-2m84-5hfw-m8v4
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2m84-5hfw-m8v4>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 API Changes
 ***********
