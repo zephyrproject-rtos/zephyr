@@ -158,12 +158,12 @@ will only boot if the authentication of its flash content is successful.
 The following configuration options can be used to build for a device which has been provisioned
 to SECURE LCS and configured to use an encrypted flash interface:
 
-- ``CONFIG_INFINEON_SECURE_LCS``: Used if the target device is in SECURE LCS
-- ``CONFIG_INFINEON_SECURE_POLICY``: Path to the policy JSON file, which was created for
-  provisioning the device to SECURE LCS (refer to section 3.2 "Key creation"
+- ``CONFIG_INFINEON_SECURE_LCS=y``: Enable if the target device is in SECURE LCS
+- ``CONFIG_INFINEON_SECURE_POLICY="path/to/policy_secure.json"``: Path to the policy JSON file,
+  which was created for provisioning the device to SECURE LCS (refer to section 3.2 "Key creation"
   of `AN239590 Provision CYW20829 to SECURE LCS`_)
-- ``CONFIG_INFINEON_SMIF_ENCRYPTION``: Used if the device was configured to use an encrypted flash
-  interface when provisioned to SECURE LCS.
+- ``CONFIG_INFINEON_SMIF_ENCRYPTION=y``: Enable to use encrypted flash interface when provisioned to
+  SECURE LCS.
 
 Here is an example for building the :zephyr:code-sample:`blinky` sample application for SECURE LCS.
 

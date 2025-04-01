@@ -28,63 +28,34 @@ if(CONFIG_INFINEON_SECURE_LCS OR CONFIG_BOOTLOADER_MCUBOOT)
     message("-- Found cysecuretools: ${CYSECURETOOLS}")
   endif()
 
+  set(default_policy)
+  set(default_policy_name)
   # Cysecuretools policy.
   if(NOT CONFIG_INFINEON_SECURE_POLICY)
     # Get default cysecuretools policy
     if(CONFIG_INFINEON_SECURE_LCS)
       message(INFO "CONFIG_INFINEON_SECURE_POLICY was not defined.")
-    endif()
-
-    set(default_policy)
-    if(CONFIG_INFINEON_SECURE_LCS)
       set(default_policy_name policy_secure.json)
     else()
       set(default_policy_name policy_no_secure.json)
     endif()
+  endif()
 
-    # Try to find policy file in project folder
-    if("${default_policy}" STREQUAL "")
-      if(EXISTS ${APPLICATION_SOURCE_DIR}/policy/${default_policy_name})
-        set(default_policy ${APPLICATION_SOURCE_DIR}/policy/${default_policy_name})
-      endif()
-    endif()
+  find_file(
+    default_policy
+    NAMES
+        ${CONFIG_INFINEON_SECURE_POLICY}
+        ${default_policy_name}
+    PATHS
+        ${APPLICATION_SOURCE_DIR}
+        ${ZEPHYR_BASE}
+    NO_DEFAULT_PATH
+  )
 
-    # Try to find policy file in Zephyr folder
-    if("${default_policy}" STREQUAL "")
-      if(EXISTS ${ZEPHYR_BASE}/policy/${default_policy_name})
-        set(default_policy ${ZEPHYR_BASE}/policy/${default_policy_name})
-      endif()
-    endif()
-
-    # Using default policy from cysecuretools targets
-    if("${default_policy}" STREQUAL "")
-      set(default_policy "${Python3_SITELIB}/cysecuretools/targets/cyw20829/policy/${default_policy_name}")
-    endif()
-  else()
-    if(IS_ABSOLUTE ${CONFIG_INFINEON_SECURE_POLICY})
-      if(NOT EXISTS ${CONFIG_INFINEON_SECURE_POLICY})
-
-        message(FATAL_ERROR "Can't find policy: ${CONFIG_INFINEON_SECURE_POLICY}. "
-                  "Please check if path in CONFIG_INFINEON_SECURE_POLICY is correct."
-            )
-      endif()
-      set(default_policy ${CONFIG_INFINEON_SECURE_POLICY})
-    else()
-
-      # Try to find policy file in project folder
-      if("${default_policy}" STREQUAL "")
-        if(EXISTS ${APPLICATION_SOURCE_DIR}/${CONFIG_INFINEON_SECURE_POLICY})
-          set(default_policy ${APPLICATION_SOURCE_DIR}/${CONFIG_INFINEON_SECURE_POLICY})
-        endif()
-      endif()
-
-      # Try to find policy file in Zephyr folder
-      if("${default_policy}" STREQUAL "")
-        if(EXISTS ${ZEPHYR_BASE}/${CONFIG_INFINEON_SECURE_POLICY})
-          set(default_policy ${ZEPHYR_BASE}/${CONFIG_INFINEON_SECURE_POLICY})
-        endif()
-      endif()
-    endif()
+  if(NOT default_policy)
+      message(FATAL_ERROR "Can't find policy:${CONFIG_INFINEON_SECURE_POLICY}"
+              "/${default_policy_name}"
+              "Checked locations: ${APPLICATION_SOURCE_DIR}, ${ZEPHYR_BASE}")
   endif()
 
   set(cysecuretools_policy ${default_policy} CACHE PATH "cysecuretools policy")
