@@ -15,6 +15,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "video_emul_imager.h"
+
 LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 
 struct emul_rx_config {
@@ -146,9 +148,15 @@ static void emul_rx_worker(struct k_work *work)
 	const struct emul_rx_config *cfg = dev->config;
 	struct video_format *fmt = &data->fmt;
 	struct video_buffer *vbuf = vbuf;
+	size_t pitch;
+	const uint8_t *linebuffer;
 
 	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
 		fmt->pixelformat, fmt->width, fmt->height);
+
+	linebuffer = video_emul_imager_get_linebuffer(cfg->source_dev, &pitch);
+	__ASSERT_NO_MSG(pitch == fmt->pitch);
+	__ASSERT_NO_MSG(linebuffer != NULL);
 
 	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = fmt->pitch * fmt->height;
@@ -161,7 +169,7 @@ static void emul_rx_worker(struct k_work *work)
 		 * the whole frame. vbuf->size is already checked in emul_rx_enqueue().
 		 */
 		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
-			memcpy(vbuf->buffer + i, cfg->source_dev->data, fmt->pitch);
+			memcpy(vbuf->buffer + i, linebuffer, fmt->pitch);
 		}
 
 		/* Once the buffer is completed, submit it to the video buffer */
