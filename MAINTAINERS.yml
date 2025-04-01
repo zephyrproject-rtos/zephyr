@@ -3455,19 +3455,23 @@ ADI Platforms:
     - microbuilder
   files:
     - boards/adi/
+    - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
     - drivers/ethernet/eth_adin*
+    - drivers/ethernet/phy/phy_adin*
     - drivers/mdio/mdio_adin*
-    - drivers/regulator/regulator_adp5360*
     - drivers/sensor/adi/
+    - drivers/stepper/adi_tmc/
     - dts/arm/adi/
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
     - soc/adi/
+  files-regex:
+    - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
   labels:
     - "platform: ADI"
 
