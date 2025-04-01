@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_lpspi_common, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 #include <fsl_lpspi.h>
@@ -61,9 +61,9 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev)
 	}
 }
 
-int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
+int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct lpspi_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -103,8 +103,8 @@ static inline int lpspi_validate_xfer_args(const struct spi_config *spi_cfg)
 
 int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	bool already_configured = spi_context_configured(ctx, spi_cfg);
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -198,8 +198,8 @@ static void lpspi_module_system_init(LPSPI_Type *base)
 int spi_nxp_init_common(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	int err = 0;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
