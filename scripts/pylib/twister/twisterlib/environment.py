@@ -410,8 +410,9 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     )
 
     parser.add_argument("--level", action="store",
-        help="Test level to be used. By default, no levels are used for filtering "
-             "and do the selection based on existing filters.")
+        help="Test level defined in --test-config to choose. "
+             "By default, test level is not used for filtering "
+             "and test selection is based on other filters.")
 
     parser.add_argument(
         "--device-serial-baud", action="store", default=None,

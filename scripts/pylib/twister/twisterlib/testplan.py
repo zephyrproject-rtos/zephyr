@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2024 Intel Corporation
+# Copyright (c) 2018-2025 Intel Corporation
 # Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -856,10 +856,7 @@ class TestPlan:
                 if self.options.level:
                     tl = self.get_level(self.options.level)
                     if tl is None:
-                        instance.add_filter(
-                            f"Unknown test level '{self.options.level}'",
-                            Filters.TESTPLAN
-                        )
+                        raise TwisterRuntimeError(f"Unknown test level '{self.options.level}'")
                     else:
                         planned_scenarios = tl.scenarios
                         if (
