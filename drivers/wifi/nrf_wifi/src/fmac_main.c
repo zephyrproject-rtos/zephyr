@@ -582,6 +582,13 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	unsigned int fw_ver = 0;
 
+#if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
+	defined(CONFIG_NRF70_SYSTEM_MODE)
+	unsigned int alt_swctrl1_function_bt_coex_status1 =
+			(~CONFIG_NRF70_SR_COEX_SWCTRL1_OUTPUT) & 0x1;
+	unsigned int invert_bt_coex_grant_output = CONFIG_NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW;
+#endif /* CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL && CONFIG_NRF70_SYSTEM_MODE */
+
 	rpu_ctx_zep = &drv_priv_zep->rpu_ctx_zep;
 
 	rpu_ctx_zep->drv_priv_zep = drv_priv_zep;
@@ -624,6 +631,18 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 				  &tx_pwr_ceil_params);
 
 	configure_board_dep_params(&board_params);
+
+#if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
+	defined(CONFIG_NRF70_SYSTEM_MODE)
+	LOG_INF("Configuring SLEEP CTRL GPIO control register\n");
+	status = nrf_wifi_coex_config_sleep_ctrl_gpio_ctrl(rpu_ctx_zep->rpu_ctx,
+			alt_swctrl1_function_bt_coex_status1,
+			invert_bt_coex_grant_output);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: Failed to configure GPIO control register", __func__);
+		goto err;
+	}
+#endif /* CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL  && CONFIG_NRF70_SYSTEM_MODE */
 
 #ifdef CONFIG_NRF70_RADIO_TEST
 	status = nrf_wifi_rt_fmac_dev_init(rpu_ctx_zep->rpu_ctx,

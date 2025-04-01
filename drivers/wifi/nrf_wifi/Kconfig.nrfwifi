@@ -182,6 +182,18 @@ config NRF70_SR_COEX_RF_SWITCH
 	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
 	  If this GPIO is de-asserted (0), the SR side RF switch is connected to the SR side (separate antenna).
 
+config NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL
+	bool "Configuration of GPIO control for coexistence"
+	default y
+
+config NRF70_SR_COEX_SWCTRL1_OUTPUT
+	int "Configure SWCTRIL1 as output"
+	default 0
+
+config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
+	int "Configure BT grant active low"
+	default 1
+
 config NRF70_WORKQ_STACK_SIZE
 	int "Stack size for workqueue"
 	default 4096
