@@ -292,15 +292,25 @@
  * the context save handle in A1 as it's first argument.
  */
 .macro CROSS_STACK_CALL
-	mov a6, a3		/* place "new sp" in the next frame's A2 */
-	mov a10, a1             /* pass "context handle" in 2nd frame's A2 */
-	mov a3, a1		/* stash it locally in A3 too */
-	mov a11, a2		/* handler in 2nd frame's A3, next frame's A7 */
+	/* Since accessing A4-A11 may trigger window overflows so
+	 * we need to setup A0 and A1 correctly before putting
+	 * the function arguments for the next two callx4 into
+	 * A6, A10 and A11. So stach the "context handle" into
+	 * ZSR_EPC, which is usable for now similar to ZSR_EPS.
+	 */
+	wsr.ZSR_EPC a1
+	rsync
 
 	/* Recover the interrupted SP from the BSA */
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
+
+	mov a6, a3		/* place "new sp" in the next frame's A2 */
+
+	rsr.ZSR_EPC a3		/* restore saved "context handle" in A3 */
+	mov a10, a3             /* pass "context handle" in 2nd frame's A2 */
+	mov a11, a2		/* handler in 2nd frame's A3, next frame's A7 */
 
 	call4 _xstack_call0_\@
 	mov a1, a3		/* restore original SP */
