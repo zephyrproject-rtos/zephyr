@@ -325,6 +325,9 @@ graphviz_dot_args = [
     "-Ncolor=gray60",
     "-Nfontcolor=gray25",
     "-Ecolor=gray60",
+    "-Gfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Nfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Efontname=SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,Courier,monospace",
 ]
 
 # -- Options for sphinx_copybutton ----------------------------------------
