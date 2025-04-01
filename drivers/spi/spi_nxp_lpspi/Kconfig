@@ -1,4 +1,4 @@
-# Copyright 2018, 2024 NXP
+# Copyright 2018, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_MCUX_LPSPI
@@ -8,24 +8,32 @@ config SPI_MCUX_LPSPI
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
-	  Enable support for NXP LPSPI.
+	  Enable driver support for NXP LPSPI.
 
 if SPI_MCUX_LPSPI
 
 config SPI_MCUX_LPSPI_DMA
-	bool "MCUX LPSPI SPI DMA Support"
+	bool "NXP LPSPI DMA-based Driver"
 	default y
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
 	help
-	  Enable the SPI DMA mode for SPI instances
-	  that enable dma channels in their device tree node.
+	  Enable DMA-based transfers for LPSPI peripherals
+	  that have a dmas property specified in their DT node.
+	  The DMA based driver prioritizes bandwidth over latency, due to
+	  DMA being more efficient for larger data transfers, to avoid CPU
+	  having to be utilized to do the work. However, setting up a DMA
+	  transfer is more complicated setup than just starting the transfer
+	  immediately with CPU, so there could be more latency between
+	  the point of requesting a transfer and when it actually starts.
 
 config SPI_MCUX_LPSPI_CPU
-	bool "NXP MCUX LPSPI driver"
+	bool "NXP LPSPI CPU-based driver"
 	default y
 	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_MCUX_LPSPI_DMA
 	help
-	  Use the CPU-based LPSPI driver.
+	  Enable "normal" CPU based SPI driver for LPSPI.
+	  This has lower latency than DMA-based driver but over the
+	  longer transfers will likely have less bandwidth and use more CPU time.
 
 endif # SPI_MCUX_LPSPI

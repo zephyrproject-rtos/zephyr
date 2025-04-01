@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +26,10 @@
 #define LPSPI_INTERRUPT_BITS GENMASK(8, 13)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
-#define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
-#define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
+#define DEV_CFG(_dev)  ((const struct lpspi_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct lpspi_data *)(_dev)->data)
 
-struct spi_mcux_config {
+struct lpspi_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -45,7 +45,7 @@ struct spi_mcux_config {
 	uint8_t irqn;
 };
 
-struct spi_mcux_data {
+struct lpspi_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
 	struct spi_context ctx;
@@ -66,33 +66,33 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 int spi_nxp_init_common(const struct device *dev);
 
 /* common api function for now */
-int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg);
+int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg);
 
 void lpspi_wait_tx_fifo_empty(const struct device *dev);
 
-#define SPI_MCUX_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)                                                     \
+#define SPI_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)                                                     \
 	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)), DEVICE_DT_INST_GET(n),     \
 				      LP_FLEXCOMM_PERIPH_LPSPI, lpspi_isr);
 
-#define SPI_MCUX_LPSPI_IRQ_FUNC_DISTINCT(n)                                                        \
+#define SPI_LPSPI_IRQ_FUNC_DISTINCT(n)                                                        \
 	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), lpspi_isr, DEVICE_DT_INST_GET(n),   \
 		    0);                                                                            \
 	irq_enable(DT_INST_IRQN(n));
 
-#define SPI_MCUX_LPSPI_IRQ_FUNC(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n),		   \
-								  nxp_lp_flexcomm),		   \
-						(SPI_MCUX_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)),	   \
-						(SPI_MCUX_LPSPI_IRQ_FUNC_DISTINCT(n)))
+#define SPI_LPSPI_IRQ_FUNC(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n),                    \
+								  nxp_lp_flexcomm),                \
+						(SPI_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)),               \
+						(SPI_LPSPI_IRQ_FUNC_DISTINCT(n)))
 
 #define LPSPI_IRQN(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm),	   \
 					(DT_IRQN(DT_INST_PARENT(n))), (DT_INST_IRQN(n)))
 
-#define SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
-	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
+#define SPI_LPSPI_CONFIG_INIT(n)                                                              \
+	static const struct lpspi_config lpspi_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = spi_mcux_config_func_##n,                                       \
+		.irq_config_func = lpspi_config_func_##n,                                          \
 		.pcs_sck_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, pcs_sck_delay),                 \
 					  DT_INST_PROP(n, pcs_sck_delay)),                         \
 		.sck_pcs_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, sck_pcs_delay),                 \
@@ -110,14 +110,14 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev);
 #define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static void spi_mcux_config_func_##n(const struct device *dev)                             \
+	static void lpspi_config_func_##n(const struct device *dev)                                \
 	{                                                                                          \
-		SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                         \
+		SPI_LPSPI_IRQ_FUNC(n)                                                         \
 	}
 
 #define SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                          \
-	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                             \
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
+	SPI_CONTEXT_INIT_LOCK(lpspi_data_##n, ctx),                                             \
+		SPI_CONTEXT_INIT_SYNC(lpspi_data_##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)
 
 #define SPI_NXP_LPSPI_HAS_DMAS(n)                                                                  \
