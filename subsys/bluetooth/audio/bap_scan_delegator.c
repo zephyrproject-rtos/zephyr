@@ -793,7 +793,12 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
-		if (internal_state->requested_bis_sync[i] != requested_bis_sync[i]) {
+		/* If the BIS sync request is different than what was previously was requested, or
+		 * different than what we are current synced to, we set bis_sync_change_requested to
+		 * let the application know that the state may need a change
+		 */
+		if (internal_state->requested_bis_sync[i] != requested_bis_sync[i] ||
+		    internal_state->state.subgroups[i].bis_sync != requested_bis_sync[i]) {
 			bis_sync_change_requested = true;
 		}
 
@@ -1005,7 +1010,8 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	bis_sync_was_requested = false;
 	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
-		if (internal_state->requested_bis_sync[i] != 0U) {
+		if (internal_state->requested_bis_sync[i] != 0U &&
+		    internal_state->state.subgroups[i].bis_sync != 0U) {
 			bis_sync_was_requested = true;
 			break;
 		}
