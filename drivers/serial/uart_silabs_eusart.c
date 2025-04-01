@@ -367,6 +367,42 @@ static void uart_silabs_eusart_configure_peripheral(const struct device *dev, bo
 	}
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_silabs_eusart_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	const struct uart_silabs_eusart_config *config = dev->config;
+	struct uart_silabs_eusart_data *data = dev->data;
+	struct uart_config *uart_cfg = &data->uart_cfg;
+	EUSART_TypeDef *eusart = config->eusart;
+
+	if (cfg->parity == UART_CFG_PARITY_MARK || cfg->parity == UART_CFG_PARITY_SPACE) {
+		return -ENOSYS;
+	}
+
+	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR ||
+	    cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
+		return -ENOSYS;
+	}
+
+	*uart_cfg = *cfg;
+
+	EUSART_Enable(eusart, eusartDisable);
+	uart_silabs_eusart_configure_peripheral(dev, true);
+
+	return 0;
+};
+
+static int uart_silabs_eusart_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_silabs_eusart_data *data = dev->data;
+	struct uart_config *uart_cfg = &data->uart_cfg;
+
+	*cfg = *uart_cfg;
+
+	return 0;
+}
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
 static int uart_silabs_eusart_init(const struct device *dev)
 {
 	int err;
@@ -420,6 +456,10 @@ static DEVICE_API(uart, uart_silabs_eusart_driver_api) = {
 	.poll_in = uart_silabs_eusart_poll_in,
 	.poll_out = uart_silabs_eusart_poll_out,
 	.err_check = uart_silabs_eusart_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_silabs_eusart_configure,
+	.config_get = uart_silabs_eusart_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_silabs_eusart_fifo_fill,
 	.fifo_read = uart_silabs_eusart_fifo_read,
