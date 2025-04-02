@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Meta Platforms All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Synopsys DesignWare SPI node
+description: Synopsys DesignWare SPI controller
 
 compatible: "snps,designware-spi"
 
