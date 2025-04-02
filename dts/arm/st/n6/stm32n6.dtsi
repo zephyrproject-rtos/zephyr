@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 
 / {
@@ -641,6 +642,55 @@
 			dma-requests = <144>;
 			dma-offset = <0>;
 			status = "disabled";
+		};
+
+		dcmipp: dcmipp@58002000 {
+			compatible = "st,stm32n6-dcmipp", "st,stm32-dcmipp";
+			reg = <0x58002000 0x1000>;
+			clock-names = "dcmipp", "dcmipp-ker", "csi";
+			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
+				 <&rcc STM32_SRC_IC17 DCMIPP_SEL(2)>,
+				 <&rcc STM32_CLOCK(APB5, 6)>;
+			interrupts = <48 0>;
+			resets = <&rctl STM32_RESET(APB5, 2)>,
+				 <&rctl STM32_RESET(APB5, 6)>;
+			status = "disabled";
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+
+					endpoint {
+						remote-endpoint-label = "";
+						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					};
+				};
+
+				port@1 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					reg = <1>;
+
+					dcmipp_pipe_dump: endpoint@0 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <0>;
+					};
+
+					dcmipp_pipe_main: endpoint@1 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <1>;
+					};
+
+					dcmipp_pipe_aux: endpoint@2 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <2>;
+					};
+				};
+			};
 		};
 
 		ethernet@58036000 {
