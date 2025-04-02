@@ -1010,6 +1010,134 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 #define VIDEO_PIX_FMT_SRGGB14P VIDEO_FOURCC('p', 'R', 'E', 'E')
 
 /**
+ * @code{.unparsed}
+ * | Bbbbbbbb | bb000000 | Gggggggg | gg000000 | Bbbbbbbb | bb000000 | ...
+ * | Gggggggg | gg000000 | Rrrrrrrr | rr000000 | Gggggggg | gg000000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGGR10 VIDEO_FOURCC('B', 'G', '1', '0')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gg000000 | Bbbbbbbb | bb000000 | Gggggggg | gg000000 | ...
+ * | Rrrrrrrr | rr000000 | Gggggggg | gg000000 | Rrrrrrrr | rr000000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GBRG10 VIDEO_FOURCC('G', 'B', '1', '0')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gg000000 | Rrrrrrrr | rr000000 | Gggggggg | gg000000 | ...
+ * | Bbbbbbbb | bb000000 | Gggggggg | gg000000 | Bbbbbbbb | bb000000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GRBG10 VIDEO_FOURCC('B', 'A', '1', '0')
+
+/**
+ * @code{.unparsed}
+ * | Rrrrrrrr | rr000000 | Gggggggg | gg000000 | Rrrrrrrr | rr000000 | ...
+ * | Gggggggg | gg000000 | Bbbbbbbb | bb000000 | Gggggggg | gg000000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGGB10 VIDEO_FOURCC('R', 'G', '1', '0')
+
+/**
+ * @code{.unparsed}
+ * | Bbbbbbbb | bbbb0000 | Gggggggg | gggg0000 | Bbbbbbbb | bbbb0000 | ...
+ * | Gggggggg | gggg0000 | Rrrrrrrr | rrrr0000 | Gggggggg | gggg0000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGGR12 VIDEO_FOURCC('B', 'G', '1', '2')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggg0000 | Bbbbbbbb | bbbb0000 | Gggggggg | gggg0000 | ...
+ * | Rrrrrrrr | rrrr0000 | Gggggggg | gggg0000 | Rrrrrrrr | rrrr0000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GBRG12 VIDEO_FOURCC('G', 'B', '1', '2')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggg0000 | Rrrrrrrr | rrrr0000 | Gggggggg | gggg0000 | ...
+ * | Bbbbbbbb | bbbb0000 | Gggggggg | gggg0000 | Bbbbbbbb | bbbb0000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GRBG12 VIDEO_FOURCC('B', 'A', '1', '2')
+
+/**
+ * @code{.unparsed}
+ * | Rrrrrrrr | rrrr0000 | Gggggggg | gggg0000 | Rrrrrrrr | rrrr0000 | ...
+ * | Gggggggg | gggg0000 | Bbbbbbbb | bbbb0000 | Gggggggg | gggg0000 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGGB12 VIDEO_FOURCC('R', 'G', '1', '2')
+
+/**
+ * @code{.unparsed}
+ * | Bbbbbbbb | bbbbbb00 | Gggggggg | gggggg00 | Bbbbbbbb | bbbbbb00 | ...
+ * | Gggggggg | gggggg00 | Rrrrrrrr | rrrrrr00 | Gggggggg | gggggg00 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGGR14 VIDEO_FOURCC('B', 'G', '1', '4')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggggg00 | Bbbbbbbb | bbbbbb00 | Gggggggg | gggggg00 | ...
+ * | Rrrrrrrr | rrrrrr00 | Gggggggg | gggggg00 | Rrrrrrrr | rrrrrr00 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GBRG14 VIDEO_FOURCC('G', 'B', '1', '4')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggggg00 | Rrrrrrrr | rrrrrr00 | Gggggggg | gggggg00 | ...
+ * | Bbbbbbbb | bbbbbb00 | Gggggggg | gggggg00 | Bbbbbbbb | bbbbbb00 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GRBG14 VIDEO_FOURCC('G', 'R', '1', '4')
+
+/**
+ * @code{.unparsed}
+ * | Rrrrrrrr | rrrrrr00 | Gggggggg | gggggg00 | Rrrrrrrr | rrrrrr00 | ...
+ * | Gggggggg | gggggg00 | Bbbbbbbb | bbbbbb00 | Gggggggg | gggggg00 | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGGB14 VIDEO_FOURCC('R', 'G', '1', '4')
+
+/**
+ * @code{.unparsed}
+ * | Bbbbbbbb | bbbbbbbb | Gggggggg | gggggggg | Bbbbbbbb | bbbbbbbb | ...
+ * | Gggggggg | gggggggg | Rrrrrrrr | rrrrrrrr | Gggggggg | gggggggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGGR16 VIDEO_FOURCC('B', 'Y', 'R', '2')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggggggg | Bbbbbbbb | bbbbbbbb | Gggggggg | gggggggg | ...
+ * | Rrrrrrrr | rrrrrrrr | Gggggggg | gggggggg | Rrrrrrrr | rrrrrrrr | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GBRG16 VIDEO_FOURCC('G', 'B', '1', '6')
+
+/**
+ * @code{.unparsed}
+ * | Gggggggg | gggggggg | Rrrrrrrr | rrrrrrrr | Gggggggg | gggggggg | ...
+ * | Bbbbbbbb | bbbbbbbb | Gggggggg | gggggggg | Bbbbbbbb | bbbbbbbb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_GRBG16 VIDEO_FOURCC('G', 'R', '1', '6')
+
+/**
+ * @code{.unparsed}
+ * | Rrrrrrrr | rrrrrrrr | Gggggggg | gggggggg | Rrrrrrrr | rrrrrrrr | ...
+ * | Gggggggg | gggggggg | Bbbbbbbb | bbbbbbbb | Gggggggg | gggggggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGGB16 VIDEO_FOURCC('R', 'G', '1', '6')
+
+/**
  * @}
  */
 
@@ -1187,6 +1315,22 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 14;
 	case VIDEO_PIX_FMT_RGB565:
 	case VIDEO_PIX_FMT_YUYV:
+	case VIDEO_PIX_FMT_BGGR10:
+	case VIDEO_PIX_FMT_GBRG10:
+	case VIDEO_PIX_FMT_GRBG10:
+	case VIDEO_PIX_FMT_RGGB10:
+	case VIDEO_PIX_FMT_BGGR12:
+	case VIDEO_PIX_FMT_GBRG12:
+	case VIDEO_PIX_FMT_GRBG12:
+	case VIDEO_PIX_FMT_RGGB12:
+	case VIDEO_PIX_FMT_BGGR14:
+	case VIDEO_PIX_FMT_GBRG14:
+	case VIDEO_PIX_FMT_GRBG14:
+	case VIDEO_PIX_FMT_RGGB14:
+	case VIDEO_PIX_FMT_BGGR16:
+	case VIDEO_PIX_FMT_GBRG16:
+	case VIDEO_PIX_FMT_GRBG16:
+	case VIDEO_PIX_FMT_RGGB16:
 		return 16;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
