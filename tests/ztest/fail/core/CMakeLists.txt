@@ -23,6 +23,10 @@ elseif(CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME)
   list(APPEND test_sources src/unexpected_assume.cpp)
 endif()
 
+if(CONFIG_ZTEST_FAIL_ON_ASSUME)
+  add_definitions(-DCONFIG_ZTEST_FAIL_ON_ASSUME=1)
+endif()
+
 if(BOARD STREQUAL "unit_testing" OR BOARD STREQUAL "unit_testing/unit_testing")
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(base)
