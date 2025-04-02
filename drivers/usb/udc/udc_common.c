@@ -180,6 +180,24 @@ int udc_submit_event(const struct device *dev,
 	return data->event_cb(dev, &drv_evt);
 }
 
+void udc_submit_sof_event(const struct device *dev,
+			  const int frame)
+{
+#if defined(CONFIG_UDC_ENABLE_SOF)
+	struct udc_data *data = dev->data;
+	struct udc_event drv_evt = {
+		.type = UDC_EVT_SOF,
+		.status = frame,
+		.dev = dev,
+	};
+
+	(void)data->event_cb(dev, &drv_evt);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(frame);
+#endif
+}
+
 int udc_submit_ep_event(const struct device *dev,
 			struct net_buf *const buf,
 			const int err)
