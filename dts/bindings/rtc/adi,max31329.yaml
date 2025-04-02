@@ -1,19 +1,30 @@
 # Copyright (c) 2024 Wimansha Wijekoon <Wimanshahb@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Analog Device MAX31329 RTC
+description: |
+  Analog Device MAX31329 RTC
+
+  Example of DT segment
+
+  rtc3: max31329@68 {
+         compatible = "adi,max31329";
+         reg = <0x68>;
+         status = "okay";
+         pvft = <0x1>;
+         trickle = <0x1>;
+         rtc-inta-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+         digital-in-enable;
+     };
+     status = "okay";
 
 compatible: "adi,max31329"
 
 include:
   - name: rtc-device.yaml
   - name: i2c-device.yaml
-  - name: pm.yaml
-    property-allowlist:
-      - wakeup-source
 
 properties:
-  rtc-inta-gpios:
+  inta-gpios:
     type: phandle-array
     description: |
       GPIO connected to the max31329 INTA interrupt output. This pin should be pull high to rtc_vcc
@@ -29,7 +40,7 @@ properties:
   trickle:
     type: int
     enum:
-      - 0x0 # 3kΩ in series with a Schottky diode
+      - 0x0 # Disable trickle charging
       - 0x1 # 3kΩ in series with a Schottky diode
       - 0x2 # 6kΩ in series with a Schottky diode
       - 0x3 # 11kΩ in series with a Schottky diode
