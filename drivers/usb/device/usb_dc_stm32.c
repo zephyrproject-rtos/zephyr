@@ -311,7 +311,7 @@ static int usb_dc_stm32_clock_enable(void)
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
-	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
+	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS |
 						LL_AHB2_GRP1_PERIPH_USBPHY);
 #else
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
