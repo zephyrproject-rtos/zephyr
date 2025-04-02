@@ -303,6 +303,7 @@ hynitron	Hynitron
 hyundai	Hyundai Technology
 hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
+iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
