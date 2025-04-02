@@ -512,6 +512,13 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 		goto done;
 	}
 
+	/* Bypass the IP stack with AF_INET(6)/SOCK_RAW */
+	if (context && net_context_get_type(context) == SOCK_RAW &&
+	    (net_context_get_family(context) == AF_INET ||
+	     net_context_get_family(context) == AF_INET6)) {
+		goto done;
+	}
+
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
 	 */
