@@ -549,7 +549,7 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 }
 
 /* Send requests without taking tx_sem */
-static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
+static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 {
 	struct net_buf *buf;
 	int err;
@@ -606,7 +606,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
 		sys_snode_t *node = sys_slist_get(&att->reqs);
 
-		if (chan_req_send(chan, ATT_REQ(node)) >= 0) {
+		if (bt_att_chan_req_send(chan, ATT_REQ(node)) >= 0) {
 			return;
 		}
 
@@ -901,19 +901,6 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	att_chan_mtu_updated(chan);
 
 	return 0;
-}
-
-static int bt_att_chan_req_send(struct bt_att_chan *chan,
-				struct bt_att_req *req)
-{
-	__ASSERT_NO_MSG(chan);
-	__ASSERT_NO_MSG(req);
-	__ASSERT_NO_MSG(req->func);
-	__ASSERT_NO_MSG(!chan->req);
-
-	LOG_DBG("req %p", req);
-
-	return chan_req_send(chan, req);
 }
 
 static void att_req_send_process(struct bt_att *att)
