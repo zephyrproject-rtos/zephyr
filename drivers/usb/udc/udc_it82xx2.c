@@ -1215,7 +1215,7 @@ static void xfer_work_handler(const struct device *dev)
 		}
 
 		if (evt.ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
-			if (work_handler_xfer_next(ep_cfg) == 0) {
+			if (work_handler_xfer_next(dev, ep_cfg) == 0) {
 				udc_ep_set_busy(ep_cfg, true);
 			}
 		}
