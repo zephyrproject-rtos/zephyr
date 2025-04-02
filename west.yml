@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: def7e1a025877a35d070439e70668f5ec319c32e
+      revision: pull/268/head
       path: modules/hal/stm32
       groups:
         - hal
