@@ -662,6 +662,12 @@ config NET_MAX_CONN
 	  The value depends on your network needs. The value
 	  should include both UDP and TCP connections.
 
+config NET_CONN_PACKET_CLONE_TIMEOUT
+	int "Timeout value in milliseconds for cloning a packet"
+	default 100
+	help
+	  Maximum wait time when cloning a packet for a network connection.
+
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
 	default 6
