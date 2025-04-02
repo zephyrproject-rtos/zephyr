@@ -44,7 +44,7 @@ config DMA_INTEL_ADSP_HDA
 
 config DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
 	bool "Intel ADSP HDA Host L1 Exit Interrupt"
-	default y if SOC_INTEL_ACE15_MTPM || SOC_INTEL_ACE20_LNL || SOC_INTEL_ACE30
+	default y if SOC_SERIES_INTEL_ADSP_ACE
 	depends on DMA_INTEL_ADSP_HDA_HOST_IN || DMA_INTEL_ADSP_HDA_HOST_OUT
 	help
 	  Intel ADSP HDA Host Interrupt for L1 exit.
