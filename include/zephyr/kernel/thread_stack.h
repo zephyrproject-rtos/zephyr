@@ -283,6 +283,14 @@ static inline char *z_stack_ptr_align(char *ptr)
 
 /** @} */
 
+#ifdef CONFIG_HW_SHADOW_STACK
+#define K_THREAD_HW_SHADOW_STACK_DEFINE ARCH_THREAD_HW_SHADOW_STACK_DEFINE
+
+#define k_thread_hw_shadow_stack_t arch_thread_hw_shadow_stack_t
+
+#define k_thread_hw_shadow_stack_attach arch_thread_hw_shadow_stack_attach
+#endif
+
 static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_KERNEL_STACK_RESERVED;
