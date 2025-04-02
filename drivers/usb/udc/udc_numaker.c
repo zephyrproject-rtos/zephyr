@@ -961,7 +961,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_OUT);
 
 	ep = msg->out.ep;
-	ep_cfg = udc_get_ep_cfg(ep);
+	ep_cfg = udc_get_ep_cfg(dev, ep);
 
 	udc_ep_set_busy(ep_cfg, false);
 
