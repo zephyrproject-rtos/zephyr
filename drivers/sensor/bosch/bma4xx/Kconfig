@@ -12,6 +12,7 @@ menuconfig BMA4XX
 	depends on DT_HAS_BOSCH_BMA4XX_ENABLED
 	depends on SENSOR_ASYNC_API
 	select I2C
+	select I2C_RTIO
 	select RTIO_WORKQ
 	help
 	  Enable driver for Bosch BMA4XX (I2C-based)
