@@ -2483,7 +2483,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		net_sprint_addr(context->remote.sa_family,
 				(const void *)&net_sin(&context->remote)->sin_addr));
 
-	ret = net_conn_register(IPPROTO_TCP, af,
+	ret = net_conn_register(IPPROTO_TCP, SOCK_STREAM, af,
 				&context->remote, &local_addr,
 				ntohs(conn->dst.sin.sin_port),/* local port */
 				ntohs(conn->src.sin.sin_port),/* remote port */
@@ -3922,6 +3922,7 @@ int net_tcp_connect(struct net_context *context,
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
 	ret = net_conn_register(net_context_get_proto(context),
+				net_context_get_type(context),
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
@@ -4063,6 +4064,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	net_conn_unregister(context->conn_handler);
 
 	return net_conn_register(net_context_get_proto(context),
+				 net_context_get_type(context),
 				 local_addr.sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 				 &context->remote : NULL,
@@ -4363,13 +4365,15 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	return verdict;
 }
 
-static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_port,
+static void test_cb_register(sa_family_t family, enum net_sock_type type,
+			     uint8_t proto, uint16_t remote_port,
 			     uint16_t local_port, net_conn_cb_t cb)
 {
 	struct net_conn_handle *conn_handle = NULL;
 	const struct sockaddr addr = { .sa_family = family, };
 
 	int ret = net_conn_register(proto,
+				    type,
 				    family,
 				    &addr,	/* remote address */
 				    &addr,	/* local address */
@@ -4632,10 +4636,10 @@ void net_tcp_init(void)
 	int rto;
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 	/* Register inputs for TTCN-3 based TCP sanity check */
-	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
-	test_cb_register(AF_INET6, IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET,  SOCK_STREAM, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET6, SOCK_STREAM, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET,  SOCK_DGRAM, IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, 4242, 4242, tp_input);
 
 	tcp_recv_cb = tp_tcp_recv_cb;
 #endif
