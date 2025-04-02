@@ -11,4 +11,4 @@ common:
   sysbuild: true
 
 tests:
-  subsys.nrfs.stress_test: {}
+  boards.nrf.nrfs.stress_test: {}
