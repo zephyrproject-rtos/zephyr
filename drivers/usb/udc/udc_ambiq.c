@@ -156,8 +156,9 @@ static void udc_ambiq_evt_callback(const struct device *dev, am_hal_usb_dev_even
 	case AM_HAL_USB_DEV_EVT_BUS_RESET:
 		/* enable usb bus interrupts */
 		am_hal_usb_intr_usb_enable(priv->usb_handle,
-					   USB_CFG2_SOFE_Msk | USB_CFG2_ResumeE_Msk |
-						   USB_CFG2_SuspendE_Msk | USB_CFG2_ResetE_Msk);
+					   IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USB_CFG2_SOFE_Msk |))
+					   USB_CFG2_ResumeE_Msk |
+					   USB_CFG2_SuspendE_Msk | USB_CFG2_ResetE_Msk);
 		/* init the endpoint */
 		am_hal_usb_ep_init(priv->usb_handle, 0, 0, EP0_MPS);
 		/* Set USB device speed to HAL */
@@ -174,7 +175,7 @@ static void udc_ambiq_evt_callback(const struct device *dev, am_hal_usb_dev_even
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 		break;
 	case AM_HAL_USB_DEV_EVT_SOF:
-		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(dev);
 		break;
 	case AM_HAL_USB_DEV_EVT_SUSPEND:
 		/* Handle USB Suspend event, then set device state to suspended */
