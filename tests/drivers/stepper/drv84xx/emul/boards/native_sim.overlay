@@ -7,9 +7,9 @@
 
 / {
 
-	drv8424: drv8424 {
+	drv84xx: drv84xx {
 		status = "okay";
-		compatible = "ti,drv8424";
+		compatible = "ti,drv84xx";
 
 		dir-gpios = <&gpio1 0 0>; /* D3 */
 		step-gpios = <&gpio1 1 0>; /* D4 */
