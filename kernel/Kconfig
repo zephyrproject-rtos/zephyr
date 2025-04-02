@@ -1029,6 +1029,22 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  mitigations after bounds checking any array index parameters passed
 	  in from untrusted sources (user mode threads). When disabled, these
 	  macros do nothing.
+
+config HW_SHADOW_STACK
+	bool "Use hardware shadow stack mechanism to provide stack protection [EXPERIMENTAL]"
+	depends on ARCH_HAS_HW_SHADOW_STACK
+	select EXPERIMENTAL
+	help
+	  This option enables the use of hardware shadow stack to provide
+	  stack protection. When enabled, threads that provide a shadow stack
+	  will use the hardware shadow stack to store the return address of
+	  function calls. This will help to protect against return-oriented
+	  programming (ROP) attacks.
+
+	  Currently, not all threads created by the kernel will have a shadow
+	  stack. Indeed, threads need to manually attach a shadow stack to
+	  use this feature. See the documentation for more information.
+
 endmenu
 
 rsource "Kconfig.mem_domain"
