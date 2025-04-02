@@ -13,7 +13,7 @@
 		pinmux = < MCHP_XEC_PINMUX(0210, MCHP_AF1) >;
 	};
 
-	/omit-if-no-ref/adc09_gpio211: adc09_gpio211 {
+	/omit-if-no-ref/ adc09_gpio211: adc09_gpio211 {
 		pinmux = < MCHP_XEC_PINMUX(0211, MCHP_AF1) >;
 	};
 
@@ -46,7 +46,7 @@
 		pinmux = < MCHP_XEC_PINMUX(0230, MCHP_AF1) >;
 	};
 
-	/omit-if-no-ref/ i2c08_sda_gpio231: i2c00_sda_gpio231 {
+	/omit-if-no-ref/ i2c08_sda_gpio231: i2c08_sda_gpio231 {
 		pinmux = < MCHP_XEC_PINMUX(0231, MCHP_AF1) >;
 	};
 
@@ -63,7 +63,7 @@
 	};
 
 	/omit-if-no-ref/ i2c10_sda_gpio030: i2c10_sda_gpio030 {
-		pinmux = < MCHP_XEC_PINMUX(030, MCHP_AF1) >;
+		pinmux = < MCHP_XEC_PINMUX(030, MCHP_AF3) >;
 	};
 
 	/omit-if-no-ref/ i2c11_scl_gpio062: i2c11_scl_gpio062 {
@@ -71,7 +71,7 @@
 	};
 
 	/omit-if-no-ref/ i2c11_sda_gpio000: i2c11_sda_gpio000 {
-		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF2) >;
+		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF3) >;
 	};
 
 	/omit-if-no-ref/ i2c11_scl_alt_gpio006: i2c11_scl_alt_gpio006 {
@@ -145,11 +145,11 @@
 	};
 
 	/omit-if-no-ref/ uart1_dsr_n_alt_gpio232: uart1_dsr_n_alt_gpio232 {
-		pinmux = < MCHP_XEC_PINMUX(0135, MCHP_AF1) >;
+		pinmux = < MCHP_XEC_PINMUX(0232, MCHP_AF1) >;
 	};
 
 	/omit-if-no-ref/ pwrgd_s0ix_alt_gpio166: pwrgd_s0ix_alt_gpio166 {
-		pinmux = < MCHP_XEC_PINMUX(0166, MCHP_AF3) >;
+		pinmux = < MCHP_XEC_PINMUX(0166, MCHP_AF2) >;
 	};
 
 	/* Week Timer BGPO Pins */
