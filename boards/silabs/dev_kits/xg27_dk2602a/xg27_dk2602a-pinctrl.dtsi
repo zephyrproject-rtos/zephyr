@@ -39,4 +39,12 @@
 			bias-pull-up;
 		};
 	};
+
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
 };

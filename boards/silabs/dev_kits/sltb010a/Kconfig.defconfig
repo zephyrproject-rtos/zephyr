@@ -1,6 +1,11 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_SLTB010A
+
+configdefault LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
 if SOC_GECKO_USE_RAIL
 
 config FPU
@@ -24,3 +29,5 @@ endif # BT
 
 config REGULATOR
 	default y if SI7210
+
+endif

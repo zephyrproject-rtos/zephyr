@@ -64,6 +64,12 @@
 	clock-frequency = <78000000>;
 };
 
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_M(78)>;
+};
+
 &hfxo {
 	status = "okay";
 	ctune = <140>;

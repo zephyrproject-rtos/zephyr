@@ -3,6 +3,9 @@
 
 if BOARD_XG24_DK2601B
 
+configdefault LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
 if SOC_GECKO_USE_RAIL
 
 config FPU
