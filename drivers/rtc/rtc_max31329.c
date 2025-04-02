@@ -12,18 +12,6 @@
  * - Trickle charging
  * - Event input (uses same GPIO as alarm interrupt)
  *
- *Example of DT segment
- *
- *    rtc3: max31329@68 {
- *        compatible = "adi,max31329";
- *        reg = <0x68>;
- *        status = "okay";
- *        pvft = <0x1>;
- *        trickle = <0x1>;
- *        rtc-inta-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
- *        digital-in-enable;
- *    };
- *    status = "okay";
  */
 
 #include <zephyr/init.h>
@@ -39,8 +27,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/rtc.h>
-#include <zephyr/sys/timeutil.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
 LOG_MODULE_REGISTER(max31329, CONFIG_RTC_LOG_LEVEL);
 
 /* Register Addresses */
@@ -72,16 +60,12 @@ LOG_MODULE_REGISTER(max31329, CONFIG_RTC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT adi_max31329
 
-#if (DT_ANY_INST_HAS_PROP_STATUS_OKAY(rtc_inta_gpios)) &&                                          \
+#if (DT_ANY_INST_HAS_PROP_STATUS_OKAY(inta_gpios)) &&                                              \
 	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
 /* The user may need only alarms but not interrupts so we will only
  * include all the interrupt code if the user configured it in the dts
  */
 #define MAX31329_INT_GPIOS_IN_USE 1
-#endif
-
-#ifndef IS_BIT_SET
-#define IS_BIT_SET(value, bit) ((((value) >> (bit)) & 0x1) != 0)
 #endif
 
 #define MAX31329_RTC_ALARM_1_TIME_MASK                                                             \
@@ -93,9 +77,9 @@ LOG_MODULE_REGISTER(max31329, CONFIG_RTC_LOG_LEVEL);
 
 struct max31329_config {
 	const struct i2c_dt_spec i2c;
-	bool digital_in_spec;
-	uint8_t power_fail_spec;
-	uint8_t trickle_charge_spec;
+	bool digital_in_enable;
+	uint8_t pwer_fail_threshold;
+	uint8_t trickle_charging_settings;
 #ifdef MAX31329_INT_GPIOS_IN_USE
 	const struct gpio_dt_spec int_rtc;
 #endif
@@ -122,6 +106,13 @@ int max31329_set_time(const struct device *dev, const struct rtc_time *new_time)
 	const struct max31329_config *config = dev->config;
 	int ret = 0;
 	uint8_t raw_time[7] = {0};
+
+	/* RTC supports only for 21st and 22nd centuries */
+	if (new_time->tm_year < 100) {
+		LOG_WRN("supported only 21st and 22nd centuries");
+		return -EINVAL;
+	}
+
 	/* Set seconds */
 	raw_time[0] = bin2bcd(new_time->tm_sec);
 	/* Set minutes */
@@ -135,7 +126,11 @@ int max31329_set_time(const struct device *dev, const struct rtc_time *new_time)
 	/*Set month */
 	raw_time[5] = bin2bcd((new_time->tm_mon) + 1);
 	/* Set year */
-	raw_time[6] = bin2bcd(new_time->tm_year);
+	/* if we make in to 22nd century */
+	if (new_time->tm_year > 199) {
+		raw_time[5] |= BIT(7);
+	}
+	raw_time[6] = bin2bcd((new_time->tm_year) - 100);
 	/* Write to device */
 	ret = i2c_burst_write_dt(&config->i2c, MAX31329_REG_SECONDS, raw_time, sizeof(raw_time));
 	if (ret) {
@@ -151,14 +146,14 @@ int max31329_get_time(const struct device *dev, struct rtc_time *dest_time)
 	int ret = 0;
 	uint8_t raw_time[7] = {0};
 
-	/*starting from seconds register read till year*/
+	/* Starting from seconds register read till year */
 	ret = i2c_burst_read_dt(&config->i2c, MAX31329_REG_SECONDS, raw_time, sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Fail to get time (error %d)", ret);
 		return ret;
 	}
 
-	/* rtc does not have nanosec*/
+	/* Rtc does not have nanosec */
 	dest_time->tm_nsec = 0;
 	/* Get seconds */
 	dest_time->tm_sec = bcd2bin(raw_time[0]);
@@ -172,10 +167,11 @@ int max31329_get_time(const struct device *dev, struct rtc_time *dest_time)
 	dest_time->tm_mday = bcd2bin(raw_time[4] & MAX31329_DAYS_MASK);
 	/* Get month */
 	dest_time->tm_mon = bcd2bin(raw_time[5] & MAX31329_MONTHS_MASK);
-	/* we need 0 based(0-11)*/
+	/* We need 0 based(0-11) */
 	dest_time->tm_mon -= 1; /* Get year */
-	/*Century Bit is ignored */
+	/* Century Bit is ignored */
 	dest_time->tm_year = bcd2bin(raw_time[6]);
+	dest_time->tm_year += 100;
 	if (IS_BIT_SET(raw_time[5], 7)) {
 		dest_time->tm_year += 100;
 	}
@@ -188,7 +184,7 @@ static int max31329_alarm_get_supported_fields(const struct device *dev, uint16_
 {
 	ARG_UNUSED(dev);
 
-	/* RTC supports two alarms, with two different supporting fields*/
+	/* RTC supports two alarms, with two different supporting fields */
 	if (id > 1) {
 		LOG_ERR("invalid ID %d", id);
 		return -EINVAL;
@@ -218,8 +214,8 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		return -ENOTSUP;
 	}
 
-	/* id =0 mapped to Alarm 1*/
-	/* id =1 mapped to Alarm 2*/
+	/* id =0 mapped to Alarm 1 */
+	/* id =1 mapped to Alarm 2 */
 	const uint16_t valid_mask =
 		id ? MAX31329_RTC_ALARM_2_TIME_MASK : MAX31329_RTC_ALARM_1_TIME_MASK;
 
@@ -232,8 +228,8 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	 * The 7/6 bit is used as enabled/disabled flag.
 	 * The mask will clean it and also the unused bits
 	 */
-	/* Alarm 1 settings*/
-	/*  SEC*/
+	/* Alarm 1 settings */
+	/*  SEC */
 	if ((mask & RTC_ALARM_TIME_MASK_SECOND) != 0) {
 		regs[0] = bin2bcd(timeptr->tm_sec) & ~BIT(7);
 	} else {
@@ -249,7 +245,7 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		regs[1] = BIT(7);
 	}
 
-	/*  HR*/
+	/*  HR */
 	if ((mask & RTC_ALARM_TIME_MASK_HOUR) != 0) {
 		regs[2] = bin2bcd(timeptr->tm_hour) & (MAX31329_HOURS_MASK & ~BIT(7));
 	} else {
@@ -257,7 +253,7 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		regs[2] = BIT(7);
 	}
 
-	/*  MONTH DAY*/
+	/*  MONTH DAY */
 	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) != 0) {
 		regs[3] = bin2bcd(timeptr->tm_mday) & (MAX31329_DAYS_MASK & ~(BIT(7) | BIT(6)));
 	} else {
@@ -265,7 +261,7 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		regs[3] = BIT(7);
 	}
 
-	/*  MONTH*/
+	/*  MONTH */
 	if ((mask & RTC_ALARM_TIME_MASK_MONTH) != 0) {
 		regs[4] = bin2bcd((timeptr->tm_mon) + 1) & (MAX31329_MONTHS_MASK & ~BIT(7));
 	} else {
@@ -273,9 +269,9 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		regs[4] = BIT(7);
 	}
 
-	/*  YEAR*/
+	/*  YEAR */
 	if ((mask & RTC_ALARM_TIME_MASK_YEAR) != 0) {
-		regs[5] = bin2bcd(timeptr->tm_year) & ~BIT(7);
+		regs[5] = bin2bcd((timeptr->tm_year) - 100) & ~BIT(7);
 	} else {
 		LOG_DBG("YEAR FLAG NOT SET");
 		regs[4] |= BIT(6);
@@ -288,7 +284,6 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 			LOG_ERR("Error when setting alarm 1: %i", ret);
 			return ret;
 		}
-
 	} else {
 		ret = i2c_burst_write_dt(&config->i2c, MAX31329_REG_ALM2_MIN, &regs[1], 3);
 		if (ret) {
@@ -297,7 +292,7 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		}
 	}
 
-	/* Enable RTC side interrupts,*/
+	/* Enable RTC side interrupts */
 	i2c_reg_read_byte_dt(&config->i2c, MAX31329_REG_INT_EN, &regs[0]);
 	regs[0] |= BIT(id ? 1 : 0);
 
@@ -307,7 +302,7 @@ static int max31329_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		return ret;
 	}
 
-	/* set intB as Alarm interrupts: Note Table 2 in data sheet*/
+	/* Set intA as Alarm1 interrupts: Note Table 2 in data sheet */
 	regs[0] = 0x00;
 	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_RTC_CONFIG2, regs[0]);
 	if (ret) {
@@ -323,14 +318,14 @@ static int max31329_alarm_get_time(const struct device *dev, uint16_t id, uint16
 {
 	const struct max31329_config *config = dev->config;
 	int ret = 0;
-	uint8_t raw_time[7] = {0};
+	uint8_t raw_time[6] = {0};
 
 	if (id != 0) {
 		LOG_ERR(" ID %d not supporting", id);
 		return -ENOTSUP;
 	}
 
-	/*starting from seconds register read till year*/
+	/* Starting from seconds register read till year */
 	ret = i2c_burst_read_dt(&config->i2c, MAX31329_REG_ALM1_SEC, raw_time, sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Fail to get time (error %d)", ret);
@@ -345,22 +340,19 @@ static int max31329_alarm_get_time(const struct device *dev, uint16_t id, uint16
 	/* Get hours in 24hr format */
 	timeptr->tm_hour = bcd2bin(raw_time[2] & MAX31329_HOURS_MASK);
 	/* Get days */
-	timeptr->tm_wday = bcd2bin(raw_time[3] & MAX31329_WEEKDAYS_MASK);
-	/* Get weekdays */
-	timeptr->tm_mday = bcd2bin(raw_time[4] & MAX31329_DAYS_MASK);
+	timeptr->tm_mday = bcd2bin(raw_time[3] & MAX31329_DAYS_MASK);
 	/* Get month */
-	timeptr->tm_mon = bcd2bin(raw_time[5] & MAX31329_MONTHS_MASK);
+	timeptr->tm_mon = bcd2bin(raw_time[4] & MAX31329_MONTHS_MASK);
 	/* we need 0 based(0-11)*/
 	timeptr->tm_mon -= 1;
 	/* Get year */
-	/*Century Bit is ignored */
-	timeptr->tm_year = bcd2bin(raw_time[6]);
-	if (IS_BIT_SET(raw_time[5], 7)) {
+	/* Century Bit is ignored */
+	timeptr->tm_year = bcd2bin(raw_time[5]);
+	timeptr->tm_year += 100;
+	if (IS_BIT_SET(raw_time[4], 7)) {
 		timeptr->tm_year += 100;
 	}
 	return 0;
-	LOG_ERR("Not Supported yet");
-	return -EINVAL;
 }
 
 static int max31329_alarm_is_pending(const struct device *dev, uint16_t id)
@@ -369,15 +361,15 @@ static int max31329_alarm_is_pending(const struct device *dev, uint16_t id)
 	uint8_t status;
 	int ret;
 
-	/* Read the status register from the RTC*/
+	/* Read the status register from the RTC */
 	ret = i2c_reg_read_byte_dt(&config->i2c, MAX31329_REG_STATUS, &status);
 	if (ret) {
 		LOG_ERR("Error when reading status: %i", ret);
 		return ret;
 	}
 
-	/* Check the alarm interrupt flag*/
-	return (status & BIT(id ? 1 : 0)) != 0;
+	/* Check the alarm interrupt flag */
+	return (status & BIT(id)) != 0;
 }
 #endif
 
@@ -394,9 +386,12 @@ void callback_work_handler(struct k_work *work)
 	}
 }
 
-/* The function called when the clock alarm activates the interrupt*/
+/* The function called when the clock alarm activates the interrupt */
 void gpio_callback_function(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pins);
+
 	struct max31329_data *data = CONTAINER_OF(cb, struct max31329_data, intb_callback);
 
 	LOG_DBG("MAX31329 interrupt detected");
@@ -429,6 +424,13 @@ static int max31329_alarm_set_callback(const struct device *dev, uint16_t id,
 		return -EINVAL;
 	}
 
+	/* Disable interrupt if callback is NULL */
+	if (callback == NULL) {
+		/* Disable RTC side interrupts */
+		LOG_DBG("Alarm %d interrupt Disabled ", id + 1);
+		return 0;
+	}
+
 	data->alarm_callback = callback;
 	data->alarm_user_data = user_data;
 	data->dev = dev;
@@ -449,7 +451,7 @@ static int max31329_alarm_set_callback(const struct device *dev, uint16_t id,
 
 	gpio_init_callback(&data->intb_callback, gpio_callback_function, BIT(config->int_rtc.pin));
 	gpio_add_callback(config->int_rtc.port, &data->intb_callback);
-	LOG_DBG("Alarm set");
+	LOG_DBG("Alarm %d interrupt Enable ", id + 1);
 
 	return 0;
 #endif
@@ -473,31 +475,17 @@ int max31329_init(const struct device *dev)
 	int ret;
 	uint8_t reg_value;
 
-	/* Check if the I2C bus is ready*/
+	/* Check if the I2C bus is ready */
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Failed to get pointer to %s device!", config->i2c.bus->name);
 		return -EINVAL;
 	}
 
-	/* Check if the device is alive by reading the status register*/
+	/* Check if the device is alive by reading the status register */
 	ret = i2c_reg_read_byte_dt(&config->i2c, MAX31329_REG_STATUS, &reg_value);
 	if (ret) {
 		LOG_ERR("Failed to read from MAX31329! (err %i)", ret);
 		return -EIO;
-	}
-
-	/* Disable trickle charging and power fail by default*/
-	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_PWR_MGMT, 0x00);
-	if (ret) {
-		LOG_ERR("Failed to disable power fail! (err %i)", ret);
-		return ret;
-	}
-
-	/* Disable trickle charging*/
-	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_TRICKLE_REG, BIT(3));
-	if (ret) {
-		LOG_ERR("Failed to disable trickle charging! (err %i)", ret);
-		return ret;
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_INT_EN, 0x00);
@@ -506,34 +494,31 @@ int max31329_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Enable power fail based on DT properties*/
-	if (config->power_fail_spec != 0) {
-		reg_value = config->power_fail_spec << 2;
-		ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_PWR_MGMT, reg_value);
-		if (ret) {
-			LOG_ERR("Failed to configure power fail! (err %i)", ret);
-			return ret;
-		}
+	/* Enable power fail threshold based on DT properties */
+	reg_value = config->pwer_fail_threshold ? config->pwer_fail_threshold << 2 : 0;
+	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_PWR_MGMT, reg_value);
+	if (ret) {
+		LOG_ERR("Failed to configure power fail! (err %i)", ret);
+		return ret;
 	}
 
-	/* Enable trickle charging based on DT properties*/
-	if (config->trickle_charge_spec != 0) {
-		reg_value = config->trickle_charge_spec | BIT(7);
-		ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_TRICKLE_REG, reg_value);
-		if (ret) {
-			LOG_ERR("Failed to enable trickle charging! (err %i)", ret);
-			return ret;
-		}
+	/* Enable trickle charging based on DT properties */
+	reg_value = config->trickle_charging_settings;
+	reg_value |= config->trickle_charging_settings ? BIT(7) : 0;
+	ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_TRICKLE_REG, reg_value);
+	if (ret) {
+		LOG_ERR("Failed to configure trickle charging! (err %i)", ret);
+		return ret;
 	}
 
-	/* Enable Digital-In (Event) if specified in DT*/
-	if (config->digital_in_spec) {
+	/* Enable Digital-In (Event) if specified in DT */
+	if (config->digital_in_enable) {
 		ret = i2c_reg_read_byte_dt(&config->i2c, MAX31329_REG_INT_EN, &reg_value);
 		if (ret) {
 			LOG_ERR("Failed to read INT_EN register! (err %i)", ret);
 			return ret;
 		}
-		/* Enable DIE (Digital-In Event)*/
+		/* Enable DIE (Digital-In Event) */
 		reg_value |= BIT(3);
 		ret = i2c_reg_write_byte_dt(&config->i2c, MAX31329_REG_INT_EN, reg_value);
 		if (ret) {
@@ -556,13 +541,12 @@ int max31329_init(const struct device *dev)
 #define MAX31329_INIT(inst)                                                                        \
 	static const struct max31329_config max31329_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.digital_in_spec = DT_INST_PROP_OR(inst, digital_in_enable, 0),                    \
-		.power_fail_spec = DT_INST_ENUM_IDX_OR(inst, pvft, 0),                             \
-		.trickle_charge_spec = DT_INST_ENUM_IDX_OR(inst, trickle, 0),                      \
-		IF_ENABLED(MAX31329_INT_GPIOS_IN_USE,                                              \
-		(.int_rtc = GPIO_DT_SPEC_INST_GET_OR(inst, rtc_inta_gpios, {0})))};         \
+		.digital_in_enable = DT_INST_PROP(inst, digital_in_enable),                        \
+		.pwer_fail_threshold = DT_INST_ENUM_IDX_OR(inst, pvft, 0),                         \
+		.trickle_charging_settings = DT_INST_ENUM_IDX_OR(inst, trickle, 0),                \
+		IF_ENABLED(MAX31329_INT_GPIOS_IN_USE,						   \
+	(.int_rtc = GPIO_DT_SPEC_INST_GET_OR(inst, inta_gpios, {0})))};             \
 	static struct max31329_data max31329_data_##inst;                                          \
-                                                                                                   \
 	DEVICE_DT_INST_DEFINE(inst, &max31329_init, NULL, &max31329_data_##inst,                   \
 			      &max31329_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,      \
 			      &max31329_driver_api);
