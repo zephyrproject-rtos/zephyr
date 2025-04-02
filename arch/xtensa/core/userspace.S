@@ -323,8 +323,11 @@ xtensa_userspace_enter:
 	/* Go back to user stack */
 	l32i a1, a1, 4
 
+	/* Disabling interrupts as we need to use ZSR_EPC and ZSR_EPS */
+	rsil a0, 0xf
+
 	movi a0, z_thread_entry
-	wsr.epc2 a0
+	wsr.ZSR_EPC a0
 
 	/* Configuring PS register.
 	 * We have to set callinc as well, since the called
@@ -338,9 +341,9 @@ xtensa_userspace_enter:
 	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(1)
 #endif
 
-	wsr a0, EPS2
+	wsr.ZSR_EPS a0
 
 	/* Wipe out a0 (thre is no return from this function */
 	movi a0, 0
 
-	rfi 2
+	rfi ZSR_RFI_LEVEL
