@@ -501,8 +501,10 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #define FRAME_BUFFER_SECTION __stm32_sdram1_section
 #elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram2))
 #define FRAME_BUFFER_SECTION __stm32_sdram2_section
+#elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(psram))
+#define FRAME_BUFFER_SECTION __stm32_psram_section
 #else
-#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node"
+#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM node"
 #define FRAME_BUFFER_SECTION
 #endif /* DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1)) */
 
