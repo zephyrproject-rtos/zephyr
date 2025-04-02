@@ -19,9 +19,16 @@ config STEPPER_ADI_$(module)_RAMPSTAT_POLL_INTERVAL_IN_MSEC
 	help
 	  The interval in ms to poll the ramp status on TMC.
 
+config STEPPER_ADI_$(module)_RAMPSTAT_POLL_STALLGUARD_LOG
+	bool "log $(module-str) stallguard"
+	depends on STEPPER_ADI_$(module)_RAMPSTAT_POLL
+	default n
+	help
+	  Enable stallguard log while polling rampstat.
+
 config STEPPER_ADI_$(module)_RAMP_GEN
 	bool "Use $(module-str) with Ramp Generator"
 	depends on STEPPER_ADI_$(module)
 	default y
 	help
-	  Enable ramp generator for trinamic stepper controller
+	  Enable ramp generator for trinamic stepper controller.
