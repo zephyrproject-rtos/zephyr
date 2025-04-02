@@ -16,5 +16,6 @@ add_subdirectory_ifdef(CONFIG_RENESAS_RX_DTC renesas_rx_dtc)
 add_subdirectory_ifdef(CONFIG_RENESAS_RX_EXTERNAL_INTERRUPT renesas_rx_external_interrupt)
 add_subdirectory_ifdef(CONFIG_NXP_RTXXX_DSP_CTRL nxp_rtxxx_dsp_ctrl)
 add_subdirectory_ifdef(CONFIG_STM32N6_AXISRAM stm32n6_axisram)
+add_subdirectory_ifdef(CONFIG_MISC_MAX2221X max2221x)
 
 add_subdirectory(interconn)
