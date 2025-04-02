@@ -76,6 +76,18 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	},
 	/* Map IMR */
 	{
+		.start = (uint32_t)IMR_ROM_EXT_CODE_BASE,
+		.end   = (uint32_t)(IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE),
+		.attrs = XTENSA_MMU_PERM_X,
+		.name = "IMR_rom_ext_code",
+	},
+	{
+		.start = (uint32_t)IMR_ROM_EXT_DATABSS_BASE,
+		.end   = (uint32_t)(IMR_ROM_EXT_DATABSS_BASE + IMR_ROM_EXT_DATABSS_SIZE),
+		.attrs = XTENSA_MMU_PERM_W,
+		.name = "IMR_rom_ext_data_bss",
+	},
+	{
 		.start = (uint32_t)(IMR_BOOT_LDR_MANIFEST_BASE - IMR_BOOT_LDR_MANIFEST_SIZE),
 		.end   = (uint32_t)IMR_BOOT_LDR_MANIFEST_BASE,
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
