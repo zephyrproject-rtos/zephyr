@@ -1139,6 +1139,10 @@ bool coap_client_has_ongoing_exchange(struct coap_client *client)
 	return has_ongoing_exchange(client);
 }
 
+#define COAP_CLIENT_THREAD_PRIORITY CLAMP(CONFIG_COAP_CLIENT_THREAD_PRIORITY, \
+					  K_HIGHEST_APPLICATION_THREAD_PRIO, \
+					  K_LOWEST_APPLICATION_THREAD_PRIO)
+
 K_THREAD_DEFINE(coap_client_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,
 		coap_client_recv, NULL, NULL, NULL,
-		CONFIG_COAP_CLIENT_THREAD_PRIORITY, 0, 0);
+		COAP_CLIENT_THREAD_PRIORITY, 0, 0);
