@@ -1,0 +1,277 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 IAR Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f429Xi.dtsi>
+#include <st/f4/stm32f429iitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "IAR STM32F429II-ACA board";
+	compatible = "iar,stm32f429ii-aca";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM2";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		traffic_red_led: led_0 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		traffic_yellow_led: led_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		traffic_green_led: led_2 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		car_led: led_3 {
+			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+
+		pedestrian_red_led: led_4 {
+			gpios = <&gpiod 7 GPIO_ACTIVE_LOW>;
+			label = "LED4";
+		};
+
+		pedestrian_green_led: led_5 {
+			gpios = <&gpiod 11 GPIO_ACTIVE_LOW>;
+			label = "LED5";
+		};
+
+		user_led_1: led_6 {
+			gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
+			label = "LED6";
+		};
+
+		user_led_2: led_7 {
+			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+			label = "LED7";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			label = "BUT0";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			label = "BUT1";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button_2 {
+			label = "BUT2";
+			gpios = <&gpiog 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		open_close_switch: switch_0 {
+			label = "OPEN/CLOSE SWITCH";
+			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+
+		interior_light_switch_on: switch_1 {
+			label = "ON";
+			gpios = <&gpioi 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_4>;
+		};
+
+		interior_light_switch_auto: switch_2 {
+			label = "AUTO";
+			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_5>;
+		};
+
+		interior_light_switch_off: switch_3 {
+			label = "OFF";
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_6>;
+		};
+
+		cap_button0: cap_button_0 {
+			label = "CAP_BUT0";
+			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_7>;
+		};
+
+		cap_button1: cap_button_1 {
+			label = "CAP_BUT1";
+			gpios = <&gpioh 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_8>;
+		};
+	};
+
+	aliases {
+		led0 = &traffic_red_led;
+		led1 = &traffic_yellow_led;
+		led2 = &traffic_green_led;
+		led3 = &car_led;
+		led4 = &pedestrian_red_led;
+		led5 = &pedestrian_green_led;
+		led6 = &user_led_1;
+		led7 = &user_led_2;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &open_close_switch;
+		sw4 = &interior_light_switch_on;
+		sw5 = &interior_light_switch_auto;
+		sw6 = &interior_light_switch_off;
+		sw7 = &cap_button0;
+		sw8 = &cap_button1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+
+&spi5 {
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
+		     &spi5_miso_pf8 &spi5_mosi_pf9>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+};
+
+&fmc {
+	status = "okay";
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		     &fmc_sdclk_pg8 &fmc_sdnwe_pc0 &fmc_sdcke0_pc3
+		     &fmc_sdne0_pc2 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3
+		     &fmc_a4_pf4 &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13
+		     &fmc_a8_pf14 &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1
+		     &fmc_a12_pg2 &fmc_a13_pg3 &fmc_a14_pg4 &fmc_a15_pg5
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+
+	sdram {
+		status = "okay";
+
+		power-up-delay = <100>;
+		num-auto-refresh = <1>;
+		mode-register = <0>;
+		refresh-rate = <1386>;
+
+		bank@1 {
+			reg = <1>;
+
+			st,sdram-control = <STM32_FMC_SDRAM_NC_8
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_3
+					    STM32_FMC_SDRAM_RBURST_DISABLE
+					    STM32_FMC_SDRAM_RPIPE_1>;
+			st,sdram-timing = <2 7 4 7 2 2 2>;
+		};
+	};
+};
+
+&adc2 {
+	compatible = "st,stm32f4-adc", "st,stm32-adc";
+	pinctrl-0 = <&adc2_in6_pa6>;
+	pinctrl-names = "default";
+	st,adc-prescaler = <2>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&dac1 {
+	pinctrl-0 = <&dac_out2_pa5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15 &usb_otg_hs_id_pb12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
