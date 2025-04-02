@@ -11,6 +11,12 @@
  */
 
 / {
+	imx335_input_clock: imx335-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -77,6 +83,12 @@
 				};
 			};
 
+			test_i2c_imx335: imx335@7 {
+				compatible = "sony,imx335";
+				reg = <0x7>;
+				clocks = <&imx335_input_clock>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
