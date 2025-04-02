@@ -17,9 +17,6 @@ LOG_MODULE_REGISTER(udc_it82xx2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #define DT_DRV_COMPAT ite_it82xx2_usb
 
-/* TODO: Replace this definition by Kconfig option */
-#define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (0U)
-
 #define IT8XXX2_IS_EXTEND_ENDPOINT(n) (USB_EP_GET_IDX(n) >= 4)
 
 #define IT82xx2_STATE_OUT_SHARED_FIFO_BUSY 0
@@ -1357,11 +1354,11 @@ static void it82xx2_usb_dc_isr(const void *arg)
 
 	/* sof received */
 	if (status & DC_SOF_RECEIVED) {
-		if (!USB_DEVICE_CONFIG_SOF_NOTIFICATIONS) {
+		if (!IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
 			it82xx2_enable_sof_int(dev, false);
 		} else {
 			usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
-			udc_submit_event(dev, UDC_EVT_SOF, 0);
+			udc_submit_sof_event(dev);
 		}
 		it82xx2_enable_resume_int(dev, false);
 		emit_resume_event(dev);
@@ -1411,7 +1408,7 @@ static void suspended_handler(struct k_work *item)
 
 	it82xx2_enable_resume_int(dev, true);
 
-	if (!USB_DEVICE_CONFIG_SOF_NOTIFICATIONS) {
+	if (!IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
 		it82xx2_enable_sof_int(dev, true);
 	}
 
