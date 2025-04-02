@@ -558,8 +558,9 @@ static void setup_tcp_handler(const struct in_addr *raddr, const struct in_addr 
 	net_ipaddr_copy(&net_sin(&remote_addr)->sin_addr, raddr);
 	remote_addr.sa_family = AF_INET;
 
-	ret = net_conn_register(IPPROTO_TCP, AF_INET, &local_addr, &remote_addr, local_port,
-				remote_port, NULL, tcp_data_received, NULL, &handle);
+	ret = net_conn_register(IPPROTO_TCP, SOCK_STREAM, AF_INET, &local_addr,
+				&remote_addr, local_port, remote_port, NULL,
+				tcp_data_received, NULL, &handle);
 
 	zassert_equal(ret, 0, "Cannot register TCP connection");
 }
