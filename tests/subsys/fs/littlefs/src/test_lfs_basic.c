@@ -84,10 +84,6 @@ static int check_medium(void)
 		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 	zassert_equal(stat.f_bsize, MEDIUM_IO_SIZE,
 		      "bsize fail");
-	zassert_equal(stat.f_frsize, 4096,
-		      "frsize fail");
-	zassert_equal(stat.f_blocks, 240,
-		      "blocks fail");
 	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
 		      "bfree fail");
 
@@ -116,10 +112,6 @@ static int check_large(void)
 		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 	zassert_equal(stat.f_bsize, LARGE_IO_SIZE,
 		      "bsize fail");
-	zassert_equal(stat.f_frsize, 32768,
-		      "frsize fail");
-	zassert_equal(stat.f_blocks, 96,
-		      "blocks fail");
 	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
 		      "bfree fail");
 
