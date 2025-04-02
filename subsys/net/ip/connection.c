@@ -632,6 +632,38 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 	return NET_OK;
 }
 
+#if defined(CONFIG_NET_SOCKETS_INET_RAW)
+static void conn_raw_ip_socket(struct net_pkt *pkt, struct net_conn *conn)
+{
+	struct net_pkt *raw_pkt;
+	struct net_pkt_cursor cur;
+
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
+
+	NET_DBG("[%p] raw IP match found cb %p ud %p", conn, conn->cb,
+		conn->user_data);
+
+	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
+	if (raw_pkt == NULL) {
+		goto out;
+	}
+
+	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
+		net_pkt_unref(raw_pkt);
+	}
+
+out:
+	net_pkt_cursor_restore(pkt, &cur);
+}
+#else
+static void conn_raw_ip_socket(struct net_pkt *pkt, struct net_conn *conn)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(conn);
+}
+#endif /* defined(CONFIG_NET_SOCKETS_INET_RAW) */
+
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				uint8_t proto,
@@ -640,6 +672,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	uint8_t pkt_family = net_pkt_family(pkt);
 	uint16_t src_port = 0U, dst_port = 0U;
+	bool raw_ip_pkt = false;
 
 	if (!net_pkt_filter_local_in_recv_ok(pkt)) {
 		/* drop the packet */
@@ -647,7 +680,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6)) {
-		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && proto_hdr == NULL) {
+			raw_ip_pkt = true;
+		} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 			src_port = proto_hdr->udp->src_port;
 			dst_port = proto_hdr->udp->dst_port;
 		} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
@@ -657,7 +692,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			src_port = proto_hdr->tcp->src_port;
 			dst_port = proto_hdr->tcp->dst_port;
 		}
-		if (!conn_are_endpoints_valid(pkt, pkt_family, ip_hdr, src_port, dst_port)) {
+		if (!raw_ip_pkt && !conn_are_endpoints_valid(pkt, pkt_family, ip_hdr,
+							     src_port, dst_port)) {
 			NET_DBG("Dropping invalid src/dst end-points packet");
 			return NET_DROP;
 		}
@@ -690,7 +726,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
 
-	if (IS_ENABLED(CONFIG_NET_IP)) {
+	if (IS_ENABLED(CONFIG_NET_IP) && !raw_ip_pkt) {
 		/* If we receive a packet with multicast destination address, we might
 		 * need to deliver the packet to multiple recipients.
 		 */
@@ -733,7 +769,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 				if (!(conn->family == AF_INET6 && pkt_family == AF_INET &&
-				      !conn->v6only)) {
+				      !conn->v6only && conn->type != SOCK_RAW)) {
 					continue;
 				}
 			} else {
@@ -741,6 +777,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			}
 
 			/* We might have a match for v4-to-v6 mapping, check more */
+		}
+
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt &&
+		    conn->type != SOCK_RAW) {
+			continue;
 		}
 
 		/* Is the candidate connection matching the packet's protocol within the family? */
@@ -753,6 +794,10 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
 				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
 					continue; /* wrong protocol */
+				}
+			} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+				if (conn->proto != IPPROTO_IP) {
+					continue;
 				}
 			} else {
 				continue; /* wrong protocol */
@@ -790,6 +835,15 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				continue; /* packet was consumed */
 			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
+			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
+				continue; /* wrong local address */
+			}
+
+			conn_raw_ip_socket(pkt, conn);
+
+			continue;
 		} else if ((IS_ENABLED(CONFIG_NET_UDP) || IS_ENABLED(CONFIG_NET_TCP)) &&
 			   (conn_family == AF_INET || conn_family == AF_INET6 ||
 			    conn_family == AF_UNSPEC)) {
@@ -900,6 +954,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			net_pkt_unref(pkt);
 			return NET_OK;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+		/* Raw IP packets are passed further in the stack regardless. */
+		return NET_CONTINUE;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IP) && is_mcast_pkt && mcast_pkt_delivered) {
