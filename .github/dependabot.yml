@@ -1,4 +1,5 @@
 version: 2
+enable-beta-ecosystems: true
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -12,7 +13,7 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/doc"
     schedule:
       interval: "weekly"
