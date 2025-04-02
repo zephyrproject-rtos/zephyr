@@ -106,13 +106,19 @@
 	clocks: clocks {
 		sysosc: sysosc {
 			compatible = "ti,mspm0-oscillator";
-			clock-frequency = <32000000>;
+			clock-frequency = <DT_FREQ_M(32)>;
 			#clock-cells = <1>;
+		};
+
+		hfclk: hfclk {
+			compatible = "ti,mspm0-oscillator";
+			#clock-cells = <1>;
+			status = "disabled";
 		};
 
 		lfosc: lfosc {
 			compatible = "ti,mspm0-oscillator";
-			clock-frequency = <32678>;
+			clock-frequency = <DT_FREQ_K(32)>;
 			#clock-cells = <1>;
 		};
 	};

@@ -69,8 +69,14 @@
 };
 
 &clkmux {
-	clock-source = <&sysosc>;
+	clock-source = <&hfclk>;
 	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&hfclk {
+	clock-frequency = <DT_FREQ_M(32)>;
+	ti,xtal;
+	status = "okay";
 };
 
 &nvm {

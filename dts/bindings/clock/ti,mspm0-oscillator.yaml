@@ -15,5 +15,8 @@ properties:
     type: int
     required: true
 
+  ti,xtal:
+    type: boolean
+
 clock-cells:
   - id

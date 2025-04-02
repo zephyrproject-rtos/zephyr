@@ -9,6 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <ti/driverlib/driverlib.h>
+#include <string.h>
 
 #define ULPCLK_DIV CONCAT(DL_SYSCTL_ULPCLK_DIV_, DT_PROP(DT_NODELABEL(clkmux), uclk_div))
 
@@ -17,10 +18,19 @@
 static const DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll;
 #endif
 
+struct mspm0_clk_cfg {
+	bool is_crystal;
+	uint32_t clk_freq;
+};
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hfclk), okay)
+#define MSPM0_HFXT_ENABLED 1
+static const struct mspm0_clk_cfg mspm0_cfg_hfclk;
+#endif
+
 #define MSPM0_CLOCK_BUS_ULPCLK_FREQ		40000000 /*40 MHz */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_out), okay)
 #define MSPM0_CLK_OUT_ENABLED 1
-
 struct mspm0_clk_out_cfg {
 	const struct pinctrl_dev_config *pinctrl;
 	uint32_t source_clk;
@@ -122,6 +132,7 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 
 static int clock_mspm0_init(const struct device *dev)
 {
+	char *mclk_src;
 	/* setup clocks based on specific rates */
 	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
 
@@ -142,6 +153,44 @@ static int clock_mspm0_init(const struct device *dev)
 
 #endif
 
+#if MSPM0_HFXT_ENABLED
+	uint32_t hf_range;
+	if (mspm0_cfg_hfclk.clk_freq >= 4 &&
+	    mspm0_cfg_hfclk.clk_freq <= 8 ) {
+		hf_range = DL_SYSCTL_HFXT_RANGE_4_8_MHZ;
+	} else if (mspm0_cfg_hfclk.clk_freq > 8 &&
+		   mspm0_cfg_hfclk.clk_freq <= 16 ) {
+		hf_range = DL_SYSCTL_HFXT_RANGE_8_16_MHZ;
+	} else if (mspm0_cfg_hfclk.clk_freq > 16 &&
+		   mspm0_cfg_hfclk.clk_freq <= 32 ) {
+		hf_range = DL_SYSCTL_HFXT_RANGE_16_32_MHZ;
+	} else if (mspm0_cfg_hfclk.clk_freq > 32 &&
+		   mspm0_cfg_hfclk.clk_freq <= 48 ) {
+		hf_range = DL_SYSCTL_HFXT_RANGE_32_48_MHZ;
+	} else {
+		return -EINVAL;
+	}
+
+	DL_SYSCTL_setHFCLKSourceHFXT(hf_range);
+
+	if (mspm0_cfg_hfclk.is_crystal == false) {
+		DL_SYSCTL_setHFCLKSourceHFCLKIN();
+	}
+#endif
+
+	mclk_src = DT_NODE_FULL_NAME(DT_PHANDLE_BY_IDX(DT_NODELABEL(clkmux), clock_source, 0));
+	if (!mclk_src) {
+		return -EINVAL;
+	}
+
+	if (!strcmp(mclk_src, "lfosc")) {
+		DL_SYSCTL_setMCLKSource(SYSOSC, LFCLK, false);
+	} else if (!strcmp(mclk_src, "hfclk")) {
+#if MSPM0_HFXT_ENABLED
+		DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK, DL_SYSCTL_HSCLK_SOURCE_HFCLK);
+#endif
+	}
+
 	return 0;
 }
 
@@ -151,10 +200,18 @@ static const struct clock_control_driver_api clock_mspm0_driver_api = {
 	.get_status = clock_mspm0_get_status,
 	.get_rate = clock_mspm0_get_rate,
 	.set_rate = clock_mspm0_set_rate,
-	.configure = clock_mspm0_configure};
+	.configure = clock_mspm0_configure
+};
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), &clock_mspm0_init, NULL, NULL, NULL, PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_mspm0_driver_api);
+
+#if MSPM0_HFXT_ENABLED
+static const struct mspm0_clk_cfg mspm0_cfg_hfclk = {
+	.is_crystal = DT_NODE_HAS_PROP(DT_NODELABEL(hfclk), ti_xtal),
+	.clk_freq = ((DT_PROP(DT_NODELABEL(hfclk), clock_frequency)) / MHZ(1)),
+};
+#endif
 
 #if MSPM0_PLL_ENABLED
 
