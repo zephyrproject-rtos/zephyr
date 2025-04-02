@@ -257,7 +257,7 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "jedec,mspi-nor";
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];
