@@ -22,6 +22,15 @@ from twister_harness import DeviceAdapter, Shell
 logger = logging.getLogger(__name__)
 
 
+async def device_power_on(device) -> None:
+    while True:
+        try:
+            await device.power_on()
+            break
+        except Exception:
+            continue
+
+
 class discovery_listener(Device.Listener):
     def __init__(self, address: str, event, **kwargs):
         self._address = address
@@ -67,7 +76,8 @@ async def start_discovery(hci_port, address) -> None:
             hci_transport.sink,
         )
         device.listener = discovery_listener(address, event)
-        await device.power_on()
+        await device_power_on(device)
+
         logger.info('Starting discovery')
         await device.start_discovery()
         await event.wait()
@@ -84,7 +94,7 @@ async def br_connect(hci_port, shell, address) -> None:
         )
         device.classic_enabled = True
         device.le_enabled = False
-        await device.power_on()
+        await device_power_on(device)
 
         target_address = address.split(" ")[0]
         logger.info(f'=== Connecting to {target_address}...')
