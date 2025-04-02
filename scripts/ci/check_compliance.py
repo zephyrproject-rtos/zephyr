@@ -1763,7 +1763,7 @@ class Ruff(ComplianceTest):
 
     def run(self):
         for file in get_files(filter="d"):
-            if not file.endswith(".py"):
+            if not file.endswith((".py", ".pyi")):
                 continue
 
             try:
