@@ -2873,6 +2873,7 @@ static int recv_udp(struct net_context *context,
 	context->recv_cb = cb;
 
 	ret = net_conn_register(net_context_get_proto(context),
+				net_context_get_type(context),
 				net_context_get_family(context),
 				context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 							&context->remote : NULL,
@@ -2958,6 +2959,7 @@ static int recv_raw(struct net_context *context,
 	context->recv_cb = cb;
 
 	ret = net_conn_register(net_context_get_proto(context),
+				net_context_get_type(context),
 				net_context_get_family(context),
 				NULL, local_addr, 0, 0,
 				context,
