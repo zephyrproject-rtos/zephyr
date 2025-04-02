@@ -78,6 +78,10 @@
 	};
 };
 
+&exmif{
+	status = "disabled";
+};
+
 &gpio0 {
 	status = "okay";
 };
