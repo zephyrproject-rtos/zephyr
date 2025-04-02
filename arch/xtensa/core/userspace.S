@@ -71,7 +71,7 @@ _not_checking_user_context:
 	rsr a2, ZSR_A0SAVE
 	s32i a2, a0, ___xtensa_irq_bsa_t_a0_OFFSET
 	rsr.ps a2
-	movi a3, ~PS_OWB_MASK
+	movi a3, ~PS_OWB_MASK & ~PS_EXCM_MASK
 	and a2, a2, a3
 	s32i a2, a0, ___xtensa_irq_bsa_t_ps_OFFSET
 
@@ -213,6 +213,9 @@ _id_ok:
 	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
 _syscall_returned:
+	/* Disable interrupts as we are restoring context. */
+	rsil a0, 0xf
+
 	call0 xtensa_restore_high_regs
 
 	ODD_REG_RESTORE a3, a1
@@ -228,10 +231,10 @@ _syscall_returned:
 #endif /* XCHAL_HAVE_THREADPTR */
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_ps_OFFSET
-	wsr.ps a3
+	wsr.ZSR_EPS a3
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
-	wsr.epc1 a3
+	wsr.ZSR_EPC a3
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	l32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
@@ -240,7 +243,7 @@ _syscall_returned:
 	l32i a1, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 	rsync
 
-	rfe
+	rfi ZSR_RFI_LEVEL
 
 _bad_syscall:
 	movi a2, K_SYSCALL_BAD
