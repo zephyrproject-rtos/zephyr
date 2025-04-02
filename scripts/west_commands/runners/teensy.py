@@ -13,12 +13,13 @@ from runners.core import ZephyrBinaryRunner
 class TeensyBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for teensy.'''
 
-    def __init__(self, cfg, mcu, teensy_loader):
+    def __init__(self, cfg, mcu, teensy_loader, flags):
         super().__init__(cfg)
 
         self.mcu_args = ['--mcu', mcu]
         self.teensy_loader = teensy_loader
         self.hex_name = cfg.hex_file
+        self.flags = flags
 
     @classmethod
     def name(cls):
@@ -30,12 +31,13 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
                             help='Teensy mcu target')
         parser.add_argument('--teensy', default='teensy_loader_cli',
                             help='path to teensy cli tool, default is teensy_loader_cli')
+        parser.add_argument('--flags', help='Flags for the teensy cli tool')
 
     @classmethod
     def do_create(cls, cfg, args):
         ret = TeensyBinaryRunner(
             cfg, args.mcu,
-            teensy_loader=args.teensy)
+            teensy_loader=args.teensy, flags=args.flags)
         return ret
 
     def do_run(self, command):
@@ -53,6 +55,9 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
         cmd = ([self.teensy_loader] +
                self.mcu_args +
                [fname])
+
+        if self.flags is not None:
+            cmd.append("-" + self.flags)
 
         self.logger.info(f'Flashing file: {fname}')
 
