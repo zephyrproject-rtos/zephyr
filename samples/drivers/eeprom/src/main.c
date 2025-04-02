@@ -39,7 +39,11 @@ int main(void)
 {
 	const struct device *eeprom = get_eeprom_device();
 	size_t eeprom_size;
+#if CONFIG_DCACHE
+	struct perisistant_values values __aligned(CONFIG_DCACHE_LINE_SIZE);
+#else
 	struct perisistant_values values;
+#endif
 	int rc;
 
 	if (eeprom == NULL) {

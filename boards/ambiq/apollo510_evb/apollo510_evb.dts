@@ -122,6 +122,9 @@
 };
 
 &iom2 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
 	spi2: spi {
 		pinctrl-0 = <&spi2_default>;
 		pinctrl-names = "default";
@@ -132,6 +135,9 @@
 };
 
 &iom0 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
 	i2c0: i2c {
 		pinctrl-0 = <&i2c0_default>;
 		pinctrl-names = "default";
