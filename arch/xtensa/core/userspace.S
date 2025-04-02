@@ -212,8 +212,6 @@ _id_ok:
 	l32i a3, a1, 0
 	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
-	j _syscall_returned
-
 _syscall_returned:
 	call0 xtensa_restore_high_regs
 
