@@ -653,7 +653,7 @@ static void usbfsotg_isr_handler(const struct device *dev)
 	}
 
 	if (istatus == USB_ISTAT_SOFTOK_MASK) {
-		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(dev);
 	}
 
 	if (istatus == USB_ISTAT_ERROR_MASK) {
@@ -1016,7 +1016,7 @@ static int usbfsotg_init(const struct device *dev)
 	base->INTEN = (USB_INTEN_SLEEPEN_MASK  |
 		       USB_INTEN_STALLEN_MASK |
 		       USB_INTEN_TOKDNEEN_MASK |
-		       USB_INTEN_SOFTOKEN_MASK |
+		       IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USB_INTEN_SOFTOKEN_MASK |))
 		       USB_INTEN_ERROREN_MASK |
 		       USB_INTEN_USBRSTEN_MASK);
 

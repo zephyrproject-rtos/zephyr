@@ -182,7 +182,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
-	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
+	udc_submit_sof_event(priv->dev);
 }
 
 static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
