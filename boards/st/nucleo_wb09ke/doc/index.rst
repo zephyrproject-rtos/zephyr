@@ -119,6 +119,20 @@ You can debug an application in the usual way.  Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+.. warning::
+   Debugging applications on this board may require usage of `STMicroelectronics's OpenOCD fork`_.
+   `STM32CubeIDE`_ version 1.16.0 and higher provide the OpenOCD binary and scripts allowing debugging on STM32WB09.
+
+   Assuming CubeIDE is installed at ``${STM32CubeIDE}``, the following command can be used to debug an application on this board:
+
+   .. code-block:: console
+
+      $ west debug --openocd="${STM32CubeIDE}/plugins/com.st.stm32cube.ide.mcu.externaltools.openocd.PLAT_X.X.XXX.XXXXXXXXXXXX/tools/bin/openocd"
+                   --openocd-search="${STM32CubeIDE}/plugins/com.st.stm32cube.ide.mcu.debug.openocd_X.X.XXX.XXXXXXXXXXXX/resources/openocd/st_scripts"
+
+   Note that the ``PLAT`` and ``X.X.XXX.XXXXXXXXXXXX`` parts of the command change with the STM32CubeIDE version. You can find the correct
+   values by searching in ``${STM32CubeIDE}/plugins``, knowing that the leading ``com.st[...]`` part of directories' names never changes.
+
 .. _`Nucleo WB09KE webpage`:
    https://www.st.com/en/evaluation-tools/nucleo-wb09ke.html
 
@@ -133,3 +147,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _`STMicroelectronics's OpenOCD fork`:
+   https://github.com/STMicroelectronics/OpenOCD
+
+.. _`STM32CubeIDE`:
+   https://www.st.com/en/development-tools/stm32cubeide.html
