@@ -212,7 +212,8 @@ static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
 	sys_rand_get(linkaddr, len);
 
-	linkaddr[0] |= 0x02; /* force LAA bit */
+	linkaddr[0] |= 0x02;  /* force LAA bit */
+	linkaddr[0] &= ~0x01; /* clear multicast bit */
 }
 
 int net_virtual_interface_attach(struct net_if *virtual_iface,
@@ -388,8 +389,8 @@ void net_virtual_set_name(struct net_if *iface, const char *name)
 
 	ctx = net_if_l2_data(iface);
 
-	strncpy(ctx->name, name, CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN);
-	ctx->name[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN - 1] = '\0';
+	strncpy(ctx->name, name, ARRAY_SIZE(ctx->name) - 1);
+	ctx->name[ARRAY_SIZE(ctx->name) - 1] = '\0';
 }
 
 enum net_l2_flags net_virtual_set_flags(struct net_if *iface,

@@ -443,7 +443,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 		return 0;
 	}
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_SPI_AMBIQ_DMA) && defined(CONFIG_DCACHE)
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		return -EFAULT;
@@ -567,18 +567,19 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void spi_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_ambiq_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
+			    spi_ambiq_isr, DEVICE_DT_INST_GET(n), 0);                              \
+		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	};                                                                                         \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.size = DT_INST_REG_SIZE(n),                                                       \
-		.inst_idx = (DT_INST_REG_ADDR(n) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),           \
+		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
+		.size = DT_REG_SIZE(DT_INST_PARENT(n)),                                            \
+		.inst_idx =                                                                        \
+			(DT_REG_ADDR(DT_INST_PARENT(n)) - IOM0_BASE) / (IOM1_BASE - IOM0_BASE),    \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = spi_irq_config_func_##n};                                       \

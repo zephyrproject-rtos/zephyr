@@ -8,12 +8,6 @@ compatible: "ambiq,i2c"
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  reg:
-    required: true
-
-  interrupts:
-    required: true
-
   scl-gpios:
     type: phandle-array
     description: |

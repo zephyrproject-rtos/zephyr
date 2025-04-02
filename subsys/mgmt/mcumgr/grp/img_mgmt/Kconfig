@@ -85,6 +85,7 @@ config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
 if !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
 	bool "Allow to erase pending slot"
+	default y
 	help
 	  Allows erasing secondary slot which is marked for test or confirmed; this allows
 	  erasing slots that have been set for next boot but the device has not

@@ -105,6 +105,79 @@
     }
 }
 
+.board-target-selector {
+    margin-bottom: 1em;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.board-target-selector > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.static-value {
+    padding: 5px 0px;
+    color: var(--body-color);
+    font-family: var(--monospace-font-family);
+    font-size: 0.9em;
+}
+
+.separator {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 4px;
+}
+
+.board-target-selector select {
+    background-color: var(--input-background-color);
+    color: var(--body-color);
+    border-radius: 4px;
+    font-family: var(--monospace-font-family);
+    font-size: 0.9em;
+    box-shadow: none;
+    transition: none;
+}
+
+.board-target-selector select:focus {
+    border-color: var(--input-focus-border-color);
+}
+
+.copy-button {
+    background: transparent;
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: var(--body-color);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+    background: var(--input-background-color);
+    border-color: var(--input-focus-border-color);
+}
+
+.copy-button.copied {
+    background: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    border-color: var(--admonition-note-title-color);
+}
+
+.copy-button svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
 
 .hardware-features {
     th {

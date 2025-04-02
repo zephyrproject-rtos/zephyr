@@ -35,6 +35,7 @@ tests:
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
+      - nucleo_f439zi
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_g474re
@@ -45,7 +46,7 @@ tests:
       - nucleo_u083rc
       - nucleo_u575zi_q
       - nucleo_wb55rg
-      - nucleo_wba52cg
+      - nucleo_wba55cg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk

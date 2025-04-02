@@ -535,7 +535,7 @@ In sysbuild and Zephyr CMake build system a board may refer to:
 
 * A physical board with a single core SoC.
 * A specific core on a physical board with a multi-core SoC, such as
-  :ref:`nrf5340dk_nrf5340`.
+  :zephyr:board:`nrf5340dk`.
 * A specific SoC on a physical board with multiple SoCs, such as
   :ref:`nrf9160dk_nrf9160` and :ref:`nrf9160dk_nrf52840`.
 

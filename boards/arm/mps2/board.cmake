@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 if(CONFIG_BOARD_MPS2_AN385)
   set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
@@ -48,6 +48,8 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
     # TF-M (Secure) & Zephyr (Non Secure) image (when running
     # in-tree tests).
     set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
+
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
   elseif(CONFIG_OPENAMP)
     set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
   elseif(CONFIG_BOARD_MPS2_AN521_CPU1)

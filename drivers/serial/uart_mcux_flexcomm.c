@@ -1121,6 +1121,7 @@ static uint32_t usart_intenset;
 static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+	int ret;
 
 	usart_intenset = USART_GetEnabledInterrupts(config->base);
 
@@ -1132,8 +1133,7 @@ static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		int ret = mcux_flexcomm_init_common(dev);
-
+		ret = mcux_flexcomm_init_common(dev);
 		if (ret) {
 			return ret;
 		}

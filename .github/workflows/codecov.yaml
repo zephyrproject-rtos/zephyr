@@ -68,6 +68,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: west setup
         run: |
           west init -l . || true
@@ -88,24 +99,13 @@ jobs:
           ccache -p
           ccache -z -s -vv
 
-      - name: Update BabbleSim to manifest revision
-        run: |
-          export BSIM_VERSION=$( west list bsim -f {revision} )
-          echo "Manifest points to bsim sha $BSIM_VERSION"
-          cd /opt/bsim_west/bsim
-          git fetch -n origin ${BSIM_VERSION}
-          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
-          west update
-          make everything -s -j 8
-
       - name: Run Tests with Twister (Push)
         continue-on-error: true
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          pip install gcovr==6.0
-          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ./scripts/twister --save-tests ${{matrix.normalized}}-testplan.json
           ls -la
           ./scripts/twister \
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload Coverage Results
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Coverage Data (Subset ${{ matrix.normalized }})
           path: |
@@ -144,8 +144,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Download Artifacts
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           path: coverage/reports
 
@@ -185,7 +196,6 @@ jobs:
       - name: Merge coverage files
         run: |
           pushd ./coverage/reports
-          pip install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
           popd
@@ -201,7 +211,6 @@ jobs:
       - name: Generate Coverage Report
         if: always()
         run: |
-          pip install xlsxwriter ijson
           python3 ./scripts/ci/coverage/coverage_analysis.py \
             -t native_sim-testplan.json \
             -m MAINTAINERS.yml \
@@ -212,7 +221,7 @@ jobs:
 
       - name: Upload Merged Coverage Results and Report
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Coverage Data and report
           path: |

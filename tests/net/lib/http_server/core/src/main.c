@@ -1431,6 +1431,8 @@ static void test_http1_header_capture_common(const char *request)
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	test_read_data(&offset, sizeof(http1_header_capture_common_response) - 1);
+	zassert_mem_equal(buf, http1_header_capture_common_response,
+			  sizeof(http1_header_capture_common_response) - 1);
 }
 
 ZTEST(server_function_tests, test_http1_header_capture)

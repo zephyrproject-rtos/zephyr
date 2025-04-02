@@ -16,16 +16,16 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
-    - name: cache-pip
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+    - name: Set up Python
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/coding_guidelines.yml') }}
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: Install python dependencies
+    - name: Install Python packages
       run: |
-        pip install unidiff
-        pip install sh
+        pip install -r scripts/requirements-actions.txt --require-hashes
 
     - name: Install Packages
       run: |

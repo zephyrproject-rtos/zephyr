@@ -680,6 +680,8 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	while (event_count < 16) {
 #elif defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 	while (event_count < 10) {
+#elif defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
+	while (event_count < 2) {
 #else
 	while (event_count < 5) {
 #endif

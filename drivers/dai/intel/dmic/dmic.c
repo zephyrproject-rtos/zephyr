@@ -552,7 +552,6 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
-		start_fir = dmic->enable[i] > 0;
 
 		/* If both microphones are needed start them simultaneously
 		 * to start them in sync. The reset may be cleared for another
@@ -585,7 +584,10 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 					     MIC_CONTROL_PDM_EN_B,
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		}
+	}
 
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
+		start_fir = dmic->enable[i] > 0;
 		dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
 				     dmic->dai_config_params.dai_index + FIR_CONTROL,
 				     FIR_CONTROL_START,

@@ -346,7 +346,7 @@ static int gpio_rz_int_enable(const struct device *int_dev, const struct device 
 	/* Select interrupt detect type. */
 	*titsr &= ~(3U << GPIO_RZ_TITSR_OFFSET(int_num));
 	*titsr |= (irq_type << GPIO_RZ_TITSR_OFFSET(int_num));
-	/* Select interrupt source base on port and pin number.*/
+	/* Select interrupt source base on port and pin number. */
 	*tssr |= (GPIO_RZ_TSSR_VAL(gpio_config->port_num, pin)) << GPIO_RZ_TSSR_OFFSET(int_num);
 
 	if (irq_type == GPIO_RZ_INT_EDGE_RISING || irq_type == GPIO_RZ_INT_EDGE_FALLING) {
@@ -487,7 +487,7 @@ static DEVICE_API(gpio, gpio_rz_driver_api) = {
 #endif
 };
 
-/*Initialize GPIO interrupt device*/
+/* Initialize GPIO interrupt device */
 #define GPIO_RZ_ISR_DEFINE(irq_num, _)                                                             \
 	static void rz_gpio_isr##irq_num(void *param)                                              \
 	{                                                                                          \
@@ -521,7 +521,7 @@ static int gpio_rz_int_init(const struct device *dev)
 			GPIO_RZ_TINT_CONNECT, (;),               \
 			node_id)                                 \
 	}
-/* Initialize GPIO device*/
+/* Initialize GPIO device */
 #define GPIO_RZ_INT_INIT(node_id)                                                                  \
 	GPIO_RZ_ALL_ISR_DEFINE(DT_NUM_IRQS(node_id))                                               \
 	GPIO_RZ_TINT_CONNECT_FUNC(node_id)                                                         \

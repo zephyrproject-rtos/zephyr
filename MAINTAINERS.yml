@@ -2070,7 +2070,7 @@ Release Notes:
   labels:
     - "area: Sensors"
   tests:
-    - drivers.sensors
+    - drivers.sensor
 
 "Drivers: SMBus":
   status: maintained
@@ -2760,8 +2760,11 @@ NEORV32 platform:
     - drivers/*/*neorv32*
     - dts/bindings/*/*neorv32*
     - soc/neorv32/
+    - tests/boards/neorv32/
   labels:
     - "platform: NEORV32"
+  tests:
+    - boards.neorv32
 
 OSDP:
   status: maintained
@@ -3615,9 +3618,11 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/**/*gecko*
-    - drivers/**/*silabs*
-    - drivers/**/*siwx91x*
+    - drivers/*/*gecko*
+    - drivers/*/*silabs*
+    - drivers/*/*siwx91x*
+    - drivers/*/*/*silabs*
+    - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
   labels:
     - "platform: Silabs"
@@ -4083,7 +4088,6 @@ Renesas RZ Platforms:
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
     - dts/bindings/*/*renesas,rz*
-    - soc/renesas/rzt2m/
     - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
@@ -5678,8 +5682,8 @@ Testing with Renode:
     - cmake/emu/renode.cmake
     - soc/renode/
     - boards/renode/
-    - boards/**/*/support/*.repl
-    - boards/**/*/support/*.resc
+    - boards/*/*/support/*.repl
+    - boards/*/*/support/*.resc
   labels:
     - "area: Renode"
 

@@ -279,6 +279,17 @@ int main(void)
 			continue;
 		}
 
+		if (usbd_is_suspended(sample_usbd)) {
+			/* on a press of any button, send wakeup request */
+			if (kb_evt.value) {
+				ret = usbd_wakeup_request(sample_usbd);
+				if (ret) {
+					LOG_ERR("Remote wakeup error, %d", ret);
+				}
+			}
+			continue;
+		}
+
 		ret = hid_device_submit_report(hid_dev, KB_REPORT_COUNT, report);
 		if (ret) {
 			LOG_ERR("HID submit report error, %d", ret);

@@ -38,14 +38,14 @@
 
 #define EXTFLASH_NODE	DT_INST(0, st_stm32_qspi_nor)
 #define EXTFLASH_ADDR	DT_REG_ADDR(DT_INST(0, st_stm32_qspi_nor))
-#define EXTFLASH_SIZE	DT_REG_SIZE(DT_INST(0, st_stm32_ospi_nor))
+#define EXTFLASH_SIZE	DT_REG_SIZE(DT_INST(0, st_stm32_qspi_nor))
 
 #elif defined(CONFIG_STM32_MEMMAP) && DT_NODE_EXISTS(DT_INST(0, st_stm32_xspi_nor))
 /* On stm32 XSPI, external flash is mapped in XIP region at address given by the reg property. */
 
 #define EXTFLASH_NODE	DT_INST(0, st_stm32_xspi_nor)
 #define EXTFLASH_ADDR	DT_REG_ADDR(DT_INST(0, st_stm32_xspi_nor))
-#define EXTFLASH_SIZE	DT_REG_SIZE(DT_INST(0, st_stm32_ospi_nor))
+#define EXTFLASH_SIZE	DT_REG_SIZE(DT_INST(0, st_stm32_xspi_nor))
 
 #elif defined(CONFIG_FLASH_MSPI_NOR) && defined(CONFIG_SOC_NRF54H20_CPUAPP)
 

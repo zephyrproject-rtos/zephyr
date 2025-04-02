@@ -7,6 +7,9 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra6/ra6-cm4-common.dtsi>
 
+/delete-node/ &eth;
+/delete-node/ &mdio;
+
 / {
 	soc {
 		sram0: memory@1ffe0000 {

@@ -215,7 +215,7 @@ static int sd_command_init(struct sd_card *card)
 	if (!sdmmc_card_init(card)) {
 		return 0;
 	}
-#endif /* CONFIG_SDIO_STACK */
+#endif /* CONFIG_SDMMC_STACK */
 #ifdef CONFIG_MMC_STACK
 	ret = sd_idle(card);
 	if (ret) {

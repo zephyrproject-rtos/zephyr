@@ -118,4 +118,4 @@
 	};
 };
 
-spi1: &iom1_spi {};
+ambiq_spi1: &iom1 {};

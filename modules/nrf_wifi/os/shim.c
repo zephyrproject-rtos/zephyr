@@ -268,6 +268,9 @@ struct nwb {
 	void (*cleanup_cb)();
 	unsigned char priority;
 	bool chksum_done;
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	struct net_pkt *pkt;
+#endif
 };
 
 static void *zep_shim_nbuf_alloc(unsigned int size)
@@ -301,6 +304,12 @@ static void zep_shim_nbuf_free(void *nbuf)
 	if (!nbuf) {
 		return;
 	}
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	if (((struct nwb *)nbuf)->pkt) {
+		net_pkt_unref(((struct nwb *)nbuf)->pkt);
+		((struct nwb *)nbuf)->pkt = NULL;
+	}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
 
 	zep_shim_data_mem_free(((struct nwb *)nbuf)->priv);
 	zep_shim_data_mem_free(nbuf);
@@ -387,11 +396,61 @@ static void zep_shim_nbuf_set_chksum_done(void *nbuf, unsigned char chksum_done)
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+void *net_pkt_to_nbuf_zc(struct net_pkt *pkt)
+{
+	struct nwb *nbuff;
+
+	if (!pkt || !pkt->buffer) {
+		LOG_DBG("Invalid packet, dropping");
+		return NULL;
+	}
+
+	/* Check if packet has more than one fragment */
+	if (pkt->buffer->frags) {
+		LOG_ERR("Zero-copy only supports single buffer packets");
+		return NULL;
+	}
+
+	nbuff = zep_shim_nbuf_alloc(NRF_WIFI_EXTRA_TX_HEADROOM); /* Just for headers */
+	if (!nbuff) {
+		return NULL;
+	}
+
+	zep_shim_nbuf_headroom_res(nbuff, NRF_WIFI_EXTRA_TX_HEADROOM);
+
+	/* Zero-copy: point to the single data buffer */
+	/* TODO: Use API for proper cursor access? */
+	nbuff->data = pkt->buffer->data;
+	nbuff->len = pkt->buffer->len;
+
+	nbuff->priority = net_pkt_priority(pkt);
+	nbuff->chksum_done = (bool)net_pkt_is_chksum_done(pkt);
+
+	nbuff->pkt = pkt;
+	/* Ref the packet so that it is not freed */
+	net_pkt_ref(pkt);
+
+	return nbuff;
+}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
+
 void *net_pkt_to_nbuf(struct net_pkt *pkt)
 {
 	struct nwb *nbuff;
 	unsigned char *data;
 	unsigned int len;
+
+	if (!pkt) {
+		return NULL;
+	}
+
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	/* For zero-copy, check if packet has single buffer */
+	if (pkt->buffer && !pkt->buffer->frags) {
+		return net_pkt_to_nbuf_zc(pkt);
+	}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
 
 	len = net_pkt_get_len(pkt);
 

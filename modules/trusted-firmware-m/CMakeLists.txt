@@ -18,6 +18,14 @@ set(TFM_VALID_PARTITIONS
 if (CONFIG_BUILD_WITH_TFM)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
+
+  if(CONFIG_TFM_BL1)
+    list(APPEND TFM_CMAKE_ARGS -DBL1:BOOL=ON)
+    if(CONFIG_TFM_BL2_SIGNING_KEY_PATH)
+      list(APPEND TFM_CMAKE_ARGS -DTFM_BL2_SIGNING_KEY_PATH=${CONFIG_TFM_BL2_SIGNING_KEY_PATH})
+    endif()
+  endif()
+
   if (CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
@@ -162,6 +170,10 @@ if (CONFIG_BUILD_WITH_TFM)
     set(BL2_ELF_FILE ${TFM_BINARY_DIR}/bin/bl2.elf)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
     set(BL2_HEX_FILE ${TFM_BINARY_DIR}/bin/bl2.hex)
+    if(CONFIG_TFM_BL1)
+      set(BL2_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2_signed.bin)
+      set(BL2_SIGNED_HEX_FILE ${TFM_BINARY_DIR}/bin/bl2_signed.hex)
+    endif()
   endif()
   set(TFM_S_ELF_FILE ${TFM_BINARY_DIR}/bin/tfm_s.elf)
   set(TFM_S_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s.bin)
@@ -179,6 +191,8 @@ if (CONFIG_BUILD_WITH_TFM)
     ${BL2_ELF_FILE}
     ${BL2_BIN_FILE}
     ${BL2_HEX_FILE}
+    $<$<BOOL:${CONFIG_TFM_BL1}>:${BL2_SIGNED_BIN_FILE}>
+    $<$<BOOL:${CONFIG_TFM_BL1}>:${BL2_SIGNED_HEX_FILE}>
     ${TFM_S_ELF_FILE}
     ${TFM_S_BIN_FILE}
     ${TFM_S_HEX_FILE}
@@ -326,6 +340,10 @@ if (CONFIG_BUILD_WITH_TFM)
       BL2_BIN_FILE ${BL2_BIN_FILE}
       BL2_HEX_FILE ${BL2_HEX_FILE}
       )
+      if(CONFIG_TFM_BL1)
+        set_target_properties(tfm PROPERTIES BL2_SIGNED_BIN_FILE ${BL2_SIGNED_BIN_FILE})
+        set_target_properties(tfm PROPERTIES BL2_SIGNED_HEX_FILE ${BL2_SIGNED_HEX_FILE})
+      endif()
   endif()
 
   # Set TFM S/NS executable file paths as target properties on 'tfm'
@@ -485,7 +503,8 @@ if (CONFIG_BUILD_WITH_TFM)
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
-        $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
+        $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
+        $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
         ${S_NS_SIGNED_FILE}
     )
 
@@ -511,7 +530,8 @@ if (CONFIG_BUILD_WITH_TFM)
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
-        $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
+        $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
+        $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
         ${S_SIGNED_FILE}
         ${NS_SIGNED_FILE}
     )

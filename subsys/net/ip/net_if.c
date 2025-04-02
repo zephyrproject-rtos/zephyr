@@ -3130,6 +3130,29 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
+		/* This is a dirty hack until we have proper IPv6 routing.
+		 * Without this the IPv6 packets might go to VPN interface for
+		 * subnets that are not on the same subnet as the VPN interface
+		 * which typically is not desired.
+		 * TODO: Implement IPv6 routing support and remove this hack.
+		 */
+		if (IS_ENABLED(CONFIG_NET_VPN)) {
+			/* For the VPN interface, we need to check if
+			 * address matches exactly the address of the interface.
+			 */
+			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+			    net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN) {
+				/* FIXME: Do not hard code the prefix length */
+				if (!net_ipv6_is_prefix(
+					    (const uint8_t *)&ipv6->unicast[i].address.in6_addr,
+					    (const uint8_t *)dst,
+					    64)) {
+					/* Skip this address as it is no match */
+					continue;
+				}
+			}
+		}
+
 		len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
 		if (len >= prefix_len) {
 			len = prefix_len;
@@ -3275,7 +3298,8 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 						IPV6_PREFER_SRC_PUBTMP_DEFAULT);
 }
 
-struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
+struct net_if *net_if_ipv6_select_src_iface_addr(const struct in6_addr *dst,
+						 const struct in6_addr **src_addr)
 {
 	struct net_if *iface = NULL;
 	const struct in6_addr *src;
@@ -3285,11 +3309,20 @@ struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
 		net_if_ipv6_addr_lookup(src, &iface);
 	}
 
+	if (src_addr != NULL) {
+		*src_addr = src;
+	}
+
 	if (iface == NULL) {
 		iface = net_if_get_default();
 	}
 
 	return iface;
+}
+
+struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
+{
+	return net_if_ipv6_select_src_iface_addr(dst, NULL);
 }
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -3600,7 +3633,8 @@ out:
 	return ret;
 }
 
-struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
+struct net_if *net_if_ipv4_select_src_iface_addr(const struct in_addr *dst,
+						 const struct in_addr **src_addr)
 {
 	struct net_if *selected = NULL;
 	const struct in_addr *src;
@@ -3614,7 +3648,16 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 		selected = net_if_get_default();
 	}
 
+	if (src_addr != NULL) {
+		*src_addr = src;
+	}
+
 	return selected;
+}
+
+struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
+{
+	return net_if_ipv4_select_src_iface_addr(dst, NULL);
 }
 
 static uint8_t get_diff_ipv4(const struct in_addr *src,
@@ -3657,6 +3700,29 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr) != ll) {
 			continue;
+		}
+
+		/* This is a dirty hack until we have proper IPv4 routing.
+		 * Without this the IPv4 packets might go to VPN interface for
+		 * subnets that are not on the same subnet as the VPN interface
+		 * which typically is not desired.
+		 * TODO: Implement IPv4 routing support and remove this hack.
+		 */
+		if (IS_ENABLED(CONFIG_NET_VPN)) {
+			/* For the VPN interface, we need to check if
+			 * address matches exactly the address of the interface.
+			 */
+			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+			    net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN) {
+				subnet.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr &
+					ipv4->unicast[i].netmask.s_addr;
+
+				if (subnet.s_addr !=
+				    (dst->s_addr & ipv4->unicast[i].netmask.s_addr)) {
+					/* Skip this address as it is no match */
+					continue;
+				}
+			}
 		}
 
 		subnet.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr &

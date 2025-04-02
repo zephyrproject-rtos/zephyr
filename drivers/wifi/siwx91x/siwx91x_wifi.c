@@ -54,7 +54,7 @@ static int siwx91x_bandwidth(enum wifi_frequency_bandwidths bandwidth)
 	}
 }
 
-static int siwx91x_security(enum wifi_security_type security)
+static int siwx91x_map_ap_security(enum wifi_security_type security)
 {
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
@@ -63,6 +63,8 @@ static int siwx91x_security(enum wifi_security_type security)
 		return SL_WIFI_WPA;
 	case WIFI_SECURITY_TYPE_PSK:
 		return SL_WIFI_WPA2;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return SL_WIFI_WPA_WPA2_MIXED;
 	default:
 		return -EINVAL;
 	}
@@ -134,8 +136,9 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	siwx91x_ap_cfg.channel.bandwidth = siwx91x_bandwidth(params->bandwidth);
 	strncpy(siwx91x_ap_cfg.ssid.value, params->ssid, params->ssid_length);
 
-	sec = siwx91x_security(params->security);
+	sec = siwx91x_map_ap_security(params->security);
 	if (sec < 0) {
+		LOG_ERR("Invalid security type");
 		return -EINVAL;
 	}
 
@@ -263,6 +266,10 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 		 * methods for SAE
 		 */
 		wifi_config.security = SL_WIFI_WPA3;
+		break;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		/* Use WPA2/WPA3 security as the device supports both */
+		wifi_config.security = SL_WIFI_WPA3_TRANSITION;
 		break;
 	/* Zephyr WiFi shell doesn't specify how to pass credential for these
 	 * key managements.
@@ -560,8 +567,14 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 	case SL_WIFI_OPEN:
 		status->security = WIFI_SECURITY_TYPE_NONE;
 		break;
+	case SL_WIFI_WPA:
+		status->security = WIFI_SECURITY_TYPE_WPA_PSK;
+		break;
 	case SL_WIFI_WPA2:
 		status->security = WIFI_SECURITY_TYPE_PSK;
+		break;
+	case SL_WIFI_WPA_WPA2_MIXED:
+		status->security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 		break;
 	case SL_WIFI_WPA3:
 		status->security = WIFI_SECURITY_TYPE_SAE;

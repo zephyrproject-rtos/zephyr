@@ -836,9 +836,6 @@ When :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is pro
 which includes string formatting. In case of that mode, stack usage will depend on which backends
 are used.
 
-:zephyr_file:`tests/subsys/logging/log_stack` test is used to characterize stack usage depending
-on mode, optimization and platform used. Test is using only the default backend.
-
 Some of the platforms characterization for log message with two ``integer`` arguments listed below:
 
 +---------------+----------+----------------------------+-----------+-----------------------------+

@@ -87,8 +87,6 @@ void IRAM_ATTR __appcpu_start(void)
 
 	core_intr_matrix_clear();
 
-	esp_intr_initialize();
-
 	/* Start Zephyr */
 	z_prep_c();
 

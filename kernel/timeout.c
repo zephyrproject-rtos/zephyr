@@ -29,10 +29,10 @@ static struct k_spinlock timeout_lock;
 static int announce_remaining;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+unsigned int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
+static inline unsigned int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
 	return z_impl_sys_clock_hw_cycles_per_sec_runtime_get();
 }

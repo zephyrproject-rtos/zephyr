@@ -8,7 +8,7 @@ Overview
 ********
 
 Make a USB Bluetooth dongle out of Zephyr. Requires USB device support from the
-board it runs on (e.g. :ref:`nrf52840dk_nrf52840` supports both Bluetooth LE and USB).
+board it runs on (e.g. :zephyr:board:`nrf52840dk` supports both Bluetooth LE and USB).
 
 Requirements
 ************

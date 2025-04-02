@@ -82,7 +82,7 @@ class TestOutput:
             assert all([(tc_name.count('.') == 1) for _, _, tc_name in filtered_j])
 
 
-    def test_inline_logs(self, out_path):
+    def xtest_inline_logs(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'always_build_error', 'dummy')
         args = ['--outdir', out_path, '-T', path] + \

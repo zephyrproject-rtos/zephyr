@@ -28,7 +28,8 @@ flash_hp_enter_pe_cf_mode(flash_hp_instance_ctrl_t *const p_ctrl) PLACE_IN_RAM_S
 extern fsp_err_t flash_hp_stop(void) PLACE_IN_RAM_SECTION;
 
 extern fsp_err_t flash_hp_configuration_area_write(flash_hp_instance_ctrl_t *p_ctrl,
-						   uint32_t fsaddr) PLACE_IN_RAM_SECTION;
+						   uint32_t fsaddr,
+						   uint16_t *src_address) PLACE_IN_RAM_SECTION;
 
 extern fsp_err_t flash_hp_check_errors(fsp_err_t previous_error, uint32_t error_bits,
 				       fsp_err_t return_error) PLACE_IN_RAM_SECTION;
@@ -63,7 +64,8 @@ static fsp_err_t flash_hp_set_block_protect_ns(flash_hp_instance_ctrl_t *p_ctrl,
 	if (bps_val_ns != NULL) {
 		memcpy(&g_configuration_area_data[FLASH_HP_FCU_CONFIG_SET_BPS_OFFSET], bps_val_ns,
 		       size);
-		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS);
+		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS,
+							&g_configuration_area_data);
 		err = flash_hp_check_errors(err, 0, FSP_ERR_WRITE_FAILED);
 	}
 
@@ -71,7 +73,8 @@ static fsp_err_t flash_hp_set_block_protect_ns(flash_hp_instance_ctrl_t *p_ctrl,
 	if (pbps_val_ns != NULL) {
 		memcpy(&g_configuration_area_data[FLASH_HP_FCU_CONFIG_SET_BPS_OFFSET], pbps_val_ns,
 		       size);
-		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_PBPS);
+		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_PBPS,
+							&g_configuration_area_data);
 		err = flash_hp_check_errors(err, 0, FSP_ERR_WRITE_FAILED);
 	}
 
@@ -103,7 +106,8 @@ static fsp_err_t flash_hp_set_block_protect_sec(flash_hp_instance_ctrl_t *p_ctrl
 	if (bps_val_sec != NULL) {
 		memcpy(&g_configuration_area_data[FLASH_HP_FCU_CONFIG_SET_BPS_OFFSET], bps_val_sec,
 		       size);
-		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS_SEC);
+		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS_SEC,
+							&g_configuration_area_data);
 		err = flash_hp_check_errors(err, 0, FSP_ERR_WRITE_FAILED);
 	}
 
@@ -111,7 +115,8 @@ static fsp_err_t flash_hp_set_block_protect_sec(flash_hp_instance_ctrl_t *p_ctrl
 	if (pbps_val_sec != NULL) {
 		memcpy(&g_configuration_area_data[FLASH_HP_FCU_CONFIG_SET_BPS_OFFSET], pbps_val_sec,
 		       size);
-		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_PBPS_SEC);
+		err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_PBPS_SEC,
+							&g_configuration_area_data);
 		err = flash_hp_check_errors(err, 0, FSP_ERR_WRITE_FAILED);
 	}
 
@@ -141,7 +146,8 @@ static fsp_err_t flash_hp_set_block_protect_sel(flash_hp_instance_ctrl_t *p_ctrl
 
 	memset(g_configuration_area_data, UINT8_MAX, sizeof(g_configuration_area_data));
 	memcpy(&g_configuration_area_data[FLASH_HP_FCU_CONFIG_SET_BPS_OFFSET], bps_sel_val, size);
-	err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS_SEL);
+	err = flash_hp_configuration_area_write(p_ctrl, FLASH_HP_FCU_CONFIG_SET_BPS_SEL,
+						&g_configuration_area_data);
 	err = flash_hp_check_errors(err, 0, FSP_ERR_WRITE_FAILED);
 
 	/* Return to read mode*/

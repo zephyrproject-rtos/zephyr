@@ -226,8 +226,6 @@ struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr);
 void bt_keys_link_key_clear(struct bt_keys_link_key *link_key);
 void bt_keys_link_key_clear_addr(const bt_addr_t *addr);
 void bt_keys_link_key_store(struct bt_keys_link_key *link_key);
-void bt_foreach_bond_br(void (*func)(const struct bt_bond_info *info, void *user_data),
-			void *user_data);
 
 /* This function is used to signal that the key has been used for paring */
 /* It updates the aging counter and saves it to flash if configuration option */

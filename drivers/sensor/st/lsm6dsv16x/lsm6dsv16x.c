@@ -165,7 +165,7 @@ static int lsm6dsv16x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
+int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -194,15 +194,17 @@ static int lsm6dsv16x_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
+int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dsv16x_data *data = dev->data;
 
 	if (lsm6dsv16x_gy_data_rate_set(ctx, odr) < 0) {
 		return -EIO;
 	}
 
+	data->gyro_freq = odr;
 	return 0;
 }
 
@@ -455,6 +457,10 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 
 		return lsm6dsv16x_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_CHAN_GBIAS_XYZ:
+		return lsm6dsv16x_gbias_config(dev, chan, attr, val);
+#endif /* CONFIG_LSM6DSV16X_STREAM */
 	default:
 		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
@@ -643,6 +649,10 @@ static int lsm6dsv16x_attr_get(const struct device *dev, enum sensor_channel cha
 		return lsm6dsv16x_accel_get_config(dev, chan, attr, val);
 	case SENSOR_CHAN_GYRO_XYZ:
 		return lsm6dsv16x_gyro_get_config(dev, chan, attr, val);
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_CHAN_GBIAS_XYZ:
+		return lsm6dsv16x_gbias_get_config(dev, chan, attr, val);
+#endif /* CONFIG_LSM6DSV16X_STREAM */
 	default:
 		LOG_WRN("attr_get() not supported on this channel.");
 		return -ENOTSUP;
@@ -1162,7 +1172,6 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
-	lsm6dsv16x->gyro_freq = odr;
 	if (lsm6dsv16x_gyro_set_odr_raw(dev, odr) < 0) {
 		LOG_ERR("failed to set gyroscope odr %d", odr);
 		return -EIO;

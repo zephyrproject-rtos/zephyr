@@ -8,6 +8,9 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
+/delete-node/ &eth;
+/delete-node/ &mdio;
+
 / {
 	soc {
 		sram0: memory@1ffe0000 {

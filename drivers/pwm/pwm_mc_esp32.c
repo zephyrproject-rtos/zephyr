@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,20 +19,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <esp_clk_tree.h>
 #ifdef CONFIG_PWM_CAPTURE
-#if defined(CONFIG_RISCV)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
 #endif /* CONFIG_PWM_CAPTURE */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
-
-#if defined(CONFIG_RISCV)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 #ifdef CONFIG_PWM_CAPTURE
 #define SKIP_IRQ_NUM        4U
@@ -554,7 +544,7 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
 				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |          \
 					ESP_INTR_FLAG_IRAM,                                        \
-				(ISR_HANDLER)mcpwm_esp32_isr, (void *)dev, NULL);                  \
+				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
 		return ret;                                                                \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx

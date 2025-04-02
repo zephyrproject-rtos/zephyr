@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    The Renesas RZ/T2L pin controller is a node responsible for controlling
+    Renesas RZ/T pin controller
+
+    The Renesas RZ/T pin controller is a node responsible for controlling
     pin function selection and pin properties, such as routing the TX and RX of UART0
     to pin 5 and pin 6 of port 16.
 

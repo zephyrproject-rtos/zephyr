@@ -682,7 +682,7 @@ struct bt_le_local_features {
 int bt_le_get_local_features(struct bt_le_local_features *local_features);
 
 /** Advertising options */
-enum advertising_options {
+enum bt_le_adv_opt {
 	/** Convenience value when no options are specified. */
 	BT_LE_ADV_OPT_NONE = 0,
 
@@ -883,7 +883,7 @@ enum advertising_options {
 	 *
 	 * @note Cannot be set if BT_LE_ADV_OPT_CODED is set.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_ADV_OPT_NO_2M = BIT(11),
@@ -896,7 +896,7 @@ enum advertising_options {
 	 * the trade-off of lower data rate and higher power consumption.
 	 * Connections will be established on LE Coded PHY.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_ADV_OPT_CODED = BIT(12),
@@ -904,7 +904,7 @@ enum advertising_options {
 	/**
 	 * @brief Advertise without a device address (identity address or RPA).
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_ADV_OPT_ANONYMOUS = BIT(13),
@@ -912,7 +912,7 @@ enum advertising_options {
 	/**
 	 * @brief Advertise with transmit power.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_ADV_OPT_USE_TX_POWER = BIT(14),
@@ -1005,7 +1005,7 @@ struct bt_le_adv_param {
 	/**
 	 * @brief Advertising Set Identifier, valid range 0x00 - 0x0f.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 *set as @ref bt_le_adv_param.options.
 	 **/
 	uint8_t  sid;
@@ -1016,12 +1016,12 @@ struct bt_le_adv_param {
 	 * Maximum advertising events the advertiser can skip before it must
 	 * send advertising data on the secondary advertising channel.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	uint8_t  secondary_max_skip;
 
-	/** @brief Bit-field of advertising options, see the @ref advertising_options field. */
+	/** @brief Bit-field of advertising options, see the @ref bt_le_adv_opt field. */
 	uint32_t options;
 
 	/**
@@ -1068,14 +1068,14 @@ struct bt_le_adv_param {
 
 
 /** Periodic Advertising options */
-enum {
+enum bt_le_per_adv_opt {
 	/** Convenience value when no options are specified. */
 	BT_LE_PER_ADV_OPT_NONE = 0,
 
 	/**
 	 * @brief Advertise with transmit power.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_PER_ADV_OPT_USE_TX_POWER = BIT(1),
@@ -1083,7 +1083,7 @@ enum {
 	/**
 	 * @brief Advertise with included AdvDataInfo (ADI).
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref advertising_options field)  to be
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	BT_LE_PER_ADV_OPT_INCLUDE_ADI = BIT(2),
@@ -1119,7 +1119,7 @@ struct bt_le_per_adv_param {
 	 */
 	uint16_t interval_max;
 
-	/** Bit-field of periodic advertising options, see the @ref advertising_options field. */
+	/** Bit-field of periodic advertising options, see the @ref bt_le_adv_opt field. */
 	uint32_t options;
 
 #if defined(CONFIG_BT_PER_ADV_RSP)
@@ -1436,7 +1436,7 @@ struct bt_le_per_adv_param {
  *
  * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
  * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
- * @param _options     Periodic advertising properties bitfield, see @ref advertising_options
+ * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
 #define BT_LE_PER_ADV_PARAM_INIT(_int_min, _int_max, _options) \
@@ -1451,7 +1451,7 @@ struct bt_le_per_adv_param {
  *
  * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
  * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
- * @param _options     Periodic advertising properties bitfield, see @ref advertising_options
+ * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
 #define BT_LE_PER_ADV_PARAM(_int_min, _int_max, _options) \
@@ -2071,7 +2071,7 @@ struct bt_le_per_adv_sync_cb {
 };
 
 /** Periodic advertising sync options */
-enum {
+enum bt_le_per_adv_sync_opt {
 	/** Convenience value when no options are specified. */
 	BT_LE_PER_ADV_SYNC_OPT_NONE = 0,
 
@@ -2295,7 +2295,7 @@ int bt_le_per_adv_sync_recv_enable(struct bt_le_per_adv_sync *per_adv_sync);
 int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync);
 
 /** Periodic Advertising Sync Transfer options */
-enum {
+enum bt_le_per_adv_sync_transfer_opt {
 	/** Convenience value when no options are specified. */
 	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_NONE = 0,
 
@@ -2476,7 +2476,7 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid);
 int bt_le_per_adv_list_clear(void);
 
 
-enum {
+enum bt_le_scan_opt {
 	/** Convenience value when no options are specified. */
 	BT_LE_SCAN_OPT_NONE = 0,
 
@@ -2497,7 +2497,7 @@ enum {
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
 };
 
-enum {
+enum bt_le_scan_type {
 	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
 
@@ -2513,7 +2513,7 @@ enum {
 
 /** LE scan parameters */
 struct bt_le_scan_param {
-	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
+	/** Scan type. @ref BT_LE_SCAN_TYPE_ACTIVE or @ref BT_LE_SCAN_TYPE_PASSIVE. */
 	uint8_t  type;
 
 	/** Bit-field of scanning options. */
@@ -2636,8 +2636,7 @@ struct bt_le_scan_cb {
 /**
  * @brief Initialize scan parameters
  *
- * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
- *                  BT_LE_SCAN_TYPE_PASSIVE.
+ * @param _type     Scan Type, @ref BT_LE_SCAN_TYPE_ACTIVE or @ref BT_LE_SCAN_TYPE_PASSIVE.
  * @param _options  Scan options
  * @param _interval Scan Interval (N * 0.625 ms)
  * @param _window   Scan Window (N * 0.625 ms)
@@ -2656,8 +2655,7 @@ struct bt_le_scan_cb {
 /**
  * @brief Helper to declare scan parameters inline
  *
- * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
- *                  BT_LE_SCAN_TYPE_PASSIVE.
+ * @param _type     Scan Type, @ref BT_LE_SCAN_TYPE_ACTIVE or @ref BT_LE_SCAN_TYPE_PASSIVE.
  * @param _options  Scan options
  * @param _interval Scan Interval (N * 0.625 ms)
  * @param _window   Scan Window (N * 0.625 ms)

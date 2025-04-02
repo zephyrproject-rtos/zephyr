@@ -6,8 +6,6 @@
 include: [ethernet-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  reg:
-    required: true
   interrupts:
     required: true
   clocks:
@@ -19,4 +17,6 @@ properties:
   pinctrl-names:
     required: true
   phy-connection-type:
+    required: true
+  phy-handle:
     required: true

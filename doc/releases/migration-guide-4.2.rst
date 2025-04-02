@@ -38,6 +38,15 @@ Boards
   nRF Util can be found
   `here <https://docs.nordicsemi.com/bundle/nrfutil/page/README.html>`_.
 
+* All boards based on a Nordic IC of the nRF54L series now default to not
+  erasing any part of the internal storage when flashing. If you'd like to
+  revert to the previous default of erasing the pages that will be written to by
+  the firmware to be flashed you can use the new ``--erase-pages`` command-line
+  switch when invoking ``west flash``.
+  Note that RRAM on nRF54L devices is not physically paged, and paging is
+  only artificially provided, with a page size of 4096 bytes, for an easier
+  transition of nRF52 software to nRF54L devices.
+
 * The config option :kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME` has been deprecated
   in favor of :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
 
@@ -61,6 +70,11 @@ Boards
   - :dtcompatible:`renesas,ra-sci-uart`
   - :dtcompatible:`renesas,ra-pinctrl-pfs`
   - :dtcompatible:`renesas,ra-cgc-pclk-block`
+
+* Nucleo WBA52CG board (``nucleo_wba52cg``) is not supported anymore since it is NRND
+  (Not Recommended for New Design) and it is not supported anymore in the STM32CubeWBA from
+  version 1.1.0 (July 2023). The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``)
+  is recommended and it could be done without any change.
 
 Device Drivers and Devicetree
 *****************************
@@ -106,6 +120,15 @@ Ethernet
 * Removed Kconfig option ``ETH_STM32_HAL_MII`` (:github:`86074`).
   PHY interface type is now selected via the ``phy-connection-type`` property in the device tree.
 
+* The :dtcompatible:`st,stm32-ethernet` driver now requires the ``phy-handle`` phandle to be
+  set to the according PHY node in the device tree (:github:`87593`).
+
+* The Kconfig options ``ETH_STM32_HAL_PHY_ADDRESS``, ``ETH_STM32_CARRIER_CHECK``,
+  ``ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS``, ``ETH_STM32_AUTO_NEGOTIATION_ENABLE``,
+  ``ETH_STM32_SPEED_10M``, ``ETH_STM32_MODE_HALFDUPLEX`` have been removed, as they are no longer
+  needed, and the driver now uses the ethernet phy api to communicate with the phy driver, which
+  is resposible for configuring the phy settings (:github:`87593`).
+
 * ``ethernet_native_posix`` has been renamed ``ethernet_native_tap``, and with it its
   kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
   deprecated in favor of :kconfig:option:`CONFIG_ETH_NATIVE_TAP` (:github:`86578`).
@@ -130,6 +153,14 @@ GPIO
   :dtcompatible:`raspberrypi,rpi-gpio-port`, and :dtcompatible:`raspberrypi,rpi-gpio` is
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
+
+Sensors
+=======
+
+* ``ltr`` vendor prefix has been renamed to ``liteon``, and with it the
+  :dtcompatible:`ltr,f216a` name has been replaced by :dtcompatible:`liteon,ltrf216a`.
+  The choice :kconfig:option:`DT_HAS_LTR_F216A_ENABLED` has been replaced with
+  :kconfig:option:`DT_HAS_LITEON_LTRF216A_ENABLED` (:github:`85453`)
 
 Serial
 =======

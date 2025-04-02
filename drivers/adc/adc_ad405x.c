@@ -58,6 +58,8 @@ LOG_MODULE_REGISTER(adc_ad405x, CONFIG_ADC_LOG_LEVEL);
 /** AD405X_REG_AVG_CONFIG Bit Definitions */
 #define AD405X_AVG_WIN_LEN_MSK GENMASK(3, 0)
 
+#define AD405X_SINGLE_DIFFERENTIAL_MSK BIT(7)
+
 #define AD405X_WRITE_CMD 0x0U
 #define AD405X_READ_CMD  0x80U
 
@@ -67,6 +69,9 @@ LOG_MODULE_REGISTER(adc_ad405x, CONFIG_ADC_LOG_LEVEL);
 #define AD405X_GP0_MODE_MSK GENMASK(2, 0)
 #define AD405X_GP1          0x1U
 #define AD405X_GP0          0x0U
+
+#define AD405X_SINGLE_ENDED  0x0U
+#define AD405X_DIFFERENTIAL  BIT(7)
 
 /** AD405X_REG_TIMER_CONFIG Bit Definitions */
 #define AD405X_FS_BURST_AUTO_MSK GENMASK(7, 4)
@@ -145,7 +150,7 @@ struct adc_ad405x_config {
 #endif
 	struct gpio_dt_spec conversion;
 	uint16_t chip_id;
-	uint16_t resolution;
+	const struct adc_dt_spec spec;
 };
 
 struct adc_ad405x_data {
@@ -419,12 +424,23 @@ int ad405x_init_interrupt(const struct device *dev)
 static int ad405x_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
+	const struct adc_ad405x_config *cfg = dev->config;
 	if (channel_cfg->channel_id != 0) {
 		LOG_ERR("invalid channel id %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
+	if (channel_cfg->differential != cfg->spec.channel_cfg.differential) {
+		LOG_ERR("invalid mode %d", channel_cfg->differential);
+		return -EINVAL;
+	}
 
-	return 0;
+	uint8_t diff_mode = AD405X_SINGLE_ENDED;
+
+	if (channel_cfg->differential) {
+		diff_mode = AD405X_DIFFERENTIAL;
+	}
+	return ad405x_reg_update_bits(dev, AD405X_REG_ADC_MODES,
+				AD405X_SINGLE_DIFFERENTIAL_MSK, diff_mode);
 }
 
 static int adc_ad405x_validate_buffer_size(const struct device *dev,
@@ -715,13 +731,13 @@ static int adc_ad405x_start_read(const struct device *dev, const struct adc_sequ
 	int ret;
 
 	if (cfg->chip_id == AD4050_CHIP_ID) {
-		if (sequence->resolution != AD4050_ADC_RESOLUTION) {
+		if (sequence->resolution != cfg->spec.resolution) {
 			LOG_ERR("invalid resolution %d", sequence->resolution);
 			return -EINVAL;
 		}
 	}
 	if (cfg->chip_id == AD4052_CHIP_ID) {
-		if (sequence->resolution != AD4052_ADC_RESOLUTION) {
+		if (sequence->resolution != cfg->spec.resolution) {
 			LOG_ERR("invalid resolution %d", sequence->resolution);
 			return -EINVAL;
 		}
@@ -858,6 +874,18 @@ static int adc_ad405x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (cfg->chip_id == AD4050_CHIP_ID) {
+		if (cfg->spec.resolution != AD4050_ADC_RESOLUTION) {
+			LOG_ERR("Invalid resolution %d", cfg->spec.resolution);
+			return -EINVAL;
+		}
+	} else {
+		if (cfg->spec.resolution != AD4052_ADC_RESOLUTION) {
+			LOG_ERR("Invalid resolution %d", cfg->spec.resolution);
+			return -EINVAL;
+		}
+	}
+
 #if CONFIG_AD405X_TRIGGER
 	if (cfg->has_gp1 != 0) {
 		ad405x_set_gpx_mode(dev, AD405X_GP1, AD405X_DATA_READY);
@@ -874,11 +902,13 @@ static int adc_ad405x_init(const struct device *dev)
 static DEVICE_API(adc, ad405x_api_funcs) = {
 	.channel_setup = ad405x_channel_setup,
 	.read = ad405x_read,
-	.ref_internal = 2048,
+	.ref_internal = 2500,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = ad405x_adc_read_async,
 #endif
 };
+
+#define AD405X_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define DT_INST_AD405X(inst, t) DT_INST(inst, adi_ad##t##_adc)
 
@@ -896,16 +926,15 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST_AD405X(n, t), gp0_gpios),                            \
 		   (AD405X_GPIO_PROPS0(n)))
 
-#define AD405X_INIT(t, n, res) \
+#define AD405X_INIT(t, n) \
 	static struct adc_ad405x_data ad##t##_data_##n = {};                                     \
 	static const struct adc_ad405x_config ad##t##_config_##n =  {                            \
-		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), SPI_WORD_SET(8) |           \
-		SPI_TRANSFER_MSB, 0)},                                                           \
+		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG, 0)},        \
 		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t), conversion_gpios, 0),\
 		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))                           \
 		.chip_id = t,                                                                    \
 		.active_mode = AD405X_SAMPLE_MODE_OP,                                            \
-		.resolution = res,                                                               \
+		.spec = ADC_DT_SPEC_STRUCT(DT_INST(n, DT_DRV_COMPAT), 0)                         \
 		};                                                                               \
 	DEVICE_DT_DEFINE(DT_INST_AD405X(n, t), adc_ad405x_init, NULL, &ad##t##_data_##n,         \
 			&ad##t##_config_##n, POST_KERNEL,                                        \
@@ -914,7 +943,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 /*
  * AD4052: 16 bit
  */
-#define AD4052_INIT(n) AD405X_INIT(AD4052_CHIP_ID, n, AD4052_ADC_RESOLUTION)
+#define AD4052_INIT(n) AD405X_INIT(AD4052_CHIP_ID, n)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT adi_ad4052_adc
 DT_INST_FOREACH_STATUS_OKAY(AD4052_INIT)
@@ -922,7 +951,7 @@ DT_INST_FOREACH_STATUS_OKAY(AD4052_INIT)
 /*
  * AD4050: 12 bit
  */
-#define AD4050_INIT(n) AD405X_INIT(AD4050_CHIP_ID, n, AD4050_ADC_RESOLUTION)
+#define AD4050_INIT(n) AD405X_INIT(AD4050_CHIP_ID, n)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT adi_ad4050_adc
 DT_INST_FOREACH_STATUS_OKAY(AD4050_INIT)

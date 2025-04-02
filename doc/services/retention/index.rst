@@ -33,7 +33,7 @@ RAM as non-init for this purpose. The retention system is then initialised as a
 child node of this device 1 or more times - note that the memory region will
 need to be decremented to account for this reserved portion of RAM. See the
 following example (examples in this guide are based on the
-:ref:`nrf52840dk_nrf52840` board and memory layout):
+:zephyr:board:`nrf52840dk` board and memory layout):
 
 .. code-block:: devicetree
 

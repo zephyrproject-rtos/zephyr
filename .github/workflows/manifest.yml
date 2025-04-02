@@ -20,12 +20,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          cd zephyrproject/zephyr
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: west setup
         env:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip install west
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
           west init -l . || true

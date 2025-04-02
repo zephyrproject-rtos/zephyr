@@ -44,6 +44,28 @@ menu "Ciphersuite configuration"
 
 comment "Supported key exchange modes"
 
+config MBEDTLS_RSA_C
+	bool "RSA base support"
+
+if MBEDTLS_RSA_C
+
+config MBEDTLS_PKCS1_V15
+	bool "RSA PKCS1 v1.5"
+
+config MBEDTLS_PKCS1_V21
+	bool "RSA PKCS1 v2.1"
+
+config MBEDTLS_GENPRIME_ENABLED
+	bool "Prime number generation code"
+
+endif # MBEDTLS_RSA_C
+
+config MBEDTLS_RSA_FULL
+	bool
+	select MBEDTLS_RSA_C
+	select MBEDTLS_PKCS1_V15
+	select MBEDTLS_PKCS1_V21
+
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
 	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -70,6 +92,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
+	select MBEDTLS_RSA_FULL
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
@@ -82,6 +105,7 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
+	select MBEDTLS_RSA_FULL
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
@@ -89,9 +113,11 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
+	select MBEDTLS_RSA_FULL
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
+	select MBEDTLS_RSA_FULL
 	depends on MBEDTLS_ECDH_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
@@ -372,11 +398,30 @@ config MBEDTLS_CIPHER
 config MBEDTLS_MD
 	bool "generic message digest layer."
 
-config MBEDTLS_GENPRIME_ENABLED
-	bool "prime-number generation code."
-
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
+
+config MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+	bool "Remove usage of standard libc functions"
+	help
+	  This prevents Mbed TLS from linking against the following standard functions
+	  from libc: `snprintf`, `vsnprintf`, `printf`, `fprintf`, `calloc`, `free`, `setbuf`, `exit`
+	  and `time`. By default Mbed TLS will use stub functions for all these functions.
+	  These stubs are just meant to return successfully, but they don't implement
+	  the required functionality.
+	  Users can individually override each of these stubs by calling
+	  `mbedtls_platform_set_xxx()` to set the their implementation of `xxx()` function
+	  at runtime.
+
+if MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
+config MBEDTLS_PLATFORM_SNPRINTF_ALT
+	bool "Allow setting custom snprintf at run-time"
+	help
+	  Allow setting a custom `snprintf()` function with `mbedtls_platform_set_snprintf()`.
+	  Include `mbedtls/platform.h` for the prototype of this function.
+
+endif # MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 
 config MBEDTLS_PEM_CERTIFICATE_FORMAT
 	bool "Support for PEM certificate format"

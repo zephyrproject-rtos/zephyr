@@ -28,7 +28,7 @@ extern "C" {
  */
 
 enum cfb_display_param {
-	CFB_DISPLAY_HEIGH		= 0,
+	CFB_DISPLAY_HEIGHT		= 0,
 	CFB_DISPLAY_WIDTH,
 	CFB_DISPLAY_PPT,
 	CFB_DISPLAY_ROWS,

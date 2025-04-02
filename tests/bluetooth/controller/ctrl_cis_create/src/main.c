@@ -127,7 +127,7 @@ static struct pdu_data_llctrl_cis_ind local_cis_ind = {
 	.cig_sync_delay = { 0, 0, 0},
 	.cis_offset = { 0, 0, 0},
 	.cis_sync_delay = { 0, 0, 0},
-	.conn_event_count = 13
+	.conn_event_count = 0
 };
 
 #define ERROR_CODE 0x17

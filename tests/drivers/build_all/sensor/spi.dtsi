@@ -413,3 +413,10 @@ paa3905: paa3905@32 {
 	reg = <0x32>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_pat9136: pat9136@33 {
+	compatible = "pixart,pat9136";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};

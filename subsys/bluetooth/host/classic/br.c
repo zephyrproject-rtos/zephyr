@@ -1241,3 +1241,41 @@ bool bt_br_bond_exists(const bt_addr_t *addr)
 	/* if there are any keys stored then device is bonded */
 	return key != NULL;
 }
+
+static void unpair(const bt_addr_t *addr)
+{
+	struct bt_conn *conn = bt_conn_lookup_addr_br(addr);
+	struct bt_conn_auth_info_cb *listener, *next;
+
+	if (conn) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		bt_conn_unref(conn);
+	}
+
+	bt_keys_link_key_clear_addr(addr);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+					  next, node) {
+		if (listener->br_bond_deleted) {
+			listener->br_bond_deleted(addr);
+		}
+	}
+}
+
+static void bt_br_unpair_remote(const struct bt_br_bond_info *info, void *data)
+{
+	ARG_UNUSED(data);
+
+	unpair(&info->addr);
+}
+
+int bt_br_unpair(const bt_addr_t *addr)
+{
+	if (!addr || bt_addr_eq(addr, BT_ADDR_ANY)) {
+		bt_br_foreach_bond(bt_br_unpair_remote, NULL);
+	} else {
+		unpair(addr);
+	}
+
+	return 0;
+}

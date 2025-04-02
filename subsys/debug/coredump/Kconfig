@@ -28,6 +28,17 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
 
+config DEBUG_COREDUMP_BACKEND_IN_MEMORY
+	bool "Use memory to store the coredump"
+	help
+	  Core dump (or part of it) is saved in a dedicated area in
+	  memory. Such memory is protected at boot time so it could be
+	  read after a warm reboot. This is obviously NOT a valid solution
+	  when a full hardware reboot cycle occurs (on/off etc..) where
+	  the RAM will most likely loose its data.
+	  See DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE on how much space to
+	  reserve.
+
 config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	bool "Use memory window for coredump on Intel ADSP"
 	depends on DT_HAS_INTEL_ADSP_MEM_WINDOW_ENABLED
@@ -117,5 +128,20 @@ config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 
 	  Say n to conserve space on coredump backend or if you will never
 	  need to look into the privilege stacks.
+
+config DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE
+	int "In-memory coredump size"
+	default 128
+	depends on DEBUG_COREDUMP_BACKEND_IN_MEMORY
+	help
+	  Sets the dedicated memory area where a coredump can be stored
+	  and accessed after a warm reboot. It has to be able to hold at
+	  least the info dumped by arch_coredump_info_dump().
+	  Extra memory region will silently be ignored if there isn't
+	  enough space.
+
+module = DEBUG_COREDUMP
+module-str = coredump
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # DEBUG_COREDUMP

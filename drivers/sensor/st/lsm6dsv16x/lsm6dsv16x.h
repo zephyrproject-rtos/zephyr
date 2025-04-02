@@ -169,6 +169,9 @@ struct lsm6dsv16x_data {
 	uint8_t bus_type : 2; /* I2C is 0, SPI is 1, I3C is 2 */
 	uint8_t sflp_batch_odr : 3;
 	uint8_t reserved : 1;
+	int32_t gbias_x_udps;
+	int32_t gbias_y_udps;
+	int32_t gbias_z_udps;
 #endif
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
@@ -210,6 +213,9 @@ static inline uint8_t lsm6dsv16x_bus_reg(struct lsm6dsv16x_data *data, uint8_t x
 #define LSM6DSV16X_FIFO_ITEM_LEN 7
 #define LSM6DSV16X_FIFO_SIZE(x) (x * LSM6DSV16X_FIFO_ITEM_LEN)
 #endif
+
+int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr);
+int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr);
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 int lsm6dsv16x_shub_init(const struct device *dev);

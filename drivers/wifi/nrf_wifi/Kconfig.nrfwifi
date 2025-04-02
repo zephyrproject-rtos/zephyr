@@ -86,7 +86,7 @@ config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
 config NRF70_SYSTEM_WITH_RAW_MODES
-	bool
+	bool "nRF70 system mode with raw modes"
 	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
 	depends on WIFI_NRF7002 || WIFI_NRF7001
 	help
@@ -828,4 +828,25 @@ config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
 	help
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
+
+if NETWORKING
+config NRF_WIFI_ZERO_COPY_TX
+	bool "Zero copy Transmit path [EXPERIMENTAL]"
+	select NET_L2_ETHERNET_RESERVE_HEADER
+	select EXPERIMENTAL
+	# 54L has lower RAM
+	default y if SOC_SERIES_NRF54LX
+	help
+	  Enable this configuration to use zero copy Transmit path.
+	  The driver will use the network buffer directly for transmission
+	  without copying the data to the driver's buffer. This reduces the
+	  driver heap memory usage without much impact on the performance.
+
+	  The application should configure the network buffers to ensure that
+	  the whole packet fits in a single buffer, else the driver will fallback
+	  to the normal copy path, but the memory requirements would still match
+	  to the zero copy path and may be sub-optimal for the normal copy path.
+
+endif # NETWORKING
+
 endif # WIFI_NRF70

@@ -29,8 +29,6 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_SYNC_MODE_ROW_SWITCH 0x20
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
-#define GC2145_PID_VAL                  0x21
-#define GC2145_REV_VAL                  0x55
 #define GC2145_SET_P0_REGS              0x00
 #define GC2145_REG_CROP_ENABLE          0x90
 #define GC2145_CROP_SET_ENABLE          0x01
@@ -1010,21 +1008,23 @@ static uint8_t gc2145_check_connection(const struct device *dev)
 {
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
-	uint8_t reg_pid_val;
-	uint8_t reg_ver_val;
+	uint8_t reg_chip_id[2];
+	uint16_t chip_id;
 
-	ret = gc2145_read_reg(&cfg->i2c, 0xf0, &reg_pid_val);
+	ret = gc2145_read_reg(&cfg->i2c, 0xf0, &reg_chip_id[0]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_read_reg(&cfg->i2c, 0xf1, &reg_ver_val);
+	ret = gc2145_read_reg(&cfg->i2c, 0xf1, &reg_chip_id[1]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if ((reg_ver_val != GC2145_REV_VAL) || (reg_pid_val != GC2145_PID_VAL)) {
-		LOG_WRN("Unexpected GC2145 pid: 0x%x or rev: 0x%x", reg_pid_val, reg_ver_val);
+	chip_id = reg_chip_id[0] << 8 | reg_chip_id[1];
+
+	if (chip_id != 0x2145 && chip_id != 0x2155) {
+		LOG_WRN("Unexpected GC2145 chip ID: 0x%04x", chip_id);
 	}
 
 	return 0;

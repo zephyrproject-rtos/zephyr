@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 1892bfe6ffc859885bc2b0f2e06b6ad9ee436e6b
+      revision: a2572b2c024a8fe5bc419090b839a12403dbd366
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 8ea892e6ade63b0b20f9adc76cb5fea774eba3a3
+      revision: 15ca19705e4bff2d147a2a13d0198fcf8e4c8b4a
       path: modules/hal/microchip
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: a959f1bbfc3ee7f99326e14b1f8e0aca8b9947eb
+      revision: 304831e59da1a72ce1f56d8738ad27c58379e7b0
       groups:
         - hal
     - name: hal_rpi_pico
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: edd82557d92d85a9e79c9568a562600c712dfb52
+      revision: 4ec1fd2e65b4f55eb516b16df73a2dd9f0cf6e1f
       path: modules/hal/stm32
       groups:
         - hal
@@ -282,7 +282,7 @@ manifest:
       revision: b97860e78998551af99931ece149eeffc538bdb1
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 3e8781aae9d7285203118c05bc01d4eb0ca565a7
+      revision: 14f519529a1e4a46aaea6826f5a41d99a3347276
       path: modules/hal/libmetal
       groups:
         - hal
@@ -321,10 +321,10 @@ manifest:
       revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 662ed74dce955e6c243f91c45a66768f5971e3cb
+      revision: 0d0c08e89b50d566285c661e886bf5db3ebaa077
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
+      revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
       path: modules/lib/open-amp
     - name: openthread
       revision: 3ae741f95e7dfb391dec35c48742862049eb62e8

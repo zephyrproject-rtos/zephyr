@@ -79,7 +79,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 reset=True, tool_opt=None, force=False, recover=False):
+                 erase_pages=False, reset=True, tool_opt=None, force=False,
+                 recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
@@ -88,6 +89,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.pinreset = pinreset
         self.dev_id = dev_id
         self.erase = bool(erase)
+        self.erase_pages = bool(erase_pages)
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
@@ -137,6 +139,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
+        parser.add_argument('--erase-pages', required=False,
+                            action='store_true', dest='erase_pages',
+                            help='erase pages to be used by the firmware')
 
         parser.set_defaults(reset=True)
 
@@ -356,8 +361,11 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 )
 
             if self.erase:
-                self.exec_op('erase', core='Application', kind='all')
-                self.exec_op('erase', core='Network', kind='all')
+                if self.build_conf.get('CONFIG_SOC_NRF54H20_IRON'):
+                    self.exec_op('erase', kind='all')
+                else:
+                    self.exec_op('erase', core='Application', kind='all')
+                    self.exec_op('erase', core='Network', kind='all')
 
             # Manage SUIT artifacts.
             # This logic should be executed only once per build.
@@ -413,8 +421,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         else:
             if self.erase:
                 erase_arg = 'ERASE_ALL'
+            elif self.family == 'nrf54l' and not self.erase_pages:
+                erase_arg = 'ERASE_NONE'
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
+
+        self.logger.debug(f'Erase type: {erase_arg}')
 
         xip_ranges = {
             'nrf52': (0x12000000, 0x19FFFFFF),
@@ -424,7 +436,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in xip_ranges:
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
-                ext_mem_erase_opt = erase_arg
+                # Default to pages for the external memory
+                ext_mem_erase_opt = erase_arg if erase_arg == 'ERASE_ALL' else \
+                                    'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
@@ -517,6 +531,16 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             raise RuntimeError('Options --softreset and --pinreset are mutually '
                                'exclusive.')
 
+        if self.erase and self.erase_pages:
+            raise RuntimeError('Options --erase and --erase-pages are mutually '
+                               'exclusive.')
+
+        self.ensure_family()
+
+        if self.family != 'nrf54l' and self.erase_pages:
+            raise RuntimeError('Option --erase-pages can only be used with the '
+                               'nRF54L family.')
+
         self.ensure_output('hex')
         if IntelHex is None:
             raise RuntimeError('Python dependency intelhex was missing; '
@@ -527,7 +551,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             self.hex_contents.loadfile(self.hex_, format='hex')
 
         self.ensure_snr()
-        self.ensure_family()
 
         self.ops = deque()
 

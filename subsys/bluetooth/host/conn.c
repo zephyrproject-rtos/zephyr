@@ -3319,53 +3319,56 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 #endif /* CONFIG_BT_SUBRATING */
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-void notify_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities params)
+void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+				   struct bt_conn_le_cs_capabilities *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_remote_capabilities_available) {
-			callback->le_cs_remote_capabilities_available(conn, &params);
+		if (callback->le_cs_read_remote_capabilities_complete) {
+			callback->le_cs_read_remote_capabilities_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_remote_capabilities_available) {
-			cb->le_cs_remote_capabilities_available(conn, &params);
+		if (cb->le_cs_read_remote_capabilities_complete) {
+			cb->le_cs_read_remote_capabilities_complete(conn, status, params);
 		}
 	}
 }
 
-void notify_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table params)
+void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+				struct bt_conn_le_cs_fae_table *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_remote_fae_table_available) {
-			callback->le_cs_remote_fae_table_available(conn, &params);
+		if (callback->le_cs_read_remote_fae_table_complete) {
+			callback->le_cs_read_remote_fae_table_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_remote_fae_table_available) {
-			cb->le_cs_remote_fae_table_available(conn, &params);
+		if (cb->le_cs_read_remote_fae_table_complete) {
+			cb->le_cs_read_remote_fae_table_complete(conn, status, params);
 		}
 	}
 }
 
-void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params)
+void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+			      struct bt_conn_le_cs_config *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_config_created) {
-			callback->le_cs_config_created(conn, params);
+		if (callback->le_cs_config_complete) {
+			callback->le_cs_config_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_config_created) {
-			cb->le_cs_config_created(conn, params);
+		if (cb->le_cs_config_complete) {
+			cb->le_cs_config_complete(conn, status, params);
 		}
 	}
 }
@@ -3387,37 +3390,37 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
-void notify_cs_security_enable_available(struct bt_conn *conn)
+void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_security_enabled) {
-			callback->le_cs_security_enabled(conn);
+		if (callback->le_cs_security_enable_complete) {
+			callback->le_cs_security_enable_complete(conn, status);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_security_enabled) {
-			cb->le_cs_security_enabled(conn);
+		if (cb->le_cs_security_enable_complete) {
+			cb->le_cs_security_enable_complete(conn, status);
 		}
 	}
 }
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn,
+void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
 					  struct bt_conn_le_cs_procedure_enable_complete *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_procedure_enabled) {
-			callback->le_cs_procedure_enabled(conn, params);
+		if (callback->le_cs_procedure_enable_complete) {
+			callback->le_cs_procedure_enable_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_procedure_enabled) {
-			cb->le_cs_procedure_enabled(conn, params);
+		if (cb->le_cs_procedure_enable_complete) {
+			cb->le_cs_procedure_enable_complete(conn, status, params);
 		}
 	}
 }
