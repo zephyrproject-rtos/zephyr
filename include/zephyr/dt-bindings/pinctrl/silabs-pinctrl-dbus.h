@@ -13,7 +13,8 @@
  *
  * 31    : Whether the configuration represents an analog pin
  * If digital (bit 31 == 0):
- * 30..29: Reserved
+ * 30    : Reserved
+ * 29    : Route register presence (fixed routes have no route register)
  * 28..24: Route register offset in words from peripheral config (offset of <fun>ROUTE
  *         register in GPIO_<periph>ROUTE_TypeDef)
  * 23..19: Enable bit (offset into ROUTEEN register for given function)
@@ -35,6 +36,7 @@
 #define SILABS_PINCTRL_HAVE_EN_MASK     0x00040000UL
 #define SILABS_PINCTRL_EN_BIT_MASK      0x00F80000UL
 #define SILABS_PINCTRL_ROUTE_MASK       0x1F000000UL
+#define SILABS_PINCTRL_HAVE_ROUTE_MASK  0x20000000UL
 
 #define SILABS_PINCTRL_ANALOG_MASK      0x80000000UL
 #define SILABS_PINCTRL_ABUS_BUS_MASK    0x0000C000UL
@@ -50,7 +52,16 @@
 	 FIELD_PREP(SILABS_PINCTRL_PERIPH_BASE_MASK, periph_base) |                                \
 	 FIELD_PREP(SILABS_PINCTRL_HAVE_EN_MASK, en_present) |                                     \
 	 FIELD_PREP(SILABS_PINCTRL_EN_BIT_MASK, en_bit) |                                          \
-	 FIELD_PREP(SILABS_PINCTRL_ROUTE_MASK, route))
+	 FIELD_PREP(SILABS_PINCTRL_ROUTE_MASK, route) |                                            \
+	 FIELD_PREP(SILABS_PINCTRL_HAVE_ROUTE_MASK, 1))
+
+#define SILABS_FIXED_ROUTE(port, pin, periph_base, en_bit)                                         \
+	(FIELD_PREP(SILABS_PINCTRL_GPIO_PORT_MASK, port) |                                         \
+	 FIELD_PREP(SILABS_PINCTRL_GPIO_PIN_MASK, pin) |                                           \
+	 FIELD_PREP(SILABS_PINCTRL_PERIPH_BASE_MASK, periph_base) |                                \
+	 FIELD_PREP(SILABS_PINCTRL_HAVE_EN_MASK, 1) |                                              \
+	 FIELD_PREP(SILABS_PINCTRL_EN_BIT_MASK, en_bit) |                                          \
+	 FIELD_PREP(SILABS_PINCTRL_HAVE_ROUTE_MASK, 0))
 
 #define SILABS_ABUS(bus, parity, peripheral)                                                       \
 	(FIELD_PREP(SILABS_PINCTRL_ANALOG_MASK, 1) |                                               \
