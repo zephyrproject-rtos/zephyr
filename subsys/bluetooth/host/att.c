@@ -584,7 +584,8 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
 		sys_snode_t *node = sys_slist_get(&att->reqs);
 
-		if (bt_att_chan_req_send(chan, ATT_REQ(node)) >= 0) {
+		err = bt_att_chan_req_send(chan, ATT_REQ(node));
+		if (err == 0) {
 			return;
 		}
 
@@ -664,7 +665,7 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 	}
 
 	if (!bt_att_is_enhanced(meta->att_chan)) {
-		struct bt_att_chan *att_chan = meta->att_chan->att->conn;
+		struct bt_att_chan *att_chan = meta->att_chan;
 		struct bt_conn *conn = att_chan->att->conn;
 		struct bt_l2cap_chan *l2cap_chan = &att_chan->chan.chan;
 
@@ -919,7 +920,7 @@ static void att_req_send_process(struct bt_att *att)
 			continue;
 		}
 
-		if (bt_att_chan_req_send(chan, req) >= 0) {
+		if (bt_att_chan_req_send(chan, req) == 0) {
 			return;
 		}
 
@@ -3346,7 +3347,7 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 		return;
 	}
 
-	if (bt_att_chan_req_send(chan, ATT_REQ(node)) >= 0) {
+	if (bt_att_chan_req_send(chan, ATT_REQ(node)) == 0) {
 		return;
 	}
 
