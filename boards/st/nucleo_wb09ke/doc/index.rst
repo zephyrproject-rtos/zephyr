@@ -121,6 +121,15 @@ You can debug an application in the usual way.  Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+.. warning::
+   Application debugging on this board uses the pyOCD runner, which requires an additional pack
+   to be installed beforehand. This can be performed using the following commands:
+
+   .. code-block:: console
+
+      $ pyocd pack update
+      $ pyocd pack install stm32wb0
+
 .. _`Nucleo WB09KE webpage`:
    https://www.st.com/en/evaluation-tools/nucleo-wb09ke.html
 
