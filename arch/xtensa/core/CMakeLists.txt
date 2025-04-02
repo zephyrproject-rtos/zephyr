@@ -73,13 +73,19 @@ else()
   set(MAY_NEED_SYSCALL_SCRATCH_REG false)
 endif()
 
+if(CONFIG_KERNEL_COHERENCE AND NOT CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+  set(NEED_FLUSH_SCRATCH_REG true)
+else()
+  set(NEED_FLUSH_SCRATCH_REG false)
+endif()
+
 # Generates a list of device-specific scratch register choices
 set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
                                $<$<BOOL:${MAY_NEED_SYSCALL_SCRATCH_REG}>:--syscall-scratch>
-                               $<$<BOOL:${CONFIG_KERNEL_COHERENCE}>:--coherence>
+                               $<$<BOOL:${NEED_FLUSH_SCRATCH_REG}>:--flush-reg>
                                ${CORE_ISA_DM} ${ZSR_H})
 add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
