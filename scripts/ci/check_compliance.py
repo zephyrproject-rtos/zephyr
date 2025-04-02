@@ -704,6 +704,8 @@ class KconfigCheck(ComplianceTest):
 
         disallowed_symbols = {
             "PINCTRL": "Drivers requiring PINCTRL must SELECT it instead.",
+            "BOARD_EARLY_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
+            "BOARD_LATE_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
         }
 
         disallowed_regex = "(" + "|".join(disallowed_symbols.keys()) + ")$"
