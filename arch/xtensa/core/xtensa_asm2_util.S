@@ -272,7 +272,7 @@ xtensa_switch:
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
 
-#ifdef CONFIG_KERNEL_COHERENCE
+#if defined(CONFIG_KERNEL_COHERENCE) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	/* Flush the stack.  The top of stack was stored for us by
 	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */

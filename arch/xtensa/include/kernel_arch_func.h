@@ -97,6 +97,19 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,
 					     struct k_thread *new_thread)
 {
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	ARG_UNUSED(old_thread);
+	ARG_UNUSED(old_switch_handle);
+	ARG_UNUSED(new_thread);
+
+	/* This kconfig option ensures that a living thread will never
+	 * be executed in a different CPU so we can safely return without
+	 * invalidate and/or flush threads cache.
+	 */
+	return;
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
+#if !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	int32_t curr_cpu = _current_cpu->id;
 
 	size_t ostack = old_thread->stack_info.start;
@@ -118,14 +131,6 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 				 "call0 xtensa_spill_reg_windows;"
 				 "mov a0, %0"
 				 : "=r"(a0save));
-	}
-
-	/* The following option ensures that a living thread will never
-	 * be executed in a different CPU so we can safely return without
-	 * invalidate and/or flush threads cache.
-	 */
-	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
-		return;
 	}
 
 	/* The "live" area (the region between the switch handle,
@@ -189,6 +194,7 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 
 		__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(end));
 	}
+#endif /* !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 #endif
 
