@@ -26,13 +26,13 @@ function(zephyr_mcuboot_tasks)
 
   # Calculate flash address (SAHB/CBUS)
   math(EXPR flash_addr_sahb_offset
-      "${CONFIG_CYW20829_FLASH_SAHB_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET}"
-      OUTPUT_FORMAT HEXADECIMAL
+       "${CONFIG_CYW20829_FLASH_SAHB_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET}"
+       OUTPUT_FORMAT HEXADECIMAL
   )
 
   math(EXPR flash_addr_sbus_offset
-      "${CONFIG_CYW20829_FLASH_CBUS_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET}"
-      OUTPUT_FORMAT HEXADECIMAL
+       "${CONFIG_CYW20829_FLASH_CBUS_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET}"
+       OUTPUT_FORMAT HEXADECIMAL
   )
 
   if(NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
@@ -41,8 +41,8 @@ function(zephyr_mcuboot_tasks)
       # No signature key file, no signed binaries. No error, though:
       # this is the documented behavior.
       message(WARNING "Neither CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE or "
-                      "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
-                      "bootable by MCUboot unless it is signed manually/externally.")
+              "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
+              "bootable by MCUboot unless it is signed manually/externally.")
       return()
     endif()
   endif()
@@ -62,24 +62,21 @@ function(zephyr_mcuboot_tasks)
     endif()
   endforeach()
 
-  #message(INFO " -- FLASH_SAHB: ${CONFIG_CYW20829_FLASH_SAHB_ADDR} / ${flash_addr_sahb_offset}")
-  #message(INFO " -- FLASH_CBUS: ${CONFIG_CYW20829_FLASH_CBUS_ADDR} / ${flash_addr_sbus_offset}")
-
   # Basic 'cysecuretools' command and output format independent arguments.
   set(cysecuretools_cmd ${CYSECURETOOLS}
       -q -t cyw20829 -p ${cysecuretools_policy}
-    )
+  )
 
   # sign-image arguments.
   set(sign_image_cmd_args sign-image
-    --image-format mcuboot_user_app
-    --image "${output}.hex"
-    --slot-size ${CONFIG_FLASH_LOAD_SIZE}
-    --align 1
-    --image-id 0
-    --hex-addr ${flash_addr_sahb_offset}
-    --app-addr ${flash_addr_sbus_offset}
-    -v "${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION}"
+      --image-format mcuboot_user_app
+      --image "${output}.hex"
+      --slot-size ${CONFIG_FLASH_LOAD_SIZE}
+      --align 1
+      --image-id 0
+      --hex-addr ${flash_addr_sahb_offset}
+      --app-addr ${flash_addr_sbus_offset}
+      -v "${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION}"
   )
 
   # Extra arguments from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS.
@@ -90,13 +87,13 @@ function(zephyr_mcuboot_tasks)
     # Use UNIX_COMMAND syntax for uniform results across host
     # platforms.
     separate_arguments(cysecuretools_extra_args UNIX_COMMAND
-                        ${CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS})
+                       ${CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS})
   else()
     set(cysecuretools_extra_args)
   endif()
 
   if(NOT "${keyfile}" STREQUAL "")
-    set(sign_image_cmd_args  ${sign_image_cmd_args} --key-path "${keyfile}")
+    set(sign_image_cmd_args ${sign_image_cmd_args} --key-path "${keyfile}")
   endif()
 
   if(NOT "${keyfile_enc}" STREQUAL "")
@@ -105,7 +102,7 @@ function(zephyr_mcuboot_tasks)
 
   # Use overwrite-only instead of swap upgrades.
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
-    set(sign_image_cmd_args  ${sign_image_cmd_args} --overwrite-only --align 1)
+    set(sign_image_cmd_args ${sign_image_cmd_args} --overwrite-only --align 1)
   endif()
 
   if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
@@ -123,7 +120,7 @@ function(zephyr_mcuboot_tasks)
     list(APPEND byproducts ${output}.signed.bin)
     zephyr_runner_file(bin ${output}.signed.bin)
     set(BYPRODUCT_KERNEL_SIGNED_BIN_NAME "${output}.signed.bin"
-       CACHE FILEPATH "Signed kernel bin file" FORCE
+        CACHE FILEPATH "Signed kernel bin file" FORCE
    )
   endif()
 
@@ -145,8 +142,8 @@ function(zephyr_mcuboot_tasks)
   if(CONFIG_BUILD_OUTPUT_HEX)
     list(APPEND bin2hex_cmd_args_signed bin2hex
           --image ${output}.signed.bin --output ${output}.signed.hex
-          --offset  ${flash_addr_sahb_offset}
-        )
+          --offset ${flash_addr_sahb_offset}
+    )
     list(APPEND byproducts ${output}.signed.hex)
     zephyr_runner_file(hex ${output}.signed.hex)
     set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
@@ -156,8 +153,8 @@ function(zephyr_mcuboot_tasks)
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND bin2hex_cmd_args_confirmed bin2hex
             --image ${output}.signed.confirmed.bin --output ${output}.signed.confirmed.hex
-            --offset  ${flash_addr_sahb_offset}
-          )
+            --offset ${flash_addr_sahb_offset}
+      )
       list(APPEND byproducts ${output}.signed.confirmed.hex)
       set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${output}.signed.confirmed.hex"
           CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
@@ -166,9 +163,9 @@ function(zephyr_mcuboot_tasks)
 
     if(NOT "${keyfile_enc}" STREQUAL "")
       list(APPEND bin2hex_cmd_args_encrypted bin2hex
-            --image ${output}.signed.encrypted.bin --output ${output}.signed.encrypted.hex
-            --offset  ${flash_addr_sahb_offset}
-          )
+           --image ${output}.signed.encrypted.bin --output ${output}.signed.encrypted.hex
+           --offset ${flash_addr_sahb_offset}
+      )
       list(APPEND byproducts ${output}.signed.encrypted.hex)
       set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_HEX_NAME "${output}.signed.encrypted.hex"
           CACHE FILEPATH "Signed and encrypted kernel hex file" FORCE
@@ -179,40 +176,39 @@ function(zephyr_mcuboot_tasks)
   # Add the post-processing steps to generate
   # signed /signed.confirmed / signed.encrypted bin and hex files
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${cysecuretools_cmd}
-      ${sign_image_cmd_args} --output ${output}.signed.bin
-      ${bin2hex_cmd_args_signed}       # bin to hex
-      ${cysecuretools_extra_args}      # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
+               ${cysecuretools_cmd}
+               ${sign_image_cmd_args} --output ${output}.signed.bin
+               ${bin2hex_cmd_args_signed} # bin to hex
+               ${cysecuretools_extra_args} # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
   )
 
   if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${cysecuretools_cmd}
-      ${sign_image_cmd_args} --output ${output}.signed.confirmed.bin
-      ${confirmed_args}
-      ${bin2hex_cmd_args_confirmed}    # bin to hex
-      ${cysecuretools_extra_args}      # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
+                 ${cysecuretools_cmd}
+                 ${sign_image_cmd_args} --output ${output}.signed.confirmed.bin
+                 ${confirmed_args}
+                 ${bin2hex_cmd_args_confirmed} # bin to hex
+                 ${cysecuretools_extra_args} # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
     )
   endif()
 
   if(NOT "${keyfile_enc}" STREQUAL "")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${cysecuretools_cmd}
-      ${sign_image_cmd_args} --output ${output}.signed.encrypted.bin
-      ${confirmed_args} ${encrypted_args}
-      ${bin2hex_cmd_args_encrypted}    # bin to hex
-      ${cysecuretools_extra_args}      # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
+                 ${cysecuretools_cmd}
+                 ${sign_image_cmd_args} --output ${output}.signed.encrypted.bin
+                 ${confirmed_args} ${encrypted_args}
+                 ${bin2hex_cmd_args_encrypted} # bin to hex
+                 ${cysecuretools_extra_args} # from CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS
 
-      COMMAND ${CMAKE_COMMAND} -E echo
-      "Generating encrypted files ${output}.signed.encrypted.hex/bin files"
+                 COMMAND ${CMAKE_COMMAND} -E echo
+                 "Generating encrypted files ${output}.signed.encrypted.hex/bin files"
 
-      COMMAND ${CMAKE_COMMAND} -E echo
-      \"Use 'west flash --hex-file ${output}.signed.encrypted.hex' to flash in primary partition\"
+                 COMMAND ${CMAKE_COMMAND} -E echo
+                 \"Use 'west flash --hex-file ${output}.signed.encrypted.hex' to flash in primary partition\"
     )
   endif()
 
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
-
 endfunction()
 
 zephyr_mcuboot_tasks()

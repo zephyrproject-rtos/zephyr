@@ -102,11 +102,9 @@ uart2: &scb2 {
 
 
 &qspi_flash {
-
 	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x08000000 DT_SIZE_M(1)>;
-
 		write-block-size = <1>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		#address-cells = <1>;
