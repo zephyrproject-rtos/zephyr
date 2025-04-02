@@ -3,5 +3,5 @@ NRFS services request handling performance.
 
 These reaquest are propagated over IPC.
 
-MRAM latency serivice and Temperature service
+MRAM latency service and Temperature service
 are used as benchmarks.
