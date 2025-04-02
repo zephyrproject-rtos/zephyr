@@ -33,9 +33,6 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include "connection.h"
 #include "net_stats.h"
 
-/** How long to wait for when cloning multicast packet */
-#define CLONE_TIMEOUT K_MSEC(100)
-
 /** Is this connection used or not */
 #define NET_CONN_IN_USE			BIT(0)
 
@@ -617,7 +614,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 	NET_DBG("[%p] raw match found cb %p ud %p", conn, conn->cb,
 		conn->user_data);
 
-	raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 	if (!raw_pkt) {
 		net_stats_update_per_proto_drop(pkt_iface, proto);
 		NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
@@ -857,7 +854,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				NET_DBG("[%p] mcast match found cb %p ud %p", conn, conn->cb,
 					conn->user_data);
 
-				mcast_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+				mcast_pkt = net_pkt_clone(
+					pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 				if (!mcast_pkt) {
 					k_mutex_unlock(&conn_lock);
 					goto drop;
