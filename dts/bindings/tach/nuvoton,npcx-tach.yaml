@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-Tachometer node
+description: Nuvoton NPCX Tachometer
 
 compatible: "nuvoton,npcx-tach"
 
