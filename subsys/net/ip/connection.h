@@ -74,6 +74,9 @@ struct net_conn {
 	/** Connection protocol */
 	uint16_t proto;
 
+	/** Connection type */
+	enum net_sock_type type;
+
 	/** Protocol family */
 	uint8_t family;
 
@@ -90,6 +93,7 @@ struct net_conn {
  *
  * @param proto Protocol for the connection (depends on the protocol
  *              family, e.g. UDP/TCP in the case of AF_INET/AF_INET6)
+ * @param type Connection type (SOCK_STREAM/DGRAM/RAW)
  * @param family Protocol family (AF_*)
  * @param remote_addr Remote address of the connection end point.
  * @param local_addr Local address of the connection end point.
@@ -103,7 +107,7 @@ struct net_conn {
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
 #if defined(CONFIG_NET_NATIVE)
-int net_conn_register(uint16_t proto, uint8_t family,
+int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
@@ -113,7 +117,8 @@ int net_conn_register(uint16_t proto, uint8_t family,
 		      void *user_data,
 		      struct net_conn_handle **handle);
 #else
-static inline int net_conn_register(uint16_t proto, uint8_t family,
+static inline int net_conn_register(uint16_t proto, enum net_sock_type type,
+				    uint8_t family,
 				    const struct sockaddr *remote_addr,
 				    const struct sockaddr *local_addr,
 				    uint16_t remote_port,
