@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/sys/util.h>
+#include <stdio.h>
 
 #include "adi_tmc_spi.h"
 
@@ -12,6 +13,44 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(tmc_spi, CONFIG_SPI_LOG_LEVEL);
+
+static void log_status(uint8_t status_byte)
+{
+	static const char *spi_status[8] = {
+#if defined CONFIG_STEPPER_ADI_TMC50XX
+		"reset_flag",
+		"driver_error1",
+		"driver_error2",
+		"velocity_reached1",
+		"velocity_reached2",
+		"status_stop_l1",
+		"status_stop_l2",
+		"-"
+#else
+		"reset_flag",
+		"driver_error",
+		"sg2",
+		"standstill",
+		"velocity_reached",
+		"position_reached",
+		"status_stop_l",
+		"status_stop_r"
+#endif
+	};
+	char buf[110];
+	int n = sprintf(buf, "0x%02x", status_byte);
+
+	for (uint8_t i = 0; i < 8; ++i) {
+		if (status_byte & BIT(i)) {
+			n += snprintf(buf + n, sizeof(buf) - n, " %s", spi_status[i]);
+			if (n >= sizeof(buf)) {
+				buf[sizeof(buf) - 1] = '\0';
+				break;
+			}
+		}
+	}
+	LOG_DBG("%s", buf);
+}
 
 static void parse_tmc_spi_status(const uint8_t status_byte)
 {
@@ -23,6 +62,12 @@ static void parse_tmc_spi_status(const uint8_t status_byte)
 	}
 	if ((status_byte & BIT_MASK(2)) != 0) {
 		LOG_WRN("spi dataframe: driver_error(2) detected");
+	}
+
+	static uint8_t status_last;
+	if (status_byte != status_last) {
+		status_last = status_byte;
+		log_status(status_byte & ~0x1); /* ignore reset_flag */
 	}
 }
 
