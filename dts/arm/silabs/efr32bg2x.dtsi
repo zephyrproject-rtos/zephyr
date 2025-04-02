@@ -123,6 +123,13 @@
 			 * managed by sl_power_manager on S2 devices.
 			 */
 			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
 		};
 
 		power-states {
