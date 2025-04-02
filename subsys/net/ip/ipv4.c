@@ -383,6 +383,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 		net_sprint_ipv4_addr(&hdr->src),
 		net_sprint_ipv4_addr(&hdr->dst));
 
+	ip.ipv4 = hdr;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
+		(void)net_conn_input(pkt, &ip, hdr->proto, NULL);
+	}
+
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
 		verdict = net_icmpv4_input(pkt, hdr);
@@ -439,8 +445,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	if (verdict == NET_DROP) {
 		goto drop;
 	}
-
-	ip.ipv4 = hdr;
 
 	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
 	if (verdict != NET_DROP) {
