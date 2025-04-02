@@ -149,6 +149,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
 
+  * Sockets
+
+    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
