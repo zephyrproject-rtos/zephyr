@@ -322,7 +322,7 @@ static int net_conn_change_remote(struct net_conn *conn,
 	return 0;
 }
 
-int net_conn_register(uint16_t proto, uint8_t family,
+int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
@@ -405,6 +405,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 
 	conn->flags = flags;
 	conn->proto = proto;
+	conn->type = type;
 	conn->family = family;
 	conn->context = context;
 
