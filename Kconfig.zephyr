@@ -1098,6 +1098,19 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 
 endchoice
 
+config BOOTLOADER_TEENSY
+	bool "Teensy bootloader support"
+	depends on SOC_SERIES_IMXRT10XX
+	help
+	  Sets whether the teensy bootloader should be loaded when an baudrate change is send or not.
+
+config BOOTLOADER_TEENSY_DEVICE_NAME
+	string "Teensy CDC ACM device name"
+	depends on BOOTLOADER_TEENSY
+	default "USB CDC-ACM"
+	help
+	  Sets the CDC ACM port to watch for reboot commands.
+
 endmenu
 
 menu "Compatibility"
