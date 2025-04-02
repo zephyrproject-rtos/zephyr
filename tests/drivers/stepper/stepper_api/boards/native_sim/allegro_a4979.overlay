@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Jilay Sandeep Pandya
+ * Copyright (c) Navimatix GmbH
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,18 +7,17 @@
 
 / {
 	aliases {
-		stepper =  &ti_drv8424;
+		stepper =  &allegro_a4979;
 	};
 };
 
 / {
-	ti_drv8424: ti_drv8424 {
+	allegro_a4979: allegro_a4979 {
 		status = "okay";
-		compatible = "ti,drv8424";
-		micro-step-res = <8>;
+		compatible = "allegro,a4979";
 		dir-gpios = <&gpio1 0 0>;
 		step-gpios = <&gpio1 1 0>;
-		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio2 0 0>;
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio3 1 0>;
