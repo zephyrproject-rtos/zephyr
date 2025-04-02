@@ -257,4 +257,11 @@ config HWINFO_NUMAKER_RMC
 	help
 	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
 
+config HWINFO_MSPM0
+	bool "TI MSPM0 hwinfo"
+	default y
+	depends on SOC_MSPM0L222X
+	help
+	  Enable TI MSPM0 hwinfo driver
+
 endif
