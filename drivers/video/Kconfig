@@ -88,4 +88,6 @@ source "drivers/video/Kconfig.emul_imager"
 
 source "drivers/video/Kconfig.emul_rx"
 
+source "drivers/video/Kconfig.imx335"
+
 endif # VIDEO
