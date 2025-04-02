@@ -123,7 +123,8 @@ struct net_pkt {
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif
-#if defined(CONFIG_NET_IPV6_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
+	defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
@@ -273,6 +274,14 @@ struct net_pkt {
 #endif
 	};
 
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	/* IPv4 address that should be resolved at L2 for transmission.
+	 * Routed packets use this to steer link-layer resolution towards the
+	 * next on-link IPv4 address.
+	 */
+	struct net_in_addr ipv4_ll_resolve_addr;
+#endif /* CONFIG_NET_IPV4_ROUTE */
+
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	union {
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
@@ -364,6 +373,9 @@ struct net_pkt {
 	/* Path MTU needed for this destination address */
 	uint8_t ipv4_pmtu : 1;
 #endif /* CONFIG_NET_IPV4_PMTU */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	uint8_t ipv4_ll_resolve_addr_set : 1;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 	/* @endcond */
 };
@@ -410,7 +422,8 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_IPV6_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
+	defined(CONFIG_NET_ETHERNET_BRIDGE)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -420,7 +433,8 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV6_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
+	defined(CONFIG_NET_ETHERNET_BRIDGE)
 	pkt->orig_iface = iface;
 #else
 	ARG_UNUSED(pkt);
@@ -876,6 +890,38 @@ static inline void net_pkt_set_ipv4_pmtu(struct net_pkt *pkt, bool value)
 	ARG_UNUSED(value);
 }
 #endif /* CONFIG_NET_IPV4_PMTU */
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ll_resolve_addr_set ? &pkt->ipv4_ll_resolve_addr : NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	if (addr != NULL) {
+		net_ipaddr_copy(&pkt->ipv4_ll_resolve_addr, addr);
+		pkt->ipv4_ll_resolve_addr_set = 1U;
+	} else {
+		pkt->ipv4_ll_resolve_addr_set = 0U;
+	}
+}
+#else
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(addr);
+}
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)

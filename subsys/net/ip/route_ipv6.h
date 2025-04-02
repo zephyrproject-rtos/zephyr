@@ -17,65 +17,12 @@
 #include <zephyr/sys/slist.h>
 
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_timeout.h>
 
-#include "nbr.h"
+#include "route.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Next hop entry for a given route.
- */
-struct net_route_nexthop {
-	/** Pointer to nexthop that has same route to a specific
-	 * neighbor.
-	 */
-	sys_snode_t node;
-
-	/** Next hop neighbor */
-	struct net_nbr *nbr;
-};
-
-/**
- * @brief Route entry to a specific neighbor. This supports both
- * IPv6 and IPv4 addresses.
- */
-struct net_route_entry {
-	/** Node information. The routes are also in separate list in
-	 * order to keep track which one of them is the oldest so that
-	 * we can remove it if we run out of available routes.
-	 * The oldest one is the last entry in the list.
-	 */
-	sys_snode_t node;
-
-	/** List of neighbors that the routes go through. */
-	sys_slist_t nexthop;
-
-	/** Network interface for the route. */
-	struct net_if *iface;
-
-	/** Route lifetime timer. */
-	struct net_timeout lifetime;
-
-	/** IPv6/IPv4 address/prefix of the route. */
-	struct net_addr addr;
-
-	/** IPv6 prefix or IPv4 netmask length. */
-	uint8_t prefix_len;
-
-	uint8_t preference : 2;
-
-	/** Is the route valid forever */
-	uint8_t is_infinite : 1;
-};
-
-/* Route preference values, as defined in RFC 4191 */
-#define NET_ROUTE_PREFERENCE_HIGH     0x01
-#define NET_ROUTE_PREFERENCE_MEDIUM   0x00
-#define NET_ROUTE_PREFERENCE_LOW      0x03 /* -1 if treated as 2 bit signed int */
-#define NET_ROUTE_PREFERENCE_RESERVED 0x02
 
 /**
  * @brief Lookup route to a given destination.
@@ -170,9 +117,6 @@ struct net_in6_addr *net_route_ipv6_get_nexthop(struct net_route_entry *entry);
  * @return Generic neighbor entry.
  */
 struct net_nbr *net_route_ipv6_get_nbr(struct net_route_entry *route);
-
-typedef void (*net_route_cb_t)(struct net_route_entry *entry,
-			       void *user_data);
 
 /**
  * @brief Go through all the routing entries and call callback

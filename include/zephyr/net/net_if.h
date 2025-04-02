@@ -2458,6 +2458,18 @@ uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface);
 void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl);
 
 /**
+ * @brief Check if this IPv4 address is part of the subnet of our
+ * network interface.
+ *
+ * @param iface Network interface. This is returned to the caller.
+ * The iface can be NULL in which case we check all the interfaces.
+ * @param addr IPv4 address
+ *
+ * @return True if address is part of our subnet, false otherwise
+ */
+bool net_if_ipv4_addr_onlink(struct net_if **iface, const struct net_in_addr *addr);
+
+/**
  * @brief Check if this IPv4 address belongs to one of the interfaces.
  *
  * @param addr IPv4 address

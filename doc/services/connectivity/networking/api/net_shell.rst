@@ -42,8 +42,8 @@ The following net-shell commands are implemented:
    per-port view. Only available if :kconfig:option:`CONFIG_PTP` is set."
    "net qbv", "Show and configure IEEE 802.1Qbv Time-Aware Shaper (TAS) information.
    Only available if :kconfig:option:`CONFIG_NET_QBV` is set."
-   "net route", "Show IPv6 network routes. Only available if
-   :kconfig:option:`CONFIG_NET_IPV6_ROUTE` is set."
+   "net route", "Show IPv6 or IPv4 network routes. Only available if
+   :kconfig:option:`CONFIG_NET_IPV6_ROUTE` or :kconfig:option:`CONFIG_NET_IPV4_ROUTE` is set."
    "net sockets", "Show network socket information and statistics. Only available if
    :kconfig:option:`CONFIG_NET_SOCKETS_OBJ_CORE` and :kconfig:option:`CONFIG_OBJ_CORE`
    are set."

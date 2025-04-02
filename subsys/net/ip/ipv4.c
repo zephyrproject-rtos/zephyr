@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
 #include "pmtu.h"
+#include "route_ipv4.h"
 
 BUILD_ASSERT(sizeof(struct net_in_addr) == NET_IPV4_ADDR_SIZE);
 
@@ -254,6 +255,69 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 }
 #endif
 
+#if defined(CONFIG_NET_IPV4_ROUTE)
+static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
+					  struct net_ipv4_hdr *hdr)
+{
+	struct net_route_entry *route;
+	struct net_in_addr *nexthop;
+	struct net_if *iface = NULL;
+	struct net_in_addr dst_ip;
+	bool found;
+	int ret;
+
+	net_ipv4_addr_copy_raw(dst_ip.s4_addr, hdr->dst);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTING)) {
+		found = net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop);
+	} else {
+		found = net_route_ipv4_get_info(net_pkt_iface(pkt), &dst_ip,
+						&route, &nexthop);
+	}
+
+	if (found) {
+		net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
+
+		if (route != NULL) {
+			net_pkt_set_iface(pkt, route->iface);
+		}
+
+		ret = net_route_ipv4_packet(pkt, nexthop);
+		if (ret < 0) {
+			NET_DBG("Cannot re-route pkt %p via %s at iface %p (%d)",
+				pkt, net_sprint_ipv4_addr(nexthop),
+				net_pkt_iface(pkt), ret);
+			goto out;
+		}
+
+		return NET_OK;
+	}
+
+	if (net_if_ipv4_addr_onlink(&iface, &dst_ip)) {
+		ret = net_route_packet_if(pkt, iface);
+		if (ret < 0) {
+			NET_DBG("Cannot re-route pkt %p at iface %p (%d)",
+				pkt, net_pkt_iface(pkt), ret);
+			goto out;
+		}
+
+		return NET_OK;
+	}
+
+out:
+	return NET_DROP;
+}
+#else
+static inline enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
+						 struct net_ipv4_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV4_ROUTE */
+
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -377,6 +441,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		if (ipv4_route_packet(pkt, hdr) == NET_OK) {
+			return NET_OK;
+		}
+
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}

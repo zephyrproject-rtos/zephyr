@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include "icmpv6.h"
 #include "ipv6.h"
-#include "route.h"
+#include "route_ipv6.h"
 
 #define THREAD_SLEEP 50 /* ms */
 #define MLD_REPORT_ADDR_COUNT 8

@@ -43,12 +43,20 @@ zephyr_library_sources_ifdef(CONFIG_NET_IPV6_FRAGMENT     ipv6_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_FRAGMENT     ipv4_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PMTU         pmtu.c)
-zephyr_library_sources_ifdef(CONFIG_NET_IPV6_ROUTE   route_ipv6.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_ROUTE   route_ipv4.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP          tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TEST_PROTOCOL           tp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          udp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
+
+if(CONFIG_NET_IPV4_ROUTE OR CONFIG_NET_IPV6_ROUTE)
+  zephyr_library_sources(route.c)
+endif()
+
+if(CONFIG_NET_IPV6_ROUTE_MCAST OR CONFIG_NET_IPV6_ROUTE)
+  zephyr_library_sources(route_ipv6.c)
+endif()
 
 # Net Connection Socket Adapters
 zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_SOCKETS  connection.c)
