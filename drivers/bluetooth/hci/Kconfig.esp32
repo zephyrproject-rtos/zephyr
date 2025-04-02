@@ -16,6 +16,9 @@ choice ESP_BT_HEAP
 	config ESP_BT_HEAP_SYSTEM
 		bool "Bluetooth adapter use the kernel mempool heap (k_malloc)"
 
+	config ESP_BT_HEAP_SPIRAM
+		bool "Bluetooth adapter use SPIRAM shared memory head"
+
 endchoice # ESP_BT_HEAP
 
 config ESP32_BT_CONTROLLER_STACK_SIZE

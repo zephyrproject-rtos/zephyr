@@ -35,6 +35,9 @@ choice ESP_WIFI_HEAP
 	config ESP_WIFI_HEAP_SYSTEM
 		bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
 
+	config ESP_WIFI_HEAP_SPIRAM
+		bool "Wi-Fi adapter use SPIRAM shared memory head"
+
 endchoice # ESP_WIFI_HEAP
 
 config NET_TCP_WORKQ_STACK_SIZE
