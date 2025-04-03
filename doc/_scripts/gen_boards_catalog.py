@@ -309,7 +309,12 @@ def get_catalog(generate_hw_features=False):
                         node.matching_compat
                     )
 
-                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_info = {
+                        "filename": str(filename),
+                        "lineno": lineno,
+                        "dts_path": Path(node.filename),
+                        "binding_path": Path(node.binding_path),
+                    }
                     node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
 
                     if existing_feature:
