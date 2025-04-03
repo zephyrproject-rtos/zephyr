@@ -240,24 +240,24 @@ if(CONFIG_LTO)
 endif()
 
 if(CONFIG_STD_C23)
-  set(CSTD c2x)
+  set(CMAKE_C_STANDARD 17)
 elseif(CONFIG_STD_C17)
-  set(CSTD c17)
+  set(CMAKE_C_STANDARD 17)
 elseif(CONFIG_STD_C11)
-  set(CSTD c11)
+  set(CMAKE_C_STANDARD 11)
 elseif(CONFIG_STD_C99)
-  set(CSTD c99)
+  set(CMAKE_C_STANDARD 99)
 elseif(CONFIG_STD_C90)
-  set(CSTD c90)
+  set(CMAKE_C_STANDARD 90)
 else()
   message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
 endif()
 
 if(CONFIG_GNU_C_EXTENSIONS)
-  string(REPLACE "c" "gnu" CSTD "${CSTD}")
+  set(CMAKE_C_EXTENSIONS ON)
+  set(CMAKE_CXX_EXTENSIONS ON)
 endif()
 
-list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
 
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
@@ -1103,11 +1103,6 @@ if(CONFIG_USERSPACE)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
-# @Intent: Obtain compiler specific flag for specifying the c standard
-zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
-)
-set(CMAKE_C_COMPILE_FEATURES ${CMAKE_C_COMPILE_FEATURES} PARENT_SCOPE)
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
