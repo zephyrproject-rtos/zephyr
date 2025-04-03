@@ -147,6 +147,11 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
+	if (!pm_policy_state_any_active()) {
+		/* Return early if all states are unavailable. */
+		return false;
+	}
+
 	/*
 	 * CPU needs to be fully wake up before the event is triggered.
 	 * We need to find out first the ticks to the next event
