@@ -20,13 +20,12 @@
 
 #include <zephyr/drivers/gpio/gpio_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 LOG_MODULE_REGISTER(ambiq_sdio, CONFIG_SDHC_LOG_LEVEL);
 
 #define AMBIQ_SDIO_FREQ_MAX MHZ(96)
 #define AMBIQ_SDIO_FREQ_MIN KHZ(375)
-#define CACHABLE_START_ADDR SSRAM_BASEADDR
 
 #if defined(CONFIG_SOC_SERIES_APOLLO4X)
 #define SDIO_BASE_ADDR     SDIO_BASE
@@ -603,13 +602,15 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if (data) {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-		/* Clean Dcache before DMA write */
-		if (cmd_data.dir == AM_HAL_DATA_DIR_WRITE &&
-		    (uint32_t)(data->data) >= CACHABLE_START_ADDR) {
-			sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
+#if CONFIG_SDHC_AMBIQ_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)data->data, data->blocks * data->block_size)) {
+			/* Clean Dcache before DMA write */
+			if (cmd_data.dir == AM_HAL_DATA_DIR_WRITE) {
+				sys_cache_data_flush_range(data->data,
+							   data->blocks * data->block_size);
+			}
 		}
-#endif
+#endif /* CONFIG_SDHC_AMBIQ_HANDLE_CACHE */
 
 #ifdef CONFIG_AMBIQ_SDIO_ASYNC
 		k_sem_reset(dev_data->async_sem);
@@ -624,17 +625,19 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 		}
 #endif /* CONFIG_AMBIQ_SDIO_ASYNC */
 
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-		/* Invalidate Dcache after DMA read */
-		if (cmd_data.dir == AM_HAL_DATA_DIR_READ &&
-		    (uint32_t)(data->data) >= CACHABLE_START_ADDR) {
-			sys_cache_data_invd_range(data->data, data->blocks * data->block_size);
+#if CONFIG_SDHC_AMBIQ_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)data->data, data->blocks * data->block_size)) {
+			/* Invalidate Dcache after DMA read */
+			if (cmd_data.dir == AM_HAL_DATA_DIR_READ) {
+				sys_cache_data_invd_range(data->data,
+							  data->blocks * data->block_size);
+			}
 		}
-#endif
+#endif /* CONFIG_SDHC_AMBIQ_HANDLE_CACHE */
 
 	} else {
-		ui32Status =
-			dev_data->host->ops->execute_cmd(dev_data->host->pHandle, &sdio_cmd, NULL);
+		ui32Status = dev_data->host->ops->execute_cmd(dev_data->host->pHandle,
+							      &sdio_cmd, NULL);
 	}
 	if ((ui32Status & 0xFFFF) != AM_HAL_STATUS_SUCCESS) {
 		if ((ui32Status & 0xFFFF) == AM_HAL_STATUS_TIMEOUT) {

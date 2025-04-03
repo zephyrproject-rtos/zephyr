@@ -105,11 +105,12 @@
 	pinctrl-names = "default";
 	txdelay = <0>;
 	rxdelay = <0>;
-	cd-gpios = <&gpio160_191 1 GPIO_ACTIVE_LOW>;
+	cd-gpios = <&gpio160_191 21 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&gpio160_191 22 GPIO_ACTIVE_LOW>;
 	status = "okay";
 	mmc {
 		compatible = "zephyr,mmc-disk";
-        disk-name = "SD";
+	disk-name = "SD2";
 		status = "okay";
 	};
 };
@@ -119,7 +120,6 @@
 	pinctrl-names = "default";
 	txdelay = <9>;
 	rxdelay = <11>;
-	cd-gpios = <&gpio160_191 15 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
@@ -306,6 +306,10 @@ zephyr_udc0: &usb {
 };
 
 &gpio96_127 {
+	status = "okay";
+};
+
+&gpio160_191 {
 	status = "okay";
 };
 
