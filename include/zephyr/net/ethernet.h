@@ -28,6 +28,8 @@
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
+#else
+#include <zephyr/net/dsa_core.h>
 #endif
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
@@ -128,17 +130,9 @@ struct net_eth_addr {
 #endif
 
 #define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + _NET_ETH_MAX_HDR_SIZE)
-/*
- * Extend the max frame size for DSA (KSZ8794) by one byte (to 1519) to
- * store tail tag.
- */
-#if defined(CONFIG_NET_DSA_DEPRECATED)
+
 #define NET_ETH_MAX_FRAME_SIZE (_NET_ETH_MAX_FRAME_SIZE + DSA_TAG_SIZE)
 #define NET_ETH_MAX_HDR_SIZE (_NET_ETH_MAX_HDR_SIZE + DSA_TAG_SIZE)
-#else
-#define NET_ETH_MAX_FRAME_SIZE (_NET_ETH_MAX_FRAME_SIZE)
-#define NET_ETH_MAX_HDR_SIZE (_NET_ETH_MAX_HDR_SIZE)
-#endif
 
 #define NET_ETH_VLAN_HDR_SIZE	4
 
@@ -716,6 +710,13 @@ struct ethernet_context {
 
 	/** Send a network packet via DSA master port */
 	dsa_send_t dsa_send;
+
+#elif defined(CONFIG_NET_DSA)
+	/** DSA port tpye */
+	enum dsa_port_type dsa_port;
+
+	/** DSA switch context pointer */
+	struct dsa_switch_context *dsa_switch_ctx;
 #endif
 
 	/** Is network carrier up */
@@ -953,12 +954,21 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
+	enum ethernet_hw_caps caps = 0;
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
-	if (!api || !api->get_capabilities) {
-		return (enum ethernet_hw_caps)0;
+	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+		caps |= ETHERNET_DSA_CONDUIT_PORT;
+	} else if (eth_ctx->dsa_port == DSA_USER_PORT) {
+		caps |= ETHERNET_DSA_USER_PORT;
+	}
+#endif
+	if (api == NULL || api->get_capabilities == NULL) {
+		return caps;
 	}
 
-	return api->get_capabilities(dev);
+	return (enum ethernet_hw_caps)(caps | api->get_capabilities(dev));
 }
 
 /**
