@@ -17,4 +17,13 @@
 		};
 	};
 
+	pinmux_lpuart3: pinmux_lpuart3 {
+		group0 {
+			pinmux = <LPUART3_RXD_P4_2>,
+				<LPUART3_TXD_P4_5>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
