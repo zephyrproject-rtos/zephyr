@@ -4,11 +4,7 @@ Overview
 ********
 
 The SK-AM64 board configuration is used by Zephyr applications that run on
-the TI AM64x platform. The board configuration provides support for the ARM
-Cortex-M4F MCU core and the following features:
-
-- Nested Vector Interrupt Controller (NVIC)
-- System Tick System Clock (SYSTICK)
+the Cortex-M4F MCU core and the Cortex-R5F cores on TI AM64x platform.
 
 The board configuration also enables support for the semihosting debugging console.
 
@@ -21,9 +17,12 @@ cluster and a single Cortex-M4 core in the MCU domain. Zephyr is ported to run o
 the M4F core and the following listed hardware specifications are used:
 
 - Low-power ARM Cortex-M4F
-- Memory
-
    - 256KB of SRAM
+
+- 2x ARM Dual-Core Cortex-R5F
+   - 64KB of SRAM each
+
+- Memory
    - 2GB of DDR4
 
 - Debug
