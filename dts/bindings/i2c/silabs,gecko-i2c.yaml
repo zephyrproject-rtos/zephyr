@@ -1,7 +1,10 @@
 # Copyright (c) 2018 Diego Sueiro <diego.sueiro@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silabs Gecko I2C
+title: Silicon Labs Series 0-2 I2C (Inter-Integrated Circuit)
+
+description: |
+  I2C peripheral on Silicon Labs EFM32 and EFR32 Series 0, 1 and 2.
 
 compatible: "silabs,gecko-i2c"
 

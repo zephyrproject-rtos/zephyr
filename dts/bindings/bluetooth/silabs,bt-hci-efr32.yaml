@@ -1,4 +1,7 @@
-description: Bluetooth HCI on Silabs boards
+title: Silicon Labs Series 2 Bluetooth HCI (Host-Controller Interface)
+
+description: |
+  Bluetooth Host-Controller Interface for Silicon Labs Series 2 SoCs.
 
 compatible: "silabs,bt-hci-efr32"
 
