@@ -345,15 +345,15 @@ def string_create_helper(
     phdrs,
 ):
     linker_string = ''
-    if load_address_in_flash:
-        if is_copy:
-            load_address_string = LOAD_ADDRESS_LOCATION_FLASH.format(add_phdr(memory_type, phdrs))
-        else:
-            load_address_string = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY.format(
-                add_phdr(memory_type, phdrs)
-            )
+
+    if not load_address_in_flash:
+        phdr_template = LOAD_ADDRESS_LOCATION_BSS
+    elif is_copy:
+        phdr_template = LOAD_ADDRESS_LOCATION_FLASH
     else:
-        load_address_string = LOAD_ADDRESS_LOCATION_BSS.format(add_phdr(memory_type, phdrs))
+        phdr_template = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY
+    load_address_string = phdr_template.format(add_phdr(memory_type, phdrs))
+
     if full_list_of_sections[kind]:
         # Create a complete list of funcs/ variables that goes in for this
         # memory type
@@ -371,11 +371,10 @@ def string_create_helper(
             }
 
             if not region_is_default_ram(memory_type) and kind is SectionKind.RODATA:
-                align_size = 0
-                if memory_type in mpu_align:
-                    align_size = mpu_align[memory_type]
-
-                linker_string += LINKER_SECTION_SEQ_MPU.format(align_size=align_size, **fields)
+                linker_string += LINKER_SECTION_SEQ_MPU.format(
+                    align_size=mpu_align.get(memory_type, 0),
+                    **fields,
+                )
             else:
                 if region_is_default_ram(memory_type) and kind in (
                     SectionKind.TEXT,
@@ -418,20 +417,14 @@ def generate_linker_script(
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(mem=memory_type.lower())
 
+        data_sections = string_create_helper(
+            SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
+        ) + string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+
         if region_is_default_ram(memory_type):
-            gen_string_sram_data += string_create_helper(
-                SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
-            )
-            gen_string_sram_bss += string_create_helper(
-                SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs
-            )
+            gen_string_sram_data += data_sections
         else:
-            gen_string += string_create_helper(
-                SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
-            )
-            gen_string += string_create_helper(
-                SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs
-            )
+            gen_string += data_sections
 
     # finally writing to the linker file
     with open(linker_file, "w") as file_desc:
@@ -482,15 +475,8 @@ def dump_header_file(header_file, code_generation):
     # bss/data/text regions
 
     code_string += code_generation["extern"]
-
-    if code_generation["copy_code"]:
-        code_string += DATA_COPY_FUNCTION.format(code_generation["copy_code"])
-    else:
-        code_string += DATA_COPY_FUNCTION.format("return;")
-    if code_generation["zero_code"]:
-        code_string += BSS_ZEROING_FUNCTION.format(code_generation["zero_code"])
-    else:
-        code_string += BSS_ZEROING_FUNCTION.format("return;")
+    code_string += DATA_COPY_FUNCTION.format(code_generation["copy_code"] or "return;")
+    code_string += BSS_ZEROING_FUNCTION.format(code_generation["zero_code"] or "return;")
 
     with open(header_file, "w") as header_file_desc:
         header_file_desc.write(SOURCE_CODE_INCLUDES)
