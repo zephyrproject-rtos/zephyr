@@ -106,7 +106,7 @@ PRINT_TEMPLATE_NOKEEP = """
 """
 
 SECTION_LOAD_MEMORY_SEQ = """
-        __{0}_{1}_rom_start = LOADADDR(.{0}_{1}_reloc);
+        __{mem}_{kind}_rom_start = LOADADDR(.{mem}_{kind}_reloc);
 """
 
 LOAD_ADDRESS_LOCATION_FLASH = """
@@ -125,48 +125,48 @@ LOAD_ADDRESS_LOCATION_BSS = "GROUP_LINK_IN({0})"
 
 MPU_RO_REGION_START = """
 
-     _{0}_mpu_ro_region_start = ORIGIN({1});
+     _{mem}_mpu_ro_region_start = ORIGIN({mem_upper});
 
 """
 
 MPU_RO_REGION_END = """
 
-    _{0}_mpu_ro_region_end = .;
+    _{mem}_mpu_ro_region_end = .;
 
 """
 
 # generic section creation format
 LINKER_SECTION_SEQ = """
 
-/* Linker section for memory region {2} for  {3} section  */
+/* Linker section for memory region {mem_upper} for {kind_name} section  */
 
-	SECTION_PROLOGUE(.{0}_{1}_reloc,,)
+	SECTION_PROLOGUE(.{mem}_{kind}_reloc,,)
         {{
                 . = ALIGN(4);
-                {4}
+                {linker_sections}
                 . = ALIGN(4);
-	}} {5}
-        __{0}_{1}_reloc_end = .;
-        __{0}_{1}_reloc_start = ADDR(.{0}_{1}_reloc);
-        __{0}_{1}_reloc_size = __{0}_{1}_reloc_end - __{0}_{1}_reloc_start;
+	}} {load_address}
+        __{mem}_{kind}_reloc_end = .;
+        __{mem}_{kind}_reloc_start = ADDR(.{mem}_{kind}_reloc);
+        __{mem}_{kind}_reloc_size = __{mem}_{kind}_reloc_end - __{mem}_{kind}_reloc_start;
 """
 
 LINKER_SECTION_SEQ_MPU = """
 
-/* Linker section for memory region {2} for {3} section  */
+/* Linker section for memory region {mem_upper} for {kind_name} section  */
 
-	SECTION_PROLOGUE(.{0}_{1}_reloc,,)
+	SECTION_PROLOGUE(.{mem}_{kind}_reloc,,)
         {{
-                __{0}_{1}_reloc_start = .;
-                {4}
-#if {6}
-                . = ALIGN({6});
+                __{mem}_{kind}_reloc_start = .;
+                {linker_sections}
+#if {align_size}
+                . = ALIGN({align_size});
 #else
-                MPU_ALIGN(__{0}_{1}_reloc_size);
+                MPU_ALIGN(__{mem}_{kind}_reloc_size);
 #endif
-                __{0}_{1}_reloc_end = .;
-	}} {5}
-        __{0}_{1}_reloc_size = __{0}_{1}_reloc_end - __{0}_{1}_reloc_start;
+                __{mem}_{kind}_reloc_end = .;
+	}} {load_address}
+        __{mem}_{kind}_reloc_size = __{mem}_{kind}_reloc_end - __{mem}_{kind}_reloc_start;
 """
 
 SOURCE_CODE_INCLUDES = """
@@ -178,9 +178,9 @@ SOURCE_CODE_INCLUDES = """
 """
 
 EXTERN_LINKER_VAR_DECLARATION = """
-extern char __{0}_{1}_reloc_start[];
-extern char __{0}_{1}_rom_start[];
-extern char __{0}_{1}_reloc_size[];
+extern char __{mem}_{kind}_reloc_start[];
+extern char __{mem}_{kind}_rom_start[];
+extern char __{mem}_{kind}_reloc_size[];
 """
 
 
@@ -199,14 +199,14 @@ void bss_zeroing_relocation(void)
 """
 
 MEMCPY_TEMPLATE = """
-	z_early_memcpy(&__{0}_{1}_reloc_start, &__{0}_{1}_rom_start,
-		           (size_t) &__{0}_{1}_reloc_size);
+	z_early_memcpy(&__{mem}_{kind}_reloc_start, &__{mem}_{kind}_rom_start,
+		           (size_t) &__{mem}_{kind}_reloc_size);
 
 """
 
 MEMSET_TEMPLATE = """
-	z_early_memset(&__{0}_bss_reloc_start, 0,
-		           (size_t) &__{0}_bss_reloc_size);
+	z_early_memset(&__{mem}_bss_reloc_start, 0,
+		           (size_t) &__{mem}_bss_reloc_size);
 """
 
 
@@ -361,48 +361,31 @@ def string_create_helper(
         if region_is_default_ram(memory_type) and kind in (SectionKind.DATA, SectionKind.BSS):
             linker_string += tmp
         else:
+            fields = {
+                "mem": memory_type.lower(),
+                "mem_upper": memory_type.upper(),
+                "kind": kind.value,
+                "kind_name": kind,
+                "linker_sections": tmp,
+                "load_address": load_address_string,
+            }
+
             if not region_is_default_ram(memory_type) and kind is SectionKind.RODATA:
                 align_size = 0
                 if memory_type in mpu_align:
                     align_size = mpu_align[memory_type]
 
-                linker_string += LINKER_SECTION_SEQ_MPU.format(
-                    memory_type.lower(),
-                    kind.value,
-                    memory_type.upper(),
-                    kind,
-                    tmp,
-                    load_address_string,
-                    align_size,
-                )
+                linker_string += LINKER_SECTION_SEQ_MPU.format(align_size=align_size, **fields)
             else:
                 if region_is_default_ram(memory_type) and kind in (
                     SectionKind.TEXT,
                     SectionKind.LITERAL,
                 ):
-                    align_size = 0
-                    linker_string += LINKER_SECTION_SEQ_MPU.format(
-                        memory_type.lower(),
-                        kind.value,
-                        memory_type.upper(),
-                        kind,
-                        tmp,
-                        load_address_string,
-                        align_size,
-                    )
+                    linker_string += LINKER_SECTION_SEQ_MPU.format(align_size=0, **fields)
                 else:
-                    linker_string += LINKER_SECTION_SEQ.format(
-                        memory_type.lower(),
-                        kind.value,
-                        memory_type.upper(),
-                        kind,
-                        tmp,
-                        load_address_string,
-                    )
+                    linker_string += LINKER_SECTION_SEQ.format(**fields)
             if load_address_in_flash:
-                linker_string += SECTION_LOAD_MEMORY_SEQ.format(
-                    memory_type.lower(), kind.value, memory_type.upper(), kind
-                )
+                linker_string += SECTION_LOAD_MEMORY_SEQ.format(**fields)
     return linker_string
 
 
@@ -418,7 +401,9 @@ def generate_linker_script(
         memory_type = memory_type.split("|", 1)[0]
 
         if region_is_default_ram(memory_type) and is_copy:
-            gen_string += MPU_RO_REGION_START.format(memory_type.lower(), memory_type.upper())
+            gen_string += MPU_RO_REGION_START.format(
+                mem=memory_type.lower(), mem_upper=memory_type.upper()
+            )
 
         gen_string += string_create_helper(
             SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs
@@ -431,7 +416,7 @@ def generate_linker_script(
         )
 
         if region_is_default_ram(memory_type) and is_copy:
-            gen_string += MPU_RO_REGION_END.format(memory_type.lower())
+            gen_string += MPU_RO_REGION_END.format(mem=memory_type.lower())
 
         if region_is_default_ram(memory_type):
             gen_string_sram_data += string_create_helper(
@@ -469,9 +454,11 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
             continue
 
         if kind in generate_sections and full_list_of_sections[kind]:
-            code_generation["copy_code"] += MEMCPY_TEMPLATE.format(memory_type.lower(), kind.value)
+            code_generation["copy_code"] += MEMCPY_TEMPLATE.format(
+                mem=memory_type.lower(), kind=kind.value
+            )
             code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
-                memory_type.lower(), kind.value
+                mem=memory_type.lower(), kind=kind.value
             )
 
     # BSS sections in main memory are automatically zeroed; others need to have
@@ -481,9 +468,9 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
         and full_list_of_sections[SectionKind.BSS]
         and not region_is_default_ram(memory_type)
     ):
-        code_generation["zero_code"] += MEMSET_TEMPLATE.format(memory_type.lower())
+        code_generation["zero_code"] += MEMSET_TEMPLATE.format(mem=memory_type.lower())
         code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
-            memory_type.lower(), SectionKind.BSS.value
+            mem=memory_type.lower(), kind=SectionKind.BSS.value
         )
 
     return code_generation
