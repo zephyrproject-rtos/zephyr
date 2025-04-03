@@ -1089,6 +1089,11 @@ void ethernet_init(struct net_if *iface)
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
 
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+	/* DSA port may need to handle flags */
+	dsa_eth_init(iface);
+#endif
+
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 	ctx->iface = iface;
 	k_work_init(&ctx->carrier_work, carrier_on_off);
