@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MCXA
@@ -7,6 +7,10 @@ config SOC_SERIES_MCXA
 
 config SOC_SERIES
 	default "mcxa" if SOC_SERIES_MCXA
+
+config SOC_MCXA153
+	bool
+	select SOC_SERIES_MCXA
 
 config SOC_MCXA156
 	bool
@@ -21,9 +25,22 @@ config SOC_MCXA276
 	select SOC_SERIES_MCXA
 
 config SOC
+	default "mcxa153" if SOC_MCXA153
 	default "mcxa156" if SOC_MCXA156
 	default "mcxa166" if SOC_MCXA166
 	default "mcxa276" if SOC_MCXA276
+
+config SOC_PART_NUMBER_MCXA153VFM
+	bool
+
+config SOC_PART_NUMBER_MCXA153VFT
+	bool
+
+config SOC_PART_NUMBER_MCXA153VLF
+	bool
+
+config SOC_PART_NUMBER_MCXA153VLH
+	bool
 
 config SOC_PART_NUMBER_MCXA156VPJ
 	bool
@@ -59,6 +76,10 @@ config SOC_PART_NUMBER_MCXA276VPN
 	bool
 
 config SOC_PART_NUMBER
+	default "MCXA153VFM" if SOC_PART_NUMBER_MCXA153VFM
+	default "MCXA153VFT" if SOC_PART_NUMBER_MCXA153VFT
+	default "MCXA153VLF" if SOC_PART_NUMBER_MCXA153VLF
+	default "MCXA153VLH" if SOC_PART_NUMBER_MCXA153VLH
 	default "MCXA156VPJ" if SOC_PART_NUMBER_MCXA156VPJ
 	default "MCXA156VLL" if SOC_PART_NUMBER_MCXA156VLL
 	default "MCXA156VMP" if SOC_PART_NUMBER_MCXA156VMP
