@@ -17,6 +17,13 @@ enum spinel_reset_type {
 	SPINEL_RESET_BOOTLOADER = 3,
 };
 
+enum {
+	SPINEL_THREAD_LINK_METRIC_PDU_COUNT = (1 << 0),
+	SPINEL_THREAD_LINK_METRIC_LQI = (1 << 1),
+	SPINEL_THREAD_LINK_METRIC_LINK_MARGIN = (1 << 2),
+	SPINEL_THREAD_LINK_METRIC_RSSI = (1 << 3),
+};
+
 enum spinel_cmd {
 	SPINEL_CMD_NOOP = 0,
 

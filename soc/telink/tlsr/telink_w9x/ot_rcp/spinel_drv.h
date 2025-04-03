@@ -38,6 +38,13 @@ struct spinel_frame_data {
 	};
 };
 
+struct spinel_link_metrics {
+	bool pdu_count: 1;
+	bool lqi: 1;
+	bool link_margin: 1;
+	bool rssi: 1;
+};
+
 struct spinel_t_id {
 	uint8_t act_id;
 	uint32_t props[SPINEL_MAX_NUMB_TID];
@@ -119,5 +126,10 @@ bool spinel_drv_check_transmit_frame(struct spinel_drv_data *spinel_drv, const u
 				     uint16_t data_size, struct spinel_frame_data *frame);
 bool spinel_drv_check_receive_frame(struct spinel_drv_data *spinel_drv, const uint8_t *data,
 				    uint16_t data_size, struct spinel_frame_data *frame);
+int spinel_drv_send_link_metrics(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
+				 const void *ctx, uint16_t short_addr, const uint8_t ext_addr[8],
+				 struct spinel_link_metrics link_metrics);
+bool spinel_drv_check_link_metrics(struct spinel_drv_data *spinel_drv, const uint8_t *data,
+				   uint16_t data_size);
 
 #endif /* SPINEL_DRV_H */

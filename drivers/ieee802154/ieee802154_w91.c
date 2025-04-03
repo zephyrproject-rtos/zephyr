@@ -383,6 +383,30 @@ static int w91_zb_configure(const struct device *dev, enum ieee802154_config_typ
 		result = openthread_rcp_mac_frame_counter(&data->ot_rcp, config->frame_counter,
 							  true);
 		break;
+	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE:
+		if (config->ack_ie.header_ie) {
+			struct spinel_link_metrics link_metrics = {};
+			uint8_t len = config->ack_ie.header_ie->length;
+			uint8_t *vendor_data = (uint8_t *)&config->ack_ie.header_ie->content;
+
+			for (uint8_t i = IEEE802154_VENDOR_SPECIFIC_IE_OUI_LEN + 1; i < len; i++) {
+				switch (vendor_data[i]) {
+				case 0x01:
+					link_metrics.rssi = true;
+					break;
+				case 0x02:
+					link_metrics.link_margin = true;
+					break;
+				case 0x03:
+					link_metrics.lqi = true;
+					break;
+				}
+			}
+			result = openthread_rcp_link_metrics(&data->ot_rcp,
+							     config->ack_ie.short_addr,
+							     config->ack_ie.ext_addr, link_metrics);
+		}
+		break;
 	default:
 		LOG_WRN("unhandled configuration %u", type);
 		break;

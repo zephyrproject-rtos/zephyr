@@ -273,7 +273,8 @@ int openthread_rcp_reset(struct openthread_rcp_data *ot_rcp)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -300,7 +301,8 @@ int openthread_rcp_ieee_eui64(struct openthread_rcp_data *ot_rcp, uint8_t ieee_e
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -328,7 +330,8 @@ int openthread_rcp_capabilities(struct openthread_rcp_data *ot_rcp,
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -355,7 +358,8 @@ int openthread_rcp_enable_src_match(struct openthread_rcp_data *ot_rcp, bool ena
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -382,7 +386,8 @@ int openthread_rcp_ack_fpb(struct openthread_rcp_data *ot_rcp, uint16_t addr, bo
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -409,7 +414,8 @@ int openthread_rcp_ack_fpb_ext(struct openthread_rcp_data *ot_rcp, uint8_t addr[
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -436,7 +442,8 @@ static int openthread_rcp_ack_fpb_short_clear(struct openthread_rcp_data *ot_rcp
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -463,7 +470,8 @@ static int openthread_rcp_ack_fpb_ext_clear(struct openthread_rcp_data *ot_rcp)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -502,7 +510,8 @@ int openthread_rcp_mac_frame_counter(struct openthread_rcp_data *ot_rcp, uint32_
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -529,7 +538,8 @@ int openthread_rcp_panid(struct openthread_rcp_data *ot_rcp, uint16_t pan_id)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -556,7 +566,8 @@ int openthread_rcp_short_addr(struct openthread_rcp_data *ot_rcp, uint16_t addr)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -583,7 +594,8 @@ int openthread_rcp_ext_addr(struct openthread_rcp_data *ot_rcp, uint8_t addr[8])
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -610,7 +622,8 @@ int openthread_rcp_tx_power(struct openthread_rcp_data *ot_rcp, int8_t pwr_dbm)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -637,7 +650,8 @@ int openthread_rcp_enable(struct openthread_rcp_data *ot_rcp, bool enable)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -664,7 +678,8 @@ int openthread_rcp_receive_enable(struct openthread_rcp_data *ot_rcp, bool enabl
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -691,7 +706,8 @@ int openthread_rcp_channel(struct openthread_rcp_data *ot_rcp, uint8_t channel)
 				processed = true;
 				result = 0;
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}
@@ -730,7 +746,38 @@ int openthread_rcp_transmit(struct openthread_rcp_data *ot_rcp, struct spinel_fr
 					}
 				}
 			} else {
-				LOG_WRN("spinel trash received during %s", __func__);
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
+			}
+			free(response.data);
+		}
+	}
+
+	return result;
+}
+
+int openthread_rcp_link_metrics(struct openthread_rcp_data *ot_rcp, uint16_t short_addr,
+				const uint8_t ext_addr[8], struct spinel_link_metrics link_metrics)
+{
+	k_timepoint_t start_tp;
+	bool processed = false;
+	int result = spinel_drv_send_link_metrics(&ot_rcp->spinel_drv,
+						  openthread_rcp_spinel_transmission, ot_rcp,
+						  short_addr, ext_addr, link_metrics);
+
+	result = openthread_rcp_process_start(ot_rcp, result, &start_tp);
+	while (result >= 0 && !processed) {
+		struct openthread_rcp_buffer response;
+
+		result = openthread_rcp_process_continue(ot_rcp, start_tp, &response);
+		if (result >= 0) {
+			if (spinel_drv_check_link_metrics(&ot_rcp->spinel_drv, response.data,
+							  response.data_size)) {
+				processed = true;
+				result = 0;
+			} else {
+				LOG_HEXDUMP_WRN(response.data, response.data_size,
+						"trash rx @ " STRINGIFY(__LINE__));
 			}
 			free(response.data);
 		}

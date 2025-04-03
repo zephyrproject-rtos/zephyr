@@ -1205,3 +1205,66 @@ bool spinel_drv_check_receive_frame(struct spinel_drv_data *spinel_drv, const ui
 
 	return true;
 }
+
+int spinel_drv_send_link_metrics(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
+				 const void *ctx, uint16_t short_addr, const uint8_t ext_addr[8],
+				 struct spinel_link_metrics link_metrics)
+{
+	uint8_t flags = 0;
+
+	if (link_metrics.pdu_count) {
+		flags |= SPINEL_THREAD_LINK_METRIC_PDU_COUNT;
+	}
+	if (link_metrics.lqi) {
+		flags |= SPINEL_THREAD_LINK_METRIC_LQI;
+	}
+	if (link_metrics.link_margin) {
+		flags |= SPINEL_THREAD_LINK_METRIC_LINK_MARGIN;
+	}
+	if (link_metrics.rssi) {
+		flags |= SPINEL_THREAD_LINK_METRIC_RSSI;
+	}
+	int ret = spinel_drv_send_cmd(
+		spinel_drv, tx_cb, ctx, SPINEL_CMD_PROP_VALUE_SET, SPINEL_PROP_RCP_ENH_ACK_PROBING,
+		SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_UINT8_S,
+		short_addr, ext_addr, flags);
+
+	if (ret < 0) {
+		LOG_ERR("Failed send link metrics (inst = %u, err = %d)", spinel_drv->inst, ret);
+	}
+
+	return ret;
+}
+
+bool spinel_drv_check_link_metrics(struct spinel_drv_data *spinel_drv, const uint8_t *data,
+				   uint16_t data_size)
+{
+	uint8_t header;
+	uint32_t cmd;
+	uint32_t prop;
+	uint32_t status;
+
+	int ret =
+		spinel_datatype_unpack(data, data_size, false,
+				       SPINEL_DATATYPE_COMMAND_PROP_S SPINEL_DATATYPE_UINT_PACKED_S,
+				       &header, &cmd, &prop, &status);
+
+	if (ret < 0) {
+		LOG_ERR("Failed unpack spinel header and data (inst = %u, err = %d)",
+			spinel_drv->inst, ret);
+		return false;
+	}
+
+	if (spinel_drv->inst != SPINEL_HEADER_GET_IID(header) || cmd != SPINEL_CMD_PROP_VALUE_IS ||
+	    prop != SPINEL_PROP_LAST_STATUS) {
+		return false;
+	}
+
+	if (status != SPINEL_STATUS_OK) {
+		LOG_ERR("Incorrect link metrics status (inst = %u, status = %u)", spinel_drv->inst,
+			status);
+		return false;
+	}
+
+	return true;
+}
