@@ -25,4 +25,12 @@ extern "C" {
  */
 extern uint32_t eth_intel_get_pcie_bdf(const struct device *dev);
 
+/**
+ * @brief This ISR will be called if there is any link change in the PHY.
+ * This interrupt is part of the Miscellaneous interrupt vector.
+ *
+ * @param dev Pointer to the device structure.
+ */
+extern void eth_intel_igc_misc_phy_link_isr(const struct device *dev);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_INTEL_PLAT_H__ */
