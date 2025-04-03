@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @brief Public APIs for Video.
+ * @brief Public APIs for Video. xxx
  */
 
 /*
