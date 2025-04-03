@@ -49,9 +49,7 @@ import warnings
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple
-from typing import NewType
-from typing import Tuple
+from typing import NamedTuple, NewType, Tuple
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
