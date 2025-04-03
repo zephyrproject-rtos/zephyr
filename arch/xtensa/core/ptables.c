@@ -320,7 +320,7 @@ void xtensa_mmu_init(void)
 {
 	xtensa_init_page_tables();
 
-	xtensa_init_paging(xtensa_kernel_ptables);
+	xtensa_mmu_init_paging();
 
 	/*
 	 * This is used to determine whether we are faulting inside double
@@ -335,7 +335,7 @@ void xtensa_mmu_init(void)
 void xtensa_mmu_reinit(void)
 {
 	/* First initialize the hardware */
-	xtensa_init_paging(xtensa_kernel_ptables);
+	xtensa_mmu_init_paging();
 
 #ifdef CONFIG_USERSPACE
 	struct k_thread *thread = _current_cpu->current;
@@ -344,7 +344,7 @@ void xtensa_mmu_reinit(void)
 
 
 	/* Set the page table for current context */
-	xtensa_set_paging(domain->asid, domain->ptables);
+	xtensa_mmu_set_paging(domain);
 #endif /* CONFIG_USERSPACE */
 
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
@@ -713,7 +713,7 @@ void xtensa_mmu_tlb_shootdown(void)
 			 */
 			struct arch_mem_domain *domain =
 				&(thread->mem_domain_info.mem_domain->arch);
-			xtensa_set_paging(domain->asid, (uint32_t *)thread_ptables);
+			xtensa_mmu_set_paging(domain);
 		}
 
 	}
@@ -840,6 +840,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
 end:
+	xtensa_mmu_compute_domain_regs(&domain->arch);
 	ret = 0;
 
 err:
@@ -1002,7 +1003,9 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * the current thread running.
 	 */
 	if (thread == _current_cpu->current) {
-		xtensa_set_paging(domain->arch.asid, thread->arch.ptables);
+		struct arch_mem_domain *arch_domain = &(domain->arch);
+
+		xtensa_mmu_set_paging(arch_domain);
 	}
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -1123,11 +1126,10 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 
 void xtensa_swap_update_page_tables(struct k_thread *incoming)
 {
-	uint32_t *ptables = incoming->arch.ptables;
 	struct arch_mem_domain *domain =
 		&(incoming->mem_domain_info.mem_domain->arch);
 
-	xtensa_set_paging(domain->asid, ptables);
+	xtensa_mmu_set_paging(domain);
 }
 
 #endif /* CONFIG_USERSPACE */
