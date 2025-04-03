@@ -145,6 +145,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	uint8_t id = _current_cpu->id;
 	k_spinlock_key_t key;
 	int32_t ticks, events_ticks;
+	uint32_t exit_latency_ticks;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -194,16 +195,17 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	}
 #endif
 
-	if ((z_cpus_pm_state[id].exit_latency_us != 0) &&
-	    (ticks != K_TICKS_FOREVER)) {
+	exit_latency_ticks = k_us_to_ticks_ceil32(z_cpus_pm_state[id].exit_latency_us);
+	if ((exit_latency_ticks > 1) && (ticks != K_TICKS_FOREVER)) {
 		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
+		 * Do this only if exit latency is significant (exceeds 1 system tick).
+		 * It is accepted that timeouts may come later than expected and setting
+		 * timeout causes additional wake up which impacts performance and
+		 * power consumption.
 		 */
-		sys_clock_set_timeout(ticks -
-		     k_us_to_ticks_ceil32(
-			     z_cpus_pm_state[id].exit_latency_us),
-				     true);
+		sys_clock_set_timeout(ticks - exit_latency_ticks, true);
 	}
 
 	/*
