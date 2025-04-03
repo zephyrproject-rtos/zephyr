@@ -5,6 +5,7 @@ zephyr_library_sources_ifdef(CONFIG_PHY_GENERIC_MII	phy_mii.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_PHY_ADIN2111	phy_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_DM8806	phy_dm8806.c)
+zephyr_library_sources_ifdef(CONFIG_PHY_INTEL_IGC  phy_intel_igc.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_MICROCHIP_KSZ8081	phy_microchip_ksz8081.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_MICROCHIP_T1S phy_microchip_t1s.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_MICROCHIP_VSC8541 phy_microchip_vsc8541.c)
