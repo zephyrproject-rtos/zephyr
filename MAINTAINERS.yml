@@ -4058,6 +4058,7 @@ Renesas RA Platforms:
   collaborators:
     - duynguyenxa
     - thaoluonguw
+    - thenguyenyf
   files:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
