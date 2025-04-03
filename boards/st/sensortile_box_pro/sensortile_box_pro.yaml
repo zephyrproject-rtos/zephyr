@@ -11,7 +11,7 @@ supported:
   - ble
   - i2c
   - gpio
-  - usb device
+  - usb_device
   - nvs
   - counter
 ram: 640
