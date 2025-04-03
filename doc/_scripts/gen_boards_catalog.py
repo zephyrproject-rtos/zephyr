@@ -294,6 +294,7 @@ def get_catalog(generate_hw_features=False):
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
+                    title = node.title
                     filename = node.filename
                     lineno = node.lineno
                     locations = set()
@@ -318,6 +319,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "title": title,
                         "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],
