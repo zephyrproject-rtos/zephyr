@@ -351,6 +351,16 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK2) ||
+	    (src_clk == STM32_SRC_HCLK3) ||
+	    (src_clk == STM32_SRC_HCLK4) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
+	    ((src_clk == STM32_SRC_PLL2_S) && IS_ENABLED(STM32_PLL2_S_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL2_T) && IS_ENABLED(STM32_PLL2_T_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL3_S) && IS_ENABLED(STM32_PLL3_S_ENABLED)) ||
+#endif
 	    ((src_clk == STM32_SRC_PLL3_R) && IS_ENABLED(STM32_PLL3_R_ENABLED))) {
 		return 0;
 	}
@@ -474,6 +484,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	case STM32_CLOCK_BUS_AHB2:
 	case STM32_CLOCK_BUS_AHB3:
 	case STM32_CLOCK_BUS_AHB4:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* HCLKn is a possible source clock for some peripherals */
+	case STM32_SRC_HCLK1:
+	case STM32_SRC_HCLK2:
+	case STM32_SRC_HCLK3:
+	case STM32_SRC_HCLK4:
+	case STM32_SRC_HCLK5:
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
@@ -558,7 +576,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_N_MULTIPLIER,
 					      STM32_PLL_S_DIVISOR);
 		break;
-	/* PLL 1  has no T-divider */
+	/* PLL 1 has no T-divider */
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 #endif /* STM32_PLL_ENABLED */
 #if defined(STM32_PLL2_ENABLED)
