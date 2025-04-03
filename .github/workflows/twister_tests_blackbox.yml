@@ -62,4 +62,4 @@ jobs:
         export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
         echo "Run twister tests"
         source zephyr-env.sh
-        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/test_output.py
+        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/
