@@ -13,7 +13,7 @@ jobs:
         fetch-depth: 0
     - name: Scan the code
       id: scancode
-      uses: zephyrproject-rtos/action_scancode@v4
+      uses: zephyrproject-rtos/action_scancode@23ef91ce31cd4b954366a7b71eea47520da9b380 # v4
       with:
         directory-to-scan: 'scan/'
     - name: Artifact Upload
