@@ -749,16 +749,22 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 	uint64_t t0, t1;
 
+	/* Ensure second alignment for K_TIMEOUT_ABS_SEC */
+	zassert_true(exp_ms % MSEC_PER_SEC == 0);
+
 	/* Check the other generator macros to make sure they produce
 	 * the same (whiteboxed) converted values
 	 */
+	t2 = K_TIMEOUT_ABS_SEC(exp_ms / MSEC_PER_SEC);
+	zassert_true(t2.ticks == t.ticks);
+
 	t2 = K_TIMEOUT_ABS_MS(exp_ms);
 	zassert_true(t2.ticks == t.ticks);
 
-	t2 = K_TIMEOUT_ABS_US(1000 * exp_ms);
+	t2 = K_TIMEOUT_ABS_US(USEC_PER_MSEC * exp_ms);
 	zassert_true(t2.ticks == t.ticks);
 
-	t2 = K_TIMEOUT_ABS_NS(1000 * 1000 * exp_ms);
+	t2 = K_TIMEOUT_ABS_NS(NSEC_PER_MSEC * exp_ms);
 	zassert_true(t2.ticks == t.ticks);
 
 	t2 = K_TIMEOUT_ABS_CYC(k_ms_to_cyc_ceil64(exp_ms));
