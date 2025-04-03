@@ -352,6 +352,12 @@ New Drivers
    * :dtcompatible:`renesas,ra-wdt`
    * :dtcompatible:`silabs,siwx91x-wdt`
 
+Devicetree
+**********
+
+* Add a ``title`` keyword to the binding syntax to serve as a concise
+  title when the ``description`` field is too long.
+
 New Samples
 ***********
 
