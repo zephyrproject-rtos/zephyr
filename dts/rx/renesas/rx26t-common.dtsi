@@ -563,5 +563,77 @@
 			zephyr,memory-region = "OFSM";
 			status = "okay";
 		};
+
+		group_irq_be0: grp_intc@87600 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "be0";
+			reg = <0x00087600 0x04>,
+			      <0x00087640 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <106 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl0: grp_intc@87630 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl0";
+			reg = <0x00087630 0x04>,
+			      <0x00087670 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <110 4>;
+			status = "okay";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl1: grp_intc@87634 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl1";
+			reg = <0x00087634 0x04>,
+			      <0x00087674 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <111 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl2: grp_intc@87638 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl2";
+			reg = <0x00087638 0x04>,
+			      <0x00087678 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <107 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_al0: grp_intc@87830 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "al0";
+			reg = <0x00087830 0x04>,
+			      <0x00087870 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <112 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_al1: grp_intc@87834 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "al1";
+			reg = <0x00087834 0x04>,
+			      <0x00087874 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <113 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
 	};
 };
