@@ -79,6 +79,10 @@
 	status = "okay";
 };
 
+&group_irq_bl0 {
+	status = "okay";
+};
+
 &sci12 {
 	pinctrl-0 = <&sci12_default>;
 	pinctrl-names = "default";
