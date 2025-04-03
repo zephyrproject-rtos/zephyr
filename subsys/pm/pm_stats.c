@@ -53,17 +53,17 @@ SYS_INIT(pm_stats_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 void pm_stats_start(void)
 {
-	time_start[_current_cpu->id] = k_cycle_get_32();
+	time_start[CPU_ID] = k_cycle_get_32();
 }
 
 void pm_stats_stop(void)
 {
-	time_stop[_current_cpu->id] = k_cycle_get_32();
+	time_stop[CPU_ID] = k_cycle_get_32();
 }
 
 void pm_stats_update(enum pm_state state)
 {
-	uint8_t cpu = _current_cpu->id;
+	uint8_t cpu = CPU_ID;
 	uint32_t time_total = time_stop[cpu] - time_start[cpu];
 
 	STATS_INC(stats[cpu][state], state_count);
