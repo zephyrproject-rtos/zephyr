@@ -190,7 +190,7 @@ add_dependencies(html devicetree)
 
 add_doc_target(
   html-live
-  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV} OUTPUT_DIR=${DOCS_HTML_DIR}
   ${SPHINXAUTOBUILD}
     --watch ${DOCS_CFG_DIR}
     --ignore ${DOCS_BUILD_DIR}
