@@ -1,0 +1,69 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Capacitive Touch Button instance.
+
+  This node is a renesas,ra-ctsu grandchild node and applies filters and calculations
+  to detect an input event on a group which is the child of renesas,ra-ctsu.
+  For more information see input/renesas,ra-ctsu.yaml
+
+  Example:
+
+  #include <dt-bindings/input/input-event-codes.h>
+
+  &ctsu {
+    compatible = "renesas,ra-ctsu";
+
+    group1 {
+      ...
+      button1 {
+        compatible = "renesas,ra-ctsu-button";
+        elements = <0>;
+        threshold = <769>;
+        hysteresis = <38>;
+        event-code = <INPUT_KEY_0>;
+      };
+
+      button2 {
+        compatible = "renesas,ra-ctsu-button";
+        elements = <1>;
+        threshold = <769>;
+        hysteresis = <38>;
+        event-code = <INPUT_KEY_1>;
+      };
+    };
+  };
+
+  Notes: The order of the CTSU button nodes in the same group must follow these elements index.
+
+compatible: "renesas,ra-ctsu-button"
+
+include: [base.yaml]
+
+properties:
+  event-code:
+    type: int
+    required: true
+    description: |
+      The key code for the device. This is used to identify the device in the
+      input subsystem. It should be one of the values defined in
+      include/input-event-codes.h.
+
+  elements:
+    type: int
+    default: 0
+    description: |
+      Element number from CTSU group that this button located on.
+
+  threshold:
+    type: int
+    default: 0
+    description: |
+      Touch/non-touch judgement threshold for automatic judgement.
+
+  hysteresis:
+    type: int
+    default: 0
+    description: |
+      Threshold hysteresis for chattering prevention for automatic judgement.
