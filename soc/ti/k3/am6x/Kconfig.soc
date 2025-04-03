@@ -63,6 +63,22 @@ config SOC_J722S_MCU_R5F0_0
 	bool
 	select SOC_SERIES_AM6X_R5
 
+config SOC_AM6442_R5F0_0
+	bool
+	select SOC_SERIES_AM6X_R5
+
+config SOC_AM6442_R5F0_1
+	bool
+	select SOC_SERIES_AM6X_R5
+
+config SOC_AM6442_R5F1_0
+	bool
+	select SOC_SERIES_AM6X_R5
+
+config SOC_AM6442_R5F1_1
+	bool
+	select SOC_SERIES_AM6X_R5
+
 config SOC_SERIES
 	default "am6x" if SOC_SERIES_AM6X
 
@@ -71,5 +87,9 @@ config SOC
 	default "am6232" if SOC_AM6232_M4 || SOC_AM6232_A53
 	default "am6234" if SOC_AM6234_M4 || SOC_AM6234_A53
 	default "am6442" if SOC_AM6442_M4
+	default "am6442" if SOC_AM6442_R5F0_0
+	default "am6442" if SOC_AM6442_R5F0_1
+	default "am6442" if SOC_AM6442_R5F1_0
+	default "am6442" if SOC_AM6442_R5F1_1
 	default "j721e" if SOC_J721E_MAIN_R5F0_0
 	default "j722s" if SOC_J722S_MAIN_R5F0_0 || SOC_J722S_MCU_R5F0_0
