@@ -24,6 +24,12 @@ config NET_DSA_DEPRECATED
 	help
 	  This is obsolete, and only used for legacy dsa device.
 
+config DSA_PORT_MAX_COUNT
+	int "DSA port max count"
+	default 8
+	help
+	  Set DSA port max count.
+
 config DSA_KSZ8XXX
 	bool
 
