@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+#	Andrew Davis <afd@ti.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Kernel Configuration
+CONFIG_XIP=n
