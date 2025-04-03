@@ -127,6 +127,16 @@
 	interrupts = <61 2>;
 };
 
+&adc0 {
+	interrupts = <48 2>;
+	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
+};
+
+&wdog0 {
+	interrupts = <43 2>;
+	clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+};
+
 &radio {
 	interrupts = <31 1>, <32 1>, <33 1>, <34 1>, <35 1>, <36 1>,
 		     <37 1>, <38 1>, <39 1>, <40 1>, <41 1>, <42 1>;

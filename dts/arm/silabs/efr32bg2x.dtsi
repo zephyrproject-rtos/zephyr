@@ -310,14 +310,12 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x4A018000 0x3028>;
 			peripheral-id = <0>;
-			interrupts = <43 2>;
 			status = "disabled";
 		};
 
 		adc0: adc@5a004000 {
 			compatible = "silabs,gecko-iadc";
 			reg = <0x5a004000 0x4000>;
-			interrupts = <48 2>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
