@@ -11,3 +11,6 @@ properties:
   mdm-reset-gpios:
     type: phandle-array
     required: true
+
+  mdm-wake-gpios:
+    type: phandle-array
