@@ -194,6 +194,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	}
 #endif
 
+#if !CONFIG_TIMEOUT_EVENT_DOMAIN
 	if ((z_cpus_pm_state[id].exit_latency_us != 0) &&
 	    (ticks != K_TICKS_FOREVER)) {
 		/*
@@ -205,6 +206,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 			     z_cpus_pm_state[id].exit_latency_us),
 				     true);
 	}
+#endif
 
 	/*
 	 * This function runs with interruptions locked but it is

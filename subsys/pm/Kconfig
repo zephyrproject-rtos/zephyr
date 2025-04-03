@@ -121,4 +121,28 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 endif # PM_DEVICE
 
+config PM_EVENT_DEVICE
+	bool "Event device PM support"
+	help
+	  Enable event device power management.
+
+config PM_EVENT_DOMAIN
+	bool "Event domain PM support"
+	depends on PM_EVENT_DEVICE
+	help
+	  Enable event domain power management.
+
+config PM_EVENT_DOMAIN_SHELL
+	bool "Event domain PM shell commands"
+	depends on SHELL
+	depends on PM_EVENT_DOMAIN
+	help
+	  Enable event domain power management shell.
+
+config PM_EVENT_DEVICE_CPU
+	bool "Implement CPU event device using default PM policy"
+	depends on PM_POLICY_DEFAULT
+	depends on PM_EVENT_DEVICE
+	default y
+
 endmenu

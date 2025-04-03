@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  pm.event_device:
+    tags: pm_event_device
+    harness: ztest
+    platform_allow:
+      - native_sim/native
+      - native_sim/native/64
