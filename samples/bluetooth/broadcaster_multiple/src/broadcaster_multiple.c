@@ -55,11 +55,11 @@
 static uint8_t mfg_data[BT_MFG_DATA_LEN] = { 0xFF, 0xFF, };
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
-#if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
-#endif
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	{
+		.type = BT_DATA_SVC_DATA16,
+		.data_len = ARRAY_SIZE(payload),
+		.data = payload,
+	},
 };
 
 static struct bt_le_ext_adv *adv[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
