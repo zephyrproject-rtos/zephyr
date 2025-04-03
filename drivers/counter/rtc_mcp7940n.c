@@ -34,9 +34,6 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_TIME_REGISTERS_SIZE		sizeof(struct mcp7940n_time_registers)
 #define RTC_ALARM_REGISTERS_SIZE	sizeof(struct mcp7940n_alarm_registers)
 
-/* Largest block size */
-#define MAX_WRITE_SIZE                  (RTC_TIME_REGISTERS_SIZE)
-
 /* tm struct uses years since 1900 but unix time uses years since
  * 1970. MCP7940N default year is '1' so the offset is 69
  */
@@ -254,43 +251,41 @@ static int write_register(const struct device *dev, enum mcp7940n_register addr,
  *
  * @param dev the MCP7940N device pointer.
  * @param addr first register address to write to, should be REG_RTC_SEC,
- * REG_ALM0_SEC or REG_ALM0_SEC.
- * @param size size of data struct that will be written.
+ * REG_ALM0_SEC or REG_ALM1_SEC.
  *
  * @retval return 0 on success, or a negative error code from an I2C
  * transaction or invalid parameter.
  */
-static int write_data_block(const struct device *dev, enum mcp7940n_register addr, uint8_t size)
+static int write_data_block(const struct device *dev, enum mcp7940n_register addr)
 {
 	struct mcp7940n_data *data = dev->data;
 	const struct mcp7940n_config *cfg = dev->config;
-	int rc = 0;
-	uint8_t time_data[MAX_WRITE_SIZE + 1];
-	uint8_t *write_block_start;
-
-	if (size > MAX_WRITE_SIZE) {
-		return -EINVAL;
-	}
+	int rc;
+	const uint8_t *write_block_start;
+	uint8_t write_block_size;
 
 	if (addr >= REG_INVAL) {
 		return -EINVAL;
 	}
 
-	if (addr == REG_RTC_SEC) {
-		write_block_start = (uint8_t *)&data->registers;
-	} else if (addr == REG_ALM0_SEC) {
-		write_block_start = (uint8_t *)&data->alm0_registers;
-	} else if (addr == REG_ALM1_SEC) {
-		write_block_start = (uint8_t *)&data->alm1_registers;
-	} else {
-		return -EINVAL;
-	}
+	switch (addr) {
+		case REG_RTC_SEC:
+			write_block_start = (uint8_t *)&data->registers;
+			write_block_size = sizeof(data->registers);
+			break;
+		case REG_ALM0_SEC:
+			write_block_start = (uint8_t *)&data->alm0_registers;
+			write_block_size = sizeof(data->alm0_registers);
+			break;
+		case REG_ALM1_SEC:
+			write_block_start = (uint8_t *)&data->alm1_registers;
+			write_block_size = sizeof(data->alm1_registers);
+			break;
+		default:
+			return -EINVAL;
+		}
 
-	/* Load register address into first byte then fill in data values */
-	time_data[0] = addr;
-	memcpy(&time_data[1], write_block_start, size);
-
-	rc = i2c_write_dt(&cfg->i2c, time_data, size + 1);
+	rc = i2c_burst_write_dt(&cfg->i2c, addr, write_block_start, write_block_size);
 
 	return rc;
 }
@@ -423,7 +418,7 @@ int mcp7940n_rtc_set_time(const struct device *dev, time_t unix_time)
 	}
 
 	/* Write to device */
-	rc = write_data_block(dev, REG_RTC_SEC, RTC_TIME_REGISTERS_SIZE);
+	rc = write_data_block(dev, REG_RTC_SEC);
 
 out:
 	k_sem_give(&data->lock);
@@ -538,7 +533,7 @@ static int mcp7940n_counter_set_alarm(const struct device *dev, uint8_t alarm_id
 
 	/* Write time to alarm registers */
 	encode_alarm(dev, &time_buffer, alarm_id);
-	rc = write_data_block(dev, alarm_base_address, RTC_ALARM_REGISTERS_SIZE);
+	rc = write_data_block(dev, alarm_base_address);
 	if (rc < 0) {
 		goto out;
 	}
