@@ -1,9 +1,0 @@
-common:
-  depends_on: netif
-  tags:
-    - net
-    - socket
-    - af_packet
-tests:
-  net.socket.af_packet.ipproto_raw:
-    min_ram: 21

@@ -698,7 +698,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-		if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+		if (proto != ETH_P_ALL) {
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && pkt_family == AF_CAN) {
@@ -787,12 +787,12 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		/* Is the candidate connection matching the packet's protocol within the family? */
 		if (conn->proto != proto) {
 			/* For packet socket data, the proto is set to ETH_P_ALL
-			 * or IPPROTO_RAW but the listener might have a specific
-			 * protocol set. This is ok and let the packet pass this
-			 * check in this case.
+			 * but the listener might have a specific protocol set.
+			 * This is ok and let the packet pass this check in this
+			 * case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+				if (proto != ETH_P_ALL) {
 					continue; /* wrong protocol */
 				}
 			} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
@@ -813,17 +813,15 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * targets AF_PACKET sockets.
 			 *
 			 * All AF_PACKET connections will receive the packet if
-			 * their socket type and - in case of IPPROTO - protocol
-			 * also matches.
+			 * their socket type and protocol also matches.
 			 */
-			if (proto == ETH_P_ALL) {
-				/* We shall continue with ETH_P_ALL to IPPROTO_RAW: */
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+			    (proto == ETH_P_ALL) && !net_pkt_is_l2_processed(pkt)) {
+				/* We shall continue with ETH_P_ALL to AF_PACKET/SOCK_DGRAM: */
 				raw_pkt_continue = true;
 			}
 
-			/* With IPPROTO_RAW deliver only if protocol match: */
-			if ((proto == ETH_P_ALL && conn->proto != IPPROTO_RAW) ||
-			    conn->proto == proto) {
+			if (proto == ETH_P_ALL) {
 				enum net_verdict ret = conn_raw_socket(pkt, conn, proto);
 
 				if (ret == NET_DROP) {
