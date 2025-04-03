@@ -920,6 +920,10 @@ class Node:
       node name format ...@<dev>,<func> or ...@<dev> (e.g. "pcie@1,0"), in
       this case None is returned.
 
+    title:
+      The title string from the binding for the node, or None if the node
+      has no binding.
+
     description:
       The description string from the binding for the node, or None if the node
       has no binding. Leading and trailing whitespace (including newlines) is
@@ -1113,6 +1117,13 @@ class Node:
             _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring."
+        if self._binding:
+            return self._binding.title
+        return None
 
     @property
     def description(self) -> Optional[str]:
