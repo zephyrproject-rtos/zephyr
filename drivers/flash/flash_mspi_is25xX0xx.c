@@ -16,8 +16,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/cache.h>
-#include <zephyr/mem_mgmt/mem_attr.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/drivers/flash.h>
+#include "spi_nor.h"
 
 #if CONFIG_SOC_FAMILY_AMBIQ
 
@@ -32,8 +32,6 @@ typedef enum mspi_timing_param mspi_timing_param;
 
 #endif
 
-#include <zephyr/drivers/flash.h>
-#include "spi_nor.h"
 LOG_MODULE_REGISTER(flash_mspi_is25xX0xx, CONFIG_FLASH_LOG_LEVEL);
 
 #define NOR_WRITE_SIZE                      1
@@ -88,27 +86,6 @@ struct flash_mspi_is25xX0xx_data {
 	struct k_sem                        lock;
 	uint32_t                            jedec_id;
 };
-
-#if CONFIG_FLASH_MSPI_HANDLE_CACHE
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache = mem_attr_check_buf((void *)buf, len_bytes,
-						DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-
-	return buf_within_nocache;
-}
-#endif
 
 static int is25xX0xx_get_dummy_clk(uint8_t rxdummy, uint8_t *dummy_clk)
 {

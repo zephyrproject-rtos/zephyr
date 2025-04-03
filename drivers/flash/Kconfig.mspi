@@ -66,21 +66,21 @@ endmenu
 if FLASH_MSPI
 
 config FLASH_MSPI_HANDLE_CACHE
-	bool "Enable cache handling in flash peripheral drivers"
+	bool "Turn on cache handling in flash peripheral drivers"
 	default y
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  Disable this if cache has been handled in upper layers.
 
 config FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE
 	int "threshold to do cache handling by range or in full, size in bytes"
-	default 65536
+	default SOC_DCACHE_SIZE if SOC_APOLLO510
 	help
 	  If size is larger than this number, it is uneconomical to handle cache in range.
 	  However, this is a number by experience and could be platform specific.
 
 config FLASH_MSPI_XIP_READ
-	bool "Enable XIP read in flash_read"
+	bool "Turn on XIP read in flash_read"
 	default n
 	depends on MSPI_XIP
 	help

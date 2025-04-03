@@ -57,7 +57,7 @@ config MSPI_AMBIQ_BUFF_ALIGNMENT
 	  This option specifies the mspi buffer alignment
 
 config MSPI_AMBIQ_TIMING_SCAN
-	bool "Enable Ambiq timing scan utility"
+	bool "Turn on Ambiq timing scan utility"
 	default n
 	depends on MSPI_TIMING
 	help

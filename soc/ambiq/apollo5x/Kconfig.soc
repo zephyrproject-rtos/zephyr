@@ -21,3 +21,7 @@ config SOC_SERIES
 
 config SOC
 	default "apollo510" if SOC_APOLLO510
+
+config SOC_DCACHE_SIZE
+	int
+	default 65536 if SOC_APOLLO510
