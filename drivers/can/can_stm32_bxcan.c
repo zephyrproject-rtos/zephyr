@@ -599,7 +599,6 @@ static int can_stm32_init(const struct device *dev)
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing = { 0 };
 	const struct device *clock;
-	uint32_t bank_offset;
 	int ret;
 
 	k_mutex_init(&filter_mutex);
@@ -645,10 +644,19 @@ static int can_stm32_init(const struct device *dev)
 	}
 
 	/* configure scale of filter banks < CONFIG_CAN_MAX_EXT_ID_FILTER for ext ids */
-	bank_offset = (cfg->can == cfg->master_can) ? 0 : CAN_STM32_NUM_FILTER_BANKS;
-	cfg->master_can->FMR |= CAN_FMR_FINIT;
-	cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1) << bank_offset;
-	cfg->master_can->FMR &= ~CAN_FMR_FINIT;
+	/* We have to have set filters after initializing master CAN */
+	if (cfg->can == cfg->master_can) {
+		cfg->master_can->FMR |= CAN_FMR_FINIT;
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1);
+
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
+		/* reserve ext_id filters on slave CAN device */
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1)
+					 << CAN_STM32_NUM_FILTER_BANKS;
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
+
+		cfg->master_can->FMR &= ~CAN_FMR_FINIT;
+	}
 
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
 		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
