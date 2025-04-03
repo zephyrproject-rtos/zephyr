@@ -1,4 +1,4 @@
-description: SiLabs Gecko GPIO
+description: Series 0-2 GPIO (General Purpose Input/Output) Peripheral
 
 compatible: "silabs,gecko-gpio"
 
