@@ -215,11 +215,15 @@ static int drv8424_disable(const struct device *dev)
 		return ret;
 	}
 
-	config->common.timing_source->stop(dev);
+	step_dir_stepper_common_stop(dev);
+	ret = gpio_pin_set_dt(&config->common.step_pin, 0);
+	if (ret != 0) {
+		return -EIO;
+	}
 
 	data->enabled = false;
 
-	return ret;
+	return 0;
 }
 
 static int drv8424_set_micro_step_res(const struct device *dev,

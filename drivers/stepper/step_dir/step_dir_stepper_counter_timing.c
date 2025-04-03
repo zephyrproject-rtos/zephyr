@@ -9,32 +9,35 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(step_dir_stepper);
 
+struct step_counter_update_data {
+	uint64_t microstep_interval_ns;
+};
+
 static void step_counter_top_interrupt(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(dev);
-	struct step_dir_stepper_common_data *data = user_data;
+	struct step_counter_data *data = user_data;
 
-	stepper_handle_timing_signal(data->dev);
+	data->handler(data->dev);
 }
 
-int step_counter_timing_source_update(const struct device *dev,
-				      const uint64_t microstep_interval_ns)
+int step_counter_timing_source_update(const struct device *dev, void *update_data)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct step_counter_data *data = dev->data;
+	struct step_counter_update_data *u_data = update_data;
 	int ret;
 
-	if (microstep_interval_ns == 0) {
+	if (u_data->microstep_interval_ns == 0) {
 		return -EINVAL;
 	}
 
 	data->counter_top_cfg.ticks = DIV_ROUND_UP(
-		counter_get_frequency(config->counter) * microstep_interval_ns, NSEC_PER_SEC);
+		counter_get_frequency(data->counter) * u_data->microstep_interval_ns, NSEC_PER_SEC);
 
 	/* Lock interrupts while modifying counter settings */
 	int key = irq_lock();
 
-	ret = counter_set_top_value(config->counter, &data->counter_top_cfg);
+	ret = counter_set_top_value(data->counter, &data->counter_top_cfg);
 
 	irq_unlock(key);
 
@@ -48,11 +51,10 @@ int step_counter_timing_source_update(const struct device *dev,
 
 int step_counter_timing_source_start(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct step_counter_data *data = dev->data;
 	int ret;
 
-	ret = counter_start(config->counter);
+	ret = counter_start(data->counter);
 	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Failed to start counter: %d", ret);
 		return ret;
@@ -65,11 +67,10 @@ int step_counter_timing_source_start(const struct device *dev)
 
 int step_counter_timing_source_stop(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct step_counter_data *data = dev->data;
 	int ret;
 
-	ret = counter_stop(config->counter);
+	ret = counter_stop(data->counter);
 	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Failed to stop counter: %d", ret);
 		return ret;
@@ -80,25 +81,38 @@ int step_counter_timing_source_stop(const struct device *dev)
 	return 0;
 }
 
-bool step_counter_timing_source_needs_reschedule(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
-
 bool step_counter_timing_source_is_running(const struct device *dev)
 {
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct step_counter_data *data = dev->data;
 
 	return data->counter_running;
 }
 
+uint64_t step_counter_timing_source_get_current_interval(const struct device *dev)
+{
+
+	struct step_counter_data *data = dev->data;
+
+	return step_counter_timing_source_is_running(dev)
+		       ? (uint64_t)data->counter_top_cfg.ticks * NSEC_PER_SEC /
+				 counter_get_frequency(data->counter)
+		       : 0;
+}
+
+int step_counter_timing_register_handler(const struct device *dev, step_dir_step_handler handler)
+{
+	struct step_counter_data *data = dev->data;
+
+	data->handler = handler;
+
+	return 0;
+}
+
 int step_counter_timing_source_init(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct step_counter_data *data = dev->data;
 
-	if (!device_is_ready(config->counter)) {
+	if (!device_is_ready(data->counter)) {
 		LOG_ERR("Counter device is not ready");
 		return -ENODEV;
 	}
@@ -106,7 +120,7 @@ int step_counter_timing_source_init(const struct device *dev)
 	data->counter_top_cfg.callback = step_counter_top_interrupt;
 	data->counter_top_cfg.user_data = data;
 	data->counter_top_cfg.flags = 0;
-	data->counter_top_cfg.ticks = counter_us_to_ticks(config->counter, 1000000);
+	data->counter_top_cfg.ticks = counter_us_to_ticks(data->counter, 1000000);
 
 	return 0;
 }
@@ -115,7 +129,8 @@ const struct stepper_timing_source_api step_counter_timing_source_api = {
 	.init = step_counter_timing_source_init,
 	.update = step_counter_timing_source_update,
 	.start = step_counter_timing_source_start,
-	.needs_reschedule = step_counter_timing_source_needs_reschedule,
 	.stop = step_counter_timing_source_stop,
 	.is_running = step_counter_timing_source_is_running,
+	.get_current_interval = step_counter_timing_source_get_current_interval,
+	.register_step_handler = step_counter_timing_register_handler,
 };

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+/# SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -28,9 +28,3 @@ properties:
       The pins should be listed in the following order:
       - MS1
       - MS2
-
-  dual-edge-step:
-    type: boolean
-    description: |
-      If present, the stepper motor controller supports dual edge step signals.
-      This means that the step signal can be toggled on both the rising and falling edge.

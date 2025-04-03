@@ -41,6 +41,20 @@ properties:
       The GPIO pins used to send direction signals to the stepper motor.
       Pin will be driven high for forward direction and low for reverse direction.
 
+  timing-source:
+    type: string
+    description: Identifier of the timing source used by step-dir drivers.
+    enum:
+      - "counter"
+      - "work"
+      - "counter-accel"
+
+  dual-edge-step:
+    type: boolean
+    description: |
+      If present, the stepper motor controller supports dual edge step signals.
+      This means that the step signal can be toggled on both the rising and falling edge.
+
   counter:
     type: phandle
     description: Counter used for generating step-accurate pulse signals.

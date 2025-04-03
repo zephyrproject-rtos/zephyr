@@ -25,6 +25,7 @@
 		 m0-gpios = <&arduino_header 16 0>;
 		 m1-gpios = <&arduino_header 17 0>;
 		 counter = <&counter2>;
+		 timing-source = "counter";
 	 };
 };
 

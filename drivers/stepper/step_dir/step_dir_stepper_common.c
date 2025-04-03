@@ -8,6 +8,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(step_dir_stepper, CONFIG_STEPPER_LOG_LEVEL);
 
+STEP_DIR_TIMING_SOURCE_STRUCT_CHECK(struct step_dir_stepper_common_data);
+
 static inline int step_dir_stepper_perform_step(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -132,35 +134,24 @@ static void update_direction_from_step_count(const struct device *dev)
 	} else if (data->step_count < 0) {
 		data->direction = STEPPER_DIRECTION_NEGATIVE;
 	} else {
-		LOG_ERR("Step count is zero");
+		LOG_WRN("Step count is zero");
 	}
 }
 
 static void position_mode_task(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
-	const struct step_dir_stepper_common_config *config = dev->config;
 
 	if (data->step_count) {
 		(void)step_dir_stepper_perform_step(dev);
 	}
 
 	update_remaining_steps(dev->data);
-
-	if (config->timing_source->needs_reschedule(dev) && data->step_count != 0) {
-		(void)config->timing_source->start(dev);
-	}
 }
 
 static void velocity_mode_task(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-
 	(void)step_dir_stepper_perform_step(dev);
-
-	if (config->timing_source->needs_reschedule(dev)) {
-		(void)config->timing_source->start(dev);
-	}
 }
 
 void stepper_handle_timing_signal(const struct device *dev)
@@ -204,6 +195,12 @@ int step_dir_stepper_common_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = config->timing_source->register_step_handler(dev, stepper_handle_timing_signal);
+	if (ret < 0) {
+		LOG_ERR("Failed to register step handler: %d", ret);
+		return ret;
+	}
+
 	if (config->timing_source->init) {
 		ret = config->timing_source->init(dev);
 		if (ret < 0) {
@@ -234,9 +231,10 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 	}
 
 	K_SPINLOCK(&data->lock) {
+		data->timing_data.microstep_interval_ns = data->microstep_interval_ns;
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = micro_steps;
-		config->timing_source->update(dev, data->microstep_interval_ns);
+		config->timing_source->update(dev, &data->timing_data);
 		update_direction_from_step_count(dev);
 		config->timing_source->start(dev);
 	}
@@ -245,7 +243,7 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 }
 
 int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
-					      const uint64_t microstep_interval_ns)
+						   const uint64_t microstep_interval_ns)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -257,7 +255,8 @@ int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
 
 	K_SPINLOCK(&data->lock) {
 		data->microstep_interval_ns = microstep_interval_ns;
-		config->timing_source->update(dev, microstep_interval_ns);
+		data->timing_data.microstep_interval_ns = data->microstep_interval_ns;
+		config->timing_source->update(dev, &data->timing_data);
 	}
 
 	return 0;
@@ -296,9 +295,10 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
 	}
 
 	K_SPINLOCK(&data->lock) {
+		data->timing_data.microstep_interval_ns = data->microstep_interval_ns;
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = value - data->actual_position;
-		config->timing_source->update(dev, data->microstep_interval_ns);
+		config->timing_source->update(dev, &data->timing_data);
 		update_direction_from_step_count(dev);
 		config->timing_source->start(dev);
 	}
@@ -320,9 +320,10 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	const struct step_dir_stepper_common_config *config = dev->config;
 
 	K_SPINLOCK(&data->lock) {
+		data->timing_data.microstep_interval_ns = data->microstep_interval_ns;
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
-		config->timing_source->update(dev, data->microstep_interval_ns);
+		config->timing_source->update(dev, &data->timing_data);
 		config->timing_source->start(dev);
 	}
 

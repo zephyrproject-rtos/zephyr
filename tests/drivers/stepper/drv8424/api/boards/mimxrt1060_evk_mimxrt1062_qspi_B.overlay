@@ -49,6 +49,7 @@
 		m0-gpios = <&mikroe_stepper_gpios 0 0>;
 		m1-gpios = <&mikroe_stepper_gpios 1 0>;
 		counter = <&pit0_channel0>;
+		timing-source = "counter";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
