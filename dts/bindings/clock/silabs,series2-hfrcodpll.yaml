@@ -1,8 +1,10 @@
 compatible: "silabs,series2-hfrcodpll"
 
+title: Silicon Labs Series 2 HFRCODPLL (High-Frequency RC Oscillator with Digital Phase-Locked Loop)
+
 description: |
-  Silicon Labs HFRCODPLL peripheral (high-frequency RC oscillator with digital phase-locked loop).
-  Can be used as a free-running RC oscillator or with PLL lock to the crystal oscillators HFXO
+  High-Frequency RC Oscillator with Digital Phase-Locked Loop peripheral on Silicon Labs Series 2
+  SoCs. Can be used as a free-running RC oscillator or with PLL lock to the crystal oscillators HFXO
   or LFXO. To enable PLL, set the `clocks` property to the source crystal oscillator, and set
   the `dpll-*` options to desired values.
 

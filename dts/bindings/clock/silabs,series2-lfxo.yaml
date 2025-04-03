@@ -1,7 +1,9 @@
 compatible: "silabs,series2-lfxo"
 
+title: Silicon Labs Series 2 LFXO (Low-Frequency Crystal Oscillator)
+
 description: |
-  Silicon Labs LFXO peripheral (low-frequency crystal oscillator).
+  Low-Frequency Crystal Oscillator peripheral.
 
 include: fixed-clock.yaml
 
