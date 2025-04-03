@@ -201,6 +201,23 @@ config USE_RA_FSP_SSI
 	help
 	  Enable RA FSP I2S SSI driver
 
+config USE_RA_FSP_IOPORT
+	bool
+	help
+	  Enable RA FSP IOPORT driver
+
+config USE_RA_FSP_CTSU
+	bool
+	select USE_RA_FSP_IOPORT
+	help
+	  Enable RA FSP CTSU driver
+
+config USE_RA_FSP_TOUCH
+	bool
+	depends on USE_RA_FSP_CTSU
+	help
+	  Enable RA FSP TOUCH library
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
