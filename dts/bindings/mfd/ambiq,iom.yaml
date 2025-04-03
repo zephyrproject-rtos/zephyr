@@ -13,3 +13,13 @@ properties:
 
   interrupts:
     required: true
+
+  cmdq-buffer-location:
+    type: string
+    description: |
+      Define the DMA command queue buffer location section
+
+  cmdq-buffer-size:
+    type: int
+    description: |
+      Define the DMA command queue buffer size in (4-byte) words
