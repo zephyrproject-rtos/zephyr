@@ -5,10 +5,7 @@ description: Nordic nRF family SPIM (SPI master with EasyDMA)
 
 compatible: "nordic,nrf-spim"
 
-include:
-  - spi-controller.yaml
-  - nordic,nrf-spi-common.yaml
-  - memory-region.yaml
+include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
   anomaly-58-workaround:
