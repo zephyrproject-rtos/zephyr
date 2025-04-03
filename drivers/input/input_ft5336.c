@@ -76,6 +76,9 @@ struct ft5336_data {
 #endif
 	/** Last pressed state. */
 	bool pressed_old;
+	/** Last touch position. */
+	uint16_t row_old;
+	uint16_t col_old;
 };
 
 INPUT_TOUCH_STRUCT_CHECK(struct ft5336_config);
@@ -128,14 +131,25 @@ static int ft5336_process(const struct device *dev)
 		/* no touch = no press */
 		pressed = false;
 	}
-
-	if (pressed) {
+	/* Report new input when there is touch on new position
+	 * The last condition (data->pressed_old == false) is for when we double tap,
+	 * there is chance we touch on the same position,
+	 * so we should also report when switching from not press to press
+	 */
+	if (pressed &&
+		 ((data->col_old != col) ||
+			(data->row_old != row) ||
+		  (data->pressed_old == false))) {
 		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
-		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-	} else if (data->pressed_old && !pressed) {
-		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+		data->col_old = col;
+		data->row_old = row;
 	}
-	data->pressed_old = pressed;
+
+	/* Report new input when touch state change */
+	if (data->pressed_old != pressed) {
+		input_report_key(dev, INPUT_BTN_TOUCH, pressed, true, K_FOREVER);
+		data->pressed_old = pressed;
+	}
 
 	return 0;
 }
