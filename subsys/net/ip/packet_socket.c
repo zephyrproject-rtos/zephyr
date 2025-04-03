@@ -15,8 +15,13 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
-
+#else
+#include <zephyr/net/dsa_core.h>
+#endif
+#endif
 #include "connection.h"
 #include "packet_socket.h"
 
@@ -25,15 +30,21 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 	sa_family_t orig_family;
 	enum net_verdict net_verdict;
 
-#if defined(CONFIG_NET_DSA)
 	/*
 	 * For DSA the master port is not supporting raw packets. Only the
 	 * lan1..3 are working with them.
 	 */
+#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	if (dsa_is_port_master(net_pkt_iface(pkt))) {
 		return NET_CONTINUE;
 	}
-#endif
+#else	/* CONFIG_NET_DSA_DEPRECATED */
+	if (dsa_port_is_conduit(net_pkt_iface(pkt))) {
+		return NET_CONTINUE;
+	}
+#endif	/* CONFIG_NET_DSA_DEPRECATED */
+#endif	/* CONFIG_NET_DSA */
 
 	orig_family = net_pkt_family(pkt);
 
