@@ -6,6 +6,15 @@
 
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#ifdef CONFIG_DCACHE
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif /* CONFIG_DCACHE */
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #include "soc.h"
 
 extern void ambiq_power_init(void);
@@ -41,3 +50,25 @@ void soc_early_init_hook(void)
 	MCUCTRL->DBGCTRL_b.DBGTPIUTRACEENABLE = MCUCTRL_DBGCTRL_DBGTPIUTRACEENABLE_EN;
 #endif
 }
+
+#if CONFIG_CACHE_MANAGEMENT
+bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	bool buf_within_nocache = false;
+
+#if CONFIG_NOCACHE_MEMORY
+	/* Check if buffer is in nocache region defined by the linker */
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+	/* Check if buffer is in nocache memory region defined in DT */
+	buf_within_nocache = mem_attr_check_buf((void *)buf, len_bytes,
+						DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
+}
+#endif
