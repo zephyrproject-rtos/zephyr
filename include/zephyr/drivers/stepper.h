@@ -30,12 +30,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Macro to calculate the index of the microstep resolution
- * @param res Microstep resolution
- */
-#define MICRO_STEP_RES_INDEX(res) LOG2(res)
-
-/**
  * @brief Stepper Motor micro-step resolution options
  */
 enum stepper_micro_step_resolution {
@@ -58,6 +52,19 @@ enum stepper_micro_step_resolution {
 	/** 256 micro-steps per full step */
 	STEPPER_MICRO_STEP_256 = 256,
 };
+
+/**
+ * @brief Macro to calculate the index of the microstep resolution
+ * @param res Microstep resolution
+ */
+#define MICRO_STEP_RES_INDEX(res) LOG2(res)
+
+#define VALID_MICRO_STEP_RES(res)                                                                  \
+	((res) == STEPPER_MICRO_STEP_1 || (res) == STEPPER_MICRO_STEP_2 ||                         \
+	 (res) == STEPPER_MICRO_STEP_4 || (res) == STEPPER_MICRO_STEP_8 ||                         \
+	 (res) == STEPPER_MICRO_STEP_16 || (res) == STEPPER_MICRO_STEP_32 ||                       \
+	 (res) == STEPPER_MICRO_STEP_64 || (res) == STEPPER_MICRO_STEP_128 ||                      \
+	 (res) == STEPPER_MICRO_STEP_256)
 
 /**
  * @brief Stepper Motor direction options
