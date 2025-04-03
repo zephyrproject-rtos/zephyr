@@ -405,21 +405,28 @@ def generate_linker_script(
             )
 
         gen_string += string_create_helper(
-            SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs
+            SectionKind.LITERAL,
+            memory_type,
+            full_list_of_sections,
+            True,
+            is_copy,
+            phdrs,
         )
         gen_string += string_create_helper(
-            SectionKind.TEXT, memory_type, full_list_of_sections, 1, is_copy, phdrs
+            SectionKind.TEXT, memory_type, full_list_of_sections, True, is_copy, phdrs
         )
         gen_string += string_create_helper(
-            SectionKind.RODATA, memory_type, full_list_of_sections, 1, is_copy, phdrs
+            SectionKind.RODATA, memory_type, full_list_of_sections, True, is_copy, phdrs
         )
 
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(mem=memory_type.lower())
 
         data_sections = string_create_helper(
-            SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
-        ) + string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+            SectionKind.DATA, memory_type, full_list_of_sections, True, True, phdrs
+        ) + string_create_helper(
+            SectionKind.BSS, memory_type, full_list_of_sections, False, True, phdrs
+        )
 
         if region_is_default_ram(memory_type):
             gen_string_sram_data += data_sections
