@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - api
+tests:
+  drivers.stepper.stepper_acceleration.ti_drv8424:
+    tags:
+      - stepper_step_dir
+      - stepper_acceleration
+      - stepper_step_dir_timing_counter
+      - stepper_ti_drv8424
+    extra_args:
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi/ti_drv8424.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:DTC_OVERLAY_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_B/ti_drv8424.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_I2C=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - nucleo_f767zi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
