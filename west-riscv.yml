@@ -27,6 +27,8 @@ manifest:
       url-base: https://gitlab.com/libeigen/
     - name: muriscv-nn-remote
       url-base: https://github.com/tum-ei-eda/
+    - name: ucb-bar-remote
+      url-base: https://github.com/ucb-bar/
 
   group-filter: [-babblesim, -optional]
 
@@ -119,6 +121,16 @@ manifest:
       repo-path: muriscv-nn 
       path: modules/lib/muriscv-nn
       revision: e17d4c79d9bd81008bdc4012f15d0ae9d4c0a032
+    - name: xnnpack
+      remote: ucb-bar-remote
+      repo-path: XNNPACK
+      path: modules/lib/xnnpack
+      revision: zephyr
+    - name: executorch
+      remote: ucb-bar-remote
+      repo-path: executorch
+      path: modules/lib/executorch
+      revision: zephyr
   # zephyr-keep-sorted-stop
 
   self:
