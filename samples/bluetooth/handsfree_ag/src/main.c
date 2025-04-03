@@ -63,9 +63,9 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 	printk("HFP AG SCO connected!\n");
 }
 
-static void ag_sco_disconnected(struct bt_hfp_ag *ag)
+static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	printk("HFP AG SCO disconnected!\n");
+	printk("HFP AG SCO disconnected %u!\n", reason);
 }
 
 static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
