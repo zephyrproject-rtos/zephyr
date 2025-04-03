@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Capacitive Touch Slider instance.
+
+  This node is a renesas,ra-ctsu grandchild node and applies filters and calculations
+  to detect an input event on a group which is the child of renesas,ra-ctsu.
+  For more information see input/renesas,ra-ctsu.yaml
+
+  Example:
+
+  #include <dt-bindings/input/input-event-codes.h>
+
+  &ctsu {
+    compatible = "renesas,ra-ctsu";
+
+    group1 {
+      ...
+      slider {
+        compatible = "renesas,ra-ctsu-slider";
+        elements = <1>, <0>, <2>, <4>, <3>;
+        threshold = <573>;
+        event-code = <INPUT_ABS_THROTTLE>;
+      };
+    };
+  };
+
+compatible: "renesas,ra-ctsu-slider"
+
+include: [base.yaml]
+
+properties:
+  event-code:
+    type: int
+    required: true
+    description: |
+      The key code for the device. This is used to identify the device in the
+      input subsystem. It should be one of the values defined in
+      include/input-event-codes.h.
+
+  elements:
+    type: array
+    description: |
+      Element number array from CTSU group that used by this node. It should have the same
+      order with electrode located on the Capacitive Pad.
+
+  threshold:
+    type: int
+    default: 0
+    description: |
+      Touch/non-touch judgement threshold for automatic judgement.
