@@ -1,5 +1,1 @@
-#include "mspm0lx22x.dtsi"
-
-&nvm {
-	reg = <0x00000000 0x40000>;
-};
+#include "mspm0lx228.dtsi"
