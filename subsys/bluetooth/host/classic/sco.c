@@ -120,11 +120,11 @@ void bt_sco_disconnected(struct bt_conn *sco)
 
 	bt_sco_cleanup_acl(sco);
 
-	chan->sco = NULL;
-
 	if (chan->ops && chan->ops->disconnected) {
 		chan->ops->disconnected(chan, sco->err);
 	}
+
+	chan->sco = NULL;
 }
 
 static uint8_t sco_server_check_security(struct bt_conn *conn)
