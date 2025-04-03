@@ -53,6 +53,26 @@ config PM_NEED_ALL_DEVICES_IDLE
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
 
+choice PM_PREWAKEUP_CONV_MODE
+	prompt "Pre-wakeup microseconds to ticks conversion method"
+	default PM_PREWAKEUP_CONV_MODE_NEAR
+	help
+	  Exit latency for each power state is given in microseconds. It is converted
+	  to ticks and system clock is set to wake up the core earlier before scheduled
+	  wake up. This option specifies rounding that is used when converting exit
+	  latency from microseconds to system ticks.
+
+config PM_PREWAKEUP_CONV_MODE_NEAR
+	bool "Nearest"
+
+config PM_PREWAKEUP_CONV_MODE_CEIL
+	bool "Round up"
+
+config PM_PREWAKEUP_CONV_MODE_FLOOR
+	bool "Round down"
+
+endchoice
+
 endif # PM
 
 config PM_DEVICE
