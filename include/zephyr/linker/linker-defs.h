@@ -154,6 +154,12 @@ extern char _vector_end[];
 extern char __vector_relay_table[];
 #endif
 
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+extern char _sram_vector_start[];
+extern char _sram_vector_end[];
+extern char _sram_vector_size[];
+#endif
+
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
 extern char __gcov_bss_end[];
