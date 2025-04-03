@@ -47,7 +47,7 @@ launched using Twister:
 
 .. code-block:: shell
 
-   west twister -v -p mimxrt1170_evk@B/mimxrt1176/cm7 --device-testing --device-serial COM4 -T tests/bluetooth/classic/sdp_c -O sdp_c --force-platform --west-flash --west-runner=jlink -X usb_hci:usb:0
+   west twister -v -p mimxrt1170_evk@B/mimxrt1176/cm7 --device-testing --device-serial COM4 -T tests/bluetooth/classic/sdp_c -O sdp_c --force-platform --west-flash --west-runner=jlink -X usb_hci:usb:0 -x CONFIG_BUILD_ONLY_NO_BLOBS=n
 
 Running on Hardware
 ===================
@@ -59,7 +59,7 @@ The test suite can be launched using Twister. Below is an example for running on
 
 .. code-block:: shell
 
-   west twister -v -p mimxrt1170_evk@B/mimxrt1176/cm7 --device-testing --device-serial COM4 -T tests/bluetooth/classic/sdp_c -O sdp_c --force-platform --west-flash --west-runner=jlink -X usb_hci:usb:0
+   west twister -v -p mimxrt1170_evk@B/mimxrt1176/cm7 --device-testing --device-serial COM4 -T tests/bluetooth/classic/sdp_c -O sdp_c --force-platform --west-flash --west-runner=jlink -X usb_hci:usb:0 -x CONFIG_BUILD_ONLY_NO_BLOBS=n
 
 .. _bumble:
    https://google.github.io/bumble/getting_started.html

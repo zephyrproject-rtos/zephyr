@@ -12,4 +12,6 @@ tests:
     harness_config:
       pytest_dut_scope: session
       fixture: usb_hci
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
     timeout: 60
