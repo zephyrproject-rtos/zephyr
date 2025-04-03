@@ -19,6 +19,9 @@
 	/* as flash node property 'write-block-size' */
 #endif
 
+/* Single program flash word size 64-bit */
+#define FLASH_MSPM0_FLASH_WRITE_SIZE	(8)
+
 struct flash_mspm0_priv {
 	FLASHCTL_Regs *regs;
 	struct k_sem sem;
@@ -57,21 +60,11 @@ void flash_mspm0_page_layout(const struct device *dev,
 			     size_t *layout_size);
 #endif
 
-static inline bool flash_mspm0_valid_write(off_t offset, uint32_t len)
-{
-	return ((offset % FLASH_MSPM0_WRITE_BLOCK_SIZE == 0) &&
-		(len % FLASH_MSPM0_WRITE_BLOCK_SIZE == 0U));
-}
-
-bool flash_mspm0_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write);
-
 int flash_mspm0_write_range(const struct device *dev, unsigned int offset, const void *data, unsigned int len);
 
 int flash_mspm0_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len);
 
 int flash_mspm0_wait_flash_idle(const struct device *dev);
-
-static int flash_mspm0_check_status(const struct device *dev);
 
 static int flash_mspm0_erase(const struct device *dev, off_t offset, size_t len);
 int flash_mspm0_block_erase_loop(const struct device *dev,
