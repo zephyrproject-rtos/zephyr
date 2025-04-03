@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mec_assy6941_mec1743qlj
-name: MEC174X EVB ASSY 6941 with MEC1743-QLJ
+identifier: mec_assy6941/mec1753_qlj
+name: MEC174X EVB ASSY 6941 with MEC1753-QLJ
 type: mcu
 arch: arm
 toolchain:

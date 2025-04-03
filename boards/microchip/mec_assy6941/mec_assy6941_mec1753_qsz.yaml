@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mec_assy6941_mec1753qsz
+identifier: mec_assy6941/mec1753_qsz
 name: MEC174X EVB ASSY 6941 with MEC1753-QSZ
 type: mcu
 arch: arm

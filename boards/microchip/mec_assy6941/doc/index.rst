@@ -1,4 +1,4 @@
-.. _mec5_assy6941:
+.. zephyr:board:: mec_assy6941
 
 Microchip EVB Assembly 6941 with MEC174x or MEC175x daughter cards
 ##################################################################
@@ -10,7 +10,7 @@ The MEC5 Assembly 6941 EVB kit is a development platform to evaluate the Microch
 MEC174x and MEC175x series microcontrollers. This board requires a CPU daughter card:
 DC 176WFBGA DC ASSY 6942 for MEC1743Q-LJ or MEC1753Q-LJ (176-pin package)
 
-.. image:: mec5_assy6941_evb.jpg
+.. image:: mec_assy6941_evb.webp
      :align: center
      :alt: MEC5_ASSY6941 EVB
 
@@ -44,40 +44,13 @@ For more information about the MEC175x please see `MEC175x Data Brief`_
 Supported Features
 ==================
 
-The mec5_assy6941 board configuration supports the following hardware
-features:
-
-	+-----------+------------+-------------------------------------+
-	| Interface | Controller | Driver/Component                    |
-	+===========+============+=====================================+
-	| NVIC      | on-chip    | nested vector interrupt controller  |
-	+-----------+------------+-------------------------------------+
-	| SYSTICK   | on-chip    | systick                             |
-	+-----------+------------+-------------------------------------+
-	| UART      | on-chip    | serial port                         |
-	+-----------+------------+-------------------------------------+
-	| GPIO      | on-chip    | gpio                                |
-	+-----------+------------+-------------------------------------+
-	| I2C       | on-chip    | i2c                                 |
-	+-----------+------------+-------------------------------------+
-	| PINMUX    | on-chip    | pinmux                              |
-	+-----------+------------+-------------------------------------+
-	| PS/2      | on-chip    | ps2                                 |
-	+-----------+------------+-------------------------------------+
-	| KSCAN     | on-chip    | kscan                               |
-	+-----------+------------+-------------------------------------+
-	| TACH      | on-chip    | tachometer                          |
-	+-----------+------------+-------------------------------------+
-	| RPMFAN    | on-chip    | Fan speed controller                |
-	+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
+.. zephyr:board-supported-hw::
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1743qlj_defconfig` Kconfig file.
-:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1743qsz_defconfig` Kconfig file.
-:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1753qlj_defconfig` Kconfig file.
-:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1753qsz_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1743_qlj_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1743_qsz_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1753_qlj_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec_assy6941/mec_assy6941_mec1753_qsz_defconfig` Kconfig file.
 
 Connections and IOs
 ===================
@@ -301,7 +274,7 @@ Wiring
 
 #. Connect the SPI Dongle ASSY 6791 to ``J18`` in the EVB.
 
-   .. image:: spi_dongle_assy6791.jpg
+   .. image:: spi_dongle_assy6791.webp
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
