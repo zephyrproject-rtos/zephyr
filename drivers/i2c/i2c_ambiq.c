@@ -166,7 +166,8 @@ static void i2c_ambiq_isr(const struct device *dev)
 	k_sem_give(&data->transfer_sem);
 }
 
-static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
+static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
+			   struct i2c_msg *data_msg, uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
@@ -177,8 +178,19 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *msg, uint16_
 	trans.ui8Priority = 1;
 	trans.eDirection = AM_HAL_IOM_RX;
 	trans.uPeerInfo.ui32I2CDevAddr = addr;
-	trans.ui32NumBytes = msg->len;
-	trans.pui32RxBuffer = (uint32_t *)msg->buf;
+	trans.ui32NumBytes = data_msg->len;
+	trans.pui32RxBuffer = (uint32_t *)data_msg->buf;
+	if (hdr_msg) {
+		if (hdr_msg->len > AM_HAL_IOM_MAX_OFFSETSIZE) {
+			return -E2BIG;
+		}
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf) & (0xFFFFFFFF >> (32 - (hdr_msg->len * 8)));
+#else
+		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf) & (0xFFFFFFFFFFFFFFFF >> (64 - (hdr_msg->len * 8)));
+#endif
+		trans.ui32InstrLen = hdr_msg->len;
+	}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 	data->transfer_status = -EFAULT;
@@ -204,7 +216,8 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *msg, uint16_
 	return (ret != AM_HAL_STATUS_SUCCESS) ? -EIO : 0;
 }
 
-static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
+static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
+			   struct i2c_msg *data_msg, uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
@@ -215,8 +228,19 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *msg, uint16
 	trans.ui8Priority = 1;
 	trans.eDirection = AM_HAL_IOM_TX;
 	trans.uPeerInfo.ui32I2CDevAddr = addr;
-	trans.ui32NumBytes = msg->len;
-	trans.pui32TxBuffer = (uint32_t *)msg->buf;
+	trans.ui32NumBytes = data_msg->len;
+	trans.pui32TxBuffer = (uint32_t *)data_msg->buf;
+	if (hdr_msg) {
+		if (hdr_msg->len > AM_HAL_IOM_MAX_OFFSETSIZE) {
+			return -E2BIG;
+		}
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf) & (0xFFFFFFFF >> (32 - (hdr_msg->len * 8)));
+#else
+		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf) & (0xFFFFFFFFFFFFFFFF >> (64 - (hdr_msg->len * 8)));
+#endif
+		trans.ui32InstrLen = hdr_msg->len;
+	}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 	data->transfer_status = -EFAULT;
@@ -301,9 +325,16 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 
 	for (int i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
-			ret = i2c_ambiq_read(dev, &(msgs[i]), addr);
+			ret = i2c_ambiq_read(dev, NULL, &(msgs[i]), addr);
+		} else if ((i + 1) < num_msgs) {
+			if (msgs[i + 1].flags & I2C_MSG_READ) {
+				ret = i2c_ambiq_read(dev, &(msgs[i]), &(msgs[i + 1]), addr);
+			} else {
+				ret = i2c_ambiq_write(dev, &(msgs[i]), &(msgs[i + 1]), addr);
+			}
+			i++;
 		} else {
-			ret = i2c_ambiq_write(dev, &(msgs[i]), addr);
+			ret = i2c_ambiq_write(dev, NULL, &(msgs[i]), addr);
 		}
 
 		if (ret != 0) {
