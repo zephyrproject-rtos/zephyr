@@ -2666,53 +2666,25 @@ skip_alloc:
 
 		net_pkt_cursor_init(pkt);
 
-		if (net_context_get_proto(context) == IPPROTO_RAW) {
-			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
-			struct sockaddr_ll *ll_addr;
+		struct sockaddr_ll_ptr *ll_src_addr;
+		struct sockaddr_ll *ll_dst_addr;
 
-			/* Set the family to pkt if detected */
-			switch (type) {
-			case 0x60:
-				net_pkt_set_family(pkt, AF_INET6);
-				net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
-				break;
-			case 0x40:
-				net_pkt_set_family(pkt, AF_INET);
-				net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
-				break;
-			default:
-				/* Not IP traffic, let it go forward as it is */
-				ll_addr = (struct sockaddr_ll *)dst_addr;
+		/* The destination address is set in remote for this
+		 * socket type.
+		 */
+		ll_dst_addr = (struct sockaddr_ll *)&context->remote;
+		ll_src_addr = (struct sockaddr_ll_ptr *)&context->local;
 
-				net_pkt_set_ll_proto_type(pkt,
-							  ntohs(ll_addr->sll_protocol));
-				break;
-			}
+		(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+				       ll_dst_addr->sll_addr,
+				       sizeof(struct net_eth_addr));
+		(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				       ll_src_addr->sll_addr,
+				       sizeof(struct net_eth_addr));
 
-			/* Pass to L2: */
-			ret = net_try_send_data(pkt, timeout);
-		} else {
-			struct sockaddr_ll_ptr *ll_src_addr;
-			struct sockaddr_ll *ll_dst_addr;
+		net_pkt_set_ll_proto_type(pkt, ntohs(ll_dst_addr->sll_protocol));
 
-			/* The destination address is set in remote for this
-			 * socket type.
-			 */
-			ll_dst_addr = (struct sockaddr_ll *)&context->remote;
-			ll_src_addr = (struct sockaddr_ll_ptr *)&context->local;
-
-			(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
-					       ll_dst_addr->sll_addr,
-					       sizeof(struct net_eth_addr));
-			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
-					       ll_src_addr->sll_addr,
-					       sizeof(struct net_eth_addr));
-
-			net_pkt_set_ll_proto_type(pkt,
-						  ntohs(ll_dst_addr->sll_protocol));
-
-			net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
-		}
+		net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN &&
 		   net_context_get_proto(context) == CAN_RAW) {
 		ret = context_write_data(pkt, buf, len, msghdr);
