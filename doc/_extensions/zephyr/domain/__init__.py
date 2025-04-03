@@ -998,6 +998,12 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                     tbody += row
 
+                    # Declare the dts and binding files as dependencies of the board doc page,
+                    # ensuring that the page is rerendered if the files change.
+                    for node in okay_nodes + disabled_nodes:
+                        env.note_dependency(node["dts_path"])
+                        env.note_dependency(node["binding_path"])
+
             tgroup += tbody
             table += tgroup
             tables_container += table
