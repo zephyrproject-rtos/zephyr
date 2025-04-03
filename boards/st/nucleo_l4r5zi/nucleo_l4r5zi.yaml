@@ -13,7 +13,7 @@ supported:
   - spi
   - i2c
   - gpio
-  - usb device
+  - usbd
   - nvs
   - counter
   - adc
