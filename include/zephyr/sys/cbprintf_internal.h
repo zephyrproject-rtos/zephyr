@@ -751,6 +751,17 @@ do { \
 		 _name##_buf32)))
 #endif
 
+/* On Xtensa the cbprintf_package_desc requires
+ * an additional alignment array. This creates an
+ * initial value to hush the compiler when compiling
+ * with C++.
+ */
+#if defined(CONFIG_XTENSA) && defined(__cplusplus)
+#define Z_CBPRINTF_XTENSA_PKG_DESC_PADDING_INITIALIZER .xtensa_padding = { },
+#else
+#define Z_CBPRINTF_XTENSA_PKG_DESC_PADDING_INITIALIZER
+#endif
+
 /** @brief Statically package a formatted string with arguments.
  *
  * @param buf buffer. If null then only length is calculated.
@@ -840,6 +851,7 @@ do { \
 				.str_cnt = 0, \
 				.ro_str_cnt = _ros_cnt, \
 				.rw_str_cnt = _rws_cnt, \
+				Z_CBPRINTF_XTENSA_PKG_DESC_PADDING_INITIALIZER \
 			} \
 		}; \
 		IF_ENABLED(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS, \
