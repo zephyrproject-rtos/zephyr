@@ -149,6 +149,11 @@
 	interrupts = <26 0>;
 };
 
+&wdog0 {
+	interrupts = <49 2>;
+	clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+};
+
 &radio {
 	interrupts = <36 1>, <37 1>, <38 1>, <39 1>, <40 1>, <41 1>,
 		     <42 1>, <43 1>, <44 1>, <45 1>, <46 1>, <47 1>;
