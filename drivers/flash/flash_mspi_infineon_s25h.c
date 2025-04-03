@@ -237,6 +237,7 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 					 size_t size)
 {
 	int ret = 0;
+	bool requires_cleanup = false;
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
 	struct flash_mspi_infineon_s25h_data *dev_data = dev->data;
 
@@ -245,12 +246,12 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 	 * don't want this and instead wait for 2 cycles. However since the flash
 	 * pins could be in high impedance state from the MSPI controller after the
 	 * address was sent an address ending with 0xA could put the flash into a
-	 * continuous read mode.  To prevent this this driver requires the address to
-	 * be aligned to 16 byte when in Quad SPI mode
+	 * continuous read mode. To prevent this the driver will read the jedec id,
+	 * if the address wasn't aligned to prevent accidentally fulfilling the
+	 * requirement.
 	 */
 	if (dev_data->mspi_dev_cfg.io_mode == MSPI_IO_MODE_QUAD && (addr % 16 != 0)) {
-		LOG_ERR("Address wasn't aligned to 16 byte while in Quad SPI mode");
-		return -ENOTSUP;
+		requires_cleanup = true;
 	}
 
 	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
@@ -277,7 +278,18 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 		.timeout = size,
 	};
 
-	return mspi_transceive(config->bus, &config->dev_id, &xfer);
+	ret = mspi_transceive(config->bus, &config->dev_id, &xfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (requires_cleanup) {
+		uint8_t unused[3];
+		(void)unused;
+		return flash_mspi_infineon_s25h_read_jedec_id(dev, unused);
+	}
+
+	return ret;
 }
 
 static int flash_mspi_infineon_s25h_single_block_write(const struct device *dev,
