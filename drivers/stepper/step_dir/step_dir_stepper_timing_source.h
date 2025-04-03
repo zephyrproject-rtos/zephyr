@@ -117,6 +117,26 @@ struct step_counter_data {
 };
 
 /**
+ * @brief Data struct for the counter-acceleration timing source
+ */
+struct step_counter_accel_data {
+	const struct device *dev;
+	const struct device *counter;
+	struct counter_top_cfg counter_top_cfg;
+	step_dir_step_handler handler;
+	bool counter_running;
+	uint64_t root_factor;
+	uint32_t accurate_steps;
+	uint32_t pulse_index;
+	uint64_t current_time_int;
+	uint64_t base_time_int;
+	uint64_t frequency;
+	uint64_t current_interval;
+	bool dual_edge;
+	bool flip_state;
+};
+
+/**
  * @brief Initialize counter timing source data from devicetree instance.
  *
  * @param node_id The devicetree node identifier.
@@ -127,7 +147,22 @@ struct step_counter_data {
 		.counter = DEVICE_DT_GET(DT_PHANDLE(node_id, counter)),                            \
 	}
 
+/**
+ * @brief Initialize counter-acceleration timing source data from devicetree instance.
+ *
+ * @param node_id The devicetree node identifier.
+ */
+#define STEP_DIR_TIMING_SOURCE_COUNTER_ACCEL_DATA_INIT(node_id)                                    \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.counter = DEVICE_DT_GET(DT_PHANDLE(node_id, counter)),                            \
+		.root_factor = 1000000,                                                            \
+		.accurate_steps = DT_PROP_OR(node_id, accurate_steps, 15),                         \
+		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
+	}
+
 extern const struct stepper_timing_source_api step_counter_timing_source_api;
+extern const struct stepper_timing_source_api step_counter_accel_timing_source_api;
 #endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
 
 /**
@@ -137,6 +172,7 @@ union step_dir_timing_source_data {
 	struct step_work_data work;
 #ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
 	struct step_counter_data counter;
+	struct step_counter_accel_data counter_accel;
 #endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
 };
 
@@ -144,13 +180,18 @@ union step_dir_timing_source_data {
 	(COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, counter),			   \
 			(&step_counter_timing_source_api),					   \
 	(COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, work),				   \
-			(&step_work_timing_source_api),	()))))
+			(&step_work_timing_source_api),						   \
+	(COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, counter_accel),			   \
+			(&step_counter_accel_timing_source_api), ()))))))
 
 #define STEP_DIR_TIMING_SOURCE_DATA(node_id)                                                       \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, counter),				   \
 			(.ts_data.counter = STEP_DIR_TIMING_SOURCE_COUNTER_DATA_INIT(node_id),),   \
 	(COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, work),				   \
-			(.ts_data.work = STEP_DIR_TIMING_SOURCE_WORK_DATA_INIT(node_id),), ())))
+			(.ts_data.work = STEP_DIR_TIMING_SOURCE_WORK_DATA_INIT(node_id),),	   \
+	(COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, timing_source, counter_accel),			   \
+			(.ts_data.counter_accel =						   \
+			STEP_DIR_TIMING_SOURCE_COUNTER_ACCEL_DATA_INIT(node_id),), ())))))
 
 #define STEP_DIR_TIMING_SOURCE_STRUCT_CHECK(data)                                                  \
 	BUILD_ASSERT(offsetof(data, ts_data) == 0,                                                 \

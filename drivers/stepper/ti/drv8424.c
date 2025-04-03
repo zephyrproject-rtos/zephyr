@@ -9,7 +9,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper/stepper_drv8424.h>
-#include "../step_dir/step_dir_stepper_common.h"
+#include "../step_dir/step_dir_stepper_common_accel.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(drv8424, CONFIG_STEPPER_LOG_LEVEL);
@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(drv8424, CONFIG_STEPPER_LOG_LEVEL);
  * needed by a given DRV8424 stepper driver.
  */
 struct drv8424_config {
-	struct step_dir_stepper_common_config common;
+	struct step_dir_stepper_common_accel_config common;
 	struct gpio_dt_spec sleep_pin;
 	struct gpio_dt_spec en_pin;
 	struct gpio_dt_spec m0_pin;
@@ -42,13 +42,13 @@ struct drv8424_pin_states {
  * This structure contains mutable data used by a DRV8424 stepper driver.
  */
 struct drv8424_data {
-	const struct step_dir_stepper_common_data common;
+	const struct step_dir_stepper_common_accel_data common;
 	bool enabled;
 	struct drv8424_pin_states pin_states;
 	enum stepper_micro_step_resolution ustep_res;
 };
 
-STEP_DIR_STEPPER_STRUCT_CHECK(struct drv8424_config, struct drv8424_data);
+STEP_DIR_STEPPER_ACCEL_STRUCT_CHECK(struct drv8424_config, struct drv8424_data);
 
 static int drv8424_set_microstep_pin(const struct device *dev, const struct gpio_dt_spec *pin,
 				     int value)
@@ -215,7 +215,7 @@ static int drv8424_disable(const struct device *dev)
 		return ret;
 	}
 
-	step_dir_stepper_common_stop(dev);
+	step_dir_stepper_common_accel_stop_immediate(dev);
 	ret = gpio_pin_set_dt(&config->common.step_pin, 0);
 	if (ret != 0) {
 		return -EIO;
@@ -316,7 +316,7 @@ static int drv8424_move_to(const struct device *dev, int32_t target)
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_to(dev, target);
+	return step_dir_stepper_common_accel_move_to(dev, target);
 }
 
 static int drv8424_move_by(const struct device *dev, int32_t steps)
@@ -328,7 +328,7 @@ static int drv8424_move_by(const struct device *dev, int32_t steps)
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_by(dev, steps);
+	return step_dir_stepper_common_accel_move_by(dev, steps);
 }
 
 static int drv8424_run(const struct device *dev, enum stepper_direction direction)
@@ -340,7 +340,7 @@ static int drv8424_run(const struct device *dev, enum stepper_direction directio
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_run(dev, direction);
+	return step_dir_stepper_common_accel_run(dev, direction);
 }
 
 static int drv8424_init(const struct device *dev)
@@ -390,7 +390,7 @@ static int drv8424_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = step_dir_stepper_common_init(dev);
+	ret = step_dir_stepper_common_accel_init(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to initialize common step direction stepper (error: %d)", ret);
 		return ret;
@@ -404,21 +404,21 @@ static DEVICE_API(stepper, drv8424_stepper_api) = {
 	.disable = drv8424_disable,
 	.move_by = drv8424_move_by,
 	.move_to = drv8424_move_to,
-	.is_moving = step_dir_stepper_common_is_moving,
-	.set_reference_position = step_dir_stepper_common_set_reference_position,
-	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
+	.is_moving = step_dir_stepper_common_accel_is_moving,
+	.set_reference_position = step_dir_stepper_common_accel_set_reference_position,
+	.get_actual_position = step_dir_stepper_common_accel_get_actual_position,
+	.set_microstep_interval = step_dir_stepper_common_accel_set_microstep_interval,
 	.run = drv8424_run,
-	.stop = step_dir_stepper_common_stop,
+	.stop = step_dir_stepper_common_accel_stop,
 	.set_micro_step_res = drv8424_set_micro_step_res,
 	.get_micro_step_res = drv8424_get_micro_step_res,
-	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.set_event_callback = step_dir_stepper_common_accel_set_event_callback,
 };
 
 #define DRV8424_DEVICE(inst)                                                                       \
                                                                                                    \
 	static const struct drv8424_config drv8424_config_##inst = {                               \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
+		.common = STEP_DIR_STEPPER_DT_INST_COMMON_ACCEL_CONFIG_INIT(inst),                 \
 		.sleep_pin = GPIO_DT_SPEC_INST_GET_OR(inst, sleep_gpios, {0}),                     \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
 		.m0_pin = GPIO_DT_SPEC_INST_GET(inst, m0_gpios),                                   \
@@ -426,7 +426,7 @@ static DEVICE_API(stepper, drv8424_stepper_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct drv8424_data drv8424_data_##inst = {                                         \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
+		.common = STEP_DIR_STEPPER_DT_INST_COMMON_ACCEL_DATA_INIT(inst),                   \
 		.ustep_res = DT_INST_PROP(inst, micro_step_res),                                   \
 	};                                                                                         \
                                                                                                    \

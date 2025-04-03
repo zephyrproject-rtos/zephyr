@@ -58,3 +58,13 @@ properties:
   counter:
     type: phandle
     description: Counter used for generating step-accurate pulse signals.
+
+  acceleration:
+    type: int
+    description: Stepper Motor acceleration in microsteps/second.
+
+  accurate-steps:
+    type: int
+    description: |
+      Number of steps whose interval is calculated exactly instead of usng
+      approximation.
