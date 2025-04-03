@@ -29,9 +29,6 @@ config IDLE_STACK_SIZE
 	default 1024 if PM
 
 config ROM_START_OFFSET
-	default 0x0 if BOOTLOADER_MCUBOOT
-
-config CYW20829_ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 
 # add additional die specific params

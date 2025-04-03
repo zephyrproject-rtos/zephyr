@@ -42,10 +42,6 @@ config CYW20829_SRAM_CBUS_ADDR
 	hex
 	default $(dt_nodelabel_reg_addr_hex,sram_cbus)
 
-config CYW20829_ROM_START_OFFSET
-	hex
-	default 0x0
-
 # MPN
 config SOC_CYW20829A0LKML
 	bool

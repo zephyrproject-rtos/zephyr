@@ -104,7 +104,7 @@ dt_reg_size(bootstrap_size PATH ${sram_bootstrap})
 
 # Calculate the place in flash
 math(EXPR flash_addr_offset
-  "${CONFIG_CYW20829_FLASH_SAHB_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_CYW20829_ROM_START_OFFSET}"
+  "${CONFIG_CYW20829_FLASH_SAHB_ADDR} + ${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_ROM_START_OFFSET}"
   OUTPUT_FORMAT HEXADECIMAL
 )
 set(gen_app_header_args --flash_addr_offset ${flash_addr_offset})
