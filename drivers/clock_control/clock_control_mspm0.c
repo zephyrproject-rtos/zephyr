@@ -28,6 +28,11 @@ struct mspm0_clk_cfg {
 static const struct mspm0_clk_cfg mspm0_cfg_hfclk;
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lfxtclk), okay)
+#define MSPM0_LFXT_ENABLED 1
+static const struct mspm0_clk_cfg mspm0_cfg_lfxtclk;
+#endif
+
 #define MSPM0_CLOCK_BUS_ULPCLK_FREQ		40000000 /*40 MHz */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_out), okay)
 #define MSPM0_CLK_OUT_ENABLED 1
@@ -67,7 +72,11 @@ static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t
 
 	switch (clockSys->bus) {
 	case MSPM0_CLOCK_BUS_LFCLK:
+#if MSPM0_LFXT_ENABLED
+		*rate = mspm0_cfg_lfxtclk.clk_freq;
+#else
 		*rate = 32768;
+#endif
 		break;
 	case MSPM0_CLOCK_BUS_ULPCLK:
 		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
@@ -132,7 +141,7 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 
 static int clock_mspm0_init(const struct device *dev)
 {
-	char *mclk_src;
+	char *mclk_src, *lfclk_src;
 	/* setup clocks based on specific rates */
 	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
 
@@ -191,6 +200,23 @@ static int clock_mspm0_init(const struct device *dev)
 #endif
 	}
 
+#if MSPM0_LFXT_ENABLED
+	lfclk_src = DT_NODE_FULL_NAME(DT_PHANDLE_BY_IDX(DT_NODELABEL(lfclk), clock_source, 0));
+	if (!lfclk_src) {
+		return -EINVAL;
+	}
+
+	if (!strcmp(lfclk_src, "lfxtclk")) {
+		if (mspm0_cfg_lfxtclk.is_crystal == false) {
+			DL_SYSCTL_setLFCLKSourceEXLF();
+		} else {
+			DL_SYSCTL_LFCLKConfig config = {0};
+
+			DL_SYSCTL_setLFCLKSourceLFXT(&config);
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -210,6 +236,13 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), &clock_mspm0_init, NULL, NULL, NULL, PRE_
 static const struct mspm0_clk_cfg mspm0_cfg_hfclk = {
 	.is_crystal = DT_NODE_HAS_PROP(DT_NODELABEL(hfclk), ti_xtal),
 	.clk_freq = ((DT_PROP(DT_NODELABEL(hfclk), clock_frequency)) / MHZ(1)),
+};
+#endif
+
+#if MSPM0_LFXT_ENABLED
+static const struct mspm0_clk_cfg mspm0_cfg_lfxtclk = {
+	.is_crystal = DT_NODE_HAS_PROP(DT_NODELABEL(lfxtclk), ti_xtal),
+	.clk_freq = DT_PROP(DT_NODELABEL(lfxtclk), clock_frequency),
 };
 #endif
 

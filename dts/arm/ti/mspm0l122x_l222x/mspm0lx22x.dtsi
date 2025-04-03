@@ -103,6 +103,13 @@
 		#clock-cells = <1>;
 	};
 
+	lfclk: lfclk {
+		compatible = "ti,mspm0-clock-mux";
+		clock-source = <&lfosc>;
+		#clock-cells = <1>;
+		status = "disabled";
+	};
+
 	clocks: clocks {
 		sysosc: sysosc {
 			compatible = "ti,mspm0-oscillator";
@@ -111,6 +118,12 @@
 		};
 
 		hfclk: hfclk {
+			compatible = "ti,mspm0-oscillator";
+			#clock-cells = <1>;
+			status = "disabled";
+		};
+
+		lfxtclk: lfxtclk {
 			compatible = "ti,mspm0-oscillator";
 			#clock-cells = <1>;
 			status = "disabled";

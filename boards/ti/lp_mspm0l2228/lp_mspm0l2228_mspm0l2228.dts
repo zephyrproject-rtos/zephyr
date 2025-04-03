@@ -73,6 +73,18 @@
 	clock-frequency = <DT_FREQ_M(32)>;
 };
 
+&lfclk {
+	clock-source = <&lfxtclk>;
+	clock-frequency = <DT_FREQ_K(32)>;
+	status = "okay";
+};
+
+&lfxtclk {
+	clock-frequency = <DT_FREQ_K(32)>;
+	ti,xtal;
+	status = "okay";
+};
+
 &hfclk {
 	clock-frequency = <DT_FREQ_M(32)>;
 	ti,xtal;
