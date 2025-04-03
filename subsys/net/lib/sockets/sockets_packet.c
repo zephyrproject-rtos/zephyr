@@ -51,11 +51,7 @@ static int zpacket_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	if (proto == 0) {
-		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
-		}
-	} else {
+	if (proto != 0) {
 		/* For example in Linux, the protocol parameter can be given
 		 * as htons(ETH_P_ALL) to receive all the network packets.
 		 * So convert the proto field back to host byte order so that
@@ -492,11 +488,10 @@ static bool packet_is_supported(int family, int type, int proto)
 		proto = ntohs(proto);
 		return proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
-		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
+		  || proto == ETH_P_IEEE802154;
 
 	case SOCK_DGRAM:
-		return proto > 0;
+		return true;
 
 	default:
 		return false;

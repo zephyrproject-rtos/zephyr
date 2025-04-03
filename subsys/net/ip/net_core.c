@@ -127,13 +127,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
 					  family == AF_UNSPEC || family == AF_PACKET)) {
-		/* L2 processed, now we can pass IPPROTO_RAW to packet socket:
-		 */
-		ret = net_packet_socket_input(pkt, IPPROTO_RAW);
-		if (ret != NET_CONTINUE) {
-			return ret;
-		}
-
 		/* IP version and header length. */
 		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
