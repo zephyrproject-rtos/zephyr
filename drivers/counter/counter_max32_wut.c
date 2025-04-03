@@ -255,7 +255,7 @@ static int counter_max32_wut_pm_action(const struct device *dev, enum pm_device_
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct counter_driver_api counter_max32_wut_driver_api = {
+static DEVICE_API(counter, counter_max32_wut_driver_api) = {
 	.start = counter_max32_wut_start,
 	.stop = counter_max32_wut_stop,
 	.get_value = counter_max32_wut_get_value,
