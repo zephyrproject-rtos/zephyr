@@ -153,6 +153,10 @@ static inline void print_nothing(const char *fmt, ...)
 	} while (0)
 #endif
 
+#ifndef TC_START_REBOOTS
+#define TC_START_REBOOTS(name)	PRINT_DATA("REBOOTS - %s\n", name);
+#endif
+
 #ifndef TC_END
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #endif
@@ -195,6 +199,10 @@ static inline void print_nothing(const char *fmt, ...)
 		TC_SUITE_PRINT("Running TESTSUITE %s\n", name);	\
 		PRINT_LINE;					\
 	} while (false)
+#endif
+
+#ifndef TC_SUITE_START_REBOOTS
+#define TC_SUITE_START_REBOOTS(name) TC_SUITE_PRINT("TESTSUITE %s reboots\n", name)
 #endif
 
 #ifndef TC_SUITE_END

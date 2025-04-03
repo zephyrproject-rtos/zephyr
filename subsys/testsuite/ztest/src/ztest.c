@@ -490,6 +490,16 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	int ret = TC_PASS;
 
 	TC_START(test->name);
+	for (struct ztest_expected_result_entry *expectation =
+		_ztest_expected_result_entry_list_start;
+		expectation < _ztest_expected_result_entry_list_end; ++expectation) {
+		if (strcmp(expectation->test_suite_name, suite->name) == 0 &&
+			strcmp(expectation->test_name, test->name) == 0 &&
+			(expectation->expected_result == ZTEST_EXPECTED_RESULT_REBOOTS)) {
+			TC_START_REBOOTS(suite->name);
+			break;
+		}
+	}
 	__ztest_set_test_phase(TEST_PHASE_BEFORE);
 
 	if (test_result == ZTEST_RESULT_SUITE_FAIL) {
@@ -670,8 +680,18 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 #if CONFIG_ZTEST_TEST_DELAY_MS > 0
 	k_busy_wait(CONFIG_ZTEST_TEST_DELAY_MS * USEC_PER_MSEC);
 #endif
-	TC_START(test->name);
 
+	TC_START(test->name);
+	for (struct ztest_expected_result_entry *expectation =
+		_ztest_expected_result_entry_list_start;
+		expectation < _ztest_expected_result_entry_list_end; ++expectation) {
+		if (strcmp(expectation->test_suite_name, suite->name) == 0 &&
+			strcmp(expectation->test_name, test->name) == 0 &&
+			(expectation->expected_result == ZTEST_EXPECTED_RESULT_REBOOTS)) {
+			TC_START_REBOOTS(test->name);
+			break;
+		}
+	}
 	__ztest_set_test_phase(TEST_PHASE_BEFORE);
 
 	/* If the suite's setup function marked us as skipped, don't bother
@@ -825,6 +845,15 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 #endif
 
 	TC_SUITE_START(suite->name);
+	for (struct ztest_expected_result_entry *expectation =
+		_ztest_expected_result_entry_list_start;
+		expectation < _ztest_expected_result_entry_list_end; ++expectation) {
+		if (strcmp(expectation->test_suite_name, suite->name) == 0 &&
+			(expectation->expected_result == ZTEST_EXPECTED_RESULT_REBOOTS)) {
+			TC_SUITE_START_REBOOTS(suite->name);
+			break;
+		}
+	}
 	current_test_failed_assumption = false;
 	__ztest_set_test_result(ZTEST_RESULT_PENDING);
 	__ztest_set_test_phase(TEST_PHASE_SETUP);
