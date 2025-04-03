@@ -86,6 +86,10 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* Kernel
+
+ * :c:macro:`K_TIMEOUT_ABS_SEC`
+
 * I2C
 
   * :c:func:`i2c_configure_dt`.
