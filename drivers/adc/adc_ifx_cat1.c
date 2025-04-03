@@ -32,8 +32,13 @@ LOG_MODULE_REGISTER(ifx_cat1_adc, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CAT1_EVENTS_MASK (CYHAL_ADC_EOS | CYHAL_ADC_ASYNC_READ_COMPLETE)
 
 #define ADC_CAT1_DEFAULT_ACQUISITION_NS (1000u)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 #define ADC_CAT1_RESOLUTION             (12u)
 #define ADC_CAT1_REF_INTERNAL_MV        (1200u)
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
+#define ADC_CAT1_RESOLUTION             (16u)
+#define ADC_CAT1_REF_INTERNAL_MV        (3600u)
+#endif
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
 #define IFX_ADC_NUM_CHANNELS                                                                       \
@@ -60,6 +65,30 @@ struct ifx_cat1_adc_config {
 	uint8_t irq_priority;
 };
 
+#ifdef CONFIG_SOC_FAMILY_INFINEON_CAT1B
+static void ifx_cat1_adc_worker(struct k_work *adc_worker_thread)
+{
+	struct ifx_cat1_adc_data *data =
+		CONTAINER_OF(adc_worker_thread, struct ifx_cat1_adc_data, adc_worker_thread);
+
+	uint32_t channels = data->channels;
+	int32_t result;
+	uint32_t channel_id;
+
+	while (channels != 0) {
+		channel_id = find_lsb_set(channels) - 1;
+		channels &= ~BIT(channel_id);
+
+		result = cyhal_adc_read(&data->adc_chan_obj[channel_id]);
+		/* Legacy API for BWC. Convert from signed to unsigned by adding 0x800 to
+		 * convert the lowest signed 12-bit number to 0x0.
+		 */
+		*data->buffer = (uint16_t)(result + 0x800);
+		data->buffer++;
+	}
+	adc_context_on_sampling_done(&data->ctx, data->dev);
+}
+#else
 static void _cyhal_adc_event_callback(void *callback_arg, cyhal_adc_event_t event)
 {
 	const struct device *dev = (const struct device *) callback_arg;
@@ -84,30 +113,6 @@ static void _cyhal_adc_event_callback(void *callback_arg, cyhal_adc_event_t even
 	adc_context_on_sampling_done(&data->ctx, dev);
 
 	LOG_DBG("%s ISR triggered.", dev->name);
-}
-
-#ifdef CONFIG_SOC_FAMILY_INFINEON_CAT1B
-static void ifx_cat1_adc_worker(struct k_work *adc_worker_thread)
-{
-	struct ifx_cat1_adc_data *data =
-		CONTAINER_OF(adc_worker_thread, struct ifx_cat1_adc_data, adc_worker_thread);
-
-	uint32_t channels = data->channels;
-	int32_t result;
-	uint32_t channel_id;
-
-	while (channels != 0) {
-		channel_id = find_lsb_set(channels) - 1;
-		channels &= ~BIT(channel_id);
-
-		result = cyhal_adc_read(&data->adc_chan_obj[channel_id]);
-		/* Legacy API for BWC. Convert from signed to unsigned by adding 0x800 to
-		 * convert the lowest signed 12-bit number to 0x0.
-		 */
-		*data->buffer = (uint16_t)(result + 0x800);
-		data->buffer++;
-	}
-	adc_context_on_sampling_done(&data->ctx, data->dev);
 }
 #endif
 
@@ -300,7 +305,10 @@ static int ifx_cat1_adc_init(const struct device *dev)
 	/* Enable ADC Interrupt */
 	cyhal_adc_enable_event(&data->adc_obj, (cyhal_adc_event_t)ADC_CAT1_EVENTS_MASK,
 			       config->irq_priority, true);
+
+#ifndef CONFIG_SOC_FAMILY_INFINEON_CAT1B
 	cyhal_adc_register_callback(&data->adc_obj, _cyhal_adc_event_callback, (void *) dev);
+#endif
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
