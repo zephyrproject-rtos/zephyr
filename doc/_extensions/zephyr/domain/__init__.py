@@ -69,15 +69,17 @@ RESOURCES_DIR = Path(__file__).parent / "static"
 # Load and parse binding types from text file
 BINDINGS_TXT_PATH = ZEPHYR_BASE / "dts" / "bindings" / "binding-types.txt"
 ACRONYM_PATTERN = re.compile(r'([a-zA-Z0-9-]+)\s*\((.*?)\)')
+ACRONYM_PATTERN_UPPERCASE_ONLY = re.compile(r'(\b[A-Z0-9-]+)\s*\((.*?)\)')
 BINDING_TYPE_TO_DOCUTILS_NODE = {}
 
 
-def parse_text_with_acronyms(text):
+def parse_text_with_acronyms(text, uppercase_only=False):
     """Parse text that may contain acronyms into a list of nodes."""
     result = nodes.inline()
     last_end = 0
 
-    for match in ACRONYM_PATTERN.finditer(text):
+    pattern = ACRONYM_PATTERN_UPPERCASE_ONLY if uppercase_only else ACRONYM_PATTERN
+    for match in pattern.finditer(text):
         # Add any text before the acronym
         if match.start() > last_end:
             result += nodes.Text(text[last_end : match.start()])
@@ -929,7 +931,7 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                     # DESCRIPTION column
                     desc_entry = nodes.entry(classes=["description"])
                     desc_para = nodes.paragraph(classes=["status"])
-                    desc_para += nodes.Text(value["description"])
+                    desc_para += parse_text_with_acronyms(value["description"], uppercase_only=True)
 
                     # Add count indicators for okay and not-okay instances
                     okay_nodes = value.get("okay_nodes", [])
