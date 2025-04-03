@@ -227,6 +227,13 @@ Bluetooth Host
   each role may be different. Any existing uses/checks for ``BT_ISO_CHAN_TYPE_CONNECTED``
   can be replaced with an ``||`` of the two. (:github:`75549`)
 
+Bluetooth Classic
+=================
+
+* The parameters of HFP AG callback ``sco_disconnected`` of the struct :c:struct:`bt_hfp_ag_cb`
+  have been changed to SCO connection object ``struct bt_conn *sco_conn`` and the disconnection
+  reason of the SCO connection ``uint8_t reason``.
+
 Networking
 **********
 
