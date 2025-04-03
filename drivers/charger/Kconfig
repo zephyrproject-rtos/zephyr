@@ -51,6 +51,7 @@ config CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
 	  Enables support for system voltage notifications
 endmenu
 
+source "drivers/charger/Kconfig.axp2101"
 source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.bq25180"
