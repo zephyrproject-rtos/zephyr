@@ -38,6 +38,11 @@
 
 /** Clock muxes */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL3_S + 1)
+#define STM32_SRC_HCLK1		(STM32_SRC_CKPER + 1)
+#define STM32_SRC_HCLK2		(STM32_SRC_HCLK1 + 1)
+#define STM32_SRC_HCLK3		(STM32_SRC_HCLK2 + 1)
+#define STM32_SRC_HCLK4		(STM32_SRC_HCLK3 + 1)
+#define STM32_SRC_HCLK5		(STM32_SRC_HCLK4 + 1)
 /** Others: Not yet supported */
 
 /** Bus clocks */
