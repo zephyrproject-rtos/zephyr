@@ -18,6 +18,7 @@
 static const struct device *const flash_dev = DEVICE_DT_GET(DT_NODELABEL(sim_flash_controller));
 static uint32_t boot_count __noinit;
 
+ZTEST_EXPECT_REBOOT(flash_sim_reboot, test_preserve_over_reboot);
 ZTEST(flash_sim_reboot, test_preserve_over_reboot)
 {
 	uint32_t word = MAGIC_WORD;
