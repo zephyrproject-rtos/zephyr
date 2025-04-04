@@ -193,6 +193,21 @@ if(${CONFIG_KERNEL_MEM_POOL})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 
+# Import all custom SYSTEM_WORKQUEUE_MIN_STACK_SIZE size requirements
+import_kconfig(CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_ ${DOTCONFIG} min_stack_size_keys)
+if(${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN})
+  set(stack_size_max ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE})
+else()
+  # Find the largest of all "MIN_STACK_SIZE" requested
+  set(stack_size_max 0)
+  foreach(val ${min_stack_size_keys})
+    if(${${val}} GREATER ${stack_size_max})
+      set(stack_size_max ${${val}})
+    endif()
+  endforeach()
+endif()
+zephyr_compile_definitions(K_SYSTEM_WORKQUEUE_STACK_SIZE=${stack_size_max})
+
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
 # This order has to be maintained. Any new file should be placed

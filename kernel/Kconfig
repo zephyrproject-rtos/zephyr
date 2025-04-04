@@ -581,6 +581,21 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
 
+config SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN
+	bool "Ignore the minimum system workqueue stack size requirement"
+	help
+	  This option can be set to force setting a smaller system workqueue
+	  stack size than what's specified by enabled subsystems. This can be
+	  useful when optimizing memory usage and a more precise system workqueue
+	  size is known for a given application.
+
+
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_DEFAULT
+	int
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+	help
+	  Used to maintain compatibility with explicit stack size setting.
+
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED

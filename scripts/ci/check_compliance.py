@@ -1110,6 +1110,7 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
+        "SYSTEM_WORKQUEUE_MIN_STACK_SIZE_", # Used as an option matching prefix
         "TEST1",
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
