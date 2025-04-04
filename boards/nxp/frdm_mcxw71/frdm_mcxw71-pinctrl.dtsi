@@ -80,4 +80,15 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_i3c: pinmux_i3c {
+		group0 {
+			pinmux = <I3C0_SDA_PTB4>,
+				<I3C0_SCL_PTB5>;
+			input-enable;
+			bias-pull-up;
+			slew-rate = "slow";
+			drive-strength = "low";
+		};
+	};
 };
