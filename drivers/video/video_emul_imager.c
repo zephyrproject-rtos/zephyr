@@ -193,9 +193,9 @@ static int emul_imager_write_multi(const struct device *const dev,
 	return 0;
 }
 
-static int emul_imager_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int emul_imager_set_ctrl(struct video_ctrl *ctrl)
 {
-	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, ctrl->val);
+	return emul_imager_write_reg(ctrl->vdev->dev, EMUL_IMAGER_REG_CUSTOM, ctrl->val);
 }
 
 /* Customize this function according to your "struct emul_imager_mode". */

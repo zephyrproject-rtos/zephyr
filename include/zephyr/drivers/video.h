@@ -317,13 +317,15 @@ typedef int (*video_api_flush_t)(const struct device *dev, enum video_endpoint_i
  */
 typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
 
+struct video_ctrl;
+
 /**
  * @typedef video_api_sg_ctrl_t
  * @brief Set/Get a video control value.
  *
- * See video_set_ctrl() or video_get_ctrl() for argument descriptions.
+ * @param ctrl Pointer to the internal video_ctrl structure to set/get value
  */
-typedef int (*video_api_sg_ctrl_t)(const struct device *dev, struct video_control *ctrl);
+typedef int (*video_api_sg_ctrl_t)(struct video_ctrl *ctrl);
 
 /**
  * @typedef video_api_get_caps_t

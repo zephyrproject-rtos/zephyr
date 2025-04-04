@@ -263,9 +263,9 @@ static int video_sw_generator_set_signal(const struct device *dev, enum video_en
 }
 #endif
 
-static inline int video_sw_generator_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static inline int video_sw_generator_set_ctrl(struct video_ctrl *ctrl)
 {
-	struct video_sw_generator_data *data = dev->data;
+	struct video_sw_generator_data *data = ctrl->vdev->dev->data;
 
 	data->ctrl_vflip = (bool)ctrl->val;
 

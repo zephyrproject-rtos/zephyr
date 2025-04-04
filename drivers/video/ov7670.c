@@ -581,8 +581,9 @@ static int ov7670_set_stream(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int ov7670_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int ov7670_set_ctrl(struct video_ctrl *ctrl)
 {
+	const struct device *dev = ctrl->vdev->dev;
 	const struct ov7670_config *config = dev->config;
 
 	switch (ctrl->id) {

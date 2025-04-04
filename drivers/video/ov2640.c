@@ -895,8 +895,10 @@ static int ov2640_get_caps(const struct device *dev,
 	return 0;
 }
 
-static int ov2640_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int ov2640_set_ctrl(struct video_ctrl *ctrl)
 {
+	const struct device *dev = ctrl->vdev->dev;
+
 	switch (ctrl->id) {
 	case VIDEO_CID_HFLIP:
 		return ov2640_set_horizontal_mirror(dev, ctrl->val);

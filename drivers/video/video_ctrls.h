@@ -29,6 +29,12 @@ enum video_ctrl_type {
 struct video_device;
 
 struct video_ctrl {
+	/* cluster fields */
+	struct video_ctrl *cluster;
+	uint8_t cluster_sz;
+	bool is_auto;
+	bool has_volatiles;
+
 	const struct video_device *vdev;
 	uint32_t id;
 	enum video_ctrl_type type;
@@ -43,5 +49,9 @@ struct video_ctrl {
 
 int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 		    struct video_ctrl_range range);
+
+void video_cluster_ctrl(uint8_t sz, struct video_ctrl *ctrls);
+
+void video_auto_cluster_ctrl(uint8_t sz, struct video_ctrl *ctrls, bool set_volatile);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_CTRLS_H_ */
