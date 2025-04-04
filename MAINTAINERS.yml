@@ -4456,8 +4456,13 @@ Task Watchdog:
 TDK Sensors:
   status: maintained
   maintainers:
+    - afontaine-invn
+    - rbuisson-invn
+  collaborators:
     - teburd
     - MaureenHelm
+    - sriccardi-invn
+    - gjabouley-invn
   files:
     - drivers/sensor/tdk/
   labels:
