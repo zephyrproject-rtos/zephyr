@@ -36,6 +36,8 @@ More details about the supported peripherals are available in MSP432P4XX TRM.
 Building and Flashing
 *********************
 
+.. zephyr:board-supported-runners::
+
 Prerequisites:
 ==============
 

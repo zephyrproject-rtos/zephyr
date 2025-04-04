@@ -116,6 +116,8 @@ Note: The overlay only supports ``mimx9352/a55``, but can be extended to support
 Programming and Debugging (A55)
 *******************************
 
+.. zephyr:board-supported-runners::
+
 U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
 it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
 xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example

@@ -64,6 +64,8 @@ For more detailed description please refer to `Ganymed StarterKit Board Document
 Programming and Testing
 ***********************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

@@ -81,6 +81,8 @@ Commander in unattended mode and passes all the necessary arguments to it.
 Programming and Debugging
 =========================
 
+.. zephyr:board-supported-runners::
+
 The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
