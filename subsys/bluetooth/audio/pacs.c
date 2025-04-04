@@ -1553,12 +1553,12 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SNK_PAC)) {
 			return snk_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	case BT_AUDIO_DIR_SOURCE:
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SRC_PAC)) {
 			return src_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	}
 
 	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
