@@ -5,6 +5,7 @@ if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS)
 endif()
 
 if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS)
+  board_runner_args(nrfutil "--ext-mem-config-file=${BOARD_DIR}/support/nrf5340dk_qspi_nrfutil_config.json")
   board_runner_args(jlink "--device=nrf5340_xxaa_app" "--speed=4000")
 endif()
 
