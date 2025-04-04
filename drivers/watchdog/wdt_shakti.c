@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2020 Katsuhiro Suzuki
+ * Copyright (c) Mindgrove Technologies Pvt. Ltd 2023. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief Watchdog (WDT) Driver for SiFive Freedom
+ * @brief Watchdog (WDT) Driver for seciot
  */
 
 #define DT_DRV_COMPAT shakti_wdt
@@ -18,29 +18,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(wdt_sifive);
-
-#define WDOGCFG_SCALE_MAX     0xf
-#define WDOGCFG_SCALE_SHIFT   0
-#define WDOGCFG_SCALE_MASK    (WDOGCFG_SCALE_MAX << WDOGCFG_SCALE_SHIFT)
-#define WDOGCFG_RSTEN         BIT(8)
-#define WDOGCFG_ZEROCMP       BIT(9)
-#define WDOGCFG_ENALWAYS      BIT(12)
-#define WDOGCFG_COREAWAKE     BIT(13)
-#define WDOGCFG_IP0           BIT(28)
-
-#define WDOGCMP_MAX        0xffff
-
-#define WDOG_KEY           0x51f15e
-#define WDOG_FEED          0xd09f00d
-
-#define WDOG_CLK           32768
-
-
-
-#define WATCHDOG_EN 			1<<0
-#define RESET_INTERRUPT_MODE	1<<1
-#define SOFT_RESET				1<<2
-
 
 #define INTERRUPT_MODE			1
 #define SOFT_RESET_MODE			7
@@ -69,13 +46,6 @@ struct wdt_shakti_dev_data {
 	bool enable_cb;
 	bool timeout_valid;
 };
-
-#define DEV_REG(dev) \
-	((struct wdt_sifive_reg *) \
-	 ((const struct wdt_sifive_device_config *const)(dev)->config)->regs)
-
-
-
 
 static int wdt_shakti_disable(const struct device *dev)
 {
