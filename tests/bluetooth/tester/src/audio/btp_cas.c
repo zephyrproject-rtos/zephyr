@@ -22,12 +22,8 @@ static uint8_t cas_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_cas_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_CAS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CAS_SET_MEMBER_LOCK);
-	tester_set_bit(rp->data, BTP_CAS_GET_MEMBER_RSI);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CAS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
