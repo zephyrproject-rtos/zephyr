@@ -253,9 +253,10 @@ static int settings_zms_load_subtree(struct settings_store *cs, const struct set
 		read_fn_arg.id = ZMS_NAME_ID_FROM_HASH(name_hash) + ZMS_DATA_ID_OFFSET;
 
 		ret = settings_call_set_handler(arg->subtree, rc2, settings_zms_read_fn,
-						&read_fn_arg, (void *)arg);
+						&read_fn_arg, arg);
 		/* We should return here as there are no need to look for the next
-		 * hash collision */
+		 * hash collision
+		 */
 		return ret;
 	}
 
@@ -303,6 +304,37 @@ static ssize_t settings_zms_load_one(struct settings_store *cs, const char *name
 	return rc;
 }
 
+/* Gets the next linked list node either from cache (if enabled) or from persistent
+ * storage if cache is full or cache is not enabled.
+ * It updates as well the next cache index and the next linked list node ID.
+ */
+static int settings_zms_get_next_ll(struct settings_zms *cf,
+				    struct settings_hash_linked_list *settings_element,
+				    uint32_t *ll_hash_id, [[maybe_unused]] uint32_t *ll_cache_index)
+{
+	int ret = 0;
+
+#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+	if (*ll_cache_index < cf->ll_cache_next) {
+		*settings_element = cf->ll_cache[*ll_cache_index];
+		*ll_cache_index = *ll_cache_index + 1;
+	} else {
+#endif
+		ret = zms_read(&cf->cf_zms, *ll_hash_id, settings_element,
+			       sizeof(struct settings_hash_linked_list));
+		if (ret < 0) {
+			return ret;
+		}
+#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+	}
+#endif
+
+	/* update next ll_hash_id */
+	*ll_hash_id = settings_element->next_hash;
+
+	return 0;
+}
+
 static int settings_zms_load(struct settings_store *cs, const struct settings_load_arg *arg)
 {
 	int ret = 0;
@@ -313,6 +345,8 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 	ssize_t rc1;
 	ssize_t rc2;
 	uint32_t ll_hash_id;
+	uint32_t ll_cache_index = 0;
+
 #ifdef CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH
 	/* If arg->subtree is not null we must load settings in that subtree */
 	if (arg->subtree != NULL) {
@@ -324,8 +358,6 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 #endif /* CONFIG_SETTINGS_ZMS_LOAD_SUBTREE_PATH */
 
 #ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-	uint32_t ll_cache_index = 0;
-
 	if (cf->ll_has_changed) {
 		/* reload the linked list in cache */
 		ret = settings_zms_get_last_hash_ids(cf);
@@ -333,17 +365,15 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 			return ret;
 		}
 	}
-	settings_element = cf->ll_cache[ll_cache_index++];
-#else
-	ret = zms_read(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
-		       sizeof(struct settings_hash_linked_list));
+#endif
+
+	/* If subtree is NULL then we must load all found Settings */
+	ll_hash_id = ZMS_LL_HEAD_HASH_ID;
+	ret = settings_zms_get_next_ll(cf, &settings_element, &ll_hash_id, &ll_cache_index);
 	if (ret < 0) {
 		return ret;
 	}
-#endif /* CONFIG_SETTINGS_ZMS_LL_CACHE */
-	ll_hash_id = settings_element.next_hash;
 
-	/* If subtree is NULL then we must load all found Settings */
 	while (ll_hash_id) {
 
 		/* In the ZMS backend, each setting item is stored in two ZMS
@@ -370,21 +400,13 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 				return ret;
 			}
 #endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-			if (ll_cache_index < cf->ll_cache_next) {
-				settings_element = cf->ll_cache[ll_cache_index++];
-			} else {
-#endif
-				ret = zms_read(&cf->cf_zms, ll_hash_id, &settings_element,
-					       sizeof(struct settings_hash_linked_list));
-				if (ret < 0) {
-					return ret;
-				}
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+
+			ret = settings_zms_get_next_ll(cf, &settings_element, &ll_hash_id,
+						       &ll_cache_index);
+			if (ret < 0) {
+				return ret;
 			}
-#endif
-			/* update next ll_hash_id */
-			ll_hash_id = settings_element.next_hash;
+
 			continue;
 		}
 
@@ -403,27 +425,15 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 		settings_zms_cache_add(cf, ll_hash_id & ZMS_HASH_MASK, cache_flags);
 #endif
 
-		ret = settings_call_set_handler(name, rc2, settings_zms_read_fn, &read_fn_arg,
-						(void *)arg);
+		ret = settings_call_set_handler(name, rc2, settings_zms_read_fn, &read_fn_arg, arg);
 		if (ret) {
-			break;
+			return ret;
 		}
 
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-		if (ll_cache_index < cf->ll_cache_next) {
-			settings_element = cf->ll_cache[ll_cache_index++];
-		} else {
-#endif
-			ret = zms_read(&cf->cf_zms, ll_hash_id, &settings_element,
-				       sizeof(struct settings_hash_linked_list));
-			if (ret < 0) {
-				return ret;
-			}
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+		ret = settings_zms_get_next_ll(cf, &settings_element, &ll_hash_id, &ll_cache_index);
+		if (ret < 0) {
+			return ret;
 		}
-#endif
-		/* update next ll_hash_id */
-		ll_hash_id = settings_element.next_hash;
 	}
 
 	return ret;
@@ -662,6 +672,45 @@ static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *n
 	return 0;
 }
 
+/* This function inits the linked list head if it doesn't exist or recover it
+ * if the ll_last_hash_id is different than the head hash ID
+ */
+static int settings_zms_init_or_recover_ll(struct settings_zms *cf, uint32_t ll_last_hash_id)
+{
+	struct settings_hash_linked_list settings_element;
+	int rc = 0;
+
+	if (ll_last_hash_id == ZMS_LL_HEAD_HASH_ID) {
+		/* header doesn't exist */
+		settings_element.previous_hash = 0;
+		settings_element.next_hash = 0;
+		rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
+			       sizeof(struct settings_hash_linked_list));
+		if (rc < 0) {
+			return rc;
+		}
+		cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
+		cf->second_to_last_hash_id = 0;
+#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+		/* store the LL header in cache */
+		cf->ll_cache_next = 0;
+		cf->ll_cache[cf->ll_cache_next] = settings_element;
+		cf->ll_cache_next = cf->ll_cache_next + 1;
+#endif
+	} else {
+		/* let's recover it by keeping all nodes until the last one */
+		settings_element.previous_hash = cf->second_to_last_hash_id;
+		settings_element.next_hash = 0;
+		rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
+			       sizeof(struct settings_hash_linked_list));
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
 static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 {
 	struct settings_hash_linked_list settings_element;
@@ -681,35 +730,7 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 			/* header doesn't exist or linked list broken, reinitialize the header
 			 * if it doesn't exist and recover it if it is broken
 			 */
-			if (ll_last_hash_id == ZMS_LL_HEAD_HASH_ID) {
-				/* header doesn't exist */
-				const struct settings_hash_linked_list settings_element = {
-					.previous_hash = 0, .next_hash = 0};
-				rc = zms_write(&cf->cf_zms, ZMS_LL_HEAD_HASH_ID, &settings_element,
-					       sizeof(struct settings_hash_linked_list));
-				if (rc < 0) {
-					return rc;
-				}
-				cf->last_hash_id = ZMS_LL_HEAD_HASH_ID;
-				cf->second_to_last_hash_id = 0;
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-				/* store the LL header in cache */
-				cf->ll_cache_next = 0;
-				cf->ll_cache[cf->ll_cache_next] = settings_element;
-				cf->ll_cache_next = cf->ll_cache_next + 1;
-#endif
-			} else {
-				/* let's recover it by keeping all nodes until the last one */
-				const struct settings_hash_linked_list settings_element = {
-					.previous_hash = cf->second_to_last_hash_id,
-					.next_hash = 0};
-				rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
-					       sizeof(struct settings_hash_linked_list));
-				if (rc < 0) {
-					return rc;
-				}
-			}
-			return 0;
+			return settings_zms_init_or_recover_ll(cf, ll_last_hash_id);
 		} else if (rc < 0) {
 			return rc;
 		}
@@ -769,6 +790,7 @@ static int settings_zms_backend_init(struct settings_zms *cf)
 	}
 
 	cf->hash_collision_num = 0;
+	cf->ll_cache_next = 0;
 
 	rc = settings_zms_get_last_hash_ids(cf);
 
