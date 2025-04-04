@@ -162,6 +162,7 @@ int z_abort_timeout(struct _timeout *to)
 			bool is_first = (to == first());
 
 			remove_timeout(to);
+			to->dticks = TIMEOUT_DTICKS_ABORTED;
 			ret = 0;
 			if (is_first) {
 				sys_clock_set_timeout(next_timeout(elapsed()), false);
