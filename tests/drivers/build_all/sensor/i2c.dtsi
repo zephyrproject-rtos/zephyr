@@ -175,9 +175,10 @@ test_i2c_ms5607: ms5607@17 {
 	reg = <0x17>;
 };
 
-test_i2c_ms5837: ms5837@18 {
-	compatible = "meas,ms5837";
+test_i2c_ms5837_02ba: ms5837@18 {
+	compatible = "meas,ms5837-02ba";
 	reg = <0x18>;
+	status = "okay";
 };
 
 test_i2c_mcp9808: mcp9808@19 {
@@ -1066,4 +1067,10 @@ test_i2c_lm95234: lm95234@8f {
 test_i2c_sht21@90 {
 	compatible = "sensirion,sht21";
 	reg = <0x90>;
+};
+
+test_i2c_ms5837_30ba: ms5837@ae {
+	compatible = "meas,ms5837-30ba";
+	reg = <0xae>;
+	status = "okay";
 };
