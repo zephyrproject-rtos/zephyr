@@ -271,7 +271,7 @@ xtensa_userspace_enter:
 
 	l32i a6, a1, 24
 #ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
+	SWAP_PAGE_TABLE a6, a3, a7
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	call4 xtensa_mpu_map_write
