@@ -443,9 +443,9 @@ void *nrf_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name,
 				 struct zep_wpa_supp_dev_callbk_fns *supp_callbk_fns)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	// Get device for Each interface
-	const int if_idx = net_if_get_by_name(iface_name);
-	struct net_if* iface = net_if_get_by_index(if_idx);
+	/* Get device for Each interface */
+	int if_idx = net_if_get_by_name(iface_name);
+	struct net_if *iface = net_if_get_by_index(if_idx);
 	const struct device *device = net_if_get_device(iface);
 
 	if (!device) {
@@ -1602,19 +1602,22 @@ void nrf_wifi_wpa_supp_event_get_wiphy(void *if_priv,
 	vif_ctx_cnt = nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx);
 
 	memset(&band, 0, sizeof(band));
-	
-	for(int idx = 0; idx < vif_ctx_cnt; ++idx) {
+
+	for (int idx = 0; idx < vif_ctx_cnt; ++idx) {
 		vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(idx);
-		if(vif_ctx_zep == NULL)
+		if (vif_ctx_zep == NULL) {
 			continue;
+		}
 
 		for (int i = 0; i < NRF_WIFI_EVENT_GET_WIPHY_NUM_BANDS; i++) {
-			if (nrf_wifi_parse_sband(&wiphy_info->sband[i], &band) != WLAN_STATUS_SUCCESS) {
+			if (nrf_wifi_parse_sband(&wiphy_info->sband[i], &band) !=
+				WLAN_STATUS_SUCCESS) {
 				continue;
 			}
-			if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.get_wiphy_res) {
-				vif_ctx_zep->supp_callbk_fns.get_wiphy_res(vif_ctx_zep->supp_drv_if_ctx,
-										&band);
+			if (vif_ctx_zep->supp_drv_if_ctx &&
+				vif_ctx_zep->supp_callbk_fns.get_wiphy_res) {
+				vif_ctx_zep->supp_callbk_fns.get_wiphy_res(
+					vif_ctx_zep->supp_drv_if_ctx, &band);
 			}
 		}
 
@@ -1622,14 +1625,14 @@ void nrf_wifi_wpa_supp_event_get_wiphy(void *if_priv,
 			rpu_ctx_zep->extended_capa == NULL) {
 			/* To avoid overflowing the 100 column limit */
 			unsigned char ec_len = wiphy_info->extended_capabilities_len;
-			
+
 			rpu_ctx_zep->extended_capa = nrf_wifi_osal_mem_alloc(ec_len);
-			
+
 			if (rpu_ctx_zep->extended_capa) {
-				memcpy(rpu_ctx_zep->extended_capa, wiphy_info->extended_capabilities,
-					ec_len);
+				memcpy(rpu_ctx_zep->extended_capa,
+					wiphy_info->extended_capabilities, ec_len);
 			}
-			
+
 			rpu_ctx_zep->extended_capa_mask = nrf_wifi_osal_mem_alloc(ec_len);
 
 			if (rpu_ctx_zep->extended_capa_mask) {
@@ -1644,7 +1647,8 @@ void nrf_wifi_wpa_supp_event_get_wiphy(void *if_priv,
 		}
 
 		if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.get_wiphy_res) {
-			vif_ctx_zep->supp_callbk_fns.get_wiphy_res(vif_ctx_zep->supp_drv_if_ctx, NULL);
+			vif_ctx_zep->supp_callbk_fns.get_wiphy_res(vif_ctx_zep->supp_drv_if_ctx,
+				NULL);
 		}
 	}
 }
@@ -1971,12 +1975,10 @@ void nrf_wifi_supp_event_proc_get_conn_info(void *if_priv,
 	vif_ctx_cnt = nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx);
 
 	/* Notify all vif */
-	for(int idx = 0; idx < vif_ctx_cnt; ++idx) {
+	for (int idx = 0; idx < vif_ctx_cnt; ++idx) {
 		vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(idx);
-		if(vif_ctx_zep)
-		{
+		if (vif_ctx_zep) {
 			conn_info = vif_ctx_zep->conn_info;
-		
 			conn_info->beacon_interval = info->beacon_interval;
 			conn_info->dtim_period = info->dtim_interval;
 			conn_info->twt_capable = info->twt_capable;

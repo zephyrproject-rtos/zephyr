@@ -63,10 +63,9 @@ void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 	vif_ctx_cnt = nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx);
 
 	/* Notify all vif */
-	for(int idx = 0; idx < vif_ctx_cnt; ++idx) {
+	for (int idx = 0; idx < vif_ctx_cnt; ++idx) {
 		vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(idx);
-		if(vif_ctx_zep)
-		{
+		if (vif_ctx_zep) {
 			vif_ctx_zep->set_if_event_received = true;
 			vif_ctx_zep->set_if_status = event->return_value;
 		}

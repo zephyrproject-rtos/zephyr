@@ -446,11 +446,12 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 		cookie_rsp_event->mac_addr[5]);
 
 	/* Notify all vif */
-	for(int idx = 0; idx < vif_ctx_cnt; ++idx) {
+	for (int idx = 0; idx < vif_ctx_cnt; ++idx) {
 		vif_ctx_zep = nrf_wifi_get_vif_ctx_by_idx(idx);
-		if(vif_ctx_zep)
+		if (vif_ctx_zep) {
 			vif_ctx_zep->cookie_resp_received = true;
-	}	
+		}
+	}
 	/* TODO: When supp_callbk_fns.mgmt_tx_status is implemented, add logic
 	 * here to use the cookie and host_cookie to map requests to responses.
 	 */
@@ -726,13 +727,13 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
 	unsigned int vif_ctx_cnt = nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx);
 
-	if(vif_ctx_cnt >= MAX_NUM_VIFS){
+	if (vif_ctx_cnt >= MAX_NUM_VIFS) {
 		LOG_ERR("%s: Max number of VIFs reached", __func__);
 		return -ENOMEM;
 	}
 
 	if (vif_ctx_cnt > 1) {
-		// FMAC is already initialized for VIF-0
+		/* FMAC is already initialized for VIF-0 */
 		return 0;
 	}
 
@@ -962,11 +963,11 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
 #ifdef CONFIG_NRF70_WIFI_ENABLE_DUAL_VIF
-// Register second interface
+/* Register second interface */
 ETH_NET_DEVICE_DT_INST_DEFINE(1,
-				nrf_wifi_drv_main_zep, /* init_fn */
-				NULL, /* pm_action_cb */
-				&rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[1], /* data */
+		    nrf_wifi_drv_main_zep, /* init_fn */
+		    NULL, /* pm_action_cb */
+		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[1], /* data */
 #ifdef CONFIG_NRF70_STA_MODE
 		    &wpa_supp_ops, /* cfg */
 #else /* CONFIG_NRF70_STA_MODE */

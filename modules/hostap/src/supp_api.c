@@ -2073,7 +2073,7 @@ int supplicant_legacy_roam(const struct device *dev)
 {
 	int ret = -1;
 	struct wpa_supplicant *wpa_s = get_wpa_s_handle(dev);
-	
+
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	if (!wpa_cli_cmd_v("scan")) {
 		goto out;
