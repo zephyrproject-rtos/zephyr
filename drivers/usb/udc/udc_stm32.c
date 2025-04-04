@@ -45,12 +45,16 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * DT property to the corresponding definition used by the STM32 HAL.
  */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH
+#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
 #endif
 
-#define FULL_SPEED             USB_OTG_SPEED_FULL
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define UDC_STM32_FULL_SPEED             PCD_SPEED_FULL
+#else
+#define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
 
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
@@ -990,7 +994,7 @@ static void priv_pcd_prepare(const struct device *dev)
 	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
-	priv->pcd.Init.speed = DT_INST_STRING_UPPER_TOKEN(0, maximum_speed);
+	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
 
 	/* Per controller/Phy values */
 #if defined(USB)
