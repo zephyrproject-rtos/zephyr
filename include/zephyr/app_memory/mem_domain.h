@@ -89,6 +89,8 @@ struct k_mem_domain {
 	uint8_t num_partitions;
 };
 
+typedef struct k_mem_domain k_mem_domain_t;
+
 /**
  * Default memory domain
  *
