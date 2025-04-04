@@ -4,6 +4,7 @@ common:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
   harness: bsim
 
 tests:

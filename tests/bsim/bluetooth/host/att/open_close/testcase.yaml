@@ -4,6 +4,7 @@ tests:
     tags:
       - bluetooth
     platform_allow:
+      - nrf5340bsim/nrf5340/cpunet
       - nrf52_bsim/native
     harness: bsim
     harness_config:
