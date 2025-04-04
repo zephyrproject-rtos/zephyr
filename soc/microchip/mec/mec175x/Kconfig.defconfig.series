@@ -11,7 +11,15 @@ config NUM_IRQS
 	# All NVIC external sources.
 	default 198
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MCHP_MEC5_KTIMER
+	default 96000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768 if MCHP_MEC5_KTIMER
+	default 1000
+
 config CORTEX_M_SYSTICK
-	depends on !RTOS_TIMER
+	depends on !MCHP_MEC5_KTIMER
 
 endif # SOC_SERIES_MEC175X
