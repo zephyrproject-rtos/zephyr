@@ -3062,7 +3062,7 @@ static int bt_hfp_ag_binp_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 static int bt_hfp_ag_vts_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
-	char code;
+	char code = 0;
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
