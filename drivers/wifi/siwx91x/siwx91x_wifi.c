@@ -287,13 +287,17 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 	}
 
 	if (params->psk_length) {
-		sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID, SL_NET_WIFI_PSK,
-				      params->psk, params->psk_length);
+		ret = sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
+					    SL_NET_WIFI_PSK, params->psk, params->psk_length);
+	} else if (params->sae_password_length) {
+		ret = sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
+					    SL_NET_WIFI_PSK, params->sae_password,
+					    params->sae_password_length);
 	}
 
-	if (params->sae_password_length) {
-		sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID, SL_NET_WIFI_PSK,
-				      params->sae_password, params->sae_password_length);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set credentials: 0x%x", ret);
+		return -EINVAL;
 	}
 
 	if (params->channel != WIFI_CHANNEL_ANY) {
