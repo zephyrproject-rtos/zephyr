@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
 
+#define STM32U5_DMA_LINKED_LIST_NODE_SIZE (2)
+
 static const uint32_t table_src_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
@@ -354,14 +356,6 @@ static int dma_stm32_configure(const struct device *dev,
 	uint32_t ll_direction;
 	int ret;
 
-	/*  Linked list Node  and structure initialization */
-	static LL_DMA_LinkNodeTypeDef Node_GPDMA_Channel;
-	LL_DMA_InitLinkedListTypeDef DMA_InitLinkedListStruct;
-	LL_DMA_InitNodeTypeDef NodeConfig;
-
-	LL_DMA_ListStructInit(&DMA_InitLinkedListStruct);
-	LL_DMA_NodeStructInit(&NodeConfig);
-
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 
@@ -434,10 +428,6 @@ static int dma_stm32_configure(const struct device *dev,
 	LL_DMA_ConfigAddresses(dma, dma_stm32_id_to_stream(id), config->head_block->source_address,
 			       config->head_block->dest_address);
 
-	NodeConfig.SrcAddress = config->head_block->source_address;
-	NodeConfig.DestAddress = config->head_block->dest_address;
-	NodeConfig.BlkDataLength = config->head_block->block_size;
-
 	ret = dma_stm32_get_priority(config->channel_priority, &ll_priority);
 	if (ret < 0) {
 		return ret;
@@ -502,30 +492,41 @@ static int dma_stm32_configure(const struct device *dev,
 	LL_DMA_SetPeriphRequest(dma, dma_stm32_id_to_stream(id), config->dma_slot);
 
 	if (config->head_block->source_reload_en == 0) {
+		LL_DMA_SetLinkStepMode(dma, dma_stm32_id_to_stream(id), LL_DMA_LSM_1LINK_EXECUTION);
 		/* Initialize the DMA structure in non-cyclic mode only */
 		LL_DMA_SetLinkedListAddrOffset(dma, dma_stm32_id_to_stream(id), 0);
 	} else {/* cyclic mode */
-		/* Setting GPDMA request */
-		NodeConfig.DestDataWidth = table_dst_size[index];
-		NodeConfig.SrcDataWidth = table_src_size[index];
-		NodeConfig.DestIncMode = LL_DMA_GetDestIncMode(dma, dma_stm32_id_to_stream(id));
-		NodeConfig.SrcIncMode = LL_DMA_GetSrcIncMode(dma, dma_stm32_id_to_stream(id));
-		NodeConfig.Direction = ll_direction;
-		NodeConfig.Request = config->dma_slot;
+		uint32_t linked_list_flags = 0;
+		volatile uint32_t *linked_list_node =
+			&dev_config->linked_list_buffer[id * STM32U5_DMA_LINKED_LIST_NODE_SIZE];
+		/* We use "linked list" to emulate circular mode.
+		 * The linked list can consists of just source and/or destination address.
+		 * Other registers can remain the same. Linked list itself doesn't contain
+		 * pointer to other item, since LLR register is not updated (ULL bit = 0).
+		 */
+		if (config->head_block->source_addr_adj == config->head_block->dest_addr_adj) {
+			/* We update both source and destination address */
+			linked_list_node[0] = config->head_block->source_address;
+			linked_list_node[1] = config->head_block->dest_address;
+			linked_list_flags = LL_DMA_UPDATE_CSAR | LL_DMA_UPDATE_CDAR;
+		} else if (config->head_block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			/* We update only source address */
+			linked_list_node[0] = config->head_block->source_address;
+			linked_list_flags = LL_DMA_UPDATE_CSAR;
+		} else if (config->head_block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			/* We update only destination address */
+			linked_list_node[0] = config->head_block->dest_address;
+			linked_list_flags = LL_DMA_UPDATE_CDAR;
+		}
+		/* We update only destination address */
+		LL_DMA_SetLinkedListBaseAddr(dma, dma_stm32_id_to_stream(id),
+					     (uint32_t)&linked_list_node[0]);
+		LL_DMA_ConfigLinkUpdate(dma, dma_stm32_id_to_stream(id), linked_list_flags,
+					(uint32_t)&linked_list_node[0]);
 
 		/* Continuous transfers with Linked List */
 		stream->cyclic = true;
-		LL_DMA_List_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitLinkedListStruct);
-		LL_DMA_CreateLinkNode(&NodeConfig, &Node_GPDMA_Channel);
-		LL_DMA_ConnectLinkNode(&Node_GPDMA_Channel, LL_DMA_CLLR_OFFSET5,
-				       &Node_GPDMA_Channel, LL_DMA_CLLR_OFFSET5);
-		LL_DMA_SetLinkedListBaseAddr(dma, dma_stm32_id_to_stream(id),
-					     (uint32_t)&Node_GPDMA_Channel);
-		LL_DMA_ConfigLinkUpdate(dma, dma_stm32_id_to_stream(id),
-					(LL_DMA_UPDATE_CTR1 | LL_DMA_UPDATE_CTR2 |
-					 LL_DMA_UPDATE_CBR1 | LL_DMA_UPDATE_CSAR |
-					 LL_DMA_UPDATE_CDAR | LL_DMA_UPDATE_CLLR),
-					(uint32_t)&Node_GPDMA_Channel);
+		LL_DMA_SetLinkStepMode(dma, dma_stm32_id_to_stream(id), LL_DMA_LSM_FULL_EXECUTION);
 
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
@@ -801,6 +802,11 @@ static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels,	\
 		DT_NUM_IRQS(DT_DRV_INST(index)))];	\
 									\
+static volatile uint32_t dma_stm32_linked_list_buffer##index	\
+		[STM32U5_DMA_LINKED_LIST_NODE_SIZE * \
+		 DT_INST_PROP_OR(index, dma_channels,	\
+				 DT_NUM_IRQS(DT_DRV_INST(index)))] __nocache_noinit;	\
+									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
@@ -810,6 +816,7 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 		DT_NUM_IRQS(DT_DRV_INST(index))				\
 	),		\
 	.streams = dma_stm32_streams_##index,				\
+	.linked_list_buffer = dma_stm32_linked_list_buffer##index	\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\

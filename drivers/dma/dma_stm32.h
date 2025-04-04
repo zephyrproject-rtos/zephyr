@@ -44,6 +44,9 @@ struct dma_stm32_config {
 	uint8_t offset; /* position in the list of dmamux channel list */
 #endif
 	struct dma_stm32_stream *streams;
+#ifdef CONFIG_DMA_STM32U5
+	volatile uint32_t *linked_list_buffer;
+#endif
 };
 
 uint32_t dma_stm32_id_to_stream(uint32_t id);
