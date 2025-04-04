@@ -1122,12 +1122,4 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
 }
 
-void xtensa_swap_update_page_tables(struct k_thread *incoming)
-{
-	struct arch_mem_domain *domain =
-		&(incoming->mem_domain_info.mem_domain->arch);
-
-	xtensa_mmu_set_paging(domain);
-}
-
 #endif /* CONFIG_USERSPACE */
