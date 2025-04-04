@@ -321,9 +321,10 @@ typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
  * @typedef video_api_ctrl_t
  * @brief Set/Get a video control value.
  *
- * See video_set_ctrl() or video_get_ctrl() for argument descriptions.
+ * @param dev Pointer to the device structure.
+ * @param cid Id of the control to set/get its value.
  */
-typedef int (*video_api_ctrl_t)(const struct device *dev, struct video_control *ctrl);
+typedef int (*video_api_ctrl_t)(const struct device *dev, uint32_t cid);
 
 /**
  * @typedef video_api_get_caps_t

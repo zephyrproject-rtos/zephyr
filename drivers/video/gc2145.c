@@ -1110,13 +1110,15 @@ static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (ctrl->id) {
+	struct gc2145_data *drv_data = dev->data;
+
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return gc2145_set_ctrl_hmirror(dev, ctrl->val);
+		return gc2145_set_ctrl_hmirror(dev, drv_data->ctrls.hflip.val);
 	case VIDEO_CID_VFLIP:
-		return gc2145_set_ctrl_vflip(dev, ctrl->val);
+		return gc2145_set_ctrl_vflip(dev, drv_data->ctrls.vflip.val);
 	default:
 		return -ENOTSUP;
 	}
