@@ -371,6 +371,16 @@ struct pm_state_constraint {
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 
 /**
+ * Get power state structure.
+ *
+ * @param cpu CPU index.
+ * @param state Power state.
+ * @param substate_id Substate.
+ *
+ * @return Pointer to the power state structure or NULL if state is not found.
+ */
+const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id);
+/**
  * @}
  */
 
@@ -382,6 +392,17 @@ static inline uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_in
 	ARG_UNUSED(states);
 
 	return 0;
+}
+
+static inline const struct pm_state_info *pm_state_get(uint8_t cpu,
+						       enum pm_state state,
+						       uint8_t substate_id)
+{
+	ARG_UNUSED(cpu);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return NULL;
 }
 
 #endif /* CONFIG_PM */
