@@ -15,7 +15,4 @@ config SOC_SERIES_MEC174X
 
 if SOC_SERIES_MEC174X
 
-config RTOS_TIMER
-	bool "MEC174x RTOS Timer(32KHz) as kernel timer"
-
 endif # SOC_SERIES_MEC174X
