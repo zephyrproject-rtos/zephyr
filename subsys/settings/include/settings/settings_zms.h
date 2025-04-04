@@ -68,6 +68,9 @@ extern "C" {
 	((x & ~ZMS_COLLISIONS_MASK) | ((y << 1) & ZMS_COLLISIONS_MASK))
 #define ZMS_COLLISION_NUM(x)     ((x & ZMS_COLLISIONS_MASK) >> 1)
 #define ZMS_NAME_ID_FROM_HASH(x) ((x & ZMS_HASH_TOTAL_MASK) | BIT(31))
+#define ZMS_DATA_ID_FROM_HASH(x) (ZMS_NAME_ID_FROM_HASH(x) + ZMS_DATA_ID_OFFSET)
+#define ZMS_DATA_ID_FROM_NAME(x) (x + ZMS_DATA_ID_OFFSET)
+#define ZMS_DATA_ID_FROM_LL_NODE(x) (ZMS_NAME_ID_FROM_LL_NODE(x) + ZMS_DATA_ID_OFFSET)
 
 struct settings_hash_linked_list {
 	uint32_t previous_hash;
