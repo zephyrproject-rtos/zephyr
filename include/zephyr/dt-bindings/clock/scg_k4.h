@@ -17,3 +17,4 @@
 #define SCG_K4_FLEXIO_CLK  9U
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SCG_K4_H_ */
+#define SCG_K4_I3C_CLK     9U

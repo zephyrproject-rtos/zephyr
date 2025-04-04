@@ -8,6 +8,7 @@
 #include <nxp/nxp_mcxw71.dtsi>
 #include "frdm_mcxw71-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
 
 / {
 	model = "NXP FRDM-MCXW71 board";
@@ -18,6 +19,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -119,18 +121,6 @@
 	pinctrl-names = "default";
 };
 
-&lpi2c1 {
-	status = "okay";
-	pinctrl-0 = <&pinmux_lpi2c1>;
-	pinctrl-names = "default";
-
-	accelerometer: accelerometer@19 {
-		status = "okay";
-		compatible = "nxp,fxls8974";
-		reg = <0x19>;
-	};
-};
-
 &lpspi1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
@@ -221,4 +211,20 @@
 
 &rtc {
 	status = "okay";
+};
+
+&i3c0 {
+	pinctrl-0 = <&pinmux_i3c>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
 };

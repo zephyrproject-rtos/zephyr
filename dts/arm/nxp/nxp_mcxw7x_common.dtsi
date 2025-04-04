@@ -401,6 +401,18 @@
 		};
 	};
 
+	i3c0: i3c@40035000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x40035000 0xFFF>;
+		interrupts = <41 0>;
+		clocks = <&scg SCG_K4_I3C_CLK 0xd4>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
 };
 
 &fast_peripheral0 {
