@@ -91,12 +91,16 @@ static const struct gpio_dt_spec ulpi_reset =
  */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
 	defined(USB_OTG_HS_EMB_PHY)
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH
+#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
 #endif
 
-#define FULL_SPEED             USB_OTG_SPEED_FULL
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define USB_DC_STM32_FULL_SPEED             PCD_SPEED_FULL
+#else
+#define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -446,7 +450,9 @@ static int usb_dc_stm32_init(void)
 	int ret;
 	unsigned int i;
 
-	usb_dc_stm32_state.pcd.Init.speed = DT_INST_STRING_UPPER_TOKEN(0, maximum_speed);
+	usb_dc_stm32_state.pcd.Init.speed =
+			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
+
 #if defined(USB) || defined(USB_DRD_FS)
 #ifdef USB
 	usb_dc_stm32_state.pcd.Instance = USB;
