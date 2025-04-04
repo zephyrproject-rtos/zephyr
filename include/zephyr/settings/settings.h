@@ -469,8 +469,8 @@ struct settings_store_itf {
 	/**< Loads values from storage limited to subtree defined by subtree.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node,
-	 *  - arg - Structure that holds additional data for data loading.
+	 *  - cs[in] - Corresponding backend handler node,
+	 *  - arg[in] - Structure that holds additional data for data loading.
 	 *
 	 * @note
 	 * Backend is expected not to provide duplicates of the entities.
@@ -484,10 +484,10 @@ struct settings_store_itf {
 	/**< Loads one value from storage that corresponds to the key defined by name.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node.
-	 *  - name - Key in string format.
-	 *  - buf - Buffer where data should be copied.
-	 *  - buf_len - Length of buf.
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
+	 *  - buf[in] - Buffer where data should be copied.
+	 *  - buf_len[in] - Length of buf.
 	 */
 
 	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
@@ -495,15 +495,15 @@ struct settings_store_itf {
 	 * It returns 0 if the Key/Value doesn't exist.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node.
-	 *  - name - Key in string format.
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);
 	/**< Handler called before an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	int (*csi_save)(struct settings_store *cs, const char *name,
@@ -511,23 +511,23 @@ struct settings_store_itf {
 	/**< Save a single key-value pair to storage.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
-	 *  - name - Key in string format
-	 *  - value - Binary value
-	 *  - val_len - Length of value in bytes.
+	 *  - cs[in] - Corresponding backend handler node
+	 *  - name[in] - Key in string format
+	 *  - value[in] - Binary value
+	 *  - val_len[in] - Length of value in bytes.
 	 */
 
 	int (*csi_save_end)(struct settings_store *cs);
 	/**< Handler called after an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	/**< Get pointer to the storage instance used by the backend.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 	void *(*csi_storage_get)(struct settings_store *cs);
 };
