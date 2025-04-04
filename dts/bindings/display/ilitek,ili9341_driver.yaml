@@ -1,0 +1,194 @@
+# Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020, Teslabs Engineering S.L.
+# Copyright (c) 2021, Krivorot Oleg <krivorot.oleg@gmail.com>
+# Copyright (c) 2022, Konstantinos Papadopulos <kostas.papadopulos@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILI9341 320x240 display controller
+
+compatible: "ilitek,ili9341_driver"
+
+include: ilitek,ili9xxx-common.yaml
+
+properties:
+  height:
+    type: int
+    description: 
+      Height of the panel driven by the controller, with the units in pixels.
+
+  width:
+    type: int
+    description: 
+      Width of the panel driven by the controller, with the units in pixels.
+      
+properties:
+  ifmode:
+    type: uint8-array
+    default: [0x40]
+    description:
+      RGB interface signal control (IFMOD) register value.
+
+  ifctl:
+    type: uint8-array
+    default: [0x01, 0x00, 0x00]
+    description:
+      Interface control (IFCTL) register value.
+
+  pwctrla:
+    type: uint8-array
+    default: [0x39, 0x2c, 0x00, 0x34, 0x02]
+    description:
+      Power control A (PWCTRLA) register value.
+
+  pwctrlb:
+    type: uint8-array
+    default: [0x00, 0x8b, 0x30]
+    description:
+      Power control B (PWCTRLB) register value.
+
+  pwseqctrl:
+    type: uint8-array
+    default: [0x55, 0x01, 0x23, 0x01]
+    description:
+      Power on sequence control (PWSEQCTRL) register value.
+
+  timctrla:
+    type: uint8-array
+    default: [0x84, 0x11, 0x7a]
+    description:
+      Driver timing control A (TIMCTRLA) register value.
+
+  timctrlb:
+    type: uint8-array
+    default: [0x00, 0x00]
+    description:
+      Driver timing control B (TIMCTRLB) register value.
+
+  pumpratioctrl:
+    type: uint8-array
+    default: [0x10]
+    description:
+      Pump ratio control (PUMPRATIOCTRL) register value.
+
+  enable3g:
+    type: uint8-array
+    default: [0x02]
+    description:
+      Enable 3G (ENABLE3G) register value.
+
+  etmod:
+    type: uint8-array
+    default: [0x06]
+    description:
+      Entry Mode Set (ETMOD) register value.
+
+  gamset:
+    type: uint8-array
+    default: [0x01]
+    description:
+      Gamma set (GAMSET) register value.
+
+  frmctr1:
+    type: uint8-array
+    default: [0x00, 0x1b]
+    description:
+      Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
+
+  disctrl:
+    type: uint8-array
+    default: [0x0a, 0x82, 0x27, 0x04]
+    description:
+      Display function control (DISCTRL) register value. Note that changing
+      default SS bit value (0) may interfere with display rotation.
+
+  pwctrl1:
+    type: uint8-array
+    default: [0x21]
+    description:
+      Power control 1 (PWCTRL1) register values.
+
+  pwctrl2:
+    type: uint8-array
+    default: [0x10]
+    description:
+      Power control 2 (PWCTRL2) register values.
+
+  vmctrl1:
+    type: uint8-array
+    default: [0x31, 0x3c]
+    description:
+      VCOM control 1 (VMCTRL1) register values.
+
+  vmctrl2:
+    type: uint8-array
+    default: [0xc0]
+    description:
+      VCOM control 2 (VMCTRL2) register values.
+
+  madctrl:
+    type: uint8-array
+    description:
+      VCOM control 2 (VMCTRL2) register values.
+  
+  pixset:
+    type: uint8-array
+    description:
+      VCOM control 2 (VMCTRL2) register values.
+
+  pgamctrl:
+    type: uint8-array
+    default: [
+      0x0f,
+      0x22,
+      0x1f,
+      0x0a,
+      0x0e,
+      0x06,
+      0x4d,
+      0x76,
+      0x3b,
+      0x03,
+      0x0e,
+      0x04,
+      0x13,
+      0x0e,
+      0x0c
+    ]
+    description:
+      Positive gamma correction (PGAMCTRL) register values.
+
+  ngamctrl:
+    type: uint8-array
+    default: [
+      0x0c,
+      0x23,
+      0x26,
+      0x04,
+      0x10,
+      0x04,
+      0x39,
+      0x24,
+      0x4b,
+      0x03,
+      0x0b,
+      0x0b,
+      0x33,
+      0x37,
+      0x0f
+    ]
+    description:
+      Negative gamma correction (NGAMCTRL) register values.
+
+  cmd-data-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/Command pin of the ILI9341 is to be configured
+      high(1) for data, low(0) for command.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin of the ILI9341.
+      If connected directly the MCU pin should be configured
+      as active low.

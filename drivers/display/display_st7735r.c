@@ -159,15 +159,6 @@ static int st7735r_blanking_off(const struct device *dev)
 	return st7735r_transmit(dev, ST7735R_CMD_DISP_ON, NULL, 0);
 }
 
-static int st7735r_read(const struct device *dev,
-			const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
-{
-	return -ENOTSUP;
-}
-
 static int st7735r_set_mem_area(const struct device *dev,
 				const uint16_t x, const uint16_t y,
 				const uint16_t w, const uint16_t h)
@@ -265,23 +256,6 @@ static int st7735r_write(const struct device *dev,
 out:
 	spi_release_dt(&config->bus);
 	return ret;
-}
-
-static void *st7735r_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
-static int st7735r_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
-
-static int st7735r_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	return -ENOTSUP;
 }
 
 static void st7735r_get_capabilities(const struct device *dev,
@@ -548,10 +522,6 @@ static const struct display_driver_api st7735r_api = {
 	.blanking_on = st7735r_blanking_on,
 	.blanking_off = st7735r_blanking_off,
 	.write = st7735r_write,
-	.read = st7735r_read,
-	.get_framebuffer = st7735r_get_framebuffer,
-	.set_brightness = st7735r_set_brightness,
-	.set_contrast = st7735r_set_contrast,
 	.get_capabilities = st7735r_get_capabilities,
 	.set_pixel_format = st7735r_set_pixel_format,
 	.set_orientation = st7735r_set_orientation,

@@ -18,3 +18,7 @@ chosen {
 	current-speed = <19200>;
 	clock-frequency = <40000000>;
 };
+
+
+
+

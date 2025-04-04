@@ -581,25 +581,6 @@ static int ssd16xx_read(const struct device *dev,
 	return ssd16xx_read_ram(dev, SSD16XX_RAM_BLACK, x, y, desc, buf);
 }
 
-static void *ssd16xx_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("not supported");
-	return NULL;
-}
-
-static int ssd16xx_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
-static int ssd16xx_set_contrast(const struct device *dev, uint8_t contrast)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
 static void ssd16xx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
@@ -614,14 +595,6 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	caps->screen_info = SCREEN_INFO_MONO_VTILED |
 			    SCREEN_INFO_MONO_MSB_FIRST |
 			    SCREEN_INFO_EPD;
-}
-
-static int ssd16xx_set_orientation(const struct device *dev,
-				   const enum display_orientation
-				   orientation)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
 }
 
 static int ssd16xx_set_pixel_format(const struct device *dev,
@@ -979,12 +952,8 @@ static struct display_driver_api ssd16xx_driver_api = {
 	.blanking_off = ssd16xx_blanking_off,
 	.write = ssd16xx_write,
 	.read = ssd16xx_read,
-	.get_framebuffer = ssd16xx_get_framebuffer,
-	.set_brightness = ssd16xx_set_brightness,
-	.set_contrast = ssd16xx_set_contrast,
 	.get_capabilities = ssd16xx_get_capabilities,
 	.set_pixel_format = ssd16xx_set_pixel_format,
-	.set_orientation = ssd16xx_set_orientation,
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1608)

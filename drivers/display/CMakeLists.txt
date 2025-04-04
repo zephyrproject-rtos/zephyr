@@ -9,7 +9,10 @@ zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF	display_mcux_dcnan
 zephyr_library_sources_ifdef(CONFIG_UC81XX		uc81xx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9XXX		display_ili9xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9340		display_ili9340.c)
-zephyr_library_sources_ifdef(CONFIG_ILI9341		display_ili9341.c)
+
+# zephyr_library_sources_ifdef(CONFIG_ILI9341TFT			ili9341_driver.c)
+
+zephyr_library_sources_ifdef(CONFIG_ILI9341		ili9341_driver.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9342C	display_ili9342c.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9488		display_ili9488.c)
 zephyr_library_sources_ifdef(CONFIG_LS0XX		ls0xx.c)
@@ -19,10 +22,15 @@ zephyr_library_sources_ifdef(CONFIG_SSD1306		ssd1306.c)
 zephyr_library_sources_ifdef(CONFIG_SSD16XX		ssd16xx.c)
 zephyr_library_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
 zephyr_library_sources_ifdef(CONFIG_ST7735R		display_st7735r.c)
+zephyr_library_sources_ifdef(CONFIG_ST7796S		display_st7796s.c)
 zephyr_library_sources_ifdef(CONFIG_STM32_LTDC		display_stm32_ltdc.c)
 zephyr_library_sources_ifdef(CONFIG_RM68200		display_rm68200.c)
 zephyr_library_sources_ifdef(CONFIG_RM67162		display_rm67162.c)
 zephyr_library_sources_ifdef(CONFIG_HX8394		display_hx8394.c)
+zephyr_library_sources_ifdef(CONFIG_GC9X01X		display_gc9x01x.c)
+zephyr_library_sources_ifdef(CONFIG_LED_STRIP_MATRIX	display_led_strip_matrix.c)
+zephyr_library_sources_ifdef(CONFIG_DISPLAY_RENESAS_LCDC display_renesas_lcdc.c)
+zephyr_library_sources_ifdef(CONFIG_NT35510		display_nt35510.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
@@ -37,3 +45,4 @@ if (CONFIG_SDL_DISPLAY)
 		target_sources(native_simulator INTERFACE display_sdl_bottom.c)
 	endif()
 endif()
+

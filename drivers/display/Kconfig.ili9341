@@ -1,0 +1,10 @@
+# ILI9XXX display driver configuration options
+
+# Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ILI9341
+	bool "ILI9341 display driver"
+	default y

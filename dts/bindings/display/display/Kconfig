@@ -1,0 +1,50 @@
+# Display drivers
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY
+	bool "Display controller drivers"
+	help
+	  Enable display drivers
+
+if DISPLAY
+
+config DISPLAY_INIT_PRIORITY
+	int "Display devices init priority"
+	default 85
+	help
+	  Display devices initialization priority.
+
+module = DISPLAY
+module-str = display
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/display/Kconfig.mcux_elcdif"
+source "drivers/display/Kconfig.microbit"
+source "drivers/display/Kconfig.nrf_led_matrix"
+source "drivers/display/Kconfig.ili9xxx"
+source "drivers/display/Kconfig.ili9341"
+source "drivers/display/Kconfig.sdl"
+source "drivers/display/Kconfig.ssd1306"
+source "drivers/display/Kconfig.ssd16xx"
+source "drivers/display/Kconfig.st7735r"
+source "drivers/display/Kconfig.st7789v"
+source "drivers/display/Kconfig.st7796s"
+source "drivers/display/Kconfig.stm32_ltdc"
+source "drivers/display/Kconfig.uc81xx"
+source "drivers/display/Kconfig.dummy"
+source "drivers/display/Kconfig.ls0xx"
+source "drivers/display/Kconfig.rm67162"
+source "drivers/display/Kconfig.rm68200"
+source "drivers/display/Kconfig.max7219"
+source "drivers/display/Kconfig.intel_multibootfb"
+source "drivers/display/Kconfig.mcux_dcnano_lcdif"
+source "drivers/display/Kconfig.otm8009a"
+source "drivers/display/Kconfig.hx8394"
+source "drivers/display/Kconfig.gc9x01x"
+source "drivers/display/Kconfig.led_strip_matrix"
+source "drivers/display/Kconfig.renesas_lcdc"
+source "drivers/display/Kconfig.nt35510"
+
+endif # DISPLAY

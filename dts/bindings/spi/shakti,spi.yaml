@@ -10,6 +10,9 @@ description: |
 
 compatible: "shakti,spi"
 
+include:
+  - name: spi-controller.yaml
+
 properties:
   reg:
     type: array
@@ -25,4 +28,7 @@ properties:
 
   clock-frequency:
     type: int
+    required: true
+  
+  cs-gpios:
     required: true
