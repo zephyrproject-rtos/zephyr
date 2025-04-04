@@ -39,6 +39,7 @@ def test_runner_imports():
         'nios2',
         'nrfjprog',
         'nrfutil',
+        'nxp_pedbg',
         'nxp_s32dbg',
         'openocd',
         'probe-rs',
