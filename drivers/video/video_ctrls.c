@@ -94,6 +94,10 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 		return ret;
 	}
 
+	ctrl->cluster_sz = 0;
+	ctrl->cluster = NULL;
+	ctrl->is_auto = false;
+	ctrl->has_volatiles = false;
 	ctrl->vdev = vdev;
 	ctrl->id = id;
 	ctrl->type = type;
@@ -117,6 +121,50 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	sys_dlist_append(&vdev->ctrls, &ctrl->node);
 
 	return 0;
+}
+
+/* By definition, the cluster is in manual mode if the master control value is 0 */
+static inline bool is_cluster_manual(const struct video_ctrl *master)
+{
+	return master->type == VIDEO_CTRL_TYPE_INTEGER64 ? master->val64 == 0 : master->val == 0;
+}
+
+void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
+{
+	bool has_volatiles = false;
+
+	__ASSERT(!sz && !ctrls, "The 1st control, i.e. the master, must not be NULL");
+
+	for (uint8_t i = 0; i < sz; i++) {
+		ctrls[i].cluster_sz = sz;
+		ctrls[i].cluster = ctrls;
+		if (ctrls[i].flags & VIDEO_CTRL_FLAG_VOLATILE) {
+			has_volatiles = true;
+		}
+	}
+
+	ctrls->has_volatiles = has_volatiles;
+}
+
+void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
+{
+	video_cluster_ctrl(ctrls, sz);
+
+	__ASSERT(sz > 1, "Control auto cluster size must be > 1");
+	__ASSERT(!(set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl),
+		 "Volatile is set but no ops");
+
+	ctrls->is_auto = true;
+	ctrls->has_volatiles = set_volatile;
+	ctrls->flags |= VIDEO_CTRL_FLAG_UPDATE;
+
+	/* If the cluster is in automatic mode, mark all manual controls inactive and volatile */
+	for (uint8_t i = 1; i < sz; i++) {
+		if (!is_cluster_manual(ctrls)) {
+			ctrls[i].flags |= VIDEO_CTRL_FLAG_INACTIVE |
+					  (set_volatile ? VIDEO_CTRL_FLAG_VOLATILE : 0);
+		}
+	}
 }
 
 static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
@@ -157,11 +205,15 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		}
 
 		/* Call driver's get_volatile_ctrl */
-		return DEVICE_API_GET(video, ctrl->vdev->dev)
-			->get_volatile_ctrl(ctrl->vdev->dev, control);
+		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
+			      ->get_volatile_ctrl(ctrl->vdev->dev,
+						  ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	/* Read control value in cache memory */
+	/* Give the control's current value to user */
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
 		control->val64 = ctrl->val64;
 	} else {
@@ -174,8 +226,10 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 int video_set_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
-
 	int ret = video_find_ctrl(dev, control->id, &ctrl);
+	uint8_t i = 0;
+	int32_t val = 0;
+	int64_t val64 = 0;
 
 	if (ret) {
 		return ret;
@@ -186,6 +240,11 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
+	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
+		LOG_ERR("Control id 0x%x is inactive\n", control->id);
+		return -EACCES;
+	}
+
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
 		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
 		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
@@ -193,25 +252,81 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -EINVAL;
 	}
 
-	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl == NULL) {
-		goto update;
+	/* No new value */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+						    : ctrl->val == control->val) {
+		return 0;
 	}
 
-	/* Call driver's set_ctrl */
-	ret = DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl(ctrl->vdev->dev, control);
-	if (ret) {
-		return ret;
-	}
-
-update:
-	/* Only update the ctrl in memory once everything is OK */
+	/* Backup the control's value then set it to the new value */
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		val64 = ctrl->val64;
 		ctrl->val64 = control->val64;
 	} else {
+		val = ctrl->val;
 		ctrl->val = control->val;
 	}
 
+	/*
+	 * For auto-clusters having volatiles, before switching to manual mode, get the current
+	 * volatile values since those will become the initial manual values after this switch.
+	 */
+	if (ctrl == ctrl->cluster && ctrl->is_auto && ctrl->has_volatiles &&
+	    is_cluster_manual(ctrl)) {
+
+		if (DEVICE_API_GET(video, ctrl->vdev->dev)->get_volatile_ctrl == NULL) {
+			ret = -ENOSYS;
+			goto restore;
+		}
+
+		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
+			      ->get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
+		if (ret) {
+			goto restore;
+		}
+	}
+
+	/* Call driver's set_ctrl */
+	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl) {
+		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
+				->set_ctrl(ctrl->vdev->dev, ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+		if (ret) {
+			goto restore;
+		}
+	}
+
+	/* Update the manual controls' flags of the cluster */
+	if (ctrl->cluster && ctrl->cluster->is_auto) {
+		for (i = 1; i < ctrl->cluster_sz; i++) {
+			if (!is_cluster_manual(ctrl->cluster)) {
+				/* Automatic mode: set the inactive and volatile flags of the manual
+				 * controls
+				 */
+				ctrl->cluster[i].flags |=
+					VIDEO_CTRL_FLAG_INACTIVE |
+					(ctrl->cluster->has_volatiles ? VIDEO_CTRL_FLAG_VOLATILE
+								      : 0);
+			} else {
+				/* Manual mode: clear the inactive and volatile flags of the manual
+				 * controls
+				 */
+				ctrl->cluster[i].flags &=
+					~(VIDEO_CTRL_FLAG_INACTIVE | VIDEO_CTRL_FLAG_VOLATILE);
+			}
+		}
+	}
+
 	return 0;
+
+restore:
+	/* Restore the old control's value */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = val64;
+	} else {
+		ctrl->val = val;
+	}
+
+	return ret;
 }
 
 static inline const char *video_get_ctrl_name(uint32_t id)
@@ -228,8 +343,12 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Hue";
 	case VIDEO_CID_EXPOSURE:
 		return "Exposure";
+	case VIDEO_CID_AUTOGAIN:
+		return "Gain, Automatic";
 	case VIDEO_CID_GAIN:
 		return "Gain";
+	case VIDEO_CID_ANALOGUE_GAIN:
+		return "Analogue Gain";
 	case VIDEO_CID_HFLIP:
 		return "Horizontal Flip";
 	case VIDEO_CID_VFLIP:
