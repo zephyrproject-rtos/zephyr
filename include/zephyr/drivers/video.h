@@ -1010,6 +1010,58 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  */
 
 /**
+ * @name Grayscale formats
+ * Luminance (Y) channel only, in various bit depth and packing.
+ *
+ * When the format includes more than 8-bit per pixel, a strategy becomes needed to pack
+ * the bits over multiple bytes, as illustrated for each format.
+ *
+ * The number above the 'Y', 'y' are hints about which pixel number the following bits belong to.
+ *
+ * @{
+ */
+
+/**
+ * Same as Y8 (8-bit luma-only) following the standard FOURCC naming.
+ *
+ * @verbatim
+ *   0          1          2          3
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_GREY VIDEO_FOURCC('G', 'R', 'E', 'Y')
+
+/**
+ * @verbatim
+ *   0          1          2          3          0 1 2 3
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_Y10P VIDEO_FOURCC('Y', '1', '0', 'P')
+
+/**
+ * @verbatim
+ *   0          1          1   0      2          3          3   2
+ * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_Y12P VIDEO_FOURCC('Y', '1', '2', 'P')
+
+/**
+ * @verbatim
+ *   0          1          2          3          1 0        2   1      3     2
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | yyyyyyyy | yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | yyyyyyyy | yyyyyyyy | yyyyyyyy | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_Y14P VIDEO_FOURCC('Y', '1', '4', 'P')
+
+/**
+ * @}
+ */
+
+/**
  * @name RGB formats
  * Per-color (R, G, B) channels.
  * @{
