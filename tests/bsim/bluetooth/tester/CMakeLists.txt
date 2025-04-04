@@ -26,6 +26,8 @@ target_sources(app PRIVATE
   src/test_main.c
   src/audio/hap_central.c
   src/audio/hap_peripheral.c
+  src/audio/mcp_central.c
+  src/audio/mcp_peripheral.c
   src/audio/micp_central.c
   src/audio/micp_peripheral.c
   src/audio/vcp_central.c
