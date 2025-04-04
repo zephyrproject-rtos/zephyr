@@ -90,6 +90,13 @@ chosen {
 	status = "okay";
 };
 
+&watchdog
+{
+	
+	status="okay";
+	rcycles=<5000>;
+	wcycles=<5000>;
+};
 &plic {
 
 	status = "okay";
