@@ -14,6 +14,15 @@
 #include "sl_si91x_types.h"
 #include "sl_si91x_protocol_types.h"
 
+/* BG SCAN configurations related macros */
+#define SL_WIFI_ADV_SCAN_THRESHOLD           -40
+#define SL_WIFI_ADV_RSSI_TOLERANCE_THRESHOLD 5
+#define SL_WIFI_ADV_ACTIVE_SCAN_DURATION     15
+#define SL_WIFI_ADV_PASSIVE_SCAN_DURATION    20
+#define SL_WIFI_ADV_MULTIPROBE               0
+#define SL_WIFI_ADV_SCAN_PERIODICITY         10
+#define SL_WIFI_ENABLE_INSTANT_SCAN          1
+
 struct siwx91x_dev {
 	struct net_if *iface;
 	sl_mac_address_t macaddr;
