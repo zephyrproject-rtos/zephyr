@@ -42,10 +42,8 @@ static uint8_t ots_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_ots_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_OTS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_OTS_REGISTER_OBJECT);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_OTS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

@@ -21,14 +21,8 @@ static uint8_t has_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_has_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_HAS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_HAS_SET_ACTIVE_INDEX);
-	tester_set_bit(rp->data, BTP_HAS_SET_PRESET_NAME);
-	tester_set_bit(rp->data, BTP_HAS_REMOVE_PRESET);
-	tester_set_bit(rp->data, BTP_HAS_ADD_PRESET);
-	tester_set_bit(rp->data, BTP_HAS_SET_PROPERTIES);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_HAS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

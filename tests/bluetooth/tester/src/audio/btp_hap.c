@@ -23,15 +23,8 @@ static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_hap_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_HAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_HAP_HA_INIT);
-	tester_set_bit(rp->data, BTP_HAP_HAUC_INIT);
-	tester_set_bit(rp->data, BTP_HAP_IAC_INIT);
-	tester_set_bit(rp->data, BTP_HAP_IAC_DISCOVER);
-	tester_set_bit(rp->data, BTP_HAP_IAC_SET_ALERT);
-	tester_set_bit(rp->data, BTP_HAP_HAUC_DISCOVER);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_HAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
