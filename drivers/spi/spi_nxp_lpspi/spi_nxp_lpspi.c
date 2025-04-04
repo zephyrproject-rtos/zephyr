@@ -33,7 +33,7 @@ static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t of
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	uint8_t num_bytes = MIN(lpspi_data->word_size_bytes, ctx->rx_len);
+	uint8_t num_bytes = lpspi_data->word_size_bytes;
 	uint8_t *buf = ctx->rx_buf + offset;
 	uint32_t word = base->RDR;
 
@@ -53,7 +53,7 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t buf_len = DIV_ROUND_UP(ctx->rx_len, lpspi_data->word_size_bytes);
+	size_t buf_len = ctx->rx_len;
 	uint8_t words_read = 0;
 	size_t offset = 0;
 
@@ -156,9 +156,7 @@ static void lpspi_next_tx_fill(const struct device *dev)
 	size_t fill_len;
 	size_t actual_filled = 0;
 
-	/* Convert bytes to words for this xfer */
-	fill_len = DIV_ROUND_UP(spi_context_tx_len_left(ctx), lpspi_data->word_size_bytes);
-	fill_len = MIN(fill_len, config->tx_fifo_size);
+	fill_len = MIN(ctx->tx_len, config->tx_fifo_size);
 
 	const struct spi_buf *current_buf = ctx->current_tx;
 	const uint8_t *cur_buf_pos = ctx->tx_buf;
