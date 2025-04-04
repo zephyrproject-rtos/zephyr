@@ -191,6 +191,7 @@ static void i2c_start_bit_(const struct device *dev){
 
 static void i2c_end(const struct device *dev){
     struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
+  delayms(1);
   WRITE_TO_REG(confg,I2C_CONTROL,I2C_STOP);
   k_sched_unlock();
   //waitfor(1000);
@@ -344,7 +345,6 @@ static int i2c_seciot_read_msg(const struct device *dev,struct i2c_msg *msg,uint
 }
 static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uint8_t num_msgs,uint16_t addr)		       
 {
-
 	/* Check for NULL pointers */
 	if (dev == NULL) {
 		//LOG_ERR("Device handle is NULL");
@@ -361,7 +361,6 @@ k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
     for (int i = 0; i < num_msgs; i++) {
         delayms(10);
         if (msgs[i].flags & I2C_MSG_READ) {
-            
 	    	i2c_seciot_read_msg(dev, &(msgs[i]), addr);
 	    } else {
 	    	i2c_seciot_write_msg(dev, &(msgs[i]), addr);
