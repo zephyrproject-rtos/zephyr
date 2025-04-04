@@ -9,6 +9,10 @@ verbosity_level=2
 simulation_id="host_privacy_peripheral"
 EXECUTE_TIMEOUT=240
 
+if [ 'nrf5340bsim_nrf5340_cpunet' == ${BOARD_TS} ]; then
+    exit
+fi
+
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 peripheral_exe="${central_exe}"
 
