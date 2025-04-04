@@ -82,6 +82,8 @@ devices as well as both PIO devices).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
