@@ -81,6 +81,8 @@ struct arch_mem_domain {
 	sys_snode_t node;
 };
 
+typedef struct arch_mem_domain arch_mem_domain_t;
+
 /**
  * @brief Generate hardware exception.
  *
