@@ -473,20 +473,23 @@ static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int mt9m114_set_ctrl(const struct device *dev, uint32_t id)
 {
 	int ret = 0;
+	struct mt9m114_data *drv_data = dev->data;
 
-	switch (ctrl->id) {
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
-					MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN,
-					ctrl->val ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
+		ret = mt9m114_modify_reg(
+			dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
+			MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN,
+			drv_data->ctrls.hflip.val ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
 		break;
 	case VIDEO_CID_VFLIP:
-		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
-					MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN,
-					ctrl->val ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
+		ret = mt9m114_modify_reg(
+			dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
+			MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN,
+			drv_data->ctrls.vflip.val ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
 		break;
 	default:
 		return -ENOTSUP;

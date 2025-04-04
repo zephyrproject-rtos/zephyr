@@ -145,7 +145,11 @@ struct ov5640_mode_config {
 };
 
 struct ov5640_ctrls {
-	struct video_ctrl gain;
+	/* gain auto-cluster */
+	struct {
+		struct video_ctrl auto_gain;
+		struct video_ctrl gain;
+	};
 	struct video_ctrl brightness;
 	struct video_ctrl contrast;
 	struct video_ctrl hue;
@@ -1034,24 +1038,30 @@ static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
 	return ov5640_write_reg(&cfg->i2c, SDE_CTRL6_REG, value & 0xff);
 }
 
-static int ov5640_set_ctrl_gain(const struct device *dev, int value)
+static int ov5640_set_ctrl_gain(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
+	struct ov5640_data *drv_data = dev->data;
+	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
 
-	if (value) {
-		int ret = ov5640_modify_reg(&cfg->i2c, AEC_PK_MANUAL, BIT(1), BIT(0));
+	int ret = ov5640_modify_reg(&cfg->i2c, AEC_PK_MANUAL, BIT(1),
+				    ctrls->auto_gain.val ? 0 : BIT(1));
 
+	if (ret) {
+		return ret;
+	}
+
+	if (!ctrls->auto_gain.val) {
+		ret = ov5640_modify_reg(&cfg->i2c, AEC_PK_REAL_GAIN, 0x03,
+					(ctrls->gain.val >> 8) & 0x03);
 		if (ret) {
 			return ret;
 		}
 
-		struct ov5640_reg gain_params[] = {{AEC_PK_REAL_GAIN, value >> 8},
-						   {AEC_PK_REAL_GAIN + 1, value & 0xff}};
-
-		return ov5640_write_multi_regs(&cfg->i2c, gain_params, ARRAY_SIZE(gain_params));
-	} else {
-		return ov5640_write_reg(&cfg->i2c, AEC_PK_MANUAL, 0);
+		ret = ov5640_write_reg(&cfg->i2c, AEC_PK_REAL_GAIN + 1, ctrls->gain.val & 0xff);
 	}
+
+	return ret;
 }
 
 static int ov5640_set_ctrl_hflip(const struct device *dev, int value)
@@ -1096,30 +1106,66 @@ static int ov5640_set_ctrl_power_line_freq(const struct device *dev, int value)
 	return ov5640_modify_reg(&cfg->i2c, HZ5060_CTRL01_REG, BIT(7), BIT(7));
 }
 
-static int ov5640_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int ov5640_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (ctrl->id) {
+	struct ov5640_data *drv_data = dev->data;
+	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
+
+	switch (id) {
 	case VIDEO_CID_TEST_PATTERN:
-		return ov5640_set_ctrl_test_pattern(dev, ctrl->val);
+		return ov5640_set_ctrl_test_pattern(dev, ctrls->test_pattern.val);
 	case VIDEO_CID_HUE:
-		return ov5640_set_ctrl_hue(dev, ctrl->val);
+		return ov5640_set_ctrl_hue(dev, ctrls->hue.val);
 	case VIDEO_CID_SATURATION:
-		return ov5640_set_ctrl_saturation(dev, ctrl->val);
+		return ov5640_set_ctrl_saturation(dev, ctrls->saturation.val);
 	case VIDEO_CID_BRIGHTNESS:
-		return ov5640_set_ctrl_brightness(dev, ctrl->val);
+		return ov5640_set_ctrl_brightness(dev, ctrls->brightness.val);
 	case VIDEO_CID_CONTRAST:
-		return ov5640_set_ctrl_contrast(dev, ctrl->val);
-	case VIDEO_CID_GAIN:
-		return ov5640_set_ctrl_gain(dev, ctrl->val);
+		return ov5640_set_ctrl_contrast(dev, ctrls->contrast.val);
+	case VIDEO_CID_AUTOGAIN:
+		return ov5640_set_ctrl_gain(dev);
 	case VIDEO_CID_HFLIP:
-		return ov5640_set_ctrl_hflip(dev, ctrl->val);
+		return ov5640_set_ctrl_hflip(dev, ctrls->hflip.val);
 	case VIDEO_CID_VFLIP:
-		return ov5640_set_ctrl_vflip(dev, ctrl->val);
+		return ov5640_set_ctrl_vflip(dev, ctrls->vflip.val);
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		return ov5640_set_ctrl_power_line_freq(dev, ctrl->val);
+		return ov5640_set_ctrl_power_line_freq(dev, ctrls->light_freq.val);
 	default:
 		return -ENOTSUP;
 	}
+}
+
+static int ov5640_get_gain(const struct device *dev)
+{
+	int ret;
+	uint16_t gain;
+	const struct ov5640_config *cfg = dev->config;
+
+	ret = ov5640_read_reg(&cfg->i2c, AEC_PK_REAL_GAIN, &gain, sizeof(gain));
+	if (ret) {
+		return ret;
+	}
+
+	return gain & 0x3ff;
+}
+
+static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
+{
+	int val;
+	struct ov5640_data *drv_data = dev->data;
+	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
+
+	switch (id) {
+	case VIDEO_CID_AUTOGAIN:
+		val = ov5640_get_gain(dev);
+		if (val < 0) {
+			return val;
+		}
+		ctrls->gain.val = val;
+		break;
+	}
+
+	return 0;
 }
 
 static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id ep,
@@ -1171,6 +1217,7 @@ static DEVICE_API(video, ov5640_driver_api) = {
 	.get_caps = ov5640_get_caps,
 	.set_stream = ov5640_set_stream,
 	.set_ctrl = ov5640_set_ctrl,
+	.get_volatile_ctrl = ov5640_get_volatile_ctrl,
 	.set_frmival = ov5640_set_frmival,
 	.get_frmival = ov5640_get_frmival,
 	.enum_frmival = ov5640_enum_frmival,
@@ -1182,12 +1229,20 @@ static int ov5640_init_controls(const struct device *dev)
 	struct ov5640_data *drv_data = dev->data;
 	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
 
+	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
+	if (ret) {
+		return ret;
+	}
+
 	ret = video_init_ctrl(
-		&ctrls->gain, dev, VIDEO_CID_GAIN,
+		&ctrls->gain, dev, VIDEO_CID_ANALOGUE_GAIN,
 		(struct video_ctrl_range){.min = 0, .max = 1023, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
+
+	video_auto_cluster_ctrl(&ctrls->auto_gain, 2, true);
 
 	ret = video_init_ctrl(
 		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,

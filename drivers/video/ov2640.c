@@ -895,32 +895,35 @@ static int ov2640_get_caps(const struct device *dev,
 	return 0;
 }
 
-static int ov2640_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (ctrl->id) {
+	struct ov2640_data *drv_data = dev->data;
+	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
+
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return ov2640_set_horizontal_mirror(dev, ctrl->val);
+		return ov2640_set_horizontal_mirror(dev, ctrls->hflip.val);
 	case VIDEO_CID_VFLIP:
-		return ov2640_set_vertical_flip(dev, ctrl->val);
+		return ov2640_set_vertical_flip(dev, ctrls->vflip.val);
 	case VIDEO_CID_EXPOSURE:
-		return ov2640_set_exposure_ctrl(dev, ctrl->val);
+		return ov2640_set_exposure_ctrl(dev, ctrls->ae.val);
 	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		return ov2640_set_white_bal(dev, ctrl->val);
+		return ov2640_set_white_bal(dev, ctrls->awb.val);
 	case VIDEO_CID_GAIN:
-		return ov2640_set_gain_ctrl(dev, ctrl->val);
+		return ov2640_set_gain_ctrl(dev, ctrls->gain.val);
 	case VIDEO_CID_BRIGHTNESS:
-		return ov2640_set_level(dev, ctrl->val, NUM_BRIGHTNESS_LEVELS,
+		return ov2640_set_level(dev, ctrls->brightness.val, NUM_BRIGHTNESS_LEVELS,
 					ARRAY_SIZE(brightness_regs[0]), brightness_regs);
 	case VIDEO_CID_CONTRAST:
-		return ov2640_set_level(dev, ctrl->val, NUM_CONTRAST_LEVELS,
+		return ov2640_set_level(dev, ctrls->contrast.val, NUM_CONTRAST_LEVELS,
 					ARRAY_SIZE(contrast_regs[0]), contrast_regs);
 	case VIDEO_CID_SATURATION:
-		return ov2640_set_level(dev, ctrl->val, NUM_SATURATION_LEVELS,
+		return ov2640_set_level(dev, ctrls->saturation.val, NUM_SATURATION_LEVELS,
 					ARRAY_SIZE(saturation_regs[0]), saturation_regs);
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		return ov2640_set_quality(dev, ctrl->val);
+		return ov2640_set_quality(dev, ctrls->jpeg.val);
 	case VIDEO_CID_TEST_PATTERN:
-		return ov2640_set_colorbar(dev, ctrl->val);
+		return ov2640_set_colorbar(dev, ctrls->test_pattern.val);
 	default:
 		return -ENOTSUP;
 	}
