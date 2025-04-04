@@ -28,9 +28,16 @@ if((${MCUX_DEVICE} MATCHES "RW61") AND (NOT DEFINED CONFIG_MINIMAL_LIBC))
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memcpy.S)
 endif()
 
+add_subdirectory(drivers)
+
+get_property(global_vars GLOBAL PROPERTY GLOBAL_VARS_LIST)
+foreach(var IN LISTS global_vars)
+  get_property(value GLOBAL PROPERTY GV_${var})
+  set(${var} ${value})
+endforeach()
+
 add_subdirectory(middleware)
 add_subdirectory(components)
-add_subdirectory(drivers)
 add_subdirectory(device)
 
 # Expose the driver header include path, so that the shim driver can use them.
