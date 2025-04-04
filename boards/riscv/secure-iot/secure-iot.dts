@@ -18,6 +18,12 @@ chosen {
 	clock-frequency = <100000000>;
 };
 
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};
+
 &i2c0 {
 	status = "ok";
 	base = <0x44000>;
@@ -79,6 +85,7 @@ chosen {
 		  pixset = [55];
         };
 };
+
 &gpio0 {
 	status = "okay";
 };
@@ -89,6 +96,11 @@ chosen {
 	status="okay";
 	rcycles=<5000>;
 	wcycles=<5000>;
+};
+&plic {
+
+	status = "okay";
+	base = <0xc000000>;
 };
 
 &pwm0 {

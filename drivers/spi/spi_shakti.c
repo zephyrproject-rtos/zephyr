@@ -44,7 +44,7 @@ int comm_config[5] = DT_PROP(DT_NODELABEL(spi0), comm_configure);
 /* variables used to configure spi */
 int pol;
 int pha;
-int prescale = 0x10;
+int prescale = 0x01;
 int setup_time = 0x0;
 int hold_time = 0x0;
 int master_mode;
