@@ -1,0 +1,10 @@
+# Shakti Freedom PWM configuration options
+
+# Copyright (c) 2018 Shakti Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SHAKTI
+	bool "Mindgrove Silicon Secure-iot-SoC PWM driver"
+	default y
+	help
+	  Enable the PWM driver for the Shakti Freedom platform
