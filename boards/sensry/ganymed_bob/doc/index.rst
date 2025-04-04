@@ -93,7 +93,7 @@ Flash the zephyr image:
    :tool: west
    :zephyr-app: samples/hello_world
    :goals: flash
-   :west-args: --serial /dev/ttyUSB0
+   :west-args: --dev-id /dev/ttyUSB0
    :compact:
 
 
