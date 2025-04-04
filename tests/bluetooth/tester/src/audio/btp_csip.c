@@ -23,14 +23,8 @@ static uint8_t btp_csip_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_csip_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_CSIP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CSIP_DISCOVER);
-	tester_set_bit(rp->data, BTP_CSIP_START_ORDERED_ACCESS);
-	tester_set_bit(rp->data, BTP_CSIP_SET_COORDINATOR_LOCK);
-	tester_set_bit(rp->data, BTP_CSIP_SET_COORDINATOR_RELEASE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CSIP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
