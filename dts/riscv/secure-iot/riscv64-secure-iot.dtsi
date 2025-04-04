@@ -62,8 +62,8 @@
     };
 
     uart0: serial@11300 {
-        compatible = "shakti,uart0";
-        reg= < 0x0 0x11300 0x0 0x100>;
+      compatible = "shakti,uart0";
+      reg= < 0x0 0x11300 0x0 0x100>;
     };
 
     uart1: serial@11400 {
@@ -110,6 +110,47 @@
       compatible = "shakti,i2c0";
       reg= <0x0 0x44100 0x0 0x100>;
     };
+    
+    pwm0: pwm@30000 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30000 0x0 0x100>;
+    };
+    
+    pwm1: pwm@30100 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30100 0x0 0x100>;
+    };
+
+    pwm2: pwm@30200 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30200 0x0 0x100>;
+    };
+
+    pwm3: pwm@30300 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30300 0x0 0x100>;
+    };
+    
+    pwm4: pwm@30400 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30400 0x0 0x100>;
+    };
+    
+    pwm5: pwm@30500 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30500 0x0 0x100>;
+    };
+    
+    pwm6: pwm@30600 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30600 0x0 0x100>;
+    };
+    
+    pwm7: pwm@30700 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30700 0x0 0x100>;
+    };
 
   };
+
 };
