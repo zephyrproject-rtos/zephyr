@@ -8,6 +8,9 @@ if SOC_SERIES_NPCX4
 config NUM_IRQS
 	default 128
 
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
