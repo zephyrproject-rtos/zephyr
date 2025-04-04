@@ -109,6 +109,11 @@ Connect a USB cable from your PC to J15, and use the serial terminal of your cho
 - Parity: None
 - Stop bits: 1
 
+Programming and Debugging
+=========================
+
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

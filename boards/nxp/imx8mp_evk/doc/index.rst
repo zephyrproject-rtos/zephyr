@@ -62,6 +62,8 @@ CPU's UART4.
 Programming and Debugging (A53)
 *******************************
 
+.. zephyr:board-supported-runners::
+
 U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
 it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
 xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
