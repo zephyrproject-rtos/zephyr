@@ -225,6 +225,44 @@
 
 .endm
 
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+/*
+ * SWAP_PAGE_TABLE
+ *
+ * This swaps the page tables by using the pre-computed register values
+ * inside the architecture-specific memory domain struct.
+ *
+ * THREAD_PTR_REG is input containing pointer to the incoming thread struct.
+ * SC1_REG and SC2_REG are scratch registers.
+ *
+ * Note that all THREAD_PTR_REG, SC1_REG and SC2_REG are all clobbered.
+ * Restore the thread pointer after this if necessary.
+ */
+.macro SWAP_PAGE_TABLE THREAD_PTR_REG, SC1_REG, SC2_REG
+	l32i \THREAD_PTR_REG, \THREAD_PTR_REG, _thread_offset_to_mem_domain
+
+	j _swap_page_table_\@
+
+.align 16
+_swap_page_table_\@:
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptevaddr
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_asid
+	wsr \SC1_REG, PTEVADDR
+	wsr \SC2_REG, RASID
+
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptepin_as
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptepin_at
+	wdtlb \SC2_REG, \SC1_REG
+
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_vecpin_as
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_vecpin_at
+	wdtlb \SC2_REG, \SC1_REG
+
+	isync
+.endm
+
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
+
 /*
  * CROSS_STACK_CALL
  *
@@ -357,7 +395,7 @@ _xstack_call0_\@:
 	l32i a6, a6, ___cpu_t_current_OFFSET
 
 #ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
+	SWAP_PAGE_TABLE a6, a3, a7
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	call4 xtensa_mpu_map_write
