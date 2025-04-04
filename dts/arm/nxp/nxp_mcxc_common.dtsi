@@ -14,6 +14,10 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
+	aliases {
+		watchdog0 = &cop;
+	};
+
 	chosen {
 		zephyr,flash-controller = &ftfa;
 	};
@@ -104,6 +108,14 @@
 				clock-div = <2>;
 				#clock-cells = <0>;
 			};
+		};
+
+		cop: watchdog@40047000 {
+			compatible = "nxp,cop";
+			reg = <0x40047000 0x8>;
+			status = "disabled";
+			clk-source = <0>;
+			timeout-cycles = <32>;
 		};
 
 		porta: pinmux@40049000 {

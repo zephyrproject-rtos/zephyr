@@ -102,6 +102,7 @@ set_variable_ifdef(CONFIG_PWM_MCUX              CONFIG_MCUX_COMPONENT_driver.pwm
 set_variable_ifdef(CONFIG_VIDEO_MCUX_CSI        CONFIG_MCUX_COMPONENT_driver.csi)
 set_variable_ifdef(CONFIG_WDT_MCUX_IMX_WDOG     CONFIG_MCUX_COMPONENT_driver.wdog01)
 set_variable_ifdef(CONFIG_WDT_MCUX_RTWDOG       CONFIG_MCUX_COMPONENT_driver.rtwdog)
+set_variable_ifdef(CONFIG_WDT_MCUX_COP          CONFIG_MCUX_COMPONENT_driver.cop)
 set_variable_ifdef(CONFIG_HAS_MCUX_RDC          CONFIG_MCUX_COMPONENT_driver.rdc)
 set_variable_ifdef(CONFIG_UART_MCUX_IUART       CONFIG_MCUX_COMPONENT_driver.iuart)
 set_variable_ifdef(CONFIG_ADC_MCUX_12B1MSPS_SAR CONFIG_MCUX_COMPONENT_driver.adc_12b1msps_sar)
