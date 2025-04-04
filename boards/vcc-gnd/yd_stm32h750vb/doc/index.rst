@@ -42,6 +42,8 @@ is driven by the PLL clock at 480MHz. PLL clock is feed by a 25MHz high speed ex
 Flashing
 ========
 
+.. zephyr:board-supported-runners::
+
 There are 2 main entry points for flashing STM32H750VB SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional
 hardware such as ST-Link). Flashing using the ROM bootloader requires a special activation

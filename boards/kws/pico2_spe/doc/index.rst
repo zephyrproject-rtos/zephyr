@@ -42,6 +42,8 @@ The default pin mapping is unchanged from the Pico-SPE.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 As with the Pico-SPE, the SWD interface can be used to program and debug the
 device, e.g. using OpenOCD with the `Raspberry Pi Debug Probe <https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html>`_ .
 
