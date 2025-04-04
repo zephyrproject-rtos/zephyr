@@ -74,7 +74,7 @@ class TestOutput:
         assert all([testsuite.startswith(expected_start)for _, testsuite, _ in filtered_j])
 
     def test_inline_logs(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'always_build_error', 'dummy')
         args = ['--outdir', out_path, '-T', path] + \
                [val for pair in zip(
@@ -123,7 +123,11 @@ class TestOutput:
             r'-- Configuring done \([0-9.]+s\)',
             r'-- Generating done \([0-9.]+s\)',
             # Cache location may vary between CI runs
-            r'^.*-- Cache files will be written to:.*$'
+            r'^.*-- Cache files will be written to:.*$',
+            # List of built C object may differ between runs.
+            # See: Issue #87769.
+            # Probable culprits: the cache mechanism, build error
+            r'^Building C object .*$'
         ]
         for pattern in removal_patterns:
             c_pattern = re.compile(pattern, flags=re.MULTILINE)
