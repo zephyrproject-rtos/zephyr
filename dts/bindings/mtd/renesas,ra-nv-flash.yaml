@@ -12,3 +12,7 @@ properties:
   renesas,programming-enable:
     type: boolean
     description: Enable flash programming configuration
+
+  erased-undefined:
+    type: boolean
+    description: Enable blank check if the data flash will read back undefined values when erased
