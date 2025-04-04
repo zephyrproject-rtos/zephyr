@@ -912,8 +912,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	}
 
 	/* Store requested_bis_sync after everything has been validated */
-	(void *)memcpy(internal_state->requested_bis_sync, requested_bis_sync,
-		       sizeof(requested_bis_sync));
+	(void)memcpy(internal_state->requested_bis_sync, requested_bis_sync,
+		     sizeof(requested_bis_sync));
 	atomic_clear_bit(internal_state->flags, BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
 
 	/* Notify if changed */
