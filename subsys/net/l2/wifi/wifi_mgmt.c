@@ -395,24 +395,50 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	}
 	NET_DBG("ch %u sec %u", params->channel, params->security);
 
-	if ((params->security > WIFI_SECURITY_TYPE_MAX) ||
-	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
-	    (params->ssid_length == 0U) ||
-	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_PSK ||
-		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256 ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) &&
-	     ((params->psk_length < 8) || (params->psk_length > 64) ||
-	      (params->psk_length == 0U) || !params->psk)) ||
-	    ((params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
-		  params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-		  params->security == WIFI_SECURITY_TYPE_SAE_AUTO) &&
-	      ((params->psk_length == 0U) || !params->psk) &&
-		  ((params->sae_password_length == 0U) || !params->sae_password)) ||
-	    ((params->channel != WIFI_CHANNEL_ANY) &&
-	     (params->channel > WIFI_CHANNEL_MAX)) ||
-	    !params->ssid) {
+	if (params->channel > WIFI_CHANNEL_MAX && params->channel != WIFI_CHANNEL_ANY) {
 		return -EINVAL;
+	}
+
+	if (!params->ssid) {
+		return -EINVAL;
+	}
+
+	if (params->ssid_length <= 0 || params->ssid_length > WIFI_SSID_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	if (params->psk_length && (params->psk_length < 8 || params->psk_length > 64)) {
+		return -EINVAL;
+	}
+
+	if (params->sae_password_length &&
+	    (params->sae_password_length < 8 || params->sae_password_length > 64)) {
+		return -EINVAL;
+	}
+
+	if (params->security > WIFI_SECURITY_TYPE_MAX) {
+		return -EINVAL;
+	}
+
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_PSK:
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		if (!params->psk_length || !params->psk) {
+			return -EINVAL;
+		}
+		break;
+	case WIFI_SECURITY_TYPE_SAE_HNP:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+		if ((!params->psk_length || !params->psk) &&
+		    (!params->sae_password_length || !params->sae_password)) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		break;
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
