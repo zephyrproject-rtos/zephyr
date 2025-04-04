@@ -57,7 +57,13 @@ extern "C" {
 /** Amount of time an image sensor is exposed to light, affecting the brightness */
 #define VIDEO_CID_EXPOSURE (VIDEO_CID_BASE + 17)
 
-/** Amount of amplification performed to each pixel electrical signal, affecting the brightness */
+/** Automatic gain control */
+#define VIDEO_CID_AUTOGAIN (VIDEO_CID_BASE + 18)
+
+/** Gain control. Most devices control only digital gain with this control.
+ * Devices that recognise the difference between digital and analogue gain use
+ * VIDEO_CID_DIGITAL_GAIN and VIDEO_CID_ANALOGUE_GAIN.
+ */
 #define VIDEO_CID_GAIN (VIDEO_CID_BASE + 19)
 
 /** Flip the image horizontally: the left side becomes the right side */
@@ -136,6 +142,9 @@ enum video_power_line_frequency {
  * @{
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
+
+/** Analogue gain control. */
+#define VIDEO_CID_ANALOGUE_GAIN (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 3)
 
 /**
  * @}

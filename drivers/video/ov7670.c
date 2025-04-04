@@ -581,17 +581,19 @@ static int ov7670_set_stream(const struct device *dev, bool enable)
 	return 0;
 }
 
-static int ov7670_set_ctrl(const struct device *dev, struct video_control *ctrl)
+static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 {
 	const struct ov7670_config *config = dev->config;
+	struct ov7670_data *drv_data = dev->data;
+	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
 
-	switch (ctrl->id) {
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_HFLIP, ctrl->val ? OV7670_MVFP_HFLIP : 0);
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_HFLIP,
+					      ctrls->hflip.val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_VFLIP, ctrl->val ? OV7670_MVFP_VFLIP : 0);
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_VFLIP,
+					      ctrls->vflip.val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
 	}
