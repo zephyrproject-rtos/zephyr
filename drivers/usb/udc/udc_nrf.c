@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file  udc_nrf.c
- * @brief Nordic USB device controller (UDC) driver
- *
- * The driver implements the interface between the nRF USBD peripheral
- * driver from nrfx package and UDC API.
- */
-
 #include <string.h>
 #include <stdio.h>
 #include <soc.h>
@@ -101,71 +93,31 @@ const static struct device *udc_nrf_dev;
 #define NRF_USBD_COMMON_USE_WORKAROUND_FOR_ANOMALY_211 0
 #endif
 
-/**
- * @defgroup nrf_usbd_common_int USB Device driver internal part
- * @internal
- * @ingroup nrf_usbd_common
- *
- * This part contains auxiliary internal macros, variables and functions.
- * @{
- */
-
-/**
- * @brief Assert endpoint number validity.
- *
- * Internal macro to be used during program creation in debug mode.
- * Generates assertion if endpoint number is not valid.
- *
- * @param ep Endpoint number to validity check.
- */
+/* Assert endpoint is valid */
 #define NRF_USBD_COMMON_ASSERT_EP_VALID(ep) __ASSERT_NO_MSG(         \
 	((NRF_USBD_COMMON_EP_IS_IN(ep) &&                            \
 	 (NRF_USBD_COMMON_EP_NUM(ep) < NRF_USBD_COMMON_EPIN_CNT)) || \
 	 (NRF_USBD_COMMON_EP_IS_OUT(ep) &&                           \
 	 (NRF_USBD_COMMON_EP_NUM(ep) < NRF_USBD_COMMON_EPOUT_CNT))));
 
-/**
- * @brief Lowest position of bit for IN endpoint.
- *
- * The first bit position corresponding to IN endpoint.
- * @sa ep2bit bit2ep
- */
+/* Lowest IN endpoint bit position */
 #define NRF_USBD_COMMON_EPIN_BITPOS_0 0
 
-/**
- * @brief Lowest position of bit for OUT endpoint.
- *
- * The first bit position corresponding to OUT endpoint
- * @sa ep2bit bit2ep
- */
+/* Lowest OUT endpoint bit position */
 #define NRF_USBD_COMMON_EPOUT_BITPOS_0 16
 
-/**
- * @brief Input endpoint bits mask.
- */
+/* Input endpoint bits mask */
 #define NRF_USBD_COMMON_EPIN_BIT_MASK (0xFFFFU << NRF_USBD_COMMON_EPIN_BITPOS_0)
 
-/**
- * @brief Output endpoint bits mask.
- */
+/* Output endpoint bits mask */
 #define NRF_USBD_COMMON_EPOUT_BIT_MASK (0xFFFFU << NRF_USBD_COMMON_EPOUT_BITPOS_0)
 
-/**
- * @brief Isochronous endpoint bit mask
- */
+/* Isochronous endpoint bit mask */
 #define USBD_EPISO_BIT_MASK                                                    \
 	((1U << NRF_USBD_COMMON_EP_BITPOS(NRF_USBD_COMMON_EPOUT8)) |           \
 	 (1U << NRF_USBD_COMMON_EP_BITPOS(NRF_USBD_COMMON_EPIN8)))
 
-/**
- * @brief Auxiliary macro to change EP number into bit position.
- *
- * This macro is used by @ref ep2bit function but also for statically check
- * the bitpos values integrity during compilation.
- *
- * @param[in] ep Endpoint number.
- * @return Endpoint bit position.
- */
+/* Convert endpoint number to bit position */
 #define NRF_USBD_COMMON_EP_BITPOS(ep) ((NRF_USBD_COMMON_EP_IS_IN(ep)      \
 	? NRF_USBD_COMMON_EPIN_BITPOS_0 : NRF_USBD_COMMON_EPOUT_BITPOS_0) \
 	+ NRF_USBD_COMMON_EP_NUM(ep))
@@ -189,18 +141,7 @@ BUILD_ASSERT(
 	"NRF_USBD_COMMON bit positions do not match hardware"
 );
 
-/**
- * @brief Detected state of the bus.
- *
- * Internal state changed in interrupts handling when
- * RESUME or SUSPEND event is processed.
- *
- * Values:
- * - true  - bus suspended
- * - false - ongoing normal communication on the bus
- *
- * @note This is only the bus state and does not mean that the peripheral is in suspend state.
- */
+/* True if USB bus is suspended, updated in interrupt handler */
 static volatile bool m_bus_suspend;
 
 /* Data Stage direction used to map EP0DATADONE to actual endpoint */
@@ -236,28 +177,15 @@ static K_SEM_DEFINE(dma_available, 1, 1);
 /* Endpoint on which DMA was started. */
 static nrf_usbd_common_ep_t dma_ep;
 
-/**
- * @brief Tracks whether total bytes transferred by DMA is even or odd.
- */
+/* Tracks whether total bytes transferred by DMA is even or odd. */
 static uint8_t m_dma_odd;
 
-/**
- * @brief First time enabling after reset. Used in nRF52 errata 223.
- */
+/* First time enabling after reset. Used in nRF52 errata 223. */
 static bool m_first_enable = true;
 
 #define NRF_USBD_COMMON_FEEDER_BUFFER_SIZE NRF_USBD_COMMON_EPSIZE
 
-/**
- * @brief Buffer used to send data directly from FLASH.
- *
- * This is internal buffer that would be used to emulate the possibility
- * to transfer data directly from FLASH.
- * We do not have to care about the source of data when calling transfer functions.
- *
- * We do not need more buffers that one, because only one transfer can be pending
- * at once.
- */
+/* Bounce buffer for sending data from FLASH */
 static uint32_t m_tx_buffer[NRFX_CEIL_DIV(NRF_USBD_COMMON_FEEDER_BUFFER_SIZE, sizeof(uint32_t))];
 
 /* Early declaration. Documentation above definition. */
@@ -335,17 +263,8 @@ static void usbd_ep_dma_start(nrf_usbd_common_ep_t ep, uint32_t addr, size_t len
 	}
 }
 
-/**
- * @brief Change endpoint number to bit position.
- *
- * Bit positions are defined the same way as they are placed in DATAEPSTATUS register,
- * but bits for endpoint 0 are included.
- *
- * @param ep Endpoint number.
- *
- * @return Bit position related to the given endpoint number.
- *
- * @sa bit2ep
+/* Convert endpoint number to bit position matching EPDATASTATUS register.
+ * Control and isochronous endpoints occupy unused EPDATASTATUS bits.
  */
 static inline uint8_t ep2bit(nrf_usbd_common_ep_t ep)
 {
@@ -353,15 +272,6 @@ static inline uint8_t ep2bit(nrf_usbd_common_ep_t ep)
 	return NRF_USBD_COMMON_EP_BITPOS(ep);
 }
 
-/**
- * @brief Change bit position to endpoint number.
- *
- * @param bitpos Bit position.
- *
- * @return Endpoint number corresponding to given bit position.
- *
- * @sa ep2bit
- */
 static inline nrf_usbd_common_ep_t bit2ep(uint8_t bitpos)
 {
 	BUILD_ASSERT(NRF_USBD_COMMON_EPOUT_BITPOS_0 > NRF_USBD_COMMON_EPIN_BITPOS_0,
@@ -371,12 +281,7 @@ static inline nrf_usbd_common_ep_t bit2ep(uint8_t bitpos)
 		: NRF_USBD_COMMON_EPIN(bitpos));
 }
 
-/**
- * @brief Mark that EasyDMA is working.
- *
- * Internal function to set the flag informing about EasyDMA transfer pending.
- * This function is called always just after the EasyDMA transfer is started.
- */
+/* Prepare DMA for transfer */
 static inline void usbd_dma_pending_set(void)
 {
 	if (nrf_usbd_common_errata_199()) {
@@ -384,12 +289,7 @@ static inline void usbd_dma_pending_set(void)
 	}
 }
 
-/**
- * @brief Mark that EasyDMA is free.
- *
- * Internal function to clear the flag informing about EasyDMA transfer pending.
- * This function is called always just after the finished EasyDMA transfer is detected.
- */
+/* DMA transfer finished */
 static inline void usbd_dma_pending_clear(void)
 {
 	if (nrf_usbd_common_errata_199()) {
@@ -426,19 +326,6 @@ static void disarm_endpoint(uint8_t ep)
 	*((volatile uint32_t *)((uint32_t)(NRF_USBD) + 0x804)) |= BIT(1);
 }
 
-/**
- * @brief Abort pending transfer on selected endpoint.
- *
- * @param ep Endpoint number.
- *
- * @note
- * This function locks interrupts that may be costly.
- * It is good idea to test if the endpoint is still busy before calling this function:
- * @code
-   (m_ep_dma_waiting & (1U << ep2bit(ep)))
- * @endcode
- * This function would check it again, but it makes it inside critical section.
- */
 static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -479,11 +366,6 @@ static void nrf_usbd_legacy_ep_abort(nrf_usbd_common_ep_t ep)
 	usbd_int_rise();
 }
 
-/**
- * @brief Abort all pending endpoints.
- *
- * Function aborts all pending endpoint transfers.
- */
 static void usbd_ep_abort_all(void)
 {
 	uint32_t ep_waiting = m_ep_dma_waiting | (m_ep_ready & NRF_USBD_COMMON_EPOUT_BIT_MASK);
@@ -500,23 +382,11 @@ static void usbd_ep_abort_all(void)
 	m_ep_ready = (((1U << NRF_USBD_COMMON_EPIN_CNT) - 1U) << NRF_USBD_COMMON_EPIN_BITPOS_0);
 }
 
-/**
- * @brief Force the USBD interrupt into pending state.
- *
- * This function is used to force USBD interrupt to be processed right now.
- * It makes it possible to process all EasyDMA access on one thread priority level.
- */
+/* Rise USBD interrupt to trigger interrupt handler */
 static inline void usbd_int_rise(void)
 {
 	NVIC_SetPendingIRQ(USBD_IRQn);
 }
-
-/**
- * @name USBD interrupt runtimes.
- *
- * Interrupt runtimes that would be vectorized using @ref m_isr.
- * @{
- */
 
 static void ev_usbreset_handler(void)
 {
@@ -679,18 +549,12 @@ static void ev_epdata_handler(uint32_t dataepstatus)
 	}
 }
 
-/**
- * @brief Function to select the endpoint to start.
+/* Select endpoint for next DMA transfer.
  *
- * Function that realizes algorithm to schedule right channel for EasyDMA transfer.
- * It gets a variable with flags for the endpoints currently requiring transfer.
+ * Passed value has at least one bit set. Each bit set indicates which endpoints
+ * can have data transferred between peripheral and USB stack buffer.
  *
- * @param[in] req Bit flags for channels currently requiring transfer.
- *                Bits 0...8 used for IN endpoints.
- *                Bits 16...24 used for OUT endpoints.
- * @note
- * This function would be never called with 0 as a @c req argument.
- * @return The bit number of the endpoint that should be processed now.
+ * Return bit position indicating which endpoint to transfer.
  */
 static uint8_t usbd_dma_scheduler_algorithm(uint32_t req)
 {
@@ -698,13 +562,7 @@ static uint8_t usbd_dma_scheduler_algorithm(uint32_t req)
 	return NRF_CTZ(req);
 }
 
-/**
- * @brief Process all DMA requests.
- *
- * Function that have to be called from USBD interrupt handler.
- * It have to be called when all the interrupts connected with endpoints transfer
- * and DMA transfer are already handled.
- */
+/* Process next DMA request, called at the end of interrupt handler */
 static void usbd_dmareq_process(void)
 {
 	uint32_t req = m_ep_dma_waiting & m_ep_ready;
@@ -792,9 +650,6 @@ static void usbd_dmareq_process(void)
 	usbd_ep_dma_start(ep, (uint32_t)payload_buf, payload_len);
 }
 
-/**
- * @brief Begin errata 171.
- */
 static inline void usbd_errata_171_begin(void)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -810,9 +665,6 @@ static inline void usbd_errata_171_begin(void)
 	irq_unlock(irq_lock_key);
 }
 
-/**
- * @brief End errata 171.
- */
 static inline void usbd_errata_171_end(void)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -828,9 +680,6 @@ static inline void usbd_errata_171_end(void)
 	irq_unlock(irq_lock_key);
 }
 
-/**
- * @brief Begin erratas 187 and 211.
- */
 static inline void usbd_errata_187_211_begin(void)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -846,9 +695,6 @@ static inline void usbd_errata_187_211_begin(void)
 	irq_unlock(irq_lock_key);
 }
 
-/**
- * @brief End erratas 187 and 211.
- */
 static inline void usbd_errata_187_211_end(void)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -864,9 +710,6 @@ static inline void usbd_errata_187_211_end(void)
 	irq_unlock(irq_lock_key);
 }
 
-/**
- * @brief Enable USBD peripheral.
- */
 static void nrf_usbd_peripheral_enable(void)
 {
 	if (nrf_usbd_common_errata_187()) {
@@ -893,13 +736,7 @@ static void nrf_usbd_peripheral_enable(void)
 		usbd_errata_187_211_end();
 	}
 }
-/** @} */
 
-/**
- * @name Interrupt handlers
- *
- * @{
- */
 static void nrf_usbd_irq_handler(void)
 {
 	volatile uint32_t *dma_endevent;
@@ -967,9 +804,6 @@ static void nrf_usbd_irq_handler(void)
 
 	usbd_dmareq_process();
 }
-
-/** @} */
-/** @} */
 
 static void nrf_usbd_legacy_enable(void)
 {
