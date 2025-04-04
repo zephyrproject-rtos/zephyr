@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Prevent compiler from warning about using addresses of packed struct members
+add_compile_options($<TARGET_PROPERTY:compiler,no_packed_member_warnings>)
+
 add_library(subsys__bluetooth INTERFACE)
 
 target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
