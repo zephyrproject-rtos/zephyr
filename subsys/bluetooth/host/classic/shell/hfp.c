@@ -73,14 +73,20 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 
 static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 {
-	bt_shell_print("HF SCO connected");
+	bt_shell_print("HF SCO connected %p", sco_conn);
 	hf_sco_conn = sco_conn;
 }
 
 static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	bt_shell_print("HF SCO disconnected");
-	hf_sco_conn = NULL;
+	bt_shell_print("HF SCO disconnected %d", reason);
+
+	if (sco_conn == hf_sco_conn) {
+		hf_sco_conn = NULL;
+	} else {
+		bt_shell_warn("The disconnect SCO conn %p is not aligned with conencted SCO conn"
+			      " %p", sco_conn, hf_sco_conn);
+	}
 }
 
 void hf_service(struct bt_hfp_hf *hf, uint32_t value)
@@ -998,14 +1004,20 @@ static void ag_disconnected(struct bt_hfp_ag *ag)
 
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 {
-	bt_shell_print("ag sco connected");
+	bt_shell_print("ag sco connected %p", sco_conn);
 	hfp_ag_sco_conn = sco_conn;
 }
 
-static void ag_sco_disconnected(struct bt_hfp_ag *ag)
+static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	bt_shell_print("ag sco disconnected");
-	hfp_ag_sco_conn = NULL;
+	bt_shell_print("ag sco disconnected %d", reason);
+
+	if (sco_conn == hfp_ag_sco_conn) {
+		hfp_ag_sco_conn = NULL;
+	} else {
+		bt_shell_warn("The disconnect SCO conn %p is not aligned with conencted SCO conn"
+			      " %p", sco_conn, hfp_ag_sco_conn);
+	}
 }
 
 static int ag_memory_dial(struct bt_hfp_ag *ag, const char *location, char **number)

@@ -2029,8 +2029,8 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 
 	call = get_call_with_flag(ag, BT_HFP_AG_CALL_OPEN_SCO, true);
 
-	if ((bt_ag) && bt_ag->sco_disconnected) {
-		bt_ag->sco_disconnected(ag);
+	if ((bt_ag != NULL) && bt_ag->sco_disconnected) {
+		bt_ag->sco_disconnected(chan->sco, reason);
 	}
 
 	if (!call) {
