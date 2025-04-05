@@ -195,12 +195,12 @@ static inline void z_swap_unlocked(void)
 
 extern int arch_swap(unsigned int key);
 
-static inline void z_sched_switch_spin(struct k_thread *thread)
+static ALWAYS_INLINE void z_sched_switch_spin(struct k_thread *thread)
 {
 	ARG_UNUSED(thread);
 }
 
-static inline int z_swap_irqlock(unsigned int key)
+static ALWAYS_INLINE int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
