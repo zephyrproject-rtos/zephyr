@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEMTECH_SX1261MB1BAS
+	def_bool $(shields_list_contains,semtech_sx1261mb1bas)
+
+config SHIELD_SEMTECH_SX1261MB1CAS
+	def_bool $(shields_list_contains,semtech_sx1261mb1cas)
+
+config SHIELD_SEMTECH_SX1261MB2BAS
+	def_bool $(shields_list_contains,semtech_sx1261mb2bas)
+
+
+config SHIELD_SEMTECH_SX1262MB1CAS
+	def_bool $(shields_list_contains,semtech_sx1262mb1cas)
+
+config SHIELD_SEMTECH_SX1262MB1CBS
+	def_bool $(shields_list_contains,semtech_sx1262mb1cbs)
+
+config SHIELD_SEMTECH_SX1262MB1DAS
+	def_bool $(shields_list_contains,semtech_sx1262mb1das)
+
+config SHIELD_SEMTECH_SX1262MB1PAS
+	def_bool $(shields_list_contains,semtech_sx1262mb1pas)
+
+config SHIELD_SEMTECH_SX1262MB2CAS
+	def_bool $(shields_list_contains,semtech_sx1262mb2cas)
+
+
+config SHIELD_SEMTECH_SX1268MB1GAS
+	def_bool $(shields_list_contains,semtech_sx1268mb1gas)
