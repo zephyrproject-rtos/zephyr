@@ -400,6 +400,7 @@ static int test_wdt_bad_window_max(void)
 	return TC_FAIL;
 }
 
+ZTEST_EXPECT_REBOOT(wdt_basic_test_suite, test_wdt);
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
 	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {

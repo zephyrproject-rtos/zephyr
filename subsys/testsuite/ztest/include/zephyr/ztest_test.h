@@ -44,10 +44,12 @@ extern "C" {
  *
  * @see ZTEST_EXPECT_FAIL
  * @see ZTEST_EXPECT_SKIP
+ * @see ZTEST_EXPECT_REBOOT
  */
 enum ztest_expected_result {
 	ZTEST_EXPECTED_RESULT_FAIL = 0, /**< Expect a test to fail */
 	ZTEST_EXPECTED_RESULT_SKIP,	/**< Expect a test to pass */
+	ZTEST_EXPECTED_RESULT_REBOOTS, /**< Expect a test to cause reboots */
 };
 
 /**
@@ -55,6 +57,7 @@ enum ztest_expected_result {
  *
  * @see ZTEST_EXPECT_FAIL
  * @see ZTEST_EXPECT_SKIP
+ * @see ZTEST_EXPECT_REBOOT
  */
 struct ztest_expected_result_entry {
 	const char *test_suite_name; /**< The test suite's name for the expectation */
@@ -106,6 +109,22 @@ extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[
 #define ZTEST_EXPECT_SKIP(_suite_name, _test_name)                                                 \
 	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_SKIP)
 
+/**
+ * @brief Expect a test to cause reboots
+ *
+ * Adding this macro to your logic will suppress errors related to tests starting multiple times:
+ *
+ *     ZTEST_EXPECT_REBOOT(my_suite, test_x);
+ *     ZTEST(my_suite, text_x) {
+ *       sys_reboot(SYS_REBOOT_COLD);
+ *     }
+ *
+ * @param _suite_name The name of the suite
+ * @param _test_name The name of the test
+ */
+#define ZTEST_EXPECT_REBOOT(_suite_name, _test_name)                                                 \
+	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_REBOOTS)
+
 struct ztest_unit_test {
 	const char *test_suite_name;
 	const char *name;
@@ -131,6 +150,8 @@ struct ztest_suite_stats {
 	uint32_t skip_count;
 	/** The number of times that the suite failed */
 	uint32_t fail_count;
+	/** At least one test in the suite reboots */
+	bool reboots_expected;
 };
 
 struct ztest_unit_test_stats {
@@ -405,6 +426,9 @@ void ztest_test_skip(void);
 
 
 void ztest_skip_failed_assumption(void);
+
+/** @brief Mark a test as expected to trigger reboots */
+#define ZTEST_TEST_REBOOTS BIT(31)
 
 #define Z_TEST_P(suite, fn, t_options) \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \

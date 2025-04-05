@@ -785,10 +785,12 @@ class Gtest(Harness):
 class Test(Harness):
     __test__ = False  # for pytest to skip this class when collects tests
 
+    test_suite_reboots_pattern = re.compile(r"TESTSUITE (?P<suite_name>\S*) reboots")
     test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
     test_suite_end_pattern = re.compile(
         r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
     )
+    test_case_reboots_pattern = re.compile(r"REBOOTS - (test_)?([a-zA-Z0-9_-]+)")
     test_case_start_pattern = re.compile(r"START - (test_)?([a-zA-Z0-9_-]+)")
     test_case_end_pattern = re.compile(
         r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds"
@@ -845,7 +847,9 @@ class Test(Harness):
             logger.debug(f"{phase}: unexpected Ztest suite '{suite_name}' is "
                          f"not present among: {self.instance.testsuite.ztest_suite_names}")
         if suite_name in self.started_suites:
-            if self.started_suites[suite_name]['count'] > 0:
+            extra_run = self.started_suites[suite_name]['count'] > 0
+            extra_expected = self.started_suites[suite_name]['reboots']
+            if extra_run and not extra_expected:
                 # Either the suite restarts itself or unexpected state transition.
                 logger.warning(f"{phase}: already STARTED '{suite_name}':"
                                f"{self.started_suites[suite_name]}")
@@ -854,7 +858,7 @@ class Test(Harness):
             self.started_suites[suite_name]['count'] += 1
             self.started_suites[suite_name]['repeat'] += 1
         else:
-            self.started_suites[suite_name] = { 'count': 1, 'repeat': 0 }
+            self.started_suites[suite_name] = { 'count': 1, 'repeat': 0, 'reboots': False }
 
     def end_suite(self, suite_name, phase='TS_END', suite_status=None):
         if suite_name in self.started_suites:
@@ -875,12 +879,14 @@ class Test(Harness):
 
     def start_case(self, tc_name, phase='TC_START'):
         if tc_name in self.started_cases:
-            if self.started_cases[tc_name]['count'] > 0:
+            extra_run = self.started_cases[tc_name]['count'] > 0
+            extra_expected = self.started_cases[tc_name]['reboots']
+            if extra_run and not extra_expected:
                 logger.warning(f"{phase}: already STARTED case "
                                f"'{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] += 1
         else:
-            self.started_cases[tc_name] = { 'count': 1 }
+            self.started_cases[tc_name] = { 'count': 1, 'reboots': False }
 
     def end_case(self, tc_name, phase='TC_END'):
         if tc_name in self.started_cases:
@@ -907,6 +913,9 @@ class Test(Harness):
         elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
             suite_name=test_suite_end_match.group("suite_name")
             self.end_suite(suite_name)
+        elif test_suite_reboots_match := re.search(self.test_suite_reboots_pattern, line):
+            suite = self.started_suites.get(test_suite_reboots_match.group("suite_name"))
+            suite['reboots'] = True
         elif testcase_match := re.search(self.test_case_start_pattern, line):
             tc_name = testcase_match.group(2)
             tc = self.get_testcase(tc_name, 'TC_START')
@@ -935,6 +944,10 @@ class Test(Harness):
             self.testcase_output = ""
             self._match = False
             self.ztest = True
+        elif reboots_match := re.search(self.test_case_reboots_pattern, line):
+            tc_name = reboots_match.group(2)
+            tc = self.get_testcase(tc_name, 'TC_START')
+            self.started_cases[tc.name]['reboots'] = True
         elif test_suite_summary_match := self.test_suite_summary_pattern.match(line):
             suite_name=test_suite_summary_match.group("suite_name")
             suite_status=test_suite_summary_match.group("suite_status")
