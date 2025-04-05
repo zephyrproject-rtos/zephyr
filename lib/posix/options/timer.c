@@ -190,7 +190,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	goto out;
 
 free_timer:
-	k_mem_slab_free(&posix_timer_slab, (void *)&timer);
+	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 
 out:
 	return ret;
