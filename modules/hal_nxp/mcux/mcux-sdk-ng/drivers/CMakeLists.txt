@@ -4,7 +4,9 @@
 
 function(set_variable_ifdef feature_toggle variable)
   if(${${feature_toggle}})
-    set(${variable} ON CACHE INTERNAL "global variable")
+    set(${variable} ON PARENT_SCOPE)
+    set_property(GLOBAL PROPERTY GV_${variable} ON)
+    set_property(GLOBAL APPEND PROPERTY GLOBAL_VARS_LIST ${variable})
   endif()
 endfunction()
 
