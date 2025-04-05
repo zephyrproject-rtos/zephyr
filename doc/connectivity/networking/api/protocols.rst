@@ -17,3 +17,4 @@ Protocols
    mqtt_sn
    ptp
    tftp
+   latmon
