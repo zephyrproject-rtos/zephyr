@@ -13,6 +13,7 @@
 #include "sl_ieee802_types.h"
 #include "sl_si91x_types.h"
 #include "sl_si91x_protocol_types.h"
+#include "nwp.h"
 
 struct siwx91x_dev {
 	struct net_if *iface;
@@ -21,6 +22,8 @@ struct siwx91x_dev {
 	enum wifi_iface_state scan_prev_state;
 	scan_result_cb_t scan_res_cb;
 	uint16_t scan_max_bss_cnt;
+	siwx91x_boot_config_t boot_cfg;
+	bool reboot_needed;
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 	struct k_event fds_recv_event;
