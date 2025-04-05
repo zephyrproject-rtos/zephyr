@@ -647,7 +647,10 @@ static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 	}
 
 	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
-	     smp->method == JUST_WORKS) {
+		smp->method == JUST_WORKS) {
+		if (IS_ENABLED(CONFIG_BT_SMP_ALLOW_UNAUTH_OVERWRITE_AUTHENTICATED)) {
+			return true;
+		}
 		return false;
 	}
 
