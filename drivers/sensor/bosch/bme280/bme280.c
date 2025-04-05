@@ -168,15 +168,6 @@ int bme280_sample_fetch_helper(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-	(void)pm_device_state_get(dev, &state);
-	/* Do not allow sample fetching from suspended state */
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
-		return -EIO;
-	}
-#endif
-
 #ifdef CONFIG_BME280_MODE_FORCED
 	ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
 	if (ret < 0) {
