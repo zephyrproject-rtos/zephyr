@@ -33,7 +33,7 @@ extern "C" {
  * microseconds. SYS_FOREVER_US value lifts the latency constraint. Other values
  * are forbidden.
  */
-typedef void (*pm_policy_latency_changed_cb_t)(int32_t latency);
+typedef void (*pm_policy_latency_changed_cb_t)(uint32_t latency);
 
 /**
  * @brief Latency change subscription.
