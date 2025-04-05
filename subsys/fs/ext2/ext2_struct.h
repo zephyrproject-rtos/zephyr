@@ -8,6 +8,7 @@
 #define __EXT2_STRUCT_H__
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/uuid.h>
 #include "ext2.h"
 
 /* Disk structures ---------------------------------------------------------- */
@@ -44,14 +45,14 @@ struct ext2_disk_superblock {
 	uint32_t s_feature_compat;
 	uint32_t s_feature_incompat;
 	uint32_t s_feature_ro_compat;
-	uint8_t s_uuid[16];
+	uint8_t s_uuid[UUID_SIZE];
 	uint8_t s_volume_name[16];
 	uint8_t s_last_mounted[64];
 	uint32_t s_algo_bitmap;
 	uint8_t s_prealloc_blocks;
 	uint8_t s_prealloc_dir_blocks;
 	uint8_t s_align[2];
-	uint8_t s_journal_uuid[16];
+	uint8_t s_journal_uuid[UUID_SIZE];
 	uint32_t s_journal_inum;
 	uint32_t s_journal_dev;
 	uint32_t s_last_orphan;
