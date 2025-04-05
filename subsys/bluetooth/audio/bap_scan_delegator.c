@@ -245,13 +245,13 @@ static void receive_state_updated(struct bt_conn *conn,
 	bt_debug_dump_recv_state(internal_state);
 	net_buf_put_recv_state(internal_state);
 	bass_notify_receive_state(internal_state);
+	k_sem_give(&read_buf_sem);
+
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->recv_state_updated != NULL) {
 		scan_delegator_cbs->recv_state_updated(conn,
 						       &internal_state->state);
 	}
-
-	k_sem_give(&read_buf_sem);
 }
 
 static void bis_sync_request_updated(struct bt_conn *conn,
