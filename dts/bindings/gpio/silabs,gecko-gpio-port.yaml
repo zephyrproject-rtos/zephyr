@@ -1,4 +1,4 @@
-description: SiLabs Gecko GPIO Port
+description: Series 0-2 GPIO (General Purpose Input/Output) Port
 
 compatible: "silabs,gecko-gpio-port"
 
