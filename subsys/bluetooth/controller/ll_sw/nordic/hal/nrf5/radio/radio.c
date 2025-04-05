@@ -2511,6 +2511,12 @@ uint32_t radio_ccm_mic_is_valid(void)
 	return (NRF_CCM->MICSTATUS != 0);
 }
 
+void radio_ccm_disable(void)
+{
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_STOP);
+	nrf_ccm_disable(NRF_CCM);
+}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
 
