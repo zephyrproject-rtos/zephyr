@@ -22,6 +22,8 @@
 #include <zephyr/shell/shell_rpmsg.h>
 #endif
 
+#include <zephyr/drivers/misc/addr_translation/addr_translation.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
@@ -30,6 +32,11 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
 #error "Sample requires definition of shared memory for rpmsg"
 #endif
+
+static const struct device *metal_io_addr_translate_dev =
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_ipc_shm_translation),
+		    (DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_shm_translation))),
+		    (NULL));
 
 /* Constants derived from device tree */
 #define SHM_NODE		DT_CHOSEN(zephyr_ipc_shm)
@@ -152,7 +159,8 @@ int platform_init(void)
 
 	/* declare shared memory region */
 	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+		      SHM_SIZE, -1, 0,
+		      metal_io_get_ops(metal_io_addr_translate_dev));
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_table, &rsc_size);
