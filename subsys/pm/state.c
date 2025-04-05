@@ -66,3 +66,18 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
 
 	return states_per_cpu[cpu];
 }
+
+const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id)
+{
+	__ASSERT_NO_MSG(cpu < ARRAY_SIZE(cpus_states));
+	const struct pm_state_info *states = cpus_states[cpu];
+	uint8_t cnt = states_per_cpu[cpu];
+
+	for (uint8_t i = 0; i < cnt; i++) {
+		if ((states[i].state == state) && (states[i].substate_id == substate_id)) {
+			return &states[i];
+		}
+	}
+
+	return NULL;
+}
