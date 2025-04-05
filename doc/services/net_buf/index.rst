@@ -53,11 +53,6 @@ The buffers have native support for being passed through k_fifo kernel
 objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer
 from one thread to another.
 
-Special functions exist for dealing with buffers in single linked lists,
-where the :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
-functions must be used instead of :c:func:`sys_slist_append` and
-:c:func:`sys_slist_get`.
-
 Common Operations
 *****************
 
