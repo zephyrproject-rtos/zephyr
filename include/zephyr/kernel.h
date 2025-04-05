@@ -332,8 +332,14 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 /**
  * @brief Dynamically allocate a thread stack.
  *
+ * Dynamically allocate a thread stack either from a pool of thread stacks of size
+ * @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap. Order is determined by the
+ * kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL}
+ * options. Thread stacks from the pool are of maximum size
+ * @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
+ *
  * Relevant stack creation flags include:
- * - @ref K_USER allocate a userspace thread (requires `CONFIG_USERSPACE=y`)
+ * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
  *
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
@@ -341,7 +347,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * @retval the allocated thread stack on success.
  * @retval NULL on failure.
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
 
@@ -355,7 +361,7 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
  * @retval -EINVAL if @p stack is invalid.
  * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall int k_thread_stack_free(k_thread_stack_t *stack);
 
@@ -373,7 +379,7 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * Stack objects passed to this function must be originally defined with
+ * Stack objects passed to this function may be statically allocated with
  * either of these macros in order to be portable:
  *
  * - K_THREAD_STACK_DEFINE() - For stacks that may support either user or
@@ -381,6 +387,10 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * - K_KERNEL_STACK_DEFINE() - For stacks that may support supervisor
  *   threads only. These stacks use less memory if CONFIG_USERSPACE is
  *   enabled.
+ *
+ * Alternatively, the stack may be dynamically allocated using
+ * @ref k_thread_stack_alloc. If this is the case, then the stack should
+ * be freed using @ref k_thread_stack_free after joining the thread.
  *
  * The stack_size parameter has constraints. It must either be:
  *
