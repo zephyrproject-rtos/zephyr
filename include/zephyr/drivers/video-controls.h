@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright (c) 2024 tinyVision.ai Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +30,8 @@
  * @{
  */
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,7 +57,13 @@ extern "C" {
 /** Amount of time an image sensor is exposed to light, affecting the brightness */
 #define VIDEO_CID_EXPOSURE (VIDEO_CID_BASE + 17)
 
-/** Amount of amplification performed to each pixel electrical signal, affecting the brightness */
+/** Automatic gain control */
+#define VIDEO_CID_AUTOGAIN (VIDEO_CID_BASE + 18)
+
+/** Gain control. Most devices control only digital gain with this control.
+ * Devices that recognise the difference between digital and analogue gain use
+ * VIDEO_CID_DIGITAL_GAIN and VIDEO_CID_ANALOGUE_GAIN.
+ */
 #define VIDEO_CID_GAIN (VIDEO_CID_BASE + 19)
 
 /** Flip the image horizontally: the left side becomes the right side */
@@ -74,6 +83,9 @@ enum video_power_line_frequency {
 
 /** Balance of colors in direction of blue (cold) or red (warm) */
 #define VIDEO_CID_WHITE_BALANCE_TEMPERATURE (VIDEO_CID_BASE + 26)
+
+/** Last base CID + 1 */
+#define VIDEO_CID_LASTP1 (VIDEO_CID_BASE + 44)
 
 /**
  * @}
@@ -131,6 +143,9 @@ enum video_power_line_frequency {
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
+/** Analogue gain control. */
+#define VIDEO_CID_ANALOGUE_GAIN (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 3)
+
 /**
  * @}
  */
@@ -156,6 +171,85 @@ enum video_power_line_frequency {
  * @{
  */
 #define VIDEO_CID_PRIVATE_BASE 0x08000000
+
+/**
+ * @}
+ */
+
+/**
+ * @name Query flags, to be ORed with the control ID
+ * @{
+ */
+
+#define VIDEO_CTRL_FLAG_NEXT_CTRL 0x80000000
+
+/**
+ * @}
+ */
+
+/**
+ * @struct video_control
+ * @brief Video control structure
+ *
+ * Used to get/set a video control.
+ */
+struct video_control {
+	/** control id */
+	uint32_t id;
+	/** control value */
+	union {
+		int32_t val;
+		int64_t val64;
+	};
+};
+
+/**
+ * @}
+ */
+
+struct video_ctrl_range {
+	/** control minimum value, inclusive */
+	union {
+		int32_t min;
+		int64_t min64;
+	};
+	/** control maximum value, inclusive */
+	union {
+		int32_t max;
+		int64_t max64;
+	};
+	/** control value step */
+	union {
+		int32_t step;
+		int64_t step64;
+	};
+	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
+	 * _INTEGER_MENU, not valid for other types
+	 */
+	union {
+		int32_t def;
+		int64_t def64;
+	};
+};
+
+/**
+ * @struct video_control_query
+ * @brief Video control query structure
+ *
+ * Used to query information about a control.
+ */
+struct video_ctrl_query {
+	/** control id */
+	uint32_t id;
+	/** control type */
+	uint32_t type;
+	/** control name */
+	const char *name;
+	/** control flags */
+	uint32_t flags;
+	/** control range */
+	struct video_ctrl_range range;
+};
 
 /**
  * @}

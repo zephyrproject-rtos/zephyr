@@ -15,6 +15,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 
 struct emul_rx_config {
@@ -28,22 +30,6 @@ struct emul_rx_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 };
-
-static int emul_rx_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	/* Forward all controls to the source */
-	return video_set_ctrl(cfg->source_dev, cid, value);
-}
-
-static int emul_rx_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	/* Forward all controls to the source */
-	return video_get_ctrl(cfg->source_dev, cid, value);
-}
 
 static int emul_rx_set_frmival(const struct device *dev, enum video_endpoint_id ep,
 			       struct video_frmival *frmival)
@@ -246,8 +232,6 @@ static int emul_rx_flush(const struct device *dev, enum video_endpoint_id ep, bo
 }
 
 static DEVICE_API(video, emul_rx_driver_api) = {
-	.set_ctrl = emul_rx_set_ctrl,
-	.get_ctrl = emul_rx_get_ctrl,
 	.set_frmival = emul_rx_set_frmival,
 	.get_frmival = emul_rx_get_frmival,
 	.enum_frmival = emul_rx_enum_frmival,
@@ -296,6 +280,8 @@ int emul_rx_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);       \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n), emul_rx_cfg_##n.source_dev);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)
