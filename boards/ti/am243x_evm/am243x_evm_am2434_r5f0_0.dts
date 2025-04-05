@@ -1,0 +1,60 @@
+/* Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ti/am64x_am243x_r5.dtsi>
+#include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
+
+/ {
+	model = "TI AM243x AM2434 R5";
+	compatible = "ti,am2434";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,sram1 = &btcm;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &ld26;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld26: led_0 {
+			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	rsc_table: memory@a0100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa0100000 DT_SIZE_M(1)>;
+		zephyr,memory-region = "RSC_TABLE";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&mcu_gpio0 {
+	pinctrl-0 = <&mcu_gpio0_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl &i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
