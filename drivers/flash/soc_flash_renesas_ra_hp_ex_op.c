@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #endif
 
 #include <soc.h>
-#include "flash_hp_ra.h"
+#include "soc_flash_renesas_ra_hp.h"
 
 #define FLASH_HP_CONFIG_SET_ACCESS_WORD_CNT (8U)
 
@@ -271,7 +271,7 @@ static fsp_err_t R_FLASH_HP_BlockProtectGet(flash_ctrl_t *const p_api_ctrl, uint
 	return err;
 }
 
-#if defined(CONFIG_FLASH_RA_WRITE_PROTECT)
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT)
 int flash_ra_block_protect_get(const struct device *dev,
 			       struct flash_ra_ex_write_protect_out *response)
 {
@@ -382,4 +382,4 @@ int flash_ra_block_protect_set(const struct device *dev,
 	return 0;
 }
 
-#endif /* CONFIG_FLASH_RA_WRITE_PROTECT */
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT */
