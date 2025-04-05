@@ -29,4 +29,12 @@ config RTS5912_DEBUG_SWJ
 	help
 	  Enables the serial wire JTAG connection on the RTS5912 EC.
 
+config SOC_RTS5912_ULPM
+	bool "Realtek RTS5912 ULPM (Ultra Low Power Mode)"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_ULPM_ENABLED
+	select HAS_POWEROFF
+	help
+	  Enable support for RTS5912 ULPM PWR wake-up pins.
+
 endif # SOC_SERIES_RTS5912
