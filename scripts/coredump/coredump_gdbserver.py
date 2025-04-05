@@ -43,6 +43,10 @@ def parse_args():
 
     parser.add_argument("elffile", help="Zephyr ELF binary")
     parser.add_argument("logfile", help="Coredump binary log file")
+    parser.add_argument("--additionalelf", action="extend", nargs="*",
+                        help="""Additional ELF binaries, may optionally specify
+                        text address to load at after a colon. This option may
+                        be specified multiple times.""")
     parser.add_argument("--debug", action="store_true",
                         help="Print extra debugging information")
     parser.add_argument("--port", type=int, default=1234,
@@ -99,6 +103,9 @@ def main():
     logger.info(f"Log file: {args.logfile}")
     logger.info(f"ELF file: {args.elffile}")
 
+    if args.additionalelf:
+        logger.info(f"Additional ELF files: {args.additionalelf}")
+
     # Parse the coredump binary log file
     logf = CoredumpLogFile(args.logfile)
     logf.open()
@@ -116,7 +123,24 @@ def main():
         logf.close()
         sys.exit(1)
 
-    gdbstub = gdbstubs.get_gdbstub(logf, elff)
+    elffs = [elff]
+
+    if args.additionalelf:
+        for elf in args.additionalelf:
+            if ":" in elf:
+                elf, textaddr = elf.split(":")
+            else:
+                textaddr = None
+
+            if textaddr is not None:
+                additionalelff = CoredumpElfFile(os.path.expanduser(elf), int(textaddr, 0))
+            else:
+                additionalelff = CoredumpElfFile(os.path.expanduser(elf))
+            additionalelff.open()
+            if additionalelff.parse():
+                elffs.append(additionalelff)
+
+    gdbstub = gdbstubs.get_gdbstub(logf, elffs)
 
     if not args.pipe:
         # Start a GDB server
