@@ -432,6 +432,7 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
+	dev_data->chan[chan_id].capacity = 0;
 
 	return true;
 }
