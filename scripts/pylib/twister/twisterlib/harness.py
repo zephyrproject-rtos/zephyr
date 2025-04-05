@@ -785,6 +785,9 @@ class Gtest(Harness):
 class Test(Harness):
     __test__ = False  # for pytest to skip this class when collects tests
 
+    # Ztest log patterns don't require to match the line start exactly: there are platforms
+    # where there is some logging prefix at each console line whereas on other platforms
+    # without prefixes the leading space is stripped.
     test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
     test_suite_end_pattern = re.compile(
         r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
@@ -798,7 +801,7 @@ class Test(Harness):
         r" .* duration = (\d*[.,]?\d*) seconds"
     )
     test_case_summary_pattern = re.compile(
-        r" - (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
+        r".*- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
     )
 
 
@@ -896,17 +899,16 @@ class Test(Harness):
         elif phase != 'TS_SUM':
             logger.warning(f"{phase}: END case '{tc_name}' without START detected")
 
-
     def handle(self, line):
         testcase_match = None
         if self._match:
             self.testcase_output += line + "\n"
-
         if test_suite_start_match := re.search(self.test_suite_start_pattern, line):
             self.start_suite(test_suite_start_match.group("suite_name"))
         elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
             suite_name=test_suite_end_match.group("suite_name")
             self.end_suite(suite_name)
+            self.ztest = True
         elif testcase_match := re.search(self.test_case_start_pattern, line):
             tc_name = testcase_match.group(2)
             tc = self.get_testcase(tc_name, 'TC_START')
@@ -947,6 +949,11 @@ class Test(Harness):
             tc_name = test_case_summary_match.group(4)
             tc = self.get_testcase(tc_name, 'TS_SUM', suite_name)
             self.end_case(tc.name, 'TS_SUM')
+            if tc.status not in [TwisterStatus.NONE, TwisterStatus[matched_status]]:
+                # TestCase miss its END log entry, so its status is from the Suite summary.
+                logger.warning(
+                    f"TS_SUM: {tc.name} force status: {tc.status}->{TwisterStatus[matched_status]}"
+                )
             tc.status = TwisterStatus[matched_status]
             if tc.status == TwisterStatus.SKIP:
                 tc.reason = "ztest skip"
@@ -960,7 +967,7 @@ class Test(Harness):
         self.process_test(line)
 
         if not self.ztest and self.status != TwisterStatus.NONE:
-            logger.debug(f"not a ztest and no state for {self.id}")
+            logger.debug(f"{self.id} is not a Ztest, status:{self.status}")
             tc = self.instance.get_case_or_create(self.id)
             if self.status == TwisterStatus.PASS:
                 tc.status = TwisterStatus.PASS
