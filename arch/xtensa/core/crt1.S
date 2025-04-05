@@ -7,6 +7,11 @@
  * Control arrives here at _start from the reset vector.
  */
 
+#if defined(CONFIG_BOARD_XT_SIM) && defined(CONFIG_BOOTARGS)
+#include <xtensa/simboard.h>
+#include <xtensa/simcall.h>
+#endif
+
 #include <xtensa/coreasm.h>
 
 /* Exports */
@@ -84,6 +89,39 @@ _start:
 	 * window size of 4, the stack frame for _start can be empty.
 	 */
 	movi	sp, __stack
+
+#if defined(CONFIG_BOARD_XT_SIM) && defined(CONFIG_BOOTARGS)
+	/* Reserve stack space for
+	 *	- argv array
+	 *	- argument strings
+	 */
+	movi	a2, SYS_iss_argv_size
+	simcall                       /* returns size of argv[] + its strings in a2 */
+
+	/* The stack only needs 16-byte alignment.
+	 * However, here we round up the argv size further to 128 byte multiples
+	 * so that in most cases, variations in argv[0]'s path do not result in
+	 * different stack allocation.  Otherwise, such variations can impact
+	 * execution timing (eg. due to cache effects etc) for the same code and data.
+	 * If we have an outbound bus, it's more likely there's enough memory.
+	 */
+# if XCHAL_HAVE_PIF
+	addi	a2, a2, 127
+	srli	a2, a2, 7
+	slli	a2, a2, 7
+# else
+	/* Keep stack 16-byte aligned */
+	addi	a2, a2, 15
+	srli	a2, a2, 4
+	slli	a2, a2, 4
+# endif
+
+	/* No need to use MOVSP because we have no caller (we're the base caller).
+	 * In fact it's better not to use MOVSP in this context, to avoid unnecessary
+	 * ALLOCA exceptions and copying from undefined memory.
+	 */
+	sub	sp, sp, a2
+#endif /* CONFIG_BOARD_XT_SIM && CONFIG_BOOTARGS */
 
 	/*
 	 *  Now that sp (a1) is set, we can set PS as per the application (user
@@ -187,6 +225,23 @@ _start:
 .L3zte:
 
 #endif /* !XCHAL_HAVE_BOOTLOADER */
+
+#if defined(CONFIG_BOARD_XT_SIM)
+	/* Get argv with the arguments from the ISS */
+	movi	a2, SYS_iss_set_argv
+	mov	a3, sp			/* tell simcall where to write argv[] */
+	simcall				/* write argv[] array at a3 */
+	movi	a2, SYS_iss_argc
+	simcall				/* put argc in a2 */
+#if defined (__XTENSA_CALL0_ABI__)
+	mov	a12, a2			/* save argc (a2 is ARG1) */
+#else
+	mov	ARG1, a2		/* argc */
+#endif
+	mov	ARG2, sp		/* argv */
+	/* Save argc and argv */
+	CALL	z_save_bootargs
+#endif /* CONFIG_BOARD_XT_SIM */
 
 	/* Enter C domain, never returns from here */
 	CALL	z_prep_c
