@@ -59,9 +59,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	case MCUX_PORT3_CLK:
 		CLOCK_EnableClock(kCLOCK_GatePORT3);
 		break;
+#if (defined(FSL_FEATURE_SOC_PORT_COUNT) && (FSL_FEATURE_SOC_PORT_COUNT > 4))
 	case MCUX_PORT4_CLK:
 		CLOCK_EnableClock(kCLOCK_GatePORT4);
 		break;
+#endif /* defined(FSL_FEATURE_SOC_PORT_COUNT) */
 #else
 	case MCUX_PORT0_CLK:
 		CLOCK_EnableClock(kCLOCK_Port0);
