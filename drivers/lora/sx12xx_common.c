@@ -16,6 +16,14 @@
 
 #include "sx12xx_common.h"
 
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1261) || \
+	DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1262) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32wl_subghz_radio)
+#include <sx126x-board.h>
+#define SX126X_RADIO 1
+#endif
+
+#define MAX_PAYLOAD_LEN 255
 #define STATE_FREE      0
 #define STATE_BUSY      1
 #define STATE_CLEANUP   2
@@ -29,6 +37,11 @@ struct sx12xx_rx_params {
 	int8_t *snr;
 };
 
+struct sx12xx_tx_params {
+	uint8_t buf[MAX_PAYLOAD_LEN];
+	uint32_t size;
+};
+
 static struct sx12xx_data {
 	const struct device *dev;
 	struct k_poll_signal *operation_done;
@@ -38,6 +51,7 @@ static struct sx12xx_data {
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
+	struct sx12xx_tx_params tx_params;
 } dev_data;
 
 int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
@@ -57,6 +71,22 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 	}
 
 	return 0;
+}
+
+/**
+ * @brief Calculate the time it takes to perform a CAD operation
+ *
+ * @param cad_symbol_num Number of symbols to perform CAD
+ * @param bw LoRa signal bandwidth
+ * @param sf LoRa data-rate
+ *
+ * @return Time in milliseconds to perform CAD operation
+ */
+static uint32_t calculate_cad_time(uint8_t cad_symbol_num, enum lora_signal_bandwidth bw,
+				   enum lora_datarate sf)
+{
+	uint32_t t_sym_us = (1 << sf) * 1000000 / ((bw + 1) * 125000);
+	return t_sym_us * (cad_symbol_num + 1) / 1000;
 }
 
 /**
@@ -153,6 +183,22 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 	k_poll_signal_raise(sig, 0);
 }
 
+static void sx12xx_ev_cad_done(bool detected)
+{
+	if (detected) {
+		struct k_poll_signal *sig = dev_data.operation_done;
+		if (modem_release(&dev_data)) {
+			/* Raise signal if provided */
+			if (sig) {
+				k_poll_signal_raise(sig, -EBUSY);
+			}
+		}
+	} else {
+		Radio.SetMaxPayloadLength(MODEM_LORA, dev_data.tx_params.size);
+		Radio.Send(dev_data.tx_params.buf, dev_data.tx_params.size);
+	}
+}
+
 static void sx12xx_ev_tx_done(void)
 {
 	struct k_poll_signal *sig = dev_data.operation_done;
@@ -200,7 +246,10 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		K_POLL_TYPE_SIGNAL,
 		K_POLL_MODE_NOTIFY_ONLY,
 		&done);
+	uint32_t cad_time;
 	uint32_t air_time;
+	unsigned int signaled;
+	int flag;
 	int ret;
 
 	/* Validate that we have a TX configuration */
@@ -222,12 +271,27 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 				   0, data_len, true);
 	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
 
+	/* Calculate CAD time */
+	if (dev_data.tx_cfg.cad) {
+		cad_time =
+			calculate_cad_time(8, dev_data.tx_cfg.bandwidth, dev_data.tx_cfg.datarate);
+		LOG_DBG("Expected CAD time = %dms", cad_time);
+	} else {
+		cad_time = 0;
+	}
+
 	/* Wait for the packet to finish transmitting.
 	 * Use twice the tx duration to ensure that we are actually detecting
 	 * a failed transmission, and not some minor timing variation between
 	 * modem and driver.
 	 */
-	ret = k_poll(&evt, 1, K_MSEC(2 * air_time));
+	ret = k_poll(&evt, 1, K_MSEC(2 * air_time + 2 * cad_time));
+
+	k_poll_signal_check(&done, &signaled, &flag);
+	if (signaled && flag == -EBUSY) {
+		return -EBUSY;
+	}
+
 	if (ret < 0) {
 		LOG_ERR("Packet transmission failed!");
 		if (!modem_release(&dev_data)) {
@@ -246,12 +310,36 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 		return -EBUSY;
 	}
 
+	/* Check if data length exceeds maximum payload length */
+	if (data_len > MAX_PAYLOAD_LEN) {
+		modem_release(&dev_data);
+		return -EINVAL;
+	}
+
 	/* Store signal */
 	dev_data.operation_done = async;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+	if (dev_data.tx_cfg.cad) {
 
-	Radio.Send(data, data_len);
+		/* Enforce that a signal must be provided if CAD is enabled */
+		if (!async) {
+			modem_release(&dev_data);
+			return -EINVAL;
+		}
+
+		memcpy(dev_data.tx_params.buf, data, data_len);
+		dev_data.tx_params.size = data_len;
+
+		Radio.Standby();
+#ifdef SX126X_RADIO
+		SX126xSetCadParams(LORA_CAD_08_SYMBOL, dev_data.tx_cfg.datarate + 13, 10,
+				   LORA_CAD_ONLY, 0);
+#endif
+		Radio.StartCad();
+	} else {
+		Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+		Radio.Send(data, data_len);
+	}
 
 	return 0;
 }
@@ -280,7 +368,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	dev_data.rx_params.rssi = rssi;
 	dev_data.rx_params.snr = snr;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(MODEM_LORA, MAX_PAYLOAD_LEN);
 	Radio.Rx(0);
 
 	ret = k_poll(&evt, 1, timeout);
@@ -328,7 +416,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 	dev_data.async_user_data = user_data;
 
 	/* Start reception */
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(MODEM_LORA, MAX_PAYLOAD_LEN);
 	Radio.Rx(0);
 
 	return 0;
@@ -389,6 +477,7 @@ int sx12xx_init(const struct device *dev)
 	dev_data.events.RxError = sx12xx_ev_rx_error;
 	/* TX timeout event raises at the end of the test CW transmission */
 	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
+	dev_data.events.CadDone = sx12xx_ev_cad_done;
 	Radio.Init(&dev_data.events);
 
 	/*
