@@ -22,7 +22,7 @@
 #include "usb.h"
 #endif
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
