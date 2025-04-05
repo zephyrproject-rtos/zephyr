@@ -351,6 +351,8 @@ The default jumper settings for the OLIMEXIMO-STM32E are:
 Flashing Zephyr onto OLIMEXINO-STM32
 ************************************
 
+.. zephyr:board-supported-runners::
+
 Flashing the Zephyr kernel onto OLIMEXINO-STM32 requires the
 `stm32flash tool`_.
 

@@ -113,6 +113,8 @@ The first ENET1 port could be enabled for M7 by west build option
 Programming and Debugging (A55)
 *******************************
 
+.. zephyr:board-supported-runners::
+
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
 

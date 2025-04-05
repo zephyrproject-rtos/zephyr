@@ -42,6 +42,8 @@ Supported Features
 Programming and Debugging
 =========================
 
+.. zephyr:board-supported-runners::
+
 The RAK11720 board shall be connected to a Segger Embedded Debugger Unit
 `J-Link OB <https://www.segger.com/jlink-ob.html>`_. This provides a debug
 interface to the Apollo3 Blue chip. You can use JLink to communicate with
