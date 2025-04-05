@@ -162,7 +162,7 @@ Open the serial monitor using the following command:
 
 .. code-block:: console
 
-   $ west espressif monitor
+   west espressif monitor
 
 After the board has automatically reset and booted, you should see the following
 message in the monitor:
@@ -209,6 +209,80 @@ You can debug an application in the usual way. Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+Programming the FPGA
+====================
+
+Download and save the ICE-V Wireless `default bitstream`_ to the current working directory.
+
+.. code-block:: console
+
+   curl -L -o bitstream.bin 'https://github.com/ICE-V-Wireless/ICE-V-Wireless/blob/main/Firmware/spiffs/bitstream.bin?raw=true'
+   printf "Bitstream size is 0x%x\n" $(wc -c bitstream.bin | awk '{print $1}')
+   printf "Bitstream CRC is %s\n" $(crc32 bitstream.bin)
+   truncate -s %4 bitstream.bin
+   printf "Rounded bitstream size is 0x%x\n" $(wc -c bitstream.bin | awk '{print $1}')
+
+.. code-block:: console
+
+   Bitstream size is 0x1969a
+   Bitstream CRC is 8d34da6c
+   Bitstream padded size is 0x1969c
+
+Build and flash the :ref:`flash_shell` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/flash_shell
+   :board: icev_wireless
+   :maybe-skip-config:
+   :goals: flash
+
+Open a terminal to the device via USB:
+
+.. code-block:: console
+
+   minicom -D /dev/tty.usbmodem1101 -b 115200
+
+Clear the `image-scratch` partition:
+
+.. code-block:: console
+
+   flash erase flash-controller@60002000 0x00210000 0x20000
+
+Prepare to load the ICE-V Wireless bitstream to the `image-scratch` partition:
+
+.. note::
+
+   Use the padded bitstream size (0x1969c below), as `flash load` needs every
+   image padded to a multiple of 4 bytes.
+
+.. code-block:: console
+
+   flash load flash-controller@60002000 0x00210000 0x1969c
+
+Transmit the ICE-V Wireless bitstream  to the `image-scratch` partition:
+
+.. code-block:: console
+
+   dd if=bitstream.bin of=/dev/tty.usbmodem1101
+
+Although unlikely, it may be possible that the bitstream was corrupted
+transferring serially, so it's a good idea to check the CRC value.
+
+.. code-block:: console
+
+   crc 0x3c020000 0x1969a
+
+
+Load the bitstream from flash:
+
+.. note::
+
+   Use the unpadded bitstream size (104090 below) for `fpga load`.
+
+.. code-block:: console
+
+   fpga load fpga@0 0x3c020000 0x1969a
+
 References
 **********
 
@@ -216,6 +290,9 @@ References
 
 .. _ICE-V Wireless Github Project:
    https://github.com/ICE-V-Wireless/ICE-V-Wireless
+
+.. _ICE-V Wireless Default Bitstream:
+   https://github.com/ICE-V-Wireless/ICE-V-Wireless/blob/main/Firmware/spiffs/bitstream.bin
 
 .. _ESP32-C3-MINI-1 Datasheet:
    https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
