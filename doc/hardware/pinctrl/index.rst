@@ -436,6 +436,11 @@ function :c:func:`pinctrl_apply_state_direct` to skip state lookup if it is
 cached in advance (e.g. at init time). Since state lookup time is expected to be
 fast, it is recommended to use :c:func:`pinctrl_apply_state`.
 
+Device drivers like timers may need to control multiple groups of similar pins
+separately so that different states are applied to each group. In such cases,
+the driver can partially apply a state to a group of contiguously defined pins
+using :c:func:`pinctrl_apply_partial_state` or its ``_direct`` variant.
+
 The example below contains a complete example of a device driver that uses the
 ``pinctrl`` API.
 
