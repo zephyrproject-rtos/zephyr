@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/usb/usb_ch9.h>
 
 #ifndef ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_

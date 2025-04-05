@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -165,6 +166,33 @@ ZTEST(util, test_UTIL_AND) {
 	zassert_equal(UTIL_AND(7, SEVEN), 7);
 	zassert_equal(UTIL_AND(SEVEN, 7), 7);
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
+}
+
+ZTEST(util, test_UTIL_INC)
+{
+	zassert_equal(UTIL_INC(0), 1, "Unexpected value %d", UTIL_INC(0));
+	zassert_equal(UTIL_INC(1), 2, "Unexpected value %d", UTIL_INC(1));
+	zassert_equal(UTIL_INC(4095), 4096, "Unexpected value %d", UTIL_INC(4095));
+	zassert_equal(UTIL_INC(4096), 4097, "Unexpected value %d", UTIL_INC(4096));
+}
+
+ZTEST(util, test_UTIL_DEC)
+{
+	zassert_equal(UTIL_DEC(0), 0, "Unexpected value %d", UTIL_DEC(0));
+	zassert_equal(UTIL_DEC(1), 0, "Unexpected value %d", UTIL_DEC(1));
+	zassert_equal(UTIL_DEC(2), 1, "Unexpected value %d", UTIL_DEC(2));
+	zassert_equal(UTIL_DEC(3), 2, "Unexpected value %d", UTIL_DEC(3));
+	zassert_equal(UTIL_DEC(4095), 4094, "Unexpected value %d", UTIL_DEC(4095));
+	zassert_equal(UTIL_DEC(4096), 4095, "Unexpected value %d", UTIL_DEC(4096));
+}
+
+ZTEST(util, test_UTIL_X2)
+{
+	zassert_equal(UTIL_X2(0), 0, "Unexpected value %d", UTIL_X2(0));
+	zassert_equal(UTIL_X2(1), 2, "Unexpected value %d", UTIL_X2(1));
+	zassert_equal(UTIL_X2(2), 4, "Unexpected value %d", UTIL_X2(2));
+	zassert_equal(UTIL_X2(4094), 8188, "Unexpected value %d", UTIL_X2(4094));
+	zassert_equal(UTIL_X2(4095), 8190, "Unexpected value %d", UTIL_X2(4095));
 }
 
 ZTEST(util, test_IF_ENABLED) {
@@ -407,6 +435,50 @@ ZTEST(util, test_IS_EQ) {
 	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
 }
 
+ZTEST(util, test_IS_LT)
+{
+	zexpect_true(IS_LT(0, 10), "Unexpected IS_LT result");
+	zexpect_true(IS_LT(100, 111), "Unexpected IS_LT result");
+	zexpect_true(IS_LT(4000, 4090), "Unexpected IS_LT result");
+
+	zexpect_false(IS_LT(1, 1), "Unexpected IS_LT result");
+	zexpect_false(IS_LT(17, 7), "Unexpected IS_LT result");
+	zexpect_false(IS_LT(4095, 0), "Unexpected IS_LT result");
+}
+
+ZTEST(util, test_IS_LE)
+{
+	zexpect_true(IS_LE(0, 0), "Unexpected IS_LE result");
+	zexpect_true(IS_LE(100, 111), "Unexpected IS_LE result");
+	zexpect_true(IS_LE(400, 4095), "Unexpected IS_LE result");
+
+	zexpect_false(IS_LE(1, 0), "Unexpected IS_LE result");
+	zexpect_false(IS_LE(17, 7), "Unexpected IS_LE result");
+	zexpect_false(IS_LE(4095, 0), "Unexpected IS_LE result");
+}
+
+ZTEST(util, test_IS_GT)
+{
+	zexpect_true(IS_GT(10, 0), "Unexpected IS_GT result");
+	zexpect_true(IS_GT(111, 100), "Unexpected IS_GT result");
+	zexpect_true(IS_GT(4090, 4000), "Unexpected IS_GT result");
+
+	zexpect_false(IS_GT(1, 1), "Unexpected IS_GT result");
+	zexpect_false(IS_GT(7, 17), "Unexpected IS_GT result");
+	zexpect_false(IS_GT(0, 4095), "Unexpected IS_GT result");
+}
+
+ZTEST(util, test_IS_GE)
+{
+	zexpect_true(IS_GE(0, 0), "Unexpected IS_GE result");
+	zexpect_true(IS_GE(111, 100), "Unexpected IS_GE result");
+	zexpect_true(IS_GE(4095, 400), "Unexpected IS_GE result");
+
+	zexpect_false(IS_GE(0, 1), "Unexpected IS_GE result");
+	zexpect_false(IS_GE(7, 17), "Unexpected IS_GE result");
+	zexpect_false(IS_GE(0, 4095), "Unexpected IS_GE result");
+}
+
 ZTEST(util, test_LIST_DROP_EMPTY) {
 	/*
 	 * The real definition should be:
@@ -459,6 +531,28 @@ ZTEST(util, test_GET_ARGS_LESS_N) {
 
 	zassert_equal(sizeof(c), 1);
 	zassert_equal(c[0], 3);
+}
+
+ZTEST(util, test_GET_ARGS_FIRST_N)
+{
+	uint8_t a[] = {GET_ARGS_FIRST_N(0, 1, 2, 3)};
+	uint8_t b[] = {GET_ARGS_FIRST_N(1, 1, 2, 3)};
+	uint8_t c[] = {GET_ARGS_FIRST_N(2, 1, 2, 3)};
+	uint8_t d[] = {GET_ARGS_FIRST_N(3, 1, 2, 3)};
+
+	zassert_equal(sizeof(a), 0);
+
+	zassert_equal(sizeof(b), 1);
+	zassert_equal(b[0], 1);
+
+	zassert_equal(sizeof(c), 2);
+	zassert_equal(c[0], 1);
+	zassert_equal(c[1], 2);
+
+	zassert_equal(sizeof(d), 3);
+	zassert_equal(d[0], 1);
+	zassert_equal(d[1], 2);
+	zassert_equal(d[2], 3);
 }
 
 ZTEST(util, test_mixing_GET_ARG_and_FOR_EACH) {

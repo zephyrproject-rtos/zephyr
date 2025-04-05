@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_memc, CONFIG_MEMC_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/qspi/nxp-s32-qspi.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #include <soc.h>
 #include "memc_nxp_s32_qspi.h"
