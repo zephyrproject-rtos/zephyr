@@ -1,18 +1,7 @@
-/* Copyright 2024 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-SECTIONS
-{
-    .app_header :
-    {
-	    KEEP(*(.app_header))
-    } > APP_HEADER_FLASH
-
-   /* Cortex-M33 bootstrap code area */
-    .bootstrapText :
+    /* Cortex-M33 bootstrap code area */
+    bootstrap.text_lma = BS_CODE_LMA_CBUS;
+    bootstrap.text_vma = BS_CODE_VMA_CBUS;
+    .bootstrapText (bootstrap.text_vma) : AT (bootstrap.text_lma)
     {
         . = ALIGN(4);
         __bootstrapText_begin = .;
@@ -20,8 +9,23 @@ SECTIONS
         /* Located in generated directory. This file is populated by calling
          * zephyr_linker_sources(ROM_START ...). This typically contains the vector
          * table and debug information.
+         * #include <snippets-rom-start.ld>
          */
-        #include <snippets-rom-start.ld>
+        HIDDEN(__rom_start_address = .);
+        FILL(0x00);
+        . += 0x0 - (. - __rom_start_address);
+        . = ALIGN(4);
+        . = ALIGN( 1 << LOG2CEIL(4 * 32) );
+        . = ALIGN( 1 << LOG2CEIL(4 * (16 + 70)) );
+        _vector_start = .;
+        KEEP(*(.exc_vector_table))
+        KEEP(*(".exc_vector_table.*"))
+        KEEP(*(.vectors))
+        _vector_end = .;
+        . = ALIGN(4);
+        KEEP(*(.gnu.linkonce.irq_vector_table*))
+        _vector_end = .;
+        #include "../subsys/bindesc/bindesc.ld"
 
         /* startup code */
         *(.text._reset_section)
@@ -49,9 +53,11 @@ SECTIONS
 
         . = ALIGN(4);
         __bootstrapText_end = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    }
 
-    .bootstrapzero.table :
+    bootstrap.zerotable.vma = (__bootstrapText_end);
+    bootstrap.zerotable.lma = (bootstrap.text_lma + (__bootstrapText_end - __bootstrapText_begin));
+    .bootstrapzero.table (bootstrap.zerotable.vma): AT (bootstrap.zerotable.lma)
     {
         . = ALIGN(4);
         __bootstrapzero_table_start__ = .;
@@ -59,9 +65,11 @@ SECTIONS
         LONG ((__bootstrap_bss_end__ - __bootstrap_bss_start__)/4)
         . = ALIGN(4);
         __bootstrapzero_table_end__ = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    }
 
-    .bootstrapData :
+    bootstrap.data.vma = ((__bootstrapzero_table_end__ - RAM_START_ADDR_CBUS) + RAM_START_ADDR_SAHB); /* CBUS -> SAHB */
+    bootstrap.data.lma = (bootstrap.zerotable.lma + (__bootstrapzero_table_end__ - __bootstrapzero_table_start__));
+    .bootstrapData (bootstrap.data.vma): AT (bootstrap.data.lma)
     {
         __bootstrapData_start__ = .;
         . = ALIGN(4);
@@ -85,9 +93,9 @@ SECTIONS
 
         . = ALIGN(4);
         __bootstrapData_end__ = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    } > BOOTSTRAP_RAM
 
-    .bootstrapBss (NOLOAD):
+    .bootstrapBss (__bootstrapData_end__) (NOLOAD):
     {
         . = ALIGN(4);
         __bootstrap_bss_start__ = .;
@@ -111,4 +119,3 @@ SECTIONS
         . = ALIGN(4);
         __bootstrap_bss_end__ = .;
     } > BOOTSTRAP_RAM
-}
