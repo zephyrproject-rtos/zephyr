@@ -310,8 +310,8 @@ static void init_stats(struct modem_backend_uart *backend)
 }
 #endif
 
-void modem_backend_uart_async_init(struct modem_backend_uart *backend,
-				   const struct modem_backend_uart_config *config)
+int modem_backend_uart_async_init(struct modem_backend_uart *backend,
+				  const struct modem_backend_uart_config *config)
 {
 	uint32_t receive_buf_size_quarter = config->receive_buf_size / 4;
 
@@ -332,4 +332,6 @@ void modem_backend_uart_async_init(struct modem_backend_uart *backend,
 #if CONFIG_MODEM_STATS
 	init_stats(backend);
 #endif
+
+	return 0;
 }
