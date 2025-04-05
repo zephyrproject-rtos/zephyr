@@ -236,7 +236,7 @@ static int unicast_server_release_cb(struct bt_bap_stream *bap_stream, struct bt
 	return 0;
 }
 
-static const struct bt_bap_unicast_server_cb unicast_server_cb = {
+static struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = unicast_server_config_cb,
 	.reconfig = unicast_server_reconfig_cb,
 	.qos = unicast_server_qos_cb,
@@ -417,19 +417,13 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 		int err;
 		struct bt_bap_unicast_server_register_param param = {
 			CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-			CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+			CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+			&unicast_server_cb
 		};
 
 		err = bt_bap_unicast_server_register(&param);
 		if (err != 0) {
 			LOG_ERR("Failed to register BAP unicast server: %d", err);
-
-			return -ENOEXEC;
-		}
-
-		err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
-		if (err != 0) {
-			LOG_ERR("Failed to register BAP unicast server callbacks: %d", err);
 
 			return -ENOEXEC;
 		}

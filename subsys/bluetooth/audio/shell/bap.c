@@ -751,7 +751,7 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
-static const struct bt_bap_unicast_server_cb unicast_server_cb = {
+static struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -3768,7 +3768,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	unsigned long snk_cnt, src_cnt;
 	struct bt_bap_unicast_server_register_param unicast_server_param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		&unicast_server_cb
 	};
 	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
@@ -3814,10 +3815,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	__ASSERT(err == 0, "Failed to register PACS: %d", err);
 
 	err = bt_bap_unicast_server_register(&unicast_server_param);
-	__ASSERT(err == 0, "Failed to register Unicast Server: %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
-	__ASSERT(err == 0, "Failed to register Unicast Server Callbacks: %d", err);
+	__ASSERT(err == 0, "Failed to register unicast server: %d", err);
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 #if defined(CONFIG_BT_PAC_SNK)
