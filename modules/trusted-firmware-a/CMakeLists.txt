@@ -8,6 +8,9 @@ if (CONFIG_BUILD_WITH_TFA)
 
   include(ExternalProject)
 
+  set(tfa_image_info MAP "name: tfa, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}")
+  build_info(images VALUE ${tfa_image_info})
+
   ExternalProject_Add(
     tfa
     SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
