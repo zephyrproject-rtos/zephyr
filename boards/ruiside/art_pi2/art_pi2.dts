@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7rs/stm32h7r7X8.dtsi>
+#include <st/h7/stm32h7r7l8hxh-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Ruiside Electronic ART-Pi2 board";
+	compatible = "ruiside,art-pi2";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		red_led: led_1 {
+			gpios = <&gpioo 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpioo 5 GPIO_ACTIVE_LOW>;
+			label = "User LED2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &blue_led;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&dtcm {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <12>;
+	mul-n = <250>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(250)>;
+	dcpre = <1>;
+	hpre = <1>;
+	ppre1 = <2>;
+	ppre2 = <2>;
+	ppre4 = <2>;
+	ppre5 = <2>;
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pd0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
