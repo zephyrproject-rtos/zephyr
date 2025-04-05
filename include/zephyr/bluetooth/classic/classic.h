@@ -51,6 +51,9 @@ struct bt_br_discovery_priv {
 	uint8_t resolve_state;
 };
 
+/** Maximum size of Extended Inquiry Response */
+#define BT_BR_EIR_SIZE_MAX 240
+
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
 	/** Private data */
@@ -66,7 +69,7 @@ struct bt_br_discovery_result {
 	uint8_t cod[3];
 
 	/** Extended Inquiry Response */
-	uint8_t eir[240];
+	uint8_t eir[BT_BR_EIR_SIZE_MAX];
 };
 
 /** BR/EDR discovery parameters */
