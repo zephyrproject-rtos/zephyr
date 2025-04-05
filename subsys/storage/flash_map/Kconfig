@@ -58,7 +58,6 @@ config FLASH_AREA_CHECK_INTEGRITY_PSA
 config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
 	bool "Use Mbed TLS"
 	select MBEDTLS
-	select MBEDTLS_SHA256
 	help
 	  Use the Mbed TLS library to perform the integrity check.
 
