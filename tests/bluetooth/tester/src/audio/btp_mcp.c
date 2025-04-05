@@ -695,7 +695,7 @@ static uint8_t mcp_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 	tester_set_bit(rp->data, BTP_MCP_CMD_SEND);
 	tester_set_bit(rp->data, BTP_MCP_CMD_SEARCH);
 
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp) + 4;
 
 	return BTP_STATUS_SUCCESS;
 }

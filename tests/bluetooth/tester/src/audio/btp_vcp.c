@@ -638,7 +638,7 @@ static uint8_t vcp_supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_UNMUTE);
 	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_MUTE);
 
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp) + 2;
 
 	return BTP_STATUS_SUCCESS;
 }
