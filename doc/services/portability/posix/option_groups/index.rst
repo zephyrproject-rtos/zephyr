@@ -208,17 +208,19 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_FD_MGMT`.
 POSIX_FILE_LOCKING
 ++++++++++++++++++
 
+Enable this option group with :kconfig:option:`CONFIG_POSIX_FILE_LOCKING`.
+
 .. csv-table:: POSIX_FILE_LOCKING
    :header: API, Supported
    :widths: 50,10
 
-    flockfile(),
-    ftrylockfile(),
-    funlockfile(),
-    getc_unlocked(),
-    getchar_unlocked(),
-    putc_unlocked(),
-    putchar_unlocked(),
+    flockfile(), yes
+    ftrylockfile(), yes
+    funlockfile(), yes
+    getc_unlocked(), yes
+    getchar_unlocked(), yes
+    putc_unlocked(), yes
+    putchar_unlocked(), yes
 
 .. _posix_option_group_file_system:
 
