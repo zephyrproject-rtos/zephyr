@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -794,10 +795,11 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "enc")) {
-			uint8_t bcode_len = hex2bin(argv[1], strlen(argv[1]), param.bcode,
-						    sizeof(param.bcode));
+			size_t bcode_len =
+				hex2bin(argv[2], strlen(argv[2]), param.bcode, sizeof(param.bcode));
+
 			if (!bcode_len || bcode_len != sizeof(param.bcode)) {
-				shell_error(sh, "Invalid Broadcast Code Length");
+				shell_error(sh, "Invalid Broadcast Code Length %zu", bcode_len);
 				return -ENOEXEC;
 			}
 			param.encryption = true;
