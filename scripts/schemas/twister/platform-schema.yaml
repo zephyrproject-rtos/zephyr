@@ -62,6 +62,7 @@ schema;platform-schema:
           "arm64",
           "mips",
           "nios2",
+          "openrisc",
           "posix",
           "riscv",
           "sparc",
