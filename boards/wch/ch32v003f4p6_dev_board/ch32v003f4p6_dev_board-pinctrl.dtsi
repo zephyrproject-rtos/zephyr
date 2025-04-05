@@ -19,4 +19,13 @@
 			bias-pull-up;
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_PC1_0>, <I2C1_SCL_PC2_0>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
 };

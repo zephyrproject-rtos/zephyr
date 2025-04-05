@@ -76,6 +76,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 zephyr_library_sources_ifdef(CONFIG_I2C_SY1XX		i2c_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TELINK_B91	i2c_b91.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_WCH		i2c_wch.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC		i2c_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC_V2		i2c_mchp_xec_v2.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XILINX_AXI	i2c_xilinx_axi.c)
