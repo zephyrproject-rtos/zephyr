@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,22 +92,24 @@ int main(void)
 	size_t bsize;
 	int i = 0;
 	int err;
+	const struct device *video_dev = NULL;
+	const struct device *const vsg = device_get_binding(VIDEO_DEV_SW);
+	uint8_t vdevs_num = video_get_devs_num();
+	bool found_vdev = false;
 
-#if DT_HAS_CHOSEN(zephyr_camera)
-	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	/* Get the 1st video HW available, otherwise fallbacks to video sw generator */
+	for (int j = 0; j < vdevs_num; j++) {
+		video_dev = video_get_dev(j);
+		if (device_is_ready(video_dev) && (vdevs_num == 1 || video_dev != vsg)) {
+			found_vdev = true;
+			break;
+		}
+	}
 
-	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s: video device is not ready", video_dev->name);
+	if (!found_vdev) {
+		LOG_ERR("No video device ready!");
 		return 0;
 	}
-#else
-	const struct device *const video_dev = device_get_binding(VIDEO_DEV_SW);
-
-	if (video_dev == NULL) {
-		LOG_ERR("%s: video device not found or failed to initialized", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 
 	LOG_INF("Video device: %s", video_dev->name);
 
@@ -174,13 +177,28 @@ int main(void)
 		fie.index++;
 	}
 
+	/* Get supported controls */
+	LOG_INF("- Supported controls:");
+
+	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+
+	while (!video_query_ctrl(video_dev, &cq)) {
+		LOG_INF("%*s id=0x%08x (type=%d) : min/max=%d/%d step=%d def=%d flags=0x%x", 32,
+			cq.name, cq.id, cq.type, cq.range.min, cq.range.max, cq.range.step,
+			cq.range.def, cq.flags);
+		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
+	}
+
 	/* Set controls */
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
+		video_set_ctrl(video_dev, &ctrl);
 	}
 
 #ifdef CONFIG_TEST
-	video_set_ctrl(video_dev, VIDEO_CID_TEST_PATTERN, (void *)1);
+	ctrl.id = VIDEO_CID_TEST_PATTERN;
+	video_set_ctrl(video_dev, &ctrl);
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
