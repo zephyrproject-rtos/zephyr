@@ -825,6 +825,11 @@ enum shell_signal {
 	SHELL_SIGNAL_RXRDY,
 	SHELL_SIGNAL_LOG_MSG,
 	SHELL_SIGNAL_KILL,
+
+#if defined(CONFIG_SHELL_BYPASS_USER)
+	SHELL_SIGNAL_BYPASS_EXIT,
+#endif
+
 	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
 	SHELL_SIGNALS
 };
@@ -886,10 +891,54 @@ struct shell_ctx {
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+	/** The ID of the user bypass thread.
+	 */
+	k_tid_t bypass_user_thread;
+
+	/** This is the number of received bytes dropped during the current or
+	 * most recent user bypass operation. It is reset to 0 on a syscall to
+	 * shell_bypass_enter().
+	 */
+	size_t bypass_rx_dropped;
+
+	/** This pipe is filled with data from the context of the shell thread
+	 * using a special bypass callback implementation. A user thread is
+	 * expected to get the data out of the pipe.
+	 */
+	struct k_pipe bypass_rx_pipe;
+
+	/** This pipe accepts data from another thread while the bypass
+	 * callback is set. Any data received on the pipe is forwarded to
+	 * the underlying transport.
+	 */
+	struct k_pipe bypass_tx_pipe;
+
+	/** This semaphore is used to signal the user bypass thread after the
+	 * shell thread has completed an exit request.
+	 */
+	struct k_sem bypass_exit_resp_sem;
+
+	#if (CONFIG_SHELL_BYPASS_USER_RX_PIPE_SIZE > 0)
+	uint8_t __aligned(CONFIG_SHELL_BYPASS_USER_RX_PIPE_ALIGN)
+		bypass_rx_pipe_buf[CONFIG_SHELL_BYPASS_USER_RX_PIPE_SIZE];
+	#endif
+	#if (CONFIG_SHELL_BYPASS_USER_TX_PIPE_SIZE > 0)
+	uint8_t __aligned(CONFIG_SHELL_BYPASS_USER_TX_PIPE_ALIGN)
+		bypass_tx_pipe_buf[CONFIG_SHELL_BYPASS_USER_TX_PIPE_SIZE];
+	#endif
+
+	/** An extra event slot is needed for polling the bypass TX pipe.
+	 */
+	#define EVENT_COUNT SHELL_SIGNALS + 1
+#else
+	#define	EVENT_COUNT SHELL_SIGNALS
+#endif
+
 	/** Events that should be used only internally by shell thread.
 	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
 	 */
-	struct k_poll_event events[SHELL_SIGNALS];
+	struct k_poll_event events[EVENT_COUNT];
 
 	struct k_mutex wr_mtx;
 	k_tid_t tid;
@@ -1241,6 +1290,143 @@ int shell_set_root_cmd(const char *cmd);
  */
 void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass);
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+/**
+ * @brief User thread shell bypass instance internals.
+ */
+struct shell_bypass {
+	struct k_thread *thread;
+	struct k_pipe *rx_pipe;
+	struct k_pipe *tx_pipe;
+	struct k_poll_signal *exit_signal;
+	struct k_sem *exit_resp_sem;
+};
+
+/**
+ * @brief Enter user bypass mode for a shell.
+ *
+ * Any system or user thread can enter user bypass mode, but only one thread at
+ * a time. Only a thread that successfully enters user bypass mode can receive
+ * and send characters. To return to normal shell operation, the active thread
+ * must call shell_bypass_exit().
+ *
+ * The calling thread must supply a buffer for a struct shell_bypass instance
+ * that is accessible in its own memory space. The caller must guarantee that
+ * the structure will live in memory until shell_bypass_exit() returns.
+ *
+ * While in user bypass mode, the shell's processing of received and transmitted
+ * characters is disabled; however, if the shell's underlying transport is also
+ * used for logging and/or printk functionality, these features could inject
+ * unwanted characters into the transmit stream.
+ *
+ * @param[in]  sh		Pointer to shell instance.
+ * @param[out] shb		Pointer to shell_bypass instance to be
+ *				initialized.
+ *
+ * @retval 0			The shell has transitioned into user bypass mode
+ *				for the current thread.
+ * @retval -EINVAL		Invalid parameters supplied.
+ * @retval -EALREADY		Another thread is already in user bypass mode.
+ */
+__syscall int shell_bypass_enter(const struct shell *sh,
+				 struct shell_bypass *shb);
+
+/**
+ * @brief Get the number of received characters that were dropped by the shell
+ * while in user bypass mode.
+ *
+ * As the shell receives characters from its underlying transport layer, it puts
+ * them into a pipe, which the caller must drain out by calling
+ * shell_bypass_receive(). If the caller does not drain characters fast enough,
+ * they will be dropped. If the caller's application encounters this situation,
+ * it can increase the size of the receive pipe using configuration parameter
+ * CONFIG_SHELL_BYPASS_USER_RX_PIPE_SIZE.
+ *
+ * Note that this is a syscall that uses the shell pointer directly rather than
+ * the shell_bypass pointer. It is valid to call this function at any time and
+ * from any thread.
+ *
+ * The count is reset to 0 each time bypass mode is entered.
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ *
+ * @retval		The number of dropped characters.
+ */
+__syscall size_t shell_bypass_get_rx_dropped(const struct shell *sh);
+
+/**
+ * @brief Poll for characters received by the shell's transport layer while in
+ * user bypass mode.
+ *
+ * The caller must obtain a valid struct shell_bypass by entering user bypass
+ * mode with shell_bypass_enter(). Only the thread that invoked the enter
+ * method may call shell_bypass_receive().
+ *
+ * This function uses a pipe whose size and alignment are specified by compile-
+ * time configuration variables SHELL_BYPASS_USER_RX_PIPE_SIZE and
+ * SHELL_BYPASS_USER_RX_PIPE_ALIGN, respectively. A pipe buffer whose size is
+ * too small may result in received characters being dropped.
+ *
+ * @param[in] shb		Pointer to shell user bypass structure.
+ * @param[in] data		Address to place the received data.
+ * @param[in] len		Requested number of bytes to receive.
+ * @param[in] timeout		Waiting period to wait for the data to be
+ *				received.
+ *
+ * @retval number		Number of bytes successfully read.
+ * @retval -EPERM		Invoked from invalid thread.
+ * @retval -EINVAL		Invalid parameters supplied.
+ * @retval -EAGAIN		Timeout expired and no data was received.
+ */
+int shell_bypass_receive(struct shell_bypass *shb, void *data, size_t len,
+			 k_timeout_t timeout);
+
+/**
+ * @brief Send bytes to the shell's underlying transport layer.
+ *
+ * The caller must obtain a valid struct shell_bypass by entering user bypass
+ * mode with shell_bypass_enter(). Only the thread that invoked the enter
+ * method may call shell_bypass_send().
+ *
+ * This function uses a pipe whose size and alignment are specified by compile-
+ * time configuration variables SHELL_BYPASS_USER_TX_PIPE_SIZE and
+ * SHELL_BYPASS_USER_TX_PIPE_ALIGN, respectively. A pipe buffer whose size is
+ * too small may result in increased CPU overhead on large data sends due to
+ * frequent thread context switching.
+ *
+ * @param[in] shb		Pointer to shell user bypass structure.
+ * @param[in] data		Address of data to send
+ * @param[in] len		Requested number of bytes to send.
+ * @param[in] timeout		Waiting period to wait for the data to be sent.
+ *
+ * @retval number		Number of bytes sucessfully sent.
+ * @retval -EPERM		Invoked from invalid thread.
+ * @retval -EINVAL		Invalid parameters supplied.
+ * @retval -EAGAIN		Timeout expired and no data was sent.
+ */
+int shell_bypass_send(struct shell_bypass *shb, const void *data, size_t len,
+		      k_timeout_t timeout);
+
+/**
+ * @brief Exit user bypass mode.
+ *
+ * The caller must obtain a valid struct shell_bypass by entering user bypass
+ * mode with shell_bypass_enter(). Only the thread that invoked the enter
+ * method may call shell_bypass_exit().
+ *
+ * Any data sent via shell_bypass_send() that has not yet been flushed to the
+ * underlying transport will be dropped. Any data received by the transport
+ * layer but not yet received with shell_bypass_receive() will be dropped.
+ *
+ * @param[in]  shb		Pointer to shell user bypass structure.
+ *
+ * @retval 0			User bypass mode is exited, and normal shell
+ *				operation is restored.
+ * @retval -EPERM		Invoked from invalid thread.
+ */
+int shell_bypass_exit(struct shell_bypass *shb);
+#endif
+
 /** @brief Get shell readiness to execute commands.
  *
  * @param[in] sh	Pointer to the shell instance.
@@ -1340,6 +1526,10 @@ int shell_get_return_value(const struct shell *sh);
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(CONFIG_SHELL_BYPASS_USER)
+#include <syscalls/shell.h>
 #endif
 
 #ifdef CONFIG_SHELL_CUSTOM_HEADER
