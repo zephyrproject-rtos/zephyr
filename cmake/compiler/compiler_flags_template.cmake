@@ -161,3 +161,7 @@ set_compiler_property(PROPERTY include_file)
 set_compiler_property(PROPERTY cmse)
 
 set_property(TARGET asm PROPERTY cmse)
+
+# Compiler flag for turning off warnings about using addresses of packed struct member
+set_property(TARGET compiler PROPERTY no_packed_member_warnings)
+set_property(TARGET compiler-cpp PROPERTY no_packed_member_warnings)
