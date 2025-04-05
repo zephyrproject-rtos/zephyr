@@ -58,6 +58,11 @@ static metal_phys_addr_t rsc_tab_physmap;
 static struct metal_io_region shm_io_data; /* shared memory */
 static struct metal_io_region rsc_io_data; /* rsc_table memory */
 
+static struct remoteproc_mem shm_rp_mem;
+static struct remoteproc_mem rsc_rp_mem;
+
+static struct remoteproc rproc_inst;
+
 struct rpmsg_rcv_msg {
 	void *data;
 	size_t len;
@@ -128,9 +133,9 @@ static void new_service_cb(struct rpmsg_device *rdev, const char *name,
 		__func__, name);
 }
 
-int mailbox_notify(void *priv, uint32_t id)
+int mailbox_notify(struct remoteproc *rproc, uint32_t id)
 {
-	ARG_UNUSED(priv);
+	ARG_UNUSED(rproc);
 
 	LOG_DBG("%s: msg received", __func__);
 	ipm_send(ipm_handle, 0, id, NULL, 0);
@@ -178,6 +183,10 @@ int platform_init(void)
 	return 0;
 }
 
+const struct remoteproc_ops rproc_ops = {
+	.notify = mailbox_notify,
+};
+
 static void cleanup_system(void)
 {
 	ipm_set_enabled(ipm_handle, 0);
@@ -191,40 +200,41 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 			   void (*rst_cb)(struct virtio_device *vdev),
 			   rpmsg_ns_bind_cb ns_cb)
 {
-	struct fw_rsc_vdev_vring *vring_rsc;
 	struct virtio_device *vdev;
+	int rsc_size;
 	int ret;
 
-	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_DEVICE, VDEV_ID,
-					rsc_table_to_vdev(rsc_table),
-					rsc_io, NULL, mailbox_notify, NULL);
-
-	if (!vdev) {
-		LOG_ERR("failed to create vdev");
+	/* Initialize remoteproc instance */
+	if (!remoteproc_init(&rproc_inst, &rproc_ops, NULL)) {
 		return NULL;
 	}
 
-	/* wait master rpmsg init completion */
-	rproc_virtio_wait_remote_ready(vdev);
+	/* Add resource table memory to remoteproc */
+	rsc_table_get(&rsc_table, &rsc_size);
+	rsc_tab_physmap = (uintptr_t)rsc_table;
+	rproc_inst.rsc_io = rsc_io;
+	remoteproc_init_mem(&rsc_rp_mem, NULL, rsc_tab_physmap, rsc_tab_physmap, rsc_size, rsc_io);
+	remoteproc_add_mem(&rproc_inst, &rsc_rp_mem);
 
-	vring_rsc = rsc_table_get_vring0(rsc_table);
-	ret = rproc_virtio_init_vring(vdev, 0, vring_rsc->notifyid,
-				      (void *)vring_rsc->da, rsc_io,
-				      vring_rsc->num, vring_rsc->align);
+	/* Add shared memory region to remoteproc */
+	remoteproc_init_mem(&shm_rp_mem, NULL, shm_physmap, shm_physmap, SHM_SIZE, shm_io);
+	remoteproc_add_mem(&rproc_inst, &shm_rp_mem);
+
+	/* Pass resource table to remoteproc */
+	ret = remoteproc_set_rsc_table(&rproc_inst, (struct resource_table *)rsc_table, rsc_size);
 	if (ret) {
-		LOG_ERR("failed to init vring 0");
-		goto failed;
+		LOG_ERR("failed remoteproc_set_rsc_table\n");
+		goto failed2;
 	}
 
-	vring_rsc = rsc_table_get_vring1(rsc_table);
-	ret = rproc_virtio_init_vring(vdev, 1, vring_rsc->notifyid,
-				      (void *)vring_rsc->da, rsc_io,
-				      vring_rsc->num, vring_rsc->align);
-	if (ret) {
-		LOG_ERR("failed to init vring 1");
-		goto failed;
+	/* Create virtio device from remoteproc */
+	vdev = remoteproc_create_virtio(&rproc_inst, vdev_index, role, rst_cb);
+	if (!vdev) {
+		LOG_ERR("failed remoteproc_create_virtio\n");
+		goto failed2;
 	}
 
+	/* Create rpmsg device from virtio device */
 	ret = rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, NULL);
 	if (ret) {
 		LOG_ERR("failed rpmsg_init_vdev");
@@ -234,7 +244,9 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 	return rpmsg_virtio_get_rpmsg_device(&rvdev);
 
 failed:
-	rproc_virtio_remove_vdev(vdev);
+	remoteproc_remove_virtio(&rproc_inst, vdev);
+failed2:
+	remoteproc_remove(&rproc_inst);
 
 	return NULL;
 }
