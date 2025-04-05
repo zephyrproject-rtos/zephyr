@@ -97,6 +97,8 @@ struct flash_hp_ra_config {
 struct event_flash {
 	volatile bool erase_complete;
 	volatile bool write_complete;
+	volatile bool blank;
+	volatile bool not_blank;
 };
 
 #if defined(CONFIG_FLASH_RA_WRITE_PROTECT)

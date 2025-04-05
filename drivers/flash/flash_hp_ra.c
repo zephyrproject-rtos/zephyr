@@ -31,6 +31,8 @@ BUILD_ASSERT((ERASE_BLOCK_SIZE_1 % FLASH_HP_DF_BLOCK_SIZE) == 0,
 static volatile struct event_flash g_event_flash = {
 	.erase_complete = false,
 	.write_complete = false,
+	.blank = false,
+	.not_blank = false,
 };
 
 static struct flash_pages_layout flash_ra_layout[5];
@@ -42,6 +44,10 @@ void bgo_callback(flash_callback_args_t *p_args)
 {
 	if (FLASH_EVENT_ERASE_COMPLETE == p_args->event) {
 		g_event_flash.erase_complete = true;
+	} else if (FLASH_EVENT_BLANK == p_args->event) {
+		g_event_flash.blank = true;
+	} else if (FLASH_EVENT_NOT_BLANK == p_args->event) {
+		g_event_flash.not_blank = true;
 	} else {
 		g_event_flash.write_complete = true;
 	}
@@ -75,9 +81,56 @@ static bool flash_ra_valid_range(struct flash_hp_ra_data *flash_data, off_t offs
 	return true;
 }
 
+#ifdef CONFIG_CHECK_BEFORE_READING
+/* This feature prevents erroneous reading. Values read from an
+ * area of the data flash that has been erased but not programmed
+ * are undefined.
+ */
+static int is_area_readable(const struct device *dev, off_t offset, size_t len)
+{
+	struct flash_hp_ra_data *flash_data = dev->data;
+	struct flash_hp_ra_controller *dev_ctrl = flash_data->controller;
+	flash_result_t result;
+	fsp_err_t err;
+
+	k_sem_take(&dev_ctrl->ctrl_sem, K_FOREVER);
+
+	err = R_FLASH_HP_BlankCheck(&dev_ctrl->flash_ctrl,
+				(long)(flash_data->area_address + offset), len, &result);
+
+	if (err != FSP_SUCCESS) {
+		k_sem_give(&dev_ctrl->ctrl_sem);
+		return -EIO;
+	}
+
+	/* Wait for the blank check result event if BGO is SET  */
+	if (true == dev_ctrl->fsp_config.data_flash_bgo) {
+		while (!(g_event_flash.blank || g_event_flash.not_blank)) {
+			k_sleep(K_USEC(10));
+		}
+		if (g_event_flash.blank) {
+			LOG_DBG("read request on erased offset:0x%lx size:%d",
+				offset, len);
+			result = FLASH_RESULT_BLANK;
+		}
+		g_event_flash.blank = false;
+		g_event_flash.not_blank = false;
+	}
+
+	k_sem_give(&dev_ctrl->ctrl_sem);
+
+	if (result == FLASH_RESULT_BLANK) {
+		return -ENODATA;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_CHECK_BEFORE_READING */
+
 static int flash_ra_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	struct flash_hp_ra_data *flash_data = dev->data;
+	int rc = 0;
 
 	if (!flash_ra_valid_range(flash_data, offset, len)) {
 		return -EINVAL;
@@ -89,9 +142,23 @@ static int flash_ra_read(const struct device *dev, off_t offset, void *data, siz
 
 	LOG_DBG("flash: read 0x%lx, len: %u", (long)(offset + flash_data->area_address), len);
 
-	memcpy(data, (uint8_t *)(offset + flash_data->area_address), len);
+#ifdef CONFIG_CHECK_BEFORE_READING
+	if (flash_data->FlashRegion == DATA_FLASH) {
+		rc = is_area_readable(dev, offset, len);
+	}
+#endif
 
-	return 0;
+	if (!rc) {
+		memcpy(data, (uint8_t *)(offset + flash_data->area_address), len);
+#ifdef CONFIG_CHECK_BEFORE_READING
+	} else if (rc == -ENODATA) {
+		/* Erased area, return dummy data as an erased page. */
+		memset(data, 0xFF, len);
+		rc = 0;
+#endif
+	}
+
+	return rc;
 }
 
 static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
