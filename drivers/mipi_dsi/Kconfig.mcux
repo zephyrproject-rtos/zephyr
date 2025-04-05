@@ -26,6 +26,14 @@ config MIPI_DSI_MCUX_2L_SMARTDMA
 	  convert RGB565 input data to BGR565 (little endian to big endian),
 	  and write it to the MIPI DSI.
 
+config MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+	bool "Use NXP DCNano DBI controller with MIPI DSI"
+	default y
+	depends on DT_HAS_NXP_MIPI_DBI_DCNANO_LCDIF_ENABLED
+	select MIPI_DBI
+	help
+	  Use DCNano DBI controller for the data transfer.
+
 config MIPI_DSI_MCUX_2L_SWAP16
 	bool "Swap 16 byte color"
 	help
