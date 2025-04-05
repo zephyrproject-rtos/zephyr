@@ -274,6 +274,30 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 	return 0;
 }
 
+/*
+ * This function deinitializes all the chip select GPIOs associated with a spi controller.
+ */
+static inline int spi_context_cs_deconfigure_all(struct spi_context *ctx)
+{
+	int ret;
+	const struct gpio_dt_spec *cs_gpio;
+
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (!device_is_ready(cs_gpio->port)) {
+			LOG_ERR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name,
+				cs_gpio->pin);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(cs_gpio, GPIO_DISCONNECTED);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
