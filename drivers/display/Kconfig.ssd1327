@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SSD1327
-	bool "SSD1327 display driver"
+	bool "SSD1327 display controller driver"
 	default y
 	depends on DT_HAS_SOLOMON_SSD1327FB_ENABLED
 	select MIPI_DBI
@@ -19,5 +19,10 @@ config SSD1327_DEFAULT_CONTRAST
 	range 0 255
 	help
 	  SSD1327 default contrast.
+
+config SSD1327_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 16
+	range 2 128
 
 endif # SSD1327
