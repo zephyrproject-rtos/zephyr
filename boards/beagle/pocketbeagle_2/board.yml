@@ -1,0 +1,6 @@
+board:
+  name: pocketbeagle_2
+  full_name: PocketBeagle 2
+  vendor: beagle
+  socs:
+  - name: am6232
