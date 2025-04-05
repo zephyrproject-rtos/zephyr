@@ -65,6 +65,28 @@ config PICOLIBC_IO_MINIMAL
 
 endchoice
 
+choice PICOLIBC_LIBCXX_VARIANT
+	prompt "Picolibc libstdc++ variant"
+	depends on "$(TOOLCHAIN_HAS_PICOLIBC)" = "y"
+	depends on PICOLIBC
+	depends on GLIBCXX_LIBCPP
+	default PICOLIBC_LIBCXX_NOEXCEPT if !CPP_EXCEPTIONS && "$(TOOLCHAIN_HAS_PICOLIBC_NOEXCEPT)" = "y"
+	default PICOLIBC_LIBCXX_FULL
+	help
+	  Selects variant of libstdc++ provided by picolibc
+
+config PICOLIBC_LIBCXX_FULL
+	bool "full c++ support"
+	help
+	  Link with full variant of libstdc++ provided by picolibc
+
+config PICOLIBC_LIBCXX_NOEXCEPT
+	bool "disabled exceptions"
+	help
+	  Link with noexcept variant of libstdc++ provided by picolibc (compiled with -fno-exceptions)
+
+endchoice
+
 if PICOLIBC_USE_MODULE
 
 choice PICOLIBC_OPTIMIZATIONS
