@@ -10,6 +10,8 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -29,8 +31,7 @@ struct video_sw_generator_data {
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	struct k_work_delayable buf_work;
-	struct k_work_sync work_sync;
+	struct k_work_delayable work;
 	int pattern;
 	bool ctrl_hflip;
 	bool ctrl_vflip;
@@ -38,39 +39,43 @@ struct video_sw_generator_data {
 	uint32_t frame_rate;
 };
 
-static const struct video_format_cap fmts[] = {{
-						       .pixelformat = VIDEO_PIX_FMT_RGB565,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       }, {
-						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       },
-					       {0}};
+#define VIDEO_SW_GENERATOR_FORMAT_CAP(pixfmt)                                                      \
+	{                                                                                          \
+		.pixelformat = pixfmt,                                                             \
+		.width_min = 64,                                                                   \
+		.width_max = 1920,                                                                 \
+		.height_min = 64,                                                                  \
+		.height_max = 1080,                                                                \
+		.width_step = 1,                                                                   \
+		.height_step = 1,                                                                  \
+	}
+
+static const struct video_format_cap fmts[] = {
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB24),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGGB8),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GRBG8),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGGR8),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GBRG8),
+	{0},
+};
 
 static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
 	struct video_sw_generator_data *data = dev->data;
-	int i = 0;
+	int i;
 
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
+		if (fmt->pixelformat == fmts[i].pixelformat &&
+		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
 			break;
 		}
 	}
@@ -102,56 +107,159 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 static int video_sw_generator_set_stream(const struct device *dev, bool enable)
 {
 	struct video_sw_generator_data *data = dev->data;
+	struct k_work_sync work_sync = {0};
 
 	if (enable) {
-		k_work_schedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
+		k_work_schedule(&data->work, K_MSEC(1000 / data->frame_rate));
 	} else {
-		k_work_cancel_delayable_sync(&data->buf_work, &data->work_sync);
+		k_work_cancel_delayable_sync(&data->work, &work_sync);
 	}
 
 	return 0;
 }
 
-/* Black, Blue, Red, Purple, Green, Aqua, Yellow, White */
-uint16_t rgb565_colorbar_value[] = {0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07FF, 0xFFE0, 0xFFFF};
+static const uint8_t pattern_rggb8_idx[] = {0, 1, 1, 2};
+static const uint8_t pattern_bggr8_idx[] = {2, 1, 1, 0};
+static const uint8_t pattern_gbrg8_idx[] = {1, 2, 0, 1};
+static const uint8_t pattern_grbg8_idx[] = {1, 0, 2, 1};
 
-uint32_t xrgb32_colorbar_value[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
-				    0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF};
+/* White, Yellow, Cyan, Green, Magenta, Red, Blue, Black */
 
-static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct video_buffer *vbuf)
+static const uint16_t pattern_8bars_yuv_bt709[8][3] = {
+	{0xFE, 0x80, 0x7F}, {0xEC, 0x00, 0x8B}, {0xC8, 0x9D, 0x00}, {0xB6, 0x1D, 0x0C},
+	{0x48, 0xE2, 0xF3}, {0x36, 0x62, 0xFF}, {0x12, 0xFF, 0x74}, {0x00, 0x80, 0x80},
+};
+
+static const uint16_t pattern_8bars_rgb[8][3] = {
+	{0xFF, 0xFF, 0xFF}, {0xFF, 0xFF, 0x00}, {0x00, 0xFF, 0xFF}, {0x00, 0xFF, 0x00},
+	{0xFF, 0x00, 0xFF}, {0xFF, 0x00, 0x00}, {0x00, 0x00, 0xFF}, {0x00, 0x00, 0x00},
+};
+
+static int video_sw_generator_fill_yuyv(uint8_t *buffer, uint16_t width)
 {
-	int bw = data->fmt.width / 8;
-	int h, w, i = 0;
+	for (size_t w = 0; w + 2 <= width; w += 2) {
+		buffer[w * 2 + 0] = pattern_8bars_yuv_bt709[8 * w / width][0];
+		buffer[w * 2 + 1] = pattern_8bars_yuv_bt709[8 * w / width][1];
+		buffer[w * 2 + 2] = pattern_8bars_yuv_bt709[8 * w / width][0];
+		buffer[w * 2 + 3] = pattern_8bars_yuv_bt709[8 * w / width][2];
+	}
+	return 1;
+}
 
-	for (h = 0; h < data->fmt.height; h++) {
-		for (w = 0; w < data->fmt.width; w++) {
-			int color_idx = data->ctrl_vflip ? 7 - w / bw : w / bw;
-			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
-				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
-				*pixel = rgb565_colorbar_value[color_idx];
-				i += 2;
-			} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
-				uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
-				*pixel = xrgb32_colorbar_value[color_idx];
-				i += 4;
-			}
+static int video_sw_generator_fill_xrgb32(uint8_t *buffer, uint16_t width)
+{
+	for (size_t w = 0; w < width; w++) {
+		buffer[w * 4 + 0] = 0xff;
+		buffer[w * 4 + 1] = pattern_8bars_rgb[8 * w / width][0];
+		buffer[w * 4 + 2] = pattern_8bars_rgb[8 * w / width][1];
+		buffer[w * 4 + 3] = pattern_8bars_rgb[8 * w / width][2];
+	}
+	return 1;
+}
+
+static int video_sw_generator_fill_rgb24(uint8_t *buffer, uint16_t width)
+{
+	for (size_t w = 0; w < width; w++) {
+		buffer[w * 3 + 0] = pattern_8bars_rgb[8 * w / width][0];
+		buffer[w * 3 + 1] = pattern_8bars_rgb[8 * w / width][1];
+		buffer[w * 3 + 2] = pattern_8bars_rgb[8 * w / width][2];
+	}
+	return 1;
+}
+
+static int video_sw_generator_fill_rgb565(uint8_t *buffer, uint16_t width)
+{
+	for (size_t w = 0; w < width; w++) {
+		uint8_t r = pattern_8bars_rgb[8 * w / width][0] >> (8 - 5);
+		uint8_t g = pattern_8bars_rgb[8 * w / width][1] >> (8 - 6);
+		uint8_t b = pattern_8bars_rgb[8 * w / width][2] >> (8 - 5);
+
+		((uint16_t *)buffer)[w] = sys_cpu_to_le16((r << 11) | (g << 6) | (b << 0));
+	}
+	return 1;
+}
+
+static int video_sw_generator_fill_bayer(uint8_t *buffer, uint16_t width, const uint8_t *idx)
+{
+	uint8_t *row0 = buffer + 0;
+	uint8_t *row1 = buffer + width;
+
+	for (size_t w = 0; w + 2 <= width; w += 2) {
+		row0[w + 0] = pattern_8bars_rgb[8 * w / width][idx[0]];
+		row0[w + 1] = pattern_8bars_rgb[8 * w / width][idx[1]];
+		row1[w + 0] = pattern_8bars_rgb[8 * w / width][idx[2]];
+		row1[w + 1] = pattern_8bars_rgb[8 * w / width][idx[3]];
+	}
+	return 2;
+}
+
+static void video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
+{
+	struct video_sw_generator_data *data = dev->data;
+	struct video_format *fmt = &data->fmt;
+	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	int lines = 1;
+
+	__ASSERT(vbuf->size >= pitch * 2, "At least 2 lines needed for bayer formats support");
+
+	/* Fill the first row of the emulated framebuffer */
+	switch (data->fmt.pixelformat) {
+	case VIDEO_PIX_FMT_YUYV:
+		lines = video_sw_generator_fill_yuyv(vbuf->buffer, fmt->width);
+		break;
+	case VIDEO_PIX_FMT_XRGB32:
+		lines = video_sw_generator_fill_xrgb32(vbuf->buffer, fmt->width);
+		break;
+	case VIDEO_PIX_FMT_RGB24:
+		lines = video_sw_generator_fill_rgb24(vbuf->buffer, fmt->width);
+		break;
+	case VIDEO_PIX_FMT_RGB565:
+		lines = video_sw_generator_fill_rgb565(vbuf->buffer, fmt->width);
+		break;
+	case VIDEO_PIX_FMT_RGGB8:
+		lines = video_sw_generator_fill_bayer(vbuf->buffer, fmt->width, pattern_rggb8_idx);
+		break;
+	case VIDEO_PIX_FMT_GBRG8:
+		lines = video_sw_generator_fill_bayer(vbuf->buffer, fmt->width, pattern_gbrg8_idx);
+		break;
+	case VIDEO_PIX_FMT_BGGR8:
+		lines = video_sw_generator_fill_bayer(vbuf->buffer, fmt->width, pattern_bggr8_idx);
+		break;
+	case VIDEO_PIX_FMT_GRBG8:
+		lines = video_sw_generator_fill_bayer(vbuf->buffer, fmt->width, pattern_grbg8_idx);
+		break;
+	default:
+		LOG_WRN("Unsupported pixel format %x, filling with 0x55", data->fmt.pixelformat);
+		memset(vbuf->buffer, 0x55, data->fmt.pitch);
+		break;
+	}
+
+	/* How much was filled insofar */
+	vbuf->bytesused = data->fmt.pitch * lines;
+
+	/* Duplicate the first line(s) all over the buffer */
+	for (int h = lines; h < data->fmt.height; h += lines) {
+		if (vbuf->size < vbuf->bytesused + pitch * lines) {
+			LOG_WRN("Generation stopped early: buffer too small");
+			break;
 		}
+		memcpy(vbuf->buffer + h * pitch, vbuf->buffer, pitch * lines);
+		vbuf->bytesused += pitch * lines;
 	}
 
 	vbuf->timestamp = k_uptime_get_32();
-	vbuf->bytesused = i;
 	vbuf->line_offset = 0;
 }
 
-static void __buffer_work(struct k_work *work)
+static void video_sw_generator_worker(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct video_sw_generator_data *data;
 	struct video_buffer *vbuf;
 
-	data = CONTAINER_OF(dwork, struct video_sw_generator_data, buf_work);
+	data = CONTAINER_OF(dwork, struct video_sw_generator_data, work);
 
-	k_work_reschedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
+	k_work_reschedule(&data->work, K_MSEC(1000 / data->frame_rate));
 
 	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
@@ -160,7 +268,7 @@ static void __buffer_work(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		__fill_buffer_colorbar(data, vbuf);
+		video_sw_generator_fill(data->dev, vbuf);
 		break;
 	}
 
@@ -305,18 +413,20 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 {
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT || fie->index) {
+	if (ep != VIDEO_EP_OUT || fie->index > 0) {
 		return -EINVAL;
 	}
 
-	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat)) {
-		i++;
+	for (i = 0; fmts[i].pixelformat != 0; ++i) {
+		if (fie->format->pixelformat == fmts[i].pixelformat &&
+		    IN_RANGE(fie->format->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fie->format->height, fmts[i].height_min, fmts[i].height_max)) {
+			break;
+		}
 	}
 
-	if ((i == ARRAY_SIZE(fmts)) || (fie->format->width > fmts[i].width_max) ||
-	    (fie->format->width < fmts[i].width_min) ||
-	    (fie->format->height > fmts[i].height_max) ||
-	    (fie->format->height < fmts[i].height_min)) {
+	if (fmts[i].pixelformat == 0) {
+		LOG_ERR("Nothing matching the requested format was found");
 		return -EINVAL;
 	}
 
@@ -364,7 +474,7 @@ static int video_sw_generator_init(const struct device *dev)
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
-	k_work_init_delayable(&data->buf_work, __buffer_work);
+	k_work_init_delayable(&data->work, video_sw_generator_worker);
 
 	return 0;
 }
