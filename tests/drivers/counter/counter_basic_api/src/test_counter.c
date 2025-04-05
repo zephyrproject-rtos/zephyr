@@ -129,6 +129,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
+#ifdef CONFIG_COUNTER_RA_AGT
+	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -728,16 +731,16 @@ static void test_valid_function_without_alarm(const struct device *dev)
 	ticks_tol = ticks_expected / 10;
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
-	if (!counter_is_counting_up(dev)) {
-		ticks_expected = counter_get_top_value(dev) - ticks_expected;
-	}
-
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: counter failed to start", dev->name);
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
-	ticks_expected += tick_current;
+	if (counter_is_counting_up(dev)) {
+		ticks_expected += tick_current;
+	} else {
+		ticks_expected = tick_current - ticks_expected;
+	}
 
 	k_busy_wait(wait_for_us);
 
@@ -808,7 +811,7 @@ static void test_late_alarm_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	alarm_cfg.ticks = counter_is_counting_up(dev) ? 0 : counter_get_top_value(dev);
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err, "%s: Unexpected error (%d)", dev->name, err);
 
@@ -859,7 +862,7 @@ static void test_late_alarm_error_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	alarm_cfg.ticks = counter_get_top_value(dev);
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err,
 			"%s: Failed to detect late setting (err: %d)",
