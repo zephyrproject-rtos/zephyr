@@ -295,8 +295,6 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan);
 
 struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
 
-static void bt_att_sent(struct bt_l2cap_chan *ch);
-
 static void att_disconnect(struct bt_att_chan *chan)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -317,26 +315,6 @@ static void att_disconnect(struct bt_att_chan *chan)
 	if (err) {
 		LOG_ERR("Disconnecting failed (err %d)", err);
 	}
-}
-
-static void att_sent(void *user_data)
-{
-	struct bt_att_tx_meta_data *data = user_data;
-	struct bt_att_chan *att_chan = data->att_chan;
-	struct bt_conn *conn = att_chan->att->conn;
-	struct bt_l2cap_chan *chan = &att_chan->chan.chan;
-
-	__ASSERT_NO_MSG(!bt_att_is_enhanced(att_chan));
-
-	LOG_DBG("conn %p chan %p", conn, chan);
-
-	/* For EATT, `bt_att_sent` is assigned to the `.sent` L2 callback.
-	 * L2CAP will then call it once the SDU has finished sending.
-	 *
-	 * For UATT, this won't happen, as static LE l2cap channels don't have
-	 * SDUs. Call it manually instead.
-	 */
-	bt_att_sent(chan);
 }
 
 /* In case of success the ownership of the buffer is transferred to the stack
@@ -549,7 +527,7 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 }
 
 /* Send requests without taking tx_sem */
-static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
+static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 {
 	struct net_buf *buf;
 	int err;
@@ -606,7 +584,8 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
 		sys_snode_t *node = sys_slist_get(&att->reqs);
 
-		if (chan_req_send(chan, ATT_REQ(node)) >= 0) {
+		err = bt_att_chan_req_send(chan, ATT_REQ(node));
+		if (err == 0) {
 			return;
 		}
 
@@ -686,9 +665,20 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 	}
 
 	if (!bt_att_is_enhanced(meta->att_chan)) {
-		/* For EATT, L2CAP will call it after the SDU is fully sent. */
-		LOG_DBG("UATT bearer, calling att_sent");
-		att_sent(meta);
+		struct bt_att_chan *att_chan = meta->att_chan;
+		struct bt_conn *conn = att_chan->att->conn;
+		struct bt_l2cap_chan *l2cap_chan = &att_chan->chan.chan;
+
+		ARG_UNUSED(conn);
+		LOG_DBG("UATT bearer, calling bt_att_sent: conn %p chan %p", conn, l2cap_chan);
+
+		/* For EATT, `bt_att_sent` is assigned to the `.sent` L2 callback.
+		 * L2CAP will then call it once the SDU has finished sending.
+		 *
+		 * For UATT, this won't happen, as static LE l2cap channels don't have
+		 * SDUs. Call it manually instead.
+		 */
+		bt_att_sent(l2cap_chan);
 	}
 
 	switch (op_type) {
@@ -903,19 +893,6 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_att_chan_req_send(struct bt_att_chan *chan,
-				struct bt_att_req *req)
-{
-	__ASSERT_NO_MSG(chan);
-	__ASSERT_NO_MSG(req);
-	__ASSERT_NO_MSG(req->func);
-	__ASSERT_NO_MSG(!chan->req);
-
-	LOG_DBG("req %p", req);
-
-	return chan_req_send(chan, req);
-}
-
 static void att_req_send_process(struct bt_att *att)
 {
 	struct bt_att_req *req = NULL;
@@ -943,7 +920,7 @@ static void att_req_send_process(struct bt_att *att)
 			continue;
 		}
 
-		if (bt_att_chan_req_send(chan, req) >= 0) {
+		if (bt_att_chan_req_send(chan, req) == 0) {
 			return;
 		}
 
@@ -3370,7 +3347,7 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 		return;
 	}
 
-	if (bt_att_chan_req_send(chan, ATT_REQ(node)) >= 0) {
+	if (bt_att_chan_req_send(chan, ATT_REQ(node)) == 0) {
 		return;
 	}
 
