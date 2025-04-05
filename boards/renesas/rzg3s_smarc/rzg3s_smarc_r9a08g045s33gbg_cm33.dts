@@ -83,11 +83,17 @@
 	status = "okay";
 };
 
-&gpio0{
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
-&gpio18{
+&gpio0 {
+	status = "okay";
+};
+
+&gpio18 {
 	status = "okay";
 };
 

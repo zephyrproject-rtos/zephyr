@@ -55,4 +55,13 @@
 			pinmux = <RZG_PINMUX(PORT_13, 4, 7)>; /* GTIOCA */
 		};
 	};
+
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_15, 0, 1)>, /* CK */
+				 <RZG_PINMUX(PORT_15, 1, 1)>, /* MOSI */
+				 <RZG_PINMUX(PORT_15, 2, 1)>, /* MISO */
+				 <RZG_PINMUX(PORT_15, 3, 1)>; /* SSL */
+		};
+	};
 };
