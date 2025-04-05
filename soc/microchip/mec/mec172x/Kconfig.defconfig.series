@@ -13,7 +13,18 @@ config NUM_IRQS
 
 rsource "Kconfig.defconfig.mec172x*"
 
-if RTOS_TIMER
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MCHP_XEC_RTOS_TIMER
+	default 96000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768 if MCHP_XEC_RTOS_TIMER
+	default 1000
+
+config CORTEX_M_SYSTICK
+	depends on !MCHP_XEC_RTOS_TIMER
+
+if MCHP_XEC_RTOS_TIMER
 
 config SOC_HAS_TIMING_FUNCTIONS
 	default y if !CORTEX_M_DWT
@@ -21,10 +32,7 @@ config SOC_HAS_TIMING_FUNCTIONS
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
-endif # RTOS_TIMER
-
-config CORTEX_M_SYSTICK
-	depends on !RTOS_TIMER
+endif # MCHP_XEC_RTOS_TIMER
 
 config PS2_XEC
 	default y
