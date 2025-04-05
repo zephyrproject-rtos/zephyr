@@ -26,6 +26,13 @@ config BOOTLOADER_MCUBOOT
 	help
 	  Include MCUboot (Zephyr port) as the bootloader to use
 
+config BOOTLOADER_CUSTOM
+	bool "Custom bootloader"
+	help
+	  Include custom bootloader in the build
+	  (the bootloader build must be configured and triggered
+	  from the target SOC or BOARD sysbuild system)
+
 endchoice
 
 if BOOTLOADER_MCUBOOT
