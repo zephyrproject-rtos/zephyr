@@ -21,22 +21,33 @@
 
 #ifdef CONFIG_SOC_M467
 #include <m460_eth.h>
+#else
+#include <numaker_eth.h>
 #endif
 
 LOG_MODULE_REGISTER(eth_numaker, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Device EMAC Interface port */
 #define NUMAKER_GMAC_INTF  0
-/* 2KB Data Flash at 0xFF800 */
-#define NUMAKER_DATA_FLASH (0xFF800U)
+/* 2KB Data Flash */
+#define NUMAKER_DATA_FLASH DT_PROP_OR(DT_NODELABEL(emac), data_flash, 0xFF800U)
+
 #define NUMAKER_MASK_32    (0xFFFFFFFFU)
 #define NUMAKER_MII_CONFIG (ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | \
 							ADVERTISE_100HALF | ADVERTISE_100FULL)
 #define NUMAKER_MII_LINKED (BMSR_ANEGCOMPLETE | BMSR_LSTATUS)
 
 extern synopGMACdevice GMACdev[GMAC_CNT];
+
+#ifdef CONFIG_NOCACHE_MEMORY
+DmaDesc tx_desc[GMAC_CNT][TRANSMIT_DESC_SIZE] __nocache __aligned(64);
+DmaDesc rx_desc[GMAC_CNT][RECEIVE_DESC_SIZE] __nocache __aligned(64);
+struct sk_buff tx_buf[GMAC_CNT][TRANSMIT_DESC_SIZE] __nocache __aligned(64);
+struct sk_buff rx_buf[GMAC_CNT][RECEIVE_DESC_SIZE] __nocache __aligned(64);
+#else
 extern struct sk_buff tx_buf[GMAC_CNT][TRANSMIT_DESC_SIZE];
 extern struct sk_buff rx_buf[GMAC_CNT][RECEIVE_DESC_SIZE];
+#endif
 
 static uint32_t eth_phy_addr;
 
