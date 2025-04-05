@@ -52,3 +52,8 @@ properties:
 
   interrupt-names:
     required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      - "accs": card access
+      - "card": card detect
+      - "dma-req": DMA request
