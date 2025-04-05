@@ -45,6 +45,7 @@
 	otghs_ulpi_phy: otghs_ulpis_phy {
 		compatible = "usb-ulpi-phy";
 		reset-gpios = <&gpiod 7 (GPIO_ACTIVE_LOW)>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 30)>;
 		#phy-cells = <0>;
 	};
 
