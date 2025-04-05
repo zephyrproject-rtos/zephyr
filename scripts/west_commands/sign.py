@@ -13,7 +13,8 @@ import subprocess
 import sys
 
 from elftools.elf.elffile import ELFFile
-
+# custom tool signer
+from west.configuration import config
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -79,6 +80,21 @@ You can also pass additional arguments to rimage thanks to [sign] and
 [rimage] sections in your west config file(s); this is especially useful
 when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
+
+sirps
+-----
+
+To create a signed binary with the Sirps tool, run this from your build directory:
+
+   west sign -t sirps -- --mic YOUR_OTA_KEY --encrypt YOUR_OTA_KEY --sign YOUR_PRIVATE_KEY.pem
+
+For this to work, either sirps must be installed in your PATH, or you must provide the path
+to sirps using the -p option (e.g., -p /path/to/sirps).
+
+The input binary (zephyr.bin.rps) is signed using the specified OTA key and private key,
+producing zephyr.bin.rps by default. If CONFIG_M4_OTA_KEY and CONFIG_M4_PRIVATE_KEY are set
+in your build configuration, they will be used unless overridden by command-line arguments.
+Additional arguments after '--' are passed to sirps directly.
 '''
 
 class ToggleAction(argparse.Action):
@@ -112,7 +128,7 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'sirps'],
                            help='''image signing tool name; imgtool and rimage
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
@@ -195,6 +211,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'sirps':
+            signer = SirpsSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +651,120 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+
+class SirpsSigner(Signer):
+    """Signer class for Silicon Labs Commander tool."""
+
+    def sign(self, command, build_dir, build_conf, formats):
+        """Sign the Zephyr binary using Silicon Labs Commander.
+
+        :param command: The Sign instance (provides args and utility methods)
+        :param build_dir: The build directory path
+        :param build_conf: BuildConfiguration object for the build directory
+        :param formats: List of formats to generate (e.g., ['bin', 'rps'])
+        """
+        self.command = command
+        args = command.args
+        b = pathlib.Path(build_dir)
+
+        # Check if signing is needed
+        if not formats:
+            if not args.quiet:
+                command.inf("No output formats specified, skipping signing.")
+            return
+
+        # Get tool path from args or default to system PATH
+        tool_path = args.tool_path if args.tool_path else shutil.which("commander")
+        if not tool_path:
+            command.die("commander not found; either install it or provide --tool-path")
+
+        if not args.quiet:
+            command.inf(f"Signing with tool {tool_path}")
+
+        # Load CMake cache to get BOARD_DIR
+        cache = CMakeCache.from_build_dir(build_dir)
+
+        # Get kernel binary name (default to 'zephyr')
+        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+
+        # Input and output files
+        in_bin = b / 'zephyr' / f"{kernel_name}.bin.rps"  # Raw binary input
+        out_rps = args.sbin or (b / 'zephyr' / f"{kernel_name}.bin.rps")  # Signed output
+
+        # Check if input binary exists
+        if not in_bin.is_file():
+            command.die(f"No unsigned .bin found at {in_bin}")
+
+        # Use $ENV{PWD} as working directory
+        working_dir = os.environ.get('PWD')
+        if not working_dir:
+            command.die("PWD environment variable not set")
+
+        # Get signing parameters with board Kconfig as primary source
+        m4_ota_key = None
+        m4_private_key = None
+
+        # Primary source: Board Kconfig defaults
+        board_dir = cache.get('BOARD_DIR') # Fallback to PWD if BOARD_DIR missing
+        board_kconfig = pathlib.Path(board_dir) / 'Kconfig.siwx917_r4338a'
+        if board_kconfig.is_file():
+            with open(board_kconfig, 'r') as f:
+                for line in f:
+                    if 'CONFIG_M4_OTA_KEY' in line and 'default' in line:
+                        m4_ota_key = line.split('default')[-1].strip().strip('"')
+                    if 'CONFIG_M4_PRIVATE_KEY' in line and 'default' in line:
+                        m4_private_key = line.split('default')[-1].strip().strip('"')
+        else:
+            if not args.quiet:
+                command.inf(f"No Kconfig.board found at {board_kconfig}, falling back to defaults")
+
+        # Secondary fallback: Hardcoded defaults if board Kconfig values are missing
+        if not m4_ota_key:
+            m4_ota_key = "default_OTA_KEY_IN_HEX"  # Hardcoded default
+            if not args.quiet:
+                command.inf(f"CONFIG_M4_OTA_KEY not found in board Kconfig, using default: {m4_ota_key}")
+        if not m4_private_key:
+            m4_private_key = "m4_private_key_in_.pem"  # Hardcoded default
+            if not args.quiet:
+                command.inf(f"CONFIG_M4_PRIVATE_KEY not found in board Kconfig, using default: {m4_private_key}")
+
+        # Resolve private key path relative to working_dir ($ENV{PWD}) or absolute
+        private_key_path = pathlib.Path(m4_private_key)
+        if not private_key_path.is_absolute():
+            private_key_path = pathlib.Path(working_dir) / m4_private_key
+        if not private_key_path.is_file():
+            command.die(f"Private key not found at {private_key_path}")
+
+        # Build the commander signing command
+        sign_base = [
+            tool_path,
+            "rps",
+            "convert",
+            str(out_rps),  # Output file
+            "--app", str(in_bin),  # Input binary
+            "--mic", m4_ota_key,   # OTA key for MIC
+            "--encrypt", m4_ota_key,  # OTA key for encryption
+            "--sign", str(private_key_path)  # Private key for signing
+        ]
+
+        # Add extra tool arguments if provided
+        sign_base.extend(args.tool_args)
+
+        # Log the command
+        if not args.quiet:
+            command.inf(f"Unsigned binary: {in_bin}")
+            command.inf(f"Signed output: {out_rps}")
+            command.dbg(quote_sh_list(sign_base))
+
+        # Execute the signing command
+        try:
+            subprocess.check_call(
+                sign_base,
+                stdout=subprocess.PIPE if args.quiet else None,
+                stderr=subprocess.PIPE if args.quiet else None
+            )
+        except subprocess.CalledProcessError as e:
+            command.die(f"Commander signing failed with exit code {e.returncode}")
+
+        if not args.quiet:
+            command.inf(f"Successfully generated signed file: {out_rps}")

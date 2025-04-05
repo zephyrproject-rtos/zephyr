@@ -3,3 +3,25 @@
 
 config BOARD_SIWX917_RB4338A
 	select SOC_PART_NUMBER_SIWG917M111MGTBA
+	
+# Kconfig.board for SiWx917 RB4338A
+
+config SIGNING_ENABLED
+  bool "Sign binary with Silicon Labs Commander"
+  default n
+  help
+    Enable signing the Zephyr binary with Silicon Labs Commander during build.
+
+config M4_OTA_KEY
+  string "M4 OTA Key for Commander"
+  default "OTA_KEY_IN_HEX"
+  depends on SIGNING_ENABLED
+  help
+    The OTA key (hex string) used for signing and encryption with Silicon Labs Commander.
+
+config M4_PRIVATE_KEY
+  string "M4 Private Key Path for Commander"
+  default "m4_private_key_path"
+  depends on SIGNING_ENABLED
+  help
+    Path to the private key file used for signing with Silicon Labs Commander, relative to the board directory.
