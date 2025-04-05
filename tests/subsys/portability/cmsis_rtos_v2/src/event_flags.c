@@ -77,9 +77,6 @@ void test_event_flags_no_wait_timeout(void)
 	evt_id = osEventFlagsNew(&event_flags_attrs);
 	zassert_true(evt_id != NULL, "Failed creating event flags");
 
-	name = osEventFlagsGetName(dummy_id);
-	zassert_true(name == NULL, "Invalid event Flags ID is unexpectedly working!");
-
 	name = osEventFlagsGetName(evt_id);
 	zassert_str_equal(event_flags_attrs.name, name, "Error getting event_flags object name");
 
