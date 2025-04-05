@@ -76,6 +76,27 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+
+	cs-gpios = <&gpio0 6 (GPIO_PUSH_PULL | GPIO_ACTIVE_LOW)>;
+
+	fpga0: fpga@0 {
+		status = "okay";
+		compatible = "lattice,ice40-fpga-bitbang";
+
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+
+		cdone-gpios = <&gpio0 0 0>;
+		creset-gpios = <&gpio0 1 (GPIO_PUSH_PULL | GPIO_ACTIVE_LOW)>;
+		clk-gpios = <&gpio0 5 (GPIO_PUSH_PULL | GPIO_ACTIVE_LOW)>;
+		pico-gpios = <&gpio0 7 (GPIO_PUSH_PULL | GPIO_ACTIVE_LOW)>;
+		mhz-delay-count = <4>;
+		gpios-set-reg = <0x60004008>;
+		gpios-clear-reg = <0x6000400c>;
+		config-delay-us = <2000>;
+		leading-clocks = <8>;
+		trailing-clocks = <160>;
+	};
 };
 
 &gpio0 {
