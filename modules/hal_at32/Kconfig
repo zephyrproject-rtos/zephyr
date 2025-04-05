@@ -1,0 +1,205 @@
+# Copyright (c) 2021 ATL-Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_AT32_MODULE
+	bool
+
+config AT32_HAS_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AF pinmux model.
+
+config AT32_HAS_AFIO_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AFIO pinmux model.
+
+config HAS_AT32_HAL
+	bool
+	select HAS_CMSIS_CORE if ARM
+
+if HAS_AT32_HAL
+
+config AT32_HAS_LICK_32K
+	bool
+	help
+	  Use 32KHz oscillator for low speed internal RC Oscillator
+
+config AT32_HAS_LICK_40K
+	bool
+	help
+	  Use 40KHz oscillator for low speed internal RC Oscillator
+
+config AT32_LOW_SPEED_LICK_FREQUENCY
+	int
+	default 32000 if AT32_HAS_LICK_32K
+	default 40000 if AT32_HAS_LICK_40K
+	help
+	  Define value of low speed internal RC oscillator (IRC) in Hz
+
+config AT32_DBG_SUPPORT
+	bool "Use AT32 Debug features"
+	select USE_AT32_DBG
+	default y
+	help
+	  Enable AT32 Debug features.
+
+config USE_AT32_ADC
+	bool
+	help
+	  Enable AT32 Analog-to-Digital Converter (ADC) HAL module driver
+
+config USE_AT32_BPR
+	bool
+	help
+	  Enable AT32 Battery powered domain data Registers (BPR) HAL module driver
+
+config USE_AT32_CAN
+	bool
+	help
+	  Enable AT32 Controller Area Network (CAN) HAL module driver
+
+config USE_AT32_CMP
+	bool
+	help
+	  Enable AT32 Comparator (CMP) HAL module driver
+
+config USE_AT32_CRC
+	bool
+	help
+	  Enable AT32 Cyclic redundancy check calculation unit (CRC) HAL
+	  module driver
+
+config USE_AT32_ACC
+	bool
+	help
+	  Enable AT32 HICK Clock auto trim (ACC) HAL module driver
+
+config USE_AT32_DAC
+	bool
+	help
+	  Enable AT32 Digital-to-Analog Converter (DAC) HAL module driver
+
+config USE_AT32_DBG
+	bool
+	help
+	  Enable AT32 Debug (DBG) HAL module driver
+
+config USE_AT32_DVP
+	bool
+	help
+		Enable AT32 Digital Video parallel Interface (DVP) HAL module driver
+
+config USE_AT32_DMA
+	bool
+	help
+	  Enable AT32 Direct Memory Access controller (DMA) HAL module driver
+
+config USE_AT32_EMAC
+	bool
+	help
+	  Enable AT32 Ethernet MAC(EMAC) HAL module driver
+
+config USE_AT32_XMC
+	bool
+	help
+	  Enable AT32 External Memory Controller (EXMC) HAL module driver
+	  
+config USE_AT32_MISC
+	bool
+	help
+	  Enable AT32 (MISC) HAL module driver
+
+config USE_AT32_EXINT
+	bool
+	help
+	  Enable AT32 Interrupt/Event controller (EXINT) HAL module driver
+
+config USE_AT32_FLASH
+	bool
+	help
+	  Enable AT32 Flash Memory Controller (FMC) HAL module driver
+
+config USE_AT32_WDT
+	bool
+	help
+	  Enable AT32 Watchdog (WDT) HAL module driver
+
+config USE_AT32_GPIO
+	bool
+	default y
+	help
+	  Enable AT32 General-purpose and Alternate-Function I/Os
+	  (GPIO and IOMUX) HAL module driver
+
+config USE_AT32_I2C
+	bool
+	help
+	  Enable AT32 Inter-Integrated Circuit Interface (I2C) HAL module driver
+
+config USE_AT32_PWC
+	bool
+	help
+	  Enable AT32 Power Control (PWC) HAL module driver
+
+config USE_AT32_CRM
+	bool
+	default y
+	help
+	  Enable AT32 Clock and Reset (CRM) HAL module driver
+
+config USE_AT32_ERTC
+	bool
+	help
+	  Enable AT32 Enhanced Real-Time Clock (RTC) HAL module driver
+	  
+config USE_AT32_RTC
+	bool
+	help
+	  Enable AT32 Real-Time Clock (RTC) HAL module driver
+
+config USE_AT32_SDIO
+	bool
+	help
+	  Enable AT32 Secure Digital Input/Output interface (SDIO) HAL module
+	  driver
+
+config USE_AT32_SPI
+	bool
+	help
+	  Enable AT32 Serial Peripheral Interface(SPI) HAL module driver
+
+config USE_AT32_QSPI
+	bool
+	help
+	  Enable AT32 Serial/Quad Parallel Interface (QSPI) HAL module driver
+
+config USE_AT32_SYSCFG
+	bool
+	help
+	  Enable AT32 System Configuration (SYSCFG) HAL module driver
+
+config USE_AT32_TIMER
+	bool
+	help
+	  Enable AT32 Timer (TIMER) HAL module driver
+
+config USE_AT32_USART
+	bool
+	help
+	  Enable AT32 Universal Synchronous/Asynchronous Receiver/Transmitter
+	  (USART) HAL module driver
+
+config USE_AT32_USB
+	bool
+	help
+	  Enable AT32 Universal Serial Bus interface (USB/OTG)
+	  HAL module driver
+
+
+config USE_AT32_WWDT
+	bool
+	help
+	  Enable AT32 Window Watchdog Timer (WWDT) HAL module driver
+
+endif # HAS_AT32_HAL
