@@ -20,10 +20,15 @@ list(APPEND TOOLCHAIN_LD_FLAGS  -mabi=lp64)
 set(LLEXT_REMOVE_FLAGS
   -fno-pic
   -fno-pie
-  -ffunction-sections
-  -fdata-sections
   -Os
 )
+
+if(NOT DEFINED(CONFIG_LLEXT_SYMBOL_GC))
+  list(APPEND LLEXT_REMOVE_FLAGS
+    -ffunction-sections
+    -fdata-sections
+  )
+endif()
 
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
   --sysroot=.*
