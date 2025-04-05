@@ -101,6 +101,8 @@ struct lsm6dso_data {
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	const struct sensor_trigger *trig_drdy_acc;
+	sensor_trigger_handler_t handler_delta_acc;
+	const struct sensor_trigger *trig_delta_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
