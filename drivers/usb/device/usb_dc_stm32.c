@@ -96,7 +96,11 @@ static const struct gpio_dt_spec ulpi_reset =
 #define HIGH_SPEED             USB_OTG_SPEED_HIGH
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define FULL_SPEED             PCD_SPEED_FULL
+#else
 #define FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series

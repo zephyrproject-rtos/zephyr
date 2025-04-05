@@ -50,7 +50,11 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define HIGH_SPEED             USB_OTG_SPEED_HIGH
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define FULL_SPEED             PCD_SPEED_FULL
+#else
 #define FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
 
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
