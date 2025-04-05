@@ -899,18 +899,38 @@ static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+#endif
 
+#ifdef CONFIG_BT_MESH_PRIV_BEACON_SRV
 static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
 					     void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_proxy_priv_identity_cmd *cp = cmd;
+	uint16_t net_idx[CONFIG_BT_MESH_SUBNET_COUNT];
+	enum bt_mesh_feat_state priv_node_id = BT_MESH_FEATURE_DISABLED;
+	ssize_t count;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_proxy_private_identity_enable();
-	if (err) {
-		LOG_ERR("Failed to enable proxy private identity (err %d)", err);
+	count = bt_mesh_subnets_get(net_idx, ARRAY_SIZE(net_idx), 0);
+
+	if (count <= 0) {
+		LOG_ERR("No subnet (err:%i)", count);
 		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->enabled) {
+		priv_node_id = BT_MESH_FEATURE_ENABLED;
+	}
+
+	for (int i = 0; i < count; i++) {
+		err = bt_mesh_subnet_priv_node_id_set(net_idx[i], priv_node_id);
+		if (err) {
+			LOG_ERR("Failed to %s proxy private identity for net idx:%x (err %d)",
+				cp->enabled ? "enable" : "disable", net_idx[i], err);
+			return BTP_STATUS_FAILED;
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -5251,8 +5271,10 @@ static const struct btp_handler handlers[] = {
 	{.opcode = BTP_MESH_PRIV_NODE_ID_SET,
 	 .expect_len = sizeof(struct btp_priv_node_id_set_cmd),
 	 .func = priv_node_id_set},
+#endif
+#ifdef CONFIG_BT_MESH_PRIV_BEACON_SRV
 	{.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
-	 .expect_len = 0,
+	 .expect_len = sizeof(struct btp_proxy_priv_identity_cmd),
 	 .func = proxy_private_identity_enable},
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
