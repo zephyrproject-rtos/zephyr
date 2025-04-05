@@ -79,6 +79,14 @@ config MODBUS_FC08_DIAGNOSTIC
 	help
 	  Enable function code 08 Diagnostic support
 
+config MODBUS_STOP_BITS_IN_SERVER_MODE
+	bool "Use stop_bits_client parameter in server mode"
+	depends on MODBUS_SERVER
+	depends on MODBUS_SERIAL
+	default n
+	help
+	  Use stop_bits_client parameter to define number of stop bits in server mode
+
 module = MODBUS
 module-str = Modbus Support
 module-help = Sets log level for Modbus support

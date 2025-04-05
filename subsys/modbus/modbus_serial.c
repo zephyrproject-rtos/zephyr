@@ -477,8 +477,8 @@ static inline int configure_uart(struct modbus_context *ctx,
 		return -EINVAL;
 	}
 
-	if (ctx->client) {
-		/* Allow custom stop bit settings only in client mode */
+	if (ctx->client || IS_ENABLED(CONFIG_MODBUS_STOP_BITS_IN_SERVER_MODE)) {
+		/* Allow custom stop bit settings */
 		switch (param->serial.stop_bits_client) {
 		case UART_CFG_STOP_BITS_0_5:
 		case UART_CFG_STOP_BITS_1:
