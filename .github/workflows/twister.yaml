@@ -143,9 +143,9 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --no-detailed-test-id --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 '
-      WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered'
-      PR_OPTIONS: ' --clobber-output --integration'
-      PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered'
+      WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
+      PR_OPTIONS: ' --clobber-output --integration -j 16'
+      PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
