@@ -1,0 +1,5 @@
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_DALI_PWM      dali_pwm.c)
+zephyr_library_sources_ifdef(CONFIG_DALI_LPC11U6X dali_lpc11u6x.c)
+zephyr_library_sources_ifdef(CONFIG_DALI_NRF      dali_nrf.c)
+zephyr_include_directories(include)
