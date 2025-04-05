@@ -563,6 +563,36 @@ static int cmd_i3c_hdr_ddr_read(const struct shell *sh, size_t argc, char **argv
 	return ret;
 }
 
+/* i3c ccc rstdaa_dc <device> <target> */
+static int cmd_i3c_ccc_rstdaa_dc(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!(desc->flags & I3C_V1P0_SUPPORT)) {
+		shell_error(sh, "I3C: %s does not support RSTDAA_DC.", tdev->name);
+		return -ENOTSUP;
+	}
+
+	ret = i3c_ccc_do_rstdaa(desc);
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC RSTDAA.");
+		return ret;
+	}
+
+	/* reset device DA */
+	desc->dynamic_addr = 0;
+	shell_print(sh, "Reset dynamic address for device %s", desc->dev->name);
+
+	return ret;
+}
+
 /* i3c ccc rstdaa <device> */
 static int cmd_i3c_ccc_rstdaa(const struct shell *sh, size_t argc, char **argv)
 {
@@ -626,7 +656,7 @@ static int cmd_i3c_ccc_setaasa(const struct shell *sh, size_t argc, char **argv)
 
 	/* set all devices DA to SA */
 	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-		if ((desc->supports_setaasa) && (desc->dynamic_addr == 0) &&
+		if (((desc->flags) & I3C_SUPPORTS_SETAASA) && (desc->dynamic_addr == 0) &&
 		    (desc->static_addr != 0)) {
 			desc->dynamic_addr = desc->static_addr;
 		}
@@ -2231,6 +2261,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 /* L2 I3C CCC Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_ccc_cmds,
+	SHELL_CMD_ARG(rstdaa_dc, &dsub_i3c_device_attached_name,
+		      "Send CCC RSTDAA\n"
+		      "Usage: ccc rstdaa_dc <device> <target>",
+		      cmd_i3c_ccc_rstdaa_dc, 3, 0),
 	SHELL_CMD_ARG(rstdaa, &dsub_i3c_device_name,
 		      "Send CCC RSTDAA\n"
 		      "Usage: ccc rstdaa <device>",
