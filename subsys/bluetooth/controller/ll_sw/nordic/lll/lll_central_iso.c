@@ -429,6 +429,15 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		/* Get reference to ACL context */
+		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+		if (conn_lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		return;
 	}
 

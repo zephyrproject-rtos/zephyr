@@ -228,6 +228,13 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 */
 		radio_isr_set(isr_done, param);
 		radio_disable();
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		if (lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		return;
 	}
 
