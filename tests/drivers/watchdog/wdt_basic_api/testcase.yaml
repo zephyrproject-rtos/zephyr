@@ -1,5 +1,6 @@
 common:
   depends_on: watchdog
+  expect_reboot: true
   tags:
     - drivers
     - watchdog
