@@ -47,6 +47,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT sensry_sy1xx_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_axi_ethernet_1_00_a_mdio)
 #define DT_DRV_COMPAT xlnx_axi_ethernet_1_00_a_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_gem_mdio)
+#define DT_DRV_COMPAT xlnx_gem_mdio
 #else
 #error "No known devicetree compatible match for MDIO shell"
 #endif
