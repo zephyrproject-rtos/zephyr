@@ -917,35 +917,52 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @brief Set deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a time delta from the
- * current time, in the same units used by k_cycle_get_32().  The
- * scheduler (when deadline scheduling is enabled) will choose the
+ * current time, in system ticks (the fundamental kernel timekeeping unit).
+ * The scheduler (when deadline scheduling is enabled) will choose the
  * next expiring thread when selecting between threads at the same
- * static priority.  Threads at different priorities will be scheduled
+ * static priority. Threads at different priorities will be scheduled
  * according to their static priority.
  *
- * @note Deadlines are stored internally using 32 bit unsigned
- * integers.  The number of cycles between the "first" deadline in the
- * scheduler queue and the "last" deadline must be less than 2^31 (i.e
- * a signed non-negative quantity).  Failure to adhere to this rule
- * may result in scheduled threads running in an incorrect deadline
- * order.
+ * @note Deadlines are stored internally using 32 bit signed integers.
+ * The number of system ticks between the "first" deadline in the scheduler
+ * queue and the "last" deadline must be less than 2^31 (i.e a signed
+ * non-negative quantity). Failure to adhere to this rule may result
+ * in scheduled threads running in an incorrect deadline order.
  *
  * @note Despite the API naming, the scheduler makes no guarantees
  * the thread WILL be scheduled within that deadline, nor does it take
  * extra metadata (like e.g. the "runtime" and "period" parameters in
  * Linux sched_setattr()) that allows the kernel to validate the
- * scheduling for achievability.  Such features could be implemented
+ * scheduling for achievability. Such features could be implemented
  * above this call, which is simply input to the priority selection
  * logic.
  *
  * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
- * @param thread A thread on which to set the deadline
- * @param deadline A time delta, in cycle units
+ * @param thread The thread on which to set the deadline.
+ * @param deadline The relative deadline value.
  *
  */
-__syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+__syscall void k_thread_deadline_set(k_tid_t thread, k_timeout_t deadline);
+
+/**
+ * @brief Set the absolute deadline expiration time for scheduler
+ *
+ * This sets the "deadline" of a thread in terms of the absolute point
+ * in time of which the thread should have completed its work by then.
+ * It is a complement for the k_thread_deadline_set API, which accepts
+ * a relative deadline and internally calculate the absolute value from
+ * it.
+ *
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * configuration.
+ *
+ * @param thread The thread on which to set the deadline.
+ * @param deadline The absolute deadline value.
+ *
+ */
+__syscall void k_thread_deadline_set_absolute(k_tid_t thread, k_timeout_t deadline);
 #endif
 
 /**
