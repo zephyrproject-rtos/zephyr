@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  drivers.stepper.drv8424.api:
+  drivers.counter.rpi_pico_pit:
     tags:
       - drivers
-      - stepper
+      - counter
       - api
-      - drv8424
+      - pwm
+    depends_on: counter
+    min_ram: 16
     platform_allow:
-      - nucleo_f767zi
-      - mimxrt1060_evk/mimxrt1062/qspi
-      - native_sim
       - rpi_pico
+    timeout: 600
