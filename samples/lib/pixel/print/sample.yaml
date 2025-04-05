@@ -1,0 +1,21 @@
+sample:
+  description: Pixel Print sample, print images in the terminal for debug purpose
+  name: pixel print
+common:
+  min_ram: 32
+  tags: pixel
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "truecolor:"
+      - "256color:"
+      - "hexdump:"
+      - "histogram"
+tests:
+  sample.pixel.print:
+    tags: pixel
+    extra_configs:
+      - CONFIG_PIXEL_PRINT_NONE=y
