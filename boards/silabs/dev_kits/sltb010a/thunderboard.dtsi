@@ -68,6 +68,12 @@
 	clock-frequency = <76800000>;
 };
 
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_K(76800)>;
+};
+
 &pstate_em3 {
 	status = "disabled";
 };
