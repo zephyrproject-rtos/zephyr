@@ -22,7 +22,7 @@ int main(void)
 
 	/* get the DALI device */
 	const struct device *dali_dev = DEVICE_DT_GET(DALI_NODE);
-	if (!dali_dev) {
+	if (!device_is_ready(dali_dev)) {
 		LOG_ERR("failed to get DALI device.");
 		return 0;
 	}
