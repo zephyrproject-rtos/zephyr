@@ -216,7 +216,7 @@ endfunction()
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
-  set(app_types MAIN BOOTLOADER)
+  set(app_types MAIN BOOTLOADER HARNESS)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
@@ -387,6 +387,10 @@ function(ExternalZephyrProject_Add)
   set(image_default "${CMAKE_SOURCE_DIR}/image_configurations/ALL_image_default.cmake")
 
   if(DEFINED ZBUILD_APP_TYPE)
+    # reuse image_configurations for HARNESS APPLICATION
+    if("${ZBUILD_APP_TYPE}" STREQUAL "HARNESS")
+      set(ZBUILD_APP_TYPE "MAIN")
+    endif()
     list(APPEND image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
   endif()
 

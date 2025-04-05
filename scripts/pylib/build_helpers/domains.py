@@ -40,6 +40,9 @@ mapping:
           build_dir:
             required: true
             type: str
+          app_type:
+            required: false
+            type: str
   flash_order:
     required: false
     type: seq
