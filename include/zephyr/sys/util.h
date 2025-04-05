@@ -28,6 +28,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 /** @brief Number of bits that make up a type */
 #define NUM_BITS(t) (sizeof(t) * BITS_PER_BYTE)
@@ -781,6 +782,40 @@ static inline void mem_xor_32(uint8_t dst[4], const uint8_t src1[4], const uint8
 static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const uint8_t src2[16])
 {
 	mem_xor_n(dst, src1, src2, 16);
+}
+
+/**
+ * @brief Compare memory areas. The same way as `memcmp` it assume areas to be
+ * the same length
+ *
+ * @param m1 First memory area to compare, cannot be NULL even if length is 0
+ * @param m2 Second memory area to compare, cannot be NULL even if length is 0
+ * @param n First n bytes of @p m1 and @p m2 to compares
+ *
+ * @returns true if the @p n first bytes of @p m1 and @p m2 are the same, else
+ * false
+ */
+static inline bool util_memeq(const void *m1, const void *m2, size_t n)
+{
+	return memcmp(m1, m2, n) == 0;
+}
+
+/**
+ * @brief Compare memory areas and their length
+ *
+ * If the length are 0, return true.
+ *
+ * @param m1 First memory area to compare, cannot be NULL even if length is 0
+ * @param len1 Length of the first memory area to compare
+ * @param m2 Second memory area to compare, cannot be NULL even if length is 0
+ * @param len2 Length of the second memory area to compare
+ *
+ * @returns true if both the length of the memory areas and their content are
+ * equal else false
+ */
+static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t len2)
+{
+	return len1 == len2 && (m1 == m2 || util_memeq(m1, m2, len1));
 }
 
 #ifdef __cplusplus
