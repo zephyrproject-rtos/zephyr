@@ -20,6 +20,7 @@ common:
     - mimxrt1180_evk/mimxrt1189/cm7
     - mimxrt700_evk/mimxrt798s/cm33_cpu0
     - nucleo_f207zg
+    - nucleo_h7s3l8
     - teensy40
     - teensy41
     - b_u585i_iot02a
@@ -29,6 +30,7 @@ common:
     - frdm_mcxa156
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
+    - stm32h7s78_dk
   depends_on: usb_device
   filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions")
     and dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
