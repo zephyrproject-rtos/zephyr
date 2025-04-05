@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF54H20_IRONSIDE_SE_BOOT_REPORT
+	bool "Nordic IRONside SE boot report"
+	default y if SOC_NRF54H20_CPUAPP
+	depends on SOC_NRF54H20_IRON
+	help
+	  This option enables parsing of the Boot Report populated by Nordic IRONside SE.
+
+config SOC_NRF54H20_IRONSIDE_SE_BOOT_REPORT_MAGIC
+	hex
+	default 0x4d69546f
+	help
+	  Constant used to check if an Nordic IRONside SE boot report has been written.

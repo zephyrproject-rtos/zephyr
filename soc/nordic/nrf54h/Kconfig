@@ -74,8 +74,9 @@ config SOC_NRF54H20_CPUPPR
 config SOC_NRF54H20_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
-rsource "bicr/Kconfig"
-rsource "gpd/Kconfig"
-
 config SOC_NRF54H20_IRON
 	select EXPERIMENTAL if MCUBOOT
+
+rsource "bicr/Kconfig"
+rsource "gpd/Kconfig"
+rsource "ironside/se/Kconfig"
