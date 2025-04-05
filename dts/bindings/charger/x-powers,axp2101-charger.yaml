@@ -1,0 +1,67 @@
+# Copyright 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Charger part of the AXP2101 PMU MFD device.
+
+  This charger should be instantiated as child of the AXP2101 MFD device, i.e.
+
+  axp2101@34 {
+    compatible = "x-powers,axp2101";
+    reg = <0x34>;
+
+    charger {
+      compatible = "x-powers,axp2101-charger";
+      constant-charge-current-ma = <300>;
+      constant-charge-voltage-mv = <4200>;
+    };
+
+    regulators {
+    ...
+    }
+  }
+
+compatible: "x-powers,axp2101-charger"
+
+include: base.yaml
+
+properties:
+  constant-charge-current-ma:
+    required: true
+    type: int
+    enum:
+      - 100
+      - 125
+      - 150
+      - 175
+      - 200
+      - 300
+      - 400
+      - 500
+      - 600
+      - 700
+      - 800
+      - 900
+      - 1000
+    description: |
+      The charge current target for the constant current phase of the charge profile.
+      The value is expressed in mA.
+
+  constant-charge-voltage-mv:
+    required: true
+    type: int
+    enum:
+      - 4000
+      - 4100
+      - 4200
+      - 4350
+      - 4400
+    description: |
+      The voltage regulation target for the constant voltage phase of the battery charging.
+      The value is expressed in mV.
+
+  vbackup-enable:
+    type: boolean
+    description:
+      Enable Vbackup on boot. This is normally used to charge a button battery
+      that is used by some RTC IC.
