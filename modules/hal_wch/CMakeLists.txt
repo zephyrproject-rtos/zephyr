@@ -1,3 +1,3 @@
-if(CONFIG_SOC_CH32V003 OR CONFIG_SOC_SERIES_QINGKE_V4C)
-  zephyr_include_directories(${ZEPHYR_HAL_WCH_MODULE_DIR}/ch32v003fun .)
+if(CONFIG_SOC_FAMILY_CH32V)
+  zephyr_include_directories(${ZEPHYR_HAL_WCH_MODULE_DIR}/ch32fun .)
 endif()
