@@ -1,0 +1,7 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+tests:
+  net.socket.af_inet_raw: {}
