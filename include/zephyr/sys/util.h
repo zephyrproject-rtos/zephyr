@@ -783,6 +783,39 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
 	mem_xor_n(dst, src1, src2, 16);
 }
 
+/**
+ * @brief Returns the number of bits set in a value
+ *
+ * @param value The value to count number of bits set of
+ * @param len The number of octets in @p value
+ */
+static inline size_t zephyr_count_bits(const void *value, size_t len)
+{
+	size_t cnt = 0U;
+	size_t i = 0;
+
+#ifdef POPCOUNT
+	for (; i < len / sizeof(unsigned int); i++) {
+		unsigned int val = ((unsigned int *)value)[i];
+
+		cnt += POPCOUNT(val);
+	}
+	i *= sizeof(unsigned int); /* convert to a uint8_t index for the remainder (if any) */
+#endif
+
+	for (; i < len; i++) {
+		uint8_t value_u8 = ((uint8_t *)value)[i];
+
+		/* Implements Brian Kernighan’s Algorithm to count bits */
+		while (value_u8) {
+			value_u8 &= (value_u8 - 1);
+			cnt++;
+		}
+	}
+
+	return cnt;
+}
+
 #ifdef __cplusplus
 }
 #endif
