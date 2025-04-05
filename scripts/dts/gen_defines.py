@@ -102,6 +102,7 @@ def main():
             write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
+            write_maps(node)
             write_special_props(node)
             write_vanilla_props(node)
 
@@ -268,6 +269,93 @@ def write_bus(node: edtlib.Node) -> None:
         out_dt_define(f"{node.z_path_id}_BUS_{str2ident(one_bus)}", 1)
 
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
+
+
+def write_maps(node: edtlib.Node) -> None:
+
+    if not node._binding:
+        return
+
+    def convert(e):
+        return str(e) if isinstance(e, int) else "DT_" + node_z_path_id(e)
+
+    out_comment("Map properties:")
+
+    for i, m in enumerate(node.maps):
+        map_ident = str2ident(m.specifier + "-map")
+
+        for i, e in enumerate(m.map):
+            out_dt_define(f"{node.z_path_id}_P_{map_ident}_IDX_{i}_EXISTS", 1)
+            out_dt_define(f"{node.z_path_id}_P_{map_ident}_IDX_{i}", convert(e))
+
+        out_dt_define(
+            f"{node.z_path_id}_P_{map_ident}_FOREACH_PROP_ELEM(fn)",
+            " ".join(f"fn({convert(e)})" for e in m.map),
+        )
+
+        out_dt_define(
+            f"{node.z_path_id}_P_{map_ident}_FOREACH_PROP_ELEM_SEP(fn, sep)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn({convert(e)})" for e in m.map),
+        )
+
+        out_dt_define(
+            f"{node.z_path_id}_P_{map_ident}_FOREACH_PROP_ELEM_VARGS(fn, ...)",
+            " ".join(f"fn({convert(e)}, __VA_ARGS__)" for e in m.map),
+        )
+
+        out_dt_define(
+            f"{node.z_path_id}_P_{map_ident}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn({convert(e)}, __VA_ARGS__)" for e in m.map),
+        )
+
+        out_dt_define(f"{node.z_path_id}_P_{map_ident}_LEN", len(m.map))
+
+        args_strs = []
+        pos = 0
+        cnt = 0
+        while pos < len(m.map):
+            ents = m.child_addr + m.child_cell + m.parent_cells[cnt] + m.parent_addrs[cnt] + 1
+            args_strs.append(", ".join(list(map(convert, m.map[pos : pos + ents]))))
+            pos += ents
+            cnt += 1
+
+        map_step = f"{node.z_path_id}_P_{map_ident}"
+        np_args = f"DT_{node.z_path_id}, {map_ident}"
+        fn_calls = [f"fn({np_args}, {i}, {args})" for i, args in enumerate(args_strs)]
+        fn_va_calls = [f"fn({np_args}, {i}, {args}, __VARGS__)" for i, args in enumerate(args_strs)]
+
+        for i, a in enumerate(args_strs):
+            out_dt_define(f"{map_step}_MAP_IDX_{i}", a)
+
+        out_dt_define(f"{map_step}_MAP_FOREACH(fn)", " ".join(fn_calls))
+        out_dt_define(f"{map_step}_MAP_FOREACH_VARGS(fn, ...)", " ".join(fn_va_calls))
+        out_dt_define(
+            f"{map_step}_MAP_FOREACH_SEP(fn, sep)", " DT_DEBRACKET_INTERNAL sep ".join(fn_calls)
+        )
+        out_dt_define(
+            f"{map_step}_MAP_FOREACH_SEP_VARGS(fn, sep, ...)",
+            " DT_DEBRACKET_INTERNAL sep ".join(fn_va_calls),
+        )
+        out_dt_define(f"{map_step}_MAP_LEN", len(args_strs))
+
+        for i, _c in enumerate(m.parent_cells):
+            pos = 0
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_CHILD_ADDR_IDX", pos)
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_CHILD_ADDR_LEN", m.child_addr)
+            pos += m.child_addr
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_CHILD_CELL_IDX", pos)
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_CHILD_CELL_LEN", m.child_cell)
+            pos += m.child_cell
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_IDX", pos)
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_LEN", 1)
+            pos += 1
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_ADDR_IDX", pos)
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_ADDR_LEN", m.parent_addrs[i])
+            pos += m.parent_addrs[i]
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_CELL_IDX", pos)
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_PARENT_CELL_LEN", m.parent_cells[i])
+            pos += m.parent_cells[i]
+            out_dt_define(f"{map_step}_MAP_IDX_{i}_VARGS_IDX", pos)
 
 
 def write_special_props(node: edtlib.Node) -> None:

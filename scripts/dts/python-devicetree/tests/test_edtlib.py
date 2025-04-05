@@ -209,6 +209,52 @@ def test_reg():
     verify_regs(edt.get_node("/reg-nested-ranges/grandparent/parent/node"),
                 [(None, 0x30000000200000001, 0x1)])
 
+def test_map():
+    '''Tests for map properties'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    def verify_maps(
+        node,
+        specifier,
+        expected_maps,
+        expected_child_cell,
+        expected_child_addr,
+        expected_parent_cells,
+        expected_parent_addrs,
+    ):
+        def node_to_path(n):
+            return n if isinstance(n, int) else n.path
+
+        for m in [m for m in node.maps if m.specifier == specifier]:
+            maps = list(map(node_to_path, m.map))
+            assert maps == expected_maps
+            assert m.child_cell == expected_child_cell
+            assert m.child_addr == expected_child_addr
+            assert m.parent_cells == expected_parent_cells
+            assert m.parent_addrs == expected_parent_addrs
+
+    verify_maps(edt.get_node("/interrupt-map-test/nexus"), specifier="interrupt",
+                expected_maps=[0, 0, 0, 0, "/interrupt-map-test/controller-0", 0, 0,
+                               0, 0, 0, 1, "/interrupt-map-test/controller-1", 0, 0, 0, 1,
+                               0, 0, 0, 2, "/interrupt-map-test/controller-2", 0, 0, 0, 0, 0, 2,
+                               0, 1, 0, 0, "/interrupt-map-test/controller-0", 0, 3,
+                               0, 1, 0, 1, "/interrupt-map-test/controller-1", 0, 0, 0, 4,
+                               0, 1, 0, 2, "/interrupt-map-test/controller-2", 0, 0, 0, 0, 0, 5],
+                expected_child_cell=2, expected_child_addr=2,
+                expected_parent_cells=[1, 2, 3, 1, 2, 3], expected_parent_addrs=[1, 2, 3, 1, 2, 3])
+
+    verify_maps(edt.get_node("/interrupt-map-bitops-test/nexus"), specifier="interrupt",
+                expected_maps=[6, 6, 6, 6, "/interrupt-map-bitops-test/controller", 2, 1],
+                expected_child_cell=2, expected_child_addr=2,
+                expected_parent_cells=[2], expected_parent_addrs=[0])
+
+    verify_maps(edt.get_node("/gpio-map/connector"), specifier="gpio",
+                expected_maps=[1, 2, "/gpio-map/destination", 5,
+                               3, 4, "/gpio-map/destination", 6],
+                expected_child_cell=2, expected_child_addr=0,
+                expected_parent_cells=[1, 1], expected_parent_addrs=[0, 0])
+
 def test_pinctrl():
     '''Test 'pinctrl-<index>'.'''
     with from_here():
