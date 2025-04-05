@@ -577,9 +577,19 @@ rsource "Kconfig.obj_core"
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE_GCOV
-	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
+
+config SYSTEM_WORKQUEUE_STACK_SIZE_EXPLICIT
+	bool "Disable the automatic system workqueue stack size calculation"
+	help
+	  Disable the automatic determination of the system workqueue stack
+	  size, setting the stack size to SYSTEM_WORKQUEUE_STACK_SIZE.
+
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_DEFAULT
+	int
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+	help
+	  Used to maintain compatability with explicit stack size setting.
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
