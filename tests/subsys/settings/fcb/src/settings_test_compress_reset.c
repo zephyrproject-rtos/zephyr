@@ -12,7 +12,7 @@ ZTEST(settings_config_fcb, test_config_compress_reset)
 {
 	int rc;
 	struct settings_fcb cf;
-	struct flash_sector *fa;
+	const struct flash_sector *fa;
 	int elems[4];
 	int i;
 
