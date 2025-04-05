@@ -1,5 +1,5 @@
 tests:
-  bluetooth.host.l2cap.split.dut:
+  bluetooth.host.l2cap.split.build_dut:
     build_only: true
     tags:
       - bluetooth
