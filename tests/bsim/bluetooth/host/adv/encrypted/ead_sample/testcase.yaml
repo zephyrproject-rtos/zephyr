@@ -5,6 +5,7 @@ tests:
       - bluetooth
     platform_allow:
       - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_adv_encrypted_ead_sample_prj_conf
