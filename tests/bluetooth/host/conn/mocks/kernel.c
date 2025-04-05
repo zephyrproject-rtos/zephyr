@@ -31,5 +31,6 @@ DEFINE_FAKE_VALUE_FUNC(void *, k_heap_alloc, struct k_heap *, size_t, k_timeout_
 DEFINE_FAKE_VOID_FUNC(k_heap_free, struct k_heap *, void *);
 DEFINE_FAKE_VOID_FUNC(k_sched_lock);
 DEFINE_FAKE_VOID_FUNC(k_sched_unlock);
+DEFINE_FAKE_VALUE_FUNC(bool, k_is_in_sys_work);
 
 struct k_work_q k_sys_work_q;

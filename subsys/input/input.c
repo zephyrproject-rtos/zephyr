@@ -52,8 +52,7 @@ int input_report(const struct device *dev,
 #ifdef CONFIG_INPUT_MODE_THREAD
 	int ret;
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) && k_is_in_sys_work()) {
 		LOG_DBG("Timeout discarded. No blocking in syswq.");
 		timeout = K_NO_WAIT;
 	}

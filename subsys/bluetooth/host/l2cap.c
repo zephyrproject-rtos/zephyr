@@ -674,8 +674,7 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 					    size_t reserve,
 					    k_timeout_t timeout)
 {
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) && k_is_in_sys_work()) {
 		timeout = K_NO_WAIT;
 	}
 
