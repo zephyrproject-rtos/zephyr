@@ -1,0 +1,14 @@
+identifier: art_pi2
+name: art pi2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 640
+flash: 64
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+vendor: ruiside

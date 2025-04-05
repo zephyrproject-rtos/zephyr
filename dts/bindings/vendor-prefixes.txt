@@ -582,6 +582,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
