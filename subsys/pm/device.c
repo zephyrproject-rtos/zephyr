@@ -338,6 +338,19 @@ bool pm_device_on_power_domain(const struct device *dev)
 #endif
 }
 
+const struct device *pm_device_get_power_domain(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	if (pm_device_on_power_domain(dev) == false) {
+		return NULL;
+	}
+	return dev->pm_base->domain;
+#else
+	ARG_UNUSED(dev);
+	return NULL;
+#endif
+}
+
 bool pm_device_is_powered(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
