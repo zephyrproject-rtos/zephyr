@@ -101,6 +101,13 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	uint8_t hop;
 	int err;
 
+	/* Disallow invalid connection interval */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_CONN_INTERVAL_LOW_LATENCY) &&
+	    !IN_RANGE(interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Concurrent scanning and initiating not supported */
 	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
