@@ -45,7 +45,6 @@ static struct fs_littlefs large = {
 		.prog_size = LARGE_IO_SIZE,
 		.cache_size = LARGE_CACHE_SIZE,
 		.lookahead_size = LARGE_LOOKAHEAD_SIZE,
-		.block_size = 32768, /* increase erase size */
 		.read_buffer = large_read_buffer,
 		.prog_buffer = large_prog_buffer,
 		.lookahead_buffer = large_lookahead_buffer,
