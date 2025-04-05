@@ -33,6 +33,18 @@ K_MUTEX_DEFINE(canopen_co_mutex);
 
 static canopen_rxmsg_callback_t rxmsg_callback;
 
+static bool_t canopen_download_in_progress;
+
+void canopen_set_firmware_download(bool_t in_progress)
+{
+	canopen_download_in_progress = in_progress;
+}
+
+bool_t canopen_firmware_download_in_progress(void)
+{
+	return canopen_download_in_progress;
+}
+
 inline void canopen_send_lock(void)
 {
 	k_mutex_lock(&canopen_send_mutex, K_FOREVER);
@@ -296,11 +308,6 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 	}
 }
 
-uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
-{
-	return rxMsg->ident;
-}
-
 CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 				uint16_t ident, uint16_t mask, bool_t rtr,
 				void *object,
@@ -457,7 +464,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule)
 	}
 }
 
-void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
+void CO_CANmodule_process(CO_CANmodule_t *CANmodule)
 {
 	CO_EM_t *em = (CO_EM_t *)CANmodule->em;
 	struct can_bus_err_cnt err_cnt;
