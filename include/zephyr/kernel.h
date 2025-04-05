@@ -332,20 +332,24 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 /**
  * @brief Dynamically allocate a thread stack.
  *
- * Dynamically allocate a thread stack either from a pool of thread stacks of size
- * @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap. Order is determined by the
- * kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL}
- * options. Thread stacks from the pool are of maximum size
- * @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
+ * Dynamically allocate a thread stack either from a pool of thread stacks of
+ * size @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap.
+ * Order is determined by the @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and
+ * @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL} options. Thread stacks from the
+ * pool are of maximum size @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
  *
- * Relevant stack creation flags include:
- * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
+ * @note When no longer required, thread stacks allocated with
+ * `k_thread_stack_alloc()` must be freed with @ref k_thread_stack_free to
+ * avoid leaking memory.
  *
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
  *
  * @retval the allocated thread stack on success.
  * @retval NULL on failure.
+ *
+ * Relevant stack creation flags include:
+ * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
  *
  * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
@@ -389,8 +393,7 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  *   enabled.
  *
  * Alternatively, the stack may be dynamically allocated using
- * @ref k_thread_stack_alloc. If this is the case, then the stack should
- * be freed using @ref k_thread_stack_free after joining the thread.
+ * @ref k_thread_stack_alloc.
  *
  * The stack_size parameter has constraints. It must either be:
  *
