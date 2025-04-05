@@ -200,7 +200,7 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 
 #define WS2812_SPI_DEVICE(idx)						 \
 									 \
-	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]; \
+	static __nocache uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]; \
 									 \
 	WS2812_COLOR_MAPPING(idx);					 \
 									 \
