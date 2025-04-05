@@ -149,7 +149,7 @@ The only difference is the structure of the build directory.
 
 .. note::
 
-   Remember that bootloader (MCUboot) needs to be flash at least once.
+   Remember that bootloader (MCUboot) needs to be flashed at least once.
 
 For the :code:`Hello, world!` application, follow the instructions below.
 
