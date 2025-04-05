@@ -1571,13 +1571,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
-	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 	uint8_t last_addr = 0;
-
-	/* DAA should not be done by secondary controllers */
-	if (ctrl_config->is_secondary) {
-		return -EACCES;
-	}
 
 	/* read dev active reg */
 	uint32_t olddevs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
@@ -2335,14 +2329,12 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(target->dynamic_addr);
 			if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
 				cmd->cmd0 |= CMD0_FIFO_RNW;
-				/*
-				 * For I3C_XMIT_MODE_NO_ADDR reads in SDN mode,
-				 * CMD0_FIFO_PL_LEN specifies the abort limit not bytes to read
-				 */
-				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl + 1);
-			} else {
-				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
 			}
+			/*
+			 * For I3C_XMIT_MODE_NO_ADDR reads in SDN mode,
+			 * CMD0_FIFO_PL_LEN specifies the abort limit not bytes to read
+			 */
+			cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
 
 			/* Send broadcast header on first transfer or after a STOP. */
 			if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
