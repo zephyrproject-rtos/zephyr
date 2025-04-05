@@ -1,0 +1,102 @@
+# Copyright (c) 2016,2023 Intel Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_CRC := zephyr,crc
+
+config CRC
+	bool "Cyclic redundancy check (CRC) Support"
+	help
+	  Enable use of CRC.
+
+if CRC
+config CRC4
+	bool "Cyclic Redundancy Check 4 bit"
+	depends on CRC_HAS_CRC4 || CRC_SW_HANDLER
+	default y
+	help
+	  Implements a CRC4 algorithm, useful for platforms that do not
+	  have dedicated CRC hardware. It offers flexibility at the cost of performance.
+
+config CRC7
+	bool "Cyclic Redundancy Check 7 bit"
+	depends on CRC_HAS_CRC7 || CRC_SW_HANDLER
+	default y
+	help
+	  Implements a CRC7 algorithm, suitable for error detection in
+	  applications such as SD cards and communication protocols.
+
+config CRC8
+	bool "Cyclic Redundancy Check 8 bit"
+	depends on CRC_HAS_CRC8 || CRC_SW_HANDLER
+	default y
+	help
+	  Implements a CRC8 algorithm, commonly used in small data integrity
+	  checks such as checksum verification.
+
+config CRC16
+	bool "Cyclic Redundancy Check 16-bit (CRC-16)"
+	depends on CRC_HAS_CRC16 || CRC_SW_HANDLER
+	default y
+	help
+	  Implements the standard CRC-16 algorithm, commonly used in
+	  storage devices, checksums, and data integrity verification
+	  in various protocols, including USB and Modbus.
+
+config CRC_CCITT
+	bool "Cyclic Redundancy Check 16-bit (CRC-16-CCITT)"
+	depends on CRC_HAS_CRC_CCITT || CRC_SW_HANDLER
+	default y
+	help
+	  Implements the CRC-16-CCITT algorithm, widely used in
+	  telecommunications, XMODEM, and other error-detection
+	  applications with a predefined polynomial for high reliability.
+
+config CRC24
+	bool "Cyclic Redundancy Check 24 bit"
+	depends on CRC_HAS_CRC24 || CRC_SW_HANDLER
+	default y
+	help
+	  Implements a CRC24 algorithm, used in applications like Bluetooth
+	  and certain cryptographic protocols.
+
+config CRC32_C
+	bool "Cyclic Redundancy Check 32-bit (CRC32-C)"
+	depends on CRC_HAS_CRC32_C || CRC_SW_HANDLER
+	default y
+	help
+	  Implements the CRC32-C (Castagnoli) algorithm, optimized for
+	  high-performance applications such as storage, networking,
+	  and error detection in modern processors.
+
+config CRC32_IEEE
+	bool "Cyclic Redundancy Check 32-bit (CRC32-IEEE)"
+	depends on CRC_HAS_CRC32_IEEE || CRC_SW_HANDLER
+	default y
+	help
+	  Implements the CRC32-IEEE (CRC-32) algorithm, commonly used
+	  in Ethernet, ZIP file integrity checks, and other standard
+	  networking and storage applications.
+
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select POSIX_C_LIB_EXT
+	help
+	  Enable CRC checking for memory regions from the shell.
+
+endif # CRC
+
+config CRC_HW_HANDLER
+	bool "CRC Hardware Accelerator"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	default y
+	help
+	  Enable use of CRC hardware
+
+config CRC_SW_HANDLER
+	bool "CRC Software implementation"
+	depends on !$(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	default y
+	help
+	  Enable use of CRC software
