@@ -38,6 +38,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		ioport0: gpio@40040000 {
 			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40040000 0x20>;
