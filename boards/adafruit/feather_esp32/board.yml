@@ -1,0 +1,11 @@
+board:
+  name: adafruit_feather_esp32
+  full_name: Adafruit ESP32 Feather
+  vendor: adafruit
+  socs:
+  - name: esp32
+  revision:
+    format: number
+    default: "2"
+    revisions:
+    - name: "2"
