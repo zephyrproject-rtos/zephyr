@@ -16,7 +16,7 @@ if(${MCUX_DEVICE} MATCHES "RW61")
   if(CONFIG_NXP_FW_LOADER)
     set(CONFIG_MCUX_COMPONENT_component.mflash_offchip ON)
     set(CONFIG_MCUX_COMPONENT_driver.cache_cache64 ON)
-    set(CONFIG_MCUX_COMPONENT_driver.flexspi ON PARENT_SCOPE)
+    set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
   endif()
 endif()
 
