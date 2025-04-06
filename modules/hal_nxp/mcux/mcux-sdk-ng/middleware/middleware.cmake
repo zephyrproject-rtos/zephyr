@@ -2,12 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-function(set_variable_ifdef feature_toggle variable)
-  if(${${feature_toggle}})
-    set(${variable} ON CACHE INTERNAL "global variable")
-  endif()
-endfunction()
-
 if(CONFIG_USB_DEVICE_DRIVER)
   zephyr_include_directories(middleware)
 

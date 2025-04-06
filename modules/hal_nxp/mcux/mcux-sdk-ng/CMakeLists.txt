@@ -11,6 +11,12 @@ include(${MCUX_SDK_NG_DIR}/cmake/extension/logging.cmake)
 include(${MCUX_SDK_NG_DIR}/cmake/extension/function.cmake)
 include(${MCUX_SDK_NG_DIR}/cmake/extension/basic_settings_lite.cmake)
 
+function(set_variable_ifdef feature_toggle variable)
+  if(${${feature_toggle}})
+    set(${variable} ON PARENT_SCOPE)
+  endif()
+endfunction()
+
 #specific operation to shared drivers
 if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
   zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/flexspi/fsl_flexspi.c
@@ -28,10 +34,10 @@ if((${MCUX_DEVICE} MATCHES "RW61") AND (NOT DEFINED CONFIG_MINIMAL_LIBC))
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memcpy.S)
 endif()
 
-add_subdirectory(middleware)
-add_subdirectory(components)
-add_subdirectory(drivers)
-add_subdirectory(device)
+include(middleware/middleware.cmake)
+include(components/components.cmake)
+include(drivers/drivers.cmake)
+include(device/device.cmake)
 
 # Expose the driver header include path, so that the shim driver can use them.
 get_target_property(MCUXSDK_INCLUDE_DIRS ${MCUX_SDK_PROJECT_NAME} INTERFACE_INCLUDE_DIRECTORIES)
