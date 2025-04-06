@@ -2,12 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-function(set_variable_ifdef feature_toggle variable)
-  if(${${feature_toggle}})
-    set(${variable} ON CACHE INTERNAL "global variable")
-  endif()
-endfunction()
-
 # fsl_common driver
 zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c
                        ${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
@@ -190,7 +184,7 @@ endif()
 if(CONFIG_SOC_MK82F25615 OR CONFIG_SOC_MK64F12 OR CONFIG_SOC_MK66F18 OR
     CONFIG_SOC_MKE14F16 OR CONFIG_SOC_MKE16F16 OR CONFIG_SOC_MKE18F16 OR
     CONFIG_SOC_MK22F12)
-  set(CONFIG_MCUX_COMPONENT_driver.sysmpu ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.sysmpu ON)
 endif()
 
 if(CONFIG_SOC_SERIES_MCXW)
@@ -215,7 +209,7 @@ if(CONFIG_SOC_SERIES_LPC55XXX)
 endif()
 
 if(CONFIG_SOC_SERIES_LPC51U68 OR CONFIG_SOC_SERIES_LPC54XXX OR CONFIG_SOC_SERIES_LPC55XXX)
-  set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
 endif()
 
 if(CONFIG_SOC_LPC55S36)
@@ -224,11 +218,11 @@ if(CONFIG_SOC_LPC55S36)
 endif()
 
 if(CONFIG_SOC_SERIES_IMXRT5XX OR CONFIG_SOC_SERIES_IMXRT6XX)
-  set(CONFIG_MCUX_COMPONENT_driver.lpc_iopctl ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.lpc_iopctl ON)
 endif()
 
 if(CONFIG_SOC_SERIES_RW6XX)
-  set(CONFIG_MCUX_COMPONENT_driver.ocotp_rw61x ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.ocotp_rw61x ON)
 endif()
 
 if(CONFIG_SOC_SERIES_IMXRT10XX)
@@ -238,24 +232,24 @@ if(CONFIG_SOC_SERIES_IMXRT10XX)
 endif()
 
 if(CONFIG_SOC_SERIES_IMXRT11XX)
-  set(CONFIG_MCUX_COMPONENT_driver.romapi ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.anadig_pmu ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.pgmc ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.dcdc_2 ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.anatop_ai ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.gpc_xxx_ctrl ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
+  set(CONFIG_MCUX_COMPONENT_driver.anadig_pmu ON)
+  set(CONFIG_MCUX_COMPONENT_driver.pgmc ON)
+  set(CONFIG_MCUX_COMPONENT_driver.dcdc_2 ON)
+  set(CONFIG_MCUX_COMPONENT_driver.anatop_ai ON)
+  set(CONFIG_MCUX_COMPONENT_driver.gpc_xxx_ctrl ON)
   set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx_soc)
 endif()
 
 if(CONFIG_SOC_SERIES_IMXRT118X)
-  set(CONFIG_MCUX_COMPONENT_driver.ele_base_api ON PARENT_SCOPE)
-  set(CONFIG_MCUX_COMPONENT_driver.anadig_pmu_1 ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.ele_base_api ON)
+  set(CONFIG_MCUX_COMPONENT_driver.anadig_pmu_1 ON)
   set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2 CONFIG_MCUX_COMPONENT_driver.src_3)
   set_variable_ifdef(CONFIG_WDT_MCUX_RTWDOG	CONFIG_MCUX_COMPONENT_driver.src_3)
 endif()
 
 if(CONFIG_SOC_SERIES_MCXA)
-  set(CONFIG_MCUX_COMPONENT_driver.romapi ON PARENT_SCOPE)
+  set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
 endif()
 
 if(CONFIG_SOC_SERIES_MCXN)
