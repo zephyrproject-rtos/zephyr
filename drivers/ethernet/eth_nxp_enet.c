@@ -163,12 +163,15 @@ static inline void ts_register_tx_event(const struct device *dev,
 	struct net_pkt *pkt = frameinfo->context;
 
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
-		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt) && frameinfo->isTsAvail) {
+		if ((eth_get_ptp_data(net_pkt_iface(pkt), pkt) ||
+		     net_pkt_is_tx_timestamping(pkt)) &&
+		    frameinfo->isTsAvail) {
 			/* Timestamp is written to packet in ISR.
 			 * Semaphore ensures sequential execution of writing
 			 * the timestamp here and subsequently reading the timestamp
 			 * after waiting for the semaphore in eth_wait_for_ptp_ts().
 			 */
+
 			pkt->timestamp.nanosecond = frameinfo->timeStamp.nanosecond;
 			pkt->timestamp.second = frameinfo->timeStamp.second;
 
@@ -184,7 +187,9 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 	struct nxp_enet_mac_data *data = dev->data;
 
 	net_pkt_ref(pkt);
-	k_sem_take(&data->ptp.ptp_ts_sem, K_FOREVER);
+	while (k_sem_take(&data->ptp.ptp_ts_sem, K_MSEC(200)) != 0) {
+		LOG_ERR("error on take PTP semaphore");
+	}
 }
 #else
 #define eth_get_ptp_data(...) false
@@ -220,10 +225,11 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 		goto exit;
 	}
 
-	frame_is_timestamped = eth_get_ptp_data(net_pkt_iface(pkt), pkt);
+	frame_is_timestamped =
+		eth_get_ptp_data(net_pkt_iface(pkt), pkt) || net_pkt_is_tx_timestamping(pkt);
 
-	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf,
-			     total_len, RING_ID, frame_is_timestamped, pkt);
+	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
+			     frame_is_timestamped, pkt);
 
 	if (ret != kStatus_Success) {
 		LOG_ERR("ENET_SendFrame error: %d", ret);
@@ -339,6 +345,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 {
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	const struct nxp_enet_mac_config *config = dev->config;
+	struct net_ptp_time ptp_time;
 #endif
 	struct nxp_enet_mac_data *data = dev->data;
 	uint32_t frame_length = 0U;
@@ -391,26 +398,20 @@ static int eth_nxp_enet_rx(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
-	/* Invalid value by default. */
-	pkt->timestamp.nanosecond = UINT32_MAX;
-	pkt->timestamp.second = UINT64_MAX;
+	/* Timestamp the packet using PTP clock. Add full second part
+	 * the hardware timestamp contains the fractional part of the second only
+	 */
+	ptp_clock_get(config->ptp_clock, &ptp_time);
 
-	/* Timestamp the packet using PTP clock */
-	if (eth_get_ptp_data(get_iface(data), pkt)) {
-		struct net_ptp_time ptp_time;
-
-		ptp_clock_get(config->ptp_clock, &ptp_time);
-
-		/* If latest timestamp reloads after getting from Rx BD,
-		 * then second - 1 to make sure the actual Rx timestamp is accurate
-		 */
-		if (ptp_time.nanosecond < ts) {
-			ptp_time.second--;
-		}
-
-		pkt->timestamp.nanosecond = ts;
-		pkt->timestamp.second = ptp_time.second;
+	/* If latest timestamp reloads after getting from Rx BD,
+	 * then second - 1 to make sure the actual Rx timestamp is accurate
+	 */
+	if (ptp_time.nanosecond < ts) {
+		ptp_time.second--;
 	}
+
+	pkt->timestamp.nanosecond = ts;
+	pkt->timestamp.second = ptp_time.second;
 	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
