@@ -27,6 +27,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
 		uint32_t pcfr1 = AFIO->PCFR1;
 		uint8_t cfg = 0;
+		bool is_adc = (bit0 == CH32V003_PINMUX_ADC1_RM);
 
 		if (remap != 0) {
 			RCC->APB2PCENR |= RCC_AFIOEN;
@@ -41,7 +42,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			cfg |= BIT(3);
 		} else {
 			if (pins->bias_pull_up || pins->bias_pull_down) {
+				/* "With pull up and pull down" mode */
 				cfg |= BIT(3);
+			} else if (is_adc) {
+				/* Analog input mode */
+				cfg = 0;
+			} else {
+				/* Floating input mode */
+				cfg |= BIT(0);
 			}
 		}
 		regs->CFGLR = (regs->CFGLR & ~(0x0F << (pin * 4))) | (cfg << (pin * 4));

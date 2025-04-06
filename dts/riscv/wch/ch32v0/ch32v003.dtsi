@@ -126,6 +126,16 @@
 			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
 			dma-channels = <7>;
 		};
+
+		adc1: adc@40012400 {
+			compatible = "wch,adc";
+			reg = <0x40012400 16>;
+			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <29>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
