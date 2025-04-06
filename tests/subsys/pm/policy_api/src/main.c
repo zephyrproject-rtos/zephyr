@@ -146,12 +146,12 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 /** Flag to indicate number of times callback has been called */
 static uint8_t latency_cb_call_cnt;
 /** Flag to indicate expected latency */
-static int32_t expected_latency;
+static uint32_t expected_latency;
 
 /**
  * Callback to notify when state allowed status changes.
  */
-static void on_pm_policy_latency_changed(int32_t latency)
+static void on_pm_policy_latency_changed(uint32_t latency)
 {
 	TC_PRINT("Latency changed to %d\n", latency);
 
