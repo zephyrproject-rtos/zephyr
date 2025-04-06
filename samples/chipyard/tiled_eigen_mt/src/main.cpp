@@ -1,51 +1,39 @@
-/*
- * Copyright (c) 2025, Dima Nikiforov <vnikiforov@berkeley.edu>
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/arch/cpu.h>
-#include <iostream>
-#include <Eigen/Dense>
-#include "data/matrices.hpp"  // This header defines matrix_A, matrix_B, and matrix_C
+#include <stdio.h>
+#include "data/matrices.hpp"
+#include "data/matlib_rvv.h"
 
-// Matrix dimensions and tiling parameters.
-constexpr int N = 32;       // Full matrix size.
-constexpr int nHalf = N/2;  // Block size (16).
-
-// Global Eigen matrices.
-static Eigen::Matrix<float, N, N> A, B, C_computed, C_precomputed;
-
-// Zephyr threading definitions.
-#define NUM_THREADS 4    // One thread per tile.
-#define STACK_SIZE 16384  // Stack size per thread.
+#define N 32
+#define nHalf (N / 2)
+#define NUM_THREADS 4
+#define STACK_SIZE 16384
 
 K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, NUM_THREADS, STACK_SIZE);
 struct k_thread thread_data[NUM_THREADS];
 k_tid_t thread_ids[NUM_THREADS];
-
 struct k_mutex print_mutex;
 
-// Thread function that computes one tile of the matrix multiplication.
+// Matrix buffers
+float A[N * N];
+float B[N * N];
+float C_computed[N * N];
+float C_precomputed[N * N];
+
 void tile_thread_function(void *arg1, void *arg2, void *arg3)
 {
     int thread_id = (int)(uintptr_t)arg1;
-    int tile_row = thread_id / 2;  // 0 for top, 1 for bottom.
-    int tile_col = thread_id % 2;  // 0 for left, 1 for right.
+    int tile_row = thread_id / 2;
+    int tile_col = thread_id % 2;
 
-    // Select the appropriate block of A and B.
-    Eigen::Matrix<float, nHalf, N> A_block = (tile_row == 0) ? A.topRows(nHalf) : A.bottomRows(nHalf);
-    Eigen::Matrix<float, N, nHalf> B_block = (tile_col == 0) ? B.leftCols(nHalf) : B.rightCols(nHalf);
+    int i = tile_row * nHalf;
+    int j = tile_col * nHalf;
+    int k = 0;
 
-    // Compute the tile: (nHalf x N) * (N x nHalf) = (nHalf x nHalf)
-    Eigen::Matrix<float, nHalf, nHalf> C_tile = A_block * B_block;
+    // Only compute the tile (i,j) portion
+    matmul_rvvt(A, B, C_computed, i, j, k, N, N, N, nHalf);
 
-    // Store the result in the correct block of the global C_computed matrix.
-    C_computed.block(tile_row * nHalf, tile_col * nHalf, nHalf, nHalf) = C_tile;
-
-    // Print thread information.
     k_mutex_lock(&print_mutex, K_FOREVER);
     int hart_id = arch_curr_cpu()->id;
     printf("Thread %d computed tile (%d, %d) on hart %d\n", thread_id, tile_row, tile_col, hart_id);
@@ -55,26 +43,26 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
 
 int main(void)
 {
-    std::cout << "Hello, C++ world! " << CONFIG_BOARD << std::endl;
+    printf("Hello, C world! %s\n", CONFIG_BOARD);
     k_mutex_init(&print_mutex);
 
-    // Load matrices from header arrays into global Eigen matrices.
-    for (int i = 0; i < N; ++i) {
+    // Load input matrices from header
+    for (int i = 0; i < N; ++i)
         for (int j = 0; j < N; ++j) {
-            A(i, j) = matrix_A[i][j];
-            B(i, j) = matrix_B[i][j];
-            C_precomputed(i, j) = matrix_C[i][j];
+            A[i * N + j] = matrix_A[i][j];
+            B[i * N + j] = matrix_B[i][j];
+            C_precomputed[i * N + j] = matrix_C[i][j];
         }
-    }
 
-    // Create and start NUM_THREADS threads, each pinned to a hart.
-    for (int i = 0; i < NUM_THREADS; i++) {
+    matset_rvv(C_computed, 0.0f, N, N);
+
+    for (int i = 0; i < NUM_THREADS; ++i) {
         int hart_id = i % CONFIG_MP_MAX_NUM_CPUS;
         thread_ids[i] = k_thread_create(&thread_data[i],
                                         thread_stacks[i],
                                         STACK_SIZE,
                                         tile_thread_function,
-                                        (void *)(uintptr_t)i,  // Pass thread id.
+                                        (void *)(uintptr_t)i,
                                         NULL, NULL,
                                         K_PRIO_PREEMPT(1),
                                         0,
@@ -86,24 +74,27 @@ int main(void)
         k_thread_start(thread_ids[i]);
     }
 
-    // Wait for all threads to complete.
-    for (int i = 0; i < NUM_THREADS; i++) {
+    for (int i = 0; i < NUM_THREADS; ++i) {
         k_thread_join(thread_ids[i], K_FOREVER);
     }
 
-    // Validate the computed result against the precomputed matrix.
-    const float tolerance = 1e-5f;
-    bool valid = C_computed.isApprox(C_precomputed, tolerance);
+    float tolerance = 1e-5f;
+    float diff[N * N];
+    matsub_rvv(C_computed, C_precomputed, diff, N, N);
+    float error = matnorm_rvv(diff, N, N);
 
-    if (valid) {
-        std::cout << "Validation passed: Parallel tiled matmul matches the precomputed output." << std::endl;
+    if (error < tolerance) {
+        printf("Validation passed: Result matches precomputed output (error = %f)\n", error);
     } else {
-        std::cout << "Validation failed: Parallel tiled matmul does not match the precomputed output." << std::endl;
+        printf("Validation failed: error = %f\n", error);
     }
 
-    // Optionally, print the top-left 4x4 block of the computed matrix.
-    std::cout << "Top-left 4x4 block of the computed matrix:\n"
-              << C_computed.block(0, 0, 4, 4) << std::endl;
+    printf("Top-left 4x4 block of the computed matrix:\n");
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j)
+            printf("%f ", C_computed[i * N + j]);
+        printf("\n");
+    }
 
     sys_reboot(SYS_REBOOT_COLD);
     return 0;
