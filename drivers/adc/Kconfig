@@ -152,4 +152,6 @@ source "drivers/adc/Kconfig.ad4130"
 
 source "drivers/adc/Kconfig.rts5912"
 
+source "drivers/adc/Kconfig.ch32v00x"
+
 endif # ADC
