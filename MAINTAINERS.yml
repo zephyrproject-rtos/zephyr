@@ -1822,7 +1822,6 @@ Release Notes:
 "Drivers: MFD":
   status: odd fixes
   collaborators:
-    - gmarull
     - aasinclair
   files:
     - drivers/mfd/
@@ -2392,8 +2391,6 @@ Input:
   status: maintained
   maintainers:
     - fabiobaltieri
-  collaborators:
-    - gmarull
   files:
     - doc/services/input/
     - drivers/input/
@@ -3487,7 +3484,6 @@ GD32 Platforms:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
     - cameled
   files:
@@ -4949,7 +4945,6 @@ West:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
