@@ -33,7 +33,6 @@ static const struct mspm0_clk_cfg mspm0_cfg_hfclk;
 static const struct mspm0_clk_cfg mspm0_cfg_lfxtclk;
 #endif
 
-#define MSPM0_CLOCK_BUS_ULPCLK_FREQ		40000000 /*40 MHz */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_out), okay)
 #define MSPM0_CLK_OUT_ENABLED 1
 struct mspm0_clk_out_cfg {
@@ -116,8 +115,12 @@ static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t
 		uint32_t clk_reg_value = 0;
 		uint8_t divider;
 		int *clk_rate = (int *)rate;
+		uint32_t ulpclk_rate;
 
-		divider = MSPM0_CLOCK_BUS_ULPCLK_FREQ / (*clk_rate);
+		ulpclk_rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+			DT_PROP(DT_NODELABEL(clkmux), uclk_div);
+
+		divider = ulpclk_rate / (*clk_rate);
 		divider = (divider / 2) - 1;
 		if (divider > 7)
 			divider = 7;
