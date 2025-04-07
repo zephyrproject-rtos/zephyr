@@ -1276,3 +1276,11 @@ test_i2c_ms5837_30ba: ms5837@ae {
 	reg = <0xae>;
 	status = "okay";
 };
+
+test_i2c_icp201xx: icp201xx@af {
+	compatible = "invensense,icp201xx";
+	reg = <0xaf>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
