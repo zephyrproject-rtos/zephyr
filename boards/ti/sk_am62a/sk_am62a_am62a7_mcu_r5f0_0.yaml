@@ -1,0 +1,8 @@
+identifier: sk_am62a/am62a7/mcu_r5f0_0
+name: TI AM62A Starter Kit (SK) R5FSS0 Core 0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+vendor: ti
