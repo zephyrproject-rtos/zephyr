@@ -13,6 +13,16 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
+config ZPERF_SESSION_PER_THREAD
+	bool "Run each session in a separate thread"
+	help
+	  Each session is started in its own thread. This means
+	  that the system will use more memory because multiple
+	  stack frames are needed, so this is not enabled by default.
+	  User is also able to set each thread priority separately and
+	  the ZPERF_WORK_Q_THREAD_PRIORITY is a default value if thread
+	  priority is not set when starting the session.
+
 config ZPERF_WORK_Q_THREAD_PRIORITY
 	int "zperf work queue thread priority"
 	default NUM_PREEMPT_PRIORITIES
