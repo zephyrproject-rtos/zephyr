@@ -1,0 +1,9 @@
+/*
+ * Copyright 2024 Nordic Semiconductor ASA
+ * Copyright 2025 Ezurio LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wdt31 {
+	status = "okay";
+};
