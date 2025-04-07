@@ -6,10 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <errno.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -17,12 +15,13 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/sys/byteorder.h>
 
 static void start_scan(void);
 
-static struct bt_conn *default_conn;
+static struct bt_conn *conn_connecting;
+static uint8_t volatile conn_count;
 
+#if defined(CONFIG_BT_GATT_CLIENT)
 static struct bt_uuid_16 discover_uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
@@ -94,11 +93,15 @@ static uint8_t discover_func(struct bt_conn *conn,
 			printk("[SUBSCRIBED]\n");
 		}
 
+		/* No more GATT procedure, lets resume initiating new connections */
+		conn_connecting = NULL;
+
 		return BT_GATT_ITER_STOP;
 	}
 
 	return BT_GATT_ITER_STOP;
 }
+#endif /* CONFIG_BT_GATT_CLIENT */
 
 static bool eir_found(struct bt_data *data, void *user_data)
 {
@@ -139,7 +142,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 			create_param = BT_CONN_LE_CREATE_CONN;
 			create_param->options |= BT_CONN_LE_OPT_CODED;
 			err = bt_conn_le_create(addr, create_param, param,
-						&default_conn);
+						&conn_connecting);
 			if (err) {
 				printk("Create connection with Coded PHY support failed (err %d)\n",
 				       err);
@@ -147,7 +150,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 				printk("Creating non-Coded PHY connection\n");
 				create_param->options &= ~BT_CONN_LE_OPT_CODED;
 				err = bt_conn_le_create(addr, create_param,
-							param, &default_conn);
+							param, &conn_connecting);
 				if (err) {
 					printk("Create connection failed (err %d)\n", err);
 					start_scan();
@@ -169,6 +172,10 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 	       dev, type, ad->len, rssi);
+
+	if (conn_connecting) {
+		return;
+	}
 
 	/* We're only interested in legacy connectable events or
 	 * possible extended advertising that are connectable.
@@ -212,25 +219,28 @@ static void start_scan(void)
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
-	int err;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
 		printk("Failed to connect to %s (%u)\n", addr, conn_err);
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_unref(conn_connecting);
+		conn_connecting = NULL;
 
 		start_scan();
+
 		return;
 	}
 
 	printk("Connected: %s\n", addr);
 
+#if defined(CONFIG_BT_GATT_CLIENT)
 	total_rx_count = 0U;
 
-	if (conn == default_conn) {
+	if (conn == conn_connecting) {
+		int err;
+
 		memcpy(&discover_uuid, BT_UUID_HRS, sizeof(discover_uuid));
 		discover_params.uuid = &discover_uuid.uuid;
 		discover_params.func = discover_func;
@@ -238,11 +248,17 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
-		err = bt_gatt_discover(default_conn, &discover_params);
+		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			printk("Discover failed(err %d)\n", err);
 			return;
 		}
+	}
+#endif /* CONFIG_BT_GATT_CLIENT */
+
+	conn_count++;
+	if (conn_count < CONFIG_BT_MAX_CONN) {
+		start_scan();
 	}
 }
 
@@ -254,14 +270,18 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
-	if (default_conn != conn) {
-		return;
+	bt_conn_unref(conn);
+
+	if (conn == conn_connecting) {
+		/* Lets resume initiating new connections */
+		conn_connecting = NULL;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	if (conn_count == CONFIG_BT_MAX_CONN) {
+		start_scan();
+	}
 
-	start_scan();
+	conn_count--;
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -282,5 +302,6 @@ int main(void)
 	printk("Bluetooth initialized\n");
 
 	start_scan();
+
 	return 0;
 }
