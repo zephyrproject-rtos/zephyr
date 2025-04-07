@@ -45,6 +45,16 @@ struct spinel_link_metrics {
 	bool rssi: 1;
 };
 
+#define SPINEL_MAC_KEY_SIZE 16
+
+struct spinel_mac_keys {
+	uint8_t key_mode;
+	uint8_t key_id;
+	uint8_t prev_key[SPINEL_MAC_KEY_SIZE];
+	uint8_t curr_key[SPINEL_MAC_KEY_SIZE];
+	uint8_t next_key[SPINEL_MAC_KEY_SIZE];
+};
+
 struct spinel_t_id {
 	uint8_t act_id;
 	uint32_t props[SPINEL_MAX_NUMB_TID];
@@ -131,5 +141,9 @@ int spinel_drv_send_link_metrics(struct spinel_drv_data *spinel_drv, spinel_tx_c
 				 struct spinel_link_metrics link_metrics);
 bool spinel_drv_check_link_metrics(struct spinel_drv_data *spinel_drv, const uint8_t *data,
 				   uint16_t data_size);
+int spinel_drv_send_mac_keys(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
+			     const void *ctx, const struct spinel_mac_keys *keys);
+bool spinel_drv_check_mac_keys(struct spinel_drv_data *spinel_drv, const uint8_t *data,
+			       uint16_t data_size);
 
 #endif /* SPINEL_DRV_H */

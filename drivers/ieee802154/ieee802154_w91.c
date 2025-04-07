@@ -51,6 +51,7 @@ static void w91_zb_rx(const struct spinel_frame_data *frame, const void *ctx)
 {
 	const struct device *dev = (const struct device *)ctx;
 	struct w91_zb_data *data = dev->data;
+	bool net_data_received = false;
 	struct net_pkt *rx_pkt = net_pkt_rx_alloc_with_buffer(data->iface, frame->data_length,
 							      AF_UNSPEC, 0, K_NO_WAIT);
 
@@ -89,9 +90,10 @@ static void w91_zb_rx(const struct spinel_frame_data *frame, const void *ctx)
 			LOG_INF("rx packet not handled");
 			break;
 		}
+		net_data_received = true;
 	} while (0);
 
-	if (rx_pkt) {
+	if (!net_data_received && rx_pkt) {
 		net_pkt_unref(rx_pkt);
 	}
 }
@@ -407,6 +409,24 @@ static int w91_zb_configure(const struct device *dev, enum ieee802154_config_typ
 							     config->ack_ie.ext_addr, link_metrics);
 		}
 		break;
+	case IEEE802154_CONFIG_MAC_KEYS: {
+		struct spinel_mac_keys mac_keys = {
+			.key_mode = config->mac_keys[0].key_value
+					    ? config->mac_keys[1].key_id_mode << 3
+					    : 0,
+			.key_id = config->mac_keys[0].key_value ? *config->mac_keys[1].key_id : 0,
+		};
+
+		if (config->mac_keys[0].key_value) {
+			memcpy(mac_keys.prev_key, config->mac_keys[0].key_value,
+			       sizeof(mac_keys.prev_key));
+			memcpy(mac_keys.curr_key, config->mac_keys[1].key_value,
+			       sizeof(mac_keys.curr_key));
+			memcpy(mac_keys.next_key, config->mac_keys[2].key_value,
+			       sizeof(mac_keys.next_key));
+		}
+		result = openthread_rcp_mac_keys(&data->ot_rcp, &mac_keys);
+	} break;
 	default:
 		LOG_WRN("unhandled configuration %u", type);
 		break;

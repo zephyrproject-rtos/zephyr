@@ -1268,3 +1268,53 @@ bool spinel_drv_check_link_metrics(struct spinel_drv_data *spinel_drv, const uin
 
 	return true;
 }
+
+int spinel_drv_send_mac_keys(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
+			     const void *ctx, const struct spinel_mac_keys *keys)
+{
+	int ret = spinel_drv_send_cmd(
+		spinel_drv, tx_cb, ctx, SPINEL_CMD_PROP_VALUE_SET, SPINEL_PROP_RCP_MAC_KEY,
+		SPINEL_DATATYPE_UINT8_S SPINEL_DATATYPE_UINT8_S SPINEL_DATATYPE_DATA_WLEN_S
+			SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_DATA_WLEN_S,
+		keys->key_mode, keys->key_id, keys->prev_key, sizeof(keys->prev_key),
+		keys->curr_key, sizeof(keys->curr_key), keys->next_key, sizeof(keys->next_key));
+
+	if (ret < 0) {
+		LOG_ERR("Failed send mac keys (inst = %u, err = %d)", spinel_drv->inst, ret);
+	}
+
+	return ret;
+}
+
+bool spinel_drv_check_mac_keys(struct spinel_drv_data *spinel_drv, const uint8_t *data,
+			       uint16_t data_size)
+{
+	uint8_t header;
+	uint32_t cmd;
+	uint32_t prop;
+	uint32_t status;
+
+	int ret =
+		spinel_datatype_unpack(data, data_size, false,
+				       SPINEL_DATATYPE_COMMAND_PROP_S SPINEL_DATATYPE_UINT_PACKED_S,
+				       &header, &cmd, &prop, &status);
+
+	if (ret < 0) {
+		LOG_ERR("Failed unpack spinel header and data (inst = %u, err = %d)",
+			spinel_drv->inst, ret);
+		return false;
+	}
+
+	if (spinel_drv->inst != SPINEL_HEADER_GET_IID(header) || cmd != SPINEL_CMD_PROP_VALUE_IS ||
+	    prop != SPINEL_PROP_LAST_STATUS) {
+		return false;
+	}
+
+	if (status != SPINEL_STATUS_OK) {
+		LOG_ERR("Incorrect mac keys status (inst = %u, status = %u)", spinel_drv->inst,
+			status);
+		return false;
+	}
+
+	return true;
+}
