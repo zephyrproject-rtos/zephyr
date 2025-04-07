@@ -30,6 +30,7 @@ tests:
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_RTIO_FALLBACK_MSGS=5
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
