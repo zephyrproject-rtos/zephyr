@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton NuMaker M55M1 board configuration
+#
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+
+if BOARD_NUMAKER_M55M1
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !MODEM
+
+endif # NETWORKING
+
+endif # BOARD_NUMAKER_M55M1

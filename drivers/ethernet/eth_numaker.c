@@ -21,22 +21,31 @@
 
 #ifdef CONFIG_SOC_M467
 #include <m460_eth.h>
+#else
+#include <numaker_eth.h>
 #endif
 
 LOG_MODULE_REGISTER(eth_numaker, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Device EMAC Interface port */
 #define NUMAKER_GMAC_INTF  0
-/* 2KB Data Flash at 0xFF800 */
-#define NUMAKER_DATA_FLASH (0xFF800U)
+
 #define NUMAKER_MASK_32    (0xFFFFFFFFU)
 #define NUMAKER_MII_CONFIG (ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | \
 							ADVERTISE_100HALF | ADVERTISE_100FULL)
 #define NUMAKER_MII_LINKED (BMSR_ANEGCOMPLETE | BMSR_LSTATUS)
 
 extern synopGMACdevice GMACdev[GMAC_CNT];
+
+#ifdef CONFIG_NOCACHE_MEMORY
+DmaDesc tx_desc[GMAC_CNT][TRANSMIT_DESC_SIZE] __nocache __aligned(64);
+DmaDesc rx_desc[GMAC_CNT][RECEIVE_DESC_SIZE] __nocache __aligned(64);
+struct sk_buff tx_buf[GMAC_CNT][TRANSMIT_DESC_SIZE] __nocache __aligned(64);
+struct sk_buff rx_buf[GMAC_CNT][RECEIVE_DESC_SIZE] __nocache __aligned(64);
+#else
 extern struct sk_buff tx_buf[GMAC_CNT][TRANSMIT_DESC_SIZE];
 extern struct sk_buff rx_buf[GMAC_CNT][RECEIVE_DESC_SIZE];
+#endif
 
 static uint32_t eth_phy_addr;
 
@@ -167,33 +176,31 @@ static int reset_phy(synopGMACdevice *gmacdev)
 
 static void m_numaker_read_mac_addr(char *mac)
 {
+#if DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac, NUMAKER_OUI_B0, NUMAKER_OUI_B1, NUMAKER_OUI_B2);
+#else
 	uint32_t uid1;
-	/* Fetch word 0 of data flash */
-	uint32_t word0 = *(uint32_t *)(NUMAKER_DATA_FLASH + 0x04U);
+	uint32_t word0;
 	/*
-	 * Fetch word 1 of data flash
 	 * we only want bottom 16 bits of word1 (MAC bits 32-47)
 	 * and bit 9 forced to 1, bit 8 forced to 0
 	 * Locally administered MAC, reduced conflicts
 	 * http://en.wikipedia.org/wiki/MAC_address
 	 */
-	uint32_t word1 = *(uint32_t *)NUMAKER_DATA_FLASH;
+	uint32_t word1;
 
-	/* Not burn any mac address at the beginning of data flash */
-	if (word0 == NUMAKER_MASK_32) {
-		/* Generate a semi-unique MAC address from the UUID */
-		SYS_UnlockReg();
-		/* Enable FMC ISP function */
-		FMC_Open();
-		uid1 = FMC_ReadUID(1);
-		word1 = (uid1 & 0x003FFFFF) | ((uid1 & 0x030000) << 6) >> 8;
-		word0 = ((FMC_ReadUID(0) >> 4) << 20) | ((uid1 & 0xFF) << 12) |
-			(FMC_ReadUID(2) & 0xFFF);
-		/* Disable FMC ISP function */
-		FMC_Close();
-		/* Lock protected registers */
-		SYS_LockReg();
-	}
+	/* Generate a semi-unique MAC address from the UUID */
+	SYS_UnlockReg();
+	/* Enable FMC ISP function */
+	FMC_Open();
+	uid1 = FMC_ReadUID(1);
+	word1 = (uid1 & 0x003FFFFF) | ((uid1 & 0x030000) << 6) >> 8;
+	word0 = ((FMC_ReadUID(0) >> 4) << 20) | ((uid1 & 0xFF) << 12) |
+		(FMC_ReadUID(2) & 0xFFF);
+	/* Disable FMC ISP function */
+	FMC_Close();
+	/* Lock protected registers */
+	SYS_LockReg();
 
 	word1 |= 0x00000200;
 	word1 &= 0x0000FEFF;
@@ -204,7 +211,7 @@ static void m_numaker_read_mac_addr(char *mac)
 	mac[3] = (word0 & 0x00ff0000) >> 16;
 	mac[4] = (word0 & 0x0000ff00) >> 8;
 	mac[5] = (word0 & 0x000000ff);
-
+#endif
 	LOG_INF("mac address %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3],
 	       mac[4], mac[5]);
 }
