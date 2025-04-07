@@ -93,6 +93,30 @@ static ALWAYS_INLINE void xtensa_cohere_stacks_cache_flush(size_t s_addr, size_t
 	}
 }
 
+/**
+ * @brief Flush and invalidate cache between two stack addresses.
+ *
+ * This flushes the cache lines between two stack addresses,
+ * beginning with the cache line including the start address,
+ * and ending with the cache line including the end address.
+ * Note that, contrary to xtensa_cohere_stacks_cache_invd(),
+ * the last cache line will be flushed and invalidated instead
+ * of being ignored.
+ *
+ * @param s_addr Starting address of memory region to have cache manipulated.
+ * @param e_addr Ending address of memory region to have cache manipulated.
+ */
+static ALWAYS_INLINE void xtensa_cohere_stacks_cache_flush_invd(size_t s_addr, size_t e_addr)
+{
+	const size_t first = ROUND_DOWN(s_addr, XCHAL_DCACHE_LINESIZE);
+	const size_t last = ROUND_UP(e_addr, XCHAL_DCACHE_LINESIZE);
+	size_t line;
+
+	for (line = first; line < last; line += XCHAL_DCACHE_LINESIZE) {
+		__asm__ volatile("dhwbi %0, 0" :: "r"(line));
+	}
+}
+
 static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,
 					     struct k_thread *new_thread)
@@ -120,9 +144,14 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	size_t nend   = nstack + new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
 
-	int zero = 0;
+	uint32_t flush_end = 0;
 
-	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(zero));
+#ifdef CONFIG_USERSPACE
+	/* End of old_thread privileged stack. */
+	void *o_psp_end = old_thread->arch.psp;
+#endif
+
+	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(flush_end));
 
 	if (old_switch_handle != NULL) {
 		int32_t a0save;
@@ -175,8 +204,13 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	 * to the stack top stashed in a special register.
 	 */
 	if (old_switch_handle != NULL) {
-		xtensa_cohere_stacks_cache_flush(osp, oend);
-		xtensa_cohere_stacks_cache_invd(ostack, osp);
+#ifdef CONFIG_USERSPACE
+		if (o_psp_end == NULL)
+#endif
+		{
+			xtensa_cohere_stacks_cache_flush(osp, oend);
+			xtensa_cohere_stacks_cache_invd(ostack, osp);
+		}
 	} else {
 		/* When in a switch, our current stack is the outbound
 		 * stack.  Flush the single line containing the stack
@@ -188,12 +222,56 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 		__asm__ volatile("mov %0, a1" : "=r"(osp));
 		osp -= 16;
 		xtensa_cohere_stacks_cache_flush(osp, osp + 16);
-		xtensa_cohere_stacks_cache_invd(ostack, osp);
 
-		uint32_t end = oend;
+#ifdef CONFIG_USERSPACE
+		if (o_psp_end == NULL)
+#endif
+		{
+			xtensa_cohere_stacks_cache_invd(ostack, osp);
 
-		__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(end));
+			flush_end = oend;
+		}
 	}
+
+#ifdef CONFIG_USERSPACE
+	/* User threads need a bit more processing due to having
+	 * privileged stack for handling syscalls. The privileged
+	 * stack always immediately precedes the thread stack.
+	 *
+	 * Note that, with userspace enabled, we need to swap
+	 * page table during context switch via function calls.
+	 * This means that the stack is being actively used
+	 * unlike the non-userspace case mentioned above.
+	 * Therefore we need to set ZSR_FLUSH_STR to make sure
+	 * we flush the cached data in the stack.
+	 */
+	if (o_psp_end != NULL) {
+		/* Start of old_thread privileged stack.
+		 *
+		 * struct xtensa_thread_stack_header wholly contains
+		 * a array for the privileged stack, so we can use
+		 * its size to calculate where the start is.
+		 */
+		size_t o_psp_start = (size_t)o_psp_end - sizeof(struct xtensa_thread_stack_header);
+
+		if ((osp >= ostack) && (osp < oend)) {
+			/* osp in user stack. */
+			xtensa_cohere_stacks_cache_invd(o_psp_start, osp);
+
+			flush_end = oend;
+		} else if ((osp >= o_psp_start) && (osp < ostack)) {
+			/* osp in privileged stack. */
+			xtensa_cohere_stacks_cache_flush(ostack, oend);
+			xtensa_cohere_stacks_cache_invd(o_psp_start, osp);
+
+			flush_end = (size_t)old_thread->arch.psp;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
+	flush_end = ROUND_DOWN(flush_end, XCHAL_DCACHE_LINESIZE);
+	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(flush_end));
+
 #endif /* !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 #endif
