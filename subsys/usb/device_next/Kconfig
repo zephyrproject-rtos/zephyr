@@ -24,10 +24,10 @@ choice USBD_MAX_SPEED_CHOICE
 config USBD_MAX_SPEED_HIGH
 	bool "High-Speed"
 	depends on UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
-	select UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
 
 config USBD_MAX_SPEED_FULL
 	bool "Full-Speed"
+	depends on !UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
 
 endchoice
 
