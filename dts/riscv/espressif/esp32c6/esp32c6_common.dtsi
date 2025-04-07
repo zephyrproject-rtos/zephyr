@@ -21,6 +21,7 @@
 	};
 
 	chosen {
+		zephyr,canbus = &twai0;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
@@ -152,6 +153,24 @@
 			compatible = "espressif,esp32-trng";
 			reg = <0x600B2808 0x4>;
 			clocks = <&rtc ESP32_RNG_MODULE>;
+			status = "disabled";
+		};
+
+		twai0: can@6000b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6000B000 DT_SIZE_K(4)>;
+			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI0_MODULE>;
+			status = "disabled";
+		};
+
+		twai1: can@6000d000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6000D000 DT_SIZE_K(4)>;
+			interrupts = <TWAI1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI1_MODULE>;
 			status = "disabled";
 		};
 
