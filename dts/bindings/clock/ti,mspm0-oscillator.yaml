@@ -18,5 +18,8 @@ properties:
   ti,xtal:
     type: boolean
 
+  ti,xtal-startup-delay-us:
+    type: int
+
 clock-cells:
   - id

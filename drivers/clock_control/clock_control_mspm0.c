@@ -20,6 +20,7 @@ static const DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll;
 
 struct mspm0_clk_cfg {
 	bool is_crystal;
+	uint32_t xtal_startup_delay;
 	uint32_t clk_freq;
 };
 
@@ -183,8 +184,10 @@ static int clock_mspm0_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	DL_SYSCTL_setHFCLKSourceHFXT(hf_range);
-
+	/* startup time in 64us resolution */
+	DL_SYSCTL_setHFCLKSourceHFXTParams(hf_range,
+				 mspm0_cfg_hfclk.xtal_startup_delay / 64,
+				 true);
 	if (mspm0_cfg_hfclk.is_crystal == false) {
 		DL_SYSCTL_setHFCLKSourceHFCLKIN();
 	}
@@ -239,6 +242,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), &clock_mspm0_init, NULL, NULL, NULL, PRE_
 static const struct mspm0_clk_cfg mspm0_cfg_hfclk = {
 	.is_crystal = DT_NODE_HAS_PROP(DT_NODELABEL(hfclk), ti_xtal),
 	.clk_freq = ((DT_PROP(DT_NODELABEL(hfclk), clock_frequency)) / MHZ(1)),
+	.xtal_startup_delay = DT_PROP_OR(DT_NODELABEL(hfclk), ti_xtal_startup_delay_us, 0),
 };
 #endif
 
