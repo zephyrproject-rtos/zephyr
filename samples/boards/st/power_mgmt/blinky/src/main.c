@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/pm/device_runtime.h>
 
 /* define SLEEP_TIME_MS higher than <st,counter-value> in ms */
 #if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_counter_value)
@@ -16,6 +17,9 @@
 #else
 #define SLEEP_TIME_MS   2000
 #endif
+
+#define STM32_GPIO_PM_ENABLE(node_id) \
+	pm_device_runtime_enable(DEVICE_DT_GET(node_id));
 
 static const struct gpio_dt_spec led =
 	GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
@@ -25,6 +29,11 @@ int main(void)
 	bool led_is_on = true;
 
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
+
+	/* Enable device runtime PM on each GPIO port.
+	 * GPIO configuration is lost but it may result in lower power consumption.
+	 */
+	DT_FOREACH_STATUS_OKAY(st_stm32_gpio, STM32_GPIO_PM_ENABLE)
 
 	printk("Device ready\n");
 
