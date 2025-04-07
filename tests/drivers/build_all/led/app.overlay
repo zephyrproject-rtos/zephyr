@@ -193,5 +193,20 @@
 				};
 			};
 		};
+
+		test_pwm: pwm@12341234 {
+			compatible = "vnd,pwm";
+			reg = <0x12341234 0x1000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
+
+		test_pwm_leds {
+			compatible = "pwm-leds";
+			status = "okay";
+			test_pwm_led0: test_pwm_led_0 {
+				pwms = <&test_pwm 0 0 0>;
+			};
+		};
 	};
 };
