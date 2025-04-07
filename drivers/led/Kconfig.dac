@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_DAC
+	bool "DAC LED driver"
+	default y
+	depends on DT_HAS_DAC_LEDS_ENABLED
+	select DAC
+	help
+	  Enable DAC LED driver.
