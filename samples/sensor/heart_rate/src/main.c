@@ -11,14 +11,14 @@
 int main(void)
 {
 	struct sensor_value green;
-	const struct device *const dev = DEVICE_DT_GET_ANY(maxim_max30101);
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(heart_rate_sensor));
 
 	if (dev == NULL) {
-		printf("Could not get max30101 device\n");
+		printf("Could not get heart_rate_sensor\n");
 		return 0;
 	}
 	if (!device_is_ready(dev)) {
-		printf("max30101 device %s is not ready\n", dev->name);
+		printf("Device %s is not ready\n", dev->name);
 		return 0;
 	}
 
