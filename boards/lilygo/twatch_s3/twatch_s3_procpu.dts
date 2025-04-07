@@ -139,6 +139,15 @@
 	axp2101@34 {
 		compatible = "x-powers,axp2101";
 		reg = <0x34>;
+
+		charger {
+			compatible = "x-powers,axp2101-charger";
+			constant-charge-current-max-microamp = <300000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			charge-term-current-microamp = <100000>;
+			vbackup-enable;
+		};
+
 		regulators {
 			compatible = "x-powers,axp2101-regulator";
 
