@@ -133,6 +133,9 @@ Ethernet
   kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
   deprecated in favor of :kconfig:option:`CONFIG_ETH_NATIVE_TAP` (:github:`86578`).
 
+* NuMaker Ethernet driver ``eth_numaker.c`` now supports ``gen_random_mac``,
+  and the EMAC data flash feature has been removed (:github:`87953`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
