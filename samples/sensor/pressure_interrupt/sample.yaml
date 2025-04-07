@@ -1,0 +1,9 @@
+sample:
+  name: Pressure sensor interrupt
+tests:
+  sample.sensor.pressure_interrupt:
+    build_only: true
+    tags: sensors
+    filter: dt_alias_exists("pressure-sensor")
+    integration_platforms:
+      - nrf52dk/nrf52832
