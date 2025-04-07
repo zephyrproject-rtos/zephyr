@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM62AX
+	bool
+	select SOC_FAMILY_TI_K3
+
+config SOC_SERIES_AM62AX_R5
+	bool
+	select SOC_SERIES_AM62AX
+	help
+	  Enable support for AM62AX R5 Series.
+
+config SOC_AM62A7_MCU_R5F0_0
+	bool
+	select SOC_SERIES_AM62AX_R5

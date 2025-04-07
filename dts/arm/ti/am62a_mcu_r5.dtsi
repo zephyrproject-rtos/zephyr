@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include <ti/am62a_main.dtsi>
+#include <ti/am62a_mcu.dtsi>
+
+/ {
+	chosen {
+		zephyr,system-timer = &mcu_timer0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5f";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+		};
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ATCM";
+	};
+
+	btcm: memory@41010000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "BTCM";
+	};
+
+	vim: interrupt-controller@2fff0000 {
+		#address-cells = <1>;
+		compatible = "ti,vim";
+		reg = <0x2fff0000 0x2800>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+		status = "okay";
+	};
+};
+
+&mcu_timer0 {
+	interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_timer1 {
+	interrupts = <0 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_timer2 {
+	interrupts = <0 138 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&mcu_timer3 {
+	interrupts = <0 138 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox2 {
+	interrupts = <0 242 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+	usr-id = <0>;
+};
