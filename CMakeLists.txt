@@ -344,6 +344,18 @@ if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
 endif()
 
+if(CONFIG_UBSAN)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined>>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined>)
+  if(CONFIG_UBSAN_LIBRARY)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_library>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_library>)
+  elseif(CONFIG_UBSAN_TRAP)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_trap>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_trap>)
+  endif()
+endif()
+
 # @Intent: Set compiler specific flag for tentative definitions, no-common
 zephyr_compile_options($<TARGET_PROPERTY:compiler,no_common>)
 
