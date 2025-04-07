@@ -67,6 +67,8 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, hifi);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+GEN_OFFSET_SYM(_thread_arch_t, return_ps);
+GEN_OFFSET_SYM(_thread_t, switch_handle);
 #ifdef CONFIG_XTENSA_MMU
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
 #endif

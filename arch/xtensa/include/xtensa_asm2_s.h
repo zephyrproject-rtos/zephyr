@@ -11,6 +11,7 @@
 #include "xtensa_asm2_context.h"
 
 #include <zephyr/offsets.h>
+#include <offsets_short.h>
 
 /* Assembler header!  This file contains macros designed to be included
  * only by the assembler.
@@ -685,6 +686,25 @@ _not_triple_fault:
 	rsr.eps\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .endif
+
+#ifdef CONFIG_USERSPACE
+	/* When restoring context via xtensa_switch and
+	 * returning from non-nested interrupts, we will be
+	 * using the stashed PS value in the thread struct
+	 * instead of the one in the thread stack. Both of
+	 * these scenarios will have nested value of 0.
+	 * So when nested value is zero, we store the PS
+	 * value into thread struct.
+	 */
+	rsr.ZSR_CPU a3
+	l32i a2, a3, ___cpu_t_nested_OFFSET
+	bnez a2, _excint_skip_ps_save_to_thread_\LVL
+
+	l32i a2, a3, ___cpu_t_current_OFFSET
+	s32i a0, a2, _thread_offset_to_return_ps
+
+_excint_skip_ps_save_to_thread_\LVL:
+#endif
 
 	rsr.epc\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET

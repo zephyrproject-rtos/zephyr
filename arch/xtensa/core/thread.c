@@ -66,14 +66,19 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 
 	(void)memset(frame, 0, bsasz);
 
-	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 #ifdef CONFIG_USERSPACE
+	/* _restore_context uses this instead of frame->bsa.ps to
+	 * restore PS value.
+	 */
+	thread->arch.return_ps = PS_WOE | PS_UM | PS_CALLINC(1);
+
 	if ((thread->base.user_options & K_USER) == K_USER) {
 		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
 	} else {
 		frame->bsa.pc = (uintptr_t)z_thread_entry;
 	}
 #else
+	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 	frame->bsa.pc = (uintptr_t)z_thread_entry;
 #endif
 
