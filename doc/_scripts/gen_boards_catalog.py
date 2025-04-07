@@ -361,10 +361,15 @@ def get_catalog(generate_hw_features=False):
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
         board_catalog[board.name] = {
             "name": board.name,
             "full_name": full_name,
-            "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
+            "doc_page": doc_page_path,
             "vendor": vendor,
             "archs": list(archs),
             "socs": list(socs),
