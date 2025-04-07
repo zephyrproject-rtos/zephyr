@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Because FAT FS needs at least 64kiB partition and default
+ * storage_partition is 36kiB for this board, we need to reorganize
+ * partitions to get at least 64KiB.
+ */
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &slot0_ns_partition;
+/delete-node/ &slot1_ns_partition;
+/delete-node/ &storage_partition;
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: parition@10000 {
+			reg = <0x00010000 DT_SIZE_K(300)>;
+		};
+
+		slot1_partition: partition@5b000 {
+			reg = <0x0005b000 DT_SIZE_K(300)>;
+		};
+
+		storage_partition: partition@a6000 {
+			label = "storage";
+			reg = <0x000a6000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+/ {
+	msc_disk0 {
+		status="okay";
+		compatible = "zephyr,flash-disk";
+		partition = <&storage_partition>;
+		disk-name = "SD";
+		cache-size = <512>;
+	};
+};
