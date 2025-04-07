@@ -1034,9 +1034,9 @@ Documentation:
 Documentation Infrastructure:
   status: maintained
   maintainers:
-    - gmarull
     - kartben
   collaborators:
+    - gmarull
     - carlescufi
     - nashif
   files:
