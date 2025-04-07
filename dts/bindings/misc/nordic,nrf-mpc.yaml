@@ -1,0 +1,17 @@
+description: Nordic Memory Privilege Controller (MPC)
+
+compatible: "nordic,nrf-mpc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  override-num:
+    type: int
+    description: Number of override regions supported by the MPC instance.
+
+  override-granularity:
+    type: int
+    description: Override region addresses must be aligned to this value.
