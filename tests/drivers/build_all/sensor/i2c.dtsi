@@ -1276,3 +1276,9 @@ test_i2c_ms5837_30ba: ms5837@ae {
 	reg = <0xae>;
 	status = "okay";
 };
+
+test_i2c_rrh46410: rrh46410@af {
+	compatible = "renesas,rrh46410";
+	reg = <0xaf>;
+	reset-gpios = <&test_gpio 0 0>;
+};
