@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Heart Rate Sensor Sample
 tests:
-  sample.sensor.max30101:
+  sample.sensor.heart_rate:
     harness: sensor
     tags: sensors
     platform_allow: hexiwear/mk64f12

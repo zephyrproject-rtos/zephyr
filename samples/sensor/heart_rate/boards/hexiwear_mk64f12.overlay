@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		heart-rate-sensor = &max30101;
+	};
+};
+
 &i2c0 {
-	max30101@57 {
+	max30101: max30101@57 {
 		status = "okay";
 	};
 };
