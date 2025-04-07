@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		zephyr,sram = &sram0;
 		zephyr,entropy = &rng0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl0;
@@ -28,8 +29,17 @@
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		/* remove sram_dma0 region at the end of the sram */
-		reg = <0x00000000 DT_SIZE_K(191)>;
+		/* siwx91x has 672kB of SRAM shared between the Cortex-M4
+		 * (Zephyr) and the NWP (Network Processor). 3 memory
+		 * configurations are
+		 * possible:
+		 *  - 196kB
+		 *  - 256kB
+		 *  - 320kB
+		 * Less memory is allocated to Zephyr, more memory is allocated
+		 * to NWP, better are the WiFi and BLE performances.
+		 */
+		reg = <0x00000000 DT_SIZE_K(196)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
