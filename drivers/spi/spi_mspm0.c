@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT ti_mspm0_spi
 
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
@@ -230,25 +232,26 @@ static int spi_mspm0_transceive(const struct device *dev, const struct spi_confi
 
 	spi_context_lock(ctx, false, NULL, NULL, spi_cfg);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#endif
 	int ret = spi_mspm0_configure(dev, spi_cfg);
+	if (ret != 0) {
+		spi_context_release(ctx, ret);
+		goto done;
+	}
 	
 	//Check if FIFO is not empty, if not empty return error
 	if(!DL_SPI_isRXFIFOEmpty(mspm0_cfg->base) ){
 		printf("Error! RX FIFO is not empty\n");
-		return -EINVAL;
+		goto done;
 	}
 
 	if(!DL_SPI_isTXFIFOEmpty(mspm0_cfg->base) ){
 		printf("Error! TX FIFO is not empty\n");
-		return -EINVAL;
+		goto done;
 	}
 
-	
-	if (ret != 0) {
-		spi_context_release(ctx, ret);
-		return ret;
-	}
-	
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs);
 		
 	spi_mspm0_start_transfer(dev, spi_cfg);
@@ -256,6 +259,10 @@ static int spi_mspm0_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_context_wait_for_completion(ctx);
 	spi_context_release(ctx, ret);
 
+done:
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#endif
 	return ret;
 }
 
@@ -305,12 +312,38 @@ static int spi_mspm0_init(const struct device *dev)
 	}
 
 	DL_SPI_setClockConfig(cfg->base, (DL_SPI_ClockConfig *)&cfg->clock_config);
-	DL_SPI_enable(cfg->base);
 
 	spi_context_unlock_unconditionally(ctx);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_enable(dev);
+#endif
+
 	return ret;
 }
+
+#ifdef CONFIG_PM_DEVICE
+
+static int spi_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct spi_mspm0_config *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		DL_SPI_enable(cfg->base);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		DL_SPI_disable(cfg->base);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif
+
 
 #define MSPM0_SPI_INIT(inst)                                                                       \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
@@ -328,6 +361,7 @@ static int spi_mspm0_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_mspm0_##inst##_data, ctx),                               \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(index, spi_mspm0_pm_action);			\
 	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, NULL, &spi_mspm0_##inst##_data,                \
 			      &spi_mspm0_##inst##_cfg, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
 			      &spi_mspm0_api);
