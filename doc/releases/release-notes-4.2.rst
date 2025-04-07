@@ -89,6 +89,9 @@ Deprecated APIs and options
 * ``esp32c6_devkitc`` board target has been deprecated and renamed to
   ``esp32c6_devkitc/esp32c6/hpcore``.
 
+* ``xiao_esp32c6`` board target has been deprecated and renamed to
+  ``xiao_esp32c6/esp32c6/hpcore``.
+
 New APIs and options
 ====================
 
