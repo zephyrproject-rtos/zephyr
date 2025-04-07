@@ -886,7 +886,6 @@ Demand Paging:
 Device Driver Model:
   status: maintained
   maintainers:
-    - gmarull
     - tbursztyka
   collaborators:
     - dcpleung
