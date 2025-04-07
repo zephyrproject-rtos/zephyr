@@ -13,12 +13,15 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/net/zperf.h>
 
 #include "zperf_internal.h"
+#include "zperf_session.h"
 
 static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 			     sizeof(struct zperf_client_hdr_v1) +
 			     PACKET_SIZE_MAX];
 
+#if !defined(CONFIG_ZPERF_SESSION_PER_THREAD)
 static struct zperf_async_upload_context udp_async_upload_ctx;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 static inline void zperf_upload_decode_stat(const uint8_t *data,
 					    size_t datalen,
@@ -335,20 +338,38 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 
 static void udp_upload_async_work(struct k_work *work)
 {
-	struct zperf_async_upload_context *upload_ctx =
-		&udp_async_upload_ctx;
-	struct zperf_results result;
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct session *ses;
+	struct zperf_async_upload_context *upload_ctx;
+	struct zperf_results *result;
+
+	ses = CONTAINER_OF(work, struct session, async_upload_ctx.work);
+	upload_ctx = &ses->async_upload_ctx;
+
+	NET_DBG("[%d] thread %p priority %d name %s", ses->id, k_current_get(),
+		k_thread_priority_get(k_current_get()),
+		k_thread_name_get(k_current_get()));
+
+	result = &ses->result;
+
+	ses->in_progress = true;
+#else
+	struct zperf_async_upload_context *upload_ctx = &udp_async_upload_ctx;
+	struct zperf_results result_storage = { 0 };
+	struct zperf_results *result = &result_storage;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	int ret;
 
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
 			     upload_ctx->user_data);
 
-	ret = zperf_udp_upload(&upload_ctx->param, &result);
+	ret = zperf_udp_upload(&upload_ctx->param, result);
 	if (ret < 0) {
 		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 				     upload_ctx->user_data);
 	} else {
-		upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
+		upload_ctx->callback(ZPERF_SESSION_FINISHED, result,
 				     upload_ctx->user_data);
 	}
 }
@@ -360,6 +381,49 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct k_work_q *queue;
+	struct session *ses;
+	k_tid_t tid;
+
+	ses = get_free_session(&param->peer_addr, SESSION_UDP);
+	if (ses == NULL) {
+		NET_ERR("Cannot get a session!");
+		return -ENOENT;
+	}
+
+	if (k_work_is_pending(&ses->async_upload_ctx.work)) {
+		NET_ERR("[%d] upload already in progress", ses->id);
+		return -EBUSY;
+	}
+
+	memcpy(&ses->async_upload_ctx.param, param, sizeof(*param));
+
+	ses->proto = SESSION_UDP;
+	ses->async_upload_ctx.callback = callback;
+	ses->async_upload_ctx.user_data = user_data;
+
+	queue = get_queue(SESSION_UDP, ses->id);
+	if (queue == NULL) {
+		NET_ERR("Cannot get a work queue!");
+		return -ENOENT;
+	}
+
+	tid = k_work_queue_thread_get(queue);
+	k_thread_priority_set(tid, ses->async_upload_ctx.param.options.thread_priority);
+
+	k_work_init(&ses->async_upload_ctx.work, udp_upload_async_work);
+
+	ses->start_time = k_uptime_ticks();
+
+	zperf_async_work_submit(SESSION_UDP, ses->id, &ses->async_upload_ctx.work);
+
+	NET_DBG("[%d] thread %p priority %d name %s", ses->id, k_current_get(),
+		k_thread_priority_get(k_current_get()),
+		k_thread_name_get(k_current_get()));
+
+#else /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	if (k_work_is_pending(&udp_async_upload_ctx.work)) {
 		return -EBUSY;
 	}
@@ -368,12 +432,16 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
 	udp_async_upload_ctx.callback = callback;
 	udp_async_upload_ctx.user_data = user_data;
 
-	zperf_async_work_submit(&udp_async_upload_ctx.work);
+	zperf_async_work_submit(SESSION_UDP, -1, &udp_async_upload_ctx.work);
+
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 	return 0;
 }
 
 void zperf_udp_uploader_init(void)
 {
+#if !defined(CONFIG_ZPERF_SESSION_PER_THREAD)
 	k_work_init(&udp_async_upload_ctx.work, udp_upload_async_work);
+#endif /* !CONFIG_ZPERF_SESSION_PER_THREAD */
 }
