@@ -327,6 +327,7 @@ config PRIVILEGED_STACK_SIZE
 
 config KOBJECT_TEXT_AREA
 	int "Size of kobject text area"
+	default 1024 if UBSAN
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
 	default 512 if STACK_CANARIES && RISCV

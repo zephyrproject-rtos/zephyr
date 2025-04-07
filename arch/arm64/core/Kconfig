@@ -126,6 +126,7 @@ config PRIVILEGED_STACK_SIZE
 	default 4096
 
 config KOBJECT_TEXT_AREA
+	default 1024 if UBSAN
 	default 512 if TEST
 
 config WAIT_AT_RESET_VECTOR
