@@ -297,6 +297,8 @@ SECTIONS {
 
     *libarch__xtensa__core.a:userspace.S.obj(.literal.xtensa_do_syscall)
     *libarch__xtensa__core.a:userspace.S.obj(.text.xtensa_do_syscall)
+    *libarch__xtensa__core.a:ptables.c.obj(.literal.xtensa_swap_update_page_tables)
+    *libarch__xtensa__core.a:ptables.c.obj(.text.xtensa_swap_update_page_tables)
 
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
     *libarch__xtensa__core.a:syscall_helper.c.obj(.text.xtensa_syscall_helper*)
