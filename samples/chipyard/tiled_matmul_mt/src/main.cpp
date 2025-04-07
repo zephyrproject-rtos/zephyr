@@ -3,14 +3,15 @@
 #include <zephyr/arch/cpu.h>
 #include <stdio.h>
 #include <string.h>
-#include "../data/matrices_128.hpp"
+//#include "../data/matrices_128.hpp"
+#include "../data/matrices.hpp"
 #include <riscv_vector.h>
 #include <zephyr/timing/timing.h>
 
-constexpr int N = 128;
+constexpr int N = 32;
 constexpr int nHalf = N / 2;
 
-#define NUM_THREADS 4
+#define NUM_THREADS 3
 #define STACK_SIZE 16384*4
 
 #define MSTATUS_VS          0x00000600
@@ -101,19 +102,24 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
     int i = tile_row * nHalf;
     int j = tile_col * nHalf;
 
+    //enable_vector_operations();
+
     // Serialize printf to avoid garbled output
-    k_mutex_lock(&print_mutex, K_FOREVER);
-    printf("Started thread %d on tile (%d, %d) on hart %d\n",
-           thread_id, tile_row, tile_col, hart_id);
-    k_mutex_unlock(&print_mutex);
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //printf("Started thread %d on tile (%d, %d) on hart %d\n",
+    //       thread_id, tile_row, tile_col, hart_id);
+    //k_mutex_unlock(&print_mutex);
 
     timing_t start_ct = timing_counter_get();
     uint64_t start_rd = read_cycle();
 
+    k_sched_lock();
     for (int k = 0; k < N; k += nHalf) {
         matmul_rvvt((float *)matrix_A, (float *)matrix_B, (float *)C_computed,
                     i, j, k, N, N, N, nHalf);
+        
     }
+    k_sched_unlock();
 
     timing_t end_ct = timing_counter_get();
     uint64_t end_rd = read_cycle();
@@ -184,7 +190,8 @@ int main(void)
 
     printf("Hello, C world! %s\n", CONFIG_BOARD);
     k_mutex_init(&print_mutex);
-
+    for(int runs = 0; runs < 2; runs++) {
+    printf("Starting run %d\n", runs);
     uint64_t launch_start = read_cycle();  
     for (int i = 0; i < NUM_THREADS; ++i) {
         assignment_cycles[i] = read_cycle(); 
@@ -266,6 +273,7 @@ int main(void)
             printf("%f ", matrix_C[i][j]);
         }
         printf("\n");
+    }
     }
 
     sys_reboot(SYS_REBOOT_COLD);
