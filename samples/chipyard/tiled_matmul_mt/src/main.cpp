@@ -11,8 +11,8 @@
 constexpr int N = 32;
 constexpr int nHalf = N / 2;
 
-#define NUM_THREADS 3
-#define STACK_SIZE 16384*4
+#define NUM_THREADS 4
+#define STACK_SIZE 16384*4*4
 
 #define MSTATUS_VS          0x00000600
 #define MSTATUS_FS          0x00006000
@@ -72,6 +72,8 @@ inline void matmul_rvvt(float *a, float *b, float *c,
     size_t vlmax = __riscv_vsetvlmax_e32m1();
     vfloat32m1_t vec_zero = __riscv_vfmv_v_f_f32m1(0, vlmax);
 
+    //int sum_count = 0;
+
     for (int I = 0; I < N; ++I) {
         for (int J = 0; J < M; ++J) {
             float *ptr_a = A + I * o;
@@ -89,11 +91,19 @@ inline void matmul_rvvt(float *a, float *b, float *c,
             vfloat32m1_t vec_sum = __riscv_vfredusum_vs_f32m1_f32m1(vec_s, vec_zero, vlmax);
             float sum = __riscv_vfmv_f_s_f32m1_f32(vec_sum);
             C[I * m + J] = k == 0 ? sum : C[I * m + J] + sum;
+            //sum_count += O;
+            //c[0] = c[0] + sum;
+            //C[0] = k == 0 ? sum : C[0] + sum;
+            
         }
     }
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //printf("Sum Count: %d\n", sum_count);
+    //k_mutex_unlock(&print_mutex);
 }
 void tile_thread_function(void *arg1, void *arg2, void *arg3)
 {
+    //k_mutex_lock(&print_mutex, K_FOREVER);
     int thread_id = (int)(uintptr_t)arg1;
     int hart_id = arch_curr_cpu()->id;
     int tile_row = thread_id / 2;
@@ -102,7 +112,15 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
     int i = tile_row * nHalf;
     int j = tile_col * nHalf;
 
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //printf("hart %d start\n", hart_id);
+    //k_mutex_unlock(&print_mutex);
+
     //enable_vector_operations();
+
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //printf("hart %d enable vec\n", hart_id);
+    //k_mutex_unlock(&print_mutex);
 
     // Serialize printf to avoid garbled output
     //k_mutex_lock(&print_mutex, K_FOREVER);
@@ -114,11 +132,18 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
     uint64_t start_rd = read_cycle();
 
     k_sched_lock();
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //for (int k = nHalf; k < N; k += nHalf) {
     for (int k = 0; k < N; k += nHalf) {
+        //k_mutex_lock(&print_mutex, K_FOREVER);
+
+            //printf("hart %d enable llop iter %d\n", hart_id, k);
+            //k_mutex_unlock(&print_mutex);
+
         matmul_rvvt((float *)matrix_A, (float *)matrix_B, (float *)C_computed,
-                    i, j, k, N, N, N, nHalf);
-        
+                    i, j, k%nHalf, N, N, N, nHalf);
     }
+    //k_mutex_unlock(&print_mutex);
     k_sched_unlock();
 
     timing_t end_ct = timing_counter_get();
@@ -126,6 +151,11 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
 
     uint64_t cycles = timing_cycles_get(&start_ct, &end_ct);
     uint64_t ns = timing_cycles_to_ns(cycles);
+
+
+    //k_mutex_lock(&print_mutex, K_FOREVER);
+    //printf("hart %d end\n", hart_id);
+    //k_mutex_unlock(&print_mutex);
 
     thread_info[thread_id] = {
         .thread_id = thread_id,
@@ -138,6 +168,7 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
         .start_ct = start_ct,
         .end_ct = end_ct
     };
+    //k_mutex_unlock(&print_mutex);
 }
 
 // void tile_thread_function(void *arg1, void *arg2, void *arg3)
@@ -188,6 +219,8 @@ int main(void)
     timing_init();
     timing_start();
 
+    //int harts[4] = {4,5,6,7};
+
     printf("Hello, C world! %s\n", CONFIG_BOARD);
     k_mutex_init(&print_mutex);
     for(int runs = 0; runs < 2; runs++) {
@@ -195,7 +228,8 @@ int main(void)
     uint64_t launch_start = read_cycle();  
     for (int i = 0; i < NUM_THREADS; ++i) {
         assignment_cycles[i] = read_cycle(); 
-        int hart_id = i % CONFIG_MP_MAX_NUM_CPUS;
+        //int hart_id = harts[(i % CONFIG_MP_MAX_NUM_CPUS)];
+        int hart_id = (i % CONFIG_MP_MAX_NUM_CPUS) + 4;
         thread_ids[i] = k_thread_create(&thread_data[i],
                                         thread_stacks[i],
                                         STACK_SIZE,
@@ -205,16 +239,20 @@ int main(void)
                                         K_PRIO_PREEMPT(1), 0, K_FOREVER);
         k_thread_cpu_pin(thread_ids[i], hart_id);
         k_thread_start(thread_ids[i]);
+        //k_mutex_lock(&print_mutex, K_FOREVER);
+        //printf("thread id %d: %d\n", i, thread_ids[i]);
+        //k_mutex_unlock(&print_mutex);
     }
     uint64_t launch_end = read_cycle();  
-    uint64_t launch_cycles = launch_end - launch_start;
+    // uint64_t launch_cycles = launch_end - launch_start;
 
     join_start = timing_counter_get();
-    for (int i = 0; i < NUM_THREADS; ++i) {
+    //k_thread_join(thread_ids[3], K_FOREVER);
+    for (int i = 0; i < NUM_THREADS-1; ++i) {
         k_thread_join(thread_ids[i], K_FOREVER);
+        //k_thread_join(thread_ids[i], K_USEC(1000));
     }
     join_end = timing_counter_get();
-    uint64_t join_cycles = timing_cycles_get(&join_start, &join_end);
 
     printf("\nPer-thread execution summary:\n");
     for (int i = 0; i < NUM_THREADS; ++i) {
@@ -224,22 +262,41 @@ int main(void)
                info.assigned_cycle, info.compute_cycles, info.compute_ns);
     }
 
-    // timing_t global_start = thread_info[0].start_ct;
-    // timing_t global_end = thread_info[0].end_ct;
-    // for (int i = 1; i < NUM_THREADS; ++i) {
-    //     if (timing_cycles_get(&thread_info[i].start_ct, &global_start) > 0)
-    //         global_start = thread_info[i].start_ct;
-    //     if (timing_cycles_get(&global_end, &thread_info[i].end_ct) > 0)
-    //         global_end = thread_info[i].end_ct;
-    // }
-    // uint64_t total_execution_cycles = timing_cycles_get(&global_start, &global_end);
-
-    printf("\nSynchronization timing:\n");
-    printf("Total thread launch overhead (cycles): %llu\n", launch_cycles);
-    printf("Total thread join time (cycles):   %llu\n", join_cycles);
     
-    // printf("Total parallel execution time (cycles): %llu\n", total_execution_cycles);
+    uint64_t launch_cycles = timing_cycles_get(&launch_start, &launch_end);
+    uint64_t join_cycles   = timing_cycles_get(&join_start, &join_end);
+    uint64_t launch_ns = timing_cycles_to_ns(launch_cycles);
+    uint64_t join_ns   = timing_cycles_to_ns(join_cycles);
 
+    printf("\nSynchronization timing (ns):\n");
+    printf("Total thread launch overhead: %llu ns\n", launch_ns);
+    printf("Total thread join time:       %llu ns\n", join_ns);
+
+    // Compute timing from first thread start to last thread end
+    timing_t earliest_start = thread_info[0].start_ct;
+    timing_t latest_end = thread_info[0].end_ct;
+
+    for (int i = 1; i < NUM_THREADS; ++i) {
+        if (timing_cycles_get(&thread_info[i].start_ct, &earliest_start) > 0) {
+            earliest_start = thread_info[i].start_ct;
+        }
+        if (timing_cycles_get(&latest_end, &thread_info[i].end_ct) > 0) {
+            latest_end = thread_info[i].end_ct;
+        }
+    }
+
+    uint64_t total_thread_computation_window_cycles = timing_cycles_get(&earliest_start, &latest_end);
+    uint64_t total_thread_computation_window_ns = timing_cycles_to_ns(total_thread_computation_window_cycles);
+
+    printf("\nTotal thread computation window (first start to last end):\n");
+    printf("Time:   %llu ns\n", total_thread_computation_window_ns);
+
+    // Compute join overhead from end of last thread's compute to end of join
+    uint64_t join_overhead_after_compute_cycles = timing_cycles_get(&latest_end, &join_end);
+    uint64_t join_overhead_after_compute_ns = timing_cycles_to_ns(join_overhead_after_compute_cycles);
+
+    printf("\nJoin overhead after compute (ns):\n");
+    printf("Time:   %llu ns\n", join_overhead_after_compute_ns);
     // Validation
     float tolerance = 1e-1f;
     bool valid = true;
