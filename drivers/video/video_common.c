@@ -26,6 +26,14 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
+#elif defined(CONFIG_VIDEO_BUFFER_USE_MEM_ATTR_HEAP)
+#include <zephyr/mem_mgmt/mem_attr_heap.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+
+#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
+	mem_attr_heap_aligned_alloc((CONFIG_VIDEO_BUFFER_MEM_SW_ATTRIBUTE <<	\
+				    DT_MEM_SW_ATTR_SHIFT), align, size)
+#define VIDEO_COMMON_FREE(block) mem_attr_heap_free(block)
 #else
 K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX*CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
@@ -47,6 +55,9 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	struct mem_block *block;
 	int i;
 
+#if defined(CONFIG_VIDEO_BUFFER_USE_MEM_ATTR_HEAP)
+	mem_attr_heap_pool_init();
+#endif
 	/* find available video buffer */
 	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {

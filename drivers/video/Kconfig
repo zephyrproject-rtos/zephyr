@@ -58,6 +58,20 @@ config VIDEO_I2C_RETRY_NUM
 	  The default is to not retry. Board configuration files or user project can then
 	  use the number of retries that matches their situation.
 
+config VIDEO_BUFFER_USE_MEM_ATTR_HEAP
+	bool "Use mem attr api for video buffer"
+	default n
+
+config VIDEO_BUFFER_MEM_SW_ATTRIBUTE
+	int "Mem SW attribute for video buffer"
+	depends on VIDEO_BUFFER_USE_MEM_ATTR_HEAP
+	default 1
+	help
+	  Mem SW attribute for video buffer:
+	  1: ATTR_SW_ALLOC_CACHE
+	  2: ATTR_SW_ALLOC_NON_CACHE
+	  4: ATTR_SW_ALLOC_DMA
+
 source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
