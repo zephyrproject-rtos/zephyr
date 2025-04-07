@@ -109,11 +109,12 @@ void tile_thread_function(void *arg1, void *arg2, void *arg3)
 
     timing_t start_ct = timing_counter_get();
     uint64_t start_rd = read_cycle();
-
+    k_sched_lock();
     for (int k = 0; k < N; k += nHalf) {
         matmul_rvvt((float *)matrix_A, (float *)matrix_B, (float *)C_computed,
                     i, j, k, N, N, N, nHalf);
     }
+    k_sched_unlock();
 
     timing_t end_ct = timing_counter_get();
     uint64_t end_rd = read_cycle();
@@ -200,14 +201,13 @@ int main(void)
         k_thread_start(thread_ids[i]);
     }
     uint64_t launch_end = read_cycle();  
-    uint64_t launch_cycles = launch_end - launch_start;
+    // uint64_t launch_cycles = launch_end - launch_start;
 
     join_start = timing_counter_get();
     for (int i = 0; i < NUM_THREADS; ++i) {
         k_thread_join(thread_ids[i], K_FOREVER);
     }
     join_end = timing_counter_get();
-    uint64_t join_cycles = timing_cycles_get(&join_start, &join_end);
 
     printf("\nPer-thread execution summary:\n");
     for (int i = 0; i < NUM_THREADS; ++i) {
@@ -217,22 +217,41 @@ int main(void)
                info.assigned_cycle, info.compute_cycles, info.compute_ns);
     }
 
-    // timing_t global_start = thread_info[0].start_ct;
-    // timing_t global_end = thread_info[0].end_ct;
-    // for (int i = 1; i < NUM_THREADS; ++i) {
-    //     if (timing_cycles_get(&thread_info[i].start_ct, &global_start) > 0)
-    //         global_start = thread_info[i].start_ct;
-    //     if (timing_cycles_get(&global_end, &thread_info[i].end_ct) > 0)
-    //         global_end = thread_info[i].end_ct;
-    // }
-    // uint64_t total_execution_cycles = timing_cycles_get(&global_start, &global_end);
-
-    printf("\nSynchronization timing:\n");
-    printf("Total thread launch overhead (cycles): %llu\n", launch_cycles);
-    printf("Total thread join time (cycles):   %llu\n", join_cycles);
     
-    // printf("Total parallel execution time (cycles): %llu\n", total_execution_cycles);
+    uint64_t launch_cycles = timing_cycles_get(&launch_start, &launch_end);
+    uint64_t join_cycles   = timing_cycles_get(&join_start, &join_end);
+    uint64_t launch_ns = timing_cycles_to_ns(launch_cycles);
+    uint64_t join_ns   = timing_cycles_to_ns(join_cycles);
 
+    printf("\nSynchronization timing (ns):\n");
+    printf("Total thread launch overhead: %llu ns\n", launch_ns);
+    printf("Total thread join time:       %llu ns\n", join_ns);
+
+    // Compute timing from first thread start to last thread end
+    timing_t earliest_start = thread_info[0].start_ct;
+    timing_t latest_end = thread_info[0].end_ct;
+
+    for (int i = 1; i < NUM_THREADS; ++i) {
+        if (timing_cycles_get(&thread_info[i].start_ct, &earliest_start) > 0) {
+            earliest_start = thread_info[i].start_ct;
+        }
+        if (timing_cycles_get(&latest_end, &thread_info[i].end_ct) > 0) {
+            latest_end = thread_info[i].end_ct;
+        }
+    }
+
+    uint64_t total_thread_computation_window_cycles = timing_cycles_get(&earliest_start, &latest_end);
+    uint64_t total_thread_computation_window_ns = timing_cycles_to_ns(total_thread_computation_window_cycles);
+
+    printf("\nTotal thread computation window (first start to last end):\n");
+    printf("Time:   %llu ns\n", total_thread_computation_window_ns);
+
+    // Compute join overhead from end of last thread's compute to end of join
+    uint64_t join_overhead_after_compute_cycles = timing_cycles_get(&latest_end, &join_end);
+    uint64_t join_overhead_after_compute_ns = timing_cycles_to_ns(join_overhead_after_compute_cycles);
+
+    printf("\nJoin overhead after compute (ns):\n");
+    printf("Time:   %llu ns\n", join_overhead_after_compute_ns);
     // Validation
     float tolerance = 1e-1f;
     bool valid = true;
