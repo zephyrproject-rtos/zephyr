@@ -174,6 +174,10 @@ Sensors
 * :dtcompatible:`ti,tmp116` has been renamed to :dtcompatible:`ti,tmp11x` because it supports
   tmp116, tmp117 and tmp119.
 
+* :dtcompatible:`meas,ms5837` has been replaced by :dtcompatible:`meas,ms5837-30ba`
+  and :dtcompatible:`meas,ms5837-02ba`. In order to use one of the two variants, the
+  status property needs to be used as well.
+
 Serial
 =======
 
