@@ -1553,6 +1553,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 			priv->pending_tx_flush |= BIT(usb_dwc2_get_depctl_txfnum(dxepctl));
 		}
 
+		udc_ep_set_busy(cfg, false);
 		return;
 	}
 
