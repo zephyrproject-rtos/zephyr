@@ -153,8 +153,33 @@ _restore_context:
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	wsr a0, ZSR_EPC
+
+#ifdef CONFIG_USERSPACE
+	/* When restoring context via xtensa_switch and
+	 * returning from non-nested interrupts, we use
+	 * the stashed PS value in the thread struct
+	 * instead of the one in the thread stack.
+	 * Both scenarios will have nested value of 0.
+	 */
+	rsr.ZSR_CPU a2
+	l32i a0, a2, ___cpu_t_nested_OFFSET
+	bnez a0, _restore_ps_from_stack
+
+	l32i a0, a2, ___cpu_t_current_OFFSET
+	l32i a0, a0, _thread_offset_to_return_ps
+	wsr a0, ZSR_EPS
+
+	j _restore_ps_after
+
+_restore_ps_from_stack:
+#endif
+
 	l32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr a0, ZSR_EPS
+
+#ifdef CONFIG_USERSPACE
+_restore_ps_after:
+#endif
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_RESTORE
@@ -262,6 +287,18 @@ xtensa_switch:
 	/* Stash our PS register contents and a "restore" PC. */
 	rsr a0, PS
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
+
+#ifdef CONFIG_USERSPACE
+	/* Backtrack to the head of thread struct and
+	 * then store the PS value to be restored in
+	 * the architecture specific section.
+	 * This will be used to restore PS instead of
+	 * the one stashed inside stack.
+	 */
+	addi a3, a3, -___thread_t_switch_handle_OFFSET
+	s32i a0, a3, _thread_offset_to_return_ps
+#endif
+
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
