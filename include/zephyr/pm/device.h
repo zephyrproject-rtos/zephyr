@@ -146,6 +146,14 @@ struct pm_device_base {
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 	/** Device usage count */
 	uint32_t usage;
+	/** Pointer to the device */
+	const struct device *dev;
+	/** Event var to listen to the sync request events */
+	struct k_event event;
+#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) || defined(__DOXYGEN__)
+	/** Work object for asynchronous calls */
+	struct k_work_delayable work;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 	/** Power Domain it belongs */
@@ -164,16 +172,8 @@ struct pm_device {
 	/** Base info. */
 	struct pm_device_base base;
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
-	/** Pointer to the device */
-	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_sem lock;
-	/** Event var to listen to the sync request events */
-	struct k_event event;
-#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) || defined(__DOXYGEN__)
-	/** Work object for asynchronous calls */
-	struct k_work_delayable work;
-#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 };
 
@@ -201,8 +201,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
-	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),	\
-	.event = Z_EVENT_INITIALIZER(obj.event),
+	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),
 #else
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
@@ -247,6 +246,8 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id) | (_flags)), \
 		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.action_cb = pm_action_cb,				     \
+		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,			     \
+			(.event = Z_EVENT_INITIALIZER(obj.base.event),), ()) \
 		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
 	}
 
