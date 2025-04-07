@@ -2515,23 +2515,19 @@ def _dt_compats(dt: DT) -> set[str]:
 
     return {compat
             for node in dt.node_iter()
-                if "compatible" in node.props
-                    for compat in node.props["compatible"].to_strings()}
+            if "compatible" in node.props
+            for compat in node.props["compatible"].to_strings()}
 
 
 def _binding_paths(bindings_dirs: list[str]) -> list[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
-    binding_paths = []
-
-    for bindings_dir in bindings_dirs:
-        for root, _, filenames in os.walk(bindings_dir):
-            for filename in filenames:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
-                    binding_paths.append(os.path.join(root, filename))
-
-    return binding_paths
+    return [os.path.join(root, filename)
+            for bindings_dir in bindings_dirs
+            for root, _, filenames in os.walk(bindings_dir)
+            for filename in filenames
+            if filename.endswith((".yaml", ".yml"))]
 
 
 def _binding_inc_error(msg):
