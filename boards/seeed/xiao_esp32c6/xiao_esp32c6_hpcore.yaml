@@ -1,5 +1,5 @@
-identifier: xiao_esp32c6
-name: XIAO ESP32C6
+identifier: xiao_esp32c6/esp32c6/hpcore
+name: XIAO ESP32C6 HP Core
 type: mcu
 arch: riscv
 toolchain:
@@ -18,5 +18,6 @@ supported:
   - xiao_spi
 testing:
   ignore_tags:
+    - bluetooth
     - tracing
 vendor: seeed

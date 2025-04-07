@@ -13,7 +13,7 @@
 #include "seeed_xiao_connector.dtsi"
 
 / {
-	model = "Seeed XIAO ESP32C6";
+	model = "Seeed XIAO ESP32C6 HP Core";
 	compatible = "seeed,xiao-esp32c6";
 
 	chosen {
