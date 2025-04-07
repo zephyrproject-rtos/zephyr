@@ -40,8 +40,13 @@ target_sources(app PRIVATE
   src/audio/hap_peripheral.c
   src/audio/micp_central.c
   src/audio/micp_peripheral.c
+<<<<<<< HEAD
   src/audio/tmap_central.c
   src/audio/tmap_peripheral.c
+=======
+  src/audio/pbp_sink.c
+  src/audio/pbp_source.c
+>>>>>>> 5fce7d4666d (tests: Bluetooth: Tester: PBP BSIM test)
   src/audio/vcp_central.c
   src/audio/vcp_peripheral.c
   src/host/gap_central.c
