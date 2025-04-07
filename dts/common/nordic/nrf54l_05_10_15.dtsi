@@ -728,6 +728,15 @@
 			};
 		};
 
+		nrf_mpc: memory@50041000 {
+			compatible = "nordic,nrf-mpc";
+			reg = <0x50041000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			override-num = <5>;
+			override-granularity = <4096>;
+		};
+
 		cpuapp_ppb: cpuapp-ppb-bus {
 			#address-cells = <1>;
 			#size-cells = <1>;
