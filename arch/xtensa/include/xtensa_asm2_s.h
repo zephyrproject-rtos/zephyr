@@ -532,6 +532,34 @@ _do_call_\@:
 	SPILL_ALL_WINDOWS
 #endif
 
+#if defined(CONFIG_KERNEL_COHERENCE) && \
+	defined(CONFIG_USERSPACE) && \
+	!defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+
+	/* With userspace enabled, we need to swap page table via function calls
+	 * above after returning from syscall handler above in CROSS_STACK_CALL.
+	 * This means that the stack is being actively used, and so we need to
+	 * flush the cached data in stack.
+	 */
+
+	movi a2, 0
+	xsr.ZSR_FLUSH a2
+	beqz a2, _excint_noflush_\@
+
+	rsr.ZSR_CPU a3
+	l32i a3, a3, \NEST_OFF
+	bnez a3, _excint_noflush_\@
+
+	mov a3, a1
+
+_excint_flushloop_\@:
+	dhwb a3, 0
+	addi a3, a3, XCHAL_DCACHE_LINESIZE
+	blt a3, a2, _excint_flushloop_\@
+
+_excint_noflush_\@:
+#endif /* CONFIG_KERNEL_COHERENCE && CONFIG_USERSPACE && !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
 	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
 
