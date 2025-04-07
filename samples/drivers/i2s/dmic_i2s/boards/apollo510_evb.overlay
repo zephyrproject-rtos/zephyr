@@ -1,0 +1,13 @@
+/ {
+	aliases {
+		i2s-tx = &i2s0;
+	};
+};
+
+dmic_dev: &pdm0 {
+	status = "okay";
+};
+
+&i2s0 {
+	status = "okay";
+};
