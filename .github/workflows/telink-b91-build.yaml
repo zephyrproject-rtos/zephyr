@@ -39,7 +39,7 @@ jobs:
         west init -l zephyr
         west update
         west blobs fetch hal_telink
-        west blobs list hal_telink -f '{status} {path}' | grep '^M lib_zephyr_b91.a$' && exit 1
+        west blobs list hal_telink -f '{status} {path}' | grep '^M lib_zephyr_b91_Os.a$' && exit 1
         west zephyr-export
         pip install -r zephyr/scripts/requirements.txt
 
