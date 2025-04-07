@@ -1932,8 +1932,8 @@ Release Notes:
     - samples.drivers.peci
 
 "Drivers: Pin Control":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - gmarull
   files:
     - doc/hardware/pinctrl/
