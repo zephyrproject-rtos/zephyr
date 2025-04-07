@@ -28,6 +28,7 @@ config LED_SHELL
 
 # zephyr-keep-sorted-start
 source "drivers/led/Kconfig.axp192"
+source "drivers/led/Kconfig.dac"
 source "drivers/led/Kconfig.gpio"
 source "drivers/led/Kconfig.ht16k33"
 source "drivers/led/Kconfig.is31fl3194"
