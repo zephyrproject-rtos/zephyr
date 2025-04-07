@@ -9,6 +9,8 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
@@ -355,6 +357,10 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return -EBUSY;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#endif
+
 	/* Transmit each message */
 	for (int i = 0; i < num_msgs; i++) {
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
@@ -374,6 +380,10 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	if(ret == -ETIMEDOUT){
 		i2c_mspm0_configure(dev, config);
 	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#endif
 
 	return ret;
 }
@@ -795,11 +805,15 @@ static int i2c_mspm0_init(const struct device *dev)
 	/* Configure Interrupts */
 	DL_I2C_enableInterrupt(config->base, TI_MSPM0_CONTROLLER_INTERRUPTS);
 
-	/* Enable module */
-	DL_I2C_enableController(config->base);
-
 	/* Enable interrupts */
 	config->interrupt_init_function(dev);
+	if (DL_I2C_isControllerEnabled(config->base)) {
+		DL_I2C_disableController(config->base);
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_enable(dev);
+#endif
 
 	return 0;
 }
@@ -811,6 +825,37 @@ static const struct i2c_driver_api i2c_mspm0_driver_api = {
 	.target_register = i2c_mspm0_target_register,
 	.target_unregister = i2c_mspm0_target_unregister,
 };
+
+#ifdef CONFIG_PM_DEVICE
+
+static int i2c_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_mspm0_config *config = dev->config;
+	struct i2c_mspm0_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (!data->is_target) {
+			DL_I2C_enableController(config->base);
+		} else {
+			DL_I2C_enableTarget(config->base);
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (!data->is_target) {
+			DL_I2C_disableController(config->base);
+		} else {
+			DL_I2C_disableTarget(config->base);
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif
 
 /* Macros to assist with the device-specific initialization */
 #define INTERRUPT_INIT_FUNCTION_DECLARATION(index)	\
@@ -848,6 +893,7 @@ static const struct i2c_driver_api i2c_mspm0_driver_api = {
 		.secondaryAddr = 0x00, \
 	};	\
 	\
+	PM_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_pm_action);			\
 	I2C_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_init, NULL,				\
 		&i2c_mspm0_data_##index, &i2c_mspm0_cfg_##index, POST_KERNEL,	\
 		CONFIG_I2C_INIT_PRIORITY, &i2c_mspm0_driver_api);				\
