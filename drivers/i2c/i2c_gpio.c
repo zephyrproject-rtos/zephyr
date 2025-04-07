@@ -57,6 +57,16 @@ static void i2c_gpio_set_scl(void *io_context, int state)
 	gpio_pin_set_dt(&config->scl_gpio, state);
 }
 
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+static int i2c_gpio_get_scl(void *io_context)
+{
+	const struct i2c_gpio_config *config = io_context;
+	int rc = gpio_pin_get_dt(&config->scl_gpio);
+
+	return rc != 0;
+}
+#endif
+
 static void i2c_gpio_set_sda(void *io_context, int state)
 {
 	const struct i2c_gpio_config *config = io_context;
@@ -75,6 +85,9 @@ static int i2c_gpio_get_sda(void *io_context)
 
 static const struct i2c_bitbang_io io_fns = {
 	.set_scl = &i2c_gpio_set_scl,
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+	.get_scl = &i2c_gpio_get_scl,
+#endif
 	.set_sda = &i2c_gpio_set_sda,
 	.get_sda = &i2c_gpio_get_sda,
 };
@@ -162,7 +175,14 @@ static int i2c_gpio_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+	err = gpio_pin_configure_dt(&config->scl_gpio, GPIO_INPUT | GPIO_OUTPUT_HIGH);
+	if (err == -ENOTSUP) {
+		err = gpio_pin_configure_dt(&config->scl_gpio, GPIO_OUTPUT_HIGH);
+	}
+#else
 	err = gpio_pin_configure_dt(&config->scl_gpio, GPIO_OUTPUT_HIGH);
+#endif
 	if (err) {
 		LOG_ERR("failed to configure SCL GPIO pin (err %d)", err);
 		return err;
