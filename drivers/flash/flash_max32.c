@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,17 +52,18 @@ static inline void max32_sem_give(const struct device *dev)
 static int api_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
 	const struct max32_flash_dev_config *const cfg = dev->config;
+	int ret = 0;
 	unsigned int key = 0;
 
 	address += cfg->flash_base;
 
 	key = irq_lock();
 
-	MXC_FLC_Read(address, buffer, length);
+	ret = Wrap_MXC_FLC_Read(address, buffer, length);
 
 	irq_unlock(key);
 
-	return 0;
+	return ret != 0 ? -EIO : 0;
 }
 
 static int api_write(const struct device *dev, off_t address, const void *buffer, size_t length)
