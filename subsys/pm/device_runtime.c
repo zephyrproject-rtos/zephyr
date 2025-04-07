@@ -79,10 +79,10 @@ static int runtime_suspend(const struct device *dev, bool async,
 	if (async) {
 		/* queue suspend */
 		pm->base.state = PM_DEVICE_STATE_SUSPENDING;
-		(void)k_work_schedule(&pm->work, delay);
+		(void)k_work_schedule(&pm->base.work, delay);
 	} else {
 		/* suspend now */
-		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = pm->base.action_cb(pm->base.dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
 			pm->base.usage++;
 			goto unlock;
@@ -103,9 +103,10 @@ static void runtime_suspend_work(struct k_work *work)
 {
 	int ret;
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
+	struct pm_device_base *pm_base = CONTAINER_OF(dwork, struct pm_device_base, work);
+	struct pm_device *pm = CONTAINER_OF(pm_base, struct pm_device, base);
 
-	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+	ret = pm->base.action_cb(pm->base.dev, PM_DEVICE_ACTION_SUSPEND);
 
 	(void)k_sem_take(&pm->lock, K_FOREVER);
 	if (ret < 0) {
@@ -114,7 +115,7 @@ static void runtime_suspend_work(struct k_work *work)
 	} else {
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
 	}
-	k_event_set(&pm->event, BIT(pm->base.state));
+	k_event_set(&pm->base.event, BIT(pm->base.state));
 	k_sem_give(&pm->lock);
 
 	/*
@@ -231,7 +232,7 @@ int pm_device_runtime_get(const struct device *dev)
 	 * the device is actually active.
 	 */
 	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
-		((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+		((k_work_cancel_delayable(&pm->base.work) & K_WORK_RUNNING) == 0)) {
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
 		goto unlock;
 	}
@@ -242,10 +243,10 @@ int pm_device_runtime_get(const struct device *dev)
 		 * nothing else we can do but wait until it finishes.
 		 */
 		while (pm->base.state == PM_DEVICE_STATE_SUSPENDING) {
-			k_event_clear(&pm->event, EVENT_MASK);
+			k_event_clear(&pm->base.event, EVENT_MASK);
 			k_sem_give(&pm->lock);
 
-			k_event_wait(&pm->event, EVENT_MASK, false, K_FOREVER);
+			k_event_wait(&pm->base.event, EVENT_MASK, false, K_FOREVER);
 
 			(void)k_sem_take(&pm->lock, K_FOREVER);
 		}
@@ -255,7 +256,7 @@ int pm_device_runtime_get(const struct device *dev)
 		goto unlock;
 	}
 
-	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
+	ret = pm->base.action_cb(pm->base.dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
 		pm->base.usage--;
 		goto unlock;
@@ -427,6 +428,12 @@ int pm_device_runtime_enable(const struct device *dev)
 		goto end;
 	}
 
+	/* lazy init of PM fields */
+	if (pm->base.dev == NULL) {
+		pm->base.dev = dev;
+		k_work_init_delayable(&pm->base.work, runtime_suspend_work);
+	}
+
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		ret = runtime_enable_sync(dev);
 		goto end;
@@ -436,14 +443,8 @@ int pm_device_runtime_enable(const struct device *dev)
 		(void)k_sem_take(&pm->lock, K_FOREVER);
 	}
 
-	/* lazy init of PM fields */
-	if (pm->dev == NULL) {
-		pm->dev = dev;
-		k_work_init_delayable(&pm->work, runtime_suspend_work);
-	}
-
 	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
-		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = pm->base.action_cb(pm->base.dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
 			goto unlock;
 		}
@@ -514,17 +515,17 @@ int pm_device_runtime_disable(const struct device *dev)
 
 	if (!k_is_pre_kernel()) {
 		if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
-			((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+			((k_work_cancel_delayable(&pm->base.work) & K_WORK_RUNNING) == 0)) {
 			pm->base.state = PM_DEVICE_STATE_ACTIVE;
 			goto clear_bit;
 		}
 
 		/* wait until possible async suspend is completed */
 		while (pm->base.state == PM_DEVICE_STATE_SUSPENDING) {
-			k_event_clear(&pm->event, EVENT_MASK);
+			k_event_clear(&pm->base.event, EVENT_MASK);
 			k_sem_give(&pm->lock);
 
-			k_event_wait(&pm->event, EVENT_MASK, false, K_FOREVER);
+			k_event_wait(&pm->base.event, EVENT_MASK, false, K_FOREVER);
 
 			(void)k_sem_take(&pm->lock, K_FOREVER);
 		}
