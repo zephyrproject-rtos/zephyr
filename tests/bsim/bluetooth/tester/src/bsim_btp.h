@@ -386,6 +386,38 @@ static inline void bsim_btp_wait_for_hauc_discovery_complete(bt_addr_le_t *addre
 	net_buf_unref(buf);
 }
 
+static inline void bsim_btp_tmap_discover(const bt_addr_le_t *address)
+{
+	struct btp_tmap_discover_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_TMAP;
+	cmd_hdr->opcode = BTP_TMAP_DISCOVER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_tmap_discovery_complete(void)
+{
+	struct btp_tmap_discovery_complete_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_TMAP, BT_TMAP_EV_DISCOVERY_COMPLETE, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
+
+	net_buf_unref(buf);
+}
+
 static inline void bsim_btp_vcp_discover(const bt_addr_le_t *address)
 {
 	struct btp_vcp_discover_cmd *cmd;
