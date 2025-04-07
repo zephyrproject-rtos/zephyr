@@ -807,6 +807,8 @@ fp_trap_exit:
 	sr t0, __struct_arch_esf_sp_OFFSET(sp)
 2:
 #endif
+	li s0, MSTATUS_XS_CLEAN
+	csrs mstatus, s0
 	/* Restore s0 (it is no longer ours) */
 	lr s0, __struct_arch_esf_s0_OFFSET(sp)
 
