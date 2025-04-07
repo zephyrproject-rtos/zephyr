@@ -1000,12 +1000,12 @@ static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 		bt_shell_warn("The conn %p is not aligned with ACL conn %p", conn, default_conn);
 	}
 	hfp_ag = ag;
-	bt_shell_print("ag connected");
+	bt_shell_print("AG connected");
 }
 
 static void ag_disconnected(struct bt_hfp_ag *ag)
 {
-	bt_shell_print("ag disconnected");
+	bt_shell_print("AG disconnected");
 }
 
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
@@ -1040,7 +1040,7 @@ static int ag_memory_dial(struct bt_hfp_ag *ag, const char *location, char **num
 		return -ENOTSUP;
 	}
 
-	bt_shell_print("ag memory dial");
+	bt_shell_print("AG memory dial");
 
 	*number = phone;
 
@@ -1051,7 +1051,7 @@ static int ag_number_call(struct bt_hfp_ag *ag, const char *number)
 {
 	static char *phone = "123456789";
 
-	bt_shell_print("ag number call");
+	bt_shell_print("AG number call");
 
 	if (strcmp(number, phone)) {
 		return -ENOTSUP;
@@ -1062,71 +1062,71 @@ static int ag_number_call(struct bt_hfp_ag *ag, const char *number)
 
 static void ag_outgoing(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
-	bt_shell_print("ag outgoing call %p, number %s", call, number);
+	bt_shell_print("AG outgoing call %p, number %s", call, number);
 	ag_add_a_call(call);
 }
 
 static void ag_incoming(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
-	bt_shell_print("ag incoming call %p, number %s", call, number);
+	bt_shell_print("AG incoming call %p, number %s", call, number);
 	ag_add_a_call(call);
 }
 
 static void ag_incoming_held(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag incoming call %p is held", call);
+	bt_shell_print("AG incoming call %p is held", call);
 }
 
 static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
 {
-	bt_shell_print("ag call %p start ringing mode %d", call, in_band);
+	bt_shell_print("AG call %p start ringing mode %d", call, in_band);
 }
 
 static void ag_accept(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p accept", call);
+	bt_shell_print("AG call %p accept", call);
 }
 
 static void ag_held(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p held", call);
+	bt_shell_print("AG call %p held", call);
 }
 
 static void ag_retrieve(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p retrieved", call);
+	bt_shell_print("AG call %p retrieved", call);
 }
 
 static void ag_reject(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p reject", call);
+	bt_shell_print("AG call %p reject", call);
 	ag_remove_a_call(call);
 }
 
 static void ag_terminate(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p terminate", call);
+	bt_shell_print("AG call %p terminate", call);
 	ag_remove_a_call(call);
 }
 
 static void ag_codec(struct bt_hfp_ag *ag, uint32_t ids)
 {
-	bt_shell_print("ag received codec id bit map %x", ids);
+	bt_shell_print("AG received codec id bit map %x", ids);
 }
 
 void ag_vgm(struct bt_hfp_ag *ag, uint8_t gain)
 {
-	bt_shell_print("ag received vgm %d", gain);
+	bt_shell_print("AG received vgm %d", gain);
 }
 
 void ag_vgs(struct bt_hfp_ag *ag, uint8_t gain)
 {
-	bt_shell_print("ag received vgs %d", gain);
+	bt_shell_print("AG received vgs %d", gain);
 }
 
 void ag_codec_negotiate(struct bt_hfp_ag *ag, int err)
 {
-	bt_shell_print("ag codec negotiation result %d", err);
+	bt_shell_print("AG codec negotiation result %d", err);
 }
 
 void ag_audio_connect_req(struct bt_hfp_ag *ag)
