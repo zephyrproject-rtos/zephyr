@@ -66,6 +66,9 @@ Removed APIs and options
 
 * Removed the deprecated ``kscan`` subsystem.
 
+* Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
+  and :dtcompatible:`meas,ms5837-02ba`.
+
 Deprecated APIs and options
 ===========================
 
