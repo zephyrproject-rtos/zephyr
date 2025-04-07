@@ -17,6 +17,7 @@
 #include <fsl_gpio.h>
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/gpio/nxp-imx-igpio.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -90,8 +91,13 @@ static int mcux_igpio_configure(const struct device *dev,
 	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
 		reg |= IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 		if (((flags & GPIO_PULL_UP) != 0)) {
-			/* Use 100K pullup */
-			reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(2);
+			if ((flags & NXP_IGPIO_PULL_STRONG) != 0) {
+				/* Use 22K pullup */
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(3);
+			} else {
+				/* Use 100K pullup */
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PUS(2);
+			}
 		} else {
 			/* 100K pulldown */
 			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
