@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash {
+	partitions {
+		small_partition: partition@E0000 {
+			label = "small";
+			reg = <0x000E0000 DT_SIZE_K(128)>;
+		};
+	};
+};
