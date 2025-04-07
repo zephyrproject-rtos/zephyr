@@ -38,6 +38,8 @@ target_sources(app PRIVATE
   src/audio/hap_peripheral.c
   src/audio/micp_central.c
   src/audio/micp_peripheral.c
+  src/audio/pbp_sink.c
+  src/audio/pbp_source.c
   src/audio/vcp_central.c
   src/audio/vcp_peripheral.c
   src/host/gap_central.c
