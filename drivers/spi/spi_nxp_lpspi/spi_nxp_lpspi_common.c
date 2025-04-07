@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_lpspi_common, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 #include <fsl_lpspi.h>
