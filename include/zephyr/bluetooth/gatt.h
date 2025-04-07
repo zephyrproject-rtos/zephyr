@@ -712,8 +712,8 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
  *
  *  Iterate attributes in the given range matching given UUID and/or data.
  *
- *  @param start_handle Start handle.
- *  @param end_handle End handle. Often set to start_handle + attr_count or
+ *  @param start_handle Start attribute handle.
+ *  @param end_handle End attribute handle. Often set to start_handle + attr_count or
  *  BT_ATT_LAST_ATTRIBUTE_HANDLE.
  *  @param uuid UUID to match, passing NULL skips UUID matching.
  *  @param attr_data Attribute data to match, passing NULL skips data matching.
@@ -731,8 +731,8 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
  *
  *  Iterate attributes in the given range.
  *
- *  @param start_handle Start handle.
- *  @param end_handle End handle.
+ *  @param start_handle Starting attribute handle.
+ *  @param end_handle Ending attribute handle.
  *  @param func Callback function.
  *  @param user_data Data to pass to the callback.
  */
@@ -1827,15 +1827,20 @@ struct bt_gatt_discover_params {
 		struct {
 			/** Include service attribute declaration handle */
 			uint16_t attr_handle;
-			/** Included service start handle */
+			/** Starting attribute handle for included service */
 			uint16_t start_handle;
-			/** Included service end handle */
+			/** Ending attribute handle for included service */
 			uint16_t end_handle;
 		} _included;
-		/** Discover start handle */
+		/** Starting attribute handle to begin discovery */
 		uint16_t start_handle;
 	};
-	/** Discover end handle */
+	/** @brief Ending attribute handle to stop discovery at
+	 *
+	 * @note When discovery begins this can be set to
+	 * @ref BT_ATT_LAST_ATTRIBUTE_HANDLE to discover all attributes
+	 * in the service.
+	 */
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
@@ -1940,9 +1945,27 @@ struct bt_gatt_read_params {
 			bool variable;
 		} multiple;
 		struct {
-			/** Attribute handle to start reading from. */
+			/** @brief Requested start attribute handle number.
+			 *
+			 * @details The starting handle is set to the starting point of the range
+			 * over which this read should be performed. For example, this could be
+			 * set to @ref BT_ATT_FIRST_ATTRIBUTE_HANDLE to set the starting point of
+			 * the range at the beginning of the GATT database, or to the starting
+			 * handle of a service after discovery.
+			 *
+			 * This value is automatically incremented by the stack after
+			 * processing each matching handle-value pair returned by the server.
+			 */
 			uint16_t start_handle;
-			/** Attribute handle to stop reading at. */
+			/** @brief Requested end attribute handle number.
+			 *
+			 * @details The end handle is set to the ending point of the range over
+			 * which this read should be performed. For example, this could be set to
+			 * @ref BT_ATT_LAST_ATTRIBUTE_HANDLE to set the ending point of the range
+			 * at the end of the GATT database, or to the end handle for service after
+			 * discovery, where the end_handle is available in the
+			 * @ref bt_gatt_service_val.
+			 */
 			uint16_t end_handle;
 			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
