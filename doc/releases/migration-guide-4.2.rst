@@ -258,6 +258,11 @@ Networking
   is optional and not used with older MQTT versions - MQTT 3.1.1 users should pass
   NULL as an argument.
 
+* The ``AF_PACKET/SOCK_RAW/IPPROTO_RAW`` socket combination is no longer supported,
+  as ``AF_PACKET`` sockets should only accept IEEE 802.3 protocol numbers. As an
+  alternative, ``AF_PACKET/SOCK_DGRAM/ETH_P_ALL`` or ``AF_INET(6)/SOCK_RAW/IPPROTO_IP``
+  sockets can be used, depending on the actual use case.
+
 SPI
 ===
 
