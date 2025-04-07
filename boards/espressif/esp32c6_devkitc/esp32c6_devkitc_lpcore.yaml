@@ -13,4 +13,5 @@ testing:
     - kernel
     - posix
     - chre
+    - cpp
 vendor: espressif
