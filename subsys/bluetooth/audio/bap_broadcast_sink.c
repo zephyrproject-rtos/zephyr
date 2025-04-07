@@ -63,6 +63,11 @@ struct codec_cap_lookup_id_data {
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
+/* The mod_src_param is and shall only be used by the BT RX thread. It is statically defined due to
+ * the size of it, and that it's configurable in size, and can cause stack overflow issues otherwise
+ */
+static struct bt_bap_scan_delegator_mod_src_param mod_src_param;
+
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
 static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
@@ -103,7 +108,6 @@ static bool find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_rec
 static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sink)
 {
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = {0};
 	int err;
 
 	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
@@ -112,6 +116,8 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 
 		return;
 	}
+
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
 
 	mod_src_param.num_subgroups = sink->subgroup_count;
 	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
@@ -145,7 +151,6 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *sink,
 					  uint8_t reason)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
@@ -156,6 +161,8 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 
 		return;
 	}
+
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
 
 	if ((recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ ||
 	     recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_DEC) &&
@@ -488,7 +495,6 @@ static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 
 static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
-	struct bt_bap_scan_delegator_mod_src_param *mod_src_param = user_data;
 	struct bt_bap_bass_subgroup *subgroup_param;
 	uint8_t *meta;
 	int ret;
@@ -498,19 +504,18 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 		return false;
 	}
 
-	subgroup_param = &mod_src_param->subgroups[mod_src_param->num_subgroups++];
+	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups++];
 	subgroup_param->metadata_len = (uint8_t)ret;
 	memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
 
 	return true;
 }
 
-static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
-					    struct bt_bap_scan_delegator_mod_src_param *param)
+static int update_recv_state_base_copy_meta(const struct bt_bap_base *base)
 {
 	int err;
 
-	err = bt_bap_base_foreach_subgroup(base, base_subgroup_meta_cb, param);
+	err = bt_bap_base_foreach_subgroup(base, base_subgroup_meta_cb, NULL);
 	if (err != 0) {
 		LOG_DBG("Failed to parse subgroups: %d", err);
 		return err;
@@ -522,7 +527,6 @@ static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
 static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 				   const struct bt_bap_base *base)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
@@ -533,7 +537,9 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 		return;
 	}
 
-	err = update_recv_state_base_copy_meta(base, &mod_src_param);
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
+
+	err = update_recv_state_base_copy_meta(base);
 	if (err != 0) {
 		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
 		return;
@@ -740,7 +746,6 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 
 static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
@@ -752,6 +757,8 @@ static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sin
 
 		return;
 	}
+
+	(void)memset(&mod_src_param, 0, sizeof(mod_src_param));
 
 	/* Only change the encrypt state, and leave the rest as is */
 	if (atomic_test_bit(sink->flags,
