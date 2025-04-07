@@ -19,6 +19,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/zperf.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "zperf_internal.h"
 #include "zperf_session.h"
@@ -484,7 +485,8 @@ static int cmd_udp_download(const struct shell *sh, size_t argc,
 #endif
 
 static void shell_udp_upload_print_stats(const struct shell *sh,
-					 struct zperf_results *results)
+					 struct zperf_results *results,
+					 bool is_async)
 {
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		uint64_t rate_in_kbps, client_rate_in_kbps;
@@ -544,11 +546,35 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, "\t(");
 		print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, ")\n");
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		if (is_async) {
+			struct session *ses = CONTAINER_OF(results,
+							   struct session,
+							   result);
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Packet priority:\t%d\n",
+				      ses->async_upload_ctx.param.options.priority);
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
+
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Thread priority:\t%d\n",
+				      ses->async_upload_ctx.param.options.thread_priority);
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Protocol:\t\t%s\n",
+				      ses->proto == SESSION_UDP ? "UDP" : "TCP");
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Session id:\t\t%d\n", ses->id);
+		}
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 	}
 }
 
 static void shell_tcp_upload_print_stats(const struct shell *sh,
-					 struct zperf_results *results)
+					 struct zperf_results *results,
+					 bool is_async)
 {
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		uint64_t client_rate_in_kbps;
@@ -565,18 +591,41 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 			client_rate_in_kbps = 0U;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t");
+		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
 		print_number_64(sh, results->client_time_in_us,
 			     TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
-		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t%u\n",
+		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\n",
 			      results->nb_packets_sent);
 		shell_fprintf(sh, SHELL_NORMAL,
-			      "Num errors:\t%u (retry or fail)\n",
+			      "Num errors:\t\t%u (retry or fail)\n",
 			      results->nb_packets_errors);
-		shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t");
+		shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
 		print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		if (is_async) {
+			struct session *ses = CONTAINER_OF(results,
+							   struct session,
+							   result);
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Packet priority:\t%d\n",
+				      ses->async_upload_ctx.param.options.priority);
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
+
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Thread priority:\t%d\n",
+				      ses->async_upload_ctx.param.options.thread_priority);
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Protocol:\t\t%s\n",
+				      ses->proto == SESSION_UDP ? "UDP" : "TCP");
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Session id:\t\t%d\n", ses->id);
+		}
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 	}
 }
 
@@ -617,17 +666,32 @@ static void udp_upload_cb(enum zperf_status status,
 {
 	const struct shell *sh = user_data;
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct session *ses = CONTAINER_OF(result, struct session, result);
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	switch (status) {
 	case ZPERF_SESSION_STARTED:
 		break;
 
 	case ZPERF_SESSION_FINISHED: {
-		shell_udp_upload_print_stats(sh, result);
+		shell_udp_upload_print_stats(sh, result, true);
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		ses->in_progress = false;
+		ses->state = STATE_COMPLETED;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 		break;
 	}
 
 	case ZPERF_SESSION_ERROR:
 		shell_fprintf(sh, SHELL_ERROR, "UDP upload failed\n");
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		ses->in_progress = false;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 		break;
 
 	default:
@@ -641,6 +705,10 @@ static void tcp_upload_cb(enum zperf_status status,
 {
 	const struct shell *sh = user_data;
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct session *ses = CONTAINER_OF(result, struct session, result);
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	switch (status) {
 	case ZPERF_SESSION_STARTED:
 		break;
@@ -650,12 +718,23 @@ static void tcp_upload_cb(enum zperf_status status,
 		break;
 
 	case ZPERF_SESSION_FINISHED: {
-		shell_tcp_upload_print_stats(sh, result);
+		shell_tcp_upload_print_stats(sh, result, true);
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		ses->in_progress = false;
+		ses->state = STATE_COMPLETED;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 		break;
 	}
 
 	case ZPERF_SESSION_ERROR:
 		shell_fprintf(sh, SHELL_ERROR, "TCP upload failed\n");
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		ses->in_progress = false;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 		break;
 	}
 }
@@ -771,7 +850,7 @@ static int execute_upload(const struct shell *sh,
 				return ret;
 			}
 
-			shell_udp_upload_print_stats(sh, &results);
+			shell_udp_upload_print_stats(sh, &results, false);
 		}
 	} else {
 		if (is_udp && !IS_ENABLED(CONFIG_NET_UDP)) {
@@ -797,7 +876,7 @@ static int execute_upload(const struct shell *sh,
 				return ret;
 			}
 
-			shell_tcp_upload_print_stats(sh, &results);
+			shell_tcp_upload_print_stats(sh, &results, false);
 		}
 	} else {
 		if (!is_udp && !IS_ENABLED(CONFIG_NET_TCP)) {
@@ -837,6 +916,25 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+static bool check_priority(const struct shell *sh, int priority)
+{
+	if (!((priority >= -CONFIG_NUM_COOP_PRIORITIES && priority <= -1) ||
+	      (priority >= 0 && priority <= (CONFIG_NUM_PREEMPT_PRIORITIES - 1)))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Invalid priority: %d\n"
+			      "Valid values are [%d, %d] for co-operative "
+			      "and [%d, %d] for pre-emptive threads\n",
+			      priority,
+			      -CONFIG_NUM_COOP_PRIORITIES, -1,
+			      0, CONFIG_NUM_PREEMPT_PRIORITIES - 1);
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
@@ -890,6 +988,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			param.options.tcp_nodelay = 1;
 			opt_cnt += 1;
 			break;
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		case 't':
+			param.options.thread_priority = parse_arg(&i, argc, argv);
+			if (!check_priority(sh, param.options.thread_priority)) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			async = true;
+			break;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		case 'p':
@@ -1125,6 +1236,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			opt_cnt += 1;
 			break;
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		case 't':
+			param.options.thread_priority = parse_arg(&i, argc, argv);
+			if (!check_priority(sh, param.options.thread_priority)) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			async = true;
+			break;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		case 'p':
 			param.options.priority = parse_arg(&i, argc, argv);
@@ -1294,7 +1418,7 @@ static int cmd_udp(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_connectap(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_INFO,
-		      "Zephyr has not been built with Wi-Fi support.\n");
+		      "Zephyr has not been built with %s support.\n", "Wi-Fi");
 
 	return 0;
 }
@@ -1415,6 +1539,251 @@ static int cmd_version(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+struct zperf_shell_user_data {
+	const struct shell *sh;
+	void *user_data;
+	int in_progress_count;
+	int finalized_count;
+	bool active;
+};
+
+static void session_cb(struct session *ses,
+		       enum session_proto proto,
+		       void *user_data)
+{
+	struct zperf_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	bool active = data->active;
+
+	if (ses->state == STATE_NULL) {
+		return;
+	}
+
+	if (active) {
+		if (ses->in_progress) {
+			uint32_t remaining;
+
+			if (ses->state != STATE_STARTING && ses->state != STATE_ONGOING) {
+				return;
+			}
+
+			if (ses->proto != proto) {
+				return;
+			}
+
+			if (data->in_progress_count == 0) {
+				shell_fprintf(sh, SHELL_NORMAL,
+					      "           Thread    Remaining\n"
+					      "Id  Proto  Priority  time (sec)\n");
+			}
+
+			remaining = (uint32_t)
+				(((uint64_t)ses->async_upload_ctx.param.duration_ms -
+				  (k_uptime_get() -
+				   k_ticks_to_ms_ceil64(ses->start_time))) / MSEC_PER_SEC);
+
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "[%d] %s    %d\t\t%d\n",
+				      ses->id, ses->proto == SESSION_UDP ? "UDP" : "TCP",
+				      ses->async_upload_ctx.param.options.thread_priority,
+				      remaining);
+
+			data->in_progress_count++;
+		}
+
+		return;
+	}
+
+	if (!ses->in_progress) {
+		if (ses->state != STATE_COMPLETED) {
+			return;
+		}
+
+		if (ses->proto != proto) {
+			return;
+		}
+
+		if (data->finalized_count == 0) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				"            Thread\n"
+				"Id  Proto  Priority  \tDuration\tRate\n");
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "[%d] %s    %d\t\t",
+			      ses->id, ses->proto == SESSION_UDP ? "UDP" : "TCP",
+			      ses->async_upload_ctx.param.options.thread_priority);
+		print_number_64(sh,
+				(uint64_t)ses->async_upload_ctx.param.duration_ms * USEC_PER_MSEC,
+				TIME_US, TIME_US_UNIT);
+		shell_fprintf(sh, SHELL_NORMAL, "\t\t%u kbps\n",
+			      ses->async_upload_ctx.param.rate_kbps);
+
+		data->finalized_count++;
+	}
+}
+
+static void session_all_cb(struct session *ses,
+			   enum session_proto proto,
+			   void *user_data)
+{
+	struct zperf_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+
+	if (ses->state == STATE_NULL) {
+		return;
+	}
+
+	if (!ses->in_progress) {
+		if (ses->state != STATE_COMPLETED) {
+			return;
+		}
+
+		if (ses->proto != proto) {
+			return;
+		}
+
+		if (proto == SESSION_UDP) {
+			shell_udp_upload_print_stats(sh, &ses->result, true);
+		} else {
+			shell_tcp_upload_print_stats(sh, &ses->result, true);
+		}
+
+		data->finalized_count++;
+	}
+}
+
+static void session_clear_cb(struct session *ses,
+			     enum session_proto proto,
+			     void *user_data)
+{
+	struct zperf_shell_user_data *data = user_data;
+
+	if (ses->state == STATE_NULL) {
+		return;
+	}
+
+	if (!ses->in_progress) {
+		if (ses->state == STATE_COMPLETED) {
+			ses->state = STATE_NULL;
+			data->finalized_count++;
+		}
+	} else {
+		if (ses->state == STATE_STARTING || ses->state == STATE_ONGOING) {
+			data->in_progress_count++;
+		}
+	}
+}
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
+static int cmd_jobs(const struct shell *sh, size_t argc, char *argv[])
+{
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct zperf_shell_user_data user_data;
+
+	user_data.sh = sh;
+	user_data.in_progress_count = 0;
+	user_data.finalized_count = 0;
+	user_data.active = true;
+
+	zperf_session_foreach(SESSION_UDP, session_cb, &user_data);
+	zperf_session_foreach(SESSION_TCP, session_cb, &user_data);
+
+	if (user_data.in_progress_count == 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "No active upload sessions\n");
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+
+	user_data.active = false;
+
+	zperf_session_foreach(SESSION_UDP, session_cb, &user_data);
+	zperf_session_foreach(SESSION_TCP, session_cb, &user_data);
+
+	if (user_data.finalized_count == 0 && user_data.in_progress_count > 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Active sessions have not yet finished\n");
+	} else if (user_data.finalized_count == 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "No finished sessions found\n");
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Total %d sessions done\n",
+			      user_data.finalized_count);
+	}
+#else
+	shell_fprintf(sh, SHELL_INFO,
+		      "Zephyr has not been built with %s support.\n",
+		      "CONFIG_ZPERF_SESSION_PER_THREAD");
+#endif
+	return 0;
+}
+
+static int cmd_jobs_all(const struct shell *sh, size_t argc, char *argv[])
+{
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct zperf_shell_user_data user_data;
+
+	user_data.sh = sh;
+	user_data.in_progress_count = 0;
+	user_data.finalized_count = 0;
+	user_data.active = false;
+
+	zperf_session_foreach(SESSION_UDP, session_all_cb, &user_data);
+	zperf_session_foreach(SESSION_TCP, session_all_cb, &user_data);
+
+	if (user_data.finalized_count == 0 && user_data.in_progress_count > 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Active sessions have not yet finished\n");
+	} else if (user_data.finalized_count == 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "No finished sessions found\n");
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Total %d sessions done\n",
+			      user_data.finalized_count);
+	}
+#else
+	shell_fprintf(sh, SHELL_INFO,
+		      "Zephyr has not been built with %s support.\n",
+		      "CONFIG_ZPERF_SESSION_PER_THREAD");
+#endif
+	return 0;
+}
+
+static int cmd_jobs_clear(const struct shell *sh, size_t argc, char *argv[])
+{
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct zperf_shell_user_data user_data;
+
+	user_data.sh = sh;
+	user_data.in_progress_count = 0;
+	user_data.finalized_count = 0;
+	user_data.active = false;
+
+	zperf_session_foreach(SESSION_UDP, session_clear_cb, &user_data);
+	zperf_session_foreach(SESSION_TCP, session_clear_cb, &user_data);
+
+	if (user_data.finalized_count == 0 && user_data.in_progress_count > 0) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Active sessions have not yet finished, not clearing\n");
+	} else if (user_data.finalized_count == 0) {
+		shell_fprintf(sh, SHELL_NORMAL, "All sessions already cleared\n");
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Cleared data from %d sessions\n",
+			      user_data.finalized_count);
+	}
+#else
+	shell_fprintf(sh, SHELL_INFO,
+		      "Zephyr has not been built with %s support.\n",
+		      "CONFIG_ZPERF_SESSION_PER_THREAD");
+#endif
+	return 0;
+}
+
 void zperf_shell_init(void)
 {
 	int ret;
@@ -1491,6 +1860,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "-i sec: Periodic reporting interval in seconds (async only)\n"
 		  "-n: Disable Nagle's algorithm\n"
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		  "-t: Specify custom thread priority\n"
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
@@ -1511,6 +1883,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "-i sec: Periodic reporting interval in seconds (async only)\n"
 		  "-n: Disable Nagle's algorithm\n"
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		  "-t: Specify custom thread priority\n"
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
@@ -1560,6 +1935,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		  "-t: Specify custom thread priority\n"
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
@@ -1581,6 +1959,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		  "-t: Specify custom thread priority\n"
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
@@ -1610,10 +1991,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_jobs,
+	SHELL_CMD(all, NULL, "Show all statistics", cmd_jobs_all),
+	SHELL_CMD(clear, NULL, "Clear all statistics", cmd_jobs_clear),
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 	SHELL_CMD(connectap, NULL,
 		  "Connect to AP",
 		  cmd_connectap),
+	SHELL_CMD(jobs, &zperf_cmd_jobs,
+		  "Show currently active tests",
+		  cmd_jobs),
 	SHELL_CMD(setip, NULL,
 		  "Set IP address\n"
 		  "<my ip> <prefix len>\n"
