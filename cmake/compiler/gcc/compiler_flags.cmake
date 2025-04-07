@@ -197,6 +197,10 @@ if(NOT CONFIG_NO_OPTIMIZATIONS)
   set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 
+check_set_compiler_property(PROPERTY sanitizer_undefined -fsanitize=undefined)
+check_set_compiler_property(PROPERTY sanitizer_undefined_trap -fsanitize-undefined-trap-on-error)
+check_set_compiler_property(PROPERTY sanitizer_undefined_library)
+
 # gcc flag for a hosted (no-freestanding) application
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
