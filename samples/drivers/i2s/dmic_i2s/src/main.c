@@ -24,8 +24,8 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 
 #define NUMBER_OF_CHANNELS 2
 
-#define DMIC_INPUT_ENABLE  0
-#define I2S_TX_RX_LOOPBACK 1
+#define DMIC_INPUT_ENABLE  1
+#define I2S_TX_RX_LOOPBACK 0
 
 #if (!DMIC_INPUT_ENABLE)
 #define SINE_WAVE_DATA_IN 0
@@ -55,15 +55,15 @@ uint32_t rx_buf_index = 0;
 static bool check_i2s_data(uint32_t rxtx_sample_num, void *rx_databuf)
 {
 	int i, index_0 = 0;
-	uint16_t *rx_databuf_16 = (uint16_t *)rx_databuf;
-	uint32_t *rx_databuf_32 = (uint32_t *)rx_databuf;
 
 	//
 	// Find the first element of Tx buffer in Rx buffer, and return the index.
 	// Rx will delay N samples.
 	//
 #if (SAMPLE_BIT_WIDTH == 16)
-	for (i = 0; i < rxtx_sample_num; i++) {
+	uint16_t *rx_databuf_16 = (uint16_t *)rx_databuf;
+
+    for (i = 0; i < rxtx_sample_num; i++) {
 		if (rx_databuf_16[i] == 0xCD00) {
 			index_0 = i;
 			break;
@@ -79,7 +79,9 @@ static bool check_i2s_data(uint32_t rxtx_sample_num, void *rx_databuf)
 		}
 	}
 #else
-	for (i = 0; i < rxtx_sample_num; i++) {
+	uint32_t *rx_databuf_32 = (uint32_t *)rx_databuf;
+
+    for (i = 0; i < rxtx_sample_num; i++) {
 		if (rx_databuf_32[i] == 0xCD0000) {
 			index_0 = i;
 			break;
