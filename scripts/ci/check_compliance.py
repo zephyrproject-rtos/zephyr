@@ -1101,6 +1101,7 @@ flagged.
         "SEL",
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
+        "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
