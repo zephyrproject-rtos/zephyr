@@ -17,4 +17,9 @@
  */
 void nrf_poweroff(void);
 
+/**
+ * @brief Power up and enable instruction and data cache.
+ */
+void nrf_power_up_cache(void);
+
 #endif /* _ZEPHYR_SOC_ARM_NORDIC_NRF_POWER_H_ */
