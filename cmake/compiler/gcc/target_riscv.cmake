@@ -87,6 +87,7 @@ if(CONFIG_RISCV_ISA_EXT_ZBS)
 endif()
 
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
+list(APPEND TOOLCHAIN_C_FLAGS -fno-tree-vectorize -fno-tree-loop-vectorize -fno-tree-slp-vectorize)
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
 
 # Flags not supported by llext linker
