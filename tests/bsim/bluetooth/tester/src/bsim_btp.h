@@ -1339,6 +1339,79 @@ static inline void bsim_btp_wait_for_mcp_cmd_ntf(uint8_t *requested_opcode)
 	net_buf_unref(buf);
 }
 
+static inline void bsim_btp_pbp_set_public_broadcast_announcement(uint8_t features)
+{
+	struct btp_pbp_set_public_broadcast_announcement_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_PBP;
+	cmd_hdr->opcode = BTP_PBP_SET_PUBLIC_BROADCAST_ANNOUNCEMENT;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->features = features;
+	cmd->metadata_len = 0U;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_pbp_set_broadcast_name(const char *broadcast_name)
+{
+	struct btp_pbp_set_broadcast_name_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_PBP;
+	cmd_hdr->opcode = BTP_PBP_SET_BROADCAST_NAME;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->name_len = strlen(broadcast_name) + 1 /* NULL terminator */;
+	net_buf_simple_add_mem(&cmd_buffer, broadcast_name, cmd->name_len);
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_pbp_broadcast_scan_start(void)
+{
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_PBP;
+	cmd_hdr->opcode = BTP_PBP_BROADCAST_SCAN_START;
+	cmd_hdr->index = BTP_INDEX;
+
+	/* The command for this is empty */
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_pbp_public_broadcast_announcement_found(bt_addr_le_t *address)
+{
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
+			      &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	net_buf_unref(buf);
+}
+
 static inline void bsim_btp_tmap_discover(const bt_addr_le_t *address)
 {
 	struct btp_tmap_discover_cmd *cmd;
