@@ -160,6 +160,18 @@
 	status = "okay";
 };
 
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+&ic18 {
+	pll-src = <1>;
+	ic-div = <60>;
+	status = "okay";
+};
+
 &perck {
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
 	status = "okay";
