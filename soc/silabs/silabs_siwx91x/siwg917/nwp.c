@@ -68,9 +68,13 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
-	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-	boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
-	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W |
+		boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
+			boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+		}
+
+		boot_config->ext_custom_feature_bit_map |=
+			SL_SI91X_EXT_FEAT_IEEE_80211W |
 			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
 #endif
 

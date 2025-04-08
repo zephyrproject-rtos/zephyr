@@ -12,6 +12,7 @@
 
 #include "sl_ieee802_types.h"
 #include "sl_si91x_types.h"
+#include "sl_wifi_device.h"
 #include "sl_si91x_protocol_types.h"
 
 struct siwx91x_dev {
@@ -21,6 +22,7 @@ struct siwx91x_dev {
 	enum wifi_iface_state scan_prev_state;
 	scan_result_cb_t scan_res_cb;
 	uint16_t scan_max_bss_cnt;
+	sl_si91x_performance_profile_t ps_profile;
 	uint8_t max_num_sta;
 	bool reboot_needed;
 	bool hidden_ssid;
