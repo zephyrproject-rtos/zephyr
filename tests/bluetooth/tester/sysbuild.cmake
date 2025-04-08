@@ -22,13 +22,6 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
 		)
 	endif()
 
-	if(SB_CONFIG_SOC_NRF54H20_CPUAPP)
-		set(${NET_APP}_CONF_FILE
-		${NET_APP_SRC_DIR}/nrf54h20_cpurad-bt_ll_softdevice.conf
-		CACHE INTERNAL ""
-		)
-	endif()
-
 	set(${NET_APP}_EXTRA_CONF_FILE
 	 ${APP_DIR}/hci_ipc_cpunet.conf
 	 CACHE INTERNAL ""
