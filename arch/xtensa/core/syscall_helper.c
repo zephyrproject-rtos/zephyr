@@ -25,7 +25,7 @@ uintptr_t xtensa_syscall_helper_args_6(uintptr_t arg1, uintptr_t arg2,
 	register uintptr_t a8 __asm__("%a8") = arg5;
 	register uintptr_t a9 __asm__("%a9") = arg6;
 
-	__asm__ volatile("syscall\n\t"
+	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
 			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
 			   "r" (a5), "r" (a8), "r" (a9)
@@ -45,7 +45,7 @@ uintptr_t xtensa_syscall_helper_args_5(uintptr_t arg1, uintptr_t arg2,
 	register uintptr_t a5 __asm__("%a5") = arg4;
 	register uintptr_t a8 __asm__("%a8") = arg5;
 
-	__asm__ volatile("syscall\n\t"
+	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
 			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
 			   "r" (a5), "r" (a8)
@@ -64,7 +64,7 @@ uintptr_t xtensa_syscall_helper_args_4(uintptr_t arg1, uintptr_t arg2,
 	register uintptr_t a4 __asm__("%a4") = arg3;
 	register uintptr_t a5 __asm__("%a5") = arg4;
 
-	__asm__ volatile("syscall\n\t"
+	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
 			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
 			   "r" (a5)
