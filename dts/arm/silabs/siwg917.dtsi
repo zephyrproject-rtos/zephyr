@@ -314,6 +314,17 @@
 			prescaler = <1>;
 			status = "disabled";
 		};
+
+		spi0: spi@45030000 {
+			compatible = "silabs,gspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x45030000 0xBC>;
+			interrupts = <46 0>;
+			interrupt-names = "gspi";
+			clocks = <&clock0 SIWX91X_CLK_GSPI>;
+			status = "disabled";
+		};
 	};
 };
 
