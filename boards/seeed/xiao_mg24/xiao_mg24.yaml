@@ -1,0 +1,20 @@
+identifier: xiao_mg24
+name: XIAO MG24
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - gpio
+  - uart
+  - dma
+  - watchdog
+  - comparator
+testing:
+  ignore_tags:
+    - pm
+vendor: seeed
