@@ -39,10 +39,6 @@
 	};
 };
 
-&adc {
-	status = "okay";
-};
-
 &gpiote {
 	status = "okay";
 };
@@ -56,14 +52,6 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&uart1 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart1_default>;
-	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
