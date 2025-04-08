@@ -280,7 +280,11 @@ static void mcux_lpi2c_isr(const struct device *dev)
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
+#if CONFIG_HAS_MCUX_FLEXCOMM
+	LPI2C_MasterTransferHandleIRQ(LPI2C_GetInstance(base), &data->handle);
+#else
 	LPI2C_MasterTransferHandleIRQ(base, &data->handle);
+#endif
 }
 
 static int mcux_lpi2c_init(const struct device *dev)
