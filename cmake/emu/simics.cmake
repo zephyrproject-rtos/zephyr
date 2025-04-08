@@ -11,7 +11,7 @@ find_program(
   )
 
 if(SIMICS STREQUAL SIMICS-NOTFOUND)
-  message(WARNING "Simics simulator environment is not found at SIMICS_PROJECT:'${SIMICS_PROJECT}'")
+  message(WARNING "Simics simulator environment is not found at SIMICS_PROJECT:'$ENV{SIMICS_PROJECT}'")
 else()
   message(STATUS "Found Simics: ${SIMICS}")
 
