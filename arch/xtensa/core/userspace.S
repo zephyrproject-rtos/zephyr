@@ -78,33 +78,12 @@ _not_checking_user_context:
 	/* Manipulate PC where we will return to after syscall.
 	 * This is needed as syscall will stash the PC where
 	 * the syscall instruction locates, instead of
-	 * the instruction after it.
+	 * the instruction after it. We need to increment it to
+	 * execute the next instruction when we return.
+	 * The instruction size is 3 bytes, so lets just add it.
 	 */
 	rsr.epc1 a3
-#if XCHAL_HAVE_LOOPS
-	/* If the syscall instruction was the last instruction in the body of
-	 * a zero-overhead loop, and the loop will execute again, decrement
-	 * the loop count and resume execution at the head of the loop.
-	 */
-	rsr.lend a2
 	addi a3, a3, 3
-	bne a2, a3, end_loop
-	rsr.lcount a2
-	beqz a2, end_loop
-	addi a2, a2, -1
-	wsr.lcount a2
-	rsr.lbeg a3
-
-	/* Make sure WSR above is synced before RSR in ODD_REG_SAVE. */
-	isync
-end_loop:
-#else
-	/* EPC1 (and now a3) contains the address that invoked syscall.
-	 * We need to increment it to execute the next instruction when
-	 * we return. The instruction size is 3 bytes, so lets just add it.
-	 */
-	addi a3, a3, 3
-#endif
 	s32i a3, a0, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* Need to setup PS so we can spill all registers.
