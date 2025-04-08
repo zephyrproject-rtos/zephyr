@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # fsl_common driver
-zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c
-                       ${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
+zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c)
 zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/common)
+
+if(CONFIG_ARCH STREQUAL "xtensa")
+  zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_dsp.c)
+elseif(CONFIG_ARCH STREQUAL "arm")
+  zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
+endif()
 
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2    CONFIG_MCUX_COMPONENT_driver.src_2)
 set_variable_ifdef(CONFIG_GPIO_MCUX_IGPIO       CONFIG_MCUX_COMPONENT_driver.igpio)
