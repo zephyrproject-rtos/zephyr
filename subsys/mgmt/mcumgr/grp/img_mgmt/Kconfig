@@ -231,6 +231,14 @@ config MCUMGR_GRP_IMG_SLOT_INFO_HOOKS
 	  This will enable the slot info function hooks which can be used to add additional
 	  information to responses.
 
+config MCUMGR_GRP_IMG_NRF5340_BOOTUTIL_HOOK
+	bool "nRF5340 network core bootutil hook"
+	depends on SOC_NRF5340_CPUAPP && BOOT_IMAGE_ACCESS_HOOKS && MCUBOOT_NETWORK_CORE_IMAGE_NUMBER > -1
+	default y
+	help
+	  This option will enable a bootutil hook that populates the network core update image
+	  slot with dummy data to allow for uploading a firmware update to the network core.
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
