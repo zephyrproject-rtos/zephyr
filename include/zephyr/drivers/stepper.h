@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
- * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -23,6 +23,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/stepper/stepper_ramp.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -74,18 +75,6 @@ enum stepper_direction {
 	STEPPER_DIRECTION_NEGATIVE = 0,
 	/** Positive direction */
 	STEPPER_DIRECTION_POSITIVE = 1,
-};
-
-/**
- * @brief Stepper Motor run mode options
- */
-enum stepper_run_mode {
-	/** Hold Mode */
-	STEPPER_RUN_MODE_HOLD = 0,
-	/** Position Mode*/
-	STEPPER_RUN_MODE_POSITION = 1,
-	/** Velocity Mode */
-	STEPPER_RUN_MODE_VELOCITY = 2,
 };
 
 /**
@@ -177,6 +166,13 @@ typedef int (*stepper_set_event_callback_t)(const struct device *dev,
 typedef int (*stepper_set_microstep_interval_t)(const struct device *dev,
 						const uint64_t microstep_interval_ns);
 /**
+ * @brief Set the ramp profile.
+ *
+ * @see stepper_set_ramp_profile() for details.
+ */
+typedef int (*stepper_set_ramp_profile_t)(const struct device *dev,
+					  const struct stepper_ramp_profile *ramp_profile);
+/**
  * @brief Move the stepper relatively by a given number of micro-steps.
  *
  * @see stepper_move_by() for details.
@@ -223,6 +219,7 @@ __subsystem struct stepper_driver_api {
 	stepper_get_actual_position_t get_actual_position;
 	stepper_set_event_callback_t set_event_callback;
 	stepper_set_microstep_interval_t set_microstep_interval;
+	stepper_set_ramp_profile_t set_ramp_profile;
 	stepper_move_by_t move_by;
 	stepper_move_to_t move_to;
 	stepper_run_t run;
@@ -418,6 +415,31 @@ static inline int z_impl_stepper_set_microstep_interval(const struct device *dev
 		return -ENOSYS;
 	}
 	return api->set_microstep_interval(dev, microstep_interval_ns);
+}
+
+/**
+ * @brief Set the ramp profile
+ *
+ * @param dev pointer to the stepper driver instance
+ * @param ramp_profile pointer to the ramp profile structure
+ *
+ * @retval -EIO General input / output error
+ * @retval -EINVAL If the requested ramp profile is not supported
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_set_ramp_profile(const struct device *dev,
+				       const struct stepper_ramp_profile *ramp_profile);
+
+static inline int z_impl_stepper_set_ramp_profile(const struct device *dev,
+						  const struct stepper_ramp_profile *ramp_profile)
+{
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	if (api->set_ramp_profile == NULL) {
+		return -ENOSYS;
+	}
+	return api->set_ramp_profile(dev, ramp_profile);
 }
 
 /**
