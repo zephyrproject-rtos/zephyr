@@ -362,7 +362,7 @@ static int spi_mspm0_pm_action(const struct device *dev, enum pm_device_action a
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(index, spi_mspm0_pm_action);			\
-	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, NULL, &spi_mspm0_##inst##_data,                \
+	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, PM_DEVICE_DT_INST_GET(index), &spi_mspm0_##inst##_data,                \
 			      &spi_mspm0_##inst##_cfg, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
 			      &spi_mspm0_api);
 
