@@ -19,3 +19,6 @@ tests:
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk@B/mimxrt1176/cm7
+  drivers.video.mcux_smartdma.build:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
