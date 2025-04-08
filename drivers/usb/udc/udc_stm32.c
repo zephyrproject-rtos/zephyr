@@ -1061,6 +1061,15 @@ static int priv_clock_enable(void)
 	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	/* Enable Vdd USB voltage monitoring */
+	LL_PWR_EnableVddUSBMonitoring();
+	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
+		/* Wait FOR VDD33USB ready */
+	}
+
+	/* Enable VDDUSB */
+	LL_PWR_EnableVddUSB();
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
@@ -1136,12 +1145,14 @@ static int priv_clock_enable(void)
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
-#else
+#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
 #if USB_OTG_HS_EMB_PHY
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #endif
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 	/* The USB2 controller only works in FS mode, but the ULPI clock needs
@@ -1171,9 +1182,11 @@ static int priv_clock_disable(void)
 static struct udc_ep_config ep_cfg_in[DT_INST_PROP(0, num_bidir_endpoints)];
 static struct udc_ep_config ep_cfg_out[DT_INST_PROP(0, num_bidir_endpoints)];
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+#endif
 
 #if USB_OTG_HS_ULPI_PHY
 static const struct gpio_dt_spec ulpi_reset =
@@ -1256,11 +1269,13 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
 		    DEVICE_DT_INST_GET(0), 0);
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", err);
 		return err;
 	}
+#endif
 
 #ifdef SYSCFG_CFGR1_USB_IT_RMP
 	/*
