@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024, Fabian Blatz <fabianblatz@gmail.com>
  * Copyright (c) 2024, Jilay Sandeep Pandya
+ * Copyright (c) 2025, Andre Stefanov
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,29 +268,6 @@ static int cmd_stepper_move_by(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_stepper_set_microstep_interval(const struct shell *sh, size_t argc, char **argv)
-{
-	const struct device *dev;
-	int err = 0;
-	uint64_t step_interval = shell_strtoull(argv[ARG_IDX_PARAM], 10, &err);
-
-	if (err < 0) {
-		return err;
-	}
-
-	err = parse_device_arg(sh, argv, &dev);
-	if (err < 0) {
-		return err;
-	}
-
-	err = stepper_set_microstep_interval(dev, step_interval);
-	if (err) {
-		shell_error(sh, "Error: %d", err);
-	}
-
-	return err;
-}
-
 static int cmd_stepper_set_micro_step_res(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -503,8 +481,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_stepper_set_reference_position, 3, 0),
 	SHELL_CMD_ARG(get_actual_position, &dsub_pos_stepper_motor_name, "<device>",
 		      cmd_stepper_get_actual_position, 2, 0),
-	SHELL_CMD_ARG(set_microstep_interval, &dsub_pos_stepper_motor_name,
-		      "<device> <microstep_interval_ns>", cmd_stepper_set_microstep_interval, 3, 0),
 	SHELL_CMD_ARG(move_by, &dsub_pos_stepper_motor_name, "<device> <microsteps>",
 		      cmd_stepper_move_by, 3, 0),
 	SHELL_CMD_ARG(move_to, &dsub_pos_stepper_motor_name, "<device> <microsteps>",
