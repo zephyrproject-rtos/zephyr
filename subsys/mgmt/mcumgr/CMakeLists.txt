@@ -17,10 +17,11 @@ add_subdirectory_ifdef(CONFIG_SMP_CLIENT    smp_client)
 
 zephyr_library_link_libraries(mgmt_mcumgr)
 
-if (CONFIG_BOOT_IMAGE_ACCESS_HOOKS)
-    zephyr_include_directories(
-        ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/bootutil/include
-        ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/zephyr/include
-    )
-    zephyr_library_sources(bootutil_hooks/nrf53_hooks.c)
+if(CONFIG_MCUMGR_GRP_IMG_NRF5340_BOOTUTIL_HOOK)
+  zephyr_include_directories(
+    ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/bootutil/include
+    ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/zephyr/include
+  )
+
+  zephyr_library_sources(bootutil_hooks/nrf53_hooks.c)
 endif()
