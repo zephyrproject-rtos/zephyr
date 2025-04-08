@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_RAMP
+	bool "Ramp control"
+	help
+	  Enable ramp control for stepper drivers.
+
+if STEPPER_RAMP
+
+config STEPPER_RAMP_TRAPEZOIDAL
+	bool "Trapezoidal ramp control"
+	help
+	  Enable trapezoidal ramp control for stepper drivers.
+	  The trapezoidal ramp control is implemented as a state machine
+	  and can be used with any stepper driver.
+
+endif

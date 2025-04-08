@@ -26,6 +26,7 @@ config STEPPER_SHELL
 
 comment "Stepper Driver Common"
 
+rsource "ramp/Kconfig"
 rsource "step_dir/Kconfig"
 
 comment "Stepper Drivers"

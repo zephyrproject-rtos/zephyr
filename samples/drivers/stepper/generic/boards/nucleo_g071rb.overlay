@@ -1,3 +1,5 @@
+#include <zephyr/dt-bindings/stepper/ramp.h>
+
 / {
 	aliases {
 		stepper = &gpio_stepper;
@@ -9,6 +11,11 @@
 		compatible = "zephyr,gpio-stepper";
 		status = "okay";
 		micro-step-res = <2>;
+		acceleration = <500>;
+		max-speed = <2000>;
+		deceleration = <500>;
+		pre-decel-steps = <500>;
+		ramp-type = <STEPPER_RAMP_TYPE_TRAPEZOIDAL>;
 		gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,	/* D8 */
 			<&gpioc 7 GPIO_ACTIVE_HIGH>,	/* D9 */
 			<&gpiob 0 GPIO_ACTIVE_HIGH>,	/* D10 */

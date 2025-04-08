@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
- * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,7 +10,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/drivers/stepper.h>
+#include "stepper_common.h"
 #include <zephyr/sys/__assert.h>
+
+#ifdef CONFIG_STEPPER_RAMP
+#include <stdlib.h>
+#include "ramp/ramp.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_stepper_motor_controller, CONFIG_STEPPER_LOG_LEVEL);
@@ -26,6 +32,10 @@ static const uint8_t
 struct gpio_stepper_config {
 	const struct gpio_dt_spec *control_pins;
 	bool invert_direction;
+#ifdef CONFIG_STEPPER_RAMP
+	const struct stepper_ramp_api *ramp_api;
+	const struct stepper_ramp_config ramp_config;
+#endif
 };
 
 struct gpio_stepper_data {
@@ -42,6 +52,9 @@ struct gpio_stepper_data {
 	bool is_enabled;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
+#ifdef CONFIG_STEPPER_RAMP
+	struct stepper_ramp_common ramp_common;
+#endif
 };
 
 static int stepper_motor_set_coil_charge(const struct device *dev)
@@ -98,6 +111,22 @@ static void update_coil_charge(const struct device *dev)
 	const struct gpio_stepper_config *config = dev->config;
 	struct gpio_stepper_data *data = dev->data;
 
+#ifdef CONFIG_STEPPER_RAMP
+	if (data->ramp_common.ramp_runtime_data.current_ramp_state ==
+	    STEPPER_RAMP_STATE_PRE_DECELERATION) {
+		if (data->direction == STEPPER_DIRECTION_POSITIVE) {
+			config->invert_direction ? increment_coil_charge(dev)
+						 : decrement_coil_charge(dev);
+			data->actual_position--;
+		} else if (data->direction == STEPPER_DIRECTION_NEGATIVE) {
+			config->invert_direction ? decrement_coil_charge(dev)
+						 : increment_coil_charge(dev);
+			data->actual_position++;
+		}
+		return;
+	}
+#endif
+
 	if (data->direction == STEPPER_DIRECTION_POSITIVE) {
 		config->invert_direction ? decrement_coil_charge(dev) : increment_coil_charge(dev);
 		data->actual_position++;
@@ -111,6 +140,19 @@ static void update_remaining_steps(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
 
+#ifdef CONFIG_STEPPER_RAMP
+
+	if (data->ramp_common.ramp_runtime_data.current_ramp_state ==
+	    STEPPER_RAMP_STATE_PRE_DECELERATION) {
+		if (data->step_count > 0) {
+			data->step_count++;
+		} else {
+			data->step_count--;
+		}
+		return;
+	}
+
+#endif
 	if (data->step_count > 0) {
 		data->step_count--;
 	} else if (data->step_count < 0) {
@@ -118,9 +160,10 @@ static void update_remaining_steps(const struct device *dev)
 	}
 }
 
-static void update_direction_from_step_count(const struct device *dev)
+static bool update_direction_from_step_count(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
+	enum stepper_direction direction = data->direction;
 
 	if (data->step_count > 0) {
 		data->direction = STEPPER_DIRECTION_POSITIVE;
@@ -129,6 +172,8 @@ static void update_direction_from_step_count(const struct device *dev)
 	} else {
 		LOG_ERR("Step count is zero");
 	}
+
+	return data->direction != direction;
 }
 
 static void position_mode_task(const struct device *dev)
@@ -139,6 +184,12 @@ static void position_mode_task(const struct device *dev)
 	(void)stepper_motor_set_coil_charge(dev);
 	update_coil_charge(dev);
 	if (data->step_count) {
+#ifdef CONFIG_STEPPER_RAMP
+		const struct gpio_stepper_config *config = dev->config;
+
+		data->delay_in_ns = config->ramp_api->get_next_step_interval(
+			&data->ramp_common, data->delay_in_ns, STEPPER_RUN_MODE_POSITION);
+#endif
 		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
 	} else {
 		if (data->callback) {
@@ -155,6 +206,14 @@ static void velocity_mode_task(const struct device *dev)
 
 	(void)stepper_motor_set_coil_charge(dev);
 	update_coil_charge(dev);
+
+#ifdef CONFIG_STEPPER_RAMP
+	const struct gpio_stepper_config *config = dev->config;
+
+	data->delay_in_ns = config->ramp_api->get_next_step_interval(
+		&data->ramp_common, data->delay_in_ns, STEPPER_RUN_MODE_VELOCITY);
+#endif
+
 	(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
 }
 
@@ -179,6 +238,20 @@ static void stepper_work_step_handler(struct k_work *work)
 	}
 }
 
+static bool is_step_timing_valid(const struct device *dev)
+{
+	struct gpio_stepper_data *data = dev->data;
+#ifdef CONFIG_STEPPER_RAMP
+
+	if (data->ramp_common.ramp_profile.max_velocity > 0) {
+		return true;
+	}
+	return false;
+#else
+	return data->delay_in_ns > 0;
+#endif
+}
+
 static int gpio_stepper_move_by(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
@@ -188,14 +261,35 @@ static int gpio_stepper_move_by(const struct device *dev, int32_t micro_steps)
 		return -ECANCELED;
 	}
 
-	if (data->delay_in_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
+	if (!is_step_timing_valid(dev)) {
 		return -EINVAL;
 	}
+
+	if (micro_steps == 0) {
+		LOG_WRN("Step count is zero");
+		return 0;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = micro_steps;
-		update_direction_from_step_count(dev);
+		bool is_dir_changed = update_direction_from_step_count(dev);
+#ifdef CONFIG_STEPPER_RAMP
+		const struct gpio_stepper_config *config = dev->config;
+		uint32_t steps_to_move = abs(micro_steps);
+		bool is_stepper_moving = k_work_delayable_is_pending(&data->stepper_dwork);
+
+		data->ramp_common.ramp_runtime_data.is_stepper_dir_changed = is_dir_changed;
+		config->ramp_api->reset_ramp_runtime_data(&config->ramp_config, &data->ramp_common,
+							  is_stepper_moving, steps_to_move);
+		if (!is_stepper_moving) {
+			data->delay_in_ns = config->ramp_api->calculate_start_interval(
+				data->ramp_common.ramp_profile.acceleration);
+		}
+		config->ramp_api->recalculate_ramp(&data->ramp_common, steps_to_move);
+#else
+		ARG_UNUSED(is_dir_changed);
+#endif
 		(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
 	}
 	return 0;
@@ -258,6 +352,23 @@ static int gpio_stepper_set_microstep_interval(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_STEPPER_RAMP
+
+static int gpio_stepper_set_ramp_profile(const struct device *dev,
+					 const struct stepper_ramp_profile *const ramp_profile)
+{
+	struct gpio_stepper_data *data = dev->data;
+
+	K_SPINLOCK(&data->lock) {
+		data->ramp_common.ramp_profile.acceleration = ramp_profile->acceleration;
+		data->ramp_common.ramp_profile.max_velocity = ramp_profile->max_velocity;
+		data->ramp_common.ramp_profile.deceleration = ramp_profile->deceleration;
+	}
+	return 0;
+}
+
+#endif
+
 static int gpio_stepper_run(const struct device *dev, const enum stepper_direction direction)
 {
 	struct gpio_stepper_data *data = dev->data;
@@ -269,7 +380,22 @@ static int gpio_stepper_run(const struct device *dev, const enum stepper_directi
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
+		bool is_dir_changed = direction != data->direction;
 		data->direction = direction;
+#ifdef CONFIG_STEPPER_RAMP
+		const struct gpio_stepper_config *config = dev->config;
+		const bool is_stepper_moving = k_work_delayable_is_pending(&data->stepper_dwork);
+
+		data->ramp_common.ramp_runtime_data.is_stepper_dir_changed = is_dir_changed;
+		config->ramp_api->reset_ramp_runtime_data(&config->ramp_config, &data->ramp_common,
+							  is_stepper_moving, UINT32_MAX);
+		if (!is_stepper_moving) {
+			data->delay_in_ns = config->ramp_api->calculate_start_interval(
+				data->ramp_common.ramp_profile.acceleration);
+		}
+#else
+		ARG_UNUSED(is_dir_changed);
+#endif
 		(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
 	}
 	return 0;
@@ -393,6 +519,7 @@ static DEVICE_API(stepper, gpio_stepper_api) = {
 	.run = gpio_stepper_run,
 	.stop = gpio_stepper_stop,
 	.is_moving = gpio_stepper_is_moving,
+	IF_ENABLED(CONFIG_STEPPER_RAMP, (.set_ramp_profile = gpio_stepper_set_ramp_profile,))
 };
 
 #define GPIO_STEPPER_DEFINE(inst)								\
@@ -400,13 +527,19 @@ static DEVICE_API(stepper, gpio_stepper_api) = {
 		DT_INST_FOREACH_PROP_ELEM_SEP(inst, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),	\
 	};											\
 	BUILD_ASSERT(ARRAY_SIZE(gpio_stepper_motor_control_pins_##inst) == 4,			\
-		"gpio_stepper_controller driver currently supports only 4 wire configuration");	\
+		"gpio_stepper_controller driver currently supports only 4 wire configuration"); \
 	static const struct gpio_stepper_config gpio_stepper_config_##inst = {			\
 		.invert_direction = DT_INST_PROP(inst, invert_direction),			\
-		.control_pins = gpio_stepper_motor_control_pins_##inst};			\
+		.control_pins = gpio_stepper_motor_control_pins_##inst,				\
+		IF_ENABLED(CONFIG_STEPPER_RAMP,							\
+	(.ramp_config.pre_deceleration_steps = DT_INST_PROP(inst, pre_decel_steps),		\
+	 .ramp_api = RAMP_DT_SPEC_GET_API(inst))) };						\
 	static struct gpio_stepper_data gpio_stepper_data_##inst = {				\
 		.step_gap = MAX_MICRO_STEP_RES >> (DT_INST_PROP(inst, micro_step_res) - 1),	\
-	};											\
+		IF_ENABLED(CONFIG_STEPPER_RAMP, (						\
+		.ramp_common.ramp_profile.acceleration = DT_INST_PROP(inst, acceleration),	\
+		.ramp_common.ramp_profile.deceleration = DT_INST_PROP(inst, deceleration),	\
+		.ramp_common.ramp_profile.max_velocity = DT_INST_PROP(inst, max_speed),)) };	\
 	BUILD_ASSERT(DT_INST_PROP(inst, micro_step_res) <= STEPPER_MICRO_STEP_2,		\
 		     "gpio_stepper_controller driver supports up to 2 micro steps");		\
 	DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,		\
