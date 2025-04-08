@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NOTES:
+ *  1- BlackPill board may be offered with/without soldered flash chips,
+ *  Modify the following configuration based on your chip properties.
+ *  2- If you are using V3.1 board, you may need to change miso port. Please
+ *  check the schematic before any change.
+ */
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5  &spi1_miso_pb4 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
+
+	w25q64_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		status = "okay";
+		jedec-id = [ef 40 17];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
