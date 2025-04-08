@@ -8,7 +8,6 @@
 
 /delete-node/&cpurad_rx_partitions;
 /delete-node/&cpuapp_rx_partitions;
-/delete-node/&cpusec_cpuapp_ipc;
 
 /* This is not yet an exhaustive memory map, and contain only a minimum required to boot
  * the application core.
