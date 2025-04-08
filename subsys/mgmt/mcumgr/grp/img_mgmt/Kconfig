@@ -224,6 +224,14 @@ config MCUMGR_GRP_IMG_QSPI_XIP_SPLIT_IMAGE
 	  sysbuild if needed. This enables selecting the correct slot when running a QSPI XIP
 	  split image application in DirectXIP mode.
 
+config MCUMGR_GRP_IMG_NRF5340_BOOTUTIL_HOOK
+	bool "nRF5340 network core bootutil hook"
+	depends on SOC_NRF5340_CPUAPP && BOOT_IMAGE_ACCESS_HOOKS && MCUBOOT_NETWORK_CORE_IMAGE_NUMBER > -1
+	default y
+	help
+	  This option will enable a bootutil hook that populates the network core update image
+	  slot with dummy data to allow for uploading a firmware update to the network core.
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"

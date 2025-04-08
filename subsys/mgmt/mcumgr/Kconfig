@@ -6,7 +6,7 @@ menuconfig MCUMGR
 	bool "mcumgr Support"
 	depends on NET_BUF
 	depends on ZCBOR
-	imply BOOT_IMAGE_ACCESS_HOOKS if (SOC_NRF5340_CPUAPP_QKAA && MCUMGR_GRP_IMG)
+	imply BOOT_IMAGE_ACCESS_HOOKS if SOC_NRF5340_CPUAPP && MCUMGR_GRP_IMG && MCUBOOT_NETWORK_CORE_IMAGE_NUMBER > -1
 	help
 	  This option enables the mcumgr management library.
 

@@ -8,19 +8,10 @@
 #include <zephyr/device.h>
 #include "bootutil/bootutil_public.h"
 
-#if CONFIG_MCUBOOT_NETWORK_CORE_IMAGE_NUMBER != -1
-/* Sysbuild */
-#define NET_CORE_IMAGE CONFIG_MCUBOOT_NETWORK_CORE_IMAGE_NUMBER
-#else
-/* Legacy child/parent */
-#define NET_CORE_IMAGE 1
-#endif
-
-int boot_read_swap_state_primary_slot_hook(int image_index,
-		struct boot_swap_state *state)
+int boot_read_swap_state_primary_slot_hook(int image_index, struct boot_swap_state *state)
 {
-	if (image_index == NET_CORE_IMAGE) {
-		/* Pretend that primary slot of image 1 unpopulated */
+	if (image_index == CONFIG_MCUBOOT_NETWORK_CORE_IMAGE_NUMBER) {
+		/* Pretend that primary slot of the network core update image is unpopulated */
 		state->magic = BOOT_MAGIC_UNSET;
 		state->swap_type = BOOT_SWAP_TYPE_NONE;
 		state->image_num = image_index;
