@@ -309,14 +309,14 @@ enum nvme_feature {
 #define CACHE_LINE_SIZE				CONFIG_DCACHE_LINE_SIZE
 #endif
 
-#define NVME_PBAO_MASK (CONFIG_MMU_PAGE_SIZE - 1)
+#define NVME_PBAO_MASK (CONFIG_NVME_PRP_PAGE_SIZE - 1)
 
 #define NVME_PRP_NEXT_PAGE(_addr)				\
-	((_addr & ~NVME_PBAO_MASK) + CONFIG_MMU_PAGE_SIZE)
+	((_addr & ~NVME_PBAO_MASK) + CONFIG_NVME_PRP_PAGE_SIZE)
 
 struct nvme_prp_list {
-	uintptr_t prp[CONFIG_MMU_PAGE_SIZE / sizeof(uintptr_t)]
-						__aligned(CONFIG_MMU_PAGE_SIZE);
+	uintptr_t prp[CONFIG_NVME_PRP_PAGE_SIZE / sizeof(uintptr_t)]
+						__aligned(CONFIG_NVME_PRP_PAGE_SIZE);
 	sys_dnode_t node;
 };
 
