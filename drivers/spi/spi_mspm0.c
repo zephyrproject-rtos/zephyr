@@ -312,6 +312,9 @@ static int spi_mspm0_init(const struct device *dev)
 	}
 
 	DL_SPI_setClockConfig(cfg->base, (DL_SPI_ClockConfig *)&cfg->clock_config);
+	if (!IS_ENABLED(CONFIG_PM_DEVICE)) {
+		DL_SPI_enable(cfg->base);
+	}
 
 	spi_context_unlock_unconditionally(ctx);
 
