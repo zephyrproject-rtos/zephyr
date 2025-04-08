@@ -74,6 +74,7 @@ struct step_dir_stepper_common_data {
 	int32_t actual_position;
 	uint64_t microstep_interval_ns;
 	int32_t step_count;
+	bool step_performed;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
 

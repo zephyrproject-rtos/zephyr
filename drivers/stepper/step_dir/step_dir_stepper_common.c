@@ -36,12 +36,10 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 		return ret;
 	}
 
-	if (!config->dual_edge) {
-		ret = gpio_pin_toggle_dt(&config->step_pin);
-		if (ret < 0) {
-			LOG_ERR("Failed to toggle step pin: %d", ret);
-			return ret;
-		}
+	data->step_performed = !data->step_performed;
+
+	if (!config->dual_edge && !data->step_performed) {
+		return 0;
 	}
 
 	if (data->direction == STEPPER_DIRECTION_POSITIVE) {
@@ -332,6 +330,7 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 int step_dir_stepper_common_stop(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = config->timing_source->stop(dev);
@@ -339,6 +338,13 @@ int step_dir_stepper_common_stop(const struct device *dev)
 		LOG_ERR("Failed to stop timing source: %d", ret);
 		return ret;
 	}
+
+	ret = gpio_pin_set_dt(&config->step_pin, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to set step pin: %d", ret);
+		return ret;
+	}
+	data->step_performed = false;
 
 	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
 	return 0;
