@@ -24,6 +24,7 @@ struct siwx91x_dev {
 	uint16_t scan_max_bss_cnt;
 	sl_wifi_performance_profile_t sl_ps_profile;
 	sl_si91x_performance_profile_t exit_strategy_mode;
+	uint16_t bcn_listen_interval;
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 	struct k_event fds_recv_event;
