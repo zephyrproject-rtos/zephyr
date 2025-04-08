@@ -48,18 +48,35 @@ choice NRF70_OPER_MODES
 config NRF70_SCAN_ONLY
 	bool "nRF70 scan only mode"
 	help
-	  Select this option to enable scan only mode of the nRF70 driver
+	  Select this option to enable scan-only mode of the nRF70 driver.
+	  In this mode, the driver can only perform scanning operations
+	  to discover nearby Wi-Fi networks, but cannot establish connections
+	  or transmit/receive data. Mainly used for location accuracy
+	  improvement.
 
 config NRF70_SYSTEM_MODE
 	bool "System mode of the nRF70 driver"
 	help
-	  Select this option to enable system mode of the nRF70 driver
+	  Select this option to enable system mode of the nRF70 driver.
+	  This is the normal operating mode that supports full Wi-Fi
+	  functionality including sub-modes like STA, AP, and P2P.
 
 config NRF70_RADIO_TEST
 	bool "Radio test mode of the nRF70 driver"
+	help
+	  Select this option to enable radio test mode of the nRF70 driver.
+	  This mode is used for testing RF performance and regulatory
+	  compliance. It provides direct control of the radio hardware
+	  for transmitting test patterns and measuring RF parameters.
 
 config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"
+	help
+	  Select this option to enable offloaded raw TX mode.
+	  In this mode, raw 802.11 frames can be transmitted directly
+	  without normal Wi-Fi protocol processing. The frame construction
+	  and transmission timing is handled by the Wi-Fi hardware,
+	  reducing CPU load.
 
 endchoice
 
