@@ -100,6 +100,12 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		reset-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 		pwdn-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
 		reg = <0x21>;
+
+		port {
+			ov7670_ep_out: endpoint {
+				remote-endpoint-label = "sdma_ep_in";
+			};
+		};
 	};
 };
 
@@ -112,10 +118,15 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		compatible = "nxp,video-smartdma";
 		pinctrl-0 = <&pinmux_smartdma_camera>;
 		pinctrl-names = "default";
-		sensor = <&ov7670>;
 		vsync-pin = <4>;
 		hsync-pin = <11>;
 		pclk-pin = <5>;
+
+		port {
+			sdma_ep_in: endpoint {
+				remote-endpoint-label = "ov7670_ep_out";
+			};
+		};
 	};
 };
 
