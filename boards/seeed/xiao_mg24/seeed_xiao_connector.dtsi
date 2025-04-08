@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Peter Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	xiao_d: connector {
+		compatible = "seeed,xiao-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioc 0 0>, /* D0 */
+			   <1 0 &gpioc 1 0>, /* D1 */
+			   <2 0 &gpioc 2 0>, /* D2 */
+			   <3 0 &gpioc 3 0>, /* D3 */
+			   <4 0 &gpioc 4 0>, /* D4 */
+			   <5 0 &gpioc 5 0>, /* D5 */
+			   <6 0 &gpioc 6 0>, /* D6 */
+			   <7 0 &gpioc 7 0>, /* D7 */
+			   <8 0 &gpioa 3 0>, /* D8 */
+			   <9 0 &gpioa 4 0>, /* D9 */
+			   <10 0 &gpioa 5 0>; /* D10 */
+	};
+};
+
+xiao_spi: &eusart1 {};
+
+xiao_serial: &eusart0 {};
+
+xiao_i2c: &i2c0 {};
