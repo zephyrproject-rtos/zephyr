@@ -18,3 +18,7 @@ properties:
       receives this as an active high signal
 
 include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
