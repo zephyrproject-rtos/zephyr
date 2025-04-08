@@ -53,6 +53,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#include <zephyr/bluetooth/iso.h>
+
+#define SUB_INTERVAL_MIN 400
+
 static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_conn_iso_estab *pdu;
@@ -321,6 +325,82 @@ static uint8_t rp_cc_check_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 	return BT_HCI_ERR_SUCCESS;
 }
 
+/* Validate that the LL_CIS_REQ parameters are valid according to the rules in
+ * Core Specification v5.4, Vol. 6, Part B, Section 2.4.2.29
+ */
+static uint8_t rp_cc_validate_req(struct ll_conn *conn, struct proc_ctx *ctx,
+				  struct pdu_data *pdu)
+{
+	uint32_t cis_offset_max;
+	uint32_t cis_offset_min;
+	uint32_t c_sdu_interval;
+	uint32_t p_sdu_interval;
+	uint32_t sub_interval;
+	uint16_t iso_interval;
+	uint16_t c_max_pdu;
+	uint16_t p_max_pdu;
+	uint8_t result;
+
+	result = rp_cc_check_phy(conn, ctx, pdu);
+	if (result != BT_HCI_ERR_SUCCESS) {
+		return result;
+	}
+
+	/* Note: SDU intervals are 20 bits; Mask away RFU bits */
+	c_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.c_sdu_interval) & 0x0FFFFF;
+	p_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.p_sdu_interval) & 0x0FFFFF;
+	if (c_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN ||
+	    p_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	c_max_pdu = sys_le16_to_cpu(pdu->llctrl.cis_req.c_max_pdu);
+	p_max_pdu = sys_le16_to_cpu(pdu->llctrl.cis_req.p_max_pdu);
+	if (c_max_pdu > BT_ISO_PDU_MAX || p_max_pdu > BT_ISO_PDU_MAX) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	if (!IN_RANGE(pdu->llctrl.cis_req.nse, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
+	sub_interval = sys_get_le24(pdu->llctrl.cis_req.sub_interval);
+	if (pdu->llctrl.cis_req.nse == 1) {
+		if (sub_interval > 0) {
+			return BT_HCI_ERR_INVALID_LL_PARAM;
+		}
+	} else if (!IN_RANGE(sub_interval, SUB_INTERVAL_MIN,
+			     iso_interval * CONN_INT_UNIT_US - 1)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	if ((pdu->llctrl.cis_req.c_bn == 0 && c_max_pdu > 0) ||
+	    (pdu->llctrl.cis_req.p_bn == 0 && p_max_pdu > 0)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	if (pdu->llctrl.cis_req.c_ft == 0 || pdu->llctrl.cis_req.p_ft == 0) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	if (!IN_RANGE(iso_interval, BT_HCI_ISO_INTERVAL_MIN, BT_HCI_ISO_INTERVAL_MAX)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	cis_offset_min = sys_get_le24(pdu->llctrl.cis_req.cis_offset_min);
+	if (cis_offset_min < PDU_CIS_OFFSET_MIN_US) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	cis_offset_max = sys_get_le24(pdu->llctrl.cis_req.cis_offset_max);
+	if (!IN_RANGE(cis_offset_max, cis_offset_min, conn->lll.interval * CONN_INT_UNIT_US - 1)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
 static void rp_cc_state_wait_rx_cis_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					void *param)
 {
@@ -331,8 +411,8 @@ static void rp_cc_state_wait_rx_cis_req(struct ll_conn *conn, struct proc_ctx *c
 		/* Handle CIS request */
 		llcp_pdu_decode_cis_req(ctx, pdu);
 
-		/* Check PHY */
-		ctx->data.cis_create.error = rp_cc_check_phy(conn, ctx, pdu);
+		/* Check validity of request */
+		ctx->data.cis_create.error = rp_cc_validate_req(conn, ctx, pdu);
 
 		if (ctx->data.cis_create.error == BT_HCI_ERR_SUCCESS) {
 			ctx->data.cis_create.error =
