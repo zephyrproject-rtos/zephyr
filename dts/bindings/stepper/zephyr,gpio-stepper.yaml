@@ -17,7 +17,7 @@ description: |
 
 compatible: "zephyr,gpio-stepper"
 
-include: stepper-controller.yaml
+include: [stepper-controller.yaml, ramp-parameters.yaml]
 
 properties:
   gpios:
