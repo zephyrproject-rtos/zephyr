@@ -576,13 +576,13 @@ static int compute_n_prp(uintptr_t addr, uint32_t size)
 
 	/* See Common Command Format, Data Pointer (DPTR) field */
 
-	n_prp = size / CONFIG_MMU_PAGE_SIZE;
+	n_prp = size / CONFIG_NVME_PRP_PAGE_SIZE;
 	if (n_prp == 0) {
 		n_prp = 1;
 	}
 
-	if (size != CONFIG_MMU_PAGE_SIZE) {
-		size = size % CONFIG_MMU_PAGE_SIZE;
+	if (size != CONFIG_NVME_PRP_PAGE_SIZE) {
+		size = size % CONFIG_NVME_PRP_PAGE_SIZE;
 	}
 
 	if (n_prp == 1) {

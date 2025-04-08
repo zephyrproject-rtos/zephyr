@@ -52,6 +52,13 @@ config NVME_REQUEST_TIMEOUT
 	  This sets the waiting time for a request to succeed.
 	  Do not touch this unless you know what you are doing.
 
+config NVME_PRP_PAGE_SIZE
+	hex "NVMe PRP Page Size"
+	default MMU_PAGE_SIZE if MMU
+	default 0x1000
+	help
+	  Set the PRP page size. If MMU is enabled, this will default to the MMU page size.
+
 config NVME_PRP_LIST_AMOUNT
 	int "Number of allocated PRP list"
 	default 2
