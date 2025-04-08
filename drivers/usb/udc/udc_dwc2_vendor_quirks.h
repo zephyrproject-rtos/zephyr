@@ -315,6 +315,191 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 
 #endif /*DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
+
+#define DT_DRV_COMPAT snps_dwc2
+
+#define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_INST_REG_ADDR_BY_NAME(n, wrapper))
+
+#include <nrf.h>
+
+#define NRF_DEFAULT_IRQ_PRIORITY 1
+
+/*
+ * On USBHS, we cannot access the DWC2 register until VBUS is detected and
+ * valid. If the user tries to force usbd_enable() and the corresponding
+ * udc_enable() without a "VBUS ready" notification, the event wait will block
+ * until a valid VBUS signal is detected or until the
+ * CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT timeout expires.
+ */
+static K_EVENT_DEFINE(usbhs_events);
+#define USBHS_VBUS_READY	BIT(0)
+
+static void vregusb_isr(const void *arg)
+{
+	const struct device *dev = arg;
+
+	if (NRF_VREGUSB->EVENTS_VBUSDETECTED) {
+		NRF_VREGUSB->EVENTS_VBUSDETECTED = 0;
+		k_event_post(&usbhs_events, USBHS_VBUS_READY);
+		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+	}
+
+	if (NRF_VREGUSB->EVENTS_VBUSREMOVED) {
+		NRF_VREGUSB->EVENTS_VBUSREMOVED = 0;
+		k_event_set_masked(&usbhs_events, 0, USBHS_VBUS_READY);
+		udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
+	}
+}
+
+static inline int usbhs_enable_vreg(const struct device *dev)
+{
+	IRQ_CONNECT(VREGUSB_IRQn, NRF_DEFAULT_IRQ_PRIORITY,
+		    vregusb_isr, DEVICE_DT_INST_GET(0), 0);
+
+	NRF_VREGUSB->INTEN = VREGUSB_INTEN_VBUSDETECTED_Msk |
+			     VREGUSB_INTEN_VBUSREMOVED_Msk;
+	NRF_VREGUSB->TASKS_START = 1;
+
+	/* TODO: Determine conditions when VBUSDETECTED is not generated */
+	if (sys_read32((mem_addr_t)NRF_VREGUSB + 0x400) & BIT(2)) {
+		k_event_post(&usbhs_events, USBHS_VBUS_READY);
+		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+	}
+
+	irq_enable(VREGUSB_IRQn);
+
+	return 0;
+}
+
+static inline int usbhs_enable_core(const struct device *dev)
+{
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+	k_timeout_t timeout = K_FOREVER;
+
+	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
+		LOG_WRN("VBUS is not ready, block udc_enable()");
+		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	/* TODO: Request PCLK24M using clock control driver */
+	NRF_CLOCK->TASKS_XO24MSTART = 1;
+	while (NRF_CLOCK->EVENTS_XO24MSTARTED == 0) {
+	}
+
+	/* Power up peripheral */
+	wrapper->ENABLE = USBHS_ENABLE_CORE_Msk;
+
+	/* Set ID to Device and force D+ pull-up off for now */
+	wrapper->PHY.OVERRIDEVALUES = (1 << 31);
+	wrapper->PHY.INPUTOVERRIDE = (1 << 31) | USBHS_PHY_INPUTOVERRIDE_VBUSVALID_Msk;
+
+	/* Release PHY power-on reset */
+	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
+
+	/* Wait for PHY clock to start */
+	k_busy_wait(45);
+
+	/* Release DWC2 reset */
+	wrapper->TASKS_START = 1UL;
+
+	/* Wait for clock to start to avoid hang on too early register read */
+	k_busy_wait(1);
+
+	/* DWC2 opmode is now guaranteed to be Non-Driving, allow D+ pull-up to
+	 * become active once driver clears DCTL SftDiscon bit.
+	 */
+	wrapper->PHY.INPUTOVERRIDE = (1 << 31);
+
+	return 0;
+}
+
+static inline int usbhs_disable_core(const struct device *dev)
+{
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	/* Set ID to Device and forcefully disable D+ pull-up */
+	wrapper->PHY.OVERRIDEVALUES = (1 << 31);
+	wrapper->PHY.INPUTOVERRIDE = (1 << 31) | USBHS_PHY_INPUTOVERRIDE_VBUSVALID_Msk;
+
+	wrapper->ENABLE = 0UL;
+
+	/* TODO: Release PCLK24M using clock control driver */
+	NRF_CLOCK->EVENTS_XO24MSTARTED = 0;
+	NRF_CLOCK->TASKS_XO24MSTOP = 1;
+
+	return 0;
+}
+
+static inline int usbhs_disable_vreg(const struct device *dev)
+{
+	NRF_VREGUSB->INTEN = 0;
+	NRF_VREGUSB->TASKS_STOP = 1;
+
+	return 0;
+}
+
+static inline int usbhs_init_caps(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+
+	data->caps.can_detect_vbus = true;
+	data->caps.hs = true;
+
+	return 0;
+}
+
+static inline int usbhs_is_phy_clk_off(const struct device *dev)
+{
+	return !k_event_test(&usbhs_events, USBHS_VBUS_READY);
+}
+
+static inline int usbhs_post_hibernation_entry(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_set_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	wrapper->TASKS_STOP = 1;
+
+	return 0;
+}
+
+static inline int usbhs_pre_hibernation_exit(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_clear_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	wrapper->TASKS_START = 1;
+
+	return 0;
+}
+
+#define QUIRK_NRF_USBHS_DEFINE(n)						\
+	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
+		.init = usbhs_enable_vreg,					\
+		.pre_enable = usbhs_enable_core,				\
+		.disable = usbhs_disable_core,					\
+		.shutdown = usbhs_disable_vreg,					\
+		.caps = usbhs_init_caps,					\
+		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
+		.post_hibernation_entry = usbhs_post_hibernation_entry,		\
+		.pre_hibernation_exit = usbhs_pre_hibernation_exit,		\
+	};
+
+DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
+
+#undef DT_DRV_COMPAT
+
+#endif /*DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l) */
+
 /* Add next vendor quirks definition above this line */
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_VENDOR_QUIRKS_H */
