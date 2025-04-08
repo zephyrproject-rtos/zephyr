@@ -16,7 +16,7 @@
  * This macro converts the Accelerometer full-scale range value (which should be a power of 2) to
  * an index value used by the decoder. Note: this index is not the same as the RAW register value.
  */
-#define LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(x) (__builtin_clz(x) - 1)
+#define LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(x) (__builtin_ctz(x) - 1)
 
 struct lsm6dsv16x_decoder_header {
 	uint64_t timestamp;
