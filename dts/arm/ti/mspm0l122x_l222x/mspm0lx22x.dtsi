@@ -76,12 +76,12 @@
 			- only RTC, TIMG0 and TIMG1 is available in this state
 			- enabling support for this state will be needing interrupt
 			any of RTC, TIMG0 and TIMG1
+			*/
 			stdby1: standby1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				substate-id = <49>;
 			};
-			*/
 		};
 	};
 
