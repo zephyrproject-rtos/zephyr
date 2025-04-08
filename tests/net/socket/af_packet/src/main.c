@@ -149,11 +149,11 @@ static void prepare_packet_socket(int *sock, struct net_if *iface, int type,
 struct user_data {
 	struct net_if *first;
 	struct net_if *second;
-};
+} ud;
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
-	struct user_data *ud = user_data;
+	struct user_data *test_data = user_data;
 	struct net_linkaddr *link_addr;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
@@ -166,12 +166,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (ud->first == NULL) {
-		ud->first = iface;
+	if (test_data->first == NULL) {
+		test_data->first = iface;
 		return;
 	}
 
-	ud->second = iface;
+	test_data->second = iface;
 }
 
 #define SRC_PORT 4240
@@ -200,19 +200,6 @@ static void prepare_udp_socket(int *sock, struct sockaddr_in *sockaddr, uint16_t
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }
 
-static void __test_packet_sockets(int *sock1, int *sock2)
-{
-	struct user_data ud = { 0 };
-
-	net_if_foreach(iface_cb, &ud);
-
-	zassert_not_null(ud.first, "1st Ethernet interface not found");
-	zassert_not_null(ud.second, "2nd Ethernet interface not found");
-
-	prepare_packet_socket(sock1, ud.first, SOCK_RAW, htons(ETH_P_ALL));
-	prepare_packet_socket(sock2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
-}
-
 #define IP_HDR_SIZE 20
 #define UDP_HDR_SIZE 8
 #define HDR_SIZE (IP_HDR_SIZE + UDP_HDR_SIZE)
@@ -226,7 +213,8 @@ ZTEST(socket_packet, test_raw_packet_sockets)
 	socklen_t addrlen;
 	ssize_t sent = 0;
 
-	__test_packet_sockets(&packet_sock_1, &packet_sock_2);
+	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_RAW, htons(ETH_P_ALL));
+	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
 
 	/* Prepare UDP socket which will read data */
 	prepare_udp_socket(&udp_sock_1, &sockaddr, DST_PORT);
@@ -278,7 +266,8 @@ ZTEST(socket_packet, test_raw_packet_sockets)
 
 ZTEST(socket_packet, test_packet_sockets)
 {
-	__test_packet_sockets(&packet_sock_1, &packet_sock_2);
+	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_RAW, htons(ETH_P_ALL));
+	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
 }
 
 ZTEST(socket_packet, test_packet_sockets_dgram)
@@ -286,14 +275,8 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
 	socklen_t addrlen = sizeof(struct sockaddr_ll);
-	struct user_data ud = { 0 };
 	struct sockaddr_ll dst, src;
 	int ret;
-
-	net_if_foreach(iface_cb, &ud);
-
-	zassert_not_null(ud.first, "1st Ethernet interface not found");
-	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
 	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_DGRAM, htons(ETH_P_TSN));
 	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_DGRAM, htons(ETH_P_TSN));
@@ -412,7 +395,6 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
 	socklen_t addrlen = sizeof(struct sockaddr_ll);
-	struct user_data ud = { 0 };
 	struct sockaddr_ll dst, src;
 	int ret;
 	const uint8_t expected_payload_raw[] = {
@@ -427,12 +409,6 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
 		ETH_P_IP >> 8, ETH_P_IP & 0xFF, /* EtherType */
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9 /* Payload */
 	};
-
-
-	net_if_foreach(iface_cb, &ud);
-
-	zassert_not_null(ud.first, "1st Ethernet interface not found");
-	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
 	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
 	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
@@ -488,7 +464,6 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
 	socklen_t addrlen = sizeof(struct sockaddr_ll);
-	struct user_data ud = { 0 };
 	struct sockaddr_ll dst, src;
 	int ret;
 	const uint8_t expected_payload_raw[] = {
@@ -497,11 +472,6 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 		ETH_P_IP >> 8, ETH_P_IP & 0xFF, /* EtherType */
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9 /* Payload */
 	};
-
-	net_if_foreach(iface_cb, &ud);
-
-	zassert_not_null(ud.first, "1st Ethernet interface not found");
-	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
 	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
 	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
@@ -577,4 +547,14 @@ static void test_after(void *arg)
 	test_sockets_close();
 }
 
-ZTEST_SUITE(socket_packet, NULL, NULL, NULL, test_after, NULL);
+static void *test_setup(void)
+{
+	net_if_foreach(iface_cb, &ud);
+
+	zassert_not_null(ud.first, "1st Ethernet interface not found");
+	zassert_not_null(ud.second, "2nd Ethernet interface not found");
+
+	return NULL;
+}
+
+ZTEST_SUITE(socket_packet, NULL, test_setup, NULL, test_after, NULL);
