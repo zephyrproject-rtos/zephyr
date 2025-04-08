@@ -23,6 +23,7 @@ struct siwx91x_dev {
 	scan_result_cb_t scan_res_cb;
 	uint16_t scan_max_bss_cnt;
 	sl_si91x_performance_profile_t ps_profile;
+	uint16_t bcn_listen_interval;
 	uint8_t max_num_sta;
 	bool reboot_needed;
 	bool hidden_ssid;
