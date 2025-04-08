@@ -2296,7 +2296,10 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	struct bt_l2cap_le_credits *ev;
 	struct net_buf *buf;
 
-	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
+	if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+		LOG_ERR("L2CAP channel not connected: %d", bt_l2cap_chan_get_state(&chan->chan));
+		return;
+	}
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
@@ -2456,7 +2459,10 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 
 	LOG_DBG("chan %p len %u", chan, buf->len);
 
-	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
+	if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+		LOG_ERR("L2CAP channel not connected: %d", bt_l2cap_chan_get_state(&chan->chan));
+		return;
+	}
 	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
 
 	/* Receiving complete SDU, notify channel and reset SDU buf */
