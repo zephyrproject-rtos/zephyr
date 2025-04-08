@@ -6,30 +6,30 @@
  */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-extern int32_t    hci_hbuf_total;
-extern uint32_t    hci_hbuf_sent;
-extern uint32_t    hci_hbuf_acked;
+extern int32_t  hci_hbuf_total;
+extern uint32_t hci_hbuf_sent;
+extern uint32_t hci_hbuf_acked;
 extern atomic_t hci_state_mask;
 
 #define HCI_STATE_BIT_RESET 0
 #endif
 
 #define HCI_CLASS_NONE            0 /* Invalid class */
-#define HCI_CLASS_EVT_REQUIRED    1 /* Mesh and connection-{established,
+#define HCI_CLASS_EVT_CMD_STATUS  1 /* HCI Command Complete/Status */
+#define HCI_CLASS_EVT_REQUIRED    2 /* Mesh and connection-{established,
 				     * disconnected}
 				     */
-#define HCI_CLASS_EVT_DISCARDABLE 2 /* Best-effort reporting. Discardable
+#define HCI_CLASS_EVT_DISCARDABLE 3 /* Best-effort reporting. Discardable
 				     * over HCI in case of overflow
 				     */
-#define HCI_CLASS_EVT_CONNECTION  3 /* Connection management; e.g.
+#define HCI_CLASS_EVT_CONNECTION  4 /* Connection management; e.g.
 				     * terminate, update, encryption
 				     */
-#define HCI_CLASS_EVT_LLCP        4 /* LL Control Procedures */
-#define HCI_CLASS_ACL_DATA        5 /* Asynchronous Connection Less (general
+#define HCI_CLASS_EVT_LLCP        5 /* LL Control Procedures */
+#define HCI_CLASS_ACL_DATA        6 /* Asynchronous Connection Less (general
 				     * data)
 				     */
-#define HCI_CLASS_ISO_DATA        6 /* Isochronous data */
-
+#define HCI_CLASS_ISO_DATA        7 /* Isochronous data */
 
 void hci_init(struct k_poll_signal *signal_host_buf);
 void hci_recv_fifo_reset(void);
