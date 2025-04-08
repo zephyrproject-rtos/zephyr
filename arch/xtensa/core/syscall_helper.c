@@ -73,61 +73,6 @@ uintptr_t xtensa_syscall_helper_args_4(uintptr_t arg1, uintptr_t arg2,
 	return a2;
 }
 
-uintptr_t xtensa_syscall_helper_args_3(uintptr_t arg1, uintptr_t arg2,
-				       uintptr_t arg3, uintptr_t call_id)
-{
-	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-	register uintptr_t a4 __asm__("%a4") = arg3;
-
-	__asm__ volatile("syscall\n\t"
-			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4)
-			 : "memory");
-
-	return a2;
-}
-
-uintptr_t xtensa_syscall_helper_args_2(uintptr_t arg1, uintptr_t arg2,
-				       uintptr_t call_id)
-{
-	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-
-	__asm__ volatile("syscall\n\t"
-			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3)
-			 : "memory");
-
-	return a2;
-}
-
-uintptr_t xtensa_syscall_helper_args_1(uintptr_t arg1, uintptr_t call_id)
-{
-	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-
-	__asm__ volatile("syscall\n\t"
-			 : "=r" (a2)
-			 : "r" (a2), "r" (a6)
-			 : "memory");
-
-	return a2;
-}
-
-uintptr_t xtensa_syscall_helper_args_0(uintptr_t call_id)
-{
-	register uintptr_t a2 __asm__("%a2") = call_id;
-
-	__asm__ volatile("syscall\n\t"
-			 : "=r" (a2)
-			 : "r" (a2)
-			 : "memory");
-
-	return a2;
-}
 #endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 
 #if XCHAL_HAVE_THREADPTR == 0
