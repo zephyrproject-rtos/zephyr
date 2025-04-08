@@ -894,7 +894,7 @@ static int i2c_mspm0_pm_action(const struct device *dev, enum pm_device_action a
 	};	\
 	\
 	PM_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_pm_action);			\
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_init, NULL,				\
+	I2C_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_init, PM_DEVICE_DT_INST_GET(index),				\
 		&i2c_mspm0_data_##index, &i2c_mspm0_cfg_##index, POST_KERNEL,	\
 		CONFIG_I2C_INIT_PRIORITY, &i2c_mspm0_driver_api);				\
 	\
