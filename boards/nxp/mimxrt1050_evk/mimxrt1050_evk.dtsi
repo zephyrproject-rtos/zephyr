@@ -211,6 +211,30 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
+zephyr_uhc0: &usbh1 {
+	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+zephyr_uhc1: &usbh2 {
+	status = "okay";
+	phy_handle = <&usbphy2>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
+&usbphy2 {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
+
 &usdhc1 {
 	status = "okay";
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
