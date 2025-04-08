@@ -727,6 +727,7 @@ struct espi_reg {
 #define NPCX_VWEVSM_INDEX                FIELD(8, 7)
 #define NPCX_VWEVSM_INDEX_EN             15
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_VWEVSM_DIRTY                16
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0
