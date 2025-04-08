@@ -216,8 +216,8 @@ static int icp201xx_channel_get(const struct device *dev, enum sensor_channel ch
 {
 	struct icp201xx_data *data = (struct icp201xx_data *)dev->data;
 
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP && chan != SENSOR_CHAN_PRESS &&
-	    chan != SENSOR_CHAN_ALTITUDE) {
+	if (!(chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_PRESS ||
+	      chan == SENSOR_CHAN_ALTITUDE)) {
 		return -ENOTSUP;
 	}
 	icp201xx_mutex_lock(dev);
