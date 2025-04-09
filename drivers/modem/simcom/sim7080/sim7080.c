@@ -395,17 +395,17 @@ MODEM_CMD_DEFINE(on_cmd_cereg)
 	return 0;
 }
 
-MODEM_CMD_DEFINE(on_cmd_cpin)
-{
-	mdata.cpin_ready = strcmp(argv[0], "READY") == 0;
-	LOG_INF("CPIN: %d", mdata.cpin_ready);
-	return 0;
-}
-
 MODEM_CMD_DEFINE(on_cmd_cgatt)
 {
-	mdata.mdm_cgatt = atoi(argv[0]);
-	LOG_INF("CGATT: %d", mdata.mdm_cgatt);
+	int cgatt = atoi(argv[0]);
+
+	if (cgatt) {
+		mdata.status_flags |= SIM7080_STATUS_FLAG_ATTACHED;
+	} else {
+		mdata.status_flags &= ~SIM7080_STATUS_FLAG_ATTACHED;
+	}
+
+	LOG_INF("CGATT: %d", cgatt);
 	return 0;
 }
 
@@ -470,6 +470,36 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
 	return len;
 }
 
+MODEM_CMD_DIRECT_DEFINE(on_urc_rdy)
+{
+	LOG_DBG("RDY received");
+	mdata.status_flags |= SIM7080_STATUS_FLAG_POWER_ON;
+	k_sem_give(&mdata.boot_sem);
+	return 0;
+}
+
+MODEM_CMD_DIRECT_DEFINE(on_urc_pwr_down)
+{
+	LOG_DBG("POWER DOWN received");
+	mdata.status_flags &= ~SIM7080_STATUS_FLAG_POWER_ON;
+	k_sem_give(&mdata.boot_sem);
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_urc_cpin)
+{
+	if (strcmp(argv[0], "READY") == 0) {
+		mdata.status_flags |= SIM7080_STATUS_FLAG_CPIN_READY;
+	} else {
+		mdata.status_flags &= ~SIM7080_STATUS_FLAG_CPIN_READY;
+	}
+
+	k_sem_give(&mdata.boot_sem);
+
+	LOG_INF("CPIN: %s", argv[0]);
+	return 0;
+}
+
 /*
  * Possible responses by the sim7080.
  */
@@ -489,6 +519,9 @@ static const struct modem_cmd unsolicited_cmds[] = {
 	MODEM_CMD("+CADATAIND: ", on_urc_cadataind, 1U, ""),
 	MODEM_CMD("+CASTATE: ", on_urc_castate, 2U, ","),
 	MODEM_CMD("+FTPGET: 1,", on_urc_ftpget, 1U, ""),
+	MODEM_CMD("RDY", on_urc_rdy, 0U, ""),
+	MODEM_CMD("NORMAL POWER DOWN", on_urc_pwr_down, 0U, ""),
+	MODEM_CMD("+CPIN: ", on_urc_cpin, 1U, ","),
 };
 
 /*
@@ -509,7 +542,7 @@ static int modem_pdp_activate(void)
 	struct modem_cmd cgatt_cmd[] = { MODEM_CMD("+CGATT: ", on_cmd_cgatt, 1U, "") };
 
 	counter = 0;
-	while (counter++ < MDM_MAX_CGATT_WAITS && mdata.mdm_cgatt != 1) {
+	while (counter++ < MDM_MAX_CGATT_WAITS && (mdata.status_flags & SIM7080_STATUS_FLAG_ATTACHED) == 0) {
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cgatt_cmd,
 				     ARRAY_SIZE(cgatt_cmd), "AT+CGATT?", &mdata.sem_response,
 				     MDM_CMD_TIMEOUT);
@@ -526,7 +559,8 @@ static int modem_pdp_activate(void)
 		return -1;
 	}
 
-	if (!mdata.cpin_ready || mdata.mdm_cgatt != 1) {
+	if ((mdata.status_flags & SIM7080_STATUS_FLAG_CPIN_READY) == 0 ||
+		(mdata.status_flags & SIM7080_STATUS_FLAG_ATTACHED) == 0) {
 		LOG_ERR("Fatal: Modem is not attached to GPRS network!!");
 		return -1;
 	}
@@ -591,41 +625,31 @@ error:
  */
 static void modem_pwrkey(void)
 {
+	LOG_DBG("Pulling PWRKEY");
 	/* Power pin should be high for 1.5 seconds. */
 	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_MSEC(1500));
 	gpio_pin_set_dt(&power_gpio, 0);
-	k_sleep(K_SECONDS(5));
 }
 
-/*
- * Commands to be sent at setup.
- */
-static const struct setup_cmd setup_cmds[] = {
-	SETUP_CMD_NOHANDLE("ATH"),
-	SETUP_CMD("AT+CGMI", "", on_cmd_cgmi, 0U, ""),
-	SETUP_CMD("AT+CGMM", "", on_cmd_cgmm, 0U, ""),
-	SETUP_CMD("AT+CGMR", "", on_cmd_cgmr, 0U, ""),
-	SETUP_CMD("AT+CGSN", "", on_cmd_cgsn, 0U, ""),
-#if defined(CONFIG_MODEM_SIM_NUMBERS)
-	SETUP_CMD("AT+CIMI", "", on_cmd_cimi, 0U, ""),
-	SETUP_CMD("AT+CCID", "", on_cmd_ccid, 0U, ""),
-#endif /* defined(CONFIG_MODEM_SIM_NUMBERS) */
-#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_NB1)
-	SETUP_CMD_NOHANDLE("AT+CNMP=38"),
-	SETUP_CMD_NOHANDLE("AT+CMNB=2"),
-	SETUP_CMD_NOHANDLE("AT+CBANDCFG=\"NB-IOT\"," MDM_LTE_BANDS),
-#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_NB1) */
-#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_M1)
-	SETUP_CMD_NOHANDLE("AT+CNMP=38"),
-	SETUP_CMD_NOHANDLE("AT+CMNB=1"),
-	SETUP_CMD_NOHANDLE("AT+CBANDCFG=\"CAT-M\"," MDM_LTE_BANDS),
-#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_M1) */
-#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
-	SETUP_CMD_NOHANDLE("AT+CNMP=13"),
-#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM) */
-	SETUP_CMD("AT+CPIN?", "+CPIN: ", on_cmd_cpin, 1U, ""),
-};
+static int modem_set_baudrate(uint32_t baudrate)
+{
+	char buf[sizeof("AT+IPR=##########")] = {0};
+
+	int ret = snprintk(buf, sizeof(buf), "AT+IPR=%u", baudrate);
+	if (ret < 0) {
+		LOG_ERR("Failed to build command");
+		goto out;
+	}
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response, K_SECONDS(2));
+	if (ret != 0) {
+		LOG_ERR("Failed to set baudrate");
+	}
+
+out:
+	return ret;
+}
 
 /**
  * Performs the autobaud sequence until modem answers or limit is reached.
@@ -634,36 +658,149 @@ static const struct setup_cmd setup_cmds[] = {
  */
 int modem_autobaud(void)
 {
-	int boot_tries = 0;
 	int counter = 0;
-	int ret;
+	int ret = -1;
 
-	while (boot_tries++ <= MDM_BOOT_TRIES) {
-		modem_pwrkey();
-
-		/*
-		 * The sim7080 has a autobaud function.
-		 * On startup multiple AT's are sent until
-		 * a OK is received.
-		 */
-		counter = 0;
-		while (counter < MDM_MAX_AUTOBAUD) {
-			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT",
-					     &mdata.sem_response, K_MSEC(500));
-
-			/* OK was received. */
-			if (ret == 0) {
-				/* Disable echo */
-				return modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
-						      "ATE0", &mdata.sem_response, K_SECONDS(2));
-			}
-
-			counter++;
+	/*
+	 * The sim7080 has a autobaud function.
+	 * On startup multiple AT's are sent until
+	 * a OK is received.
+	 */
+	counter = 0;
+	while (counter++ <= MDM_MAX_AUTOBAUD) {
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT",
+				     &mdata.sem_response, K_MSEC(500));
+		if (ret != 0) {
+			LOG_DBG("No response to autobaud AT");
+			continue;
 		}
+		break;
 	}
 
-	return -1;
+	return ret;
 }
+
+/**
+ * Power on the modem and wait for operational sim card.
+ *
+ * @param allow_autobaud Allow autobaud functionality.
+ * @return 0 on success. Otherwise <0.
+ *
+ * @note Autobaud is only allowed during driver setup.
+ * 		 In any other case a fixed baudrate should be used.
+ */
+static int modem_boot(bool allow_autobaud)
+{
+	uint8_t boot_tries = 0;
+	int ret = -1;
+
+	/* Reset the status flags */
+	mdata.status_flags = 0;
+
+	/* Try boot multiple times in case modem was already on */
+	while (boot_tries++ <= MDM_BOOT_TRIES) {
+
+		k_sem_reset(&mdata.boot_sem);
+
+		modem_pwrkey();
+
+		ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
+		if (ret == 0) {
+			if (mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) {
+				LOG_INF("Modem booted");
+				break;
+			}
+
+			LOG_INF("Modem turned off");
+			k_sleep(K_SECONDS(1));
+			continue;
+		}
+
+		LOG_WRN("No modem response after pwrkey");
+
+		if (allow_autobaud == false) {
+			continue;
+		}
+
+		LOG_INF("Trying autobaud");
+
+		ret = modem_autobaud();
+		if (ret != 0) {
+			LOG_WRN("Autobaud failed");
+			continue;
+		}
+
+		/* Set baudrate to disable autobaud on next startup */
+		ret = modem_set_baudrate(CONFIG_MODEM_SIMCOM_SIM7080_BAUDRATE);
+		if (ret != 0) {
+			LOG_ERR("Failed to disable echo");
+			continue;
+		}
+
+		/* Reset modem and wait for ready indication */
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CFUN=1,1",
+			     &mdata.sem_response, K_MSEC(500));
+		if (ret != 0) {
+			LOG_ERR("Reset failed");
+			break;
+		}
+
+		ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
+		if (ret != 0) {
+			LOG_ERR("No RDY received!");
+			break;
+		}
+
+		if ((mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) == 0) {
+			LOG_ERR("Modem not powered");
+			break;
+		}
+
+		break;
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Modem boot failed!");
+		goto out;
+	}
+
+	/* Wait for sim card status */
+	ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
+	if (ret != 0) {
+		LOG_ERR("Timeout while waiting for sim status");
+		goto out;
+	}
+
+	if ((mdata.status_flags & SIM7080_STATUS_FLAG_CPIN_READY) == 0) {
+		LOG_ERR("Sim card not ready!");
+		goto out;
+	}
+
+	/* Disable echo on successful boot */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "ATE0",
+				 &mdata.sem_response, K_MSEC(500));
+	if (ret != 0) {
+		LOG_ERR("Disabling echo failed");
+		goto out;
+	}
+
+out:
+	return ret;
+}
+
+/*
+ * Commands to be sent at setup.
+ */
+static const struct setup_cmd setup_cmds[] = {
+	SETUP_CMD("AT+CGMI", "", on_cmd_cgmi, 0U, ""),
+	SETUP_CMD("AT+CGMM", "", on_cmd_cgmm, 0U, ""),
+	SETUP_CMD("AT+CGMR", "", on_cmd_cgmr, 0U, ""),
+	SETUP_CMD("AT+CGSN", "", on_cmd_cgsn, 0U, ""),
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	SETUP_CMD("AT+CIMI", "", on_cmd_cimi, 0U, ""),
+	SETUP_CMD("AT+CCID", "", on_cmd_ccid, 0U, ""),
+#endif /* defined(CONFIG_MODEM_SIM_NUMBERS) */
+};
 
 /*
  * Does the modem setup by starting it and
@@ -672,11 +809,10 @@ int modem_autobaud(void)
 static int modem_setup(void)
 {
 	int ret = 0;
-	int counter = 0;
 
 	k_work_cancel_delayable(&mdata.rssi_query_work);
 
-	ret = modem_autobaud();
+	ret = modem_boot(true);
 	if (ret < 0) {
 		LOG_ERR("Booting modem failed!!");
 		goto error;
@@ -690,13 +826,13 @@ static int modem_setup(void)
 		goto error;
 	}
 
-	k_sleep(K_SECONDS(3));
+	sim7080_change_state(SIM7080_STATE_IDLE);
 
 	/* Wait for acceptable rssi values. */
 	modem_rssi_query_work(NULL);
 	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 
-	counter = 0;
+	int counter = 0;
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
 	       (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
@@ -731,45 +867,44 @@ int mdm_sim7080_start_network(void)
 
 int mdm_sim7080_power_on(void)
 {
-	return modem_autobaud();
+	return modem_boot(false);
 }
 
 int mdm_sim7080_power_off(void)
 {
-	int tries = 5;
-	int autobaud_tries;
-	int ret = 0;
+	int ret = -EALREADY;
 
 	k_work_cancel_delayable(&mdata.rssi_query_work);
 
-	/* Check if module is already off. */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT", &mdata.sem_response,
-			     K_MSEC(1000));
-	if (ret < 0) {
-		sim7080_change_state(SIM7080_STATE_OFF);
-		return 0;
+	if ((mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) == 0) {
+		LOG_WRN("Modem already off");
+		goto out;
 	}
 
-	while (tries--) {
-		modem_pwrkey();
+	k_sem_reset(&mdata.boot_sem);
 
-		autobaud_tries = 5;
+	/* Pull pwrkey to turn off */
+	modem_pwrkey();
 
-		while (autobaud_tries--) {
-			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT",
-					     &mdata.sem_response, K_MSEC(500));
-			if (ret == 0) {
-				break;
-			}
-		}
-
-		if (ret < 0) {
-			sim7080_change_state(SIM7080_STATE_OFF);
-			return 0;
-		}
+	/* Wait for power down indication */
+	ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
+	if (ret != 0) {
+		LOG_ERR("No power down indication");
+		goto out;
 	}
 
-	return -1;
+	if ((mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) != 0) {
+		LOG_ERR("Modem not powered down!");
+		ret = -1;
+		goto out;
+	}
+
+	LOG_DBG("Modem turned off");
+	mdata.status_flags = 0;
+	sim7080_change_state(SIM7080_STATE_OFF);
+
+out:
+	return ret;
 }
 
 const char *mdm_sim7080_get_manufacturer(void)
@@ -807,12 +942,13 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_tx_ready, 0, 1);
 	k_sem_init(&mdata.sem_dns, 0, 1);
 	k_sem_init(&mdata.sem_ftp, 0, 1);
+	k_sem_init(&mdata.boot_sem, 0 ,1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);
 
 	/* Assume the modem is not registered to the network. */
 	mdata.mdm_registration = 0;
-	mdata.cpin_ready = false;
+	mdata.status_flags = 0;
 	mdata.pdp_active = false;
 
 	mdata.sms_buffer = NULL;
@@ -825,7 +961,7 @@ static int modem_init(const struct device *dev)
 		goto error;
 	}
 
-	sim7080_change_state(SIM7080_STATE_INIT);
+	sim7080_change_state(SIM7080_STATE_OFF);
 
 	/* Command handler. */
 	const struct modem_cmd_handler_config cmd_handler_config = {

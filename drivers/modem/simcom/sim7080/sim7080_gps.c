@@ -272,7 +272,7 @@ int mdm_sim7080_start_gnss(void)
 	sim7080_change_state(SIM7080_STATE_INIT);
 	k_work_cancel_delayable(&mdata.rssi_query_work);
 
-	ret = modem_autobaud();
+	ret = mdm_sim7080_power_on();
 	if (ret < 0) {
 		LOG_ERR("Failed to start modem!!");
 		return -1;
