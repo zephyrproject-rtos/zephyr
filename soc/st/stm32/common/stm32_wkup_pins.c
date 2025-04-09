@@ -225,11 +225,11 @@ static void wkup_pin_setup(const struct wkup_pin_cfg_t *wakeup_pin_cfg)
 
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Select the proper wake-up signal source */
-	if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_PIN_SRC_0) {
+	if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_0) {
 		LL_PWR_SetWakeUpPinSignal0Selection(table_wakeup_pins[wkup_pin_index]);
-	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_PIN_SRC_1) {
+	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_1) {
 		LL_PWR_SetWakeUpPinSignal1Selection(table_wakeup_pins[wkup_pin_index]);
-	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_PIN_SRC_2) {
+	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_2) {
 		LL_PWR_SetWakeUpPinSignal2Selection(table_wakeup_pins[wkup_pin_index]);
 	} else {
 		LL_PWR_SetWakeUpPinSignal3Selection(table_wakeup_pins[wkup_pin_index]);
@@ -286,9 +286,9 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 /* Each wake-up pin on STM32U5 is associated with 4 wkup srcs, 3 of them correspond to GPIOs. */
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	wakeup_pin_cfg.src_selection = wkup_pin_gpio_cfg->dt_flags &
-					(STM32_PWR_WKUP_PIN_SRC_0 |
-					STM32_PWR_WKUP_PIN_SRC_1 |
-					STM32_PWR_WKUP_PIN_SRC_2);
+					(STM32_PWR_WKUP_EVT_SRC_0 |
+					STM32_PWR_WKUP_EVT_SRC_1 |
+					STM32_PWR_WKUP_EVT_SRC_2);
 #else
 	wakeup_pin_cfg.src_selection = 0;
 #endif /* CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
