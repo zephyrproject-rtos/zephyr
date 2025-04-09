@@ -158,11 +158,6 @@ static void reset_pending_event(enum pending_events event)
 	atomic_clear_bit(pending_events, event);
 }
 
-static inline void clear_pending_events(void)
-{
-	atomic_clear(pending_events);
-}
-
 void energy_detected(const struct device *dev, int16_t max_ed)
 {
 	if (dev == radio_dev) {
