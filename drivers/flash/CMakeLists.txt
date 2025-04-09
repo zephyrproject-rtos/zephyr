@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Siemens Mobility GmbH
+#
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library_sources(flash_util.c)
@@ -34,6 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_f
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_ATXP032 flash_mspi_atxp032.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_EMUL_DEVICE flash_mspi_emul_device.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_INFINEON_S25H flash_mspi_infineon_s25h.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_NOR flash_mspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_NPCX_FIU_NOR flash_npcx_fiu_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_NPCX_FIU_QSPI flash_npcx_fiu_qspi.c)
