@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FUSE
+	bool "FUSE primitives support"
+	help
+	  Enable FUSE primitives support.
+
+config FUSE_UID_VALUE
+	int "Fuse user ID"
+	default 0
+	help
+	  Each fuse request contains user ID, this config allows setting
+	  that value. The result is as if user with given UID accessed the file/resource.
+
+config FUSE_GID_VALUE
+	int "Fuse group ID"
+	default 0
+	help
+	  Each fuse request contains group ID, this config allows setting
+	  that value. The result is as if user with given GID accessed the file/resource.
+
+config FUSE_PID_VALUE
+	int "Fuse process ID"
+	default 0
+	help
+	  Each fuse request contains process ID, this config allows setting
+	  that value. The result is as if process with given PID accessed the file/resource.
+
+module = FUSE
+module-str = fuse
+source "subsys/logging/Kconfig.template.log_config"
