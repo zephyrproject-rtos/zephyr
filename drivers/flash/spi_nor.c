@@ -381,8 +381,8 @@ static int spi_nor_access(const struct device *const dev,
 	struct spi_nor_data *const driver_data = dev->data;
 	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
-	uint8_t buf[5] = { 0 };
-	struct spi_buf spi_buf[2] = {
+	uint8_t buf[5] = {opcode};
+	struct spi_buf spi_buf_tx[2] = {
 		{
 			.buf = buf,
 			.len = 1,
@@ -392,8 +392,17 @@ static int spi_nor_access(const struct device *const dev,
 			.len = length
 		}
 	};
+	struct spi_buf spi_buf_rx[2] = {
+		{
+			.buf = NULL,
+			.len = 1,
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
 
-	buf[0] = opcode;
 	if (is_addressed) {
 		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
 		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
@@ -409,20 +418,22 @@ static int spi_nor_access(const struct device *const dev,
 
 		if (use_32bit) {
 			memcpy(&buf[1], &addr32.u8[0], 4);
-			spi_buf[0].len += 4;
+			spi_buf_tx[0].len += 4;
+			spi_buf_rx[0].len += 4;
 		} else {
 			memcpy(&buf[1], &addr32.u8[1], 3);
-			spi_buf[0].len += 3;
+			spi_buf_tx[0].len += 3;
+			spi_buf_rx[0].len += 3;
 		}
 	};
 
 	const struct spi_buf_set tx_set = {
-		.buffers = spi_buf,
-		.count = (length != 0) ? 2 : 1,
+		.buffers = spi_buf_tx,
+		.count = (is_write && length != 0) ? 2 : 1,
 	};
 
 	const struct spi_buf_set rx_set = {
-		.buffers = spi_buf,
+		.buffers = spi_buf_rx,
 		.count = 2,
 	};
 
