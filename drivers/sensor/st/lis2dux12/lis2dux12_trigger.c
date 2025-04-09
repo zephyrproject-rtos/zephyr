@@ -11,6 +11,9 @@
 #include <zephyr/logging/log.h>
 #include "lis2dux12.h"
 
+#include "lis2dux12.h"
+#include "lis2dux12_rtio.h"
+
 LOG_MODULE_DECLARE(LIS2DUX12, CONFIG_SENSOR_LOG_LEVEL);
 
 static void lis2dux12_gpio_callback(const struct device *dev, struct gpio_callback *cb,
@@ -31,6 +34,9 @@ static void lis2dux12_gpio_callback(const struct device *dev, struct gpio_callba
 #elif defined(CONFIG_LIS2DUX12_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&data->work);
 #endif
+	if (IS_ENABLED(CONFIG_LIS2DUX12_STREAM)) {
+		lis2dux12_stream_irq_handler(data->dev);
+	}
 }
 
 #ifdef CONFIG_LIS2DUX12_TRIGGER_OWN_THREAD

@@ -15,10 +15,20 @@ menuconfig LIS2DUX12
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DUX12 if DT_HAS_ST_LIS2DUX12_ENABLED
 	select USE_STDC_LIS2DUXS12 if DT_HAS_ST_LIS2DUXS12_ENABLED
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for LIS2DUX12 accelerometer sensor driver
 
 if LIS2DUX12
+
+config LIS2DUX12_STREAM
+	bool "Use hardware FIFO to stream data"
+	select LIS2DUX12_TRIGGER
+	default y
+	depends on I2C_RTIO || SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this config option to enable streaming sensor data via RTIO subsystem.
 
 module = LIS2DUX12
 thread_priority = 10
