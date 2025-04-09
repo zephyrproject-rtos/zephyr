@@ -76,8 +76,11 @@ choice HAWKBIT_DDI_SECURITY
 
 config HAWKBIT_DDI_NO_SECURITY
 	bool "No authentication security"
+	select DEPRECATED
 	help
-	  No authentication security for the hawkBit DDI API.
+	  No authentication security for the hawkBit DDI API. Support for this
+	  had been removed from the hawkBit server in version 0.8.0. Use gateway
+	  security token authentication instead, if you want something similar.
 
 config HAWKBIT_DDI_TARGET_SECURITY
 	bool "Use target security token authentication"
