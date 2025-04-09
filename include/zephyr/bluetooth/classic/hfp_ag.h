@@ -77,6 +77,37 @@ enum hfp_ag_hf_indicators {
 	HFP_AG_BATTERY_LEVEL_IND = 2,   /* Remaining level of Battery */
 };
 
+/* The status of the call */
+enum __packed bt_hfp_ag_call_status {
+	BT_HFP_AG_CALL_STATUS_ACTIVE = 0,       /* Call is active */
+	BT_HFP_AG_CALL_STATUS_HELD = 1,         /* Call is on hold */
+	BT_HFP_AG_CALL_STATUS_DIALING = 2,      /* Outgoing call is being dialed */
+	BT_HFP_AG_CALL_STATUS_ALERTING = 3,     /* Outgoing call is being alerted */
+	BT_HFP_AG_CALL_STATUS_INCOMING = 4,     /* Incoming call is came */
+	BT_HFP_AG_CALL_STATUS_WAITING = 5,      /* Incoming call is waiting */
+	BT_HFP_AG_CALL_STATUS_INCOMING_HELD = 6 /* Call held by Response and Hold */
+};
+
+/* The direction of the call */
+enum __packed bt_hfp_ag_call_dir {
+	BT_HFP_AG_CALL_DIR_OUTGOING = 0, /* It is a outgoing call */
+	BT_HFP_AG_CALL_DIR_INCOMING = 1, /* It is a incoming call */
+};
+
+/** @brief The ongoing call
+ *
+ *  @param number Phone number terminated with '\0' of the call.
+ *  @param type Specify the format of the phone number.
+ *  @param dir Call direction.
+ *  @param status The status of the call.
+ */
+struct bt_hfp_ag_ongoing_call {
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+	uint8_t type;
+	enum bt_hfp_ag_call_dir dir;
+	enum bt_hfp_ag_call_status status;
+};
+
 /** @brief HFP profile AG application callback */
 struct bt_hfp_ag_cb {
 	/** HF AG connected callback to application
@@ -115,6 +146,22 @@ struct bt_hfp_ag_cb {
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
+
+	/** Get ongoing call information Callback
+	 *
+	 *  If this callback is provided it will be called whenever the response
+	 *  of the AT command `AT+CIND=?` from HF has been sent. It is used to get all
+	 *  ongoing calls one bye one from the upper layer.
+	 *  Then set the `Call`, `Call Setup`, and `Held Call` indicators and report the
+	 *  values int the response of AT command `AT+CIND?`. Then report all ongoing
+	 *  calls in the `+CLCC` response.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param call Pointer to store the ongoing call information.
+	 *
+	 *  @return 0 in case of success and will get next one or negative value in case of error.
+	 */
+	int (*get_ongoing_call)(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *call);
 
 	/** HF memory dialing request Callback
 	 *
