@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MSPM0_TIMER
+	bool "mel SAM MCU family counter (TC) driver"
+	default y
+	depends on DT_HAS_TI_MSPM0G1X0X_G3X0X_TIMER_COUNTER_ENABLED
+	help
+	  Enable the TI MSPMO MCU family counter driver.
