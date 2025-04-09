@@ -69,10 +69,10 @@ static enum ieee802154_hw_caps spinel_drv_get_hw_caps(otRadioCaps caps)
 
 static int spinel_drv_set_t_id(struct spinel_drv_data *spinel_drv, uint32_t prop)
 {
-	uint8_t next_t_id;
+	uint8_t next_t_id = spinel_drv->t_id.act_id;
 
 	do {
-		next_t_id = SPINEL_GET_NEXT_TID(spinel_drv->t_id.act_id);
+		next_t_id = SPINEL_GET_NEXT_TID(next_t_id);
 
 		if (spinel_drv->t_id.act_id == next_t_id) {
 			/* All TIDs are used */
@@ -215,6 +215,42 @@ static int spinel_drv_get_cmd(struct spinel_drv_data *spinel_drv, uint32_t cmd, 
 	}
 
 	return ret;
+}
+
+static bool spinel_drv_check_status(struct spinel_drv_data *spinel_drv, const uint8_t *data,
+				    uint16_t data_size)
+{
+	const uint8_t *param_data = NULL;
+	uint16_t param_size = 0;
+	uint32_t status;
+
+	int ret = spinel_drv_get_cmd(spinel_drv, SPINEL_CMD_PROP_VALUE_IS, SPINEL_PROP_LAST_STATUS,
+				     data, data_size, &param_data, &param_size);
+
+	if (ret == -EPERM) {
+		/* Skip this frame */
+		return false;
+	} else if (ret < 0 || !param_data || !param_size) {
+		LOG_ERR("Failed check status (inst = %u, err = %d, data = %p, size = %u)",
+			spinel_drv->inst, ret, param_data, param_size);
+		return false;
+	}
+
+	ret = spinel_datatype_unpack(param_data, param_size, true, SPINEL_DATATYPE_UINT_PACKED_S,
+				     &status);
+
+	if (ret < 0) {
+		LOG_ERR("Failed get status (inst = %u, err = %d)", spinel_drv->inst, ret);
+		return false;
+	}
+
+	if (status != SPINEL_STATUS_OK) {
+		LOG_ERR("Incorrect response status (inst = %u, status = %u)", spinel_drv->inst,
+			status);
+		return false;
+	}
+
+	return true;
 }
 
 static int spinel_drv_get_radio_frame(struct spinel_drv_data *spinel_drv, const uint8_t *data,
@@ -680,42 +716,15 @@ int spinel_drv_send_mac_frame_counter(struct spinel_drv_data *spinel_drv, spinel
 }
 
 bool spinel_drv_check_mac_frame_counter(struct spinel_drv_data *spinel_drv, const uint8_t *data,
-					uint16_t data_size, uint32_t frame_counter)
+			       uint16_t data_size)
 {
-	const uint8_t *param_data = NULL;
-	uint16_t param_size = 0;
-	uint32_t get_frame_counter;
+	bool ret = spinel_drv_check_status(spinel_drv, data, data_size);
 
-	int ret = spinel_drv_get_cmd(spinel_drv, SPINEL_CMD_PROP_VALUE_IS,
-				     SPINEL_PROP_RCP_MAC_FRAME_COUNTER, data, data_size,
-				     &param_data, &param_size);
-
-	if (ret == -EPERM) {
-		/* Skip this frame */
-		return false;
-	} else if (ret < 0 || !param_data || param_size != sizeof(uint32_t)) {
-		LOG_ERR("Failed check mac_frame_counter (inst = %u, err = %d, data = %p, size = "
-			"%u)",
-			spinel_drv->inst, ret, param_data, param_size);
-		return false;
+	if (!ret) {
+		LOG_ERR("Failed check mac_frame_counter (inst = %u)", spinel_drv->inst);
 	}
 
-	ret = spinel_datatype_unpack(param_data, param_size, true, SPINEL_DATATYPE_UINT32_S,
-				     &get_frame_counter);
-
-	if (ret < 0) {
-		LOG_ERR("Failed get parameters of mac_frame_counter (inst = %u, err = %d)",
-			spinel_drv->inst, ret);
-		return false;
-	}
-
-	if (get_frame_counter != frame_counter) {
-		LOG_ERR("Get incorrect frame counter in response to mac_frame_counter (inst = %u)",
-			spinel_drv->inst);
-		return false;
-	}
-
-	return true;
+	return ret;
 }
 
 int spinel_drv_send_panid(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb, const void *ctx,
@@ -1239,34 +1248,13 @@ int spinel_drv_send_link_metrics(struct spinel_drv_data *spinel_drv, spinel_tx_c
 bool spinel_drv_check_link_metrics(struct spinel_drv_data *spinel_drv, const uint8_t *data,
 				   uint16_t data_size)
 {
-	uint8_t header;
-	uint32_t cmd;
-	uint32_t prop;
-	uint32_t status;
+	bool ret = spinel_drv_check_status(spinel_drv, data, data_size);
 
-	int ret =
-		spinel_datatype_unpack(data, data_size, false,
-				       SPINEL_DATATYPE_COMMAND_PROP_S SPINEL_DATATYPE_UINT_PACKED_S,
-				       &header, &cmd, &prop, &status);
-
-	if (ret < 0) {
-		LOG_ERR("Failed unpack spinel header and data (inst = %u, err = %d)",
-			spinel_drv->inst, ret);
-		return false;
+	if (!ret) {
+		LOG_ERR("Failed check link_metrics (inst = %u)", spinel_drv->inst);
 	}
 
-	if (spinel_drv->inst != SPINEL_HEADER_GET_IID(header) || cmd != SPINEL_CMD_PROP_VALUE_IS ||
-	    prop != SPINEL_PROP_LAST_STATUS) {
-		return false;
-	}
-
-	if (status != SPINEL_STATUS_OK) {
-		LOG_ERR("Incorrect link metrics status (inst = %u, status = %u)", spinel_drv->inst,
-			status);
-		return false;
-	}
-
-	return true;
+	return ret;
 }
 
 int spinel_drv_send_mac_keys(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
@@ -1289,32 +1277,11 @@ int spinel_drv_send_mac_keys(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx
 bool spinel_drv_check_mac_keys(struct spinel_drv_data *spinel_drv, const uint8_t *data,
 			       uint16_t data_size)
 {
-	uint8_t header;
-	uint32_t cmd;
-	uint32_t prop;
-	uint32_t status;
+	bool ret = spinel_drv_check_status(spinel_drv, data, data_size);
 
-	int ret =
-		spinel_datatype_unpack(data, data_size, false,
-				       SPINEL_DATATYPE_COMMAND_PROP_S SPINEL_DATATYPE_UINT_PACKED_S,
-				       &header, &cmd, &prop, &status);
-
-	if (ret < 0) {
-		LOG_ERR("Failed unpack spinel header and data (inst = %u, err = %d)",
-			spinel_drv->inst, ret);
-		return false;
+	if (!ret) {
+		LOG_ERR("Failed check mac_keys (inst = %u)", spinel_drv->inst);
 	}
 
-	if (spinel_drv->inst != SPINEL_HEADER_GET_IID(header) || cmd != SPINEL_CMD_PROP_VALUE_IS ||
-	    prop != SPINEL_PROP_LAST_STATUS) {
-		return false;
-	}
-
-	if (status != SPINEL_STATUS_OK) {
-		LOG_ERR("Incorrect mac keys status (inst = %u, status = %u)", spinel_drv->inst,
-			status);
-		return false;
-	}
-
-	return true;
+	return ret;
 }

@@ -506,7 +506,7 @@ int openthread_rcp_mac_frame_counter(struct openthread_rcp_data *ot_rcp, uint32_
 		result = openthread_rcp_process_continue(ot_rcp, start_tp, &response);
 		if (result >= 0) {
 			if (spinel_drv_check_mac_frame_counter(&ot_rcp->spinel_drv, response.data,
-							       response.data_size, frame_counter)) {
+							       response.data_size)) {
 				processed = true;
 				result = 0;
 			} else {

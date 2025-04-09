@@ -101,7 +101,7 @@ bool spinel_drv_check_ack_fpb_ext_clear(struct spinel_drv_data *spinel_drv, cons
 int spinel_drv_send_mac_frame_counter(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb,
 				      const void *ctx, uint32_t frame_counter, bool set_if_larger);
 bool spinel_drv_check_mac_frame_counter(struct spinel_drv_data *spinel_drv, const uint8_t *data,
-					uint16_t data_size, uint32_t frame_counter);
+					uint16_t data_size);
 int spinel_drv_send_panid(struct spinel_drv_data *spinel_drv, spinel_tx_cb tx_cb, const void *ctx,
 			  uint16_t pan_id);
 bool spinel_drv_check_panid(struct spinel_drv_data *spinel_drv, const uint8_t *data,
