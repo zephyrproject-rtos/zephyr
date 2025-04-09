@@ -47,13 +47,13 @@
 	sramx: memory@4000000 {
 		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(96)>;
-		zephyr,memory-region = "SRAM1";
+		zephyr,memory-region = "SRAMX";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	/* mcxn94x Memory configurations:
 	 *
-	 * RAM blocks RAMA through SRAM4 are contiguous address ranges
+	 * RAM blocks RAMA through RAMH are contiguous address ranges
 	 *
 	 * MCXN94X: 512KB RAM, RAMX: 96K, RAMA: 32K, RAMB: 32K,
 	 *                     RAMC: 64K, RAMD: 64K, RAME: 64K
