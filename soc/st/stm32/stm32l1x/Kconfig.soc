@@ -10,6 +10,10 @@ config SOC_SERIES_STM32L1X
 config SOC_SERIES
 	default "stm32l1x" if SOC_SERIES_STM32L1X
 
+config SOC_STM32L100XB
+	bool
+	select SOC_SERIES_STM32L1X
+
 config SOC_STM32L151XB
 	bool
 	select SOC_SERIES_STM32L1X
@@ -31,6 +35,7 @@ config SOC_STM32L152XE
 	select SOC_SERIES_STM32L1X
 
 config SOC
+	default "stm32l100xb" if SOC_STM32L100XB
 	default "stm32l151xb" if SOC_STM32L151XB
 	default "stm32l151xba" if SOC_STM32L151XBA
 	default "stm32l151xc" if SOC_STM32L151XC
