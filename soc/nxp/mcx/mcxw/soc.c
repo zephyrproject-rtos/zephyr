@@ -188,6 +188,10 @@ __weak void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpadc0);
 	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
+		CLOCK_EnableClock(kCLOCK_Ewm0);
+	}
 }
 
 static void vbat_init(void)
