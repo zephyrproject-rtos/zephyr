@@ -3987,6 +3987,31 @@ static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
 	return 0;
 }
 
+static void ag_sco_connected(struct bt_conn *conn, uint8_t err)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(err);
+}
+
+static void ag_sco_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	__ASSERT(conn != NULL, "Invalid SCO conn");
+
+	ARRAY_FOR_EACH(bt_hfp_ag_pool, i) {
+		if (bt_hfp_ag_pool[i].sco_conn == conn) {
+			bt_conn_unref(bt_hfp_ag_pool[i].sco_conn);
+			bt_hfp_ag_pool[i].sco_conn = NULL;
+		}
+	}
+}
+
+static struct bt_sco_conn_cb ag_sco_conn_cb = {
+	.connected = ag_sco_connected,
+	.disconnected = ag_sco_disconnected
+};
+
 static void hfp_ag_init(void)
 {
 	static struct bt_rfcomm_server chan = {
@@ -4004,6 +4029,8 @@ static void hfp_ag_init(void)
 	bt_sco_server_register(&sco_server);
 
 	bt_sdp_register_service(&hfp_ag_rec);
+
+	bt_sco_conn_cb_register(&ag_sco_conn_cb);
 }
 
 int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb)
