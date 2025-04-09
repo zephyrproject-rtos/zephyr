@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+
+/*
+ * This devicetree overlay file will be automatically picked by the Zephyr
+ * build system when building the sample for the sensortile_box_pro board.
+ */
+
+/ {
+	aliases {
+		stream0 = &lsm6dsv16x_0;
+	};
+};
+
+&spi2 {
+	lsm6dsv16x_0: lsm6dsv16x@0 {
+		compatible = "st,lsm6dsv16x";
+
+		accel-odr = <LSM6DSV16X_DT_ODR_AT_960Hz>;
+		accel-range = <LSM6DSV16X_DT_FS_16G>;
+	};
+};
