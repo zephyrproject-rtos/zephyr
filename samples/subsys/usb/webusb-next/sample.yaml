@@ -12,4 +12,5 @@ tests:
       - nucleo_f413zh
       - mimxrt685_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
+      - max32690evkit/max32690/m4
     harness: TBD
