@@ -218,7 +218,7 @@ static int dma_mcux_pxp_init(const struct device *dev)
                                                                                                    \
 	static struct dma_mcux_pxp_data dma_data_##n;                                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,         \
+	DEVICE_DT_INST_DEFINE(n, dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,          \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_pxp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

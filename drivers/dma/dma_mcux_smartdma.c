@@ -152,7 +152,7 @@ static DEVICE_API(dma, dma_mcux_smartdma_api) = {
 	static struct dma_mcux_smartdma_data smartdma_##n##_data;		\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-				&dma_mcux_smartdma_init,			\
+				dma_mcux_smartdma_init,				\
 				NULL,						\
 				&smartdma_##n##_data, &smartdma_##n##_config,	\
 				POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,		\

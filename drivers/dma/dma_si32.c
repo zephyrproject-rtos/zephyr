@@ -423,5 +423,5 @@ static DEVICE_API(dma, dma_si32_driver_api) = {
 	.stop = dma_si32_stop,
 };
 
-DEVICE_DT_INST_DEFINE(0, &dma_si32_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, dma_si32_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,
 		      &dma_si32_driver_api);
