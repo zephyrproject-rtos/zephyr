@@ -195,6 +195,25 @@ Modem
 * Removed Kconfig option :kconfig:option:`CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE` in favor of
   :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE` and :kconfig:option:`CONFIG_MODEM_CMUX_MTU`.
 
+Flash
+=====
+
+* Renamed the file from ``flash_hp_ra.h`` to ``soc_flash_renesas_ra_hp.h``.
+* Renamed the file from ``flash_hp_ra.c`` to ``soc_flash_renesas_ra_hp.c``.
+* Renamed the file from ``flash_hp_ra_ex_op.c`` to ``soc_flash_renesas_ra_hp_ex_op.c``.
+
+* The Flash HP Renesas RA dual bank mode Kconfig symbol :kconfig:option:`CONFIG_DUAL_BANK_MODE`
+  has been removed.
+* The Flash HP Renesas RA Kconfig symbol :kconfig:option:`CONFIG_RA_FLASH_HP`
+  has been renamed to :kconfig:option:`CONFIG_SOC_FLASH_RENESAS_RA_HP`.
+* The Flash HP Renesas RA write protect Kconfig symbol :kconfig:option:`CONFIG_FLASH_RA_WRITE_PROTECT`
+  has been renamed to :kconfig:option:`CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT`.
+
+* Separate the file ``renesas,ra-nv-flash.yaml`` into 2 files ``renesas,ra-nv-code-flash.yaml``
+  and ``renesas,ra-nv-data-flash.yaml``.
+* Separate the ``compatible`` from ``renesas,ra-nv-flash`` to :dtcompatible:`renesas,ra-nv-code-flash.yaml`
+  and :dtcompatible:`renesas,ra-nv-data-flash.yaml`.
+
 
 Stepper
 =======
