@@ -876,58 +876,58 @@
 
 			wkup-pin@1 {
 				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpiob 2 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpioe 4 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 2 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 4 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@2 {
 				reg = <0x2>;
-				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpioe 5 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 5 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@3 {
 				reg = <0x3>;
-				wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioa 1 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpiob 6 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 1 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 6 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@4 {
 				reg = <0x4>;
-				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpiob 1 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpiob 7 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 1 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 7 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@5 {
 				reg = <0x5>;
-				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioa 3 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpiob 8 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 3 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 8 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@6 {
 				reg = <0x6>;
-				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioa 5 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpioe 7 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 5 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 7 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@7 {
 				reg = <0x7>;
-				wkup-gpios = <&gpiob 15 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioa 6 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpioe 8 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpiob 15 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 6 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 8 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 
 			wkup-pin@8 {
 				reg = <0x8>;
-				wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_PIN_SRC_0>,
-					     <&gpioa 7 STM32_PWR_WKUP_PIN_SRC_1>,
-					     <&gpiob 10 STM32_PWR_WKUP_PIN_SRC_2>;
+				wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
 
