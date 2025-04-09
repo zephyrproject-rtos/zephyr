@@ -4,6 +4,7 @@ common:
     - drivers
     - wifi
     - net
+    - hostap
   platform_allow:
     - native_sim
 tests:
