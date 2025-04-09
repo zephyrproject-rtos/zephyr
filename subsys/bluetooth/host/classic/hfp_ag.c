@@ -665,6 +665,20 @@ static void ag_notify_call_held_ind(struct bt_hfp_ag *ag, void *user_data)
 	}
 }
 
+static void release_call(struct bt_hfp_ag_call *call)
+{
+	atomic_clear_bit(call->flags, BT_HFP_AG_CALL_IN_USING);
+	k_work_cancel_delayable(&call->ringing_work);
+	k_work_cancel_delayable(&call->deferred_work);
+	/*
+	 * Because it is uncertain whether `ringing_work` and `deferred_work` have been cancelled,
+	 * do not clear ringing_work and deferred_work.
+	 * Use `offsetof()` to get the offset of `ringing_work` to avoid access the fields
+	 * `ringing_work` and `deferred_work`.
+	 */
+	(void)memset(call, 0, offsetof(struct bt_hfp_ag_call, ringing_work));
+}
+
 static void free_call(struct bt_hfp_ag_call *call)
 {
 	int call_count;
@@ -673,9 +687,7 @@ static void free_call(struct bt_hfp_ag_call *call)
 
 	ag = call->ag;
 
-	k_work_cancel_delayable(&call->ringing_work);
-	k_work_cancel_delayable(&call->deferred_work);
-	memset(call, 0, sizeof(*call));
+	release_call(call);
 
 	call_count = get_none_released_calls(ag);
 
@@ -3195,7 +3207,6 @@ static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
 static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
-	bt_hfp_call_state_t call_state;
 	sys_snode_t *node;
 	struct bt_ag_tx *tx;
 	struct bt_hfp_ag_call *call;
@@ -3227,14 +3238,10 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 			continue;
 		}
 
-		hfp_ag_lock(ag);
-		call_state = call->call_state;
-		hfp_ag_unlock(ag);
-		if ((call_state == BT_HFP_CALL_ALERTING) || (call_state == BT_HFP_CALL_ACTIVE) ||
-		    (call_state == BT_HFP_CALL_HOLD)) {
-			bt_hfp_ag_terminate_cb(ag, call);
-		}
+		release_call(call);
 	}
+
+	hfp_ag_close_sco(ag);
 
 	ag->acl_conn = NULL;
 
@@ -3465,6 +3472,12 @@ static void bt_ag_deferred_work(struct k_work *work)
 	struct bt_hfp_ag_call *call = CONTAINER_OF(dwork, struct bt_hfp_ag_call, deferred_work);
 	struct bt_hfp_ag *ag = call->ag;
 
+	LOG_DBG("");
+
+	if (!atomic_test_bit(call->flags, BT_HFP_AG_CALL_IN_USING)) {
+		return;
+	}
+
 	(void)hfp_ag_next_step(ag, bt_ag_deferred_work_cb, call);
 }
 
@@ -3507,6 +3520,12 @@ static void bt_ag_ringing_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_hfp_ag_call *call = CONTAINER_OF(dwork, struct bt_hfp_ag_call, ringing_work);
+
+	LOG_DBG("");
+
+	if (!atomic_test_bit(call->flags, BT_HFP_AG_CALL_IN_USING)) {
+		return;
+	}
 
 	(void)hfp_ag_next_step(call->ag, bt_ag_ringing_work_cb, call);
 }
