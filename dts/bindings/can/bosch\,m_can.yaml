@@ -1,0 +1,22 @@
+description: Bosch M_CAN CAN FD generic driver
+
+compatible: "bosch,m_can"
+
+include:
+  - name: bosch,m_can-base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Optional frequency in Hertz to use if clocks are not defined
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

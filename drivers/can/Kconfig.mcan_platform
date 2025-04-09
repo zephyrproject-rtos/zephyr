@@ -1,0 +1,10 @@
+# MCAN Platform configuration options
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCAN_PLATFORM
+	bool "Bosch M_CAN driver"
+	default y
+	depends on DT_HAS_BOSCH_M_CAN_ENABLED
+	select CAN_MCAN
+	select PINCTRL
