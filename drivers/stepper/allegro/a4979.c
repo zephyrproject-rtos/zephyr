@@ -93,7 +93,7 @@ static int a4979_stepper_disable(const struct device *dev)
 		return ret;
 	}
 
-	config->common.timing_source->stop(dev);
+	step_dir_stepper_common_stop(dev);
 	data->enabled = false;
 
 	return 0;

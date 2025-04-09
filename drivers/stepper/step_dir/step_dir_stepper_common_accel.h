@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Fabian Blatz <fabianblatz@gmail.com>
+ * Copyright 2025 Navimatix GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,12 +26,11 @@
  *
  * This structure **must** be placed first in the driver's config structure.
  */
-struct step_dir_stepper_common_config {
+struct step_dir_stepper_common_accel_config {
 	const struct gpio_dt_spec step_pin;
 	const struct gpio_dt_spec dir_pin;
 	bool dual_edge;
 	const struct stepper_timing_source_api *timing_source;
-	bool invert_direction;
 };
 
 /**
@@ -39,12 +38,11 @@ struct step_dir_stepper_common_config {
  *
  * @param node_id The devicetree node identifier.
  */
-#define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id)                                            \
+#define STEP_DIR_STEPPER_DT_COMMON_ACCEL_CONFIG_INIT(node_id)                                      \
 	{                                                                                          \
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
-		.invert_direction = DT_PROP(node_id, invert_direction),                            \
 		.timing_source = STEP_DIR_TIMING_SOURCE_SELECT(node_id),                           \
 	}
 
@@ -52,14 +50,16 @@ struct step_dir_stepper_common_config {
  * @brief Initialize common step direction stepper config from devicetree instance.
  * @param inst Instance.
  */
-#define STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst)                                          \
-	STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(DT_DRV_INST(inst))
+#define STEP_DIR_STEPPER_DT_INST_COMMON_ACCEL_CONFIG_INIT(inst)                                    \
+	STEP_DIR_STEPPER_DT_COMMON_ACCEL_CONFIG_INIT(DT_DRV_INST(inst))
 
 /**
  * @brief Struct used to update the timing source.
  */
-struct step_dir_timing_data {
+struct step_dir_accel_timing_data {
 	uint64_t microstep_interval_ns;
+	uint64_t start_microstep_interval;
+	uint32_t acceleration;
 };
 
 /**
@@ -67,7 +67,7 @@ struct step_dir_timing_data {
  *
  * This structure **must** be placed first in the driver's data structure.
  */
-struct step_dir_stepper_common_data {
+struct step_dir_stepper_common_accel_data {
 	union step_dir_timing_source_data ts_data;
 	const struct device *dev;
 	struct k_spinlock lock;
@@ -78,7 +78,17 @@ struct step_dir_stepper_common_data {
 	int32_t step_count;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
-	struct step_dir_timing_data timing_data;
+	uint32_t acceleration;
+	uint64_t current_interval;
+	struct step_dir_accel_timing_data timing_data;
+	uint32_t const_steps;
+	uint32_t decel_steps;
+	uint32_t accel_steps;
+	uint32_t step_index;
+	const struct gpio_dt_spec *step_pin;
+	uint64_t new_interval;
+	bool stopping;
+	bool step_pin_low;
 
 #ifdef CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
 	struct k_work event_callback_work;
@@ -93,15 +103,17 @@ struct step_dir_stepper_common_data {
  *
  * @param node_id The devicetree node identifier.
  */
-#define STEP_DIR_STEPPER_DT_COMMON_DATA_INIT(node_id)                                              \
-	{.dev = DEVICE_DT_GET(node_id), STEP_DIR_TIMING_SOURCE_DATA(node_id)}
+#define STEP_DIR_STEPPER_DT_COMMON_ACCEL_DATA_INIT(node_id)                                        \
+	{.dev = DEVICE_DT_GET(node_id),                                                            \
+	 .acceleration = DT_PROP_OR(node_id, acceleration, 0),                                     \
+	 STEP_DIR_TIMING_SOURCE_DATA(node_id)}
 
 /**
  * @brief Initialize common step direction stepper data from devicetree instance.
  * @param inst Instance.
  */
-#define STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst)                                            \
-	STEP_DIR_STEPPER_DT_COMMON_DATA_INIT(DT_DRV_INST(inst))
+#define STEP_DIR_STEPPER_DT_INST_COMMON_ACCEL_DATA_INIT(inst)                                      \
+	STEP_DIR_STEPPER_DT_COMMON_ACCEL_DATA_INIT(DT_DRV_INST(inst))
 
 /**
  * @brief Validate the offset of the common data structures.
@@ -109,11 +121,11 @@ struct step_dir_stepper_common_data {
  * @param config Name of the config structure.
  * @param data Name of the data structure.
  */
-#define STEP_DIR_STEPPER_STRUCT_CHECK(config, data)                                                \
+#define STEP_DIR_STEPPER_ACCEL_STRUCT_CHECK(config, data)                                          \
 	BUILD_ASSERT(offsetof(config, common) == 0,                                                \
-		     "struct step_dir_stepper_common_config must be placed first");                \
+		     "struct step_dir_stepper_common_accel_config must be placed first");          \
 	BUILD_ASSERT(offsetof(data, common) == 0,                                                  \
-		     "struct step_dir_stepper_common_data must be placed first");
+		     "struct step_dir_stepper_common_accel_data must be placed first");
 
 /**
  * @brief Common function to initialize a step direction stepper device at init time.
@@ -125,7 +137,7 @@ struct step_dir_stepper_common_data {
  * @retval 0 If initialized successfully.
  * @retval -errno Negative errno in case of failure.
  */
-int step_dir_stepper_common_init(const struct device *dev);
+int step_dir_stepper_common_accel_init(const struct device *dev);
 
 /**
  * @brief Move the stepper motor by a given number of micro_steps.
@@ -134,7 +146,7 @@ int step_dir_stepper_common_init(const struct device *dev);
  * @param micro_steps Number of micro_steps to move. Can be positive or negative.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micro_steps);
+int step_dir_stepper_common_accel_move_by(const struct device *dev, const int32_t micro_steps);
 
 /**
  * @brief Set the step interval of the stepper motor.
@@ -143,8 +155,8 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
  * @param microstep_interval_ns The step interval in nanoseconds.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
-						   const uint64_t microstep_interval_ns);
+int step_dir_stepper_common_accel_set_microstep_interval(const struct device *dev,
+							 const uint64_t microstep_interval_ns);
 
 /**
  * @brief Set the reference position of the stepper motor.
@@ -153,7 +165,8 @@ int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
  * @param value The reference position value to set.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_set_reference_position(const struct device *dev, const int32_t value);
+int step_dir_stepper_common_accel_set_reference_position(const struct device *dev,
+							 const int32_t value);
 
 /**
  * @brief Get the actual (reference) position of the stepper motor.
@@ -162,7 +175,7 @@ int step_dir_stepper_common_set_reference_position(const struct device *dev, con
  * @param value Pointer to a variable where the position value will be stored.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_get_actual_position(const struct device *dev, int32_t *value);
+int step_dir_stepper_common_accel_get_actual_position(const struct device *dev, int32_t *value);
 
 /**
  * @brief Set the absolute target position of the stepper motor.
@@ -171,7 +184,7 @@ int step_dir_stepper_common_get_actual_position(const struct device *dev, int32_
  * @param value The target position to set.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_move_to(const struct device *dev, const int32_t value);
+int step_dir_stepper_common_accel_move_to(const struct device *dev, const int32_t value);
 
 /**
  * @brief Check if the stepper motor is still moving.
@@ -180,7 +193,7 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
  * @param is_moving Pointer to a boolean where the movement status will be stored.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving);
+int step_dir_stepper_common_accel_is_moving(const struct device *dev, bool *is_moving);
 
 /**
  * @brief Run the stepper with a given direction and step interval.
@@ -189,7 +202,8 @@ int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
  * @param direction The direction of movement (positive or negative).
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction);
+int step_dir_stepper_common_accel_run(const struct device *dev,
+				      const enum stepper_direction direction);
 
 /**
  * @brief Stop the stepper motor.
@@ -197,7 +211,15 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
  * @param dev Pointer to the device structure.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_stop(const struct device *dev);
+int step_dir_stepper_common_accel_stop(const struct device *dev);
+
+/**
+ * @brief Immediatly stop the stepper motor.
+ *
+ * @param dev Pointer to the device structure.
+ * @return 0 on success, or a negative error code on failure.
+ */
+int step_dir_stepper_common_accel_stop_immediate(const struct device *dev);
 
 /**
  * @brief Set a callback function for stepper motor events.
@@ -210,14 +232,30 @@ int step_dir_stepper_common_stop(const struct device *dev);
  * @param user_data Pointer to user-defined data that will be passed to the callback.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_set_event_callback(const struct device *dev,
-					       stepper_event_callback_t callback, void *user_data);
+int step_dir_stepper_common_accel_set_event_callback(const struct device *dev,
+						     stepper_event_callback_t callback,
+						     void *user_data);
+
+/**
+ * @brief Updates driver accelarion. Takes effect on next movement command.
+ *
+ * This function updates the acceleration for ths driver. The new acceleration value is used from
+ * the next movement command onwars, any currently running movements are unaffected. An acceleration
+ * value of 0 causes the target velocity to be immediatly reached during movement, skipping the
+ * acceleration ramp.
+ *
+ * @param dev Pointer to the device structure.
+ * @param acceleration The new acceleration.
+ * @return 0 on success, or a negative error code on failure.
+ */
+int step_dir_stepper_common_accel_update_acceleraion(const struct device *dev,
+						     uint32_t acceleration);
 
 /**
  * @brief Handle a timing signal and update the stepper position.
  * @param dev Pointer to the device structure.
  */
-void stepper_handle_timing_signal(const struct device *dev);
+void stepper_handle_timing_signal_accel(const struct device *dev);
 
 /** @} */
 
