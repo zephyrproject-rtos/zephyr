@@ -376,7 +376,7 @@ static DEVICE_API(dma, dma_cc23x0_api) = {
 	.get_status = dma_cc23x0_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, &dma_cc23x0_init, NULL,
+DEVICE_DT_INST_DEFINE(0, dma_cc23x0_init, NULL,
 		      &cc23x0_data, NULL,
 		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,
 		      &dma_cc23x0_api);
