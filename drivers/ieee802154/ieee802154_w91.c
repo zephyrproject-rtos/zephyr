@@ -156,8 +156,8 @@ static enum ieee802154_hw_caps w91_zb_get_capabilities(const struct device *dev)
 
 static int w91_zb_cca(const struct device *dev)
 {
-	LOG_DBG("%s", __func__);
-	return 0;
+	LOG_WRN("%s not supported", __func__);
+	return -ENOTSUP;
 }
 
 static int w91_zb_set_channel(const struct device *dev, uint16_t channel)
@@ -342,8 +342,8 @@ static int w91_zb_stop(const struct device *dev)
 
 static int w91_zb_continuous_carrier(const struct device *dev)
 {
-	LOG_DBG("%s", __func__);
-	return 0;
+	LOG_WRN("%s not supported", __func__);
+	return -ENOTSUP;
 }
 
 static int w91_zb_configure(const struct device *dev, enum ieee802154_config_type type,
@@ -438,8 +438,8 @@ static int w91_zb_configure(const struct device *dev, enum ieee802154_config_typ
 static int w91_zb_ed_scan(const struct device *dev, uint16_t duration,
 			  energy_scan_done_cb_t done_cb)
 {
-	LOG_DBG("%s", __func__);
-	return 0;
+	LOG_WRN("%s not supported", __func__);
+	return -ENOTSUP;
 }
 
 static net_time_t w91_zb_get_time(const struct device *dev)
@@ -451,7 +451,7 @@ static net_time_t w91_zb_get_time(const struct device *dev)
 
 static uint8_t w91_zb_get_sch_acc(const struct device *dev)
 {
-	LOG_DBG("%s", __func__);
+	LOG_WRN("%s not supported", __func__);
 	return 0;
 }
 

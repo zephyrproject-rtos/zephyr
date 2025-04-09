@@ -3,7 +3,7 @@
 
 config LOG_BACKEND_TELINK_W91
 	bool "Telink W91 backend"
-	depends on TELINK_W91_DEBUG_ENABLE
+	depends on TELINK_W91_DEBUG_ENABLE && !(SHELL_BACKEND_TELINK_W91 && LOG_MODE_IMMEDIATE)
 	default y
 	select LOG_OUTPUT
 	help
