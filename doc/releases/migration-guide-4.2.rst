@@ -263,6 +263,11 @@ Networking
   alternative, ``AF_PACKET/SOCK_DGRAM/ETH_P_ALL`` or ``AF_INET(6)/SOCK_RAW/IPPROTO_IP``
   sockets can be used, depending on the actual use case.
 
+* The HTTP server now respects the configured ``_concurrent`` and  ``_backlog`` values. Check that
+  you provide applicable values to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
+  :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
+  :c:macro:`HTTPS_SERVICE_DEFINE`.
+
 SPI
 ===
 
