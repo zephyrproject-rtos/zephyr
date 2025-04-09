@@ -83,11 +83,18 @@ config HAWKBIT_DDI_TARGET_SECURITY
 	bool "Use target security token authentication"
 	help
 	  Use target security token authentication for the hawkBit DDI API.
+	  Here the security token is unique for each device and is generated
+	  during the device registration process. The device has to be registered
+	  in the hawkBit server before using this authentication mode.
 
 config HAWKBIT_DDI_GATEWAY_SECURITY
 	bool "Use gateway security token authentication"
 	help
 	  Use gateway security token authentication for the hawkBit DDI API.
+	  Here the security token is shared between all devices in the same
+	  tenant. The device can register itself in the hawkBit server on
+	  first connection to the server. The device does not need to be registered
+	  in the hawkBit server before using this authentication mode.
 
 endchoice
 
