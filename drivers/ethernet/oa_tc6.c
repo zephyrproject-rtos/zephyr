@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/net/mdio.h>
+#include <ethernet/eth_stats.h>
 #include "oa_tc6.h"
 
 #include <zephyr/logging/log.h>
@@ -140,6 +141,32 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	return ret;
 }
 
+int oa_tc6_enable_sync(struct oa_tc6 *tc6)
+{
+	uint32_t val;
+	int ret;
+
+	ret = oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
+	if (ret) {
+		return ret;
+	}
+	val |= OA_CONFIG0_SYNC;
+	return oa_tc6_reg_write(tc6, OA_CONFIG0, val);
+}
+
+int oa_tc6_zero_align_receive_frame_enable(struct oa_tc6 *tc6)
+{
+	uint32_t val;
+	int ret;
+
+	ret = oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
+	if (ret) {
+		return ret;
+	}
+	val |= OA_CONFIG0_RFA_ZARFE;
+	return oa_tc6_reg_write(tc6, OA_CONFIG0, val);
+}
+
 int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg, uint32_t mask, uint32_t val)
 {
 	uint32_t tmp;
@@ -235,7 +262,7 @@ int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
 	return 0;
 }
 
-int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
+static int oa_tc6_process_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
 	uint16_t len = net_pkt_get_len(pkt);
 	uint8_t oa_tx[tc6->cps];
@@ -252,7 +279,7 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		chunks++;
 	}
 
-	/* Check if LAN865x has any free internal buffer space */
+	/* Check if MAC-PHY has any free internal buffer space */
 	if (chunks > tc6->txc) {
 		return -EIO;
 	}
@@ -283,6 +310,30 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		}
 
 		len -= tc6->cps;
+	}
+
+	return 0;
+}
+
+int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
+{
+	int ret;
+
+	k_sem_take(&tc6->tx_rx_sem, K_FOREVER);
+
+	ret = oa_tc6_process_send_chunks(tc6, pkt);
+
+	/* Check if rca > 0 during half-duplex TX transmission */
+	if (tc6->rca > 0) {
+		k_sem_give(&tc6->int_sem);
+	}
+
+	k_sem_give(&tc6->tx_rx_sem);
+
+	if (ret < 0) {
+		LOG_ERR("TX transmission error, %d", ret);
+		eth_stats_update_errors_tx(net_pkt_iface(pkt));
+		return ret;
 	}
 
 	return 0;
@@ -388,7 +439,7 @@ int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 	return oa_tc6_chunk_spi_transfer(tc6, NULL, NULL, hdr, ftr);
 }
 
-int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
+int oa_tc6_process_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
 	const uint16_t buf_rx_size = CONFIG_NET_BUF_DATA_SIZE;
 	struct net_buf *buf_rx = NULL;
@@ -510,4 +561,172 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 unref_buf:
 	net_buf_unref(buf_rx);
 	return ret;
+}
+
+static int oa_tc6_wait_for_reset(const struct oa_tc6 *tc6)
+{
+	uint8_t i;
+
+	/* Wait for end of MAC-PHY reset */
+	for (i = 0; !tc6->rst_flag && i < OA_TC6_RESET_TIMEOUT; i++) {
+		k_msleep(1);
+	}
+
+	if (i == OA_TC6_RESET_TIMEOUT) {
+		LOG_ERR("MAC-PHY reset timeout reached!");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int oa_tc6_gpio_reset(struct oa_tc6 *tc6)
+{
+	tc6->rst_flag = false;
+	tc6->protected = false;
+
+	/* Perform (GPIO based) HW reset */
+	/* assert RESET_N low for 10 µs (5 µs min) */
+	gpio_pin_set_dt(tc6->reset, 1);
+	k_busy_wait(10U);
+	/* deassert - end of reset indicated by IRQ_N low  */
+	gpio_pin_set_dt(tc6->reset, 0);
+
+	return oa_tc6_wait_for_reset(tc6);
+}
+
+static void oa_tc6_read_chunks(struct oa_tc6 *tc6)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_rx_alloc(K_MSEC(tc6->timeout));
+	if (!pkt) {
+		LOG_ERR("OA RX: Could not allocate packet!");
+		return;
+	}
+
+	k_sem_take(&tc6->tx_rx_sem, K_FOREVER);
+	ret = oa_tc6_process_read_chunks(tc6, pkt);
+	if (ret < 0) {
+		eth_stats_update_errors_rx(tc6->iface);
+		net_pkt_unref(pkt);
+		k_sem_give(&tc6->tx_rx_sem);
+		return;
+	}
+
+	/* Feed buffer frame to IP stack */
+	ret = net_recv_data(tc6->iface, pkt);
+	if (ret < 0) {
+		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
+		net_pkt_unref(pkt);
+	}
+	k_sem_give(&tc6->tx_rx_sem);
+}
+
+static void oa_tc6_int_thread(struct oa_tc6 *tc6)
+{
+	uint32_t sts, ftr;
+	int ret;
+
+	while (true) {
+		k_sem_take(&tc6->int_sem, K_FOREVER);
+		if (!tc6->rst_flag) {
+			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
+			if (sts & OA_STATUS0_RESETC) {
+				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
+
+				tc6->rst_flag = true;
+
+				/*
+				 * According to OA T1S standard - it is mandatory to
+				 * read chunk of data to get the IRQ_N negated (deasserted).
+				 */
+				oa_tc6_read_status(tc6, &ftr);
+				continue;
+			}
+		}
+
+		/*
+		 * The IRQ_N is asserted when RCA becomes > 0. As described in
+		 * OPEN Alliance 10BASE-T1x standard it is deasserted when first
+		 * data header is received by MAC-PHY.
+		 *
+		 * Hence, it is mandatory to ALWAYS read at least one data chunk!
+		 */
+		do {
+			oa_tc6_read_chunks(tc6);
+		} while (tc6->rca > 0);
+
+		ret = oa_tc6_check_status(tc6);
+		if (ret == -EIO) {
+			oa_tc6_gpio_reset(tc6);
+		}
+	}
+}
+
+static void oa_tc6_int_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pins);
+
+	struct oa_tc6 *tc6 = CONTAINER_OF(cb, struct oa_tc6, gpio_int_callback);
+
+	k_sem_give(&tc6->int_sem);
+}
+
+int oa_tc6_init(struct oa_tc6 *tc6)
+{
+	int ret;
+
+	if (!spi_is_ready_dt(tc6->spi)) {
+		LOG_ERR("SPI bus %s not ready", tc6->spi->bus->name);
+		return -ENODEV;
+	}
+
+	if (!gpio_is_ready_dt(tc6->interrupt)) {
+		LOG_ERR("Interrupt GPIO device %s is not ready", tc6->interrupt->port->name);
+		return -ENODEV;
+	}
+
+	/*
+	 * Configure interrupt service routine for MAC-PHY IRQ
+	 */
+	ret = gpio_pin_configure_dt(tc6->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure interrupt GPIO, %d", ret);
+		return ret;
+	}
+
+	gpio_init_callback(&(tc6->gpio_int_callback), oa_tc6_int_callback,
+			   BIT(tc6->interrupt->pin));
+
+	ret = gpio_add_callback(tc6->interrupt->port, &tc6->gpio_int_callback);
+	if (ret < 0) {
+		LOG_ERR("Failed to add INT callback, %d", ret);
+		return ret;
+	}
+
+	gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+
+	/* Start interruption-poll thread */
+	tc6->tid_int = k_thread_create(&tc6->thread, tc6->thread_stack,
+				       CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE,
+				       (k_thread_entry_t)oa_tc6_int_thread, (void *)tc6, NULL, NULL,
+				       K_PRIO_COOP(CONFIG_OA_TC6_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(tc6->tid_int, "oa_tc6_interrupt");
+
+	/* Perform HW reset - 'rst-gpios' required property set in DT */
+	if (!gpio_is_ready_dt(tc6->reset)) {
+		LOG_ERR("Reset GPIO device %s is not ready", tc6->reset->port->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(tc6->reset, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure reset GPIO, %d", ret);
+		return ret;
+	}
+
+	return oa_tc6_gpio_reset(tc6);
 }
