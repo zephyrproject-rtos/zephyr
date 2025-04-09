@@ -39,6 +39,9 @@ tests:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y
       - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
+  wifi.build.ap:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y
   wifi.build.wps:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
