@@ -984,6 +984,10 @@ struct bt_hfp_ag *hfp_ag;
 struct bt_conn *hfp_ag_sco_conn;
 static struct bt_hfp_ag_call *hfp_ag_call[CONFIG_BT_HFP_AG_MAX_CALLS];
 
+static struct bt_hfp_ag_ongoing_call ag_ongoing_call_info[CONFIG_BT_HFP_AG_MAX_CALLS];
+
+static size_t ag_ongoing_calls;
+
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
 	ARRAY_FOR_EACH(hfp_ag_call, i) {
@@ -1050,6 +1054,30 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	} else {
 		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hfp_ag_sco_conn, sco_conn);
 	}
+}
+
+static int ag_get_ongoing_call(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *call)
+{
+	static int call_index;
+
+	if ((ag_ongoing_calls < 1) || (call == NULL)) {
+		return -EINVAL;
+	}
+
+	if (ag_ongoing_calls > ARRAY_SIZE(ag_ongoing_call_info)) {
+		ag_ongoing_calls = ARRAY_SIZE(ag_ongoing_call_info);
+	}
+
+	if (call_index >= ag_ongoing_calls) {
+		call_index = 0;
+		ag_ongoing_calls = 0;
+		return -EINVAL;
+	}
+
+	memcpy(call, &ag_ongoing_call_info[call_index], sizeof(*call));
+	call_index++;
+
+	return 0;
 }
 
 static int ag_memory_dial(struct bt_hfp_ag *ag, const char *location, char **number)
@@ -1249,6 +1277,7 @@ static struct bt_hfp_ag_cb ag_cb = {
 	.disconnected = ag_disconnected,
 	.sco_connected = ag_sco_connected,
 	.sco_disconnected = ag_sco_disconnected,
+	.get_ongoing_call = ag_get_ongoing_call,
 	.memory_dial = ag_memory_dial,
 	.number_call = ag_number_call,
 	.outgoing = ag_outgoing,
@@ -1335,6 +1364,28 @@ static int cmd_ag_sco_disconnect(const struct shell *sh, size_t argc, char **arg
 	}
 
 	return err;
+}
+
+static int cmd_ag_ongoing_call(const struct shell *sh, size_t argc, char **argv)
+{
+	size_t max_calls;
+
+	max_calls =  MIN(CONFIG_BT_HFP_AG_MAX_CALLS, ARRAY_SIZE(ag_ongoing_call_info));
+	if (ag_ongoing_calls >= max_calls) {
+		shell_error(sh, "Supported max call count %d", max_calls);
+		return -EINVAL;
+	}
+
+	memset(ag_ongoing_call_info[ag_ongoing_calls].number, 0,
+	       sizeof(ag_ongoing_call_info[ag_ongoing_calls].number));
+	memcpy(ag_ongoing_call_info[ag_ongoing_calls].number, argv[1],
+	       MIN(strlen(argv[1]), sizeof(ag_ongoing_call_info[ag_ongoing_calls].number) - 1));
+	ag_ongoing_call_info[ag_ongoing_calls].type = (uint8_t)atoi(argv[2]);
+	ag_ongoing_call_info[ag_ongoing_calls].status = (enum bt_hfp_ag_call_status)atoi(argv[3]);
+	ag_ongoing_call_info[ag_ongoing_calls].dir = (enum bt_hfp_ag_call_dir)atoi(argv[4]);
+
+	ag_ongoing_calls++;
+	return 0;
 }
 
 static int cmd_ag_remote_incoming(const struct shell *sh, size_t argc, char **argv)
@@ -1877,6 +1928,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ag_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_ag_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_ag_disconnect, 1, 0),
 	SHELL_CMD_ARG(sco_disconnect, NULL, HELP_NONE, cmd_ag_sco_disconnect, 1, 0),
+	SHELL_CMD_ARG(ongoing_calls, NULL, "<number> <type> <status> <dir>", cmd_ag_ongoing_call, 5,
+		      0),
 	SHELL_CMD_ARG(remote_incoming, NULL, "<number>", cmd_ag_remote_incoming, 2, 0),
 	SHELL_CMD_ARG(hold_incoming, NULL, "<number>", cmd_ag_hold_incoming, 2, 0),
 	SHELL_CMD_ARG(remote_reject, NULL, "<call index>", cmd_ag_remote_reject, 2, 0),
