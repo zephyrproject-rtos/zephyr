@@ -77,9 +77,14 @@ static void schedule_next_timeout(int64_t current_ticks)
 		}
 	}
 
-	/* update task wdt kernel timer */
-	k_timer_user_data_set(&timer, (void *)next_channel_id);
-	k_timer_start(&timer, K_TIMEOUT_ABS_TICKS(next_timeout), K_FOREVER);
+	if (!IS_ENABLED(CONFIG_TASK_WDT_HW_FALLBACK) &&
+		next_timeout == INT64_MAX) {
+		k_timer_stop(&timer);
+	} else {
+		/* update task wdt kernel timer */
+		k_timer_user_data_set(&timer, (void *)next_channel_id);
+		k_timer_start(&timer, K_TIMEOUT_ABS_TICKS(next_timeout), K_FOREVER);
+	}
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (hw_wdt_started) {
