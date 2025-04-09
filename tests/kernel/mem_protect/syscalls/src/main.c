@@ -259,17 +259,17 @@ ZTEST_USER(syscalls, test_string_nlen)
 	ret = string_nlen(kernel_string, BUF_SIZE, &err);
 	if (arch_is_user_context()) {
 		zassert_equal(err, -1,
-			      "kernel string did not fault on user access");
+			      "kernel string did not fault on user access (%d)", err);
 	} else {
-		zassert_equal(err, 0, "kernel string faulted in kernel mode");
+		zassert_equal(err, 0, "kernel string faulted in kernel mode (%d)", err);
 		zassert_equal(ret, strlen(kernel_string),
-			      "incorrect length returned");
+			      "incorrect length returned (%d)", ret);
 	}
 
 	/* Valid usage */
 	ret = string_nlen(user_string, BUF_SIZE, &err);
-	zassert_equal(err, 0, "user string faulted");
-	zassert_equal(ret, strlen(user_string), "incorrect length returned");
+	zassert_equal(err, 0, "user string faulted (%d)", err);
+	zassert_equal(ret, strlen(user_string), "incorrect length returned (%d)", ret);
 
 	/* Skip this scenario for nsim_sem emulated board, unfortunately
 	 * the emulator doesn't set up memory as specified in DTS and poking
@@ -304,17 +304,17 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
 	int ret;
 
 	ret = string_alloc_copy("asdkajshdazskjdh");
-	zassert_equal(ret, -2, "got %d", ret);
+	zassert_equal(ret, -2, "string_alloc_copy: 1: got %d", ret);
 
 	ret = string_alloc_copy(
 	    "asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, -1, "got %d", ret);
+	zassert_equal(ret, -1, "string_alloc_copy: 2: got %d", ret);
 
 	ret = string_alloc_copy(kernel_string);
-	zassert_equal(ret, -1, "got %d", ret);
+	zassert_equal(ret, -1, "string_alloc_copy: 3: got %d", ret);
 
 	ret = string_alloc_copy("this is a kernel string");
-	zassert_equal(ret, 0, "string should have matched");
+	zassert_equal(ret, 0, "string_alloc_copy: string should have matched (%d)", ret);
 }
 
 /**
@@ -329,16 +329,16 @@ ZTEST_USER(syscalls, test_user_string_copy)
 	int ret;
 
 	ret = string_copy("asdkajshdazskjdh", 0);
-	zassert_equal(ret, ESRCH, "got %d", ret);
+	zassert_equal(ret, ESRCH, "string_copy: 1: got %d", ret);
 
 	ret = string_copy("asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs", 0);
-	zassert_equal(ret, EINVAL, "got %d", ret);
+	zassert_equal(ret, EINVAL, "string_copy: 2: got %d", ret);
 
 	ret = string_copy(kernel_string, 0);
-	zassert_equal(ret, EFAULT, "got %d", ret);
+	zassert_equal(ret, EFAULT, "string_copy: 3: got %d", ret);
 
 	ret = string_copy("this is a kernel string", 0);
-	zassert_equal(ret, 0, "string should have matched");
+	zassert_equal(ret, 0, "string_copy: string should have matched (%d)", ret);
 }
 
 /**
@@ -354,23 +354,23 @@ ZTEST_USER(syscalls, test_to_copy)
 	int ret;
 
 	ret = to_copy(kernel_buf[0]);
-	zassert_equal(ret, EFAULT, "should have faulted");
+	zassert_equal(ret, EFAULT, "to_copy: should have faulted (%d)", ret);
 
 	ret = to_copy(buf);
-	zassert_equal(ret, 0, "copy should have been a success");
+	zassert_equal(ret, 0, "to_copy: copy should have been a success (%d)", ret);
 	ret = strcmp(buf, user_string);
-	zassert_equal(ret, 0, "string should have matched");
+	zassert_equal(ret, 0, "to_copy: string should have matched (%d)", ret);
 }
 
 void run_test_arg64(void)
 {
 	zassert_equal(syscall_arg64(54321),
 		      z_impl_syscall_arg64(54321),
-		      "syscall didn't match impl");
+		      "syscall (arg64) didn't match impl");
 
 	zassert_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      z_impl_syscall_arg64_big(1, 2, 3, 4, 5, 6),
-		      "syscall didn't match impl");
+		      "syscall (arg64_big) didn't match impl");
 }
 
 ZTEST_USER(syscalls, test_arg64)
@@ -382,7 +382,7 @@ ZTEST_USER(syscalls, test_more_args)
 {
 	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
 		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
-		      "syscall didn't match impl");
+		      "syscall (more_args) didn't match impl");
 }
 
 void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
@@ -398,29 +398,31 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 		 * for concurrency problems.
 		 */
 		ret = string_nlen(user_string, BUF_SIZE, &err);
-		zassert_equal(err, 0, "user string faulted");
+		zassert_equal(err, 0, "stress: user string faulted (%d)", err);
 		zassert_equal(ret, strlen(user_string),
-			      "incorrect length returned");
+			      "stress: incorrect length returned (%d)", ret);
 
 		YIELD_USER;
 
 		ret = string_alloc_copy("this is a kernel string");
-		zassert_equal(ret, 0, "string should have matched");
+		zassert_equal(ret, 0,
+			      "stress: string_alloc_copy: string should have matched (%d)", ret);
 
 		YIELD_USER;
 
 		ret = string_copy("this is a kernel string", (int)id);
-		zassert_equal(ret, 0, "string should have matched");
+		zassert_equal(ret, 0, "stress: string_copy: string should have matched (%d)", ret);
 
 		YIELD_USER;
 
 		ret = to_copy(buf);
-		zassert_equal(ret, 0, "copy should have been a success");
+		zassert_equal(ret, 0,
+			      "stress: to_copy: copy should have been a success (%d)", ret);
 
 		YIELD_USER;
 
 		ret = strcmp(buf, user_string);
-		zassert_equal(ret, 0, "string should have matched");
+		zassert_equal(ret, 0, "stress: strcmp: string should have matched (%d)", ret);
 
 		YIELD_USER;
 
