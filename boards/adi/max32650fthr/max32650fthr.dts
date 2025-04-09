@@ -16,8 +16,8 @@
 	compatible = "adi,max32650fthr";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -59,8 +59,8 @@
 	};
 };
 
-&uart0 {
-	pinctrl-0 = <&uart0_tx_p2_12 &uart0_rx_p2_11>;
+&uart1 {
+	pinctrl-0 = <&uart1_tx_p2_16 &uart1_rx_p2_14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	data-bits = <8>;
