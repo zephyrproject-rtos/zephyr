@@ -49,6 +49,14 @@ config MODEM_SIMCOM_SIM7080_APN
 	  context. This value is specific to the network provider and may
 	  need to be changed.
 
+config MODEM_SIMCOM_SIM7080_BAUDRATE
+	int "Baudrate for modem UART"
+	default 115200
+	help
+		Set this to the baudrate the uart is using. On first startup
+		the modem is configured to use autobaud. The driver will then
+		configure the modem to use a fixed baudrate for faster startups.
+
 choice MODEM_SIMCOM_SIM7080_RAT
 	bool "Radio Access Technology Mode"
 	default MODEM_SIMCOM_SIM7080_RAT_NB1
@@ -67,6 +75,22 @@ config MODEM_SIMCOM_SIM7080_RAT_GSM
 	bool "GSM"
 	help
 	  Enable GSM mode.
+
+endchoice
+
+choice
+	bool "Modem Boot Type"
+	default MODEM_SIMCOM_SIM7080_BOOT_TYPE_NORMAL
+
+config MODEM_SIMCOM_SIM7080_BOOT_TYPE_NORMAL
+	bool "Normal boot"
+	help
+		Boot the modem and attach to network
+
+config MODEM_SIMCOM_SIM7080_BOOT_TYPE_CONSTRAINED
+	bool "Constrained boot"
+	help
+		Check if the modem is operational and then power off
 
 endchoice
 
