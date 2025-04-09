@@ -33,6 +33,8 @@ struct bt_sco_server *sco_server;
 
 #define SCO_CHAN(_sco) ((_sco)->sco.chan);
 
+static sys_slist_t sco_conn_cbs = SYS_SLIST_STATIC_INIT(&sco_conn_cbs);
+
 int bt_sco_server_register(struct bt_sco_server *server)
 {
 	CHECKIF(!server) {
@@ -75,6 +77,40 @@ int bt_sco_server_unregister(struct bt_sco_server *server)
 	return 0;
 }
 
+static void notify_connected(struct bt_conn *conn)
+{
+	struct bt_sco_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sco_conn_cbs, callback, _node) {
+		if (callback->connected) {
+			callback->connected(conn, conn->err);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_sco_conn_cb, cb) {
+		if (cb->connected) {
+			cb->connected(conn, conn->err);
+		}
+	}
+}
+
+static void notify_disconnected(struct bt_conn *conn)
+{
+	struct bt_sco_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sco_conn_cbs, callback, _node) {
+		if (callback->disconnected) {
+			callback->disconnected(conn, conn->err);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_sco_conn_cb, cb) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, conn->err);
+		}
+	}
+}
+
 void bt_sco_connected(struct bt_conn *sco)
 {
 	struct bt_sco_chan *chan;
@@ -86,8 +122,9 @@ void bt_sco_connected(struct bt_conn *sco)
 
 	LOG_DBG("%p", sco);
 
-	chan = SCO_CHAN(sco);
+	notify_connected(sco);
 
+	chan = SCO_CHAN(sco);
 	if (chan == NULL) {
 		LOG_ERR("Could not lookup chan from connected SCO");
 		return;
@@ -110,6 +147,10 @@ void bt_sco_disconnected(struct bt_conn *sco)
 	}
 	LOG_DBG("%p", sco);
 
+	notify_disconnected(sco);
+
+	bt_sco_cleanup_acl(sco);
+
 	chan = SCO_CHAN(sco);
 	if (chan == NULL) {
 		LOG_ERR("Could not lookup chan from connected SCO");
@@ -117,8 +158,6 @@ void bt_sco_disconnected(struct bt_conn *sco)
 	}
 
 	bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
-
-	bt_sco_cleanup_acl(sco);
 
 	if (chan->ops && chan->ops->disconnected) {
 		chan->ops->disconnected(chan, sco->err);
@@ -402,4 +441,32 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	}
 
 	return sco_conn;
+}
+
+int bt_sco_conn_cb_register(struct bt_sco_conn_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&sco_conn_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&sco_conn_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&sco_conn_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
 }
