@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OA_TC6
+	bool "OPEN Alliance TC6 10BASE-T1x MAC-PHY support"
+	help
+	  This library implements OPEN Alliance TC6 10BASE-T1x MAC-PHY
+	  Serial Interface protocol for supporting 10BASE-T1x MAC-PHYs.
+
+if OA_TC6
+
+config OA_TC6_IRQ_THREAD_STACK_SIZE
+	int "Stack size of OA TC6 thread that processes IRQ"
+	default 512
+	help
+	  Size of the stack used for internal thread which is ran to
+	  process raised INT IRQ.
+
+config OA_TC6_IRQ_THREAD_PRIO
+	int "Priority for internal incoming packet handler"
+	default 2
+	help
+	  Priority level for internal thread which is ran for LAN
+	  INT IRQ processing.
+
+config OA_TC6_TIMEOUT
+	int "IP buffer timeout"
+	default 100
+	help
+	  Given timeout in milliseconds. Maximum amount of time
+	  that the driver will wait from the IP stack to get
+	  a memory buffer.
+
+endif
