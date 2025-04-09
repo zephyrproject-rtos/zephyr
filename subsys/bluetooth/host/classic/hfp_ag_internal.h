@@ -149,6 +149,7 @@ enum {
 	BT_HFP_AG_CALL_OPEN_SCO,      /* Open SCO */
 	BT_HFP_AG_CALL_OUTGOING_3WAY, /* Outgoing 3 way call */
 	BT_HFP_AG_CALL_INCOMING_3WAY, /* Incoming 3 way call */
+	BT_HFP_AG_CALL_ALERTING,      /* Pending for alerting */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_CALL_NUM_FLAGS,
@@ -234,6 +235,10 @@ struct bt_hfp_ag {
 
 	/* calls */
 	struct bt_hfp_ag_call calls[CONFIG_BT_HFP_AG_MAX_CALLS];
+
+	/* ongoing calls */
+	struct bt_hfp_ag_ongoing_call ongoing_calls[CONFIG_BT_HFP_AG_MAX_CALLS];
+	size_t ongoing_call_count;
 
 	/* last dialing number and type */
 	char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
