@@ -19,14 +19,13 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define LFCLK_HFXO_NODE DT_INST_PHANDLE_BY_NAME(0, clocks, hfxo)
 
-#define LFCLK_LFLPRC_ACCURACY DT_INST_PROP(0, lflprc_accuracy_ppm)
 #define LFCLK_LFRC_ACCURACY DT_INST_PROP(0, lfrc_accuracy_ppm)
 #define LFCLK_HFXO_ACCURACY DT_PROP(LFCLK_HFXO_NODE, accuracy_ppm)
 #define LFCLK_LFLPRC_STARTUP_TIME_US DT_INST_PROP(0, lflprc_startup_time_us)
 #define LFCLK_LFRC_STARTUP_TIME_US DT_INST_PROP(0, lfrc_startup_time_us)
 
-#define LFCLK_MAX_OPTS 5
-#define LFCLK_DEF_OPTS 3
+#define LFCLK_MAX_OPTS 4
+#define LFCLK_DEF_OPTS 2
 
 #define NRFS_CLOCK_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS)
 
@@ -35,7 +34,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 /* Clock options sorted from highest to lowest power consumption.
  * - Clock synthesized from a high frequency clock
  * - Internal RC oscillator
- * - Internal low power RC oscillator
  * - External clock. These are inserted into the list at driver initialization.
  *   Set to one of the following:
  *   - XTAL. Low or High precision
@@ -56,12 +54,6 @@ static struct clock_options {
 		.accuracy = LFCLK_LFRC_ACCURACY,
 		.precision = 0,
 		.src = NRFS_CLOCK_SRC_LFCLK_LFRC,
-	},
-	{
-		/* NRFS will request FLL16M use HFXO in bypass mode if SYNTH src is used */
-		.accuracy = LFCLK_LFLPRC_ACCURACY,
-		.precision = 0,
-		.src = NRFS_CLOCK_SRC_LFCLK_LFLPRC,
 	},
 	/* Remaining options are populated on lfclk_init */
 };
