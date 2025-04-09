@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Google LLC.
+ * Copyright (c) 2025 GP Orcullo
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,8 @@ LOG_MODULE_REGISTER(flash_sam0);
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
+
+#include "flash_sam0.h"
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-block-size");
@@ -37,13 +40,7 @@ BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-bl
  * grows with the flash size.
  */
 #define LOCK_REGIONS DT_INST_PROP(0, lock_regions)
-#define LOCK_REGION_SIZE (FLASH_SIZE / LOCK_REGIONS)
-
-#if defined(NVMCTRL_BLOCK_SIZE)
-#define ROW_SIZE NVMCTRL_BLOCK_SIZE
-#elif defined(NVMCTRL_ROW_SIZE)
-#define ROW_SIZE NVMCTRL_ROW_SIZE
-#endif
+#define LOCK_REGION_SIZE (CONFIG_FLASH_SIZE / LOCK_REGIONS)
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
@@ -58,6 +55,10 @@ struct flash_sam0_data {
 #if defined(CONFIG_MULTITHREADING)
 	struct k_sem sem;
 #endif
+};
+
+struct flash_sam0_config {
+	uintptr_t base;
 };
 
 #if CONFIG_FLASH_PAGE_LAYOUT
@@ -110,40 +111,28 @@ static int flash_sam0_valid_range(off_t offset, size_t len)
 	return 0;
 }
 
-static void flash_sam0_wait_ready(void)
+static inline void flash_sam0_wait_ready(uintptr_t base)
 {
-#ifdef NVMCTRL_STATUS_READY
-	while (NVMCTRL->STATUS.bit.READY == 0) {
+	while (!sys_test_bit(base + READY_OFFSET, READY_BIT)) {
 	}
-#else
-	while (NVMCTRL->INTFLAG.bit.READY == 0) {
-	}
-#endif
 }
 
-static int flash_sam0_check_status(off_t offset)
+static int flash_sam0_check_status(uintptr_t base, off_t offset)
 {
-	flash_sam0_wait_ready();
+	flash_sam0_wait_ready(base);
 
-#ifdef NVMCTRL_INTFLAG_PROGE
-	NVMCTRL_INTFLAG_Type status = NVMCTRL->INTFLAG;
-
-	/* Clear any flags */
-	NVMCTRL->INTFLAG.reg = status.reg;
-#else
-	NVMCTRL_STATUS_Type status = NVMCTRL->STATUS;
+	uint16_t status = sys_read16(base + STATUS_OFFSET);
 
 	/* Clear any flags */
-	NVMCTRL->STATUS = status;
-#endif
+	sys_write16(status, base + STATUS_OFFSET);
 
-	if (status.bit.PROGE) {
+	if (IS_BIT_SET(status, PROGE_BIT)) {
 		LOG_ERR("programming error at 0x%lx", (long)offset);
 		return -EIO;
-	} else if (status.bit.LOCKE) {
+	} else if (IS_BIT_SET(status, LOCKE_BIT)) {
 		LOG_ERR("lock error at 0x%lx", (long)offset);
 		return -EROFS;
-	} else if (status.bit.NVME) {
+	} else if (IS_BIT_SET(status, NVME_BIT)) {
 		LOG_ERR("NVM error at 0x%lx", (long)offset);
 		return -EIO;
 	}
@@ -161,30 +150,24 @@ static int flash_sam0_check_status(off_t offset)
 static int flash_sam0_write_page(const struct device *dev, off_t offset,
 				 const void *data, size_t len)
 {
+	const struct flash_sam0_config *config = dev->config;
 	const uint32_t *src = data;
 	const uint32_t *end = src + (len / sizeof(*src));
 	uint32_t *dst = FLASH_MEM(offset);
 	int err;
 
-#ifdef NVMCTRL_CTRLA_CMD_PBC
-	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_PBC | NVMCTRL_CTRLA_CMDEX_KEY;
-#else
-	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_PBC | NVMCTRL_CTRLB_CMDEX_KEY;
-#endif
-	flash_sam0_wait_ready();
+	sys_write16(CTRL_CMD_PBC | CTRL_CMDEX_KEY, config->base + CTRL_OFFSET);
+
+	flash_sam0_wait_ready(config->base);
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
 		*dst = UNALIGNED_GET((uint32_t *)src);
 	}
 
-#ifdef NVMCTRL_CTRLA_CMD_WP
-	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
-#else
-	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_WP | NVMCTRL_CTRLB_CMDEX_KEY;
-#endif
+	sys_write16(CTRL_CMD_WP | CTRL_CMDEX_KEY, config->base + CTRL_OFFSET);
 
-	err = flash_sam0_check_status(offset);
+	err = flash_sam0_check_status(config->base, offset);
 	if (err != 0) {
 		return err;
 	}
@@ -199,13 +182,12 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 
 static int flash_sam0_erase_row(const struct device *dev, off_t offset)
 {
+	const struct flash_sam0_config *config = dev->config;
 	*FLASH_MEM(offset) = 0U;
-#ifdef NVMCTRL_CTRLA_CMD_ER
-	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
-#else
-	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY;
-#endif
-	return flash_sam0_check_status(offset);
+
+	sys_write16(CTRL_CMD_ER | CTRL_CMDEX_KEY, config->base + CTRL_OFFSET);
+
+	return flash_sam0_check_status(config->base, offset);
 }
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
@@ -402,31 +384,21 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 
 static int flash_sam0_write_protection(const struct device *dev, bool enable)
 {
+	const struct flash_sam0_config *config = dev->config;
 	off_t offset;
 	int err;
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
 	     offset += LOCK_REGION_SIZE) {
-		NVMCTRL->ADDR.reg = offset + CONFIG_FLASH_BASE_ADDRESS;
+		sys_write32(offset + CONFIG_FLASH_BASE_ADDRESS, config->base + ADDR_OFFSET);
 
-#ifdef NVMCTRL_CTRLA_CMD_LR
 		if (enable) {
-			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_LR |
-					     NVMCTRL_CTRLA_CMDEX_KEY;
+			sys_write16(CTRL_CMD_LR | CTRL_CMDEX_KEY, config->base + CTRL_OFFSET);
 		} else {
-			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_UR |
-					     NVMCTRL_CTRLA_CMDEX_KEY;
+			sys_write16(CTRL_CMD_UR | CTRL_CMDEX_KEY, config->base + CTRL_OFFSET);
 		}
-#else
-		if (enable) {
-			NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_LR |
-					     NVMCTRL_CTRLB_CMDEX_KEY;
-		} else {
-			NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_UR |
-					     NVMCTRL_CTRLB_CMDEX_KEY;
-		}
-#endif
-		err = flash_sam0_check_status(offset);
+
+		err = flash_sam0_check_status(config->base, offset);
 		if (err != 0) {
 			goto done;
 		}
@@ -463,25 +435,27 @@ static int flash_sam0_get_size(const struct device *dev, uint64_t *size)
 
 static int flash_sam0_init(const struct device *dev)
 {
+	const struct flash_sam0_config *config = dev->config;
+	const uintptr_t mclk = DT_REG_ADDR(DT_INST(0, atmel_sam0_mclk));
+
 #if defined(CONFIG_MULTITHREADING)
 	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_init(&ctx->sem, 1, 1);
 #endif
 
-#ifdef PM_APBBMASK_NVMCTRL
 	/* Ensure the clock is on. */
-	PM->APBBMASK.bit.NVMCTRL_ = 1;
-#else
-	MCLK->APBBMASK.reg |= MCLK_APBBMASK_NVMCTRL;
-#endif
+	sys_set_bit(mclk + APBBMASK_OFFSET, APBBMASK_NVMCTRL_BIT);
 
-#ifdef NVMCTRL_CTRLB_MANW
+#ifdef CTRLB_MANW_BIT
 	/* Require an explicit write command */
-	NVMCTRL->CTRLB.bit.MANW = 1;
-#elif NVMCTRL_CTRLA_WMODE
+	sys_set_bit(config->base + CTRLB_OFFSET, CTRLB_MANW_BIT);
+#else
 	/* Set manual write mode */
-	NVMCTRL->CTRLA.bit.WMODE = NVMCTRL_CTRLA_WMODE_MAN_Val;
+	uint16_t ctrla = sys_read16(config->base + CTRLA_OFFSET);
+
+	ctrla &= ~CTRLA_WMODE_MASK;
+	sys_write16(ctrla, config->base + CTRLA_OFFSET);
 #endif
 
 	return flash_sam0_write_protection(dev, false);
@@ -499,7 +473,9 @@ static DEVICE_API(flash, flash_sam0_api) = {
 };
 
 static struct flash_sam0_data flash_sam0_data_0;
+static const struct flash_sam0_config flash_sam0_config_0 = {
+	.base = DT_INST_REG_ADDR(0),
+};
 
-DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL,
-		    &flash_sam0_data_0, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_sam0_api);
+DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL, &flash_sam0_data_0, &flash_sam0_config_0,
+		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_sam0_api);
