@@ -8,7 +8,8 @@
 Overview
 ********
 
-This sample application demonstrates how to stream FIFO data using the :ref:`RTIO framework <rtio>`.
+This sample application demonstrates how to stream FIFO data using the
+:ref:`RTIO framework <rtio>` based :ref:`Read and Decode method <sensor-read-and-decode>`.
 
 The streaming is started using the sensor_stream() API and it is self-sustained by the
 SENSOR_TRIG_FIFO_WATERMARK trigger.
@@ -39,8 +40,16 @@ to be aliased as :samp:`stream{N}` where ``N`` goes from ``0`` to ``9``. For exa
 .. note::
     Note that NUM_SENSORS defined in main.c must match ``N`` and should be set accordingly.
 
-Example devicetree overlays and configurations are already available for nucleo_f401re and
-nucleo_h503rb in the boards directory:
+Example devicetree overlays and configurations are already available for sensortile_box_pro,
+nucleo_f401re and nucleo_h503rb in the boards directory:
+
+- :zephyr_file:`samples/sensor/stream_fifo/boards/sensortile_box_pro.overlay`
+
+  DT overlay file for the sensortile_box_pro board.
+
+- :zephyr_file:`samples/sensor/stream_fifo/boards/sensortile_box_pro.conf`
+
+  Configuration file for the sensortile_box_pro board.
 
 - :zephyr_file:`samples/sensor/stream_fifo/boards/nucleo_f401re.overlay`
 
