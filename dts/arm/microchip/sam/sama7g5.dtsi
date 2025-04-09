@@ -413,6 +413,14 @@
 			#interrupt-cells = <4>;
 		};
 
+		rtc: rtc@e001d0a8 {
+			compatible = "atmel,sam-rtc";
+			reg = <0xe001d0a8 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk32k 1>;
+		};
+
 		sram: memory@100000 {
 			compatible = "mmio-sram";
 			reg = <0x00100000 DT_SIZE_K(128)>;
