@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2025 GP Orcullo
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +14,9 @@
 #include <zephyr/dt-bindings/gpio/atmel-sam0-gpio.h>
 #include <soc.h>
 #include <zephyr/drivers/interrupt_controller/sam0_eic.h>
-
 #include <zephyr/drivers/gpio/gpio_utils.h>
+
+#include "gpio_sam0.h"
 
 #ifndef PORT_PMUX_PMUXE_A_Val
 #define PORT_PMUX_PMUXE_A_Val (0)
@@ -23,7 +25,7 @@
 struct gpio_sam0_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	PortGroup *regs;
+	uintptr_t regs;
 #ifdef CONFIG_SAM0_EIC
 	uint8_t id;
 #endif
@@ -53,10 +55,8 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 {
 	const struct gpio_sam0_config *config = dev->config;
 	struct gpio_sam0_data *data = dev->data;
-	PortGroup *regs = config->regs;
-	PORT_PINCFG_Type pincfg = {
-		.reg = 0,
-	};
+	uintptr_t regs = config->regs;
+	uint8_t pincfg = 0;
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;
@@ -64,7 +64,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 
 	/* Supports disconnected, input, output, or bidirectional */
 	if ((flags & GPIO_INPUT) != 0) {
-		pincfg.bit.INEN = 1;
+		WRITE_BIT(pincfg, PINCFG_INEN_BIT, 1);
 	}
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output is incompatible with pull */
@@ -73,33 +73,32 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 		}
 		/* Bidirectional is supported */
 		if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			regs->OUTCLR.reg = BIT(pin);
+			sys_write32(BIT(pin), regs + OUTCLR_OFFSET);
 		} else if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			regs->OUTSET.reg = BIT(pin);
+			sys_write32(BIT(pin), regs + OUTSET_OFFSET);
 		}
-		regs->DIRSET.reg = BIT(pin);
+		sys_write32(BIT(pin), regs + DIRSET_OFFSET);
 	} else {
 		/* Not output, may be input */
-		regs->DIRCLR.reg = BIT(pin);
+		sys_write32(BIT(pin), regs + DIRCLR_OFFSET);
 
 		/* Pull configuration is supported if not output */
 		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
-			pincfg.bit.PULLEN = 1;
+			WRITE_BIT(pincfg, PINCFG_PULLEN_BIT, 1);
 			if ((flags & GPIO_PULL_UP) != 0) {
-				regs->OUTSET.reg = BIT(pin);
+				sys_write32(BIT(pin), regs + OUTSET_OFFSET);
 			} else {
-				regs->OUTCLR.reg = BIT(pin);
+				sys_write32(BIT(pin), regs + OUTCLR_OFFSET);
 			}
 		}
 	}
 
 	/* Preserve debounce flag for interrupt configuration. */
 	WRITE_BIT(data->debounce, pin,
-		  ((flags & SAM0_GPIO_DEBOUNCE) != 0)
-		  && (pincfg.bit.INEN != 0));
+		  ((flags & SAM0_GPIO_DEBOUNCE) != 0) && IS_BIT_SET(pincfg, PINCFG_INEN_BIT));
 
 	/* Write the now-built pin configuration */
-	regs->PINCFG[pin] = pincfg;
+	sys_write8(pincfg, regs + PINCFG_OFFSET + pin);
 
 	return 0;
 }
@@ -109,7 +108,7 @@ static int gpio_sam0_port_get_raw(const struct device *dev,
 {
 	const struct gpio_sam0_config *config = dev->config;
 
-	*value = config->regs->IN.reg;
+	*value = sys_read32(config->regs + IN_OFFSET);
 
 	return 0;
 }
@@ -119,9 +118,9 @@ static int gpio_sam0_port_set_masked_raw(const struct device *dev,
 					 gpio_port_value_t value)
 {
 	const struct gpio_sam0_config *config = dev->config;
-	uint32_t out = config->regs->OUT.reg;
+	uint32_t out = sys_read32(config->regs + OUT_OFFSET);
 
-	config->regs->OUT.reg = (out & ~mask) | (value & mask);
+	sys_write32((out & ~mask) | (value & mask), config->regs + OUT_OFFSET);
 
 	return 0;
 }
@@ -131,7 +130,7 @@ static int gpio_sam0_port_set_bits_raw(const struct device *dev,
 {
 	const struct gpio_sam0_config *config = dev->config;
 
-	config->regs->OUTSET.reg = pins;
+	sys_write32(pins, config->regs + OUTSET_OFFSET);
 
 	return 0;
 }
@@ -141,7 +140,7 @@ static int gpio_sam0_port_clear_bits_raw(const struct device *dev,
 {
 	const struct gpio_sam0_config *config = dev->config;
 
-	config->regs->OUTCLR.reg = pins;
+	sys_write32(pins, config->regs + OUTCLR_OFFSET);
 
 	return 0;
 }
@@ -151,7 +150,7 @@ static int gpio_sam0_port_toggle_bits(const struct device *dev,
 {
 	const struct gpio_sam0_config *config = dev->config;
 
-	config->regs->OUTTGL.reg = pins;
+	sys_write32(pins, config->regs + OUTTGL_OFFSET);
 
 	return 0;
 }
@@ -165,18 +164,17 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_sam0_config *config = dev->config;
 	struct gpio_sam0_data *const data = dev->data;
-	PortGroup *regs = config->regs;
-	PORT_PINCFG_Type pincfg = {
-		.reg = regs->PINCFG[pin].reg,
-	};
+	uintptr_t regs = config->regs;
+	uint8_t pincfg = sys_read8(regs + PINCFG_OFFSET + pin);
 	enum sam0_eic_trigger trigger;
 	int rc = 0;
+	uint8_t tmp;
 
 	data->dev = dev;
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
-		pincfg.bit.PMUXEN = 0;
+		WRITE_BIT(pincfg, PINCFG_PMUXEN_BIT, 0);
 		rc = sam0_eic_disable_interrupt(config->id, pin);
 		if (rc == -EBUSY) {
 			/* Ignore diagnostic disabling disabled */
@@ -195,19 +193,20 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 		 * as an output, so interrupts are only supported if
 		 * the pin is configured as input-only.
 		 */
-		if ((pincfg.bit.INEN == 0)
-		    || ((regs->DIR.reg & BIT(pin)) != 0)) {
+		if (!IS_BIT_SET(pincfg, PINCFG_INEN_BIT) || sys_test_bit(regs + DIR_OFFSET, pin)) {
 			rc = -ENOTSUP;
 			break;
 		}
 
 		/* Transfer control to EIC */
-		pincfg.bit.PMUXEN = 1;
+		WRITE_BIT(pincfg, PINCFG_PMUXEN_BIT, 1);
+		tmp = sys_read8(regs + PMUX_OFFSET + (pin / 2U));
 		if ((pin & 1U) != 0) {
-			regs->PMUX[pin / 2U].bit.PMUXO = PORT_PMUX_PMUXE_A_Val;
+			tmp &= ~PMUX_PMUXO_MASK;
 		} else {
-			regs->PMUX[pin / 2U].bit.PMUXE = PORT_PMUX_PMUXE_A_Val;
+			tmp &= ~PMUX_PMUXE_MASK;
 		}
+		sys_write8(tmp, regs + PMUX_OFFSET + (pin / 2U));
 
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
@@ -245,7 +244,7 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 
 	if (rc == 0) {
 		/* Update the pin configuration */
-		regs->PINCFG[pin] = pincfg;
+		sys_write8(pincfg, regs + PINCFG_OFFSET + pin);
 	}
 
 	return rc;
@@ -292,7 +291,7 @@ static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
-	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(porta)),
+	.regs = DT_REG_ADDR(DT_NODELABEL(porta)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 0,
 #endif
@@ -314,7 +313,7 @@ static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
-	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portb)),
+	.regs = DT_REG_ADDR(DT_NODELABEL(portb)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 1,
 #endif
@@ -336,7 +335,7 @@ static const struct gpio_sam0_config gpio_sam0_config_2 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
-	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portc)),
+	.regs = DT_REG_ADDR(DT_NODELABEL(portc)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 2,
 #endif
@@ -358,7 +357,7 @@ static const struct gpio_sam0_config gpio_sam0_config_3 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
-	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portd)),
+	.regs = DT_REG_ADDR(DT_NODELABEL(portd)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 3,
 #endif
