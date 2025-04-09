@@ -967,10 +967,8 @@ static int eth_initialize(const struct device *dev)
 		&dma_tx_buffer[0][0], ETH_TXBUFNB);
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
+
 #endif /* !CONFIG_ETH_STM32_HAL_API_V1 */
-
-	setup_mac_filter(heth);
-
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -1194,6 +1192,7 @@ static void eth_iface_init(struct net_if *iface)
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	bool is_first_init = false;
+	ETH_HandleTypeDef *heth;
 
 	__ASSERT_NO_MSG(iface != NULL);
 
@@ -1202,6 +1201,9 @@ static void eth_iface_init(struct net_if *iface)
 
 	dev_data = dev->data;
 	__ASSERT_NO_MSG(dev_data != NULL);
+
+	heth = &dev_data->heth;
+	__ASSERT_NO_MSG(heth != NULL);
 
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
@@ -1226,6 +1228,8 @@ static void eth_iface_init(struct net_if *iface)
 	 */
 	eth_init_api_v2(dev);
 #endif
+
+	setup_mac_filter(heth);
 
 	net_if_carrier_off(iface);
 
