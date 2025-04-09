@@ -18,6 +18,7 @@
 		sw0 = &btn0;
 		sw1 = &btn1;
 		pwm-led0 = &pwm_led;
+		counter = &countera0;
 	};
 
 	chosen {
@@ -216,16 +217,11 @@
 	ti,period = <1000>;
 };
 
-&pwma0 {
+&countera0 {
 	status = "okay";
-	pinctrl-0 = <&tima0c0_pa8>;
-	pinctrl-names = "default";
-	ti,cc-index = <0>;
-	ti,clk-prescaler = <9>;
+	ti,clk-prescaler = <255>;
 	ti,clk-div = <1>;
-	ti,pwm-mode = "CENTER_ALIGN";
-	ti,pulse-cycle = <3>;
-	ti,period = <10>;
+	clocks = <&clkmux MSPM0_CLOCK_BUS_LFCLK>;
 };
 
 &rtc0 {
