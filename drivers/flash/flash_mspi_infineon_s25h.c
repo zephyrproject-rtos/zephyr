@@ -34,18 +34,23 @@ struct flash_mspi_infineon_s25h_cfg {
 };
 
 struct flash_mspi_infineon_s25h_data {
+	struct mspi_dev_cfg mspi_dev_cfg;
+	uint8_t read_jedec_cmd;
+	uint8_t read_flash_cmd;
+	uint8_t read_flash_dummy_cycles;
 };
 
 static int flash_mspi_infineon_s25h_prepare_mspi_bus(const struct device *dev)
 {
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *data = dev->data;
 
 	return mspi_dev_config(config->bus, &config->dev_id,
 			       MSPI_DEVICE_CONFIG_CE_NUM | MSPI_DEVICE_CONFIG_IO_MODE |
 				       MSPI_DEVICE_CONFIG_CPP | MSPI_DEVICE_CONFIG_CE_POL |
 				       MSPI_DEVICE_CONFIG_DQS | MSPI_DEVICE_CONFIG_DATA_RATE |
 				       MSPI_DEVICE_CONFIG_ENDIAN,
-			       &config->mspi_dev_cfg);
+			       &data->mspi_dev_cfg);
 }
 
 static int flash_mspi_infineon_s25h_reset(const struct device *dev)
@@ -111,6 +116,7 @@ static int flash_mspi_infineon_s25h_rw_any_register(const struct device *dev, ui
 {
 	int ret;
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *dev_data = dev->data;
 	uint32_t cmd;
 	uint32_t rx_dummy;
 
@@ -140,7 +146,7 @@ static int flash_mspi_infineon_s25h_rw_any_register(const struct device *dev, ui
 
 	struct mspi_xfer xfer = {
 		INF_MSPI_S25H_DEFAULT_XFER_DATA,
-		.addr_length = config->mspi_dev_cfg.addr_length,
+		.addr_length = dev_data->mspi_dev_cfg.addr_length,
 		.rx_dummy = rx_dummy,
 		.packets = &packet,
 		.num_packet = 1,
@@ -199,10 +205,11 @@ static int flash_mspi_infineon_s25h_read_jedec_id(const struct device *dev, uint
 {
 	int ret = 0;
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *data = dev->data;
 
 	const struct mspi_xfer_packet packet = {
 		.dir = MSPI_RX,
-		.cmd = INF_MSPI_S25H_OPCODE_READ_JEDEC_ID,
+		.cmd = data->read_jedec_cmd,
 		.num_bytes = 3,
 		.data_buf = buf,
 		.address = 0,
@@ -222,6 +229,7 @@ static int flash_mspi_infineon_s25h_read_jedec_id(const struct device *dev, uint
 		LOG_ERR("Error reading JEDEC id");
 		return ret;
 	}
+
 	return 0;
 }
 
@@ -230,6 +238,20 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 {
 	int ret = 0;
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *dev_data = dev->data;
+
+	/* The S25H allows for continuous read operations which happen by sending
+	 * 0xAX after an address. The driver doesn't implement this which is why we
+	 * don't want this and instead wait for 2 cycles. However since the flash
+	 * pins could be in high impedance state from the MSPI controller after the
+	 * address was sent an address ending with 0xA could put the flash into a
+	 * continuous read mode.  To prevent this this driver requires the address to
+	 * be aligned to 16 byte when in Quad SPI mode
+	 */
+	if (dev_data->mspi_dev_cfg.io_mode == MSPI_IO_MODE_QUAD && (addr % 16 != 0)) {
+		LOG_ERR("Address wasn't aligned to 16 byte while in Quad SPI mode");
+		return -ENOTSUP;
+	}
 
 	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
 	if (ret < 0) {
@@ -239,7 +261,7 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 
 	const struct mspi_xfer_packet packet = {
 		.address = addr,
-		.cmd = INF_MSPI_S25H_OPCODE_READ_FLASH,
+		.cmd = dev_data->read_flash_cmd,
 		.data_buf = data,
 		.dir = MSPI_RX,
 		.num_bytes = size,
@@ -247,8 +269,8 @@ static int flash_mspi_infineon_s25h_read(const struct device *dev, off_t addr, v
 
 	struct mspi_xfer xfer = {
 		INF_MSPI_S25H_DEFAULT_XFER_DATA,
-		.addr_length = config->mspi_dev_cfg.addr_length,
-		.rx_dummy = 0,
+		.addr_length = dev_data->mspi_dev_cfg.addr_length,
+		.rx_dummy = dev_data->read_flash_dummy_cycles,
 		.packets = &packet,
 		.num_packet = 1,
 		/* 1 us per byte; this gives for 256KiB around 0.26 seconds */
@@ -301,13 +323,13 @@ static int flash_mspi_infineon_s25h_single_block_write(const struct device *dev,
 	return 0;
 }
 
-static int flash_mspi_infineon_s25h_write(const struct device *dev, off_t addr, const void *data,
-					  size_t size)
+static int flash_mspi_infineon_s25h_write(const struct device *dev, off_t addr,
+					  const void *transmission_data, size_t size)
 {
 	int ret = 0;
-	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *dev_data = dev->data;
 	uint8_t old_write_protection;
-	uint8_t *data_buf = (uint8_t *)data;
+	uint8_t *data_buf = (uint8_t *)transmission_data;
 
 	/* Check whether we are not aligned and would write over a block boundary */
 	if ((addr % INF_MSPI_S25H_WRITE_BLOCK_SIZE) != 0 &&
@@ -323,7 +345,7 @@ static int flash_mspi_infineon_s25h_write(const struct device *dev, off_t addr, 
 
 	struct mspi_xfer xfer_write = {
 		INF_MSPI_S25H_DEFAULT_XFER_DATA,
-		.addr_length = config->mspi_dev_cfg.addr_length,
+		.addr_length = dev_data->mspi_dev_cfg.addr_length,
 		.rx_dummy = 0,
 		.packets = &packet_write,
 		.num_packet = 1,
@@ -384,6 +406,7 @@ static int flash_mspi_infineon_s25h_erase(const struct device *dev, off_t addr, 
 {
 	int ret = 0;
 	const struct flash_mspi_infineon_s25h_cfg *config = dev->config;
+	struct flash_mspi_infineon_s25h_data *dev_data = dev->data;
 	uint8_t old_write_protection;
 
 	struct mspi_xfer_packet packet_erase = {
@@ -395,7 +418,7 @@ static int flash_mspi_infineon_s25h_erase(const struct device *dev, off_t addr, 
 
 	const struct mspi_xfer xfer_erase = {
 		INF_MSPI_S25H_DEFAULT_XFER_DATA,
-		.addr_length = config->mspi_dev_cfg.addr_length,
+		.addr_length = dev_data->mspi_dev_cfg.addr_length,
 		.rx_dummy = 0,
 		.packets = &packet_erase,
 		.num_packet = 1,
@@ -479,6 +502,117 @@ static void flash_mspi_infineon_s25h_pages_layout(const struct device *dev,
 }
 #endif
 
+static int flash_mspi_infineon_s25h_verify_jedec_id(const struct device *dev)
+{
+	uint8_t id[3];
+	int ret;
+
+	ret = flash_mspi_infineon_s25h_read_jedec_id(dev, id);
+	if (ret < 0) {
+		LOG_ERR("Error reading JEDEC ids from flash");
+		return ret;
+	}
+
+	uint8_t manufacturer_id = id[0];
+	uint16_t device_id = (id[1] << 8) | id[2];
+
+	if (manufacturer_id != INF_MSPI_S25H_MANUFACTURER_ID ||
+	    device_id != INF_MSPI_S25H_DEVICE_ID) {
+		LOG_ERR("Rear JEDEC ids don't match expected ids. The communication is possibly "
+			"broken or the non-volatile flash configuration is something unexpected");
+		LOG_ERR("Read manufacturer id: 0x%02X. Expected: 0x%02X", manufacturer_id,
+			INF_MSPI_S25H_MANUFACTURER_ID);
+		LOG_ERR("Read device id: 0x%04X. Expected: 0x%04X", device_id,
+			INF_MSPI_S25H_DEVICE_ID);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int flash_mspi_infineon_s25h_switch_to_quad_transfer(const struct device *dev)
+{
+	int ret;
+	struct flash_mspi_infineon_s25h_data *data = dev->data;
+
+	uint8_t cfg_value;
+
+	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_1,
+						       &cfg_value, 0, MSPI_RX);
+	if (ret < 0) {
+		LOG_ERR("Error reading flash register");
+		return ret;
+	}
+
+	cfg_value |= INF_MSPI_S25H_CFG_1_QUADIT_BIT;
+
+	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_1,
+						       &cfg_value, 0, MSPI_TX);
+	if (ret < 0) {
+		LOG_ERR("Error writing flash register");
+		return ret;
+	}
+
+	/* set address + data to 4 lanes */
+	data->mspi_dev_cfg.io_mode = MSPI_IO_MODE_QUAD_1_4_4;
+	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
+
+	if (ret < 0) {
+		LOG_ERR("Error switching MSPI mode to 4 lane data width");
+		return ret;
+	}
+
+	data->read_flash_cmd = INF_MSPI_S25H_OPCODE_READ_FLASH_QUAD;
+	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_1,
+						       &cfg_value, 0, MSPI_RX);
+	if (ret < 0) {
+		LOG_ERR("Error reading flash register");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
+	if (ret < 0) {
+		LOG_ERR("JEDEC ID mismatch after switching to 4 lane MSPI. Communication is "
+			"broken");
+		return ret;
+	}
+
+	/* set command to 4 lanes */
+	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_2,
+						       &cfg_value, 0, MSPI_RX);
+	if (ret < 0) {
+		LOG_ERR("Error reading flash register");
+		return ret;
+	}
+
+	cfg_value |= INF_MSPI_S25H_CFG_2_QPI_IT_BIT;
+	ret = flash_mspi_infineon_s25h_rw_any_register(dev, INF_MSPI_S25H_ADDRESS_VOLATILE_CFG_2,
+						       &cfg_value, 0, MSPI_TX);
+	if (ret < 0) {
+		LOG_ERR("Error writing flash register");
+		return ret;
+	}
+
+	data->mspi_dev_cfg.io_mode = MSPI_IO_MODE_QUAD;
+	data->read_jedec_cmd = INF_MSPI_S25H_OPCODE_READ_JEDEC_ID_QUAD;
+	data->read_flash_dummy_cycles = INF_MSPI_S25H_DELAY_READ_QUADSPI;
+
+	ret = flash_mspi_infineon_s25h_prepare_mspi_bus(dev);
+	if (ret < 0) {
+		LOG_ERR("Error switching bus mode to full quad MSPI mode");
+		return ret;
+	}
+
+	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
+	if (ret < 0) {
+		LOG_ERR("JEDEC ID mismatch after switching to full quad MSPI mode. Communication "
+			"is broken");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int flash_mspi_infineon_s25h_init(const struct device *dev)
 {
 	int ret = 0;
@@ -503,26 +637,9 @@ static int flash_mspi_infineon_s25h_init(const struct device *dev)
 		return ret;
 	}
 
-	uint8_t id[3];
-
-	ret = flash_mspi_infineon_s25h_read_jedec_id(dev, id);
+	ret = flash_mspi_infineon_s25h_verify_jedec_id(dev);
 	if (ret < 0) {
-		LOG_ERR("Error reading JEDEC ids from flash");
 		return ret;
-	}
-
-	uint8_t manufacturer_id = id[0];
-	uint16_t device_id = (id[1] << 8) | id[2];
-
-	if (manufacturer_id != INF_MSPI_S25H_MANUFACTURER_ID ||
-	    device_id != INF_MSPI_S25H_DEVICE_ID) {
-		LOG_ERR("Rear JEDEC ids don't match expected ids. The communication is possibly "
-			"broken or the non-volatile flash configuration is something unexpected");
-		LOG_ERR("Read manufacturer id: 0x%02X. Expected: 0x%02X", manufacturer_id,
-			INF_MSPI_S25H_MANUFACTURER_ID);
-		LOG_ERR("Read device id: 0x%04X. Expected: 0x%04X", device_id,
-			INF_MSPI_S25H_DEVICE_ID);
-		return -EIO;
 	}
 
 	/* This driver needs the hybrid sector mode to be disabled. So if it's found to be turned on
@@ -584,6 +701,11 @@ static int flash_mspi_infineon_s25h_init(const struct device *dev)
 		}
 	}
 
+	ret = flash_mspi_infineon_s25h_switch_to_quad_transfer(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -633,7 +755,12 @@ static DEVICE_API(flash, flash_mspi_infineon_s25h_driver_api) = {
 				.pages_size = DT_INST_PROP(n, erase_block_size)},                  \
 		.parameters = {.erase_value = 0xFF,                                                \
 			       .write_block_size = DT_INST_PROP(n, write_block_size)}};            \
-	static struct flash_mspi_infineon_s25h_data flash_mspi_infineon_s25h_data_##n = {};        \
+	static struct flash_mspi_infineon_s25h_data flash_mspi_infineon_s25h_data_##n = {          \
+		.mspi_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                     \
+		.read_jedec_cmd = INF_MSPI_S25H_OPCODE_READ_JEDEC_ID,                              \
+		.read_flash_cmd = INF_MSPI_S25H_OPCODE_READ_FLASH,                                 \
+		.read_flash_dummy_cycles = 0,                                                      \
+	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, flash_mspi_infineon_s25h_init, NULL,                              \
 			      &flash_mspi_infineon_s25h_data_##n,                                  \
 			      &flash_mspi_infineon_s25h_cfg_##n, POST_KERNEL,                      \

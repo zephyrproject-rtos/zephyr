@@ -13,7 +13,7 @@
 /* defaults */
 #define INF_MSPI_S25H_DEFAULT_MSPI_TIMEOUT 100
 
-/* opcodes */
+/* opcodes 1-1-1 mode */
 #define INF_MSPI_S25H_OPCODE_WRITE_ENABLE  0x06
 #define INF_MSPI_S25H_OPCODE_WRITE_DISABLE 0x04
 
@@ -28,6 +28,14 @@
 #define INF_MSPI_S25H_OPCODE_RESET        0x99
 
 #define INF_MSPI_S25H_OPCODE_READ_JEDEC_ID 0x9F
+
+/* opcodes 4-4-4 mode */
+#define INF_MSPI_S25H_OPCODE_READ_FLASH_QUAD    0xEB
+#define INF_MSPI_S25H_OPCODE_READ_JEDEC_ID_QUAD 0xAF
+
+/* RX delay */
+/* 2 cycles for the mode bit to be ignored in Quad SPI mode; 8 from the default configuration */
+#define INF_MSPI_S25H_DELAY_READ_QUADSPI (2 + 8)
 
 /* addresses */
 #define INF_MSPI_S25H_ADDRESS_VOLATILE_STATUS_1 0x00800000
