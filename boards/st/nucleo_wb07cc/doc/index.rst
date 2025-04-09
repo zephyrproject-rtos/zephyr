@@ -108,6 +108,13 @@ You should see the following message on the console:
 
    Hello World! nucleo_wb07cc/stm32wb07
 
+Usage of the pyOCD runner requires installation of an additional target pack.
+This can be done using the following commands:
+
+.. code-block:: console
+
+   $ pyocd pack update
+   $ pyocd pack install stm32wb0
 
 Debugging
 =========
