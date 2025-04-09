@@ -34,11 +34,32 @@
 #include <zephyr/drivers/i2c.h>
 #endif
 
+/* Accel sensor sensitivity grain is 61 ug/LSB */
+#define GAIN_UNIT (61LL)
+
+#ifdef CONFIG_LIS2DUX12_STREAM
+struct trigger_config {
+	uint8_t int_fifo_th : 1;
+	uint8_t int_fifo_full : 1;
+	uint8_t int_drdy : 1;
+};
+#endif
+
 typedef int32_t (*api_lis2dux12_set_odr_raw)(const struct device *dev, uint8_t odr);
 typedef int32_t (*api_lis2dux12_set_range)(const struct device *dev, uint8_t range);
 typedef int32_t (*api_lis2dux12_sample_fetch_accel)(const struct device *dev);
 #ifdef CONFIG_LIS2DUX12_ENABLE_TEMP
 typedef int32_t (*api_lis2dux12_sample_fetch_temp)(const struct device *dev);
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+typedef int32_t (*api_lis2dux12_rtio_read_accel)(const struct device *dev, int16_t *acc);
+typedef int32_t (*api_lis2dux12_rtio_read_temp)(const struct device *dev, int16_t *temp);
+#endif
+#ifdef CONFIG_LIS2DUX12_STREAM
+typedef void (*api_lis2dux12_stream_config_fifo)(const struct device *dev,
+						 struct trigger_config trig_cfg);
+typedef void (*api_lis2dux12_stream_config_drdy)(const struct device *dev,
+						 struct trigger_config trig_cfg);
 #endif
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 typedef void (*api_lis2dux12_handle_interrupt)(const struct device *dev);
@@ -51,6 +72,14 @@ struct lis2dux12_chip_api {
 	api_lis2dux12_sample_fetch_accel sample_fetch_accel;
 #ifdef CONFIG_LIS2DUX12_ENABLE_TEMP
 	api_lis2dux12_sample_fetch_temp sample_fetch_temp;
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	api_lis2dux12_rtio_read_accel rtio_read_accel;
+	api_lis2dux12_rtio_read_temp rtio_read_temp;
+#endif
+#ifdef CONFIG_LIS2DUX12_STREAM
+	api_lis2dux12_stream_config_fifo stream_config_fifo;
+	api_lis2dux12_stream_config_drdy stream_config_drdy;
 #endif
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 	api_lis2dux12_handle_interrupt handle_interrupt;
@@ -73,6 +102,12 @@ struct lis2dux12_config {
 	uint8_t range;
 	uint8_t pm;
 	uint8_t odr;
+#ifdef CONFIG_LIS2DUX12_STREAM
+	uint8_t fifo_wtm;
+	uint8_t accel_batch : 3;
+	uint8_t ts_batch : 2;
+	uint8_t reserved : 3;
+#endif
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
@@ -95,6 +130,21 @@ struct lis2dux12_data {
 	float sample_temp;
 #endif
 
+ #ifdef CONFIG_LIS2DUX12_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t timestamp;
+	uint8_t status;
+	uint8_t fifo_status[2];
+	uint16_t fifo_count;
+	struct trigger_config trig_cfg;
+	uint8_t accel_batch_odr : 3;
+	uint8_t ts_batch_odr : 2;
+	uint8_t bus_type : 1; /* I2C is 0, SPI is 1 */
+	uint8_t reserved : 2;
+ #endif
+
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 	struct gpio_dt_spec *drdy_gpio;
 	struct gpio_callback gpio_cb;
@@ -113,6 +163,19 @@ struct lis2dux12_data {
 
 #endif /* CONFIG_LIS2DUX12_TRIGGER */
 };
+
+#ifdef CONFIG_LIS2DUX12_STREAM
+#define BUS_I2C 0
+#define BUS_SPI 1
+
+static inline uint8_t lis2dux12_bus_reg(struct lis2dux12_data *data, uint8_t x)
+{
+	return (data->bus_type == BUS_SPI) ? x | 0x80 : x;
+}
+
+#define LIS2DUX12_FIFO_ITEM_LEN 7
+#define LIS2DUX12_FIFO_SIZE(x) (x * LIS2DUX12_FIFO_ITEM_LEN)
+#endif
 
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 int lis2dux12_trigger_set(const struct device *dev,
