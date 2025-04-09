@@ -347,7 +347,7 @@ static DEVICE_API(dma, max32_dma_driver_api) = {
 		.channels = DT_INST_PROP(inst, dma_channels),                                      \
 		.irq_configure = max32_dma##inst##_irq_configure,                                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,    \
+	DEVICE_DT_INST_DEFINE(inst, max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,     \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &max32_dma_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_DMA_INIT)

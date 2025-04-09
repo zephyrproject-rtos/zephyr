@@ -663,7 +663,7 @@ static DEVICE_API(dma, dma_xmc4xxx_driver_api) = {
 		.channels = dma_xmc4xxx##inst##_channels,                       \
 	};                                                                      \
 										\
-	DEVICE_DT_INST_DEFINE(inst, &dma_xmc4xxx_init, NULL,                    \
+	DEVICE_DT_INST_DEFINE(inst, dma_xmc4xxx_init, NULL,                     \
 			      &dma_xmc4xxx##inst##_data,                        \
 			      &dma_xmc4xxx##inst##_config, PRE_KERNEL_1,        \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_xmc4xxx_driver_api);
