@@ -136,6 +136,12 @@
 /* Call held by Response and Hold */
 #define BT_HFP_CLCC_STATUS_CALL_HELD_HOLD 6
 
+/* CLCC direction */
+/* CLCC direction: incoming */
+#define BT_HFP_CLCC_DIR_INCOMING 1
+/* CLCC direction: outgoing */
+#define BT_HFP_CLCC_DIR_OUTGOING 0
+
 /* BVRA Value */
 /* BVRA Deactivation */
 #define BT_HFP_BVRA_DEACTIVATION    0
