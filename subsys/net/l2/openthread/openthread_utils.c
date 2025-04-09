@@ -214,7 +214,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context,
 	}
 
 	openthread_api_mutex_lock(context);
-	otIp6AddUnicastAddress(context->instance, &addr);
+	(void)otIp6AddUnicastAddress(context->instance, &addr);
 	openthread_api_mutex_unlock(context);
 
 	if (CONFIG_OPENTHREAD_L2_LOG_LEVEL == LOG_LEVEL_DBG) {
@@ -233,7 +233,7 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context,
 	memcpy(&addr, addr6, sizeof(addr));
 
 	openthread_api_mutex_lock(context);
-	otIp6SubscribeMulticastAddress(context->instance, &addr);
+	(void)otIp6SubscribeMulticastAddress(context->instance, &addr);
 	openthread_api_mutex_unlock(context);
 
 	if (CONFIG_OPENTHREAD_L2_LOG_LEVEL == LOG_LEVEL_DBG) {
