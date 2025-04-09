@@ -368,6 +368,17 @@
 			status = "disabled";
 		};
 
+		sdio0: sdio@40070000 {
+			compatible = "ambiq,sdio";
+			reg = <0x40070000 0x100>;
+			interrupts = <26 0>;
+			max-bus-freq = <96000000>;
+			min-bus-freq = <375000>;
+			power-delay-ms = <50>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
 		usb: usb@400b0000 {
 			compatible = "ambiq,usb";
 			reg = <0x400B0000 0x4100>;

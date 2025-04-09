@@ -26,6 +26,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		rtc = &rtc0;
+		sdhc0 = &sdio0;
 	};
 
 	leds {
@@ -152,6 +153,19 @@
 
 &stimer0 {
 	clk-source = <3>;
+};
+
+&sdio0 {
+	pinctrl-0 = <&sdio0_default>;
+	pinctrl-names = "default";
+	txdelay = <0>;
+	rxdelay = <0>;
+	status = "okay";
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "okay";
+	};
 };
 
 zephyr_udc0: &usb {
