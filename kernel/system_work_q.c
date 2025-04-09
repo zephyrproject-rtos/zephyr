@@ -25,6 +25,7 @@ static int k_sys_work_q_init(void)
 		.name = "sysworkq",
 		.no_yield = IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_YIELD),
 		.essential = true,
+		.work_timeout_ms = CONFIG_SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS,
 	};
 
 	k_work_queue_start(&k_sys_work_q,
