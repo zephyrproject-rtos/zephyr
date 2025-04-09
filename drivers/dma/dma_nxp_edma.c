@@ -768,7 +768,7 @@ static struct edma_data edma_data_##inst = {					\
 	.ctx.magic = DMA_MAGIC,							\
 };										\
 										\
-DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\
+DEVICE_DT_INST_DEFINE(inst, edma_init, NULL,					\
 		      &edma_data_##inst, &edma_config_##inst,			\
 		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,			\
 		      &edma_api);						\

@@ -229,6 +229,6 @@ static struct nios2_msgdma_dev_data dma0_nios2_data = {
 	.msgdma_dev = &msgdma_dev0,
 };
 
-DEVICE_DT_INST_DEFINE(0, &nios2_msgdma0_initialize,
+DEVICE_DT_INST_DEFINE(0, nios2_msgdma0_initialize,
 		NULL, &dma0_nios2_data, NULL, POST_KERNEL,
 		CONFIG_DMA_INIT_PRIORITY, &nios2_msgdma_driver_api);

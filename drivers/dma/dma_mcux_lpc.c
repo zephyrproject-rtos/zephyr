@@ -914,7 +914,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &dma_mcux_lpc_init,				\
+			    dma_mcux_lpc_init,				\
 			    NULL,					\
 			    &dma_data_##n, &dma_##n##_config,		\
 			    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
