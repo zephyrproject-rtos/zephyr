@@ -75,7 +75,7 @@ static struct k_thread drv_stack_data;
 
 static struct udc_ep_config ep_cfg_out[CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT + 1];
 static struct udc_ep_config ep_cfg_in[CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + 1];
-static bool udc_nrf_setup_rcvd, udc_nrf_setup_set_addr, udc_nrf_fake_setup;
+static bool udc_nrf_setup_set_addr, udc_nrf_fake_setup;
 static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
 
@@ -212,13 +212,8 @@ BUILD_ASSERT(
  */
 static volatile bool m_bus_suspend;
 
-/**
- * @brief Direction of last received Setup transfer.
- *
- * This variable is used to redirect internal setup data event
- * into selected endpoint (IN or OUT).
- */
-static nrf_usbd_common_ep_t m_last_setup_dir;
+/* Data Stage direction used to map EP0DATADONE to actual endpoint */
+static uint8_t m_ep0_data_dir;
 
 /**
  * @brief Mark endpoint readiness for DMA transfer.
@@ -278,7 +273,6 @@ static void usbd_dmareq_process(void);
 static inline void usbd_int_rise(void);
 static void nrf_usbd_common_stop(void);
 static void nrf_usbd_legacy_transfer_out_drop(nrf_usbd_common_ep_t ep);
-static void nrf_usbd_legacy_setup_data_clear(void);
 static size_t nrf_usbd_legacy_epout_size_get(nrf_usbd_common_ep_t ep);
 static bool nrf_usbd_legacy_suspend_check(void);
 
@@ -525,7 +519,6 @@ static inline void usbd_int_rise(void)
 static void ev_usbreset_handler(void)
 {
 	m_bus_suspend = false;
-	m_last_setup_dir = NRF_USBD_COMMON_EPOUT0;
 
 	LOG_INF("Reset");
 	udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
@@ -547,7 +540,8 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 			k_event_post(&drv_evt, BIT(UDC_NRF_EVT_EP_FINISHED));
 		}
 	} else if (ep == NRF_USBD_COMMON_EPOUT0) {
-		nrf_usbd_legacy_setup_data_clear();
+		/* Allow receiving next OUT Data Stage chunk */
+		NRF_USBD->TASKS_EP0RCVOUT = 1;
 	}
 }
 
@@ -592,13 +586,6 @@ static void ev_setup_handler(void)
 		       NRF_USBD->WVALUEL | (NRF_USBD->WVALUEH << 8),
 		       NRF_USBD->WINDEXL | (NRF_USBD->WINDEXH << 8),
 		       NRF_USBD->WLENGTHL | (NRF_USBD->WLENGTHH << 8));
-	uint8_t bmRequestType = NRF_USBD->BMREQUESTTYPE;
-
-	m_last_setup_dir =
-		((bmRequestType & USBD_BMREQUESTTYPE_DIRECTION_Msk) ==
-		 (USBD_BMREQUESTTYPE_DIRECTION_HostToDevice << USBD_BMREQUESTTYPE_DIRECTION_Pos))
-			? NRF_USBD_COMMON_EPOUT0
-			: NRF_USBD_COMMON_EPIN0;
 
 	m_ep_dma_waiting &= ~((1U << ep2bit(NRF_USBD_COMMON_EPOUT0)) |
 			      (1U << ep2bit(NRF_USBD_COMMON_EPIN0)));
@@ -922,7 +909,7 @@ static void nrf_usbd_irq_handler(void)
 	/* Use common variable to store EP0DATADONE processing needed flag */
 	if (NRF_USBD->EVENTS_EP0DATADONE) {
 		NRF_USBD->EVENTS_EP0DATADONE = 0;
-		epdatastatus |= BIT(ep2bit(m_last_setup_dir));
+		epdatastatus |= BIT(ep2bit(m_ep0_data_dir));
 	}
 
 	/* Check DMA end event only for last enabled DMA channel. Other channels
@@ -1011,7 +998,7 @@ static void nrf_usbd_legacy_enable(void)
 	m_dma_odd = 0;
 	__ASSERT_NO_MSG(k_sem_count_get(&dma_available) == 1);
 	usbd_dma_pending_clear();
-	m_last_setup_dir = NRF_USBD_COMMON_EPOUT0;
+	m_ep0_data_dir = USB_CONTROL_EP_OUT;
 
 #if NRF_USBD_COMMON_USE_WORKAROUND_FOR_ANOMALY_211
 	if (nrf_usbd_common_errata_187() && !nrf_usbd_common_errata_211()) {
@@ -1228,14 +1215,7 @@ static nrfx_err_t nrf_usbd_legacy_ep_transfer(nrf_usbd_common_ep_t ep)
 	const uint8_t ep_bitpos = ep2bit(ep);
 	unsigned int irq_lock_key = irq_lock();
 
-	/* Setup data transaction can go only in one direction at a time */
-	if ((NRF_USBD_COMMON_EP_NUM(ep) == 0) && (ep != m_last_setup_dir)) {
-		ret = NRFX_ERROR_INVALID_ADDR;
-		if (NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG &&
-		    (NRF_USBD_COMMON_ISO_DEBUG || (!NRF_USBD_COMMON_EP_IS_ISO(ep)))) {
-			LOG_DBG("Transfer failed: Invalid EPr\n");
-		}
-	} else if ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
+	if ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
 		   (1U << ep_bitpos)) {
 		/* IN (Device -> Host) transfer has to be transmitted out to allow new transmission
 		 */
@@ -1311,38 +1291,6 @@ static void nrf_usbd_legacy_ep_dtoggle_clear(nrf_usbd_common_ep_t ep)
 	NRF_USBD->DTOGGLE = ep | (USBD_DTOGGLE_VALUE_Data0 << USBD_DTOGGLE_VALUE_Pos);
 }
 
-static void nrf_usbd_legacy_setup_get(nrf_usbd_common_setup_t *p_setup)
-{
-	memset(p_setup, 0, sizeof(nrf_usbd_common_setup_t));
-	p_setup->bmRequestType = NRF_USBD->BMREQUESTTYPE;
-	p_setup->bRequest = NRF_USBD->BREQUEST;
-	p_setup->wValue = NRF_USBD->WVALUEL | (NRF_USBD->WVALUEH << 8);
-	p_setup->wIndex = NRF_USBD->WINDEXL | (NRF_USBD->WINDEXH << 8);
-	p_setup->wLength = NRF_USBD->WLENGTHL | (NRF_USBD->WLENGTHH << 8);
-}
-
-static void nrf_usbd_legacy_setup_data_clear(void)
-{
-	NRF_USBD->TASKS_EP0RCVOUT = 1;
-}
-
-static void nrf_usbd_legacy_setup_clear(void)
-{
-	LOG_DBG(">> ep0status >>");
-	NRF_USBD->TASKS_EP0STATUS = 1;
-}
-
-static void nrf_usbd_legacy_setup_stall(void)
-{
-	LOG_DBG("Setup stalled.");
-	NRF_USBD->TASKS_EP0STALL = 1;
-}
-
-static nrf_usbd_common_ep_t nrf_usbd_legacy_last_setup_dir_get(void)
-{
-	return m_last_setup_dir;
-}
-
 static void nrf_usbd_legacy_transfer_out_drop(nrf_usbd_common_ep_t ep)
 {
 	unsigned int irq_lock_key = irq_lock();
@@ -1365,17 +1313,6 @@ struct udc_nrf_config {
 
 static struct onoff_manager *hfxo_mgr;
 static struct onoff_client hfxo_cli;
-
-static void udc_nrf_clear_control_out(const struct device *dev)
-{
-	if (nrf_usbd_legacy_last_setup_dir_get() == USB_CONTROL_EP_OUT &&
-	    udc_nrf_setup_rcvd) {
-		/* Allow data chunk on EP0 OUT */
-		nrf_usbd_legacy_setup_data_clear();
-		udc_nrf_setup_rcvd = false;
-		LOG_INF("Allow data OUT");
-	}
-}
 
 static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 {
@@ -1422,7 +1359,8 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 	udc_ctrl_update_stage(dev, buf);
 
 	if (!udc_nrf_setup_set_addr) {
-		nrf_usbd_legacy_setup_clear();
+		/* Allow status stage */
+		NRF_USBD->TASKS_EP0STATUS = 1;
 	}
 }
 
@@ -1536,19 +1474,37 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 	}
 
 	udc_buf_put(cfg, buf);
-	udc_nrf_clear_control_out(dev);
 
-	atomic_set_bit(&xfer_new, ep2bit(USB_CONTROL_EP_OUT));
-	k_event_post(&drv_evt, BIT(UDC_NRF_EVT_XFER));
+	__ASSERT_NO_MSG(k_current_get() == &drv_stack_data);
+	udc_event_xfer_out_next(dev, USB_CONTROL_EP_OUT);
+
+	/* Allow receiving first OUT Data Stage packet */
+	NRF_USBD->TASKS_EP0RCVOUT = 1;
 
 	return 0;
 }
 
 static int udc_event_xfer_setup(const struct device *dev)
 {
-	nrf_usbd_common_setup_t *setup;
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+	struct usb_setup_packet *setup;
 	struct net_buf *buf;
 	int err;
+
+	/* Make sure there isn't any obsolete data stage buffer queued */
+	buf = udc_buf_get_all(cfg_out);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(cfg_in);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	udc_ep_set_busy(cfg_out, false);
+	udc_ep_set_busy(cfg_in, false);
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT,
 			     sizeof(struct usb_setup_packet));
@@ -1558,8 +1514,12 @@ static int udc_event_xfer_setup(const struct device *dev)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	setup = (nrf_usbd_common_setup_t *)buf->data;
-	nrf_usbd_legacy_setup_get(setup);
+	setup = (struct usb_setup_packet *)buf->data;
+	setup->bmRequestType = NRF_USBD->BMREQUESTTYPE;
+	setup->bRequest = NRF_USBD->BREQUEST;
+	setup->wValue = NRF_USBD->WVALUEL | (NRF_USBD->WVALUEH << 8);
+	setup->wIndex = NRF_USBD->WINDEXL | (NRF_USBD->WINDEXH << 8);
+	setup->wLength = NRF_USBD->WLENGTHL | (NRF_USBD->WLENGTHH << 8);
 
 	/* USBD peripheral automatically handles Set Address in slightly
 	 * different manner than the USB stack.
@@ -1630,7 +1590,6 @@ static int udc_event_xfer_setup(const struct device *dev)
 	}
 
 	net_buf_add(buf, sizeof(nrf_usbd_common_setup_t));
-	udc_nrf_setup_rcvd = true;
 
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
@@ -1638,11 +1597,13 @@ static int udc_event_xfer_setup(const struct device *dev)
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
 		LOG_DBG("s:%p|feed for -out-", buf);
+		m_ep0_data_dir = USB_CONTROL_EP_OUT;
 		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
+		m_ep0_data_dir = USB_CONTROL_EP_IN;
 		err = udc_ctrl_submit_s_in_status(dev);
 	} else {
 		err = udc_ctrl_submit_s_status(dev);
@@ -1757,18 +1718,6 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	}
 }
 
-static bool udc_nrf_fake_status_in(const struct device *dev)
-{
-	if (nrf_usbd_legacy_last_setup_dir_get() == USB_CONTROL_EP_OUT ||
-	    udc_nrf_fake_setup) {
-		/* Let controller perform status IN stage */
-		k_event_post(&drv_evt, BIT(UDC_NRF_EVT_STATUS_IN));
-		return true;
-	}
-
-	return false;
-}
-
 static int udc_nrf_ep_enqueue(const struct device *dev,
 			      struct udc_ep_config *cfg,
 			      struct net_buf *buf)
@@ -1776,7 +1725,11 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (cfg->addr == USB_CONTROL_EP_IN && buf->len == 0) {
-		if (udc_nrf_fake_status_in(dev)) {
+		const struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->status) {
+			/* Controller automatically performs status IN stage */
+			k_event_post(&drv_evt, BIT(UDC_NRF_EVT_STATUS_IN));
 			return 0;
 		}
 	}
@@ -1844,7 +1797,7 @@ static int udc_nrf_ep_set_halt(const struct device *dev,
 
 	if (cfg->addr == USB_CONTROL_EP_OUT ||
 	    cfg->addr == USB_CONTROL_EP_IN) {
-		nrf_usbd_legacy_setup_stall();
+		NRF_USBD->TASKS_EP0STALL = 1;
 	} else {
 		nrf_usbd_legacy_ep_stall(cfg->addr);
 	}
