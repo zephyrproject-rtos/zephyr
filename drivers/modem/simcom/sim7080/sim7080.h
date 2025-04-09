@@ -45,7 +45,7 @@
 #define MDM_MAX_AUTOBAUD 5
 #define MDM_MAX_CEREG_WAITS 40
 #define MDM_MAX_CGATT_WAITS 40
-#define MDM_BOOT_TRIES 4
+#define MDM_BOOT_TRIES 2
 #define MDM_GNSS_PARSER_MAX_LEN 128
 #define MDM_APN CONFIG_MODEM_SIMCOM_SIM7080_APN
 #define MDM_LTE_BANDS CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS
@@ -63,6 +63,7 @@
 
 enum sim7080_state {
 	SIM7080_STATE_INIT = 0,
+	SIM7080_STATE_IDLE,
 	SIM7080_STATE_NETWORKING,
 	SIM7080_STATE_GNSS,
 	SIM7080_STATE_OFF,
@@ -78,6 +79,13 @@ enum sim7080_ftp_connection_state {
 	SIM7080_FTP_CONNECTION_STATE_FINISHED,
 	/* Something went wrong. */
 	SIM7080_FTP_CONNECTION_STATE_ERROR,
+};
+
+enum sim7080_status_flags {
+	SIM7080_STATUS_FLAG_POWER_ON = 0x01,
+	SIM7080_STATUS_FLAG_CPIN_READY = 0x02,
+	SIM7080_STATUS_FLAG_ATTACHED = 0x04,
+	SIM7080_STATUS_FLAG_PDP_ACTIVE = 0x08,
 };
 
 /*
@@ -133,14 +141,8 @@ struct sim7080_data {
 	 * Network registration of the modem.
 	 */
 	uint8_t mdm_registration;
-	/*
-	 * Whether gprs is attached or detached.
-	 */
-	uint8_t mdm_cgatt;
-	/*
-	 * If the sim card is ready or not.
-	 */
-	bool cpin_ready;
+	/* Modem status flags */
+	uint32_t status_flags;
 	/*
 	 * Flag if the PDP context is active.
 	 */
@@ -165,6 +167,7 @@ struct sim7080_data {
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_dns;
 	struct k_sem sem_ftp;
+	struct k_sem boot_sem;
 };
 
 /*
