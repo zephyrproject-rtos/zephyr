@@ -15,6 +15,15 @@
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
 
+/* Flag status register bits */
+#define SPI_NOR_FLSR_READY           BIT(7) /* Ready (program/erase not in progress) */
+#define SPI_NOR_FLSR_ERASE_SUSPEND   BIT(6) /* Erase suspend active */
+#define SPI_NOR_FLSR_ERASE_FAIL      BIT(5) /* Last erase failed */
+#define SPI_NOR_FLSR_PROGRAM_FAIL    BIT(4) /* Last program failed */
+#define SPI_NOR_FLSR_PROGRAM_SUSPEND BIT(2) /* Program suspend active */
+#define SPI_NOR_FLSR_PROT_ERROR      BIT(1) /* Protection violation */
+#define SPI_NOR_FLSR_4BA             BIT(0) /* 4-byte address mode active */
+
 /* Flash opcodes */
 #define SPI_NOR_CMD_WRSR        0x01    /* Write status register */
 #define SPI_NOR_CMD_RDSR        0x05    /* Read status register */
@@ -60,6 +69,8 @@
 #define SPI_NOR_CMD_PP_4B        0x12  /* Page Program 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_1_4_4B  0x34  /* Quad Page program (1-1-4) 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_4_4_4B  0x3e  /* Quad Page program (1-4-4) 4 Byte Address */
+#define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
+#define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
 
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */

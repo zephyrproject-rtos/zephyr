@@ -53,6 +53,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_WP_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(wp_gpios)
 #define ANY_INST_HAS_HOLD_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(hold_gpios)
 #define ANY_INST_USE_4B_ADDR_OPCODES DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_4b_addr_opcodes)
+#define ANY_INST_HAS_FLSR \
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_flag_status_register)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -150,6 +152,7 @@ struct spi_nor_config {
 	bool requires_ulbpr_exist:1;
 	bool wp_gpios_exist:1;
 	bool hold_gpios_exist:1;
+	bool has_flsr: 1;
 };
 
 /**
@@ -485,16 +488,53 @@ static int spi_nor_access(const struct device *const dev,
  */
 static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_delay)
 {
+	const struct spi_nor_config *cfg = dev->config;
 	int ret;
 	uint8_t reg;
 
 	ARG_UNUSED(poll_delay);
 
 	while (true) {
-		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
-		/* Exit on error or no longer WIP */
-		if (ret || !(reg & SPI_NOR_WIP_BIT)) {
-			break;
+		/* If flag status register is present, check it rather than the standard
+		 * status register since it allows better error detection. Also, some devices
+		 * that have it require it to be read after a program operation.
+		 */
+		if (IS_ENABLED(ANY_INST_HAS_FLSR) && cfg->has_flsr) {
+			ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDFLSR, &reg, sizeof(reg));
+			if (ret) {
+				break;
+			}
+			if (reg & SPI_NOR_FLSR_READY) {
+				if (reg & SPI_NOR_FLSR_ERASE_FAIL) {
+					LOG_ERR("Erase failure");
+					ret = -EIO;
+				}
+				if (reg & SPI_NOR_FLSR_PROGRAM_FAIL) {
+					LOG_ERR("Program failure");
+					ret = -EIO;
+				}
+				if (reg & SPI_NOR_FLSR_PROT_ERROR) {
+					LOG_ERR("Protection violation");
+					ret = -EIO;
+				}
+
+				if (ret) {
+					/* Clear flag status register for next operation */
+					int ret2 = spi_nor_cmd_write(dev, SPI_NOR_CMD_CLRFLSR);
+
+					if (ret2) {
+						LOG_ERR("Failed to clear flag status register: %d",
+							ret2);
+					}
+				}
+				break;
+			}
+		} else {
+			ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+			/* Exit on error or no longer WIP */
+			if (ret || !(reg & SPI_NOR_WIP_BIT)) {
+				break;
+			}
 		}
 #ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 		/* Don't monopolise the CPU while waiting for ready */
@@ -1818,6 +1858,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
 		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
 		.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),			\
+		.has_flsr = DT_INST_PROP(idx, use_flag_status_register),			\
 		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
 		IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))				\
 		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\

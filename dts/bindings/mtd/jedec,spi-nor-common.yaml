@@ -113,3 +113,13 @@ properties:
       Some devices support 4-byte address opcodes for read/write/erase
       operations.  Use this property to indicate that the device supports
       4-byte address opcodes.
+
+  use-flag-status-register:
+    type: boolean
+    description: |
+      Indicates the device supports a flag status register.
+
+      Some devices (Micron and possibly others) support a flag status register
+      which indicates more details on the status of program or erase operations.
+      In some cases, program operations will not function properly if the flag
+      status register is not read after the operation.
