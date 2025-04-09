@@ -18,6 +18,7 @@ if(CONFIG_FILE_SYSTEM_LIB_LINK)
 
   add_subdirectory_ifdef(CONFIG_FILE_SYSTEM_EXT2 ext2)
   add_subdirectory_ifdef(CONFIG_FUSE fuse)
+  add_subdirectory_ifdef(CONFIG_FILE_SYSTEM_VIRTIOFS virtiofs)
 
   zephyr_library_link_libraries(FS)
 
@@ -25,6 +26,7 @@ if(CONFIG_FILE_SYSTEM_LIB_LINK)
   target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS FS INTERFACE LITTLEFS)
   target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_EXT2     FS INTERFACE EXT2)
   target_link_libraries_ifdef(CONFIG_FUSE                 FS INTERFACE FUSE)
+  target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_VIRTIOFS FS INTERFACE VIRTIOFS)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)
