@@ -11,4 +11,7 @@ FILE *vscanf(const char *format, va_list args)
 {
     return vfscanf(stdin, format, args);
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> c64262e9bea (libc: implement vscanf())
