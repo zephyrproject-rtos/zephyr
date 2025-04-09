@@ -594,8 +594,8 @@ static int adxl345_init(const struct device *dev)
 #define ADXL345_DEFINE(inst)								\
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));                 \
 	static struct adxl345_dev_data adxl345_data_##inst = {                  \
-	COND_CODE_1(adxl345_iodev_##inst, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
-				.iodev = &adxl345_iodev_##inst,), ()) \
+	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
+				.iodev = &adxl345_iodev_##inst,)) \
 	};     \
 	static const struct adxl345_dev_config adxl345_config_##inst =                  \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
