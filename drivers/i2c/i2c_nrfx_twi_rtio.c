@@ -80,7 +80,11 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 						   sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
-		return false;
+		/** This request will not generate an event therefore, this
+		 * code immediately submits a CQE in order to unblock
+		 * i2c_rtio_configure.
+		 */
+		return i2c_rtio_complete(ctx, 0);
 	case RTIO_OP_I2C_RECOVER:
 		(void)i2c_nrfx_twi_recover_bus(dev);
 		return false;
