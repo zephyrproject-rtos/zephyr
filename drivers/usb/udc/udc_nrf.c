@@ -526,7 +526,7 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 		break;
 	case NRF_USBD_COMMON_EVT_SOF:
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(udc_nrf_dev, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
 	case NRF_USBD_COMMON_EVT_SUSPEND:
@@ -559,7 +559,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_DBG("POWER event ready");
-		nrf_usbd_common_start(true);
+		nrf_usbd_common_start(IS_ENABLED(CONFIG_UDC_ENABLE_SOF));
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_DBG("POWER event removed");
