@@ -1,0 +1,38 @@
+# Copyright 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI MSPM0 counter node for MSPM0 SoCs. Each timer can be configured to use for
+  counter operation.
+
+  mspm0counter : counter {
+    counter_0 {
+      ti,clk-prescaler = <255>;
+      ti,clk-div = <1>;
+      resolution = <16>;
+    };
+  };
+
+compatible: "ti,mspm0g1x0x_g3x0x-timer-counter"
+
+include: base.yaml
+
+properties:
+  ti,clk-prescaler:
+    type: int
+    required: true
+    description: |
+      TIMCLK clock source prescaler value.
+      Valid range [0 ... 255].
+
+  ti,clk-div:
+    type: int
+    required: true
+    description: |
+      TIMCLK clock source divider.
+
+  resolution:
+    type: int
+    description: |
+      Counter resolution
+    required: true

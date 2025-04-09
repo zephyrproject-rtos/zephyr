@@ -367,6 +367,14 @@
 				ti,advanced;
 				status = "disabled";
 			};
+
+			countera0: countera0 {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-counter";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <18 0>;
+				resolution = <16>;
+				status = "disabled";
+			};
 		};
 	};
 };
