@@ -1,0 +1,32 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP External Watchdog Monitor
+
+compatible: "nxp,ewm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-divider:
+    type: int
+    description: Watchdog clock divider
+    required: true
+
+  input_trigger_en:
+    type: boolean
+    description: |
+      When enabled the ewm_in signal can be used
+      to assert the ewm.
+
+  input_trigger_active_high:
+    type: boolean
+    description: |
+      When enabled the ewm_in signal is active high.
+      The ewm_in signal is active low otherwise.
