@@ -505,6 +505,24 @@ SECTIONS {
   .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     _bss_start = .;
+
+#if defined(CONFIG_ZTEST) && defined(CONFIG_SIMULATOR_XTENSA)
+    /* For some weird unknown reasons, the simulator really do not
+     * like these cpuhold_* variables to be tightly packed together.
+     * This results in cpuhold_spawned not being updated, and we
+     * will be stuck in the while loop for it to be set.
+     * Workaround by explicitly aligning these variables.
+     */
+    . = ALIGN(16);
+    *:ztest.c.obj(.bss.cpuhold_sem)
+    . = ALIGN(16);
+    *:ztest.c.obj(.bss.cpuhold_active)
+    . = ALIGN(16);
+    *:ztest.c.obj(.bss.cpuhold_spawned)
+    . = ALIGN(16);
+    *:ztest.c.obj(.bss.cpuhold_pool_items)
+#endif /* CONFIG_ZTEST && CONFIG_SIMULATOR_XTENSA */
+
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
