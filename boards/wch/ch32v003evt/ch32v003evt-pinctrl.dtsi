@@ -18,4 +18,13 @@
 			bias-pull-up;
 		};
 	};
+
+	red_pwm_pinctrl: red_pwm_pinctrl {
+		group1 {
+			pinmux = <TIM2_CH1_PD4_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+	};
 };
