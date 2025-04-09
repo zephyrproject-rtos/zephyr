@@ -475,7 +475,7 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 
 	prepare_packet_socket(&packet_sock_1, ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
 	prepare_packet_socket(&packet_sock_2, ud.second, SOCK_RAW, htons(ETH_P_ALL));
-	prepare_packet_socket(&packet_sock_3, ud.second, SOCK_RAW, htons(ETH_P_ALL));
+	prepare_packet_socket(&packet_sock_3, ud.second, SOCK_DGRAM, htons(ETH_P_ALL));
 
 	memset(&dst, 0, sizeof(dst));
 	dst.sll_family = AF_PACKET;
@@ -506,10 +506,10 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 	errno = 0;
 	ret = zsock_recvfrom(packet_sock_3, data_to_receive, sizeof(data_to_receive),
 			     0, (struct sockaddr *)&src, &addrlen);
-	zassert_equal(ret, sizeof(expected_payload_raw),
+	zassert_equal(ret, sizeof(data_to_send),
 		      "Cannot receive all data (%d)", -errno);
-	zassert_mem_equal(expected_payload_raw, data_to_receive,
-			  sizeof(expected_payload_raw), "Data mismatch");
+	zassert_mem_equal(data_to_send, data_to_receive, sizeof(data_to_send),
+			  "Data mismatch");
 }
 
 static void test_sockets_close(void)
