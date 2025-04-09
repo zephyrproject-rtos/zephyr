@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+};
+
+&pwmleds {
+	status = "okay";
+};
+
+&tim2 {
+	status = "okay";
+	/*
+	 * The sample blinks the LED at 0.5 Hz, ceil(48 MHz / 65536 / 0.5 Hz)
+	 * is 1465, and the prescaler property is one less than that.
+	 */
+	prescaler = <1464>;
+	pinctrl-0 = <&red_pwm_pinctrl>;
+	pinctrl-names = "default";
+};
