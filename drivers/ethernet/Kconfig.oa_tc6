@@ -31,4 +31,17 @@ config OA_TC6_TIMEOUT
 	  that the driver will wait from the IP stack to get
 	  a memory buffer.
 
+config OA_TC6_TX_RX_BUFFER_SIZE
+	int "OA SPI TX RX buffer size (Value must be multiples of 68)"
+	default 2108
+	range 68 2108
+	help
+	  Size of the buffer to transmit and receive SPI chunks to MAC-PHY
+	  and from MAC-PHY respectively. In full duplex mode same buffer size
+	  should be used in Tx and Rx path. Value must be multiples of 68
+	  bytes (Size of the single OASPI chunk is 68 bytes). Otherwise nearest
+	  minimum multiple value of 68 will be taken. For SoCs with more
+	  resources, set the maximum value of 2108 to achieve higher bandwidth.
+	  For SoCs with limited resources, set the value to at least 68.
+
 endif
