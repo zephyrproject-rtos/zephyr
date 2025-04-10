@@ -31,4 +31,13 @@ config OA_TC6_TIMEOUT
 	  that the driver will wait from the IP stack to get
 	  a memory buffer.
 
+config OA_TC6_TX_RX_BUFFER_SIZE
+	int "OA SPI TX RX BUFFER SIZE"
+	default 31
+	help
+	  Size of the buffer to transmit and receive SPI chunks to MAC-PHY
+	  and from MAC-PHY respectively. One buffer size is equal to 68
+	  bytes. (Size of the single OASPI chunk is 68 bytes). Buffer size
+	  31 is equal to (31 * 68) 2108 bytes.
+
 endif
