@@ -115,6 +115,8 @@ struct oa_tc6 {
 
 	bool rst_flag;
 
+	bool int_flag;
+
 	const int32_t timeout;
 
 	struct net_if *iface;
@@ -142,6 +144,21 @@ struct oa_tc6 {
 
 	/** Pointer to network buffer concatenated from received chunk */
 	struct net_buf *concat_buf;
+
+	/** Pointer to store the net_pkt received from IP stack */
+	struct net_pkt *waiting_net_pkt;
+
+	/** Pointer to store the net_pkt while preparing the spi tx buffer */
+	struct net_pkt *ongoing_net_pkt;
+
+	struct k_sem tx_enq_sem;
+	struct k_sem spi_sem;
+	uint16_t spi_length;
+	uint16_t tx_eth_len;
+	uint8_t chunk_size;
+	bool tx_eth_frame_end;
+	uint8_t spi_tx_buf[2108];
+	uint8_t spi_rx_buf[2108];
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE);
 	struct k_thread thread;
@@ -373,4 +390,12 @@ int oa_tc6_zero_align_receive_frame_enable(struct oa_tc6 *tc6);
  * @return 0 if successful, <0 otherwise.
  */
 int oa_tc6_init(struct oa_tc6 *tc6);
+/**
+ * @brief Thread for SPI transfer
+ *
+ * @param tc6 OA TC6 specific data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_spi_thread(struct oa_tc6 *tc6);
 #endif /* OA_TC6_CFG_H__ */
