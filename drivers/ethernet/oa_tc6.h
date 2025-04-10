@@ -25,6 +25,7 @@
 #define OA_CONFIG0_PROTE     BIT(5)
 #define OA_STATUS0           MMS_REG(0x0, 0x008)
 #define OA_STATUS0_RESETC    BIT(6)
+#define OA_STATUS0_RX_BUFFER_OVERFLOW BIT(3)
 #define OA_STATUS1           MMS_REG(0x0, 0x009)
 #define OA_BUFSTS            MMS_REG(0x0, 0x00B)
 #define OA_BUFSTS_TXC        GENMASK(15, 8)
@@ -79,6 +80,8 @@
 #define OA_TC6_BUF_ALLOC_TIMEOUT K_MSEC(10)
 #define OA_TC6_FTR_RCA_MAX       GENMASK(4, 0)
 #define OA_TC6_FTR_TXC_MAX       GENMASK(4, 0)
+
+#define OA_TC6_ETH_BUFFER_SIZE 1524
 
 /* PHY Clause 22 registers base address and mask */
 #define OA_TC6_PHY_STD_REG_ADDR_BASE 0xFF00
@@ -142,6 +145,11 @@ struct oa_tc6 {
 	/** Indication of protected control transmission mode */
 	bool protected;
 
+#ifdef CONFIG_SPI_ASYNC
+	struct k_sem spi_async_sem;
+	int spi_tx_status;
+#endif
+
 	/** Pointer to network buffer concatenated from received chunk */
 	struct net_buf *concat_buf;
 
@@ -154,6 +162,8 @@ struct oa_tc6 {
 	/**  Size of the buffer to transmit and receive SPI chunks */
 	int oa_spi_tx_rx_buffer_size;
 
+	/** Pointer to receive the net_pkt in IP stack */
+	struct net_pkt *rx_pkt;
 	struct k_sem tx_enq_sem;
 	struct k_sem spi_sem;
 	uint16_t spi_length;
@@ -162,6 +172,7 @@ struct oa_tc6 {
 	bool tx_eth_frame_end;
 	uint8_t spi_tx_buf[CONFIG_OA_TC6_TX_RX_BUFFER_SIZE];
 	uint8_t spi_rx_buf[CONFIG_OA_TC6_TX_RX_BUFFER_SIZE];
+	bool rx_buf_overflow;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE);
 	struct k_thread thread;
