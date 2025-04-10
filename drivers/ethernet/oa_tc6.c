@@ -340,6 +340,9 @@ static uint16_t oa_tc6_prepare_spi_tx_buf_from_net_pkt(struct oa_tc6 *tc6)
 			tc6->ongoing_net_pkt = NULL;
 			break;
 		}
+		if (tx_offset >= tc6->oa_spi_tx_rx_buffer_size) {
+			return tx_offset;
+		}
 	}
 	return tx_offset;
 }
@@ -354,6 +357,13 @@ static void oa_tc6_add_tx_empty_chunks(struct oa_tc6 *tc6, uint8_t empty_chunks)
 	hdr = sys_cpu_to_be32(hdr);
 
 	while (empty_chunks--) {
+		if (tc6->spi_length > tc6->oa_spi_tx_rx_buffer_size) {
+			tc6->spi_length = tc6->oa_spi_tx_rx_buffer_size;
+			break;
+		} else if (tc6->spi_length == tc6->oa_spi_tx_rx_buffer_size) {
+			break;
+		}
+
 		spi_tx_buf = (uint32_t *)(tc6->spi_tx_buf + tc6->spi_length);
 		*spi_tx_buf = hdr;
 		tc6->spi_length += tc6->chunk_size;
@@ -757,10 +767,25 @@ static void oa_tc6_int_callback(const struct device *dev, struct gpio_callback *
 
 	if (!tc6->rst_flag) {
 		k_sem_give(&tc6->int_sem);
-
 	} else {
 		tc6->int_flag = true;
 		k_sem_give(&tc6->spi_sem);
+	}
+}
+
+static void oa_tc6_calculate_spi_buffer_size(struct oa_tc6 *tc6)
+{
+	tc6->oa_spi_tx_rx_buffer_size = CONFIG_OA_TC6_TX_RX_BUFFER_SIZE;
+
+	/*
+	 * OA SPI TX RX buffer size value should be multiples of 68 (size of the single OA SPI
+	 * chunk is 68 bytes)
+	 *
+	 * If not, calculate the nearest mimimum multiple value
+	 */
+	if (CONFIG_OA_TC6_TX_RX_BUFFER_SIZE % tc6->chunk_size != 0) {
+		tc6->oa_spi_tx_rx_buffer_size =
+			(CONFIG_OA_TC6_TX_RX_BUFFER_SIZE / tc6->chunk_size) * tc6->chunk_size;
 	}
 }
 
@@ -775,6 +800,8 @@ int oa_tc6_init(struct oa_tc6 *tc6)
 
 	tc6->waiting_net_pkt = NULL;
 	tc6->ongoing_net_pkt = NULL;
+
+	oa_tc6_calculate_spi_buffer_size(tc6);
 
 	if (!spi_is_ready_dt(tc6->spi)) {
 		LOG_ERR("SPI bus %s not ready", tc6->spi->bus->name);
