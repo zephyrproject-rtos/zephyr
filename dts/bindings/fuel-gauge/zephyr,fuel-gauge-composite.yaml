@@ -31,9 +31,3 @@ properties:
       Sources should be queried by the sensor API fuel gauge
       channels (SENSOR_CHAN_GAUGE_*), instead of the generic
       channels (SENSOR_CHAN_VOLTAGE, etc).
-
-  device-chemistry:
-    required: true
-
-  ocv-capacity-table-0:
-    required: true
