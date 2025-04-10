@@ -281,4 +281,12 @@ config HWINFO_RENESAS_RA
 	help
 	  Enable RENESAS RA hwinfo driver
 
+config HWINFO_SIWX91X
+	bool "Silabs SiWx91x hwinfo"
+	default y
+	depends on SOC_FAMILY_SILABS_SIWX91X
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Silabs SiWx91x hwinfo driver.
+
 endif
