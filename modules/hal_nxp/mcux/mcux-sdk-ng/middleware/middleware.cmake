@@ -40,6 +40,4 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
   ${CMAKE_CURRENT_BINARY_DIR}/usb
 )
 
-if(CONFIG_BT_H4_NXP_CTLR)
-  add_subdirectory(bt_controller)
-endif()
+add_subdirectory_ifdef(CONFIG_BT_H4_NXP_CTLR ${CMAKE_CURRENT_LIST_DIR}/bt_controller)
