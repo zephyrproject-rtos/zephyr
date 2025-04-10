@@ -34,3 +34,16 @@ this API is limited to creating the simplistic tokens needed to
 authenticate with the Google Core IoT infrastructure.
 
 .. doxygengroup:: jwt
+
+Identifier APIs
+***************
+
+UUID
+====
+
+Universally Unique Identifiers (UUID), also known as Globally Unique
+IDentifiers (GUIDs) are an open, industry standard [RFC
+9562](https://tools.ietf.org/html/rfc9562) 128 bits long identifiers
+intended to guarantee uniqueness across space and time.
+
+.. doxygengroup:: uuid
