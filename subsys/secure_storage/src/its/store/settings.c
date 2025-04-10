@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/secure_storage/its/store.h>
+#include <zephyr/secure_storage/its/store/settings_get.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
@@ -26,26 +27,37 @@ static int init_settings_subsys(void)
 }
 SYS_INIT(init_settings_subsys, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
-enum { NAME_BUF_SIZE = sizeof(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX) - 1
-		       + 2 * (sizeof(secure_storage_its_uid_t) + 1) };
-BUILD_ASSERT(NAME_BUF_SIZE <= SETTINGS_MAX_NAME_LEN + 1);
+BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN <= SETTINGS_MAX_NAME_LEN);
 
-static void make_name(secure_storage_its_uid_t uid, char name[static NAME_BUF_SIZE])
+#ifndef CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
+
+BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN ==
+	     sizeof(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX) - 1
+	     + 1 + 1 /* caller ID + '/' */
+	     + 2 * sizeof(psa_storage_uid_t) /* hex UID */);
+
+void secure_storage_its_store_settings_get_name(
+	secure_storage_its_uid_t uid,
+	char name[static SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE])
 {
 	int ret;
 
-	ret = snprintf(name, NAME_BUF_SIZE, CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX
-		       "%x/%llx", uid.caller_id, (unsigned long long)uid.uid);
-	__ASSERT_NO_MSG(ret > 0 && ret < NAME_BUF_SIZE);
+	ret = snprintf(name, SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE,
+		       CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX "%x/%llx",
+		       uid.caller_id, (unsigned long long)uid.uid);
+	__ASSERT_NO_MSG(ret > 0 && ret < SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE);
 }
+
+#endif /* !CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM */
 
 psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 					  size_t data_length, const void *data)
 {
 	int ret;
-	char name[NAME_BUF_SIZE];
+	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];
 
-	make_name(uid, name);
+	secure_storage_its_store_settings_get_name(uid, name);
+
 	ret = settings_save_one(name, data, data_length);
 	LOG_DBG("%s %s with %zu bytes. (%d)",
 		(ret == 0) ? "Saved" : "Failed to save", name, data_length, ret);
@@ -81,10 +93,10 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 					  void *data, size_t *data_length)
 {
 	psa_status_t ret;
-	char name[NAME_BUF_SIZE];
+	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];
 	struct load_params load_params = {.data_size = data_size, .data = data, .ret = -ENOENT};
 
-	make_name(uid, name);
+	secure_storage_its_store_settings_get_name(uid, name);
 
 	settings_load_subtree_direct(name, load_direct_setting, &load_params);
 	if (load_params.ret > 0) {
@@ -103,9 +115,10 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 {
 	int ret;
-	char name[NAME_BUF_SIZE];
+	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];
 
-	make_name(uid, name);
+	secure_storage_its_store_settings_get_name(uid, name);
+
 	ret = settings_delete(name);
 
 	LOG_DBG("%s %s. (%d)", ret ? "Failed to delete" : "Deleted", name, ret);

@@ -81,6 +81,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    When first using the nRF54H20 DK, you must program the `nRF54H20 SoC binaries`_ on the development kit.
    To do so, follow the bring up steps instructions on the `Getting started with the nRF54H20 DK`_ documentation.

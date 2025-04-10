@@ -88,6 +88,8 @@ Same UART1 TX and RX cmos signals are available before the FT232, at P9 connecto
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

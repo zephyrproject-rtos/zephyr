@@ -5888,6 +5888,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
+#ifdef CONFIG_BT_SETTINGS
 static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 		      void *cb_arg)
 {
@@ -5900,6 +5901,7 @@ static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 }
 
 BT_SETTINGS_DEFINE(ccc, "ccc", ccc_set_cb, NULL);
+#endif /* CONFIG_BT_SETTINGS */
 
 static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 			  void *cb_arg, void *param)

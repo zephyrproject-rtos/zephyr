@@ -87,6 +87,12 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SDMMC2_CK : PC2
+- SDMMC2_CMD : PC3
+- SDMMC2_D0 : PC4
+- SDMMC2_D1 : PC5
+- SDMMC2_D2 : PC0
+- SDMMC2_D3 : PE4
 - SPI5_SCK : PE15
 - SPI5_MOSI : PG2
 - SPI5_MISO : PH8
@@ -142,6 +148,8 @@ USART1. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.

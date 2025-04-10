@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.stepper.drv84xx.api:
+    tags:
+      - drivers
+      - stepper
+      - api
+      - drv84xx
+    platform_allow:
+      - nucleo_f767zi
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - native_sim

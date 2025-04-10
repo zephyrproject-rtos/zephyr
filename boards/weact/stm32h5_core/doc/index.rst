@@ -101,6 +101,8 @@ Virtual COM port interface. Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ``weact_stm32h5_core`` board facilitates firmware flashing via the USB DFU
 bootloader. This method simplifies the process of updating images, although
 it doesn't provide debugging capabilities. However, the board provides header

@@ -886,7 +886,6 @@ Demand Paging:
 Device Driver Model:
   status: maintained
   maintainers:
-    - gmarull
     - tbursztyka
   collaborators:
     - dcpleung
@@ -1034,9 +1033,9 @@ Documentation:
 Documentation Infrastructure:
   status: maintained
   maintainers:
-    - gmarull
     - kartben
   collaborators:
+    - gmarull
     - carlescufi
     - nashif
   files:
@@ -1822,7 +1821,6 @@ Release Notes:
 "Drivers: MFD":
   status: odd fixes
   collaborators:
-    - gmarull
     - aasinclair
   files:
     - drivers/mfd/
@@ -1933,8 +1931,8 @@ Release Notes:
     - samples.drivers.peci
 
 "Drivers: Pin Control":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - gmarull
   files:
     - doc/hardware/pinctrl/
@@ -2392,8 +2390,6 @@ Input:
   status: maintained
   maintainers:
     - fabiobaltieri
-  collaborators:
-    - gmarull
   files:
     - doc/services/input/
     - drivers/input/
@@ -3487,7 +3483,6 @@ GD32 Platforms:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
     - cameled
   files:
@@ -4058,6 +4053,7 @@ Renesas RA Platforms:
   collaborators:
     - duynguyenxa
     - thaoluonguw
+    - thenguyenyf
   files:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
@@ -4456,8 +4452,13 @@ Task Watchdog:
 TDK Sensors:
   status: maintained
   maintainers:
+    - afontaine-invn
+    - rbuisson-invn
+  collaborators:
     - teburd
     - MaureenHelm
+    - sriccardi-invn
+    - gjabouley-invn
   files:
     - drivers/sensor/tdk/
   labels:
@@ -4943,7 +4944,6 @@ West:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -5671,6 +5671,22 @@ Peregrine Platforms:
     - boards/peregrine/
   labels:
     - "platform: Peregrine"
+
+WCH Platforms:
+  status: maintained
+  maintainers:
+    - nzmichaelh
+    - kholia
+  collaborators:
+    - VynDragon
+  files:
+    - boards/wch/
+    - dts/riscv/wch/
+    - soc/wch/
+    - drivers/*/*wch*
+    - dts/bindings/*/wch,*
+  labels:
+    - "platform: WinChipHead"
 
 # This area is to be converted to a subarea
 Testing with Renode:

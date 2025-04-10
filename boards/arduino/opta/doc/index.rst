@@ -98,6 +98,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``arduino_opta`` use the regular Zephyr build commands.
 See :ref:`build_an_application` for more information about application builds.
 

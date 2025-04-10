@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/mp13/stm32mp135.dtsi>
+#include <st/mp13/stm32mp135faex-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32MP135-DK board";
+	compatible = "st,stm32mp135f-dk";
+
+	chosen {
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_data;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User 1";
+			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led_1: led_1 {
+			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+			label = "LD3";
+		};
+
+		red_led_2: led_2 {
+			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+			label = "LD4";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		led1 = &red_led_2;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hsi {
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&cpusw {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&pll1 {
+	clocks = <&clk_hse>;
+	div-m = <2>;
+	mul-n = <83>;
+	div-p = <1>;
+	frac-v = <2730>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(1000)>;
+	clocks = <&pll>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_tx_pd6 &uart4_rx_pd8>;
+	current-speed = <115200>;
+	status = "okay";
+};

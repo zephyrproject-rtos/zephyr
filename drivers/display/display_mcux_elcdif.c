@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 /* Define the heap size. 512 bytes of padding are included for kernel heap structures */
 K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
-static const uint32_t supported_fmts = PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888;
+static const uint32_t supported_fmts =
+	PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;

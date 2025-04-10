@@ -239,6 +239,8 @@ jumper settings.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo U5A5ZJ-Q board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 

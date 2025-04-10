@@ -41,6 +41,8 @@ is USART0 with TX connected at PB6 and RX at PB7.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before programming your board make sure to configure boot jumpers as
 follows:
 

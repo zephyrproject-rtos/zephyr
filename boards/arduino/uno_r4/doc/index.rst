@@ -25,6 +25,8 @@ Supported Features
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Debug adapter
 =============
 

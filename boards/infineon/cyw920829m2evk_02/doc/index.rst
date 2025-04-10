@@ -69,6 +69,8 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The CYW920829M2EVK-02 includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
 The CYW920829M2EVK-02 supports RTT via a SEGGER JLink device, under the target name cyw20829_tm. This can be enabled for an application by building with the rtt-console snippet or setting the following config values: CONFIG_UART_CONSOLE=n, CONFIG_RTT_CONSOLE=y, and CONFIG_USE_SEGGER_RTT=y.

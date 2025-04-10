@@ -122,13 +122,8 @@ static uint8_t pbp_read_supported_commands(const void *cmd, uint16_t cmd_len, vo
 {
 	struct btp_pbp_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_PBP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_PBP_SET_PUBLIC_BROADCAST_ANNOUNCEMENT);
-	tester_set_bit(rp->data, BTP_PBP_SET_BROADCAST_NAME);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_START);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_STOP);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PBP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

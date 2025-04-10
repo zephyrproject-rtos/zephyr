@@ -17,6 +17,7 @@
 		i2c-0 = &flexcomm2;
 		pwm-0 = &sctimer;
 		sw0 = &user_button_0;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -255,6 +256,12 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+		status = "okay";
+	};
 };
 
 zephyr_mipi_dbi_spi: &lcdic {

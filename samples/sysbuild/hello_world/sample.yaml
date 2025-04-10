@@ -48,8 +48,10 @@ tests:
   sample.sysbuild.hello_world.nrf54l15dk_nrf54l15_cpuflpr:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args:
 
       - SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf

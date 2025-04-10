@@ -64,6 +64,8 @@ The FDCAN1 peripheral is driven by PLLQ, which has 80 MHz frequency.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 MKS CANable V2.0 board includes an SWDIO debug connector header J4.
 
 .. note::

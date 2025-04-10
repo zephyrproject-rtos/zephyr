@@ -52,6 +52,8 @@ virtual COM port via the J1 USB connector.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before programming your board make sure to configure boot jumpers as
 follows:
 

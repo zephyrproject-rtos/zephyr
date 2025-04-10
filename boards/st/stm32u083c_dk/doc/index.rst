@@ -187,6 +187,8 @@ USART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32U083C_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 

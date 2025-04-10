@@ -42,6 +42,8 @@ It also regulates 5V from USB to 3.3V via the onboard LDO to power Nano v2.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52_blenano2`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

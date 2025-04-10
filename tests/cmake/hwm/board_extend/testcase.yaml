@@ -2,7 +2,7 @@ common:
   tags:
     - cmake
 tests:
-  cmake.board.extend_one:
+  buildsystem.cmake.board.extend_one:
     extra_args:
       # Twister can only lookup known board roots.
       # Thus platform above is set to native_sim, while at this location
@@ -15,7 +15,7 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
-  cmake.board.extend_two:
+  buildsystem.cmake.board.extend_two:
     extra_args:
       - CACHED_BOARD=native_sim/native/64/two
     platform_allow:
@@ -24,7 +24,7 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
-  cmake.soc.extend_cputest:
+  buildsystem.cmake.soc.extend_cputest:
     extra_args:
       - CACHED_BOARD=mps2/an521/cputest
     platform_allow:

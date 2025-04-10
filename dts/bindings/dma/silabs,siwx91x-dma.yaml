@@ -1,4 +1,4 @@
-description: Silabs SiWx91x DMA node
+description: Silabs SiWx91x DMA
 
 compatible: "silabs,siwx91x-dma"
 

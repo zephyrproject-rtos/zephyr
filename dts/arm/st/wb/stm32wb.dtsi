@@ -487,6 +487,7 @@
 			interrupt-names = "usb", "usbhp";
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
+			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB1, 26U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
@@ -534,12 +535,12 @@
 
 			wkup-pin@1 {
 				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
 
 			wkup-pin@4 {
 				reg = <0x4>;
-				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_SRC_0>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
 		};
 	};

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <float.h>
+#include <math.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <zephyr/ztest.h>
@@ -57,6 +59,32 @@ struct test_int_limits {
 	uint64_t uint64_max;
 	uint64_t uint64_cero;
 	uint64_t uint64_min;
+};
+
+struct test_float {
+	float some_float;
+	float another_float;
+	float some_array[16];
+	size_t some_array_len;
+};
+
+struct test_float_limits {
+	float float_max;
+	float float_cero;
+	float float_min;
+};
+
+struct test_double {
+	double some_double;
+	double another_double;
+	double some_array[16];
+	size_t some_array_len;
+};
+
+struct test_double_limits {
+	double double_max;
+	double double_cero;
+	double double_min;
 };
 
 static const struct json_obj_descr nested_descr[] = {
@@ -119,6 +147,32 @@ static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_max, JSON_TOK_UINT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_cero, JSON_TOK_UINT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_min, JSON_TOK_UINT64),
+};
+
+static const struct json_obj_descr obj_float_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_float, some_float, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_float, another_float, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_ARRAY(struct test_float, some_array,
+			     16, some_array_len, JSON_TOK_FLOAT_FP),
+};
+
+static const struct json_obj_descr obj_float_limits_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_float_limits, float_max, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_float_limits, float_cero, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_float_limits, float_min, JSON_TOK_FLOAT_FP),
+};
+
+static const struct json_obj_descr obj_double_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_double, some_double, JSON_TOK_DOUBLE_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_double, another_double, JSON_TOK_DOUBLE_FP),
+	JSON_OBJ_DESCR_ARRAY(struct test_double, some_array,
+			     16, some_array_len, JSON_TOK_DOUBLE_FP),
+};
+
+static const struct json_obj_descr obj_double_limits_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_max, JSON_TOK_DOUBLE_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_cero, JSON_TOK_DOUBLE_FP),
+	JSON_OBJ_DESCR_PRIM(struct test_double_limits, double_min, JSON_TOK_DOUBLE_FP),
 };
 
 struct array {
@@ -204,6 +258,27 @@ static const struct json_obj_descr outer_descr[] = {
 	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_outer, array, 5,
 				num_elements, element_descr, ARRAY_SIZE(element_descr))
 };
+
+struct test_alignment_nested {
+	bool bool1;
+	int int1;
+	bool bool2;
+};
+
+struct test_alignment_bool {
+	struct test_alignment_nested array[3];
+	size_t num_elements;
+};
+
+static const struct json_obj_descr alignment_nested_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, bool1, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, int1, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_alignment_nested, bool2, JSON_TOK_TRUE),
+};
+
+static const struct json_obj_descr alignment_bool_descr[] = {
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_alignment_bool, array, 3, num_elements,
+				 alignment_nested_descr, ARRAY_SIZE(alignment_nested_descr)) };
 
 ZTEST(lib_json_test, test_json_encoding)
 {
@@ -423,6 +498,331 @@ ZTEST(lib_json_test, test_json_limits)
 			  "Integer limits not encoded correctly");
 	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
 		     "Integer limits not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_float)
+{
+	char encoded[] = "{\"some_float\":-0.000244140625,"
+			 "\"another_float\":12345600,"
+			 "\"some_array\":[1.5,2.25]"
+			 "}";
+
+	struct test_float floats = {
+		.some_float = -0.000244140625,
+		.another_float = 12345600.0,
+		.some_array[0] = 1.5,
+		.some_array[1] = 2.25,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_float floats_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_float_descr, ARRAY_SIZE(obj_float_descr),
+				&floats, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of float returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_float_descr,
+			     ARRAY_SIZE(obj_float_descr), &floats_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Float not encoded correctly");
+	zassert_true(!memcmp(&floats, &floats_decoded, sizeof(floats)),
+		     "Float not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_float_format)
+{
+	struct sub_test {
+		float num;
+		char *str;
+	};
+	struct sub_test encoded[] = {
+		{ .num = 0, .str = "0" },
+		{ .num = 0, .str = "0.0" },
+		{ .num = 0, .str = "0e0" },
+		{ .num = 0, .str = "0e+0" },
+		{ .num = 0, .str = "0e-0" },
+
+		{ .num = 12345, .str = "12345" },
+		{ .num = 12345, .str = "1.2345e+4" },
+		{ .num = 12345, .str = "1.2345e+04" },
+
+		{ .num = -12345, .str = "-12345" },
+		{ .num = -12345, .str = "-1.2345e+4" },
+		{ .num = -12345, .str = "-1.2345e+04" },
+
+		{ .num = 0.03125, .str = "0.03125" },
+		{ .num = 0.03125, .str = "3.125e-2" },
+		{ .num = 0.03125, .str = "3.125e-02" },
+
+		{ .num = -0.03125, .str = "-0.03125" },
+		{ .num = -0.03125, .str = "-3.125e-2" },
+		{ .num = -0.03125, .str = "-3.125e-02" },
+	};
+
+	struct test_float ts;
+	char str_encoded[32];
+
+	for (int i = 0; i < ARRAY_SIZE(encoded); i++) {
+		snprintf(str_encoded, sizeof(str_encoded), "{\"some_float\":%s}", encoded[i].str);
+		int ret = json_obj_parse(str_encoded, strlen(str_encoded),
+			       obj_float_descr, ARRAY_SIZE(obj_float_descr), &ts);
+		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
+		zassert_equal(ts.some_float, encoded[i].num,
+			      "Decoding failed '%s' float: %g exepcted: %g",
+			      str_encoded, (double)ts.some_float, (double)encoded[i].num);
+	}
+}
+
+ZTEST(lib_json_test, test_json_float_nan)
+{
+	char encoded[] = "{\"some_float\":NaN,"
+			 "\"another_float\":NaN,"
+			 "\"some_array\":[NaN,NaN]"
+			 "}";
+
+	struct test_float floats = {
+		.some_float = NAN,
+		.another_float = NAN,
+		.some_array[0] = NAN,
+		.some_array[1] = NAN,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_float floats_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_float_descr, ARRAY_SIZE(obj_float_descr),
+				&floats, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of float nan returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_float_descr,
+			     ARRAY_SIZE(obj_float_descr), &floats_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Float not encoded correctly");
+	zassert_true(!memcmp(&floats, &floats_decoded, sizeof(floats)),
+		     "Float not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_float_infinity)
+{
+	char encoded[] = "{\"some_float\":Infinity,"
+			 "\"another_float\":-Infinity,"
+			 "\"some_array\":[Infinity,-Infinity]"
+			 "}";
+
+	struct test_float floats = {
+		.some_float = INFINITY,
+		.another_float = -INFINITY,
+		.some_array[0] = INFINITY,
+		.some_array[1] = -INFINITY,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_float floats_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_float_descr, ARRAY_SIZE(obj_float_descr),
+				&floats, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of float inf returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_float_descr,
+			     ARRAY_SIZE(obj_float_descr), &floats_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Float not encoded correctly");
+	zassert_true(!memcmp(&floats, &floats_decoded, sizeof(floats)),
+		     "Float not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_float_limits)
+{
+	char encoded[] = "{\"float_max\":3.40282347e+38,"
+			 "\"float_cero\":0,"
+			 "\"float_min\":-3.40282347e+38"
+			 "}";
+
+	struct test_float_limits limits = {
+		.float_max = 3.40282347e+38,
+		.float_cero = 0,
+		.float_min = -3.40282347e+38,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_float_limits limits_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_float_limits_descr, ARRAY_SIZE(obj_float_limits_descr),
+				&limits, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of float limits returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_float_limits_descr,
+			     ARRAY_SIZE(obj_float_limits_descr), &limits_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Float limits not encoded correctly");
+	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
+		     "Float limits not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_double)
+{
+	char encoded[] = "{\"some_double\":-0.000244140625,"
+			 "\"another_double\":1234567890000000,"
+			 "\"some_array\":[1.5,2.25]"
+			 "}";
+
+	struct test_double doubles = {
+		.some_double = -0.000244140625,
+		.another_double = 1234567890000000.0,
+		.some_array[0] = 1.5,
+		.some_array[1] = 2.25,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_double doubles_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_double_descr, ARRAY_SIZE(obj_double_descr),
+				&doubles, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of double returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_double_descr,
+			     ARRAY_SIZE(obj_double_descr), &doubles_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Double not encoded correctly");
+	zassert_true(!memcmp(&doubles, &doubles_decoded, sizeof(doubles)),
+		     "Double not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_double_format)
+{
+	struct sub_test {
+		double num;
+		char *str;
+	};
+	struct sub_test encoded[] = {
+		{ .num = 0, .str = "0" },
+		{ .num = 0, .str = "0.0" },
+		{ .num = 0, .str = "0e0" },
+		{ .num = 0, .str = "0e+0" },
+		{ .num = 0, .str = "0e-0" },
+
+		{ .num = 12345, .str = "12345" },
+		{ .num = 12345, .str = "1.2345e+4" },
+		{ .num = 12345, .str = "1.2345e+04" },
+
+		{ .num = -12345, .str = "-12345" },
+		{ .num = -12345, .str = "-1.2345e+4" },
+		{ .num = -12345, .str = "-1.2345e+04" },
+
+		{ .num = 0.03125, .str = "0.03125" },
+		{ .num = 0.03125, .str = "3.125e-2" },
+		{ .num = 0.03125, .str = "3.125e-02" },
+
+		{ .num = -0.03125, .str = "-0.03125" },
+		{ .num = -0.03125, .str = "-3.125e-2" },
+		{ .num = -0.03125, .str = "-3.125e-02" },
+	};
+
+	struct test_double ts;
+	char str_encoded[32];
+
+	for (int i = 0; i < ARRAY_SIZE(encoded); i++) {
+		snprintf(str_encoded, sizeof(str_encoded), "{\"some_double\":%s}", encoded[i].str);
+		int ret = json_obj_parse(str_encoded, strlen(str_encoded),
+					 obj_double_descr, ARRAY_SIZE(obj_double_descr), &ts);
+		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
+		zassert_equal(ts.some_double, encoded[i].num,
+			      "Decoding failed '%s' double: %g exepcted: %g",
+			      str_encoded, ts.some_double, encoded[i].num);
+	}
+}
+
+
+ZTEST(lib_json_test, test_json_double_nan)
+{
+	char encoded[] = "{\"some_double\":NaN,"
+			 "\"another_double\":NaN,"
+			 "\"some_array\":[NaN,NaN]"
+			 "}";
+
+	struct test_double doubles = {
+		.some_double = (double)NAN,
+		.another_double = (double)NAN,
+		.some_array[0] = (double)NAN,
+		.some_array[1] = (double)NAN,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_double doubles_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_double_descr, ARRAY_SIZE(obj_double_descr),
+				&doubles, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of double nan returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_double_descr,
+			     ARRAY_SIZE(obj_double_descr), &doubles_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Double not encoded correctly");
+	zassert_true(!memcmp(&doubles, &doubles_decoded, sizeof(doubles)),
+		     "Double not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_double_infinity)
+{
+	char encoded[] = "{\"some_double\":Infinity,"
+			 "\"another_double\":-Infinity,"
+			 "\"some_array\":[Infinity,-Infinity]"
+			 "}";
+
+	struct test_double doubles = {
+		.some_double = (double)INFINITY,
+		.another_double = (double)-INFINITY,
+		.some_array[0] = (double)INFINITY,
+		.some_array[1] = (double)-INFINITY,
+		.some_array_len = 2,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_double doubles_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_double_descr, ARRAY_SIZE(obj_double_descr),
+				&doubles, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of double inf returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_double_descr,
+			     ARRAY_SIZE(obj_double_descr), &doubles_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Double not encoded correctly");
+	zassert_true(!memcmp(&doubles, &doubles_decoded, sizeof(doubles)),
+		     "Double not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_doubles_limits)
+{
+	char encoded[] = "{\"double_max\":1.797693134862315e+308,"
+			 "\"double_cero\":0,"
+			 "\"double_min\":-1.797693134862315e+308"
+			 "}";
+
+	struct test_double_limits limits = {
+		.double_max = 1.797693134862315e+308,
+		.double_cero = 0,
+		.double_min = -1.797693134862315e+308,
+	};
+
+	char buffer[sizeof(encoded)];
+	struct test_double_limits limits_decoded = {0};
+	int ret;
+
+	ret = json_obj_encode_buf(obj_double_limits_descr, ARRAY_SIZE(obj_double_limits_descr),
+				&limits, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of double limits returned error");
+	ret = json_obj_parse(encoded, sizeof(encoded), obj_double_limits_descr,
+			     ARRAY_SIZE(obj_double_limits_descr), &limits_decoded);
+	zassert_str_equal(encoded, buffer,
+			  "Double limits not encoded correctly");
+	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
+		     "Double limits not decoded correctly");
 }
 
 ZTEST(lib_json_test, test_json_encoding_array_array)
@@ -1360,6 +1760,29 @@ ZTEST(lib_json_test, test_json_array_alignment)
 	zassert_equal(o.array[1].int1, 4, "Element 1 int1 not decoded correctly");
 	zassert_equal(o.array[1].int2, 5, "Element 1 int2 not decoded correctly");
 	zassert_equal(o.array[1].int3, 6, "Element 1 int3 not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_array_alignment_bool)
+{
+	char encoded[] = "{\"array\":["
+			 "{\"bool1\":true,\"int1\":1,\"bool2\":false},"
+			 "{\"bool1\":true,\"int1\":2,\"bool2\":false}"
+			 "]}";
+
+	struct test_alignment_bool o = { 0 };
+	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, alignment_bool_descr,
+				     ARRAY_SIZE(alignment_bool_descr), &o);
+
+	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
+
+	zassert_equal(o.array[0].bool1, true, "Element 0 bool1 not decoded correctly");
+	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
+	zassert_equal(o.array[0].bool2, false, "Element 0 bool2 not decoded correctly");
+
+	zassert_equal(o.array[1].bool1, true, "Element 1 bool1 not decoded correctly");
+	zassert_equal(o.array[1].int1, 2, "Element 1 int1 not decoded correctly");
+	zassert_equal(o.array[1].bool2, false, "Element 1 bool2 not decoded correctly");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);

@@ -61,6 +61,8 @@ accessible through the BoosterPack, are not currently supported.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 TI officially supports development on the CC3235SF using the TI
 `CC32xx SDK`_ on Windows and Linux using TI tools: Code Composer
 Studio for debugging and `UniFlash`_ for flashing.

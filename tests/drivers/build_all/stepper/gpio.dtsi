@@ -32,9 +32,9 @@ allegro_a4979: allegro_a4979 {
 	counter = <&counter0>;
 };
 
-ti_drv8424: ti_drv8424 {
+ti_drv84xx: ti_drv84xx {
 	status = "okay";
-	compatible = "ti,drv8424";
+	compatible = "ti,drv84xx";
 
 	dir-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;

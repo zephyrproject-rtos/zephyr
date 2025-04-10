@@ -279,11 +279,9 @@ The I2C ports can independently pulled up to V_AUX (3.3V default) through JP4 (I
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The IC can be reset by pushbutton SW1.
-
-
-Programming and Debugging
-*************************
 
 Flashing
 ========

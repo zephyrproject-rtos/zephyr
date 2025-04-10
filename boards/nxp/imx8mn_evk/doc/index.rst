@@ -60,6 +60,8 @@ CPU's UART4.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
 it has been supported in latest U-Boot version by `patch serials`_.
 

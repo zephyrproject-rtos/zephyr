@@ -56,6 +56,8 @@ for the console and is available as a Virtual COM Port via EDBG USB chip.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing the Zephyr project onto SAM V71 MCU requires the `OpenOCD tool`_.
 By default a factory new SAM V71 chip will boot the `SAM-BA`_ boot loader
 located in the ROM, not the flashed image. This is determined by the value

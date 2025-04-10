@@ -3,33 +3,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Default cmsis-dap, it will be overwritten below if requires
-set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
+if(CONFIG_ARCH STREQUAL "riscv")
+  set(MAX32_TARGET_CFG "${CONFIG_SOC}_riscv.cfg")
+  set(MAX32_INTERFACE_CFG "olimex-arm-usb-ocd-h.cfg")
+else()
+  set(MAX32_TARGET_CFG "${CONFIG_SOC}.cfg")
+  set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
+endif()
 
-if(CONFIG_SOC_MAX32650)
-  set(MAX32_TARGET_CFG "max32650.cfg")
-elseif(CONFIG_SOC_MAX32655_M4)
-  set(MAX32_TARGET_CFG "max32655.cfg")
-elseif(CONFIG_SOC_MAX32660)
-  set(MAX32_TARGET_CFG "max32660.cfg")
-elseif(CONFIG_SOC_MAX32662)
-  set(MAX32_TARGET_CFG "max32662.cfg")
-elseif(CONFIG_SOC_MAX32666)
+# MAX32666 share the same target configuration file with MAX32665
+if(CONFIG_SOC_MAX32666)
   set(MAX32_TARGET_CFG "max32665.cfg")
-elseif(CONFIG_SOC_MAX32670)
-  set(MAX32_TARGET_CFG "max32670.cfg")
-elseif(CONFIG_SOC_MAX32672)
-  set(MAX32_TARGET_CFG "max32672.cfg")
-elseif(CONFIG_SOC_MAX32675)
-  set(MAX32_TARGET_CFG "max32675.cfg")
-elseif(CONFIG_SOC_MAX32680_M4)
-  set(MAX32_TARGET_CFG "max32680.cfg")
-elseif(CONFIG_SOC_MAX32690_M4)
-  set(MAX32_TARGET_CFG "max32690.cfg")
-elseif(CONFIG_SOC_MAX78000_M4)
-  set(MAX32_TARGET_CFG "max78000.cfg")
-elseif(CONFIG_SOC_MAX78002_M4)
-  set(MAX32_TARGET_CFG "max78002.cfg")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${MAX32_INTERFACE_CFG}]")

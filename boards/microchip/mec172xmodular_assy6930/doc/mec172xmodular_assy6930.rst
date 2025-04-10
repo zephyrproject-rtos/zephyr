@@ -121,6 +121,8 @@ or Master Attached Flash (MAF).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Setup
 =====
 

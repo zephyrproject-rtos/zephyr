@@ -330,6 +330,7 @@ SECTIONS
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__picolib.a:string.*(.literal .text .literal.* .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libc.a:*(.literal .text .literal.* .text.*)

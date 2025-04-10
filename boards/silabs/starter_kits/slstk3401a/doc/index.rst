@@ -81,6 +81,8 @@ The EFM32PG SoC has two USARTs and one Low Energy UART (LEUART).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
    in Simplicity Studio.

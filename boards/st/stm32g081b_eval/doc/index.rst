@@ -124,6 +124,8 @@ For more details please refer to `STM32G0 Evaluation board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``stm32g081b_eval`` board configuration can be built and

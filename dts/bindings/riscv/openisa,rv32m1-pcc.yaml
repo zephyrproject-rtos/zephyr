@@ -1,7 +1,7 @@
 # Copyright (c) 2018 Foundries.io
 # SPDX-License-Identifier: Apache-2.0
 
-description: RV32M1 PCC (Peripheral Clock Control) IP node
+description: RV32M1 PCC (Peripheral Clock Control)
 
 compatible: "openisa,rv32m1-pcc"
 

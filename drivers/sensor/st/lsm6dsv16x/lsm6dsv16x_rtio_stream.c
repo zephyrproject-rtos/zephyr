@@ -222,7 +222,9 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
+#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 
 	/*
@@ -238,9 +240,7 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
 	struct rtio_iodev *iodev = lsm6dsv16x->iodev;

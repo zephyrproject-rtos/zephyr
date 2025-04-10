@@ -66,9 +66,6 @@ static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0,
 #define ETH_RXBUFNB	ETH_RX_DESC_CNT
 #define ETH_TXBUFNB	ETH_TX_DESC_CNT
 
-#define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
-#define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
-
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
 #define ETH_TXBUF_DEF_NB	1U
 #else
@@ -78,11 +75,32 @@ static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+#define ETH_MII_MODE	HAL_ETH_MII_MODE
+#define ETH_RMII_MODE	HAL_ETH_RMII_MODE
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+#define ETH_GMII_MODE	HAL_ETH_GMII_MODE
+#define ETH_RGMII_MODE	HAL_ETH_RGMII_MODE
+#endif
+
+#else
+#define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
+#define ETH_RMII_MODE	ETH_MEDIA_INTERFACE_RMII
+#endif
+
 #define MAC_NODE DT_NODELABEL(mac)
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+#define STM32_ETH_PHY_MODE(node_id) \
+	((DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
+	 (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, gmii) ? ETH_GMII_MODE : \
+	 (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? ETH_MII_MODE : \
+		 ETH_RMII_MODE))))
+#else
 #define STM32_ETH_PHY_MODE(node_id) \
 	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? \
-		ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII)
+		ETH_MII_MODE : ETH_RMII_MODE)
+#endif
 
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
@@ -1090,7 +1108,10 @@ static void set_mac_config(const struct device *dev, struct phy_link_state *stat
 	mac_config.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_FULLDUPLEX_MODE : ETH_HALFDUPLEX_MODE;
 
-	mac_config.Speed = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
+	mac_config.Speed =
+		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet),
+			PHY_LINK_IS_SPEED_1000M(state->speed) ? ETH_SPEED_1000M :)
+		PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
 
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
@@ -1428,9 +1449,12 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-BUILD_ASSERT(DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, mii) ||
-	     DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rmii),
-	     "Unsupported PHY connection type selected");
+BUILD_ASSERT(DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, mii)
+	|| DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rmii)
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet),
+	(|| DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rgmii)
+	 || DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, gmii))),
+			"Unsupported PHY connection type");
 
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {

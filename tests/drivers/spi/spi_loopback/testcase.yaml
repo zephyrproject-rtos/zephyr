@@ -30,6 +30,7 @@ tests:
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_RTIO_FALLBACK_MSGS=5
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -248,16 +249,19 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_16mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_32mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.ke1xz_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
@@ -276,7 +280,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
   drivers.spi.max32_spi_rtio.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-max32-spi-rtio.conf"
+      - EXTRA_CONF_FILE="overlay-max32-spi-rtio.conf"
     filter: CONFIG_SOC_FAMILY_MAX32
     platform_allow:
       - apard32690/max32690/m4

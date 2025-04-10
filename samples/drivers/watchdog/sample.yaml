@@ -25,6 +25,7 @@ tests:
       - panb511evb/nrf54l15/cpuapp
       - panb511evb/nrf54l15/cpuflpr
       - panb511evb/nrf54l15/cpuflpr/xip
+      - nrf54l15dk/nrf54l15/cpuapp/ns
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")

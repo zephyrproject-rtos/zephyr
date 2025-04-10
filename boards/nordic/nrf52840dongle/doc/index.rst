@@ -61,6 +61,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52840dongle/nrf52840`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details).
 

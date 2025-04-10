@@ -13,6 +13,7 @@ common:
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
     - nrf54h20dk/nrf54h20/cpuppr
+    - ophelia4ev/nrf54l15/cpuapp
 
 tests:
   drivers.spi.spi_mode0:
@@ -65,6 +66,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
     # SPIS120 instance occupies P6 which is not available on nRF54H20 DK pin headers
@@ -77,6 +79,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
     extra_configs:

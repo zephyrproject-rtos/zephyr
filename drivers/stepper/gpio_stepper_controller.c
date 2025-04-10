@@ -325,23 +325,35 @@ static int gpio_stepper_set_event_callback(const struct device *dev,
 	return 0;
 }
 
-static int gpio_stepper_enable(const struct device *dev, bool enable)
+static int gpio_stepper_enable(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
 	int err;
 
-	if (data->is_enabled == enable) {
+	if (data->is_enabled) {
+		LOG_WRN("Stepper motor is already enabled");
 		return 0;
 	}
 
 	K_SPINLOCK(&data->lock) {
-		data->is_enabled = enable;
+		err = energize_coils(dev, true);
+		if (err == 0) {
+			data->is_enabled = true;
+		}
+	}
+	return err;
+}
 
-		if (enable) {
-			err = energize_coils(dev, true);
-		} else {
-			(void)k_work_cancel_delayable(&data->stepper_dwork);
-			err = energize_coils(dev, false);
+static int gpio_stepper_disable(const struct device *dev)
+{
+	struct gpio_stepper_data *data = dev->data;
+	int err;
+
+	K_SPINLOCK(&data->lock) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
+		err = energize_coils(dev, false);
+		if (err == 0) {
+			data->is_enabled = false;
 		}
 	}
 	return err;
@@ -379,6 +391,7 @@ static int gpio_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, gpio_stepper_api) = {
 	.enable = gpio_stepper_enable,
+	.disable = gpio_stepper_disable,
 	.set_micro_step_res = gpio_stepper_set_micro_step_res,
 	.get_micro_step_res = gpio_stepper_get_micro_step_res,
 	.set_reference_position = gpio_stepper_set_reference_position,

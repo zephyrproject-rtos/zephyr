@@ -58,6 +58,8 @@ below.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Programming and debugging for the ICE-V Wireless ESP32-C3 target is
 incredibly easy 🎉 following the steps below.
 

@@ -86,6 +86,8 @@ For more details please refer to `STM32G0 Discovery board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32G071B Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``stm32g071b_disco`` board configuration can be built and

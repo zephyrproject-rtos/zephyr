@@ -93,6 +93,8 @@ Refer to the `Semtech SX1272 datasheet`_ for further details.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

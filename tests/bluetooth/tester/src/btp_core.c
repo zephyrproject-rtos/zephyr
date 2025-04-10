@@ -35,12 +35,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_core_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(rp->data, BTP_CORE_REGISTER_SERVICE);
-	tester_set_bit(rp->data, BTP_CORE_UNREGISTER_SERVICE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CORE, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

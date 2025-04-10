@@ -70,6 +70,8 @@ the remaining are not used/tested.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The MIMX8MQ EVK board doesn't have QSPI flash for the M4 and it needs
 to be started by the A53 core. The A53 core is responsible to load the M4 binary
 application into the RAM, put the M4 in reset, set the M4 Program Counter and

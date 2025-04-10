@@ -26,6 +26,11 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_MAX_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 
+/* Convert exit-latency-us to ticks using specified method. */
+#define EXIT_LATENCY_US_TO_TICKS(us)						    \
+	IS_ENABLED(CONFIG_PM_PREWAKEUP_CONV_MODE_NEAR) ? k_us_to_ticks_near32(us) : \
+	IS_ENABLED(CONFIG_PM_PREWAKEUP_CONV_MODE_CEIL) ? k_us_to_ticks_ceil32(us) : \
+		k_us_to_ticks_floor32(us)
 /*
  * Properly initialize cpu power states. Do not make assumptions that
  * ACTIVE_STATE is 0
@@ -62,7 +67,7 @@ static inline void pm_state_notify(bool entering_state)
 		}
 
 		if (callback) {
-			callback(z_cpus_pm_state[_current_cpu->id].state);
+			callback(z_cpus_pm_state[CPU_ID].state);
 		}
 	}
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
@@ -93,7 +98,7 @@ static inline int32_t ticks_expiring_sooner(int32_t ticks1, int32_t ticks2)
 
 void pm_system_resume(void)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CPU_ID;
 
 	/*
 	 * This notification is called from the ISR of the event
@@ -142,9 +147,10 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 
 bool pm_system_suspend(int32_t kernel_ticks)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CPU_ID;
 	k_spinlock_key_t key;
 	int32_t ticks, events_ticks;
+	uint32_t exit_latency_ticks;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -194,16 +200,13 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	}
 #endif
 
-	if ((z_cpus_pm_state[id].exit_latency_us != 0) &&
-	    (ticks != K_TICKS_FOREVER)) {
+	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id].exit_latency_us);
+	if ((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) {
 		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
-		sys_clock_set_timeout(ticks -
-		     k_us_to_ticks_ceil32(
-			     z_cpus_pm_state[id].exit_latency_us),
-				     true);
+		sys_clock_set_timeout(ticks - exit_latency_ticks, true);
 	}
 
 	/*

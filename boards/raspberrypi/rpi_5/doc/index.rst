@@ -36,6 +36,8 @@ See `Raspberry Pi hardware`_ for the complete list of hardware features.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Blinky
 ======
 

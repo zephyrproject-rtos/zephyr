@@ -12,6 +12,8 @@ to learn how to obtain Renode for your host.
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

@@ -82,7 +82,7 @@ HTTP_RESOURCE_DEFINE(resource_12, service_D, "/foo/b?r", RES(3));
 
 /* Default resource in case of no match */
 static uint16_t service_E_port = 8080;
-HTTP_SERVICE_DEFINE(service_E, "192.0.2.1", &service_E_port, 0, 0, NULL, DETAIL(0));
+HTTP_SERVICE_DEFINE(service_E, "192.0.2.1", &service_E_port, 1, 1, NULL, DETAIL(0));
 HTTP_RESOURCE_DEFINE(resource_10, service_E, "/index.html", RES(4));
 
 ZTEST(http_service, test_HTTP_SERVICE_DEFINE)

@@ -1,3 +1,7 @@
+common:
+  build_only: true
+  tags: bluetooth
+
 tests:
   bluetooth.general.tester:
     build_only: true
@@ -7,6 +11,12 @@ tests:
       - nrf52840dk/nrf52840
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester_bsim:
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
   bluetooth.general.tester.nxp:
     # Disabling monolithic since CI environment doesn't use blobs
     build_only: true
@@ -29,6 +39,16 @@ tests:
       # Build config used by AutoPTS for nRF53
       - EXTRA_CONF_FILE="hci_ipc.conf"
     tags: bluetooth
+    sysbuild: true
+  bluetooth.general.tester_hci_ipc_bsim:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
+    extra_args:
+      # Build config used by AutoPTS for nRF53
+      - EXTRA_CONF_FILE="hci_ipc.conf"
     sysbuild: true
   bluetooth.general.tester_le_audio:
     build_only: true

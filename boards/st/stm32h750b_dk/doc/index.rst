@@ -67,6 +67,8 @@ COM port interface. Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H750B Discovery kit includes an ST-LINK-V3E embedded debug tool interface.
 This probe allows flashing and debugging the board using various tools.
 

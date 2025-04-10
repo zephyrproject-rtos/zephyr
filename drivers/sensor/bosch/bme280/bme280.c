@@ -126,6 +126,7 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 	h = (h - (((((h >> 15) * (h >> 15)) >> 7) *
 		((int32_t)data->dig_h1)) >> 4));
 	h = (h > 419430400 ? 419430400 : h);
+	h = (h < 0 ? 0 : h);
 
 	return (uint32_t)(h >> 12);
 }

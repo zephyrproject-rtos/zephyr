@@ -139,6 +139,8 @@ port A1. This board configuration selects it as the default flash controller.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``s32z2xxdc2`` boards can be built in the usual way as
 documented in :ref:`build_an_application`.
 

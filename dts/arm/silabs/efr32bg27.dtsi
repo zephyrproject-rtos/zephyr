@@ -38,7 +38,7 @@
 		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
-			interrupts = <48 0>;
+			interrupts = <48 2>;
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
@@ -46,11 +46,11 @@
 };
 
 &cmu {
-	interrupts = <52 0>;
+	interrupts = <52 2>;
 };
 
 &hfxo {
-	interrupts = <50 0>;
+	interrupts = <50 2>;
 	interrupt-names = "hfxo";
 };
 
@@ -106,52 +106,57 @@
 };
 
 &i2c0 {
-	interrupts = <32 0>;
+	interrupts = <32 2>;
 	clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
 };
 
 &i2c1 {
-	interrupts = <33 0>;
+	interrupts = <33 2>;
 	clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_PCLK>;
 };
 
 &usart0 {
-	interrupts = <16 0>, <17 0>;
+	interrupts = <16 2>, <17 2>;
 	clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 };
 
 &usart1 {
-	interrupts = <18 0>, <19 0>;
+	interrupts = <18 2>, <19 2>;
 	clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
 };
 
 &burtc0 {
-	interrupts = <23 0>;
+	interrupts = <23 2>;
 	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
 &rtcc0 {
-	interrupts = <15 0>;
+	interrupts = <15 2>;
 	interrupt-names = "rtcc";
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
 
 &adc0 {
-	interrupts = <54 0>;
+	interrupts = <54 2>;
 	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 };
 
 &dcdc {
-	interrupts = <8 0>;
+	interrupts = <8 2>;
 };
 
 &dma0 {
 	interrupts = <26 0>;
 };
 
+&wdog0 {
+	interrupts = <49 2>;
+	clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+};
+
 &radio {
-	interrupts = <36 0>, <37 0>, <38 0>, <39 0>, <40 0>, <41 0>,
-		     <42 0>, <43 0>, <44 0>, <45 0>, <46 0>, <47 0>;
+	interrupts = <36 1>, <37 1>, <38 1>, <39 1>, <40 1>, <41 1>,
+		     <42 1>, <43 1>, <44 1>, <45 1>, <46 1>, <47 1>;
 	interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
 		     "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "synth",
 		     "prortc";

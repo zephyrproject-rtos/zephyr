@@ -23,6 +23,8 @@ and `HiFive1 Rev B <https://www.sifive.com/boards/hifive1-rev-b>`__.
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

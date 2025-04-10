@@ -337,7 +337,7 @@ static int mcux_lpuart_irq_tx_ready(const struct device *dev)
 static void mcux_lpuart_irq_rx_enable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
-	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
 	LPUART_EnableInterrupts(config->base, mask);
 }
@@ -345,7 +345,7 @@ static void mcux_lpuart_irq_rx_enable(const struct device *dev)
 static void mcux_lpuart_irq_rx_disable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
-	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
 	LPUART_DisableInterrupts(config->base, mask);
 }

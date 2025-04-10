@@ -41,6 +41,8 @@ UART0 is configured for serial logs. The default serial setup is 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board comes with a Cortex ETM port which facilitates tracing and debugging
 using a single physical connection. In addition, it comes with sockets for
 JTAG-only sessions.

@@ -704,6 +704,8 @@ class KconfigCheck(ComplianceTest):
 
         disallowed_symbols = {
             "PINCTRL": "Drivers requiring PINCTRL must SELECT it instead.",
+            "BOARD_EARLY_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
+            "BOARD_LATE_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
         }
 
         disallowed_regex = "(" + "|".join(disallowed_symbols.keys()) + ")$"
@@ -1099,6 +1101,7 @@ flagged.
         "SEL",
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
+        "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
@@ -1763,7 +1766,7 @@ class Ruff(ComplianceTest):
 
     def run(self):
         for file in get_files(filter="d"):
-            if not file.endswith(".py"):
+            if not file.endswith((".py", ".pyi")):
                 continue
 
             try:

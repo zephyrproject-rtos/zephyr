@@ -52,6 +52,8 @@ RS-232 onboard port or via USB device.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM4L WM-400 Cape board has a 10-pin header to connect to a Segger JLink.
 Using the JLink is possible to program and debug the SAM4LC4B chip. The board
 came with a SAM-BA bootloader that only can be used to flash the software.

@@ -3,9 +3,10 @@
 
 menuconfig WIFI_NXP
 	bool "NXP Wi-Fi driver support"
-	select NET_L2_WIFI_MGMT if NETWORKING
-	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
-	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	select NET_L2_ETHERNET_MGMT
 	select SDHC if !SOC_SERIES_RW6XX
 	select SDIO_STACK if !SOC_SERIES_RW6XX
 	select WIFI_NM
@@ -305,7 +306,7 @@ endchoice
 
 config NXP_WIFI_SHELL
 	bool "NXP Wi-Fi shell"
-	depends on SHELL
+	default y if SHELL
 	help
 	  NXP Wi-Fi shell commands support.
 
@@ -690,7 +691,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	default y if NXP_RW610
+	depends on NXP_RW610
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.

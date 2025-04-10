@@ -72,6 +72,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bl654_dvk`` board configuration can be built, flashed,
 and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.

@@ -111,6 +111,8 @@ assigned to USART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo H7A3ZI-Q board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``nucleo_h7a3zi_q`` board configuration can be built and

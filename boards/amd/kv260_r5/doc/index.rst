@@ -55,6 +55,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Currently the best way to run this sample is by loading it through remoteproc
 from the APU, running Linux, to the RPU, assuming the target board has a compatible
 Linux kernel.

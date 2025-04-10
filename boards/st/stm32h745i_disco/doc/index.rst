@@ -107,6 +107,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
 
 Applications for the ``stm32h745i_disco`` board should be built per core target,

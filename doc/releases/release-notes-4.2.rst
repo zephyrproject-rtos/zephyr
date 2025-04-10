@@ -40,7 +40,13 @@ The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
 ******************************
+
 The following CVEs are addressed by this release:
+
+* :cve:`2025-27809` `TLS clients may unwittingly skip server authentication
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
+* :cve:`2025-27810` `Potential authentication bypass in TLS handshake
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -83,8 +89,15 @@ Deprecated APIs and options
 * ``esp32c6_devkitc`` board target has been deprecated and renamed to
   ``esp32c6_devkitc/esp32c6/hpcore``.
 
+* ``xiao_esp32c6`` board target has been deprecated and renamed to
+  ``xiao_esp32c6/esp32c6/hpcore``.
+
 New APIs and options
 ====================
+
+* Kernel
+
+ * :c:macro:`K_TIMEOUT_ABS_SEC`
 
 * I2C
 
@@ -138,6 +151,10 @@ New APIs and options
   * MQTT
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
+
+  * Sockets
+
+    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
 
 * Stepper
 
@@ -387,3 +404,6 @@ Other notable changes
 * Removed support for Nucleo WBA52CG board (``nucleo_wba52cg``) since it is NRND (Not Recommended
   for New Design) and it is not supported anymore in the STM32CubeWBA from version 1.1.0 (July 2023).
   The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``) is recommended instead.
+
+* Updated Mbed TLS to version 3.6.3 (from 3.6.2). The release notes can be found at:
+  https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3

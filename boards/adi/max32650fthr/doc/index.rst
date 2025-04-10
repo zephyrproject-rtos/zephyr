@@ -69,6 +69,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 The MAX32650 MCU can be flashed by connecting an external debug probe to the

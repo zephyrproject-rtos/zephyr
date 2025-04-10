@@ -105,6 +105,8 @@ The Arm Cortex-M4F core is configured to run at 80 MHz (RUN mode).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``ucans32k1sic`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 

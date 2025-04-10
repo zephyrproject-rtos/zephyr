@@ -1266,6 +1266,21 @@ Boards
       (``zephyr_generate_hw_features`` config option set to ``True``). If disabled, a warning message
       will be shown instead of the hardware features tables.
 
+.. rst:directive:: .. zephyr:board-supported-runners::
+
+   This directive is used to show the supported runners for the board documented in the current
+   page, including which runner is the default for flashing and debugging.
+
+   The directive must be used in a document that also contains a :rst:dir:`zephyr:board` directive,
+   as it relies on the board information to generate the table.
+
+   .. note::
+
+      Similar to :rst:dir:`zephyr:board-supported-hw`, this directive requires hardware features
+      generation to be enabled (``zephyr_generate_hw_features`` config option set to ``True``) to
+      produce a complete table. If disabled, a warning message will be shown instead of the runners
+      tables.
+
 References
 **********
 

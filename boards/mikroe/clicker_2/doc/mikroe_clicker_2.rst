@@ -36,6 +36,9 @@ For connections on the edge connectors, please refer to `Clicker 2 for STM32 Use
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 Applications for the ``mikroe_clicker_2`` board configuration can
 be built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

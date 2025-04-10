@@ -99,6 +99,8 @@ The KW41Z SoC has one UART, which is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 

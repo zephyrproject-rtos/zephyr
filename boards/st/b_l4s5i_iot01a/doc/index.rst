@@ -140,6 +140,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 B_L4S5I_IOT01A Discovery kit includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

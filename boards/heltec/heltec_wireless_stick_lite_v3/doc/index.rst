@@ -141,6 +141,8 @@ below to retrieve those files.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 

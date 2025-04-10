@@ -152,6 +152,8 @@ used as a user LED.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

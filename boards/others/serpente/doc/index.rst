@@ -46,6 +46,8 @@ to the host PC.
 Programming and Debugging
 =========================
 
+.. zephyr:board-supported-runners::
+
 The Serpente ships the BOSSA compatible UF2 bootloader. The bootloader
 can be entered by quickly tapping the reset button twice.
 

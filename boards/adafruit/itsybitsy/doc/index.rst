@@ -86,6 +86,9 @@ your board. The button and LED definitions can be found in
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The ItsyBitsy ships with the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 

@@ -26,6 +26,9 @@ static struct qspi_config *spim_config;
 static const struct spi_dt_spec spi_spec =
 SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
 
+static struct spi_dt_spec spi_spec_8mhz =
+SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+
 static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 {
 	int err;
@@ -116,7 +119,7 @@ int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 	return err;
 }
 
-int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
+int spim_write_reg(const struct spi_dt_spec *spi_spec, uint32_t reg_addr, const uint8_t reg_value)
 {
 	int err;
 	uint8_t tx_buffer[] = { reg_addr, reg_value };
@@ -124,7 +127,7 @@ int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
 	const struct spi_buf tx_buf = { .buf = tx_buffer, .len = sizeof(tx_buffer) };
 	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
 
-	err = spi_transceive_dt(&spi_spec, &tx, NULL);
+	err = spi_transceive_dt(spi_spec, &tx, NULL);
 
 	if (err) {
 		LOG_ERR("SPI error: %d", err);
@@ -150,7 +153,7 @@ int spim_RDSR2(const struct device *dev, uint8_t *rdsr1)
 
 int spim_WRSR2(const struct device *dev, const uint8_t wrsr2)
 {
-	return spim_write_reg(0x3F, wrsr2);
+	return spim_write_reg(&spi_spec, 0x3F, wrsr2);
 }
 
 int _spim_wait_while_rpu_awake(void)
@@ -208,7 +211,13 @@ int spim_wait_while_rpu_wake_write(void)
 
 int spim_cmd_rpu_wakeup(uint32_t data)
 {
-	return spim_write_reg(0x3F, data);
+	struct spi_dt_spec *spi_spec_tmp = (struct spi_dt_spec *)&spi_spec;
+
+	if (spi_spec.config.frequency > MHZ(8)) {
+		spi_spec_tmp = &spi_spec_8mhz;
+	}
+	/* Waking RPU works reliably only with lowest frequency (8MHz) */
+	return spim_write_reg(spi_spec_tmp, 0x3F, data);
 }
 
 unsigned int spim_cmd_sleep_rpu(void)
@@ -242,6 +251,8 @@ int spim_init(struct qspi_config *config)
 	if (spi_spec.config.frequency >= MHZ(16)) {
 		spim_config->qspi_slave_latency = 1;
 	}
+
+	spi_spec_8mhz.config.frequency = MHZ(8);
 
 	LOG_INF("SPIM %s: freq = %d MHz", spi_spec.bus->name,
 		spi_spec.config.frequency / MHZ(1));

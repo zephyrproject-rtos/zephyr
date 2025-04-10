@@ -32,6 +32,9 @@ More details about the supported peripherals are available in `M2L31 TRM`_
 
 Building and Flashing
 *********************
+
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

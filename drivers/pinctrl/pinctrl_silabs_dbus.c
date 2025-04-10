@@ -37,7 +37,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			     (pins[i].base_offset * sizeof(mem_addr_t));
 		route_reg = enable_reg + (pins[i].route_offset * sizeof(mem_addr_t));
 
-		sys_write32(pins[i].port | FIELD_PREP(PIN_MASK, pins[i].pin), route_reg);
+		if (pins[i].route_offset != SILABS_PINCTRL_UNUSED) {
+			sys_write32(pins[i].port | FIELD_PREP(PIN_MASK, pins[i].pin), route_reg);
+		}
 
 		if (pins[i].en_bit != SILABS_PINCTRL_UNUSED) {
 			if (pins[i].mode == gpioModeDisabled) {

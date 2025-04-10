@@ -81,6 +81,8 @@ nRF9161:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for ``ctcc`` boards can be
 built in the usual way (see :ref:`build_an_application` for more details).
 

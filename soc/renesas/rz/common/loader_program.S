@@ -7,9 +7,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
 
+/* Require CONFIG_XIP=n */
 #define ROM_START	(CONFIG_FLASH_BASE_ADDRESS + DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
-#define RAM_START	_image_ram_start // Require CONFIG_XIP=n
-#define APP_SIZE	_image_ram_size
+#define RAM_START	CONFIG_SRAM_BASE_ADDRESS
+#define APP_SIZE	_flash_used
 
 _ASM_FILE_PROLOGUE
 

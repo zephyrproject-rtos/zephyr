@@ -131,6 +131,8 @@ To build the hello_world sample for the i.MX RT700 HiFi 4 DSP core:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 

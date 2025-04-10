@@ -435,8 +435,8 @@ static void eusart_dma_rx_flush(struct eusart_data *data)
 	}
 }
 
-static void eusart_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
-			     int status)
+__maybe_unused static void eusart_dma_rx_cb(const struct device *dma_dev, void *user_data,
+					    uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
 	struct eusart_data *data = uart_dev->data;
@@ -466,8 +466,8 @@ static void eusart_dma_rx_cb(const struct device *dma_dev, void *user_data, uint
 	}
 }
 
-static void eusart_dma_tx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
-			     int status)
+__maybe_unused static void eusart_dma_tx_cb(const struct device *dma_dev, void *user_data,
+					    uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
 	struct eusart_data *data = uart_dev->data;

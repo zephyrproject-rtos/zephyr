@@ -225,6 +225,13 @@ int step_dir_stepper_common_set_event_callback(const struct device *dev,
  */
 void stepper_handle_timing_signal(const struct device *dev);
 
+/**
+ * @brief Trigger callback function for stepper motor events.
+ * @param dev Pointer to the device structure.
+ * @param event The stepper_event to rigger the callback for.
+ */
+void stepper_trigger_callback(const struct device *dev, enum stepper_event event);
+
 /** @} */
 
 #endif /* ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_COMMON_H_ */

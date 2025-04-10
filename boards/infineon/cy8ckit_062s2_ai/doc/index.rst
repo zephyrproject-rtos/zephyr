@@ -63,6 +63,8 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The CY8CKIT-062S2-AI board includes an onboard programmer/debugger (`KitProg3`_)
 to provide debugging, flash programming, and serial communication over USB.
 Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version,

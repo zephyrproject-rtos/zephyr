@@ -184,6 +184,8 @@ assigned to USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H573I-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``stm32h573i_dk`` board configuration can be built and

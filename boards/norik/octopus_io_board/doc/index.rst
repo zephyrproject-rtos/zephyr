@@ -91,6 +91,8 @@ The board also has multiple built-in test points for measuring current consumpti
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Norik Octopus IO-Board can be programmed and debugged using the Tag-Connect TC2030-IDC 6-pin connector or 6-pin SWD pinheader.
 
 Building an application

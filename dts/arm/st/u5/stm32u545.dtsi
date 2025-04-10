@@ -21,6 +21,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 			clocks = <&rcc STM32_CLOCK(APB2, 24U)>,
 				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;

@@ -133,6 +133,8 @@ assigned to UART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F767ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f767zi`` board configuration can be built and

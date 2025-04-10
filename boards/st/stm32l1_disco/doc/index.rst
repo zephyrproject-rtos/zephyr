@@ -84,6 +84,8 @@ For more details please refer to `STM32L1DISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32L1DISCOVERY and STM32L152CDISCOVERY boards include an ST-LINK/V2 embedded debug tool interface.
 
 Applications for the ``stm32l1_disco`` board configuration can be built and

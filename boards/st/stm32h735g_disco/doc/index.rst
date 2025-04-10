@@ -68,6 +68,8 @@ COM port interface. Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H735G-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
 
 See :ref:`build_an_application` for more information about application builds.

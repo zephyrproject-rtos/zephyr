@@ -178,9 +178,10 @@ test_i2c_ms5607: ms5607@17 {
 	reg = <0x17>;
 };
 
-test_i2c_ms5837: ms5837@18 {
-	compatible = "meas,ms5837";
+test_i2c_ms5837_02ba: ms5837@18 {
+	compatible = "meas,ms5837-02ba";
 	reg = <0x18>;
+	status = "okay";
 };
 
 test_i2c_jc42: jc42@19 {
@@ -1265,7 +1266,21 @@ test_i2c_bmm350: bmm350@ac {
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ltr329: ltr329@aa {
+test_i2c_ltr329: ltr329@ad {
 	compatible = "liteon,ltr329";
 	reg = <0xad>;
+};
+
+test_i2c_ms5837_30ba: ms5837@ae {
+	compatible = "meas,ms5837-30ba";
+	reg = <0xae>;
+	status = "okay";
+};
+
+test_i2c_icp201xx: icp201xx@af {
+	compatible = "invensense,icp201xx";
+	reg = <0xaf>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
 };

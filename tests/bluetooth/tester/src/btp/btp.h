@@ -7,6 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef TESTS_BLUETOOTH_TESTER_SRC_BTP_
+#define TESTS_BLUETOOTH_TESTER_SRC_BTP_
+
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/addr.h>
 
@@ -87,6 +90,8 @@
 
 #define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
 
+#define BTP_EVENT_OPCODE 0x80
+
 /* TODO indicate delay response, should be removed when all commands are
  * converted to cmd+status+ev pattern
  */
@@ -104,3 +109,5 @@ struct btp_hdr {
 struct btp_status {
 	uint8_t code;
 } __packed;
+
+#endif /* TESTS_BLUETOOTH_TESTER_SRC_BTP_ */

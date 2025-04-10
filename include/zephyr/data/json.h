@@ -44,6 +44,8 @@ enum json_tokens {
 	JSON_TOK_ENCODED_OBJ = '4',
 	JSON_TOK_INT64 = '5',
 	JSON_TOK_UINT64 = '6',
+	JSON_TOK_FLOAT_FP = '7',
+	JSON_TOK_DOUBLE_FP = '8',
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',
@@ -237,12 +239,10 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param elem_descr_len_ Number of elements in elem_descr_
  */
 #define Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_) \
-	{ \
 		.object = { \
 			.sub_descr = elem_descr_, \
 			.sub_descr_len = elem_descr_len_, \
 		}, \
-	}
 
 /**
  * @brief Helper macro to declare a descriptor for an array of primitives

@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_RPI_PICO
-	bool "RaspberryPi Pico pin controller driver"
+	bool "Raspberry Pi Pico pin controller driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_PINCTRL_ENABLED
 	select PICOSDK_USE_GPIO
 	help
-	  RaspberryPi Pico pinctrl driver
+	  Raspberry Pi Pico pinctrl driver

@@ -1259,6 +1259,7 @@ static int zms_init(struct zms_fs *fs)
 			}
 
 			if (zms_gc_done_ate_valid(fs, &gc_done_ate)) {
+				gc_done_marker = true;
 				break;
 			}
 			addr += fs->ate_size;

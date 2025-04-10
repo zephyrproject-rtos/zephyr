@@ -61,6 +61,8 @@ The board uses a standard XIAO pinout, the default pin mapping is the following:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

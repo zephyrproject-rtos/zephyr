@@ -340,6 +340,8 @@ For hardware feature details, refer to : `Designware HS4x/HS4xD Development Kit 
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

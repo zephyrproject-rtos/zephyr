@@ -249,6 +249,8 @@ Console default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 There are two alternative methods of flashing ST Sensortile.box Pro board:
 
 1. Using DFU software tools

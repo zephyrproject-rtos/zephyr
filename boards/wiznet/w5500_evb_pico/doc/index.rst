@@ -74,6 +74,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -112,7 +114,7 @@ interface that can be used to program and debug the on board RP2040. This
 interface can be utilized by OpenOCD. To use it with the RP2040, OpenOCD
 version 0.12.0 or later is needed.
 
-If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and
+If you are using a Debian based system (including Raspberry Pi OS, Ubuntu, and
 more), using the `pico_setup.sh`_ script is a convenient way to set up the
 forked version of OpenOCD.
 

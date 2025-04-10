@@ -473,104 +473,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_mesh_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_MESH_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_MESH_CONFIG_PROVISIONING);
-	tester_set_bit(rp->data, BTP_MESH_PROVISION_NODE);
-	tester_set_bit(rp->data, BTP_MESH_INIT);
-	tester_set_bit(rp->data, BTP_MESH_RESET);
-	tester_set_bit(rp->data, BTP_MESH_INPUT_NUMBER);
-	tester_set_bit(rp->data, BTP_MESH_INPUT_STRING);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_MESH_IVU_TEST_MODE);
-	tester_set_bit(rp->data, BTP_MESH_IVU_TOGGLE_STATE);
-	tester_set_bit(rp->data, BTP_MESH_NET_SEND);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_GENERATE_FAULTS);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_CLEAR_FAULTS);
-	tester_set_bit(rp->data, BTP_MESH_LPN);
-	tester_set_bit(rp->data, BTP_MESH_LPN_POLL);
-	tester_set_bit(rp->data, BTP_MESH_MODEL_SEND);
-
-	/* octet 2 */
-#if defined(CONFIG_BT_TESTING)
-	tester_set_bit(rp->data, BTP_MESH_LPN_SUBSCRIBE);
-	tester_set_bit(rp->data, BTP_MESH_LPN_UNSUBSCRIBE);
-	tester_set_bit(rp->data, BTP_MESH_RPL_CLEAR);
-#endif /* CONFIG_BT_TESTING */
-	tester_set_bit(rp->data, BTP_MESH_PROXY_IDENTITY);
-	tester_set_bit(rp->data, BTP_MESH_COMP_DATA_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_BEACON_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_BEACON_SET);
-
-	/* octet 3 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_DEFAULT_TTL_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_DEFAULT_TTL_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_GATT_PROXY_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_GATT_PROXY_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_FRIEND_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_FRIEND_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_RELAY_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_RELAY_SET);
-
-	/* octet 4 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_PUB_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_PUB_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_ADD);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_DEL);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NETKEY_ADD);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NETKEY_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NETKEY_DEL);
-	tester_set_bit(rp->data, BTP_MESH_CFG_APPKEY_ADD);
-
-	/* octet 5 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_APPKEY_DEL);
-	tester_set_bit(rp->data, BTP_MESH_CFG_APPKEY_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_APP_BIND);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_APP_UNBIND);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_APP_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_APP_VND_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_HEARTBEAT_PUB_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_HEARTBEAT_PUB_GET);
-
-	/* octet 6 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_HEARTBEAT_SUB_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_HEARTBEAT_SUB_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NET_TRANS_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NET_TRANS_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_OVW);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_DEL_ALL);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_GET_VND);
-
-	/* octet 7 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_VA_ADD);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_VA_DEL);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_SUB_VA_OVW);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NETKEY_UPDATE);
-	tester_set_bit(rp->data, BTP_MESH_CFG_APPKEY_UPDATE);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NODE_IDT_SET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NODE_IDT_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_NODE_RESET);
-
-	/* octet 8 */
-	tester_set_bit(rp->data, BTP_MESH_CFG_LPN_TIMEOUT_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_MODEL_APP_BIND_VND);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_FAULT_GET);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_FAULT_CLEAR);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_PERIOD_GET);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_PERIOD_SET);
-
-	/* octet 9 */
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_ATTENTION_GET);
-	tester_set_bit(rp->data, BTP_MESH_HEALTH_ATTENTION_SET);
-	tester_set_bit(rp->data, BTP_MESH_PROVISION_ADV);
-	tester_set_bit(rp->data, BTP_MESH_CFG_KRP_GET);
-	tester_set_bit(rp->data, BTP_MESH_CFG_KRP_SET);
-	tester_set_bit(rp->data, BTP_MESH_VA_ADD);
-	tester_set_bit(rp->data, BTP_MESH_VA_DEL);
-
-	*rsp_len = sizeof(*rp) + 10;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MESH, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -899,18 +803,38 @@ static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+#endif
 
+#ifdef CONFIG_BT_MESH_PRIV_BEACON_SRV
 static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
 					     void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_proxy_priv_identity_cmd *cp = cmd;
+	uint16_t net_idx[CONFIG_BT_MESH_SUBNET_COUNT];
+	enum bt_mesh_feat_state priv_node_id = BT_MESH_FEATURE_DISABLED;
+	ssize_t count;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_proxy_private_identity_enable();
-	if (err) {
-		LOG_ERR("Failed to enable proxy private identity (err %d)", err);
+	count = bt_mesh_subnets_get(net_idx, ARRAY_SIZE(net_idx), 0);
+
+	if (count <= 0) {
+		LOG_ERR("No subnet (err:%i)", count);
 		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->enabled) {
+		priv_node_id = BT_MESH_FEATURE_ENABLED;
+	}
+
+	for (int i = 0; i < count; i++) {
+		err = bt_mesh_subnet_priv_node_id_set(net_idx[i], priv_node_id);
+		if (err) {
+			LOG_ERR("Failed to %s proxy private identity for net idx:%x (err %d)",
+				cp->enabled ? "enable" : "disable", net_idx[i], err);
+			return BTP_STATUS_FAILED;
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -5251,8 +5175,10 @@ static const struct btp_handler handlers[] = {
 	{.opcode = BTP_MESH_PRIV_NODE_ID_SET,
 	 .expect_len = sizeof(struct btp_priv_node_id_set_cmd),
 	 .func = priv_node_id_set},
+#endif
+#ifdef CONFIG_BT_MESH_PRIV_BEACON_SRV
 	{.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
-	 .expect_len = 0,
+	 .expect_len = sizeof(struct btp_proxy_priv_identity_cmd),
 	 .func = proxy_private_identity_enable},
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)

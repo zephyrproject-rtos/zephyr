@@ -8791,6 +8791,15 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 	case NODE_RX_TYPE_TERMINATE:
 		hci_disconn_complete_encode(pdu_data, handle, buf);
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+		/* Similar to the design of processing the termination when using Rx priority
+		 * thread, we process the termination event to handle Controller to Host data
+		 * flowcontrol in the Controller here.
+		 */
+		hci_disconn_complete_process(handle);
+#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
 		break;
 
 	case NODE_RX_TYPE_CONN_UPDATE:

@@ -24,6 +24,12 @@ LOG_MODULE_REGISTER(bt_br);
 
 #define RSSI_INVALID 127
 
+enum __packed resolve_name_state {
+	RESOLVE_REMOTE_NAME_PENDING,
+	RESOLVE_REMOTE_NAME_RESOLVING,
+	RESOLVE_REMOTE_NAME_RESOLVED,
+};
+
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
@@ -327,11 +333,10 @@ void bt_br_discovery_reset(void)
 	discovery_results_count = 0;
 }
 
-static void report_discovery_results(void)
+static bool check_request_name(void)
 {
-	bool resolving_names = false;
 	int i;
-	struct bt_br_discovery_cb *listener, *next;
+	bool resolving_names = false;
 
 	for (i = 0; i < discovery_results_count; i++) {
 		struct bt_br_discovery_priv *priv;
@@ -342,16 +347,37 @@ static void report_discovery_results(void)
 			continue;
 		}
 
-		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
-				 priv->clock_offset)) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_PENDING) {
 			continue;
 		}
 
-		priv->resolving = true;
+		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
+				 priv->clock_offset)) {
+			priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
+			continue;
+		}
+
+		priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVING;
 		resolving_names = true;
+		break;
 	}
 
-	if (resolving_names) {
+	return resolving_names;
+}
+
+static void report_discovery_results(void)
+{
+	int i;
+	struct bt_br_discovery_cb *listener, *next;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		struct bt_br_discovery_priv *priv;
+
+		priv = &discovery_results[i]._priv;
+		priv->resolve_state = RESOLVE_REMOTE_NAME_PENDING;
+	}
+
+	if (check_request_name()) {
 		return;
 	}
 
@@ -511,7 +537,6 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	struct bt_br_discovery_priv *priv;
 	int eir_len = 240;
 	uint8_t *eir;
-	int i;
 	struct bt_br_discovery_cb *listener, *next;
 
 	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
@@ -520,7 +545,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	}
 
 	priv = &result->_priv;
-	priv->resolving = false;
+	priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
 
 	if (evt->status) {
 		goto check_names;
@@ -572,15 +597,9 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	}
 
 check_names:
-	/* if still waiting for names */
-	for (i = 0; i < discovery_results_count; i++) {
-		struct bt_br_discovery_priv *dpriv;
-
-		dpriv = &discovery_results[i]._priv;
-
-		if (dpriv->resolving) {
-			return;
-		}
+	/* if still need to request name */
+	if (check_request_name()) {
+		return;
 	}
 
 	/* all names resolved, report discovery results */
@@ -982,7 +1001,7 @@ int bt_br_discovery_stop(void)
 
 		priv = &discovery_results[i]._priv;
 
-		if (!priv->resolving) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_RESOLVING) {
 			continue;
 		}
 

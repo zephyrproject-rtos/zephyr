@@ -897,10 +897,13 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		if (sub == beacon_sub) {
 			beacon_sub = NULL;
 		}
+
+		bt_mesh_proxy_identity_stop(sub);
 	} else {
 		bt_mesh_proxy_beacon_send(sub);
-		bt_mesh_adv_gatt_update();
 	}
+
+	bt_mesh_adv_gatt_update();
 }
 
 BT_MESH_SUBNET_CB_DEFINE(gatt_services) = {

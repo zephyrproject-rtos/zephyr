@@ -186,6 +186,8 @@ Default USART settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32MP157F doesn't have QSPI flash for Cortex®-M4 and it needs to be
 started by the Cortex®-A7 core. The Cortex®-A7 core is responsible for loading the
 Cortex®-M4 binary application into the RAM, and getting Cortex®-M4 out of reset.

@@ -105,9 +105,9 @@ struct udc_dwc2_data {
 	/* Main events the driver thread waits for */
 	struct k_event drv_evt;
 	/* Transfer triggers (IN on bits 0-15, OUT on bits 16-31) */
-	struct k_event xfer_new;
+	atomic_t xfer_new;
 	/* Finished transactions (IN on bits 0-15, OUT on bits 16-31) */
-	struct k_event xfer_finished;
+	atomic_t xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
 	uint32_t max_xfersize;
@@ -404,7 +404,7 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 	}
 
 	udc_buf_put(ep_cfg, buf);
-	k_event_post(&priv->xfer_new, BIT(16));
+	atomic_set_bit(&priv->xfer_new, 16);
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 
 	return 0;
@@ -820,7 +820,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	 * transfer beforehand. In Buffer DMA the SETUP can be copied to any EP0
 	 * OUT buffer. If there is any buffer queued, it is obsolete now.
 	 */
-	k_event_clear(&priv->xfer_finished, BIT(0) | BIT(16));
+	atomic_and(&priv->xfer_finished, ~(BIT(0) | BIT(16)));
 
 	buf = udc_buf_get_all(cfg_out);
 	if (buf) {
@@ -1553,6 +1553,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 			priv->pending_tx_flush |= BIT(usb_dwc2_get_depctl_txfnum(dxepctl));
 		}
 
+		udc_ep_set_busy(cfg, false);
 		return;
 	}
 
@@ -1726,15 +1727,15 @@ static int udc_dwc2_ep_clear_halt(const struct device *dev,
 
 	/* Resume queued transfers if any */
 	if (udc_buf_peek(cfg)) {
-		uint32_t ep_bit;
+		int ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+			ep_bit = USB_EP_GET_IDX(cfg->addr);
 		} else {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+			ep_bit = 16 + USB_EP_GET_IDX(cfg->addr);
 		}
 
-		k_event_post(&priv->xfer_new, ep_bit);
+		atomic_set_bit(&priv->xfer_new, ep_bit);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
@@ -1751,15 +1752,15 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
-		uint32_t ep_bit;
+		int ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+			ep_bit = USB_EP_GET_IDX(cfg->addr);
 		} else {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+			ep_bit = 16 + USB_EP_GET_IDX(cfg->addr);
 		}
 
-		k_event_post(&priv->xfer_new, ep_bit);
+		atomic_set_bit(&priv->xfer_new, ep_bit);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
@@ -2040,15 +2041,21 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		if (IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBHS20);
+		} else {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
+		}
 		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		if (IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBHS20);
+		} else {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
+		}
 		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
@@ -2059,8 +2066,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB11;
 		}
 
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBFS1148
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS1148);
 		hs_phy = false;
 	}
 
@@ -2290,8 +2296,8 @@ static int dwc2_driver_preinit(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	k_event_init(&priv->drv_evt);
-	k_event_init(&priv->xfer_new);
-	k_event_init(&priv->xfer_finished);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
@@ -2552,7 +2558,7 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 		return;
 	}
 
-	k_event_post(&priv->xfer_finished, BIT(ep_idx));
+	atomic_set_bit(&priv->xfer_finished, ep_idx);
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 }
 
@@ -2658,7 +2664,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	    net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
-		k_event_post(&priv->xfer_finished, BIT(16 + ep_idx));
+		atomic_set_bit(&priv->xfer_finished, 16 + ep_idx);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 	}
 }
@@ -2989,16 +2995,16 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 
 	if (bus_reset) {
 		/* Clear all pending transfers */
-		k_event_clear(&priv->xfer_new, UINT32_MAX);
-		k_event_clear(&priv->xfer_finished, UINT32_MAX);
+		atomic_clear(&priv->xfer_new);
+		atomic_clear(&priv->xfer_finished);
 		dwc2_on_bus_reset(dev);
 	} else {
 		/* Resume any pending transfer handling */
-		if (k_event_test(&priv->xfer_new, UINT32_MAX)) {
+		if (atomic_get(&priv->xfer_new)) {
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 		}
 
-		if (k_event_test(&priv->xfer_finished, UINT32_MAX)) {
+		if (atomic_get(&priv->xfer_finished)) {
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 		}
 	}
@@ -3053,7 +3059,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 		if (!priv->hibernated) {
 			LOG_DBG("New transfer(s) in the queue");
-			eps = k_event_clear(&priv->xfer_new, UINT32_MAX);
+			eps = atomic_clear(&priv->xfer_new);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
@@ -3075,7 +3081,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 
 		if (!priv->hibernated) {
-			eps = k_event_clear(&priv->xfer_finished, UINT32_MAX);
+			eps = atomic_clear(&priv->xfer_finished);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;

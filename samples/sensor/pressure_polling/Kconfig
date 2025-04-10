@@ -1,0 +1,13 @@
+# Copyright (c) 2024, TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+source "Kconfig.zephyr"

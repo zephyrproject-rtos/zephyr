@@ -67,6 +67,8 @@ retrieve those files.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Standalone application
 ======================
 

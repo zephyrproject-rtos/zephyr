@@ -97,6 +97,8 @@ aligns with the LaunchPad standard.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the TXD and RXD signals for a serial
 console using the XDS110 application serial port.

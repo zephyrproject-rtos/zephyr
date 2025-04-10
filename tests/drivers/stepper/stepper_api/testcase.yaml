@@ -25,10 +25,10 @@ tests:
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.ti_drv8424:
+  drivers.stepper.stepper_api.ti_drv84xx:
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv8424.overlay"
-      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi_ti_drv8424.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx.overlay"
+      - platform:nucleo_f767zi/stm32f767xx:DTC_OVERLAY_FILE="boards/nucleo_f767zi_ti_drv84xx.overlay"
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y

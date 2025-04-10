@@ -131,6 +131,8 @@ used with `RS485 CAN Shield`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F446RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f446re`` board configuration can be built and

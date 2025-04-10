@@ -132,6 +132,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nucleo F429ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

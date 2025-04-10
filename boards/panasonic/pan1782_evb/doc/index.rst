@@ -40,6 +40,8 @@ The schematics for the PAN1782 Evaluation Board are available in the
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Please use the ``pan1782_evb`` board configuration when
 :ref:`build_an_application` and :ref:`application_run`.
 

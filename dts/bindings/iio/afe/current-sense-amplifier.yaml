@@ -45,3 +45,16 @@ properties:
 
       If present the corresponding GPIO must be set to an active level
       to enable the current amplifier.
+
+  enable-calibration:
+    type: boolean
+    description: |
+      Enable calibration of the current sense amplifier.
+      This is used to calibrate the ADC prior to taking measurements.
+
+  zephyr,noise-threshold:
+    type: int
+    default: 0
+    description: |
+     Raw ADC readings below this threshold are treated as noise and
+     reported as 0 uA. The default value of 0 disables the threshold.

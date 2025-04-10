@@ -9,5 +9,6 @@ config UART_CMSDK_APB
 	depends on DT_HAS_ARM_CMSDK_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the UART driver for ARM CMSDK APB UART.

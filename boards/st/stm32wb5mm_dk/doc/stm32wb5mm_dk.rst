@@ -166,6 +166,8 @@ and the second to PC13. They have the aliases sw0 and sw1 respectively.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the module.
 
 Applications for the ``stm32wb5mm_dk`` board configuration can be built the

@@ -66,6 +66,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52833dk/nrf52833`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.

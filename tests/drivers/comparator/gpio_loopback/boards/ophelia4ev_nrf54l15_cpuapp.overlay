@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * P1.10 looped back to P1.11
+ */
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};

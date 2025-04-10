@@ -79,6 +79,8 @@ The on-board 8MHz crystal is used to produce a 72MHz system clock with PLL.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``stm32f103_mini`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

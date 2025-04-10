@@ -146,6 +146,7 @@
 			num-bidir-endpoints = <4>;
 			ram-size = <1280>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 12U)>;
+			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
 			status = "disabled";
 		};

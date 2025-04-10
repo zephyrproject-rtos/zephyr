@@ -1,5 +1,5 @@
 identifier: rpi_pico
-name: RaspberryPi-Pico
+name: Raspberry Pi Pico
 type: mcu
 arch: arm
 flash: 2048

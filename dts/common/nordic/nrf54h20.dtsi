@@ -8,6 +8,7 @@
 #include <nordic/nrf_common.dtsi>
 
 #include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/clock/nrfs-audiopll.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
@@ -136,13 +137,13 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <1000>;
-				exit-latency-us = <30>;
+				exit-latency-us = <7>;
 			};
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
 				min-residency-us = <2000>;
-				exit-latency-us = <260>;
+				exit-latency-us = <33>;
 			};
 		};
 	};
@@ -201,6 +202,12 @@
 			lflprc-accuracy-ppm = <1000>;
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
+		};
+
+		audiopll: audiopll {
+			compatible = "nordic,nrfs-audiopll";
+			frequency = <NRFS_AUDIOPLL_FREQ_AUDIO_44K1>;
+			status = "disabled";
 		};
 	};
 

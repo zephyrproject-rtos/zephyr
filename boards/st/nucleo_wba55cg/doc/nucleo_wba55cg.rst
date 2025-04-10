@@ -196,6 +196,8 @@ Default settings are 115500 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WBA55CG board includes an ST-LINK/V3 embedded debug tool interface.
 It could be used for flash and debug using either OpenOCD or STM32Cube ecosystem tools.
 

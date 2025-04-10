@@ -257,6 +257,8 @@ __attribute_const__ struct k_thread *z_smp_current_get(void);
 #define _current _kernel.cpus[0].current
 #endif
 
+#define CPU_ID ((CONFIG_MP_MAX_NUM_CPUS == 1) ? 0 : _current_cpu->id)
+
 /* This is always invoked from a context where preemption is disabled */
 #define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
 

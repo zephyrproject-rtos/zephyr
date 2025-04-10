@@ -63,6 +63,8 @@ For more details please refer to `STM32F0DISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32F0DISCOVERY board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``stm32f0_disco`` board configuration can be built and

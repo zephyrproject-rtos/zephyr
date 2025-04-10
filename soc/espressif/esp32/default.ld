@@ -13,16 +13,16 @@
 #include "memory.h"
 
 /* User available SRAM memory segments */
-procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
-procpu_iram_org = SRAM0_IRAM_START + SRAM0_CACHE_SIZE;
-procpu_iram_len = procpu_iram_end - procpu_iram_org;
+procpu_iram0_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
+procpu_iram0_org = SRAM0_IRAM_START + SRAM0_CACHE_SIZE;
+procpu_iram0_len = procpu_iram0_end - procpu_iram0_org;
 
-procpu_dram_end = SRAM2_DRAM_END;
-procpu_dram_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
-procpu_dram_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
+procpu_dram0_end = SRAM2_DRAM_END;
+procpu_dram0_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
+procpu_dram0_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
 
-user_dram_2_seg_org = SRAM1_DRAM_USER_START;
-user_dram_2_seg_len = SRAM1_USER_SIZE;
+procpu_dram1_org = SRAM1_DRAM_USER_START;
+procpu_dram1_len = SRAM1_DRAM_USER_SIZE;
 
 procpu_irom_org = ICACHE0_START;
 procpu_irom_len = ICACHE0_SIZE;
@@ -40,7 +40,14 @@ procpu_ext_ram_len = DCACHE1_SIZE;
 #define IRAM_REGION       iram0_0_seg
 #define DRAM_REGION       dram0_0_seg
 #define RAMABLE_REGION    dram0_0_seg
-#define ROMABLE_REGION    FLASH
+
+#ifndef CONFIG_ESP32_REGION_1_NOINIT
+#define RAMABLE_REGION_2  dram0_0_seg
+#else
+#define RAMABLE_REGION_2  dram1_0_seg
+#endif
+
+#define ROMABLE_REGION      FLASH
 
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
@@ -73,8 +80,9 @@ MEMORY
   FLASH (R):       org = 0x0,  len = FLASH_SIZE - 0x100
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
-  iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
-  dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
+  iram0_0_seg(RX): org = procpu_iram0_org, len = procpu_iram0_len
+  dram0_0_seg(RW): org = procpu_dram0_org, len = procpu_dram0_len
+  dram1_0_seg(RW): org = procpu_dram1_org, len = procpu_dram1_len
 
   irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
   drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
@@ -428,6 +436,7 @@ SECTIONS
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     *libzephyr.a:esp_system_chip.*(.literal.esp_system_abort .text.esp_system_abort)
@@ -801,7 +810,7 @@ SECTIONS
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN (4);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } GROUP_LINK_IN(RAMABLE_REGION_2)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _dram_data_start;
@@ -814,6 +823,7 @@ SECTIONS
 
   /* --- SPIRAM BEGIN --- */
 
+  /* The SPIRAM section needs to be spilled before the dram0.noinit */
 #ifdef CONFIG_ESP_SPIRAM
   .ext_ram (NOLOAD):
   {

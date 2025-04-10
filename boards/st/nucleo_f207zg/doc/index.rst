@@ -139,6 +139,8 @@ do it by removing ``SB156`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F207ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

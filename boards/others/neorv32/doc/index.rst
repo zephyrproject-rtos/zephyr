@@ -107,6 +107,8 @@ property of the ``trng`` devicetree node to ``okay``.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 First, configure the FPGA with the NEORV32 bitstream as described in the NEORV32
 user guide.
 
