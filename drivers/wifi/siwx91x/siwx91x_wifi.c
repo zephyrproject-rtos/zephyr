@@ -1305,7 +1305,6 @@ static int siwx91x_try_set_listen_interval(struct siwx91x_dev *sidev,
 					   uint16_t bcn_listen_interval)
 {
 	if (!siwx91x_is_device_connected(sidev)) {
-		LOG_ERR("Listen interval works after connection");
 		return -EACCES;
 	}
 
@@ -1315,6 +1314,7 @@ static int siwx91x_try_set_listen_interval(struct siwx91x_dev *sidev,
 static void siwx91x_clear_listen_interval(struct siwx91x_dev *sidev)
 {
 	sidev->bcn_listen_interval = 0;
+	sidev->listen_interval_wakeup = false;
 }
 
 static void siwx91x_set_dtim_ps_profile(sl_wifi_performance_profile_t *sl_ps_profile)
@@ -1326,12 +1326,22 @@ static void siwx91x_set_dtim_ps_profile(sl_wifi_performance_profile_t *sl_ps_pro
 static int siwx91x_set_listen_interval_ps_profile(struct siwx91x_dev *sidev,
 						  sl_wifi_performance_profile_t *sl_ps_profile)
 {
+	int status;
+
 	sl_ps_profile->dtim_aligned_type = 0;
 	if (sl_ps_profile->profile == HIGH_PERFORMANCE) {
 		return 0;
 	}
 
-	return siwx91x_try_set_listen_interval(sidev, sl_ps_profile, sidev->bcn_listen_interval);
+	status = siwx91x_try_set_listen_interval(sidev, sl_ps_profile, sidev->bcn_listen_interval);
+	if (status == -EACCES) {
+		sidev->listen_interval_wakeup = true;
+		sl_ps_profile->profile = HIGH_PERFORMANCE;
+		LOG_WRN("listen interval reflect after connection");
+		return 0;
+	}
+
+	return status;
 }
 
 static int siwx91x_set_ps_param_timeout(sl_wifi_performance_profile_t *sl_ps_profile,
@@ -1380,6 +1390,7 @@ static int siwx91x_set_ps_profile(struct siwx91x_dev *sidev,
 		sl_ps_profile->profile = sidev->ps_profile;
 		break;
 	case WIFI_PS_DISABLED:
+		sidev->listen_interval_wakeup = false;
 		if (sl_ps_profile->profile == HIGH_PERFORMANCE) {
 			return -EALREADY;
 		}
@@ -1429,9 +1440,15 @@ static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_param
 		if (!sl_ps_profile.dtim_aligned_type && params->enabled) {
 			status = siwx91x_try_set_listen_interval(sidev, &sl_ps_profile,
 								 sidev->bcn_listen_interval);
-			if (status < 0) {
+			if (status == -EACCES) {
+				sidev->listen_interval_wakeup = true;
+				LOG_WRN("listen interval reflect after connection");
+				return 0;
+			} else if (status < 0) {
 				return status;
 			}
+
+			sidev->listen_interval_wakeup = false;
 		}
 		break;
 
@@ -1498,10 +1515,33 @@ static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_param
 	return 0;
 }
 
+static int validate_ps_listen_interval(const struct device *dev)
+{
+	struct siwx91x_dev *sidev = dev->data;
+	struct wifi_ps_params params = {
+		.type = WIFI_PS_PARAM_STATE,
+		.enabled = WIFI_PS_ENABLED,
+	};
+	int ret;
+
+	if (!sidev->listen_interval_wakeup) {
+		return 0;
+	}
+
+	ret = siwx91x_set_power_save(dev, &params);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable PS after device connection: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 				    char *result, uint32_t result_size, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
+	const struct device *dev = sidev->iface->if_dev->dev;
 
 	if (*result != 'C') {
 		/* TODO: report the real reason of failure */
@@ -1520,6 +1560,7 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 	siwx91x_on_join_ipv4(sidev);
 	siwx91x_on_join_ipv6(sidev);
 
+	validate_ps_listen_interval(dev);
 	return 0;
 }
 
