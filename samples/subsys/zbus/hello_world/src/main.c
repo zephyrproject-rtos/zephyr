@@ -57,11 +57,16 @@ static bool simple_chan_validator(const void *msg, size_t msg_size)
 ZBUS_CHAN_DEFINE(simple_chan, /* Name */
 		 int,         /* Message type */
 
-		 simple_chan_validator, /* Validator */
-		 NULL,                  /* User data */
-		 ZBUS_OBSERVERS_EMPTY,  /* observers */
-		 0                      /* Initial value is 0 */
+		 simple_chan_validator,   /* Validator */
+		 NULL,                    /* User data */
+		 ZBUS_OBSERVERS(bar_sub), /* observers */
+		 0                        /* Initial value is 0 */
 );
+
+#define HEARTBEAT_EVENT 1
+#define HEARTBEAT_INTERVAL K_SECONDS(2)
+
+ZBUS_DELAYABLE_MSG_DEFINE(heartbeat_delayable, &simple_chan, int, ZBUS_MSG_INIT(HEARTBEAT_EVENT));
 
 static void listener_callback_example(const struct zbus_channel *chan)
 {
@@ -77,14 +82,25 @@ ZBUS_SUBSCRIBER_DEFINE(bar_sub, 4);
 static void subscriber_task(void)
 {
 	const struct zbus_channel *chan;
+	zbus_chan_reschedule_pub(&heartbeat_delayable, HEARTBEAT_INTERVAL);
 
 	while (!zbus_sub_wait(&bar_sub, &chan, K_FOREVER)) {
 		struct acc_msg acc;
+		int simple_msg;
 
 		if (&acc_data_chan == chan) {
 			zbus_chan_read(&acc_data_chan, &acc, K_MSEC(500));
 
 			LOG_INF("From subscriber -> Acc x=%d, y=%d, z=%d", acc.x, acc.y, acc.z);
+		}
+
+		if (&simple_chan == chan) {
+			zbus_chan_read(&simple_chan, &simple_msg, K_MSEC(500));
+
+			if (simple_msg == HEARTBEAT_EVENT) {
+				LOG_INF("From subscriber -> simple_msg = HEARTBEAT_EVENT");
+				zbus_chan_reschedule_pub(&heartbeat_delayable, HEARTBEAT_INTERVAL);
+			}
 		}
 	}
 }

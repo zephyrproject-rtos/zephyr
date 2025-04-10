@@ -46,5 +46,9 @@ Sample Output
     D: From listener -> Acc x=2, y=2, z=2
     D: FINISH processing channel acc_data change
     D: From subscriber -> Acc x=2, y=2, z=2
+    I: From subscriber -> simple_msg = HEARTBEAT_EVENT
+    I: From subscriber -> simple_msg = HEARTBEAT_EVENT
+    I: From subscriber -> simple_msg = HEARTBEAT_EVENT
+    I: From subscriber -> simple_msg = HEARTBEAT_EVENT
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
