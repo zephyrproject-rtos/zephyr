@@ -19,5 +19,6 @@ supported:
   - rtc_counter
   - pwm
   - flash
+  - can
 ram: 80
 flash: 256
