@@ -15,6 +15,13 @@
 #include <zephyr/device.h>
 
 /**
+ * @brief Mark interrupt as completed
+ *
+ * @param irq IRQ number to enable
+ */
+void riscv_plic_irq_complete(uint32_t irq);
+
+/**
  * @brief Enable interrupt
  *
  * @param irq Multi-level encoded interrupt ID

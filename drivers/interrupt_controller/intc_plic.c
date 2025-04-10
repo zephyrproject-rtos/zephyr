@@ -262,6 +262,22 @@ static void plic_irq_enable_set_state(uint32_t irq, bool enable)
 }
 
 /**
+ * @brief Clear a riscv PLIC-specific interrupt line
+ *
+ * This routine clear a RISCV PLIC-specific interrupt line.
+ * riscv_plic_irq_complete is called by RISCV_PRIVILEGED
+ *
+ * @param irq IRQ number to enable
+ */
+void riscv_plic_irq_complete(uint32_t irq)
+{
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
+	sys_write32(local_irq, claim_complete_addr);
+}
+
+/**
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
