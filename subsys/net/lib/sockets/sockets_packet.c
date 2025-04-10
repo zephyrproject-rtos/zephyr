@@ -234,6 +234,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			   int flags, const struct sockaddr *dest_addr,
 			   socklen_t addrlen)
 {
+	const struct sockaddr_ll *ll_addr = (const struct sockaddr_ll *)dest_addr;
 	k_timeout_t timeout = K_FOREVER;
 	int status;
 
@@ -246,6 +247,21 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
+	}
+
+	/* If no interface was set on the context yet, use the one provided in
+	 * the destination address for default binding, unless 0 (any interface)
+	 * was set, in that case let the stack choose the default.
+	 */
+	if (net_context_get_iface(ctx) == NULL && ll_addr->sll_ifindex != 0) {
+		struct net_if *iface = net_if_get_by_index(ll_addr->sll_ifindex);
+
+		if (iface == NULL) {
+			errno = EDESTADDRREQ;
+			return -1;
+		}
+
+		net_context_set_iface(ctx, iface);
 	}
 
 	/* Register the callback before sending in order to receive the response
