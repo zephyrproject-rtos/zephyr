@@ -537,12 +537,12 @@ static int adxl345_init(const struct device *dev)
 			(I2C_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst));),  \
 			())
 
-	/* Conditionally set the RTIO size based on the presence of SPI/I2C
-	 * lines 541 - 542.
-	 * The sizes of sqe and cqe pools are increased due to the amount of
-	 * multibyte reads needed for watermark using 31 samples
-	 * (adx345_stram - line 203), using smaller amounts of samples
-	 * to trigger an interrupt can decrease the pool sizes.
+	/** RTIO SQE/CQE pool size depends on the fifo-watermark because we
+	 * can't just burst-read all the fifo data at once. Datasheet specifies
+	 * we need to get one frame at a time (through the Data registers),
+	 * therefore, we set all the sequence at once to properly pull each
+	 * frame, and then end up calling the completion event so the
+	 * application receives it).
 	 */
 #define ADXL345_RTIO_DEFINE(inst)                                      \
 	/* Conditionally include SPI and/or I2C parts based on their presence */ \
@@ -552,10 +552,9 @@ static int adxl345_init(const struct device *dev)
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),     \
 				(ADXL345_RTIO_I2C_DEFINE(inst)),        \
 				())                                  \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_dt_spec) &&           \
-				DT_INST_NODE_HAS_PROP(inst, i2c_dt_spec),              \
-		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 128, 128);),              \
-		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);))               \
+	RTIO_DEFINE(adxl345_rtio_ctx_##inst,							   \
+		    2 * DT_INST_PROP(inst, fifo_watermark) + 2,					   \
+		    2 * DT_INST_PROP(inst, fifo_watermark) + 2);
 
 #define ADXL345_CONFIG(inst)								\
 		.odr = DT_INST_PROP(inst, odr),						\
