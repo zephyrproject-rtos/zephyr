@@ -40,7 +40,7 @@ static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 	case SL_WIFI_CLIENT_INTERFACE:
 		return WIFI_STA_MODE;
 	case SL_WIFI_AP_INTERFACE:
-		return WIFI_AP_MODE;
+		return WIFI_SOFTAP_MODE;
 	default:
 		return -EIO;
 	}

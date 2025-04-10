@@ -26,7 +26,7 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
-int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
+int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t wifi_oper_mode)
 {
 	sl_wifi_device_configuration_t default_config = {
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
@@ -60,7 +60,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		 k_panic();
 	}
 
-	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+	if (wifi_oper_mode == WIFI_STA_MODE) {
 		boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
 
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
@@ -107,7 +107,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 			SL_SI91X_BLE_ENABLE_ADV_EXTN |
 			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
 #endif
-	} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+	} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
 		boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
 		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 
@@ -136,22 +136,26 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
-			if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+			if (wifi_oper_mode == WIFI_STA_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
-			} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+			} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
+			} else {
+				/* No DHCPv6 configuration needed for other modes */
 			}
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
+			if (wifi_oper_mode == WIFI_STA_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
-			} else if (wifi_oper_mode == SL_SI91X_ACCESS_POINT_MODE) {
+			} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
 				boot_config->tcp_ip_feature_bit_map |=
 					SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
+			} else {
+				/* No DHCPv4 configuration needed for other modes */
 			}
 		}
 	} else {
@@ -165,17 +169,11 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 int siwx91x_nwp_mode_switch(uint8_t oper_mode)
 {
 	sl_wifi_device_configuration_t nwp_config;
-	sl_status_t status;
+	int status;
 
-	switch (oper_mode) {
-	case WIFI_STA_MODE:
-		siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &nwp_config);
-		break;
-	case WIFI_AP_MODE:
-		siwg91x_get_nwp_config(SL_SI91X_ACCESS_POINT_MODE, &nwp_config);
-		break;
-	default:
-		return -EINVAL;
+	status = siwx91x_get_nwp_config(&nwp_config, oper_mode);
+	if (status < 0) {
+		return status;
 	}
 
 	/* FIXME: Calling sl_wifi_deinit() impacts Bluetooth if coexistence is enabled */
@@ -197,7 +195,7 @@ static int siwg917_nwp_init(void)
 	sl_wifi_device_configuration_t network_config;
 	sl_status_t status;
 
-	siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &network_config);
+	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
 	 */
