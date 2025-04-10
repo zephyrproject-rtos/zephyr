@@ -196,6 +196,13 @@ static uint8_t pbp_set_public_broadcast_announcement(const void *cmd, uint16_t c
 	const struct btp_pbp_set_public_broadcast_announcement_cmd *cp = cmd;
 	int err = -EINVAL;
 
+	if (cp->features == 0U || cp->features > (BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
+		LOG_DBG("Invalid features: %u", cp->features);
+		return BTP_STATUS_FAILED;
+	}
+
 	if (cp->metadata_len <= PBP_EXT_ADV_METADATA_LEN_MAX) {
 		pbp_features_cached = cp->features;
 		pbp_metadata_cached_len = cp->metadata_len;
