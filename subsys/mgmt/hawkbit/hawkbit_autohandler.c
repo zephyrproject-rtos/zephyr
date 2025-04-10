@@ -115,6 +115,8 @@ int hawkbit_autohandler_set_delay(k_timeout_t timeout, bool if_bigger)
 
 void hawkbit_autohandler(bool auto_reschedule)
 {
+	k_event_clear(&hawkbit_autohandler_event, UINT32_MAX);
+
 	if (auto_reschedule) {
 		k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
 	} else {
