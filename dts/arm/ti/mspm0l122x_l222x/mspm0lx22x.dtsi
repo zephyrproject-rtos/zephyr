@@ -85,9 +85,9 @@
 		};
 	};
 
-	sram0: memory@20200000 {
+	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-		reg = <0x20200000 0x8000>;
+		reg = <0x20000000 0x8000>;
 	};
 
 	sysclk: system-clock {
