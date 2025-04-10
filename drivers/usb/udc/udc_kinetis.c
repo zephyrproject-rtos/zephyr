@@ -1154,14 +1154,19 @@ static const struct udc_api usbfsotg_api = {
 	.unlock = usbfsotg_unlock,
 };
 
+#define USBFSOTG_IRQ_DEFINE_OR(n)						\
+	COND_CODE_1(CONFIG_UHC_NXP_KHCI,					\
+	(irq_connect_dynamic(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+			     (void (*)(const void *))usbfsotg_isr_handler,	\
+			     DEVICE_DT_INST_GET(n), 0)),			\
+	(IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
+		     usbfsotg_isr_handler,					\
+		     DEVICE_DT_INST_GET(n), 0)))
+
 #define USBFSOTG_DEVICE_DEFINE(n)						\
 	static void udc_irq_enable_func##n(const struct device *dev)		\
 	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    usbfsotg_isr_handler,				\
-			    DEVICE_DT_INST_GET(n), 0);				\
-										\
+		USBFSOTG_IRQ_DEFINE_OR(n);					\
 		irq_enable(DT_INST_IRQN(n));					\
 	}									\
 										\
