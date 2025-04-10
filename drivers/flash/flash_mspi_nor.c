@@ -520,7 +520,7 @@ static int quad_enable_set(const struct device *dev, bool enable)
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
-	flash_mspi_command_set(dev, &commands[MSPI_IO_MODE_SINGLE].write_en);
+	flash_mspi_command_set(dev, &commands_single.write_en);
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 	if (rc < 0) {
@@ -672,7 +672,7 @@ static int flash_chip_init(const struct device *dev)
 	}
 #endif
 
-	flash_mspi_command_set(dev, &commands[MSPI_IO_MODE_SINGLE].id);
+	flash_mspi_command_set(dev, &commands_single.id);
 	dev_data->packet.data_buf  = id;
 	dev_data->packet.num_bytes = sizeof(id);
 
@@ -787,7 +787,39 @@ static DEVICE_API(flash, drv_api) = {
 }
 
 #define FLASH_SIZE_INST(inst) (DT_INST_PROP(inst, size) / 8)
-#define FLASH_CMDS(inst) &commands[DT_INST_ENUM_IDX(inst, mspi_io_mode)]
+
+/* Define copies of mspi_io_mode enum values, so they can be used inside
+ * the COND_CODE_1 macros.
+ */
+#define _MSPI_IO_MODE_SINGLE 0
+#define _MSPI_IO_MODE_QUAD_1_4_4 6
+#define _MSPI_IO_MODE_OCTAL 7
+BUILD_ASSERT(_MSPI_IO_MODE_SINGLE == MSPI_IO_MODE_SINGLE,
+	"Please align _MSPI_IO_MODE_SINGLE macro value");
+BUILD_ASSERT(_MSPI_IO_MODE_QUAD_1_4_4 == MSPI_IO_MODE_QUAD_1_4_4,
+	"Please align _MSPI_IO_MODE_QUAD_1_4_4 macro value");
+BUILD_ASSERT(_MSPI_IO_MODE_OCTAL == MSPI_IO_MODE_OCTAL,
+	"Please align _MSPI_IO_MODE_OCTAL macro value");
+
+/* Define a non-existing extern symbol to get an understandable compile-time error
+ * if the IO mode is not supported by the driver.
+ */
+extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
+
+#define FLASH_CMDS(inst) COND_CODE_1( \
+	IS_EQ(DT_INST_ENUM_IDX(inst, mspi_io_mode), _MSPI_IO_MODE_SINGLE), \
+	(&commands_single), \
+	(COND_CODE_1( \
+		IS_EQ(DT_INST_ENUM_IDX(inst, mspi_io_mode), _MSPI_IO_MODE_QUAD_1_4_4), \
+		(&commands_quad_1_4_4), \
+		(COND_CODE_1( \
+			IS_EQ(DT_INST_ENUM_IDX(inst, mspi_io_mode), _MSPI_IO_MODE_OCTAL), \
+			(&commands_octal), \
+			(&mspi_io_mode_not_supported) \
+		)) \
+	)) \
+)
+
 #define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
 
 #define FLASH_DW15_QER_VAL(inst) _CONCAT(JESD216_DW15_QER_VAL_, \
