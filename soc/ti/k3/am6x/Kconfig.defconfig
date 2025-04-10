@@ -4,7 +4,7 @@
 if SOC_SERIES_AM6X
 
 config KERNEL_ENTRY
-	default "_vector_table"
+	default "_vector_table" if SOC_SERIES_AM6X_R5
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
