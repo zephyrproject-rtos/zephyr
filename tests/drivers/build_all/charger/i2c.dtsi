@@ -54,3 +54,15 @@ bq257130@4 {
 	constant-charge-voltage-max-microvolt = <3800000>;
 	system-voltage-min-threshold-microvolt = <3328000>;
 };
+
+axp2101@5 {
+	compatible = "x-powers,axp2101";
+	reg = <0x5>;
+
+	charger {
+		compatible = "x-powers,axp2101-charger";
+		constant-charge-current-max-microamp = <300000>;
+		constant-charge-voltage-max-microvolt = <4200000>;
+		charge-term-current-microamp = <100000>;
+	};
+};
