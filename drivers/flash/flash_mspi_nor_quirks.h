@@ -75,7 +75,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	} while (status & SPI_NOR_WIP_BIT);
 
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands[MSPI_IO_MODE_SINGLE].write_en);
+	flash_mspi_command_set(dev, &commands_single.write_en);
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 	if (rc < 0) {
@@ -154,7 +154,7 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	}
 
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands[MSPI_IO_MODE_SINGLE].write_en);
+	flash_mspi_command_set(dev, &commands_single.write_en);
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 	if (rc < 0) {
