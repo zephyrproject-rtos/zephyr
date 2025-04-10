@@ -19,6 +19,7 @@ struct composite_config {
 	int32_t ocv_lookup_table[BATTERY_OCV_TABLE_LEN];
 	uint32_t charge_capacity_microamp_hours;
 	enum battery_chemistry chemistry;
+	bool fg_channels;
 };
 
 struct composite_data {
@@ -60,6 +61,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	struct composite_data *data = dev->data;
 	k_ticks_t now = k_uptime_ticks();
 	struct sensor_value sensor_val;
+	enum sensor_channel sensor_chan;
 	int64_t voltage;
 	int rc = 0;
 
@@ -100,7 +102,8 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->full_charge_capacity = config->charge_capacity_microamp_hours / 1000;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		rc = composite_channel_get(dev, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
+		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
 		val->voltage = sensor_value_to_micro(&sensor_val);
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
@@ -109,7 +112,8 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			return -ENOTSUP;
 		}
 		/* Fetch the voltage from the sensor */
-		rc = composite_channel_get(dev, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
+		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
 		voltage = sensor_value_to_micro(&sensor_val);
 		if (rc == 0) {
 			/* Convert voltage to state of charge */
@@ -119,7 +123,9 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CURRENT:
 	case FUEL_GAUGE_AVG_CURRENT:
-		rc = composite_channel_get(dev, SENSOR_CHAN_CURRENT, &sensor_val);
+		sensor_chan =
+			config->fg_channels ? SENSOR_CHAN_GAUGE_AVG_CURRENT : SENSOR_CHAN_CURRENT;
+		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
 		val->current = sensor_value_to_micro(&sensor_val);
 		break;
 	default:
@@ -156,6 +162,7 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 		.charge_capacity_microamp_hours =                                                  \
 			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),               \
 		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
+		.fg_channels = DT_INST_PROP(inst, fuel_gauge_channels),                            \
 	};                                                                                         \
 	static struct composite_data composite_##inst##_data;                                      \
 	DEVICE_DT_INST_DEFINE(inst, fuel_gauge_composite_init, NULL, &composite_##inst##_data,     \
