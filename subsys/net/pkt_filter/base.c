@@ -49,6 +49,7 @@ struct npf_rule_list npf_ipv6_recv_rules = {
 /*
  * Helper function
  */
+#if defined(CONFIG_NET_PKT_FILTER_IPV4_HOOK) || defined(CONFIG_NET_PKT_FILTER_IPV6_HOOK)
 static struct npf_rule_list *get_ip_rules(uint8_t pf)
 {
 	switch (pf) {
@@ -68,7 +69,7 @@ static struct npf_rule_list *get_ip_rules(uint8_t pf)
 
 	return NULL;
 }
-
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK || CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 /*
  * Rule application
  */
