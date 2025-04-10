@@ -745,10 +745,10 @@ ZTEST(lib_json_test, test_json_double_nan)
 			 "}";
 
 	struct test_double doubles = {
-		.some_double = NAN,
-		.another_double = NAN,
-		.some_array[0] = NAN,
-		.some_array[1] = NAN,
+		.some_double = (double)NAN,
+		.another_double = (double)NAN,
+		.some_array[0] = (double)NAN,
+		.some_array[1] = (double)NAN,
 		.some_array_len = 2,
 	};
 
@@ -775,10 +775,10 @@ ZTEST(lib_json_test, test_json_double_infinity)
 			 "}";
 
 	struct test_double doubles = {
-		.some_double = INFINITY,
-		.another_double = -INFINITY,
-		.some_array[0] = INFINITY,
-		.some_array[1] = -INFINITY,
+		.some_double = (double)INFINITY,
+		.another_double = (double)-INFINITY,
+		.some_array[0] = (double)INFINITY,
+		.some_array[1] = (double)-INFINITY,
 		.some_array_len = 2,
 	};
 
