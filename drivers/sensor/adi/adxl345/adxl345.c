@@ -482,7 +482,7 @@ static int adxl345_init(const struct device *dev)
 #ifdef CONFIG_ADXL345_TRIGGER
 	rc = adxl345_configure_fifo(dev, ADXL345_FIFO_STREAMED,
 				     ADXL345_INT2,
-				     SAMPLE_NUM);
+				     cfg->fifo_config.fifo_samples);
 	if (rc) {
 		return rc;
 	}
@@ -561,7 +561,7 @@ static int adxl345_init(const struct device *dev)
 		.odr = DT_INST_PROP(inst, odr),						\
 		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,				\
 		.fifo_config.fifo_trigger = ADXL345_INT2,			\
-		.fifo_config.fifo_samples = SAMPLE_NUM,					\
+		.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \
@@ -590,7 +590,19 @@ static int adxl345_init(const struct device *dev)
 		(ADXL345_CFG_IRQ(inst)), ())		\
 	}
 
-#define ADXL345_DEFINE(inst)								\
+#define ADXL345_DEFINE(inst)									   \
+												   \
+	BUILD_ASSERT(!IS_ENABLED(CONFIG_ADXL345_STREAM) ||					   \
+		     DT_INST_NODE_HAS_PROP(inst, fifo_watermark),				   \
+		     "Streaming requires fifo-watermark property. Please set it in the"		   \
+		     "device-tree node properties");						   \
+	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, fifo_watermark),			   \
+				 ((DT_INST_PROP(inst, fifo_watermark) > 0) &&			   \
+				  (DT_INST_PROP(inst, fifo_watermark) < 32)),			   \
+				 (true)),							   \
+		     "fifo-watermark must be between 1 and 32. Please set it in "		   \
+		     "the device-tree node properties");					   \
+												   \
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));                 \
 	static struct adxl345_dev_data adxl345_data_##inst = {                  \
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
