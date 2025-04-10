@@ -28,6 +28,8 @@ target_sources(app PRIVATE
   src/audio/bap_broadcast_source.c
   src/audio/bap_central.c
   src/audio/bap_peripheral.c
+  src/audio/cap_central.c
+  src/audio/cap_peripheral.c
   src/audio/vcp_central.c
   src/audio/vcp_peripheral.c
   src/host/gap_central.c
