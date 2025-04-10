@@ -28,7 +28,7 @@ target_link_libraries(pthreadpool PUBLIC compile_commands)
 
 target_include_directories(app PRIVATE ${XNNPACK_DIR}/include)
 target_link_libraries(app PRIVATE XNNPACK pthreadpool)
-target_sources(app PRIVATE main.c)
+target_sources(app PRIVATE src/main.c)
 
 
 
