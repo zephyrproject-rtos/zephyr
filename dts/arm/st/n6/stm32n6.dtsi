@@ -694,7 +694,7 @@
 				 <&rcc STM32_SRC_CKPER XSPI1_SEL(1)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -707,7 +707,7 @@
 				 <&rcc STM32_SRC_CKPER XSPI2_SEL(1)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
