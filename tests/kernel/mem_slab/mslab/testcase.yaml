@@ -3,3 +3,5 @@ tests:
     tags:
       - kernel
       - memory_slabs
+    extra_configs:
+      - platform:intel_ish_5_8_0/intel_ish_5_8_0:CONFIG_TEST_ALLOC_TIMEOUT_MS=180
