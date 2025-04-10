@@ -170,7 +170,7 @@
 }; 
 
 &spi1 {
-	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
+	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb8 &spi1_poci_pb7>;
 	pinctrl-names = "default";
 	status = "okay";
 	#address-cells = <1>;
