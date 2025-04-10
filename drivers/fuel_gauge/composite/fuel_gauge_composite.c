@@ -128,6 +128,12 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
 		val->current = sensor_value_to_micro(&sensor_val);
 		break;
+	case FUEL_GAUGE_TEMPERATURE:
+		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_TEMP : SENSOR_CHAN_DIE_TEMP;
+		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
+		/* Output unit = 0.1K (10x increase + 273.0) */
+		val->temperature = sensor_value_to_deci(&sensor_val) + 2730;
+		break;
 	default:
 		return -ENOTSUP;
 	}
