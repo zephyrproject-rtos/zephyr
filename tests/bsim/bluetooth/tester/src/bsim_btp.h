@@ -668,6 +668,144 @@ static inline void bsim_btp_cap_unicast_audio_start(uint8_t cig_id, uint8_t set_
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
 
+static inline void
+bsim_btp_cap_broadcast_source_setup_stream(uint8_t source_id, uint8_t subgroup_id,
+					   uint8_t coding_format, uint16_t vid, uint16_t cid,
+					   uint8_t cc_ltvs_len, const uint8_t cc_ltvs[],
+					   uint8_t metadata_ltvs_len, const uint8_t metadata_ltvs[])
+{
+	struct btp_cap_broadcast_source_setup_stream_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CAP;
+	cmd_hdr->opcode = BTP_CAP_BROADCAST_SOURCE_SETUP_STREAM;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->source_id = source_id;
+	cmd->subgroup_id = subgroup_id;
+	cmd->coding_format = coding_format;
+	cmd->vid = sys_cpu_to_le16(vid);
+	cmd->cid = sys_cpu_to_le16(cid);
+	cmd->cc_ltvs_len = cc_ltvs_len;
+	if (cc_ltvs_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, cc_ltvs, cc_ltvs_len);
+	}
+	cmd->metadata_ltvs_len = metadata_ltvs_len;
+	if (metadata_ltvs_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, metadata_ltvs, metadata_ltvs_len);
+	}
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_cap_broadcast_source_setup_subgroup(
+	uint8_t source_id, uint8_t subgroup_id, uint8_t coding_format, uint16_t vid, uint16_t cid,
+	uint8_t cc_ltvs_len, const uint8_t cc_ltvs[], uint8_t metadata_ltvs_len,
+	const uint8_t metadata_ltvs[])
+{
+	struct btp_cap_broadcast_source_setup_subgroup_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CAP;
+	cmd_hdr->opcode = BTP_CAP_BROADCAST_SOURCE_SETUP_SUBGROUP;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->source_id = source_id;
+	cmd->subgroup_id = subgroup_id;
+	cmd->coding_format = coding_format;
+	cmd->vid = sys_cpu_to_le16(vid);
+	cmd->cid = sys_cpu_to_le16(cid);
+	cmd->cc_ltvs_len = cc_ltvs_len;
+	if (cc_ltvs_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, cc_ltvs, cc_ltvs_len);
+	}
+	cmd->metadata_ltvs_len = metadata_ltvs_len;
+	if (metadata_ltvs_len > 0U) {
+		net_buf_simple_add_mem(&cmd_buffer, metadata_ltvs, metadata_ltvs_len);
+	}
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_cap_broadcast_source_setup(uint8_t source_id, uint32_t broadcast_id,
+						       uint32_t sdu_interval, uint8_t framing,
+						       uint16_t max_sdu, uint8_t rtn,
+						       uint16_t max_latency,
+						       uint32_t presentation_delay, uint8_t flags)
+{
+	struct btp_cap_broadcast_source_setup_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CAP;
+	cmd_hdr->opcode = BTP_CAP_BROADCAST_SOURCE_SETUP;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->source_id = source_id;
+	sys_put_le24(broadcast_id, cmd->broadcast_id);
+	sys_put_le24(sdu_interval, cmd->sdu_interval);
+	cmd->framing = framing;
+	cmd->max_sdu = sys_cpu_to_le16(max_sdu);
+	cmd->retransmission_num = rtn;
+	cmd->max_transport_latency = sys_cpu_to_le16(max_latency);
+	sys_put_le24(presentation_delay, cmd->presentation_delay);
+	cmd->flags = flags;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_cap_broadcast_adv_start(uint8_t source_id)
+{
+	struct btp_cap_broadcast_adv_start_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CAP;
+	cmd_hdr->opcode = BTP_CAP_BROADCAST_ADV_START;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->source_id = source_id;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_cap_broadcast_source_start(uint8_t source_id)
+{
+	struct btp_cap_broadcast_source_start_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_CAP;
+	cmd_hdr->opcode = BTP_CAP_BROADCAST_SOURCE_START;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->source_id = source_id;
+
+	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
 static inline void bsim_btp_wait_for_cap_discovered(void)
 {
 	struct btp_cap_discovery_completed_ev *ev;
