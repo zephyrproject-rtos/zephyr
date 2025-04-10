@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 
@@ -416,7 +417,6 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
-	size_t size = len;
 	uint8_t *src = (uint8_t *)buffer;
 	unsigned int key = 0;
 	int i, j;
@@ -428,6 +428,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	if (!dst) {
 		return -EINVAL;
 	}
+
+	sys_cache_instr_disable();
+	sys_cache_data_disable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/*
@@ -490,13 +493,12 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
-	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
+	/* Clock FlexSPI at 200 MHZ (100 MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(332));
+					data->port, MHZ(200));
 
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
@@ -517,6 +519,10 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
 			data->port,
 			offset);
+
+
+	sys_cache_instr_disable();
+	sys_cache_data_disable();
 
 	if (!dst) {
 		return -EINVAL;
@@ -576,9 +582,8 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 		offset += SPI_HYPERFLASH_SECTOR_SIZE;
 	}
 
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
