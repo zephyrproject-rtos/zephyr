@@ -97,6 +97,9 @@ Devicetree
   superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
   include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
 
+* The :c:macro:`DT_ENUM_HAS_VALUE` and :c:macro:`DT_INST_ENUM_HAS_VALUE` macros are now
+  checking all values, when used on an array, not just the first one.
+
 DAI
 ===
 
