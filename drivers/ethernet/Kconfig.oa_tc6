@@ -45,4 +45,12 @@ config OA_TC6_TX_RX_BUFFER_SIZE
 	  higher bandwidth. For SoCs with limited resources, set the value
 	  to at least 1 (68 bytes).
 
+config OA_TC6_SPI_ASYNC_SUPPORT
+	bool "MAC-PHY driver SPI async support"
+	depends on SPI_ASYNC
+	default n
+	help
+	  Enables asynchronous SPI transaction support in the MAC-PHY
+	  device driver.
+
 endif
