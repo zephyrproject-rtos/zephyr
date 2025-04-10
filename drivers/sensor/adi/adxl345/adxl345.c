@@ -562,7 +562,6 @@ static int adxl345_init(const struct device *dev)
 		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,				\
 		.fifo_config.fifo_trigger = ADXL345_INT2,			\
 		.fifo_config.fifo_samples = SAMPLE_NUM,					\
-		.odr = ADXL345_RATE_25HZ,						\
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \
