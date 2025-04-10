@@ -875,18 +875,10 @@ static void RISAF_Config(void)
 
 static int eth_initialize(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *dev_data;
-	const struct eth_stm32_hal_dev_cfg *cfg;
-	ETH_HandleTypeDef *heth;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int ret = 0;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-	cfg = dev->config;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-	__ASSERT_NO_MSG(cfg != NULL);
 
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
 		LOG_ERR("clock control device not ready");
@@ -921,8 +913,6 @@ static int eth_initialize(const struct device *dev)
 		LOG_ERR("Could not configure ethernet pins");
 		return ret;
 	}
-
-	heth = &dev_data->heth;
 
 	generate_mac(dev_data->mac_addr);
 
