@@ -619,3 +619,13 @@ int zbus_obs_set_enable(const struct zbus_observer *obs, bool enabled)
 
 	return 0;
 }
+
+void zbus_delayed_publish_work_handler(struct k_work *work)
+{
+	int err;
+
+	struct zbus_delayable_msg *msg = CONTAINER_OF(work, struct zbus_delayable_msg, work.work);
+	err = zbus_chan_pub(msg->chan, msg->data, K_FOREVER);
+
+	__ASSERT(err != 0, "failed to publish");
+}

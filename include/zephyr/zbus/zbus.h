@@ -550,6 +550,38 @@ struct zbus_channel_observation {
  * @param[in] _name The subscriber's name.
  */
 #define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
+
+/** @cond INTERNAL_HIDDEN */
+
+void zbus_delayed_publish_work_handler(struct k_work *work);
+
+struct zbus_delayable_msg {
+	struct k_work_delayable work;
+	const void *const data;
+	struct zbus_channel *chan;
+};
+
+/** @endcond */
+
+/**
+ * @brief Define and initialize a delayable zbus message context.
+ *
+ * This macro defines a delayble zbus message type and a variable type that corresponds to the
+ * zbus channel. This context can then be used to schedule publishes via the system work queue.
+ *
+ * @param[in] _name The name of the delayable zbus message context.
+ * @param[in] _p_chan Pointer to the zbus channel.
+ * @param _type The Message type of the channel.
+ * @param _init_val The init val of the message.
+ */
+#define ZBUS_DELAYABLE_MSG_DEFINE(_name, _p_chan, _type, _init_val)                                \
+	static const _type _CONCAT(_name, _delayable_msg_data) = _init_val;                        \
+	static struct zbus_delayable_msg _name = {                                                 \
+		.work = Z_WORK_DELAYABLE_INITIALIZER(zbus_delayed_publish_work_handler),           \
+		.data = (void *)&_CONCAT(_name, _delayable_msg_data),                              \
+		.chan = (struct zbus_channel *)_p_chan,                                            \
+	};
+
 /**
  *
  * @brief Publish to a channel
@@ -650,6 +682,58 @@ int zbus_chan_finish(const struct zbus_channel *chan);
  * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout);
+
+/**
+ *
+ * @brief Schedules a publish to a channel
+ *
+ * Enables the developer to schedule a message to a specific channel from the work queue
+ * thread.
+ *
+ * @param[in] delayable_msg The struct that holds the work context, zbus channel and a pointer to
+ * the message.
+ * @param[in] delay The time to wait before submitting the work item.
+ *  
+ * @return as with k_work_schedule().
+ */
+static inline int zbus_chan_schedule_pub(struct zbus_delayable_msg *delayable_msg,
+					 k_timeout_t delay)
+{
+	return k_work_schedule(&delayable_msg->work, delay);
+}
+
+/**
+ *
+ * @brief Reschedules a publish to a channel
+ *
+ * Enables the developer to reschedule a message to a specific channel from the work queue
+ * thread.
+ *
+ * @param[in] delayable_msg The struct that holds the work context, zbus channel and a pointer to
+ * the message.
+ * @param[in] delay The time to wait before submitting the work item.
+ * 
+ * @return as with k_work_reschedule().
+ */
+static inline int zbus_chan_reschedule_pub(struct zbus_delayable_msg *delayable_msg,
+					   k_timeout_t delay)
+{
+	return k_work_reschedule(&delayable_msg->work, delay);
+}
+
+/**
+ *
+ * @brief Cancels a publish to a channel
+ *
+ * @param[in] delayable_msg The struct that holds the work context, zbus channel and a pointer to
+ * the message.
+ * 
+ * @return as with k_work_cancel_delayable().
+ */
+static inline int zbus_chan_cancel_delayable_pub(struct zbus_delayable_msg *delayable_msg)
+{
+	return k_work_cancel_delayable(&delayable_msg->work);
+}
 
 #if defined(CONFIG_ZBUS_CHANNEL_NAME) || defined(__DOXYGEN__)
 
