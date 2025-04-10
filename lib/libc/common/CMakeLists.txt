@@ -21,5 +21,9 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     )
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
+# Add the ferror implementation here
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FERROR source/stdio/ferror.c)
+
 # Prevent compiler from optimizing calloc into an infinite recursive call
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin_malloc>)
+
