@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SMP_SVR_NRF54H20_SAMPLE
+	bool
+	default y if SOC_NRF54H20_CPUAPP
+	select EXPERIMENTAL
+
+source "Kconfig.zephyr"
