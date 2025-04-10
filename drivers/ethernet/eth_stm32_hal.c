@@ -258,23 +258,21 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 
 	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
-#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-	MACFilterConf.HashMulticast = ENABLE;
-	MACFilterConf.PassAllMulticast = DISABLE;
-#else
-	MACFilterConf.HashMulticast = DISABLE;
-	MACFilterConf.PassAllMulticast = ENABLE;
-#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
+
+	MACFilterConf.HashMulticast =
+		IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER) ? ENABLE : DISABLE;
+	MACFilterConf.PassAllMulticast =
+		IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER) ? DISABLE : ENABLE;
 	MACFilterConf.HachOrPerfectFilter = DISABLE;
 
 	HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
 
 	k_sleep(K_MSEC(1));
-#else
+#else /* CONFIG_ETH_STM32_HAL_API_V2 */
 	uint32_t tmp = heth->Instance->MACFFR;
 
 	/* clear all multicast filter bits, resulting in perfect filtering */
@@ -299,7 +297,7 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 	tmp = heth->Instance->MACFFR;
 	k_sleep(K_MSEC(1));
 	heth->Instance->MACFFR = tmp;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
@@ -1304,19 +1302,19 @@ static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_conf
 		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-		if (heth->Instance->MACPFR & ETH_MACPFR_PR) {
-			config->promisc_mode = true;
-		} else {
-			config->promisc_mode = false;
-		}
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+		ETH_MACFilterConfigTypeDef MACFilterConf;
+
+		HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+
+		config->promisc_mode = (MACFilterConf.PromiscuousMode == ENABLE);
 #else
 		if (heth->Instance->MACFFR & ETH_MACFFR_PM) {
 			config->promisc_mode = true;
 		} else {
 			config->promisc_mode = false;
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 		ret = 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 		break;
@@ -1354,19 +1352,21 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-		if (config->promisc_mode) {
-			heth->Instance->MACPFR |= ETH_MACPFR_PR;
-		} else {
-			heth->Instance->MACPFR &= ~ETH_MACPFR_PR;
-		}
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+		ETH_MACFilterConfigTypeDef MACFilterConf;
+
+		HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+
+		MACFilterConf.PromiscuousMode = config->promisc_mode ? ENABLE : DISABLE;
+
+		HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
 #else
 		if (config->promisc_mode) {
 			heth->Instance->MACFFR |= ETH_MACFFR_PM;
 		} else {
 			heth->Instance->MACFFR &= ~ETH_MACFFR_PM;
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 		ret = 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 		break;
