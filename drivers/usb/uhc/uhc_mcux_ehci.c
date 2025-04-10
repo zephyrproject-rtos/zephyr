@@ -324,15 +324,19 @@ static const usb_host_controller_interface_t uhc_mcux_if = {
 #define UHC_MCUX_PHY_CFG_PTR_OR_NULL(n)                                                            \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle), (&phy_config_##n), (NULL))
 
+#define UHC_MCUX_EHCI_IRQ_DEFINE_OR(n)                                                             \
+	COND_CODE_1(CONFIG_UDC_NXP_EHCI,                                                           \
+	(irq_connect_dynamic(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                            \
+			     (void (*)(const void *))uhc_mcux_isr, DEVICE_DT_INST_GET(n), 0)),     \
+	(IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uhc_mcux_isr,                      \
+		     DEVICE_DT_INST_GET(n), 0)))
+
 #define UHC_MCUX_EHCI_DEVICE_DEFINE(n)                                                             \
 	UHC_MCUX_PHY_DEFINE_OR(n);                                                                 \
                                                                                                    \
 	static void uhc_irq_enable_func##n(const struct device *dev)                               \
 	{                                                                                          \
-		irq_connect_dynamic(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                     \
-				    (void (*)(const void *))uhc_mcux_isr, DEVICE_DT_INST_GET(n),   \
-				    0);                                                            \
-                                                                                                   \
+		UHC_MCUX_EHCI_IRQ_DEFINE_OR(n);                                                    \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
                                                                                                    \
