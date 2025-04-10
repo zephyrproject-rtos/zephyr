@@ -956,6 +956,15 @@ static const uint8_t test_pattern_val[] = {
 	TEST_PATTERN_ENABLE | TEST_PATTERN_SQUARE | TEST_PATTERN_ROLLING,
 };
 
+static const char *const test_pattern_menu[] = {
+	"Disabled",
+	"Color bars",
+	"Color bars with rolling bar",
+	"Color squares",
+	"Color squares with rolling bar",
+	NULL
+};
+
 static int ov5640_set_ctrl_test_pattern(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
@@ -1282,20 +1291,14 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_ctrl(
-		&ctrls->light_freq, dev, VIDEO_CID_POWER_LINE_FREQUENCY,
-		(struct video_ctrl_range){.min = VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED,
-					  .max = VIDEO_CID_POWER_LINE_FREQUENCY_AUTO,
-					  .step = 1,
-					  .def = VIDEO_CID_POWER_LINE_FREQUENCY_50HZ});
+	ret = video_init_menu_ctrl(&ctrls->light_freq, dev, VIDEO_CID_POWER_LINE_FREQUENCY,
+				   VIDEO_CID_POWER_LINE_FREQUENCY_50HZ, NULL);
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(
-		&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
-		(struct video_ctrl_range){
-			.min = 0, .max = ARRAY_SIZE(test_pattern_val) - 1, .step = 1, .def = 0});
+	ret = video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
+				   test_pattern_menu);
 	if (ret) {
 		return ret;
 	}

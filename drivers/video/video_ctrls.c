@@ -15,6 +15,24 @@
 
 LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
 
+static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
+{
+	static const char *const camera_power_line_frequency[] = {"Disabled", "50 Hz", "60 Hz",
+								  "Auto", NULL};
+	static const char *const camera_exposure_auto[] = {"Auto Mode", "Manual Mode",
+							   "Shutter Priority Mode",
+							   "Aperture Priority Mode", NULL};
+
+	switch (id) {
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+		return camera_power_line_frequency;
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return camera_exposure_auto;
+	default:
+		return NULL;
+	}
+}
+
 static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range range)
 {
 	switch (type) {
@@ -98,6 +116,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	ctrl->cluster = NULL;
 	ctrl->is_auto = false;
 	ctrl->has_volatiles = false;
+	ctrl->menu = NULL;
 	ctrl->vdev = vdev;
 	ctrl->id = id;
 	ctrl->type = type;
@@ -119,6 +138,34 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	}
 
 	sys_dlist_append(&vdev->ctrls, &ctrl->node);
+
+	return 0;
+}
+
+int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			 uint8_t def, const char *const menu[])
+{
+	int ret;
+	uint8_t sz = 0;
+	const char *const *_menu = menu ? menu : video_get_std_menu_ctrl(id);
+
+	if (!_menu) {
+		return -EINVAL;
+	}
+
+	while (_menu[sz]) {
+		sz++;
+	}
+
+	ret = video_init_ctrl(
+		ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = sz - 1, .step = 1, .def = def});
+
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->menu = _menu;
 
 	return 0;
 }
@@ -404,7 +451,7 @@ fill_query:
 	cq->type = ctrl->type;
 	cq->flags = ctrl->flags;
 	cq->range = ctrl->range;
-
+	cq->menu = ctrl->menu;
 	cq->name = video_get_ctrl_name(cq->id);
 
 	return 0;
@@ -456,5 +503,12 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
 			"value=%d ",
 			cq->name, cq->id, typebuf, cq->flags, cq->range.min, cq->range.max,
 			cq->range.step, cq->range.def, vc.val);
+	}
+
+	if (cq->menu) {
+		while (cq->menu[i]) {
+			LOG_INF("%*s %u: %s", 32, "", i, cq->menu[i]);
+			i++;
+		}
 	}
 }

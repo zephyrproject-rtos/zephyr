@@ -54,11 +54,15 @@ struct video_ctrl {
 		int32_t val;
 		int64_t val64;
 	};
+	const char *const *menu;
 	sys_dnode_t node;
 };
 
 int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 		    struct video_ctrl_range range);
+
+int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			 uint8_t def, const char *const menu[]);
 
 void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
 
