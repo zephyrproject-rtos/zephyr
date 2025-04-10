@@ -21,9 +21,12 @@ struct composite_config {
 	enum battery_chemistry chemistry;
 };
 
-static int composite_read_micro(const struct device *dev, enum sensor_channel chan, int *val)
+struct composite_data {
+	k_ticks_t next_reading;
+};
+
+static int composite_fetch(const struct device *dev)
 {
-	struct sensor_value sensor_val;
 	int rc;
 
 	rc = pm_device_runtime_get(dev);
@@ -34,23 +37,41 @@ static int composite_read_micro(const struct device *dev, enum sensor_channel ch
 	if (rc < 0) {
 		return rc;
 	}
-	rc = sensor_channel_get(dev, chan, &sensor_val);
-	if (rc < 0) {
-		return rc;
-	}
-	rc = pm_device_runtime_put(dev);
-	if (rc < 0) {
-		return rc;
-	}
-	*val = sensor_value_to_micro(&sensor_val);
-	return 0;
+	return pm_device_runtime_put(dev);
 }
 
 static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			      union fuel_gauge_prop_val *val)
 {
 	const struct composite_config *config = dev->config;
-	int voltage, rc = 0;
+	struct composite_data *data = dev->data;
+	k_ticks_t now = k_uptime_ticks();
+	struct sensor_value sensor_val;
+	int64_t voltage;
+	int rc = 0;
+
+	/* Validate at build time that equivalent channel output fields still match */
+	BUILD_ASSERT(sizeof(val->absolute_state_of_charge) ==
+		     sizeof(val->relative_state_of_charge));
+	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, absolute_state_of_charge) ==
+		     offsetof(union fuel_gauge_prop_val, relative_state_of_charge));
+	BUILD_ASSERT(sizeof(val->current) == sizeof(val->avg_current));
+	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, current) ==
+			offsetof(union fuel_gauge_prop_val, avg_current));
+
+	if (now >= data->next_reading) {
+		/* Trigger a sample on the input devices */
+		rc = composite_fetch(config->battery_voltage);
+		if ((rc == 0) && config->battery_current) {
+			rc = composite_fetch(config->battery_current);
+		}
+		if (rc != 0) {
+			return rc;
+		}
+		/* Update timestamp for next reading */
+		data->next_reading =
+			now + k_ms_to_ticks_near64(CONFIG_FUEL_GAUGE_COMPOSITE_DATA_VALIDITY_MS);
+	}
 
 	switch (prop) {
 	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
@@ -66,30 +87,36 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->full_charge_capacity = config->charge_capacity_microamp_hours / 1000;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		rc = composite_read_micro(config->battery_voltage, SENSOR_CHAN_VOLTAGE,
-					  &val->voltage);
+		rc = sensor_channel_get(config->battery_voltage, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		val->voltage = sensor_value_to_micro(&sensor_val);
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
 		if (config->ocv_lookup_table[0] == -1) {
 			return -ENOTSUP;
 		}
-		rc = composite_read_micro(config->battery_voltage, SENSOR_CHAN_VOLTAGE, &voltage);
-		val->relative_state_of_charge =
-			battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+		/* Fetch the voltage from the sensor */
+		rc = sensor_channel_get(config->battery_voltage, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		voltage = sensor_value_to_micro(&sensor_val);
+		if (rc == 0) {
+			/* Convert voltage to state of charge */
+			val->relative_state_of_charge =
+				battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+		}
 		break;
 	case FUEL_GAUGE_CURRENT:
+	case FUEL_GAUGE_AVG_CURRENT:
 		if (config->battery_current == NULL) {
 			return -ENOTSUP;
 		}
-		rc = composite_read_micro(config->battery_current, SENSOR_CHAN_CURRENT,
-					  &val->current);
+		rc = sensor_channel_get(config->battery_current, SENSOR_CHAN_CURRENT, &sensor_val);
+		val->current = sensor_value_to_micro(&sensor_val);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return rc;
 }
 
 static DEVICE_API(fuel_gauge, composite_api) = {
@@ -106,7 +133,9 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),               \
 		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &composite_##inst##_config, POST_KERNEL,     \
+	static struct composite_data composite_##inst##_data;                                      \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &composite_##inst##_data,                          \
+			      &composite_##inst##_config, POST_KERNEL,                             \
 			      CONFIG_SENSOR_INIT_PRIORITY, &composite_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COMPOSITE_INIT)
