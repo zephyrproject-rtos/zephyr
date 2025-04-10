@@ -14,8 +14,8 @@
 #include <zephyr/kernel.h>
 
 struct composite_config {
-	const struct device *battery_voltage;
-	const struct device *battery_current;
+	const struct device *source_primary;
+	const struct device *source_secondary;
 	int32_t ocv_lookup_table[BATTERY_OCV_TABLE_LEN];
 	uint32_t charge_capacity_microamp_hours;
 	enum battery_chemistry chemistry;
@@ -40,6 +40,19 @@ static int composite_fetch(const struct device *dev)
 	return pm_device_runtime_put(dev);
 }
 
+static int composite_channel_get(const struct device *dev, enum sensor_channel chan,
+				 struct sensor_value *val)
+{
+	const struct composite_config *config = dev->config;
+	int rc;
+
+	rc = sensor_channel_get(config->source_primary, chan, val);
+	if ((rc == -ENOTSUP) && config->source_secondary) {
+		rc = sensor_channel_get(config->source_secondary, chan, val);
+	}
+	return rc;
+}
+
 static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			      union fuel_gauge_prop_val *val)
 {
@@ -57,13 +70,13 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		     offsetof(union fuel_gauge_prop_val, relative_state_of_charge));
 	BUILD_ASSERT(sizeof(val->current) == sizeof(val->avg_current));
 	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, current) ==
-			offsetof(union fuel_gauge_prop_val, avg_current));
+		     offsetof(union fuel_gauge_prop_val, avg_current));
 
 	if (now >= data->next_reading) {
 		/* Trigger a sample on the input devices */
-		rc = composite_fetch(config->battery_voltage);
-		if ((rc == 0) && config->battery_current) {
-			rc = composite_fetch(config->battery_current);
+		rc = composite_fetch(config->source_primary);
+		if ((rc == 0) && config->source_secondary) {
+			rc = composite_fetch(config->source_secondary);
 		}
 		if (rc != 0) {
 			return rc;
@@ -87,7 +100,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->full_charge_capacity = config->charge_capacity_microamp_hours / 1000;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		rc = sensor_channel_get(config->battery_voltage, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		rc = composite_channel_get(dev, SENSOR_CHAN_VOLTAGE, &sensor_val);
 		val->voltage = sensor_value_to_micro(&sensor_val);
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
@@ -96,7 +109,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			return -ENOTSUP;
 		}
 		/* Fetch the voltage from the sensor */
-		rc = sensor_channel_get(config->battery_voltage, SENSOR_CHAN_VOLTAGE, &sensor_val);
+		rc = composite_channel_get(dev, SENSOR_CHAN_VOLTAGE, &sensor_val);
 		voltage = sensor_value_to_micro(&sensor_val);
 		if (rc == 0) {
 			/* Convert voltage to state of charge */
@@ -106,10 +119,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CURRENT:
 	case FUEL_GAUGE_AVG_CURRENT:
-		if (config->battery_current == NULL) {
-			return -ENOTSUP;
-		}
-		rc = sensor_channel_get(config->battery_current, SENSOR_CHAN_CURRENT, &sensor_val);
+		rc = composite_channel_get(dev, SENSOR_CHAN_CURRENT, &sensor_val);
 		val->current = sensor_value_to_micro(&sensor_val);
 		break;
 	default:
@@ -119,14 +129,28 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return rc;
 }
 
+static int fuel_gauge_composite_init(const struct device *dev)
+{
+	const struct composite_config *config = dev->config;
+
+	/* Validate sources are ready */
+	if (!device_is_ready(config->source_primary)) {
+		return -ENODEV;
+	}
+	if (config->source_secondary && !device_is_ready(config->source_secondary)) {
+		return -ENODEV;
+	}
+	return 0;
+}
+
 static DEVICE_API(fuel_gauge, composite_api) = {
 	.get_property = composite_get_prop,
 };
 
 #define COMPOSITE_INIT(inst)                                                                       \
 	static const struct composite_config composite_##inst##_config = {                         \
-		.battery_voltage = DEVICE_DT_GET(DT_INST_PROP(inst, battery_voltage)),             \
-		.battery_current = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, battery_current)),     \
+		.source_primary = DEVICE_DT_GET(DT_INST_PROP(inst, source_primary)),               \
+		.source_secondary = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, source_secondary)),   \
 		.ocv_lookup_table =                                                                \
 			BATTERY_OCV_TABLE_DT_GET(DT_DRV_INST(inst), ocv_capacity_table_0),         \
 		.charge_capacity_microamp_hours =                                                  \
@@ -134,7 +158,7 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
 	};                                                                                         \
 	static struct composite_data composite_##inst##_data;                                      \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &composite_##inst##_data,                          \
+	DEVICE_DT_INST_DEFINE(inst, fuel_gauge_composite_init, NULL, &composite_##inst##_data,     \
 			      &composite_##inst##_config, POST_KERNEL,                             \
 			      CONFIG_SENSOR_INIT_PRIORITY, &composite_api);
 
