@@ -266,7 +266,7 @@
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x4000>;
-			interrupts = <55 1>;
+			interrupts = <55 2>;
 			interrupt-names = "msc";
 			#address-cells = <1>;
 			#size-cells = <1>;
