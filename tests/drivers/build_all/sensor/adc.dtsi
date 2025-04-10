@@ -40,8 +40,8 @@ test_current: current_amp {
 test_composite_fuel_gauge: composite_fuel_gauge {
 	compatible = "zephyr,fuel-gauge-composite";
 	status = "okay";
-	battery-voltage = <&test_voltage>;
-	battery-current = <&test_current>;
+	source-primary = <&test_voltage>;
+	source-secondary = <&test_current>;
 	device-chemistry = "lithium-ion-polymer";
 	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 	charge-full-design-microamp-hours = <1000000>;
