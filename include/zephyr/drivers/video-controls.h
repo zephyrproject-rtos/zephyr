@@ -107,6 +107,15 @@ enum video_power_line_frequency {
  */
 #define VIDEO_CID_CAMERA_CLASS_BASE 0x009a0900
 
+/** Adjustments of exposure time and/or iris aperture. */
+#define VIDEO_CID_EXPOSURE_AUTO (VIDEO_CID_CAMERA_CLASS_BASE + 1)
+enum video_exposure_auto_type {
+	VIDEO_EXPOSURE_AUTO = 0,
+	VIDEO_EXPOSURE_MANUAL = 1,
+	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2,
+	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3
+};
+
 /** Amount of optical zoom applied through to the camera optics */
 #define VIDEO_CID_ZOOM_ABSOLUTE (VIDEO_CID_CAMERA_CLASS_BASE + 13)
 
@@ -256,6 +265,8 @@ struct video_ctrl_query {
 	uint32_t flags;
 	/** control range */
 	struct video_ctrl_range range;
+	/** menu if control is of menu type */
+	const char *const *menu;
 };
 
 /**
