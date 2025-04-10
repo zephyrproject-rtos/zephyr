@@ -208,7 +208,7 @@ int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode)
  * Set Output data rate.
  * @param dev - The device structure.
  * @param odr - Output data rate.
- *		Accepted values: ADXL345_ODR_12HZ
+ *		Accepted values: ADXL345_ODR_12_5HZ
  *				 ADXL345_ODR_25HZ
  *				 ADXL345_ODR_50HZ
  *				 ADXL345_ODR_100HZ
@@ -233,7 +233,7 @@ static int adxl345_attr_set_odr(const struct device *dev,
 
 	switch (val->val1) {
 	case 12:
-		odr = ADXL345_ODR_12HZ;
+		odr = ADXL345_ODR_12_5HZ;
 		break;
 	case 25:
 		odr = ADXL345_ODR_25HZ;
