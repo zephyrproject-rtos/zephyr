@@ -564,7 +564,8 @@ config NRF_WIFI_CTRL_HEAP_SIZE
 
 config NRF_WIFI_DATA_HEAP_SIZE
 	int "Dedicated memory pool for data plane"
-	default 8000 if NRF70_SCAN_ONLY || NRF70_RADIO_TEST #TODO: Need to optimize this.
+	default 0 if NRF70_RADIO_TEST || NRF70_OFFLOADED_RAW_TX
+	default 8000 if NRF70_SCAN_ONLY
 	default 110000 if !SOC_FAMILY_NORDIC_NRF
 	default 130000
 
