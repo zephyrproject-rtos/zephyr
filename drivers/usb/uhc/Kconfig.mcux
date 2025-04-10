@@ -7,7 +7,7 @@ config UHC_NXP_EHCI
 	depends on DT_HAS_NXP_UHC_EHCI_ENABLED
 	select EVENTS
 	select NOCACHE_MEMORY if CPU_HAS_DCACHE
-	select DYNAMIC_INTERRUPTS
+	select DYNAMIC_INTERRUPTS if UDC_NXP_EHCI
 	help
 	  NXP MCUX USB Host Controller Driver for EHCI.
 
@@ -16,6 +16,7 @@ config UHC_NXP_KHCI
 	default y
 	depends on DT_HAS_NXP_UHC_KHCI_ENABLED
 	select EVENTS
+	select DYNAMIC_INTERRUPTS if UDC_KINETIS
 	help
 	  NXP MCUX USB Host Controller Driver for KHCI.
 
