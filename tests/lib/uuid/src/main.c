@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, SECO Mind Srl
+ * Copyright (c) 2025, SECO Mind Srl
  *
  * SPDX-License-Identifier: Apache-2.0
  */
