@@ -83,11 +83,6 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 	DL_Timer_setCaptureCompareValue(config->base,
 					data->pulse_cycle,
 					config->cc_idx);
-
-	DL_Timer_clearInterruptStatus(config->base,
-				      DL_TIMER_INTERRUPT_ZERO_EVENT);
-	DL_Timer_enableInterrupt(config->base,
-				 DL_TIMER_INTERRUPT_ZERO_EVENT);
 	DL_Timer_enableClock(config->base);
 	DL_Timer_setCCPDirection(config->base, 1 << config->cc_idx);
 
