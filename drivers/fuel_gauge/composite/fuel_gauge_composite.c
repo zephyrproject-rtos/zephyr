@@ -90,16 +90,25 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 
 	switch (prop) {
 	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
-		if (config->charge_capacity_microamp_hours == 0) {
-			return -ENOTSUP;
+		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY, &sensor_val);
+		if (rc == -ENOTSUP) {
+			if (config->charge_capacity_microamp_hours == 0) {
+				return -ENOTSUP;
+			}
+			val->full_charge_capacity = config->charge_capacity_microamp_hours;
+			rc = 0;
 		}
-		val->full_charge_capacity = config->charge_capacity_microamp_hours;
 		break;
 	case FUEL_GAUGE_DESIGN_CAPACITY:
-		if (config->charge_capacity_microamp_hours == 0) {
-			return -ENOTSUP;
+		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY,
+					   &sensor_val);
+		if (rc == -ENOTSUP) {
+			if (config->charge_capacity_microamp_hours == 0) {
+				return -ENOTSUP;
+			}
+			val->design_cap = config->charge_capacity_microamp_hours / 1000;
+			rc = 0;
 		}
-		val->full_charge_capacity = config->charge_capacity_microamp_hours / 1000;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
 		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
@@ -108,17 +117,24 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		if (config->ocv_lookup_table[0] == -1) {
-			return -ENOTSUP;
-		}
-		/* Fetch the voltage from the sensor */
-		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
-		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
-		voltage = sensor_value_to_micro(&sensor_val);
+		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, &sensor_val);
 		if (rc == 0) {
-			/* Convert voltage to state of charge */
-			val->relative_state_of_charge =
-				battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+			val->absolute_state_of_charge = sensor_val.val1;
+		} else if (rc == -ENOTSUP) {
+			if (config->ocv_lookup_table[0] == -1) {
+				return -ENOTSUP;
+			}
+			/* Fetch the voltage from the sensor */
+			sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE
+							  : SENSOR_CHAN_VOLTAGE;
+			rc = composite_channel_get(dev, sensor_chan, &sensor_val);
+			voltage = sensor_value_to_micro(&sensor_val);
+			if (rc == 0) {
+				/* Convert voltage to state of charge */
+				val->relative_state_of_charge =
+					battery_soc_lookup(config->ocv_lookup_table, voltage) /
+					1000;
+			}
 		}
 		break;
 	case FUEL_GAUGE_CURRENT:
