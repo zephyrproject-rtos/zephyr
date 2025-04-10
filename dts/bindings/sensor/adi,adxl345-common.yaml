@@ -31,6 +31,12 @@ properties:
       - 11 # ADXL345_DT_ODR_200
       - 12 # ADXL345_DT_ODR_400
 
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Valid range: 1 - 31
+
   int2-gpios:
     type: phandle-array
     description: |
