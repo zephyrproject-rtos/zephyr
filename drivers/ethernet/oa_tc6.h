@@ -25,6 +25,7 @@
 #define OA_CONFIG0_PROTE     BIT(5)
 #define OA_STATUS0           MMS_REG(0x0, 0x008)
 #define OA_STATUS0_RESETC    BIT(6)
+#define OA_STATUS0_RX_BUFFER_OVERFLOW BIT(3)
 #define OA_STATUS1           MMS_REG(0x0, 0x009)
 #define OA_BUFSTS            MMS_REG(0x0, 0x00B)
 #define OA_BUFSTS_TXC        GENMASK(15, 8)
@@ -153,6 +154,14 @@ struct oa_tc6 {
 	/** Pointer to store the net_pkt while preparing the spi tx buffer */
 	struct net_pkt *ongoing_net_pkt;
 
+	/** Pointer to receive the net_pkt in IP stack */
+	struct net_pkt *rx_pkt;
+
+	/** net_buf pointer to store the received packet in IP stack */
+	struct net_buf *buf_rx;
+
+	/** Number of used rx buffers */
+	uint16_t buf_rx_used;
 	struct k_sem tx_enq_sem;
 	struct k_sem spi_sem;
 	uint16_t spi_length;
@@ -161,6 +170,7 @@ struct oa_tc6 {
 	bool tx_eth_frame_end;
 	uint8_t spi_tx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
 	uint8_t spi_rx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
+	bool rx_buf_overflow;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE);
 	struct k_thread thread;
