@@ -343,6 +343,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_ipv4_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
