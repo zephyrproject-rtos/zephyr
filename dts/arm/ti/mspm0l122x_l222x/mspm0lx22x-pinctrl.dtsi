@@ -37,19 +37,23 @@
 
 	/omit-if-no-ref/ spi1_sclk_pa17: spi1_sclk_pa17 {
 		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_3)>;
+		drive-open-drain;
 	};
 
 	/omit-if-no-ref/ spi1_pico_pb8: spi1_pico_pb8 {
 		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+		drive-open-drain;
 	};
 
 	/omit-if-no-ref/ spi1_poci_pb7: spi1_poci_pb7 {
 		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_3)>;
 		input-enable;
+		drive-open-drain;
 	};
 
 	/omit-if-no-ref/ spi1_cs0_pb6: spi1_cs0_pb6 {
 		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_3)>;
+		drive-open-drain;
 	};
 
 	/omit-if-no-ref/ adc0_pa27: adc0_pa27 {
