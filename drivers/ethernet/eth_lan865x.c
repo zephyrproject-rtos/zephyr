@@ -90,6 +90,13 @@ static void lan865x_iface_init(struct net_if *iface)
 		return;
 	}
 
+	/*
+	 * Interrupt line will remain as low, after completing the reset operation. On reception of
+	 * the first data header interrupt line will become high
+	 */
+	tc6->int_flag = true;
+	k_sem_give(&tc6->spi_sem);
+
 	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
 
 	if (tc6->iface == NULL) {
@@ -245,6 +252,7 @@ static int lan865x_init(const struct device *dev)
 		 "SPI frequency exceeds supported maximum\n");
 #endif
 	ret = oa_tc6_init(tc6);
+
 	if (ret < 0) {
 		LOG_ERR("OA TC6 init failed %d", ret);
 		return ret;
