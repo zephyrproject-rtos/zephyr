@@ -341,6 +341,9 @@ static uint16_t oa_tc6_prepare_spi_tx_buf_from_net_pkt(struct oa_tc6 *tc6)
 			tc6->ongoing_net_pkt = NULL;
 			break;
 		}
+		if (tx_offset >= OA_SPI_TX_RX_BUFFER_SIZE) {
+			return tx_offset;
+		}
 	}
 	return tx_offset;
 }
@@ -355,6 +358,13 @@ static void oa_tc6_add_tx_empty_chunks(struct oa_tc6 *tc6, uint8_t empty_chunks)
 	hdr = sys_cpu_to_be32(hdr);
 
 	while (empty_chunks--) {
+		if (tc6->spi_length > OA_SPI_TX_RX_BUFFER_SIZE) {
+			tc6->spi_length = OA_SPI_TX_RX_BUFFER_SIZE;
+			break;
+		} else if (tc6->spi_length == OA_SPI_TX_RX_BUFFER_SIZE) {
+			break;
+		}
+
 		spi_tx_buf = (uint32_t *)(tc6->spi_tx_buf + tc6->spi_length);
 		*spi_tx_buf = hdr;
 		tc6->spi_length += tc6->chunk_size;
@@ -764,7 +774,6 @@ static void oa_tc6_int_callback(const struct device *dev, struct gpio_callback *
 
 	if (!tc6->rst_flag) {
 		k_sem_give(&tc6->int_sem);
-
 	} else {
 		tc6->int_flag = true;
 		k_sem_give(&tc6->spi_sem);
