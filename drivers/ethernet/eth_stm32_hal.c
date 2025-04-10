@@ -890,9 +890,7 @@ static int eth_initialize(const struct device *dev)
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
 
-	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (!device_is_ready(dev_data->clock)) {
+	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
@@ -903,14 +901,14 @@ static int eth_initialize(const struct device *dev)
 #endif
 
 	/* enable clock */
-	ret = clock_control_on(dev_data->clock,
+	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken);
-	ret |= clock_control_on(dev_data->clock,
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_tx);
-	ret |= clock_control_on(dev_data->clock,
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_rx);
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	ret |= clock_control_on(dev_data->clock,
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_ptp);
 #endif
 
@@ -1685,7 +1683,7 @@ static int ptp_stm32_init(const struct device *port)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
 	/* Query ethernet clock rate */
-	ret = clock_control_get_rate(eth_dev_data->clock,
+	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 				     (clock_control_subsys_t)&eth_cfg->pclken,
 #else
