@@ -303,7 +303,8 @@ static const struct ethernet_api lan865x_api_func = {
 		.interrupt = &lan865x_config_##inst.interrupt,                                     \
 		.reset = &lan865x_config_##inst.reset,                                             \
 		.tx_rx_sem = Z_SEM_INITIALIZER((oa_tc6_##inst).tx_rx_sem, 1, 1),                   \
-		.int_sem = Z_SEM_INITIALIZER((oa_tc6_##inst).int_sem, 0, 1)};                      \
+		.int_sem = Z_SEM_INITIALIZER((oa_tc6_##inst).int_sem, 0, 1),                       \
+		.tx_pkt_mutex = Z_MUTEX_INITIALIZER((oa_tc6_##inst).tx_pkt_mutex)};                \
 	static struct lan865x_data lan865x_data_##inst = {                                         \
 		.tc6 = &oa_tc6_##inst};                                                            \
                                                                                                    \
