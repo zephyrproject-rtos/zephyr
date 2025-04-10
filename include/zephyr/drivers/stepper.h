@@ -338,9 +338,6 @@ static inline int z_impl_stepper_set_reference_position(const struct device *dev
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->set_reference_position == NULL) {
-		return -ENOSYS;
-	}
 	return api->set_reference_position(dev, value);
 }
 
@@ -360,9 +357,6 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->get_actual_position == NULL) {
-		return -ENOSYS;
-	}
 	return api->get_actual_position(dev, value);
 }
 
@@ -462,9 +456,6 @@ static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->move_to == NULL) {
-		return -ENOSYS;
-	}
 	return api->move_to(dev, micro_steps);
 }
 
