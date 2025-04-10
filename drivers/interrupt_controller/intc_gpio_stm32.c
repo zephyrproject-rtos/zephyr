@@ -141,7 +141,7 @@ static void stm32_exti_isr(const void *exti_range)
 		line = linenum_to_ll_exti_line(line_num);
 
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line) != 0) {
+		if (stm32_exti_is_pending(line_num)) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
