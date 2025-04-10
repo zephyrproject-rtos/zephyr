@@ -27,4 +27,14 @@ config ETH_LAN865X_INIT_PRIORITY
 	  LAN865X device driver initialization priority.
 	  Must be initialized after SPI.
 
+config ETH_LAN865X_SPI_ASYNC_SUPPORT
+	bool "LAN865X driver SPI async support"
+	depends on SPI_ASYNC
+	default y if SOC_SERIES_SAMC21 || SOC_SERIES_SAMD20 || SOC_SERIES_SAMD21 || \
+		     SOC_SERIES_SAME54 || SOC_SERIES_SAML21 || SOC_SERIES_SAMR21 || \
+		     SOC_SERIES_SAMR34
+	help
+	  Enables asynchronous SPI transaction support in the LAN865X device driver
+	  only for the specified SoC series.
+
 endif # ETH_LAN865X
