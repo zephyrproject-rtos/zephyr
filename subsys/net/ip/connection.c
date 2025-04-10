@@ -793,7 +793,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL) {
+				if (conn->proto == 0 || proto != ETH_P_ALL) {
 					continue; /* wrong protocol */
 				}
 			} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {

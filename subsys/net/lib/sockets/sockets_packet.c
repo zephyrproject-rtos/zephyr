@@ -486,7 +486,8 @@ static bool packet_is_supported(int family, int type, int proto)
 	switch (type) {
 	case SOCK_RAW:
 		proto = ntohs(proto);
-		return proto == ETH_P_ALL
+		return proto == 0
+		  || proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
 		  || proto == ETH_P_IEEE802154;
 
