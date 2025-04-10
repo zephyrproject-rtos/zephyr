@@ -5,7 +5,10 @@
  */
 
 #include <zephyr/net/mdio.h>
+#include <zephyr/net/net_if.h>
 #include <ethernet/eth_stats.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include "oa_tc6.h"
 
 #include <zephyr/logging/log.h>
@@ -262,54 +265,145 @@ int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
 	return 0;
 }
 
-static int oa_tc6_process_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
+static int oa_tc6_perform_spi(struct oa_tc6 *tc6)
 {
-	uint16_t len = net_pkt_get_len(pkt);
-	uint8_t oa_tx[tc6->cps];
-	uint32_t hdr, ftr;
-	uint8_t chunks, i;
+	struct spi_buf spi_tx_buf;
+	struct spi_buf spi_rx_buf;
+	struct spi_buf_set tx;
+	struct spi_buf_set rx;
+
+	spi_tx_buf.buf = tc6->spi_tx_buf;
+	spi_tx_buf.len = tc6->spi_length;
+	tx.buffers = &spi_tx_buf;
+	tx.count = 1;
+
+	spi_rx_buf.buf = tc6->spi_rx_buf;
+	spi_rx_buf.len = tc6->spi_length;
+	rx.buffers = &spi_rx_buf;
+	rx.count = 1;
+
+	return spi_transceive_dt(tc6->spi, &tx, &rx);
+}
+
+static uint16_t oa_tc6_prepare_spi_tx_buf_from_net_pkt(struct oa_tc6 *tc6)
+{
+	uint16_t tx_offset = 0;
+	uint8_t no_of_chunks;
+	uint32_t *hdr_pos;
+	uint8_t used_txc;
+	uint16_t tx_len;
+	uint32_t hdr;
 	int ret;
 
-	if (len == 0) {
-		return -ENODATA;
-	}
-
-	chunks = len / tc6->cps;
-	if (len % tc6->cps) {
-		chunks++;
-	}
-
-	/* Check if MAC-PHY has any free internal buffer space */
-	if (chunks > tc6->txc) {
-		return -EIO;
-	}
-
-	/* Transform struct net_pkt content into chunks */
-	for (i = 1; i <= chunks; i++) {
+	for (used_txc = 0; used_txc < tc6->txc; used_txc++) {
 		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 1) |
-		      FIELD_PREP(OA_DATA_HDR_NORX, 1) | FIELD_PREP(OA_DATA_HDR_SWO, 0);
+		      FIELD_PREP(OA_DATA_HDR_SWO, 0);
 
-		if (i == 1) {
+		if (!tc6->ongoing_net_pkt) {
+			tc6->ongoing_net_pkt = tc6->waiting_net_pkt;
+			tc6->waiting_net_pkt = NULL;
+			k_sem_give(&tc6->tx_enq_sem);
+			net_pkt_cursor_init(tc6->ongoing_net_pkt);
+			tc6->tx_eth_len = net_pkt_get_len(tc6->ongoing_net_pkt);
 			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
 		}
 
-		if (i == chunks) {
-			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, len - 1) | FIELD_PREP(OA_DATA_HDR_EV, 1);
+		no_of_chunks = tc6->tx_eth_len / tc6->cps;
+		if (tc6->tx_eth_len % tc6->cps) {
+			no_of_chunks++;
+		}
+
+		if (no_of_chunks == 1) {
+			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, tc6->tx_eth_len - 1) |
+			       FIELD_PREP(OA_DATA_HDR_EV, 1);
+			tc6->tx_eth_frame_end = true;
 		}
 
 		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+		hdr = sys_cpu_to_be32(hdr);
+		hdr_pos = (uint32_t *)(tc6->spi_tx_buf + tx_offset);
+		*hdr_pos = hdr;
+		tx_offset += OA_TC6_HDR_SIZE;
 
-		ret = net_pkt_read(pkt, oa_tx, len > tc6->cps ? tc6->cps : len);
+		tx_len = MIN(tc6->tx_eth_len, tc6->cps);
+		ret = net_pkt_read(tc6->ongoing_net_pkt, &tc6->spi_tx_buf[tx_offset], tx_len);
 		if (ret < 0) {
-			return ret;
+			eth_stats_update_errors_tx(tc6->iface);
+			net_pkt_unref(tc6->ongoing_net_pkt);
+			tc6->ongoing_net_pkt = NULL;
+			return 0;
 		}
-
-		ret = oa_tc6_chunk_spi_transfer(tc6, NULL, oa_tx, hdr, &ftr);
-		if (ret < 0) {
-			return ret;
+		tx_offset += tc6->cps;
+		tc6->tx_eth_len -= tx_len;
+		eth_stats_update_bytes_tx(tc6->iface, tx_len);
+		if (tc6->tx_eth_frame_end) {
+			net_pkt_unref(tc6->ongoing_net_pkt);
+			tc6->ongoing_net_pkt = NULL;
+			break;
 		}
+	}
+	return tx_offset;
+}
 
-		len -= tc6->cps;
+static void oa_tc6_add_tx_empty_chunks(struct oa_tc6 *tc6, uint8_t empty_chunks)
+{
+	uint32_t *spi_tx_buf;
+	uint32_t hdr;
+
+	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0);
+	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+	hdr = sys_cpu_to_be32(hdr);
+
+	while (empty_chunks--) {
+		spi_tx_buf = (uint32_t *)(tc6->spi_tx_buf + tc6->spi_length);
+		*spi_tx_buf = hdr;
+		tc6->spi_length += tc6->chunk_size;
+	}
+}
+
+int oa_tc6_spi_thread(struct oa_tc6 *tc6)
+{
+	uint8_t needed_tx_empty_chunks;
+	uint8_t tx_chunks;
+	int ret;
+
+	k_sem_take(&tc6->spi_sem, K_FOREVER);
+
+	if (tc6->waiting_net_pkt || tc6->ongoing_net_pkt) {
+		tc6->spi_length = oa_tc6_prepare_spi_tx_buf_from_net_pkt(tc6);
+	}
+
+	tx_chunks = tc6->spi_length / tc6->chunk_size;
+	if (tx_chunks < tc6->rca) {
+		needed_tx_empty_chunks = tc6->rca - tx_chunks;
+		oa_tc6_add_tx_empty_chunks(tc6, needed_tx_empty_chunks);
+	}
+
+	if (tc6->int_flag) {
+		tc6->int_flag = false;
+		if (tc6->spi_length == 0) {
+			oa_tc6_add_tx_empty_chunks(tc6, 1);
+		}
+	}
+
+	if (tc6->spi_length == 0) {
+		return 0;
+	}
+
+	ret = oa_tc6_perform_spi(tc6);
+	if (ret) {
+		LOG_ERR("SPI transfer failed: %d\n", ret);
+		return ret;
+	}
+
+	if (tc6->tx_eth_frame_end) {
+		eth_stats_update_pkts_tx(tc6->iface);
+		tc6->tx_eth_frame_end = false;
+	}
+	tc6->spi_length = 0;
+
+	if ((tc6->ongoing_net_pkt && tc6->txc) || (tc6->waiting_net_pkt && tc6->txc)) {
+		k_sem_give(&tc6->spi_sem);
 	}
 
 	return 0;
@@ -317,24 +411,13 @@ static int oa_tc6_process_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 
 int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
-	int ret;
+	net_pkt_ref(pkt);
 
-	k_sem_take(&tc6->tx_rx_sem, K_FOREVER);
+	tc6->waiting_net_pkt = pkt;
 
-	ret = oa_tc6_process_send_chunks(tc6, pkt);
+	k_sem_give(&tc6->spi_sem);
 
-	/* Check if rca > 0 during half-duplex TX transmission */
-	if (tc6->rca > 0) {
-		k_sem_give(&tc6->int_sem);
-	}
-
-	k_sem_give(&tc6->tx_rx_sem);
-
-	if (ret < 0) {
-		LOG_ERR("TX transmission error, %d", ret);
-		eth_stats_update_errors_tx(net_pkt_iface(pkt));
-		return ret;
-	}
+	k_sem_take(&tc6->tx_enq_sem, K_FOREVER);
 
 	return 0;
 }
@@ -606,12 +689,12 @@ static void oa_tc6_read_chunks(struct oa_tc6 *tc6)
 		return;
 	}
 
-	k_sem_take(&tc6->tx_rx_sem, K_FOREVER);
+	k_sem_take(&tc6->spi_sem, K_FOREVER);
 	ret = oa_tc6_process_read_chunks(tc6, pkt);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(tc6->iface);
 		net_pkt_unref(pkt);
-		k_sem_give(&tc6->tx_rx_sem);
+		k_sem_give(&tc6->spi_sem);
 		return;
 	}
 
@@ -621,7 +704,7 @@ static void oa_tc6_read_chunks(struct oa_tc6 *tc6)
 		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
 		net_pkt_unref(pkt);
 	}
-	k_sem_give(&tc6->tx_rx_sem);
+	k_sem_give(&tc6->spi_sem);
 }
 
 static void oa_tc6_int_thread(struct oa_tc6 *tc6)
@@ -630,8 +713,8 @@ static void oa_tc6_int_thread(struct oa_tc6 *tc6)
 	int ret;
 
 	while (true) {
-		k_sem_take(&tc6->int_sem, K_FOREVER);
 		if (!tc6->rst_flag) {
+			k_sem_take(&tc6->int_sem, K_FOREVER);
 			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
 			if (sts & OA_STATUS0_RESETC) {
 				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
@@ -644,6 +727,13 @@ static void oa_tc6_int_thread(struct oa_tc6 *tc6)
 				 */
 				oa_tc6_read_status(tc6, &ftr);
 				continue;
+			}
+		}
+
+		else {
+			if (oa_tc6_spi_thread(tc6)) {
+				LOG_ERR("Non recoverable error\n");
+				break;
 			}
 		}
 
@@ -672,12 +762,26 @@ static void oa_tc6_int_callback(const struct device *dev, struct gpio_callback *
 
 	struct oa_tc6 *tc6 = CONTAINER_OF(cb, struct oa_tc6, gpio_int_callback);
 
-	k_sem_give(&tc6->int_sem);
+	if (!tc6->rst_flag) {
+		k_sem_give(&tc6->int_sem);
+
+	} else {
+		tc6->int_flag = true;
+		k_sem_give(&tc6->spi_sem);
+	}
 }
 
 int oa_tc6_init(struct oa_tc6 *tc6)
 {
 	int ret;
+
+	tc6->chunk_size = tc6->cps + OA_TC6_HDR_SIZE;
+
+	k_sem_init(&tc6->spi_sem, 0, 1);
+	k_sem_init(&tc6->tx_enq_sem, 0, 1);
+
+	tc6->waiting_net_pkt = NULL;
+	tc6->ongoing_net_pkt = NULL;
 
 	if (!spi_is_ready_dt(tc6->spi)) {
 		LOG_ERR("SPI bus %s not ready", tc6->spi->bus->name);
