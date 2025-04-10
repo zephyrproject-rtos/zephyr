@@ -534,6 +534,7 @@ function(yaml_save)
 
     to_yaml("${json_content}" 0 yaml_out TEMP_GENEX)
     FILE(GENERATE OUTPUT ${expanded_file} CONTENT "${yaml_out}")
+    FILE(TOUCH ${expanded_file}) # ensure timestamp is updated even if nothing changed
   endif()
 endfunction()
 
