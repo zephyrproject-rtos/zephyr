@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,9 +19,9 @@
 #include "btp/btp.h"
 #include "bsim_btp.h"
 
-LOG_MODULE_REGISTER(bsim_bap_broadcast_sink, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(bsim_cap_broadcast_sink, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 
-static void test_bap_broadcast_sink(void)
+static void test_cap_broadcast_sink(void)
 {
 	const uint16_t pa_sync_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -39,6 +38,7 @@ static void test_bap_broadcast_sink(void)
 
 	bsim_btp_core_register(BTP_SERVICE_ID_GAP);
 	bsim_btp_core_register(BTP_SERVICE_ID_BAP);
+	bsim_btp_core_register(BTP_SERVICE_ID_CAS);
 	bsim_btp_core_register(BTP_SERVICE_ID_PACS);
 
 	bsim_btp_bap_broadcast_sink_setup();
@@ -64,14 +64,14 @@ static void test_bap_broadcast_sink(void)
 
 static const struct bst_test_instance test_sample[] = {
 	{
-		.test_id = "bap_broadcast_sink",
-		.test_descr = "Smoketest for the BAP Broadcast Sink BT Tester behavior",
-		.test_main_f = test_bap_broadcast_sink,
+		.test_id = "cap_broadcast_sink",
+		.test_descr = "Smoketest for the CAP Broadcast Sink BT Tester behavior",
+		.test_main_f = test_cap_broadcast_sink,
 	},
 	BSTEST_END_MARKER,
 };
 
-struct bst_test_list *test_bap_broadcast_sink_install(struct bst_test_list *tests)
+struct bst_test_list *test_cap_broadcast_sink_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_sample);
 }
