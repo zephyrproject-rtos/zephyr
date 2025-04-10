@@ -149,8 +149,8 @@ parameter.
   parameter from the separate table. This approach is commonly used in the ARC
   and ARM architectures via the :kconfig:option:`CONFIG_GEN_ISR_TABLES` implementation.
   You can find examples of the stubs by looking at :code:`_interrupt_enter()` in
-  x86, :code:`_IntExit()` in ARM, :code:`_isr_wrapper()` in ARM, or the full
-  implementation description for ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
+  x86, :code:`_isr_wrapper()` in ARM, or the full implementation description for
+  ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
 
@@ -252,7 +252,7 @@ A context switch can also be performed preemptively. This happens upon exiting
 an ISR, in the kernel interrupt exit stub:
 
 * :code:`_interrupt_enter` on x86 after the handler is called.
-* :code:`_IntExit` on ARM.
+* :code:`z_arm_exc_exit` and :code:`z_arm_int_exit` on ARM.
 * :code:`_firq_exit` and :code:`_rirq_exit` on ARCv2.
 
 In this case, the context switch must only be invoked when the interrupted
