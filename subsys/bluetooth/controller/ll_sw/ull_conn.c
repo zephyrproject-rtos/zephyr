@@ -2362,6 +2362,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	switch (lll->role) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
+		/* Since LLL prepare doesn't get to run, accumulate window widening here */
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (conn->llcp.prep.lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us =
+				lll->periph.window_widening_max_us;
+		}
+
 		lll->periph.window_widening_prepare_us -=
 			lll->periph.window_widening_periodic_us * instant_latency;
 
