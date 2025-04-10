@@ -157,17 +157,6 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	},
 };
 
-static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
-{
-#ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) != 0U) {
-		return thread->arch.ptables;
-	}
-#endif
-
-	return xtensa_kernel_ptables;
-}
-
 /**
  * @brief Check if the page table entry is illegal.
  *
@@ -731,6 +720,15 @@ void xtensa_mmu_tlb_shootdown(void)
 }
 
 #ifdef CONFIG_USERSPACE
+
+static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
+{
+	if ((thread->base.user_options & K_USER) != 0U) {
+		return thread->arch.ptables;
+	}
+
+	return xtensa_kernel_ptables;
+}
 
 static inline uint32_t *alloc_l1_table(void)
 {
