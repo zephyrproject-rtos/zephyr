@@ -686,6 +686,8 @@ def enum_macros(prop: edtlib.Property, macro: str):
         ret[f"{macro}_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
         ret[f"{macro}_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+        # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
+        ret[f"{macro}_ENUM_VAL_{subval}_EXISTS"] = 1
 
     return ret
 
