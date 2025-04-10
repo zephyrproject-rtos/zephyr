@@ -676,6 +676,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	if (!net_pkt_filter_local_in_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_local_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 

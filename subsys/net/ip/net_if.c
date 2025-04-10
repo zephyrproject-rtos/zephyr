@@ -340,7 +340,10 @@ void net_process_tx_packet(struct net_pkt *pkt)
 void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t timeout)
 {
 	if (!net_pkt_filter_send_ok(pkt)) {
-		/* silently drop the packet */
+		/* Silently drop the packet, but update the statistics in order
+		 * to be able to monitor filter activity.
+		 */
+		net_stats_update_filter_tx_drop(net_pkt_iface(pkt));
 		net_pkt_unref(pkt);
 		return;
 	}
