@@ -250,12 +250,19 @@ static const usb_host_controller_interface_t uhc_mcux_if = {
 	USB_HostKhciWritePipe, USB_HostKhciReadpipe, USB_HostKciIoctl,
 };
 
+#define UHC_MCUX_KHCI_IRQ_DEFINE_OR(n)                                                             \
+	COND_CODE_1(CONFIG_UDC_KINETIS,                                                           \
+	(irq_connect_dynamic(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                            \
+			     (void (*)(const void *))uhc_mcux_isr,                                 \
+			     DEVICE_DT_INST_GET(n), 0)),                                           \
+	(IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                                    \
+		     uhc_mcux_isr,                                                                 \
+		     DEVICE_DT_INST_GET(n), 0)))
+
 #define UHC_MCUX_KHCI_DEVICE_DEFINE(n)                                                             \
 	static void uhc_irq_enable_func##n(const struct device *dev)                               \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uhc_mcux_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
+		UHC_MCUX_KHCI_IRQ_DEFINE_OR(n);                                                    \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
                                                                                                    \
