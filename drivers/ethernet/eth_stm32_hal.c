@@ -88,17 +88,15 @@ static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0,
 #define ETH_RMII_MODE	ETH_MEDIA_INTERFACE_RMII
 #endif
 
-#define MAC_NODE DT_NODELABEL(mac)
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-#define STM32_ETH_PHY_MODE(node_id) \
-	((DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
-	 (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, gmii) ? ETH_GMII_MODE : \
-	 (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? ETH_MII_MODE : \
+#define STM32_ETH_PHY_MODE(inst) \
+	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
 		 ETH_RMII_MODE))))
 #else
-#define STM32_ETH_PHY_MODE(node_id) \
-	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? \
+#define STM32_ETH_PHY_MODE(inst) \
+	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
 		ETH_MII_MODE : ETH_RMII_MODE)
 #endif
 
@@ -1453,11 +1451,11 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-BUILD_ASSERT(DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, mii)
-	|| DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rmii)
+BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
+	|| DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet),
-	(|| DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rgmii)
-	 || DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, gmii))),
+	(|| DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rgmii)
+	 || DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, gmii))),
 			"Unsupported PHY connection type");
 
 static struct eth_stm32_hal_dev_data eth0_data = {
@@ -1472,7 +1470,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* CONFIG_ETH_STM32_HAL_API_V1 */
-			.MediaInterface = STM32_ETH_PHY_MODE(MAC_NODE),
+			.MediaInterface = STM32_ETH_PHY_MODE(0),
 		},
 	},
 };
