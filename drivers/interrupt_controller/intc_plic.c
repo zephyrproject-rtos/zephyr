@@ -594,7 +594,9 @@ static int plic_init(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t en_addr, thres_prio_addr;
+#if !defined(CONFIG_PLIC_WARM_BOOT)
 	mem_addr_t prio_addr = config->prio;
+#endif
 
 	/* Iterate through each of the contexts, HART + PRIV */
 	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
@@ -610,10 +612,12 @@ static int plic_init(const struct device *dev)
 		sys_write32(0U, thres_prio_addr);
 	}
 
+#if !defined(CONFIG_PLIC_WARM_BOOT)
 	/* Set priority of each interrupt line to 0 initially */
 	for (uint32_t i = 0; i < config->nr_irqs; i++) {
 		sys_write32(0U, prio_addr + (i * sizeof(uint32_t)));
 	}
+#endif
 
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();
