@@ -5,12 +5,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "btp/btp.h"
-#include <zephyr/sys/byteorder.h>
 
-#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_csis
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 

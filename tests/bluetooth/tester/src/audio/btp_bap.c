@@ -7,25 +7,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <errno.h>
 
-#include <zephyr/types.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
-#include <hci_core.h>
-
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#define LOG_MODULE_NAME bttester_bap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
 #include "btp/btp.h"
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 #include "btp_bap_broadcast.h"
+
+#include <hci_core.h>
+
+#define LOG_MODULE_NAME bttester_bap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define SUPPORTED_SINK_CONTEXT	BT_AUDIO_CONTEXT_TYPE_ANY
 #define SUPPORTED_SOURCE_CONTEXT BT_AUDIO_CONTEXT_TYPE_ANY
