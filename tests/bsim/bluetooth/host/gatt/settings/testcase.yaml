@@ -1,17 +1,106 @@
 common:
-  build_only: true
   tags:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
+  timeout: 120
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 30e6
+    bsim_options:
+      - -RealEncryption=1
+      - -argstest
 
 tests:
   bluetooth.host.gatt.settings:
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_prj_conf
+      bsim_devices:
+        - test_id: client
+          options:
+            - '0'
+            - '0'
+            - 'client'
+        - test_id: server
+          options:
+            - '0'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '1'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '2'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '3'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '4'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '5'
+            - '6'
+            - 'server'
+        - test_id: server
+          options:
+            - '6'
+            - '6'
+            - 'server'
+
   bluetooth.host.gatt.settings_priv:
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_overlay-privacy_conf
+      bsim_devices:
+        - test_id: client
+          options:
+            - '0'
+            - '0'
+            - 'client_priv'
+        - test_id: server
+          options:
+            - '0'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '1'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '2'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '3'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '4'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '5'
+            - '6'
+            - 'server_priv'
+        - test_id: server
+          options:
+            - '6'
+            - '6'
+            - 'server_priv'
     extra_args:
       EXTRA_CONF_FILE=overlay-privacy.conf
