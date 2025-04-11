@@ -1,4 +1,7 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 dut: &lpuart4 {
 	status = "okay";
