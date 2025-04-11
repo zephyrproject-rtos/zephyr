@@ -639,7 +639,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 #if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
 	defined(CONFIG_NRF70_SYSTEM_MODE)
-	LOG_INF("Configuring SLEEP CTRL GPIO control register\n");
+	LOG_DBG("Configuring SLEEP CTRL GPIO control register\n");
 	status = nrf_wifi_coex_config_sleep_ctrl_gpio_ctrl(rpu_ctx_zep->rpu_ctx,
 			alt_swctrl1_function_bt_coex_status1,
 			invert_bt_coex_grant_output);
