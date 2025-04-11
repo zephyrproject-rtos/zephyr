@@ -16,4 +16,5 @@ toolchain:
 supported:
   - gpio
   - uart
+  - flash
 vendor: nxp

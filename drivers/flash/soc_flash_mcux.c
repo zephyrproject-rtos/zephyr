@@ -138,6 +138,11 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
 }
+#elif CONFIG_SOC_SERIES_MCXA
+static void clear_flash_caches(void)
+{
+	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
+}
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES
 #define clear_flash_caches(...)
