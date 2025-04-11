@@ -41,8 +41,8 @@ Boards
 * All boards based on a Nordic IC of the nRF54L series now default to not
   erasing any part of the internal storage when flashing. If you'd like to
   revert to the previous default of erasing the pages that will be written to by
-  the firmware to be flashed you can use the new ``--erase-pages`` command-line
-  switch when invoking ``west flash``.
+  the firmware to be flashed you can set the new ``--erase-mode`` command-line
+  switch when invoking ``west flash`` to ``ranges``.
   Note that RRAM on nRF54L devices is not physically paged, and paging is
   only artificially provided, with a page size of 4096 bytes, for an easier
   transition of nRF52 software to nRF54L devices.
