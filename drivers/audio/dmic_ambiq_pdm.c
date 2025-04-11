@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/audio/dmic.h>
-
+#include <zephyr/cache.h>
 #include <am_mcu_apollo.h>
 
 #define DT_DRV_COMPAT ambiq_pdm
@@ -38,12 +38,6 @@ struct dmic_ambiq_pdm_cfg {
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
-
-static __aligned(32) struct {
-	__aligned(32) uint32_t buf[CONFIG_PDM_DMA_TCB_BUFFER_SIZE]; // CONFIG_PDM_DMA_TCB_BUFFER_SIZE
-								    // should be 2 x block_size
-} pdm_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".data"))); // SSRAM allocation
 
 static void dmic_ambiq_pdm_isr(const struct device *dev)
 {
@@ -163,7 +157,6 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 
 	/* Configure DMA and target address.*/
 	data->pdm_transfer.ui32TotalCount = data->sample_num * sizeof(uint32_t);
-	data->pdm_transfer.ui32TargetAddr = (uint32_t)(pdm_dma_tcb_buf[data->inst_idx].buf);
 	data->pdm_transfer.ui32TargetAddrReverse =
 		data->pdm_transfer.ui32TargetAddr + data->pdm_transfer.ui32TotalCount;
 
@@ -235,10 +228,11 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 		 * PDM DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
 		 * block_size
 		 */
-		am_hal_cachectrl_dcache_invalidate(
-			&(am_hal_cachectrl_range_t){(uint32_t)pdm_data_buf, data->block_size * 2},
-			false);
-
+#if CONFIG_PDM_AMBIQ_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)pdm_data_buf, data->block_size * 2)) {
+			sys_cache_data_invd_range(pdm_data_buf, data->block_size * 2);
+		}
+#endif /* PDM_AMBIQ_HANDLE_CACHE */
 		/* Re-arrange data */
 		if (data->frame_size_bytes == 2) {
  			uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
@@ -275,12 +269,16 @@ static const struct _dmic_ops dmic_ambiq_ops = {
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
+	static uint32_t pdm_dma_tcb_buf##n[DT_INST_PROP_OR(n, pdm_buffer_size, 1536)]              \
+	__attribute__((section(DT_INST_PROP_OR(n, pdm_buffer_location, ".data"))))                 \
+	__aligned(CONFIG_PDM_AMBIQ_BUFFER_ALIGNMENT);                                              \
 	static struct dmic_ambiq_pdm_data dmic_ambiq_pdm_data##n = {                               \
 		.dma_done_sem = Z_SEM_INITIALIZER(dmic_ambiq_pdm_data##n.dma_done_sem, 0, 1),      \
 		.inst_idx = n,                                                                     \
 		.block_size = 0,                                                                   \
 		.sample_num = 0,                                                                   \
 		.dmic_state = DMIC_STATE_UNINIT,                                                   \
+		.pdm_transfer.ui32TargetAddr = (uint32_t)pdm_dma_tcb_buf##n,                       \
 	};                                                                                         \
 	static const struct dmic_ambiq_pdm_cfg dmic_ambiq_pdm_cfg##n = {                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
