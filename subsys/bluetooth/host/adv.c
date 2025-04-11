@@ -1516,7 +1516,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		LOG_DBG("No valid legacy adv");
+		LOG_ERR("No valid legacy adv");
 		return;
 	}
 
@@ -1531,7 +1531,7 @@ void bt_le_adv_resume(void)
 
 	err = le_adv_start_add_conn(adv, &conn);
 	if (err) {
-		LOG_DBG("Host cannot resume connectable advertising (%d)", err);
+		LOG_ERR("Host cannot resume connectable advertising (%d)", err);
 		return;
 	}
 
@@ -1555,7 +1555,7 @@ void bt_le_adv_resume(void)
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
-		LOG_DBG("Controller cannot resume connectable advertising (%d)", err);
+		LOG_ERR("Controller cannot resume connectable advertising (%d)", err);
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		/* Temporarily clear persist flag to avoid recursion in
