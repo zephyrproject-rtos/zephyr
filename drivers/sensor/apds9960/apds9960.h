@@ -236,6 +236,7 @@ struct apds9960_data {
 #endif
 };
 
+#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 static inline void apds9960_setup_int(const struct apds9960_config *cfg,
 				      bool enable)
 {
@@ -245,6 +246,7 @@ static inline void apds9960_setup_int(const struct apds9960_config *cfg,
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
+#endif
 
 #ifdef CONFIG_APDS9960_TRIGGER
 void apds9960_work_cb(struct k_work *work);

@@ -23,14 +23,21 @@ config APDS9960_TRIGGER_NONE
 
 config APDS9960_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
-	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AVAGO_APDS9960),int-gpios)
 	select APDS9960_TRIGGER
+	select APDS9960_INTERRUPT_PIN
 
 endchoice
 
 config APDS9960_TRIGGER
 	bool
+
+config APDS9960_INTERRUPT_PIN
+	bool "Interrupt Pin"
+	default y
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AVAGO_APDS9960),int-gpios)
+	help
+	   Use Interrupt Pin
 
 config APDS9960_ENABLE_ALS
 	bool "Ambient Light Sense"
