@@ -11,12 +11,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/bluetooth/addr.h>
 
 #ifdef __cplusplus
 extern "C" {

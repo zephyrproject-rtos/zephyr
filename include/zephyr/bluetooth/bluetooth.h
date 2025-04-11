@@ -31,12 +31,15 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <zephyr/sys/util.h>
-#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/classic/classic.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,7 +244,7 @@ struct bt_le_ext_adv_cb {
 	 *
 	 * This callback notifies the application that the RPA validity of the advertising set has
 	 * expired. The user can use this callback to synchronize the advertising payload update
-	 * with the RPA rotation by for example envoking @ref bt_le_ext_adv_set_data upon callback.
+	 * with the RPA rotation by for example invoking @ref bt_le_ext_adv_set_data upon callback.
 	 *
 	 * If RPA sharing is enabled (see @kconfig{CONFIG_BT_RPA_SHARING}) and this RPA expired
 	 * callback of any adv-sets belonging to same adv id returns false, then adv-sets will
