@@ -1,0 +1,14 @@
+identifier: cv32a6_genesys_2
+name: OpenHWGroup CV32A6 on Genesys 2
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 1048576
+supported:
+  - gpio
+  - uart
+  - spi
+  - ethernet
+vendor: openhwgroup
