@@ -19,6 +19,7 @@
 		sw1 = &btn1;
 		pwm-led0 = &pwm_led;
 		counter = &countera0;
+		capture = &pwm4;
 	};
 
 	chosen {

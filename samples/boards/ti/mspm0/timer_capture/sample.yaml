@@ -1,0 +1,4 @@
+sample:
+  description: input capture for pwm signal, time and duration
+    application
+  name: timer capture
