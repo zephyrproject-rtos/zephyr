@@ -64,72 +64,89 @@ static inline void DBG(char *msg, struct k_thread *t)
 
 #ifdef CONFIG_RISCV_ISA_EXT_V
 
-void z_riscv_vstate_csr_save(struct z_riscv_v_context *dest)
+void z_riscv_vstate_save_thread(struct k_thread *thread)
 {
-	__asm volatile("csrr	%0, vstart\n\t"
-		       "csrr	%1, vtype\n\t"
-		       "csrr	%2, vl\n\t"
-		       "csrr	%3, vcsr\n\t"
-		       "csrr	%4, vlenb\n\t"
-		       : "=r"(dest->vstart), "=r"(dest->vtype), "=r"(dest->vl), "=r"(dest->vcsr),
-			 "=r"(dest->vlenb)
-		       :
-		       :);
-}
+	struct z_riscv_v_context *save_to = &thread->arch.saved_v_context;
 
-void z_riscv_vstate_csr_restore(struct z_riscv_v_context *src)
-{
-	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-		       "vsetvl	 x0, %2, %1\n\t"
-		       ".option pop\n\t"
-		       "csrw	vstart, %0\n\t"
-		       "csrw	vcsr, %3\n\t"
-		       :
-		       : "r"(src->vstart), "r"(src->vtype), "r"(src->vl), "r"(src->vcsr)
-		       :);
-}
+	size_t mstatus = csr_read(mstatus);
+	save_to->is_dirty = (mstatus & MSTATUS_VS) == MSTATUS_VS_DIRTY;
+	if (!save_to->is_dirty) {
+		csr_clear(mstatus, MSTATUS_VS_DIRTY);
+		return;
+	}
 
-void z_riscv_vstate_save(struct z_riscv_v_context *save_to)
-{
 	unsigned long vl;
 
-	z_riscv_vstate_csr_save(save_to);
-	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-		       "vsetvli	%0, x0, e8, m8, ta, ma\n\t"
-		       "vse8.v		v0, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vse8.v		v8, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vse8.v		v16, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vse8.v		v24, (%1)\n\t"
-		       ".option pop\n\t"
-		       : "=&r"(vl)
-		       : "r"(save_to->vreg)
-		       : "memory");
+	__asm volatile(
+		"csrr	%0, vstart\n\t"
+		"csrr	%1, vtype\n\t"
+		"csrr	%2, vl\n\t"
+		"csrr	%3, vcsr\n\t"
+		"csrr	%4, vlenb\n\t"
+		: "=r"(save_to->vstart), "=r"(save_to->vtype), "=r"(save_to->vl), "=r"(save_to->vcsr), "=r"(save_to->vlenb)
+		::);
+	__asm volatile(
+		".option push\n\t"
+		".option arch, +v\n\t"
+		"vsetvli	%0, x0, e8, m8, ta, ma\n\t"
+		"vse8.v		v0, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vse8.v		v8, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vse8.v		v16, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vse8.v		v24, (%1)\n\t"
+		".option pop\n\t"
+		: "=&r"(vl)
+		: "r"(save_to->vreg)
+		: "memory");
+	csr_clear(mstatus, MSTATUS_VS_DIRTY);
+}
+void z_riscv_vstate_save()
+{
+	z_riscv_vstate_save_thread(_current);
 }
 
-void z_riscv_vstate_restore(struct z_riscv_v_context *restore_from)
-{
+void z_riscv_vstate_restore_thread(struct k_thread *thread){
+	struct z_riscv_v_context *restore_from = &thread->arch.saved_v_context;
+	csr_set(mstatus, MSTATUS_VS_CLEAN);
+	if (!restore_from->is_dirty) {
+		return;
+	}
+	restore_from->is_dirty = false;
+
 	unsigned long vl;
 
-	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-		       "vsetvli	%0, x0, e8, m8, ta, ma\n\t"
-		       "vle8.v		v0, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vle8.v		v8, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vle8.v		v16, (%1)\n\t"
-		       "add		%1, %1, %0\n\t"
-		       "vle8.v		v24, (%1)\n\t"
-		       ".option pop\n\t"
-		       : "=&r"(vl)
-		       : "r"(restore_from->vreg)
-		       : "memory");
-	z_riscv_vstate_csr_restore(restore_from);
+	__asm volatile(
+		".option push\n\t"
+		".option arch, +v\n\t"
+		"vsetvli	%0, x0, e8, m8, ta, ma\n\t"
+		"vle8.v		v0, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vle8.v		v8, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vle8.v		v16, (%1)\n\t"
+		"add		%1, %1, %0\n\t"
+		"vle8.v		v24, (%1)\n\t"
+		".option pop\n\t"
+		: "=&r"(vl)
+		: "r"(restore_from->vreg)
+		: "memory");
+	__asm volatile(
+		".option push\n\t"
+		".option arch, +v\n\t"
+		"vsetvl	 x0, %2, %1\n\t"
+		".option pop\n\t"
+		"csrw	vstart, %0\n\t"
+		"csrw	vcsr, %3\n\t"
+		: : "r"(restore_from->vstart), "r"(restore_from->vtype), "r"(restore_from->vl), "r"(restore_from->vcsr)
+		:);
+	csr_clear(mstatus, MSTATUS_VS_INIT);
+}
+
+void z_riscv_vstate_restore()
+{
+	z_riscv_vstate_restore_thread(_current);
 }
 
 #endif /* CONFIG_RISCV_ISA_EXT_V */
@@ -142,15 +159,9 @@ static void z_riscv_fpu_disable(void)
 
 	if ((status & MSTATUS_FS) != 0 || (status & MSTATUS_VS) != 0) {
 		csr_clear(mstatus, MSTATUS_FS);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-		csr_clear(mstatus, MSTATUS_VS);
-#endif
 
 		/* remember its clean/dirty state */
 		_current_cpu->arch.fpu_state = (status & MSTATUS_FS);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-		_current_cpu->arch.vpu_state = (status & MSTATUS_VS);
-#endif
 	}
 }
 
@@ -165,13 +176,7 @@ static void z_riscv_fpu_load(void)
 
 	/* restore our content */
 	csr_set(mstatus, MSTATUS_FS_INIT);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-	csr_set(mstatus, MSTATUS_VS_INIT);
-#endif
 	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-	z_riscv_vstate_restore(&_current->arch.saved_v_context);
-#endif
 	DBG("restore", _current);
 }
 
@@ -192,25 +197,13 @@ void arch_flush_local_fpu(void)
 	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
 
 	if (owner != NULL) {
-#ifdef CONFIG_RISCV_ISA_EXT_V
-
-		bool dirty = (_current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY) ||
-			     (_current_cpu->arch.vpu_state == MSTATUS_VS_DIRTY);
-#else
 		bool dirty = _current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY;
-#endif
 
 		if (dirty) {
 			/* turn on FPU access */
 			csr_set(mstatus, MSTATUS_FS_CLEAN);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-			csr_set(mstatus, MSTATUS_VS_CLEAN);
-#endif
 			/* save current owner's content */
 			z_riscv_fpu_save(&owner->arch.saved_fp_context);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-			z_riscv_vstate_save(&owner->arch.saved_v_context);
-#endif
 		}
 
 		/* dirty means active use */
@@ -218,9 +211,6 @@ void arch_flush_local_fpu(void)
 
 		/* disable FPU access */
 		csr_clear(mstatus, MSTATUS_FS);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-		csr_clear(mstatus, MSTATUS_VS);
-#endif
 
 		/* release ownership */
 		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
@@ -321,9 +311,6 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 		/* make it accessible to the returning context */
 		esf->mstatus |= MSTATUS_FS_INIT;
-#ifdef CONFIG_RISCV_ISA_EXT_V
-		esf->mstatus |= MSTATUS_VS_INIT;
-#endif
 
 		return;
 	}
@@ -338,9 +325,6 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 
 	/* make it accessible and clean to the returning context */
 	esf->mstatus |= MSTATUS_FS_CLEAN;
-#ifdef CONFIG_RISCV_ISA_EXT_V
-	esf->mstatus |= MSTATUS_VS_CLEAN;
-#endif
 
 	/* and load it with corresponding content */
 	z_riscv_fpu_load();
@@ -379,9 +363,6 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 #endif
 			z_riscv_fpu_load();
 			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;
-#ifdef CONFIG_RISCV_ISA_EXT_V
-			_current_cpu->arch.vpu_state = MSTATUS_VS_CLEAN;
-#endif
 			return true;
 		}
 		return false;
@@ -401,14 +382,8 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 void z_riscv_fpu_exit_exc(struct arch_esf *esf)
 {
 	esf->mstatus &= ~MSTATUS_FS;
-#ifdef CONFIG_RISCV_ISA_EXT_V
-	esf->mstatus &= ~MSTATUS_VS;
-#endif
 	if (fpu_access_allowed(1)) {
 		esf->mstatus |= _current_cpu->arch.fpu_state;
-#ifdef CONFIG_RISCV_ISA_EXT_V
-		esf->mstatus |= _current_cpu->arch.vpu_state;
-#endif
 	}
 }
 
@@ -423,10 +398,6 @@ void z_riscv_fpu_thread_context_switch(void)
 	if (fpu_access_allowed(0)) {
 		csr_clear(mstatus, MSTATUS_FS);
 		csr_set(mstatus, _current_cpu->arch.fpu_state);
-#ifdef CONFIG_RISCV_ISA_EXT_V
-csr_clear(mstatus, MSTATUS_VS);
-		csr_set(mstatus, _current_cpu->arch.vpu_state);
-#endif
 	} else {
 		z_riscv_fpu_disable();
 	}

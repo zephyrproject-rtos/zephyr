@@ -20,6 +20,7 @@
 #define ZEPHYR_INCLUDE_ARCH_RISCV_THREAD_H_
 
 #ifndef _ASMLANGUAGE
+#include <stdbool.h>
 #include <zephyr/types.h>
 
 /*
@@ -69,7 +70,8 @@ struct z_riscv_v_context {
 	unsigned long vtype;
 	unsigned long vcsr;
 	unsigned long vlenb;
-	char vreg[32][CONFIG_RISCV_VECTOR_MAX_LEN];
+	bool is_dirty;
+	char vreg[32][CONFIG_RISCV_VECTOR_MAX_LEN/8]__attribute__((aligned(CONFIG_RISCV_VECTOR_MAX_LEN)));
 };
 typedef struct z_riscv_v_context z_riscv_v_context_t;
 #endif
