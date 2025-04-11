@@ -221,7 +221,7 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 		trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
 		trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 		ctx_update(ctx, 1, cur_num);
-		if ((!spi_context_tx_buf_on(ctx)) && (!spi_context_rx_buf_on(ctx))) {
+		if ((!spi_context_tx_buf_on(ctx)) && (!spi_context_rx_on(ctx))) {
 			is_last = true;
 		}
 #ifdef CONFIG_SPI_AMBIQ_DMA

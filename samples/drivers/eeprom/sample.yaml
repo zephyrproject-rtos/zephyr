@@ -9,6 +9,7 @@ tests:
       - native_sim
       - native_sim/native/64
       - apollo510_eb
+      - apollo510_evb
     integration_platforms:
       - native_sim/native/64
     harness: console

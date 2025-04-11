@@ -125,28 +125,16 @@
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
 
-	spi2: spi {
-		pinctrl-0 = <&spi2_default>;
-		pinctrl-names = "default";
-		cs-gpios = <&gpio0_31 29 GPIO_ACTIVE_LOW>;
-		clock-frequency = <DT_FREQ_M(1)>;
-		status = "okay";
-	};
-};
-
-&iom0 {
-	cmdq-buffer-location = "SRAM_NO_CACHE";
-	cmdq-buffer-size = <256>;
-
-	i2c0: i2c {
-		pinctrl-0 = <&i2c0_default>;
+	i2c2: i2c {
+		pinctrl-0 = <&i2c2_default>;
 		pinctrl-names = "default";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
-		scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		scl-gpios = <&gpio0_31 25 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0_31 26 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };
+
 
 &uart0 {
 	current-speed = <115200>;

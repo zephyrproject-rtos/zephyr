@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &mb85rs256b;
+	};
+};
+
+&iom0 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	spi0: spi {
+		pinctrl-0 = <&spi0_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 10 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+		/* Need the mirko bus FRAM click board */
+		mb85rs256b: mb85rs256b@0 {
+			status = "okay";
+			compatible = "fujitsu,mb85rsxx";
+			reg = <0>;
+			spi-max-frequency = <DT_FREQ_M(33)>;
+			size = <DT_SIZE_K(32)>;
+			wp-gpios = <&gpio32_63 19 GPIO_ACTIVE_LOW>;
+			hold-gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+};
