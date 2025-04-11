@@ -254,6 +254,7 @@ zephyr_udc0: &usbotg_hs1 {
 		compatible = "st,stm32-xspi-psram";
 		reg = <0>;
 		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		max-frequency = <DT_FREQ_M(200)>;
 		fixed-latency;
 		io-x16-mode;
 		read-latency = <4>;
