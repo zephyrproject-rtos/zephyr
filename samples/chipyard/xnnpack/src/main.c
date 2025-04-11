@@ -15,9 +15,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
 
-const size_t batch_size = 1;
-const size_t input_channels = 128;
-const size_t output_channels = 64;
+const size_t batch_size = 1; // the test is only for batch size 1
+const size_t input_channels = 2048;
+const size_t output_channels = 256;
 
 unsigned long cycle()
 {
@@ -26,7 +26,7 @@ unsigned long cycle()
 	return cc;
 }
 
-static volatile int wait = 0;
+volatile int wait = 0;
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
@@ -119,7 +119,7 @@ int main(void)
 	}
 
 	// Reshape the operator
-	status = xnn_reshape_fully_connected_nc_f32(fc_op, 1, threadpool);
+	status = xnn_reshape_fully_connected_nc_f32(fc_op, batch_size, threadpool);
 	if (status != xnn_status_success) {
 		printf("Failed to reshape Fully Connected operator, status code: %d\n", status);
 		xnn_delete_operator(fc_op);
@@ -166,8 +166,6 @@ int main(void)
 			       (double)output_data_ref[i], (double)output_data[i]);
 		}
 	}
-
-	printf("Output verification finished!\n");
 
 	// Cleanup
 	xnn_delete_operator(fc_op);
