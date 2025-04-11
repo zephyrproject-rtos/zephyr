@@ -6,19 +6,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
-#include <zephyr/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/toolchain.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/uart_pipe.h>
-
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
+
 #define LOG_MODULE_NAME bttester
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
