@@ -3,13 +3,13 @@
 #include <zephyr/arch/cpu.h>
 #include <stdio.h>
 #include <string.h>
-//#include "../data/matrices_128.hpp"
-#include "../data/matrices.hpp"
+#include "../data/matrices_128.hpp"
+// #include "../data/matrices.hpp"
 #include <riscv_vector.h>
 #include <zephyr/timing/timing.h>
 #include <math.h>
 
-constexpr int N = 32;
+constexpr int N = 128;
 constexpr int nHalf = N / 2;
 
 #define NUM_THREADS 4
@@ -23,6 +23,14 @@ struct ThreadTask {
     timing_t start_ct;
     timing_t end_ct;
 } thread_tasks[NUM_THREADS];
+
+struct TaskTiming {
+    timing_t dispatch;
+    timing_t first_start;
+    timing_t last_end;
+    timing_t all_done;
+};
+
 
 K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, NUM_THREADS, STACK_SIZE);
 struct k_thread thread_data[NUM_THREADS];
@@ -73,9 +81,10 @@ inline void matmul_rvvt(float *a, float *b, float *c,
                 vl = __riscv_vsetvl_e32m1(K);
                 vec_a = __riscv_vle32_v_f32m1(ptr_a, vl);
                 vec_b = __riscv_vlse32_v_f32m1(ptr_b, m * sizeof(float), vl);
-            k_mutex_lock(&print_mutex, K_FOREVER);
-            printf("Thread loop iter %d, %d.\n", I, J);
-            k_mutex_unlock(&print_mutex);
+            // k_mutex_lock(&print_mutex, K_FOREVER);
+            // printf("Thread loop iter %d, %d.\n", I, J);
+            // k_mutex_unlock(&print_mutex);
+                enable_vector_operations();
                 vec_s = __riscv_vfmacc_vv_f32m1(vec_s, vec_a, vec_b, vl);
             }
 
@@ -92,28 +101,28 @@ void worker_thread(void *arg1, void *, void *) {
     ThreadTask &task = thread_tasks[thread_id];
 
     enable_vector_operations();
-    k_mutex_lock(&print_mutex, K_FOREVER);
-    printf("Thread %d started and waiting.\n", thread_id);
-    k_mutex_unlock(&print_mutex );
+    // k_mutex_lock(&print_mutex, K_FOREVER);
+    // printf("Thread %d started and waiting.\n", thread_id);
+    // k_mutex_unlock(&print_mutex );
 
     while (true) {
         k_sem_take(&task.start_sem, K_FOREVER);
-        k_mutex_lock(&print_mutex, K_FOREVER);
-        printf("Thread %d started computation.\n", thread_id);
-        k_mutex_unlock(&print_mutex );
+        // k_mutex_lock(&print_mutex, K_FOREVER);
+        // printf("Thread %d started computation.\n", thread_id);
+        // k_mutex_unlock(&print_mutex );
 
         task.start_ct = timing_counter_get();
         for (int k = 0; k < N; k += task.tile_size) {
-            k_mutex_lock(&print_mutex, K_FOREVER);
-            printf("Thread %d loop iter %d.\n", thread_id, k);
-            k_mutex_unlock(&print_mutex );
+            // k_mutex_lock(&print_mutex, K_FOREVER);
+            // printf("Thread %d loop iter %d.\n", thread_id, k);
+            // k_mutex_unlock(&print_mutex );
             matmul_rvvt(task.a, task.b, task.c,
                         task.i, task.j, k, N, N, N, task.tile_size);
         }
         task.end_ct = timing_counter_get();
 
         k_mutex_lock(&print_mutex, K_FOREVER);
-        printf("Thread %d finished computation.\n", thread_id);
+        // printf("Thread %d Done\n", thread_id);
         k_mutex_unlock(&print_mutex );
         k_sem_give(&task.done_sem);
     }
@@ -132,35 +141,52 @@ void threadpool_init() {
     }
 }
 
-uint64_t execute_task(float *a, float *b, float *c, int tile_size) {
-    timing_t task_start = timing_counter_get();
 
-    for (int t = 0; t < NUM_THREADS; ++t) {
-        int tile_row = t / 2;
-        int tile_col = t % 2;
+TaskTiming execute_task(float *a, float *b, float *c, int tile_size) {
+    timing_t dispatch = timing_counter_get();
 
-        thread_tasks[t].a = a;
-        thread_tasks[t].b = b;
-        thread_tasks[t].c = c;
-        thread_tasks[t].i = tile_row * tile_size;
-        thread_tasks[t].j = tile_col * tile_size;
-        thread_tasks[t].tile_size = tile_size;
-
-        k_sem_give(&thread_tasks[t].start_sem);
+    for (int i = 0; i < NUM_THREADS; ++i) {
+        thread_tasks[i].a = a;
+        thread_tasks[i].b = b;
+        thread_tasks[i].c = c;
+        thread_tasks[i].tile_size = tile_size;
+        thread_tasks[i].i = (i / 2) * tile_size;
+        thread_tasks[i].j = (i % 2) * tile_size;
+        k_sem_give(&thread_tasks[i].start_sem);
     }
 
-    for (int t = 0; t < NUM_THREADS; ++t) {
-        k_sem_take(&thread_tasks[t].done_sem, K_FOREVER);
+    timing_t first_start = thread_tasks[0].start_ct;
+    timing_t last_end = thread_tasks[0].end_ct;
+
+    for (int i = 0; i < NUM_THREADS; ++i) {
+        k_sem_take(&thread_tasks[i].done_sem, K_FOREVER);
+
+        if (timing_cycles_get(&thread_tasks[i].start_ct, &first_start) > 0)
+            first_start = thread_tasks[i].start_ct;
+
+        if (timing_cycles_get(&last_end, &thread_tasks[i].end_ct) > 0)
+            last_end = thread_tasks[i].end_ct;
     }
 
-    timing_t task_end = timing_counter_get();
-
-    return timing_cycles_get(&task_start, &task_end);
+    timing_t all_done = timing_counter_get();
+    return {dispatch, first_start, last_end, all_done};
 }
+void report_timing(const char *label, TaskTiming t) {
+    uint64_t start_overhead_cycles = timing_cycles_get(&t.dispatch, &t.first_start);
+    uint64_t compute_cycles        = timing_cycles_get(&t.first_start, &t.last_end);
+    uint64_t sync_overhead_cycles  = timing_cycles_get(&t.last_end, &t.all_done);
+    uint64_t total_cycles          = timing_cycles_get(&t.dispatch, &t.all_done);
 
-void report_timing(const char *label, uint64_t total_cycles) {
-    uint64_t total_ns = timing_cycles_to_ns(total_cycles);
-    printf("%s Total time (including overhead): %llu cycles (%llu ns)\n", label, total_cycles, total_ns);
+    uint64_t start_overhead_ns = timing_cycles_to_ns(start_overhead_cycles);
+    uint64_t compute_ns        = timing_cycles_to_ns(compute_cycles);
+    uint64_t sync_overhead_ns  = timing_cycles_to_ns(sync_overhead_cycles);
+    uint64_t total_ns          = timing_cycles_to_ns(total_cycles);
+
+    printf("\n=== Timing Report: %s ===\n", label);
+    printf("Start overhead:      %llu ns (%llu cycles)\n", start_overhead_ns, start_overhead_cycles);
+    printf("Compute time:        %llu ns (%llu cycles)\n", compute_ns, compute_cycles);
+    printf("Sync overhead:       %llu ns (%llu cycles)\n", sync_overhead_ns, sync_overhead_cycles);
+    printf("Total time:          %llu ns (%llu cycles)\n", total_ns, total_cycles);
 }
 
 int main(void) {
@@ -185,9 +211,9 @@ int main(void) {
     k_mutex_unlock(&print_mutex);
 
     printf("Starting final measurement run.\n");
-    uint64_t final_cycles = execute_task((float *)matrix_A, (float *)matrix_B, (float *)C_computed, nHalf);
+    TaskTiming t_final = execute_task((float *)matrix_A, (float *)matrix_B, (float *)C_computed, nHalf);
 
-    report_timing("Final run", final_cycles);
+    report_timing("Final run", t_final);
 
     // Validation (simplified)
     bool valid = true;
