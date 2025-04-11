@@ -93,7 +93,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                     cmd.append('--sectoranduicrerase')
                 else:
                     cmd.append('--sectorerase')
-            elif erase == 'NO_ERASE':
+            elif erase == 'ERASE_NONE':
                 pass
             else:
                 raise RuntimeError(f'Invalid erase mode: {erase}')
