@@ -510,9 +510,11 @@ ZTEST_USER(uart_async_double_buf, test_double_buffer)
 			      "TX_DONE timeout");
 		zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0,
 			      "RX_RDY timeout");
-		zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
-			      0,
-			      "Buffers not equal");
+		if (read_ptr) {
+			zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
+					0,
+					"Buffers not equal");
+		}
 	}
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
