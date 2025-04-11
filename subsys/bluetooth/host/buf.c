@@ -5,18 +5,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
-
-#include "common/hci_common_internal.h"
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "buf_view.h"
-#include "hci_core.h"
+#include "common/hci_common_internal.h"
 #include "conn_internal.h"
+#include "hci_core.h"
 #include "iso_internal.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
 /* Events have a length field of 1 byte. This size fits all events.
