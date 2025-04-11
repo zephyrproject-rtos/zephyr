@@ -66,6 +66,9 @@ enum dwc2_drv_event_type {
 /* Get Data FIFO access register */
 #define UDC_DWC2_EP_FIFO(base, idx)	((mem_addr_t)base + 0x1000 * (idx + 1))
 
+/* Percentage limit of how much SPRAM can be allocated for RxFIFO */
+#define MAX_RXFIFO_GDFIFO_PERCENTAGE 25
+
 enum dwc2_suspend_type {
 	DWC2_SUSPEND_NO_POWER_SAVING,
 	DWC2_SUSPEND_HIBERNATION,
@@ -2184,6 +2187,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	if (priv->dynfifosizing) {
 		uint32_t gnptxfsiz;
 		uint32_t default_depth;
+		uint32_t spram_size;
+		uint32_t max_rxfifo;
+
+		/* Get available SPRAM size and calculate max allocatable RX fifo size */
+		val = sys_read32((mem_addr_t)&base->gdfifocfg);
+		spram_size = usb_dwc2_get_gdfifocfg_gdfifocfg(val);
+		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
 
 		/* TODO: For proper runtime FIFO sizing UDC driver would have to
 		 * have prior knowledge of the USB configurations. Only with the
@@ -2204,7 +2214,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		 * to store reset value. Read the reset value and make sure that
 		 * the programmed value is not greater than what driver sets.
 		 */
-		priv->rxfifo_depth = MIN(priv->rxfifo_depth, default_depth);
+		priv->rxfifo_depth = MIN(MIN(priv->rxfifo_depth, default_depth), max_rxfifo);
 		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
 
 		/* Set TxFIFO 0 depth */
