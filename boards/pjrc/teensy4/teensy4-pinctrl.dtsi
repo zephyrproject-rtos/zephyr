@@ -99,6 +99,19 @@
 		};
 	};
 
+	/* LPI2C2 SCL, SDA on Teensy-Micromod-Pins 40/41 */
+	pinmux_lpi2c2: pinmux_lpi2c2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_b0_04_lpi2c2_scl>,
+				<&iomuxc_gpio_b0_05_lpi2c2_sda>;
+			drive-strength = "r0-6";
+			drive-open-drain;
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+			input-enable;
+		};
+	};
+
 	/* LPI2C3 SCL, SDA on Teensy-Pins 16/17 */
 	pinmux_lpi2c3: pinmux_lpi2c3 {
 		group0 {

@@ -9,3 +9,8 @@ boards:
     vendor: pjrc
     socs:
       - name: mimxrt1062
+  - name: teensymm
+    full_name: Teensy MicroMod
+    vendor: pjrc
+    socs:
+      - name: mimxrt1062
