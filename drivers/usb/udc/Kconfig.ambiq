@@ -63,4 +63,11 @@ config UDC_AMBIQ_DEB_ENABLE
 	  includes 128 bytes required by control endpoints.
 	  - Apollo510: (4096 Bytes FIFO)
 
+config UDC_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in UDC driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
 endif # UDC_AMBIQ

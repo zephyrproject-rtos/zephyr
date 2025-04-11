@@ -54,8 +54,6 @@ K_MSGQ_DEFINE(drv_msgq, sizeof(struct udc_ambiq_event), CONFIG_UDC_AMBIQ_MAX_QME
 #define EP_FS_MPS 64U
 #define EP_HS_MPS 512U
 
-#define CACHEABLE_START_ADDR SSRAM_BASEADDR
-
 struct udc_ambiq_data {
 	struct k_thread thread_data;
 	void *usb_handle;
@@ -116,13 +114,14 @@ static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *bu
 	if (buf == NULL) {
 		status = am_hal_usb_ep_xfer(priv->usb_handle, ep, NULL, 0);
 	} else {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-		/* Cache management if cache and DMA is enabled */
-		if ((ep != USB_CONTROL_EP_OUT) && (CONFIG_UDC_AMBIQ_DMA_MODE != 0) &&
-		    ((uint32_t)buf->data >= CACHEABLE_START_ADDR)) {
-			sys_cache_data_flush_and_invd_range(buf->data, buf->size);
+#if CONFIG_UDC_AMBIQ_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)buf->data, buf->size)) {
+			/* Cache management if cache and DMA is enabled */
+			if ((ep != USB_CONTROL_EP_OUT) && (CONFIG_UDC_AMBIQ_DMA_MODE != 0)) {
+				sys_cache_data_flush_and_invd_range(buf->data, buf->size);
+			}
 		}
-#endif
+#endif /* CONFIG_UDC_AMBIQ_HANDLE_CACHE */
 		status = am_hal_usb_ep_xfer(priv->usb_handle, ep, buf->data, buf->len);
 	}
 
@@ -163,13 +162,14 @@ static int udc_ambiq_rx(const struct device *dev, uint8_t ep, struct net_buf *bu
 	}
 #endif
 
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-	/* Cache management if cache and DMA is enabled */
-	if ((ep != USB_CONTROL_EP_OUT) && (CONFIG_UDC_AMBIQ_DMA_MODE != 0) &&
-	    ((uint32_t)buf->data >= CACHEABLE_START_ADDR)) {
-		sys_cache_data_invd_range(buf->data, buf->size);
+#if CONFIG_UDC_AMBIQ_HANDLE_CACHE
+	if (!buf_in_nocache((uintptr_t)buf->data, buf->size)) {
+		/* Cache management if cache and DMA is enabled */
+		if ((ep != USB_CONTROL_EP_OUT) && (CONFIG_UDC_AMBIQ_DMA_MODE != 0)) {
+			sys_cache_data_invd_range(buf->data, buf->size);
+		}
 	}
-#endif
+#endif /* CONFIG_UDC_AMBIQ_HANDLE_CACHE */
 
 	status = am_hal_usb_ep_xfer(priv->usb_handle, ep, buf->data, rx_size);
 	if (status != AM_HAL_STATUS_SUCCESS) {
