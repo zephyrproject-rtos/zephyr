@@ -203,26 +203,26 @@ New Boards
    * :zephyr:board:`rzn2l_rsk` (``rzn2l_rsk``)
    * :zephyr:board:`rzt2l_rsk` (``rzt2l_rsk``)
 
-* STMicroelectronics
-
-   * :zephyr:board:`stm32h757i_eval` (``stm32h757i_eval``)
-
 * Silicon Laboratories
 
    * :zephyr:board:`slwrb4180b` (``slwrb4180b``)
+
+* STMicroelectronics
+
+   * :zephyr:board:`stm32h757i_eval` (``stm32h757i_eval``)
 
 * Texas Instruments
 
    * :zephyr:board:`sk_am64` (``sk_am64``)
 
-* WIZnet Co., Ltd.
-
-   * :zephyr:board:`w5500_evb_pico2` (``w5500_evb_pico2``)
-
 * WinChipHead
 
    * :zephyr:board:`ch32v003f4p6_dev_board` (``ch32v003f4p6_dev_board``)
    * :zephyr:board:`linkw` (``linkw``)
+
+* WIZnet Co., Ltd.
+
+   * :zephyr:board:`w5500_evb_pico2` (``w5500_evb_pico2``)
 
 New Drivers
 ***********
