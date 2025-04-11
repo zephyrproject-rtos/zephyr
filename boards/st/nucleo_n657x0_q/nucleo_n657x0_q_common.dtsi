@@ -97,6 +97,12 @@
 	status = "okay";
 };
 
+&ic3 {
+	pll-src = <1>;
+	ic-div = <6>;
+	status = "okay";
+};
+
 &ic6 {
 	pll-src = <3>;
 	ic-div = <2>;
@@ -224,6 +230,9 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
+		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
 	mx25um51245g: ospi-nor-flash@70000000 {
