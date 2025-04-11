@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config APS6404L
+	bool "APS6404L PSRAM"
+	default y
+	depends on DT_HAS_APM_APS6404L_ENABLED
+	help
+	  Enable driver for PSRAM

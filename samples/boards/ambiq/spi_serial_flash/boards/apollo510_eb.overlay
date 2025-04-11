@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		spi-psram = &spi_psram;
+	};
+};
+
+&iom5 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	spi5: spi {
+		pinctrl-0 = <&spi5_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio64_95 29 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		status = "okay";
+		spi_psram: aps6404l@0 {
+			compatible = "apm,aps6404l";
+			reg = <0>;
+			spi-max-frequency = <48000000>;
+		};
+	};
+};

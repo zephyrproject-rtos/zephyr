@@ -75,3 +75,4 @@ zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX spi_xmc4xxx.c)
 # zephyr-keep-sorted-stop
 
 add_subdirectory(spi_nxp_lpspi)
+add_subdirectory_ifdef(CONFIG_APS6404L aps6404l)

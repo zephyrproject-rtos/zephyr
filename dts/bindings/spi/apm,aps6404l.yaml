@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: APS6404L PSRAM
+
+compatible: "apm,aps6404l"
+
+include: spi-device.yaml

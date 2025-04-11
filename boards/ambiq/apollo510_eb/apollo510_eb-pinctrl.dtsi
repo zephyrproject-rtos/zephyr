@@ -130,6 +130,12 @@
 		};
 	};
 
+	spi5_default: spi5_default {
+		group1 {
+			pinmux = <M5SCK_P47>, <M5MISO_P49>, <M5MOSI_P48>;
+		};
+	};
+
 	mspi0_default: mspi0_default {
 		group0 {
 			pinmux = <MSPI0_0_P64>,
