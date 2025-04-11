@@ -26,7 +26,11 @@
 	status = "okay";
 };
 
-&clint{
+&clint {
+	status = "okay";
+};
+
+&mtimer {
 	status = "okay";
 };
 
