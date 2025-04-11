@@ -22,15 +22,21 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <sys/types.h>
 
-#include <zephyr/sys/slist.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -229,7 +235,7 @@ struct bt_gatt_attr {
 	 *  GATT Characteristic Presentation Format descriptor as
 	 *  specified in Core Specification 3.G.3.3.3.5.
 	 *
-	 *  You can define a new Attirubute Type for your application specific
+	 *  You can define a new Attribute Type for your application specific
 	 *  use by generating a new UUID for it.
 	 */
 	const struct bt_uuid *uuid;
@@ -956,7 +962,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset);
 
-/** @brief Gatt Characterisitc Initialization Macro.
+/** @brief Gatt Characteristic Initialization Macro.
  *
  *  Helper macro used within the @ref BT_GATT_CHARACTERISTIC macro in the GATT attribute declaration
  *  to set the attribute user data.
