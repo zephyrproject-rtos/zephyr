@@ -1,7 +1,0 @@
-/* SPDX-License-Identifier: Apache-2.0 */
-
-dut: &lpuart2 {
-	status = "okay";
-	current-speed = <115200>;
-	nxp,loopback;
-};
