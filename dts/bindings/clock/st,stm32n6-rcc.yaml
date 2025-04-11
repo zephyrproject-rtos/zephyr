@@ -62,63 +62,35 @@ properties:
 
   apb1-prescaler:
     type: int
-    required: true
+    default: 1
+    const: 1
     description: |
         CPU domain APB1 prescaler
-    enum:
-      - 1
-      - 2
-      - 4
-      - 8
-      - 16
-      - 32
-      - 64
-      - 128
+        Fixed to 1 as APB prescalers cannot be modified (See Errata sheet ES0620 §2.2.1)
 
   apb2-prescaler:
     type: int
-    required: true
+    default: 1
+    const: 1
     description: |
         CPU domain APB2 prescaler
-    enum:
-      - 1
-      - 2
-      - 4
-      - 8
-      - 16
-      - 32
-      - 64
-      - 128
+        Fixed to 1 as APB prescalers cannot be modified (See Errata sheet ES0620 §2.2.1)
 
   apb4-prescaler:
     type: int
-    required: true
+    default: 1
+    const: 1
     description: |
         CPU domain APB4 prescaler
-    enum:
-      - 1
-      - 2
-      - 4
-      - 8
-      - 16
-      - 32
-      - 64
-      - 128
+        Fixed to 1 as APB prescalers cannot be modified (See Errata sheet ES0620 §2.2.1)
 
   apb5-prescaler:
     type: int
-    required: true
+    default: 1
+    const: 1
     description: |
         CPU domain APB5 prescaler
-    enum:
-      - 1
-      - 2
-      - 4
-      - 8
-      - 16
-      - 32
-      - 64
-      - 128
+        Fixed to 1 as APB prescalers cannot be modified (See Errata sheet ES0620 §2.2.1)
 
   timg-prescaler:
     type: int
