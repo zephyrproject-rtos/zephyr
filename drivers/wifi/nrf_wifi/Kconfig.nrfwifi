@@ -190,10 +190,10 @@ config NRF70_2_4G_ONLY
 config NRF70_SR_COEX
 	bool "Wi-Fi and SR coexistence support"
 
+if NRF70_SR_COEX
 config NRF70_SR_COEX_RF_SWITCH
 	bool "GPIO configuration to control SR side RF switch position"
 	depends on $(dt_nodelabel_has_prop,nrf70,srrf-switch-gpios)
-	depends on NRF70_SR_COEX
 	help
 	  Select this option to enable GPIO configuration to control SR side RF switch position.
 	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
@@ -210,6 +210,7 @@ config NRF70_SR_COEX_SWCTRL1_OUTPUT
 config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
 	int "Configure BT grant active low"
 	default 1
+endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
 	int "Stack size for workqueue"
