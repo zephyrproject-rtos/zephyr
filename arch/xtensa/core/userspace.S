@@ -119,8 +119,7 @@ _not_checking_user_context:
 _id_ok:
 	/* Find the function handler for the given syscall id. */
 	movi a3, _k_syscall_table
-	slli a2, a2, 2
-	add a2, a2, a3
+	addx4 a2, a2, a3
 	l32i a2, a2, 0
 
 #if XCHAL_HAVE_THREADPTR
