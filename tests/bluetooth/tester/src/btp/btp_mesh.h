@@ -7,8 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util_macro.h>
 
 /* MESH Service */
 /* commands */
