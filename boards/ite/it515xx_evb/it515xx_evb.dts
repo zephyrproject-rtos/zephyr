@@ -149,3 +149,7 @@
 	pinctrl-0 = <&tach0a_gpd6_default>;
 	pinctrl-names = "default";
 };
+
+&sha256 {
+	status = "okay";
+};
