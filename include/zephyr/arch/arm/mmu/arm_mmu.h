@@ -10,6 +10,9 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stdint.h>
+#include <stdlib.h>
+
 /*
  * Comp.:
  * ARM Architecture Reference Manual, ARMv7-A and ARMv7-R edition,
