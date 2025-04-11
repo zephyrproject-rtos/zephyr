@@ -6,6 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util_macro.h>
+
 /* CAP commands */
 #define BTP_CAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_cap_read_supported_commands_rp {
