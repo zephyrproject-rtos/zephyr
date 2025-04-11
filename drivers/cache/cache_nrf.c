@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/cache.h>
+#include <zephyr/sys/barrier.h>
 #include <hal/nrf_cache.h>
 #include <zephyr/logging/log.h>
 
@@ -67,6 +68,8 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 
 	wait_for_cache(cache);
 
+	barrier_dsync_fence_full();
+
 	switch (op) {
 
 #if NRF_CACHE_HAS_TASK_CLEAN
@@ -100,6 +103,8 @@ static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, ui
 		wait_for_cache(cache);
 
 		nrf_cache_lineaddr_set(cache, line_addr);
+
+		barrier_dsync_fence_full();
 
 		switch (op) {
 
