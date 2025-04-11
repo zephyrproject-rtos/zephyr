@@ -586,7 +586,7 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
-	int *num_ports = user_data;
+	uint8_t *num_ports = user_data;
 	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
