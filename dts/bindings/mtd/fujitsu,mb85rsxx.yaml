@@ -11,3 +11,11 @@ properties:
   size:
     required: true
     description: Total FRAM size in bytes.
+
+  wp-gpios:
+    type: phandle-array
+    description: GPIO to which the write-protect pin of the chip is connected.
+
+  hold-gpios:
+    type: phandle-array
+    description: GPIO to which the hold pin of the chip is connected.
