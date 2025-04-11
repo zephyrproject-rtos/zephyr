@@ -6,8 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util.h>
 
 /*AICS service */
 struct btp_aics_instance {
