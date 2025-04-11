@@ -11,8 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
-#include <zephyr/sys/util_macro.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
