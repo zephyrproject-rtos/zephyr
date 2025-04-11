@@ -25,16 +25,26 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_core, CONFIG_USBD_LOG_LEVEL);
 
-static K_KERNEL_STACK_DEFINE(usbd_stack, CONFIG_USBD_THREAD_STACK_SIZE);
-static struct k_thread usbd_thread_data;
-
 K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
 	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
+
+static void usbd_flush_queue(void);
 
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
 {
-	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
+	int ret;
+
+	LOG_DBG("Submitting event %p from %s", event, dev->name);
+
+	ret = k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	usbd_flush_queue();
+
+	return 0;
 }
 
 static int event_handler_ep_request(struct usbd_context *const uds_ctx,
@@ -183,23 +193,28 @@ static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 	}
 }
 
-static void usbd_thread(void *p1, void *p2, void *p3)
+static void usbd_flush_queue(void)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
+	static struct k_mutex mutex;
 	struct usbd_context *uds_ctx;
 	struct udc_event event;
+	int ret;
+
+	k_mutex_lock(&mutex, K_FOREVER);
 
 	while (true) {
-		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
+		ret = k_msgq_get(&usbd_msgq, &event, K_NO_WAIT);
+		if (ret != 0) {
+			break;
+		}
 
 		uds_ctx = (void *)udc_get_event_ctx(event.dev);
 		__ASSERT(uds_ctx != NULL && usbd_is_initialized(uds_ctx),
 			 "USB device is not initialized");
 		usbd_event_handler(uds_ctx, &event);
 	}
+
+	k_mutex_unlock(&mutex);
 }
 
 int usbd_device_init_core(struct usbd_context *const uds_ctx)
@@ -258,14 +273,6 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 
 static int usbd_pre_init(void)
 {
-	k_thread_create(&usbd_thread_data, usbd_stack,
-			K_KERNEL_STACK_SIZEOF(usbd_stack),
-			usbd_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(8), 0, K_NO_WAIT);
-
-	k_thread_name_set(&usbd_thread_data, "usbd");
-
 	LOG_DBG("Available USB class iterators:");
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
 		atomic_set(&c_nd->state, 0);
