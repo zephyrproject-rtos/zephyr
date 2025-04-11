@@ -35,6 +35,7 @@ struct mspi_ti_k3_config {
 };
 
 struct mspi_ti_k3_data {
+	struct k_mutex lock;
 };
 
 /* helper function to easily modify parts of registers */
@@ -183,8 +184,11 @@ static int mspi_ti_k3_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	const struct mspi_ti_k3_config *config = dev->config;
+	struct mspi_ti_k3_data *data = dev->data;
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(dev);
 	int ret;
+
+	k_mutex_init(&data->lock);
 
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -493,12 +497,19 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 {
 	/* timeouts are in us and ticks are too inprecise */
 	uint64_t start_cycle = k_uptime_get();
-	int ret;
+	struct mspi_ti_k3_data *data = controller->data;
+	int ret = 0;
 
 	ret = mspi_ti_k3_check_transfer_request(req);
 	if (ret) {
 		return ret;
 	}
+
+	ret = k_mutex_lock(&data->lock, K_USEC(req->timeout));
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (uint32_t i = 0; i < req->num_packet; ++i) {
 		const struct mspi_xfer_packet *packet = &req->packets[i];
 		/* the FLASH_CMD_REGISTER is good for small transfers with only very little/no data
@@ -506,7 +517,7 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 		if (packet->num_bytes <= 8) {
 			ret = mspi_ti_k3_small_transfer(controller, req, i, start_cycle);
 			if (ret < 0) {
-				return ret;
+				goto exit;
 			}
 		} else {
 			/* big transfer via indirect transfer mode */
@@ -516,12 +527,14 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 				ret = mspi_ti_k3_indirect_write(controller, req, i, start_cycle);
 			}
 			if (ret < 0) {
-				return ret;
+				goto exit;
 			}
 		}
 	}
 
-	return 0;
+exit:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int mspi_ti_k3_set_opcode_lines(const mem_addr_t base_addr, enum mspi_io_mode io_mode)
@@ -614,7 +627,10 @@ int mspi_ti_k3_dev_config(const struct device *controller, const struct mspi_dev
 			  const enum mspi_dev_cfg_mask param_mask, const struct mspi_dev_cfg *cfg)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	struct mspi_ti_k3_data *data = controller->data;
 	int ret = 0;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (param_mask & TI_K3_OSPI_NOT_IMPLEMENT_DEV_CONFIG_PARAMS) {
 		LOG_ERR("Device config includes non implemented features");
@@ -719,6 +735,8 @@ int mspi_ti_k3_dev_config(const struct device *controller, const struct mspi_dev
 exit:
 	/* Re-enable OSPI */
 	MSPI_TI_K3_REG_WRITE(1, CONFIG, ENABLE_SPI, base_addr);
+
+	k_mutex_unlock(&data->lock);
 
 	return ret;
 }
