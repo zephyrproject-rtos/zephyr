@@ -10,8 +10,7 @@
 #ifndef TESTS_BLUETOOTH_TESTER_SRC_BTP_
 #define TESTS_BLUETOOTH_TESTER_SRC_BTP_
 
-#include <zephyr/sys/util.h>
-#include <zephyr/bluetooth/addr.h>
+#include <stdint.h>
 
 #include "bttester.h"
 #include "btp_core.h"

@@ -4,27 +4,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
-
 #include <assert.h>
 #include <errno.h>
-#include <zephyr/bluetooth/mesh.h>
-#include <zephyr/bluetooth/mesh/cfg.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/settings/settings.h>
-#include <app_keys.h>
-#include <va.h>
-#include <sar_cfg_internal.h>
+#include <stdint.h>
 #include <string.h>
+#include <va.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh/access.h>
+#include <zephyr/bluetooth/mesh/cfg.h>
+#include <zephyr/bluetooth/mesh/cfg_cli.h>
+#include <zephyr/bluetooth/mesh/cfg_srv.h>
+#include <zephyr/bluetooth/mesh/health_cli.h>
+#include <zephyr/bluetooth/mesh/health_srv.h>
+#include <zephyr/bluetooth/mesh/main.h>
+#include <zephyr/bluetooth/mesh/msg.h>
+#include <zephyr/bluetooth/mesh/proxy.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+
 #include "mesh/access.h"
+#include "mesh/dfu_slot.h"
 #include "mesh/testing.h"
 
-#include <zephyr/logging/log.h>
+#include "btp/btp.h"
+
 #define LOG_MODULE_NAME bttester_mesh
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
-
-#include "btp/btp.h"
-#include "dfu_slot.h"
 
 #define CID_LOCAL 0x05F1
 #define COMPANY_ID_LF 0x05F1
@@ -1444,7 +1457,7 @@ static uint8_t start(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		printk("Loading stored settings\n");
+		LOG_INF("Loading stored settings\n");
 		settings_load();
 	}
 
