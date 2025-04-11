@@ -60,9 +60,9 @@
 };
 
 &pll1 {
-	clocks = <&clk_hsi>;
-	div-m = <4>;
-	mul-n = <75>;
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <150>;
 	div-p1 = <1>;
 	div-p2 = <1>;
 	status = "okay";
@@ -70,10 +70,19 @@
 
 &pll2 {
 	clocks = <&clk_hsi>;
-	div-m = <4>;
-	mul-n = <24>;
-	div-p1 = <2>;
-	div-p2 = <2>;
+	div-m = <2>;
+	mul-n = <48>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&pll3 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <125>;
+	div-p1 = <1>;
+	div-p2 = <1>;
 	status = "okay";
 };
 
@@ -88,24 +97,24 @@
 
 &ic1 {
 	pll-src = <1>;
-	ic-div = <2>;
+	ic-div = <3>;
 	status = "okay";
 };
 
 &ic2 {
 	pll-src = <1>;
-	ic-div = <3>;
+	ic-div = <6>;
 	status = "okay";
 };
 
 &ic4 {
 	pll-src = <2>;
-	ic-div = <2>;
+	ic-div = <32>;
 	status = "okay";
 };
 
 &ic6 {
-	pll-src = <1>;
+	pll-src = <3>;
 	ic-div = <2>;
 	status = "okay";
 };
@@ -129,7 +138,7 @@
 
 &cpusw {
 	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
-	clock-frequency = <DT_FREQ_M(600)>;
+	clock-frequency = <DT_FREQ_M(800)>;
 	status = "okay";
 };
 
@@ -138,10 +147,7 @@
 	clocks = <&ic2>;
 	clock-frequency = <DT_FREQ_M(400)>;
 	ahb-prescaler = <2>;
-	apb1-prescaler = <1>;
-	apb2-prescaler = <1>;
-	apb4-prescaler = <1>;
-	apb5-prescaler = <1>;
+	timg-prescaler = <2>;
 };
 
 &adc1 {
