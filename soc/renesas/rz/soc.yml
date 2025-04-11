@@ -9,6 +9,9 @@ family:
           - name: r9a07g044l23gbg
             cpuclusters:
               - name: cm33
+          - name: r9a07g044c22gbg
+            cpuclusters:
+              - name: cm33
       - name: rzg3s
         socs:
           - name: r9a08g045s33gbg
