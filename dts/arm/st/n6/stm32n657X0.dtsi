@@ -8,7 +8,8 @@
 
 / {
 	axisram1: memory@34000000 {
-		reg = <0x34000000 DT_SIZE_K(624)>;
+		/* 400 kB of FLEXRAM followed by 624 kB of AXISRAM1 */
+		reg = <0x34000000 (DT_SIZE_K(400) + DT_SIZE_K(624))>;
 	};
 
 	axisram2: memory@34180400 {
