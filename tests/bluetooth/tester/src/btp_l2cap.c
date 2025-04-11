@@ -5,19 +5,28 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/bluetooth/bluetooth.h>
-
 #include <errno.h>
-#include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/att.h>
-#include <zephyr/sys/byteorder.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_l2cap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <sys/types.h>
 
 #include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_l2cap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define L2CAP_MPS        96
 #define DATA_MTU         (3 * L2CAP_MPS)
