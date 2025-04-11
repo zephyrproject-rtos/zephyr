@@ -114,6 +114,15 @@ DMA
 * Renamed the devicetree property ``nxp,a_on`` to ``nxp,a-on``.
 * Renamed the devicetree property ``dma_channels`` to ``dma-channels``.
 
+Regulator
+=========
+
+* :dtcompatible:`nordic,npm1300-regulator` BUCK and LDO node GPIO properties are now specified as an
+  integer array without a GPIO controller, removing the requirement for a
+  :dtcompatible:`nordic,npm1300-gpio` node to be present and enabled for GPIO control of the output
+  rails. For example, ``enable-gpios = <&pmic_gpios 3 GPIO_ACTIVE_LOW>;`` is now specified as
+  ``enable-gpio-config = <3 GPIO_ACTIVE_LOW>;``.
+
 Counter
 =======
 
