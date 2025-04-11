@@ -476,11 +476,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-#endif
+	usb_dc_stm32_state.pcd.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE_ADDRESS;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 #if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;

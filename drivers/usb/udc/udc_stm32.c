@@ -37,8 +37,15 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ_NAME     usb
 #endif
 
+#define UDC_STM32_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+
+#define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
+			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /**
  * The following defines are used to map the value of the "maxiumum-speed"
@@ -962,12 +969,6 @@ static const struct udc_api udc_stm32_api = {
 #define USB_BTABLE_SIZE 0
 #endif /* USB */
 
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
-#define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
 static struct udc_stm32_data udc0_priv;
 
 static struct udc_data udc0_data = {
@@ -1001,12 +1002,8 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Instance = USB;
 #elif defined(USB_DRD_FS)
 	priv->pcd.Instance = USB_DRD_FS;
-#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = USB_OTG_HS;
-#else
-	priv->pcd.Instance = USB_OTG_FS;
-#endif
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
 #endif /* USB */
 
 #if USB_OTG_HS_EMB_PHY
