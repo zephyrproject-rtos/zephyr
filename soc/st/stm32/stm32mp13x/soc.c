@@ -9,6 +9,7 @@
  * @brief System/hardware module for STM32MP13 processor
  */
 
+#include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
