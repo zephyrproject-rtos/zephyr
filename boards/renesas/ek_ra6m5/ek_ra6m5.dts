@@ -195,3 +195,21 @@
 &wdt {
 	status = "okay";
 };
+
+&eth {
+	local-mac-address = [74 90 50 B0 6D 5C];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
