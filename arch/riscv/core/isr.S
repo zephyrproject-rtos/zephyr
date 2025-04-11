@@ -198,6 +198,10 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	sr s0, __struct_arch_esf_s0_OFFSET(sp)
 	get_current_cpu s0
 
+#ifdef CONFIG_RISCV_ISA_EXT_V
+	call z_riscv_vstate_save
+#endif /* CONFIG_RISCV_ISA_EXT_V */
+
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
 	/* Save mcause register */
 	csrr t0, mcause
@@ -254,10 +258,6 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	ori  t1, t0, 0b0001100
 	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
 	beqz t1, is_fp
-#ifdef CONFIG_RISCV_ISA_EXT_V
-	xori t1, t0, 0x57	/* VECTOR */
-	beqz t1, is_fp
-#endif
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
 	 * are in fact CSR instructions targeting the fcsr, frm and fflags
@@ -279,19 +279,6 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bnez t1, no_fp
 #else
 	beqz t1, is_fp
-#ifdef CONFIG_RISCV_ISA_EXT_V
-/* Vector extension instructions, but vxsat&vxrm is not processed */
-	li t1, 0x8	// vstart
-	beq t0, t1, is_fp
-	li t1, 0xf	// vcsr
-	beq t0, t1, is_fp
-	li t1, 0xc20	// vl
-	beq t0, t1, is_fp
-	li t1, 0xc21	// vtype
-	beq t0, t1, is_fp
-	li t1, 0xc22	// vlenb
-	beq t0, t1, is_fp
-#endif /* CONFIG_RISCV_ISA_EXT_V */
 2:	/* remaining non RVC (0b11) and RVC with 0b01 are not FP instructions */
 	andi t1, t2, 1
 	bnez t1, no_fp
@@ -771,6 +758,10 @@ fp_trap_exit:
 	csrw mepc, t0
 	csrw mstatus, t2
 
+#ifdef CONFIG_RISCV_ISA_EXT_V
+	call z_riscv_vstate_restore
+#endif /* CONFIG_RISCV_ISA_EXT_V */
+
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Check if we are returning to user mode. If so then we must
@@ -807,6 +798,8 @@ fp_trap_exit:
 	sr t0, __struct_arch_esf_sp_OFFSET(sp)
 2:
 #endif
+	li s0, MSTATUS_XS_CLEAN
+	csrs mstatus, s0
 	/* Restore s0 (it is no longer ours) */
 	lr s0, __struct_arch_esf_s0_OFFSET(sp)
 

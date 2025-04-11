@@ -1,10 +1,49 @@
 menuconfig UART_HTIF
     bool "Enable HTIF UART driver"
-	  select SERIAL_HAS_DRIVER
+    select SERIAL_HAS_DRIVER
     depends on RISCV
     help
       Enable the HTIF (Host-Target Interface) UART driver for RISC-V Spike simulation.
 
 if UART_HTIF
+
+config UART_HTIF_USE_YIELD_SLEEP
+    bool "Use yield/sleep in HTIF polling"
+    default n
+    depends on UART_HTIF
+    help
+      Enable yielding (or sleeping) in wait loops for the HTIF driver. This
+      optimization inserts a call to k_yield() if CONFIG_COOP_ENABLED is set;
+      otherwise, it sleeps for 1ms. Disabling this option results in tight polling,
+      which might be preferred in fast simulation environments such as RTL simulation.
+
+config UART_HTIF_SYSCALL_PRINT
+    bool "Enable syscall-based full-string printing"
+    default y
+    depends on UART_HTIF
+    help
+      When enabled, the driver will use an HTIF command to send a pointer to a
+      null-terminated string (instead of sending characters one at a time). This
+      may reduce overhead for printing longer strings, if the host-side FESVR supports it.
+
+config UART_HTIF_BUFFERED_OUTPUT
+    bool "Buffer UART output until newline"
+    default y
+    depends on UART_HTIF
+    help
+      If enabled, characters are buffered until a newline or the buffer becomes full.
+      At that point, the entire buffer is flushed in one syscall (using the syscall-based
+      print command if available). If disabled, characters are transmitted immediately.
+
+#ifdef CONFIG_MULTITHREADING
+config UART_HTIF_BUFFERED_OUTPUT_SIZE
+    int "UART HTIF output buffer size"
+    default 64
+    depends on UART_HTIF && MULTITHREADING
+    help
+      Specifies the size (in bytes) of the output buffer for buffered UART output.
+      When the buffer is full or a newline is encountered, the buffered string is
+      transmitted in one operation.
+#endif
 
 endif # UART_HTIF

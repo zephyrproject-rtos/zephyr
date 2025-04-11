@@ -30,6 +30,7 @@ set(EXECUTORCH_BUILD_GFLAGS OFF CACHE BOOL "")
 set(EXECUTORCH_BUILD_HOST_TARGETS OFF CACHE BOOL "")
 
 set(EXECUTORCH_BUILD_XNNPACK ON CACHE BOOL "")
+set(XNNPACK_ENABLE_RISCV_GEMMINI ON CACHE BOOL "Build XNNPACK with RISC-V Gemmini micro-kernels")
 set(XNNPACK_ENABLE_RISCV_VECTOR ON CACHE BOOL "Build XNNPACK with RISC-V Vector micro-kernels")
 set(XNNPACK_BUILD_TESTS OFF CACHE BOOL "Build XNNPack unit tests")
 set(XNNPACK_BUILD_BENCHMARKS OFF CACHE BOOL "Build XNNPack benchmarks")
@@ -63,7 +64,8 @@ target_link_libraries(pthreadpool PUBLIC compile_commands)
 target_link_libraries(app PRIVATE
   # "-Wl,--whole-archive" 
   extension_runner_util executorch executorch_core quantized_ops_lib portable_ops_lib quantized_kernels portable_kernels 
-  # "-Wl,--no-whole-archive"
+  xnnpack_backend XNNPACK microkernels-prod
+  # "-Wl,--no-whole-archive"`
 )
 
 target_include_directories(app PRIVATE ${ET_INCLUDE_PATH} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})

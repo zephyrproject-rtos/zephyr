@@ -171,6 +171,11 @@
 #define MSTATUS_VS_CLEAN (2UL << 9)
 #define MSTATUS_VS_DIRTY (3UL << 9)
 
+#define MSTATUS_XS_OFF   (0UL << 15)
+#define MSTATUS_XS_INIT  (1UL << 15)
+#define MSTATUS_XS_CLEAN (2UL << 15)
+#define MSTATUS_XS_DIRTY (3UL << 15)
+
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
  * - Preserve machine privileges in MPP. If you see any documentation
