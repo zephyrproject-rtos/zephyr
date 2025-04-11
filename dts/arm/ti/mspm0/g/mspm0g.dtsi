@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/mspm0/mspm0.dtsi>
