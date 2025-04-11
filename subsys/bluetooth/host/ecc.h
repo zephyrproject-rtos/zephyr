@@ -6,6 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/sys/slist.h>
+
 /** Key size used in Bluetooth's ECC domain. */
 #define BT_ECC_KEY_SIZE            32
 /** Length of a Bluetooth ECC public key coordinate. */
@@ -46,7 +51,7 @@ bool bt_pub_key_is_debug(uint8_t *cmp_pub_key);
 
 /*  @brief Check if public key is valid.
  *
- *  Verify that the public key is valid, e.g. that its coordinates lie on the eliptic curve.
+ *  Verify that the public key is valid, e.g. that its coordinates lie on the elliptic curve.
  *
  *  @param key The public key to validate.
  *
