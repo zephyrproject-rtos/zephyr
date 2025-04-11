@@ -7,25 +7,33 @@
  */
 
 #include <errno.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/devicetree.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/iso.h>
-
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/bluetooth.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "common/hci_common_internal.h"
-
-#include "monitor.h"
 #include "hci_raw_internal.h"
+#include "monitor.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_raw);
 
 static struct k_fifo *raw_rx;

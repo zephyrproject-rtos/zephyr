@@ -4,6 +4,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys_clock.h>
 
 #include "keys.h"
 
@@ -12,6 +20,9 @@
 static inline bool bt_id_rpa_is_new(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
+	/* TODO: To get bt_dev we should include "hci_core.h" but that gives redefinitions
+	 * Should we have an API to get the rpa_update value?
+	 */
 	uint32_t remaining_ms = k_ticks_to_ms_floor32(
 		k_work_delayable_remaining_get(&bt_dev.rpa_update));
 	/* RPA is considered new if there is less than half a second since the
