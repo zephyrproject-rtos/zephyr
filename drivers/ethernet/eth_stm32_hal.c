@@ -56,9 +56,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
 
-#define ETH_STM32_AUTO_NEGOTIATION_ENABLE                                                          \
-	UTIL_NOT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, phy_handle), fixed_link))
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->DESC3 & \
 							ETH_DMATXNDESCRF_OWN)
@@ -845,6 +842,64 @@ static void RISAF_Config(void)
 }
 #endif
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V1)
+#define ETH_TIMEOUT_SWRESET 500000U
+
+static int eth_stm32_init_v1_api(const struct device *dev)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	uint32_t tmpreg1 = 0U;
+
+	if (heth->State == HAL_ETH_STATE_RESET) {
+		heth->Lock = HAL_UNLOCKED;
+	}
+
+	/* Select MII or RMII Mode*/
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	AFIO->MAPR &= ~(AFIO_MAPR_MII_RMII_SEL);
+	AFIO->MAPR |= (uint32_t)heth->Init.MediaInterface;
+#else
+	/* Enable SYSCFG Clock */
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+
+	/* Select MII or RMII Mode*/
+	SYSCFG->PMC &= ~(SYSCFG_PMC_MII_RMII_SEL);
+	SYSCFG->PMC |= (uint32_t)heth->Init.MediaInterface;
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
+	/* Get the ETHERNET MACMIIAR value, this is responsible for mdio, so save it to restore it
+	 * later
+	 */
+	tmpreg1 = heth->Instance->MACMIIAR;
+
+	/* Ethernet Software reset */
+	/* Set the SWR bit: resets all MAC subsystem internal registers and logic */
+	/* After reset all the registers holds their respective reset values */
+	heth->Instance->DMABMR |= ETH_DMABMR_SR;
+
+	/* Wait for software reset */
+	if (!WAIT_FOR((heth->Instance->DMABMR & ETH_DMABMR_SR) == (uint32_t)RESET,
+		     ETH_TIMEOUT_SWRESET, NULL)) {
+		heth->State = HAL_ETH_STATE_TIMEOUT;
+		/* Process Unlocked */
+		__HAL_UNLOCK(heth);
+
+		return -ETIMEDOUT;
+	}
+
+	heth->Instance->MACMIIAR = tmpreg1;
+
+	/* Config MAC and DMA */
+	ETH_MACDMAConfig(heth, ETH_SUCCESS);
+
+	/* Set ETH HAL State to Ready */
+	heth->State = HAL_ETH_STATE_READY;
+
+	return HAL_OK;
+}
+#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
+
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
@@ -891,28 +946,10 @@ static int eth_initialize(const struct device *dev)
 	heth->Init.MACAddr = dev_data->mac_addr;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-
-	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
-		struct phy_link_state state;
-
-		phy_get_link_state(eth_stm32_phy_dev, &state);
-
-		heth->Init.DuplexMode = PHY_LINK_IS_FULL_DUPLEX(state.speed) ? ETH_MODE_FULLDUPLEX
-									     : ETH_MODE_HALFDUPLEX;
-		heth->Init.Speed =
-			PHY_LINK_IS_SPEED_100M(state.speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
-	}
-
-	hal_ret = HAL_ETH_Init(heth);
-	if (hal_ret == HAL_TIMEOUT) {
-		/* HAL Init time out. This could be linked to */
-		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
-		LOG_WRN("HAL_ETH_Init timed out (cable not connected?)");
-	} else if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
-		return -EINVAL;
+	ret = eth_stm32_init_v1_api(dev);
+	if (ret < 0) {
+		LOG_ERR("eth_init_v1_api failed: %d", ret);
+		return -EIO;
 	}
 
 	/* Initialize semaphores */
@@ -1395,9 +1432,6 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 		.Init = {
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-			.AutoNegotiation = ETH_STM32_AUTO_NEGOTIATION_ENABLE ?
-					   ETH_AUTONEGOTIATION_ENABLE : ETH_AUTONEGOTIATION_DISABLE,
-			.PhyAddress = DT_REG_ADDR(DT_INST_PHANDLE(0, phy_handle)),
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
