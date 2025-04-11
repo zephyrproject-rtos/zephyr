@@ -519,22 +519,22 @@ static int adxl345_init(const struct device *dev)
 }
 
 #ifdef CONFIG_ADXL345_TRIGGER
-#define ADXL345_CFG_IRQ(inst) \
+#define ADXL345_CFG_IRQ(inst)									   \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),
 #else
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
 
-#define ADXL345_RTIO_SPI_DEFINE(inst)   \
-	COND_CODE_1(CONFIG_SPI_RTIO,    \
-			(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst), \
-			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \
-			SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),    \
+#define ADXL345_RTIO_SPI_DEFINE(inst)								   \
+	COND_CODE_1(CONFIG_SPI_RTIO,								   \
+			(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),		   \
+			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |					   \
+			SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),					   \
 			())
 
-#define ADXL345_RTIO_I2C_DEFINE(inst)    \
-	COND_CODE_1(CONFIG_I2C_RTIO, \
-			(I2C_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst));),  \
+#define ADXL345_RTIO_I2C_DEFINE(inst)								   \
+	COND_CODE_1(CONFIG_I2C_RTIO,								   \
+			(I2C_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst));),	   \
 			())
 
 	/** RTIO SQE/CQE pool size depends on the fifo-watermark because we
@@ -544,49 +544,49 @@ static int adxl345_init(const struct device *dev)
 	 * frame, and then end up calling the completion event so the
 	 * application receives it).
 	 */
-#define ADXL345_RTIO_DEFINE(inst)                                      \
-	/* Conditionally include SPI and/or I2C parts based on their presence */ \
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),  \
-				(ADXL345_RTIO_SPI_DEFINE(inst)), \
-				())       \
-	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),     \
-				(ADXL345_RTIO_I2C_DEFINE(inst)),        \
-				())                                  \
+#define ADXL345_RTIO_DEFINE(inst)								   \
+	/* Conditionally include SPI and/or I2C parts based on their presence */		   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
+				(ADXL345_RTIO_SPI_DEFINE(inst)),				   \
+				())								   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
+				(ADXL345_RTIO_I2C_DEFINE(inst)),				   \
+				())								   \
 	RTIO_DEFINE(adxl345_rtio_ctx_##inst,							   \
 		    2 * DT_INST_PROP(inst, fifo_watermark) + 2,					   \
 		    2 * DT_INST_PROP(inst, fifo_watermark) + 2);
 
-#define ADXL345_CONFIG(inst)								\
-		.odr = DT_INST_PROP(inst, odr),						\
-		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,				\
-		.fifo_config.fifo_trigger = ADXL345_INT2,			\
+#define ADXL345_CONFIG(inst)									   \
+		.odr = DT_INST_PROP(inst, odr),							   \
+		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,					   \
+		.fifo_config.fifo_trigger = ADXL345_INT2,					   \
 		.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
 
-#define ADXL345_CONFIG_SPI(inst)                                       \
-	{                                                              \
-		.bus = {.spi = SPI_DT_SPEC_INST_GET(inst,              \
-						    SPI_WORD_SET(8) |  \
-						    SPI_TRANSFER_MSB | \
-						    SPI_MODE_CPOL |    \
-						    SPI_MODE_CPHA,     \
-						    0)},               \
-		.bus_is_ready = adxl345_bus_is_ready_spi,              \
-		.reg_access = adxl345_reg_access_spi,                  \
-		.bus_type = ADXL345_BUS_SPI,       \
-		ADXL345_CONFIG(inst)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
-		(ADXL345_CFG_IRQ(inst)), ())				\
+#define ADXL345_CONFIG_SPI(inst)								   \
+	{											   \
+		.bus = {.spi = SPI_DT_SPEC_INST_GET(inst,					   \
+						    SPI_WORD_SET(8) |				   \
+						    SPI_TRANSFER_MSB |				   \
+						    SPI_MODE_CPOL |				   \
+						    SPI_MODE_CPHA,				   \
+						    0)},					   \
+		.bus_is_ready = adxl345_bus_is_ready_spi,					   \
+		.reg_access = adxl345_reg_access_spi,						   \
+		.bus_type = ADXL345_BUS_SPI,							   \
+		ADXL345_CONFIG(inst)								   \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),				   \
+		(ADXL345_CFG_IRQ(inst)), ())							   \
 	}
 
-#define ADXL345_CONFIG_I2C(inst)			    \
-	{						    \
-		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)}, \
-		.bus_is_ready = adxl345_bus_is_ready_i2c,   \
-		.reg_access = adxl345_reg_access_i2c,	    \
-		.bus_type = ADXL345_BUS_I2C,                \
-		ADXL345_CONFIG(inst)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
-		(ADXL345_CFG_IRQ(inst)), ())		\
+#define ADXL345_CONFIG_I2C(inst)								   \
+	{											   \
+		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)},					   \
+		.bus_is_ready = adxl345_bus_is_ready_i2c,					   \
+		.reg_access = adxl345_reg_access_i2c,						   \
+		.bus_type = ADXL345_BUS_I2C,							   \
+		ADXL345_CONFIG(inst)								   \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),				   \
+		(ADXL345_CFG_IRQ(inst)), ())							   \
 	}
 
 #define ADXL345_DEFINE(inst)									   \
@@ -602,17 +602,17 @@ static int adxl345_init(const struct device *dev)
 		     "fifo-watermark must be between 1 and 32. Please set it in "		   \
 		     "the device-tree node properties");					   \
 												   \
-	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));                 \
-	static struct adxl345_dev_data adxl345_data_##inst = {                  \
-	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
-				.iodev = &adxl345_iodev_##inst,)) \
-	};     \
-	static const struct adxl345_dev_config adxl345_config_##inst =                  \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
-			    (ADXL345_CONFIG_I2C(inst)));                                \
-                                                                                        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,				\
-			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
-			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\
+	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));				   \
+	static struct adxl345_dev_data adxl345_data_##inst = {					   \
+	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,		   \
+				.iodev = &adxl345_iodev_##inst,))				   \
+	};											   \
+	static const struct adxl345_dev_config adxl345_config_##inst =				   \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),		   \
+			    (ADXL345_CONFIG_I2C(inst)));					   \
+												   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,					   \
+			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,	   \
+			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(ADXL345_DEFINE)
