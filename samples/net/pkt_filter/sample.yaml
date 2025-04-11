@@ -1,0 +1,14 @@
+sample:
+  description: Network packet filtering functionality
+  name: Network packet filter sample app
+tests:
+  sample.net.pkt_filter:
+    harness: net
+    min_ram: 64
+    tags:
+      - net
+      - statistics
+      - net_pkt_filter
+    depends_on: netif
+    integration_platforms:
+      - native_sim
