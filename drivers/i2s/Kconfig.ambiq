@@ -13,11 +13,18 @@ config I2S_AMBIQ
 
 if I2S_AMBIQ
 
-config I2S_DMA_TCB_BUFFER_SIZE
-	int "DMA Transfer Control Buffer size in words."
-	default 1536
+config I2S_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in I2S driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
-	  DMA Transfer Control Buffer size in words
+	  Disable this if cache has been handled in upper layers.
+
+config I2S_AMBIQ_BUFFER_ALIGNMENT
+	int "Set the I2S DMA TCB buffer alignment"
+	default DCACHE_LINE_SIZE if DCACHE
+	help
+	  I2S buffer should be 32bytes aligned when placed in cachable region.
 
 config I2S_AMBIQ_RX_BLOCK_COUNT
 	int "RX queue length"

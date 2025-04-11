@@ -19,3 +19,13 @@ properties:
 
   pinctrl-names:
     required: true
+
+  i2s-buffer-location:
+    type: string
+    description: |
+      Define I2S DMA buffer location section
+
+  i2s-buffer-size:
+    type: int
+    description: |
+      Define I2S DMA buffer size in (4-byte) words

@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/cache.h>
 
 #include <am_mcu_apollo.h>
 
@@ -33,6 +34,8 @@ struct i2s_ambiq_data {
 	am_hal_i2s_config_t i2s_hal_cfg;
 	am_hal_i2s_transfer_t i2s_transfer;
 	struct i2s_config i2s_user_config;
+	uint32_t *dma_tcb_tx_buf;
+	uint32_t *dma_tcb_rx_buf;
 
 	enum i2s_state i2s_state;
 };
@@ -65,20 +68,6 @@ static am_hal_i2s_io_signal_t i2s_io_config = {
 	.eTxCpol = AM_HAL_I2S_IO_TX_CPOL_FALLING,
 	.eRxCpol = AM_HAL_I2S_IO_RX_CPOL_RISING,
 };
-
-static __aligned(32) struct {
-	__aligned(32) uint32_t
-		buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
-						     // should be 2 x block_size
-} i2s_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".data"))); // SSRAM allocation
-
-static __aligned(32) struct {
-	__aligned(32) uint32_t
-		buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
-						     // should be 2 x block_size
-} i2s_rx_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".data"))); // SSRAM allocation
 
 static void i2s_ambiq_isr0(const struct device *dev)
 {
@@ -248,7 +237,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	// Configure DMA and target address.
 	//
 	if (dir == I2S_DIR_TX) {
-		uint8_t *tx_buf_8 = (uint8_t *)&(i2s_dma_tcb_buf[data->inst_idx].buf[0]);
+		uint8_t *tx_buf_8 = (uint8_t *)data->dma_tcb_tx_buf;
 		data->i2s_transfer.ui32TxTotalCount =
 			data->sample_num; // I2S DMA buffer count is the number of 32-bit datawidth.
 		data->i2s_transfer.ui32TxTargetAddr = (uint32_t)tx_buf_8;
@@ -257,7 +246,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 			data->i2s_transfer.ui32TxTotalCount,
 			data->i2s_transfer.ui32TxTargetAddrReverse);
 	} else {
-		uint8_t *rx_buf_8 = (uint8_t *)&(i2s_rx_dma_tcb_buf[data->inst_idx].buf[0]);
+		uint8_t *rx_buf_8 = (uint8_t *)data->dma_tcb_rx_buf;
 		data->i2s_transfer.ui32RxTotalCount =
 			data->sample_num; // I2S DMA buffer count is the number of 32-bit datawidth.
 		data->i2s_transfer.ui32RxTargetAddr = (uint32_t)rx_buf_8;
@@ -349,11 +338,12 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer, size_t size)
 		}
 	}
 
-	//
-	// Clean I2S DMA buffer of block_size after filling data.
-	//
-	am_hal_cachectrl_dcache_clean(
-		&(am_hal_cachectrl_range_t){i2s_data_buf_ptr, data->block_size});
+#if CONFIG_I2S_AMBIQ_HANDLE_CACHE
+	if (!buf_in_nocache((uintptr_t)i2s_data_buf_ptr, data->block_size)) {
+		/* Clean I2S DMA buffer of block_size after filling data. */
+		sys_cache_data_flush_range((uint32_t *)i2s_data_buf_ptr, data->block_size);
+	}
+#endif /* CONFIG_I2S_AMBIQ_HANDLE_CACHE */
 
 	k_mem_slab_free(data->mem_slab, buffer);
 
@@ -381,13 +371,14 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 		uint32_t *i2s_data_buf = (uint32_t *)am_hal_i2s_dma_get_buffer(data->i2s_handler,
 									       AM_HAL_I2S_XFER_RX);
 
-		//
-		// I2S DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
-		// block_size when we are getting 16 bits sample.
-		//
-		am_hal_cachectrl_dcache_invalidate(
-			&(am_hal_cachectrl_range_t){(uint32_t)i2s_data_buf, data->block_size},
-			false);
+#if CONFIG_I2S_AMBIQ_HANDLE_CACHE
+	if (!buf_in_nocache((uintptr_t)i2s_data_buf, data->block_size)) {
+		/* I2S DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
+		 * block_size when we are getting 16 bits sample.
+		 */
+		sys_cache_data_invd_range(i2s_data_buf, data->block_size);
+	}
+#endif /* CONFIG_I2S_AMBIQ_HANDLE_CACHE */
 
 		memcpy(data->mem_slab_buffer, (void *)i2s_data_buf, data->block_size);
 		*size = data->block_size;
@@ -405,27 +396,32 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 	.trigger = i2s_ambiq_trigger,
 };
 
-#define AMBIQ_I2S_DEFINE(n)                                                                \
-	PINCTRL_DT_INST_DEFINE(n);                                                             \
-	static void i2s_irq_config_func_##n(void)                                              \
-	{                                                                                      \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2s_ambiq_isr##n,           \
-			    DEVICE_DT_INST_GET(n), 0);                                                 \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                      \
-	static struct i2s_ambiq_data i2s_ambiq_data##n = {                                     \
-		.tx_ready_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.tx_ready_sem, 1, 1),           \
-		.rx_done_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.rx_done_sem, 0, 1),             \
-		.inst_idx = n,                                                                     \
-		.block_size = 0,                                                                   \
-		.sample_num = 0,                                                                   \
-		.i2s_state = I2S_STATE_NOT_READY,                                                  \
-	};                                                                                     \
-	static const struct i2s_ambiq_cfg i2s_ambiq_cfg##n = {                                 \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_config_func = i2s_irq_config_func_##n,                                        \
-	};                                                                                     \
-	DEVICE_DT_INST_DEFINE(n, i2s_ambiq_init, NULL, &i2s_ambiq_data##n, &i2s_ambiq_cfg##n,  \
+#define AMBIQ_I2S_DEFINE(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	static void i2s_irq_config_func_##n(void)                                                 \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2s_ambiq_isr##n,          \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+		irq_enable(DT_INST_IRQN(n));                                                      \
+	}                                                                                         \
+	static uint32_t i2s_dma_tcb_buf##n[DT_INST_PROP_OR(n, i2s_buffer_size, 1536) * 2]         \
+	__attribute__((section(DT_INST_PROP_OR(n, i2s_buffer_location, ".data"))))                \
+	__aligned(CONFIG_I2S_AMBIQ_BUFFER_ALIGNMENT);                                             \
+	static struct i2s_ambiq_data i2s_ambiq_data##n = {                                        \
+		.tx_ready_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.tx_ready_sem, 1, 1),          \
+		.rx_done_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.rx_done_sem, 0, 1),            \
+		.inst_idx = n,                                                                    \
+		.block_size = 0,                                                                  \
+		.sample_num = 0,                                                                  \
+		.i2s_state = I2S_STATE_NOT_READY,                                                 \
+		.dma_tcb_tx_buf = i2s_dma_tcb_buf##n,                                             \
+		.dma_tcb_rx_buf = i2s_dma_tcb_buf##n + DT_INST_PROP_OR(n, i2s_buffer_size, 1536), \
+	};                                                                                        \
+	static const struct i2s_ambiq_cfg i2s_ambiq_cfg##n = {                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                        \
+		.irq_config_func = i2s_irq_config_func_##n,                                       \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, i2s_ambiq_init, NULL, &i2s_ambiq_data##n, &i2s_ambiq_cfg##n,     \
 			      POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_I2S_DEFINE)
