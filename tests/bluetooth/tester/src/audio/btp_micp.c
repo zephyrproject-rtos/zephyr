@@ -6,23 +6,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
-#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <zephyr/types.h>
-#include <zephyr/kernel.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/aics.h>
-
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-
-#include <../../subsys/bluetooth/audio/micp_internal.h>
-#include <../../subsys/bluetooth/audio/aics_internal.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
+#include "../../subsys/bluetooth/audio/micp_internal.h"
+#include "../../subsys/bluetooth/audio/aics_internal.h"
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"

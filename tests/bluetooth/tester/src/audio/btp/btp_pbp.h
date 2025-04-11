@@ -6,7 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* This is main.h */
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #define BTP_PBP_READ_SUPPORTED_COMMANDS	0x01
 struct btp_pbp_read_supported_commands_rp {
