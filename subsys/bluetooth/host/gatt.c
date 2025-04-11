@@ -7,46 +7,57 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-
-#include <zephyr/bluetooth/att.h>
-#include <zephyr/kernel.h>
-#include <string.h>
+#include "sys/types.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/iterable_sections.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/sys/check.h>
+#include <string.h>
 
-#include <zephyr/settings/settings.h>
-
-#if defined(CONFIG_BT_GATT_CACHING)
-#include "psa/crypto.h"
-#endif /* CONFIG_BT_GATT_CACHING */
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include "common/bt_str.h"
+#if defined(CONFIG_BT_GATT_CACHING)
+#include <psa/crypto.h>
+#include <psa/crypto_struct.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
+#endif /* CONFIG_BT_GATT_CACHING */
 
-#include "hci_core.h"
-#include "conn_internal.h"
-#include "keys.h"
-#include "l2cap_internal.h"
 #include "att_internal.h"
-#include "smp.h"
-#include "settings.h"
+#include "conn_internal.h"
+#include "common/bt_str.h"
 #include "gatt_internal.h"
+#include "hci_core.h"
+#include "keys.h"
 #include "long_wq.h"
+#include "l2cap_internal.h"
+#include "settings.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_gatt);
 
 #define SC_TIMEOUT	K_MSEC(10)
@@ -3470,7 +3481,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			LOG_ERR("Read method not set");
 			return false;
 		}
-		/* The charactestic properties is the first byte of the attribute value */
+		/* The characterstic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
 			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);

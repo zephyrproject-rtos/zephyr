@@ -4,31 +4,42 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/types.h>
+#include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <zephyr/sys/atomic.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
-
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/direction.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+
+#include <sys/types.h>
 
 #include "addr_internal.h"
-#include "hci_core.h"
+#include "common/bt_str.h"
 #include "conn_internal.h"
 #include "direction_internal.h"
+#include "hci_core.h"
 #include "id.h"
-
-#include "common/bt_str.h"
 #include "scan.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
@@ -908,7 +919,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		if (evt->length + ext_scan_buf.len > ext_scan_buf.size) {
-			/* The report does not fit in the reassemby buffer
+			/* The report does not fit in the reassembly buffer
 			 * Discard this and future reports from the advertiser.
 			 */
 			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
@@ -1419,7 +1430,7 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
-		LOG_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
+		LOG_ERR("Unknown handle 0x%04X for periodic adv sync lost",
 			sys_le16_to_cpu(evt->handle));
 		return;
 	}

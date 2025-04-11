@@ -7,8 +7,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
-#if defined(CONFIG_BT_MONITOR)
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/net_buf.h>
 
 #define BT_MONITOR_NEW_INDEX    0
 #define BT_MONITOR_DEL_INDEX    1
@@ -95,6 +97,8 @@ static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
 	}
 }
 
+/* TODO: Remove guard and replace with IS_ENABLED(CONFIG_BT_MONITOR) */
+#if defined(CONFIG_BT_MONITOR)
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len);
 
 void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,

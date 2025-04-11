@@ -11,13 +11,19 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -25,17 +31,18 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-
-#include "common/bt_str.h"
-
-#include "crypto/bt_crypto.h"
-
-#include "hci_core.h"
-#include "ecc.h"
-#include "keys.h"
 #include "conn_internal.h"
+#include "common/bt_str.h"
+#include "crypto/bt_crypto.h"
+#include "ecc.h"
+#include "hci_core.h"
+#include "keys.h"
 #include "l2cap_internal.h"
 #include "smp.h"
 
@@ -4390,7 +4397,7 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 	    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-		/* Deny public key with identitcal X coordinate unless it is the
+		/* Deny public key with identical X coordinate unless it is the
 		 * debug public key.
 		 */
 		LOG_WRN("Remote public key rejected");
@@ -4476,7 +4483,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_CENTRAL) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 		    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-			/* Deny public key with identitcal X coordinate unless
+			/* Deny public key with identical X coordinate unless
 			 * it is the debug public key.
 			 */
 			LOG_WRN("Remote public key rejected");

@@ -7,56 +7,64 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
-
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/testing.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
+#include <zephyr/kernel/thread.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 
-#include <zephyr/settings/settings.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/bluetooth/testing.h>
-#include <zephyr/drivers/bluetooth.h>
-
+#include "addr_internal.h"
+#include "adv.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
 #include "common/assert.h"
-
-#include "keys.h"
-#include "monitor.h"
-#include "hci_core.h"
-#include "ecc.h"
-#include "id.h"
-#include "adv.h"
-#include "scan.h"
-
-#include "addr_internal.h"
 #include "conn_internal.h"
-#include "iso_internal.h"
-#include "l2cap_internal.h"
-#include "gatt_internal.h"
-#include "smp.h"
 #include "crypto.h"
+#include "ecc.h"
+#include "gatt_internal.h"
+#include "hci_core.h"
+#include "id.h"
+#include "iso_internal.h"
+#include "keys.h"
+#include "l2cap_internal.h"
+#include "monitor.h"
+#include "scan.h"
 #include "settings.h"
+#include "smp.h"
 
 #if defined(CONFIG_BT_CLASSIC)
 #include "classic/br.h"
@@ -67,7 +75,6 @@
 #endif /* CONFIG_BT_DF */
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_core);
 
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
