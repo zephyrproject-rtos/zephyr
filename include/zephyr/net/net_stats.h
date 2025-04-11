@@ -702,7 +702,7 @@ struct net_stats_wifi {
 /** @cond INTERNAL_HIDDEN */
 
 #define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
-#define _NET_STATS_CODE		0x101
+#define _NET_STATS_CODE		0x09
 #define _NET_STATS_BASE		(NET_MGMT_LAYER(_NET_STATS_LAYER) |	\
 				 NET_MGMT_LAYER_CODE(_NET_STATS_CODE))
 

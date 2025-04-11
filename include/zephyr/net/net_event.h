@@ -28,7 +28,7 @@ extern "C" {
 
 /* Network Interface events */
 #define _NET_IF_LAYER		NET_MGMT_LAYER_L2
-#define _NET_IF_CORE_CODE	0x001
+#define _NET_IF_CORE_CODE	0x05
 #define _NET_EVENT_IF_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_IF_LAYER) |	\
@@ -43,7 +43,7 @@ enum net_event_if_cmd {
 
 /* IPv6 Events */
 #define _NET_IPV6_LAYER		NET_MGMT_LAYER_L3
-#define _NET_IPV6_CORE_CODE	0x060
+#define _NET_IPV6_CORE_CODE	0x06
 #define _NET_EVENT_IPV6_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_IPV6_LAYER) |	\
@@ -79,7 +79,7 @@ enum net_event_ipv6_cmd {
 
 /* IPv4 Events*/
 #define _NET_IPV4_LAYER		NET_MGMT_LAYER_L3
-#define _NET_IPV4_CORE_CODE	0x004
+#define _NET_IPV4_CORE_CODE	0x07
 #define _NET_EVENT_IPV4_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_IPV4_LAYER) |	\
@@ -105,7 +105,7 @@ enum net_event_ipv4_cmd {
 
 /* L4 network events */
 #define _NET_L4_LAYER		NET_MGMT_LAYER_L4
-#define _NET_L4_CORE_CODE	0x114
+#define _NET_L4_CORE_CODE	0x08
 #define _NET_EVENT_L4_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_L4_LAYER) |	\
