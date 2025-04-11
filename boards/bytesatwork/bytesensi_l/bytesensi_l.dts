@@ -93,15 +93,15 @@
 		int-gpios = <&gpio0 25 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
-	temperature_sensor: tmp116@4a {
+	temperature_sensor: tmp11x@4a {
 		status = "okay";
-		compatible = "ti,tmp116";
+		compatible = "ti,tmp11x";
 		reg = <0x4a>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		eeprom: ti_tmp116_eeprom@0 {
-			compatible = "ti,tmp116-eeprom";
+		eeprom: ti_tmp11x_eeprom@0 {
+			compatible = "ti,tmp11x-eeprom";
 			reg = <0x0>;
 			read-only;
 		};
