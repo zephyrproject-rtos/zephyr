@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Note: To test this sample, connect SCL, SDA pins of I2C0 and I2C1 in loopback */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/delete-node/ &eeprom0;
+/delete-node/ &eeprom1;
+
+&i2c0 {
+	status = "okay";
+	clocks = <&i2c_ref_clk>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
