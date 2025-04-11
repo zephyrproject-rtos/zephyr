@@ -9,6 +9,8 @@
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 
 / {
 	cpus {
@@ -41,6 +43,19 @@
 			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x200000 0x80000>;
+		};
+
+		reserved_mem: reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			shared_vc_arm_sdram: memory@3b400000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x3b400000 0x04c00000>;
+				zephyr,memory-region = "VC_SHARED_RAM";
+				zephyr,memory-attr = <(DT_MEM_SW_ALLOC_NON_CACHE)>;
+			};
 		};
 
 		gic: interrupt-controller@ff841000 {
@@ -89,6 +104,13 @@
 			clock-frequency = <DT_FREQ_M(500)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		mailbox0: mailbox@fe00b880 {
+			compatible = "brcm,bcm2711-mailbox";
+			reg = <0xfe00b880 0x40>;
+			#mbox-cells = <1>;
 			status = "disabled";
 		};
 	};
