@@ -49,6 +49,7 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
 
 config EC_HOST_CMD_HANDLER_BUFFER_ALIGN
 	int "Memory alignment for the tx/rx buffers"
+	default DCACHE_LINE_SIZE if (DCACHE_LINE_SIZE > 0) && EC_HOST_CMD_BACKEND_USB
 	default 4
 	help
 	  Some interfaces need a special memory alignment to work properly. Use that config

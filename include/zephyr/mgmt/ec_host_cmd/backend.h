@@ -163,6 +163,14 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *de
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_spi(struct gpio_dt_spec *cs);
 
 /**
+ * @brief Signal event over USB
+ *
+ * Signal event using USB interrupt endpoint. It informs host that there is a pending event that has
+ * to be handled. The function performs remote wake-up if needed.
+ */
+void ec_host_cmd_backend_usb_trigger_event(void);
+
+/**
  * @}
  */
 
