@@ -254,11 +254,6 @@ static int commit_settings(void)
 		return 0;
 	}
 
-#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (bt_dev.name[0] == '\0') {
-		bt_set_name(CONFIG_BT_DEVICE_NAME);
-	}
-#endif
 	if (!bt_dev.id_count) {
 		err = bt_setup_public_id_addr();
 		if (err) {
