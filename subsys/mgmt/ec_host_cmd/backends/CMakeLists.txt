@@ -25,3 +25,7 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
 	CONFIG_EC_HOST_CMD_BACKEND_SPI_STM32
 	ec_host_cmd_backend_spi_stm32.c)
+
+zephyr_library_sources_ifdef(
+	CONFIG_EC_HOST_CMD_BACKEND_USB
+	ec_host_cmd_backend_usb.c)
