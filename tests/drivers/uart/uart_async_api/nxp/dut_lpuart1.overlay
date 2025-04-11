@@ -4,6 +4,8 @@
  */
 
 /*
- * To test this sample connect P3_20 to P3_21
+ * To test this sample
+ * frdm_mcxa156 connect P3_20 to P3_21
  */
+
 dut: &lpuart1 {};
