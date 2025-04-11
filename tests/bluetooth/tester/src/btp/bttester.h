@@ -7,9 +7,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/sys/util.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util_macro.h>
 #include <sys/types.h>
 
 static inline void tester_set_bit(uint8_t *addr, unsigned int bit)

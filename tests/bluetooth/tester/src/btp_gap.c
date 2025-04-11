@@ -5,33 +5,37 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 #include <stdint.h>
-
-#include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/gap.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util_macro.h>
-#include <zephyr/types.h>
 #include <string.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
 
 #include <hci_core.h>
 
-#include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_gap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
-
 #include "btp/btp.h"
 
+#define LOG_MODULE_NAME bttester_gap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CONTROLLER_NAME "btp_tester"
 
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
