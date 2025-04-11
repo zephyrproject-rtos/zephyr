@@ -5,7 +5,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/types.h>
+
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 
 /* HAP commands */
 #define BTP_HAP_READ_SUPPORTED_COMMANDS         0x01
