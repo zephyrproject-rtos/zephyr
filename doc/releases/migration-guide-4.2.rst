@@ -114,6 +114,12 @@ Entropy
   And :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX` and its related options with
   :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_SIM` (:github:`86615`).
 
+Eeprom
+========
+
+* :dtcompatible:`ti,tmp116-eeprom` has been renamed to :dtcompatible:`ti,tmp11x-eeprom` because it
+  supports both tmp117 and tmp119.
+
 Ethernet
 ========
 
@@ -164,6 +170,9 @@ Sensors
   :dtcompatible:`ltr,f216a` name has been replaced by :dtcompatible:`liteon,ltrf216a`.
   The choice :kconfig:option:`DT_HAS_LTR_F216A_ENABLED` has been replaced with
   :kconfig:option:`DT_HAS_LITEON_LTRF216A_ENABLED` (:github:`85453`)
+
+* :dtcompatible:`ti,tmp116` has been renamed to :dtcompatible:`ti,tmp11x` because it supports
+  tmp116, tmp117 and tmp119.
 
 Serial
 =======
