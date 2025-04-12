@@ -6,12 +6,6 @@ config POSIX_API
 	bool "POSIX APIs"
 	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
-	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
-	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
-	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
-	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
-	imply POSIX_FD_MGMT # open(), close(), read(), write()
-	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	help
 	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
 	  and some features found in PSE52.
