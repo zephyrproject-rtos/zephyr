@@ -2,18 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_SYSTEM_HEADERS
-	bool
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
-	help
-	  Make POSIX headers available to the system without the "zephyr/posix" prefix.
-
 config POSIX_API
 	bool "POSIX APIs"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
-	select POSIX_SYSTEM_HEADERS
+	select POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
@@ -40,14 +31,13 @@ choice POSIX_AEP_CHOICE
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
 config POSIX_AEP_CHOICE_NONE
-	bool "No pre-defined POSIX subprofile"
+	bool "No POSIX subprofile"
 	help
-	  No pre-defined POSIX profile is selected.
+	  No POSIX subprofile is selected.
 
 config POSIX_AEP_CHOICE_BASE
-	bool "Base definitions (system interfaces)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	bool "Minimal POSIX System Profile"
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	help
 	  Only enable the base definitions required for all POSIX systems.
@@ -57,8 +47,7 @@ config POSIX_AEP_CHOICE_BASE
 
 config POSIX_AEP_CHOICE_PSE51
 	bool "Minimal Realtime System Profile (PSE51)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	help
@@ -71,8 +60,7 @@ config POSIX_AEP_CHOICE_PSE51
 
 config POSIX_AEP_CHOICE_PSE52
 	bool "Realtime Controller System Profile (PSE52)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
@@ -86,8 +74,7 @@ config POSIX_AEP_CHOICE_PSE52
 
 config POSIX_AEP_CHOICE_PSE53
 	bool "Dedicated Realtime System Profile (PSE53)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
@@ -104,10 +91,11 @@ config POSIX_AEP_CHOICE_PSE53
 
 endchoice # POSIX_AEP_CHOICE
 
-# Base Definitions (System Interfaces)
+if POSIX_SYSTEM_INTERFACES
+
+# Mandatory POSIX System Interfaces (base profile)
 config POSIX_BASE_DEFINITIONS
 	bool
-	select POSIX_SYSTEM_HEADERS
 	select POSIX_ASYNCHRONOUS_IO
 	select POSIX_BARRIERS
 	select POSIX_CLOCK_SELECTION
@@ -193,3 +181,5 @@ config POSIX_AEP_REALTIME_DEDICATED
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+endif # POSIX_SYSTEM_INTERFACE
