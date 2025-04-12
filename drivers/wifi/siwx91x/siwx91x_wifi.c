@@ -475,6 +475,58 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 	return 0;
 }
 
+static int
+siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_time_active,
+				  uint16_t dwell_time_passive,
+				  sl_wifi_advanced_scan_configuration_t *advanced_scan_config)
+{
+	int ret = 0;
+
+	if (dwell_time_active && (dwell_time_active < 5 || dwell_time_active > 1000)) {
+		LOG_ERR("Invalid active scan dwell time");
+		return -EINVAL;
+	}
+
+	if (dwell_time_passive && (dwell_time_passive < 10 || dwell_time_passive > 1000)) {
+		LOG_ERR("Invalid passive scan dwell time");
+		return -EINVAL;
+	}
+
+	switch (scan_type) {
+	case SL_WIFI_SCAN_TYPE_ACTIVE:
+		if (!dwell_time_active) {
+			dwell_time_active = SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME;
+		}
+		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+						 dwell_time_active);
+		break;
+	case SL_WIFI_SCAN_TYPE_PASSIVE:
+		if (!dwell_time_passive) {
+			dwell_time_passive = SL_WIFI_DEFAULT_PASSIVE_CHANNEL_SCAN_TIME;
+		}
+		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
+						 dwell_time_passive);
+		break;
+	case SL_WIFI_SCAN_TYPE_ADV_SCAN:
+		__ASSERT(advanced_scan_config, "advanced_scan_config cannot be NULL");
+
+		if (!dwell_time_active) {
+			dwell_time_active = CONFIG_WIFI_SILABS_SIWX91X_ADV_ACTIVE_SCAN_DURATION;
+		}
+		advanced_scan_config->active_channel_time = dwell_time_active;
+
+		if (!dwell_time_passive) {
+			dwell_time_passive = CONFIG_WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION;
+		}
+		advanced_scan_config->passive_channel_time = dwell_time_passive;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_config,
 			scan_result_cb_t cb)
 {
@@ -510,6 +562,11 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	}
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
+		siwx91x_configure_scan_dwell_time(SL_WIFI_SCAN_TYPE_ADV_SCAN,
+						  z_scan_config->dwell_time_active,
+						  z_scan_config->dwell_time_passive,
+						  &advanced_scan_config);
+
 		ret = sl_wifi_set_advanced_scan_configuration(&advanced_scan_config);
 		if (ret != SL_STATUS_OK) {
 			LOG_ERR("advanced scan configuration failed with status %x", ret);
@@ -522,8 +579,20 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	} else {
 		if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
 			sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+			ret = siwx91x_configure_scan_dwell_time(SL_WIFI_SCAN_TYPE_ACTIVE,
+								z_scan_config->dwell_time_active,
+								z_scan_config->dwell_time_passive,
+								NULL);
 		} else {
 			sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
+			ret = siwx91x_configure_scan_dwell_time(SL_WIFI_SCAN_TYPE_PASSIVE,
+								z_scan_config->dwell_time_active,
+								z_scan_config->dwell_time_passive,
+								NULL);
+		}
+		if (ret != SL_STATUS_OK) {
+			LOG_ERR("Failed to configure timeout");
+			return -EINVAL;
 		}
 	}
 
