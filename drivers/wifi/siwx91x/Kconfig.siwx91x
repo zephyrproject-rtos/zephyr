@@ -45,6 +45,44 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	bool "WiFi roaming support"
+	help
+	  Enable this option to configure roaming parameters.
+	  Roaming will be enabled automatically when the
+	  background scan is active, improving connectivity
+	  and performance during transitions between access points.
+
+config WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH
+	bool "Use deauth frames for roaming"
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Enable this option to allow roaming using
+	  deauthentication frames. By default, roaming
+	  is performed using Null data packets.
+
+config WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL
+	int "Default value of roam trigger level (in dBm)"
+	default -70
+	range -10 -100
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Sets the default roam trigger level. Higher values trigger
+	  earlier roaming; lower values delay it. It determines
+	  when to start searching for a new AP.
+
+config WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL_CHANGE
+	int "Default value of roam trigger level change (in dBm)"
+	default 5
+	range 0 90
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Configure the default trigger level change for WiFi roaming.
+	  This value determines the change in signal strength (in dBm)
+	  required to initiate a roaming event. A smaller value may result
+	  in more sensitive roaming behavior, while a larger value can
+	  reduce the frequency of roaming events. It determines
+	  the signal difference needed to switch to a new AP.
 
 config WIFI_SILABS_SIWX91X_ADV_SCAN_THRESHOLD
 	int "Advanced scan threshold (in dBm)"
