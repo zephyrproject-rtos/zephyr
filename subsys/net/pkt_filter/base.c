@@ -449,7 +449,9 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 		buf[pos] = ']';
 
 	} else if (test->type == NPF_TEST_TYPE_ETH_TYPE_MATCH ||
-		   test->type == NPF_TEST_TYPE_ETH_TYPE_UNMATCH) {
+		   test->type == NPF_TEST_TYPE_ETH_TYPE_UNMATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH) {
 		struct npf_test_eth_type *test_eth =
 			CONTAINER_OF(test, struct npf_test_eth_type, test);
 
