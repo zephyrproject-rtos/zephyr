@@ -479,6 +479,12 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 			scan_result_cb_t cb)
 {
 	sl_wifi_scan_configuration_t sl_scan_config = { };
+	sl_wifi_advanced_scan_configuration_t advanced_scan_config = {
+		.trigger_level = CONFIG_WIFI_SILABS_SIWX91X_ADV_SCAN_THRESHOLD,
+		.trigger_level_change = CONFIG_WIFI_SILABS_SIWX91X_ADV_RSSI_TOLERANCE_THRESHOLD,
+		.enable_multi_probe = CONFIG_WIFI_SILABS_SIWX91X_ADV_MULTIPROBE,
+		.enable_instant_scan = CONFIG_WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN,
+	};
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_interface_t interface;
 	sl_wifi_ssid_t ssid = { };
@@ -503,17 +509,22 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		return -EINVAL;
 	}
 
-	if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
-		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
-		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
-						 z_scan_config->dwell_time_active);
+	if (sidev->state == WIFI_STATE_COMPLETED) {
+		ret = sl_wifi_set_advanced_scan_configuration(&advanced_scan_config);
+		if (ret != SL_STATUS_OK) {
+			LOG_ERR("advanced scan configuration failed with status %x", ret);
+			return -EINVAL;
+		}
+
+		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ADV_SCAN;
+		sl_scan_config.periodic_scan_interval =
+			CONFIG_WIFI_SILABS_SIWX91X_ADV_SCAN_PERIODICITY;
 	} else {
-		sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
-		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
-						 z_scan_config->dwell_time_passive);
-	}
-	if (ret) {
-		return -EINVAL;
+		if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
+			sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+		} else {
+			sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
+		}
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(z_scan_config->band_chan); i++) {
