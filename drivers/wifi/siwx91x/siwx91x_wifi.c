@@ -20,6 +20,7 @@
 #include "sl_net_default_values.h"
 #include "sl_wifi.h"
 #include "sl_net.h"
+#include "sl_wifi_constants.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
 
@@ -537,6 +538,15 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		.enable_multi_probe = CONFIG_WIFI_SILABS_SIWX91X_ADV_MULTIPROBE,
 		.enable_instant_scan = CONFIG_WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN,
 	};
+	sl_wifi_roam_configuration_t roam_configuration = {
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+		.trigger_level = CONFIG_WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL,
+		.trigger_level_change = CONFIG_WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL_CHANGE,
+#else
+		.trigger_level = SL_WIFI_NEVER_ROAM,
+		.trigger_level_change = 0,
+#endif
+	};
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_interface_t interface;
 	sl_wifi_ssid_t ssid = { };
@@ -570,6 +580,12 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		ret = sl_wifi_set_advanced_scan_configuration(&advanced_scan_config);
 		if (ret != SL_STATUS_OK) {
 			LOG_ERR("advanced scan configuration failed with status %x", ret);
+			return -EINVAL;
+		}
+
+		ret = sl_wifi_set_roam_configuration(interface, &roam_configuration);
+		if (ret != SL_STATUS_OK) {
+			LOG_ERR("roaming configuration failed with status %x", ret);
 			return -EINVAL;
 		}
 
