@@ -344,7 +344,7 @@ config NET_SOCKETPAIR_BUFFER_SIZE
 	help
 	  Buffer size for socketpair(2)
 
-choice
+choice NET_SOCKETPAIR_ALLOCATION_STRATEGY
 	prompt "Memory management for socketpair"
 	default NET_SOCKETPAIR_HEAP if KERNEL_MEM_POOL
 
