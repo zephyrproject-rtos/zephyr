@@ -53,6 +53,7 @@ West currently supports shell completion in the following shells:
 * bash
 * zsh
 * fish
+* powershell (board qualifiers only)
 
 In order to enable shell completion, you will need to obtain the corresponding
 completion script and have it sourced.
@@ -101,6 +102,23 @@ Using the completion scripts:
     .. code-block:: fish
 
       west completion fish > $HOME/.config/fish/completions/west.fish
+
+  .. group-tab:: powershell
+
+    *One-time setup*:
+
+    .. code-block:: powershell
+
+      west completion powershell | Out-String | Invoke-Expression
+
+    *Permanent setup*:
+
+    .. code-block:: powershell
+
+      Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+      New-item -type file -force $PROFILE
+      west completion powershell > $HOME/west-completion.ps1
+      (Add-Content -Path $PROFILE -Value ". '{$HOME/west-completion.ps1}'")
 
 .. _PyPI:
    https://pypi.org/project/west/
