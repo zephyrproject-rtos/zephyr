@@ -41,6 +41,28 @@ config POSIX_AEP_CHOICE_NONE
 	help
 	  No POSIX subprofile is selected.
 
+config POSIX_AEP_CHOICE_ZEPHYR
+	bool "Minimal Zephyr System Profile"
+	select POSIX_C_LIB_EXT
+	select POSIX_C_LANG_SUPPORT_R
+	help
+	  Zephyr expects certain POSIX functions to be available throughout the build environment,
+	  such as gmtime_r(), strnlen(), strtok_r(), and possibly others.
+
+	  These functions are divided into two standalone Option Groups that may be enabled
+	  independently of the remainder of the POSIX API implementation; namely POSIX_C_LIB_EXT and
+	  POSIX_C_LANG_SUPPORT_R. If not referenced by the Zephyr kernel or application, there are no
+	  resource implications for enabling these option groups.
+
+	  Unlike pre-defined, standard POSIX subprofiles, this subprofile is custom to Zephyr and
+	  therefore does not need to include the base definitions or system interfaces that would
+	  otherwise be required for a conformant POSIX system or subprofile. This system profile
+	  does not itself meet the requirements for POSIX implementation conformance.
+
+	  For more information, see
+	  https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
 config POSIX_AEP_CHOICE_BASE
 	bool "Minimal POSIX System Profile"
 	select POSIX_SYSTEM_INTERFACES
