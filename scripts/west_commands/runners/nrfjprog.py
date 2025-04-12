@@ -18,11 +18,12 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 erase_mode=None, reset=True, tool_opt=None, force=False,
-                 recover=False, qspi_ini=None):
+                 erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
+                 force=False, recover=False, qspi_ini=None):
 
         super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
-                         erase_mode, reset, tool_opt, force, recover)
+                         erase_mode, ext_erase_mode, reset, tool_opt, force,
+                         recover)
 
         self.qspi_ini = qspi_ini
 
@@ -46,9 +47,11 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.pinreset, args.dev_id, erase=args.erase,
-                                    erase_mode=args.erase_mode, reset=args.reset,
-                                    tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover, qspi_ini=args.qspi_ini)
+                                    erase_mode=args.erase_mode,
+                                    ext_erase_mode=args.ext_erase_mode,
+                                    reset=args.reset, tool_opt=args.tool_opt,
+                                    force=args.force, recover=args.recover,
+                                    qspi_ini=args.qspi_ini)
     @classmethod
     def do_add_parser(cls, parser):
         super().do_add_parser(parser)
