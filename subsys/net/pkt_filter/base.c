@@ -242,6 +242,10 @@ bool npf_iface_match(struct npf_test *test, struct net_pkt *pkt)
 	struct npf_test_iface *test_iface =
 			CONTAINER_OF(test, struct npf_test_iface, test);
 
+	NET_DBG("iface %d pkt %d",
+		net_if_get_by_iface(test_iface->iface),
+		net_if_get_by_iface(net_pkt_iface(pkt)));
+
 	return test_iface->iface == net_pkt_iface(pkt);
 }
 
@@ -254,6 +258,10 @@ bool npf_orig_iface_match(struct npf_test *test, struct net_pkt *pkt)
 {
 	struct npf_test_iface *test_iface =
 			CONTAINER_OF(test, struct npf_test_iface, test);
+
+	NET_DBG("orig iface %d pkt %d",
+		net_if_get_by_iface(test_iface->iface),
+		net_if_get_by_iface(net_pkt_orig_iface(pkt)));
 
 	return test_iface->iface == net_pkt_orig_iface(pkt);
 }
@@ -268,6 +276,9 @@ bool npf_size_inbounds(struct npf_test *test, struct net_pkt *pkt)
 	struct npf_test_size_bounds *bounds =
 			CONTAINER_OF(test, struct npf_test_size_bounds, test);
 	size_t pkt_size = net_pkt_get_len(pkt);
+
+	NET_DBG("pkt_size %zu min %zu max %zu",
+		pkt_size, bounds->min, bounds->max);
 
 	return pkt_size >= bounds->min && pkt_size <= bounds->max;
 }
