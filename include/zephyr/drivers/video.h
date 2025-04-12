@@ -810,7 +810,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
- * The @c | characters separate the pixels, and spaces separate the bytes.
+ * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
  * The lowercase letters represent the rest of the bits.
  * @{
@@ -856,38 +856,48 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  *
  * The full color information is spread over multiple pixels.
  *
+ * When the format includes more than 8-bit per pixel, a strategy becomes needed to pack
+ * the bits over multiple bytes, as illustrated for each format.
+ *
+ * The number above the 'R', 'r', 'G', 'g', 'B', 'b' are hints about which pixel number the
+ * following bits belong to.
+ *
  * @{
  */
 
 /**
- * @verbatim
- * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
- * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
- * @endverbatim
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * @endcode
  */
 #define VIDEO_PIX_FMT_BGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
 
 /**
- * @verbatim
- * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
- * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
- * @endverbatim
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * @endcode
  */
 #define VIDEO_PIX_FMT_GBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
 
 /**
- * @verbatim
- * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
- * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
- * @endverbatim
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
+ * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
+ * @endcode
  */
 #define VIDEO_PIX_FMT_GRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
 
 /**
- * @verbatim
- * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
- * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
- * @endverbatim
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
+ * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
+ * @endcode
  */
 #define VIDEO_PIX_FMT_RGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
 
@@ -905,10 +915,10 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
  * This 16-bit integer is then packed in big endian format over two bytes:
  *
- * @verbatim
+ * @code{.unparsed}
  *   15.....8 7......0
  * | RrrrrGgg gggBbbbb | ...
- * @endverbatim
+ * @endcode
  */
 #define VIDEO_PIX_FMT_RGB565X VIDEO_FOURCC('R', 'G', 'B', 'R')
 
@@ -916,19 +926,19 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
  * This 16-bit integer is then packed in little endian format over two bytes:
  *
- * @verbatim
+ * @code{.unparsed}
  *   7......0 15.....8
  * | gggBbbbb RrrrrGgg | ...
- * @endverbatim
+ * @endcode
  */
 #define VIDEO_PIX_FMT_RGB565 VIDEO_FOURCC('R', 'G', 'B', 'P')
 
 /**
  * The first byte is empty (X) for each pixel.
  *
- * @verbatim
+ * @code{.unparsed}
  * | Xxxxxxxx Rrrrrrrr Gggggggg Bbbbbbbb | ...
- * @endverbatim
+ * @endcode
  */
 #define VIDEO_PIX_FMT_XRGB32 VIDEO_FOURCC('B', 'X', '2', '4')
 
@@ -946,18 +956,18 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * There is either a missing channel per pixel, U or V.
  * The value is to be averaged over 2 pixels to get the value of individual pixel.
  *
- * @verbatim
+ * @code{.unparsed}
  * | Yyyyyyyy Uuuuuuuu | Yyyyyyyy Vvvvvvvv | ...
- * @endverbatim
+ * @endcode
  */
 #define VIDEO_PIX_FMT_YUYV VIDEO_FOURCC('Y', 'U', 'Y', 'V')
 
 /**
  * The first byte is empty (X) for each pixel.
  *
- * @verbatim
+ * @code{.unparsed}
  * | Xxxxxxxx Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
- * @endverbatim
+ * @endcode
  */
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
