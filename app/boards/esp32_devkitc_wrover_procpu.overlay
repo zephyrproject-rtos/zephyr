@@ -1,0 +1,9 @@
+&gpio0  {
+    tm1637:  tm1637_0  {
+        compatible = "hw,tm1637";
+        status = "okay";
+        clk-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+        dio-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+    };
+};
+    

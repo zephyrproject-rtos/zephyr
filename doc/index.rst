@@ -1,5 +1,5 @@
-..
-    Zephyr Project documentation main file
+Zephyr Project documentation main file
+======================================
 
 .. _zephyr-home:
 
@@ -21,65 +21,64 @@ Zephyr Project Documentation
 Use the version selection menu on the left to view
 documentation for a specific version of Zephyr.
 
-
 .. raw:: html
 
    <ul class="grid">
        <li class="grid-item">
-	   <a href="introduction/index.html">
-	       <img alt="" src="_static/images/kite.png"/>
-	       <h2>Introduction</h2>
-	   </a>
-	   <p>Architecture, features &amp; licensing details</p>
+       <a href="introduction/index.html">
+           <img alt="" src="_static/images/kite.png"/>
+           <h2>Introduction</h2>
+       </a>
+       <p>Architecture, features &amp; licensing details</p>
        </li>
        <li class="grid-item">
-	   <a href="develop/getting_started/index.html">
+       <a href="develop/getting_started/index.html">
                <span class="grid-icon fa fa-map-signs"></span>
-	       <h2>Getting Started Guide</h2>
-	   </a>
-	   <p>Set up Zephyr, build &amp; run a sample application</p>
+           <h2>Getting Started Guide</h2>
+       </a>
+       <p>Set up Zephyr, build &amp; run a sample application</p>
        </li>
        <li class="grid-item">
-	   <a href="samples/index.html">
+       <a href="samples/index.html">
                <span class="grid-icon fa fa-cogs"></span>
-	       <h2>Samples and Demos</h2>
-	   </a>
-	   <p>Explore samples and demos for various boards</p>
+           <h2>Samples and Demos</h2>
+       </a>
+       <p>Explore samples and demos for various boards</p>
        </li>
        <li class="grid-item">
-	   <a href="boards/index.html">
+       <a href="boards/index.html">
                <span class="grid-icon fa fa-object-group"></span>
-	       <h2>Supported Boards</h2>
-	   </a>
-	   <p>List of supported boards and platforms</p>
+           <h2>Supported Boards</h2>
+       </a>
+       <p>List of supported boards and platforms</p>
        </li>
        <li class="grid-item">
-	   <a href="hardware/index.html">
+       <a href="hardware/index.html">
                <span class="grid-icon fa fa-sign-in"></span>
-	       <h2>Hardware Support</h2>
-	   </a>
-	   <p>Supported hardware and porting guides</p>
+           <h2>Hardware Support</h2>
+       </a>
+       <p>Supported hardware and porting guides</p>
        </li>
        <li class="grid-item">
-	   <a href="security/index.html">
+       <a href="security/index.html">
                <span class="grid-icon fa fa-lock"></span>
-	       <h2>Security</h2>
-	   </a>
-	   <p>Security processes and guidelines</p>
+           <h2>Security</h2>
+       </a>
+       <p>Security processes and guidelines</p>
        </li>
        <li class="grid-item">
-	   <a href="services/index.html">
+       <a href="services/index.html">
                <span class="grid-icon fa fa-puzzle-piece"></span>
-	       <h2>OS Services</h2>
-	   </a>
-	   <p>OS Services and usage guides</p>
+           <h2>OS Services</h2>
+       </a>
+       <p>OS Services and usage guides</p>
        </li>
        <li class="grid-item">
-	   <a href="contribute/index.html">
+       <a href="contribute/index.html">
                <span class="grid-icon fa fa-github"></span>
-	       <h2>Contribution Guidelines</h2>
-	   </a>
-	   <p>How to submit patches and contribute to Zephyr</p>
+           <h2>Contribution Guidelines</h2>
+       </a>
+       <p>How to submit patches and contribute to Zephyr</p>
        </li>
    </ul>
 
@@ -110,6 +109,15 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    boards/index.rst
    releases/index.rst
 
+Display Drivers
+===============
+This section includes documentation for the various display drivers supported in Zephyr.
+
+.. toctree::
+   :maxdepth: 1
+
+   drivers/display/display_tm1637
+
 Indices and Tables
 ******************
 
@@ -120,3 +128,4 @@ Indices and Tables
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
+
