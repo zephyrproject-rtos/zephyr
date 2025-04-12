@@ -58,6 +58,8 @@ enum npf_test_type {
 	NPF_TEST_TYPE_ETH_DST_ADDR_MASK_MATCH,
 	NPF_TEST_TYPE_ETH_TYPE_MATCH,
 	NPF_TEST_TYPE_ETH_TYPE_UNMATCH,
+	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
+	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -604,6 +606,8 @@ struct npf_test_eth_type {
 
 extern npf_test_fn_t npf_eth_type_match;
 extern npf_test_fn_t npf_eth_type_unmatch;
+extern npf_test_fn_t npf_eth_vlan_type_match;
+extern npf_test_fn_t npf_eth_vlan_type_unmatch;
 
 /** @endcond */
 
@@ -635,6 +639,38 @@ extern npf_test_fn_t npf_eth_type_unmatch;
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth type",			\
 			    .test.type = NPF_TEST_TYPE_ETH_TYPE_UNMATCH,)) \
+	}
+
+/**
+ * @brief Statically define an "Ethernet VLAN header type match" packet
+ *        filter condition.
+ *
+ * @param _name Name of the condition
+ * @param _type Ethernet VLAN header type to match
+ */
+#define NPF_ETH_VLAN_TYPE_MATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_vlan_type_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth vlan type",		\
+			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,)) \
+	}
+
+/**
+ * @brief Statically define an "Ethernet VLAN header type unmatch" packet
+ *        filter condition.
+ *
+ * @param _name Name of the condition
+ * @param _type Ethernet VLAN header type to exclude
+ */
+#define NPF_ETH_VLAN_TYPE_UNMATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_vlan_type_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!eth vlan type",		\
+			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
 	}
 
 /** Type of the packet filter rule. */
