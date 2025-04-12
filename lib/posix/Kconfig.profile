@@ -26,7 +26,7 @@ config POSIX_API
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"
-	default POSIX_AEP_CHOICE_NONE
+	default POSIX_AEP_CHOICE_ZEPHYR
 	help
 	  This choice is intended to help users select the correct POSIX profile for their
 	  application. Choices are based on IEEE 1003.13-2003 (now inactive / reserved) and
