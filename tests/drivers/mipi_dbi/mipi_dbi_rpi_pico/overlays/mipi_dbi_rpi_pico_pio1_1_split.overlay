@@ -1,0 +1,33 @@
+&dma {
+	status = "okay";
+};
+
+&pio1 {
+	status = "okay";
+	mipi_dbi: mipi_dbi {
+		status = "okay";
+		compatible = "raspberrypi,pico-mipi-dbi-pio";
+		reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		wr-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 11 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 12 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 13 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 14 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 15 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 16 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 17 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 18 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 19 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 20 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 21 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 22 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 23 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 24 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
