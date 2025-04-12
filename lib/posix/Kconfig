@@ -7,4 +7,7 @@ menu "POSIX API Support"
 rsource "options/Kconfig"
 rsource "shell/Kconfig"
 
-endmenu # "POSIX API Support"
+endmenu
+
+# Eventfd Support (not officially POSIX)
+rsource "eventfd/Kconfig"
