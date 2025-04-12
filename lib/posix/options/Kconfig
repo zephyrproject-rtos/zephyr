@@ -40,8 +40,6 @@ rsource "Kconfig.xsi_threads_ext"
 
 endmenu # "X/Open system interfaces"
 
-rsource "Kconfig.compat"
-
 rsource "Kconfig.toolchain"
 
 endmenu # "POSIX Options"
