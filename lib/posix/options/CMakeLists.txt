@@ -30,7 +30,6 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
 endif()
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_ASYNCHRONOUS_IO)
   zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
