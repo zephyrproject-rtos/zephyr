@@ -9,6 +9,7 @@ config POSIX_API
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
+	select POSIX_HEADERS_IN_DEFAULT_SEARCH_PATH
 	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MESSAGE_PASSING # mq_open(), etc
