@@ -45,6 +45,11 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
 		boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
 
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
+		}
+
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) &&
 		    IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 			boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
