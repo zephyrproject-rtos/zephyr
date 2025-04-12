@@ -9,6 +9,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CLOCK_CONTROL
 	default y
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	default n
+
 rsource "Kconfig.defconfig.*"
 
 endif # SOC_SERIES_QINGKE_V4F
