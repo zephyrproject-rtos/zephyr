@@ -1257,7 +1257,7 @@ int net_context_create_ipv4_new(struct net_context *context,
 						  (struct in_addr *)dst);
 		/* If src address is still unspecified, do not create pkt */
 		if (net_ipv4_is_addr_unspecified(src)) {
-			NET_DBG("DROP: src addr is unspecified");
+			NET_WARN("DROP: src addr is unspecified");
 			return -EINVAL;
 		}
 	}
