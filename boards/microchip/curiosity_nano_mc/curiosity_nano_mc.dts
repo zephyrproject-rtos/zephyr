@@ -9,10 +9,17 @@
 #include <microchip/pic32cm1216mcxx.dtsi>
 #include <microchip/pic32cmxxmc00032.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pinctrl/atmel_sam_pinctrl.h>
 
 #define PA0D_SERCOM1_PAD0 SAM_PINMUX(a, 0, d, periph)
 #define PA1D_SERCOM1_PAD1 SAM_PINMUX(a, 1, d, periph)
+#define PA8C_SERCOM0_PAD0 SAM_PINMUX(a, 8, c, periph)
+#define PA9C_SERCOM0_PAD1 SAM_PINMUX(a, 9, c, periph)
+#define PA16D_SERCOM3_PAD0 SAM_PINMUX(a, 16, d, periph)
+#define PA17D_SERCOM3_PAD1 SAM_PINMUX(a, 17, d, periph)
+#define PA18D_SERCOM3_PAD2 SAM_PINMUX(a, 18, d, periph)
+#define PA19D_SERCOM3_PAD3 SAM_PINMUX(a, 19, d, periph)
 
 / {
 	model = "PIC32CM MC00 Curiosity Nano";
@@ -44,6 +51,13 @@
 };
 
 &pinctrl {
+	sercom0_i2c: sercom0_i2c {
+		group1 {
+			pinmux = <PA8C_SERCOM0_PAD0>,
+				 <PA9C_SERCOM0_PAD1>;
+		};
+	};
+
 	sercom1_uart: sercom1_uart {
 		group1 {
 			pinmux = <PA0D_SERCOM1_PAD0>,
@@ -51,6 +65,25 @@
 		};
 	};
 
+	sercom3_spi: sercom3_spi {
+		group1 {
+			pinmux = <PA16D_SERCOM3_PAD0>,
+				 <PA17D_SERCOM3_PAD1>,
+				 <PA18D_SERCOM3_PAD2>,
+				 <PA19D_SERCOM3_PAD3>;
+		};
+	};
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom0_i2c>;
+	pinctrl-names = "default";
 };
 
 &sercom1 {
@@ -61,5 +94,17 @@
 	txpo = <0>;
 
 	pinctrl-0 = <&sercom1_uart>;
+	pinctrl-names = "default";
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_spi>;
 	pinctrl-names = "default";
 };
