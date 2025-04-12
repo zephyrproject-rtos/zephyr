@@ -9,7 +9,7 @@ zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
-if(CONFIG_POSIX_SYSTEM_HEADERS)
+if(CONFIG_POSIX_SYSTEM_INTERFACES)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
@@ -31,7 +31,7 @@ endif()
 
 if(CONFIG_POSIX_API OR CONFIG_POSIX_THREADS OR CONFIG_POSIX_TIMERS OR
   CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FILE_SYSTEM OR
-  CONFIG_POSIX_C_LIB_EXT OR CONFIG_POSIX_SINGLE_PROCESS)
+  CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
   # types for us. POSIX features to be formalized as part of #51211
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_THREADS>)
@@ -50,15 +50,6 @@ endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
   zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION clock_selection.c)
-endif()
-
-if (NOT CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_C_LIB_EXT
-    fnmatch.c
-    getentropy.c
-    getopt/getopt.c
-    getopt/getopt_common.c
-  )
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_DEVICE_IO)
@@ -184,13 +175,6 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
-  getopt/getopt_long.c
-)
-zephyr_include_directories_ifdef(CONFIG_POSIX_C_LIB_EXT
-  getopt/
-)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
