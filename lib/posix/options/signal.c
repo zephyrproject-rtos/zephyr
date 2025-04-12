@@ -14,7 +14,9 @@
 #define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
 
+#ifdef CONFIG_POSIX_REALTIME_SIGNALS
 BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
+#endif
 
 static inline bool signo_valid(int signo)
 {
