@@ -4,14 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "POSIX Options"
-
-rsource "Kconfig.profile"
-
 rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
-rsource "Kconfig.c_lang_r"
-rsource "Kconfig.c_lib_ext"
 rsource "Kconfig.device_io"
 rsource "Kconfig.fd_mgmt"
 rsource "Kconfig.file_system_r"
@@ -39,7 +33,3 @@ rsource "Kconfig.xsi_system_logging"
 rsource "Kconfig.xsi_threads_ext"
 
 endmenu # "X/Open system interfaces"
-
-rsource "Kconfig.toolchain"
-
-endmenu # "POSIX Options"
