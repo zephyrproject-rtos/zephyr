@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
@@ -19,11 +20,13 @@ static struct k_spinlock _zbus_chan_slock;
 
 static struct k_spinlock obs_slock;
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
+#if defined(CONFIG_ZBUS_MSG_BUF_POOL)
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_BUF_ALLOC_DYNAMIC)
 
-NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
+NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_buf_pool,
+			 (CONFIG_ZBUS_MSG_SUBSCRIBER_MSG_BUF_POOL_SIZE_ADD +
+			  CONFIG_ZBUS_ASYNC_LISTENER_MSG_BUF_POOL_SIZE_ADD),
 			 sizeof(struct zbus_channel *), NULL);
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
@@ -34,23 +37,24 @@ static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, si
 
 #else
 
-NET_BUF_POOL_FIXED_DEFINE(_zbus_msg_subscribers_pool,
-			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE),
-			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE),
-			  sizeof(struct zbus_channel *), NULL);
+NET_BUF_POOL_FIXED_DEFINE(_zbus_msg_buf_pool,
+			  (CONFIG_ZBUS_MSG_SUBSCRIBER_MSG_BUF_POOL_SIZE_ADD +
+			   CONFIG_ZBUS_ASYNC_LISTENER_MSG_BUF_POOL_SIZE_ADD),
+			  (CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE), sizeof(struct zbus_channel *),
+			  NULL);
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
 {
-	__ASSERT(size <= CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE,
-		 "CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE must be greater or equal to "
+	__ASSERT(size <= CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE,
+		 "CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE must be greater or equal to "
 		 "%d",
 		 (int)size);
 	return net_buf_alloc(pool, timeout);
 }
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_BUF_ALLOC_DYNAMIC */
 
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
+#endif /* CONFIG_ZBUS_MSG_BUF_POOL */
 
 int _zbus_init(void)
 {
@@ -103,6 +107,39 @@ int _zbus_init(void)
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
 
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+void async_listener_work_handler(struct k_work *item)
+{
+	struct zbus_async_listener_work *async_listener =
+		CONTAINER_OF(item, struct zbus_async_listener_work, work);
+
+	__ASSERT(async_listener != NULL, "async_listener required");
+	__ASSERT(async_listener->callback != NULL, "callback required");
+	__ASSERT(async_listener->queue != NULL, "queue required");
+	__ASSERT(async_listener->message_fifo != NULL, "async listener message_fifo is required");
+
+	while (k_fifo_is_empty(async_listener->message_fifo) == 0) {
+
+		struct net_buf *buf = k_fifo_get(async_listener->message_fifo,
+						 K_MSEC(CONFIG_ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT));
+		__ASSERT(buf != NULL, "buf element required");
+
+		if (buf == NULL) {
+			LOG_ERR("Could not retrieve message from async listener fifo");
+			return;
+		}
+
+		struct zbus_channel **chan = ((struct zbus_channel **)net_buf_user_data(buf));
+
+		__ASSERT_NO_MSG(*chan != NULL);
+
+		async_listener->callback(*chan, net_buf_remove_mem(buf, zbus_chan_msg_size(*chan)));
+
+		net_buf_unref(buf);
+	}
+}
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
+
 #if defined(CONFIG_ZBUS_CHANNEL_ID)
 
 const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
@@ -134,6 +171,7 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 	case ZBUS_OBSERVER_SUBSCRIBER_TYPE: {
 		return k_msgq_put(obs->queue, &chan, sys_timepoint_timeout(end_time));
 	}
+
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
 	case ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE: {
 		struct net_buf *cloned_buf = net_buf_clone(buf, sys_timepoint_timeout(end_time));
@@ -146,8 +184,31 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 
 		break;
 	}
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER  */
 
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+	case ZBUS_OBSERVER_ASYNC_LISTENER_TYPE: {
+		struct net_buf *cloned_buf = net_buf_clone(buf, sys_timepoint_timeout(end_time));
+
+		if (cloned_buf == NULL) {
+			return -ENOMEM;
+		}
+
+		struct zbus_async_listener_work *async_listener =
+			CONTAINER_OF(obs->work, struct zbus_async_listener_work, work);
+
+		k_fifo_put(async_listener->message_fifo, cloned_buf);
+
+		int ret;
+
+		ret = k_work_submit_to_queue(async_listener->queue, obs->work);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	}
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
 	default:
 		_ZBUS_ASSERT(false, "Unreachable");
 	}
@@ -164,10 +225,9 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	struct zbus_channel_observation *observation;
 	struct zbus_channel_observation_mask *observation_mask;
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
-	struct net_buf_pool *pool =
-		COND_CODE_1(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,
-			    (chan->data->msg_subscriber_pool), (&_zbus_msg_subscribers_pool));
+#if defined(CONFIG_ZBUS_MSG_BUF_POOL)
+	struct net_buf_pool *pool = COND_CODE_1(CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION,
+			    (chan->data->msg_buf_pool), (&_zbus_msg_buf_pool));
 
 	buf = _zbus_create_net_buf(pool, zbus_chan_msg_size(chan), sys_timepoint_timeout(end_time));
 
@@ -177,7 +237,7 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	memcpy(net_buf_user_data(buf), &chan, sizeof(struct zbus_channel *));
 
 	net_buf_add_mem(buf, zbus_chan_msg(chan), zbus_chan_msg_size(chan));
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
+#endif /* CONFIG_ZBUS_MSG_BUF_POOL */
 
 	LOG_DBG("Notifing %s's observers. Starting VDED:", _ZBUS_CHAN_NAME(chan));
 
@@ -203,7 +263,7 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 			LOG_ERR("could not deliver notification to observer %s. Error code %d",
 				_ZBUS_OBS_NAME(obs), err);
 			if (err == -ENOMEM) {
-				if (IS_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER)) {
+				if (IS_ENABLED(CONFIG_ZBUS_MSG_BUF_POOL)) {
 					net_buf_unref(buf);
 				}
 				return err;
@@ -232,7 +292,9 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	}
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 
-	IF_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER, (net_buf_unref(buf);))
+	if (IS_ENABLED(CONFIG_ZBUS_MSG_BUF_POOL)) {
+		net_buf_unref(buf);
+	}
 
 	return last_error;
 }
