@@ -142,7 +142,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		SET_FLAG(flag_broadcast_code_requested);
 	} else if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		SET_FLAG(flag_incorrect_broadcast_code);
-		if (memcmp(state->bad_code, INCORRECT_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
+		if (memcmp(state->bad_code, BAD_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
 		    0) {
 			FAIL("Bad code is not what we sent\n");
 			return;
