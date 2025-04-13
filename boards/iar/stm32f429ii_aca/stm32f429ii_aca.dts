@@ -272,6 +272,7 @@
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15 &usb_otg_hs_id_pb12>;
+	physel = "USB_OTG_HS_EMBEDDED_PHY";
 	pinctrl-names = "default";
 	status = "okay";
 };
