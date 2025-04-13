@@ -102,6 +102,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
     confstr.c
     env.c
+    env_common.c
     sysconf.c
     uname.c
   )
