@@ -10,6 +10,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/test_toolchain.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #ifdef CONFIG_CMSIS_DSP_FLOAT16
@@ -68,8 +69,7 @@
 		test_##name(a1, a2, a3, a4, a5, a6, a7);                                           \
 	}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_FUNCTION)
 
 static inline bool test_equal_f64(
 	size_t length, const float64_t *a, const float64_t *b)
@@ -463,6 +463,6 @@ static inline bool test_snr_error_q7(
 	return (snr >= threshold);
 }
 
-#pragma GCC diagnostic pop
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_FUNCTION)
 
 #endif /* ZEPHYR_TESTS_LIB_CMSIS_DSP_COMMON_TEST_COMMON_H_ */

@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020, 2024 NXP
+ * Copyright 2020, 2024-2025 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -19,6 +19,10 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+
+#if defined(CONFIG_SOC_MIMX9596)
+#include <zephyr/dt-bindings/clock/imx95_clock.h>
+#endif
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
@@ -51,29 +55,22 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 {
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
-	uint8_t duty_cycle;
-
-	if (period_cycles == 0U) {
-		LOG_ERR("Channel can not be set to inactive level");
-		return -ENOTSUP;
-	}
 
 	if (channel >= config->channel_count) {
 		LOG_ERR("Invalid channel");
 		return -ENOTSUP;
 	}
 
-	duty_cycle = pulse_cycles * 100U / period_cycles;
-	data->channel[channel].dutyCyclePercent = duty_cycle;
-
-	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		data->channel[channel].level = kTPM_HighTrue;
-	} else {
-		data->channel[channel].level = kTPM_LowTrue;
+	if (period_cycles == 0 || period_cycles == TPM_MAX_COUNTER_VALUE(base)) {
+		return -ENOTSUP;
 	}
 
-	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
-		pulse_cycles, period_cycles, duty_cycle, flags);
+	if ((TPM_MAX_COUNTER_VALUE(base) == 0xFFFFU) &&
+	    (pulse_cycles > TPM_MAX_COUNTER_VALUE(base))) {
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, flags=%d", pulse_cycles, period_cycles, flags);
 
 	if (period_cycles != data->period_cycles) {
 		uint32_t pwm_freq;
@@ -102,6 +99,9 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 
 		TPM_StopTimer(config->base);
 
+		/* Set counter back to zero */
+		config->base->CNT = 0;
+
 		status = TPM_SetupPwm(config->base, data->channel,
 				      config->channel_count, config->mode,
 				      pwm_freq, data->clock_freq);
@@ -111,12 +111,23 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			return -ENOTSUP;
 		}
 		TPM_StartTimer(config->base, config->tpm_clock_source);
-	} else {
-		TPM_UpdateChnlEdgeLevelSelect(config->base, channel,
-					      data->channel[channel].level);
-		TPM_UpdatePwmDutycycle(config->base, channel, config->mode,
-				       duty_cycle);
 	}
+
+	if ((flags & PWM_POLARITY_INVERTED) == 0 &&
+		   data->channel[channel].level != kTPM_HighTrue) {
+		data->channel[channel].level = kTPM_HighTrue;
+		TPM_UpdateChnlEdgeLevelSelect(config->base, channel, kTPM_HighTrue);
+	} else if ((flags & PWM_POLARITY_INVERTED) != 0 &&
+		   data->channel[channel].level != kTPM_LowTrue) {
+		data->channel[channel].level = kTPM_LowTrue;
+		TPM_UpdateChnlEdgeLevelSelect(config->base, channel, kTPM_LowTrue);
+	}
+
+	if (pulse_cycles == period_cycles) {
+		pulse_cycles = period_cycles + 1U;
+	}
+
+	config->base->CONTROLS[channel].CnV = pulse_cycles;
 
 	return 0;
 }
@@ -151,10 +162,18 @@ static int mcux_tpm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
-		LOG_ERR("Could not turn on clock");
-		return -EINVAL;
+#if defined(CONFIG_SOC_MIMX9596)
+	/* IMX9596 AON and WAKEUP clocks aren't controllable */
+	if (config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSWAKEUP &&
+	    config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSAON) {
+#endif
+		if (clock_control_on(config->clock_dev, config->clock_subsys)) {
+			LOG_ERR("Could not turn on clock");
+			return -EINVAL;
+		}
+#if defined(CONFIG_SOC_MIMX9596)
 	}
+#endif
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {

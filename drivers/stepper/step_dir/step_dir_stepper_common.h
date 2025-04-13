@@ -32,6 +32,7 @@ struct step_dir_stepper_common_config {
 	bool dual_edge;
 	const struct stepper_timing_source_api *timing_source;
 	const struct device *counter;
+	bool invert_direction;
 };
 
 /**
@@ -47,6 +48,7 @@ struct step_dir_stepper_common_config {
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
 		.counter = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, counter)),                    \
+		.invert_direction = DT_PROP(node_id, invert_direction),                            \
 		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
 						(&step_counter_timing_source_api),                 \
 						(&step_work_timing_source_api)),                   \
@@ -196,6 +198,14 @@ int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
 int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction);
 
 /**
+ * @brief Stop the stepper motor.
+ *
+ * @param dev Pointer to the device structure.
+ * @return 0 on success, or a negative error code on failure.
+ */
+int step_dir_stepper_common_stop(const struct device *dev);
+
+/**
  * @brief Set a callback function for stepper motor events.
  *
  * This function sets a user-defined callback that will be invoked when a stepper motor event
@@ -214,6 +224,13 @@ int step_dir_stepper_common_set_event_callback(const struct device *dev,
  * @param dev Pointer to the device structure.
  */
 void stepper_handle_timing_signal(const struct device *dev);
+
+/**
+ * @brief Trigger callback function for stepper motor events.
+ * @param dev Pointer to the device structure.
+ * @param event The stepper_event to rigger the callback for.
+ */
+void stepper_trigger_callback(const struct device *dev, enum stepper_event event);
 
 /** @} */
 

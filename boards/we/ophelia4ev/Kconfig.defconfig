@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OPHELIA4EV_NRF54L15_CPUAPP
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+endif # BOARD_OPHELIA4EV_NRF54L15_CPUAPP

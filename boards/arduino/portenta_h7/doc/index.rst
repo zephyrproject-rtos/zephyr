@@ -1,7 +1,4 @@
-.. _arduino_portenta_h7_board:
-
-Arduino Portenta H7
-###################
+.. zephyr:board:: arduino_portenta_h7
 
 Overview
 ********
@@ -19,12 +16,6 @@ Additionally, the board features:
 - USB OTG FS
 - 3 color user LEDs
 
-.. image:: img/arduino_portenta_h7.jpeg
-     :width: 500px
-     :align: center
-     :height: 325px
-     :alt: ARDUINO_PORTENTA_H7
-
 More information about the board can be found at the `ARDUINO_PORTENTA_H7 website`_.
 More information about STM32H747XIH6 can be found here:
 
@@ -35,40 +26,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr arduino_portenta_h7 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| EXTFLASH  | on-chip    | qspi                                |
-+-----------+------------+-------------------------------------+
-| SDRAM     | on-chip    | sdram                               |
-+-----------+------------+-------------------------------------+
-| USB       | on-board   | usb-hs                              |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-board   | eth                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
+.. zephyr:board-supported-hw::
 
 The high precision low speed external (LSE) clock is only fully supported on
 boards with hardware revision 4.10 or greater. By default the internal source
@@ -108,7 +66,9 @@ two cores. This is done in 3 ways:
   to avoid potential concurrent access issues.
 
 Building and Flashing
-*************************
+*********************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_portenta_h7`` board should be built per core target,
 using either ``arduino_portenta_h7_m7`` or ``arduino_portenta_h7_m4`` as the target.

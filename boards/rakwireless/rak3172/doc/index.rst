@@ -43,6 +43,8 @@ Supported Features
 Programming and Debugging
 =========================
 
+.. zephyr:board-supported-runners::
+
 The RAK3172 board can be debugged and flashed with an external debug probe connected
 to the SWD pins.
 It can also be flashed via `pyOCD`_, but have to install an additional pack to support STM32WL.

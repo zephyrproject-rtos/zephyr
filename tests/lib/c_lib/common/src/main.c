@@ -22,6 +22,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -51,9 +52,7 @@
  * destination array).  That's exactly the case we're testing, so turn
  * it off.
  */
-#if defined(__GNUC__) && __GNUC__ >= 8
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_TRUNCATION)
 
 ZTEST_SUITE(libc_common, NULL, NULL, NULL, NULL, NULL);
 
@@ -650,14 +649,9 @@ ZTEST(libc_common, test_str_operate)
 
 	zassert_true(strncat(ncat, str1, 2), "strncat failed");
 	zassert_not_null(strncat(str1, str3, 2), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
 	zassert_not_null(strncat(str1, str3, 1), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic pop
-#endif
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
 	zassert_str_equal(ncat, "ddeeaa", "strncat failed");
 
 	zassert_is_null(strrchr(ncat, 'z'),

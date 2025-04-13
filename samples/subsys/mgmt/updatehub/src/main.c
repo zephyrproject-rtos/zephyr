@@ -89,7 +89,7 @@ int main(void)
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	if (tls_credential_add(CA_CERTIFICATE_TAG,
-			       TLS_CREDENTIAL_SERVER_CERTIFICATE,
+			       TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 			       server_certificate,
 			       sizeof(server_certificate)) < 0) {
 		LOG_ERR("Failed to register server certificate");

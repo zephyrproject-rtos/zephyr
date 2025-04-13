@@ -596,10 +596,26 @@
 				latch-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_max22017: max22017_mfd@b {
-				compatible = "adi,max22017";
+			test_spi_max22199: max22199@b {
+				compatible = "adi,max22199-gpio";
 				status = "okay";
 				reg = <0x0b>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				max22190-mode = <1>;
+				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				latch-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max22017: max22017_mfd@c {
+				compatible = "adi,max22017";
+				status = "okay";
+				reg = <0x0c>;
 				spi-max-frequency = <0>;
 
 				max22017_gpio0: max22017_gpio {
@@ -611,10 +627,10 @@
 				};
 			};
 
-			test_max14915: max14915@c {
+			test_max14915: max14915@d {
 				compatible = "adi,max14915-gpio";
 				status = "okay";
-				reg = <0x0c>;
+				reg = <0x0d>;
 				spi-max-frequency = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -625,6 +641,23 @@
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max14917: max14917@d {
+				compatible = "adi,max14917-gpio";
+				status = "okay";
+				reg = <0x0d>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				vddok-gpios = <&test_gpio 0 0>;
+				ready-gpios = <&test_gpio 0 0>;
+				comerr-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				crcen-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

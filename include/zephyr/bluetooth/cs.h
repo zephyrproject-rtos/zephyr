@@ -878,6 +878,27 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  */
 int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
 
+/** @brief Get antenna path used for the CS tone exchange
+ *	   when using multiple antenna paths for mode-2 or mode-3
+ *	   CS procedure.
+ *
+ *	   The function implements antenna path permutation defined in
+ *	   Bluetooth Core Specification 6.0, Vol. 6, Part H, Section 4.7.5.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param n_ap				 The number of antenna paths, range: [1, 4].
+ * @param antenna_path_permutation_index Antenna Path Permutation Index.
+ * @param tone_index			 Index of the tone in the CS step, range [0, n_ap].
+ *					 tone_index = n_ap corresponds to extension slot.
+ *
+ * @return Antenna path used to exchange CS tones, range: [0, 3].
+ * @return -EINVAL if arguments are invalid.
+ */
+int bt_le_cs_get_antenna_path(uint8_t n_ap,
+			      uint8_t antenna_path_permutation_index,
+			      uint8_t tone_index);
+
 #ifdef __cplusplus
 }
 #endif

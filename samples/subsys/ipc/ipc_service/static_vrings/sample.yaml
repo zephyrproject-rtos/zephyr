@@ -2,7 +2,8 @@ sample:
   name: IPC Service example integration (OpenAMP static_vrings backend)
 tests:
   sample.ipc.static_vrings:
-    filter: dt_compat_enabled("zephyr,ipc-openamp-static-vrings")
+    filter: dt_compat_enabled("zephyr,ipc-openamp-static-vrings") and
+            dt_nodelabel_enabled("ipc0") and dt_nodelabel_enabled("ipc1")
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp

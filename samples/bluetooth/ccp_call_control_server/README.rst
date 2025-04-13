@@ -28,7 +28,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required feature support.
+use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required feature support.
 
 Building for an nrf5340dk
 -------------------------
@@ -74,4 +74,4 @@ Building for a simulated nrf52_bsim
    :zephyr-app: samples/bluetooth/ccp_call_control_server/
    :board: nrf52_bsim
    :goals: build
-   :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf

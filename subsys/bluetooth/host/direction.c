@@ -16,7 +16,6 @@
 #include <zephyr/bluetooth/direction.h>
 
 #include "hci_core.h"
-#include "scan.h"
 #include "conn_internal.h"
 #include "direction_internal.h"
 

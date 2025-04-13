@@ -13,38 +13,17 @@ It features the following integrated components:
 - JST GH 2-pin battery connector
 - LED
 
-Functional Description
-**********************
+Hardware
+********
+
 This board is based on the ESP32-WROVER-E module with 4MB of flash (there
 are models 16MB as well), WiFi and BLE support. It has a Micro-USB port for
 programming and debugging, integrated battery charging and an on-board antenna.
 
-Connections and IOs
-===================
+Supported Features
+==================
 
-The ``ttgo_t7v1_5/esp32/procpu`` board target supports the following hardware features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| CPU       | ESP32      | arch/xtensa      |
-+-----------+------------+------------------+
-| GPIO      | on-chip    | gpio_esp32       |
-+-----------+------------+------------------+
-| UART      | on-chip    | uart_esp32       |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c_esp32        |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi_esp32_spim   |
-+-----------+------------+------------------+
-| LoRa      | SX1276     | lora_sx127x      |
-+-----------+------------+------------------+
-| WiFi      | on-chip    | wifi_esp32       |
-+-----------+------------+------------------+
-| BLE       | on-chip    | bluetooth_esp32  |
-+-----------+------------+------------------+
-| Flash     | on-chip    | flash_esp32      |
-+-----------+------------+------------------+
+.. zephyr:board-supported-hw::
 
 System requirements
 *******************
@@ -52,7 +31,7 @@ System requirements
 Prerequisites
 =============
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+Espressif HAL requires WiFi and Bluetooth binary blobs in order to work. Run the command
 below to retrieve those files.
 
 .. code-block:: console
@@ -66,10 +45,12 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 
-The board could be loaded using the single binary image, without 2nd stage bootloader.
+The board could be loaded using a single binary image, without 2nd stage bootloader.
 It is the default option when building the application without additional configuration.
 
 .. note::
@@ -80,7 +61,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -92,14 +73,14 @@ There are two options to be used when building an application:
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
 
-   .. code:: cfg
+   .. code-block:: cfg
 
       CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
 
-The sysbuild makes possible to build and flash all necessary images needed to
+The sysbuild makes it possible to build and flash all necessary images needed to
 bootstrap the board with the ESP32 SoC.
 
 To build the sample application using sysbuild use the command:
@@ -142,7 +123,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.

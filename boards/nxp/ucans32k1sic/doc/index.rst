@@ -31,26 +31,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``ucans32k1sic`` board configuration supports the following hardware features:
-
-============  ==========  ================================
-Interface     Controller  Driver/Component
-============  ==========  ================================
-SYSMPU        on-chip     mpu
-PORT          on-chip     pinctrl
-GPIO          on-chip     gpio
-LPUART        on-chip     serial
-LPI2C         on-chip     i2c
-LPSPI         on-chip     spi
-FTM           on-chip     pwm
-FlexCAN       on-chip     can
-Watchdog      on-chip     watchdog
-RTC           on-chip     counter
-ADC           on-chip     adc
-============  ==========  ================================
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/ucans32k1sic/ucans32k1sic_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -123,6 +104,8 @@ The Arm Cortex-M4F core is configured to run at 80 MHz (RUN mode).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ucans32k1sic`` board can be built in the usual way as
 documented in :ref:`build_an_application`.

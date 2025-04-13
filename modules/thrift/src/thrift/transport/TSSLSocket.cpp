@@ -450,7 +450,7 @@ void TSSLSocketFactory::loadCertificateFromBuffer(const char *aCertificate, cons
 
 	if (strcmp(format, "PEM") == 0) {
 		const int status = tls_credential_add(Thrift_TLS_SERVER_CERT_TAG,
-						      TLS_CREDENTIAL_SERVER_CERTIFICATE,
+						      TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 						      aCertificate, strlen(aCertificate) + 1);
 
 		if (status != 0) {

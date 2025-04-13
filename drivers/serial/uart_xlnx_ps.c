@@ -25,7 +25,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
-#include <soc.h>
 
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
@@ -256,7 +255,7 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 			} else {
 				bauderr = tmpbaud - baud;
 			}
-			if (((bauderr * 100) / baud) < 3) {
+			if (((bauderr * 1000) / baud) < 3) {
 				break;
 			}
 		}

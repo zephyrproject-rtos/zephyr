@@ -233,45 +233,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_gap_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_GAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INDEX_LIST);
-	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INFO);
-	tester_set_bit(rp->data, BTP_GAP_SET_POWERED);
-	tester_set_bit(rp->data, BTP_GAP_SET_CONNECTABLE);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_GAP_SET_DISCOVERABLE);
-	tester_set_bit(rp->data, BTP_GAP_SET_BONDABLE);
-	tester_set_bit(rp->data, BTP_GAP_START_ADVERTISING);
-	tester_set_bit(rp->data, BTP_GAP_STOP_ADVERTISING);
-	tester_set_bit(rp->data, BTP_GAP_START_DISCOVERY);
-	tester_set_bit(rp->data, BTP_GAP_STOP_DISCOVERY);
-	tester_set_bit(rp->data, BTP_GAP_CONNECT);
-	tester_set_bit(rp->data, BTP_GAP_DISCONNECT);
-
-	/* octet 2 */
-	tester_set_bit(rp->data, BTP_GAP_SET_IO_CAP);
-	tester_set_bit(rp->data, BTP_GAP_PAIR);
-	tester_set_bit(rp->data, BTP_GAP_PASSKEY_ENTRY);
-	tester_set_bit(rp->data, BTP_GAP_PASSKEY_CONFIRM);
-	tester_set_bit(rp->data, BTP_GAP_START_DIRECTED_ADV);
-	tester_set_bit(rp->data, BTP_GAP_CONN_PARAM_UPDATE);
-
-	/* octet 3 */
-	tester_set_bit(rp->data, BTP_GAP_OOB_LEGACY_SET_DATA);
-	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		tester_set_bit(rp->data, BTP_GAP_OOB_SC_GET_LOCAL_DATA);
-		tester_set_bit(rp->data, BTP_GAP_OOB_SC_SET_REMOTE_DATA);
-	}
-
-	tester_set_bit(rp->data, BTP_GAP_SET_MITM);
-	tester_set_bit(rp->data, BTP_GAP_SET_FILTER_LIST);
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
-	}
-
-	*rsp_len = sizeof(*rp) + 4;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_GAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -1769,6 +1732,23 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 }
 #endif /* defined(CONFIG_BT_PER_ADV) */
 
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static uint8_t set_rpa_timeout(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_set_rpa_timeout_cmd *cp = cmd;
+	int err;
+
+	err = bt_le_set_rpa_timeout(sys_le16_to_cpu(cp->rpa_timeout));
+
+	if (err != 0) {
+		LOG_DBG("Failed to set RPA timeout: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -1933,6 +1913,13 @@ static const struct btp_handler handlers[] = {
 	},
 #endif /* defined(CONFIG_BT_PER_ADV) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+	{
+		.opcode = BTP_GAP_SET_RPA_TIMEOUT,
+		.expect_len = sizeof(struct btp_gap_set_rpa_timeout_cmd),
+		.func = set_rpa_timeout,
+	},
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
 };
 
 uint8_t tester_init_gap(void)

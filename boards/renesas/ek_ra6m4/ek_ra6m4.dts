@@ -82,6 +82,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -243,3 +244,7 @@
 mikrobus_serial: &uart7 {};
 mikrobus_i2c: &iic1 {};
 mikrobus_spi: &spi0 {};
+
+&wdt {
+	status = "okay";
+};

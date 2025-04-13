@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/ip6.h>
 #include <openthread/thread.h>
 
+#include "net_private.h"
 #include "openthread_utils.h"
 
 #define ALOC16_MASK 0xfc
@@ -167,6 +168,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context,
 	struct otNetifAddress addr = { 0 };
 	struct net_if_ipv6 *ipv6;
 	struct net_if_addr *if_addr = NULL;
+	otError error;
 	int i;
 
 	/* IPv6 struct should've already been allocated when we get an
@@ -214,14 +216,14 @@ void add_ipv6_addr_to_ot(struct openthread_context *context,
 	}
 
 	openthread_api_mutex_lock(context);
-	otIp6AddUnicastAddress(context->instance, &addr);
+	error = otIp6AddUnicastAddress(context->instance, &addr);
 	openthread_api_mutex_unlock(context);
 
-	if (CONFIG_OPENTHREAD_L2_LOG_LEVEL == LOG_LEVEL_DBG) {
-		char buf[NET_IPV6_ADDR_LEN];
-
-		NET_DBG("Added %s",
-			net_addr_ntop(AF_INET6, &addr.mAddress, buf, sizeof(buf)));
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Failed to add IPv6 unicast address %s [%d]",
+			net_sprint_ipv6_addr(addr6), error);
+	} else {
+		NET_DBG("Added %s", net_sprint_ipv6_addr(addr6));
 	}
 }
 
@@ -229,18 +231,19 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context,
 			  const struct in6_addr *addr6)
 {
 	struct otIp6Address addr;
+	otError error;
 
 	memcpy(&addr, addr6, sizeof(addr));
 
 	openthread_api_mutex_lock(context);
-	otIp6SubscribeMulticastAddress(context->instance, &addr);
+	error = otIp6SubscribeMulticastAddress(context->instance, &addr);
 	openthread_api_mutex_unlock(context);
 
-	if (CONFIG_OPENTHREAD_L2_LOG_LEVEL == LOG_LEVEL_DBG) {
-		char buf[NET_IPV6_ADDR_LEN];
-
-		NET_DBG("Added multicast %s",
-			net_addr_ntop(AF_INET6, &addr, buf, sizeof(buf)));
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Failed to add IPv6 multicast address %s [%d]",
+			net_sprint_ipv6_addr(addr6), error);
+	} else {
+		NET_DBG("Added %s", net_sprint_ipv6_addr(addr6));
 	}
 }
 

@@ -1,0 +1,8 @@
+identifier: sk_am64/am6442/m4
+name: TI AM64X M4 Starter Kit (SK)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: ti

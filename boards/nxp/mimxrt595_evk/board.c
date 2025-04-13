@@ -263,7 +263,7 @@ __ramfunc int32_t power_manager_set_profile(uint32_t power_profile)
 
 #endif /* CONFIG_REGULATOR */
 
-static int mimxrt595_evk_init(void)
+void board_early_init_hook(void)
 {
 	/* Set the correct voltage range according to the board. */
 	power_pad_vrange_t vrange = {
@@ -385,8 +385,6 @@ static int mimxrt595_evk_init(void)
 		rd_trim_96 = CLKCTL0->FRO_RDTRIM;
 		sc_trim_96 = sc_trim_192;
 	}
-
-	return 0;
 }
 
 
@@ -417,5 +415,3 @@ SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
  */
 SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
-
-SYS_INIT(mimxrt595_evk_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);

@@ -2,7 +2,9 @@ sample:
   description: Hello World C++ sample, the simplest C++ Zephyr application
   name: hello cpp world
 common:
-  tags: introduction
+  tags:
+    - introduction
+    - cpp
   integration_platforms:
     - qemu_riscv32
   harness: console

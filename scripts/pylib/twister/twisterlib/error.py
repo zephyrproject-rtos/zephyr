@@ -6,7 +6,7 @@ import logging
 import traceback
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class TwisterException(Exception):
     def __init__(self, message="TwisterException"):

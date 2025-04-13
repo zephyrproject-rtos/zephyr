@@ -82,11 +82,19 @@ config SOC_STM32F437XX
 	bool
 	select SOC_SERIES_STM32F4X
 
+config SOC_STM32F439XX
+	bool
+	select SOC_SERIES_STM32F4X
+
 config SOC_STM32F446XX
 	bool
 	select SOC_SERIES_STM32F4X
 
 config SOC_STM32F469XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F479XX
 	bool
 	select SOC_SERIES_STM32F4X
 
@@ -109,5 +117,7 @@ config SOC
 	default "stm32f427xx" if SOC_STM32F427XX
 	default "stm32f429xx" if SOC_STM32F429XX
 	default "stm32f437xx" if SOC_STM32F437XX
+	default "stm32f439xx" if SOC_STM32F439XX
 	default "stm32f446xx" if SOC_STM32F446XX
 	default "stm32f469xx" if SOC_STM32F469XX
+	default "stm32f479xx" if SOC_STM32F479XX

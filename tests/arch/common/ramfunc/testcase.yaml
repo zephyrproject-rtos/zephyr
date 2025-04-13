@@ -1,6 +1,6 @@
 tests:
   arch.common.ramfunc:
-    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT and not CONFIG_ARM_MPU_PXN
     tags:
       - arm
       - userspace

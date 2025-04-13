@@ -683,7 +683,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc);
 /** @brief to be used as return values for @ref bt_gatt_attr_func_t and @ref bt_gatt_read_func_t
  *  type callbacks.
  */
-enum {
+enum bt_gatt_iter {
 	BT_GATT_ITER_STOP = 0,
 	BT_GATT_ITER_CONTINUE,
 };
@@ -1167,6 +1167,20 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
 		{BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)}), _perm)
 
+/**
+ *  @brief Client Characteristic Configuration Declaration Macro with write callback.
+ *
+ *  Helper macro to declare a CCC attribute with a write callback.
+ *
+ *  @param _changed Configuration changed callback.
+ *  @param _write Configuration write callback.
+ *  @param _perm CCC access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ */
+#define BT_GATT_CCC_WITH_WRITE_CB(_changed, _write, _perm)		\
+	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
+		{BT_GATT_CCC_INITIALIZER(_changed, _write, NULL) }), _perm)
+
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
  *  Read CEP attribute value from local database storing the result into buffer
@@ -1641,7 +1655,7 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
 
 /** @brief GATT Exchange MTU parameters
  *
- *  Used with @ref bt_gatt_exchange_mtu() to initiate an MTU exchange. The
+ *  Used with @ref bt_gatt_exchange_mtu function to initiate an MTU exchange. The
  *  response is handled in the callback @p func, which is called upon
  *  completion from the 'config BT_RECV_CONTEXT' context.
  *
@@ -1696,7 +1710,7 @@ struct bt_gatt_discover_params;
  *  The attribute object as well as its UUID and value objects are temporary and
  *  must be copied to in order to cache its information.
  *
- *  @note @ref bt_gatt_attr is given as an argument to bt_gatt_discover(), but
+ *  @note @ref bt_gatt_attr is given as an argument to @ref bt_gatt_discover function, but
  *  it's not a proper object of this type. @ref bt_gatt_attr.perm, and methods
  *  bt_gatt_attr.read() and bt_gatt_attr.write() are not available, and it's
  *  unsound to pass the pointer to GATT server APIs.

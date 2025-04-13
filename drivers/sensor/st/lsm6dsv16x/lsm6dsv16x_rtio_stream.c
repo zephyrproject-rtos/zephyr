@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_lsm6dsv16x
-
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/drivers/sensor.h>
 #include "lsm6dsv16x.h"
@@ -20,6 +18,45 @@ LOG_MODULE_DECLARE(LSM6DSV16X_RTIO);
 
 #define FIFO_TH 1
 #define FIFO_FULL 2
+
+int lsm6dsv16x_gbias_config(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+
+	switch (attr) {
+	case SENSOR_ATTR_OFFSET:
+		lsm6dsv16x->gbias_x_udps = 10 * sensor_rad_to_10udegrees(&val[0]);
+		lsm6dsv16x->gbias_y_udps = 10 * sensor_rad_to_10udegrees(&val[1]);
+		lsm6dsv16x->gbias_z_udps = 10 * sensor_rad_to_10udegrees(&val[2]);
+		break;
+	default:
+		LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int lsm6dsv16x_gbias_get_config(const struct device *dev, enum sensor_channel chan,
+				enum sensor_attribute attr, struct sensor_value *val)
+{
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+
+	switch (attr) {
+	case SENSOR_ATTR_OFFSET:
+		sensor_10udegrees_to_rad(lsm6dsv16x->gbias_x_udps / 10, &val[0]);
+		sensor_10udegrees_to_rad(lsm6dsv16x->gbias_y_udps / 10, &val[1]);
+		sensor_10udegrees_to_rad(lsm6dsv16x->gbias_z_udps / 10, &val[2]);
+		break;
+	default:
+		LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 
 static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 {
@@ -34,6 +71,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	lsm6dsv16x_fifo_mode_t fifo_mode = LSM6DSV16X_BYPASS_MODE;
 	lsm6dsv16x_sflp_data_rate_t sflp_odr = LSM6DSV16X_SFLP_120Hz;
 	lsm6dsv16x_fifo_sflp_raw_t sflp_fifo = { 0 };
+	lsm6dsv16x_sflp_gbias_t gbias;
 
 	/* disable FIFO as first thing */
 	lsm6dsv16x_fifo_mode_set(ctx, LSM6DSV16X_BYPASS_MODE);
@@ -91,6 +129,52 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	lsm6dsv16x_fifo_sflp_batch_set(ctx, sflp_fifo);
 	lsm6dsv16x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
 
+	/*
+	 * Temporarly set Accel and gyro odr same as sensor fusion LP in order to
+	 * make the SFLP gbias setting effective. Then restore it to saved values.
+	 */
+	switch (sflp_odr) {
+	case LSM6DSV16X_DT_SFLP_ODR_AT_480Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_480Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_480Hz);
+		break;
+
+	case LSM6DSV16X_DT_SFLP_ODR_AT_240Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_240Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_240Hz);
+		break;
+
+	case LSM6DSV16X_DT_SFLP_ODR_AT_120Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_120Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_120Hz);
+		break;
+
+	case LSM6DSV16X_DT_SFLP_ODR_AT_60Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_60Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_60Hz);
+		break;
+
+	case LSM6DSV16X_DT_SFLP_ODR_AT_30Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_30Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_30Hz);
+		break;
+
+	case LSM6DSV16X_DT_SFLP_ODR_AT_15Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_15Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_15Hz);
+		break;
+	}
+
+	/* set sflp gbias */
+	gbias.gbias_x = (float)lsm6dsv16x->gbias_x_udps / 1000000;
+	gbias.gbias_y = (float)lsm6dsv16x->gbias_y_udps / 1000000;
+	gbias.gbias_z = (float)lsm6dsv16x->gbias_z_udps / 1000000;
+	lsm6dsv16x_sflp_game_gbias_set(ctx, &gbias);
+
+	/* restore accel/gyro odr to saved values */
+	lsm6dsv16x_accel_set_odr_raw(dev, lsm6dsv16x->accel_freq);
+	lsm6dsv16x_gyro_set_odr_raw(dev, lsm6dsv16x->gyro_freq);
+
 	/* Set pin interrupt (fifo_th could be on or off) */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
 		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
@@ -102,7 +186,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
@@ -138,7 +222,7 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
@@ -156,9 +240,7 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
 	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
@@ -315,10 +397,12 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 		return;
 	}
 
+	/* clang-format off */
 	struct lsm6dsv16x_fifo_data hdr = {
 		.header = {
 			.is_fifo = true,
-			.accel_fs = lsm6dsv16x->accel_fs,
+			.accel_fs_idx = LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(
+				config->accel_fs_map[lsm6dsv16x->accel_fs]),
 			.gyro_fs = lsm6dsv16x->gyro_fs,
 			.timestamp = lsm6dsv16x->fifo_timestamp,
 		},
@@ -330,6 +414,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 #endif
 		.sflp_batch_odr = lsm6dsv16x->sflp_batch_odr,
 	};
+	/* clang-format on */
 
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
@@ -375,7 +460,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	uint64_t cycles;
@@ -395,7 +480,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	/* get timestamp as soon as the irq is served */
 	lsm6dsv16x->fifo_timestamp = sensor_clock_cycles_to_ns(cycles);
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {
 		/*
 		 * If we are on an I3C bus, then it should be expected that the fifo status was

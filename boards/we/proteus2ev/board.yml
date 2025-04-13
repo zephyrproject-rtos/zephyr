@@ -1,6 +1,6 @@
 board:
   name: we_proteus2ev
   full_name: Proteus-II-EV
-  vendor: wurth
+  vendor: we
   socs:
   - name: nrf52832

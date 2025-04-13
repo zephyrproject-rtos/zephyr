@@ -306,6 +306,13 @@ config NET_SOCKETS_PACKET_DGRAM
 	  on the information in the sockaddr_ll destination address before
 	  they are queued.
 
+config NET_SOCKETS_INET_RAW
+	bool "AF_INET/AF_INET6 and SOCK_RAW sockets support"
+	depends on NET_NATIVE_IP
+	help
+	  Support SOCK_RAW socket type for AF_INET/AF_INET6 sockets. This allows
+	  to receive raw IP datagrams before further processing takes place.
+
 config NET_SOCKETS_CAN
 	bool "Socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW

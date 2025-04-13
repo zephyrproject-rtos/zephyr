@@ -71,6 +71,15 @@ set(ZEPHYR_CURRENT_LINKER_PASS 0)
 set(ZEPHYR_CURRENT_LINKER_CMD    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}.cmd)
 set(ZEPHYR_LINK_STAGE_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 
+# Make kconfig variables available to the linker script generator
+zephyr_linker_include_generated(KCONFIG ${CMAKE_CURRENT_BINARY_DIR}/.config)
+
+# The linker generator also needs sections.h to be able to access e.g. _APP_SMEM_SECTION_NAME
+# for linkerscripts that do not support c-preprocessing.
+zephyr_linker_include_generated(HEADER ${ZEPHYR_BASE}/include/zephyr/linker/sections.h)
+
+zephyr_linker_include_var(VAR CMAKE_VERBOSE_MAKEFILE VALUE ${CMAKE_VERBOSE_MAKEFILE})
+
 # ZEPHYR_PREBUILT_EXECUTABLE is used outside of this file, therefore keep the
 # existing variable to allow slowly cleanup of linking stage handling.
 # Three stage linking active: pre0 -> pre1 -> final, this will correspond to `pre1`
@@ -935,6 +944,8 @@ add_custom_target(${DEVICE_API_LD_TARGET}
                           ${DEVICE_API_LINKER_SECTIONS_CMAKE}
 )
 
+zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
@@ -1127,8 +1138,6 @@ elseif(DEFINED BOARD_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${BOARD_LINKER_SCRIPT})
 elseif(DEFINED SOC_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${SOC_LINKER_SCRIPT})
-else()
-  find_package(Deprecated COMPONENTS SEARCHED_LINKER_SCRIPT)
 endif()
 
 if(NOT EXISTS ${LINKER_SCRIPT})
@@ -1136,14 +1145,20 @@ if(NOT EXISTS ${LINKER_SCRIPT})
 endif()
 
 if(CONFIG_USERSPACE)
-  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
-  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    set(APP_SMEM_LD_EXT "cmake")
+  else()
+    set(APP_SMEM_LD_EXT "ld")
+  endif()
+
+  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.${APP_SMEM_LD_EXT}")
+  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.${APP_SMEM_LD_EXT}")
 
   if(CONFIG_LINKER_USE_PINNED_SECTION)
     set(APP_SMEM_PINNED_ALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.${APP_SMEM_LD_EXT}")
     set(APP_SMEM_PINNED_UNALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.${APP_SMEM_LD_EXT}")
 
     if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
       # The libc partition may hold symbols that are required during boot process,
@@ -1208,9 +1223,11 @@ if(CONFIG_USERSPACE)
 
   set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
   list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_APP_SMEM_UNALIGNED")
-endif()
 
-if (CONFIG_USERSPACE)
+  foreach(dep ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD})
+    zephyr_linker_include_generated(CMAKE ${dep} PASS LINKER_APP_SMEM_UNALIGNED)
+  endforeach()
+
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
@@ -1230,6 +1247,9 @@ if (CONFIG_USERSPACE)
     COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_aligned linker section"
     )
+    foreach(dep ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD})
+      zephyr_linker_include_generated(CMAKE ${dep} PASS NOT LINKER_APP_SMEM_UNALIGNED)
+    endforeach()
 endif()
 
 if(CONFIG_USERSPACE)
@@ -1337,6 +1357,13 @@ if(CONFIG_USERSPACE)
     DEPENDS
     ${KOBJECT_LINKER_HEADER_DATA}
   )
+
+  # gen_kobject_placeholders.py generates linker-kobject-prebuild-data.h,
+  # linker-kobject-prebuild-priv-stacks.h and linker-kobject-prebuild-rodata.h
+  foreach(ext "-data.h" "-priv-stacks.h" "-rodata.h")
+    string(REGEX REPLACE "-data.h$" ${ext} file ${KOBJECT_LINKER_HEADER_DATA})
+    zephyr_linker_include_generated(HEADER ${file} PASS LINKER_ZEPHYR_PREBUILT LINKER_ZEPHYR_FINAL)
+  endforeach()
 endif()
 
 if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)

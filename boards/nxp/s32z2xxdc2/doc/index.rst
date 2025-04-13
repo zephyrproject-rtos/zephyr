@@ -21,55 +21,7 @@ Information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The boards support the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| Arm GIC   | on-chip    | interrupt_controller                |
-+-----------+------------+-------------------------------------+
-| Arm Timer | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-| LINFlexD  | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| MRU       | on-chip    | mbox                                |
-+-----------+------------+-------------------------------------+
-| NETC      | on-chip    | ethernet                            |
-|           |            |                                     |
-|           |            | mdio                                |
-+-----------+------------+-------------------------------------+
-| SIUL2     | on-chip    | pinctrl                             |
-|           |            |                                     |
-|           |            | gpio                                |
-|           |            |                                     |
-|           |            | external interrupt controller       |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| SWT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| CANEXCEL  | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| SAR_ADC   | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| LPI2C     | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| EDMA      | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| DSPI      | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| eMIOS     | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| QSPI      | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| STM       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -186,6 +138,8 @@ port A1. This board configuration selects it as the default flash controller.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``s32z2xxdc2`` boards can be built in the usual way as
 documented in :ref:`build_an_application`.

@@ -33,9 +33,6 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include "connection.h"
 #include "net_stats.h"
 
-/** How long to wait for when cloning multicast packet */
-#define CLONE_TIMEOUT K_MSEC(100)
-
 /** Is this connection used or not */
 #define NET_CONN_IN_USE			BIT(0)
 
@@ -325,7 +322,7 @@ static int net_conn_change_remote(struct net_conn *conn,
 	return 0;
 }
 
-int net_conn_register(uint16_t proto, uint8_t family,
+int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
@@ -408,6 +405,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 
 	conn->flags = flags;
 	conn->proto = proto;
+	conn->type = type;
 	conn->family = family;
 	conn->context = context;
 
@@ -617,7 +615,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 	NET_DBG("[%p] raw match found cb %p ud %p", conn, conn->cb,
 		conn->user_data);
 
-	raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 	if (!raw_pkt) {
 		net_stats_update_per_proto_drop(pkt_iface, proto);
 		NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
@@ -634,6 +632,38 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 	return NET_OK;
 }
 
+#if defined(CONFIG_NET_SOCKETS_INET_RAW)
+static void conn_raw_ip_socket(struct net_pkt *pkt, struct net_conn *conn)
+{
+	struct net_pkt *raw_pkt;
+	struct net_pkt_cursor cur;
+
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
+
+	NET_DBG("[%p] raw IP match found cb %p ud %p", conn, conn->cb,
+		conn->user_data);
+
+	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
+	if (raw_pkt == NULL) {
+		goto out;
+	}
+
+	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
+		net_pkt_unref(raw_pkt);
+	}
+
+out:
+	net_pkt_cursor_restore(pkt, &cur);
+}
+#else
+static void conn_raw_ip_socket(struct net_pkt *pkt, struct net_conn *conn)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(conn);
+}
+#endif /* defined(CONFIG_NET_SOCKETS_INET_RAW) */
+
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				uint8_t proto,
@@ -642,6 +672,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	uint8_t pkt_family = net_pkt_family(pkt);
 	uint16_t src_port = 0U, dst_port = 0U;
+	bool raw_ip_pkt = false;
 
 	if (!net_pkt_filter_local_in_recv_ok(pkt)) {
 		/* drop the packet */
@@ -649,7 +680,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6)) {
-		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && proto_hdr == NULL) {
+			raw_ip_pkt = true;
+		} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 			src_port = proto_hdr->udp->src_port;
 			dst_port = proto_hdr->udp->dst_port;
 		} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
@@ -659,12 +692,13 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			src_port = proto_hdr->tcp->src_port;
 			dst_port = proto_hdr->tcp->dst_port;
 		}
-		if (!conn_are_endpoints_valid(pkt, pkt_family, ip_hdr, src_port, dst_port)) {
+		if (!raw_ip_pkt && !conn_are_endpoints_valid(pkt, pkt_family, ip_hdr,
+							     src_port, dst_port)) {
 			NET_DBG("Dropping invalid src/dst end-points packet");
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-		if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+		if (proto != ETH_P_ALL) {
 			return NET_DROP;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && pkt_family == AF_CAN) {
@@ -692,7 +726,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
 
-	if (IS_ENABLED(CONFIG_NET_IP)) {
+	if (IS_ENABLED(CONFIG_NET_IP) && !raw_ip_pkt) {
 		/* If we receive a packet with multicast destination address, we might
 		 * need to deliver the packet to multiple recipients.
 		 */
@@ -735,7 +769,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 				if (!(conn->family == AF_INET6 && pkt_family == AF_INET &&
-				      !conn->v6only)) {
+				      !conn->v6only && conn->type != SOCK_RAW)) {
 					continue;
 				}
 			} else {
@@ -745,16 +779,25 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			/* We might have a match for v4-to-v6 mapping, check more */
 		}
 
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt &&
+		    conn->type != SOCK_RAW) {
+			continue;
+		}
+
 		/* Is the candidate connection matching the packet's protocol within the family? */
 		if (conn->proto != proto) {
 			/* For packet socket data, the proto is set to ETH_P_ALL
-			 * or IPPROTO_RAW but the listener might have a specific
-			 * protocol set. This is ok and let the packet pass this
-			 * check in this case.
+			 * but the listener might have a specific protocol set.
+			 * This is ok and let the packet pass this check in this
+			 * case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+				if (proto != ETH_P_ALL) {
 					continue; /* wrong protocol */
+				}
+			} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+				if (conn->proto != IPPROTO_IP) {
+					continue;
 				}
 			} else {
 				continue; /* wrong protocol */
@@ -770,17 +813,15 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * targets AF_PACKET sockets.
 			 *
 			 * All AF_PACKET connections will receive the packet if
-			 * their socket type and - in case of IPPROTO - protocol
-			 * also matches.
+			 * their socket type and protocol also matches.
 			 */
-			if (proto == ETH_P_ALL) {
-				/* We shall continue with ETH_P_ALL to IPPROTO_RAW: */
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+			    (proto == ETH_P_ALL) && !net_pkt_is_l2_processed(pkt)) {
+				/* We shall continue with ETH_P_ALL to AF_PACKET/SOCK_DGRAM: */
 				raw_pkt_continue = true;
 			}
 
-			/* With IPPROTO_RAW deliver only if protocol match: */
-			if ((proto == ETH_P_ALL && conn->proto != IPPROTO_RAW) ||
-			    conn->proto == proto) {
+			if (proto == ETH_P_ALL) {
 				enum net_verdict ret = conn_raw_socket(pkt, conn, proto);
 
 				if (ret == NET_DROP) {
@@ -792,6 +833,15 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				continue; /* packet was consumed */
 			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
+			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
+				continue; /* wrong local address */
+			}
+
+			conn_raw_ip_socket(pkt, conn);
+
+			continue;
 		} else if ((IS_ENABLED(CONFIG_NET_UDP) || IS_ENABLED(CONFIG_NET_TCP)) &&
 			   (conn_family == AF_INET || conn_family == AF_INET6 ||
 			    conn_family == AF_UNSPEC)) {
@@ -857,7 +907,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				NET_DBG("[%p] mcast match found cb %p ud %p", conn, conn->cb,
 					conn->user_data);
 
-				mcast_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+				mcast_pkt = net_pkt_clone(
+					pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 				if (!mcast_pkt) {
 					k_mutex_unlock(&conn_lock);
 					goto drop;
@@ -901,6 +952,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			net_pkt_unref(pkt);
 			return NET_OK;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {
+		/* Raw IP packets are passed further in the stack regardless. */
+		return NET_CONTINUE;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IP) && is_mcast_pkt && mcast_pkt_delivered) {

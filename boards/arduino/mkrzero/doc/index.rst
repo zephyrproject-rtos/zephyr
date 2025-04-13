@@ -1,17 +1,10 @@
-.. _arduino_mkrzero:
-
-Arduino MKR Zero
-####################
+.. zephyr:board:: arduino_mkrzero
 
 Overview
 ********
 
 The Arduino MKR Zero built with smaller MKR form factor and powered by Atmel's SAMD21 MCU.
 This board come with microSD card holder that allows you to play with music files with no extra hardware.
-
-.. image:: img/arduino_mkrzero.jpg
-     :align: center
-     :alt: Arduino MKR Zero
 
 Hardware
 ********
@@ -27,46 +20,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_mkrzero board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| ADC       | on-chip    | Analog to digital converter              |
-+-----------+------------+------------------------------------------+
-| COUNTER   | on-chip    | Pulse counter                            |
-+-----------+------------+------------------------------------------+
-| DMA       | on-chip    | Direct memory access unit                |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| HWINFO    | on-chip    | Hardware info and serial number          |
-+-----------+------------+------------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation                   |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit ports           |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/mkrzero/arduino_mkrzero_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -123,6 +77,8 @@ Arduino MKR Zero, the DAC is available on pin A0.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Arduino MKR Zero ships the BOSSA compatible bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.

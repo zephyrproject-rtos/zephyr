@@ -35,6 +35,11 @@ config USE_RA_FSP_I2C_IIC
 	help
 	  Enable Renesas RA I2C IIC Master driver
 
+config USE_RA_FSP_SCI_B_I2C
+	bool
+	help
+	  Enable RA FSP SCI-B I2C driver
+
 config USE_RA_FSP_SCI_UART
 	bool
 	help
@@ -159,6 +164,23 @@ config USE_RA_FSP_ACMPHS
 	help
 	  Enable RA FSP ACMPHS driver
 
+config USE_RA_FSP_WDT
+	bool
+	help
+	  Enable RA FSP WDT driver
+
+config USE_RA_FSP_ULPT
+	bool
+	help
+	  Enable RA FSP ULPT driver
+
+config USE_RA_FSP_LPM
+	bool
+	default y
+	depends on PM
+	help
+	  Enable RA FSP LPM driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
@@ -217,10 +239,5 @@ config USE_RZ_FSP_SCI_UART
 	bool
 	help
 	  Enable RZ FSP SCI UART driver
-
-config USE_RZ_FSP_EXT_IRQ
-	bool
-	help
-	  Enable RZ FSP External IRQ driver
 
 endif

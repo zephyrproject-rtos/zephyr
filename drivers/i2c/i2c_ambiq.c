@@ -268,6 +268,7 @@ static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 	const struct i2c_ambiq_config *cfg = dev->config;
+
 	data->iom_cfg.pNBTxnBuf = i2c_dma_tcb_buf[cfg->inst_idx].buf;
 	data->iom_cfg.ui32NBTxnBufLength = CONFIG_I2C_DMA_TCB_BUFFER_SIZE;
 #endif
@@ -505,9 +506,9 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
-		IF_ENABLED(CONFIG_I2C_AMBIQ_BUS_RECOVERY,			\
-		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),\
-		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };       \
+		IF_ENABLED(CONFIG_I2C_AMBIQ_BUS_RECOVERY,                                          \
+		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),                               \
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };                          \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_pm_action);                                          \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n, \
 				  &i2c_ambiq_config##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \

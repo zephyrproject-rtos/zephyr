@@ -1,0 +1,22 @@
+# BMM350 Geomagnetic sensor configuration options
+
+# Copyright (c) 2024 Bosch Sensortec GmbH
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMM350
+	bool "BMM350 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMM350_ENABLED
+	select I2C
+	help
+	  Enable driver for BMM350 I2C-based Geomagnetic sensor.
+
+if BMM350
+
+module = BMM350
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # BMM350

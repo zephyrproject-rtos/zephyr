@@ -48,7 +48,7 @@ struct bt_br_discovery_priv {
 	/** Page scan repetition mode */
 	uint8_t pscan_rep_mode;
 	/** Resolving remote name*/
-	bool resolving;
+	uint8_t resolve_state;
 };
 
 /** @brief BR/EDR discovery result structure */
@@ -208,6 +208,30 @@ int bt_br_set_connectable(bool enable);
  *  @return true if @p addr is bonded
  */
 bool bt_br_bond_exists(const bt_addr_t *addr);
+
+/**
+ * @brief Clear classic pairing information .
+ *
+ * @param addr  Remote address, NULL or BT_ADDR_ANY to clear all remote devices.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_br_unpair(const bt_addr_t *addr);
+
+/** Information about a bond with a remote device. */
+struct bt_br_bond_info {
+	/** Address of the remote device. */
+	bt_addr_t addr;
+};
+
+/**
+ * @brief Iterate through all existing bonds of Classic.
+ *
+ * @param func       Function to call for each bond.
+ * @param user_data  Data to pass to the callback function.
+ */
+void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *user_data),
+			void *user_data);
 
 /**
  * @}

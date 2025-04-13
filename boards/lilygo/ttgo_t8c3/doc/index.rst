@@ -14,39 +14,18 @@ It features the following integrated components:
 - JST GH 2-pin battery connector
 - LED
 
-Functional Description
-**********************
+Hardware
+********
+
 This board is based on the ESP32-C3 with 4MB of flash, WiFi and BLE support. It
 has an USB-C port for programming and debugging, integrated battery charging
 and an on-board antenna. The fitted U.FL external antenna connector can be
 enabled by moving a 0-ohm resistor.
 
-Connections and IOs
-===================
+Supported Features
+==================
 
-The ``ttgo_t8c3`` board target supports the following hardware features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| PMP       | on-chip    | arch/riscv       |
-+-----------+------------+------------------+
-| INTMTRX   | on-chip    | intc_esp32c3     |
-+-----------+------------+------------------+
-| PINMUX    | on-chip    | pinctrl_esp32    |
-+-----------+------------+------------------+
-| USB UART  | on-chip    | serial_esp32_usb |
-+-----------+------------+------------------+
-| GPIO      | on-chip    | gpio_esp32       |
-+-----------+------------+------------------+
-| UART      | on-chip    | uart_esp32       |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c_esp32        |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi_esp32_spim   |
-+-----------+------------+------------------+
-| TWAI      | on-chip    | can_esp32_twai   |
-+-----------+------------+------------------+
+.. zephyr:board-supported-hw::
 
 Start Application Development
 *****************************
@@ -60,7 +39,7 @@ System requirements
 Prerequisites
 =============
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+Espressif HAL requires WiFi and Bluetooth binary blobs in order to work. Run the command
 below to retrieve those files.
 
 .. code-block:: console
@@ -74,10 +53,12 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 
-The board could be loaded using the single binary image, without 2nd stage bootloader.
+The board could be loaded using a single binary image, without 2nd stage bootloader.
 It is the default option when building the application without additional configuration.
 
 .. note::
@@ -107,7 +88,7 @@ There are two options to be used when building an application:
 Sysbuild
 ========
 
-The sysbuild makes possible to build and flash all necessary images needed to
+The sysbuild makes it possible to build and flash all necessary images needed to
 bootstrap the board with the ESP32-C3 SoC.
 
 To build the sample application using sysbuild use the command:

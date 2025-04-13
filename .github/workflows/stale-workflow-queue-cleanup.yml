@@ -7,6 +7,9 @@ on:
   # everyday at 15:00
   - cron: '0 15 * * *'
 
+permissions:
+  contents: read
+
 concurrency:
   group: stale-workflow-queue-cleanup
   cancel-in-progress: true
@@ -15,6 +18,8 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-22.04
+    permissions:
+      actions: write # to delete stale workflow runs
 
     steps:
     - name: Delete stale queued workflow runs

@@ -1,0 +1,29 @@
+# DOC: used to generate docs
+
+sphinx<8.3.0
+sphinx_rtd_theme~=3.0
+sphinx-tabs
+sphinxcontrib-svg2pdfconverter
+pygments>=2.9,!=2.19.0
+sphinx-notfound-page
+sphinx-copybutton
+sphinx-togglebutton
+sphinx-sitemap
+sphinx-autobuild
+
+# YAML validation. Used by zephyr_module.
+PyYAML>=6.0
+pykwalify
+
+# Used by pytest-twister-harness plugin (imported by autodoc)
+pytest
+pyserial
+
+# Doxygen doxmlparser
+doxmlparser
+
+# Used by the Zephyr domain to organize code samples
+anytree
+
+# Used to generate API coverage reports
+coverxygen

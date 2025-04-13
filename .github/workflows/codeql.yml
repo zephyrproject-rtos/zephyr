@@ -1,0 +1,58 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+  schedule:
+    - cron: '34 16 * * 3'
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
+permissions:
+  contents: read
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            build-mode: none
+          - language: actions
+            build-mode: none
+            config: ./.github/codeql/codeql-actions-config.yml
+          - language: javascript-typescript
+            build-mode: none
+            config: ./.github/codeql/codeql-js-config.yml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1b549b9259bda1cb5ddde3b41741a82a2d15a841 # v3.28.13
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+          config-file: ${{ matrix.config }}
+
+      - if: matrix.build-mode == 'manual'
+        shell: bash
+        run: |
+          echo "nothing yet"
+          exit 0
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@1b549b9259bda1cb5ddde3b41741a82a2d15a841 # v3.28.13
+        with:
+          category: "/language:${{matrix.language}}"

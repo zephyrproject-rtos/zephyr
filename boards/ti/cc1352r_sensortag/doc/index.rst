@@ -95,6 +95,8 @@ aligns with the SensorTag standard.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 TI's supported method of programming and debugging the ``CC1352R SensorTag`` is
 to use it in tandem with a ``CC1352R LaunchPad``, making use of the integrated
 (XDS110) debugger and serial console over USB.

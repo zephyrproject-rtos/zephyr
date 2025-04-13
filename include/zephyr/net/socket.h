@@ -8,6 +8,7 @@
 /*
  * Copyright (c) 2017-2018 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -964,6 +965,8 @@ struct in_pktinfo {
 #define IP_MULTICAST_IF 32
 /** Set IPv4 multicast TTL value. */
 #define IP_MULTICAST_TTL 33
+/** Set IPv4 multicast loop value. */
+#define IP_MULTICAST_LOOP 34
 /** Join IPv4 multicast group. */
 #define IP_ADD_MEMBERSHIP 35
 /** Leave IPv4 multicast group. */
@@ -1004,6 +1007,9 @@ struct ip_mreq  {
 
 /** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
+
+/** Set the multicast loop bit for the socket. */
+#define IPV6_MULTICAST_LOOP 19
 
 /** Join IPv6 multicast group. */
 #define IPV6_ADD_MEMBERSHIP 20

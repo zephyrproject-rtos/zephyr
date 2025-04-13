@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <stdlib.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_if.h>
@@ -178,6 +179,24 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	if (ctx->phase != PPP_RUNNING && !net_pkt_is_ppp(pkt)) {
 		return -ENETDOWN;
+	}
+
+	/* PPP drivers only support IP packet types, therefore in order to be
+	 * able to use AF_PACKET family sockets with PPP, we need to translate
+	 * L2 proto type to packet family.
+	 */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+	    net_pkt_family(pkt) == AF_PACKET) {
+		switch (net_pkt_ll_proto_type(pkt)) {
+		case ETH_P_IP:
+			net_pkt_set_family(pkt, AF_INET);
+			break;
+		case ETH_P_IPV6:
+			net_pkt_set_family(pkt, AF_INET6);
+			break;
+		default:
+			return -EPROTONOSUPPORT;
+		}
 	}
 
 	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);

@@ -106,6 +106,8 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 
@@ -147,7 +149,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: esp32c6_devkitc
+   :board: esp32c6_devkitc/esp32c6/hpcore
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -196,7 +198,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c6_devkitc
+   :board: esp32c6_devkitc/esp32c6/hpcore
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32c6_devkitc`` board
@@ -205,7 +207,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c6_devkitc
+   :board: esp32c6_devkitc/esp32c6/hpcore
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -220,7 +222,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32c6_devkitc
+   Hello World! esp32c6_devkitc/esp32c6/hpcore
 
 Debugging
 *********
@@ -237,7 +239,7 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c6_devkitc
+   :board: esp32c6_devkitc/esp32c6/hpcore
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -245,9 +247,32 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c6_devkitc
+   :board: esp32c6_devkitc/esp32c6/hpcore
    :goals: debug
 
+Low-Power CPU (LP CORE)
+***********************
+
+The ESP32-C6 SoC has two RISC-V cores: the High-Performance Core (HP CORE) and the Low-Power Core (LP CORE).
+The LP Core features ultra low power consumption, an interrupt controller, a debug module and a system bus
+interface for memory and peripheral access.
+
+The LP Core is in sleep mode by default. It has two application scenarios:
+
+- Power insensitive scenario: When the High-Performance CPU (HP Core) is active, the LP Core can assist the HP CPU with some speed and efficiency-insensitive controls and computations.
+- Power sensitive scenario: When the HP CPU is in the power-down state to save power, the LP Core can be woken up to handle some external wake-up events.
+
+For more information, check the datasheet at `ESP32-C6 Datasheet`_ or the technical reference
+manual at `ESP32-C6 Technical Reference Manual`_.
+
+The LP Core support is fully integrated with :ref:`sysbuild`. The user can enable the LP Core by adding
+the following configuration to the project:
+
+.. code:: cfg
+
+   CONFIG_ULP_COPROC_ENABLED=y
+
+See :zephyr:code-sample-category:`lp-core` folder as code reference.
 
 References
 **********

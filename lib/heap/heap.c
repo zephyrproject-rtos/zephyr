@@ -298,6 +298,13 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	return mem;
 }
 
+void *sys_heap_noalign_alloc(struct sys_heap *heap, size_t align, size_t bytes)
+{
+	ARG_UNUSED(align);
+
+	return sys_heap_alloc(heap, bytes);
+}
+
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
@@ -306,7 +313,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	/*
 	 * Split align and rewind values (if any).
 	 * We allow for one bit of rewind in addition to the alignment
-	 * value to efficiently accommodate z_heap_aligned_alloc().
+	 * value to efficiently accommodate z_alloc_helper().
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
@@ -376,37 +383,24 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	return mem;
 }
 
-void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
-			       size_t align, size_t bytes)
+static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 
-	/* special realloc semantics */
-	if (ptr == NULL) {
-		return sys_heap_aligned_alloc(heap, align, bytes);
-	}
-	if (bytes == 0) {
-		sys_heap_free(heap, ptr);
-		return NULL;
-	}
-
-	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
-
 	if (size_too_big(h, bytes)) {
-		return NULL;
+		return false;
 	}
 
 	chunkid_t c = mem_to_chunkid(h, ptr);
-	chunkid_t rc = right_chunk(h, c);
 	size_t align_gap = (uint8_t *)ptr - (uint8_t *)chunk_mem(h, c);
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes + align_gap);
 
-	if (align && ((uintptr_t)ptr & (align - 1))) {
-		/* ptr is not sufficiently aligned */
-	} else if (chunk_size(h, c) == chunks_need) {
+	if (chunk_size(h, c) == chunks_need) {
 		/* We're good already */
-		return ptr;
-	} else if (chunk_size(h, c) > chunks_need) {
+		return true;
+	}
+
+	if (chunk_size(h, c) > chunks_need) {
 		/* Shrink in place, split off and free unused suffix */
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -428,9 +422,13 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 					  bytes_freed);
 #endif
 
-		return ptr;
-	} else if (!chunk_used(h, rc) &&
-		   (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
+		return true;
+	}
+
+	chunkid_t rc = right_chunk(h, c);
+
+	if (!chunk_used(h, rc) &&
+	    (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
 
@@ -459,22 +457,66 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 					  bytes_freed);
 #endif
 
+		return true;
+	}
+
+	return false;
+}
+
+void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
+{
+	/* special realloc semantics */
+	if (ptr == NULL) {
+		return sys_heap_alloc(heap, bytes);
+	}
+	if (bytes == 0) {
+		sys_heap_free(heap, ptr);
+		return NULL;
+	}
+
+	if (inplace_realloc(heap, ptr, bytes)) {
 		return ptr;
-	} else {
-		;
+	}
+
+	/* In-place realloc was not possible: fallback to allocate and copy. */
+	void *ptr2 = sys_heap_alloc(heap, bytes);
+
+	if (ptr2 != NULL) {
+		size_t prev_size = sys_heap_usable_size(heap, ptr);
+
+		memcpy(ptr2, ptr, MIN(prev_size, bytes));
+		sys_heap_free(heap, ptr);
+	}
+	return ptr2;
+}
+
+void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
+			       size_t align, size_t bytes)
+{
+	/* special realloc semantics */
+	if (ptr == NULL) {
+		return sys_heap_aligned_alloc(heap, align, bytes);
+	}
+	if (bytes == 0) {
+		sys_heap_free(heap, ptr);
+		return NULL;
+	}
+
+	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
+
+	if ((align == 0 || ((uintptr_t)ptr & (align - 1)) == 0) &&
+	    inplace_realloc(heap, ptr, bytes)) {
+		return ptr;
 	}
 
 	/*
-	 * Fallback: allocate and copy
-	 *
-	 * Note for heap listener notification:
-	 * The calls to allocation and free functions generate
-	 * notification already, so there is no need to those here.
+	 * Either ptr is not sufficiently aligned for in-place realloc or
+	 * in-place realloc was not possible: fallback to allocate and copy.
 	 */
 	void *ptr2 = sys_heap_aligned_alloc(heap, align, bytes);
 
 	if (ptr2 != NULL) {
-		size_t prev_size = chunksz_to_bytes(h, chunk_size(h, c)) - align_gap;
+		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
 		memcpy(ptr2, ptr, MIN(prev_size, bytes));
 		sys_heap_free(heap, ptr);

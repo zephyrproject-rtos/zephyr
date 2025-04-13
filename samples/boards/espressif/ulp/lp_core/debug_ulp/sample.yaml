@@ -1,0 +1,9 @@
+sample:
+  name: ESP32C6 LP_CORE Debug Sample
+tests:
+  sample.boards.espressif.ulp.lp_core.debug_ulp:
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+    tags:
+      - samples
+    sysbuild: true

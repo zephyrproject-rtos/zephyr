@@ -64,6 +64,8 @@ dedicated to the 2 MB SPI Flash chip.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 DFU-Util programming is supported through Zephyr by default. Set up
 of the built in DFU-Util bootloader is possible by following the
 `instructions on the Learn website`_.

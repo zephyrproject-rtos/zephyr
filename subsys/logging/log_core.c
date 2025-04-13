@@ -288,6 +288,14 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
 	}
+
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
+		uint32_t id;
+		/* As first slot in filtering mask is reserved, backend ID has offset.*/
+		id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
+		id += backend - log_backend_get(0);
+		log_backend_id_set(backend, id);
+	}
 }
 
 static uint32_t activate_foreach_backend(uint32_t mask)
@@ -331,12 +339,6 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 	int backend_index = 0;
 
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
-		uint32_t id;
-		/* As first slot in filtering mask is reserved, backend ID has offset.*/
-		id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
-		id += backend - log_backend_get(0);
-		log_backend_id_set(backend, id);
-
 		/* Activate autostart backends */
 		if (backend->autostart) {
 			log_backend_init(backend);

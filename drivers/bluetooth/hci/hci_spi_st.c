@@ -631,7 +631,9 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {
-		k_sem_take(&sem_initialised, K_FOREVER);
+		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+			ret = -EIO;
+		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 	net_buf_unref(buf);
@@ -682,7 +684,9 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 			0, K_NO_WAIT);
 
 	/* Device will let us know when it's ready */
-	k_sem_take(&sem_initialised, K_FOREVER);
+	if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+		return -EIO;
+	}
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BLUENRG_ACI)
 	/* force BlueNRG to be on controller mode */

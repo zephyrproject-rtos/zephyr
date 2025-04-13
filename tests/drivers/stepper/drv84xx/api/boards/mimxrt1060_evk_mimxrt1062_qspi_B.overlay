@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2024 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		stepper =  &drv8424;
+	};
+};
+
+&lpi2c1 {
+	status = "okay";
+
+	mikroe_stepper_gpios: mikroe_stepper_ctrl_tca9538a@70 {
+		status = "okay";
+		compatible = "ti,tca9538";
+
+		reg = <0x70>;
+
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+
+		gpio-reserved-ranges = <7 1>;
+
+		gpio-line-names =
+			"M0",
+			"M1",
+			"DEC0",
+			"DEC1",
+			"TOFF",
+			"STP",
+			"DIR";
+	};
+};
+
+/ {
+	drv8424: drv8424 {
+		status = "okay";
+		compatible = "ti,drv84xx";
+
+		dir-gpios = <&arduino_header 9 0>; /* D3 */
+		step-gpios = <&arduino_header 10 0>; /* D4 */
+		sleep-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>; /* D2 */
+		en-gpios  = <&arduino_header 11 0>; /* D5 */
+		m0-gpios = <&mikroe_stepper_gpios 0 0>;
+		m1-gpios = <&mikroe_stepper_gpios 1 0>;
+		counter = <&pit0_channel0>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#stepper-motor-cells = <0>;
+	};
+};
+
+&pit0_channel0 {
+	status = "okay";
+};

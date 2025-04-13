@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Pete Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+&pinctrl {
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART1_TX_PC6>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART1_RX_PC7>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PA5>, <EUSART1_SCLK_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART1_RX_PA4>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA8>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PA9>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PC4>, <I2C0_SDA_PC5>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+};

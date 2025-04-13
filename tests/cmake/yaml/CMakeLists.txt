@@ -242,6 +242,46 @@ function(test_setting_list_strings)
   endforeach()
 endfunction()
 
+function(test_setting_list_escaped_strings)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_value "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string LIST ${new_value}
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the value.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  test_assert(TEST 5 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  foreach(a e IN ZIP_LISTS readback new_value)
+    # cmake_parse_arguments() breaks horribly when given strings that include
+    # escapes, making it impossible to use test_assert() here. Or, for that
+    # matter, even trying to print them in message(). Thanks, CMake!
+    if("${e}" STREQUAL "${a}")
+      message("${CMAKE_CURRENT_FUNCTION}(): Passed")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}(): Failed\n"
+        "Test: list values mismatch."
+      )
+    endif()
+  endforeach()
+endfunction()
+
 function(test_append_list_strings)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -475,7 +515,7 @@ function(test_setting_map_list_entry_commas)
     test_assert(TEST "${readback_name}" STREQUAL "${new_entry_name_${index}}"
                 COMMENT "list values mismatch."
     )
-    test_assert(TEST "'${readback_str}'" STREQUAL "${new_entry_str_${index}}"
+    test_assert(TEST "${readback_str}" STREQUAL "${new_entry_str_${index}}"
                 COMMENT "list values mismatch."
     )
   endforeach()
@@ -653,6 +693,51 @@ function(test_verify_genexes)
   endforeach()
 endfunction()
 
+function(test_setting_escaped_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_escaped_genexes.yaml)
+  yaml_create(FILE ${file}
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set_property(TARGET app PROPERTY escaped_list
+               "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           GENEX LIST "$<TARGET_PROPERTY:app,escaped_list>"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+endfunction()
+
+function(test_verify_escaped_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_escaped_genexes.yaml)
+  yaml_load(FILE ${file}
+      NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  set(expected "back\\slash" "dou\"ble" "sin'gle" "co:lon" "win:\\path")
+  list(LENGTH expected exp_len)
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  yaml_length(act_len NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+
+  test_assert(TEST ${exp_len} EQUAL ${act_len}
+              COMMENT "yaml list length does not match expectation."
+  )
+
+  foreach(a e IN ZIP_LISTS readback expected)
+    # See comment in test_setting_list_escaped_strings() for why test_assert() is not used here.
+    if("${e}" STREQUAL "${a}")
+      message("${CMAKE_CURRENT_FUNCTION}(): Passed")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}(): Failed\n"
+        "Test: key-list-string-genex list values mismatch."
+      )
+    endif()
+  endforeach()
+endfunction()
+
 function(test_set_remove_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -728,6 +813,7 @@ test_save_new_file()
 test_setting_int()
 test_setting_string()
 test_setting_list_strings()
+test_setting_list_escaped_strings()
 test_setting_list_int()
 test_setting_map_list_entry()
 test_setting_map_list_entry_windows()
@@ -749,6 +835,7 @@ test_fail_missing_filename()
 if(NOT CMAKE_SCRIPT_MODE_FILE)
   # create a file containing genexes
   test_setting_genexes()
+  test_setting_escaped_genexes()
 
   # Spawn a new CMake instance to re-run the whole test suite in script mode
   # and verify the genex values once the associated target is built.
@@ -756,6 +843,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE}
   )
 else()
-  # verify the contents of the created genex file
+  # verify the contents of the created genex files
   test_verify_genexes()
+  test_verify_escaped_genexes()
 endif()

@@ -7,10 +7,14 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSV16X_H_
 
 /* Accel range */
-#define	LSM6DSV16X_DT_FS_2G			0
-#define	LSM6DSV16X_DT_FS_4G			1
-#define	LSM6DSV16X_DT_FS_8G			2
-#define	LSM6DSV16X_DT_FS_16G			3
+#define	LSM6DSV16X_DT_FS_2G			2
+#define	LSM6DSV16X_DT_FS_4G			4
+#define	LSM6DSV16X_DT_FS_8G			8
+#define	LSM6DSV16X_DT_FS_16G			16
+#define LSM6DSV32X_DT_FS_4G                     4
+#define LSM6DSV32X_DT_FS_8G                     8
+#define LSM6DSV32X_DT_FS_16G                    16
+#define LSM6DSV32X_DT_FS_32G                    32
 
 /* Gyro range */
 #define	LSM6DSV16X_DT_FS_125DPS			0x0

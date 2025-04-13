@@ -22,6 +22,11 @@ LOG_MODULE_REGISTER(bt_cs);
 static struct bt_le_cs_test_cb cs_test_callbacks;
 #endif
 
+#define A1 (0)
+#define A2 (1)
+#define A3 (2)
+#define A4 (3)
+
 struct reassembly_buf_meta_data {
 	uint16_t conn_handle;
 };
@@ -305,7 +310,6 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Read Remote Supported Capabilities failed (status 0x%02X)", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
@@ -314,95 +318,106 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 		return;
 	}
 
-	remote_cs_capabilities.num_config_supported = evt->num_config_supported;
-	remote_cs_capabilities.max_consecutive_procedures_supported =
-		sys_le16_to_cpu(evt->max_consecutive_procedures_supported);
-	remote_cs_capabilities.num_antennas_supported = evt->num_antennas_supported;
-	remote_cs_capabilities.max_antenna_paths_supported = evt->max_antenna_paths_supported;
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		remote_cs_capabilities.num_config_supported = evt->num_config_supported;
+		remote_cs_capabilities.max_consecutive_procedures_supported =
+			sys_le16_to_cpu(evt->max_consecutive_procedures_supported);
+		remote_cs_capabilities.num_antennas_supported = evt->num_antennas_supported;
+		remote_cs_capabilities.max_antenna_paths_supported =
+			evt->max_antenna_paths_supported;
 
-	remote_cs_capabilities.initiator_supported =
-		evt->roles_supported & BT_HCI_LE_CS_INITIATOR_ROLE_MASK;
-	remote_cs_capabilities.reflector_supported =
-		evt->roles_supported & BT_HCI_LE_CS_REFLECTOR_ROLE_MASK;
-	remote_cs_capabilities.mode_3_supported =
-		evt->modes_supported & BT_HCI_LE_CS_MODES_SUPPORTED_MODE_3_MASK;
+		remote_cs_capabilities.initiator_supported =
+			evt->roles_supported & BT_HCI_LE_CS_INITIATOR_ROLE_MASK;
+		remote_cs_capabilities.reflector_supported =
+			evt->roles_supported & BT_HCI_LE_CS_REFLECTOR_ROLE_MASK;
+		remote_cs_capabilities.mode_3_supported =
+			evt->modes_supported & BT_HCI_LE_CS_MODES_SUPPORTED_MODE_3_MASK;
 
-	remote_cs_capabilities.rtt_aa_only_n = evt->rtt_aa_only_n;
-	remote_cs_capabilities.rtt_sounding_n = evt->rtt_sounding_n;
-	remote_cs_capabilities.rtt_random_payload_n = evt->rtt_random_payload_n;
+		remote_cs_capabilities.rtt_aa_only_n = evt->rtt_aa_only_n;
+		remote_cs_capabilities.rtt_sounding_n = evt->rtt_sounding_n;
+		remote_cs_capabilities.rtt_random_payload_n = evt->rtt_random_payload_n;
 
-	if (evt->rtt_aa_only_n) {
-		if (evt->rtt_capability & BT_HCI_LE_CS_RTT_AA_ONLY_N_10NS_MASK) {
-			remote_cs_capabilities.rtt_aa_only_precision =
-				BT_CONN_LE_CS_RTT_AA_ONLY_10NS;
+		if (evt->rtt_aa_only_n) {
+			if (evt->rtt_capability & BT_HCI_LE_CS_RTT_AA_ONLY_N_10NS_MASK) {
+				remote_cs_capabilities.rtt_aa_only_precision =
+					BT_CONN_LE_CS_RTT_AA_ONLY_10NS;
+			} else {
+				remote_cs_capabilities.rtt_aa_only_precision =
+					BT_CONN_LE_CS_RTT_AA_ONLY_150NS;
+			}
 		} else {
 			remote_cs_capabilities.rtt_aa_only_precision =
-				BT_CONN_LE_CS_RTT_AA_ONLY_150NS;
+				BT_CONN_LE_CS_RTT_AA_ONLY_NOT_SUPP;
 		}
-	} else {
-		remote_cs_capabilities.rtt_aa_only_precision = BT_CONN_LE_CS_RTT_AA_ONLY_NOT_SUPP;
-	}
 
-	if (evt->rtt_sounding_n) {
-		if (evt->rtt_capability & BT_HCI_LE_CS_RTT_SOUNDING_N_10NS_MASK) {
-			remote_cs_capabilities.rtt_sounding_precision =
-				BT_CONN_LE_CS_RTT_SOUNDING_10NS;
+		if (evt->rtt_sounding_n) {
+			if (evt->rtt_capability & BT_HCI_LE_CS_RTT_SOUNDING_N_10NS_MASK) {
+				remote_cs_capabilities.rtt_sounding_precision =
+					BT_CONN_LE_CS_RTT_SOUNDING_10NS;
+			} else {
+				remote_cs_capabilities.rtt_sounding_precision =
+					BT_CONN_LE_CS_RTT_SOUNDING_150NS;
+			}
 		} else {
 			remote_cs_capabilities.rtt_sounding_precision =
-				BT_CONN_LE_CS_RTT_SOUNDING_150NS;
+				BT_CONN_LE_CS_RTT_SOUNDING_NOT_SUPP;
 		}
-	} else {
-		remote_cs_capabilities.rtt_sounding_precision = BT_CONN_LE_CS_RTT_SOUNDING_NOT_SUPP;
-	}
 
-	if (evt->rtt_random_payload_n) {
-		if (evt->rtt_capability & BT_HCI_LE_CS_RTT_RANDOM_PAYLOAD_N_10NS_MASK) {
-			remote_cs_capabilities.rtt_random_payload_precision =
-				BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS;
+		if (evt->rtt_random_payload_n) {
+			if (evt->rtt_capability & BT_HCI_LE_CS_RTT_RANDOM_PAYLOAD_N_10NS_MASK) {
+				remote_cs_capabilities.rtt_random_payload_precision =
+					BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS;
+			} else {
+				remote_cs_capabilities.rtt_random_payload_precision =
+					BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_150NS;
+			}
 		} else {
 			remote_cs_capabilities.rtt_random_payload_precision =
-				BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_150NS;
+				BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_NOT_SUPP;
 		}
+
+		remote_cs_capabilities.phase_based_nadm_sounding_supported =
+			sys_le16_to_cpu(evt->nadm_sounding_capability) &
+			BT_HCI_LE_CS_NADM_SOUNDING_CAPABILITY_PHASE_BASED_MASK;
+
+		remote_cs_capabilities.phase_based_nadm_random_supported =
+			sys_le16_to_cpu(evt->nadm_random_capability) &
+			BT_HCI_LE_CS_NADM_RANDOM_CAPABILITY_PHASE_BASED_MASK;
+
+		remote_cs_capabilities.cs_sync_2m_phy_supported =
+			evt->cs_sync_phys_supported & BT_HCI_LE_CS_SYNC_PHYS_2M_MASK;
+
+		remote_cs_capabilities.cs_sync_2m_2bt_phy_supported =
+			evt->cs_sync_phys_supported & BT_HCI_LE_CS_SYNC_PHYS_2M_2BT_MASK;
+
+		remote_cs_capabilities.cs_without_fae_supported =
+			sys_le16_to_cpu(evt->subfeatures_supported) &
+			BT_HCI_LE_CS_SUBFEATURE_NO_TX_FAE_MASK;
+
+		remote_cs_capabilities.chsel_alg_3c_supported =
+			sys_le16_to_cpu(evt->subfeatures_supported) &
+			BT_HCI_LE_CS_SUBFEATURE_CHSEL_ALG_3C_MASK;
+
+		remote_cs_capabilities.pbr_from_rtt_sounding_seq_supported =
+			sys_le16_to_cpu(evt->subfeatures_supported) &
+			BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK;
+
+		remote_cs_capabilities.t_ip1_times_supported =
+			sys_le16_to_cpu(evt->t_ip1_times_supported);
+		remote_cs_capabilities.t_ip2_times_supported =
+			sys_le16_to_cpu(evt->t_ip2_times_supported);
+		remote_cs_capabilities.t_fcs_times_supported =
+			sys_le16_to_cpu(evt->t_fcs_times_supported);
+		remote_cs_capabilities.t_pm_times_supported =
+			sys_le16_to_cpu(evt->t_pm_times_supported);
+
+		remote_cs_capabilities.t_sw_time = evt->t_sw_time_supported;
+		remote_cs_capabilities.tx_snr_capability = evt->tx_snr_capability;
+
+		notify_remote_cs_capabilities(conn, BT_HCI_ERR_SUCCESS, &remote_cs_capabilities);
 	} else {
-		remote_cs_capabilities.rtt_random_payload_precision =
-			BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_NOT_SUPP;
+		notify_remote_cs_capabilities(conn, evt->status, NULL);
 	}
-
-	remote_cs_capabilities.phase_based_nadm_sounding_supported =
-		sys_le16_to_cpu(evt->nadm_sounding_capability) &
-		BT_HCI_LE_CS_NADM_SOUNDING_CAPABILITY_PHASE_BASED_MASK;
-
-	remote_cs_capabilities.phase_based_nadm_random_supported =
-		sys_le16_to_cpu(evt->nadm_random_capability) &
-		BT_HCI_LE_CS_NADM_RANDOM_CAPABILITY_PHASE_BASED_MASK;
-
-	remote_cs_capabilities.cs_sync_2m_phy_supported =
-		evt->cs_sync_phys_supported & BT_HCI_LE_CS_SYNC_PHYS_2M_MASK;
-
-	remote_cs_capabilities.cs_sync_2m_2bt_phy_supported =
-		evt->cs_sync_phys_supported & BT_HCI_LE_CS_SYNC_PHYS_2M_2BT_MASK;
-
-	remote_cs_capabilities.cs_without_fae_supported =
-		sys_le16_to_cpu(evt->subfeatures_supported) &
-		BT_HCI_LE_CS_SUBFEATURE_NO_TX_FAE_MASK;
-
-	remote_cs_capabilities.chsel_alg_3c_supported =
-		sys_le16_to_cpu(evt->subfeatures_supported) &
-		BT_HCI_LE_CS_SUBFEATURE_CHSEL_ALG_3C_MASK;
-
-	remote_cs_capabilities.pbr_from_rtt_sounding_seq_supported =
-		sys_le16_to_cpu(evt->subfeatures_supported) &
-		BT_HCI_LE_CS_SUBFEATURE_PBR_FROM_RTT_SOUNDING_SEQ_MASK;
-
-	remote_cs_capabilities.t_ip1_times_supported = sys_le16_to_cpu(evt->t_ip1_times_supported);
-	remote_cs_capabilities.t_ip2_times_supported = sys_le16_to_cpu(evt->t_ip2_times_supported);
-	remote_cs_capabilities.t_fcs_times_supported = sys_le16_to_cpu(evt->t_fcs_times_supported);
-	remote_cs_capabilities.t_pm_times_supported = sys_le16_to_cpu(evt->t_pm_times_supported);
-
-	remote_cs_capabilities.t_sw_time = evt->t_sw_time_supported;
-	remote_cs_capabilities.tx_snr_capability = evt->tx_snr_capability;
-
-	notify_remote_cs_capabilities(conn, remote_cs_capabilities);
 
 	bt_conn_unref(conn);
 }
@@ -465,7 +480,6 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Read Remote FAE Table failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
@@ -474,8 +488,13 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 		return;
 	}
 
-	fae_table.remote_fae_table = evt->remote_fae_table;
-	notify_remote_cs_fae_table(conn, fae_table);
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		fae_table.remote_fae_table = evt->remote_fae_table;
+
+		notify_remote_cs_fae_table(conn, BT_HCI_ERR_SUCCESS, &fae_table);
+	} else {
+		notify_remote_cs_fae_table(conn, evt->status, NULL);
+	}
 
 	bt_conn_unref(conn);
 }
@@ -805,7 +824,6 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("CS Config failed (status 0x%02X)", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -814,33 +832,38 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 		return;
 	}
 
-	if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED) {
-		notify_cs_config_removed(conn, evt->config_id);
-		bt_conn_unref(conn);
-		return;
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED) {
+			notify_cs_config_removed(conn, evt->config_id);
+			bt_conn_unref(conn);
+			return;
+		}
+
+		config.id = evt->config_id;
+		config.main_mode_type = evt->main_mode_type;
+		config.sub_mode_type = evt->sub_mode_type;
+		config.min_main_mode_steps = evt->min_main_mode_steps;
+		config.max_main_mode_steps = evt->max_main_mode_steps;
+		config.main_mode_repetition = evt->main_mode_repetition;
+		config.mode_0_steps = evt->mode_0_steps;
+		config.role = evt->role;
+		config.rtt_type = evt->rtt_type;
+		config.cs_sync_phy = evt->cs_sync_phy;
+		config.channel_map_repetition = evt->channel_map_repetition;
+		config.channel_selection_type = evt->channel_selection_type;
+		config.ch3c_shape = evt->ch3c_shape;
+		config.ch3c_jump = evt->ch3c_jump;
+		config.t_ip1_time_us = evt->t_ip1_time;
+		config.t_ip2_time_us = evt->t_ip2_time;
+		config.t_fcs_time_us = evt->t_fcs_time;
+		config.t_pm_time_us = evt->t_pm_time;
+		memcpy(config.channel_map, evt->channel_map, ARRAY_SIZE(config.channel_map));
+
+		notify_cs_config_created(conn, BT_HCI_ERR_SUCCESS, &config);
+	} else {
+		notify_cs_config_created(conn, evt->status, NULL);
 	}
 
-	config.id = evt->config_id;
-	config.main_mode_type = evt->main_mode_type;
-	config.sub_mode_type = evt->sub_mode_type;
-	config.min_main_mode_steps = evt->min_main_mode_steps;
-	config.max_main_mode_steps = evt->max_main_mode_steps;
-	config.main_mode_repetition = evt->main_mode_repetition;
-	config.mode_0_steps = evt->mode_0_steps;
-	config.role = evt->role;
-	config.rtt_type = evt->rtt_type;
-	config.cs_sync_phy = evt->cs_sync_phy;
-	config.channel_map_repetition = evt->channel_map_repetition;
-	config.channel_selection_type = evt->channel_selection_type;
-	config.ch3c_shape = evt->ch3c_shape;
-	config.ch3c_jump = evt->ch3c_jump;
-	config.t_ip1_time_us = evt->t_ip1_time;
-	config.t_ip2_time_us = evt->t_ip2_time;
-	config.t_fcs_time_us = evt->t_fcs_time;
-	config.t_pm_time_us = evt->t_pm_time;
-	memcpy(config.channel_map, evt->channel_map, ARRAY_SIZE(config.channel_map));
-
-	notify_cs_config_created(conn, &config);
 	bt_conn_unref(conn);
 }
 
@@ -1203,7 +1226,6 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Security Enable failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -1212,7 +1234,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 		return;
 	}
 
-	notify_cs_security_enable_available(conn);
+	notify_cs_security_enable_available(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
@@ -1232,7 +1254,6 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
 		LOG_WRN("Procedure Enable failed with status 0x%02X", evt->status);
-		return;
 	}
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
@@ -1250,19 +1271,23 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 		}
 	}
 
-	params.config_id = evt->config_id;
-	params.state = evt->state;
-	params.tone_antenna_config_selection = evt->tone_antenna_config_selection;
-	params.selected_tx_power = evt->selected_tx_power;
-	params.subevent_len = sys_get_le24(evt->subevent_len);
-	params.subevents_per_event = evt->subevents_per_event;
-	params.subevent_interval = sys_le16_to_cpu(evt->subevent_interval);
-	params.event_interval = sys_le16_to_cpu(evt->event_interval);
-	params.procedure_interval = sys_le16_to_cpu(evt->procedure_interval);
-	params.procedure_count = sys_le16_to_cpu(evt->procedure_count);
-	params.max_procedure_len = sys_le16_to_cpu(evt->max_procedure_len);
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		params.config_id = evt->config_id;
+		params.state = evt->state;
+		params.tone_antenna_config_selection = evt->tone_antenna_config_selection;
+		params.selected_tx_power = evt->selected_tx_power;
+		params.subevent_len = sys_get_le24(evt->subevent_len);
+		params.subevents_per_event = evt->subevents_per_event;
+		params.subevent_interval = sys_le16_to_cpu(evt->subevent_interval);
+		params.event_interval = sys_le16_to_cpu(evt->event_interval);
+		params.procedure_interval = sys_le16_to_cpu(evt->procedure_interval);
+		params.procedure_count = sys_le16_to_cpu(evt->procedure_count);
+		params.max_procedure_len = sys_le16_to_cpu(evt->max_procedure_len);
 
-	notify_cs_procedure_enable_available(conn, &params);
+		notify_cs_procedure_enable_available(conn, BT_HCI_ERR_SUCCESS, &params);
+	} else {
+		notify_cs_procedure_enable_available(conn, evt->status, NULL);
+	}
 
 	bt_conn_unref(conn);
 }
@@ -1341,6 +1366,101 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 		}
 
 		net_buf_simple_pull(step_data_buf, step.data_len);
+	}
+}
+
+/* Bluetooth Core Specification 6.0, Table 4.13, Antenna Path Permutation for N_AP=2.
+ * The last element corresponds to extension slot
+ */
+static const uint8_t antenna_path_lut_n_ap_2[2][3] = {
+	{A1, A2, A2},
+	{A2, A1, A1},
+};
+
+/* Bluetooth Core Specification 6.0, Table 4.14, Antenna Path Permutation for N_AP=3.
+ * The last element corresponds to extension slot
+ */
+static const uint8_t antenna_path_lut_n_ap_3[6][4] = {
+	{A1, A2, A3, A3},
+	{A2, A1, A3, A3},
+	{A1, A3, A2, A2},
+	{A3, A1, A2, A2},
+	{A3, A2, A1, A1},
+	{A2, A3, A1, A1},
+};
+
+/* Bluetooth Core Specification 6.0, Table 4.15, Antenna Path Permutation for N_AP=4.
+ * The last element corresponds to extension slot
+ */
+static const uint8_t antenna_path_lut_n_ap_4[24][5] = {
+	{A1, A2, A3, A4, A4},
+	{A2, A1, A3, A4, A4},
+	{A1, A3, A2, A4, A4},
+	{A3, A1, A2, A4, A4},
+	{A3, A2, A1, A4, A4},
+	{A2, A3, A1, A4, A4},
+	{A1, A2, A4, A3, A3},
+	{A2, A1, A4, A3, A3},
+	{A1, A4, A2, A3, A3},
+	{A4, A1, A2, A3, A3},
+	{A4, A2, A1, A3, A3},
+	{A2, A4, A1, A3, A3},
+	{A1, A4, A3, A2, A2},
+	{A4, A1, A3, A2, A2},
+	{A1, A3, A4, A2, A2},
+	{A3, A1, A4, A2, A2},
+	{A3, A4, A1, A2, A2},
+	{A4, A3, A1, A2, A2},
+	{A4, A2, A3, A1, A1},
+	{A2, A4, A3, A1, A1},
+	{A4, A3, A2, A1, A1},
+	{A3, A4, A2, A1, A1},
+	{A3, A2, A4, A1, A1},
+	{A2, A3, A4, A1, A1},
+};
+
+int bt_le_cs_get_antenna_path(uint8_t n_ap,
+			      uint8_t antenna_path_permutation_index,
+			      uint8_t tone_index)
+{
+	switch (n_ap) {
+	case 1:
+	{
+		uint8_t antenna_path_permutations = 1;
+		uint8_t num_tones = n_ap + 1; /* one additional tone extension slot */
+
+		if (antenna_path_permutation_index >= antenna_path_permutations ||
+		    tone_index >= num_tones) {
+			return -EINVAL;
+		}
+		return A1;
+	}
+	case 2:
+	{
+		if (antenna_path_permutation_index >= ARRAY_SIZE(antenna_path_lut_n_ap_2) ||
+		    tone_index >= ARRAY_SIZE(antenna_path_lut_n_ap_2[0])) {
+			return -EINVAL;
+		}
+		return antenna_path_lut_n_ap_2[antenna_path_permutation_index][tone_index];
+	}
+	case 3:
+	{
+		if (antenna_path_permutation_index >= ARRAY_SIZE(antenna_path_lut_n_ap_3) ||
+		    tone_index >= ARRAY_SIZE(antenna_path_lut_n_ap_3[0])) {
+			return -EINVAL;
+		}
+		return antenna_path_lut_n_ap_3[antenna_path_permutation_index][tone_index];
+	}
+	case 4:
+	{
+		if (antenna_path_permutation_index >= ARRAY_SIZE(antenna_path_lut_n_ap_4) ||
+		    tone_index >= ARRAY_SIZE(antenna_path_lut_n_ap_4[0])) {
+			return -EINVAL;
+		}
+		return antenna_path_lut_n_ap_4[antenna_path_permutation_index][tone_index];
+	}
+	default:
+		return -EINVAL;
 	}
 }
 

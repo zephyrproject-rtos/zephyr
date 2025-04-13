@@ -706,6 +706,12 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 {
 	struct ll_conn *conn;
 
+#if defined(CONFIG_BT_CTLR_ISO)
+	if (IS_CIS_HANDLE(handle) || IS_SYNC_ISO_HANDLE(handle) || IS_ADV_ISO_HANDLE(handle)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_ISO */
+
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
@@ -725,6 +731,12 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 {
 	struct ll_conn *conn;
+
+#if defined(CONFIG_BT_CTLR_ISO)
+	if (IS_CIS_HANDLE(handle) || IS_SYNC_ISO_HANDLE(handle) || IS_ADV_ISO_HANDLE(handle)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_ISO */
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -2251,18 +2263,6 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	ticks_at_expire = conn->llcp.prep.ticks_at_expire;
 
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-	/* restore to normal prepare */
-	if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
-		uint32_t ticks_prepare_to_start =
-			MAX(conn->ull.ticks_active_to_start, conn->ull.ticks_preempt_to_start);
-
-		conn->ull.ticks_prepare_to_start &= ~XON_BITMASK;
-
-		ticks_at_expire -= (conn->ull.ticks_prepare_to_start - ticks_prepare_to_start);
-	}
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_tx_ready_delay_get(lll->phy_tx,
 						      lll->phy_flags);
@@ -2353,10 +2353,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	/* calculate the offset */
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead =
-			MAX(conn->ull.ticks_active_to_start,
-			    conn->ull.ticks_prepare_to_start);
-
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}

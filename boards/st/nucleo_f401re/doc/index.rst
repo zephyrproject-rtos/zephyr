@@ -56,7 +56,7 @@ More information about STM32F401RE can be found here:
 Supported Features
 ==================
 
-.. zephyr:board-supported-hw:
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -109,6 +109,8 @@ Nucleo F401RE board has up to 3 I2Cs. The default I2C mapping for Zephyr is:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo F401RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 

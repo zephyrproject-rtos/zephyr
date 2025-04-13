@@ -32,6 +32,8 @@ The schematics for the PANB511 Evaluation Boards are available in the
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``panb511evb/nrf54l15/cpuapp`` board target can
 be built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on

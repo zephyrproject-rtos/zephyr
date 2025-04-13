@@ -52,6 +52,10 @@ echo-server directory:
 - :file:`overlay-tunnel.conf`
   This overlay config enables support for IP tunneling.
 
+- :file:`overlay-vlan.conf`
+  This overlay config enables support for Virtual LAN.
+  See :ref:`networking_samples_common` for details.
+
 Build echo-server sample application like this:
 
 .. zephyr-app-commands::

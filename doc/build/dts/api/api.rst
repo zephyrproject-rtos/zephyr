@@ -422,6 +422,9 @@ device.
      - A node whose ``reg`` is used by the OpenAMP subsystem to determine the
        base address and size of the shared memory (SHM) usable for
        interprocess-communication (IPC)
+   * - zephyr,ipc_rsc_table
+     - Specifies a memory region that will be used for the OpenAMP resource table.
+       Only needed if :kconfig:option:`CONFIG_OPENAMP_COPY_RSC_TABLE` is enabled.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,log-uart
@@ -459,3 +462,8 @@ device.
        WS2812 GPIO driver
    * - zephyr,touch
      - touchscreen controller device node.
+   * - mcuboot,ram-load-dev
+     - When a Zephyr application is built to be loaded to RAM by MCUboot, with
+       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,
+       this property is used to tell MCUboot the load address of the image, which
+       will be the ``reg`` of the chosen node.

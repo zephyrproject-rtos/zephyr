@@ -12,7 +12,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 
 /* Length of buffer of printable size */
 #define LOG_BUF_SZ		64
@@ -125,50 +126,3 @@ struct coredump_backend_api coredump_backend_logging = {
 	.query = coredump_logging_backend_query,
 	.cmd = coredump_logging_backend_cmd,
 };
-
-
-#ifdef CONFIG_DEBUG_COREDUMP_SHELL
-#include <zephyr/shell/shell.h>
-
-static int cmd_coredump_error_get(const struct shell *sh,
-				  size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	if (error == 0) {
-		shell_print(sh, "No error.");
-	} else {
-		shell_print(sh, "Error: %d", error);
-	}
-
-	return 0;
-}
-
-static int cmd_coredump_error_clear(const struct shell *sh,
-				    size_t argc, char **argv)
-{
-	error = 0;
-
-	shell_print(sh, "Error cleared.");
-
-	return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_coredump_error,
-	SHELL_CMD(get, NULL, "Get Coredump error", cmd_coredump_error_get),
-	SHELL_CMD(clear, NULL, "Clear Coredump error",
-		  cmd_coredump_error_clear),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_coredump,
-	SHELL_CMD(error, &sub_coredump_error,
-		  "Get/clear backend error.", NULL),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
-
-SHELL_CMD_REGISTER(coredump, &sub_coredump,
-		   "Coredump commands (logging backend)", NULL);
-
-#endif /* CONFIG_DEBUG_COREDUMP_SHELL */

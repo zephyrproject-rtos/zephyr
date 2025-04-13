@@ -1,0 +1,11 @@
+identifier: neorv32/neorv32/up5kdemo
+name: NEORV32 UP5KDemo
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 64
+flash: 64
+supported:
+  - gpio

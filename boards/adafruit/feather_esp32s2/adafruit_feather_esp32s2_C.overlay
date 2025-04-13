@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/*
+	 * On-board regulator powers I2C pull-ups and external devices connected
+	 * via the STEMMA QT connector.
+	 */
+	i2c_reg: i2c_reg {
+		label = "I2C Power";
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10>;
+	};
+};

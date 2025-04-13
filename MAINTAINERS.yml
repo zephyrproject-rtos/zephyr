@@ -299,6 +299,7 @@ BeagleBoard Platforms:
     - ayush1325
     - con-pax
     - vaishnavachath
+    - glneo
   files:
     - boards/beagle/
   labels:
@@ -364,9 +365,9 @@ Bluetooth Controller:
     - carlescufi
     - thoh-ot
     - ppryga
-    - mtpr-ot
     - wopu-ot
     - erbr-ot
+    - Tronil
   files:
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/img/ctlr*
@@ -438,6 +439,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
     - tests/bluetooth/audio/
+    - tests/bluetooth/classic/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
@@ -534,6 +536,7 @@ Bluetooth Classic:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
+    - tests/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
@@ -883,7 +886,6 @@ Demand Paging:
 Device Driver Model:
   status: maintained
   maintainers:
-    - gmarull
     - tbursztyka
   collaborators:
     - dcpleung
@@ -975,6 +977,7 @@ Display drivers:
   collaborators:
     - jfischer-no
     - danieldegrasse
+    - VynDragon
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1030,9 +1033,9 @@ Documentation:
 Documentation Infrastructure:
   status: maintained
   maintainers:
-    - gmarull
     - kartben
   collaborators:
+    - gmarull
     - carlescufi
     - nashif
   files:
@@ -1818,7 +1821,6 @@ Release Notes:
 "Drivers: MFD":
   status: odd fixes
   collaborators:
-    - gmarull
     - aasinclair
   files:
     - drivers/mfd/
@@ -1929,8 +1931,8 @@ Release Notes:
     - samples.drivers.peci
 
 "Drivers: Pin Control":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - gmarull
   files:
     - doc/hardware/pinctrl/
@@ -2066,7 +2068,7 @@ Release Notes:
   labels:
     - "area: Sensors"
   tests:
-    - drivers.sensors
+    - drivers.sensor
 
 "Drivers: SMBus":
   status: maintained
@@ -2388,8 +2390,6 @@ Input:
   status: maintained
   maintainers:
     - fabiobaltieri
-  collaborators:
-    - gmarull
   files:
     - doc/services/input/
     - drivers/input/
@@ -2756,8 +2756,11 @@ NEORV32 platform:
     - drivers/*/*neorv32*
     - dts/bindings/*/*neorv32*
     - soc/neorv32/
+    - tests/boards/neorv32/
   labels:
     - "platform: NEORV32"
+  tests:
+    - boards.neorv32
 
 OSDP:
   status: maintained
@@ -3249,6 +3252,7 @@ RISCV arch:
     - carlocaione
     - npitre
     - ycsin
+    - VynDragon
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -3451,19 +3455,23 @@ ADI Platforms:
     - microbuilder
   files:
     - boards/adi/
+    - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
     - drivers/ethernet/eth_adin*
+    - drivers/ethernet/phy/phy_adin*
     - drivers/mdio/mdio_adin*
-    - drivers/regulator/regulator_adp5360*
     - drivers/sensor/adi/
+    - drivers/stepper/adi_tmc/
     - dts/arm/adi/
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
     - soc/adi/
+  files-regex:
+    - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
   labels:
     - "platform: ADI"
 
@@ -3479,7 +3487,6 @@ GD32 Platforms:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
     - cameled
   files:
@@ -3610,9 +3617,11 @@ Silabs Platforms:
     - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
-    - drivers/**/*gecko*
-    - drivers/**/*silabs*
-    - drivers/**/*siwx91x*
+    - drivers/*/*gecko*
+    - drivers/*/*silabs*
+    - drivers/*/*siwx91x*
+    - drivers/*/*/*silabs*
+    - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
   labels:
     - "platform: Silabs"
@@ -4048,6 +4057,7 @@ Renesas RA Platforms:
   collaborators:
     - duynguyenxa
     - thaoluonguw
+    - thenguyenyf
   files:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
@@ -4078,7 +4088,6 @@ Renesas RZ Platforms:
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
     - dts/bindings/*/*renesas,rz*
-    - soc/renesas/rzt2m/
     - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
@@ -4246,6 +4255,7 @@ TI K3 Platforms:
   collaborators:
     - gramsay0
     - dnltz
+    - glneo
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
@@ -4446,8 +4456,13 @@ Task Watchdog:
 TDK Sensors:
   status: maintained
   maintainers:
+    - afontaine-invn
+    - rbuisson-invn
+  collaborators:
     - teburd
     - MaureenHelm
+    - sriccardi-invn
+    - gjabouley-invn
   files:
     - drivers/sensor/tdk/
   labels:
@@ -4933,7 +4948,6 @@ West:
   maintainers:
     - nandojve
   collaborators:
-    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -5000,9 +5014,6 @@ West:
     - bperseghetti
   files:
     - modules/hal_nxp/
-    - modules/Kconfig.imx
-    - modules/Kconfig.mcux
-    - modules/Kconfig.nxp_s32
   labels:
     - "platform: NXP"
 
@@ -5127,6 +5138,8 @@ West:
   maintainers:
     - nzmichaelh
     - kholia
+  collaborators:
+    - VynDragon
   files:
     - modules/hal_wch/
 
@@ -5663,6 +5676,22 @@ Peregrine Platforms:
   labels:
     - "platform: Peregrine"
 
+WCH Platforms:
+  status: maintained
+  maintainers:
+    - nzmichaelh
+    - kholia
+  collaborators:
+    - VynDragon
+  files:
+    - boards/wch/
+    - dts/riscv/wch/
+    - soc/wch/
+    - drivers/*/*wch*
+    - dts/bindings/*/wch,*
+  labels:
+    - "platform: WinChipHead"
+
 # This area is to be converted to a subarea
 Testing with Renode:
   status: odd fixes
@@ -5673,8 +5702,8 @@ Testing with Renode:
     - cmake/emu/renode.cmake
     - soc/renode/
     - boards/renode/
-    - boards/**/*/support/*.repl
-    - boards/**/*/support/*.resc
+    - boards/*/*/support/*.repl
+    - boards/*/*/support/*.resc
   labels:
     - "area: Renode"
 

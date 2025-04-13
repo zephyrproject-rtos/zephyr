@@ -78,22 +78,13 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev, const uint8_t ep)
 	return data->ep_lut[USB_EP_LUT_IDX(ep)];
 }
 
-bool udc_ep_is_busy(const struct device *dev, const uint8_t ep)
+bool udc_ep_is_busy(const struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
-
 	return ep_cfg->stat.busy;
 }
 
-void udc_ep_set_busy(const struct device *dev, const uint8_t ep, const bool busy)
+void udc_ep_set_busy(struct udc_ep_config *const ep_cfg, const bool busy)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
 	ep_cfg->stat.busy = busy;
 }
 
@@ -115,34 +106,21 @@ int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 	return 0;
 }
 
-struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
-
 	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
-struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
 
 	buf = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
 
-	LOG_DBG("ep 0x%02x dequeue %p", ep, buf);
+	LOG_DBG("ep 0x%02x dequeue %p", ep_cfg->addr, buf);
 	for (struct net_buf *n = buf; !k_fifo_is_empty(&ep_cfg->fifo); n = n->frags) {
 		n->frags = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 		LOG_DBG("|-> %p ", n->frags);
@@ -154,15 +132,8 @@ struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
 	return buf;
 }
 
-struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
+struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg)
 {
-	struct udc_ep_config *ep_cfg;
-
-	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg == NULL) {
-		return NULL;
-	}
-
 	return k_fifo_peek_head(&ep_cfg->fifo);
 }
 

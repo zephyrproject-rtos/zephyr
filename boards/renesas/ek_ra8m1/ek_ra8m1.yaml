@@ -10,5 +10,6 @@ toolchain:
 supported:
   - gpio
   - uart
+  - watchdog
   - usbd
 vendor: renesas

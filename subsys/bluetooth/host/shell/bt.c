@@ -361,7 +361,8 @@ static void print_data_set(uint8_t set_value_len,
 
 static bool data_verbose_cb(struct bt_data *data, void *user_data)
 {
-	bt_shell_fprintf_info("%*sType 0x%02x: ", strlen(scan_response_label), "", data->type);
+	bt_shell_fprintf_info("%*sType 0x%02x: ",
+			      (int)strlen(scan_response_label), "", data->type);
 
 	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
@@ -572,10 +573,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 
 	if (scan_verbose_output) {
 		bt_shell_info("%*s[SCAN DATA START - %s]",
-			      strlen(scan_response_label), "",
+			      (int)strlen(scan_response_label), "",
 			      scan_response_type_txt(info->adv_type));
 		bt_data_parse(&buf_copy, data_verbose_cb, NULL);
-		bt_shell_info("%*s[SCAN DATA END]", strlen(scan_response_label), "");
+		bt_shell_info("%*s[SCAN DATA END]", (int)strlen(scan_response_label), "");
 	}
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -987,8 +988,15 @@ void subrate_changed(struct bt_conn *conn,
 #endif
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-void print_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities *params)
+void print_remote_cs_capabilities(struct bt_conn *conn,
+				  uint8_t status,
+				  struct bt_conn_le_cs_capabilities *params)
 {
+	if (status != BT_HCI_ERR_SUCCESS) {
+		bt_shell_print("Read Remote CS Capabilities failed (HCI status 0x%02x)", status);
+		return;
+	}
+
 	bt_shell_print(
 		"Received remote channel sounding capabilities:\n"
 		"- Num CS configurations: %d\n"
@@ -1050,14 +1058,28 @@ void print_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_cap
 		params->tx_snr_capability);
 }
 
-void print_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table *params)
+void print_remote_cs_fae_table(struct bt_conn *conn,
+			       uint8_t status,
+			       struct bt_conn_le_cs_fae_table *params)
 {
+	if (status != BT_HCI_ERR_SUCCESS) {
+		bt_shell_print("Read Remote CS FAE Table failed (HCI status 0x%02x)", status);
+		return;
+	}
+
 	bt_shell_print("Received FAE Table: ");
 	bt_shell_hexdump(params->remote_fae_table, 72);
 }
 
-static void le_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *config)
+static void le_cs_config_created(struct bt_conn *conn,
+				 uint8_t status,
+				 struct bt_conn_le_cs_config *config)
 {
+	if (status != BT_HCI_ERR_SUCCESS) {
+		bt_shell_print("Create CS Config failed (HCI status 0x%02x)", status);
+		return;
+	}
+
 	const char *mode_str[5] = {"Unused", "1 (RTT)", "2 (PBR)", "3 (RTT + PBR)", "Invalid"};
 	const char *role_str[3] = {"Initiator", "Reflector", "Invalid"};
 	const char *rtt_type_str[8] = {"AA only",        "32-bit sounding", "96-bit sounding",
@@ -1145,9 +1167,9 @@ static struct bt_conn_cb conn_callbacks = {
 	.subrate_changed = subrate_changed,
 #endif
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-	.le_cs_remote_capabilities_available = print_remote_cs_capabilities,
-	.le_cs_remote_fae_table_available = print_remote_cs_fae_table,
-	.le_cs_config_created = le_cs_config_created,
+	.le_cs_read_remote_capabilities_complete = print_remote_cs_capabilities,
+	.le_cs_read_remote_fae_table_complete = print_remote_cs_fae_table,
+	.le_cs_config_complete = le_cs_config_created,
 	.le_cs_config_removed = le_cs_config_removed,
 #endif
 };
@@ -1499,7 +1521,7 @@ static int cmd_id_reset(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		shell_error(sh, "Identity identifier not specified");
+		shell_error(sh, "Identity handle not specified");
 		return -ENOEXEC;
 	}
 
@@ -1533,7 +1555,7 @@ static int cmd_id_delete(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		shell_error(sh, "Identity identifier not specified");
+		shell_error(sh, "Identity handle not specified");
 		return -ENOEXEC;
 	}
 
@@ -1935,7 +1957,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		csis_ad_len = csis_ad_data_add(&data_array[ad_len],
 					       data_array_size - ad_len, discoverable);
 		if (csis_ad_len < 0) {
-			bt_shell_error("Failed to add CSIS data (err %d)", csis_ad_len);
+			bt_shell_error("Failed to add CSIS data (err %zd)", csis_ad_len);
 			return ad_len;
 		}
 
@@ -3773,13 +3795,8 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BT_CLASSIC)
-		addr.type = BT_ADDR_LE_PUBLIC;
-		err = bt_addr_from_str(argv[1], &addr.a);
-#else
 		shell_print(sh, "Both address and address type needed");
 		return -ENOEXEC;
-#endif
 	} else {
 		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	}
@@ -4216,6 +4233,16 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	bt_shell_print("Bond deleted for %s, id %u", addr, id);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static void br_bond_deleted(const bt_addr_t *peer)
+{
+	char addr[BT_ADDR_STR_LEN];
+
+	bt_addr_to_str(peer, addr, sizeof(addr));
+	bt_shell_print("Classic bond deleted for %s", addr);
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 #if defined(CONFIG_BT_PASSKEY_KEYPRESS)
@@ -4316,6 +4343,9 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_failed = auth_pairing_failed,
 	.pairing_complete = auth_pairing_complete,
 	.bond_deleted = bond_deleted,
+#if defined(CONFIG_BT_CLASSIC)
+	.br_bond_deleted = br_bond_deleted,
+#endif /* CONFIG_BT_CLASSIC */
 };
 
 static int cmd_auth(const struct shell *sh, size_t argc, char *argv[])

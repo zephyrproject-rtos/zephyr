@@ -1,7 +1,4 @@
-.. _arduino_uno_r4:
-
-Arduino UNO R4
-##############
+.. zephyr:board:: arduino_uno_r4
 
 Overview
 ********
@@ -23,19 +20,12 @@ Hardware
 Supported Features
 ==================
 
-The Arduino UNO R4 Minima/Wifi  board configuration supports the following
-hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| UART      | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Debug adapter
 =============

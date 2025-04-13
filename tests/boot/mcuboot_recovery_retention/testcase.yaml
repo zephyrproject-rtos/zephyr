@@ -30,7 +30,7 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_mem.conf"
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_mem.overlay"
-      - mcuboot_TARGET_OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_mem.conf"
+      - mcuboot_TARGET_EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_mem.conf"
       - mcuboot_TARGET_DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_mem.overlay"
     tags:
       - mcuboot

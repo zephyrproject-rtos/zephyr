@@ -413,17 +413,9 @@ execute_process(
   ${ZEPHYR_DTS}
   OUTPUT_QUIET # Discard stdout
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  RESULT_VARIABLE ret
-  ERROR_VARIABLE stderr
+  COMMAND_ERROR_IS_FATAL ANY
   )
 
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "dtc failed with return code: ${ret}")
-elseif(stderr)
-  # dtc printed warnings on stderr but did not fail.
-  # Display them as CMake warnings to draw attention.
-  message(WARNING "dtc raised one or more warnings:\n${stderr}")
-endif()
 endif(DTC)
 
 build_info(devicetree files PATH ${dts_files})

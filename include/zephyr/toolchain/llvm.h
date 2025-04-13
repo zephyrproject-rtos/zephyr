@@ -30,7 +30,8 @@
 
 #include <zephyr/toolchain/gcc.h>
 
-#define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY "-Wsizeof-array-decay"
+#define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY            "-Wsizeof-array-decay"
+#define TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION "-Wunneeded-internal-declaration"
 
 #define TOOLCHAIN_DISABLE_CLANG_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(clang, warning)
 #define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(clang, warning)
@@ -40,6 +41,12 @@
  * Avoid collision with defines from include/zephyr/toolchain/zephyr_stdint.h
  */
 #ifdef CONFIG_MINIMAL_LIBC
+
+/*
+ * Predefined __INTN_C/__UINTN_C macros are provided by clang starting in version 20.1.
+ * Avoid redefining these macros if a sufficiently modern clang is being used.
+ */
+#if TOOLCHAIN_CLANG_VERSION < 200100
 
 #define __int_c(v, suffix) v ## suffix
 #define int_c(v, suffix) __int_c(v, suffix)
@@ -131,6 +138,8 @@
 
 #define __INTMAX_C(x)	int_c(x, __INTMAX_C_SUFFIX__)
 #define __UINTMAX_C(x)	int_c(x, __UINTMAX_C_SUFFIX__)
+
+#endif /* TOOLCHAIN_CLANG_VERSION < 200100 */
 
 #endif /* CONFIG_MINIMAL_LIBC */
 

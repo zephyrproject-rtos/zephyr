@@ -21,6 +21,7 @@
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		watchdog0 = &wwdt0;
+		pwm-0 = &sc_timer;
 	};
 
 	chosen {
@@ -130,6 +131,12 @@
 
 &mrt0_channel0 {
 	status = "okay";
+};
+
+&sc_timer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
 };
 
 &xspi0 {

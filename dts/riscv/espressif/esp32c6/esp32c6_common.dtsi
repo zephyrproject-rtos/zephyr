@@ -16,6 +16,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		die-temp0 = &coretemp;
+	};
+
 	chosen {
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
@@ -76,9 +80,15 @@
 		};
 
 		sramlp: memory@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "SRAMLP ";
+
+			shmlp: memory@0 {
+				reg = <0x0 0x10>;
+			};
 		};
 
 		intc: interrupt-controller@60010000 {
@@ -189,6 +199,13 @@
 			};
 		};
 
+		coretemp: coretemp@6000e058 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x6000E058 0x4>;
+			status = "disabled";
+		};
+
 		adc0: adc@6000e000 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x6000E000 4>;
@@ -254,6 +271,13 @@
 			interrupts = <UART1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
+			current-speed = <115200>;
+		};
+
+		lp_uart: uart@600b1400 {
+			compatible = "espressif,esp32-lpuart";
+			reg = <0x600b1400 DT_SIZE_K(4)>;
+			status = "disabled";
 			current-speed = <115200>;
 		};
 

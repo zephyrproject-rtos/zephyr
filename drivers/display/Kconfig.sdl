@@ -37,6 +37,9 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565
 		bool "BGR 565"
 
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_L_8
+		bool "Grayscale 8bit"
+
 endchoice
 
 config SDL_DISPLAY_ZOOM_PCT
@@ -59,6 +62,14 @@ config SDL_DISPLAY_MONO_MSB_FIRST
 	  If selected, set the MSB to represent the first pixel.
 	  This applies when the pixel format is MONO01/MONO10.
 
+config SDL_DISPLAY_MONO_VTILED
+	bool "Configure data octet representation"
+	default y
+	help
+	  If selected, set the data octet to represent 8 pixels ordered vertically.
+	  Otherwise, horizontally.
+	  This applies when the pixel format is MONO01/MONO10.
+
 config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE
 	int "Transparency grid cell size"
 	default 8
@@ -76,5 +87,11 @@ config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2
 	default 0xbbbbbb
 	help
 	  The color of the even cells in the transparency grid.
+
+config SDL_DISPLAY_THREAD_PRIORITY
+	int "SDL display thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Drawing thread priority.
 
 endif # SDL_DISPLAY

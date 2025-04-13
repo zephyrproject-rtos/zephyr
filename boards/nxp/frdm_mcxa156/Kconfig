@@ -1,8 +1,5 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_INIT_PRIORITY
-	int "Board initialization priority"
-	default 1
-	help
-	  Board initialization priority.
+config BOARD_FRDM_MCXA156
+	select BOARD_EARLY_INIT_HOOK

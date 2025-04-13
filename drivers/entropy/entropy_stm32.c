@@ -177,6 +177,14 @@ static int entropy_stm32_resume(void)
 
 	res = clock_control_on(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+#if defined(CONFIG_SOC_STM32WB09XX)
+	/**
+	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
+	 * CLKDIV is 256 after reset which makes the RNG runs VERY slow.
+	 * Configure CLKDIV=1 to ensure RNG runs at an acceptable speed.
+	 */
+	LL_RNG_SetSamplingClockEnableDivider(rng, 0);
+#endif
 	LL_RNG_Enable(rng);
 	ll_rng_enable_it(rng);
 

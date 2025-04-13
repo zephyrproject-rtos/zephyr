@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
@@ -143,7 +145,8 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_msg *current, *next;
+	struct i2c_msg *current;
+	struct i2c_msg *next = NULL;
 	int ret = 0;
 
 	/* Check for validity of all messages, to prevent having to abort
@@ -582,6 +585,20 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
+#ifdef CONFIG_I2C_STM32_V2_DMA
+
+#define I2C_DMA_INIT(index, dir)                                                                   \
+	.dir##_dma = {.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                    \
+				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),              \
+			       .dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),       \
+					(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1))},
+
+#else
+
+#define I2C_DMA_INIT(index, dir)
+
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 #define STM32_I2C_INIT(index)						\
 STM32_I2C_IRQ_HANDLER_DECL(index);					\
 									\
@@ -607,6 +624,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),		\
 		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,\
 		 .n_timings = ARRAY_SIZE(i2c_timings_##index),))	\
+	I2C_DMA_INIT(index, tx) \
+	I2C_DMA_INIT(index, rx) \
 };									\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\

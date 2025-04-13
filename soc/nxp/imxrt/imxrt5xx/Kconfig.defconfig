@@ -17,9 +17,6 @@ config ROM_START_OFFSET
 config NUM_IRQS
 	default 76
 
-config ZTEST_NO_YIELD
-	default y if (PM && ZTEST)
-
 if MBEDTLS
 #
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than

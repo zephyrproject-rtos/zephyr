@@ -303,6 +303,7 @@ hynitron	Hynitron
 hyundai	Hyundai Technology
 hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
+iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
@@ -358,6 +359,7 @@ kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
 kvaser	Kvaser
 kvg	Kverneland Group
+kws	KWS Computersysteme Gmbh
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
@@ -380,6 +382,7 @@ linksys	Belkin International, Inc. (Linksys)
 linutronix	Linutronix GmbH
 linux	Linux-specific binding
 linx	Linx Technologies
+liteon	LiteOn OptoElectronics
 litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
@@ -389,7 +392,6 @@ lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
-ltr	LiteOn OptoElectronics
 luatos	LuatOS Team
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
@@ -487,6 +489,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openhwgroup	OpenHW Group
 openisa	open-isa.org
 openrisc	OpenRISC.io
 openthread	OpenThread.io

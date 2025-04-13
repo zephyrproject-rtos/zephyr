@@ -16,6 +16,15 @@
 		};
 	};
 
+	sci4_default: sci4_default {
+		group1 {
+			/* sda scl */
+			psels = <RA_PSEL(RA_PSEL_SCI_4, 4, 15)>,<RA_PSEL(RA_PSEL_SCI_4, 4, 14)>;
+			drive-strength = "medium";
+			drive-open-drain;
+		};
+	};
+
 	spi1_default: spi1_default {
 		group1 {
 			/* MISO MOSI RSPCK SSL */
@@ -184,71 +193,6 @@
 			<RA_PSEL(RA_PSEL_BUS, 10, 8)>,
 			/* SDRAM_DQM0 */
 			<RA_PSEL(RA_PSEL_BUS, 10, 10)>;
-		};
-	};
-
-	glcdc_default: glcdc_default {
-		group1 {
-			/* LCDC_TCON0 */
-			psels = <RA_PSEL(RA_PSEL_GLCDC, 8, 5)>,
-			/* LCDC_TCON1 */
-			<RA_PSEL(RA_PSEL_GLCDC, 8, 7)>,
-			/* LCDC_TCON2 */
-			<RA_PSEL(RA_PSEL_GLCDC, 5, 13)>,
-			/* LCDC_TCON3 */
-			<RA_PSEL(RA_PSEL_GLCDC, 5, 15)>,
-			/* LCDC_DATA00 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 14)>,
-			/* LCDC_DATA01 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 15)>,
-			/* LCDC_DATA02 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 10)>,
-			/* LCDC_DATA03 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 11)>,
-			/* LCDC_DATA04 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 12)>,
-			/* LCDC_DATA05 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 13)>,
-			/* LCDC_DATA06 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 4)>,
-			/* LCDC_DATA07 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 3)>,
-			/* LCDC_DATA08 */
-			<RA_PSEL(RA_PSEL_GLCDC, 9, 2)>,
-			/* LCDC_DATA09 */
-			<RA_PSEL(RA_PSEL_GLCDC, 2, 7)>,
-			/* LCDC_DATA10 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 11)>,
-			/* LCDC_DATA11 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 12)>,
-			/* LCDC_DATA12 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 13)>,
-			/* LCDC_DATA13 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 14)>,
-			/* LCDC_DATA14 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 15)>,
-			/* LCDC_DATA15 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 7)>,
-			/* LCDC_DATA16 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 6)>,
-			/* LCDC_DATA17 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 5)>,
-			/* LCDC_DATA18 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 1)>,
-			/* LCDC_DATA19 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 4)>,
-			/* LCDC_DATA20 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 3)>,
-			/* LCDC_DATA21 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 2)>,
-			/* LCDC_DATA22 */
-			<RA_PSEL(RA_PSEL_GLCDC, 11, 0)>,
-			/* LCDC_DATA23 */
-			<RA_PSEL(RA_PSEL_GLCDC, 7, 7)>,
-			/* LCDC_CLK */
-			<RA_PSEL(RA_PSEL_GLCDC, 8, 6)>,
-			/* LCDC_EXTCLK */
-			<RA_PSEL(RA_PSEL_GLCDC, 5, 14)>;
 		};
 	};
 

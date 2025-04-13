@@ -311,6 +311,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 					    uint16_t *handle_iter)
 {
 	struct ll_conn_iso_stream *cis_next = NULL;
+	struct ll_conn_iso_stream *cis_curr;
 	struct ll_conn_iso_group *cig;
 	uint32_t cis_offset_curr;
 	uint32_t cis_offset_next;
@@ -322,16 +323,15 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 		/* First in the iteration, start with a minimum offset value and
 		 * find the first CIS offset of the active CIS.
 		 */
+		cis_curr = NULL;
 		cis_offset_curr = 0U;
 	} else {
 		/* Subsequent iteration, get reference to current CIS and use
 		 * its CIS offset to find the next active CIS with offset
 		 * greater than the current CIS.
 		 */
-		struct ll_conn_iso_stream *cis_curr;
-
 		cis_curr = ll_conn_iso_stream_get(*handle_iter);
-		cis_offset_curr = cis_curr->offset;
+		cis_offset_curr = cis_curr->lll.offset;
 	}
 
 	cis_offset_next = UINT32_MAX;
@@ -346,7 +346,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 
 		/* Match CIS contexts associated with the CIG */
 		if (cis->group == cig) {
-			if (cis->offset <= cis_offset_curr) {
+			if (cis_curr && (cis->lll.offset <= cis_offset_curr)) {
 				/* Skip already returned CISes with offsets less
 				 * than the current CIS.
 				 */
@@ -357,9 +357,9 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 			 * lower than previous that we remember as the next CIS
 			 * in ascending order.
 			 */
-			if (cis->offset < cis_offset_next) {
+			if (cis->lll.offset < cis_offset_next) {
 				cis_next = cis;
-				cis_offset_next = cis_next->offset;
+				cis_offset_next = cis_next->lll.offset;
 
 				if (handle_iter) {
 					(*handle_iter) = handle;
@@ -977,10 +977,20 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 			cis->lll.event_count_prepare += lost_cig_events;
 
-			lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) * cis->lll.rx.bn;
+			if (lost_cig_events > (cis->lll.rx.ft - 1)) {
+				lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) *
+						cis->lll.rx.bn;
+			} else {
+				lost_payloads = 0U;
+			}
 			cis->lll.rx.payload_count += lost_payloads;
 
-			lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) * cis->lll.tx.bn;
+			if (lost_cig_events > (cis->lll.tx.ft - 1)) {
+				lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) *
+						cis->lll.tx.bn;
+			} else {
+				lost_payloads = 0U;
+			}
 			cis->lll.tx.payload_count += lost_payloads;
 
 			/* Adjust for extra window widening */
@@ -1054,16 +1064,10 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		 */
 
 		/* Populate the ULL hdr with event timings overheads */
-		cig->ull.ticks_active_to_start = 0U;
-		cig->ull.ticks_prepare_to_start =
-			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		cig->ull.ticks_preempt_to_start =
-			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 		cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 	}
 
-	ticks_slot_offset = MAX(cig->ull.ticks_active_to_start,
-				cig->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -1075,6 +1079,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	/* Initialize CIS event lazy at CIS create */
 	cis->lll.lazy_active = 0U;
+	cis->lll.prepared = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Start CIS peripheral CIG ticker */
@@ -1178,6 +1183,7 @@ static void mfy_cis_lazy_fill(void *param)
 	 * CIG before the CIS gets active that be decremented when event_count
 	 * is incremented in ull_conn_iso_ticker_cb().
 	 */
+	cis->lll.prepared = 0U;
 	cis->lll.active = 1U;
 	cis->lll.lazy_active = lazy;
 }
@@ -1220,6 +1226,11 @@ static void cis_disabled_cb(void *param)
 	cig = HDR_LLL2ULL(param);
 	handle_iter = UINT16_MAX;
 	active_cises = 0;
+
+	if (cig->ull.disabled_cb == cis_disabled_cb) {
+		/* Reset disabled_cb */
+		cig->ull.disabled_cb = NULL;
+	}
 
 	/* Remove all CISes marked for teardown */
 	num_cis = cig->lll.num_cis;
@@ -1287,7 +1298,6 @@ static void cis_disabled_cb(void *param)
 		} else if (cis->teardown) {
 			DECLARE_MAYFLY_ARRAY(mfys, cis_tx_lll_flush,
 				CONFIG_BT_CTLR_CONN_ISO_GROUPS);
-			uint32_t ret;
 
 			if (cis->established) {
 				struct node_rx_pdu *node_terminate;
@@ -1328,11 +1338,12 @@ static void cis_disabled_cb(void *param)
 			 */
 			cis->lll.flush = LLL_CIS_FLUSH_PENDING;
 
-			mfys[cig->lll.handle].param = &cis->lll;
-			ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			/* Ignore enqueue error (already enqueued) as all CISes marked for
+			 * flushing will be handled in cis_tx_lll_flush
+			 */
+			mfys[cig->lll.handle].param = cig;
+			(void)mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 					     TICKER_USER_ID_LLL, 1, &mfys[cig->lll.handle]);
-			LL_ASSERT(!ret);
-
 			return;
 		}
 	}
@@ -1359,37 +1370,58 @@ static void cis_tx_lll_flush(void *param)
 {
 	DECLARE_MAYFLY_ARRAY(mfys, cis_disabled_cb, CONFIG_BT_CTLR_CONN_ISO_GROUPS);
 
-	struct lll_conn_iso_stream *lll;
-	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	struct node_tx_iso *tx;
-	memq_link_t *link;
+	uint16_t handle_iter;
+	uint8_t cis_idx;
+	uint8_t num_cis;
 
-	lll = param;
-	lll->active = 0U;
+	cig = param;
+	handle_iter = UINT16_MAX;
 
-	cis = ll_conn_iso_stream_get(lll->handle);
-	cig = cis->group;
+	/* Flush all CISes in CIG marked for flush */
+	num_cis = cig->lll.num_cis;
+	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
+		struct lll_conn_iso_stream *lll;
+		struct ll_conn_iso_stream *cis;
+		struct node_tx_iso *tx;
+		memq_link_t *link;
 
-	/* Flush in LLL - may return TX nodes to ack queue */
-	lll_conn_iso_flush(lll->handle, lll);
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(cis);
 
-	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
-	while (link) {
-		link->next = tx->next;
-		tx->next = link;
-		ull_iso_lll_ack_enqueue(lll->handle, tx);
+		lll = &cis->lll;
 
-		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-				    (void **)&tx);
+		if (lll->flush != LLL_CIS_FLUSH_PENDING) {
+			/* Not flushing this CIS, skip */
+			continue;
+		}
+
+		lll->active = 0U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		lll->prepared = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+		/* Flush in LLL - may return TX nodes to ack queue */
+		lll_conn_iso_flush(lll->handle, lll);
+
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
+		while (link) {
+			link->next = tx->next;
+			tx->next = link;
+			ull_iso_lll_ack_enqueue(lll->handle, tx);
+
+			link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+					    (void **)&tx);
+		}
+
+		LL_ASSERT(!lll->link_tx_free);
+		link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+		LL_ASSERT(link);
+		lll->link_tx_free = link;
+
+		lll->flush = LLL_CIS_FLUSH_COMPLETE;
 	}
-
-	LL_ASSERT(!lll->link_tx_free);
-	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
-	LL_ASSERT(link);
-	lll->link_tx_free = link;
-
-	lll->flush = LLL_CIS_FLUSH_COMPLETE;
 
 	/* Resume CIS teardown in ULL_HIGH context */
 	mfys[cig->lll.handle].param = &cig->lll;

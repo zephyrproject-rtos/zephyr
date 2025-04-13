@@ -30,12 +30,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Macro to calculate the index of the microstep resolution
- * @param res Microstep resolution
- */
-#define MICRO_STEP_RES_INDEX(res) LOG2(res)
-
-/**
  * @brief Stepper Motor micro-step resolution options
  */
 enum stepper_micro_step_resolution {
@@ -58,6 +52,19 @@ enum stepper_micro_step_resolution {
 	/** 256 micro-steps per full step */
 	STEPPER_MICRO_STEP_256 = 256,
 };
+
+/**
+ * @brief Macro to calculate the index of the microstep resolution
+ * @param res Microstep resolution
+ */
+#define MICRO_STEP_RES_INDEX(res) LOG2(res)
+
+#define VALID_MICRO_STEP_RES(res)                                                                  \
+	((res) == STEPPER_MICRO_STEP_1 || (res) == STEPPER_MICRO_STEP_2 ||                         \
+	 (res) == STEPPER_MICRO_STEP_4 || (res) == STEPPER_MICRO_STEP_8 ||                         \
+	 (res) == STEPPER_MICRO_STEP_16 || (res) == STEPPER_MICRO_STEP_32 ||                       \
+	 (res) == STEPPER_MICRO_STEP_64 || (res) == STEPPER_MICRO_STEP_128 ||                      \
+	 (res) == STEPPER_MICRO_STEP_256)
 
 /**
  * @brief Stepper Motor direction options
@@ -95,6 +102,8 @@ enum stepper_event {
 	STEPPER_EVENT_RIGHT_END_STOP_DETECTED = 3,
 	/** Stepper has stopped */
 	STEPPER_EVENT_STOPPED = 4,
+	/** Fault with the stepper controller detected */
+	STEPPER_EVENT_FAULT_DETECTED = 5,
 };
 
 /**
@@ -105,11 +114,18 @@ enum stepper_event {
  */
 
 /**
- * @brief enable or disable the stepper driver.
+ * @brief Enable the stepper driver.
  *
  * @see stepper_enable() for details.
  */
-typedef int (*stepper_enable_t)(const struct device *dev, const bool enable);
+typedef int (*stepper_enable_t)(const struct device *dev);
+
+/**
+ * @brief Disable the stepper driver.
+ *
+ * @see stepper_disable() for details.
+ */
+typedef int (*stepper_disable_t)(const struct device *dev);
 
 /**
  * @brief Set the micro-step resolution
@@ -200,6 +216,7 @@ typedef int (*stepper_is_moving_t)(const struct device *dev, bool *is_moving);
  */
 __subsystem struct stepper_driver_api {
 	stepper_enable_t enable;
+	stepper_disable_t disable;
 	stepper_set_micro_step_res_t set_micro_step_res;
 	stepper_get_micro_step_res_t get_micro_step_res;
 	stepper_set_reference_position_t set_reference_position;
@@ -218,24 +235,41 @@ __subsystem struct stepper_driver_api {
  */
 
 /**
- * @brief Enable or disable stepper driver
+ * @brief Enable stepper driver
  *
  * @details Enabling the driver will energize the coils, however not set the stepper in motion.
- * Disabling the driver shall cancel all active movements and de-energize the coils.
  *
  * @param dev pointer to the stepper driver instance
- * @param enable Input enable or disable stepper driver
  *
  * @retval -EIO Error during Enabling
  * @retval 0 Success
  */
-__syscall int stepper_enable(const struct device *dev, const bool enable);
+__syscall int stepper_enable(const struct device *dev);
 
-static inline int z_impl_stepper_enable(const struct device *dev, const bool enable)
+static inline int z_impl_stepper_enable(const struct device *dev)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	return api->enable(dev, enable);
+	return api->enable(dev);
+}
+
+/**
+ * @brief Disable stepper driver
+ *
+ * @details Disabling the driver shall cancel all active movements and de-energize the coils.
+ *
+ * @param dev pointer to the stepper driver instance
+ *
+ * @retval -EIO Error during Disabling
+ * @retval 0 Success
+ */
+__syscall int stepper_disable(const struct device *dev);
+
+static inline int z_impl_stepper_disable(const struct device *dev)
+{
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	return api->disable(dev);
 }
 
 /**

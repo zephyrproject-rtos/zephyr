@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  RaspberryPi Pico USB Device Controller.
+  Raspberry Pi Pico USB Device Controller.
 
   Example of enabling the controller with vbus detection:
 

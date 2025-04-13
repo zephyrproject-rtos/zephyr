@@ -218,6 +218,21 @@
 			status = "disabled";
 		};
 
+		dac_global: dac_global@4005e000 {
+			compatible = "renesas,ra-dac-global";
+			reg = <0x4005e000 0x10c4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			dac0: dac@0 {
+				compatible = "renesas,ra-dac";
+				#io-channel-cells = <1>;
+				reg = <0>;
+				status = "disabled";
+			};
+		};
+
 		iic0: iic0@40053000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
@@ -236,6 +251,8 @@
 			compatible = "renesas,ra-usbfs";
 			reg = <0x40090000 0x2000>;
 			num-bidir-endpoints = <10>;
+			interrupts = <12 1>, <13 1>;
+			interrupt-names = "usbfs-i", "usbfs-r";
 			phys = <&usbfs_phy>;
 			phys-clock = <&uclk>;
 			status = "disabled";
@@ -407,6 +424,13 @@
 			clocks = <&pclkd MSTPD 6>;
 			reg = <0x40078500 0x100>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		wdt: wdt@40044200 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40044200 0x200>;
+			clocks = <&pclkb 0 0>;
 			status = "disabled";
 		};
 	};

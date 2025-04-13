@@ -1,7 +1,4 @@
-.. _arduino_nicla_vision_board:
-
-Arduino Nicla Vision
-####################
+.. zephyr:board:: arduino_nicla_vision
 
 Overview
 ********
@@ -38,53 +35,7 @@ More information about STM32H747GAII6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr ``arduino_nicla_vision/stm32h747xx/m7`` board configuration supports the
-following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| DCMI      | on-chip    | Parallel Camera interface           |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
-+-----------+------------+-------------------------------------+
-
-And the ``arduino_nicla_vision/stm32h747xx/m4`` has the following
-support from Zephyr:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr port.
+.. zephyr:board-supported-hw::
 
 Fetch Binary Blobs
 ******************
@@ -115,6 +66,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_nicla_vision`` board should be built per core target,
 using either ``arduino_nicla_vision/stm32h747xx/m7`` or ``arduino_nicla_vision/stm32h747xx/m4`` as the target.

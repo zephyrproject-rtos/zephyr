@@ -604,22 +604,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_l2cap_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_L2CAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_L2CAP_CONNECT);
-	tester_set_bit(rp->data, BTP_L2CAP_DISCONNECT);
-	tester_set_bit(rp->data, BTP_L2CAP_SEND_DATA);
-	tester_set_bit(rp->data, BTP_L2CAP_LISTEN);
-#if defined(CONFIG_BT_L2CAP_ECRED)
-	tester_set_bit(rp->data, BTP_L2CAP_RECONFIGURE);
-#endif
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_L2CAP_CREDITS);
-#if defined(CONFIG_BT_EATT)
-	tester_set_bit(rp->data, BTP_L2CAP_DISCONNECT_EATT_CHANS);
-#endif
-
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_L2CAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

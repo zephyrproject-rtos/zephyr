@@ -14,10 +14,10 @@
 #include "nsi_tracing.h"
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
-			    bool use_accelerator, void **window, void **renderer, void **mutex,
-			    void **texture, void **read_texture, void **background_texture,
-			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
-			    uint16_t transparency_grid_cell_size)
+			    bool use_accelerator, void **window, const void *window_user_data,
+			    void **renderer, void **mutex, void **texture, void **read_texture,
+			    void **background_texture, uint32_t transparency_grid_color1,
+			    uint32_t transparency_grid_color2, uint16_t transparency_grid_cell_size)
 {
 	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
 				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
@@ -26,6 +26,7 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 		nsi_print_warning("Failed to create SDL window: %s", SDL_GetError());
 		return -1;
 	}
+	SDL_SetWindowData(*window, "zephyr_display", (void *)window_user_data);
 
 	if (use_accelerator) {
 		*renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);

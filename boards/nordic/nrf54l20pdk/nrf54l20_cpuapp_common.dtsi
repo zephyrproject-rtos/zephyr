@@ -27,11 +27,6 @@
 	status = "okay";
 };
 
-&hfpll {
-	/* For now use 64 MHz clock for CPU and fast peripherals. */
-	clock-frequency = <DT_FREQ_M(64)>;
-};
-
 &lfxo {
 	load-capacitors = "internal";
 	load-capacitance-femtofarad = <15500>;
@@ -73,6 +68,10 @@
 		slot1_ns_partition: partition@160c00 {
 			label = "image-1-nonsecure";
 			reg = <0x160c00 DT_SIZE_K(449)>;
+		};
+		storage_partition: partition@1d1000 {
+			label = "storage";
+			reg = <0x1d1000 DT_SIZE_K(36)>;
 		};
 	};
 };

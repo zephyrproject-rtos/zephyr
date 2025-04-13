@@ -10,6 +10,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 #include <em_iadc.h>
 
@@ -361,21 +362,44 @@ static int adc_gecko_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int adc_gecko_init(const struct device *dev)
+static int adc_gecko_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int err;
 	const struct adc_gecko_config *config = dev->config;
+
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int adc_gecko_init(const struct device *dev)
+{
+	const struct adc_gecko_config *config = dev->config;
 	struct adc_gecko_data *data = dev->data;
-
-	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
-	if (err < 0) {
-		return err;
-	}
-
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0 && err != -ENOENT) {
-		return err;
-	}
 
 	data->dev = dev;
 
@@ -383,7 +407,7 @@ static int adc_gecko_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, adc_gecko_pm_action);
 }
 
 static DEVICE_API(adc, api_gecko_adc_driver_api) = {
@@ -397,6 +421,7 @@ static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 
 #define GECKO_IADC_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	PM_DEVICE_DT_INST_DEFINE(n, adc_gecko_pm_action);		\
 									\
 	static void adc_gecko_config_func_##n(void);			\
 									\
@@ -420,7 +445,7 @@ static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));	\
 	}; \
 	DEVICE_DT_INST_DEFINE(n,					 \
-			      &adc_gecko_init, NULL,			 \
+			      &adc_gecko_init, PM_DEVICE_DT_INST_GET(n), \
 			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
 			      &api_gecko_adc_driver_api);

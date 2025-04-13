@@ -26,7 +26,7 @@ tests:
     depends_on: counter
     platform_allow:
       - nucleo_f429zi
-      - nucleo_wba52cg
+      - nucleo_wba55cg
       - google_dragonclaw
     timeout: 600
     extra_configs:

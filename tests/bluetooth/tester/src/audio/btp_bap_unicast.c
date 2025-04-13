@@ -258,7 +258,7 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	struct bt_bap_ep_info info;
-	struct btp_ascs_ase_found_ev ev;
+	struct btp_bap_ase_found_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
@@ -715,7 +715,7 @@ static void stream_recv(struct bt_bap_stream *stream,
 		LOG_DBG("Incoming audio on stream %p len %u flags 0x%02X seq_num %u and ts %u",
 			stream, buf->len, info->flags, info->seq_num, info->ts);
 
-		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+		if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
 			u_stream->already_sent = true;
 			send_stream_received_ev(stream->conn, stream->ep, buf->len, buf->data);
 		}

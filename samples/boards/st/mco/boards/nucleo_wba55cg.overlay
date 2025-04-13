@@ -8,17 +8,17 @@
 &clk_lse {
 	status = "okay";
 };
-/* MCO use same pin like usart1 RX - disable usart */
+
 / {
 	chosen {
-		zephyr,bt-c2h-uart = &lpuart1;
-		zephyr,uart-pipe = &lpuart1;
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 	};
 };
+
 &usart1 {
-	status = "disabled";
+	/* Do not use the console RX pin : dedicated to the MCO */
+	pinctrl-0 = <&usart1_tx_pb12 &analog_pa8>;
 };
 
 &mco1 {

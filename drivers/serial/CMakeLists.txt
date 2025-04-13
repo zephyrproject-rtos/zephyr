@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_LEUART_GECKO leuart_gecko.c)
+zephyr_library_sources_ifdef(CONFIG_LPUART_ESP32 lpuart_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SERIAL_ESP32_USB serial_esp32_usb.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA uart_altera.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag.c)
@@ -35,6 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_HOSTLINK uart_hostlink.c)
 zephyr_library_sources_ifdef(CONFIG_UART_IMX uart_imx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_INFINEON_CAT1 uart_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_UART_INTEL_LW uart_intel_lw.c)
+zephyr_library_sources_ifdef(CONFIG_UART_ITE_IT51XXX uart_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ITE_IT8XXX2 uart_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_UART_LITEX uart_litex.c)
 zephyr_library_sources_ifdef(CONFIG_UART_LPC11U6X uart_lpc11u6x.c)

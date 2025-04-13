@@ -106,6 +106,13 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@58004000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l4-flash-controller";
@@ -516,17 +523,17 @@
 
 			wkup-pin@1 {
 				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
 
 			wkup-pin@2 {
 				reg = <0x2>;
-				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_0>;
+				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
 
 			wkup-pin@3 {
 				reg = <0x3>;
-				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_SRC_0>;
+				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 			};
 		};
 	};

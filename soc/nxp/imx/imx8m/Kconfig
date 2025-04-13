@@ -93,6 +93,9 @@ config SOC_MIMX8MQ6_M4
 config MCUX_CORE_SUFFIX
 	default "_ca53" if SOC_MIMX8MM6_A53 || SOC_MIMX8MN6_A53 || SOC_MIMX8ML8_A53
 	default "_dsp" if SOC_MIMX8ML8_ADSP
+	default "_cm4" if SOC_MIMX8MM6_M4
+	default "_cm7" if SOC_MIMX8ML8_M7
+	default "_cm4" if SOC_MIMX8MQ6_M4
 
 if SOC_MIMX8ML8_M7
 

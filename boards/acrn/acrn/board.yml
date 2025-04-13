@@ -8,4 +8,9 @@ boards:
   - name: acrn_ehl_crb
     full_name: ACRN on EHL hypervisor
     socs:
-      - name: elkhart_lake
+      - name: atom
+
+  - name: acrn_adl_crb
+    full_name: ACRN Hypervisor on ADL
+    socs:
+      - name: atom

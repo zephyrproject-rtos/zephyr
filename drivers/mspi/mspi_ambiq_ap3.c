@@ -1364,7 +1364,8 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 
 #define MSPI_CONFIG(n)                                                                           \
 	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI_BASE_ADDR) / MSPI_ADDR_INTERVAL, \
+		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI_BASE_ADDR) /                \
+									 MSPI_ADDR_INTERVAL,     \
 		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
 		.duplex                = MSPI_HALF_DUPLEX,                                       \
 		.max_freq              = MSPI_MAX_FREQ,                                          \

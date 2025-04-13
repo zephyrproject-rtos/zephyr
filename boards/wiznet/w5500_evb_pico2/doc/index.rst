@@ -75,6 +75,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -86,7 +88,7 @@ The overall explanation regarding flashing and debugging is the same as or
 See :ref:`rpi_pico_flashing_using_openocd`. in ``rpi_pico`` documentation.
 
 A typical build command for w5500_evb_pico2 is as follows.
-This assumes a CMSIS-DAP adapter such as the RaspberryPi Debug Probe,
+This assumes a CMSIS-DAP adapter such as the Raspberry Pi Debug Probe,
 but if you are using something else, specify ``RPI_PICO_DEBUG_ADAPTER``.
 
 .. zephyr-app-commands::

@@ -1561,7 +1561,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 		return -EINVAL;
 	}
 
-	pub.period = (steps << 2) + res_step;
+	pub.period = steps + (res_step << 6);
 	count = shell_strtoul(argv[6], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");

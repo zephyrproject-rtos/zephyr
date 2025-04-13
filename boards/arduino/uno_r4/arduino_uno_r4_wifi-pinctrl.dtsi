@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 0)>,
+				<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MOSI MISO RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+				<RA_PSEL(RA_PSEL_SPI, 1,  2)>,
+				<RA_PSEL(RA_PSEL_SPI, 1,  3)>;
+		};
+	};
+};

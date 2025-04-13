@@ -42,15 +42,8 @@ config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512
 
-config MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE
-	int "The maximum CMUX frame size in bytes."
-	default 32 if DT_HAS_U_BLOX_LARA_R6_ENABLED
-	default 128
-	help
-	  This value affects the size of buffers used to receive and transmit CMUX frames.
-
-config MODEM_CELLULAR_CHAT_BUFFER_SIZES
-	int "The size of the buffers used for the chat scripts in bytes."
+config MODEM_CELLULAR_CHAT_BUFFER_SIZE
+	int "The size of the buffer used for the chat scripts in bytes."
 	default 128
 
 config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES

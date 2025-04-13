@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Linaro Limited.
  * Copyright (c) 2018 Nordic Semiconductor ASA.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +66,9 @@
 
 /* Attribute flag for not-allowing execution (eXecute Never) */
 #define NOT_EXEC MPU_RBAR_XN_Msk
+
+/* To prevent execution of MPU region in privileged mode */
+#define PRIV_EXEC_NEVER (1)
 
 /* Attribute flags for share-ability */
 #define NON_SHAREABLE       0x0
@@ -243,14 +247,28 @@
 			NON_SHAREABLE_Msk,                /* AP, XN, SH */                         \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,          /* Cache-ability */                      \
 		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
-/* clang-format on */
+
+#if defined(CONFIG_ARM_MPU_PXN)
+/* Use this attr to define an MPU region in RAM that has code intended to be executed in
+ * un-privileged mode but not in privileged mode.
+ */
+#define REGION_RAM_ATTR_PXN(base, size)                                                            \
+	{                                                                                          \
+		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk,/* AP, XN, SH */			   \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,          /* Cache-ability */                      \
+		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		.pxn = PRIV_EXEC_NEVER,								   \
+	}
+#endif
 
 #define REGION_RAM_NOCACHE_ATTR(base, size)                                                        \
 	{                                                                                          \
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */             \
 		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,              /* Cache-ability */          \
 		.r_limit = REGION_LIMIT_ADDR(base, size),             /* Region Limit */           \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = PRIV_EXEC_NEVER,))			   \
 	}
 
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
@@ -262,14 +280,18 @@
 		.rbar = P_RW_U_RW_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */                        \
 		.mair_idx = MPU_MAIR_INDEX_FLASH,          /* Cache-ability */                     \
 		.r_limit = REGION_LIMIT_ADDR(base, size),  /* Region Limit */                      \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
+
 #else /* CONFIG_MPU_ALLOW_FLASH_WRITE */
 #define REGION_FLASH_ATTR(base, size)                                                              \
 	{                                                                                          \
 		.rbar = RO_Msk | NON_SHAREABLE_Msk,       /* AP, XN, SH */                         \
 		.mair_idx = MPU_MAIR_INDEX_FLASH,         /* Cache-ability */                      \
 		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
+
 #endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
 
 #define REGION_DEVICE_ATTR(base, size)                                                             \
@@ -277,7 +299,10 @@
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */             \
 		.mair_idx = MPU_MAIR_INDEX_DEVICE,                    /* Cache-ability */          \
 		.r_limit = REGION_LIMIT_ADDR(base, size),             /* Region Limit */           \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = PRIV_EXEC_NEVER,))			   \
 	}
+
+/* clang-format on */
 #endif
 
 struct arm_mpu_region_attr {
@@ -287,6 +312,10 @@ struct arm_mpu_region_attr {
 	uint8_t mair_idx: 3;
 	/* Region Limit Address value to be written to the RLAR register. */
 	uint32_t r_limit;
+#ifdef CONFIG_ARM_MPU_PXN
+	/* To prevent execution of MPU region in privileged mode (Privileged Execute Never) */
+	uint8_t pxn;
+#endif
 };
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
@@ -295,6 +324,10 @@ typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 typedef struct {
 	uint16_t rbar;
 	uint16_t mair_idx;
+#ifdef CONFIG_ARM_MPU_PXN
+	/* To prevent execution of MPU region in privileged mode (Privileged Execute Never) */
+	uint8_t pxn;
+#endif
 } k_mem_partition_attr_t;
 
 /* Kernel macros for memory attribution
@@ -321,6 +354,11 @@ typedef struct {
 /* Execution-allowed attributes */
 #define K_MEM_PARTITION_P_RWX_U_RWX ((k_mem_partition_attr_t){(P_RW_U_RW_Msk), MPU_MAIR_INDEX_SRAM})
 #define K_MEM_PARTITION_P_RX_U_RX   ((k_mem_partition_attr_t){(P_RO_U_RO_Msk), MPU_MAIR_INDEX_SRAM})
+
+#ifdef CONFIG_ARM_MPU_PXN
+#define K_MEM_PARTITION_P_R_U_RX                                                                   \
+	((k_mem_partition_attr_t){(P_RO_U_RO_Msk), MPU_MAIR_INDEX_SRAM, PRIV_EXEC_NEVER})
+#endif
 
 /*
  * @brief Evaluate Write-ability

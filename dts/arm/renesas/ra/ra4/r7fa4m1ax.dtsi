@@ -47,6 +47,8 @@
 		sci2: sci2@40070040 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070040 0x20>;
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			clocks = <&pclka MSTPB 29>;
 			status = "disabled";
 
@@ -332,4 +334,8 @@
 
 &pwm3 {
 	clocks = <&pclkd MSTPD 6>;
+};
+
+&dac_global {
+	has-davrefcr;
 };

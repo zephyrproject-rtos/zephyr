@@ -93,6 +93,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F030R8 board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_f030r8`` board configuration can be built and

@@ -1,0 +1,68 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32MP13 devices
+
+  It can be used to describe 4 different PLLs: PLL1, PLL2, PLL3 and PLL4.
+
+  These PLLs can take one of hse_ck, hsi_ck or csi_ck as input clock.
+  PLLM factor is used to set the input clock in this acceptable range.
+
+  Each PLL has one output clock whose frequency can be computed with the
+  following formula:
+
+    f(PLL_P) = f(VCO clock) / (DIVP × DIVR × DIVQ)
+
+      with f(VCO clock) = f(PLL clock input) × 2 × (((DIVN + 1) + (FRACV / 8192)) / DIVM1)
+
+  Note: To reduce the power consumption, it is recommended to configure the VCOx
+        clock output to the lowest frequency.
+
+  The PLL1 output frequency must not exceed 2000 MHz.
+  The PLL2 output frequency must not exceed 1600 MHz.
+  The PLL3 output frequency must not exceed 800 MHz.
+  The PLL4 output frequency must not exceed 800 MHz.
+
+  Note: The CPU clock should not exceed 1Ghz so avoid configuring the PLL1 to more
+  than 1000 MHz or program the mpuss_ck mux to use the MPUDIV
+  (refer to the stm32mp13 reference manual for details)
+
+compatible: "st,stm32mp13-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Prescaler for PLLx
+        input clock
+        Valid range: 1 - 64
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLLx multiplication factor for VCO
+        Valid range: 31 - 125
+
+  div-p:
+    type: int
+    description: |
+        PLLx DIVP division factor
+        Valid range: 1 - 128
+
+  frac-v:
+    type: int
+    description: |
+        PLLx FRACV fractional latch
+        Valid range: 1 - 8192

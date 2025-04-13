@@ -412,10 +412,10 @@ int icm42688_read_all(const struct device *dev, uint8_t data[14]);
  * @param cfg icm42688_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_g whole G's output in int32_t
- * @param out_ug micro (1/1000000) of a G output as uint32_t
+ * @param out_ug micro (1/1000000) of a G output as int32_t
  */
 static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_t *out_g,
-				    uint32_t *out_ug)
+				    int32_t *out_ug)
 {
 	int32_t sensitivity;
 
@@ -449,10 +449,10 @@ static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_
  * @param cfg icm42688_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_dps whole deg/s output in int32_t
- * @param out_udps micro (1/1000000) deg/s as uint32_t
+ * @param out_udps micro (1/1000000) deg/s as int32_t
  */
 static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_dps,
-				     uint32_t *out_udps)
+				     int32_t *out_udps)
 {
 	int64_t sensitivity;
 
@@ -501,7 +501,7 @@ static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in,
  * @param cfg icm42688_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_ms meters/s^2 (whole) output in int32_t
- * @param out_ums micrometers/s^2 output as uint32_t
+ * @param out_ums micrometers/s^2 output as int32_t
  */
 static inline void icm42688_accel_ms(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_ms,
 				     int32_t *out_ums)
@@ -541,7 +541,7 @@ static inline void icm42688_accel_ms(const struct icm42688_cfg *cfg, int32_t in,
  * @param cfg icm42688_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_rads whole rad/s output in int32_t
- * @param out_urads microrad/s as uint32_t
+ * @param out_urads microrad/s as int32_t
  */
 static inline void icm42688_gyro_rads(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_rads,
 				      int32_t *out_urads)
@@ -593,9 +593,9 @@ static inline void icm42688_gyro_rads(const struct icm42688_cfg *cfg, int32_t in
  * @param cfg icm42688_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_c whole celsius output in int32_t
- * @param out_uc micro (1/1000000) celsius as uint32_t
+ * @param out_uc micro (1/1000000) celsius as int32_t
  */
-static inline void icm42688_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
+static inline void icm42688_temp_c(int32_t in, int32_t *out_c, int32_t *out_uc)
 {
 	int64_t sensitivity = 13248; /* value equivalent for x100 1c */
 

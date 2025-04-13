@@ -20,6 +20,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			clock-frequency = <48000000>;
 			cpu-power-states = <&idle &suspend_to_ram>;
 		};
 
@@ -160,6 +161,7 @@
 			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
+			clock-frequency = <32768>;
 			girqs = <23 10>;
 		};
 		bbram: bb-ram@4000a800 {
@@ -471,7 +473,7 @@
 			rxdma = <11>;
 			txdma = <10>;
 			lines = <1>;
-			chip_select = <0>;
+			chip-select = <0>;
 			dcsckon = <6>;
 			dckcsoff = <4>;
 			dldh = <6>;

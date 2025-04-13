@@ -1,0 +1,16 @@
+identifier: fk743m5_xih6
+name: FANKE FK743M5-XIH6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 1024
+flash: 2048
+supported:
+  - uart
+  - gpio
+  - spi
+  - backup_sram
+  - qspi
+vendor: fanke

@@ -10,7 +10,7 @@
 
 /** Domain clocks */
 
-/* RM0468, Table 56 Kernel clock distribution summary */
+/* RM0486, Figures 37 and 45 on clock distribution description */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -45,6 +45,20 @@
 #define STM32_SRC_IC18		(STM32_SRC_IC17 + 1)
 #define STM32_SRC_IC19		(STM32_SRC_IC18 + 1)
 #define STM32_SRC_IC20		(STM32_SRC_IC19 + 1)
+#define STM32_SRC_HSI_DIV	(STM32_SRC_IC20 + 1)
+#define STM32_SRC_TIMG		(STM32_SRC_HSI_DIV + 1)
+#define STM32_SRC_HCLK1		(STM32_SRC_TIMG + 1)
+#define STM32_SRC_HCLK2		(STM32_SRC_HCLK1 + 1)
+#define STM32_SRC_HCLK3		(STM32_SRC_HCLK2 + 1)
+#define STM32_SRC_HCLK4		(STM32_SRC_HCLK3 + 1)
+#define STM32_SRC_HCLK5		(STM32_SRC_HCLK4 + 1)
+#define STM32_SRC_PCLK1		(STM32_SRC_HCLK5 + 1)
+#define STM32_SRC_PCLK2		(STM32_SRC_PCLK1 + 1)
+#define STM32_SRC_PCLK4		(STM32_SRC_PCLK2 + 1)
+#define STM32_SRC_PCLK5		(STM32_SRC_PCLK4 + 1)
+
+/** Others: Not yet supported */
+/* #define STM32_SRC_I2SCKIN	TBD */
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1	0x250
@@ -65,7 +79,7 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB5
 
-/** @brief RCC_CCIPRx register offset (RM0468.pdf) */
+/** @brief RCC_CCIPRx register offset (RM0486.pdf) */
 #define CCIPR1_REG		0x144
 #define CCIPR2_REG		0x148
 #define CCIPR3_REG		0x14C
@@ -150,13 +164,13 @@
 #define USART10_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR14_REG)
 #define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR14_REG)
 
-/** @brief RCC_ICxCFGR register offset (RM0468.pdf) */
+/** @brief RCC_ICxCFGR register offset (RM0486.pdf) */
 #define ICxCFGR_REG(ic)		(0xC4 + ((ic) - 1) * 4)
 
 /** @brief Divider ICx source selection */
 #define ICx_PLLy_SEL(ic, pll)	STM32_DT_CLOCK_SELECT((pll) - 1, 3, 28, ICxCFGR_REG(ic))
 
-/** @brief RCC_CFGR1 register offset (RM0468.pdf) */
+/** @brief RCC_CFGR1 register offset (RM0486.pdf) */
 #define CFGR1_REG		0x20
 
 /** @brief CPU clock switch selection */

@@ -11,6 +11,16 @@ menuconfig UDC_DRIVER
 
 if UDC_DRIVER
 
+config UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	bool
+
+config UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
+	bool "Allow High-Speed chirp"
+	default y if UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	help
+	  Allow High-Speed capable device to operate at High-Speed. Disable this
+	  option to force Full-Speed only operation.
+
 config UDC_BUF_COUNT
 	int "Number of buffers in the pool"
 	range 16 256
@@ -67,5 +77,6 @@ source "drivers/usb/udc/Kconfig.numaker"
 source "drivers/usb/udc/Kconfig.rpi_pico"
 source "drivers/usb/udc/Kconfig.ambiq"
 source "drivers/usb/udc/Kconfig.renesas_ra"
+source "drivers/usb/udc/Kconfig.max32"
 
 endif # UDC_DRIVER

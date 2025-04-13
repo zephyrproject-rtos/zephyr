@@ -169,20 +169,12 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 	}
 }
 
-#if defined(__clang__)
 #define ARCH_ISR_DIAG_OFF \
-	_Pragma("clang diagnostic push") \
-	_Pragma("clang diagnostic ignored \"-Wextra\"")
-#define ARCH_ISR_DIAG_ON _Pragma("clang diagnostic pop")
-#elif defined(__GNUC__)
-#define ARCH_ISR_DIAG_OFF \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wattributes\"")
-#define ARCH_ISR_DIAG_ON _Pragma("GCC diagnostic pop")
-#else
-#define ARCH_ISR_DIAG_OFF
-#define ARCH_ISR_DIAG_ON
-#endif
+	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
+#define ARCH_ISR_DIAG_ON \
+	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
 
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \

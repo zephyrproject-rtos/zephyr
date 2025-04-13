@@ -7,9 +7,12 @@
 &pinctrl {
 	spi120_default: spi120_default {
 		group1 {
+			psels = <NRF_PSEL(SPIM_MISO, 7, 6)>;
+		};
+		group2 {
 			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
-				<NRF_PSEL(SPIM_MISO, 7, 6)>,
 				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			nordic,drive-mode = <NRF_DRIVE_E0E1>;
 		};
 	};
 
@@ -40,7 +43,7 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
-	fast@0 {
+	dut_fast: fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;

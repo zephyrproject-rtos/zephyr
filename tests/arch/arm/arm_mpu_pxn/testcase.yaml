@@ -1,0 +1,19 @@
+common:
+  filter: CONFIG_ARM_MPU_PXN
+  tags:
+    - arm
+    - mpu
+  platform_allow:
+    - mps3/corstone300/an547
+    - mps3/corstone300/fvp
+    - mps3/corstone310/fvp
+tests:
+  # To verify that region marked with PXN attribute can be executed from unprivileged code
+  # and cannot be executed from privileged code
+  arch.arm.pxn_with_userspace:
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  # To verify that region marked *without* PXN attribute can be executed from privileged code
+  arch.arm.pxn_without_userspace:
+    extra_configs:
+      - CONFIG_USERSPACE=n

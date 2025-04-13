@@ -55,3 +55,15 @@ properties:
     description: |
       GPIO to which the I2C SDA signal is routed. This is only needed for
       I2C bus recovery support.
+
+  dmas:
+    type: phandle-array
+    description: |
+      Optional DMA channels used by the I2C peripheral. If specified, these
+      channels can be used to handle RX and TX transactions over DMA.
+
+  dma-names:
+    type: string-array
+    description: |
+      Names of the optional DMA channels. Expected values are "tx" for
+      the TX channel and "rx" for the RX channel.

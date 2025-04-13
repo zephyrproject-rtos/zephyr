@@ -1,0 +1,11 @@
+identifier: neorv32/neorv32/minimalboot
+name: NEORV32 MinimalBoot
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 64
+flash: 64
+supported:
+  - gpio

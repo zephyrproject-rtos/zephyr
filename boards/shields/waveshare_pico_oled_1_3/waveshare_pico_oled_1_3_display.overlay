@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,display = &sh1107_waveshare_pico_oled_1_3;
+	};
+};
+
+&i2c1 {
+	sh1107_waveshare_pico_oled_1_3: sh1107@3c {
+		compatible = "sinowealth,sh1106";
+		reg = <0x3c>;
+
+		width = <64>;
+		height = <128>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0x20>;
+		multiplex-ratio = <63>;
+		prechargep = <0x22>;
+		segment-remap;
+		com-invdir;
+		reset-gpios = <&pico_header 12 GPIO_ACTIVE_LOW>;
+
+		status = "okay";
+	};
+};

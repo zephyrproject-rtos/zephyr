@@ -66,6 +66,8 @@ source "drivers/interrupt_controller/Kconfig.loapic"
 
 source "drivers/interrupt_controller/Kconfig.dw"
 
+source "drivers/interrupt_controller/Kconfig.it51xxx"
+
 source "drivers/interrupt_controller/Kconfig.it8xxx2"
 
 source "drivers/interrupt_controller/Kconfig.stm32"
@@ -83,8 +85,6 @@ source "drivers/interrupt_controller/Kconfig.npcx"
 source "drivers/interrupt_controller/Kconfig.intel_vtd"
 
 source "drivers/interrupt_controller/Kconfig.esp32"
-
-source "drivers/interrupt_controller/Kconfig.esp32c3"
 
 source "drivers/interrupt_controller/Kconfig.xec"
 

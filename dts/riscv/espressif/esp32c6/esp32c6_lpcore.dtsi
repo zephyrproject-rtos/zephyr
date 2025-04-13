@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
+#include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "espressif,riscv";
+			riscv,isa = "rv32imac_zicsr_zifencei";
+			reg = <0>;
+			clock-source = <ESP32_RTC_FAST_CLK_SRC_XTAL_D2>;
+			clock-frequency = <DT_FREQ_M(20)>;
+			xtal-freq = <DT_FREQ_M(40)>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sramlp: memory@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(16)>;
+
+			shmlp: memory@0 {
+				reg = <0x0 0x10>;
+			};
+		};
+
+		flash: flash-controller@60002000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x60002000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				/* Flash size is specified in SOC/SIP dtsi */
+			};
+		};
+
+		lp_uart: uart@600b1400 {
+			compatible = "espressif,esp32-lpuart";
+			reg = <0x600b1400 DT_SIZE_K(4)>;
+			status = "disabled";
+		};
+
+	};
+};

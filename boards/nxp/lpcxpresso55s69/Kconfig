@@ -1,0 +1,5 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO55S69
+	select BOARD_EARLY_INIT_HOOK

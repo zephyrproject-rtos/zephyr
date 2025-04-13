@@ -38,8 +38,8 @@ extern "C" {
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd,
-				uint8_t *buf, uint32_t num_bytes)
+static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd, uint8_t *buf,
+				    uint32_t num_bytes)
 {
 	struct i3c_msg msg;
 
@@ -66,14 +66,14 @@ static inline int i3c_hdr_ddr_write(struct i3c_device_desc *target, uint8_t cmd,
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd,
-				uint8_t *buf, uint32_t num_bytes)
+static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd, uint8_t *buf,
+				   uint32_t num_bytes)
 {
 	struct i3c_msg msg;
 
 	msg.buf = buf;
 	msg.len = num_bytes;
-	msg.flags = I3C_MSG_STOP | I3C_MSG_HDR;
+	msg.flags = I3C_MSG_READ | I3C_MSG_STOP | I3C_MSG_HDR;
 	msg.hdr_mode = I3C_MSG_HDR_DDR;
 	msg.hdr_cmd_code = cmd;
 
@@ -90,18 +90,18 @@ static inline int i3c_hdr_ddr_read(struct i3c_device_desc *target, uint8_t cmd,
  * @param target I3C target device descriptor.
  * @param write_buf Pointer to the data to be written
  * @param num_write Number of bytes to write
- * @param write_cmd 7-bit command code for write
+ * @param read_cmd 7-bit command code for read
  * @param read_buf Pointer to storage for read data
  * @param num_read Number of bytes to read
- * @param read_cmd 7-bit command code for read
+ * @param write_cmd 7-bit command code for write
  *
  * @retval 0 if successful
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
-static inline int i3c_hdr_ddr_write_read(struct i3c_device_desc *target,
-				 const void *write_buf, size_t num_write, uint8_t read_cmd,
-				 void *read_buf, size_t num_read, uint8_t write_cmd)
+static inline int i3c_hdr_ddr_write_read(struct i3c_device_desc *target, const void *write_buf,
+					 size_t num_write, uint8_t read_cmd, void *read_buf,
+					 size_t num_read, uint8_t write_cmd)
 {
 	struct i3c_msg msg[2];
 

@@ -70,6 +70,9 @@ master clock, which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The SEGGER-TRB-STM32F407 board is specially designed to test the SEGGER
 Trace-Pro debuggers, so this example assumes a J-Trace or J-Link is used.
 

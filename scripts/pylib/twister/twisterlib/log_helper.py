@@ -12,6 +12,7 @@ import shlex
 
 _WINDOWS = platform.system() == 'Windows'
 
+
 def log_command(logger, msg, args):
     '''Platform-independent helper for logging subprocess invocations.
     Will log a command string that can be copy/pasted into a POSIX

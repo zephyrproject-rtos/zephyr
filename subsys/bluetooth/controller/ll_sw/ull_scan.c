@@ -411,16 +411,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval *
 						SCAN_INT_UNIT_US);
 
-	/* TODO: active_to_start feature port */
-	scan->ull.ticks_active_to_start = 0U;
-	scan->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	scan->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(scan->ull.ticks_active_to_start,
-					  scan->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -610,6 +602,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret_cb = TICKER_STATUS_BUSY;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	ll_scan_ticker_ext[handle].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	ret = ticker_start_ext(
 #else
 	ret = ticker_start(

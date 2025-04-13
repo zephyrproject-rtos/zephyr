@@ -7,7 +7,8 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
-#include <zephyr/dt-bindings/adc/nrf-saadc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/clock/nrfs-audiopll.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
@@ -136,13 +137,13 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <1000>;
-				exit-latency-us = <30>;
+				exit-latency-us = <7>;
 			};
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
 				min-residency-us = <2000>;
-				exit-latency-us = <260>;
+				exit-latency-us = <33>;
 			};
 		};
 	};
@@ -201,6 +202,12 @@
 			lflprc-accuracy-ppm = <1000>;
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
+		};
+
+		audiopll: audiopll {
+			compatible = "nordic,nrfs-audiopll";
+			frequency = <NRFS_AUDIOPLL_FREQ_AUDIO_44K1>;
+			status = "disabled";
 		};
 	};
 
@@ -649,6 +656,20 @@
 				#pwm-cells = <3>;
 			};
 
+			spis120: spi@8e5000 {
+				compatible = "nordic,nrf-spis";
+				reg = <0x8e5000 0x1000>;
+				status = "disabled";
+				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
+				easydma-maxcnt-bits = <15>;
+				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
+				max-frequency = <DT_FREQ_M(32)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_SPIS_SCK>;
+			};
+
 			spi120: spi@8e6000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x8e6000 0x1000>;
@@ -662,8 +683,7 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
-				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
-							 <NRF_FUN_SPIS_SCK>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>;
 			};
 
 			uart120: uart@8e6000 {
@@ -690,8 +710,7 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
-				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
-							 <NRF_FUN_SPIS_SCK>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>;
 			};
 
 			cpuppr_vpr: vpr@908000 {

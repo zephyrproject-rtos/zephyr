@@ -1587,10 +1587,22 @@ static int set_controller_info(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
+	uint8_t controller_da;
 
-	uint8_t controller_da =
-		i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
-	LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
+	if (config->common.primary_controller_da) {
+		if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots,
+					    config->common.primary_controller_da)) {
+			controller_da = i3c_addr_slots_next_free_find(
+				&data->common.attached_dev.addr_slots, 0);
+			LOG_WRN("%s: 0x%02x DA selected for controller as 0x%02x is unavailable",
+				dev->name, controller_da, config->common.primary_controller_da);
+		} else {
+			controller_da = config->common.primary_controller_da;
+		}
+	} else {
+		controller_da =
+			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
+	}
 
 	sys_write32(DEVICE_ADDR_DYNAMIC_ADDR_VALID | DEVICE_ADDR_DYNAMIC(controller_da),
 		    config->regs + DEVICE_ADDR);
@@ -2352,6 +2364,9 @@ static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action
 
 static DEVICE_API(i3c, dw_i3c_api) = {
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 
 	.configure = dw_i3c_configure,
 	.config_get = dw_i3c_config_get,
@@ -2377,6 +2392,10 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.ibi_disable = dw_i3c_controller_disable_ibi,
 	.ibi_raise = dw_i3c_target_ibi_raise,
 #endif /* CONFIG_I3C_USE_IBI */
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
+#endif
 };
 
 #define I3C_DW_IRQ_HANDLER(n)                                                                      \
@@ -2416,6 +2435,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),                    \
 		.common.dev_list.i2c = dw_i3c_i2c_device_array_##n,                                \
 		.common.dev_list.num_i2c = ARRAY_SIZE(dw_i3c_i2c_device_array_##n),                \
+		.common.primary_controller_da = DT_INST_PROP_OR(n, primary_controller_da, 0x00),   \
 		I3C_DW_PINCTRL_INIT(n)};                                                           \
 	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \

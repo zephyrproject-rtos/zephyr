@@ -63,8 +63,10 @@ typedef uint32_t k_mem_partition_attr_t;
 	((k_mem_partition_attr_t) {0})
 
 /* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RX_U_RX \
+#define K_MEM_PARTITION_P_RX_U_NA \
 	((k_mem_partition_attr_t) {XTENSA_MMU_PERM_X})
+#define K_MEM_PARTITION_P_RX_U_RX \
+	((k_mem_partition_attr_t) {XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_USER})
 
 /**
  * @}

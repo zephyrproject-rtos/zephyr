@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Sink */
 
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -355,6 +355,9 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	}
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
+
+	/* Setup the ISO data path */
+	bt_bap_setup_iso_data_path(stream);
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
@@ -973,7 +976,6 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
-	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
@@ -1069,6 +1071,22 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 
 	*out_sink = sink;
 	return 0;
+}
+
+static uint8_t bit_count(uint32_t bitfield)
+{
+#ifdef POPCOUNT
+	return POPCOUNT(bitfield);
+#else
+	uint8_t cnt = 0U;
+
+	while (bitfield != 0U) {
+		cnt += bitfield & 1U;
+		bitfield >>= 1U;
+	}
+
+	return cnt;
+#endif
 }
 
 struct sync_base_info_data {
@@ -1255,7 +1273,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	/* Validate that number of bits set is within supported range */
-	bis_count = count_bits(&indexes_bitfield, sizeof(indexes_bitfield));
+	bis_count = bit_count(indexes_bitfield);
 	if (bis_count > CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
 		LOG_DBG("Cannot sync to more than %d streams (%u was requested)",
 			CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT, bis_count);

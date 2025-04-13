@@ -353,4 +353,14 @@ config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
 	  Enable the creation of exportable MAC keys in the OpenThread Key Manager.
 
+config OPENTHREAD_INTERFACE_EARLY_UP
+	bool "Make OpenThread interface ready as soon as Thread is enabled"
+	help
+	  When enabled, OpenThread interface will be marked ready (operational
+	  UP) as soon as Thread has been enabled. This means the interface will
+	  be ready to transmit application packets during the Mesh Link
+	  Establishment phase.
+	  Otherwise, OpenThread interface will be marked operational UP only
+	  after the device joins a Thread network.
+
 endif # NET_L2_OPENTHREAD_IMPLEMENTATION_ZEPHYR

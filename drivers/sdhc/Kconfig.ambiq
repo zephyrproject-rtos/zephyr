@@ -1,5 +1,5 @@
- # Copyright (c) 2025 Ambiq Micro Inc.
- # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 config SDHC_AMBIQ
 	bool "Ambiq SDHC driver"
@@ -24,7 +24,7 @@ config AMBIQ_SDIO_ASYNC
 
 config SDHC_BUFFER_ALIGNMENT
 	default 32 if DCACHE
-	default 1
+	default 16
 	help
 	  SDHC buffer should be 32bytes aligned when placed in cachable region.
 

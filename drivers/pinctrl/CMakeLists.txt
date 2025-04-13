@@ -1,10 +1,14 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
 zephyr_library_sources(common.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_TELINK_B91 pinctrl_b91.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_AMBIQ pinctrl_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS2 pinctrl_arm_mps2.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS3 pinctrl_arm_mps3.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_V2M_BEETLE pinctrl_arm_v2m_beetle.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AF pinctrl_gd32_af.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AFIO pinctrl_gd32_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ITE_IT8XXX2 pinctrl_ite_it8xxx2.c)

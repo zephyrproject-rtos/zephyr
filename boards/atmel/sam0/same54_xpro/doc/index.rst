@@ -3,7 +3,7 @@
 Overview
 ********
 
-The SAM E54 Xplained Pro evaluation kit is ideal for evaluation and
+The `SAM E54 Xplained Pro Evaluation Kit`_ is ideal for evaluation and
 prototyping with the SAM E54 Cortex®-M4F processor-based
 microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
@@ -44,8 +44,9 @@ Pin Mapping
 The SAM E54 Xplained Pro evaluation kit has 4 GPIO controllers. These
 controllers are responsible for pin muxing, input/output, pull-up, etc.
 
-For more details please refer to `SAM D5x/E5x Family Datasheet`_ and the `SAM E54
-Xplained Pro Schematic`_.
+For more details please refer to `SAM D5x/E5x Family Datasheet (Web)`_, the `SAM E54
+Xplained Pro Schematic (Blue PCB)`_, or `SAM E54
+Xplained Pro Schematic (Red PCB)`_.
 
 .. image:: img/ATSAME54-XPRO-pinout.jpg
      :align: center
@@ -111,6 +112,8 @@ Authentication device.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM E54 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAME54 chip and is supported by
 OpenOCD.
@@ -159,11 +162,17 @@ References
 
 .. target-notes::
 
-.. _Microchip website:
-    http://www.microchip.com/DevelopmentTools/ProductDetails.aspx?PartNO=ATSAME54-XPRO
+.. _SAM E54 Xplained Pro Evaluation Kit:
+    https://www.microchip.com/en-us/development-tool/ATSAME54-XPRO
 
-.. _SAM D5x/E5x Family Datasheet:
-    http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf
+.. _SAM D5x/E5x Family Datasheet (Web):
+    https://onlinedocs.microchip.com/oxy/GUID-AA358083-AEED-4BA8-8511-9F986D3390A5-en-US-2/index.html
 
-.. _SAM E54 Xplained Pro Schematic:
-    http://ww1.microchip.com/downloads/en/DeviceDoc/SAME54-Xplained-Pro_Design-Documentation.zip
+.. _Sam D5x/E5x Family Datasheet (PDF):
+    https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/UserGuides/70005321A.pdf
+
+.. _SAM E54 Xplained Pro Schematic (Blue PCB):
+    https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/BoardDesignFiles/SAM-E54-Xplained-Pro-Design-Documentation-Rev9.zip
+
+.. _SAM E54 Xplained Pro Schematic (Red PCB):
+   https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/BoardDesignFiles/SAM-E54-Xplained-Pro-Design-Documentation-Rev11.zip

@@ -20,9 +20,8 @@ import re
 import string
 import sys
 import textwrap
-from typing import (Any, Iterable,
-                    NamedTuple, NoReturn, Optional,
-                    TYPE_CHECKING, Union)
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -111,7 +110,7 @@ class Node:
 
         if name.count("@") > 1:
             dt._parse_error("multiple '@' in node name")
-        if not name == "/":
+        if name != "/":
             for char in name:
                 if char not in _nodename_chars:
                     dt._parse_error(f"{self.path}: bad character '{char}' "
@@ -1984,13 +1983,20 @@ class DT:
 
         def sub(match):
             esc = match.group(1)
-            if esc == b"a": return b"\a"
-            if esc == b"b": return b"\b"
-            if esc == b"t": return b"\t"
-            if esc == b"n": return b"\n"
-            if esc == b"v": return b"\v"
-            if esc == b"f": return b"\f"
-            if esc == b"r": return b"\r"
+            if esc == b"a":
+                return b"\a"
+            if esc == b"b":
+                return b"\b"
+            if esc == b"t":
+                return b"\t"
+            if esc == b"n":
+                return b"\n"
+            if esc == b"v":
+                return b"\v"
+            if esc == b"f":
+                return b"\f"
+            if esc == b"r":
+                return b"\r"
 
             if esc[0] in b"01234567":
                 # Octal escape

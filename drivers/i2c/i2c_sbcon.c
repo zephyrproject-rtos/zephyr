@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Ltd.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +18,7 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
-
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_sbcon, CONFIG_I2C_LOG_LEVEL);
 
@@ -41,6 +42,7 @@ struct sbcon {
 struct i2c_sbcon_config {
 	struct sbcon *sbcon;		/* Address of hardware registers */
 	uint32_t bitrate;		/* I2C bus speed in Hz */
+	const struct pinctrl_dev_config *pctrl;
 };
 
 /* Driver instance data */
@@ -128,7 +130,14 @@ static int i2c_sbcon_init(const struct device *dev)
 	struct i2c_sbcon_context *context = dev->data;
 	const struct i2c_sbcon_config *config = dev->config;
 	int ret;
+	ret = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
 
+	/* some pins are not available externally so,
+	 * ignore if there is no entry for them
+	 */
+	if (ret != -ENOENT) {
+		return ret;
+	}
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 
 	ret = i2c_bitbang_configure(&context->bitbang,
@@ -136,24 +145,24 @@ static int i2c_sbcon_init(const struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("failed to configure I2C bitbang: %d", ret);
 	}
-
 	return ret;
 }
 
-#define	DEFINE_I2C_SBCON(_num)						\
-									\
-static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
-									\
-static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
-	.sbcon		= (void *)DT_INST_REG_ADDR(_num),		\
-	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
-};									\
-									\
-I2C_DEVICE_DT_INST_DEFINE(_num,						\
-	    i2c_sbcon_init,						\
-	    NULL,							\
-	    &i2c_sbcon_dev_data_##_num,					\
-	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
+#define DEFINE_I2C_SBCON(_num)							\
+	PINCTRL_DT_INST_DEFINE(_num);						\
+	static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
+										\
+	static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
+		.sbcon		= (void *)DT_INST_REG_ADDR(_num),		\
+		.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),			\
+	};									\
+										\
+	I2C_DEVICE_DT_INST_DEFINE(_num,						\
+		    i2c_sbcon_init,						\
+		    NULL,							\
+		    &i2c_sbcon_dev_data_##_num,					\
+		    &i2c_sbcon_dev_cfg_##_num,					\
+		    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)

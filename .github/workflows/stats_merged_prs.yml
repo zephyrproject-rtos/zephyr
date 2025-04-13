@@ -6,13 +6,28 @@ on:
       - main
       - v*-branch
     types: [closed]
+
+permissions:
+  contents: read
+
 jobs:
   record_merged:
     if: github.event.pull_request.merged == true && github.repository == 'zephyrproject-rtos/zephyr'
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: PR event
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -20,5 +35,4 @@ jobs:
           ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
           PR_STAT_ES_INDEX: ${{ vars.PR_STAT_ES_INDEX }}
         run: |
-          pip install pygithub elasticsearch
           python3 ./scripts/ci/stats/merged_prs.py --pull-request ${{ github.event.pull_request.number }} --repo ${{ github.repository }}

@@ -63,6 +63,8 @@ For more details, please refer to the `Nucleo WB05KZ board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WB05KZ board includes an ST-LINK-V3EC embedded debug tool interface.
 
 Applications for the ``nucleo_w05kz`` board target can be built and flashed
@@ -106,6 +108,13 @@ You should see the following message on the console:
 
    Hello World! nucleo_wb05kz/stm32wb05
 
+Usage of the pyOCD runner requires installation of an additional target pack.
+This can be done using the following commands:
+
+.. code-block:: console
+
+   $ pyocd pack update
+   $ pyocd pack install stm32wb0
 
 Debugging
 =========

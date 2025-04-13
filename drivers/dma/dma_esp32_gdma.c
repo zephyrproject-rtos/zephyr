@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,17 +21,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
-#else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif
-
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-#define ISR_HANDLER isr_handler_t
-#else
-#define ISR_HANDLER intr_handler_t
-#endif
 
 #define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
 
@@ -116,7 +106,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	}
 }
 
-#if !defined(CONFIG_SOC_SERIES_ESP32C6) && !defined(CONFIG_SOC_SERIES_ESP32S3)
+#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
 static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_id, uint8_t tx_id)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -540,15 +530,35 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 static int dma_esp32_configure_irq(const struct device *dev)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_data *data = (struct dma_esp32_data *)dev->data;
 	struct irq_config *irq_cfg = (struct irq_config *)config->irq_config;
+	volatile uint32_t *status_reg;
+	uint32_t status_mask;
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
-		int ret = esp_intr_alloc(irq_cfg[i].irq_source,
+#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+		status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i);
+		status_mask = (GDMA_LL_RX_EVENT_MASK | GDMA_LL_TX_EVENT_MASK);
+#else
+		/* We assume device tree to feature RX/TX pairs */
+		if (i % 2) {
+			status_reg = gdma_ll_tx_get_interrupt_status_reg(data->hal.dev, i / 2);
+			status_mask = GDMA_LL_TX_EVENT_MASK;
+		} else {
+			status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i / 2);
+			status_mask = GDMA_LL_RX_EVENT_MASK;
+		}
+#endif
+
+		int ret = esp_intr_alloc_intrstatus(irq_cfg[i].irq_source,
 			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
 				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(ISR_HANDLER)config->irq_handlers[i],
+			(uint32_t)status_reg,
+			status_mask,
+			(intr_handler_t)config->irq_handlers[i],
 			(void *)dev,
 			NULL);
+
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");
 			return ret;
@@ -604,7 +614,16 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	.reload = dma_esp32_reload,
 };
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32S3)
+#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
+
+#define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
+	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
+		const struct device *dev)                                                          \
+	{                                                                                          \
+		dma_esp32_isr_handle(dev, channel * 2, channel * 2 + 1);                           \
+	}
+
+#else
 
 #define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
 	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel##_rx(                \
@@ -631,21 +650,12 @@ static DEVICE_API(dma, dma_esp32_api) = {
 		}                                                                                  \
 	}
 
-#else
-
-#define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
-	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
-		const struct device *dev)                                                          \
-	{                                                                                          \
-		dma_esp32_isr_handle(dev, channel * 2, channel * 2 + 1);                           \
-	}
-
 #endif
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32S3)
-#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
-#else
+#if defined(SOC_GDMA_TX_RX_SHARE_INTERRUPT)
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
+#else
+#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
 #endif
 
 DMA_ESP32_DEFINE_IRQ_HANDLER(0)
@@ -693,6 +703,6 @@ static void *irq_handlers[] = {
 	};                                                                                         \
 												   \
 	DEVICE_DT_INST_DEFINE(idx, &dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,      \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
+			      PRE_KERNEL_2, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_ESP32_INIT)

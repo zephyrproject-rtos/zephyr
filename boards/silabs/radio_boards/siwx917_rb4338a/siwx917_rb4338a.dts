@@ -20,6 +20,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &ulpuart;
 		zephyr,shell-uart = &ulpuart;
+		zephyr,uart-pipe = &ulpuart;
 		zephyr,bt-hci = &bt_hci0;
 	};
 
@@ -104,6 +105,10 @@
 			reg = <0x0000000 DT_SIZE_K(2048-8)>;
 		};
 	};
+};
+
+&sysrtc0  {
+	status = "okay";
 };
 
 &bt_hci0 {

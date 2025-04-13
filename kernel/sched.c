@@ -699,6 +699,16 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 			}
 
 			update_cache(1);
+		} else if (z_is_thread_pending(thread)) {
+			/* Thread is pending, remove it from the waitq
+			 * and reinsert it with the new priority to avoid
+			 * violating waitq ordering and rb assumptions.
+			 */
+			_wait_q_t *wait_q = pended_on_thread(thread);
+
+			_priq_wait_remove(&wait_q->waitq, thread);
+			thread->base.prio = prio;
+			_priq_wait_add(&wait_q->waitq, thread);
 		} else {
 			thread->base.prio = prio;
 		}

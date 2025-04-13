@@ -50,6 +50,8 @@ chip.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing the Zephyr project onto SAM E70 MCU requires the `OpenOCD tool`_.
 Support for Atmel SAM E microcontroller series was added in OpenOCD release
 0.10.0, which was added in Zephyr SDK 0.9.2.

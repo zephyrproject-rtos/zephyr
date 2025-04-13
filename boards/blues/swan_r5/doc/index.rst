@@ -159,6 +159,8 @@ assigned to LPUART.  Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Connect Swan to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
 :zephyr:code-sample:`hello_world` application.

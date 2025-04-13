@@ -1,4 +1,4 @@
-.. _da14695_dk_usb:
+.. zephyr:board:: da14695_dk_usb
 
 DA14695 Development Kit USB
 ###########################
@@ -10,13 +10,6 @@ The DA14695 Development Kit USB is a low cost development board for DA14695.
 The development kit comes with an integrated debugger and an USB hub
 to have both the on-chip USB and the J-Link connected via a single port.
 
-.. figure:: da14695-00hqdevkt-u-usb-board.jpg
-     :width: 442px
-     :align: center
-     :alt: DA14695 Development Kit USB
-
-     DA14695 Development Kit USB (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
 
@@ -26,29 +19,7 @@ the sleep clock is 32768 Hz. The frequency of the system clock is 32 MHz.
 Supported Features
 ==================
 
-The _da14695_dk_usb board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-
-Other hardware features, including the Configurable MAC (CMAC) controller,
-are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 For more information about the DA14695 Development Kit see:
 
@@ -76,6 +47,8 @@ The pin connections are as follows:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``da14695_dk_usb`` board configuration can be
 built, flashed, and debugged in the usual way. See

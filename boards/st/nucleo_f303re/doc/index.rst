@@ -110,6 +110,8 @@ to UART2.  Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nucleo F303RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Flashing

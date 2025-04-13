@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,12 @@
 	pinctrl-names = "default";
 };
 
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &trng0 {
 	status = "okay";
 };
@@ -117,5 +123,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

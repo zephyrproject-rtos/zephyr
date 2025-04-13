@@ -19,16 +19,26 @@
 			status = "disabled";
 		};
 
-		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+		ethernet@40028000 {
 			reg = <0x40028000 0x2000>;
-			interrupts = <61 0>;
-			clock-names = "stmmaceth", "mac-clk-tx",
-				      "mac-clk-rx";
-			clocks = <&rcc STM32_CLOCK(AHB1, 14U)>,
-				 <&rcc STM32_CLOCK(AHB1, 15U)>,
-				 <&rcc STM32_CLOCK(AHB1, 16U)>;
-			status = "disabled";
+			clock-names = "stm-eth";
+			clocks = <&rcc STM32_CLOCK(AHB1, 14)>;
+
+			mac: ethernet {
+				compatible = "st,stm32-ethernet";
+				interrupts = <61 0>;
+				clock-names = "mac-clk-tx", "mac-clk-rx";
+				clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
+					 <&rcc STM32_CLOCK(AHB1, 16)>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

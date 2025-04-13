@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
@@ -398,6 +399,13 @@ static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
 #endif
 }
 
+void gpio_mcux_lpc_trigger_cb(const struct device *dev, uint32_t pins)
+{
+	struct gpio_mcux_lpc_data *data = dev->data;
+
+	gpio_fire_callbacks(&data->callbacks, dev, pins);
+}
+
 static int gpio_mcux_lpc_manage_cb(const struct device *port,
 				   struct gpio_callback *callback, bool set)
 {
@@ -406,12 +414,32 @@ static int gpio_mcux_lpc_manage_cb(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_mcux_lpc_init(const struct device *dev)
+static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config;
-	GPIO_PortInit(config->gpio_base, config->port_no);
 
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		GPIO_PortInit(config->gpio_base, config->port_no);
+		break;
+	default:
+		return -ENOTSUP;
+	}
 	return 0;
+}
+
+static int gpio_mcux_lpc_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, gpio_mcux_lpc_pm_action);
 }
 
 static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
@@ -465,7 +493,10 @@ static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 											\
 	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;			\
 											\
-	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_mcux_lpc_pm_action);				\
+											\
+	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n,					\
+		    PM_DEVICE_DT_INST_GET(n),						\
 		    &gpio_mcux_lpc_data_##n,						\
 		    &gpio_mcux_lpc_config_##n, PRE_KERNEL_1,				\
 		    CONFIG_GPIO_INIT_PRIORITY,						\

@@ -11,7 +11,7 @@
 #include <esp_private/cache_utils.h>
 #include <esp_private/system_internal.h>
 #include <esp_timer.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
@@ -25,8 +25,6 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_flash_config();
 
-	esp_intr_initialize();
-
 	/* Start Zephyr */
 	z_cstart();
 
@@ -35,8 +33,6 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 void IRAM_ATTR __esp_platform_mcuboot_start(void)
 {
-	esp_intr_initialize();
-
 	/* Start Zephyr */
 	z_cstart();
 
@@ -55,5 +51,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

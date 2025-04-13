@@ -7,7 +7,7 @@ The PAN1770 Evaluation Board is a development tool for the PAN1770 module
 which is based on the nRF52840 chipset from Nordic Semiconductor.
 
 It is basically a clone of the official nRF52840 development kit (PCA10056)
-from Nordic Semiconductor. Please refer to :ref:`nrf52840dk_nrf52840` for
+from Nordic Semiconductor. Please refer to :zephyr:board:`nrf52840dk` for
 further information.
 
 You can find more information about the PAN1770 module and the PAN1770
@@ -41,6 +41,8 @@ The schematics for the PAN1770 Evaluation Board are available in the
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Please use the ``pan1770_evb`` board configuration when
 :ref:`build_an_application` and :ref:`application_run`.

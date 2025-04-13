@@ -4,7 +4,7 @@
 anytree
 
 # to use in ./scripts for memory footprint, code coverage, etc.
-gitpython
+gitpython>=3.1.41
 
 # helper for developers - check git commit messages
 gitlint
@@ -16,7 +16,7 @@ junit2html
 lpc_checksum
 
 # used by scripts/build/gen_cfb_font_header.py - helper script for user
-Pillow>=10.0
+Pillow>=10.3.0
 
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub

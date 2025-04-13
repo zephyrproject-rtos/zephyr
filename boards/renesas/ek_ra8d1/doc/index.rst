@@ -94,12 +94,31 @@ Supported Features
      |     OFF     |      OFF    |      OFF     |     OFF    |     OFF    |      OFF   |      OFF    |     OFF   |
      +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
+   - For using MIPI Graphics Expansion Port (J58) on RA8D1 board please set switch SW1 as following configuration:
+
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      OFF     |     OFF    |     OFF    |     ON     |     ON      |    OFF    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
+   - For using the Parallel Graphics Expansion Port (J57) with the Graphics Expansion Board supplied as part of the kit,
+     please set switch SW1 as following configuration:
+
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      OFF     |     OFF    |     OFF    |     ON     |     ON      |    OFF    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
 .. warning::
 
    Do not enable SW1-4 and SW1-5 together
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra8d1`` board configuration can be
 built, flashed, and debugged in the usual way. See

@@ -50,7 +50,7 @@ static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_d
 	return 0;
 }
 
-static int a4979_stepper_enable(const struct device *dev, bool enable)
+static int a4979_stepper_enable(const struct device *dev)
 {
 	int ret;
 	const struct a4979_config *config = dev->config;
@@ -63,16 +63,38 @@ static int a4979_stepper_enable(const struct device *dev, bool enable)
 		return -ENOTSUP;
 	}
 
-	ret = gpio_pin_set_dt(&config->en_pin, enable);
+	ret = gpio_pin_set_dt(&config->en_pin, 1);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
-	data->enabled = enable;
-	if (!enable) {
-		config->common.timing_source->stop(dev);
+	data->enabled = true;
+
+	return 0;
+}
+
+static int a4979_stepper_disable(const struct device *dev)
+{
+	int ret;
+	const struct a4979_config *config = dev->config;
+	struct a4979_data *data = dev->data;
+	bool has_enable_pin = config->en_pin.port != NULL;
+
+	/* Check availability of enable pin, as it might be hardwired. */
+	if (!has_enable_pin) {
+		LOG_ERR("%s: Enable pin undefined.", dev->name);
+		return -ENOTSUP;
 	}
+
+	ret = gpio_pin_set_dt(&config->en_pin, 0);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+		return ret;
+	}
+
+	config->common.timing_source->stop(dev);
+	data->enabled = false;
 
 	return 0;
 }
@@ -245,6 +267,7 @@ static int a4979_init(const struct device *dev)
 
 static DEVICE_API(stepper, a4979_stepper_api) = {
 	.enable = a4979_stepper_enable,
+	.disable = a4979_stepper_disable,
 	.move_by = a4979_stepper_move_by,
 	.move_to = a4979_move_to,
 	.is_moving = step_dir_stepper_common_is_moving,
@@ -252,6 +275,7 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
 	.run = a4979_run,
+	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,
 	.set_event_callback = step_dir_stepper_common_set_event_callback,

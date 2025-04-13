@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/adc/stm32f4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f2_4_7_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -583,6 +584,22 @@
 			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <49 0>;
 			status = "disabled";
+		};
+	};
+
+	pwr: power@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x40007000 0x400>; /* PWR register bank */
+		status = "disabled";
+
+		wkup-pins-nb = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		wkup-pin@1 {
+			reg = <0x1>;
+			wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 		};
 	};
 

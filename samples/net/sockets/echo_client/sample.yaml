@@ -90,7 +90,7 @@ tests:
     extra_args:
       # Disabling monolithic since CI environment doesn't use blobs
       - CONFIG_NXP_MONOLITHIC_NBU=n
-      - OVERLAY_CONFIG="overlay-ot-rcp-host-nxp.conf"
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-nxp.conf"
     slow: true
     tags:
       - net

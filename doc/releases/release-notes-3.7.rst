@@ -412,7 +412,7 @@ Boards & SoC Support
   * Added support for :zephyr:board:`Raspberry Pi 5 board <rpi_5>`: ``rpi_5``.
   * Added support for :zephyr:board:`Seeed Studio XIAO RP2040 board <xiao_rp2040>`: ``xiao_rp2040``.
   * Added support for :zephyr:board:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
-  * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
+  * Added support for :zephyr:board:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
   * Added support for :zephyr:board:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
   * Added support for :zephyr:board:`ST Nucleo H533RE <nucleo_h533re>`: ``nucleo_h533re``.
   * Added support for :zephyr:board:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk>`: ``stm32c0116_dk``.
@@ -452,8 +452,8 @@ Boards & SoC Support
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
   * The nrf5x bsim targets now support BT LE Coded PHY.
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
-  * nRF54H20 PDK (pre-release) converted to :ref:`nrf54h20dk_nrf54h20`
-  * PPR core target in :ref:`nrf54h20dk_nrf54h20` runs from RAM by default. A
+  * nRF54H20 PDK (pre-release) converted to :zephyr:board:`nrf54h20dk`
+  * PPR core target in :zephyr:board:`nrf54h20dk` runs from RAM by default. A
     new ``xip`` variant has been introduced which runs from MRAM (XIP).
   * Refactored :zephyr:board:`beagleconnect_freedom` external antenna switch handling.
   * Added Arduino dts node labels for the nRF5340 Audio DK.

@@ -279,7 +279,7 @@ Boards & SoC Support
    * :zephyr:board:`ADI MAX32666FTHR <max32666fthr>` (``max32666fthr``)
    * :zephyr:board:`ADI MAX32675EVKIT <max32675evkit>` (``max32675evkit``)
    * :zephyr:board:`ADI MAX32690FTHR <max32690fthr>` (``max32690fthr``)
-   * :ref:`Arduino Nicla Vision <arduino_nicla_vision_board>` (``arduino_nicla_vision``)
+   * :zephyr:board:`arduino_nicla_vision` (``arduino_nicla_vision``)
    * :zephyr:board:`BeagleBone AI-64 <beaglebone_ai64>` (``beaglebone_ai64``)
    * :zephyr:board:`BeaglePlay (CC1352) <beagleplay>` (``beagleplay``)
    * :zephyr:board:`DPTechnics Walter <walter>` (``walter``)
@@ -289,9 +289,9 @@ Boards & SoC Support
    * :zephyr:board:`Espressif ESP8684-DevKitM <esp8684_devkitm>` (``esp8684_devkitm``)
    * :zephyr:board:`Gardena Smart Garden Radio Module <sgrm>` (``sgrm``)
    * :zephyr:board:`mikroe STM32 M4 Clicker <mikroe_stm32_m4_clicker>` (``mikroe_stm32_m4_clicker``)
-   * :ref:`Nordic Semiconductor nRF54L15 DK <nrf54l15dk_nrf54l15>` (``nrf54l15dk``)
-   * :ref:`Nordic Semiconductor nRF54L20 PDK <nrf54l20pdk_nrf54l20>` (``nrf54l20pdk``)
-   * :ref:`Nordic Semiconductor nRF7002 DK <nrf7002dk_nrf5340>` (``nrf7002dk``)
+   * :zephyr:board:`Nordic Semiconductor nRF54L15 DK <nrf54l15dk>` (``nrf54l15dk``)
+   * :zephyr:board:`Nordic Semiconductor nRF54L20 PDK <nrf54l20pdk>` (``nrf54l20pdk``)
+   * :zephyr:board:`Nordic Semiconductor nRF7002 DK <nrf7002dk>` (``nrf7002dk``)
    * :zephyr:board:`Nuvoton NPCM400_EVB <npcm400_evb>` (``npcm400_evb``)
    * :zephyr:board:`NXP FRDM-MCXA156 <frdm_mcxa156>` (``frdm_mcxa156``)
    * :zephyr:board:`NXP FRDM-MCXC242 <frdm_mcxc242>` (``frdm_mcxc242``)
@@ -344,7 +344,7 @@ Boards & SoC Support
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through Devicetree.
     See ``samples/boards/st/mco`` sample.
   * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
-  * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
+  * Removed the ``nrf54l15pdk`` board, use :zephyr:board:`nrf54l15dk` instead.
   * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
     with the old name marked as deprecated.
   * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,

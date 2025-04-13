@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2020-2025 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,13 +95,6 @@ static void process(const struct log_backend *const backend,
 			      "Unexpected log severity");
 	}
 
-	cb->counter++;
-	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		if (cb->counter == cb->total_logs) {
-			k_sem_give(&log_sem);
-		}
-	}
-
 	if (k_is_user_context()) {
 		zassert_equal(log_msg_get_domain(&(msg->log)), domain,
 				"Unexpected domain id");
@@ -112,6 +105,13 @@ static void process(const struct log_backend *const backend,
 
 	flags = log_backend_std_get_flags();
 	log_output_msg_process(&log_output, &msg->log, flags);
+
+	cb->counter++;
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		if (cb->counter == cb->total_logs) {
+			k_sem_give(&log_sem);
+		}
+	}
 }
 
 static void panic(const struct log_backend *const backend)
@@ -171,6 +171,7 @@ static void log_setup(bool backend2_enable)
 static bool log_test_process(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		log_flush();
 		/* waiting for all logs have been handled */
 		k_sem_take(&log_sem, K_FOREVER);
 		return false;
@@ -277,7 +278,7 @@ ZTEST(test_log_core_additional, test_log_early_logging)
 		LOG_WRN("log warn before backend active");
 		LOG_ERR("log error before backend active");
 
-		TC_PRINT("Activate backend with context");
+		TC_PRINT("Activate backend with context\n");
 		memset(&backend1_cb, 0, sizeof(backend1_cb));
 		backend1_cb.total_logs = 3;
 		log_backend_enable(&backend1, &backend1_cb, LOG_LEVEL_DBG);
@@ -381,7 +382,7 @@ ZTEST(test_log_core_additional, test_multiple_backends)
 {
 	int cnt;
 
-	TC_PRINT("Test multiple backends");
+	TC_PRINT("Test multiple backends\n");
 	/* enable both backend1 and backend2 */
 	log_setup(true);
 	STRUCT_SECTION_COUNT(log_backend, &cnt);

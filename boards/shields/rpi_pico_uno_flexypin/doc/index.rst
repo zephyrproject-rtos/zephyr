@@ -1,7 +1,7 @@
 .. _rpi_pico_uno_flexypin:
 
-RaspberryPi Pico to UNO FlexyPin Adapter
-########################################
+Raspberry Pi Pico to UNO FlexyPin Adapter
+#########################################
 
 Overview
 ********
@@ -16,10 +16,10 @@ to the Arduino UNO form factor.
 
 .. image:: img/rpi_pico_uno_flexypin.png
      :align: center
-     :alt: RaspberryPi Pico to UNO FlexyPin Adapter
+     :alt: Raspberry Pi Pico to UNO FlexyPin Adapter
 
-Pins Assignment of the RaspberryPi Pico to UNO FlexyPin Adapter
-===============================================================
+Pins Assignment of the Raspberry Pi Pico to UNO FlexyPin Adapter
+================================================================
 
 +---------------------+------------+
 | Rpi-Pico Pin        | UNO Header |

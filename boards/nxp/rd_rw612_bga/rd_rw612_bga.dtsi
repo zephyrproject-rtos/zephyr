@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -270,6 +270,12 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	pinctrl-names = "default";
 };
 
+/* RTC is the wakeup source for PM modes 3,4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
+};
+
 &pmu {
 	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
 			  <PMU_RESET_ITRC>,
@@ -288,6 +294,7 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 &os_timer {
 	status = "okay";
 	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
 };
 
 &systick {

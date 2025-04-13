@@ -16,6 +16,15 @@
 		};
 	};
 
+	sci9_default: sci9_default {
+		group1 {
+			/* sda scl*/
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 14)>,<RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
+			drive-strength = "medium";
+			drive-open-drain;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			/* MISO MOSI RSPCK SSL*/

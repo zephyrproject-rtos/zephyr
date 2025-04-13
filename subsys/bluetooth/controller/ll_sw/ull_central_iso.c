@@ -600,11 +600,6 @@ ll_cig_parameters_commit_retry:
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	/* Populate the ULL hdr with event timings overheads */
-	cig->ull.ticks_active_to_start = 0U;
-	cig->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	cig->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
@@ -841,7 +836,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	uint16_t event_counter;
 	struct ll_conn *conn;
 	uint16_t instant;
 
@@ -857,11 +851,13 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	/* ACL connection of the new CIS */
 	conn = ll_conn_get(cis->lll.acl_handle);
-	event_counter = ull_conn_event_counter(conn);
-	instant = MAX(*conn_event_count, event_counter + 1);
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint16_t event_counter;
 	uint32_t cis_offset;
+
+	event_counter = ull_conn_event_counter(conn);
+	instant = MAX(*conn_event_count, event_counter + 1);
 
 	cis_offset = *cis_offset_min;
 
@@ -902,6 +898,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
+	instant = *conn_event_count;
+
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_SPACING)
@@ -923,6 +921,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	} else {
 		cis->offset = *cis_offset_min;
 	}
+
+	cis->lll.prepared = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	cis->central.instant = instant;
@@ -975,7 +975,18 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 
-	cis->central.instant = ull_conn_event_counter(conn) + 3U;
+	/* NOTE: CIS Create Procedure uses 3 PDU transmissions, hence minimum relative instant not
+	 *       be less than 3. As the CIS_REQ PDU will be transmitted in the next ACL interval,
+	 *       add +1 to the instant. The +1 also helps with the fact that currently we do not
+	 *       have Central implementation to handle event latencies at the instant. Refer to
+	 *       `ull_conn_iso_start()` implementation.
+	 *
+	 *       `ull_conn_llcp()` is called before `ull_ref_inc()` hence we do not need to use
+	 *       `ull_conn_event_counter()`.
+	 */
+	cis->central.instant = conn->lll.event_counter + conn->lll.latency_prepare +
+			       conn->llcp.prep.lazy + 4U;
+
 	*conn_event_count = cis->central.instant;
 
 	/* Provide CIS offset range
@@ -1177,7 +1188,12 @@ static void mfy_cis_offset_get(void *param)
 	 * and latency counts (typically 3) is low enough to avoid 32-bit
 	 * overflow. Refer to ull_central_iso_cis_offset_get().
 	 */
-	latency_acl = cis->central.instant - ull_conn_event_counter(conn);
+	/* FIXME: Mayfly execution of `mfy_cig_offset_get()` could be before "LLL Prepare" or after
+	 *        conn->lll.event_counter could have been pre-incremented.
+	 *        This race condition needs a fix.
+	 */
+	latency_acl = cis->central.instant - conn->lll.event_counter - conn->lll.latency_prepare -
+		      conn->llcp.prep.lazy;
 	elapsed_acl_us = latency_acl * conn->lll.interval * CONN_INT_UNIT_US;
 
 	/* Calculate elapsed CIG intervals until the instant */
@@ -1201,7 +1217,7 @@ static void mfy_cis_offset_get(void *param)
 	 * CIG interval.
 	 */
 	if (offset_min_us > cig_interval_us) {
-		cis->lll.event_count--;
+		cis->lll.event_count_prepare--;
 	}
 
 	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_min_us);

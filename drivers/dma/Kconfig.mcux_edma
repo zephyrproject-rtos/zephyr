@@ -10,7 +10,7 @@ config DMA_MCUX_EDMA
 	bool "MCUX DMA driver"
 	default y
 	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),2)
-	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
+	imply NOCACHE_MEMORY if CPU_HAS_DCACHE
 	help
 	  DMA driver for MCUX series SoCs.
 

@@ -144,6 +144,13 @@
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
 			 */
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
 		};
 
 		power-states {
@@ -188,7 +195,7 @@
 		cmu: clock@50008000 {
 			compatible = "silabs,series-clock";
 			reg = <0x50008000 0x4000>;
-			interrupts = <47 0>;
+			interrupts = <47 2>;
 			interrupt-names = "cmu";
 			status = "okay";
 			#clock-cells = <2>;
@@ -262,7 +269,7 @@
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x3148>;
-			interrupts = <50 0>;
+			interrupts = <50 2>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -277,7 +284,7 @@
 		usart0: usart@5005c000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x5005C000 0x306c>;
-			interrupts = <9 0>, <10 0>;
+			interrupts = <9 2>, <10 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 			status = "disabled";
@@ -286,7 +293,7 @@
 		eusart0: eusart@5b010000 {
 			compatible = "silabs,eusart-spi";
 			reg = <0x5B010000 0x4000>;
-			interrupts = <11 0>, <12 0>;
+			interrupts = <11 2>, <12 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
 			status = "disabled";
@@ -295,7 +302,7 @@
 		eusart1: eusart@500a0000 {
 			compatible = "silabs,eusart-spi";
 			reg = <0x500A0000 0x4000>;
-			interrupts = <13 0>, <14 0>;
+			interrupts = <13 2>, <14 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_EUSART1 CLOCK_BRANCH_EM01GRPCCLK>;
 			status = "disabled";
@@ -304,7 +311,7 @@
 		burtc0: burtc@50064000 {
 			compatible = "silabs,gecko-burtc";
 			reg = <0x50064000 0x3034>;
-			interrupts = <17 0>;
+			interrupts = <17 2>;
 			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			status = "disabled";
 		};
@@ -323,7 +330,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x5b000000 0x3044>;
-			interrupts = <27 0>;
+			interrupts = <27 2>;
 			clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
 			status = "disabled";
 		};
@@ -331,7 +338,7 @@
 		sysrtc0: stimer0: sysrtc@500a8000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x500a8000 0x3054>;
-			interrupts = <67 0>, <68 0>;
+			interrupts = <67 2>, <68 2>;
 			interrupt-names = "sysrtc_app", "sysrtc_seq";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -398,7 +405,7 @@
 			reg = <0x40040000 0x4000>;
 			interrupts = <21 0>;
 			#dma-cells = <1>;
-			dma_channels = <8>;
+			dma-channels = <8>;
 			status = "disabled";
 		};
 
@@ -406,7 +413,7 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x5b004000 0x2C>;
 			peripheral-id = <0>;
-			interrupts = <42 0>;
+			interrupts = <42 2>;
 			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
 			status = "disabled";
 		};
@@ -415,7 +422,7 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x5b008000 0x2C>;
 			peripheral-id = <1>;
-			interrupts = <43 0>;
+			interrupts = <43 2>;
 			clocks = <&cmu CLOCK_WDOG1 CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
 		};
@@ -423,7 +430,7 @@
 		adc0: adc@59004000 {
 			compatible = "silabs,gecko-iadc";
 			reg = <0x59004000 0x4000>;
-			interrupts = <49 0>;
+			interrupts = <49 2>;
 			clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -432,14 +439,14 @@
 		dcdc: dcdc@50094000 {
 			compatible = "silabs,series2-dcdc";
 			reg = <0x50094000 0x4000>;
-			interrupts = <53 0>;
+			interrupts = <53 2>;
 			status = "disabled";
 		};
 
 		acmp0: acmp@59008000 {
 			compatible = "silabs,acmp";
 			reg = <0x59008000 0x4000>;
-			interrupts = <40 0>;
+			interrupts = <40 2>;
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
@@ -447,8 +454,8 @@
 		radio: radio@b0000000 {
 			compatible = "silabs,series2-radio";
 			reg = <0xb0000000 0x1000000>;
-			interrupts = <30 0>, <31 0>, <32 0>, <33 0>, <34 0>, <35 0>,
-				     <36 0>, <37 0>, <38 0>, <39 0>, <70 0>, <71 0>;
+			interrupts = <30 1>, <31 1>, <32 1>, <33 1>, <34 1>, <35 1>,
+				     <36 1>, <37 1>, <38 1>, <39 1>, <70 1>, <71 1>;
 			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
 					  "rac_rsm", "rac_seq", "hostmailbox", "synth",
 					  "rfeca0", "rfeca1";

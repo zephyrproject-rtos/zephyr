@@ -1,0 +1,40 @@
+name: PR Metadata Check
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+      - edited
+
+permissions:
+  contents: read
+
+jobs:
+  do-not-merge:
+    name: Prevent Merging
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check for label
+        if: ${{ contains(github.event.*.labels.*.name, 'DNM') ||
+                contains(github.event.*.labels.*.name, 'DNM (manifest)') ||
+                contains(github.event.*.labels.*.name, 'TSC') ||
+                contains(github.event.*.labels.*.name, 'Architecture Review') ||
+                contains(github.event.*.labels.*.name, 'dev-review') }}
+        run: |
+          echo "Pull request is labeled as 'DNM', 'TSC', 'Architecture Review' or 'dev-review'."
+          echo "This workflow fails so that the pull request cannot be merged."
+          exit 1
+
+  empty_pr_description:
+    if: ${{ github.event.pull_request.body == '' }}
+    name: PR Description
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check for PR description
+        run: |
+          echo "Pull request description cannot be empty."
+          exit 1

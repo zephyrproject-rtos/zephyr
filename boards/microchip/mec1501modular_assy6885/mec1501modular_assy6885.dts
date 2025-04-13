@@ -68,9 +68,9 @@
 
 &espi0 {
 	status = "okay";
-	io_girq = <19>;
-	vw_girqs = <24 25>;
-	pc_girq = <15>;
+	io-girq = <19>;
+	vw-girqs = <24 25>;
+	pc-girq = <15>;
 	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
 		  &espi_alert_n_gpio063 &espi_clk_gpio065
 		  &espi_io0_gpio070 &espi_io1_gpio071

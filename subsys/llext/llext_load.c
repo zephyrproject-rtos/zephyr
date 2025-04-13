@@ -494,10 +494,19 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	/*
 	 * Calculate each ELF section's offset inside its memory region. This
 	 * is done as a separate pass so the final regions are already defined.
+	 * Also mark the regions that include relocation targets.
 	 */
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 		enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
+
+		if (shdr->sh_type == SHT_REL || shdr->sh_type == SHT_RELA) {
+			enum llext_mem target_region = ldr->sect_map[shdr->sh_info].mem_idx;
+
+			if (target_region != LLEXT_MEM_COUNT) {
+				ldr->sects[target_region].sh_flags |= SHF_LLEXT_HAS_RELOCS;
+			}
+		}
 
 		if (mem_idx != LLEXT_MEM_COUNT) {
 			ldr->sect_map[i].offset = shdr->sh_offset - ldr->sects[mem_idx].sh_offset;
@@ -846,8 +855,8 @@ out:
 		ext->exp_tab.sym_cnt = 0;
 		ext->exp_tab.syms = NULL;
 	} else {
-		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
-			ext->mem[LLEXT_MEM_RODATA]);
+		LOG_DBG("Loaded llext: %zu bytes in heap, .text at %p, .rodata at %p",
+			ext->alloc_size, ext->mem[LLEXT_MEM_TEXT], ext->mem[LLEXT_MEM_RODATA]);
 	}
 
 	llext_finalize(ldr);

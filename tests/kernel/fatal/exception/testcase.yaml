@@ -43,8 +43,6 @@ tests:
       - mps2/an385
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
-    platform_exclude:
-      - qemu_cortex_a9 # FIXME: See issue #39948
     tags: kernel
     integration_platforms:
       - qemu_x86

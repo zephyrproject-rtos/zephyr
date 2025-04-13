@@ -347,7 +347,6 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_I3C`
-* :kconfig:option:`CONFIG_I3C_USE_GROUP_ADDR`
 * :kconfig:option:`CONFIG_I3C_USE_IBI`
 * :kconfig:option:`CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE`
 * :kconfig:option:`CONFIG_I3C_CONTROLLER_INIT_PRIORITY`

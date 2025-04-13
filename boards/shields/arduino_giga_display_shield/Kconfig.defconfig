@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ARDUINO_GIGA_DISPLAY_SHIELD
+
+if LVGL
+
+config INPUT
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+config LV_DPI_DEF
+	default 128
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+
+endchoice
+
+endif # LVGL
+
+endif # SHIELD_ARDUINO_GIGA_DISPLAY_SHIELD

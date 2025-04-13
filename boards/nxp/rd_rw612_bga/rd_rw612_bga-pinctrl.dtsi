@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,6 +116,13 @@
 	pinmux_pwm0: pinmux_pwm0 {
 		group0 {
 			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2S>;
 			slew-rate = "normal";
 		};
 	};

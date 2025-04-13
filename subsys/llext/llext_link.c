@@ -299,9 +299,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 * beginning of the .text section in the ELF file can be
 		 * applied to the memory location of mem[LLEXT_MEM_TEXT].
 		 *
-		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
-		 * and peek() is usable on the source ELF file.
+		 * This is valid only for LLEXT_STORAGE_WRITABLE loaders
+		 * since the buffer will be directly modified.
 		 */
+		if (ldr->storage != LLEXT_STORAGE_WRITABLE) {
+			LOG_ERR("PLT: cannot link read-only ELF file");
+			continue;
+		}
+
 		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
 			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 

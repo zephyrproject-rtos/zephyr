@@ -1,0 +1,47 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IT51XXX
+	select HAS_PM
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	select SOC_PREP_HOOK
+
+if SOC_SERIES_IT51XXX
+
+config SOC_IT51XXX
+	select RISCV
+	select ATOMIC_OPERATIONS_C
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C if !SOC_IT51526AW
+	select RISCV_ISA_EXT_ZBA
+	select RISCV_ISA_EXT_ZBB
+	select RISCV_ISA_EXT_ZBS
+	select FLASH
+	imply XIP
+
+config SOC_IT51XXX_CPU_IDLE_GATING
+	bool
+	help
+	  This option determines whether the entering CPU idle mode can be
+	  gated by individual drivers. When this option is disabled, CPU idle
+	  mode is always permitted.
+
+config SOC_IT51XXX_USE_ILM
+	bool
+	default y
+	help
+	  If enabled, Instruction Local Memory (ILM) will be configured to execute
+	  code placed in the .__ram_code section out of RAM. This consumes RAM in
+	  blocks of 4 kilobytes, but performance of code in ILM is much more
+	  predictable than executing from Flash directly, and some code (such as code
+	  that writes to the internal Flash) must execute out of RAM.
+
+config ILM_MAX_SIZE
+	int "ILM Size in kB"
+	default 4
+
+endif # SOC_SERIES_IT51XXX

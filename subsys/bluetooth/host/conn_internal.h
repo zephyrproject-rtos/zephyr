@@ -423,9 +423,6 @@ void bt_sco_cleanup(struct bt_conn *sco_conn);
 /* Look up an existing sco connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 
-/* Look up an existing connection by BT address */
-struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
-
 void bt_conn_disconnect_all(uint8_t id);
 
 /* Allocate new connection object */
@@ -498,20 +495,25 @@ void notify_subrate_change(struct bt_conn *conn,
 			   struct bt_conn_le_subrate_changed params);
 
 void notify_remote_cs_capabilities(struct bt_conn *conn,
-			   struct bt_conn_le_cs_capabilities params);
+				   uint8_t status,
+				   struct bt_conn_le_cs_capabilities *params);
 
 void notify_remote_cs_fae_table(struct bt_conn *conn,
-			   struct bt_conn_le_cs_fae_table params);
+				uint8_t status,
+				struct bt_conn_le_cs_fae_table *params);
 
-void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params);
+void notify_cs_config_created(struct bt_conn *conn,
+			      uint8_t status,
+			      struct bt_conn_le_cs_config *params);
 
 void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
 
 void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
 
-void notify_cs_security_enable_available(struct bt_conn *conn);
+void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
 
 void notify_cs_procedure_enable_available(struct bt_conn *conn,
+					  uint8_t status,
 					  struct bt_conn_le_cs_procedure_enable_complete *params);
 
 #if defined(CONFIG_BT_SMP)

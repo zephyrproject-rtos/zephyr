@@ -20,6 +20,9 @@ on:
     - 'scripts/dts/**'
     - '.github/workflows/devicetree_checks.yml'
 
+permissions:
+  contents: read
+
 jobs:
   devicetree-checks:
     name: Devicetree script tests
@@ -30,39 +33,19 @@ jobs:
         os: [ubuntu-22.04, macos-14, windows-2022]
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: cache-pip-linux
-      if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}
-    - name: cache-pip-mac
-      if: startsWith(runner.os, 'macOS')
-      uses: actions/cache@v4
-      with:
-        path: ~/Library/Caches/pip
-        # Trailing '-' was just to get a different cache name
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-
-    - name: cache-pip-win
-      if: startsWith(runner.os, 'Windows')
-      uses: actions/cache@v4
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}
-    - name: install python dependencies
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
       run: |
-        pip install pytest pyyaml tox
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
     - name: run tox
       working-directory: scripts/dts/python-devicetree
       run: |

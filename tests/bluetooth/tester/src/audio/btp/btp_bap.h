@@ -216,7 +216,7 @@ struct btp_bap_codec_cap_found_ev {
 } __packed;
 
 #define BTP_BAP_EV_ASE_FOUND			0x82
-struct btp_ascs_ase_found_ev {
+struct btp_bap_ase_found_ev {
 	bt_addr_le_t address;
 	uint8_t dir;
 	uint8_t ase_id;

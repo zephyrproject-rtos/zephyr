@@ -11,6 +11,8 @@ configurations that only exist in proprietary boards/SoCs to be tested in upstre
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

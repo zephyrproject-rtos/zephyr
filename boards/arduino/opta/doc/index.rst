@@ -1,7 +1,4 @@
-.. _arduino_opta_m4_board:
-
-Arduino OPTA
-############
+.. zephyr:board:: arduino_opta
 
 Overview
 ********
@@ -31,10 +28,6 @@ Additionally, the device features:
 - 8 x analog inputs
 - 4 x isolated relay outputs
 
-.. image:: img/arduino_opta.jpeg
-     :align: center
-     :alt: ARDUINO-OPTA
-
 More information about the board can be found at the `ARDUINO-OPTA website`_.
 More information about STM32H747XIH6 can be found here:
 
@@ -45,55 +38,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The ``arduino_opta/stm32h747xx/m7`` board target
-supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| USB       | on-board   | usb-fs                              |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-board   | eth                                 |
-+-----------+------------+-------------------------------------+
-| RS485     | on-board   | uart                                |
-+-----------+------------+-------------------------------------+
-
-The ``arduino_opta/stm32h747xx/m4`` board target
-supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/arduino/opta/arduino_opta_stm32h747xx_m4_defconfig` and
-:zephyr_file:`boards/arduino/opta/arduino_opta_stm32h747xx_m7_defconfig`.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -152,6 +97,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_opta`` use the regular Zephyr build commands.
 See :ref:`build_an_application` for more information about application builds.

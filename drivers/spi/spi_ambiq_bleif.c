@@ -165,10 +165,11 @@ static DEVICE_API(spi, spi_ambiq_driver_api) = {
 static int spi_ambiq_init(const struct device *dev)
 {
 	struct spi_ambiq_data *data = dev->data;
-	const struct spi_ambiq_config *cfg = dev->config;
 	int ret;
 
 #if defined(CONFIG_SPI_AMBIQ_BLEIF_TIMING_TRACE)
+	const struct spi_ambiq_config *cfg = dev->config;
+
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
@@ -194,8 +195,8 @@ static int spi_ambiq_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx)};                                    \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
-		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
-		.size = DT_REG_SIZE(DT_INST_PARENT(n)),                                            \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.size = DT_INST_REG_SIZE(n),                                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n,                     \
 				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \

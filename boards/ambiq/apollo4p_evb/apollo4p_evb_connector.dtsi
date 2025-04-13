@@ -118,4 +118,5 @@
 	};
 };
 
+ambiq_spi1: &iom1 {};
 mspi_aps256n: &mspi0 {};

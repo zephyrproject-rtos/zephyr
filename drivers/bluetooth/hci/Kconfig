@@ -81,6 +81,16 @@ config BT_SPI_INIT_PRIORITY
 	depends on BT_SPI
 	default 75
 
+config BT_SPI_BOOT_TIMEOUT_SEC
+	int "Seconds to wait for SPI device to report ready"
+	depends on BT_SPI_ZEPHYR || BT_SPI_BLUENRG
+	default 30
+	help
+	  Maximum duration for a HCI SPI Controller to report ready through the
+	  Zephyr Project defined `EVT_BLUE_INITIALIZED` HCI vendor event.
+	  Default is 30 seconds to support a bootloader image swap on the
+	  Controller.
+
 config BT_SPI_ZEPHYR
 	bool
 	default y
@@ -197,7 +207,14 @@ config BT_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_BT_CTLR
+	select BT_CTLR_PRIVACY_SUPPORT
+	select BT_CTLR_EXT_SCAN_FP_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	select BT_CTLR_PHY_UPDATE_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	select BT_CTLR_EXT_REJ_IND_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	select BT_CTLR_PHY_2M_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	select BT_CTLR_CHAN_SEL_2_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
 	help
 	  Espressif HCI bluetooth interface
 

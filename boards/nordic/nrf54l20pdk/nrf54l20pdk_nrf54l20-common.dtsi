@@ -91,3 +91,15 @@
 	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
 };
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&hfpll {
+	/* For now use 64 MHz clock for CPU and fast peripherals. */
+	clock-frequency = <DT_FREQ_M(64)>;
+};
