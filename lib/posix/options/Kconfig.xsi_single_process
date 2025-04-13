@@ -4,11 +4,14 @@
 
 config XSI_SINGLE_PROCESS
 	bool "X/Open single process"
-	depends on POSIX_SINGLE_PROCESS
-	depends on POSIX_TIMERS
+	select HWINFO
 	help
 	  Select 'y' here and Zephyr will provide implementations of
 	  gethostid(), gettimeofday(), and putenv().
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+module = XSI_SINGLE_PROCESS
+module-str = XSI Single Process
+source "subsys/logging/Kconfig.template.log_config"
