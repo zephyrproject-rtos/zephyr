@@ -64,7 +64,7 @@ static int findenv(const char *name, size_t namelen)
 	return -ENOENT;
 }
 
-char *getenv(const char *name)
+char *z_getenv(const char *name)
 {
 	int ret;
 	size_t nsize;
@@ -83,8 +83,12 @@ char *getenv(const char *name)
 
 	return val;
 }
+char *getenv(const char *name)
+{
+	return z_getenv(name);
+}
 
-int getenv_r(const char *name, char *buf, size_t len)
+int z_getenv_r(const char *name, char *buf, size_t len)
 {
 	int ret = 0;
 	size_t vsize;
@@ -117,8 +121,12 @@ int getenv_r(const char *name, char *buf, size_t len)
 
 	return ret;
 }
+int getenv_r(const char *name, char *buf, size_t len)
+{
+	return z_getenv_r(name, buf, len);
+}
 
-int setenv(const char *name, const char *val, int overwrite)
+int z_setenv(const char *name, const char *val, int overwrite)
 {
 	int ret = 0;
 	char *env;
@@ -203,8 +211,12 @@ int setenv(const char *name, const char *val, int overwrite)
 
 	return ret;
 }
+int setenv(const char *name, const char *val, int overwrite)
+{
+	return z_setenv(name, val, overwrite);
+}
 
-int unsetenv(const char *name)
+int z_unsetenv(const char *name)
 {
 	int ret = 0;
 	char **envp;
@@ -264,4 +276,8 @@ int unsetenv(const char *name)
 	}
 
 	return ret;
+}
+int unsetenv(const char *name)
+{
+	return z_unsetenv(name);
 }
