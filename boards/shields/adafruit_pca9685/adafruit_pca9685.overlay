@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/pwm/pwm.h>
+
 &arduino_i2c {
 	status = "okay";
 
