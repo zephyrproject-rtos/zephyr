@@ -9,6 +9,10 @@
 	ngpios = <32>;
 };
 
+&pwm {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
