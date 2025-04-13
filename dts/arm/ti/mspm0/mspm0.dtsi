@@ -6,6 +6,8 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <freq.h>
 
 /{
 	cpus {
@@ -18,6 +20,81 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+		};
+	};
+
+	ckm: clock-module {
+		compatible = "ti,mspm0-clk";
+		#clock-cells = <1>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <32768>;
+			clocks = <&lfosc>;
+		};
+
+		hsclk: hsclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&sysosc>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
+		mclk: mclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+			clocks = <&sysosc>;
+		};
+
+		mfpclk: mfpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(4)>;
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscialltors {
+		hfxt: hfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
 		};
 	};
 
