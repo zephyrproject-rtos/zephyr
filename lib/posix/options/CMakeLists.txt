@@ -3,6 +3,7 @@
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
+zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
 if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
@@ -154,6 +155,14 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
+
+if (NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
+  zephyr_library_sources_ifdef(CONFIG_XSI_SINGLE_PROCESS
+    clock_common.c
+    env_common.c
+    xsi_single_process.c
+  )
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)

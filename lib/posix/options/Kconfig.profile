@@ -12,6 +12,7 @@ config POSIX_API
 	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
+	imply XSI_SINGLE_PROCESS # gettimeofday()
 	help
 	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
 	  and some features found in PSE52.
