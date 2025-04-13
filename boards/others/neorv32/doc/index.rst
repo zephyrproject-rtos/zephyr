@@ -97,6 +97,13 @@ supporting the GPIOs, support can be enabled by setting the ``status`` property 
 devicetree node to ``okay``. The number of supported GPIOs can be set via the ``ngpios`` devicetree
 property.
 
+Pulse-Width Modulation
+======================
+
+The NEORV32 PWM controller is supported but disabled by default. For NEORV32 SoC implementations
+supporting PWM, support can be enabled by setting the ``status`` property of the ``pwm`` devicetree
+node to ``okay``.
+
 True Random-Number Generator
 ============================
 
