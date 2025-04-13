@@ -2,6 +2,7 @@
 
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
+zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
@@ -43,6 +44,13 @@ endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_BARRIERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
+endif()
+
+if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION
+    clock_common.c
+    clock_selection.c
+  )
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
