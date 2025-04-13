@@ -61,7 +61,7 @@ int z_vrfy___posix_clock_get_base(clockid_t clock_id, struct timespec *ts)
 #include <zephyr/syscalls/__posix_clock_get_base_mrsh.c>
 #endif
 
-int clock_gettime(clockid_t clock_id, struct timespec *ts)
+int z_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	struct timespec base;
 
@@ -97,6 +97,10 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 
 	return 0;
 }
+int clock_gettime(clockid_t clock_id, struct timespec *ts)
+{
+	return z_clock_gettime(clock_id, ts);
+}
 
 int clock_getres(clockid_t clock_id, struct timespec *res)
 {
@@ -128,7 +132,7 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
  * Note that only the `CLOCK_REALTIME` clock can be set using this
  * call.
  */
-int clock_settime(clockid_t clock_id, const struct timespec *tp)
+int z_clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	struct timespec base;
 	k_spinlock_key_t key;
@@ -155,6 +159,10 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	k_spin_unlock(&rt_clock_base_lock, key);
 
 	return 0;
+}
+int clock_settime(clockid_t clock_id, const struct timespec *tp)
+{
+	return z_clock_settime(clock_id, tp);
 }
 
 /*
@@ -192,7 +200,7 @@ int usleep(useconds_t useconds)
  *
  * See IEEE 1003.1
  */
-static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+int z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 			       struct timespec *rmtp)
 {
 	uint64_t ns;
@@ -255,13 +263,13 @@ do_rmtp_update:
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-	return __z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+	return z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
 }
 
 int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 		    struct timespec *rmtp)
 {
-	return __z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
+	return z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
 }
 
 /**
