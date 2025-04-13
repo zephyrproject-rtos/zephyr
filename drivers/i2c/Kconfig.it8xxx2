@@ -6,6 +6,7 @@ config I2C_ITE_IT8XXX2
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_I2C_ENABLED
 	select PINCTRL
+	select I2C_BITBANG
 	help
 	  Enable I2C support on it8xxx2_evb.
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
@@ -32,6 +33,7 @@ config I2C_ITE_ENHANCE
 	default y
 	depends on DT_HAS_ITE_ENHANCE_I2C_ENABLED
 	select PINCTRL
+	select I2C_BITBANG
 	help
 	  This option can enable the enhance I2C
 	  of IT8XXX2 and support three channels.
