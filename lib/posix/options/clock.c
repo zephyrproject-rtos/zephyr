@@ -91,27 +91,6 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 	return z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
 }
 
-/**
- * @brief Get current real time.
- *
- * See IEEE 1003.1
- */
-int gettimeofday(struct timeval *tv, void *tz)
-{
-	struct timespec ts;
-	int res;
-
-	/* As per POSIX, "if tzp is not a null pointer, the behavior
-	 * is unspecified."  "tzp" is the "tz" parameter above. */
-	ARG_UNUSED(tz);
-
-	res = clock_gettime(CLOCK_REALTIME, &ts);
-	tv->tv_sec = ts.tv_sec;
-	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
-
-	return res;
-}
-
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 {
 	/* We don't allow any process ID but our own.  */

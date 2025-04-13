@@ -77,6 +77,10 @@ size_t confstr(int name, char *buf, size_t len);
 long sysconf(int opt);
 #endif /* CONFIG_POSIX_SYSCONF_IMPL_FULL */
 
+#if _XOPEN_SOURCE >= 500
+long gethostid(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
