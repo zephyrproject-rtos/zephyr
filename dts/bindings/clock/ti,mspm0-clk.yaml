@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Texas Instruments Inc.
+# Copyright (c) 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Clock
+
+compatible: "ti,mspm0-clk"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  clocks:
+    description: |
+      Clock reference source
+
+  clock-frequency:
+    type: int
+    description: |
+      Output clock frequency in Hz.
+
+  clk-div:
+    type: int
+    description: |
+      Clock divider selction value. Valid range [2 ... 16].
+
+clock-cells:
+  - clk
