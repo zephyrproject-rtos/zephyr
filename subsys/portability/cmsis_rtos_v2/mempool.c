@@ -84,11 +84,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		return NULL;
 	}
 
-	if (attr->name == NULL) {
-		strncpy(mslab->name, init_mslab_attrs.name, sizeof(mslab->name) - 1);
-	} else {
-		strncpy(mslab->name, attr->name, sizeof(mslab->name) - 1);
-	}
+	mslab->name = (attr->name == NULL) ? init_mslab_attrs.name : attr->name;
 
 	return (osMemoryPoolId_t)mslab;
 }
@@ -152,16 +148,16 @@ osStatus_t osMemoryPoolFree(osMemoryPoolId_t mp_id, void *block)
 
 /**
  * @brief Get name of a Memory Pool object.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osMemoryPoolGetName(osMemoryPoolId_t mp_id)
 {
 	struct cmsis_rtos_mempool_cb *mslab = (struct cmsis_rtos_mempool_cb *)mp_id;
 
-	if (!k_is_in_isr() && (mslab != NULL)) {
-		return mslab->name;
-	} else {
+	if (mslab == NULL) {
 		return NULL;
 	}
+	return mslab->name;
 }
 
 /**
