@@ -6,6 +6,8 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <freq.h>
 
 /{
 	cpus {
@@ -18,6 +20,65 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+		};
+	};
+
+	ckm: clock-module {
+		#clock-cells = <1>;
+		compatible = "ti,mspm0-ckm";
+	};
+
+	clocks: clock-buses {
+		exlfclk: exlfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			status = "disabled";
+		};
+
+		hfclk: hfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			clock-frequency = <32768>;
+			clock-source = <MSPM0_CLOCK_BUS_LFOSC>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			clock-frequency = <DT_FREQ_M(32)>;
+			clock-source = <MSPM0_CLOCK_BUS_SYSOSC>;
+		};
+
+		mclk: mclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			clock-frequency = <DT_FREQ_M(32)>;
+			clock-source = <MSPM0_CLOCK_BUS_SYSOSC>;
+		};
+
+		mfpclk: mfpclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-ckm-bus";
+			clock-frequency = <DT_FREQ_M(4)>;
+			clock-source = <MSPM0_CLOCK_BUS_SYSOSC_4M>;
 		};
 	};
 
