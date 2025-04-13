@@ -51,11 +51,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 	k_mutex_init(&mutex->z_mutex);
 	mutex->state = attr->attr_bits;
 
-	if (attr->name == NULL) {
-		strncpy(mutex->name, init_mutex_attrs.name, sizeof(mutex->name) - 1);
-	} else {
-		strncpy(mutex->name, attr->name, sizeof(mutex->name) - 1);
-	}
+	mutex->name = (attr->name == NULL) ? init_mutex_attrs.name : attr->name;
 
 	return (osMutexId_t)mutex;
 }
@@ -156,13 +152,16 @@ osThreadId_t osMutexGetOwner(osMutexId_t mutex_id)
 	return get_cmsis_thread_id(mutex->z_mutex.owner);
 }
 
+/**
+ * @brief Get name of a mutex.
+ * This function may be called from Interrupt Service Routines.
+ */
 const char *osMutexGetName(osMutexId_t mutex_id)
 {
 	struct cmsis_rtos_mutex_cb *mutex = (struct cmsis_rtos_mutex_cb *)mutex_id;
 
-	if (k_is_in_isr() || (mutex == NULL)) {
+	if (mutex == NULL) {
 		return NULL;
 	}
-
 	return mutex->name;
 }

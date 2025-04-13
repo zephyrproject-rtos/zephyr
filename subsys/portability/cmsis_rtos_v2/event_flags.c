@@ -50,11 +50,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 			  &events->poll_signal);
 	events->signal_results = 0U;
 
-	if (attr->name == NULL) {
-		strncpy(events->name, init_event_flags_attrs.name, sizeof(events->name) - 1);
-	} else {
-		strncpy(events->name, attr->name, sizeof(events->name) - 1);
-	}
+	events->name = (attr->name == NULL) ? init_event_flags_attrs.name : attr->name;
 
 	return (osEventFlagsId_t)events;
 }
@@ -207,16 +203,16 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
 
 /**
  * @brief Get name of an Event Flags object.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osEventFlagsGetName(osEventFlagsId_t ef_id)
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 
-	if (!k_is_in_isr() && (ef_id != NULL)) {
-		return events->name;
-	} else {
+	if (events == NULL) {
 		return NULL;
 	}
+	return events->name;
 }
 
 /**
