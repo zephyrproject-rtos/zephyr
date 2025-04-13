@@ -1,0 +1,32 @@
+sample:
+  name: Async Listeners
+tests:
+  sample.zbus.async_listeners:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "I: Output                       | Thread Context$"
+        - "I: =============================================$"
+        - "I: From listener -> Evt=0       | main$"
+        - "I: From async listener -> Evt=0 | sysworkq$"
+        - "I: From listener -> Evt=1       | main$"
+        - "I: From async listener -> Evt=1 | sysworkq$"
+        - "I: From listener -> Evt=2       | main$"
+        - "I: From async listener -> Evt=2 | sysworkq$"
+        - "I: From listener -> Evt=3       | main$"
+        - "I: From async listener -> Evt=3 | sysworkq$"
+        - "I: =============================================$"
+        - "I: From listener -> Evt=0       | main$"
+        - "I: From async listener -> Evt=0 | sysworkq$"
+        - "I: From listener -> Evt=1       | main$"
+        - "I: From async listener -> Evt=1 | sysworkq$"
+        - "I: From listener -> Evt=2       | main$"
+        - "I: From async listener -> Evt=2 | sysworkq$"
+        - "I: From listener -> Evt=3       | main$"
+        - "I: From async listener -> Evt=3 | sysworkq$"
+    platform_exclude: qemu_leon3
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
