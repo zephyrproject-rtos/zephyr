@@ -112,6 +112,10 @@
 #define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
 				    partition_100, partition_40)
 
+#define TEST_GPIO_CONNECTOR  DT_PATH(gpio_map_test, connector)
+#define TEST_INTERRUPT_NEXUS DT_PATH(interrupt_map_test, nexus)
+#define TEST_INTERRUPT_NEXUS_EMPTY DT_PATH(interrupt_map_test, empty)
+
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
@@ -3888,6 +3892,142 @@ ZTEST(devicetree_api, test_nvmem_devictree_inst)
 
 	zexpect_str_equal(DT_NODE_PATH(DT_MTD_FROM_NVMEM_CELL(DT_INST_NVMEM_CELL(0))),
 			  "/test/test-nvmem-provider");
+}
+
+#define INTERRUPT_NEXUS_CHECK_0(n, p, i, ...)                                                      \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_LEN(n, p, i), 2);                                 \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 0), 0);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 1), 0);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(n, p, i), 2);                               \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 0), 1);                         \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 1), 2);                         \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_LEN(n, p, i), 1);                                \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_BY_IDX(n, p, i, 0), 3);                          \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(n, p, i), 1);                              \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0), 4);                        \
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT(n, p)),                                    \
+				    "DT_N_S_interrupt_map_test_S_controller_0_0");
+
+#define INTERRUPT_NEXUS_CHECK_1(n, p, i, ...)                                                      \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_LEN(n, p, i), 2);                                 \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS(n, p, i), 0);                                     \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 1), 0);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(n, p, i), 2);                               \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER(n, p, i), 5);                                   \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 1), 6);                         \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_LEN(n, p, i), 2);                                \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS(n, p, i), 7);                                    \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_BY_IDX(n, p, i, 1), 8);                          \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(n, p, i), 2);                              \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER(n, p, i), 9);                                  \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 1), 0);                        \
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                          \
+				    "DT_N_S_interrupt_map_test_S_controller_1_1");
+
+#define INTERRUPT_NEXUS_CHECK_2(n, p, i, ...)                                                      \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_LEN(n, p, i), 2);                                 \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 0), 0);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 1), 1);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(n, p, i), 2);                               \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 0), 9);                         \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 1), 8);                         \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_LEN(n, p, i), 1);                                \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_BY_IDX(n, p, i, 0), 7);                          \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(n, p, i), 1);                              \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0), 6);                        \
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                          \
+				    "DT_N_S_interrupt_map_test_S_controller_0_0");
+
+#define INTERRUPT_NEXUS_CHECK_3(n, p, i, ...)                                                      \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_LEN(n, p, i), 2);                                 \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 0), 0);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_BY_IDX(n, p, i, 1), 1);                           \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(n, p, i), 2);                               \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 0), 5);                         \
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 1), 4);                         \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_LEN(n, p, i), 2);                                \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_BY_IDX(n, p, i, 0), 3);                          \
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_BY_IDX(n, p, i, 1), 2);                          \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(n, p, i), 2);                              \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0), 1);                        \
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 1), 0);                        \
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                          \
+				    "DT_N_S_interrupt_map_test_S_controller_1_1");
+
+#define INTERRUPT_NEXUS_CHECK(n, p, i)            UTIL_CAT(INTERRUPT_NEXUS_CHECK_, i)(n, p, i)
+#define INTERRUPT_NEXUS_CHECK_VARGS(n, p, i, ...) UTIL_CAT(INTERRUPT_NEXUS_CHECK_, i)(n, p, i)
+
+#define EMPTY_MAP_SHOULD_NOT_RUN(...) zassert_unreachable("map should be empty")
+
+ZTEST(devicetree_api, test_map)
+{
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map_mask), 2);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_mask, 0), 0xffffffff);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_mask, 1), 0xffffffc0);
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map_pass_thru), 2);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_pass_thru, 0), 0x0);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_pass_thru, 1), 0x3f);
+
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map), 2);
+
+	zassert_equal(DT_MAP_ENTRY_CHILD_ADDRESS_LEN(TEST_GPIO_CONNECTOR, gpio_map, 0), 0);
+	zassert_equal(DT_MAP_ENTRY_PARENT_ADDRESS_LEN(TEST_GPIO_CONNECTOR, gpio_map, 0), 0);
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(TEST_GPIO_CONNECTOR, gpio_map, 0), 2);
+	zassert_equal(DT_MAP_ENTRY_HAS_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 1),
+		      1);
+	zassert_equal(DT_MAP_ENTRY_HAS_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 2),
+		      0);
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 0), 1);
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 1), 2);
+
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0)),
+				    "DT_N_S_gpio_map_test_S_parent");
+
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(TEST_GPIO_CONNECTOR, gpio_map, 1), 1);
+	zassert_equal(DT_MAP_ENTRY_HAS_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 0),
+		      1);
+	zassert_equal(DT_MAP_ENTRY_HAS_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 1),
+		      0);
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 0), 3);
+
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_LEN(TEST_GPIO_CONNECTOR, gpio_map, 1), 2);
+	zassert_equal(DT_MAP_ENTRY_HAS_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 1),
+		      1);
+	zassert_equal(DT_MAP_ENTRY_HAS_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 2),
+		      0);
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 0), 4);
+	zassert_equal(DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 1), 5);
+
+	zassert_str_equal(STRINGIFY(DT_MAP_ENTRY_PARENT_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1)),
+				    "DT_N_S_gpio_map_test_S_parent");
+
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_LEN(TEST_GPIO_CONNECTOR, gpio_map, 0), 1);
+	zassert_equal(DT_MAP_ENTRY_HAS_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 0),
+		      1);
+	zassert_equal(DT_MAP_ENTRY_HAS_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, 1),
+		      0);
+	zassert_equal(DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, 0), 6);
+
+	zassert_true(DT_NODE_HAS_MAP(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map), "");
+	zassert_equal(DT_MAP_LEN(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map), 0);
+	zassert_equal(DT_MAP_HAS_ENTRY(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map), 0);
+
+	DT_FOREACH_MAP_ENTRY(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map, EMPTY_MAP_SHOULD_NOT_RUN);
+	DT_FOREACH_MAP_ENTRY_SEP(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map,
+				 EMPTY_MAP_SHOULD_NOT_RUN, ());
+	DT_FOREACH_MAP_ENTRY_VARGS(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map,
+				   EMPTY_MAP_SHOULD_NOT_RUN, 1234);
+	DT_FOREACH_MAP_ENTRY_SEP_VARGS(TEST_INTERRUPT_NEXUS_EMPTY, interrupt_map,
+				       EMPTY_MAP_SHOULD_NOT_RUN, (), 1234);
+
+	zassert_equal(DT_MAP_HAS_ENTRY_BY_IDX(TEST_INTERRUPT_NEXUS, interrupt_map, 3), 1);
+	zassert_equal(DT_MAP_HAS_ENTRY_BY_IDX(TEST_INTERRUPT_NEXUS, interrupt_map, 4), 0);
+	DT_FOREACH_MAP_ENTRY(TEST_INTERRUPT_NEXUS, interrupt_map, INTERRUPT_NEXUS_CHECK)
+	DT_FOREACH_MAP_ENTRY_SEP(TEST_INTERRUPT_NEXUS, interrupt_map, INTERRUPT_NEXUS_CHECK, ())
+	DT_FOREACH_MAP_ENTRY_VARGS(TEST_INTERRUPT_NEXUS, interrupt_map, INTERRUPT_NEXUS_CHECK_VARGS,
+				   9999);
+	DT_FOREACH_MAP_ENTRY_SEP_VARGS(TEST_INTERRUPT_NEXUS, interrupt_map,
+				       INTERRUPT_NEXUS_CHECK_VARGS, (), 9999);
 }
 
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
