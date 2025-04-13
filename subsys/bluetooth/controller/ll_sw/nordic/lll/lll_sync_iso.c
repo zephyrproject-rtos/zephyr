@@ -699,17 +699,10 @@ static void isr_rx(void *param)
 			}
 
 			goto isr_rx_done;
-		} else {
-			/* Check if there are 2 free rx buffers, one will be
-			 * consumed to receive the current PDU, and the other
-			 * is to ensure a PDU can be setup for the radio DMA to
-			 * receive in the next sub_interval/iso_interval.
-			 */
-			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
-			if (!node_rx) {
-				goto isr_rx_done;
-			}
 		}
+
+		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+		LL_ASSERT(node_rx);
 
 		pdu = (void *)node_rx->pdu;
 
@@ -717,6 +710,15 @@ static void isr_rx(void *param)
 		if (pdu->cstf && (pdu->cssn != lll->cssn_curr)) {
 			lll->cssn_next = pdu->cssn;
 			/* TODO: check same CSSN is used in every subevent */
+		}
+
+		/* Check if there are 2 free rx buffers, one will be
+		 * consumed to receive the current PDU, and the other
+		 * is to ensure a PDU can be setup for the radio DMA to
+		 * receive in the next sub_interval/iso_interval.
+		 */
+		if (ull_iso_pdu_rx_alloc_peek(2U) == NULL) {
+			goto isr_rx_done;
 		}
 
 		/* Check payload buffer overflow.
