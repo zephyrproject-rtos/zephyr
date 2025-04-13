@@ -54,6 +54,7 @@
 	};
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
@@ -149,6 +150,18 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc3 {
+	pinctrl-0 = <&adc3_inp5_pf3>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
