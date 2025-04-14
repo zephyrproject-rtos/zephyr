@@ -214,7 +214,9 @@
 
 struct apds9960_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	struct gpio_dt_spec int_gpio;
+#endif
 	uint8_t pgain;
 	uint8_t again;
 	uint8_t ppcount;
@@ -231,7 +233,7 @@ struct apds9960_data {
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
 	const struct sensor_trigger *p_th_trigger;
-#else
+#elif CONFIG_APDS9960_INTERRUPT_PIN
 	struct k_sem data_sem;
 #endif
 };
