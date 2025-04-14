@@ -166,14 +166,24 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
  *
  * Convert the absolute time specified by @p abstime with respect to @p clock to a relative
  * timeout in milliseconds. The result is the number of milliseconds until the specified time,
+<<<<<<< HEAD
  * clamped to the range [0, `INT32_MAX`] so that if @p abstime specifies a timepoint in the past,
+=======
+ * clamped to the range [0, `INT64_MAX`] so that if @p abstime specifies a timepoint in the past,
+>>>>>>> 4def3d81eaf (posix + tests: correct timing functions to use CLOCK_REALTIME)
  * the result timeout is 0. If the clock specified by @p clock is not supported, the function
  * returns 0.
  *
  * @param clock The clock ID to use for conversion, e.g. `CLOCK_REALTIME`, or `CLOCK_MONOTONIC`.
  * @param abstime The absolute time to convert.
+<<<<<<< HEAD
  * @return The relative timeout in milliseconds clamped to the range [0, `INT32_MAX`].
  */
 uint32_t timespec_to_timeoutms(clockid_t clock, const struct timespec *abstime);
+=======
+ * @return The relative timeout in milliseconds clamped to the range [0, `INT64_MAX`].
+ */
+uint64_t timespec_to_timeoutms(clockid_t clock, const struct timespec *abstime);
+>>>>>>> 4def3d81eaf (posix + tests: correct timing functions to use CLOCK_REALTIME)
 
 #endif
