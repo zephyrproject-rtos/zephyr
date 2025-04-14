@@ -54,9 +54,6 @@ extern "C" {
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT {0}
 
-/* The minimum allowable stack size */
-#define PTHREAD_STACK_MIN K_KERNEL_STACK_LEN(0)
-
 /**
  * @brief Declare a condition variable as initialized
  *
