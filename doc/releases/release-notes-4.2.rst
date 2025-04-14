@@ -164,6 +164,10 @@ New APIs and options
 
   * :c:func:`counter_reset`
 
+* Other
+
+  * :c:func:`zephyr_count_bits`
+
 New Boards
 **********
 
