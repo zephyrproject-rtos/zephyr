@@ -113,6 +113,10 @@
 	status = "okay";
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpiote {
 	status = "okay";
 };
