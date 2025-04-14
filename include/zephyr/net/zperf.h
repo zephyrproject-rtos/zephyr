@@ -47,6 +47,7 @@ struct zperf_upload_params {
 		int priority;
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 		int thread_priority;
+		bool wait_for_start;
 #endif
 		uint32_t report_interval_ms;
 	} options;
