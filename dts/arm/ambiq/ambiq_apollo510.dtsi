@@ -394,40 +394,6 @@
 			};
 		};
 
-		timer14: timer@400081c0 {
-			compatible = "ambiq,timer";
-			reg = <0x400081c0 0x20>;
-			interrupts = <81 0>;
-			clk-source = "CLK_SELECT_HFRC_DIV64";
-
-			counter {
-				compatible = "ambiq,counter";
-				status = "disabled";
-			};
-			pwm {
-				compatible = "ambiq,timer-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-		};
-
-		timer15: timer@400081e0 {
-			compatible = "ambiq,timer";
-			reg = <0x400081e0 0x20>;
-			interrupts = <82 0>;
-			clk-source = "CLK_SELECT_HFRC_DIV64";
-
-			counter {
-				compatible = "ambiq,counter";
-				status = "disabled";
-			};
-			pwm {
-				compatible = "ambiq,timer-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-		};
-
 		rtc0: rtc@RTC_BASE_NAME {
 			compatible = "ambiq,rtc";
 			reg = <RTC_REG_BASE RTC_REG_SIZE>;

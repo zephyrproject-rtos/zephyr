@@ -16,6 +16,9 @@ void soc_early_init_hook(void)
 	__DSB();
 	__ISB();
 
+	/* Internal timer15 for SPOT manager */
+	IRQ_CONNECT(82, 0, hal_internal_timer_isr, 0, 0);
+
 	/* Initialize for low power in the power control block */
 	am_hal_pwrctrl_low_power_init();
 
