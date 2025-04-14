@@ -8,11 +8,17 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/dt-bindings/sensor/ina230.h>
+#include <zephyr/drivers/sensor/ina230.h>
+#include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
 #include <ina230_emul.h>
 #include <ina230.h>
+
+DEFINE_FFF_GLOBALS;
 
 enum ina23x_ids {
 	INA230,
@@ -27,6 +33,7 @@ struct ina230_fixture {
 	const uint16_t rshunt_uOhms;
 	const uint16_t config;
 	const enum ina23x_ids dev_type;
+	const struct gpio_dt_spec alert_gpios;
 };
 
 /**
@@ -211,6 +218,95 @@ static void test_power(struct ina230_fixture *fixture)
 	}
 }
 
+FAKE_VOID_FUNC(test_cnvr_trigger_handler, const struct device *, const struct sensor_trigger *);
+FAKE_VOID_FUNC(test_alert_trigger_handler, const struct device *, const struct sensor_trigger *);
+
+static void test_trigger(struct ina230_fixture *fixture)
+{
+	const struct sensor_trigger trigger = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+	const struct sensor_trigger alarm_trigger = {
+		.type = (enum sensor_trigger_type)SENSOR_TRIG_INA230_OVER,
+		.chan = SENSOR_CHAN_VOLTAGE,
+	};
+
+	int ret;
+
+	RESET_FAKE(test_cnvr_trigger_handler);
+	RESET_FAKE(test_alert_trigger_handler);
+
+	ret = sensor_trigger_set(fixture->dev, &trigger, test_cnvr_trigger_handler);
+	zassert_equal(ret, 0);
+
+	ret = sensor_trigger_set(fixture->dev, &alarm_trigger, test_alert_trigger_handler);
+	zassert_equal(ret, 0);
+
+	ina230_mock_set_register(fixture->mock->data, INA230_REG_MASK,
+				 INA230_CONVERSION_READY | INA230_CONVERSION_READY_FLAG |
+					 INA230_ALERT_FUNCTION_FLAG | INA230_BUS_VOLTAGE_OVER);
+
+	/* Toggle the GPIO */
+	gpio_emul_input_set(fixture->alert_gpios.port, fixture->alert_gpios.pin, 1);
+	k_msleep(5);
+	gpio_emul_input_set(fixture->alert_gpios.port, fixture->alert_gpios.pin, 0);
+	k_msleep(5);
+
+	/* Verify the handler was called */
+	zassert_equal(test_cnvr_trigger_handler_fake.call_count, 1);
+	zassert_equal(test_alert_trigger_handler_fake.call_count, 1);
+}
+
+static void test_trigger_config(struct ina230_fixture *fixture)
+{
+	const struct sensor_trigger cnvr_trigger = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+	struct sensor_trigger alarm_trigger = {
+		.type = (enum sensor_trigger_type)SENSOR_TRIG_INA230_OVER,
+		.chan = SENSOR_CHAN_VOLTAGE,
+	};
+	struct sensor_value reg;
+	int ret;
+
+	/* Remove trigger */
+	ret = sensor_trigger_set(fixture->dev, &cnvr_trigger, NULL);
+	zassert_equal(ret, 0);
+
+	ret = sensor_trigger_set(fixture->dev, &alarm_trigger, NULL);
+	zassert_equal(ret, 0);
+
+	sensor_attr_get(fixture->dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &reg);
+	zassert_equal(reg.val1, 0);
+
+	/* Add triggers */
+	ret = sensor_trigger_set(fixture->dev, &cnvr_trigger, test_cnvr_trigger_handler);
+	zassert_equal(ret, 0);
+
+	sensor_attr_get(fixture->dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &reg);
+	zassert_equal(reg.val1 & INA230_CONVERSION_READY, INA230_CONVERSION_READY);
+
+	ret = sensor_trigger_set(fixture->dev, &alarm_trigger, test_alert_trigger_handler);
+	zassert_equal(ret, 0);
+
+	sensor_attr_get(fixture->dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &reg);
+	zassert_equal(reg.val1 & (INA230_CONVERSION_READY | INA230_BUS_VOLTAGE_OVER),
+		      (INA230_CONVERSION_READY | INA230_BUS_VOLTAGE_OVER));
+
+	/* Update trigger */
+	alarm_trigger.type = (enum sensor_trigger_type)SENSOR_TRIG_INA230_UNDER;
+	alarm_trigger.chan = SENSOR_CHAN_VSHUNT;
+
+	ret = sensor_trigger_set(fixture->dev, &alarm_trigger, test_alert_trigger_handler);
+	zassert_equal(ret, 0);
+
+	sensor_attr_get(fixture->dev, SENSOR_CHAN_ALL, SENSOR_ATTR_FEATURE_MASK, &reg);
+	zassert_equal(reg.val1 & (INA230_CONVERSION_READY | INA230_SHUNT_VOLTAGE_UNDER),
+		      (INA230_CONVERSION_READY | INA230_SHUNT_VOLTAGE_UNDER));
+}
+
 /* Create a test fixture for each enabled ina230 device node */
 #define INA230_FIXTURE_ENTRY(inst, v)                                                              \
 	static struct ina230_fixture fixture_23##v##_##inst = {                                    \
@@ -219,6 +315,7 @@ static void test_power(struct ina230_fixture *fixture)
 		.current_lsb_uA = DT_INST_PROP(inst, current_lsb_microamps),                       \
 		.rshunt_uOhms = DT_INST_PROP(inst, rshunt_micro_ohms),                             \
 		.dev_type = INA23##v,                                                              \
+		.alert_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                   \
 	}
 
 /* Create a test suite for each enabled ina230 device node */
@@ -243,6 +340,14 @@ static void test_power(struct ina230_fixture *fixture)
 	ZTEST(ina23##v##_##inst, test_power)                                                       \
 	{                                                                                          \
 		test_power(&fixture_23##v##_##inst);                                               \
+	}                                                                                          \
+	ZTEST(ina23##v##_##inst, test_trigger)                                                     \
+	{                                                                                          \
+		test_trigger(&fixture_23##v##_##inst);                                             \
+	}                                                                                          \
+	ZTEST(ina23##v##_##inst, test_trigger_config)                                              \
+	{                                                                                          \
+		test_trigger_config(&fixture_23##v##_##inst);                                      \
 	}                                                                                          \
 	ZTEST_SUITE(ina23##v##_##inst, NULL, NULL, NULL, NULL, NULL);
 
