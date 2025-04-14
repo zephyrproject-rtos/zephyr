@@ -129,13 +129,13 @@ static void test_current(struct ina230_fixture *fixture)
 		-32768,
 	};
 
-	for (int idx = 0; idx < ARRAY_SIZE(current_reg_vectors); idx++) {
+	ARRAY_FOR_EACH_PTR(current_reg_vectors, current_register) {
 		struct sensor_value sensor_val;
-		int16_t current_register = current_reg_vectors[idx];
-		double current_expected_A = fixture->current_lsb_uA * 1e-6 * current_register;
+		double current_expected_A = fixture->current_lsb_uA * 1e-6 * *current_register;
 
 		/* set current reading */
-		ina230_mock_set_register(fixture->mock->data, INA230_REG_CURRENT, current_register);
+		ina230_mock_set_register(fixture->mock->data, INA230_REG_CURRENT,
+					 *current_register);
 
 		/* Verify sensor value is correct */
 		zassert_ok(sensor_sample_fetch(fixture->dev));
@@ -164,18 +164,18 @@ static void test_bus_voltage(struct ina230_fixture *fixture)
 	double bitres =
 		(fixture->dev_type == INA232 || fixture->dev_type == INA236) ? 1.6e-3 : 1.25e-3;
 
-	for (int idx = 0; idx < ARRAY_SIZE(voltage_reg_vectors); idx++) {
+	ARRAY_FOR_EACH_PTR(voltage_reg_vectors, voltage_register) {
 		struct sensor_value sensor_val;
 
 		ina230_mock_set_register(fixture->mock->data, INA230_REG_BUS_VOLT,
-			voltage_reg_vectors[idx]);
+			*voltage_register);
 
 		/* Verify sensor value is correct */
 		zassert_ok(sensor_sample_fetch(fixture->dev));
 		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_VOLTAGE, &sensor_val));
 
 		double voltage_actual_V = sensor_value_to_double(&sensor_val);
-		double voltage_expected_V = voltage_reg_vectors[idx] * bitres;
+		double voltage_expected_V = *voltage_register * bitres;
 
 		zexpect_within(voltage_expected_V, voltage_actual_V, 1e-6,
 			"Expected %.6f A, got %.6f A", voltage_expected_V, voltage_actual_V);
@@ -197,15 +197,14 @@ static void test_power(struct ina230_fixture *fixture)
 
 	int scale = (fixture->dev_type == INA232 || fixture->dev_type == INA236) ? 32 : 25;
 
-	for (int idx = 0; idx < ARRAY_SIZE(power_reg_vectors); idx++) {
+	ARRAY_FOR_EACH_PTR(power_reg_vectors, power_register) {
 		struct sensor_value sensor_val;
-		uint32_t power_register = power_reg_vectors[idx];
 
 		/* power is power_register * SCALE * current_lsb */
-		double power_expected_W = power_register * scale * fixture->current_lsb_uA * 1e-6;
+		double power_expected_W = *power_register * scale * fixture->current_lsb_uA * 1e-6;
 
 		/* set current reading */
-		ina230_mock_set_register(fixture->mock->data, INA230_REG_POWER, power_register);
+		ina230_mock_set_register(fixture->mock->data, INA230_REG_POWER, *power_register);
 
 		/* Verify sensor value is correct */
 		zassert_ok(sensor_sample_fetch(fixture->dev));
@@ -214,7 +213,35 @@ static void test_power(struct ina230_fixture *fixture)
 
 		zexpect_within(power_expected_W, power_actual_W, 1e-6,
 			       "Expected %.6f W, got %.6f W for %d", power_expected_W,
-			       power_actual_W, power_register);
+			       power_actual_W, *power_register);
+	}
+}
+
+static void test_shunt_voltage(struct ina230_fixture *fixture)
+{
+	/* 16-bit signed value for vshunt register */
+	const int16_t vshunt_reg_vectors[] = {
+		32767, 1000, 100, 1, 0, -1, -100, -1000, -32768,
+	};
+
+	ARRAY_FOR_EACH_PTR(vshunt_reg_vectors, vshunt_register) {
+		struct sensor_value sensor_val;
+
+		/* shunt voltage is vshunt_register * 2.5 uV */
+		double vshunt_expected_mV = *vshunt_register * 2.5 * 1e-3;
+
+		/* set current reading */
+		ina230_mock_set_register(fixture->mock->data, INA230_REG_SHUNT_VOLT,
+					 *vshunt_register);
+
+		/* Verify sensor value is correct */
+		zassert_ok(sensor_sample_fetch(fixture->dev));
+		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_VSHUNT, &sensor_val));
+		double vshunt_actual_mV = sensor_value_to_double(&sensor_val);
+
+		zexpect_within(vshunt_expected_mV, vshunt_actual_mV, 1e-6,
+			       "Expected %.6f mV, got %.6f mV for %d", vshunt_expected_mV,
+			       vshunt_actual_mV, *vshunt_register);
 	}
 }
 
@@ -340,6 +367,10 @@ static void test_trigger_config(struct ina230_fixture *fixture)
 	ZTEST(ina23##v##_##inst, test_power)                                                       \
 	{                                                                                          \
 		test_power(&fixture_23##v##_##inst);                                               \
+	}                                                                                          \
+	ZTEST(ina23##v##_##inst, test_shunt_voltage)                                               \
+	{                                                                                          \
+		test_shunt_voltage(&fixture_23##v##_##inst);                                       \
 	}                                                                                          \
 	ZTEST(ina23##v##_##inst, test_trigger)                                                     \
 	{                                                                                          \
