@@ -167,6 +167,11 @@ New APIs and options
 
   * :c:func:`counter_reset`
 
+* Sys
+
+  * :c:func:`util_eq`
+  * :c:func:`util_memeq`
+
 New Boards
 **********
 
