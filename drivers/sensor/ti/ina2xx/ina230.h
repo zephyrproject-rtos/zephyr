@@ -35,6 +35,7 @@
 struct ina230_data {
 	struct ina2xx_data common;
 	const struct device *dev;
+	int16_t shunt_voltage;
 	uint16_t mask;
 #ifdef CONFIG_INA230_TRIGGER
 	const struct device *gpio;
