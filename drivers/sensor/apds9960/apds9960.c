@@ -63,7 +63,6 @@ static int apds9960_sample_fetch(const struct device *dev,
 #ifndef CONFIG_APDS9960_TRIGGER
 #ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	apds9960_setup_int(config, true);
-#endif
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	tmp = APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN;
@@ -75,7 +74,6 @@ static int apds9960_sample_fetch(const struct device *dev,
 		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
-#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	k_sem_take(&data->data_sem, K_FOREVER);
 #endif
 #endif
@@ -104,12 +102,14 @@ static int apds9960_sample_fetch(const struct device *dev,
 	}
 
 #ifndef CONFIG_APDS9960_TRIGGER
+#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	if (i2c_reg_update_byte_dt(&config->i2c,
 				APDS9960_ENABLE_REG,
 				APDS9960_ENABLE_PON,
 				0)) {
 		return -EIO;
 	}
+#endif
 #endif
 
 	if (i2c_reg_write_byte_dt(&config->i2c,
@@ -353,6 +353,14 @@ static int apds9960_sensor_setup(const struct device *dev)
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	if (apds9960_ambient_setup(dev)) {
 		LOG_ERR("Failed to setup ambient light functionality");
+		return -EIO;
+	}
+#endif
+
+#ifndef CONFIG_APDS9960_INTERRUPT_PIN
+	if (i2c_reg_update_byte_dt(&config->i2c, APDS9960_ENABLE_REG, APDS9960_ENABLE_PON,
+				   APDS9960_ENABLE_PON)) {
+		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
 #endif
