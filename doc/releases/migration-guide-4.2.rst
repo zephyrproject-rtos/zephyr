@@ -163,6 +163,12 @@ GPIO
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
 
+I2S
+===
+* The :dtcompatible:`nxp,mcux-i2s` driver added property ``mclk-output``. Set this property to
+* configure the MCLK signal as an output.  Older driver versions used the macro
+* ``I2S_OPT_BIT_CLK_SLAVE`` to configure the MCLK signal direction. (:github:`88554`)
+
 Sensors
 =======
 
