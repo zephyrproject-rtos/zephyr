@@ -146,6 +146,14 @@
 	status = "okay";
 };
 
+&ctimer0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
 &lpuart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart3>;
