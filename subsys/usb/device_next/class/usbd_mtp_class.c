@@ -13,6 +13,8 @@
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/logging/log.h>
+#include "usbd_mtp_class.h"
+
 LOG_MODULE_REGISTER(usb_mtp_impl, CONFIG_USBD_MTP_LOG_LEVEL);
 
 /* MTP Control Requests Codes */
@@ -111,7 +113,7 @@ LOG_MODULE_REGISTER(usb_mtp_impl, CONFIG_USBD_MTP_LOG_LEVEL);
 
 /* MACROS */
 #define MAX_FILES                CONFIG_USBD_MTP_MAX_HANDLES /* Define the maximum number of files to store */
-#define MAX_PATH_LEN             128
+
 #define MAX_PACKET_SIZE          512 /* Get it in a usb complaint way */
 /* Helpers */
 #define INTERNAL_STORAGE_ID(id)  (0x00010000 + id)
@@ -126,10 +128,10 @@ LOG_MODULE_REGISTER(usb_mtp_impl, CONFIG_USBD_MTP_LOG_LEVEL);
 
 /* Functions dec/def */
 static void mtp_reset();
-#define MTP_CMD(opcode) mtp_##opcode(mtp_command, payload, buf)
+#define MTP_CMD(opcode) mtp_##opcode(ctx, mtp_command, payload, buf)
 
 #define MTP_CMD_HANDLER(opcode)                                                                    \
-	static void mtp_##opcode(struct mtp_container *mtp_command, struct net_buf *payload,       \
+	static void mtp_##opcode(struct mtp_context* ctx, struct mtp_container *mtp_command, struct net_buf *payload,       \
 				 struct net_buf *buf)
 /* DTS */
 #define PROCESS_FSTAB_ENTRY(node_id)                                                               \
@@ -177,21 +179,6 @@ static const uint16_t events_supported[] = {MTP_EVENT_OBJECT_ADDED, MTP_EVENT_OB
 static const uint16_t playback_formats[] = {
 	MTP_FORMAT_UNDEFINED,
 	MTP_FORMAT_ASSOCIATION,
-};
-
-struct mtp_context {
-	bool session_opened;
-	uint8_t filebuf[512]; /* TODO: should match USB Packet size */
-	struct {
-		struct fs_file_t file;
-		char filepath[MAX_PATH_LEN];
-		uint32_t total_size;
-		uint32_t transferred;
-		uint32_t chunks_sent;
-		uint32_t storage_id;
-	} filestate;
-} mtp_ctx = {
-	.session_opened = false,
 };
 
 struct fs_object_t {
@@ -451,59 +438,47 @@ static void net_buf_pull_utf16le(struct net_buf *buf, char *strbuf, size_t len)
 		net_buf_pull_u8(buf);
 	}
 }
+typedef int (pending_fn_t)(struct mtp_context* ctx, struct net_buf *buf);
 
-static int mtp_send_confirmation(struct net_buf *buf);
+static int mtp_send_confirmation(struct mtp_context* ctx, struct net_buf *buf);
 /* ================== Pending packet handling ================ */
-typedef int(pending_fn_t)(struct net_buf *buf);
-static pending_fn_t *pending_fn;
-
-static void set_pending_packet(pending_fn_t *pend_fn)
+static void set_pending_packet(struct mtp_context* ctx, pending_fn_t *pend_fn)
 {
-	pending_fn = pend_fn;
+	ctx->pending_fn = pend_fn;
 }
 
-int send_pending_packet(struct net_buf *buf)
+int send_pending_packet(struct mtp_context* ctx, struct net_buf *buf)
 {
-	if (pending_fn) {
-		pending_fn_t *lpfn = pending_fn;
-
-		pending_fn = NULL;
-		return lpfn(buf);
+	if (ctx->pending_fn) {
+		return ctx->pending_fn(ctx, buf);
 	} else {
 		return -EINVAL;
 	}
 }
 
-bool mtp_packet_pending(void)
+bool mtp_packet_pending(struct mtp_context* ctx)
 {
-	return (pending_fn != NULL);
+	return (ctx->pending_fn != NULL);
 }
 
 /* ===================== Extra Data needed handling =============== */
-typedef int(extra_data_fn_t)(struct net_buf *buf, struct net_buf *buf_recv);
-static extra_data_fn_t *extra_data_fn;
-
-static bool more_data_needed;
-static void set_needs_more_data(bool more_data)
+static void set_needs_more_data(struct mtp_context* ctx, bool more_data)
 {
-	more_data_needed = more_data;
+	ctx->more_data_needed = more_data;
 }
 
-bool mtp_needs_more_data(struct net_buf *buf)
+bool mtp_needs_more_data(struct mtp_context* ctx, struct net_buf *buf)
 {
-	bool val = more_data_needed;
+	bool val = ctx->more_data_needed;
 
-	more_data_needed = false;
+	ctx->more_data_needed = false;
 	return val;
 }
 
-int handle_extra_data(struct net_buf *buf, struct net_buf *buf_recv)
+int handle_extra_data(struct mtp_context* ctx, struct net_buf *buf, struct net_buf *buf_recv)
 {
-	if (extra_data_fn) {
-		extra_data_fn_t *lpfn = extra_data_fn;
-
-		extra_data_fn = NULL;
-		return lpfn(buf, buf_recv);
+	if (ctx->extra_data_fn) {
+		return ctx->extra_data_fn(ctx, buf, buf_recv);
 	} else {
 		return -EINVAL;
 	}
@@ -680,14 +655,14 @@ MTP_CMD_HANDLER(MTP_OP_GET_DEVICE_INFO)
 	/* Add the Packet Header */
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
 MTP_CMD_HANDLER(MTP_OP_OPEN_SESSION)
 {
 	uint16_t err_code = MTP_RESP_OK;
 
-	if (mtp_ctx.session_opened == false) {
+	if (ctx->session_opened == false) {
 		for (int i = 1; i < ARRAY_SIZE(storage); i++) {
 			if (dir_traverse(i, storage[i].mountpoint, 0xFFFFFFFF)) {
 				LOG_ERR("Failed to traverse %s", storage[i].mountpoint);
@@ -695,7 +670,7 @@ MTP_CMD_HANDLER(MTP_OP_OPEN_SESSION)
 				break;
 			}
 			/* TODO: Fail the MTP command if dir_traverse fails */
-			mtp_ctx.session_opened = true;
+			ctx->session_opened = true;
 		}
 	} else {
 		LOG_ERR("Session already open");
@@ -758,7 +733,7 @@ MTP_CMD_HANDLER(MTP_OP_GET_STORAGE_INFO)
 	/* Add the Packet Header */
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
 MTP_CMD_HANDLER(MTP_OP_GET_STORAGE_IDS)
@@ -773,7 +748,7 @@ MTP_CMD_HANDLER(MTP_OP_GET_STORAGE_IDS)
 	/* Add the Packet Header */
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
 MTP_CMD_HANDLER(MTP_OP_GET_OBJECT_HANDLES)
@@ -801,7 +776,7 @@ MTP_CMD_HANDLER(MTP_OP_GET_OBJECT_HANDLES)
 	/* Add the Packet Header */
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
 MTP_CMD_HANDLER(MTP_OP_GET_OBJECT_INFO)
@@ -873,41 +848,41 @@ MTP_CMD_HANDLER(MTP_OP_GET_OBJECT_INFO)
 	/* Add the Packet Header */
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
-static int continue_get_object(struct net_buf *buf)
+static int continue_get_object(struct mtp_context* ctx, struct net_buf *buf)
 {
 	int len = 0;
-	int total_chunks = (mtp_ctx.filestate.total_size / MAX_PACKET_SIZE);
+	int total_chunks = (ctx->filestate.total_size / MAX_PACKET_SIZE);
 
-	memset(mtp_ctx.filebuf, 0x00, 512);
+	memset(ctx->filebuf, 0x00, 512);
 
-	if (mtp_ctx.filestate.transferred < mtp_ctx.filestate.total_size) {
+	if (ctx->filestate.transferred < ctx->filestate.total_size) {
 		len = MIN(MAX_PACKET_SIZE,
-			  (mtp_ctx.filestate.total_size - mtp_ctx.filestate.transferred));
+			  (ctx->filestate.total_size - ctx->filestate.transferred));
 
-		int read = fs_read(&mtp_ctx.filestate.file, mtp_ctx.filebuf, len);
+		int read = fs_read(&ctx->filestate.file, ctx->filebuf, len);
 
 		if (read <= 0) {
 			LOG_ERR("Failed to read file content %d", read);
 		}
-		net_buf_add_mem(buf, mtp_ctx.filebuf, read);
+		net_buf_add_mem(buf, ctx->filebuf, read);
 
-		mtp_ctx.filestate.transferred += len;
-		mtp_ctx.filestate.chunks_sent++;
-		LOG_DBG("sent [%u of %u]: %u, remaining %u", mtp_ctx.filestate.chunks_sent,
-			total_chunks, mtp_ctx.filestate.transferred,
-			(mtp_ctx.filestate.total_size - mtp_ctx.filestate.transferred));
+		ctx->filestate.transferred += len;
+		ctx->filestate.chunks_sent++;
+		LOG_DBG("sent [%u of %u]: %u, remaining %u", ctx->filestate.chunks_sent,
+			total_chunks, ctx->filestate.transferred,
+			(ctx->filestate.total_size - ctx->filestate.transferred));
 
-		if (mtp_ctx.filestate.transferred >= mtp_ctx.filestate.total_size) {
+		if (ctx->filestate.transferred >= ctx->filestate.total_size) {
 			LOG_DBG("Done (%u), CONFIRMING", read);
-			fs_close(&mtp_ctx.filestate.file);
-			memset(&mtp_ctx.filestate, 0x00, sizeof(mtp_ctx.filestate));
-			set_pending_packet(mtp_send_confirmation);
+			fs_close(&ctx->filestate.file);
+			memset(&ctx->filestate, 0x00, sizeof(ctx->filestate));
+			set_pending_packet(ctx, mtp_send_confirmation);
 		} else {
 			LOG_DBG("Continue (%u) Next", read);
-			set_pending_packet(continue_get_object);
+			set_pending_packet(ctx, continue_get_object);
 		}
 	} else {
 		LOG_ERR("shouldn't happen !");
@@ -944,9 +919,9 @@ MTP_CMD_HANDLER(MTP_OP_GET_OBJECT)
 	traverse_path(&storage[storage_id].filelist[object_id], path);
 	LOG_DBG(">>>> Traversed Path: %s", path);
 
-	fs_file_t_init(&mtp_ctx.filestate.file);
-	int err = fs_open(&mtp_ctx.filestate.file, path, FS_O_READ);
-	memcpy(mtp_ctx.filestate.filepath, path, MAX_PATH_LEN);
+	fs_file_t_init(&ctx->filestate.file);
+	int err = fs_open(&ctx->filestate.file, path, FS_O_READ);
+	memcpy(ctx->filestate.filepath, path, MAX_PATH_LEN);
 
 	if (err) {
 		LOG_ERR("Failed to open %s (%d)", path, err);
@@ -962,26 +937,27 @@ MTP_CMD_HANDLER(MTP_OP_GET_OBJECT)
 	data_header_push(buf, mtp_command, storage[storage_id].filelist[object_id].size);
 
 	if (storage[storage_id].filelist[object_id].size > available_buf_len) {
-		int read = fs_read(&mtp_ctx.filestate.file, mtp_ctx.filebuf, available_buf_len);
+		int read = fs_read(&ctx->filestate.file, ctx->filebuf, available_buf_len);
 
 		if (read <= 0) {
 			LOG_ERR("Failed to read file content %d", read);
 		}
-		net_buf_add_mem(buf, mtp_ctx.filebuf, read);
+		net_buf_add_mem(buf, ctx->filebuf, read);
 
-		mtp_ctx.filestate.total_size = filesize;
-		mtp_ctx.filestate.transferred = read;
-		set_pending_packet(continue_get_object);
+		ctx->filestate.direction = 0;
+		ctx->filestate.total_size = filesize;
+		ctx->filestate.transferred = read;
+		set_pending_packet(ctx, continue_get_object);
 	} else {
-		int read = fs_read(&mtp_ctx.filestate.file, mtp_ctx.filebuf, filesize);
+		int read = fs_read(&ctx->filestate.file, ctx->filebuf, filesize);
 
 		if (read <= 0) {
 			LOG_ERR("Failed to read file content %d", read);
 		}
-		net_buf_add_mem(buf, mtp_ctx.filebuf, read);
-		fs_close(&mtp_ctx.filestate.file);
-		memset(&mtp_ctx.filestate, 0x00, sizeof(mtp_ctx.filestate));
-		set_pending_packet(mtp_send_confirmation);
+		net_buf_add_mem(buf, ctx->filebuf, read);
+		fs_close(&ctx->filestate.file);
+		memset(&ctx->filestate, 0x00, sizeof(ctx->filestate));
+		set_pending_packet(ctx, mtp_send_confirmation);
 	}
 }
 
@@ -1019,7 +995,7 @@ MTP_CMD_HANDLER(MTP_OP_SEND_OBJECT_INFO)
 				fs_obj->storage_id = dest_storage_id;
 
 				LOG_INF("New ObjID:  0x%08x", fs_obj->ID);
-				set_needs_more_data(true);
+				set_needs_more_data(ctx, true);
 			} else {
 				LOG_ERR("No file handle avaiable %u",
 					storage[dest_storage_id].files_count);
@@ -1107,14 +1083,14 @@ MTP_CMD_HANDLER(MTP_OP_SEND_OBJECT_INFO)
 				err_code = MTP_RESP_GENERAL_ERROR;
 			}
 		} else {
-			fs_file_t_init(&mtp_ctx.filestate.file);
-			ret = fs_open(&mtp_ctx.filestate.file, filepath, FS_O_CREATE | FS_O_WRITE);
+			fs_file_t_init(&ctx->filestate.file);
+			ret = fs_open(&ctx->filestate.file, filepath, FS_O_CREATE | FS_O_WRITE);
 			if (ret) {
 				LOG_ERR("Open file failed, %d", ret);
 				err_code = MTP_RESP_GENERAL_ERROR;
 			} else {
-				mtp_ctx.filestate.total_size = fs_obj->size;
-				memcpy(mtp_ctx.filestate.filepath, filepath, MAX_PATH_LEN);
+				ctx->filestate.total_size = fs_obj->size;
+				memcpy(ctx->filestate.filepath, filepath, MAX_PATH_LEN);
 			}
 		}
 
@@ -1142,24 +1118,25 @@ fail:
 	}
 }
 
-int extra_data_handler(struct net_buf *buf, struct net_buf *buf_recv)
+int extra_data_handler(struct mtp_context* ctx, struct net_buf *buf, struct net_buf *buf_recv)
 {
-	mtp_ctx.filestate.transferred += buf_recv->len;
-	mtp_ctx.filestate.chunks_sent++;
+	ctx->filestate.transferred += buf_recv->len;
+	ctx->filestate.chunks_sent++;
 
-	fs_write(&mtp_ctx.filestate.file, buf_recv->data, buf_recv->len);
-	LOG_INF("EXTRA: Data len: %u out of %u", mtp_ctx.filestate.transferred,
-		mtp_ctx.filestate.total_size);
-	if (mtp_ctx.filestate.transferred >= mtp_ctx.filestate.total_size) {
-		fs_close(&mtp_ctx.filestate.file);
+	fs_write(&ctx->filestate.file, buf_recv->data, buf_recv->len);
+	LOG_INF("EXTRA: Data len: %u out of %u", ctx->filestate.transferred,
+		ctx->filestate.total_size);
+	if (ctx->filestate.transferred >= ctx->filestate.total_size) {
+		fs_close(&ctx->filestate.file);
 		LOG_INF("Sending Confirmation after reciving data (Total len: %u)",
-			mtp_ctx.filestate.transferred);
+			ctx->filestate.transferred);
 
-		memset(&mtp_ctx.filestate, 0x00, sizeof(mtp_ctx.filestate));
-		mtp_send_confirmation(buf);
+		ctx->extra_data_fn = NULL;
+		memset(&ctx->filestate, 0x00, sizeof(ctx->filestate));
+		mtp_send_confirmation(ctx, buf);
 	} else {
-		extra_data_fn = extra_data_handler;
-		set_needs_more_data(true);
+		ctx->extra_data_fn = extra_data_handler;
+		set_needs_more_data(ctx, true);
 	}
 	return 0;
 }
@@ -1171,28 +1148,30 @@ MTP_CMD_HANDLER(MTP_OP_SEND_OBJECT)
 	} else if (mtp_command->hdr.type == MTP_CONTAINER_DATA) {
 		LOG_INF("DATA RECEIVED len: %u", payload->len); /* SKIP The header */
 		net_buf_pull_mem(payload, sizeof(struct mtp_header));
-		fs_write(&mtp_ctx.filestate.file, payload->data, payload->len);
+		fs_write(&ctx->filestate.file, payload->data, payload->len);
 
-		mtp_ctx.filestate.chunks_sent++;
-		mtp_ctx.filestate.transferred += payload->len;
-		LOG_INF("SEND_OBJECT: Data len: %u out of %u", mtp_ctx.filestate.transferred,
-			mtp_ctx.filestate.total_size);
+		ctx->filestate.direction = 1;
+		ctx->filestate.chunks_sent++;
+		ctx->filestate.transferred += payload->len;
+		LOG_INF("SEND_OBJECT: Data len: %u out of %u", ctx->filestate.transferred,
+			ctx->filestate.total_size);
 
-		if (mtp_ctx.filestate.transferred >= mtp_ctx.filestate.total_size) {
-			fs_close(&mtp_ctx.filestate.file);
+		if (ctx->filestate.transferred >= ctx->filestate.total_size) {
+			fs_close(&ctx->filestate.file);
 			LOG_INF("SEND_OBJECT: Sending Confirmation after reciving data (Total len: "
 				"%u)",
-				mtp_ctx.filestate.transferred);
+				ctx->filestate.transferred);
 			LOG_INF("SEND_OBJECT: Old filecount %u", storage[1].files_count);
 
-			memset(&mtp_ctx.filestate, 0x00, sizeof(mtp_ctx.filestate));
-			mtp_send_confirmation(buf);
+			memset(&ctx->filestate, 0x00, sizeof(ctx->filestate));
+			ctx->extra_data_fn = NULL;
+			mtp_send_confirmation(ctx, buf);
 			if (buf->len <= 0) {
 				LOG_ERR("Failed to send confirmation");
 			}
 		} else {
-			extra_data_fn = extra_data_handler;
-			set_needs_more_data(true);
+			ctx->extra_data_fn = extra_data_handler;
+			set_needs_more_data(ctx, true);
 		}
 	}
 }
@@ -1239,17 +1218,17 @@ MTP_CMD_HANDLER(MTP_OP_GET_OBJECT_REFERENCES)
 
 	data_header_push(buf, mtp_command, buf->len);
 
-	set_pending_packet(mtp_send_confirmation);
+	set_pending_packet(ctx, mtp_send_confirmation);
 }
 
-int mtp_commands_handler(struct net_buf *buf_in, struct net_buf *buf)
+int mtp_commands_handler(struct mtp_context* ctx, struct net_buf *buf_in, struct net_buf *buf)
 {
 	if (buf == NULL) {
 		LOG_ERR("%s: NULL Buffer", __func__);
 		return -EINVAL;
 	}
 
-	if (handle_extra_data(buf, buf_in) == 0) {
+	if (handle_extra_data(ctx, buf, buf_in) == 0) {
 		return buf->len;
 	}
 
@@ -1311,7 +1290,7 @@ int mtp_commands_handler(struct net_buf *buf_in, struct net_buf *buf)
 	return buf->len;
 }
 
-int mtp_control_handler(uint8_t request, struct net_buf *buf)
+int mtp_control_handler(struct mtp_context* ctx, uint8_t request, struct net_buf *buf)
 {
 	struct mtp_device_status_t dev_status;
 	static bool canceled = false;
@@ -1334,14 +1313,20 @@ int mtp_control_handler(uint8_t request, struct net_buf *buf)
 			break;
 
 		case MTP_REQUEST_CANCEL:
-			LOG_WRN("Closing incomplete file %s", mtp_ctx.filestate.filepath);
-			if (strlen(mtp_ctx.filestate.filepath) > 0) {
-				fs_close(&mtp_ctx.filestate.file);
-				fs_unlink(mtp_ctx.filestate.filepath);
+		//FIXME: Check if the last op was sendObject, otherwise don't delete
+			LOG_WRN("Closing incomplete file %s", ctx->filestate.filepath);
+			if (strlen(ctx->filestate.filepath) > 0) {
+				fs_close(&ctx->filestate.file);
+				if (ctx->filestate.direction == 1) { /* Delete only when downloading from Host */
+					fs_unlink(ctx->filestate.filepath);
+				}
 
-				memset(mtp_ctx.filebuf, 0x00, sizeof(mtp_ctx.filebuf));
-				memset(&mtp_ctx.filestate, 0x00, sizeof(mtp_ctx.filestate));
+				memset(ctx->filebuf, 0x00, sizeof(ctx->filebuf));
+				memset(&ctx->filestate, 0x00, sizeof(ctx->filestate));
 			}
+			set_pending_packet(ctx, NULL);
+			set_needs_more_data(ctx, false);
+
 			canceled = true;
 			//usbd_ep_set_halt(usbd_class_get_ctx(c_data), ep);
 			return 1;
@@ -1349,7 +1334,7 @@ int mtp_control_handler(uint8_t request, struct net_buf *buf)
 
 		case MTP_REQUEST_DEVICE_RESET:
 			LOG_WRN("MTP_REQUEST_DEVICE_RESET");
-			mtp_reset();
+			mtp_reset(ctx);
 			break;
 
 		default:
@@ -1360,7 +1345,7 @@ int mtp_control_handler(uint8_t request, struct net_buf *buf)
 	return 0;
 }
 
-static int mtp_send_confirmation(struct net_buf *buf)
+static int mtp_send_confirmation(struct mtp_context* ctx, struct net_buf *buf)
 {
 	if (buf == NULL) {
 		LOG_ERR("%s: Null Buffer!", __func__);
@@ -1374,20 +1359,21 @@ static int mtp_send_confirmation(struct net_buf *buf)
 					  .transaction_id = mtp_command->hdr.transaction_id};
 
 	net_buf_add_mem(buf, &mtp_response, sizeof(struct mtp_header));
+	set_pending_packet(ctx, NULL);
 
 	return 0;
 }
 
-static void mtp_reset()
+static void mtp_reset(struct mtp_context* ctx)
 {
 	for (int i = 1; i < ARRAY_SIZE(storage); i++) {
 		memset(storage[i].filelist, 0x00, sizeof(storage[i].filelist));
 		storage[i].files_count = 0;
 	}
-	mtp_ctx.session_opened = false;
+	ctx->session_opened = false;
 }
 
-int mtp_init(const char *manufacturer, const char *model, const char *device_version,
+int mtp_init(struct mtp_context* ctx, const char *manufacturer, const char *model, const char *device_version,
 	     const char *serial_number)
 {
 	dev_info.manufacturer = manufacturer;
@@ -1397,7 +1383,7 @@ int mtp_init(const char *manufacturer, const char *model, const char *device_ver
 	/* Zephyr set Serial Number descriptor after MTP init, so for now use this one */
 	dev_info.serial_number = "0123456789ABCDEF";
 
-	mtp_reset();
+	mtp_reset(ctx);
 
 	return 0;
 }

@@ -17,6 +17,9 @@ LOG_MODULE_REGISTER(usb_mtp, CONFIG_USBD_MTP_LOG_LEVEL);
 #define MTP_OUT_EP_ADDR  0x01 /* Bulk OUT */
 #define MTP_INTR_EP_ADDR 0x82 /* Interrupt IN */
 
+/* Single instance is likely enough because it can support multiple LUNs */
+#define MTP_NUM_INSTANCES CONFIG_USBD_MTP_INSTANCES_COUNT
+
 #define BOLDMAGENTA "\033[1m\033[35m" /* Bold Magenta */
 #define BOLDWHITE   "\033[1m\033[35m" /* Bold White */
 #define RESET       "\033[0m"
@@ -42,8 +45,8 @@ UDC_BUF_POOL_DEFINE(mtp_ep_pool, 3, 512, sizeof(struct udc_buf_info), NULL);
 
 struct mtp_desc {
 
-	/* Full Speed Descriptors */
 	struct usb_if_descriptor if0;
+	/* Full Speed Descriptors */
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_int_in_ep;
@@ -51,6 +54,7 @@ struct mtp_desc {
 	/* High Speed Descriptors */
 	struct usb_ep_descriptor if0_hs_out_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
+	struct usb_ep_descriptor if0_hs_int_in_ep;
 
 	/* Termination descriptor */
 	struct usb_desc_header nil_desc;
@@ -60,13 +64,9 @@ struct mtp_data {
 	struct mtp_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
-	atomic_t state;
+	struct mtp_context mtp_ctx;
 };
 
-struct mtp_device_status {
-	uint16_t wLength;
-	uint16_t wCode;
-};
 
 static void usbd_mtp_update(struct usbd_class_data *c_data, uint8_t iface, uint8_t alternate)
 {
@@ -131,15 +131,16 @@ static int usbd_mtp_control_to_host(struct usbd_class_data *c_data,
 				    const struct usb_setup_packet *const setup,
 				    struct net_buf *const buf)
 {
+	struct mtp_data *data = usbd_class_get_private(c_data);
+	struct mtp_context *mtp_ctx = &data->mtp_ctx;
+
 	LOG_DBG("%s: Class request 0x%x (Recipient: %x)", __func__,
 		setup->bRequest, setup->RequestType.recipient);
 
 	//FIXME: Handle Cancel transaction properly
-	int ret = mtp_control_handler(setup->bRequest, buf);
-	if (ret){
-		usbd_ep_set_halt(usbd_class_get_ctx(c_data), 0x81);
-		usbd_ep_set_halt(usbd_class_get_ctx(c_data), 0x01);
-	}
+	// Reply to host with the status
+	mtp_control_handler(mtp_ctx, setup->bRequest, buf);
+
 	return 0;
 }
 
@@ -147,15 +148,16 @@ static int usbd_mtp_control_to_dev(struct usbd_class_data *c_data,
 	const struct usb_setup_packet *const setup,
 	const struct net_buf *const buf)
 {
+	struct mtp_data *data = usbd_class_get_private(c_data);
+	struct mtp_context *mtp_ctx = &data->mtp_ctx;
+
 	LOG_WRN("%s: Class request 0x%x (Recipient: %x)", __func__,
 		setup->bRequest, setup->RequestType.recipient);
 
 	//FIXME: Handle Cancel transaction properly
-	int ret = mtp_control_handler(setup->bRequest, buf);
-	if (ret){
-		usbd_ep_set_halt(usbd_class_get_ctx(c_data), 0x81);
-		usbd_ep_set_halt(usbd_class_get_ctx(c_data), 0x01);
-	}
+	// here transaction is canceled without any reply back
+	mtp_control_handler(mtp_ctx, setup->bRequest, buf);
+
 	return 0;
 }
 
@@ -165,6 +167,9 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 {
 	LOG_INF("\n\n");
 	LOG_INF(BOLDWHITE "==[mtp_request_handler]=============Entry============" RESET);
+
+	struct mtp_data *data = usbd_class_get_private(c_data);
+	struct mtp_context *ctx = &data->mtp_ctx;
 
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi = (struct udc_buf_info *)net_buf_user_data(buf);
@@ -184,7 +189,7 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 			return -1;
 		}
 
-		ret = mtp_commands_handler(buf, buf_resp);
+		ret = mtp_commands_handler(ctx, buf, buf_resp);
 		if (ret) {
 			ret = usbd_ep_enqueue(c_data, buf_resp);
 			if (ret) {
@@ -202,15 +207,12 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 			usbd_mtp_enable(c_data);
 		}
 
-		if (mtp_needs_more_data(buf)) {
-			LOG_INF("Alloc EXTRA Buffer");
-		}
 
 	} else if (bi->ep == mtp_get_bulk_in(c_data)) {
 		LOG_WRN("Host event EP: %x[%s] (buf %p, len: %u)", bi->ep,
 			bi->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR", buf, buf->len);
 
-		if (mtp_packet_pending()) {
+		if (mtp_packet_pending(ctx)) {
 			LOG_INF("Sending Pending packet");
 			buf_resp = mtp_buf_alloc(mtp_get_bulk_in(c_data));
 			if (buf_resp == NULL) {
@@ -219,7 +221,7 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 				return -1;
 			}
 
-			send_pending_packet(buf_resp);
+			send_pending_packet(ctx, buf_resp);
 			ret = usbd_ep_enqueue(c_data, buf_resp);
 			if (ret) {
 				LOG_ERR("Failed to enqueue net_buf %d", ret);
@@ -283,6 +285,9 @@ static void *usbd_mtp_get_desc(struct usbd_class_data *const c_data, const enum 
 
 static int usbd_mtp_init(struct usbd_class_data *c_data)
 {
+	struct mtp_data *data = usbd_class_get_private(c_data);
+	struct mtp_context *mtp_ctx = &data->mtp_ctx;
+
 	LOG_INF("Init class instance %p", c_data);
 
 	char *manufacturer, *model, *device_version, *serial_number;
@@ -311,10 +316,93 @@ static int usbd_mtp_init(struct usbd_class_data *c_data)
 			model,
 			d_nd->bLength > 0 ? serial_number : "NULL");
 
-	mtp_init(manufacturer, model, device_version, serial_number);
+	mtp_init(mtp_ctx, manufacturer, model, device_version, serial_number);
 
 	return 0;
 }
+
+#define DEFINE_MTP_DESCRIPTOR(n, _)					\
+static struct mtp_desc mtp_desc_0 = { 					\
+	.if0 = { 							\
+		.bLength = sizeof(struct usb_if_descriptor), 		\
+		.bDescriptorType = USB_DESC_INTERFACE, 			\
+		.bInterfaceNumber = 0x00, 				\
+		.bAlternateSetting = 0x00, 				\
+		.bNumEndpoints = 0x03, 					\
+		.bInterfaceClass = USB_BCC_IMAGE, 			\
+		.bInterfaceSubClass = 0x01, /* Still Image Capture */ 	\
+		.bInterfaceProtocol = 0x01, /* PTP Protocol */ 		\
+		.iInterface = 0x00, 					\
+	}, 								\
+	.if0_int_in_ep = { 						\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_INTR_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(16U), 		\
+		.bInterval = 0x06, 					\
+	}, 								\
+	.if0_in_ep = { 							\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_IN_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_BULK, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(64U), 		\
+		.bInterval = 0x00, 					\
+	}, 								\
+	.if0_out_ep = { 						\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_OUT_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_BULK, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(64U), 		\
+		.bInterval = 0x00, 					\
+	}, 								\
+	.if0_hs_in_ep = { 						\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_IN_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_BULK, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(512U), 		\
+		.bInterval = 0x00, 					\
+	}, 								\
+	.if0_hs_out_ep = { 						\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_OUT_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_BULK, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(512U), 		\
+		.bInterval = 0x00, 					\
+	}, 								\
+	.if0_hs_int_in_ep = { 						\
+		.bLength = sizeof(struct usb_ep_descriptor), 		\
+		.bDescriptorType = USB_DESC_ENDPOINT, 			\
+		.bEndpointAddress = MTP_INTR_EP_ADDR, 			\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT, 			\
+		.wMaxPacketSize = sys_cpu_to_le16(16U), 		\
+		.bInterval = 0x06, 					\
+	}, 								\
+	.nil_desc = { 							\
+		.bLength = 0, 						\
+		.bDescriptorType = 0, 					\
+	}, 								\
+}; 									\
+									\
+const static struct usb_desc_header *mtp_fs_desc_##n[] = {		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0,			\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_in_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_out_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_int_in_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.nil_desc,		\
+};									\
+									\
+const static struct usb_desc_header *mtp_hs_desc_##n[] = {		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0,			\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_hs_in_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_hs_out_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.if0_int_in_ep,		\
+	(struct usb_desc_header *)&mtp_desc_##n.nil_desc,		\
+};
 
 struct usbd_class_api mtp_api = {
 	.update = usbd_mtp_update,
@@ -327,98 +415,16 @@ struct usbd_class_api mtp_api = {
 	.init = usbd_mtp_init,
 };
 
-static struct mtp_desc mtp_desc_0 = {
-	.if0 = {
 
-			.bLength = sizeof(struct usb_if_descriptor),
-			.bDescriptorType = USB_DESC_INTERFACE,
-			.bInterfaceNumber = 0x00,
-			.bAlternateSetting = 0x00,
-			.bNumEndpoints = 0x03,
-			.bInterfaceClass = USB_BCC_IMAGE,
-			.bInterfaceSubClass = 0x01, /* Still Image Capture */
-			.bInterfaceProtocol = 0x01, /* Picture Transfer Protocol */
-			.iInterface = 0x00,
-		},
+#define DEFINE_MTP_CLASS_DATA(x, _)					\
+	static struct mtp_data mtp_data_##x = {				\
+		.desc = &mtp_desc_##x,					\
+		.fs_desc = mtp_fs_desc_##x,				\
+		.hs_desc = mtp_hs_desc_##x,				\
+	};								\
+									\
+	USBD_DEFINE_CLASS(mtp_##x, &mtp_api, &mtp_data_##x,		\
+			  NULL);
 
-	.if0_int_in_ep = {
-
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_DESC_ENDPOINT,
-			.bEndpointAddress = MTP_INTR_EP_ADDR,
-			.bmAttributes = USB_EP_TYPE_INTERRUPT,
-			.wMaxPacketSize = sys_cpu_to_le16(16U),
-			.bInterval = 0x06,
-		},
-
-	/* Full Speed*/
-	.if0_in_ep = {
-
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_DESC_ENDPOINT,
-			.bEndpointAddress = MTP_IN_EP_ADDR,
-			.bmAttributes = USB_EP_TYPE_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(64U),
-			.bInterval = 0x00,
-		},
-
-	.if0_out_ep = {
-
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_DESC_ENDPOINT,
-			.bEndpointAddress = MTP_OUT_EP_ADDR,
-			.bmAttributes = USB_EP_TYPE_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(64U),
-			.bInterval = 0x00,
-		},
-
-	/* High Speed */
-	.if0_hs_in_ep = {
-
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_DESC_ENDPOINT,
-			.bEndpointAddress = MTP_IN_EP_ADDR,
-			.bmAttributes = USB_EP_TYPE_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(512U),
-			.bInterval = 0x00,
-		},
-
-	.if0_hs_out_ep = {
-
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_DESC_ENDPOINT,
-			.bEndpointAddress = MTP_OUT_EP_ADDR,
-			.bmAttributes = USB_EP_TYPE_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(512U),
-			.bInterval = 0x00,
-		},
-
-	.nil_desc = {
-
-			.bLength = 0,
-			.bDescriptorType = 0,
-		},
-};
-
-const static struct usb_desc_header *mtp_fs_desc_0[] = {
-	(struct usb_desc_header *)&mtp_desc_0.if0,
-	(struct usb_desc_header *)&mtp_desc_0.if0_in_ep,
-	(struct usb_desc_header *)&mtp_desc_0.if0_out_ep,
-	(struct usb_desc_header *)&mtp_desc_0.if0_int_in_ep,
-	(struct usb_desc_header *)&mtp_desc_0.nil_desc,
-};
-const static struct usb_desc_header *mtp_hs_desc_0[] = {
-	(struct usb_desc_header *)&mtp_desc_0.if0,
-	(struct usb_desc_header *)&mtp_desc_0.if0_hs_in_ep,
-	(struct usb_desc_header *)&mtp_desc_0.if0_hs_out_ep,
-	(struct usb_desc_header *)&mtp_desc_0.if0_int_in_ep,
-	(struct usb_desc_header *)&mtp_desc_0.nil_desc,
-};
-
-static struct mtp_data mtp_data0 = {
-	.desc = &mtp_desc_0,
-	.fs_desc = mtp_fs_desc_0,
-	.hs_desc = mtp_hs_desc_0,
-};
-
-USBD_DEFINE_CLASS(mtp, &mtp_api, &mtp_data0, NULL);
+LISTIFY(MTP_NUM_INSTANCES, DEFINE_MTP_DESCRIPTOR, ())
+LISTIFY(MTP_NUM_INSTANCES, DEFINE_MTP_CLASS_DATA, ())
