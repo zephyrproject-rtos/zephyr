@@ -203,6 +203,11 @@ ipc0: &cpuapp_cpurad_ipc {
 	source-memory = <&cpuflpr_code_partition>;
 };
 
+&nfct {
+	status = "okay";
+	memory-regions = <&cpuapp_dma_region>;
+};
+
 &gpiote130 {
 	status = "okay";
 	owned-channels = <0 1 2 3 4 5 6 7>;

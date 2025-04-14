@@ -187,6 +187,10 @@
 	};
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpiote {
 	status = "okay";
 };
