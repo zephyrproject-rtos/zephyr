@@ -36,16 +36,20 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 		.region_code = DEFAULT_REGION,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
+			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE |
+					   SL_SI91X_FEAT_SECURITY_PSK | SL_SI91X_FEAT_AGGREGATION |
+					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
+						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS |
 						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
 			.ext_custom_feature_bit_map =
 				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
 				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
 				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
-				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH,
+				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
+				SL_SI91X_EXT_FEAT_XTAL_CLK,
 		}
 	};
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
