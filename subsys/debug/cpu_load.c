@@ -16,7 +16,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER) || DT_HAS_CHOSEN(zephyr_cp
 #define CONFIG_CPU_LOAD_LOG_PERIODICALLY 0
 #endif
 
-const struct device *counter = COND_CODE_1(CONFIG_CPU_LOAD_USE_COUNTER,
+static const struct device *counter = COND_CODE_1(CONFIG_CPU_LOAD_USE_COUNTER,
 				(DEVICE_DT_GET(DT_CHOSEN(zephyr_cpu_load_counter))), (NULL));
 static uint32_t enter_ts;
 static uint32_t cyc_start;
