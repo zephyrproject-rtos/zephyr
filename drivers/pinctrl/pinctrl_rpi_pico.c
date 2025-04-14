@@ -20,6 +20,9 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	gpio_set_input_hysteresis_enabled(pin->pin_num, pin->schmitt_enable);
 	gpio_set_input_enabled(pin->pin_num, pin->input_enable);
 	gpio_set_oeover(pin->pin_num, pin->oe_override);
+	gpio_set_outover(pin->pin_num, pin->out_override);
+	gpio_set_inover(pin->pin_num, pin->in_override);
+	gpio_set_irqover(pin->pin_num, pin->irq_override);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
