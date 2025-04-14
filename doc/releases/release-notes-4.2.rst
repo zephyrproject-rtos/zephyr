@@ -226,6 +226,12 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
 
+* Debug
+
+  * Core Dump
+
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP`, enabled by default for ARM Cortex M when :kconfig:option:`CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN` is selected.
+
 * Other
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
