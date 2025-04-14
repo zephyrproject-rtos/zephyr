@@ -36,10 +36,12 @@ INA2XX_REG_DEFINE(ina230_cal, INA230_REG_CALIB, 16);
 INA2XX_CHANNEL_DEFINE(ina230_current, INA230_REG_CURRENT, 16, 0, 1, 1);
 INA2XX_CHANNEL_DEFINE(ina230_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA230_BUS_VOLTAGE_UV_LSB, 1);
 INA2XX_CHANNEL_DEFINE(ina230_power, INA230_REG_POWER, 16, 0, INA230_POWER_SCALING, 1);
+INA2XX_CHANNEL_DEFINE(ina230_vshunt, INA230_REG_SHUNT_VOLT, 16, 0, 2500, 1);
 
 static struct ina2xx_channels ina230_channels = {
 	.voltage = &ina230_bus_voltage,
 	.current = &ina230_current,
+	.vshunt = &ina230_vshunt,
 	.power = &ina230_power,
 };
 #endif /* ti_ina230 */
@@ -60,10 +62,12 @@ static struct ina2xx_channels ina232_channels = {
 INA2XX_CHANNEL_DEFINE(ina236_current, INA230_REG_CURRENT, 16, 0, 1, 1);
 INA2XX_CHANNEL_DEFINE(ina236_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA236_BUS_VOLTAGE_UV_LSB, 1);
 INA2XX_CHANNEL_DEFINE(ina236_power, INA230_REG_POWER, 16, 0, INA236_POWER_SCALING, 1);
+INA2XX_CHANNEL_DEFINE(ina236_vshunt, INA230_REG_SHUNT_VOLT, 16, 0, 2500, 1);
 
 static struct ina2xx_channels ina236_channels = {
 	.voltage = &ina236_bus_voltage,
 	.current = &ina236_current,
+	.vshunt = &ina236_vshunt,
 	.power = &ina236_power,
 };
 #endif /* ti_ina236 */

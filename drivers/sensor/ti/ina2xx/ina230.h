@@ -44,6 +44,7 @@ struct ina230_data {
 	int16_t current;
 	uint16_t bus_voltage;
 	uint16_t power;
+	int16_t shunt_voltage;
 	uint16_t mask;
 #ifdef CONFIG_INA230_TRIGGER
 	const struct device *gpio;
