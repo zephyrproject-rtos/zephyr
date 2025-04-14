@@ -277,6 +277,7 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 	.odr = DT_INST_PROP(inst, odr),							\
 	IF_ENABLED(CONFIG_LIS2DUX12_STREAM,						\
 		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),			\
+		    .fifo_mode_sel = DT_INST_PROP(inst, fifo_mode_sel),			\
 		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),		\
 		    .ts_batch  = DT_INST_PROP(inst, timestamp_fifo_batch_rate),))	\
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),			\
