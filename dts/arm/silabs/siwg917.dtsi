@@ -32,13 +32,6 @@
 		reg = <0x00000000 DT_SIZE_K(191)>;
 	};
 
-	sram_dma0: memory-dma@2fc00 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x0002fc00 DT_SIZE_K(1)>;
-		zephyr,memory-region = "dma0";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
 	sram_dma1: memory-dma@24061c00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24061c00 DT_SIZE_K(1)>;
@@ -259,7 +252,6 @@
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
-			silabs,sram-region = <&sram_dma0>;
 			#dma-cells = < 1>;
 			dma-channels = <32>;
 			status = "disabled";
