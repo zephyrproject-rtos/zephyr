@@ -94,6 +94,19 @@ properties:
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
+  fifo-mode-sel:
+    type: int
+    default: 0x0
+    description: |
+      Specify the sample content to be batched in FIFO.
+      Default is power-up configuration.
+
+      - 0x0 # 1x Accelerometer @12bit and 1x temperature @12bit samples
+      - 0x1 # 1x Accelerometer @16bit sample
+      - 0x2 # 2x Accelerometer @8bit samples (previous and current)
+
+    enum: [0x00, 0x01, 0x02]
+
   fifo-watermark:
     type: int
     default: 32

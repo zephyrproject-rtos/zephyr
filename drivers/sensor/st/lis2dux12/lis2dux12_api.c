@@ -155,7 +155,7 @@ static void st_lis2dux12_stream_config_fifo(const struct device *dev,
 
 	/* disable FIFO as first thing */
 	fifo_mode.store = LIS2DUX12_FIFO_1X;
-	fifo_mode.xl_only = 1;
+	fifo_mode.xl_only = 0;
 	fifo_mode.watermark = 0;
 	fifo_mode.operation = LIS2DUX12_BYPASS_MODE;
 	fifo_mode.batch.dec_ts = LIS2DUX12_DEC_TS_OFF;
@@ -168,10 +168,32 @@ static void st_lis2dux12_stream_config_fifo(const struct device *dev,
 		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
+		switch (config->fifo_mode_sel) {
+		case 0:
+			fifo_mode.store = LIS2DUX12_FIFO_1X;
+			fifo_mode.xl_only = 0;
+			break;
+		case 1:
+			fifo_mode.store = LIS2DUX12_FIFO_1X;
+			fifo_mode.xl_only = 1;
+			break;
+		case 2:
+			fifo_mode.store = LIS2DUX12_FIFO_2X;
+			fifo_mode.xl_only = 1;
+			break;
+		}
+
 		fifo_mode.operation = LIS2DUX12_STREAM_MODE;
 		fifo_mode.batch.dec_ts = config->ts_batch;
 		fifo_mode.batch.bdr_xl = config->accel_batch;
 		fifo_mode.watermark = config->fifo_wtm;
+
+		/* In case each FIFO word contains 2x accelerometer samples,
+		 * then watermark can be divided by two to match user expectation.
+		 */
+		if (config->fifo_mode_sel == 2) {
+			fifo_mode.watermark /= 2;
+		}
 	}
 
 	/*
