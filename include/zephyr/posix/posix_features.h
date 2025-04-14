@@ -10,6 +10,7 @@
 
 #include <zephyr/autoconf.h>       /* CONFIG_* */
 #include <zephyr/sys/util_macro.h> /* COND_CODE_1() */
+#include <zephyr/kernel/thread_stack.h> /* K_KERNEL_STACK_LEN() */
 
 /*
  * POSIX Application Environment Profiles (AEP - IEEE Std 1003.13-2003)
@@ -286,6 +287,7 @@ __PICOLIBC_MINOR__ == 8 && __PICOLIBC_PATCHLEVEL__ >= 9)))
 #define _POSIX_SIGQUEUE_MAX                 (32)
 #define _POSIX_SSIZE_MAX                    (32767)
 #define _POSIX_SS_REPL_MAX                  (4)
+#define _POSIX_STACK_MIN                    (K_KERNEL_STACK_LEN(0))
 #define _POSIX_STREAM_MAX                   (8)
 #define _POSIX_SYMLINK_MAX                  (255)
 #define _POSIX_SYMLOOP_MAX                  (8)
@@ -343,6 +345,7 @@ __PICOLIBC_MINOR__ == 8 && __PICOLIBC_PATCHLEVEL__ >= 9)))
 #define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
 #define PTHREAD_KEYS_MAX              _POSIX_THREAD_KEYS_MAX
 #define PTHREAD_THREADS_MAX           _POSIX_THREAD_THREADS_MAX
+#define PTHREAD_STACK_MIN             _POSIX_STACK_MIN
 #define RTSIG_MAX                     _POSIX_RTSIG_MAX
 #define SEM_NSEMS_MAX       _POSIX_SEM_NSEMS_MAX
 #define SEM_VALUE_MAX       _POSIX_SEM_VALUE_MAX
