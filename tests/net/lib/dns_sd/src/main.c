@@ -304,16 +304,30 @@ ZTEST(dns_sd, test_add_ptr_record)
 	zassert_mem_equal(actual_buf, expected_buf,
 			  MIN(actual_int, expected_int), "");
 
-	/* dns_sd_rec_is_valid failure */
-	DNS_SD_REGISTER_TCP_SERVICE(null_label,
+	/* empty instance should pass */
+	DNS_SD_REGISTER_TCP_SERVICE(null_instance,
 				NULL,
 				"_x",
 				"xx",
 				DNS_SD_EMPTY_TXT,
 				CONST_PORT);
-	zassert_equal(-EINVAL, add_ptr_record(&null_label, ttl,
+	zassert_equal(56, add_ptr_record(&null_instance, ttl,
 					      actual_buf, offset,
-					      actual_int,
+					      BUFSZ,
+					      &service_offset,
+					      &instance_offset,
+					      &domain_offset), "");
+
+	/* dns_sd_rec_is_valid failure, service should not be NULL */
+	DNS_SD_REGISTER_TCP_SERVICE(null_service,
+				"x",
+				NULL,
+				"xx",
+				DNS_SD_EMPTY_TXT,
+				CONST_PORT);
+	zassert_equal(-EINVAL, add_ptr_record(&null_service, ttl,
+					      actual_buf, offset,
+					      BUFSZ,
 					      &service_offset,
 					      &instance_offset,
 					      &domain_offset), "");
