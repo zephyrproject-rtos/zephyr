@@ -12,7 +12,7 @@
 #include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
-extern uint32_t _irq_vector_table[];
+extern uintptr_t _irq_vector_table[];
 
 #if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS
@@ -226,7 +226,7 @@ static int check_vector(void *isr, int offset)
 	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
 
-	if (_irq_vector_table[TABLE_INDEX(offset)] != (uint32_t)isr) {
+	if (_irq_vector_table[TABLE_INDEX(offset)] != (uintptr_t)isr) {
 		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
 		return -1;
 	}
