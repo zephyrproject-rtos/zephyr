@@ -277,9 +277,10 @@ static void tc_disabled_entry(void *obj)
 /**
  * @brief Disabled Run
  */
-static void tc_disabled_run(void *obj)
+static enum smf_state_result tc_disabled_run(void *obj)
 {
 	/* Do nothing */
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -298,14 +299,14 @@ static void tc_error_recovery_entry(void *obj)
 /**
  * @brief ErrorRecovery Run
  */
-static void tc_error_recovery_run(void *obj)
+static enum smf_state_result tc_error_recovery_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
 
 	/* Wait for expiry */
 	if (usbc_timer_expired(&tc->tc_t_error_recovery) == false) {
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 #ifdef CONFIG_USBC_CSM_SINK_ONLY
@@ -315,11 +316,13 @@ static void tc_error_recovery_run(void *obj)
 	/* Transition to Unattached.SRC */
 	tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
 #endif
+	return SMF_EVENT_HANDLED;
 }
 
 /**
  * @brief Type-C State Table
  */
+/* clang-format off */
 static const struct smf_state tc_states[TC_STATE_COUNT] = {
 	/* Super States */
 	[TC_CC_OPEN_SUPER_STATE] = SMF_CREATE_STATE(
@@ -402,4 +405,5 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		&tc_states[TC_CC_OPEN_SUPER_STATE],
 		NULL),
 };
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);

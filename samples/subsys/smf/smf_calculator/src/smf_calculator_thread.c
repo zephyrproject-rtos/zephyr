@@ -191,7 +191,7 @@ static void on_entry(void *obj)
 	s->operator_btn = 0x00;
 }
 
-static void on_run(void *obj)
+static enum smf_state_result on_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -205,9 +205,10 @@ static void on_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void ready_run(void *obj)
+static enum smf_state_result ready_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -234,17 +235,20 @@ static void ready_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
+
 static void result_entry(void *obj)
 {
 	LOG_DBG("");
 	set_display_mode(DISPLAY_RESULT);
 }
 
-static void result_run(void *obj)
+static enum smf_state_result result_run(void *obj)
 {
 	LOG_DBG("");
 	/* Ready state handles the exits from this state */
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void begin_entry(void *obj)
@@ -253,7 +257,7 @@ static void begin_entry(void *obj)
 	set_display_mode(DISPLAY_OPERAND_1);
 }
 
-static void begin_run(void *obj)
+static enum smf_state_result begin_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -270,6 +274,7 @@ static void begin_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void negated_1_entry(void *obj)
@@ -281,7 +286,7 @@ static void negated_1_entry(void *obj)
 	negate(&s->operand_1);
 }
 
-static void negated_1_run(void *obj)
+static enum smf_state_result negated_1_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -303,7 +308,7 @@ static void negated_1_run(void *obj)
 	case OPERATOR:
 		/* We only care about ignoring the negative key */
 		if (s->event.operand == '-') {
-			smf_set_handled(&s->ctx);
+			return SMF_EVENT_HANDLED;
 		}
 		break;
 	case CANCEL_ENTRY:
@@ -314,6 +319,7 @@ static void negated_1_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void operand_1_entry(void *obj)
@@ -322,7 +328,7 @@ static void operand_1_entry(void *obj)
 	set_display_mode(DISPLAY_OPERAND_1);
 }
 
-static void operand_1_run(void *obj)
+static enum smf_state_result operand_1_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -341,9 +347,10 @@ static void operand_1_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void zero_1_run(void *obj)
+static enum smf_state_result zero_1_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -352,7 +359,7 @@ static void zero_1_run(void *obj)
 	switch (s->event.event_id) {
 	case DIGIT_0:
 		/* We ignore leading zeroes */
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DIGIT_1_9:
 		insert(&s->operand_1, s->event.operand);
@@ -366,9 +373,10 @@ static void zero_1_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void int_1_run(void *obj)
+static enum smf_state_result int_1_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -378,7 +386,7 @@ static void int_1_run(void *obj)
 	case DIGIT_0:
 	case DIGIT_1_9:
 		insert(&s->operand_1, s->event.operand);
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DECIMAL_POINT:
 		insert(&s->operand_1, s->event.operand);
@@ -388,9 +396,10 @@ static void int_1_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void frac_1_run(void *obj)
+static enum smf_state_result frac_1_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -400,16 +409,17 @@ static void frac_1_run(void *obj)
 	case DIGIT_0:
 	case DIGIT_1_9:
 		insert(&s->operand_1, s->event.operand);
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DECIMAL_POINT:
 		/* Ignore further decimal points */
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	default:
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void negated_2_entry(void *obj)
@@ -421,7 +431,7 @@ static void negated_2_entry(void *obj)
 	negate(&s->operand_2);
 }
 
-static void negated_2_run(void *obj)
+static enum smf_state_result negated_2_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -443,7 +453,7 @@ static void negated_2_run(void *obj)
 	case OPERATOR:
 		/* We only care about ignoring the negative key */
 		if (s->event.operand == '-') {
-			smf_set_handled(&s->ctx);
+			return SMF_EVENT_HANDLED;
 		}
 		break;
 	case CANCEL_ENTRY:
@@ -454,6 +464,7 @@ static void negated_2_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void operand_2_entry(void *obj)
@@ -462,7 +473,7 @@ static void operand_2_entry(void *obj)
 	set_display_mode(DISPLAY_OPERAND_2);
 }
 
-static void operand_2_run(void *obj)
+static enum smf_state_result operand_2_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -497,9 +508,10 @@ static void operand_2_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void zero_2_run(void *obj)
+static enum smf_state_result zero_2_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -508,7 +520,7 @@ static void zero_2_run(void *obj)
 	switch (s->event.event_id) {
 	case DIGIT_0:
 		/* We ignore leading zeroes */
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DIGIT_1_9:
 		insert(&s->operand_2, s->event.operand);
@@ -522,9 +534,10 @@ static void zero_2_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void int_2_run(void *obj)
+static enum smf_state_result int_2_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -534,7 +547,7 @@ static void int_2_run(void *obj)
 	case DIGIT_0:
 	case DIGIT_1_9:
 		insert(&s->operand_2, s->event.operand);
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DECIMAL_POINT:
 		insert(&s->operand_2, s->event.operand);
@@ -544,9 +557,10 @@ static void int_2_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void frac_2_run(void *obj)
+static enum smf_state_result frac_2_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -556,19 +570,20 @@ static void frac_2_run(void *obj)
 	case DIGIT_0:
 	case DIGIT_1_9:
 		insert(&s->operand_2, s->event.operand);
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	case DECIMAL_POINT:
 		/* Ignore further decimal points */
-		smf_set_handled(&s->ctx);
+		return SMF_EVENT_HANDLED;
 		break;
 	default:
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
-static void op_entered_run(void *obj)
+static enum smf_state_result op_entered_run(void *obj)
 {
 	struct s_object *s = (struct s_object *)obj;
 
@@ -597,6 +612,7 @@ static void op_entered_run(void *obj)
 		/* Let parent state handle it: shuts up compiler warning */
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void op_chained_entry(void *obj)
