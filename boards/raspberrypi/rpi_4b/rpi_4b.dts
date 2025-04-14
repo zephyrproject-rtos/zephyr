@@ -11,12 +11,14 @@
 
 / {
 	model = "Raspberry Pi 4 Model B";
-	compatible = "raspberrypi,4-model-b", "brcm,bcm2838";
+	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
 	aliases {
 		led0 = &led_act;
+		mbox0 = &mailbox0;
+		armvcsdram = &shared_vc_arm_sdram;
 	};
 
 	chosen {
@@ -42,4 +44,13 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&mailbox0 {
+	status = "okay";
+};
+
+mbox_vc: &mailbox0 {
+	mboxes = <&mailbox0 8>;
+	mbox-names = "vc";
 };
