@@ -18,4 +18,5 @@ supported:
   - uart
   - flash
   - watchdog
+  - counter
 vendor: nxp
