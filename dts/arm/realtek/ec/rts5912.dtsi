@@ -96,7 +96,7 @@
 			max-value = <0xFFFFFFFF>;
 			clock-frequency = <1000000>;
 			prescaler = <0>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		rtmr: rtmr@4000c500 {
