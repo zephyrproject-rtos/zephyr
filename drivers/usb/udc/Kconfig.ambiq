@@ -8,6 +8,7 @@ config UDC_AMBIQ
 	select GPIO
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_USB
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  Enable USB Device Controller Driver.
 
