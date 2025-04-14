@@ -16,4 +16,3 @@ properties:
         value is greater than bitWidth times lineChannels, frameLength needs to be set to
         the value that is equal to the number of bit clock between two neighboring WS signal.
         Ommit or set to 0 means use calculation of driver (default behaviour).
-
