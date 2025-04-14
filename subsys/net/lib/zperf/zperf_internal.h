@@ -116,7 +116,17 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr);
 struct sockaddr_in *zperf_get_sin(void);
 
 extern void connect_ap(char *ssid);
-extern struct k_work_q *get_queue(enum session_proto proto, int session_id);
+
+struct zperf_work {
+	struct k_work_q *queue;
+	struct z_thread_stack_element *stack;
+	struct k_event *start_event;
+	size_t stack_size;
+};
+
+#define START_EVENT 0x0001
+extern void start_jobs(void);
+extern struct zperf_work *get_queue(enum session_proto proto, int session_id);
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 			      int priority, int tcp_nodelay, int proto);
