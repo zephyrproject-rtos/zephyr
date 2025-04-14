@@ -153,6 +153,10 @@
 	status = "okay";
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 	gpio-reserved-ranges = <0 2>, <6 1>, <8 3>, <17 7>;

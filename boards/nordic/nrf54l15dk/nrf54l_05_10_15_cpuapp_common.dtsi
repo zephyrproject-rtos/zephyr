@@ -56,6 +56,10 @@
 	status = "okay";
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
