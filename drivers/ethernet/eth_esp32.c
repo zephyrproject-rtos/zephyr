@@ -282,9 +282,10 @@ int eth_esp32_initialize(const struct device *dev)
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
 #if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
 			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
-			"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
+			"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
 		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
 		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
 		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
