@@ -12,7 +12,12 @@
 
 		boot_partition: partition@1000 {
 			label = "mcuboot";
-			reg = <0x1000 DT_SIZE_K(124)>;
+			reg = <0x1000 DT_SIZE_K(60)>;
+		};
+
+		sys_partition: partition@10000 {
+			label = "sys";
+			reg = <0x10000 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@20000 {
