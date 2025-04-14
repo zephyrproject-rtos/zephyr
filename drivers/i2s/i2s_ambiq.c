@@ -19,9 +19,6 @@
 
 LOG_MODULE_REGISTER(ambiq_i2s, LOG_LEVEL_ERR);
 
-typedef int (*ambiq_i2s_pwr_func_t)(void);
-#define PWRCTRL_MAX_WAIT_US 5
-
 struct i2s_ambiq_data {
 	void *i2s_handler;
 	void *pdm_handler;
@@ -43,7 +40,6 @@ struct i2s_ambiq_data {
 struct i2s_ambiq_cfg {
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_i2s_pwr_func_t pwr_func;
 };
 
 static am_hal_i2s_data_format_t i2s_data_format = {
@@ -75,8 +71,6 @@ static __aligned(32) struct {
 		buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
 						     // should be 2 x block_size
 } i2s_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	//	__attribute__((__section__(".dtcm_data"))); // To using deep sleep, this should be
-	//changed to SSRAM.
 	__attribute__((__section__(".data"))); // SSRAM allocation
 
 static __aligned(32) struct {
@@ -84,8 +78,6 @@ static __aligned(32) struct {
 		buf[CONFIG_I2S_DMA_TCB_BUFFER_SIZE]; // CONFIG_I2S_DMA_TCB_BUFFER_SIZE
 						     // should be 2 x block_size
 } i2s_rx_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	//    __attribute__((__section__(".dtcm_data"))); // To using deep sleep, this should be
-	//    changed to SSRAM.
 	__attribute__((__section__(".data"))); // SSRAM allocation
 
 static void i2s_ambiq_isr0(const struct device *dev)
@@ -131,7 +123,6 @@ static int i2s_ambiq_init(const struct device *dev)
 
 	int ret = 0;
 
-	ret = config->pwr_func();
 	if (ret < 0) {
 		LOG_ERR("Fail to power on I2S\n");
 	}
@@ -416,14 +407,6 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 
 #define AMBIQ_I2S_DEFINE(n)                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                             \
-	static int pwr_on_ambiq_i2s_##n(void)                                                  \
-	{                                                                                      \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                                      \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                      \
 	static void i2s_irq_config_func_##n(void)                                              \
 	{                                                                                      \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2s_ambiq_isr##n,           \
@@ -441,7 +424,6 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 	static const struct i2s_ambiq_cfg i2s_ambiq_cfg##n = {                                 \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2s_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_i2s_##n,                                                  \
 	};                                                                                     \
 	DEVICE_DT_INST_DEFINE(n, i2s_ambiq_init, NULL, &i2s_ambiq_data##n, &i2s_ambiq_cfg##n,  \
 			      POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_ambiq_driver_api);

@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 
 #define SAMPLE_FREQUENCY 16000
 
-// #define SAMPLE_BIT_WIDTH    (16U)
-#define SAMPLE_BIT_WIDTH (24U)
-// #define SAMPLE_BIT_WIDTH    (32U)
+#define SAMPLE_BIT_WIDTH    (16U)
+//#define SAMPLE_BIT_WIDTH    (24U)
+//#define SAMPLE_BIT_WIDTH    (32U)
 
 #define NUMBER_OF_CHANNELS 2
 
@@ -38,7 +38,6 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 #define BYTES_PER_SAMPLE sizeof(int32_t)
 #endif
 
-/* Such block length provides an echo with the delay of 10 ms. */
 #define SAMPLE_BLOCKS_MS  10
 #define SAMPLES_PER_BLOCK ((SAMPLE_FREQUENCY * SAMPLE_BLOCKS_MS / 1000) * NUMBER_OF_CHANNELS)
 #define TIMEOUT           (1000U)

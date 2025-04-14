@@ -42,7 +42,7 @@ static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_PDM_DMA_TCB_BUFFER_SIZE]; // CONFIG_PDM_DMA_TCB_BUFFER_SIZE
 								    // should be 2 x block_size
 } pdm_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)]
-	__attribute__((__section__(".dtcm_data")));
+	__attribute__((__section__(".data"))); // SSRAM allocation
 
 static void dmic_ambiq_pdm_isr(const struct device *dev)
 {

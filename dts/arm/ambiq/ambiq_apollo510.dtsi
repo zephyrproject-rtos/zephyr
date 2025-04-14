@@ -720,7 +720,6 @@
 			reg = <0x40208000 0x310>;
 			interrupts = <44 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0xc 0x40>;
 		};
 
 		i2s1: i2s1@40209000 {
@@ -728,7 +727,6 @@
 			reg = <0x40209000 0x310>;
 			interrupts = <45 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0xc 0x80>;
 		};
 
 		pinctrl: pin-controller@GPIO_BASE_NAME {
