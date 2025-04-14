@@ -49,12 +49,51 @@
 	};
 };
 
+&flx8 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_TWI>;
+	status = "okay";
+
+	i2c8: i2c8@600 {
+		pinctrl-0 = <&pinctrl_i2c8_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		eeprom0: eeprom0@52 {
+			compatible = "atmel,24mac02e4", "atmel,at24";
+			reg = <0x52>;
+			address-width = <8>;
+			pagesize = <16>;
+			size = <256>;
+			timeout = <5>;
+			status = "okay";
+		};
+
+		eeprom1: eeprom1@53 {
+			compatible = "atmel,24mac02e4", "atmel,at24";
+			reg = <0x53>;
+			address-width = <8>;
+			pagesize = <16>;
+			size = <256>;
+			timeout = <5>;
+			status = "okay";
+		};
+	};
+};
+
 &pinctrl {
 	pinctrl_flx3_default: flx3_default {
 		group1 {
 			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
 				 <PIN_PD17__FLEXCOM3_IO1>;
 			bias-pull-up;
+		};
+	};
+
+	pinctrl_i2c8_default: i2c8_default {
+		group1 {
+			pinmux = <PIN_PC14__FLEXCOM8_IO0>,
+				 <PIN_PC13__FLEXCOM8_IO1>;
+			bias-disable;
 		};
 	};
 };
