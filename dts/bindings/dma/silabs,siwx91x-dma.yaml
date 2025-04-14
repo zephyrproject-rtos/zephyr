@@ -10,10 +10,11 @@ properties:
 
   silabs,sram-region:
     type: phandle
-    required: true
     description: |
-        SRAM Address for UDMA Descriptor Storage. This address must match to the
-        location used by the hardware.
+        SRAM Address for UDMA Descriptor Storage. Some instance require this
+        buffer to be placed in a specific area. If the instance doesn't have
+        this requirement, this attribute is not required and the memory will
+        will be automatically allocated.
 
   "#dma-cells":
     const: 1
