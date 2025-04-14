@@ -74,6 +74,7 @@ config IPM_MBOX
 # zephyr-keep-sorted-start
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.ivshmem"
+source "drivers/ipm/Kconfig.mchp"
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.sedi"
 source "drivers/ipm/Kconfig.stm32"

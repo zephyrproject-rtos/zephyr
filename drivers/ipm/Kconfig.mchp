@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Microchip Technology Inc
+# SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+config IPM_MCHP_IHC
+	bool "IPM Microchip IHC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MIV_IHC_RTL_V2_ENABLED
+	help
+	  Driver for Microchip Inter Hart Communication unit.
+
+config IPM_MCHP_IHC_REMOTEPROC
+	bool "IPM Microchip IHC remoteproc remote"
+	depends on IPM_MCHP_IHC
+	help
+	  Remoteproc Microchip specific initialisation and shutdown for remote
+	  processor
+
+config IPM_MCHP_IHC_REMOTEPROC_STOP_ADDR
+	hex "IPM Microchip IHC remoteproc remote stop address"
+	default 0xA000000
+	depends on IPM_MCHP_IHC_REMOTEPROC
+	help
+	When remoteproc request shutdown, the system must exit cleanly to
+	the specified address
+

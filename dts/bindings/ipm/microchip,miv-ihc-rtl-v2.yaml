@@ -1,0 +1,44 @@
+# Copyright (c) 2024 Microchip Technology Inc
+# SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+description: |
+  The Microchip IHC(Inter Hart Communication) mailbox controller is to manage
+  messaging between two IHC agents. Each IHC agent owns registers used for
+  notification and buffers for message.
+
+compatible: "microchip,miv-ihc-rtl-v2"
+
+include: base.yaml
+
+properties:
+  reg:
+    type: array
+    description: Address and length of the register set for the device
+    required: true
+
+  interrupts-parent:
+    type: phandle
+    description: phandle to the parent interrupt controller
+
+child-binding:
+  description: Microchip IHCM (Inter Hart Communication Module) node
+
+  properties:
+    reg:
+      type: array
+      description: Address and length of the register for this IHCM block
+      required: true
+
+    interrupts:
+      type: array
+      description: Interrupt specifier for the IHCM block
+      required: true
+
+  child-binding:
+    description: Microchip IHCC (Inter Hart Communication Channel) node
+
+    properties:
+      reg:
+        type: array
+        description: Address and length of the register for this IHCC channel
+        required: true
