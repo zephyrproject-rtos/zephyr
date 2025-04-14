@@ -17,41 +17,81 @@
  */
 void NVIC_SetPendingIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return;
+	}
+
 	hw_irq_ctrl_raise_im_from_sw(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return;
+	}
+
 	hw_irq_ctrl_clear_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_DisableIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return;
+	}
+
 	hw_irq_ctrl_disable_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 uint32_t NVIC_GetPendingIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return 0;
+	}
+
 	return hw_irq_ctrl_is_irq_pending(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_EnableIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return;
+	}
+
 	hw_irq_ctrl_enable_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 uint32_t NVIC_GetEnableIRQ(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return 0;
+	}
+
 	return hw_irq_ctrl_is_irq_enabled(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
+	if (IRQn < 0)
+	{
+		return;
+	}
+
 	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn, priority);
 }
 
 uint32_t NVIC_GetPriority(IRQn_Type IRQn)
 {
+	if (IRQn < 0)
+	{
+		return UINT32_MAX;
+	}
+
 	return hw_irq_ctrl_get_prio(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
