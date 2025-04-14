@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_rza2m_clock.h>
 
 / {
 	compatible = "renesas,r7s9210";
@@ -49,6 +50,28 @@
 		ram: memory@80020000 {
 			compatible = "mmio-sram";
 			reg = <0x80020000 (DT_SIZE_M(4) - 0x20000)>;
+		};
+
+		cpg: clock-controller@fcfe0010 {
+			compatible = "renesas,rza2m-cpg";
+			reg = <0xfcfe0010 0x455>;
+			#clock-cells = <1>;
+			clocks = <&osc>;
+
+			iclk: iclk {
+				compatible = "fixed-clock";
+				#clock-cells = <0>;
+			};
+
+			bclk: bclk {
+				compatible = "fixed-clock";
+				#clock-cells = <0>;
+			};
+
+			p1clk: p1clk {
+				compatible = "fixed-clock";
+				#clock-cells = <0>;
+			};
 		};
 	};
 };

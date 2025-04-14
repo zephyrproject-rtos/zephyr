@@ -52,6 +52,11 @@ if(CONFIG_CLOCK_CONTROL_NRF2)
   zephyr_library_sources(clock_control_nrf2_lfclk.c)
 endif()
 
+if(CONFIG_CLOCK_CONTROL_RENESAS_RZA2M_CPG)
+  zephyr_library_sources(clock_control_renesas_rza2m_cpg.c)
+  zephyr_library_sources(clock_control_renesas_rza2m_cpg_lld.c)
+endif()
+
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MCO clock_stm32_mco.c)
