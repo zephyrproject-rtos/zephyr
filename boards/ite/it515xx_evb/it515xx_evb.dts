@@ -16,6 +16,7 @@
 
 	aliases {
 		led0 = &led0;
+		watchdog0 = &twd0;
 	};
 
 	chosen {
