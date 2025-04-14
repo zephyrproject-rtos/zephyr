@@ -31,6 +31,13 @@
 		dht0 = &si7021;
 	};
 
+	psram: psram@a000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "psram";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
