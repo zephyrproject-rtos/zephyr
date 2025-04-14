@@ -314,10 +314,10 @@ pmod_spi: &spi4 {
 		     &spixf_sdio3_p0_4 &spixf_sdio1_p0_5 &spixf_ss0_p0_6>;
 	pinctrl-names = "default";
 
-	mx25u64: mx25u6432f@0 {
+	mx25u64: mx25u6432f@8000000 {
 		compatible = "adi,max32-spixf-nor";
-		reg = <0x0 DT_SIZE_M(8)>; /* 64 Mbits */
-		qspi-max-frequency = <80000000>;
+		reg = <0x08000000 DT_SIZE_M(8)>; /* 64 Mbits */
+		qspi-max-frequency = <60000000>;
 		jedec-id = [c2 37 25];
 		reset-cmd;
 		spi-bus-width = <4>;

@@ -65,6 +65,7 @@ struct flash_max32_spixf_nor_config {
 	size_t perclkens_len;
 	size_t flash_size;
 	uint32_t max_frequency;
+	uint32_t spixf_base_addr;
 	const struct pinctrl_dev_config *pcfg;
 #if MAX32_QSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
@@ -282,25 +283,40 @@ static int qspi_write_status_register(const struct device *dev, uint8_t reg_num,
 }
 
 #if defined(CONFIG_FLASH_JESD216_API) || MAX32_QSPI_HAS_JEDEC_ID
+
+static int qspi_read_jedec_id_priv(const struct device *dev, uint8_t *id)
+{
+	int ret;
+
+	ret = qspi_read_access(dev, JESD216_CMD_READ_ID, id, JESD216_READ_ID_LEN, 8);
+	if (ret < 0) {
+		LOG_ERR("Failed to read ID (%d)", ret);
+		return ret;
+	}
+
+	LOG_DBG("Read JESD216-ID");
+
+	return ret;
+}
+
+#if defined(CONFIG_FLASH_JESD216_API)
+
 static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	int ret = 0;
 
 	qspi_lock_thread(dev);
+	MXC_SPIXF_Enable();
 
-	ret = qspi_read_access(dev, JESD216_CMD_READ_ID, id, JESD216_READ_ID_LEN, 8);
-	if (ret < 0) {
-		LOG_ERR("Failed to read ID (%d)", ret);
-		goto read_jedec_end;
-	}
+	ret = qspi_read_jedec_id_priv(dev, id);
 
-	LOG_DBG("Read JESD216-ID");
-
-read_jedec_end:
+	MXC_SPIXF_Disable();
 	qspi_unlock_thread(dev);
 
 	return ret;
 }
+
+#endif
 
 #endif /* CONFIG_FLASH_JESD216_API */
 
@@ -347,7 +363,7 @@ static int qspi_write_unprotect(const struct device *dev)
 /*
  * Read Serial Flash Discovery Parameter
  */
-static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data, size_t size)
+static int qspi_read_sfdp_priv(const struct device *dev, off_t addr, void *data, size_t size)
 {
 	struct flash_max32_spixf_nor_req_wrapper req = {.req.width = MXC_SPIXF_WIDTH_1};
 	uint8_t tx_payload[4] = {JESD216_CMD_READ_SFDP, 0};
@@ -387,6 +403,25 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data, size
 	return ret;
 }
 
+#if IS_ENABLED(CONFIG_FLASH_JESD216_API)
+
+static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data, size_t size)
+{
+	int ret;
+
+	qspi_lock_thread(dev);
+	MXC_SPIXF_Enable();
+
+	ret = qspi_read_sfdp_priv(dev, addr, data, size);
+
+	MXC_SPIXF_Disable();
+	qspi_unlock_thread(dev);
+
+	return ret;
+}
+
+#endif /* IS_ENABLED(CONFIG_FLASH_JESD216_API) */
+
 static bool qspi_address_is_valid(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
@@ -397,11 +432,7 @@ static bool qspi_address_is_valid(const struct device *dev, off_t addr, size_t s
 
 static int flash_max32_spixf_nor_read(const struct device *dev, off_t addr, void *data, size_t size)
 {
-	struct flash_max32_spixf_nor_data *dev_data = dev->data;
-
-	struct flash_max32_spixf_nor_req_wrapper req = {0};
-	int ret;
-	uint8_t cmd, dummy_cycles;
+	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -415,64 +446,13 @@ static int flash_max32_spixf_nor_read(const struct device *dev, off_t addr, void
 		return 0;
 	}
 
-	/* Write the command */
-	cmd = SPI_NOR_CMD_READ;
-	dummy_cycles = 0;
-
-	if (IS_ENABLED(MAX32_QSPI_USE_QUAD_IO)) {
-		cmd = dev_data->qspi_read_cmd;
-		dummy_cycles = dev_data->qspi_read_cmd_latency;
-	}
-
-	req.req.tx_data = &cmd;
-	req.req.len = 1;
-	req.req.width = MXC_SPIXF_WIDTH_1;
-
 	qspi_lock_thread(dev);
 
-	ret = qspi_send_req(dev, &req);
-	if (ret < 0) {
-		LOG_ERR("Failed to send the read command (%d)", ret);
-		goto read_unlock_and_return;
-	}
+	memcpy(data, (uint8_t *)dev_cfg->spixf_base_addr + addr, size);
 
-	/* Write the address */
-	uint8_t addr_data[4];
-
-	req.req.tx_data = addr_data;
-	req.req.len = qspi_copy_addr(addr_data, addr, dev_data->flag_access_32bit);
-	req.req.width = MXC_SPIXF_WIDTH_1;
-
-	if (IS_ENABLED(MAX32_QSPI_USE_QUAD_IO)) {
-		req.req.width = (dev_data->mode == JESD216_MODE_114) ? MXC_SPIXF_WIDTH_1
-								     : MXC_SPIXF_WIDTH_4;
-	}
-
-	ret = qspi_send_req(dev, &req);
-	if (ret < 0) {
-		LOG_ERR("Failed to send the read address (%d)", ret);
-		goto read_unlock_and_return;
-	}
-
-	/* Clock the dummy bytes */
-	MXC_SPIXF_Clocks(dummy_cycles, 0);
-
-	/* Read the data */
-	req.req.tx_data = NULL;
-	req.req.rx_data = data;
-	req.req.len = size;
-	req.req.width = IS_ENABLED(MAX32_QSPI_USE_QUAD_IO) ? MXC_SPIXF_WIDTH_4 : MXC_SPIXF_WIDTH_1;
-	req.req.deass = 1;
-
-	ret = qspi_send_req(dev, &req);
-	if (ret < 0) {
-		LOG_ERR("Failed to read the data (%d)", ret);
-	}
-
-read_unlock_and_return:
 	qspi_unlock_thread(dev);
 
-	return ret;
+	return 0;
 }
 
 static int qspi_wait_until_ready(const struct device *dev)
@@ -485,6 +465,28 @@ static int qspi_wait_until_ready(const struct device *dev)
 	} while (!ret && (reg & SPI_NOR_WIP_BIT));
 
 	return ret;
+}
+
+static int flash_max32_spixf_clear_read_cache(const struct device *dev)
+{
+	struct flash_max32_spixf_nor_data *dev_data = dev->data;
+	uint8_t read_data;
+	int ret;
+
+	/* Read two pages to flush the cache */
+	ret = flash_max32_spixf_nor_read(dev, 0, &read_data, 1);
+	if (ret) {
+		LOG_ERR("Failed to read first page to clear the read cache (%d)", ret);
+		return ret;
+	}
+
+	ret = flash_max32_spixf_nor_read(dev, dev_data->page_size, &read_data, 1);
+	if (ret) {
+		LOG_ERR("Failed to read second page to clear the read cache (%d)", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, const void *data,
@@ -523,6 +525,7 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 	}
 
 	qspi_lock_thread(dev);
+	MXC_SPIXF_Enable();
 
 	while (size > 0) {
 		size_t to_write = size;
@@ -586,7 +589,14 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 	goto end;
 
 end:
+	MXC_SPIXF_Disable();
 	qspi_unlock_thread(dev);
+
+	/* TODO: ICC Flush */
+
+	if (ret >= 0) {
+		ret = flash_max32_spixf_clear_read_cache(dev);
+	}
 
 	return ret;
 }
@@ -611,6 +621,7 @@ static int flash_max32_spixf_nor_erase(const struct device *dev, off_t addr, siz
 	}
 
 	qspi_lock_thread(dev);
+	MXC_SPIXF_Enable();
 
 	while ((size > 0) && (ret == 0)) {
 		qspi_write_enable(dev);
@@ -668,7 +679,14 @@ static int flash_max32_spixf_nor_erase(const struct device *dev, off_t addr, siz
 	goto end;
 
 end:
+	MXC_SPIXF_Disable();
 	qspi_unlock_thread(dev);
+
+	/* TODO: ICC Flush */
+
+	if (ret >= 0) {
+		ret = flash_max32_spixf_clear_read_cache(dev);
+	}
 
 	return ret;
 }
@@ -1075,7 +1093,7 @@ static int flash_max32_spixf_nor_check_jedec_id(const struct device *dev)
 	uint8_t id[SPI_NOR_MAX_ID_LEN];
 	int ret;
 
-	ret = qspi_read_jedec_id(dev, id);
+	ret = qspi_read_jedec_id_priv(dev, id);
 	if (ret < 0) {
 		LOG_ERR("Failed to read the JEDEC ID (%d)", ret);
 		return ret;
@@ -1110,7 +1128,7 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;
 
-	ret = qspi_read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	ret = qspi_read_sfdp_priv(dev, 0, u.raw, sizeof(u.raw));
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return ret;
@@ -1142,8 +1160,9 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 			} u2;
 			const struct jesd216_bfp *bfp = &u2.bfp;
 
-			ret = qspi_read_sfdp(dev, jesd216_param_addr(php), (uint8_t *)u2.dw,
-					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
+			ret = qspi_read_sfdp_priv(
+				dev, jesd216_param_addr(php), (uint8_t *)u2.dw,
+				MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
 			if (ret == 0) {
 				ret = spi_nor_process_bfp(dev, php, bfp);
 			}
@@ -1157,6 +1176,23 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 	}
 
 	return 0;
+}
+
+static void flash_max32_spixf_update_read_settings(uint8_t cmd_read, uint8_t read_latency)
+{
+	MXC_SPIXF_SetMode(MXC_SPIXF_MODE_0);
+	MXC_SPIXF_SetSSPolActiveLow();
+	MXC_SPIXF_SetSSActiveTime(MXC_SPIXF_SYS_CLOCKS_2);
+	MXC_SPIXF_SetSSInactiveTime(MXC_SPIXF_SYS_CLOCKS_3);
+
+	MXC_SPIXF_SetCmdValue(cmd_read);
+	MXC_SPIXF_SetAddrWidth(MXC_SPIXF_QUAD_SDIO);
+	MXC_SPIXF_SetDataWidth(MXC_SPIXF_WIDTH_4);
+	MXC_SPIXF_SetModeClk(read_latency);
+
+	MXC_SPIXF_Set3ByteAddr();
+	MXC_SPIXF_SCKFeedbackEnable();
+	MXC_SPIXF_SetSCKNonInverted();
 }
 
 static int flash_max32_spixf_nor_init(const struct device *dev)
@@ -1238,6 +1274,12 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 	LOG_INF("NOR quad-flash at 0x%lx (0x%x bytes)", (long)(MAX32_QSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 
+	MXC_SPIXF_Disable();
+
+	/* Update our SPIXF main controller settings based on the fetched jesd216 details */
+	flash_max32_spixf_update_read_settings(dev_data->qspi_read_cmd,
+					       dev_data->qspi_read_cmd_latency);
+
 	return 0;
 }
 
@@ -1275,8 +1317,9 @@ static const struct flash_max32_spixf_nor_config flash_max32_spixf_nor_cfg = {
 	.clock = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(MAX32_QSPI_NODE)),
 	.perclkens = perclkens,
 	.perclkens_len = ARRAY_SIZE(perclkens),
-	.flash_size = DT_INST_REG_SIZE_BY_IDX(0, 0),
+	.flash_size = DT_INST_REG_SIZE(0),
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
+	.spixf_base_addr = DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(MAX32_QSPI_NODE),
 	.force_quad_addr_writes = DT_INST_PROP_OR(0, force_quad_address_write, false),
 #if MAX32_QSPI_RESET_GPIO
