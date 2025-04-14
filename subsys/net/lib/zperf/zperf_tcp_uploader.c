@@ -160,6 +160,15 @@ static void tcp_upload_async_work(struct k_work *work)
 	ses = CONTAINER_OF(work, struct session, async_upload_ctx.work);
 	upload_ctx = &ses->async_upload_ctx;
 
+	if (ses->wait_for_start) {
+		NET_INFO("[%d] %s waiting for start", ses->id, "TCP");
+
+		/* Wait for the start event to be set */
+		k_event_wait(ses->zperf->start_event, START_EVENT, true, K_FOREVER);
+
+		NET_INFO("[%d] %s starting", ses->id, "TCP");
+	}
+
 	NET_DBG("[%d] thread %p priority %d name %s", ses->id, k_current_get(),
 		k_thread_priority_get(k_current_get()),
 		k_thread_name_get(k_current_get()));
@@ -250,6 +259,7 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 	struct k_work_q *queue;
+	struct zperf_work *zperf;
 	struct session *ses;
 	k_tid_t tid;
 
@@ -270,7 +280,9 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 	ses->async_upload_ctx.callback = callback;
 	ses->async_upload_ctx.user_data = user_data;
 
-	queue = get_queue(SESSION_TCP, ses->id);
+	zperf = get_queue(SESSION_TCP, ses->id);
+
+	queue = zperf->queue;
 	if (queue == NULL) {
 		NET_ERR("Cannot get a work queue!");
 		return -ENOENT;
@@ -282,6 +294,8 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 	k_work_init(&ses->async_upload_ctx.work, tcp_upload_async_work);
 
 	ses->start_time = k_uptime_ticks();
+	ses->zperf = zperf;
+	ses->wait_for_start = param->options.wait_for_start;
 
 	zperf_async_work_submit(SESSION_TCP, ses->id, &ses->async_upload_ctx.work);
 

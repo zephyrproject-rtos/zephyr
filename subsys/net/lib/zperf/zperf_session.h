@@ -54,7 +54,9 @@ struct session {
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 	struct zperf_results result;
 	struct zperf_async_upload_context async_upload_ctx;
+	struct zperf_work *zperf;
 	bool in_progress; /* is this session finished or not */
+	bool wait_for_start; /* wait until the user starts the sessions */
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 };
 

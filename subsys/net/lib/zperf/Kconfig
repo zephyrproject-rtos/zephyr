@@ -24,6 +24,7 @@ config NET_ZPERF_LEGACY_HEADER_COMPAT
 
 config ZPERF_SESSION_PER_THREAD
 	bool "Run each session in a separate thread"
+	select EVENTS
 	help
 	  Each session is started in its own thread. This means
 	  that the system will use more memory because multiple

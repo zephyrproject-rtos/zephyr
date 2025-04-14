@@ -47,11 +47,7 @@ struct sockaddr_in *zperf_get_sin(void)
 	      K_LOWEST_APPLICATION_THREAD_PRIO)
 
 #if defined(CONFIG_ZPERF_SESSION_PER_THREAD)
-struct zperf_work {
-	struct k_work_q *queue;
-	struct z_thread_stack_element *stack;
-	size_t stack_size;
-};
+static K_EVENT_DEFINE(start_event);
 
 #define CREATE_WORK_Q(i, _)					       \
 	static struct k_work_q zperf_work_q_##i;		       \
@@ -80,7 +76,7 @@ static struct zperf_work zperf_work_q[] = {
 	LISTIFY(MAX_SESSION_COUNT, SET_WORK_Q, (,), _)
 };
 
-struct k_work_q *get_queue(enum session_proto proto, int session_id)
+struct zperf_work *get_queue(enum session_proto proto, int session_id)
 {
 	if (session_id < 0 || session_id >= CONFIG_NET_ZPERF_MAX_SESSIONS) {
 		return NULL;
@@ -95,9 +91,14 @@ struct k_work_q *get_queue(enum session_proto proto, int session_id)
 		proto * SESSION_INDEX + session_id,
 		session_id);
 
-	return zperf_work_q[proto * SESSION_INDEX + session_id].queue;
+
+	return &zperf_work_q[proto * SESSION_INDEX + session_id];
 }
 
+void start_jobs(void)
+{
+	k_event_set(&start_event, START_EVENT);
+}
 #else /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
@@ -297,6 +298,8 @@ static int zperf_init(void)
 		struct k_work_queue_config cfg = {
 			.no_yield = false,
 		};
+
+		zperf_work_q[i].start_event = &start_event;
 
 #define MAX_NAME_LEN sizeof("zperf_work_q[xxx]")
 		char name[MAX_NAME_LEN];
