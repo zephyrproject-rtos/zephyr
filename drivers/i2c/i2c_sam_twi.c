@@ -293,7 +293,7 @@ static void i2c_sam_twi_isr(const struct device *dev)
 
 	/* Byte sent */
 	if (isr_status & TWI_SR_TXRDY) {
-		if (msg->idx == msg->len) {
+		if (msg->idx == msg->len || msg->len == 0) {
 			if (msg->flags & I2C_MSG_STOP) {
 				/* Send a STOP condition on the TWI */
 				twi->TWI_CR = TWI_CR_STOP;
