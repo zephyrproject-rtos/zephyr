@@ -798,7 +798,14 @@ static int execute_upload(const struct shell *sh,
 		      param->packet_size);
 	shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t%u kbps\n",
 		      param->rate_kbps);
-	shell_fprintf(sh, SHELL_NORMAL, "Starting...\n");
+
+	if (IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD) &&
+	    COND_CODE_1(CONFIG_ZPERF_SESSION_PER_THREAD,
+			(param->options.wait_for_start), (0))) {
+		shell_fprintf(sh, SHELL_NORMAL, "Waiting \"zperf jobs start\" command.\n");
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "Starting...\n");
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && param->peer_addr.sa_family == AF_INET6) {
 		struct sockaddr_in6 *ipv6 =
@@ -991,6 +998,11 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			}
 			opt_cnt += 2;
 			async = true;
+			break;
+
+		case 'w':
+			param.options.wait_for_start = true;
+			opt_cnt += 1;
 			break;
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
@@ -1238,6 +1250,11 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			}
 			opt_cnt += 2;
 			async = true;
+			break;
+
+		case 'w':
+			param.options.wait_for_start = true;
+			opt_cnt += 1;
 			break;
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
@@ -1772,6 +1789,22 @@ static int cmd_jobs_clear(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_jobs_start(const struct shell *sh, size_t argc, char *argv[])
+{
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(sh);
+
+	start_jobs();
+#else
+	shell_fprintf(sh, SHELL_INFO,
+		      "Zephyr has not been built with %s support.\n",
+		      "CONFIG_ZPERF_SESSION_PER_THREAD");
+#endif
+	return 0;
+}
+
 void zperf_shell_init(void)
 {
 	int ret;
@@ -1846,6 +1879,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "-n: Disable Nagle's algorithm\n"
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 		  "-t: Specify custom thread priority\n"
+		  "-w: Wait for start signal before starting the tests\n"
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
@@ -1941,6 +1975,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 		  "-t: Specify custom thread priority\n"
+		  "-w: Wait for start signal before starting the tests\n"
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
@@ -1972,6 +2007,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_jobs,
 	SHELL_CMD(all, NULL, "Show all statistics", cmd_jobs_all),
 	SHELL_CMD(clear, NULL, "Clear all statistics", cmd_jobs_clear),
+	SHELL_CMD(start, NULL, "Start waiting jobs", cmd_jobs_start),
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
