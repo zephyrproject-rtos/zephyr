@@ -197,6 +197,35 @@ static void test_power(struct ina230_fixture *fixture)
 	}
 }
 
+static void test_shunt_voltage(struct ina230_fixture *fixture)
+{
+	/* 16-bit signed value for vshunt register */
+	const int16_t vshunt_reg_vectors[] = {
+		32767, 1000, 100, 1, 0, -1, -100, -1000, -32768,
+	};
+
+	ARRAY_FOR_EACH(vshunt_reg_vectors, idx) {
+		struct sensor_value sensor_val;
+		int32_t vshunt_register = vshunt_reg_vectors[idx];
+
+		/* shunt voltage is vshunt_register * 2.5 uV */
+		double vshunt_expected_mV = vshunt_register * 2.5 * 1e-3;
+
+		/* set current reading */
+		ina230_mock_set_register(fixture->mock->data, INA230_REG_SHUNT_VOLT,
+					 vshunt_register);
+
+		/* Verify sensor value is correct */
+		zassert_ok(sensor_sample_fetch(fixture->dev));
+		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_VSHUNT, &sensor_val));
+		double vshunt_actual_mV = sensor_value_to_double(&sensor_val);
+
+		zexpect_within(vshunt_expected_mV, vshunt_actual_mV, 1e-6,
+			       "Expected %.6f mV, got %.6f mV for %d", vshunt_expected_mV,
+			       vshunt_actual_mV);
+	}
+}
+
 FAKE_VOID_FUNC(test_cnvr_trigger_handler, const struct device *, const struct sensor_trigger *);
 FAKE_VOID_FUNC(test_alert_trigger_handler, const struct device *, const struct sensor_trigger *);
 
@@ -320,6 +349,10 @@ static void test_trigger_config(struct ina230_fixture *fixture)
 	ZTEST(ina23##v##_##inst, test_power)                                                       \
 	{                                                                                          \
 		test_power(&fixture_23##v##_##inst);                                               \
+	}                                                                                          \
+	ZTEST(ina23##v##_##inst, test_shunt_voltage)                                               \
+	{                                                                                          \
+		test_shunt_voltage(&fixture_23##v##_##inst);                                       \
 	}                                                                                          \
 	ZTEST(ina23##v##_##inst, test_trigger)                                                     \
 	{                                                                                          \

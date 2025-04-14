@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 #define INA230_POWER_SCALING 25
 #define INA236_POWER_SCALING 32
 
+#define INA230_VSHUNT_NV_LSV 2500
+
 #define INA230_MASK_REG_MASK (INA230_ALERT_POLARITY | INA230_ALERT_LATCH_ENABLE)
 
 static int ina230_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -33,7 +35,7 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
 	uint32_t bus_uv, power_uw;
-	int32_t current_ua;
+	int32_t current_ua, shunt_nv;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -61,6 +63,12 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 		val->val2 = power_uw % 1000000U;
 		break;
 
+	case SENSOR_CHAN_VSHUNT:
+		shunt_nv = data->shunt_voltage * INA230_VSHUNT_NV_LSV;
+
+		/* convert to fractional milli-volts */
+		val->val1 = shunt_nv / 1000000L;
+		val->val2 = shunt_nv % 1000000L;
 		break;
 
 	default:
@@ -77,7 +85,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER) {
+	    chan != SENSOR_CHAN_POWER && chan != SENSOR_CHAN_VSHUNT) {
 		return -ENOTSUP;
 	}
 
@@ -101,6 +109,14 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 		ret = ina23x_reg_read_16(&config->bus, INA230_REG_POWER, &data->power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
+			return ret;
+		}
+	}
+
+	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VSHUNT)) {
+		ret = ina23x_reg_read_16(&config->bus, INA230_REG_SHUNT_VOLT, &data->shunt_voltage);
+		if (ret < 0) {
+			LOG_ERR("Failed to read shunt voltage");
 			return ret;
 		}
 	}
