@@ -126,3 +126,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+  drivers.flash.common.disable_spi_nor:
+    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+    extra_args:
+      - CONFIG_SPI_NOR=n
