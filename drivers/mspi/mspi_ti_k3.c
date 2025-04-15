@@ -11,10 +11,8 @@
 #include <zephyr/arch/arm/cortex_a_r/sys_io.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mspi.h>
-#include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
@@ -24,7 +22,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-LOG_MODULE_REGISTER(flash_ti_k3_mspi, CONFIG_MSPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(mspi_ti_k3, CONFIG_MSPI_LOG_LEVEL);
 
 struct mspi_ti_k3_config {
 	DEVICE_MMIO_ROM;
@@ -221,8 +219,7 @@ static int mspi_ti_k3_init(const struct device *dev)
 	/* only allow one CS to be active */
 	MSPI_TI_K3_REG_WRITE(0, CONFIG, PERIPH_SEL_DEC, base_addr);
 
-	/* CS selection is based on manual pin selection instead of address mapping to flash devices
-	 */
+	/* CS selection is based on "manual" pin selection */
 	MSPI_TI_K3_REG_WRITE(0, CONFIG, ENABLE_AHB_DECODER, base_addr);
 
 	/* DQ3 should not be used as reset pin */
@@ -246,7 +243,7 @@ static int mspi_ti_k3_init(const struct device *dev)
 	/* disable DMA generally since it's not supported */
 	MSPI_TI_K3_REG_WRITE(0, CONFIG, ENB_DMA_IF, base_addr);
 
-	/* disable write protection of the MSPI peripheral */
+	/* disable automatic write protection disablement of MSPI peripherals */
 	MSPI_TI_K3_REG_WRITE(0, CONFIG, WR_PROT_FLASH, base_addr);
 
 	/* disable possible reset pin */
@@ -353,7 +350,7 @@ static int mspi_ti_k3_small_transfer(const struct device *controller, const stru
 			MSPI_TI_K3_REG_READ_MASKED(FLASH_CMD_CTRL, CMD_EXEC_STATUS, base_address);
 	}
 	if (exec_status != 0) {
-		LOG_ERR("Timeout while waiting for dedicated flash operation to finish");
+		LOG_ERR("Timeout while waiting for dedicated command to finish");
 		return -EIO;
 	}
 
@@ -396,7 +393,7 @@ static int mspi_ti_k3_indirect_read(const struct device *controller, const struc
 
 	while (remaining_bytes > 0) {
 		if (k_uptime_get() - start_time > req->timeout) {
-			LOG_ERR("Timeout while receiving data from flash");
+			LOG_ERR("Timeout while receiving data from MSPI device");
 			goto timeout;
 		}
 		num_new_words = MSPI_TI_K3_REG_READ_MASKED(SRAM_FILL, INDAC_READ, base_address);
@@ -453,7 +450,7 @@ static int mspi_ti_k3_indirect_write(const struct device *controller, const stru
 
 	while (remaining_bytes > 0) {
 		if (k_uptime_get() - start_time > req->timeout) {
-			LOG_ERR("Timeout while sending data to flash");
+			LOG_ERR("Timeout while sending data to MSPI device");
 			goto timeout;
 		}
 		free_words = config->sram_allocated_for_read -
