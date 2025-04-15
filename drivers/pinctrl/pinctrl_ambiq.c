@@ -7,7 +7,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
