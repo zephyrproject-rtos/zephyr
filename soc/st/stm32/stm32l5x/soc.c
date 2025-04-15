@@ -11,9 +11,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
-#include <stm32l5xx_ll_icache.h>
 #include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
@@ -29,10 +29,7 @@ extern void stm32_power_init(void);
  */
 void soc_early_init_hook(void)
 {
-	/* Enable ICACHE */
-	while (LL_ICACHE_IsActiveFlag_BUSY()) {
-	}
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
