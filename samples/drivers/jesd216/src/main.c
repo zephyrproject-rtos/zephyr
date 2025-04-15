@@ -340,7 +340,7 @@ int main(void)
 			const struct jesd216_bfp *bfp = (struct jesd216_bfp *)dw;
 
 			dump_bfp(php, bfp);
-			printf("size = <%u> bits;\n", (uint32_t)jesd216_bfp_density(bfp));
+			printf("size = <%u>; // bits\n", (uint32_t)jesd216_bfp_density(bfp));
 			printf("sfdp-bfp =");
 		} else {
 			printf("sfdp-%04x =", id);
