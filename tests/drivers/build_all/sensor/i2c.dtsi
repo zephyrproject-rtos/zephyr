@@ -1290,3 +1290,9 @@ test_i2c_paj7620: paj7620@b0 {
 	reg = <0xb0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_icm45686: icm45686@b1 {
+	compatible = "invensense,icm45686";
+	reg = <0xb1>;
+	int-gpios = <&test_gpio 0 0>;
+};
