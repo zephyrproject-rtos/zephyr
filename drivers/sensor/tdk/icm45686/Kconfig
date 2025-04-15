@@ -6,8 +6,10 @@ menuconfig ICM45686
 	bool "ICM45686 High-precision 6-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM45686_ENABLED
-	select SPI
-	select SPI_RTIO
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
 	help
 	  Enable driver for ICM45686 High-precision 6-axis motion
 	  tracking device.

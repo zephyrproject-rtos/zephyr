@@ -204,6 +204,9 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   (buf->header.fifo_count *
 				   sizeof(struct icm45686_encoded_fifo_payload)),
 				   NULL);
+		if (data->rtio.type == ICM45686_BUS_I2C) {
+			data_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		}
 		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
 	} else if (should_flush_fifo(read_cfg, int_status)) {
@@ -232,6 +235,9 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 					 write_reg,
 					 sizeof(write_reg),
 					 NULL);
+		if (data->rtio.type == ICM45686_BUS_I2C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		}
 		write_sqe->flags |= RTIO_SQE_CHAINED;
 
 	} else if (should_read_data(read_cfg, int_status)) {
@@ -269,6 +275,9 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   buf->payload.buf,
 				   sizeof(buf->payload.buf),
 				   NULL);
+		if (data->rtio.type == ICM45686_BUS_I2C) {
+			read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
 	}
 
@@ -318,6 +327,9 @@ static void icm45686_event_handler(const struct device *dev)
 					 wr_data,
 					 sizeof(wr_data),
 					 NULL);
+		if (data->rtio.type == ICM45686_BUS_I2C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		}
 		rtio_submit(data->rtio.ctx, 0);
 
 		data->stream.settings.enabled.drdy = false;
@@ -375,7 +387,11 @@ static void icm45686_event_handler(const struct device *dev)
 			   &data->stream.data.int_status,
 			   1,
 			   NULL);
+	if (data->rtio.type == ICM45686_BUS_I2C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
+
 
 	/** Preemptively read FIFO count so we can decide on the next callback
 	 * how much FIFO data we'd read (if needed).
@@ -395,6 +411,9 @@ static void icm45686_event_handler(const struct device *dev)
 			   (uint8_t *)&data->stream.data.fifo_count,
 			   2,
 			   NULL);
+	if (data->rtio.type == ICM45686_BUS_I2C) {
+		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	read_fifo_ct_sqe->flags |= RTIO_SQE_CHAINED;
 
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,

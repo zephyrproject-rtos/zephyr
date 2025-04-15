@@ -10,6 +10,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/rtio/rtio.h>
 
@@ -199,6 +200,9 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 			   edata->payload.buf,
 			   sizeof(edata->payload.buf),
 			   NULL);
+	if (data->rtio.type == ICM45686_BUS_I2C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
@@ -245,10 +249,18 @@ static int icm45686_init(const struct device *dev)
 	uint8_t val;
 	int err;
 
-	if (!spi_is_ready_iodev(data->rtio.iodev)) {
+#if CONFIG_SPI_RTIO
+	if ((data->rtio.type == ICM45686_BUS_SPI) && !spi_is_ready_iodev(data->rtio.iodev)) {
 		LOG_ERR("Bus is not ready");
 		return -ENODEV;
 	}
+#endif
+#if CONFIG_I2C_RTIO
+	if ((data->rtio.type == ICM45686_BUS_I2C) && !i2c_is_ready_iodev(data->rtio.iodev)) {
+		LOG_ERR("Bus is not ready");
+		return -ENODEV;
+	}
+#endif
 
 	/* Soft-reset sensor to restore config to defaults */
 
@@ -383,10 +395,18 @@ static int icm45686_init(const struct device *dev)
 #define ICM45686_INIT(inst)									   \
 												   \
 	RTIO_DEFINE(icm45686_rtio_ctx_##inst, 8, 8);						   \
-	SPI_DT_IODEV_DEFINE(icm45686_bus_##inst,						   \
-			    DT_DRV_INST(inst),							   \
-			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,		   \
-			    0U);								   \
+												   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
+		    (SPI_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
+					 DT_DRV_INST(inst),					   \
+					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,  \
+					 0U)),							   \
+		    ());									   \
+												   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
+		    (I2C_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
+					 DT_DRV_INST(inst))),					   \
+		    ());									   \
 												   \
 	static const struct icm45686_config icm45686_cfg_##inst = {				   \
 		.settings = {									   \
@@ -414,6 +434,10 @@ static int icm45686_init(const struct device *dev)
 		.rtio = {									   \
 			.iodev = &icm45686_bus_##inst,						   \
 			.ctx = &icm45686_rtio_ctx_##inst,					   \
+			COND_CODE_1(DT_INST_ON_BUS(inst, i2c),					   \
+				(.type = ICM45686_BUS_I2C), ())					   \
+				COND_CODE_1(DT_INST_ON_BUS(inst, spi),				   \
+				(.type = ICM45686_BUS_SPI), ())					   \
 		},										   \
 	};											   \
 												   \
