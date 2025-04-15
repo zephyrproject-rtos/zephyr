@@ -235,9 +235,10 @@ zephyr_udc0: &usbotg_hs1 {
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	mx25um51245g: ospi-nor-flash@70000000 {
+	mx25um51245g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
