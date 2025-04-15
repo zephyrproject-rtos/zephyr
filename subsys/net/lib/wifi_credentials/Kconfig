@@ -73,6 +73,32 @@ config WIFI_CREDENTIALS_CONNECT_STORED_CONNECTION_TIMEOUT
 	help
 	   Wait period before falling back to the next entry in the list of stored SSIDs.
 
+
+if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+config WIFI_CREDENTIALS_RUNTIME_CERTIFICATES
+	bool "Provide Wi-Fi enterprise security certificates at run-time"
+	select TLS_CREDENTIALS
+	select TLS_CREDENTIALS_SHELL
+	select BASE64
+	default y if WIFI_SHELL_RUNTIME_CERTIFICATES
+	help
+	  This option enables providing Wi-Fi enterprise security certificates at run-time.
+	  Uses the TLS credentials subsystem to store and manage the certificates.
+
+if WIFI_CREDENTIALS_RUNTIME_CERTIFICATES
+
+config HEAP_MEM_POOL_ADD_SIZE_WIFI_CERT
+	int "Wi-Fi enterprise security certificates memory pool size"
+	# STA - 6 certs and each assume 1500 bytes
+	default 12000
+	help
+	   The size of the memory pool used by the Wi-Fi enterprise security certificates.
+
+endif # WIFI_CREDENTIALS_RUNTIME_CERTIFICATES
+
+endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
 endif # WIFI_CREDENTIALS_CONNECT_STORED
 
 endif # WIFI_CREDENTIALS
