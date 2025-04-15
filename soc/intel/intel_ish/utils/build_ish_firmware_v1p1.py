@@ -19,34 +19,41 @@ MANIFEST_ENTRY_SIZE = 0x80
 HEADER_SIZE = 0x1000
 HEADER_VER = 0x00010001
 PAGE_SIZE = 0x1000
-MAIN_FW_ADDR = 0xff200000
+MAIN_FW_ADDR = 0xFF200000
 SRAM_BASE_ADDR = MAIN_FW_ADDR
 SRAM_BANK_SIZE = 0x00008000
 SRAM_BIT_WIDTH = 64
-SRAM_SIZE = 0x000a0000
-AON_RF_ADDR = 0xff800000
+SRAM_SIZE = 0x000A0000
+AON_RF_ADDR = 0xFF800000
 AON_RF_SIZE = 0x2000
 KERN_LOAD_ADDR = MAIN_FW_ADDR
 AON_LOAD_ADDR = AON_RF_ADDR
 
+
 def parseargs():
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("-k", "--kernel",
-                        help="EC kernel binary to pack, \
+    parser.add_argument(
+        "-k",
+        "--kernel",
+        help="EC kernel binary to pack, \
                         usually ec.RW.bin or ec.RW.flat.",
-                        required=True)
-    parser.add_argument("-a", "--aon",
-                        help="EC aontask binary to pack, \
+        required=True,
+    )
+    parser.add_argument(
+        "-a",
+        "--aon",
+        help="EC aontask binary to pack, \
                         usually ish_aontask.bin.",
-                        required=False)
-    parser.add_argument("-o", "--output",
-                        help="Output flash binary file")
+        required=False,
+    )
+    parser.add_argument("-o", "--output", help="Output flash binary file")
 
-    parser.add_argument("-v", "--version",
-                        help="Specify the version of the EC firmware",
-                        required=True)
+    parser.add_argument(
+        "-v", "--version", help="Specify the version of the EC firmware", required=True
+    )
 
     return parser.parse_args()
+
 
 def gen_global_manifest():
     """Returns a binary blob that represents a manifest entry"""
@@ -90,6 +97,7 @@ def gen_global_manifest():
 
     return m
 
+
 def gen_manifest_end():
     """Returns a binary blob that represents a manifest entry"""
     m = bytearray(MANIFEST_ENTRY_SIZE)
@@ -98,6 +106,7 @@ def gen_manifest_end():
     struct.pack_into('<4s', m, 0, b'ISHE')
 
     return m
+
 
 def gen_module_manifest(ext_id, comp_app_name, code_offset, module_size, load_addr):
     """Returns a binary blob that represents a manifest entry"""
@@ -124,9 +133,11 @@ def gen_module_manifest(ext_id, comp_app_name, code_offset, module_size, load_ad
 
     return m
 
+
 def roundup_page(size):
     """Returns roundup-ed page size from size of bytes"""
     return int(size / PAGE_SIZE) + (size % PAGE_SIZE > 0)
+
 
 def main():
     args = parseargs()
@@ -145,29 +156,46 @@ def main():
         f.write(gen_global_manifest())
 
         # Add manifest for main ISH binary
-        f.write(gen_module_manifest(b'ISHM', b'ISH_KERN', HEADER_SIZE,
-                                kernel_size, KERN_LOAD_ADDR))
+        f.write(gen_module_manifest(b'ISHM', b'ISH_KERN', HEADER_SIZE, kernel_size, KERN_LOAD_ADDR))
 
         if args.aon is not None:
             print("      AON binary size:   ", aon_size)
             aon_rdup_pg_size = roundup_page(aon_size)
             # Add manifest for aontask binary
-            f.write(gen_module_manifest(b'ISHM', b'AON_TASK',
-                                (HEADER_SIZE + kern_rdup_pg_size * PAGE_SIZE),
-                                aon_size, AON_LOAD_ADDR))
+            f.write(
+                gen_module_manifest(
+                    b'ISHM',
+                    b'AON_TASK',
+                    (HEADER_SIZE + kern_rdup_pg_size * PAGE_SIZE),
+                    aon_size,
+                    AON_LOAD_ADDR,
+                )
+            )
         else:
             aon_rdup_pg_size = 0
 
-        #ICCM DCCM placeholder
-        f.write(gen_module_manifest(b'ISHM', b'ICCM_IMG', (HEADER_SIZE +
-                                (kern_rdup_pg_size + aon_rdup_pg_size) *
-                                PAGE_SIZE), 0, 0))
-        f.write(gen_module_manifest(b'ISHM', b'DCCM_IMG', (HEADER_SIZE +
-                                (kern_rdup_pg_size + aon_rdup_pg_size) *
-                                PAGE_SIZE), 0, 0))
+        # ICCM DCCM placeholder
+        f.write(
+            gen_module_manifest(
+                b'ISHM',
+                b'ICCM_IMG',
+                (HEADER_SIZE + (kern_rdup_pg_size + aon_rdup_pg_size) * PAGE_SIZE),
+                0,
+                0,
+            )
+        )
+        f.write(
+            gen_module_manifest(
+                b'ISHM',
+                b'DCCM_IMG',
+                (HEADER_SIZE + (kern_rdup_pg_size + aon_rdup_pg_size) * PAGE_SIZE),
+                0,
+                0,
+            )
+        )
 
         # Add manifest that signals end of manifests
-        #f.write(gen_manifest(b'ISHE', b'', 0, 0))
+        # f.write(gen_manifest(b'ISHE', b'', 0, 0))
         f.write(gen_manifest_end())
 
         # Pad the remaining HEADER with 0s
@@ -188,6 +216,7 @@ def main():
                     f.write(in_file.read())
                 # Filling padings due to size round up as pages
                 f.write(b'\x00' * (aon_rdup_pg_size * PAGE_SIZE - aon_size))
+
 
 if __name__ == '__main__':
     main()

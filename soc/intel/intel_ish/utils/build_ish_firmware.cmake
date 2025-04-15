@@ -4,12 +4,12 @@
 #
 
 if(CONFIG_BOARD_INTEL_ISH_5_8_0)
-    set(BUILD_ISH_FIRMWARE_SCRIPT "build_ish_firmware_v1p1.py")
-    set(BUILD_VERSION "5.8.0.0")
-    set(VERSION_ARG "-v ${BUILD_VERSION}")
+  set(BUILD_ISH_FIRMWARE_SCRIPT "build_ish_firmware_v1p1.py")
+  set(BUILD_VERSION "5.8.0.0")
+  set(VERSION_ARG "-v ${BUILD_VERSION}")
 else()
-    set(BUILD_ISH_FIRMWARE_SCRIPT "build_ish_firmware.py")
-    set(VERSION_ARG "")
+  set(BUILD_ISH_FIRMWARE_SCRIPT "build_ish_firmware.py")
+  set(VERSION_ARG "")
 endif()
 
 if(CONFIG_PM)
