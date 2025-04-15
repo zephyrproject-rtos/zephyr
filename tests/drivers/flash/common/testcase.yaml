@@ -126,3 +126,8 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+  drivers.flash.common.disable_spi_nor:
+    extra_args:
+      - CONFIG_SPI_NOR=n
+    platform_allow:
+      - frdm_mcxw71
