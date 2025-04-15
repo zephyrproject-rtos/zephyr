@@ -97,5 +97,10 @@
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM2, RZA2M_CLK_P1C)>;
 			status = "disabled";
 		};
+
+		pinctrl: pin-controller@fcffe000 {
+			compatible = "renesas,rza2m-pinctrl";
+			reg = <0xfcffe000 0x1000>;
+		};
 	};
 };
