@@ -338,53 +338,6 @@ static int tmc50xx_stepper_is_moving(const struct device *dev, bool *is_moving)
 	return 0;
 }
 
-static int tmc50xx_stepper_move_by(const struct device *dev, const int32_t micro_steps)
-{
-	const struct tmc50xx_stepper_config *config = dev->config;
-	struct tmc50xx_stepper_data *data = dev->data;
-	int err;
-
-	if (config->is_sg_enabled) {
-		err = stallguard_enable(dev, false);
-		if (err != 0) {
-			return -EIO;
-		}
-	}
-
-	int32_t position;
-
-	err = stepper_get_actual_position(dev, &position);
-	if (err != 0) {
-		return -EIO;
-	}
-	int32_t target_position = position + micro_steps;
-
-	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
-			    TMC5XXX_RAMPMODE_POSITIONING_MODE);
-	if (err != 0) {
-		return -EIO;
-	}
-	LOG_DBG("Stepper motor controller %s moved to %d by steps: %d", dev->name, target_position,
-		micro_steps);
-	err = tmc50xx_write(config->controller, TMC50XX_XTARGET(config->index), target_position);
-	if (err != 0) {
-		return -EIO;
-	}
-
-	if (config->is_sg_enabled) {
-		k_work_reschedule(&data->stallguard_dwork,
-				  K_MSEC(config->sg_velocity_check_interval_ms));
-	}
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
-	if (data->callback) {
-		k_work_reschedule(
-			&data->rampstat_callback_dwork,
-			K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
-	}
-#endif
-	return 0;
-}
-
 int tmc50xx_stepper_set_max_velocity(const struct device *dev, uint32_t velocity)
 {
 	const struct tmc50xx_stepper_config *config = dev->config;
@@ -497,7 +450,7 @@ static int tmc50xx_stepper_get_actual_position(const struct device *dev, int32_t
 
 static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro_steps)
 {
-	LOG_DBG("Stepper motor controller %s set target position to %d", dev->name, micro_steps);
+	LOG_DBG("%s set target position to %d", dev->name, micro_steps);
 	const struct tmc50xx_stepper_config *config = dev->config;
 	struct tmc50xx_stepper_data *data = dev->data;
 	int err;
@@ -528,6 +481,22 @@ static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro
 	}
 #endif
 	return 0;
+}
+
+static int tmc50xx_stepper_move_by(const struct device *dev, const int32_t micro_steps)
+{
+	int err;
+	int32_t position;
+
+	err = stepper_get_actual_position(dev, &position);
+	if (err != 0) {
+		return -EIO;
+	}
+	int32_t target_position = position + micro_steps;
+
+	LOG_DBG("%s moved to %d by steps: %d", dev->name, target_position, micro_steps);
+
+	return tmc50xx_stepper_move_to(dev, target_position);
 }
 
 static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_direction direction)
