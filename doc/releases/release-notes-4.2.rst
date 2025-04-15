@@ -106,6 +106,12 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* Architectures
+
+  * :kconfig:option:`ARCH_HAS_VECTOR_TABLE_RELOCATION`
+  * :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` moved from ``zephyr/Kconfig.zephyr`` to
+    ``zephyr/arch/Kconfig`` and added dependencies to it.
+
 * Kernel
 
  * :c:macro:`K_TIMEOUT_ABS_SEC`

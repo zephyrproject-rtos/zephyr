@@ -329,3 +329,9 @@ Modules
 
 Architectures
 *************
+
+* Moved :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` from ``zephyr/Kconfig.zephyr`` to
+  ``zephyr/arch/Kconfig`` and added dependency to :kconfig:option:`CONFIG_XIP`,
+  :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
+  :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
+  of vector table in RAM.
