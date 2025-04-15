@@ -1723,9 +1723,10 @@ static DEVICE_API(flash, spi_nor_api) = {
 			INST_##idx##_BYTES,						\
 	     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
 
-#define SFDP_BFP_ATTR_GEN(idx)							\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),			\
-		"jedec,spi-nor sfdp-bfp required for devicetree SFDP");		\
+#define SFDP_BFP_ATTR_GEN(idx)								\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),				\
+		"jedec,spi-nor sfdp-bfp required for devicetree SFDP\n"			\
+		"use samples/drivers/jesd216 to gather it from the spi_nor device");	\
 	static const __aligned(4) uint8_t bfp_##idx##_data[] = DT_INST_PROP(idx, sfdp_bfp);
 
 #define INST_ATTR_GEN(idx)								\
