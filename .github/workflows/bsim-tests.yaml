@@ -121,9 +121,10 @@ jobs:
         id: check-bluetooth-files
         with:
           files: |
-            tests/bsim/bluetooth/
             samples/bluetooth/
             subsys/bluetooth/
+            tests/bluetooth/common/testlib/
+            tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
         uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
