@@ -12,7 +12,7 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Espressif ESP32-DevkitC WROVER-E PROCPU";
+	model = "Espressif ESP32-DevkitC PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {

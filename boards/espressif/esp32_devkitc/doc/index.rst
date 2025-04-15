@@ -1,4 +1,4 @@
-.. zephyr:board:: esp32_devkitc_wrover
+.. zephyr:board:: esp32_devkitc
 
 Overview
 ********
@@ -8,7 +8,7 @@ with integrated Wi-Fi & dual-mode Bluetooth. The ESP32 series employs a
 Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
 variations. ESP32 is created and developed by Espressif Systems, a
 Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-process. For more information, check `ESP32-DevKitC-WROVER`_.
+process. For more information, check `ESP32-DevKitC`_.
 
 The features include the following:
 
@@ -115,7 +115,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wrover
+   :board: esp32_devkitc
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -164,16 +164,16 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wrover/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32_devkitc_wrover`` board
+The usual ``flash`` target will work with the ``esp32_devkitc`` board
 configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wrover/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -188,7 +188,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32_devkitc_wrover
+   Hello World! esp32_devkitc
 
 Debugging
 *********
@@ -223,14 +223,14 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wrover/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
 
 You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wrover/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: debug
 
 Note on Debugging with GDB Stub
