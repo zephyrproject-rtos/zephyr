@@ -12,6 +12,7 @@ tests:
       - qemu_x86
       - nucleo_l152re
       - nucleo_l073rz
+      - sama7g54_ek
     integration_platforms:
       - qemu_x86
   drivers.eeprom.api.w_at2x_emul:
@@ -33,3 +34,4 @@ tests:
       - qemu_x86
       - nucleo_l152re
       - nucleo_l073rz
+      - sama7g54_ek
