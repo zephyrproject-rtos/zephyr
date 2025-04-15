@@ -1234,6 +1234,56 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 #define VIDEO_PIX_FMT_RGB565 VIDEO_FOURCC('R', 'G', 'B', 'P')
 
 /**
+ * 24 bit RGB format with 8 bit per component
+ *
+ * @code{.unparsed}
+ * | Bbbbbbbb Gggggggg Rggggggg | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_BGR24 VIDEO_FOURCC('B', 'G', 'R', '3')
+
+/**
+ * 24 bit RGB format with 8 bit per component
+ *
+ * @code{.unparsed}
+ * | Rggggggg Gggggggg Bbbbbbbb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
+ * @code{.unparsed}
+ * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_ARGB32 VIDEO_FOURCC('B', 'A', '2', '4')
+
+/**
+ * @code{.unparsed}
+ * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_ABGR32 VIDEO_FOURCC('A', 'R', '2', '4')
+
+/**
+ * @code{.unparsed}
+ * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_RGBA32 VIDEO_FOURCC('A', 'B', '2', '4')
+
+/**
+ * @code{.unparsed}
+ * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_BGRA32 VIDEO_FOURCC('R', 'A', '2', '4')
+
+/**
  * The first byte is empty (X) for each pixel.
  *
  * @code{.unparsed}
@@ -1261,6 +1311,27 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * @endcode
  */
 #define VIDEO_PIX_FMT_YUYV VIDEO_FOURCC('Y', 'U', 'Y', 'V')
+
+/**
+ * @code{.unparsed}
+ * | Yyyyyyyy Vvvvvvvv | Yyyyyyyy Uuuuuuuu | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVYU VIDEO_FOURCC('Y', 'V', 'Y', 'U')
+
+/**
+ * @code{.unparsed}
+ * | Vvvvvvvv Yyyyyyyy | Uuuuuuuu Yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_VYUY VIDEO_FOURCC('V', 'Y', 'U', 'Y')
+
+/**
+ * @code{.unparsed}
+ * | Uuuuuuuu Yyyyyyyy | Vvvvvvvv Yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_UYVY VIDEO_FOURCC('U', 'Y', 'V', 'Y')
 
 /**
  * The first byte is empty (X) for each pixel.
@@ -1326,6 +1397,9 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 14;
 	case VIDEO_PIX_FMT_RGB565:
 	case VIDEO_PIX_FMT_YUYV:
+	case VIDEO_PIX_FMT_YVYU:
+	case VIDEO_PIX_FMT_UYVY:
+	case VIDEO_PIX_FMT_VYUY:
 	case VIDEO_PIX_FMT_SBGGR10:
 	case VIDEO_PIX_FMT_SGBRG10:
 	case VIDEO_PIX_FMT_SGRBG10:
@@ -1343,8 +1417,15 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG16:
 	case VIDEO_PIX_FMT_SRGGB16:
 		return 16;
+	case VIDEO_PIX_FMT_BGR24:
+	case VIDEO_PIX_FMT_RGB24:
+		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
+	case VIDEO_PIX_FMT_ARGB32:
+	case VIDEO_PIX_FMT_ABGR32:
+	case VIDEO_PIX_FMT_RGBA32:
+	case VIDEO_PIX_FMT_BGRA32:
 		return 32;
 	default:
 		/* Variable number of bits per pixel or unknown format */
