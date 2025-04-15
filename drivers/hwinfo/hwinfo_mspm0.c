@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <ti/driverlib/driverlib.h>
+#include <string.h>
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
@@ -22,6 +23,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	info.partnum = DL_FactoryRegion_getPartNumber();
 	info.version = DL_FactoryRegion_getVersion();
 
+	if (length > sizeof(info)) {
+		length = sizeof(info);
+	}
 	memcpy(buffer, &info, length);
 
 	return length;
