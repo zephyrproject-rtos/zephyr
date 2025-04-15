@@ -202,6 +202,10 @@ New APIs and options
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
 
+* PCIe
+
+   * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
+
 New Boards
 **********
 
