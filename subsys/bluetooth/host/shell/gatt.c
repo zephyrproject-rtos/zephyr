@@ -740,7 +740,7 @@ static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 	total_len = stats.svc_count * sizeof(struct bt_gatt_service);
 	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
 	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
-	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
+	total_len += stats.ccc_count * sizeof(struct bt_gatt_ccc_managed_user_data);
 
 	shell_print(sh, "=================================================");
 	shell_print(sh, "Total: %u services %u attributes (%zu bytes)",
