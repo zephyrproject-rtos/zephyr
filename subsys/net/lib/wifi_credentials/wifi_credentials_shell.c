@@ -358,7 +358,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argc != 2) {
-		shell_print(sh, "Usage: wifi_cred delete \"network name\"");
+		shell_print(sh, "Usage: wifi cred delete \"network name\"");
 		return -EINVAL;
 	}
 
