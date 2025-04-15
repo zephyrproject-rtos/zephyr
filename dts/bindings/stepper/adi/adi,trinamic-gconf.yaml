@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
 # SPDX-License-Identifier: Apache-2.0
 
 description: Global configuration flags for Trinamic stepper controller.
@@ -72,3 +73,11 @@ properties:
     type: boolean
     description: |
       1: GCONF is locked against further write access.
+
+  en-pwm-mode:
+    type: boolean
+    description: |
+      1: StealthChop voltage PWM mode enabled
+         (depending on velocity thresholds). Switch from
+         off to on state while in stand-still and at IHOLD=
+         nominal IRUN current, only.
