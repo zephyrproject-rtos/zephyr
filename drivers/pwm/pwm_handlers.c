@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
+ * Copyright (c) 2025 Siemens SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,3 +79,22 @@ static inline int z_vrfy_pwm_capture_cycles(const struct device *dev,
 #include <zephyr/syscalls/pwm_capture_cycles_mrsh.c>
 
 #endif /* CONFIG_PWM_CAPTURE */
+
+#ifdef CONFIG_PWM_WITH_DMA
+static inline int z_vrfy_pwm_enable_dma(const struct device *dev,
+						uint32_t channel)
+{
+K_OOPS(K_SYSCALL_DRIVER_PWM(dev, enable_dma));
+return z_impl_pwm_enable_dma((const struct device *)dev, channel);
+}
+#include <zephyr/syscalls/pwm_enable_dma_mrsh.c>
+
+static inline int z_vrfy_pwm_disable_dma(const struct device *dev,
+						uint32_t channel)
+{
+K_OOPS(K_SYSCALL_DRIVER_PWM(dev, disable_dma));
+return z_impl_pwm_disable_dma((const struct device *)dev, channel);
+}
+#include <zephyr/syscalls/pwm_disable_dma_mrsh.c>
+
+#endif /* CONFIG_PWM_WITH_DMA */

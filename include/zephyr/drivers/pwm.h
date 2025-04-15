@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  * Copyright (c) 2025 Basalte bv
+ * Copyright (c) 2025 Siemens SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +20,7 @@
  * @brief Interfaces for Pulse Width Modulation (PWM) controllers.
  * @defgroup pwm_interface PWM
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  *
@@ -527,6 +528,20 @@ typedef int (*pwm_manage_event_callback_t)(const struct device *dev,
 					   struct pwm_event_callback *callback, bool set);
 #endif /* CONFIG_PWM_EVENT */
 
+#ifdef CONFIG_PWM_WITH_DMA
+/**
+ * @brief PWM driver API call to enable PWM DMA requests.
+ * @see pwm_enable_dma() for argument description
+ */
+typedef int (*pwm_enable_dma_t)(const struct device *dev, uint32_t channel);
+
+/**
+ * @brief PWM driver API call to disable PWM DMA requests.
+ * @see pwm_disable_dma() for argument description
+ */
+typedef int (*pwm_disable_dma_t)(const struct device *dev, uint32_t channel);
+#endif /* CONFIG_PWM_WITH_DMA */
+
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
@@ -539,6 +554,10 @@ __subsystem struct pwm_driver_api {
 #ifdef CONFIG_PWM_EVENT
 	pwm_manage_event_callback_t manage_event_callback;
 #endif /* CONFIG_PWM_EVENT */
+#ifdef CONFIG_PWM_WITH_DMA
+	pwm_enable_dma_t enable_dma;
+	pwm_disable_dma_t disable_dma;
+#endif /* CONFIG_PWM_WITH_DMA */
 };
 /** @endcond */
 
@@ -881,6 +900,56 @@ static inline int z_impl_pwm_disable_capture(const struct device *dev,
 	return api->disable_capture(dev, channel);
 }
 #endif /* CONFIG_PWM_CAPTURE */
+
+#if defined(CONFIG_PWM_WITH_DMA) || defined(__DOXYGEN__)
+/**
+ * @brief Enable DMA requests triggered by PWM cycles for a single PWM channel.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOSYS if DMA for PWM is not supported
+ * @retval -ENOTSUP if the PWM channel does not support DMA
+ */
+__syscall int pwm_enable_dma(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_pwm_enable_dma(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+
+	if (api->enable_dma == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enable_dma(dev, channel);
+}
+
+/**
+ * @brief Disable DMA requests triggered by PWM cycles for a single PWM channel.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOSYS if DMA for PWM is not supported
+ * @retval -ENOTSUP if the PWM channel does not support DMA
+ */
+__syscall int pwm_disable_dma(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_pwm_disable_dma(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+
+	if (api->disable_dma == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->disable_dma(dev, channel);
+}
+#endif /* CONFIG_PWM_WITH_DMA */
 
 /**
  * @brief Capture a single PWM period/pulse width in clock cycles for a single
