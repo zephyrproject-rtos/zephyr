@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_ambiq);
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/mem_mgmt/mem_attr.h>
 

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(spi_ambiq_spid);
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #define SPID_ADDR_INTERVAL 1
 struct spi_ambiq_config {

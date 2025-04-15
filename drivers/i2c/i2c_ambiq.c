@@ -13,7 +13,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/mem_mgmt/mem_attr.h>
 

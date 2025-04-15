@@ -20,7 +20,7 @@
 #include <zephyr/spinlock.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #define COUNTER_MAX UINT32_MAX
 

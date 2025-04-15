@@ -5,7 +5,6 @@
  */
 
 #include <soc.h>
-#include "am_mcu_apollo.h"
 #include <string.h>
 #include <zephyr/drivers/clock_control/clock_control_ambiq.h>
 #include <zephyr/sys/util.h>

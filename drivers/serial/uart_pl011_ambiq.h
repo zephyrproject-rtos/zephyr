@@ -13,7 +13,7 @@
 #include <zephyr/pm/policy.h>
 
 #include "uart_pl011_registers.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 static inline void pl011_ambiq_enable_clk(const struct device *dev)
 {

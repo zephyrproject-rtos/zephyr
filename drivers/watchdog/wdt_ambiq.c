@@ -10,7 +10,7 @@
 #include <zephyr/drivers/watchdog.h>
 
 #include <errno.h>
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_ambiq, CONFIG_WDT_LOG_LEVEL);
