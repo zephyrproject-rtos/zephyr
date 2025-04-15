@@ -11,6 +11,9 @@ if SOC_FAMILY_STM32
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
+config CACHE_STM32
+	default y if EXTERNAL_CACHE
+
 config CLOCK_CONTROL
 	default y
 
