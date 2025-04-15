@@ -62,16 +62,20 @@ enum npm1300_gpio_type {
 /* nPM1300 ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
 
-#define BUCK1_ON_MASK 0x04U
-#define BUCK2_ON_MASK 0x40U
+#define BUCK1_ON_MASK          0x04U
+#define BUCK2_ON_MASK          0x40U
+#define BUCK1_EN_PULLDOWN_MASK BIT(2)
+#define BUCK2_EN_PULLDOWN_MASK BIT(3)
 
 #define LDSW1_ON_MASK 0x03U
 #define LDSW2_ON_MASK 0x0CU
 
-#define LDSW1_SOFTSTART_MASK  0x0CU
-#define LDSW1_SOFTSTART_SHIFT 2U
-#define LDSW2_SOFTSTART_MASK  0x30U
-#define LDSW2_SOFTSTART_SHIFT 4U
+#define LDSW1_SOFTSTART_MASK        0x0CU
+#define LDSW1_SOFTSTART_SHIFT       2U
+#define LDSW1_ACTIVE_DISCHARGE_MASK BIT(6)
+#define LDSW2_SOFTSTART_MASK        0x30U
+#define LDSW2_SOFTSTART_SHIFT       4U
+#define LDSW2_ACTIVE_DISCHARGE_MASK BIT(7)
 
 #define NPM1300_GPIO_UNUSED UINT8_MAX
 
@@ -94,6 +98,7 @@ struct regulator_npm1300_config {
 	struct npm1300_gpio_info retention_gpios;
 	struct npm1300_gpio_info pwm_gpios;
 	uint8_t soft_start;
+	bool active_discharge;
 	bool ldo_disable_workaround;
 };
 
@@ -603,6 +608,32 @@ static int soft_start_set(const struct device *dev, uint8_t soft_start)
 	}
 }
 
+static int active_discharge_set(const struct device *dev, bool enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_BUCK1:
+		return mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0,
+					      enabled ? BUCK1_EN_PULLDOWN_MASK : 0,
+					      BUCK1_EN_PULLDOWN_MASK);
+	case NPM1300_SOURCE_BUCK2:
+		return mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0,
+					      enabled ? BUCK2_EN_PULLDOWN_MASK : 0,
+					      BUCK2_EN_PULLDOWN_MASK);
+	case NPM1300_SOURCE_LDO1:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      enabled ? LDSW1_ACTIVE_DISCHARGE_MASK : 0,
+					      LDSW1_ACTIVE_DISCHARGE_MASK);
+	case NPM1300_SOURCE_LDO2:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      enabled ? LDSW2_ACTIVE_DISCHARGE_MASK : 0,
+					      LDSW2_ACTIVE_DISCHARGE_MASK);
+	default:
+		return -ENODEV;
+	}
+}
+
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
@@ -637,6 +668,12 @@ int regulator_npm1300_init(const struct device *dev)
 		if (ret != 0) {
 			return ret;
 		}
+	}
+
+	/* Configure active discharge */
+	ret = active_discharge_set(dev, config->active_discharge);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Configure GPIO pin control */
@@ -690,6 +727,7 @@ static DEVICE_API(regulator, api) = {
 		.enable_gpios = GPIO_CONFIG_DEFINE(node_id, enable_gpio_config),                   \
 		.retention_gpios = GPIO_CONFIG_DEFINE(node_id, retention_gpio_config),             \
 		.pwm_gpios = GPIO_CONFIG_DEFINE(node_id, pwm_gpio_config),                         \
+		.active_discharge = DT_PROP(node_id, active_discharge),                            \
 		.ldo_disable_workaround = DT_PROP(node_id, nordic_anomaly38_disable_workaround)};  \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \
