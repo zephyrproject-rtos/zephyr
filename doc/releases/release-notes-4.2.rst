@@ -167,6 +167,13 @@ New APIs and options
 
   * :c:func:`counter_reset`
 
+
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
+
 New Boards
 **********
 
