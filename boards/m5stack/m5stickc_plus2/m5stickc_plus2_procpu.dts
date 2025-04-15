@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_pico_d4.dtsi>
+#include <espressif/esp32/esp32_pico_v3_02.dtsi>
 #include "m5stickc_plus2-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
@@ -42,7 +42,7 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			gpios =  <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			gpios =  <&gpio0 19 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED0";
 		};
 	};
