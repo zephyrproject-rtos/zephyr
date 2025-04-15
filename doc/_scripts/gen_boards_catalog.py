@@ -163,7 +163,7 @@ def gather_board_build_info(twister_out_dir):
                 revision = board_info.get('revision', '')
 
                 board_target = board_name
-                if revision is not None:
+                if revision != '':
                     board_target = f"{board_target}@{revision}"
                 if qualifier:
                     board_target = f"{board_target}/{qualifier}"
