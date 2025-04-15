@@ -130,10 +130,16 @@ struct icm45686_stream {
 	} data;
 };
 
+enum icm45686_bus_type {
+	ICM45686_BUS_SPI,
+	ICM45686_BUS_I2C,
+};
+
 struct icm45686_data {
 	struct {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
+		enum icm45686_bus_type type;
 	} rtio;
 	/** Single-shot encoded data instance to support fetch/get API */
 	struct icm45686_encoded_data edata;
