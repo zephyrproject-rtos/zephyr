@@ -143,10 +143,6 @@ struct sim7080_data {
 	uint8_t mdm_registration;
 	/* Modem status flags */
 	uint32_t status_flags;
-	/*
-	 * Flag if the PDP context is active.
-	 */
-	bool pdp_active;
 	/* SMS buffer structure provided by read. */
 	struct sim7080_sms_buffer *sms_buffer;
 	/* Position in the sms buffer. */
@@ -168,6 +164,7 @@ struct sim7080_data {
 	struct k_sem sem_dns;
 	struct k_sem sem_ftp;
 	struct k_sem boot_sem;
+	struct k_sem pdp_sem;
 };
 
 /*
@@ -187,11 +184,15 @@ extern struct sim7080_data mdata;
 extern struct modem_context mctx;
 extern const struct socket_op_vtable offload_socket_fd_op_vtable;
 extern const struct socket_dns_offload offload_dns_ops;
+extern struct k_work_q modem_workq;
+
+extern void sim7080_rssi_query_work(struct k_work *work);
 
 enum sim7080_state sim7080_get_state(void);
 
 void sim7080_change_state(enum sim7080_state state);
 
-int modem_autobaud(void);
+int sim7080_pdp_activate(void);
+int sim7080_pdp_deactivate(void);
 
 #endif /* SIMCOM_SIM7080_H */

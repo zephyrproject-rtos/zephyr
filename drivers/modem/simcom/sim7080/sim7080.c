@@ -17,7 +17,7 @@ struct sim7080_data mdata;
 struct modem_context mctx;
 
 static struct k_thread modem_rx_thread;
-static struct k_work_q modem_workq;
+struct k_work_q modem_workq;
 
 static K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_SIMCOM_SIM7080_RX_STACK_SIZE);
 static K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_SIMCOM_SIM7080_RX_WORKQ_STACK_SIZE);
@@ -25,11 +25,6 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL)
 
 /* pin settings */
 static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
-
-struct modem_context *sim7080_get_mctx(void)
-{
-	return &mctx;
-}
 
 static inline uint32_t hash32(char *str, int len)
 {
@@ -183,9 +178,15 @@ MODEM_CMD_DEFINE(on_cmd_exterror)
  */
 MODEM_CMD_DEFINE(on_urc_app_pdp)
 {
-	mdata.pdp_active = strcmp(argv[1], "ACTIVE") == 0;
-	LOG_INF("PDP context: %u", mdata.pdp_active);
-	k_sem_give(&mdata.sem_response);
+	bool active = strcmp(argv[1], "ACTIVE") == 0;
+	if (active) {
+		mdata.status_flags |= SIM7080_STATUS_FLAG_PDP_ACTIVE;
+	} else {
+		mdata.status_flags &= ~SIM7080_STATUS_FLAG_PDP_ACTIVE;
+	}
+
+	LOG_INF("PDP context: %u", active);
+	k_sem_give(&mdata.pdp_sem);
 	return 0;
 }
 
@@ -386,82 +387,6 @@ MODEM_CMD_DEFINE(on_cmd_ccid)
 #endif /* defined(CONFIG_MODEM_SIM_NUMBERS) */
 
 /*
- * Parses the non urc C(E)REG and updates registration status.
- */
-MODEM_CMD_DEFINE(on_cmd_cereg)
-{
-	mdata.mdm_registration = atoi(argv[1]);
-	LOG_INF("CREG: %u", mdata.mdm_registration);
-	return 0;
-}
-
-MODEM_CMD_DEFINE(on_cmd_cgatt)
-{
-	int cgatt = atoi(argv[0]);
-
-	if (cgatt) {
-		mdata.status_flags |= SIM7080_STATUS_FLAG_ATTACHED;
-	} else {
-		mdata.status_flags &= ~SIM7080_STATUS_FLAG_ATTACHED;
-	}
-
-	LOG_INF("CGATT: %d", cgatt);
-	return 0;
-}
-
-/*
- * Handler for RSSI query.
- *
- * +CSQ: <rssi>,<ber>
- *  rssi: 0,-115dBm; 1,-111dBm; 2...30,-110...-54dBm; 31,-52dBm or greater.
- *        99, ukn
- *  ber: Not used.
- */
-MODEM_CMD_DEFINE(on_cmd_csq)
-{
-	int rssi = atoi(argv[0]);
-
-	if (rssi == 0) {
-		mdata.mdm_rssi = -115;
-	} else if (rssi == 1) {
-		mdata.mdm_rssi = -111;
-	} else if (rssi > 1 && rssi < 31) {
-		mdata.mdm_rssi = -114 + 2 * rssi;
-	} else if (rssi == 31) {
-		mdata.mdm_rssi = -52;
-	} else {
-		mdata.mdm_rssi = -1000;
-	}
-
-	LOG_INF("RSSI: %d", mdata.mdm_rssi);
-	return 0;
-}
-
-/*
- * Queries modem RSSI.
- *
- * If a work queue parameter is provided query work will
- * be scheduled. Otherwise rssi is queried once.
- */
-static void modem_rssi_query_work(struct k_work *work)
-{
-	struct modem_cmd cmd[] = { MODEM_CMD("+CSQ: ", on_cmd_csq, 2U, ",") };
-	static char *send_cmd = "AT+CSQ";
-	int ret;
-
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), send_cmd,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-	if (ret < 0) {
-		LOG_ERR("AT+CSQ ret:%d", ret);
-	}
-
-	if (work) {
-		k_work_reschedule_for_queue(&modem_workq, &mdata.rssi_query_work,
-					    K_SECONDS(RSSI_TIMEOUT_SECS));
-	}
-}
-
-/*
  * Unlock the tx ready semaphore if '> ' is received.
  */
 MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
@@ -523,102 +448,6 @@ static const struct modem_cmd unsolicited_cmds[] = {
 	MODEM_CMD("NORMAL POWER DOWN", on_urc_pwr_down, 0U, ""),
 	MODEM_CMD("+CPIN: ", on_urc_cpin, 1U, ","),
 };
-
-/*
- * Activates the pdp context
- */
-static int modem_pdp_activate(void)
-{
-	int counter;
-	int ret = 0;
-#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
-	const char *buf = "AT+CREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CREG: ", on_cmd_cereg, 2U, ",") };
-#else
-	const char *buf = "AT+CEREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CEREG: ", on_cmd_cereg, 2U, ",") };
-#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM) */
-
-	struct modem_cmd cgatt_cmd[] = { MODEM_CMD("+CGATT: ", on_cmd_cgatt, 1U, "") };
-
-	counter = 0;
-	while (counter++ < MDM_MAX_CGATT_WAITS && (mdata.status_flags & SIM7080_STATUS_FLAG_ATTACHED) == 0) {
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cgatt_cmd,
-				     ARRAY_SIZE(cgatt_cmd), "AT+CGATT?", &mdata.sem_response,
-				     MDM_CMD_TIMEOUT);
-		if (ret < 0) {
-			LOG_ERR("Failed to query cgatt!!");
-			return -1;
-		}
-
-		k_sleep(K_SECONDS(1));
-	}
-
-	if (counter >= MDM_MAX_CGATT_WAITS) {
-		LOG_WRN("Network attach failed!!");
-		return -1;
-	}
-
-	if ((mdata.status_flags & SIM7080_STATUS_FLAG_CPIN_READY) == 0 ||
-		(mdata.status_flags & SIM7080_STATUS_FLAG_ATTACHED) == 0) {
-		LOG_ERR("Fatal: Modem is not attached to GPRS network!!");
-		return -1;
-	}
-
-	LOG_INF("Waiting for network");
-
-	/* Wait until the module is registered to the network.
-	 * Registration will be set by urc.
-	 */
-	counter = 0;
-	while (counter++ < MDM_MAX_CEREG_WAITS && mdata.mdm_registration != 1 &&
-	       mdata.mdm_registration != 5) {
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), buf,
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
-		if (ret < 0) {
-			LOG_ERR("Failed to query registration!!");
-			return -1;
-		}
-
-		k_sleep(K_SECONDS(1));
-	}
-
-	if (counter >= MDM_MAX_CEREG_WAITS) {
-		LOG_WRN("Network registration failed!");
-		ret = -1;
-		goto error;
-	}
-
-	/* Set dual stack mode (IPv4/IPv6) */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNCFG=0,0",
-				&mdata.sem_response, MDM_CMD_TIMEOUT);
-	if (ret < 0) {
-		LOG_ERR("Could not configure pdp context!");
-		goto error;
-	}
-
-	/*
-	 * Now activate the pdp context and wait for confirmation.
-	 */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNACT=0,1",
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-	if (ret < 0) {
-		LOG_ERR("Could not activate PDP context.");
-		goto error;
-	}
-
-	ret = k_sem_take(&mdata.sem_response, MDM_PDP_TIMEOUT);
-	if (ret < 0 || mdata.pdp_active == false) {
-		LOG_ERR("Failed to activate PDP context.");
-		ret = -1;
-		goto error;
-	}
-
-	LOG_INF("Network active.");
-
-error:
-	return ret;
-}
 
 /*
  * Toggles the modems power pin.
@@ -834,32 +663,7 @@ static int modem_setup(void)
 
 	sim7080_change_state(SIM7080_STATE_IDLE);
 
-	/* Wait for acceptable rssi values. */
-	modem_rssi_query_work(NULL);
-	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
-
-	int counter = 0;
-	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	       (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
-		modem_rssi_query_work(NULL);
-		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
-	}
-
-	if (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000) {
-		LOG_ERR("Network not reachable!!");
-		ret = -ENETUNREACH;
-		goto error;
-	}
-
-	ret = modem_pdp_activate();
-	if (ret < 0) {
-		goto error;
-	}
-
-	k_work_reschedule_for_queue(&modem_workq, &mdata.rssi_query_work,
-				    K_SECONDS(RSSI_TIMEOUT_SECS));
-
-	sim7080_change_state(SIM7080_STATE_NETWORKING);
+	ret = sim7080_pdp_activate();
 
 error:
 	return ret;
@@ -949,13 +753,13 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_dns, 0, 1);
 	k_sem_init(&mdata.sem_ftp, 0, 1);
 	k_sem_init(&mdata.boot_sem, 0 ,1);
+	k_sem_init(&mdata.pdp_sem, 0, 1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);
 
 	/* Assume the modem is not registered to the network. */
 	mdata.mdm_registration = 0;
 	mdata.status_flags = 0;
-	mdata.pdp_active = false;
 
 	mdata.sms_buffer = NULL;
 	mdata.sms_buffer_pos = 0;
@@ -1038,7 +842,7 @@ static int modem_init(const struct device *dev)
 			modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */
-	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
+	k_work_init_delayable(&mdata.rssi_query_work, sim7080_rssi_query_work);
 
 	return modem_setup();
 error:
