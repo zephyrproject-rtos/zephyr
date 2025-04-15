@@ -6,7 +6,7 @@
 
 #include <zephyr/init.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 extern void ambiq_power_init(void);
 
