@@ -69,6 +69,11 @@ zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
+)
+
 if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources(
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
