@@ -46,6 +46,7 @@ struct st7789v_config {
 	uint16_t height;
 	uint16_t width;
 	uint8_t ready_time_ms;
+	const struct gpio_dt_spec supply_gpio;
 };
 
 struct st7789v_data {
@@ -411,6 +412,15 @@ static int st7789v_init(const struct device *dev)
 	}
 
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
+	
+	if (config->supply_gpio.port) {
+		if (!device_is_ready(config->supply_gpio.port)) {
+			LOG_ERR("supply-gpio not ready");
+			return -ENODEV;
+		}
+		LOG_INF("Enabling supply");
+		gpio_pin_configure_dt(&config->supply_gpio, GPIO_OUTPUT_ACTIVE);
+	}
 
 	ret = st7789v_reset_display(dev);
 	if (ret < 0) {
@@ -500,6 +510,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
+		.supply_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}), \
 	};										\
 											\
 	static struct st7789v_data st7789v_data_ ## inst = {				\
