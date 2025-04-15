@@ -20,6 +20,7 @@ zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI_APS6404L ${ZEPHYR_BASE
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_QSPI            memc_nxp_s32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_RENESAS_RA_SDRAM        memc_renesas_ra_sdram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC                 memc_sam_smc.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI     memc_silabs_siwx91x_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_SMARTBOND               memc_smartbond_nor_psram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32                   memc_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_NOR_PSRAM         memc_stm32_nor_psram.c)
