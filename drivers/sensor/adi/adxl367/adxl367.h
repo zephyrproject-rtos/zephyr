@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/sensor/adxl367.h>
 
 #define DT_DRV_COMPAT  adi_adxl367
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -280,10 +281,10 @@ enum adxl367_fifo_format {
 };
 
 enum adxl367_fifo_mode {
-	ADXL367_FIFO_DISABLED,
-	ADXL367_OLDEST_SAVED,
-	ADXL367_STREAM_MODE,
-	ADXL367_TRIGGERED_MODE
+	ADXL367_FIFO_DISABLED = ADXL367_FIFO_MODE_DISABLED,
+	ADXL367_OLDEST_SAVED = ADXL367_FIFO_MODE_OLDEST_SAVED,
+	ADXL367_STREAM_MODE = ADXL367_FIFO_MODE_STREAM,
+	ADXL367_TRIGGERED_MODE = ADXL367_FIFO_MODE_TRIGGERED
 };
 
 enum adxl367_fifo_read_mode {
