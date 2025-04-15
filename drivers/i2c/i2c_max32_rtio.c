@@ -97,7 +97,7 @@ static int max32_do_configure(const struct device *dev, uint32_t dev_cfg)
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return ((ret > 0) ? 0 : -EIO);
 }
 
 static void max32_complete(const struct device *dev, int status);
