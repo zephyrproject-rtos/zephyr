@@ -250,8 +250,7 @@ static void uart_mspm0_async_rx_callback(const struct device *dev, void *user_da
 		dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0,
 			   (uint32_t)(data->async_rx.buf + data->async_rx.offset),
 			   stat.pending_length);
-		irq_unlock(key);
-		return;
+		goto out;
 	}
 
 	data->async_rx.offset = data->async_rx.buf_len - stat.pending_length;
@@ -290,6 +289,7 @@ static void uart_mspm0_async_rx_callback(const struct device *dev, void *user_da
 		}
 	}
 
+out:
 	uart_mspm0_async_timer_start(&data->async_rx.timeout_work,
 				     data->async_rx.timeout);
 
@@ -590,6 +590,9 @@ static void uart_mspm0_async_rx_timeout(struct k_work *work)
 		evt.data.rx.offset = data->async_rx.offset;
 		data->async_cb(data->uart_dev, &evt, data->async_user_data);
 	}
+
+	uart_mspm0_async_timer_start(&data->async_rx.timeout_work,
+				     data->async_rx.timeout);
 
 	irq_unlock(key);
 }
