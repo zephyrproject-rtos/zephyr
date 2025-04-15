@@ -13,8 +13,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "M5StickC Plus PROCPU";
-	compatible = "m5stack,m5stickc-plus";
+	model = "M5StickC Plus 2 PROCPU";
+	compatible = "m5stack,m5stickc-plus2";
 
 	aliases {
 		led0 = &red_led;
@@ -65,8 +65,8 @@
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&spi3>;
-		dc-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>; // G14
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>; // G12
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -75,6 +75,8 @@
 			compatible = "sitronix,st7789v";
 			reg = <0>;
 			mipi-max-frequency = <20000000>;
+
+			supply-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>; // G27
 
 			width = <135>;
 			height = <240>;
