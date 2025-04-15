@@ -140,6 +140,9 @@ struct udc_dwc2_data {
 	uint8_t setup[8];
 };
 
+static void udc_dwc2_ep_disable(const struct device *dev,
+				struct udc_ep_config *const cfg, bool stall);
+
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 
@@ -829,6 +832,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 
 	buf = udc_buf_get_all(cfg_in);
 	if (buf) {
+		udc_dwc2_ep_disable(dev, cfg_in, false);
 		net_buf_unref(buf);
 	}
 
@@ -1557,7 +1561,8 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		return;
 	}
 
-	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
+	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS) &&
+	    !(dxepctl & USB_DWC2_DEPCTL_EPENA)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
 		if (stall) {
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
