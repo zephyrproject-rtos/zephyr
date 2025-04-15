@@ -8,6 +8,25 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <ti/driverlib/driverlib.h>
 
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+{
+	struct mspm0_device_id {
+		uint16_t manufacturer;
+		uint16_t partnum;
+		uint8_t version;
+	};
+
+	struct mspm0_device_id info = {0};
+
+	info.manufacturer = DL_FactoryRegion_getManufacturerCode();
+	info.partnum = DL_FactoryRegion_getPartNumber();
+	info.version = DL_FactoryRegion_getVersion();
+
+	memcpy(buffer, &info, length);
+
+	return length;
+}
+
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t reason = DL_SYSCTL_getResetCause();
