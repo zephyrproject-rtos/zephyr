@@ -327,7 +327,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: 60ebade5d3d381a210af90191e475d8870b8adbc
+      revision: 78854fffd4f57d91547dc3e15370d786ead01477
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
