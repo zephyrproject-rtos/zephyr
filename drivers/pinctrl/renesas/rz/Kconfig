@@ -20,3 +20,10 @@ config PINCTRL_RENESAS_RZ
 	select USE_RZ_FSP_IOPORT
 	help
 	  Enable Renesas RZ pinctrl driver.
+
+config PINCTRL_RENESAS_RZA2M
+	bool "Renesas RZA2M pin controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_PINCTRL_ENABLED
+	help
+	  Enable Renesas RZ pinctrl driver.
