@@ -577,3 +577,6 @@ Other notable changes
 
 * Updated Mbed TLS to version 3.6.3 (from 3.6.2). The release notes can be found at:
   https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+
+* Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
+  https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
