@@ -223,23 +223,12 @@ static int gpio_stepper_get_actual_position(const struct device *dev, int32_t *p
 static int gpio_stepper_move_to(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int32_t steps_to_move;
 
-	if (!data->is_enabled) {
-		LOG_ERR("Stepper motor is not enabled");
-		return -ECANCELED;
-	}
-
-	if (data->delay_in_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
-		return -EINVAL;
-	}
 	K_SPINLOCK(&data->lock) {
-		data->run_mode = STEPPER_RUN_MODE_POSITION;
-		data->step_count = micro_steps - data->actual_position;
-		update_direction_from_step_count(dev);
-		(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
+		steps_to_move = micro_steps - data->actual_position;
 	}
-	return 0;
+	return gpio_stepper_move_by(dev, steps_to_move);
 }
 
 static int gpio_stepper_is_moving(const struct device *dev, bool *is_moving)
