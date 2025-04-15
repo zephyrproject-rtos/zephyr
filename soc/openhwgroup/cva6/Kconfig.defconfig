@@ -19,7 +19,7 @@ config 2ND_LVL_INTR_00_OFFSET
 
 # 12 first level, 30 second level
 config MAX_IRQ_PER_AGGREGATOR
-	default 42
+	default 30
 
 # one 2nd level aggregator (PLIC) with 30 interrupts
 # offset of 12
