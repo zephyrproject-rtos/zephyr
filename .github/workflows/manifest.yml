@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   contribs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write # to create/update pull request comments
     name: Manifest

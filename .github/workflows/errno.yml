@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check-errno:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.27.4
 

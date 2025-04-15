@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check_for_first_interaction:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     permissions:
       pull-requests: write # to comment on pull requests
