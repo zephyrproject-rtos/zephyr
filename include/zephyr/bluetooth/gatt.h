@@ -1035,8 +1035,14 @@ struct bt_gatt_ccc_cfg {
 	uint16_t value;
 };
 
-/** Internal representation of CCC value */
-struct _bt_gatt_ccc {
+/** Macro to keep old name for deprecation period. */
+#define _bt_gatt_ccc bt_gatt_ccc_managed_user_data __DEPRECATED_MACRO
+
+/** @brief Internal representation of CCC value.
+ *
+ * @note Only use this as an argument for @ref BT_GATT_CCC_MANAGED
+ */
+struct bt_gatt_ccc_managed_user_data {
 	/** Configuration for each connection */
 	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
 
@@ -1092,8 +1098,8 @@ struct _bt_gatt_ccc {
  *          case of error.
  */
 /** @cond INTERNAL_HIDDEN
- *  @note Only use this with attributes which user_data is a _bt_gatt_ccc.
- *  _bt_gatt_ccc being the internal representation of CCC value.
+ *  @note Only use this with attributes which user_data is a bt_gatt_ccc_managed_user_data.
+ *        @ref bt_gatt_ccc_managed_user_data being the internal representation of CCC value.
  */
  /** @endcond */
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
@@ -1115,13 +1121,16 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
  *          case of error.
  */
 /** @cond INTERNAL_HIDDEN
- *  @note Only use this with attributes which user_data is a _bt_gatt_ccc.
- *  _bt_gatt_ccc being the internal representation of CCC value.
+ *  @note Only use this with attributes which user_data is a bt_gatt_ccc_managed_user_data.
+ *        @ref bt_gatt_ccc_managed_user_data being the internal representation of CCC value.
  */
 /** @endcond */
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags);
+
+/** Macro to keep old name for deprecation period. */
+#define BT_GATT_CCC_INITIALIZER BT_GATT_CCC_MANAGED_USER_DATA_INIT __DEPRECATED_MACRO
 
 /**
  *  @brief Initialize Client Characteristic Configuration Declaration Macro.
@@ -1132,12 +1141,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _write Configuration write callback.
  *  @param _match Configuration match callback.
  */
-#define BT_GATT_CCC_INITIALIZER(_changed, _write, _match) \
-	{                                            \
-		.cfg = {},                           \
-		.cfg_changed = _changed,             \
-		.cfg_write = _write,                 \
-		.cfg_match = _match,                 \
+#define BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, _write, _match)                               \
+	{                                                                                          \
+		.cfg = {},                                                                         \
+		.cfg_changed = _changed,                                                           \
+		.cfg_write = _write,                                                               \
+		.cfg_match = _match,                                                               \
 	}
 
 /**
@@ -1145,7 +1154,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  Helper macro to declare a Managed CCC attribute.
  *
- *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
+ *  @param _ccc A new @ref bt_gatt_ccc_managed_user_data object with the same lifetime
+ *              as the results of the call to BT_GATT_CCC_MANAGED.
+ *              See the documentation of @ref bt_gatt_ccc_managed_user_data on how
+ *              to initialize it.
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
@@ -1163,9 +1175,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
-#define BT_GATT_CCC(_changed, _perm)				\
-	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
-		{BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)}), _perm)
+#define BT_GATT_CCC(_changed, _perm)                                                               \
+	BT_GATT_CCC_MANAGED(((struct bt_gatt_ccc_managed_user_data[]){                             \
+				    BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, NULL, NULL)}),    \
+			    _perm)
 
 /**
  *  @brief Client Characteristic Configuration Declaration Macro with write callback.
@@ -1177,9 +1190,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
-#define BT_GATT_CCC_WITH_WRITE_CB(_changed, _write, _perm)		\
-	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
-		{BT_GATT_CCC_INITIALIZER(_changed, _write, NULL) }), _perm)
+#define BT_GATT_CCC_WITH_WRITE_CB(_changed, _write, _perm)                                         \
+	BT_GATT_CCC_MANAGED(((struct bt_gatt_ccc_managed_user_data[]){                             \
+				    BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, _write, NULL)}),  \
+			    _perm)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
