@@ -107,7 +107,8 @@ void adxl362_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		}
 
 		if (fifo_mode == ADXL362_FIFO_DISABLE) {
-			fifo_mode = ADXL362_FIFO_STREAM;
+			LOG_ERR("ERROR: FIFO DISABLED");
+			return;
 		}
 
 		if (en_temp_read == 0) {
