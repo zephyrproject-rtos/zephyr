@@ -225,8 +225,15 @@ const struct log_backend_api log_backend_uart_api = {
 	.format_set = format_set,
 };
 
+#if defined(CONFIG_LOG_BACKEND_UART_ASYNC) && defined(CONFIG_SOC_FAMILY_STM32) &&                  \
+	defined(CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT)
+#define NOCACHE_ATTR __nocache
+#else
+#define NOCACHE_ATTR
+#endif
+
 #define LBU_DEFINE(node_id, ...)                                                                   \
-	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];               \
+	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR;  \
 	LOG_OUTPUT_DEFINE(lbu_output##__VA_ARGS__, char_out, lbu_buffer##__VA_ARGS__,              \
 			  CONFIG_LOG_BACKEND_UART_BUFFER_SIZE);                                    \
                                                                                                    \
