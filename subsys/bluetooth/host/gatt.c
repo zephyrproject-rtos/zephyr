@@ -486,9 +486,8 @@ static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 	return sizeof(value);
 }
 
-static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
-							    sc_ccc_cfg_write,
-							    NULL);
+static struct bt_gatt_ccc_managed_user_data sc_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(NULL, sc_ccc_cfg_write, NULL);
 
 /* Do not shuffle the values in this enum, they are used as bit offsets when
  * saving the CF flags to NVS (i.e. NVS persists between FW upgrades).
@@ -1118,7 +1117,7 @@ struct addr_match {
 static uint8_t convert_to_id_on_match(const struct bt_gatt_attr *attr,
 				      uint16_t handle, void *user_data)
 {
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct addr_match *match = user_data;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -1644,7 +1643,7 @@ static void db_changed(void)
 #endif
 }
 
-static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
+static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	ccc->value = 0;
 
@@ -2127,7 +2126,7 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 }
 
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
-					    struct _bt_gatt_ccc *ccc)
+					    struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
@@ -2149,7 +2148,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	struct _bt_gatt_ccc *ccc = attr->user_data;
+	struct bt_gatt_ccc_managed_user_data *ccc = attr->user_data;
 	const struct bt_gatt_ccc_cfg *cfg;
 	uint16_t value;
 
@@ -2166,7 +2165,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 }
 
 static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
-			     struct _bt_gatt_ccc *ccc)
+			     struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	int i;
 	uint16_t value = 0x0000;
@@ -2200,7 +2199,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct _bt_gatt_ccc *ccc = attr->user_data;
+	struct bt_gatt_ccc_managed_user_data *ccc = attr->user_data;
 	struct bt_gatt_ccc_cfg *cfg;
 	bool value_changed;
 	uint16_t value;
@@ -2732,7 +2731,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			 void *user_data)
 {
 	struct notify_data *data = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	size_t i;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -3321,7 +3320,7 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct conn_data *data = user_data;
 	struct bt_conn *conn = data->conn;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	size_t i;
 	uint8_t err;
 
@@ -3383,7 +3382,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			       void *user_data)
 {
 	struct bt_conn *conn = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	bool value_used;
 	size_t i;
 
@@ -5724,7 +5723,7 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 #define CCC_STORE_MAX 0
 #endif /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
 
-static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
+static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct bt_gatt_ccc_managed_user_data *ccc,
 					    const bt_addr_le_t *addr,
 					    uint8_t id)
 {
@@ -5749,7 +5748,7 @@ struct ccc_load {
 	size_t count;
 };
 
-static void ccc_clear(struct _bt_gatt_ccc *ccc,
+static void ccc_clear(struct bt_gatt_ccc_managed_user_data *ccc,
 		      const bt_addr_le_t *addr,
 		      uint8_t id)
 {
@@ -5768,7 +5767,7 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 			void *user_data)
 {
 	struct ccc_load *load = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -6107,7 +6106,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 			void *user_data)
 {
 	struct ccc_save *save = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -6390,7 +6389,7 @@ static uint8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
 				     uint16_t handle, void *user_data)
 {
 	const struct addr_with_id *addr_with_id = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {

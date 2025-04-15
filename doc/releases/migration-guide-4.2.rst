@@ -249,6 +249,12 @@ Bluetooth Host
   each role may be different. Any existing uses/checks for ``BT_ISO_CHAN_TYPE_CONNECTED``
   can be replaced with an ``||`` of the two. (:github:`75549`)
 
+* The ``struct _bt_gatt_ccc`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h` has been renamed to
+  struct :c:struct:`bt_gatt_ccc_managed_user_data`. (:github:`88652`)
+
+* The macro ``BT_GATT_CCC_INITIALIZER`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h`
+  has been renamed to :c:macro:`BT_GATT_CCC_MANAGED_USER_DATA_INIT`. (:github:`88652`)
+
 Bluetooth Classic
 =================
 
