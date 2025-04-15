@@ -826,6 +826,12 @@ static int modem_setup(void)
 		goto error;
 	}
 
+	if (strcmp(mdata.mdm_model, "SIMCOM_SIM7080") != 0) {
+		LOG_ERR("Wrong modem model: %s", mdata.mdm_model);
+		ret = -EINVAL;
+		goto error;
+	}
+
 	sim7080_change_state(SIM7080_STATE_IDLE);
 
 	/* Wait for acceptable rssi values. */
