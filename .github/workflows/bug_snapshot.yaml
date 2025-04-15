@@ -19,7 +19,7 @@ permissions:
 jobs:
   make_bugs_pickle:
     name: Make bugs pickle
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository_owner == 'zephyrproject-rtos'
 
     steps:
