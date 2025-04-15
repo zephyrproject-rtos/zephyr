@@ -2,14 +2,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/sys/__assert.h"
 #include <stdint.h>
+#include <testlib/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-
-#include <testlib/conn.h>
-
+#include <zephyr/sys/__assert.h>
 
 int bt_testlib_disconnect(struct bt_conn **connp, uint8_t reason)
 {
