@@ -188,7 +188,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		buf->header.channels = 0x7F; /* Signal all channels are available */
 		buf->header.fifo_count = data->stream.data.fifo_count;
 
-		read_reg = REG_FIFO_DATA | REG_SPI_READ_BIT;
+		read_reg = REG_FIFO_DATA | REG_READ_BIT;
 		rtio_sqe_prep_tiny_write(data_wr_sqe,
 					 data->rtio.iodev,
 					 RTIO_PRIO_HIGH,
@@ -253,7 +253,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 			return;
 		}
 
-		uint8_t read_reg = REG_ACCEL_DATA_X1_UI | REG_SPI_READ_BIT;
+		uint8_t read_reg = REG_ACCEL_DATA_X1_UI | REG_READ_BIT;
 
 		rtio_sqe_prep_tiny_write(write_sqe,
 					 data->rtio.iodev,
@@ -360,7 +360,7 @@ static void icm45686_event_handler(const struct device *dev)
 	}
 
 	/** Directly read Status Register to determine what triggered the event */
-	val = REG_INT1_STATUS0 | REG_SPI_READ_BIT;
+	val = REG_INT1_STATUS0 | REG_READ_BIT;
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,
 				 RTIO_PRIO_HIGH,
@@ -380,7 +380,7 @@ static void icm45686_event_handler(const struct device *dev)
 	/** Preemptively read FIFO count so we can decide on the next callback
 	 * how much FIFO data we'd read (if needed).
 	 */
-	val = REG_FIFO_COUNT_0 | REG_SPI_READ_BIT;
+	val = REG_FIFO_COUNT_0 | REG_READ_BIT;
 	rtio_sqe_prep_tiny_write(write_fifo_ct_sqe,
 				 data->rtio.iodev,
 				 RTIO_PRIO_HIGH,

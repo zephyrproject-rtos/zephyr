@@ -31,7 +31,7 @@ static inline int icm45686_bus_read(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	reg = reg | REG_SPI_READ_BIT;
+	reg = reg | REG_READ_BIT;
 
 	rtio_sqe_prep_write(write_sqe, iodev, RTIO_PRIO_HIGH, &reg, 1, NULL);
 	write_sqe->flags |= RTIO_SQE_TRANSACTION;
