@@ -21,8 +21,10 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+#ifndef CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
 K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_WQ_STACK_SIZE);
 static struct k_work_q pm_device_runtime_wq;
+#endif /* !CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ */
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 #define EVENT_STATE_ACTIVE	BIT(PM_DEVICE_STATE_ACTIVE)
@@ -86,7 +88,11 @@ static int runtime_suspend(const struct device *dev, bool async,
 		/* queue suspend */
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 		pm->base.state = PM_DEVICE_STATE_SUSPENDING;
+#ifdef CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+		(void)k_work_schedule(&pm->work, delay);
+#else
 		(void)k_work_schedule_for_queue(&pm_device_runtime_wq, &pm->work, delay);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ */
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 	} else {
 		/* suspend now */
@@ -592,6 +598,7 @@ int pm_device_runtime_usage(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+#ifndef CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
 
 static int pm_device_runtime_wq_init(void)
 {
@@ -608,4 +615,5 @@ static int pm_device_runtime_wq_init(void)
 
 SYS_INIT(pm_device_runtime_wq_init, POST_KERNEL, CONFIG_PM_DEVICE_RUNTIME_WQ_INIT_PRIO);
 
+#endif /* !CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ */
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
