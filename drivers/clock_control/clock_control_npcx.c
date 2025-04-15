@@ -208,9 +208,11 @@ static int npcx_clock_control_init(const struct device *dev)
 	struct cdcg_reg *const inst_cdcg = HAL_CDCG_INST(dev);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NPCX_EXTERNAL_SRC)) {
 		inst_cdcg->LFCGCTL2 |= BIT(NPCX_LFCGCTL2_XT_OSC_SL_EN);
 	}
+#endif
 
 	/*
 	 * Resetting the OFMCLK (even to the same value) will make the clock
