@@ -39,7 +39,7 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint16_t proto)
 
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	net_verdict = net_conn_input(pkt, NULL, proto, NULL);
+	net_verdict = net_conn_packet_input(pkt, proto);
 
 	net_pkt_set_family(pkt, orig_family);
 
