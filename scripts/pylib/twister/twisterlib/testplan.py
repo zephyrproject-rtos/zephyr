@@ -502,24 +502,31 @@ class TestPlan:
             module_name = f"{ filter_path }{ module_name }"
 
             if (
-                importlib.util.find_spec(module_name) and 
+                importlib.util.find_spec(module_name) and
                 (filter_class := getattr(importlib.import_module(module_name), filter_name, None)) and
                 inspect.isclass(filter_class)
             ):
                 return filter_class()
 
-        dynamic_filters: list[FilterFramework] = []
+        plugin_filters: list[FilterFramework] = []
 
-        if dynamic_filter := self.options.dynamic_filter:
-            for filter_file, (filter_args, filter_kwargs) in dynamic_filter.items():
-                logger.info(f"Initialising filter: {filter_file}")
-                
-                filter_obj = get_filter(filter_file)
-            
-                if isinstance(filter_obj, FilterFramework):
-                    filter_obj.setup(*filter_args, **filter_kwargs)
+        if plugin_filter_dictionaries := self.options.plugin_filter:
+            for plugin_filter in plugin_filter_dictionaries:
+                if isinstance(plugin_filter, dict):
+                    module_name = plugin_filter.get('name', None)
+                    args = plugin_filter.get('args', [])
+                    kwargs = plugin_filter.get('kwargs', {})
 
-                    dynamic_filters.append(filter_obj)
+                    if module_name:
+
+                        logger.info(f"Initialising filter: { module_name }")
+
+                        filter_obj = get_filter(module_name)
+
+                        if isinstance(filter_obj, FilterFramework):
+                            filter_obj.setup(*args, **kwargs)
+
+                            plugin_filters.append(filter_obj)
 
         for root in self.env.test_roots:
             root = os.path.abspath(root)
@@ -606,9 +613,13 @@ class TestPlan:
                         else:
                             self.testsuites[suite.name] = suite
 
-                        for filter_obj in dynamic_filters:
-                            if filter_obj.filter(suite):
-                                suite.skip = True
+                        suite.skip = True
+
+                        for filter_obj in plugin_filters:
+                            if not filter_obj.filter(suite):
+                                suite.skip = False
+                            
+                            filter_obj.teardown()
 
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")

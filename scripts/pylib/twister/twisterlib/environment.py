@@ -105,6 +105,8 @@ Artificially long but functional example:
 
     test_or_build = parser.add_mutually_exclusive_group()
 
+    plugin_filter_mex_group = case_select.add_mutually_exclusive_group()
+
     test_xor_subtest = case_select.add_mutually_exclusive_group()
 
     test_xor_generator = case_select.add_mutually_exclusive_group()
@@ -153,15 +155,50 @@ Artificially long but functional example:
         help="Run only those tests that failed the previous twister run "
              "invocation.")
 
-    case_select.add_argument(
-        "--dynamic-filter",
+    plugin_filter_mex_group.add_argument(
+        "--plugin-filter",
         nargs="+",
-        help="""
-            Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. 
-            Because the filter files might require arguments to work properly, the arguments will be divided in "blocks". 
-            The symbol to split them is the semicolon (;). The argument should have the following format: 
-            --dynamic-filter filter1.py arg1 arg2 kwarg1=1234 kwarg2=5678; filter2.py arg3
-        """
+        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
+            "Because the filter files might require arguments to work properly, the command parameters will be divided in 'blocks'. "
+            "The symbol to signal the start of a new block is the semicolon (;), while a double semicolon will mark the start of a kwarg section. "
+            "The argument should have one the two following formats: "
+            "--plugin-filter 'filter1 arg1 arg2;; kwarg1=1234 kwarg2=5678; filter2 arg3' or alternatively "
+            "--plugin-filter filter1 arg1 arg2\\;\\; kwarg1=1234 kwarg2=5678\\; filter2 arg3"
+    )
+
+    plugin_filter_mex_group.add_argument(
+        "--plugin-filter-json-string",
+        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
+            "The names of these filters, along with their arguments, will be passed through a json string. "
+            "Said string should follow these structural guidelines: "
+            "The outermost layer must be a list. "
+            "This list contains only dictionaries. should contain key-value pairs, where each key represents the name of a filter. "
+            "Each dictionary must always contain a 'name' key-value pair. This specifies the name of the file where the filter is located."
+            "Additionally, args and kwargs properties can also be specified, while all other items in the dictionary will be ignored. "
+            "If used, the args key must be linked to a list, while kwargs must be linked to a dictionary. "
+
+            "Examples: "
+            "Without arguments: "
+            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\"}]', with the usage of kwargs: "
+            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\", \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]', and with both args and kwargs: "
+            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\", \"args\": [123, 456], \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' "
+    )
+
+    plugin_filter_mex_group.add_argument(
+        "--plugin-filter-json-path",
+        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
+            "The names of these filters, along with their arguments, will be contained inside a json file. "
+            f"When trying to pass a relative path, always take the current working directory '{ os.getcwd() }' into consideration. "
+            "The content of the json file should follow these structural guidelines: "
+            "The outermost layer must be a list. "
+            "This list contains only dictionaries. should contain key-value pairs, where each key represents the name of a filter. "
+            "Each dictionary must always contain a 'name' key-value pair. This specifies the name of the file where the filter is located."
+            "Additionally, args and kwargs properties can also be specified, while all other items in the dictionary will be ignored. "
+            "If used, the args key must be linked to a list, while kwargs must be linked to a dictionary. "
+
+            "Examples: "
+            "--plugin-filter-json-path filter_details.json or also "
+            "--plugin-filter-json-path \"C:/users/Desktop/filter_details.json\""
     )
 
     test_plan_report_xor.add_argument("--list-tests", action="store_true",
@@ -1045,18 +1082,18 @@ def parse_arguments(
         logger.warning("You work with installed version of "
                        "pytest-twister-harness plugin.")
 
-    if filter_parameters := options.dynamic_filter:
-        filters = {}
+    if filter_parameters := options.plugin_filter:
+        filters = []
         current_args = []
         current_kwargs = {}
         parsing_args = False
         parsing_kwargs = False
 
-        def initialize_filter(filter_list, filter):
+        def initialize_filter(filter_list, module_name):
             args = []
             kwargs = {}
 
-            filter_list[filter] = [args, kwargs]
+            filter_list.append({ 'name': module_name,'args': args, 'kwargs': kwargs })
 
             return args, kwargs
 
@@ -1100,7 +1137,18 @@ def parse_arguments(
                     parsing_args = True
                     parsing_kwargs = False
 
-        options.dynamic_filter = filters
+        options.plugin_filter = filters
+
+    else:
+        try:
+            if filter_data := options.plugin_filter_json_string:
+                options.plugin_filter = json.loads(filter_data)
+            elif filter_data := options.plugin_filter_json_path:
+                with open(filter_data, 'r') as json_file:
+                    options.plugin_filter = json.load(json_file)
+        except Exception as e:
+            logger.error(f"JSON String parser crashed with error { e } when trying to parse { filter_data }. Halting twister process...")
+            quit()
 
     return options
 
