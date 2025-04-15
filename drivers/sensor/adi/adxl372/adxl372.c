@@ -900,8 +900,8 @@ static int adxl372_init(const struct device *dev)
 		.inactivity_th.enable = 1,						\
 		.inactivity_time = CONFIG_ADXL372_INACTIVITY_TIME,			\
 		.filter_settle = ADXL372_FILTER_SETTLE_370,				\
-		.fifo_config.fifo_mode = ADXL372_FIFO_STREAMED,				\
-		.fifo_config.fifo_format = ADXL372_XYZ_PEAK_FIFO,			\
+		.fifo_config.fifo_mode = ADXL372_DEFAULT_FIFO_MODE,				\
+		.fifo_config.fifo_format = ADXL372_XYZ_FIFO,			\
 		.fifo_config.fifo_samples = 128,					\
 		.op_mode = ADXL372_FULL_BW_MEASUREMENT,					\
 
