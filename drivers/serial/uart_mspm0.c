@@ -253,10 +253,10 @@ static void uart_mspm0_async_rx_callback(const struct device *dev, void *user_da
 		goto out;
 	}
 
-	data->async_rx.offset = data->async_rx.buf_len - stat.pending_length;
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async_rx.buf;
-	evt.data.rx.len = data->async_rx.offset;
+	evt.data.rx.offset = data->async_rx.offset;
+	evt.data.rx.len = data->async_rx.buf_len - stat.pending_length;
 
 	if (data->async_cb) {
 		data->async_cb(uart_dev, &evt, data->async_user_data);
@@ -589,6 +589,8 @@ static void uart_mspm0_async_rx_timeout(struct k_work *work)
 		evt.data.rx.len = recv_size;
 		evt.data.rx.offset = data->async_rx.offset;
 		data->async_cb(data->uart_dev, &evt, data->async_user_data);
+		data->async_rx.buf_len -= recv_size;
+		data->async_rx.offset += recv_size;
 	}
 
 	uart_mspm0_async_timer_start(&data->async_rx.timeout_work,
