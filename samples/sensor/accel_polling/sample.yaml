@@ -41,3 +41,10 @@ tests:
       - SNIPPET="rtt-tracing;rtt-console"
     platform_allow:
       - apard32690/max32690/m4
+  sample.sensor.accel_polling.adxl372-stream:
+    extra_args:
+      - SHIELD="eval_adxl372_ardz"
+      - EXTRA_CONF_FILE="adxl372-stream.conf"
+      - SNIPPET="rtt-tracing;rtt-console"
+    platform_allow:
+      - apard32690/max32690/m4
