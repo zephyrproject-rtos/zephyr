@@ -163,6 +163,10 @@ New APIs and options
 
   * :c:func:`stepper_stop()`
 
+* Storage
+
+  * :c:func:`flash_area_copy()`
+
 * Counter
 
   * :c:func:`counter_reset`
