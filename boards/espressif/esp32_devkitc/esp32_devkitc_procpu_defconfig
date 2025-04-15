@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2023-2025 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_CONSOLE=y
