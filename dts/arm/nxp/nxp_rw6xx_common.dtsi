@@ -355,6 +355,7 @@
 		#size-cells = <0>;
 		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
 		dmas = <&dma0 0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
 	};
 
