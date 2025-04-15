@@ -542,8 +542,17 @@ config LTO
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
+	depends on !DEPRECATION_TEST
 	help
 	  Turn on "warning as error" toolchain flags
+
+config DEPRECATION_TEST
+	bool "Indicate test for deprecated feature"
+	help
+	  This option is selected by tests which check functionality of
+	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
+	  is not selected as that would generate errors when the deprecated
+	  features are used.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
