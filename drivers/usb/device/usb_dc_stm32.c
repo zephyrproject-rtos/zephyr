@@ -459,7 +459,6 @@ static int usb_dc_stm32_clock_disable(void)
 static int usb_dc_stm32_init(void)
 {
 	HAL_StatusTypeDef status;
-	int ret;
 	unsigned int i;
 
 	usb_dc_stm32_state.pcd.Init.speed =
@@ -521,7 +520,7 @@ static int usb_dc_stm32_init(void)
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LOG_DBG("Pinctrl signals configuration");
-	ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
+	int ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", ret);
 		return ret;
