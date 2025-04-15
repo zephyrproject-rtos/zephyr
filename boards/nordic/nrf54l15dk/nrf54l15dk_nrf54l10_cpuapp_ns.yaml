@@ -19,3 +19,5 @@ supported:
   - watchdog
   - adc
   - i2s
+vendor: nordic
+sysbuild: true
