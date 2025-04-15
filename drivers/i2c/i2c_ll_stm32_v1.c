@@ -24,8 +24,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 #include "i2c-priv.h"
 
-#define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
-
 #define STM32_I2C_TIMEOUT_USEC  1000
 #define I2C_REQUEST_WRITE       0x00
 #define I2C_REQUEST_READ        0x01
@@ -649,7 +647,7 @@ static int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg
 	stm32_i2c_enable_transfer_interrupts(dev);
 
 	if (k_sem_take(&data->device_sync_sem,
-			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+			K_MSEC(CONFIG_STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		LOG_DBG("%s: WRITE timeout", __func__);
 		stm32_i2c_reset(dev);
 		return -EIO;
@@ -671,7 +669,7 @@ static int32_t stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_RX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+			K_MSEC(CONFIG_STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		LOG_DBG("%s: READ timeout", __func__);
 		stm32_i2c_reset(dev);
 		return -EIO;
