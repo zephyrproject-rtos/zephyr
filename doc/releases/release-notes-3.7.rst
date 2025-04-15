@@ -38,6 +38,15 @@ https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
 Mbed TLS 3.6 is an LTS release that will be supported
 with security and bug fixes until at least March 2027.
 
+Trusted Firmware-M (TF-M)
+*************************
+
+TF-M was updated to version 2.1.2 (from 2.1.1). The release notes can be found at:
+https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
+
+TF-M 2.1 is an LTS release that will be supported
+with security and bug fixes until at least May 2027.
+
 .. _zephyr_3.7.1:
 
 Zephyr 3.7.1
