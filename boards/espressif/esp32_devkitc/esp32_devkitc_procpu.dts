@@ -6,13 +6,13 @@
 /dts-v1/;
 
 #include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
-#include "esp32_devkitc_wrover-pinctrl.dtsi"
+#include "esp32_devkitc-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Espressif ESP32-DevkitC WROVER-E PROCPU";
+	model = "Espressif ESP32-DevkitC PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2023-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Espressif ESP32-DevkitC WROVER-E APPCPU";
+	model = "Espressif ESP32-DevkitC APPCPU";
 	compatible = "espressif,esp32";
 
 	chosen {
