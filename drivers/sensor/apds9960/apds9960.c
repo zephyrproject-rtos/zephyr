@@ -83,6 +83,15 @@ static int apds9960_sample_fetch(const struct device *dev,
 		return -EIO;
 	}
 
+#ifndef CONFIG_APDS9960_INTERRUPT_PIN
+	while (!(tmp & APDS9960_STATUS_PINT) && !(tmp & APDS9960_STATUS_AINT)) {
+		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
+		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
+			return -EIO;
+		}
+	}
+#endif
+
 	LOG_DBG("status: 0x%x", tmp);
 	if (tmp & APDS9960_STATUS_PINT) {
 		if (i2c_reg_read_byte_dt(&config->i2c,
