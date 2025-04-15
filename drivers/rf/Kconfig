@@ -1,0 +1,15 @@
+# RF Config
+# Copyright (c) 2024 Tron Future Tech., Inc.
+
+menuconfig RF
+    bool "RF driver"
+    help
+      Drivers related to RF devices such like baseband, beamformer
+
+
+if RF
+
+module = RF
+module-str = rf
+source "drivers/rf/Kconfig.rfdc"
+endif # RF
