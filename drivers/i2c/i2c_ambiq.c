@@ -54,6 +54,7 @@ struct i2c_ambiq_data {
 	void *callback_data;
 	uint32_t transfer_status;
 	bool pm_policy_state_on;
+	bool dma_mode;
 };
 
 static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
@@ -82,7 +83,6 @@ static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
 	}
 }
 
-#ifdef CONFIG_I2C_AMBIQ_DMA
 static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 {
 	const struct device *dev = callback_ctxt;
@@ -93,7 +93,6 @@ static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 	}
 	data->transfer_status = status;
 }
-#endif
 
 static void i2c_ambiq_isr(const struct device *dev)
 {
@@ -132,29 +131,30 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 		trans.ui32InstrLen = hdr_msg->len;
 	}
 
-#ifdef CONFIG_I2C_AMBIQ_DMA
-	data->transfer_status = -EFAULT;
-	ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
-					      (void *)dev);
-	if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
-		LOG_ERR("Timeout waiting for transfer complete");
-		/* cancel timed out transaction */
-		am_hal_iom_disable(data->iom_handler);
-		/* clean up for next xfer */
-		k_sem_reset(&data->transfer_sem);
-		am_hal_iom_enable(data->iom_handler);
-		return -ETIMEDOUT;
-	}
+	if (data->dma_mode) {
+		data->transfer_status = -EFAULT;
+		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
+						      (void *)dev);
+		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
+			LOG_ERR("Timeout waiting for transfer complete");
+			/* cancel timed out transaction */
+			am_hal_iom_disable(data->iom_handler);
+			/* clean up for next xfer */
+			k_sem_reset(&data->transfer_sem);
+			am_hal_iom_enable(data->iom_handler);
+			return -ETIMEDOUT;
+		}
 #if CONFIG_I2C_AMBIQ_HANDLE_CACHE
-	if (!buf_in_nocache((uintptr_t)trans.pui32RxBuffer, trans.ui32NumBytes)) {
-		/* Invalidate Dcache after DMA read */
-		sys_cache_data_invd_range((void *)trans.pui32RxBuffer, trans.ui32NumBytes);
-	}
+		if (!buf_in_nocache((uintptr_t)trans.pui32RxBuffer, trans.ui32NumBytes)) {
+			/* Invalidate Dcache after DMA read */
+			sys_cache_data_invd_range((void *)trans.pui32RxBuffer, trans.ui32NumBytes);
+		}
 #endif /* CONFIG_I2C_AMBIQ_HANDLE_CACHE */
-	ret = data->transfer_status;
-#else
-	ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
-#endif
+		ret = data->transfer_status;
+	} else {
+		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
+	}
+
 	return (ret != AM_HAL_STATUS_SUCCESS) ? -EIO : 0;
 }
 
@@ -184,30 +184,30 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
 		trans.ui32InstrLen = hdr_msg->len;
 	}
 
-#ifdef CONFIG_I2C_AMBIQ_DMA
-	data->transfer_status = -EFAULT;
+	if (data->dma_mode) {
+		data->transfer_status = -EFAULT;
 #if CONFIG_I2C_AMBIQ_HANDLE_CACHE
-	if (!buf_in_nocache((uintptr_t)trans.pui32TxBuffer, trans.ui32NumBytes)) {
-		/* Clean Dcache before DMA write */
-		sys_cache_data_flush_range((void *)trans.pui32TxBuffer, trans.ui32NumBytes);
-	}
+		if (!buf_in_nocache((uintptr_t)trans.pui32TxBuffer, trans.ui32NumBytes)) {
+			/* Clean Dcache before DMA write */
+			sys_cache_data_flush_range((void *)trans.pui32TxBuffer, trans.ui32NumBytes);
+		}
 #endif /* CONFIG_I2C_AMBIQ_HANDLE_CACHE */
-	ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
-					      (void *)dev);
+		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
+						      (void *)dev);
 
-	if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
-		LOG_ERR("Timeout waiting for transfer complete");
-		/* cancel timed out transaction */
-		am_hal_iom_disable(data->iom_handler);
-		/* clean up for next xfer */
-		k_sem_reset(&data->transfer_sem);
-		am_hal_iom_enable(data->iom_handler);
-		return -ETIMEDOUT;
+		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
+			LOG_ERR("Timeout waiting for transfer complete");
+			/* cancel timed out transaction */
+			am_hal_iom_disable(data->iom_handler);
+			/* clean up for next xfer */
+			k_sem_reset(&data->transfer_sem);
+			am_hal_iom_enable(data->iom_handler);
+			return -ETIMEDOUT;
+		}
+		ret = data->transfer_status;
+	} else {
+		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
 	}
-	ret = data->transfer_status;
-#else
-	ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
-#endif
 
 	return (ret != AM_HAL_STATUS_SUCCESS) ? -EIO : 0;
 }
@@ -391,11 +391,13 @@ static int i2c_ambiq_init(const struct device *dev)
 		goto end;
 	}
 
-#ifdef CONFIG_I2C_AMBIQ_DMA
-	am_hal_iom_interrupt_clear(data->iom_handler, AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
-	am_hal_iom_interrupt_enable(data->iom_handler, AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
-	config->irq_config_func();
-#endif
+	if (data->dma_mode) {
+		am_hal_iom_interrupt_clear(data->iom_handler,
+					   AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
+		am_hal_iom_interrupt_enable(data->iom_handler,
+					    AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
+		config->irq_config_func();
+	}
 
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_enable(data->iom_handler)) {
 		LOG_ERR("Fail to enable I2C\n");
@@ -465,17 +467,18 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 			    i2c_ambiq_isr, DEVICE_DT_INST_GET(n), 0);                              \
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	};                                                                                         \
-	IF_ENABLED(CONFIG_I2C_AMBIQ_DMA,                                                           \
+	IF_ENABLED(DT_PROP(DT_INST_PARENT(n), dma_mode),                                           \
 	(static uint32_t i2c_ambiq_cmdq##n[DT_PROP_OR(DT_INST_PARENT(n), cmdq_buffer_size, 1024)]  \
 	 __attribute__((section(DT_PROP_OR(DT_INST_PARENT(n),                                      \
 					  cmdq_buffer_location, ".nocache"))));)                   \
 	)                                                                                          \
 	static struct i2c_ambiq_data i2c_ambiq_data##n = {                                         \
-		.iom_cfg = IOM_HAL_CFG(n, COND_CODE_1(CONFIG_I2C_AMBIQ_DMA, (i2c_ambiq_cmdq##n),   \
+		.iom_cfg = IOM_HAL_CFG(                                                            \
+			n, COND_CODE_1(DT_PROP(DT_INST_PARENT(n), dma_mode), (i2c_ambiq_cmdq##n), \
 									    (NULL)),               \
-					  COND_CODE_1(CONFIG_I2C_AMBIQ_DMA,                        \
-						(DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)), (0)) \
-					),                                                         \
+				COND_CODE_1(DT_PROP(DT_INST_PARENT(n), dma_mode),              \
+					(DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)), (0))),  \
+		.dma_mode = DT_PROP(DT_INST_PARENT(n), dma_mode),     \
 		.bus_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.bus_sem, 1, 1),                     \
 		.transfer_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.transfer_sem, 0, 1),           \
 	};                                                                                         \

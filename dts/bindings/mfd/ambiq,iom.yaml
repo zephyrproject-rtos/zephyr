@@ -14,6 +14,10 @@ properties:
   interrupts:
     required: true
 
+  dma-mode:
+    description: Enables DMA over SPI/I2C.
+    type: boolean
+
   cmdq-buffer-location:
     type: string
     description: |
