@@ -33,6 +33,7 @@ struct mspi_ti_k3_config {
 };
 
 struct mspi_ti_k3_data {
+	DEVICE_MMIO_RAM;
 	struct k_mutex lock;
 };
 
