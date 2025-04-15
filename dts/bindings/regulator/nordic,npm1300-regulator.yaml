@@ -97,6 +97,11 @@ child-binding:
       description: |
         Soft start current limit in microamps.
 
+    active-discharge:
+      type: boolean
+      description: |
+        Enable active-discharge on the BUCK/LDO/LDSW output when disabled.
+
     nordic,anomaly38-disable-workaround:
       type: boolean
       description: |
