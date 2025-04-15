@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/sensor/adxl372.h>
 
 #ifdef CONFIG_ADXL372_STREAM
 #include <zephyr/rtio/rtio.h>
@@ -268,10 +269,10 @@ enum adxl372_fifo_format {
 };
 
 enum adxl372_fifo_mode {
-	ADXL372_FIFO_BYPASSED,
-	ADXL372_FIFO_STREAMED,
-	ADXL372_FIFO_TRIGGERED,
-	ADXL372_FIFO_OLD_SAVED
+	ADXL372_FIFO_BYPASSED = ADXL372_FIFO_MODE_BYPASSED,
+	ADXL372_FIFO_STREAMED = ADXL372_FIFO_MODE_STREAMED,
+	ADXL372_FIFO_TRIGGERED = ADXL372_FIFO_MODE_TRIGGERED,
+	ADXL372_FIFO_OLD_SAVED = ADXL372_FIFO_MODE_OLD_SAVED
 };
 
 struct adxl372_fifo_config {
