@@ -183,7 +183,7 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 		return;
 	}
 
-	uint8_t val = REG_ACCEL_DATA_X1_UI | REG_SPI_READ_BIT;
+	uint8_t val = REG_ACCEL_DATA_X1_UI | REG_READ_BIT;
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,

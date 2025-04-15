@@ -13,7 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 
 /* Address value has a read bit */
-#define REG_SPI_READ_BIT BIT(7)
+#define REG_READ_BIT BIT(7)
 
 /* Registers */
 /* Register Bank 0 */
