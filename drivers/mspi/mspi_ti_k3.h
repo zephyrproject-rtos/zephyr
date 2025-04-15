@@ -24,10 +24,10 @@
 #define TI_K3_OSPI_DEFAULT_DELAY 10
 
 /* Timeout calculations and default timeout values */
-#define TI_K3_OSPI_TIME_BETWEEN_RETRIES_US     10
-#define TI_K3_OSPI_TIME_BETWEEN_RETRIES        K_USEC(TI_K3_OSPI_TIME_BETWEEN_RETRIES_US)
-#define TI_K3_OSPI_DEFAULT_TIMEOUT_US          100
-#define TI_K3_OSPI_GET_NUM_RETRIES(timeout_us) (timeout_us / TI_K3_OSPI_TIME_BETWEEN_RETRIES_US)
+#define TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS     10
+#define TI_K3_OSPI_TIME_BETWEEN_RETRIES        K_MSEC(TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
+#define TI_K3_OSPI_DEFAULT_TIMEOUT_MS          100
+#define TI_K3_OSPI_GET_NUM_RETRIES(timeout_ms) (timeout_ms / TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
 
 /* General register offsets */
 #define TI_K3_OSPI_CONFIG_REG                        0x0u

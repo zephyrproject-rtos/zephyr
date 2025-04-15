@@ -74,7 +74,7 @@ int mspi_ti_k3_wait_for_idle(const struct device *controller)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
 	uint32_t idle = MSPI_TI_K3_REG_READ_MASKED(CONFIG, IDLE, base_addr);
-	uint32_t retries = TI_K3_OSPI_GET_NUM_RETRIES(TI_K3_OSPI_DEFAULT_TIMEOUT_US);
+	uint32_t retries = TI_K3_OSPI_GET_NUM_RETRIES(TI_K3_OSPI_DEFAULT_TIMEOUT_MS);
 
 	while (idle == 0 && retries > 0) {
 		k_sleep(TI_K3_OSPI_TIME_BETWEEN_RETRIES);
@@ -296,7 +296,7 @@ static int mspi_ti_k3_init(const struct device *dev)
 }
 
 static int mspi_ti_k3_small_transfer(const struct device *controller, const struct mspi_xfer *req,
-				     uint32_t index, const uint64_t start_cycles)
+				     uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
 	const struct mspi_xfer_packet *packet = &req->packets[index];
@@ -347,8 +347,7 @@ static int mspi_ti_k3_small_transfer(const struct device *controller, const stru
 
 	uint32_t exec_status =
 		MSPI_TI_K3_REG_READ_MASKED(FLASH_CMD_CTRL, CMD_EXEC_STATUS, base_address);
-	while (exec_status != 0 &&
-	       k_cyc_to_us_floor32(k_uptime_get() - start_cycles) < req->timeout) {
+	while (exec_status != 0 && k_uptime_get() - start_time < req->timeout) {
 		k_sleep(TI_K3_OSPI_TIME_BETWEEN_RETRIES);
 		exec_status =
 			MSPI_TI_K3_REG_READ_MASKED(FLASH_CMD_CTRL, CMD_EXEC_STATUS, base_address);
@@ -374,7 +373,7 @@ static int mspi_ti_k3_small_transfer(const struct device *controller, const stru
 }
 
 static int mspi_ti_k3_indirect_read(const struct device *controller, const struct mspi_xfer *req,
-				    uint32_t index, const uint64_t start_cycles)
+				    uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
 	const struct mspi_ti_k3_config *config = controller->config;
@@ -396,7 +395,7 @@ static int mspi_ti_k3_indirect_read(const struct device *controller, const struc
 	int bytes_to_copy_from_current_word;
 
 	while (remaining_bytes > 0) {
-		if (k_ticks_to_us_floor32(k_uptime_get() - start_cycles) > req->timeout) {
+		if (k_uptime_get() - start_time > req->timeout) {
 			LOG_ERR("Timeout while receiving data from flash");
 			goto timeout;
 		}
@@ -414,8 +413,7 @@ static int mspi_ti_k3_indirect_read(const struct device *controller, const struc
 	/* wait until official indirect read completion */
 	uint32_t done_status = MSPI_TI_K3_REG_READ_MASKED(INDIRECT_READ_XFER_CTRL,
 							  IND_OPS_DONE_STATUS, base_address);
-	while (done_status == 0 &&
-	       k_ticks_to_us_floor32(k_uptime_get() - start_cycles) < req->timeout) {
+	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
 		k_sleep(TI_K3_OSPI_TIME_BETWEEN_RETRIES);
 		done_status = MSPI_TI_K3_REG_READ_MASKED(INDIRECT_READ_XFER_CTRL,
 							 IND_OPS_DONE_STATUS, base_address);
@@ -434,7 +432,7 @@ timeout:
 }
 
 static int mspi_ti_k3_indirect_write(const struct device *controller, const struct mspi_xfer *req,
-				     uint32_t index, const uint64_t start_cycles)
+				     uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
 	const struct mspi_ti_k3_config *config = controller->config;
@@ -454,7 +452,7 @@ static int mspi_ti_k3_indirect_write(const struct device *controller, const stru
 	uint32_t current_word_to_write;
 
 	while (remaining_bytes > 0) {
-		if (k_ticks_to_us_floor32(k_uptime_get() - start_cycles) > req->timeout) {
+		if (k_uptime_get() - start_time > req->timeout) {
 			LOG_ERR("Timeout while sending data to flash");
 			goto timeout;
 		}
@@ -474,8 +472,7 @@ static int mspi_ti_k3_indirect_write(const struct device *controller, const stru
 	/* Wait for official finish */
 	uint32_t done_status = MSPI_TI_K3_REG_READ_MASKED(INDIRECT_WRITE_XFER_CTRL,
 							  IND_OPS_DONE_STATUS, base_address);
-	while (done_status == 0 &&
-	       k_ticks_to_us_floor32(k_uptime_get() - start_cycles) < req->timeout) {
+	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
 		k_sleep(TI_K3_OSPI_TIME_BETWEEN_RETRIES);
 		done_status = MSPI_TI_K3_REG_READ_MASKED(INDIRECT_WRITE_XFER_CTRL,
 							 IND_OPS_DONE_STATUS, base_address);
@@ -495,8 +492,7 @@ timeout:
 static int mspi_ti_k3_transceive(const struct device *controller, const struct mspi_dev_id *dev_id,
 				 const struct mspi_xfer *req)
 {
-	/* timeouts are in us and ticks are too inprecise */
-	uint64_t start_cycle = k_uptime_get();
+	uint64_t start_time = k_uptime_get();
 	struct mspi_ti_k3_data *data = controller->data;
 	int ret = 0;
 
@@ -505,7 +501,7 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 		return ret;
 	}
 
-	ret = k_mutex_lock(&data->lock, K_USEC(req->timeout));
+	ret = k_mutex_lock(&data->lock, K_MSEC(req->timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -515,16 +511,16 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 		/* the FLASH_CMD_REGISTER is good for small transfers with only very little/no data
 		 */
 		if (packet->num_bytes <= 8) {
-			ret = mspi_ti_k3_small_transfer(controller, req, i, start_cycle);
+			ret = mspi_ti_k3_small_transfer(controller, req, i, start_time);
 			if (ret < 0) {
 				goto exit;
 			}
 		} else {
 			/* big transfer via indirect transfer mode */
 			if (packet->dir == MSPI_RX) {
-				ret = mspi_ti_k3_indirect_read(controller, req, i, start_cycle);
+				ret = mspi_ti_k3_indirect_read(controller, req, i, start_time);
 			} else {
-				ret = mspi_ti_k3_indirect_write(controller, req, i, start_cycle);
+				ret = mspi_ti_k3_indirect_write(controller, req, i, start_time);
 			}
 			if (ret < 0) {
 				goto exit;
