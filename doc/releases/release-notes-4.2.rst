@@ -71,6 +71,8 @@ Removed APIs and options
 * Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`.
 
+* Removed the ``get_ctrl`` video driver API
+
 Deprecated APIs and options
 ===========================
 
@@ -180,6 +182,12 @@ New APIs and options
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
+
+* Video
+
+  * :c:func:`video_api_ctrl_t`
+  * :c:func:`video_query_ctrl`
+  * :c:func:`video_print_ctrl`
 
 New Boards
 **********
