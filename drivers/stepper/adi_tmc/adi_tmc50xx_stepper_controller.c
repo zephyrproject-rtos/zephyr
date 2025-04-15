@@ -15,7 +15,6 @@
 #include "adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
 
 struct tmc50xx_data {
@@ -730,7 +729,7 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 						stallguard_velocity_check_interval_ms),		\
 		.is_sg_enabled = DT_PROP(child, activate_stallguard2),				\
 		IF_ENABLED(CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN,					\
-		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET(child))) };
+		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC50XX(child))) };
 
 #define TMC50XX_STEPPER_DATA_DEFINE(child)							\
 	static struct tmc50xx_stepper_data tmc50xx_stepper_data_##child = {			\
