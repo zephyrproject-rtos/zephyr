@@ -64,7 +64,8 @@ size_t confstr(int name, char *buf, size_t len);
 #endif
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
-#define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
+/* Can't use CONCAT(), must concat directly to prevent expansion of 'x' */
+#define sysconf(x) (long)__z_posix_sysconf##x
 #else
 long sysconf(int opt);
 #endif /* CONFIG_POSIX_SYSCONF_IMPL_FULL */

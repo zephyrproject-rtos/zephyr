@@ -6,13 +6,12 @@
 
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
-#include <zephyr/posix/pthread.h>
 #include <zephyr/posix/sys/sysconf.h>
 #include <zephyr/posix/unistd.h>
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_FULL
-
-#define z_sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
+/* Can't use CONCAT(), must concat directly to prevent expansion of 'x' */
+#define z_sysconf(x) (long)__z_posix_sysconf##x
 
 long sysconf(int x)
 {
@@ -125,21 +124,17 @@ long sysconf(int x)
 		return z_sysconf(_SC_TYPED_MEMORY_OBJECTS);
 	case _SC_VERSION:
 		return z_sysconf(_SC_VERSION);
-	case _SC_V6_ILP32_OFF32:
-		return z_sysconf(_SC_V6_ILP32_OFF32);
-	case _SC_V6_ILP32_OFFBIG:
-		return z_sysconf(_SC_V6_ILP32_OFFBIG);
-	case _SC_V6_LP64_OFF64:
-		return z_sysconf(_SC_V6_LP64_OFF64);
-	case _SC_V6_LPBIG_OFFBIG:
-		return z_sysconf(_SC_V6_LPBIG_OFFBIG);
 	case _SC_V7_ILP32_OFF32:
+		/* case _SC_V6_ILP32_OFF32 */
 		return z_sysconf(_SC_V7_ILP32_OFF32);
 	case _SC_V7_ILP32_OFFBIG:
+		/* case _SC_V6_ILP32_OFFBIG */
 		return z_sysconf(_SC_V7_ILP32_OFFBIG);
 	case _SC_V7_LP64_OFF64:
+		/* case _SC_V6_LP64_OFF64 */
 		return z_sysconf(_SC_V7_LP64_OFF64);
 	case _SC_V7_LPBIG_OFFBIG:
+		/* case _SC_V6_LPBIG_OFFBIG */
 		return z_sysconf(_SC_V7_LPBIG_OFFBIG);
 	case _SC_BC_BASE_MAX:
 		return z_sysconf(_SC_BC_BASE_MAX);
@@ -237,10 +232,9 @@ long sysconf(int x)
 		return z_sysconf(_SC_MQ_PRIO_MAX);
 	case _SC_OPEN_MAX:
 		return z_sysconf(_SC_OPEN_MAX);
-	case _SC_PAGE_SIZE:
-		return z_sysconf(_SC_PAGE_SIZE);
 	case _SC_PAGESIZE:
-		return z_sysconf(_SC_PAGESIZE);
+		/* case _SC_PAGE_SIZE */
+		return z_sysconf(_SC_PAGE_SIZE);
 	case _SC_THREAD_DESTRUCTOR_ITERATIONS:
 		return z_sysconf(_SC_THREAD_DESTRUCTOR_ITERATIONS);
 	case _SC_THREAD_KEYS_MAX:
