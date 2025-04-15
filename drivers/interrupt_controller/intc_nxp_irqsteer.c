@@ -266,12 +266,12 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
 #if defined(CONFIG_XTENSA)
-#define irqsteer_level1_irq_enable(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
-#define irqsteer_level1_irq_disable(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq))
+#define irqstr_l1_irq_enable_raw(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
+#define irqstr_l1_irq_disable_raw(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq))
 #define irqsteer_level1_irq_is_enabled(irq) xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq))
 #elif defined(CONFIG_ARM)
-#define irqsteer_level1_irq_enable(irq)     arm_irq_enable(irq)
-#define irqsteer_level1_irq_disable(irq)    arm_irq_disable(irq)
+#define irqstr_l1_irq_enable_raw(irq)     arm_irq_enable(irq)
+#define irqstr_l1_irq_disable_raw(irq)    arm_irq_disable(irq)
 #define irqsteer_level1_irq_is_enabled(irq) arm_irq_is_enabled(irq)
 #else
 #error ARCH not supported
@@ -348,11 +348,11 @@ static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
 	if (enable) {
-		irqsteer_level1_irq_enable(disp->irq);
+		irqstr_l1_irq_enable_raw(disp->irq);
 		IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
 	} else {
 		IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
-		irqsteer_level1_irq_disable(disp->irq);
+		irqstr_l1_irq_disable_raw(disp->irq);
 	}
 }
 
@@ -477,9 +477,9 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
 		if (enable) {
-			irqsteer_level1_irq_enable(irq);
+			irqstr_l1_irq_enable_raw(irq);
 		} else {
-			irqsteer_level1_irq_disable(irq);
+			irqstr_l1_irq_disable_raw(irq);
 		}
 		return;
 	}
