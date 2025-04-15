@@ -48,6 +48,12 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
 
+TWISTER_PLUGIN_FILTER_ROOTS = os.getenv("TWISTER_PLUGIN_FILTER_ROOTS")
+if not TWISTER_PLUGIN_FILTER_ROOTS:
+    TWISTER_PLUGIN_FILTER_ROOTS = ['plugin_filters']
+elif not isinstance(TWISTER_PLUGIN_FILTER_ROOTS, list):
+    sys.exit("$TWISTER_PLUGIN_FILTER_ROOTS environment variable must be a list")
+
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
@@ -498,35 +504,64 @@ class TestPlan:
         if testsuite_filter is None:
             testsuite_filter = []
 
-        def get_filter(module_name, filter_path='plugin_filters.', filter_name='Filter'):
-            module_name = f"{ filter_path }{ module_name }"
+        def get_class(file_name, file_path, class_name='Filter'):
+            class_reference = None
 
-            if (
-                importlib.util.find_spec(module_name) and
-                (filter_class := getattr(importlib.import_module(module_name), filter_name, None)) and
-                inspect.isclass(filter_class)
-            ):
-                return filter_class()
+            try:
+                if (
+                    os.path.exists((class_path := os.path.join(file_path, file_name))) and
+                    (module_specification := importlib.util.spec_from_file_location(class_name, class_path)) and
+                    (module := importlib.util.module_from_spec(module_specification))
+                ):
+                    module_specification.loader.exec_module(module)
+                    class_reference = getattr(module, class_name, None)
+
+                if class_reference is None:
+                    import_string = f"{ file_path }.{ file_name }"
+
+                    try:
+                        if importlib.util.find_spec(import_string):
+                            class_reference = getattr(importlib.import_module(import_string), class_name, None)
+                    except ModuleNotFoundError:
+                        pass
+
+                if class_reference and inspect.isclass(class_reference):
+                    return class_reference()
+            except FileNotFoundError as fnf_error:
+                logger.error(f"Exception while attempting to import file { file_name }: { fnf_error }")
+
+            return None
 
         plugin_filters: list[FilterFramework] = []
 
         if plugin_filter_dictionaries := self.options.plugin_filter:
             for plugin_filter in plugin_filter_dictionaries:
                 if isinstance(plugin_filter, dict):
-                    module_name = plugin_filter.get('name', None)
+                    file_path = plugin_filter.get('filter_file_path', None)
                     args = plugin_filter.get('args', [])
                     kwargs = plugin_filter.get('kwargs', {})
 
-                    if module_name:
+                    if file_path:
 
-                        logger.info(f"Initialising filter: { module_name }")
+                        logger.info(f"Initialising filter: { file_path }")
 
-                        filter_obj = get_filter(module_name)
+                        root_found = False
 
-                        if isinstance(filter_obj, FilterFramework):
-                            filter_obj.setup(*args, **kwargs)
+                        for root in TWISTER_PLUGIN_FILTER_ROOTS:
+                            filter_obj = get_class(file_path, root)
 
-                            plugin_filters.append(filter_obj)
+                            if isinstance(filter_obj, FilterFramework):
+                                filter_obj.setup(*args, **kwargs)
+
+                                plugin_filters.append(filter_obj)
+
+                                logger.info(f"Found filter instance in root { root }")
+                                root_found = True
+
+                                break
+
+                        if not root_found:
+                            logger.warning(f"Filter { file_path } was unable to find a corresponding root")
 
         for root in self.env.test_roots:
             root = os.path.abspath(root)
@@ -613,13 +648,14 @@ class TestPlan:
                         else:
                             self.testsuites[suite.name] = suite
 
-                        suite.skip = True
+                        if plugin_filters:
+                            suite.skip = True
 
-                        for filter_obj in plugin_filters:
-                            if not filter_obj.filter(suite):
-                                suite.skip = False
-                            
-                            filter_obj.teardown()
+                            for filter_obj in plugin_filters:
+                                if not filter_obj.filter(suite):
+                                    suite.skip = False
+
+                                filter_obj.teardown()
 
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")

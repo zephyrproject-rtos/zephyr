@@ -1,12 +1,12 @@
 [
     {
-        "name":"filter_id_regex",
+        "filter_file_path":"filter_id_regex",
         "kwargs": { 
             "id_filter": ".*static"
         }
     },
     {
-        "name":"filter_id_regex",
+        "filter_file_path":"filter_id_regex",
         "kwargs": { 
             "id_filter": ".*stacks"
         }

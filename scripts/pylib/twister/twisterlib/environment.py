@@ -159,11 +159,22 @@ Artificially long but functional example:
         "--plugin-filter",
         nargs="+",
         help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
-            "Because the filter files might require arguments to work properly, the command parameters will be divided in 'blocks'. "
-            "The symbol to signal the start of a new block is the semicolon (;), while a double semicolon will mark the start of a kwarg section. "
+            "Because the filter files might require arguments to work properly, the command parameters are divided in 'blocks'. "
+            "The symbol to signal the start of a new block is a semicolon (;), while a double semicolon marks the start of a kwarg section. "
+
             "The argument should have one the two following formats: "
-            "--plugin-filter 'filter1 arg1 arg2;; kwarg1=1234 kwarg2=5678; filter2 arg3' or alternatively "
-            "--plugin-filter filter1 arg1 arg2\\;\\; kwarg1=1234 kwarg2=5678\\; filter2 arg3"
+            "--plugin-filter 'filter_file_path_1 arg1 arg2;; kwarg1=1234 kwarg2=5678; filter_file_path_2 arg3', or alternatively "
+            "--plugin-filter filter_file_path_1 arg1 arg2\\;\\; kwarg1=1234 kwarg2=5678\\; filter_file_path_2 arg3"
+
+            "NOTE: "
+            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
+            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
+            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
+            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
+            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
+            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
+            "Since plugin_filters is the container for the filter framework and regex filter example, "
+            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
     )
 
     plugin_filter_mex_group.add_argument(
@@ -171,34 +182,56 @@ Artificially long but functional example:
         help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
             "The names of these filters, along with their arguments, will be passed through a json string. "
             "Said string should follow these structural guidelines: "
-            "The outermost layer must be a list. "
-            "This list contains only dictionaries. should contain key-value pairs, where each key represents the name of a filter. "
-            "Each dictionary must always contain a 'name' key-value pair. This specifies the name of the file where the filter is located."
-            "Additionally, args and kwargs properties can also be specified, while all other items in the dictionary will be ignored. "
-            "If used, the args key must be linked to a list, while kwargs must be linked to a dictionary. "
+            "The outermost layer must be a list, which is used to contain the dictionaries with the filter data. "
+            "Each of these dictionaries must always contain a 'filter_file_path' key-value pair. "
+            "This variable specifies the relative path of the file where the filter is located "
+            "(the absolute path is generated separately by iterating through the TWISTER_PLUGIN_FILTER_ROOTS environmental variable). "
+            "The dictionary also allows to specify args and kwargs to feed to the filter, while all other items in the dictionary will be ignored. "
+            "If used, the args key must be linked to a list, while kwargs one must be linked to a dictionary. "
 
             "Examples: "
             "Without arguments: "
-            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\"}]', with the usage of kwargs: "
-            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\", \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]', and with both args and kwargs: "
-            "--plugin-filter-json-string '[{\"name\": \"skip_matching_id\", \"args\": [123, 456], \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' "
+            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\"}]', with the usage of kwargs: "
+            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]', and with both args and kwargs: "
+            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"args\": [123, 456], \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' "
+
+            "NOTE: "
+            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
+            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
+            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
+            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
+            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
+            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
+            "Since plugin_filters is the container for the filter framework and regex filter example, "
+            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
     )
 
     plugin_filter_mex_group.add_argument(
         "--plugin-filter-json-path",
         help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
             "The names of these filters, along with their arguments, will be contained inside a json file. "
-            f"When trying to pass a relative path, always take the current working directory '{ os.getcwd() }' into consideration. "
+            f"When trying to pass a relative path (for the json file), always take the current working directory '{ os.getcwd() }' into consideration. "
             "The content of the json file should follow these structural guidelines: "
-            "The outermost layer must be a list. "
-            "This list contains only dictionaries. should contain key-value pairs, where each key represents the name of a filter. "
-            "Each dictionary must always contain a 'name' key-value pair. This specifies the name of the file where the filter is located."
-            "Additionally, args and kwargs properties can also be specified, while all other items in the dictionary will be ignored. "
-            "If used, the args key must be linked to a list, while kwargs must be linked to a dictionary. "
+            "The outermost layer must be a list, which is used to contain the dictionaries with the filter data. "
+            "Each of these dictionaries must always contain a 'filter_file_path' key-value pair. "
+            "This variable specifies the relative path of the file where the filter is located "
+            "(the absolute path is generated separately by iterating through the TWISTER_PLUGIN_FILTER_ROOTS environmental variable). "
+            "The dictionary also allows to specify args and kwargs to feed to the filter, while all other items in the dictionary will be ignored. "
+            "If used, the args key must be linked to a list, while kwargs one must be linked to a dictionary. "
 
             "Examples: "
-            "--plugin-filter-json-path filter_details.json or also "
+            "--plugin-filter-json-path filter_details.json, or also "
             "--plugin-filter-json-path \"C:/users/Desktop/filter_details.json\""
+
+            "NOTE: "
+            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
+            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
+            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
+            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
+            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
+            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
+            "Since plugin_filters is the container for the filter framework and regex filter example, "
+            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
     )
 
     test_plan_report_xor.add_argument("--list-tests", action="store_true",
@@ -1089,11 +1122,11 @@ def parse_arguments(
         parsing_args = False
         parsing_kwargs = False
 
-        def initialize_filter(filter_list, module_name):
+        def initialize_filter(filter_list, file_path):
             args = []
             kwargs = {}
 
-            filter_list.append({ 'name': module_name,'args': args, 'kwargs': kwargs })
+            filter_list.append({ 'filter_file_path': file_path,'args': args, 'kwargs': kwargs })
 
             return args, kwargs
 
