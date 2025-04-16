@@ -25,6 +25,15 @@ config MCTP_UART
 	  Build the MCTP UART binding to use MCTP over Zephyr's async UART
 	  interface.
 
+config MCTP_I2C_GPIO_CONTROLLER
+	bool "MCTP I2C+GPIO Controller Binding"
+	depends on I2C
+	depends on I2C_RTIO
+	depends on GPIO
+	help
+	  Build the MCTP I2C+GPIO controller binding to use MCTP over Zephyr's I2C RTIO
+	  interface and GPIO interrupts.
+
 module = MCTP
 module-str = MCTP
 source "subsys/logging/Kconfig.template.log_config"
