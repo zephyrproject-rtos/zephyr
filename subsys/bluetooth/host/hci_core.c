@@ -2416,8 +2416,13 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
 
-	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
-		status, bt_hci_err_to_str(status), evt_buf);
+	if (status) {
+		LOG_ERR("opcode 0x%04x status 0x%02x %s buf %p", opcode,
+			status, bt_hci_err_to_str(status), evt_buf);
+	} else {
+		LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
+			status, bt_hci_err_to_str(status), evt_buf);
+	}
 
 	/* Unsolicited cmd complete. This does not complete a command.
 	 * The controller can send these for effect of the `ncmd` field.
