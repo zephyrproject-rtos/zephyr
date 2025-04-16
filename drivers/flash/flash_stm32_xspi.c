@@ -743,6 +743,13 @@ static int stm32_xspi_config_mem(const struct device *dev)
 			return -EIO;
 		}
 
+		if (stm32_xspi_read_cfg2reg(&dev_data->hxspi,
+			XSPI_OCTO_MODE, XSPI_DTR_TRANSFER, reg) != 0) {
+			/* Check the configuration has been correctly done on SPI_NOR_REG2_ADDR1 */
+			LOG_ERR("XSPI flash config read failed");
+			return -EIO;
+		}
+
 		LOG_INF("XSPI flash config is OCTO / DTR");
 	}
 
@@ -846,7 +853,7 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 	XSPI_RegularCmdTypeDef s_command = {0}; /* Non-zero values disturb the command */
-	XSPI_MemoryMappedTypeDef s_MemMappedCfg;
+	XSPI_MemoryMappedTypeDef s_MemMappedCfg = {0};
 
 	/* Configure octoflash in MemoryMapped mode */
 	if ((dev_cfg->data_mode == XSPI_SPI_MODE) &&
@@ -938,6 +945,13 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 
 	/* Enable the memory-mapping */
 	s_MemMappedCfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
+
+#ifdef XSPI_CR_NOPREF
+	s_MemMappedCfg.NoPrefetchData = HAL_XSPI_AUTOMATIC_PREFETCH_ENABLE;
+#ifdef XSPI_CR_NOPREF_AXI
+	s_MemMappedCfg.NoPrefetchAXI = HAL_XSPI_AXI_PREFETCH_DISABLE;
+#endif /* XSPI_CR_NOPREF_AXI */
+#endif /* XSPI_CR_NOPREF */
 
 	ret = HAL_XSPI_MemoryMapped(&dev_data->hxspi, &s_MemMappedCfg);
 	if (ret != HAL_OK) {
@@ -2031,12 +2045,19 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_STM32_MEMMAP
-	/* If MemoryMapped then configure skip init */
-	if (stm32_xspi_is_memorymap(dev)) {
-		LOG_DBG("NOR init'd in MemMapped mode");
-		/* Force HAL instance in correct state */
-		dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
-		return 0;
+	/* If MemoryMapped then configure skip init
+	 * Check clock status first as reading CR register without bus clock doesn't work on N6
+	 * If clock is off, then MemoryMapped is off too and we do init
+	 */
+	if (clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				     (clock_control_subsys_t) &dev_cfg->pclken[0])
+				     == CLOCK_CONTROL_STATUS_ON) {
+		if (stm32_xspi_is_memorymap(dev)) {
+			LOG_ERR("NOR init'd in MemMapped mode");
+			/* Force HAL instance in correct state */
+			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
+			return 0;
+		}
 	}
 #endif /* CONFIG_STM32_MEMMAP */
 
