@@ -759,7 +759,7 @@ static void bt_hfp_ag_set_call_state(struct bt_hfp_ag_call *call, bt_hfp_call_st
 
 static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 {
-	struct bt_conn *sco;
+	struct bt_conn *sco = NULL;
 	int call_count;
 
 	LOG_DBG("");
@@ -772,9 +772,13 @@ static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 		return;
 	}
 
-	sco = ag->sco_chan.sco;
-	ag->sco_chan.sco = NULL;
+	if (ag->sco_conn != NULL) {
+		bt_conn_unref(ag->sco_conn);
+		ag->sco_conn = NULL;
+		sco = ag->sco_chan.sco;
+	}
 	hfp_ag_unlock(ag);
+
 	if (sco != NULL) {
 		LOG_DBG("Disconnect sco %p", sco);
 		bt_conn_disconnect(sco, BT_HCI_ERR_LOCALHOST_TERM_CONN);
@@ -1333,20 +1337,32 @@ static void bt_hfp_ag_call_ringing_cb(struct bt_hfp_ag_call *call, bool in_bond)
 	}
 }
 
-static void hfp_ag_sco_connected(struct bt_sco_chan *chan)
+static void hfp_ag_sco_valid_call_update(struct bt_hfp_ag *ag)
 {
-	struct bt_hfp_ag *ag = CONTAINER_OF(chan, struct bt_hfp_ag, sco_chan);
 	struct bt_hfp_ag_call *call;
 
 	call = get_call_clear_flag(ag, BT_HFP_AG_CALL_OPEN_SCO);
 
-	if (call) {
-		if ((call->call_state == BT_HFP_CALL_INCOMING) ||
-		    atomic_test_and_clear_bit(call->flags, BT_HFP_AG_CALL_ALERTING)) {
-			bt_hfp_ag_set_call_state(call, BT_HFP_CALL_ALERTING);
-			bt_hfp_ag_call_ringing_cb(call, true);
-		}
+	if (call == NULL) {
+		return;
 	}
+
+	if ((call->call_state == BT_HFP_CALL_INCOMING) ||
+	    atomic_test_and_clear_bit(call->flags, BT_HFP_AG_CALL_ALERTING)) {
+		bt_hfp_ag_set_call_state(call, BT_HFP_CALL_ALERTING);
+		bt_hfp_ag_call_ringing_cb(call, true);
+	}
+}
+
+static void hfp_ag_sco_connected(struct bt_sco_chan *chan)
+{
+	struct bt_hfp_ag *ag = CONTAINER_OF(chan, struct bt_hfp_ag, sco_chan);
+
+	if (ag->sco_conn == NULL) {
+		ag->sco_conn = bt_conn_ref(chan->sco);
+	}
+
+	hfp_ag_sco_valid_call_update(ag);
 
 	if ((bt_ag) && bt_ag->sco_connected) {
 		bt_ag->sco_connected(ag, chan->sco);
@@ -1365,6 +1381,11 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 		bt_ag->sco_disconnected(chan->sco, reason);
 	}
 
+	if (ag->sco_conn != NULL) {
+		bt_conn_unref(ag->sco_conn);
+		ag->sco_conn = NULL;
+	}
+
 	if (!call) {
 		return;
 	}
@@ -1377,8 +1398,6 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 
 static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 {
-	struct bt_conn *sco_conn;
-
 	static struct bt_sco_chan_ops ops = {
 		.connected = hfp_ag_sco_connected,
 		.disconnected = hfp_ag_sco_disconnected,
@@ -1386,20 +1405,21 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 
 	LOG_DBG("");
 
-	if (ag->sco_chan.sco == NULL) {
+	if (ag->sco_conn == NULL) {
 		ag->sco_chan.ops = &ops;
 
 		/* create SCO connection*/
-		sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
-		if (sco_conn != NULL) {
-			LOG_DBG("Created sco %p", sco_conn);
-			bt_conn_unref(sco_conn);
+		ag->sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
+		if (ag->sco_conn != NULL) {
+			LOG_DBG("Created sco %p", ag->sco_conn);
+			if (ag->sco_chan.sco == NULL) {
+				/* SCO connection exists */
+				hfp_ag_sco_valid_call_update(ag);
+			}
 		}
-	} else {
-		sco_conn = ag->sco_chan.sco;
 	}
 
-	return sco_conn;
+	return ag->sco_conn;
 }
 
 static int hfp_ag_open_sco(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call)
@@ -1412,7 +1432,7 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call)
 	}
 
 	hfp_ag_lock(ag);
-	create_sco = (ag->sco_chan.sco == NULL) ? true : false;
+	create_sco = (ag->sco_conn == NULL) ? true : false;
 	if (create_sco) {
 		atomic_set_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
 	}
@@ -2554,7 +2574,7 @@ static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	if (ag->sco_chan.sco) {
+	if (ag->sco_conn != NULL) {
 		hfp_ag_unlock(ag);
 		return -ECONNREFUSED;
 	}
@@ -4520,7 +4540,7 @@ int bt_hfp_ag_remote_ringing(struct bt_hfp_ag_call *call)
 	}
 
 	if (atomic_test_bit(ag->flags, BT_HFP_AG_INBAND_RING)) {
-		if (ag->sco_chan.sco == NULL) {
+		if (ag->sco_conn == NULL) {
 			hfp_ag_unlock(ag);
 			return -ENOTCONN;
 		}
@@ -4768,7 +4788,7 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 		}
 	}
 
-	if (ag->sco_chan.sco) {
+	if (ag->sco_conn != NULL) {
 		LOG_ERR("Audio conenction has been connected");
 		hfp_ag_unlock(ag);
 		return -ECONNREFUSED;
