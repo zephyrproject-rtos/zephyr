@@ -250,7 +250,7 @@ struct z_poller {
 struct k_thread {
 
 	struct _thread_base base;
-
+	uint8_t id;
 	/** defined by the architecture, but all archs need these */
 	struct _callee_saved callee_saved;
 

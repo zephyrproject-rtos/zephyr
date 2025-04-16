@@ -38,4 +38,4 @@ NOTE
 * If you want to run this code in XIP Mode, then in the prj.conf, set **CONFIG_XIP=y**, and **CONFIG_CODE_DATA_RELOCATION=y**. Now, your code will start
 executing at address 0x90000000, which is your flash on vcu118 FPGA. 
 
-* In order to run this code on XIP on ASIC, then set the FLASH_BASE_ADDRESS to 0x90000400 and in linker_secure-iot.ld change the ORIGIN of EXTFLASH to 0x90000400.
+* In order to run this code on XIP on ASIC, then set the ROM_BASE to 0x90000400 in zephyr/include/zephyr/arch/riscv/common/linker.ld.

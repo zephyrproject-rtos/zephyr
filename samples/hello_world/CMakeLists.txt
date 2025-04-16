@@ -9,6 +9,6 @@ target_sources(app PRIVATE src/main.c)
 
 if(CONFIG_XIP)
     zephyr_code_relocate(FILES src/main.c LOCATION ROM_TEXT NOCOPY)
-    zephyr_code_relocate(FILES src/main.c LOCATION ROM_DATA)
-    zephyr_code_relocate(FILES src/main.c LOCATION ROM_BSS)
+    zephyr_code_relocate(FILES src/main.c LOCATION RAM_DATA)
+    zephyr_code_relocate(FILES src/main.c LOCATION RAM_BSS)
 endif()

@@ -276,51 +276,64 @@ void *memmove(void *d, const void *s, size_t n)
  * @return pointer to start of destination buffer
  */
 
-void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
-{
-	/* attempt word-sized copying only if buffers have identical alignment */
+// void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
+// {
+// 	/* attempt word-sized copying only if buffers have identical alignment */
 
-	unsigned char *d_byte = (unsigned char *)d;
-	const unsigned char *s_byte = (const unsigned char *)s;
+// 	unsigned char *d_byte = (unsigned char *)d;
+// 	const unsigned char *s_byte = (const unsigned char *)s;
 
-#if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	const uintptr_t mask = sizeof(mem_word_t) - 1;
+// #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
+// 	const uintptr_t mask = sizeof(mem_word_t) - 1;
 
-	if ((((uintptr_t)d ^ (uintptr_t)s_byte) & mask) == 0) {
+// 	if ((((uintptr_t)d ^ (uintptr_t)s_byte) & mask) == 0) {
 
-		/* do byte-sized copying until word-aligned or finished */
+// 		/* do byte-sized copying until word-aligned or finished */
 
-		while (((uintptr_t)d_byte) & mask) {
-			if (n == 0) {
-				return d;
-			}
-			*(d_byte++) = *(s_byte++);
-			n--;
-		}
+// 		while (((uintptr_t)d_byte) & mask) {
+// 			if (n == 0) {
+// 				return d;
+// 			}
+// 			*(d_byte++) = *(s_byte++);
+// 			n--;
+// 		}
 
-		/* do word-sized copying as long as possible */
+// 		/* do word-sized copying as long as possible */
 
-		mem_word_t *d_word = (mem_word_t *)d_byte;
-		const mem_word_t *s_word = (const mem_word_t *)s_byte;
+// 		mem_word_t *d_word = (mem_word_t *)d_byte;
+// 		const mem_word_t *s_word = (const mem_word_t *)s_byte;
 
-		while (n >= sizeof(mem_word_t)) {
-			*(d_word++) = *(s_word++);
-			n -= sizeof(mem_word_t);
-		}
+// 		while (n >= sizeof(mem_word_t)) {
+// 			*(d_word++) = *(s_word++);
+// 			n -= sizeof(mem_word_t);
+// 		}
 
-		d_byte = (unsigned char *)d_word;
-		s_byte = (unsigned char *)s_word;
-	}
-#endif
+// 		d_byte = (unsigned char *)d_word;
+// 		s_byte = (unsigned char *)s_word;
+// 	}
+// #endif
 
-	/* do byte-sized copying until finished */
+// 	/* do byte-sized copying until finished */
 
-	while (n > 0) {
-		*(d_byte++) = *(s_byte++);
-		n--;
-	}
+// 	while (n > 0) {
+// 		*(d_byte++) = *(s_byte++);
+// 		n--;
+// 	}
 
-	return d;
+// 	return d;
+// }
+
+void* memcpy(void* d, const void* s, size_t n) {
+    // Cast pointers to char* for byte-wise copying
+    unsigned char* dest_ = (unsigned char*) d;
+    const unsigned char* src_ = (const unsigned char*) s;
+
+    // Copy bytes from src to dest
+    while (n--) {
+        *dest_++ = *src_++;
+    }
+
+    return d;
 }
 
 /**
@@ -330,49 +343,60 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
  * @return pointer to start of buffer
  */
 
-void *memset(void *buf, int c, size_t n)
-{
-	/* do byte-sized initialization until word-aligned or finished */
+// void *memset(void *buf, int c, size_t n)
+// {
+// 	/* do byte-sized initialization until word-aligned or finished */
 
-	unsigned char *d_byte = (unsigned char *)buf;
-	unsigned char c_byte = (unsigned char)c;
+// 	unsigned char *d_byte = (unsigned char *)buf;
+// 	unsigned char c_byte = (unsigned char)c;
 
-#if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
-		if (n == 0) {
-			return buf;
-		}
-		*(d_byte++) = c_byte;
-		n--;
-	}
+// #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
+// 	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
+// 		if (n == 0) {
+// 			return buf;
+// 		}
+// 		*(d_byte++) = c_byte;
+// 		n--;
+// 	}
 
-	/* do word-sized initialization as long as possible */
+// 	/* do word-sized initialization as long as possible */
 
-	mem_word_t *d_word = (mem_word_t *)d_byte;
-	mem_word_t c_word = (mem_word_t)c_byte;
+// 	mem_word_t *d_word = (mem_word_t *)d_byte;
+// 	mem_word_t c_word = (mem_word_t)c_byte;
 
-	c_word |= c_word << 8;
-	c_word |= c_word << 16;
-#if Z_MEM_WORD_T_WIDTH > 32
-	c_word |= c_word << 32;
-#endif
+// 	c_word |= c_word << 8;
+// 	c_word |= c_word << 16;
+// #if Z_MEM_WORD_T_WIDTH > 32
+// 	c_word |= c_word << 32;
+// #endif
 
-	while (n >= sizeof(mem_word_t)) {
-		*(d_word++) = c_word;
-		n -= sizeof(mem_word_t);
-	}
+// 	while (n >= sizeof(mem_word_t)) {
+// 		*(d_word++) = c_word;
+// 		n -= sizeof(mem_word_t);
+// 	}
 
-	/* do byte-sized initialization until finished */
+// 	/* do byte-sized initialization until finished */
 
-	d_byte = (unsigned char *)d_word;
-#endif
+// 	d_byte = (unsigned char *)d_word;
+// #endif
 
-	while (n > 0) {
-		*(d_byte++) = c_byte;
-		n--;
-	}
+// 	while (n > 0) {
+// 		*(d_byte++) = c_byte;
+// 		n--;
+// 	}
 
-	return buf;
+// 	return buf;
+// }
+
+void *memset(void *s, int c, size_t n) {
+    unsigned char *ptr = s;
+    unsigned char value = (unsigned char)c;
+
+    while (n--) {
+        *ptr++ = value;
+    }
+
+    return s;
 }
 
 /**

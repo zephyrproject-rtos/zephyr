@@ -256,13 +256,13 @@ static inline bool should_queue_thread(struct k_thread *th)
 {
 	return !IS_ENABLED(CONFIG_SMP) || th != _current;
 }
-
 static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
 		runq_add(thread);
 	}
+	*((uint32_t*)(0x40218))=1<<thread->id;
 #ifdef CONFIG_SMP
 	if (thread == _current) {
 		/* add current to end of queue means "yield" */
@@ -274,7 +274,9 @@ static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_QUEUED;
+	// printf("Thread Number :%d Entry\n",thread->id);
 	if (should_queue_thread(thread)) {
+		
 		runq_remove(thread);
 	}
 }
@@ -530,10 +532,15 @@ void z_time_slice(void)
 #endif
 
 	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
+		// printf("Expired thread:%d",curr->id);
+		*((uint32_t*)(0x40218))=1<<curr->id;
+		
+
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&sched_spinlock, key);
 			curr->base.slice_expired(curr, curr->base.slice_data);
+			
 			key = k_spin_lock(&sched_spinlock);
 		}
 #endif
@@ -1057,7 +1064,10 @@ struct k_thread *z_swap_next_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
+	// printf("old_thread:%d",_current_cpu->current->id);
 	z_thread_mark_switched_out();
+	// printf("New Thread Id:%d\n",new_thread->id);
+	*((uint32_t*)(0x40210))=1<<new_thread->id;
 	_current_cpu->current = new_thread;
 }
 
