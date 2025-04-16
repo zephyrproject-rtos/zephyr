@@ -48,11 +48,11 @@ struct bt_sco_chan_ops {
 };
 
 struct bt_sco_chan {
-	struct bt_conn *sco;
+	struct bt_conn               *sco;
 	/** Channel operations reference */
-	struct bt_sco_chan_ops		*ops;
+	const struct bt_sco_chan_ops *ops;
 
-	enum bt_sco_state		state;
+	enum bt_sco_state            state;
 };
 
 /** @brief Initiate an SCO connection to a remote device.

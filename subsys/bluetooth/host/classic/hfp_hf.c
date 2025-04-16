@@ -4161,7 +4161,7 @@ static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 		      struct bt_sco_chan **chan)
 {
-	static struct bt_sco_chan_ops ops = {
+	static const struct bt_sco_chan_ops ops = {
 		.connected = hfp_hf_sco_connected,
 		.disconnected = hfp_hf_sco_disconnected,
 	};
