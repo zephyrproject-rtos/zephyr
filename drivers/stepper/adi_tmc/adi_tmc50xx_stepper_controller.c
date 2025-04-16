@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT adi_tmc50xx
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <zephyr/drivers/stepper.h>
@@ -54,6 +55,59 @@ struct tmc50xx_stepper_config {
 #endif
 };
 
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_LOG_STATUS
+
+static void log_status(uint8_t status_byte)
+{
+	static const char *spi_status[8] = {
+		"reset_flag",
+		"driver_error1",
+		"driver_error2",
+		"velocity_reached1",
+		"velocity_reached2",
+		"status_stop_l1",
+		"status_stop_l2",
+		"-"
+	};
+	char buf[110];
+	int n = snprintf(buf, sizeof(buf), "0x%02x", status_byte);
+
+	for (uint8_t i = 0; i < 8; ++i) {
+		if (status_byte & BIT(i)) {
+			n += snprintf(buf + n, sizeof(buf) - n, " %s", spi_status[i]);
+			if (n >= sizeof(buf)) {
+				buf[sizeof(buf) - 1] = '\0';
+				break;
+			}
+		}
+	}
+	LOG_DBG("%s", buf);
+}
+
+#endif
+
+static void parse_tmc_spi_status(const uint8_t status_byte)
+{
+	if ((status_byte & BIT_MASK(0)) != 0) {
+		LOG_WRN("spi dataframe: reset_flag detected");
+	}
+	if ((status_byte & BIT_MASK(1)) != 0) {
+		LOG_WRN("spi dataframe: driver_error(1) detected");
+	}
+	if ((status_byte & BIT_MASK(2)) != 0) {
+		LOG_WRN("spi dataframe: driver_error(2) detected");
+	}
+
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_LOG_STATUS
+	static uint8_t status_last;
+
+	if (status_byte != status_last) {
+		status_last = status_byte;
+		log_status(status_byte & ~0x1); /* ignore reset_flag */
+	}
+#endif
+}
+
 static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
 	const struct tmc50xx_config *config = dev->config;
@@ -63,7 +117,8 @@ static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
+	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val,
+					parse_tmc_spi_status);
 
 	k_sem_give(&data->sem);
 
@@ -83,7 +138,8 @@ static int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
+	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val,
+					parse_tmc_spi_status);
 
 	k_sem_give(&data->sem);
 

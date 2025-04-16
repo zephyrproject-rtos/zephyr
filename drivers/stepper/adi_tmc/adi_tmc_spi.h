@@ -26,6 +26,8 @@ extern "C" {
 
 #include <zephyr/drivers/spi.h>
 
+typedef void (*parse_tmc_spi_status_t)(const uint8_t value);
+
 /**
  * @brief Read a register from the TMC module using the SPI Bus.
  *
@@ -37,7 +39,8 @@ extern "C" {
  * @return a value from spi_transceive().
  */
 int tmc_spi_read_register(const struct spi_dt_spec *bus, const uint8_t read_address_mask,
-			  const uint8_t register_address, uint32_t *data);
+			  const uint8_t register_address, uint32_t *data,
+			  parse_tmc_spi_status_t parse_tmc_spi_status);
 
 /**
  * @brief Write into a register in the TMC module using the SPI Bus.
@@ -50,7 +53,8 @@ int tmc_spi_read_register(const struct spi_dt_spec *bus, const uint8_t read_addr
  * @return a value from spi_transceive().
  */
 int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bit,
-			   const uint8_t register_address, const uint32_t data);
+			   const uint8_t register_address, const uint32_t data,
+			   parse_tmc_spi_status_t parse_tmc_spi_status);
 
 /**
  * @}
