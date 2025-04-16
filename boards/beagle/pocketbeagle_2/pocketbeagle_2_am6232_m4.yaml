@@ -8,3 +8,4 @@ ram: 192
 vendor: beagle
 supported:
   - uart
+  - gpio
