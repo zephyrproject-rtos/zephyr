@@ -1,0 +1,16 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_TI_TMS570LC43X
+	select ARM
+	select CPU_CORTEX_R5
+	select BIG_ENDIAN
+	select CPU_HAS_DCLS
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CACHE_MANAGEMENT
+	select SOC_RESET_HOOK
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select HAS_TMS570_HALCOGEN_CODE
+	imply XIP

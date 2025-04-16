@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2025 ispace inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <freq.h>
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5";
+			reg = <0>;
+			status = "okay";
+		};
+	};
+
+	clocks {
+		/*
+		 * OSC_IN (16 MHZ)
+		 *  -> PLL1 (300 MHz)
+		 *      -> GCLK1 (300 MHz)
+		 *          -> HCLK (150 MHz)
+		 *              -> VCLK (75 MHz)
+		 *                  -> RTICLK (75 MHz, divider is bypassed when VCLK is the source)
+		 */
+
+		osc_in: osc_in {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(16)>;
+			status = "okay";
+		};
+
+		clk_vclk: clk_vclk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(75)>;
+			status = "okay";
+		};
+
+		clk_rticlk: clk_rticlk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(75)>;
+			status = "okay";
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sys: sys@ffffff00 {
+			reg = <0xffffff00 256>,    /* SYS1 */
+			      <0xffffe100 256>,    /* SYS2 */
+			      <0xffff1000 0x800>,  /* PCR1 */
+			      <0xfcff1000 0x800>,  /* PCR2 */
+			      <0xfff78000 0x800>,  /* PCR3 */
+			      <0xfff87000 0x1000>, /* FCR  */
+			      <0xfffff500 0x100>,  /* ESM  */
+			      <0xFFFFFF00 0xfc>,   /* SYSBASE */
+			      <0xFFFFFC98 4>,	   /* WATCHDOG_STATUS */
+			      <0xFFFFEC00 44>,	   /* DCC */
+			      <0xFFA04000 0x10>;   /* POM_CONTROL_BASE */
+		};
+
+		sram0: memory@8000000 {
+			compatible = "mmio-sram";
+			reg = <0x08000000 DT_SIZE_K(512)>;
+		};
+
+		flc0: flash_controller@f0000000 {
+			compatible = "flash-controller";
+			reg = <0xf0000000 0x00480000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_M(4)>;
+			};
+		};
+	};
+};

@@ -1,0 +1,6 @@
+family:
+- name: ti_hercules
+  series:
+  - name: ti_tms570
+    socs:
+    - name: ti_tms570lc43x
