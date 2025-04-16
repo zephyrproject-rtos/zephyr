@@ -1564,7 +1564,6 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 	const struct device *phy = dev_conf->phy_dev;
-	const struct ethphy_driver_api *phy_api = phy->api;
 	enum phy_link_speed adv_speeds;
 
 	int retval = 0;
@@ -1577,7 +1576,7 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 			adv_speeds =
 				get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
 						   dev_data->link_speed);
-			retval = phy_api->cfg_link(phy, adv_speeds);
+			retval = phy_configure_link(phy, adv_speeds);
 		} else {
 			retval = -EALREADY;
 		}
@@ -1599,7 +1598,7 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 		}
 		adv_speeds = get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
 						dev_data->link_speed);
-		retval = phy_api->cfg_link(phy, adv_speeds);
+		retval = phy_configure_link(phy, adv_speeds);
 		break;
 	case ETHERNET_CONFIG_TYPE_DUPLEX:
 		if (config->full_duplex == dev_data->enable_full_duplex) {
@@ -1610,7 +1609,7 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 
 		adv_speeds = get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
 						dev_data->link_speed);
-		retval = phy_api->cfg_link(phy, adv_speeds);
+		retval = phy_configure_link(phy, adv_speeds);
 		break;
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, ETH_MAC_ADDRESS_SIZE);
