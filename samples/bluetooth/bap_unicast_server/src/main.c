@@ -78,10 +78,12 @@ static uint8_t unicast_server_addata[] = {
 
 /* TODO: Expand with BAP data */
 static const struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
-	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+    BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+    BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata,
+            ARRAY_SIZE(unicast_server_addata)),
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+            sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 #define AUDIO_DATA_TIMEOUT_US 1000000UL /* Send data every 1 second */

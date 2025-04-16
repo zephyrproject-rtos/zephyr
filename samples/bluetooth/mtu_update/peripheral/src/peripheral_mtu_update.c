@@ -28,7 +28,8 @@ static const struct bt_uuid_128 notify_characteristic_uuid =
 static const struct bt_data adv_ad_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, MTU_TEST_SERVICE_TYPE),
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 static struct bt_conn *default_conn;

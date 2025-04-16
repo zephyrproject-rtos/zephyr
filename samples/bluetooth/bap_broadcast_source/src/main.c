@@ -600,9 +600,10 @@ int main(void)
 		ext_ad[0].type = BT_DATA_SVC_DATA16;
 		ext_ad[0].data_len = ad_buf.len;
 		ext_ad[0].data = ad_buf.data;
-		ext_ad[1] = (struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
-						    sizeof(CONFIG_BT_DEVICE_NAME) - 1);
-		err = bt_le_ext_adv_set_data(adv, ext_ad, 2, NULL, 0);
+		ext_ad[1] = (struct bt_data)BT_DATA(
+		    BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		    sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1);
+                err = bt_le_ext_adv_set_data(adv, ext_ad, 2, NULL, 0);
 		if (err != 0) {
 			printk("Failed to set extended advertising data: %d\n", err);
 			return 0;

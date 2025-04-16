@@ -26,7 +26,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_connected, LOG_LEVEL_DBG);
 
-#define DEVICE_NAME	CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME	CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME))
 
 enum benchmark_role {
@@ -145,7 +145,8 @@ static struct bt_iso_cig_param cig_create_param = {
 };
 
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 static enum benchmark_role device_role_select(void)

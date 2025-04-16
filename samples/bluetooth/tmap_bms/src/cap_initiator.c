@@ -129,7 +129,8 @@ static struct bt_bap_stream_ops broadcast_stream_ops = {
 };
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 static int setup_extended_adv(struct bt_le_ext_adv **adv)

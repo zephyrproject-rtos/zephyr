@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include <zephyr/drivers/sensor.h>
 
@@ -529,7 +530,10 @@ static void send_hello(struct k_work *work)
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,
 	};
-	const char *name = bt_get_name();
+	uint8_t name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX + 1];
+	size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+
+	name[name_size] = '\0';
 
 	bt_mesh_model_msg_init(&msg, OP_VND_HELLO);
 	net_buf_simple_add_mem(&msg, name,
@@ -556,7 +560,10 @@ static void send_baduser(struct k_work *work)
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,
 	};
-	const char *name = bt_get_name();
+	uint8_t name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX + 1];
+	size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+
+	name[name_size] = '\0';
 
 	bt_mesh_model_msg_init(&msg, OP_VND_BADUSER);
 	net_buf_simple_add_mem(&msg, name,

@@ -17,7 +17,7 @@ This sample can be found under
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Use :kconfig:option:`CONFIG_TARGET_BROADCAST_NAME` Kconfig to specify the name
-(:kconfig:option:`CONFIG_BT_DEVICE_NAME`) of a broadcast source to listen to. With default value
+(:kconfig:option:`CONFIG_BT_GAP_DEVICE_NAME`) of a broadcast source to listen to. With default value
 (empty string), sink device will listen to all available broadcast sources.
 
 Requirements

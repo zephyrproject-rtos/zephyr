@@ -23,6 +23,7 @@
 
 #include "mesh.h"
 #include "board.h"
+#include "zephyr/bluetooth/gap/device_name.h"
 
 #define STORAGE_PARTITION		storage_partition
 #define STORAGE_PARTITION_DEV		FIXED_PARTITION_DEVICE(STORAGE_PARTITION)
@@ -398,11 +399,12 @@ _error_get:
 
 static void show_main(void)
 {
-	char buf[CONFIG_BT_DEVICE_NAME_MAX];
 	int i;
 
-	strncpy(buf, bt_get_name(), sizeof(buf) - 1);
-	buf[sizeof(buf) - 1] = '\0';
+	uint8_t buf[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX + 1];
+	size_t size = bt_gap_get_device_name(buf, sizeof(buf) - 1);
+
+	buf[size] = '\0';
 
 	/* Convert commas to newlines */
 	for (i = 0; buf[i] != '\0'; i++) {

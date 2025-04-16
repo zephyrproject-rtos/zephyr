@@ -13,7 +13,7 @@
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
 	     "This app requires Zephyr-specific HCI vendor extensions");
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LENGTH (sizeof(DEVICE_NAME) - 1)
 
 /* Advertising Interval: the longer, the less energy consumption.
@@ -113,7 +113,7 @@ static int start_advertising(void)
 		return err;
 	}
 
-	printk("Advertising successfully started (%s)\n", CONFIG_BT_DEVICE_NAME);
+	printk("Advertising successfully started (%s)\n", CONFIG_BT_GAP_DEVICE_NAME);
 
 	return 0;
 }

@@ -16,6 +16,8 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/bluetooth/hci.h>
 
+#include <zephyr/bluetooth/gap/device_name.h>
+
 #include "mesh.h"
 #include "board.h"
 
@@ -23,39 +25,33 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-};
-
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	const char *value = bt_get_name();
+	uint8_t name[BT_GAP_DEVICE_NAME_MAX_SIZE];
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 strlen(value));
+	size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
+				 name_size);
 }
 
 static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  const void *buf, uint16_t len, uint16_t offset,
 			  uint8_t flags)
 {
-	char name[CONFIG_BT_DEVICE_NAME_MAX];
 	int err;
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len >= CONFIG_BT_DEVICE_NAME_MAX) {
+	if (len >= CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(name, buf, len);
-	name[len] = '\0';
-
-	err = bt_set_name(name);
-	if (err) {
+	err = bt_gap_set_device_name(buf, len);
+	if (err != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -140,7 +136,15 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 
-	if (strcmp(CONFIG_BT_DEVICE_NAME, bt_get_name()) &&
+	char *first_bt_dev_name = "reel board";
+
+	uint8_t name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX + 1];
+	size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+
+	name[name_size] = '\0';
+
+	/* I didn't do this, keep on blaming */
+	if (strcmp(first_bt_dev_name, name) &&
 	    !mesh_is_initialized()) {
 		/* Mesh will take over advertising control */
 		bt_le_adv_stop();
@@ -157,6 +161,9 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 
 static void bt_ready(int err)
 {
+	struct bt_data sd[1];
+	char *bt_dev_name = "reel board";
+
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -178,6 +185,16 @@ static void bt_ready(int err)
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
+
+	err = bt_gap_set_device_name(bt_dev_name, sizeof(bt_dev_name));
+	if (err != 0) {
+		printk("Failed to set name (err %d)", err);
+		return;
+	}
+
+	sd[0].type = BT_DATA_NAME_COMPLETE;
+	sd[0].data_len = sizeof(bt_dev_name);
+	sd[0].data = bt_dev_name;
 
 	if (!mesh_is_initialized()) {
 		/* Start advertising */

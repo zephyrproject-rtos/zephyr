@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/nus.h>
 
-#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME		CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 
 static const struct bt_data ad[] = {
