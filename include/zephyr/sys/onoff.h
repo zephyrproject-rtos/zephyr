@@ -18,7 +18,7 @@ extern "C" {
 
 /**
  * @defgroup resource_mgmt_onoff_apis On-Off Service APIs
- * @ingroup kernel_apis
+ * @ingroup os_services
  * @{
  */
 
