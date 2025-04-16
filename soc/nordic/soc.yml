@@ -115,9 +115,11 @@ runners:
               - nrf54l09/cpuflpr
           - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
           - qualifiers:
               - nrf54l20/cpuapp
@@ -179,9 +181,11 @@ runners:
               - nrf54l09/cpuflpr
           - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
           - qualifiers:
               - nrf54l20/cpuapp
@@ -243,9 +247,11 @@ runners:
               - nrf54l09/cpuflpr
           - qualifiers:
               - nrf54l10/cpuapp
+              - nrf54l10/cpuapp/ns
               - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
+              - nrf54l15/cpuapp/ns
               - nrf54l15/cpuflpr
           - qualifiers:
               - nrf54l20/cpuapp
