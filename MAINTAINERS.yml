@@ -4277,6 +4277,20 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
+TI MSPM0 Platforms:
+  status: maintained
+  maintainers:
+    - ssekar15
+  files:
+    - soc/ti/mspm0/
+    - boards/ti/lp_mspm0g3507/
+    - dts/arm/ti/mspm0/
+    - dts/bindings/*/*mspm0*
+    - drivers/*/*_mspm0*
+    - modules/Kconfig.mspm0
+  labels:
+    - "platform: Texas Instruments MSPM0"
+
 TI SimpleLink Platforms:
   status: maintained
   maintainers:
