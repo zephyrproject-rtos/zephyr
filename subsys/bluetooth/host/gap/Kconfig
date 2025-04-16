@@ -1,0 +1,44 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice BT_GAP_DEVICE_NAME_TYPE
+	prompt "Bluetooth GAP Device Name type"
+	default BT_GAP_DEVICE_NAME_STATIC
+
+config BT_GAP_DEVICE_NAME_DYNAMIC
+	bool "Allow to set Bluetooth GAP Device Name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of Bluetooth
+	  GAP Device Name.
+
+config BT_GAP_DEVICE_NAME_STATIC
+	bool "Set the Bluetooth GAP Device Name at compile time"
+	help
+	  Enabling this option will set the Bluetooth GAP Device Name based on
+	  CONFIG_BT_GAP_DEVICE_NAME.
+
+endchoice
+
+if BT_GAP_DEVICE_NAME_DYNAMIC
+
+config BT_GAP_DEVICE_NAME_DYNAMIC_MAX
+	int "Maximum size in bytes for the Bluetooth GAP Device Name"
+	depends on BT_GAP_DEVICE_NAME_DYNAMIC
+	default 28
+	range 2 248
+	help
+	  Bluetooth GAP Device Name storage size. Storage can be up to 248 bytes
+	  long (excluding NULL termination).
+
+endif
+
+if BT_GAP_DEVICE_NAME_STATIC
+
+config BT_GAP_DEVICE_NAME
+	string "Bluetooth GPA Device Name"
+	default "Zephyr"
+	help
+	  Bluetooth GAP Device Name. Name can be up to 248 bytes long (excluding
+	  NULL termination). Can be empty string.
+
+endif

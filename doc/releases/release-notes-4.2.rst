@@ -144,6 +144,8 @@ New APIs and options
       :c:func:`bt_br_unpair`.
     * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
       :c:func:`bt_br_foreach_bond`.
+    * :c:func:`bt_gap_get_device_name`
+    * :c:func:`bt_gap_set_device_name`
 
 * Display
 
