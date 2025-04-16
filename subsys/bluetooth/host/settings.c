@@ -12,6 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/settings/settings.h>
@@ -180,16 +181,21 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 		return 0;
 	}
 
-#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+#if defined(CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC)
+	uint8_t device_name[BT_GAP_DEVICE_NAME_MAX_SIZE];
 	if (!strncmp(name, "name", len)) {
-		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
+		len = read_cb(cb_arg, device_name, sizeof(device_name));
 		if (len < 0) {
 			LOG_ERR("Failed to read device name from storage"
 			       " (err %zd)", len);
 		} else {
-			bt_dev.name[len] = '\0';
+			int err = bt_gap_set_device_name(device_name, len);
+			if (err != 0) {
+				LOG_ERR("Failed to set device name (err %d)", err);
+				return -EINVAL;
+			}
 
-			LOG_DBG("Name set to %s", bt_dev.name);
+			LOG_DBG("Name set to %.*s", len, device_name);
 		}
 		return 0;
 	}

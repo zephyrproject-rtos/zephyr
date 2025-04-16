@@ -52,6 +52,7 @@
 #include <zephyr/net/hostname.h>
 #elif defined(CONFIG_BT)
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #endif
 #endif
 
@@ -677,8 +678,12 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 			      (prior_output == true ? " %s" : "%s"), net_hostname_get());
 #elif defined(CONFIG_BT)
 		/* From Bluetooth */
+		uint8_t bt_dev_name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+		size_t bt_dev_name_size = bt_gap_get_device_name(bt_dev_name, sizeof(bt_dev_name));
 		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
-			      (prior_output == true ? " %s" : "%s"), bt_get_name());
+			      (prior_output == true ? " %.*s" : "%.*s"), bt_dev_name_size,
+			      bt_dev_name);
+
 #else
 		/* Not available */
 		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
