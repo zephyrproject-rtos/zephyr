@@ -11,6 +11,8 @@
 		tx-flank-shift-us = <(-46)>;
 		rx-flank-shift-us = <(-56)>;
 		tx-rx-propagation-max-us = <2400>;
+		rx-finish-work-delay-us = <1000>;
+    	rx-capture-work-delay-us = <200>;
 	};
 };
 

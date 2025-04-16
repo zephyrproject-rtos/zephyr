@@ -24,8 +24,6 @@ LOG_MODULE_REGISTER(dali_low_level, CONFIG_DALI_LOW_LEVEL_LOG_LEVEL);
 	SETTLING_TIME_BACKWARD_FRAME_MAX +                                                         \
 		k_us_to_cyc_floor32(DALI_TX_HALF_BIT_US) * MAX_HALFBIT_TIMES_PER_BACKWARD_FRAME
 
-#define SEND_TWICE_MAX_TIME k_ms_to_cyc_floor32(95)
-
 const uint32_t settling_times_min[] = {
 	k_us_to_cyc_floor32(DALI_TX_BACKWARD_INTERFRAME_MIN_US), /* Settling time backward min */
 	k_us_to_cyc_floor32(DALI_TX_PRIO_1_INTERFRAME_MIN_US),   /* Settling time prio 1 min */
@@ -156,6 +154,8 @@ struct dali_pwm_config {
 	int tx_shift_us;
 	int rx_shift_us;
 	unsigned int tx_rx_propagation_max_us;
+	unsigned int rx_finish_work_delay_us;
+	unsigned int rx_capture_work_delay_us;
 };
 
 /** this function gets called from pwm_capture to finish the frame, after idle time on bus. */
@@ -168,9 +168,18 @@ static void dali_pwm_finish_frame(struct dali_pwm_data *data)
 		/* don't alter anything, if there is no data. */
 		return;
 	}
-	uint32_t time_now = k_cycle_get_32();
+	const uint32_t time_now = k_cycle_get_32();
+	const uint32_t time_difference_cycle =
+		time_now - data->last_frame_timestamp -
+		k_us_to_cyc_floor32(data->capture.length * DALI_TX_FULL_BIT_US);
+	const struct device *dev = data->dev;
+	const struct dali_pwm_config *config = dev->config;
+	const uint32_t max_time_twice_cycle =
+		k_us_to_cyc_floor32(DALI_RX_TWICE_MAX_US + config->rx_finish_work_delay_us);
 	bool is_send_twice = true;
-	if ((time_now - data->last_frame_timestamp) > SEND_TWICE_MAX_TIME) {
+	if (time_difference_cycle > max_time_twice_cycle) {
+		LOG_DBG("single frame interframe time %d us",
+			k_cyc_to_us_floor32(time_difference_cycle));
 		is_send_twice = false;
 	}
 
@@ -296,7 +305,9 @@ static void dali_pwm_continuous_capture_callback_locked(uint32_t period_cycles,
 	/* trigger PWM send */
 	k_sem_give(&data->tx_pwm_sem);
 	/* wait for stop condition */
-	const uint32_t stopbit_timeout_us = DALI_RX_BIT_TIME_STOP_US - 10 * DALI_RX_GREY_AREA;
+	const struct device *dev = data->dev;
+	const struct dali_pwm_config *config = dev->config;
+	const uint32_t stopbit_timeout_us = DALI_RX_BIT_TIME_STOP_US - config->rx_capture_work_delay_us;
 	k_work_reschedule(&data->frame_finish_work, Z_TIMEOUT_US(stopbit_timeout_us));
 
 	if (data->timings.rx_flank_shift < 0) {
@@ -953,6 +964,8 @@ static DEVICE_API(dali, dali_pwm_driver_api) = {
 		.tx_shift_us = DT_INST_PROP_OR(idx, tx_flank_shift_us, 0),                         \
 		.rx_shift_us = DT_INST_PROP_OR(idx, rx_flank_shift_us, 0),                         \
 		.tx_rx_propagation_max_us = DT_INST_PROP_OR(idx, tx_rx_propagation_max_us, 200),   \
+		.rx_finish_work_delay_us = DT_INST_PROP_OR(idx, rx_finish_work_delay_us, 800),     \
+		.rx_capture_work_delay_us = DT_INST_PROP_OR(idx, rx_capture_work_delay_us, 200),   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, dali_pwm_init, NULL, &dali_pwm_data_##idx,                      \
 			      &dali_pwm_config_##idx, POST_KERNEL,                                 \
