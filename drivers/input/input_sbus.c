@@ -247,7 +247,7 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		return;
 	}
 
-	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes <= SBUS_FRAME_LEN) {
+	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < SBUS_FRAME_LEN) {
 		if (data->in_sync) {
 			if (data->xfer_bytes == 0) {
 				data->last_rx_time = k_uptime_get_32();
@@ -324,9 +324,9 @@ static int input_sbus_init(const struct device *dev)
 		return ret;
 	}
 
-	uart_irq_rx_enable(config->uart_dev);
-
 	k_sem_init(&data->report_lock, 0, 1);
+
+	uart_irq_rx_enable(config->uart_dev);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			K_KERNEL_STACK_SIZEOF(data->thread_stack),

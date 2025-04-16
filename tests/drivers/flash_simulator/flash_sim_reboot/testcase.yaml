@@ -5,6 +5,7 @@ common:
 tests:
   drivers.flash.flash_simulator.boot_no_erase:
     timeout: 5
+    expect_reboot: true
     platform_allow: mps2/an385
     integration_platforms:
       - mps2/an385

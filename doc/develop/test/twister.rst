@@ -734,6 +734,11 @@ required_snippets: <list of needed snippets>
               - cdc-acm-console
               - user-snippet-example
 
+expect_reboot: <True|False> (default False)
+    Notify twister that the test scenario is expected to reboot while executing.
+    When enabled, twister will suppress warnings about unexpected multiple runs
+    of a testsuite or testcase.
+
 The set of test scenarios that actually run depends on directives in the test scenario
 filed and options passed in on the command line. If there is any confusion,
 running with ``-v`` or examining the discard report

@@ -13,7 +13,7 @@ extern "C" {
 
 #ifdef SECURE_UART1
 
-#if defined(NRF54L15_XXAA)
+#if defined(NRF54L_SERIES)
 #define TFM_PERIPHERAL_UARTE30_SECURE 1
 #else
 #define TFM_PERIPHERAL_UARTE1_SECURE 1
@@ -35,8 +35,8 @@ extern "C" {
     #include <tfm_peripherals_config_nrf91.h>
 #elif defined(NRF5340_XXAA_APPLICATION)
     #include <tfm_peripherals_config_nrf5340_application.h>
-#elif defined(NRF54L15_XXAA)
-    #include <tfm_peripherals_config_nrf54l15.h>
+#elif defined(NRF54L_SERIES)
+    #include <tfm_peripherals_config_nrf54l.h>
 #else
     #error "Unknown device."
 #endif

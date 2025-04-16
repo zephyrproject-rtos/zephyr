@@ -15,4 +15,6 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - uart
+  - flash
 vendor: nxp

@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <openhwgroup/cv64a6.dtsi>
+
+/ {
+	model = "Openhardwaregroup CV64A6 on Genesys 2";
+	compatible = "openhwgroup,cv64a6_genesys_2";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &memory0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&clint{
+	status = "okay";
+};
+
+&dma0 {
+	status = "disabled";
+};
+
+&eth {
+	local-mac-address = [00 18 3e 02 e3 7f];
+	status = "okay";
+};
+
+&xlnx_gpio {
+	status = "okay";
+};

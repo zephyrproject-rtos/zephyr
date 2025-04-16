@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 77d99efc16c7de7c17e9507693e4e3d8be1a5cb7
+      revision: a6dff0a5f49e898f29bc428e01538a8911364460
       path: modules/hal/ambiq
       groups:
         - hal
@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 468e955eb49b8a731474ff194ca17b6e6a08c2d9
+      revision: 9df9d40571b25171cb752459c6dd96bd83ec8570
       path: modules/hal/infineon
       groups:
         - hal
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: def7e1a025877a35d070439e70668f5ec319c32e
+      revision: f467d8e039216b4f5f9b55dd8a1ffa8582fc516d
       path: modules/hal/stm32
       groups:
         - hal
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: c8470fb145f8aff92696d05396fb77c3b8068b32
+      revision: 20f98e0a975c24864872e0df5701eb1082e9c957
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -321,7 +321,7 @@ manifest:
       revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 8fd3cd7b088d62f145b8b9f5ecc985dd73bd9e77
+      revision: eeceee739252cf2d56a5ad9356553d87aae8c57d
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
@@ -353,7 +353,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 25dff7328c77b51e314ef9d4625044072040c96d
+      revision: 857f3697ece6f44a663f007de71205a7b34974ef
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

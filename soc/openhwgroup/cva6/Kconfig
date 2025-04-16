@@ -1,0 +1,11 @@
+# Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_OPENHWGROUP_CVA6
+
+config SOC_FAMILY_CVA6_PROVIDE_NONSTANDARD_CACHE_OPTIONS
+	bool "Include non-standard cache management operations (currently global cache disable)"
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_OPENHWGROUP_CVA6

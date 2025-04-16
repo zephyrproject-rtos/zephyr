@@ -123,21 +123,36 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART0, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART0);
-	RESET_PeripheralReset(kLPUART0_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART0_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART1, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART1);
-	RESET_PeripheralReset(kLPUART1_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART1_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART2, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART2);
-	RESET_PeripheralReset(kLPUART2_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART2_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart3))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART3, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART3);
+	RESET_ReleasePeripheralReset(kLPUART3_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart4))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART4, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART4);
+	RESET_ReleasePeripheralReset(kLPUART4_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
+	RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
+#endif
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

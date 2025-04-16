@@ -1,0 +1,19 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Short J5.3 and J5.4 to loopback LPUART3 RX/TX for this test
+ * or test lpuart3 with "nxp,loopback"
+ */
+dut: &lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};

@@ -100,6 +100,13 @@ jobs:
         git clean -f -d
         git log --graph --oneline HEAD...${PR_HEAD}
 
+    - name: Set up Python
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: doc/requirements.txt
+
     - name: Setup Zephyr project
       uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
       with:
@@ -194,6 +201,13 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         path: zephyr
+
+    - name: Set up Python
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: doc/requirements.txt
 
     - name: install-pkgs
       run: |

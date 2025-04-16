@@ -18,7 +18,7 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if(CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT)
+if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ESPTOOL_PY ${ESP_IDF_PATH}/tools/esptool_py/esptool.py)
     message("-- Use the esptool.py: ${ESPTOOL_PY}")

@@ -219,6 +219,55 @@ ZTEST(i2c_ram, test_ram_rtio)
 		      "Written and Read data should match");
 }
 
+ZTEST(i2c_ram, test_ram_rtio_write_with_transaction)
+{
+	/** Many drivers and API rely on two write OPs in a single transaction
+	 * to write register addr + register data in a single go.
+	 * Hence why is validated in a separate test-case.
+	 */
+	struct rtio_sqe *wraddr_sqe, *wrdata_sqe, *wr_sqe, *rd_sqe;
+	struct rtio_cqe *wr_cqe, *rd_cqe;
+
+	uint8_t reg_data[] = {'h', 'e', 'l', 'l', 'o'};
+
+	TC_PRINT("submitting write from thread %p addr %x\n", k_current_get(), addr);
+	wraddr_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wraddr_sqe, &i2c_iodev, 0, (uint8_t *)&addr, sizeof(addr), NULL);
+	wraddr_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	wrdata_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wrdata_sqe, &i2c_iodev, 0, reg_data, ARRAY_SIZE(reg_data), NULL);
+	wrdata_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+
+	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
+
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	zassert_ok(wr_cqe->result, "i2c write should succeed");
+	rtio_cqe_release(&i2c_rtio, wr_cqe);
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	zassert_ok(wr_cqe->result, "i2c write should succeed");
+	rtio_cqe_release(&i2c_rtio, wr_cqe);
+
+	/** Now read the register address to confirm the write was performed */
+	wr_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rd_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, (uint8_t *)&addr, sizeof(addr), NULL);
+	rtio_sqe_prep_read(rd_sqe, &i2c_iodev, 0, rx_data, ARRAY_SIZE(reg_data), NULL);
+	wr_sqe->flags |= RTIO_SQE_TRANSACTION;
+	rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
+
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	rd_cqe = rtio_cqe_consume(&i2c_rtio);
+	zassert_ok(wr_cqe->result, "i2c write should succeed");
+	zassert_ok(rd_cqe->result, "i2c read should succeed");
+	rtio_cqe_release(&i2c_rtio, wr_cqe);
+	rtio_cqe_release(&i2c_rtio, rd_cqe);
+
+	zassert_equal(memcmp(&reg_data[0], &rx_data[0], ARRAY_SIZE(reg_data)), 0,
+		      "Written and Read data should match");
+}
+
 static enum isr_rtio_state {
 	INIT,
 	WRITE_WAIT,

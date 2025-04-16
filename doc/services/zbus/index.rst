@@ -848,25 +848,28 @@ The following code has the exact behavior of the code in :ref:`reading from a ch
 Runtime observer registration
 -----------------------------
 
-It is possible to add observers to channels in runtime. This feature uses the heap to allocate the
-nodes dynamically. The heap size limits the number of dynamic observers zbus can create. Therefore,
-set the :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` to enable the feature. It is possible to
-adjust the heap size by changing the configuration :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. The
-following example illustrates the runtime registration usage.
-
-
+It is possible to add observers to channels at runtime if
+:kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` is enabled. In addition to the channel and observer
+references, :c:func:`zbus_chan_add_obs` also requires a :c:struct:`zbus_observer_node` to link the two
+together, which must remain valid in memory for the duration that the observer is attached to the
+channel. The simplest way to achieve this is to make the structure ``static``.
 
 .. code-block:: c
 
     ZBUS_LISTENER_DEFINE(my_listener, callback);
     // ...
     void thread_entry(void) {
+            static struct zbus_observer_node obs_node;
             // ...
             /* Adding the observer to channel chan1 */
-            zbus_chan_add_obs(&chan1, &my_listener, K_NO_WAIT);
+            zbus_chan_add_obs(&chan1, &my_listener, &obs_node, K_NO_WAIT);
             /* Removing the observer from channel chan1 */
             zbus_chan_rm_obs(&chan1, &my_listener, K_NO_WAIT);
 
+.. warning::
+
+  The :c:struct:`zbus_observer_node` can only be re-used in :c:func:`zbus_chan_add_obs` after removing
+  the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
 Samples
 *******

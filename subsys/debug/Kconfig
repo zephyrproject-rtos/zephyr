@@ -357,3 +357,7 @@ config CPU_LOAD_LOG_PERIODICALLY
 	default 0
 	help
 	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
+
+module = CPU_LOAD
+module-str = cpu_load
+source "subsys/logging/Kconfig.template.log_config"

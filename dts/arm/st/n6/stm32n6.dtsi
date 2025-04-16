@@ -710,6 +710,27 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		usbotg_hs1: otghs@58040000 {
+			compatible = "st,stm32n6-otghs", "st,stm32-otghs";
+			reg = <0x58040000 0x2000>;
+			interrupts = <177 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK(AHB5, 26)>,
+				 <&rcc STM32_SRC_HSE OTGPHY1CKREF_SEL(1)>;
+			phys = <&usbphyc1>;
+			status = "disabled";
+		};
+
+		usbphyc1: usbphyc@5803fc00 {
+			compatible = "st,stm32-usbphyc";
+			reg = <0x5803FC00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 27)>;
+			#phy-cells = <0>;
+		};
 	};
 };
 

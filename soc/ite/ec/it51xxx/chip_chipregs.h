@@ -307,6 +307,8 @@ struct gctrl_it51xxx_regs {
 #define IT51XXX_GCTRL_LRSIPGWR    BIT(0)
 /* 0x38: Special Control 9 */
 #define IT51XXX_GCTRL_ALTIE       BIT(4)
+/* 0x47: Scratch SRAM0 Base Address */
+#define IT51XXX_SEL_SRAM0_BASE_4K 0x04
 /* 0x48: Scratch ROM 0 Size */
 #define IT51XXX_GCTRL_SCRSIZE_4K  0x03
 

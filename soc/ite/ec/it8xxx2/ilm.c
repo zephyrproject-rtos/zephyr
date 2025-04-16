@@ -80,8 +80,13 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 	if ((uintptr_t)ram_addr < RAM_BASE) {
 		return -EFAULT; /* Not in RAM */
 	}
-	const int dirmap_index = ((uintptr_t)ram_addr - RAM_BASE) / ILM_BLOCK_SIZE;
 
+#ifdef CONFIG_SOC_IT51XXX
+	/* Since IT51XXX only supports one 4KB ILM block (SCAR0), set dirmap_index to 0 directly. */
+	const int dirmap_index = 0;
+#else
+	const int dirmap_index = ((uintptr_t)ram_addr - RAM_BASE) / ILM_BLOCK_SIZE;
+#endif
 	if (dirmap_index >= ARRAY_SIZE(config->scar_regs)) {
 		return -EFAULT; /* Past the end of RAM */
 	}
@@ -101,8 +106,10 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 
 	int irq_key = irq_lock();
 
+#if !defined(CONFIG_SOC_IT51XXX)
 	/* Ensure scratch RAM for block data access is enabled */
 	scar->h = SCARH_ENABLE;
+#endif
 	/* Copy block contents from flash into RAM */
 	memcpy(ram_addr, flash_addr, copy_sz);
 	/* Program SCAR */
@@ -116,6 +123,11 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 	}
 	scar->h = scarh_value;
 
+#ifdef CONFIG_SOC_IT51XXX
+	struct gctrl_it51xxx_regs *const gctrl_regs = GCTRL_IT51XXX_REGS_BASE;
+	/* Scratch ROM0 is 4kb size */
+	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
+#endif
 	irq_unlock(irq_key);
 	return 0;
 }

@@ -24,7 +24,7 @@
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
-#include <zephyr/dt-bindings/sensor/tmp116.h>
+#include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
 
 /****************************************
@@ -478,11 +478,11 @@ test_i2c_tmp112: tmp112@46 {
 	reg = <0x46>;
 };
 
-test_i2c_tmp116: tmp116@47 {
-	compatible = "ti,tmp116";
+test_i2c_tmp11x: tmp11x@47 {
+	compatible = "ti,tmp11x";
 	reg = <0x47>;
-	odr = <TMP116_DT_ODR_125_MS>;
-	oversampling = <TMP116_DT_OVERSAMPLING_32>;
+	odr = <TMP11X_DT_ODR_125_MS>;
+	oversampling = <TMP11X_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {

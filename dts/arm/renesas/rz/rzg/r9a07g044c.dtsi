@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/rz/rzg/r9a07g044.dtsi>
+
+/delete-node/ &scif4;
