@@ -209,6 +209,10 @@ EL1_Reset_Handler:
     mcr p15, 1, r0, c9, c1, 0
 #endif
 
+#if defined(z_arm_platform_pre_stack_init)
+    bl z_arm_platform_pre_stack_init
+#endif
+
     ldr r0, =arm_cpu_boot_params
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
