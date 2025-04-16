@@ -213,7 +213,7 @@ static int hdr_len(uint8_t type)
 
 static struct net_buf *alloc_tx_buf(uint8_t type)
 {
-	uint8_t alloc_type = type;
+	enum bt_buf_type alloc_type = type;
 	struct net_buf *buf;
 
 	switch (type) {
@@ -229,10 +229,9 @@ static struct net_buf *alloc_tx_buf(uint8_t type)
 		LOG_ERR("Invalid type: %u", type);
 		return NULL;
 	}
-	buf = bt_buf_get_tx(BT_BUF_H4, K_NO_WAIT, &alloc_type, sizeof(alloc_type));
-	if (buf && (type == H4_ST_VND_CMD)) {
-		bt_buf_set_type(buf, type);
-	}
+
+	buf = bt_buf_get_tx(alloc_type, K_NO_WAIT, NULL, 0);
+
 	return buf;
 }
 
@@ -385,8 +384,9 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 		/* Wait until a buffer is available */
 		buf = k_fifo_get(&tx_queue, K_FOREVER);
-		buf_type = bt_buf_get_type(buf);
+		buf_type = buf->data[0];
 		if (buf_type == H4_ST_VND_CMD) {
+			net_buf_pull(buf, 1);
 			len = parse_cmd(buf->data, buf->len, response);
 			err =  send_evt(response, len);
 			if (!err) {
@@ -410,7 +410,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static int h4_send(struct net_buf *buf)
 {
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 	k_fifo_put(&uart_tx_queue, buf);
 	uart_irq_tx_enable(hci_uart_dev);
 	return 0;

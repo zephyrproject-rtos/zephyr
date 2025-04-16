@@ -132,12 +132,14 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		struct net_buf *buf;
+		uint8_t type;
 
 		buf = k_fifo_get(&tx_queue, K_FOREVER);
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
 		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
 			/* Force to sent over bulk if H4 is selected */
+			(void)bt_buf_get_type(buf);
 			bt_buf_set_type(buf, BT_BUF_ACL_IN);
 		}
 
@@ -156,7 +158,8 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 			}
 		}
 
-		switch (bt_buf_get_type(buf)) {
+		type = bt_buf_get_type(buf);
+		switch (type) {
 		case BT_BUF_EVT:
 			usb_transfer_sync(
 				bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr,
@@ -170,7 +173,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 				USB_TRANS_WRITE);
 			break;
 		default:
-			LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
+			LOG_ERR("Unknown type %u", type);
 			break;
 		}
 
@@ -198,13 +201,12 @@ static void hci_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static uint16_t hci_pkt_get_len(struct net_buf *buf,
-				const uint8_t *data, size_t size)
+static uint16_t hci_pkt_get_len(uint8_t type, const uint8_t *data, size_t size)
 {
 	uint16_t len = 0;
 	size_t hdr_len = 0;
 
-	switch (bt_buf_get_type(buf)) {
+	switch (type) {
 	case BT_BUF_CMD: {
 		struct bt_hci_cmd_hdr *cmd_hdr;
 
@@ -248,19 +250,21 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 	if (buf == NULL) {
+		uint8_t type = data[0];
+
 		/*
 		 * Obtain the first chunk and determine the length
 		 * of the HCI packet.
 		 */
 		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
 		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
-			buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+			buf = bt_buf_get_tx(type, K_FOREVER, data + 1, size - 1);
 			if (!buf) {
 				LOG_ERR("Failed to allocate buffer");
 				goto restart_out_transfer;
 			}
 
-			pkt_len = hci_pkt_get_len(buf, &data[1], size - 1);
+			pkt_len = hci_pkt_get_len(type, &data[1], size - 1);
 			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
 		} else {
 			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
@@ -270,7 +274,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 				goto restart_out_transfer;
 			}
 
-			pkt_len = hci_pkt_get_len(buf, data, size);
+			pkt_len = hci_pkt_get_len(BT_BUF_ACL_OUT, data, size);
 			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
 		}
 

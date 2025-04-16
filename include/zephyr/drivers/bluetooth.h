@@ -152,7 +152,10 @@ static inline int bt_hci_close(const struct device *dev)
  * @brief Send HCI buffer to controller.
  *
  * Send an HCI packet to the controller. The packet type of the buffer
- * must be set using bt_buf_set_type().
+ * must be set using bt_buf_set_type(). The packet type is encoded as H:4,
+ * i.e. the UART transport encoding, as a prefix to the actual payload. This means
+ * that HCI drivers that use H:4 as their native encoding don't need to do any
+ * special handling of the packet type.
  *
  * @note This function must only be called from a cooperative thread.
  *

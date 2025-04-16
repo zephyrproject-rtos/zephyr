@@ -181,7 +181,7 @@ static void recover_sync_by_reset_pattern(void)
 	}
 
 	LOG_DBG("Pattern found");
-	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, h4_cmd_reset, sizeof(h4_cmd_reset));
+	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER, h4_cmd_reset, sizeof(h4_cmd_reset));
 	LOG_DBG("Fowarding reset");
 
 	err = bt_send(h2c_cmd_reset);
@@ -219,7 +219,7 @@ static void h2c_h4_transport(void)
 		LOG_DBG("h2c: h4_type %d", h4_type);
 
 		/* Allocate buf. */
-		buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, &h4_type, sizeof(h4_type));
+		buf = bt_buf_get_tx(h4_type, K_FOREVER, &h4_type, sizeof(h4_type));
 		LOG_DBG("h2c: buf %p", buf);
 
 		if (!buf) {
