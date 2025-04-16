@@ -590,69 +590,41 @@ static bool is_iface_matching(struct net_conn *conn, struct net_pkt *pkt)
 	return (net_pkt_iface(pkt) == net_context_get_iface(conn->context));
 }
 
-#if defined(CONFIG_NET_SOCKETS_PACKET)
-static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
-					struct net_conn *conn, uint8_t proto)
+#if defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW)
+static void conn_raw_socket_deliver(struct net_pkt *pkt, struct net_conn *conn,
+				    bool is_ip)
 {
-	enum net_sock_type type = net_context_get_type(conn->context);
-
-	if (proto == ETH_P_ALL) {
-		if ((type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) ||
-		    (type == SOCK_RAW && net_pkt_is_l2_processed(pkt))) {
-			return NET_CONTINUE;
-		}
-	}
-
-	/*
-	 * After l2 processed only deliver protocol matched pkt,
-	 * unless the connection protocol is all packets
-	 */
-	if (type == SOCK_DGRAM && net_pkt_is_l2_processed(pkt) &&
-	    conn->proto != ETH_P_ALL &&
-	    conn->proto != net_pkt_ll_proto_type(pkt)) {
-		return NET_CONTINUE;
-	}
-
-	if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {
-		return NET_CONTINUE;
-	}
-
-	struct net_if *pkt_iface = net_pkt_iface(pkt);
-	struct sockaddr_ll *local;
 	struct net_pkt *raw_pkt;
+	struct net_pkt_cursor cur;
 
-	local = (struct sockaddr_ll *)&conn->local_addr;
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
 
-	if (local->sll_ifindex != net_if_get_by_iface(pkt_iface)) {
-		return NET_CONTINUE;
-	}
-
-	NET_DBG("[%p] raw match found cb %p ud %p", conn, conn->cb,
-		conn->user_data);
+	NET_DBG("[%p] raw%s match found cb %p ud %p", conn, is_ip ? " IP" : "",
+		conn->cb, conn->user_data);
 
 	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
-	if (!raw_pkt) {
-		net_stats_update_per_proto_drop(pkt_iface, proto);
-		NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
-		return NET_DROP;
+	if (raw_pkt == NULL) {
+		NET_WARN("pkt cloning failed, pkt %p not delivered", pkt);
+		goto out;
 	}
 
 	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
-		net_stats_update_per_proto_drop(pkt_iface, proto);
 		net_pkt_unref(raw_pkt);
-	} else {
-		net_stats_update_per_proto_recv(pkt_iface, proto);
 	}
 
-	return NET_OK;
+out:
+	net_pkt_cursor_restore(pkt, &cur);
 }
+#endif /* defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW) */
 
+#if defined(CONFIG_NET_SOCKETS_PACKET)
 enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 {
-	bool raw_pkt_delivered = false;
+	bool raw_sock_found = false;
 	bool raw_pkt_continue = false;
+	struct sockaddr_ll *local;
 	struct net_conn *conn;
-	enum net_verdict ret;
 
 	/* Only accept input with AF_PACKET family. */
 	if (net_pkt_family(pkt) != AF_PACKET) {
@@ -685,7 +657,11 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 			 * with this packet regardless the result.
 			 */
 			raw_pkt_continue = true;
-			continue;
+			continue; /* L2 not processed yet */
+		}
+
+		if (conn->type == SOCK_RAW && net_pkt_is_l2_processed(pkt)) {
+			continue; /* L2 already processed */
 		}
 
 		if (conn->proto == 0) {
@@ -703,25 +679,23 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 
 		/* Apply protocol-specific matching criteria... */
 
-		ret = conn_raw_socket(pkt, conn, proto);
-		if (ret == NET_DROP) {
-			k_mutex_unlock(&conn_lock);
-			goto drop;
-		} else if (ret == NET_OK) {
-			raw_pkt_delivered = true;
+		if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {
+			continue;
 		}
+
+		local = (struct sockaddr_ll *)&conn->local_addr;
+		if (local->sll_ifindex != net_if_get_by_iface(net_pkt_iface(pkt))) {
+			continue;
+		}
+
+		conn_raw_socket_deliver(pkt, conn, false);
+
+		raw_sock_found = true;
 	}
 
 	k_mutex_unlock(&conn_lock);
 
-	if (raw_pkt_continue) {
-		/* When there is open connection different than AF_PACKET this
-		 * packet shall be also handled in the upper net stack layers.
-		 */
-		return NET_CONTINUE;
-	}
-
-	if (raw_pkt_delivered) {
+	if (!raw_pkt_continue && raw_sock_found) {
 		/* As one or more raw socket packets have already been delivered
 		 * in the loop above, report NET_OK.
 		 */
@@ -729,10 +703,10 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 		return NET_OK;
 	}
 
-drop:
-	net_stats_update_per_proto_drop(net_pkt_iface(pkt), proto);
-
-	return NET_DROP;
+	/* When there is open connection different than AF_PACKET this
+	 * packet shall be also handled in the upper net stack layers.
+	 */
+	return NET_CONTINUE;
 }
 #else
 enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
@@ -745,30 +719,6 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 #endif /* defined(CONFIG_NET_SOCKETS_PACKET) */
 
 #if defined(CONFIG_NET_SOCKETS_INET_RAW)
-static void conn_raw_ip_socket(struct net_pkt *pkt, struct net_conn *conn)
-{
-	struct net_pkt *raw_pkt;
-	struct net_pkt_cursor cur;
-
-	net_pkt_cursor_backup(pkt, &cur);
-	net_pkt_cursor_init(pkt);
-
-	NET_DBG("[%p] raw IP match found cb %p ud %p", conn, conn->cb,
-		conn->user_data);
-
-	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
-	if (raw_pkt == NULL) {
-		goto out;
-	}
-
-	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
-		net_pkt_unref(raw_pkt);
-	}
-
-out:
-	net_pkt_cursor_restore(pkt, &cur);
-}
-
 enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 				       union net_ip_header *ip_hdr,
 				       uint8_t proto)
@@ -810,7 +760,7 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 			continue; /* wrong local address */
 		}
 
-		conn_raw_ip_socket(pkt, conn);
+		conn_raw_socket_deliver(pkt, conn, true);
 	}
 
 	k_mutex_unlock(&conn_lock);
