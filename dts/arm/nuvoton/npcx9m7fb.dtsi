@@ -9,16 +9,16 @@
 
 / {
 	flash0: flash@10070000 {
-		reg = <0x10070000 DT_SIZE_K(320)>;
+		reg = <0x10070000 DT_SIZE_K(256)>;
 	};
 
 	flash1: flash@64000000 {
-		reg = <0x64000000 DT_SIZE_K(1024)>;
+		reg = <0x64000000 DT_SIZE_K(512)>;
 	};
 
 	sram0: memory@200c0000 {
 		compatible = "mmio-sram";
-		reg = <0x200C0000 DT_SIZE_K(64)>;
+		reg = <0x200B0000 DT_SIZE_K(128)>;
 	};
 
 	soc-id {
@@ -29,7 +29,7 @@
 &qspi_fiu0 {
 	int_flash: w25q80@0 {
 		compatible ="nuvoton,npcx-fiu-nor";
-		size = <DT_SIZE_M(1 * 8)>;
+		size = <DT_SIZE_K(512 * 8)>;
 		reg = <0>;
 		status = "okay";
 
@@ -39,4 +39,12 @@
 		pinctrl-0 = <&int_flash_sl>;
 		pinctrl-names = "default";
 	};
+};
+
+/*
+ * Raising the interrupt priority of the MIWU group, which owns SHI CS, to the same as
+ * SHI's priority.
+ */
+&group_f1 {
+	irq-prio = <1>;
 };
