@@ -1,2 +1,3 @@
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_MCTP_UART mctp_uart.c)
+zephyr_library_sources_ifdef(CONFIG_MCTP_I2C_GPIO mctp_i2c_controller_gpio.c)
