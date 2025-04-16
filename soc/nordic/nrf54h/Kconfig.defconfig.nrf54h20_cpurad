@@ -14,4 +14,7 @@ config NRF_REGTOOL_GENERATE_UICR
 config PM
 	default y
 
+config PINCTRL_NRF_CUSTOM_HOOKS
+	default y
+
 endif # SOC_NRF54H20_CPURAD
