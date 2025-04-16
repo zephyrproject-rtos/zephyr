@@ -1399,7 +1399,7 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 
 static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 {
-	static struct bt_sco_chan_ops ops = {
+	static const struct bt_sco_chan_ops ops = {
 		.connected = hfp_ag_sco_connected,
 		.disconnected = hfp_ag_sco_disconnected,
 	};
@@ -3958,7 +3958,7 @@ static int hfp_ag_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
 		struct bt_sco_chan **chan)
 {
-	static struct bt_sco_chan_ops ops = {
+	static const struct bt_sco_chan_ops ops = {
 		.connected = hfp_ag_sco_connected,
 		.disconnected = hfp_ag_sco_disconnected,
 	};
