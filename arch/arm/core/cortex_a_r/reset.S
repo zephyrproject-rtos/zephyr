@@ -203,6 +203,10 @@ EL1_Reset_Handler:
 
 #endif /* CONFIG_DCLS */
 
+#if defined(CONFIG_PLATFORM_SPECIFIC_PRE_STACK_INIT)
+    bl z_arm_platform_pre_stack_init
+#endif
+
 #if defined(CONFIG_CPU_CORTEX_R52_CACHE_SEGREGATION)
     ldr r0, =IMP_CSCTLR(CONFIG_CPU_CORTEX_R52_ICACHE_FLASH_WAY,
                         CONFIG_CPU_CORTEX_R52_DCACHE_FLASH_WAY)
