@@ -318,7 +318,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
+      revision: d5b95fdd0260e8189e788d40d2863d1e2d4be159
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: eeceee739252cf2d56a5ad9356553d87aae8c57d
