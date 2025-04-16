@@ -1316,6 +1316,18 @@ Release Notes:
   labels:
     - "area: DAI"
 
+"Drivers: Debug":
+  status: maintained
+  maintainers:
+    - asmellby
+  collaborators:
+    - nordic-krch
+  files:
+    - drivers/debug/
+    - dts/bindings/debug/
+  labels:
+    - "area: Debugging"
+
 "Drivers: Devmux":
   status: maintained
   maintainers:
