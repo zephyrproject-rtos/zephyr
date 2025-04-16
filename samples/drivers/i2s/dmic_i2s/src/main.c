@@ -18,11 +18,9 @@ LOG_MODULE_REGISTER(dmic_i2s_sample, LOG_LEVEL_INF);
 
 #define SAMPLE_FREQUENCY 16000
 
-#define SAMPLE_BIT_WIDTH    (16U)
-//#define SAMPLE_BIT_WIDTH    (24U)
-//#define SAMPLE_BIT_WIDTH    (32U)
+#define SAMPLE_BIT_WIDTH (24U) // 16U, 24U or 32U
 
-#define NUMBER_OF_CHANNELS 2
+#define NUMBER_OF_CHANNELS 2 // 1 or 2 channels supported
 
 #define DMIC_INPUT_ENABLE  1
 #define I2S_TX_RX_LOOPBACK 0
@@ -62,7 +60,7 @@ static bool check_i2s_data(uint32_t rxtx_sample_num, void *rx_databuf)
 #if (SAMPLE_BIT_WIDTH == 16)
 	uint16_t *rx_databuf_16 = (uint16_t *)rx_databuf;
 
-    for (i = 0; i < rxtx_sample_num; i++) {
+    	for (i = 0; i < rxtx_sample_num; i++) {
 		if (rx_databuf_16[i] == 0xCD00) {
 			index_0 = i;
 			break;
@@ -80,7 +78,7 @@ static bool check_i2s_data(uint32_t rxtx_sample_num, void *rx_databuf)
 #else
 	uint32_t *rx_databuf_32 = (uint32_t *)rx_databuf;
 
-    for (i = 0; i < rxtx_sample_num; i++) {
+    	for (i = 0; i < rxtx_sample_num; i++) {
 		if (rx_databuf_32[i] == 0xCD0000) {
 			index_0 = i;
 			break;

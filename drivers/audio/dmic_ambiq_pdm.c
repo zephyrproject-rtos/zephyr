@@ -27,6 +27,7 @@ struct dmic_ambiq_pdm_data {
 	int inst_idx;
 	uint32_t block_size;
 	uint32_t sample_num;
+	uint8_t frame_size_bytes;
 	am_hal_pdm_config_t pdm_cfg;
 	am_hal_pdm_transfer_t pdm_transfer;
 
@@ -97,8 +98,8 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 		return -EINVAL;
 	}
 
-	if (stream->pcm_width != 16) {
-		LOG_ERR("Only 16-bit samples are supported");
+	if ((stream->pcm_width != 16) && (stream->pcm_width != 24)) {
+ 		LOG_ERR("Only 16-bit or 24-bit samples are supported");
 		return -EINVAL;
 	}
 
@@ -108,10 +109,11 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 
 	data->pdm_cfg.ePDMClkSpeed = AM_HAL_PDM_CLK_HFRC_24MHZ;
 
-	//  1.5MHz PDM CLK OUT:
-	//      AM_HAL_PDM_CLK_24MHZ, AM_HAL_PDM_MCLKDIV_1, AM_HAL_PDM_PDMA_CLKO_DIV7
-	//  15.625KHz 24bit Sampling:
-	//      DecimationRate = 48
+	/*  1.5MHz PDM CLK OUT:
+	 *      AM_HAL_PDM_CLK_24MHZ, AM_HAL_PDM_MCLKDIV_1, AM_HAL_PDM_PDMA_CLKO_DIV7
+	 *  15.625KHz 24bit Sampling:
+	 *      DecimationRate = 48
+	 */
 	data->pdm_cfg.eClkDivider = AM_HAL_PDM_MCLKDIV_1;
 	data->pdm_cfg.ePDMAClkOutDivder = AM_HAL_PDM_PDMA_CLKO_DIV7;
 	data->pdm_cfg.ui32DecimationRate = 48;
@@ -147,14 +149,19 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 	config->irq_config_func();
 
 	data->block_size = stream->block_size;
-	data->sample_num = stream->block_size / sizeof(int16_t);
+
+ 	if (stream->pcm_width == 16) {
+ 		data->frame_size_bytes = 2;
+ 	} else if (stream->pcm_width == 24) {
+ 		data->frame_size_bytes = 4;
+ 	}
+
+ 	data->sample_num = stream->block_size / data->frame_size_bytes;
 	data->mem_slab = stream->mem_slab;
 
 	data->dmic_state = DMIC_STATE_CONFIGURED;
 
-	//
-	// Configure DMA and target address.
-	//
+	/* Configure DMA and target address.*/
 	data->pdm_transfer.ui32TotalCount = data->sample_num * sizeof(uint32_t);
 	data->pdm_transfer.ui32TargetAddr = (uint32_t)(pdm_dma_tcb_buf[data->inst_idx].buf);
 	data->pdm_transfer.ui32TargetAddrReverse =
@@ -167,9 +174,7 @@ static void am_pdm_dma_trigger(const struct device *dev)
 {
 	struct dmic_ambiq_pdm_data *data = dev->data;
 
-	//
-	// Start the data transfer.
-	//
+	/* Start the data transfer. */
 	am_hal_pdm_dma_start(data->pdm_handler, &(data->pdm_transfer));
 }
 
@@ -226,25 +231,29 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 
 		uint32_t *pdm_data_buf = (uint32_t *)am_hal_pdm_dma_get_buffer(data->pdm_handler);
 
-		//
-		// PDM DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
-		// block_size
-		//
+		/*
+		 * PDM DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
+		 * block_size
+		 */
 		am_hal_cachectrl_dcache_invalidate(
 			&(am_hal_cachectrl_range_t){(uint32_t)pdm_data_buf, data->block_size * 2},
 			false);
 
-		//
-		// Re-arrange data
-		//
-		uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
-		for (uint32_t i = 0; i < data->sample_num; i++) {
-			temp1[2 * i] = (pdm_data_buf[i] & 0xFF00) >> 8U;
-			temp1[2 * i + 1] = (pdm_data_buf[i] & 0xFF0000) >> 16U;
+		/* Re-arrange data */
+		if (data->frame_size_bytes == 2) {
+ 			uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
+ 			for (uint32_t i = 0; i < data->sample_num; i++) {
+ 				temp1[2 * i] = (pdm_data_buf[i] & 0xFF00) >> 8U;
+ 				temp1[2 * i + 1] = (pdm_data_buf[i] & 0xFF0000) >> 16U;
+ 			}
+ 			*buffer = temp1;
+ 		} else if (data->frame_size_bytes == 4) {
+ 			memcpy((void *)data->mem_slab_buffer, (void *)pdm_data_buf,
+ 			       data->block_size);
+ 			*buffer = (void *)data->mem_slab_buffer;
 		}
-		*buffer = temp1;
 
-		// LOG_DBG("Released buffer %p", *buffer);
+		/* LOG_DBG("Released buffer %p", *buffer); */
 
 		*size = data->block_size;
 	}
