@@ -30,6 +30,8 @@ struct mspi_ti_k3_config {
 	const struct pinctrl_dev_config *pinctrl;
 	const uint32_t fifo_addr;
 	const uint32_t sram_allocated_for_read;
+
+	const struct mspi_ti_k3_timing_cfg initial_timing_cfg;
 };
 
 struct mspi_ti_k3_data {
@@ -183,6 +185,7 @@ static int mspi_ti_k3_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	const struct mspi_ti_k3_config *config = dev->config;
+	const struct mspi_ti_k3_timing_cfg *timing_config = &config->initial_timing_cfg;
 	struct mspi_ti_k3_data *data = dev->data;
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(dev);
 	int ret;
@@ -251,10 +254,10 @@ static int mspi_ti_k3_init(const struct device *dev)
 	MSPI_TI_K3_REG_WRITE(0, CONFIG, RESET_PIN, base_addr);
 
 	/* general clock cycle delays */
-	MSPI_TI_K3_REG_WRITE(TI_K3_OSPI_DEFAULT_DELAY, DEV_DELAY, D_NSS, base_addr);
-	MSPI_TI_K3_REG_WRITE(TI_K3_OSPI_DEFAULT_DELAY, DEV_DELAY, D_BTWN, base_addr);
-	MSPI_TI_K3_REG_WRITE(TI_K3_OSPI_DEFAULT_DELAY, DEV_DELAY, D_AFTER, base_addr);
-	MSPI_TI_K3_REG_WRITE(TI_K3_OSPI_DEFAULT_DELAY, DEV_DELAY, D_INIT, base_addr);
+	MSPI_TI_K3_REG_WRITE(timing_config->nss, DEV_DELAY, D_NSS, base_addr);
+	MSPI_TI_K3_REG_WRITE(timing_config->btwn, DEV_DELAY, D_BTWN, base_addr);
+	MSPI_TI_K3_REG_WRITE(timing_config->after, DEV_DELAY, D_AFTER, base_addr);
+	MSPI_TI_K3_REG_WRITE(timing_config->init, DEV_DELAY, D_INIT, base_addr);
 
 	/* set trigger reg address and range to 0 */
 	MSPI_TI_K3_REG_WRITE(0, IND_AHB_ADDR_TRIGGER, ADDR, base_addr);
@@ -735,12 +738,50 @@ exit:
 	return ret;
 }
 
+#ifdef CONFIG_MSPI_TIMING
+int mspi_ti_k3_timing(const struct device *controller, const struct mspi_dev_id *dev_id,
+		      const uint32_t param_mask, void *timing_cfg)
+{
+	ARG_UNUSED(dev_id);
+
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	struct mspi_ti_k3_data *data = controller->data;
+	struct mspi_ti_k3_timing_cfg *timing = timing_cfg;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (param_mask & MSPI_TI_K3_TIMING_PARAM_NSS) {
+		MSPI_TI_K3_REG_WRITE(timing->nss, DEV_DELAY, D_NSS, base_addr);
+	}
+
+	if (param_mask & MSPI_TI_K3_TIMING_PARAM_BTWN) {
+		MSPI_TI_K3_REG_WRITE(timing->btwn, DEV_DELAY, D_BTWN, base_addr);
+	}
+
+	if (param_mask & MSPI_TI_K3_TIMING_PARAM_AFTER) {
+		MSPI_TI_K3_REG_WRITE(timing->after, DEV_DELAY, D_AFTER, base_addr);
+	}
+
+	if (param_mask & MSPI_TI_K3_TIMING_PARAM_INIT) {
+		MSPI_TI_K3_REG_WRITE(timing->init, DEV_DELAY, D_INIT, base_addr);
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+}
+#endif /* CONFIG_MSPI_TIMING */
+
 static DEVICE_API(mspi, mspi_ti_k3_driver_api) = {
 	.config = NULL,
 	.dev_config = mspi_ti_k3_dev_config,
 	.xip_config = NULL,
 	.scramble_config = NULL,
+#ifdef CONFIG_MSPI_TIMING
+	.timing_config = mspi_ti_k3_timing,
+#else
 	.timing_config = NULL,
+#endif
 	.get_channel_status = NULL,
 	.register_callback = NULL,
 	.transceive = mspi_ti_k3_transceive,
@@ -758,7 +799,16 @@ static DEVICE_API(mspi, mspi_ti_k3_driver_api) = {
 		.mspi_config = MSPI_CONFIG(n),                                                     \
 		.fifo_addr = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), sram_allocated_for_read),       \
-	};                                                                                         \
+		.initial_timing_cfg = {                                                            \
+			.nss = DT_PROP_OR(DT_DRV_INST(n), init_nss_delay,                          \
+					  TI_K3_OSPI_DEFAULT_DELAY),                               \
+			.btwn = DT_PROP_OR(DT_DRV_INST(n), init_btwn_delay,                        \
+					   TI_K3_OSPI_DEFAULT_DELAY),                              \
+			.after = DT_PROP_OR(DT_DRV_INST(n), init_after_delay,                      \
+					    TI_K3_OSPI_DEFAULT_DELAY),                             \
+			.init = DT_PROP_OR(DT_DRV_INST(n), init_init_delay,                        \
+					   TI_K3_OSPI_DEFAULT_DELAY),                              \
+		}};                                                                                \
 	static struct mspi_ti_k3_data mspi_ti_k3_data##n = {};                                     \
 	DEVICE_DT_INST_DEFINE(n, mspi_ti_k3_init, NULL, &mspi_ti_k3_data##n,                       \
 			      &mspi_ti_k3_config##n, PRE_KERNEL_2, CONFIG_MSPI_INIT_PRIORITY,      \

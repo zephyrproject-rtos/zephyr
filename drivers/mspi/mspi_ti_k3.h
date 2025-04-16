@@ -10,6 +10,37 @@
 #include "zephyr/kernel.h"
 #include "zephyr/sys/util_macro.h"
 
+/**
+ * Timing configuration for the TI K3 MSPI peripheral.
+ *
+ * These values are put into the DEV_DELAY register and the names match the
+ * register parts.
+ */
+struct mspi_ti_k3_timing_cfg {
+	/* amount of clock cycles the CS pin is deasserted between transactions */
+	uint8_t nss;
+	/* amount of clock cycles no peripheral is selected during switching */
+	uint8_t btwn;
+	/* amount of clock cycles chip select is held after the last bit was
+	 * transmitted
+	 */
+	uint8_t after;
+	/* amount of clock cycles after CS is asserted and the first bit is
+	 * transmitted
+	 */
+	uint8_t init;
+};
+
+/**
+ * Enum which timing parameters should be modified
+ */
+enum mspi_ti_k3_timing_param {
+	MSPI_TI_K3_TIMING_PARAM_NSS = BIT(0),
+	MSPI_TI_K3_TIMING_PARAM_BTWN = BIT(1),
+	MSPI_TI_K3_TIMING_PARAM_AFTER = BIT(2),
+	MSPI_TI_K3_TIMING_PARAM_INIT = BIT(3)
+};
+
 /* Not implemented mspi_dev_cfg bits */
 #define TI_K3_OSPI_NOT_IMPLEMENT_DEV_CONFIG_PARAMS                                                 \
 	(MSPI_DEVICE_CONFIG_FREQUENCY | MSPI_DEVICE_CONFIG_MEM_BOUND |                             \

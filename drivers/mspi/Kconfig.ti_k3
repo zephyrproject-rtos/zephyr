@@ -8,5 +8,6 @@ config MSPI_TI_K3
 	# GPIO is required for ce_gpios despite the field being ignored
 	select GPIO
 	select PINCTRL
+	select MSPI_TIMING
 	help
 	  Enable driver for Ti Keystone 3 devices
