@@ -1,0 +1,33 @@
+# Copyright (c) Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_TI_TMS570LC43X
+
+config SYS_CLOCK_EXISTS
+	default n
+
+config MULTITHREADING
+	default n
+
+config GEN_SW_ISR_TABLE
+	default n
+
+config GEN_ISR_TABLES
+	default n
+
+# launchpad is 16MHz
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 16000000
+
+config FLASH_BASE_ADDRESS
+	default 1000000
+
+config FLASH_SIZE
+	default 4096
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 127
+
+endif # SOC_TI_TMS570LC43X
