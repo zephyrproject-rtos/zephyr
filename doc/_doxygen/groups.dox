@@ -39,6 +39,12 @@
 @{
 @}
 
+@brief Debug Services
+@defgroup debug Debug
+@ingroup os_services
+@{
+@}
+
 @brief Connectivity
 @defgroup connectivity Connectivity
 @{
