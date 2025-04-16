@@ -19,6 +19,15 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     message(FATAL_ERROR "SPSDK Image generating failed: requires Linux host!")
   endif()
   set(FIRMWARE_RELEASE "imx95-19x19-lpddr5-evk-boot-firmware-0.1")
+  # Parse SPSDK version
+  execute_process(
+    COMMAND spsdk --version
+    OUTPUT_VARIABLE SPSDK_VERSION_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" SPSDK_VERSION "${SPSDK_VERSION_OUTPUT}")
+  message(STATUS "SPSDK version is ${SPSDK_VERSION}")
+
   if(CONFIG_BOARD_IMX95_EVK_MIMX9596_M7)
     set(AHAB_CONFIG_FILE "imx95_evk_mimx9596_m7_ahab.yaml")
 
@@ -101,8 +110,16 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND chmod +x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin
       COMMAND ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin --auto-accept --force
-      COMMAND nxpimage bootable-image merge -c ${CMAKE_BINARY_DIR}/zephyr/imx95_evk_mimx9596_a55_ahab_flash_template.yaml -o flash.bin
     )
+    if(SPSDK_VERSION VERSION_GREATER_EQUAL "3.0.0")
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND nxpimage bootable-image export -c ${CMAKE_BINARY_DIR}/zephyr/imx95_evk_mimx9596_a55_ahab_flash_template.yaml -o flash.bin
+      )
+    else()
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND nxpimage bootable-image merge -c ${CMAKE_BINARY_DIR}/zephyr/imx95_evk_mimx9596_a55_ahab_flash_template.yaml -o flash.bin
+      )
+    endif()
   else()
     message(FATAL_ERROR "SPSDK Image not supported on the platform!")
   endif()
