@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "connection.h"
 #include "packet_socket.h"
 
-enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
+enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint16_t proto)
 {
 	sa_family_t orig_family;
 	enum net_verdict net_verdict;
