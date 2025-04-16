@@ -153,20 +153,6 @@ After this change, the ENET will stop functioning on the board.
 
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
-=======
-RTC Sub-Second Counter
-======================
-
-To use the RTC sub-second counter which is clocked at a 32kHZ rate, you first need to make the
-following modifications to the board hardware:
-
-1. Move the short on SJ21 from 1 and 2 to short 2 and 3.
-2. Move the short on SJ22 from 1 and 2 to short 2 and 3.
-
-After you make this change, the ENET will stop functioning on the board.
-
-Resources
-*********
 
 Resources
 *********
