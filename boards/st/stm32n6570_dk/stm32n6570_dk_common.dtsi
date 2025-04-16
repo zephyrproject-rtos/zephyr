@@ -188,7 +188,7 @@
 			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
-	cd-gpios = <&gpion 8 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 };
 
