@@ -479,8 +479,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			case HCI_COMMAND_PKT:
 			case HCI_ACLDATA_PKT:
 			case HCI_ISODATA_PKT:
-				h5.rx_buf = bt_buf_get_tx(type, K_NO_WAIT,
-							  &type, sizeof(type));
+				h5.rx_buf = bt_buf_get_tx(type, K_NO_WAIT, NULL, 0);
 				if (!h5.rx_buf) {
 					LOG_WRN("No available data buffers");
 					h5_reset_rx();

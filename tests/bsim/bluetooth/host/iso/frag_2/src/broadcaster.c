@@ -269,9 +269,10 @@ int __real_bt_send(struct net_buf *buf);
 
 int __wrap_bt_send(struct net_buf *buf)
 {
+	uint8_t type = bt_buf_get_type(buf);
 	struct bt_hci_iso_hdr *hci_hdr = (void *)buf->data;
 
-	if (bt_buf_get_type(buf) == BT_BUF_ISO_OUT) {
+	if (type == BT_BUF_ISO_OUT) {
 		uint16_t handle = sys_le16_to_cpu(hci_hdr->handle);
 		uint8_t flags = bt_iso_flags(handle);
 		uint8_t pb_flag = bt_iso_flags_pb(flags);
@@ -281,6 +282,8 @@ int __wrap_bt_send(struct net_buf *buf)
 			bt_conn_suspend_tx(true);
 		}
 	}
+
+	bt_buf_set_type(buf, type);
 
 	return __real_bt_send(buf);
 }

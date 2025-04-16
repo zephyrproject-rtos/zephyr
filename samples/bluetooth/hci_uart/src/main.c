@@ -150,8 +150,7 @@ static void rx_isr(void)
 				 * interrupt. On failed allocation state machine
 				 * is reset.
 				 */
-				buf = bt_buf_get_tx(type, K_NO_WAIT,
-						    &type, sizeof(type));
+				buf = bt_buf_get_tx(type, K_NO_WAIT, NULL, 0);
 				if (!buf) {
 					LOG_ERR("No available command buffers!");
 					state = ST_IDLE;

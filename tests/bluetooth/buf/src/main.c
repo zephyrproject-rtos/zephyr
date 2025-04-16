@@ -44,7 +44,8 @@ ZTEST(test_buf_data_api, test_buf_freed_cb)
 	 */
 	err = k_sem_take(&rx_sem, K_NO_WAIT);
 	zassert_equal(err, 0, "Timeout while waiting for event buffer to be freed");
-	zassert_equal(BT_BUF_EVT, BT_BUF_EVT & freed_buf_type, "Event buffer wasn't freed");
+	zassert_equal(BIT(BT_BUF_EVT), BIT(BT_BUF_EVT) & freed_buf_type,
+		      "Event buffer wasn't freed");
 
 	/* Test that the callback is called for the BT_BUF_ACL_IN type */
 	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
@@ -56,7 +57,8 @@ ZTEST(test_buf_data_api, test_buf_freed_cb)
 	 */
 	err = k_sem_take(&rx_sem, K_NO_WAIT);
 	zassert_equal(err, 0, "Timeout while waiting for ACL buffer to be freed");
-	zassert_equal(BT_BUF_ACL_IN, BT_BUF_ACL_IN & freed_buf_type, "ACL buffer wasn't freed");
+	zassert_equal(BIT(BT_BUF_ACL_IN), BIT(BT_BUF_ACL_IN) & freed_buf_type,
+		      "ACL buffer wasn't freed");
 
 	/* Test that the callback is called for the BT_BUF_ISO_IN type */
 	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
@@ -68,5 +70,6 @@ ZTEST(test_buf_data_api, test_buf_freed_cb)
 	 */
 	err = k_sem_take(&rx_sem, K_NO_WAIT);
 	zassert_equal(err, 0, "Timeout while waiting for ISO buffer to be freed");
-	zassert_equal(BT_BUF_ISO_IN, BT_BUF_ISO_IN & freed_buf_type, "ISO buffer wasn't freed");
+	zassert_equal(BIT(BT_BUF_ISO_IN), BIT(BT_BUF_ISO_IN) & freed_buf_type,
+		      "ISO buffer wasn't freed");
 }

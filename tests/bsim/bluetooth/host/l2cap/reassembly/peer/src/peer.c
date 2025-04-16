@@ -70,7 +70,6 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	LOG_DBG("buf %p", buf);
 
 	net_buf_reserve(buf, BT_BUF_RESERVE);
-
 	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
@@ -236,9 +235,10 @@ static void recv(struct net_buf *buf)
 {
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "HCI RX");
 
+	uint8_t type = bt_buf_get_type(buf);
 	uint8_t code = buf->data[0];
 
-	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
+	if (type == BT_BUF_EVT) {
 		switch (code) {
 		case BT_HCI_EVT_CMD_COMPLETE:
 		case BT_HCI_EVT_CMD_STATUS:
@@ -265,7 +265,7 @@ static void recv(struct net_buf *buf)
 		return;
 	}
 
-	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
+	if (type == BT_BUF_ACL_IN) {
 		handle_acl(buf);
 		net_buf_unref(buf);
 		return;

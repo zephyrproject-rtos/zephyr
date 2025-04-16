@@ -99,8 +99,7 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 	if (buf) {
 		/* Increase reserved space for headers */
 		net_buf_reset(buf);
-		net_buf_reserve(buf, BT_BUF_RESERVE + SDU_HCI_HDR_SIZE + net_buf_headroom(buf));
-		bt_buf_set_type(buf, BT_BUF_ISO_IN);
+		net_buf_reserve(buf, BT_BUF_RESERVE + SDU_HCI_HDR_SIZE);
 
 		sdu_buffer->dbuf = buf;
 		sdu_buffer->size = net_buf_tailroom(buf);
@@ -198,6 +197,8 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
+
+		bt_buf_set_type(buf, BT_BUF_ISO_IN);
 
 		/* send fragment up the chain */
 		data->recv(dev, buf);

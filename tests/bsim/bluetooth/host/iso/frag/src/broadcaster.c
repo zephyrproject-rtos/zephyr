@@ -245,11 +245,15 @@ int __real_bt_send(struct net_buf *buf);
 
 int __wrap_bt_send(struct net_buf *buf)
 {
+	uint8_t type = bt_buf_get_type(buf);
+
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "h->c");
 
-	if (bt_buf_get_type(buf) == BT_BUF_ISO_OUT) {
+	if (type == BT_BUF_ISO_OUT) {
 		validate_no_iso_frag(buf);
 	}
+
+	bt_buf_set_type(buf, type);
 
 	return __real_bt_send(buf);
 }
