@@ -56,13 +56,28 @@ static void mspi_ti_k3_set_bits_shifted(const uint32_t value, const uint32_t num
 	sys_write32(tmp, address);
 }
 
+/**
+ * Set value in part of a register. The reg is the name of the register where
+ * content should be set and field is the field that should be changed.  It is
+ * implemented via macro concatenation to prevent overly long code. An
+ * explanation of how the registers / fields are named are in the corresponding
+ * header file.
+ */
 #define MSPI_TI_K3_REG_WRITE(value, reg, field, base_addr)                                         \
 	mspi_ti_k3_set_bits_shifted(value, TI_K3_OSPI_##reg##_##field##_FLD_SIZE,                  \
 				    TI_K3_OSPI_##reg##_##field##_FLD_OFFSET,                       \
 				    base_addr + TI_K3_OSPI_##reg##_REG)
 
+/**
+ * Read an entire register by name. Short version for sys_read32 with base_addr and offset
+ */
 #define MSPI_TI_K3_REG_READ(reg, base_addr) sys_read32(base_addr + TI_K3_OSPI_##reg##_REG)
 
+/**
+ * Read part of a register. This is done via macro concatenation to allow
+ * shorter code. The reg is the name of the register from which should be read
+ * and the field is which field of the register should be extracted.
+ */
 #define MSPI_TI_K3_REG_READ_MASKED(reg, field, base_addr)                                          \
 	((sys_read32(base_addr + TI_K3_OSPI_##reg##_REG) >>                                        \
 	  TI_K3_OSPI_##reg##_##field##_FLD_OFFSET) &                                               \

@@ -59,6 +59,17 @@ enum mspi_ti_k3_timing_param {
 #define TI_K3_OSPI_TIME_BETWEEN_RETRIES        K_MSEC(TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
 #define TI_K3_OSPI_GET_NUM_RETRIES(timeout_ms) (timeout_ms / TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
 
+/*
+ * General register naming:
+ * Since the driver uses macro concatention the register names need to be in a specific format.
+ * The offsets from the base addresses are named TI_K3_OSPI_[REGISTER_NAME]_REG.
+ *
+ * For the individual fields the offset and length of the field must be
+ * specified. They follow the format:
+ * Field offset:	TI_K3_OSPI_[REGISTER_NAME]_[FIELD_NAME]_FLD_OFFSET
+ * Field size in bits:	TI_K3_OSPI_[REGISTER_NAME]_[FIELD_NAME]_FLD_SIZE
+ */
+
 /* General register offsets */
 #define TI_K3_OSPI_CONFIG_REG                        0x0u
 #define TI_K3_OSPI_DEV_INSTR_RD_CONFIG_REG           0x4u
