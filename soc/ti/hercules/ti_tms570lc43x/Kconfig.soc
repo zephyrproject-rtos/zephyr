@@ -1,0 +1,23 @@
+# Copyright (c) 2024 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TI_TMS570
+	bool
+	select SOC_FAMILY_TI_HERCULES
+	help
+	  TI Hercules family
+
+config SOC_TI_TMS570LC43X
+	bool
+	select SOC_SERIES_TI_TMS570
+	help
+	  TI TMS570LC43X
+
+config HAS_TMS570_HALCOGEN_CODE
+	bool
+
+config SOC_SERIES
+	default "ti_tms570" if SOC_SERIES_TI_TMS570
+
+config SOC
+	default "ti_tms570lc43x" if SOC_TI_TMS570LC43X
