@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP bindings to an I2C controller with GPIO.
+
+compatible: "zephyr,mctp-i2c-gpio-controller"
+
+properties:
+  i2c:
+    type: phandle
+    description: |
+      I2C controller that is used as an MCTP bus.
+
+  endpoint-ids:
+    type: array
+    description: |
+      Set of matching MCTP endpoint ids
+
+  endpoint-addrs:
+    type: array
+    description: |
+      I2C addresses of endpoints
+
+  endpoint-gpios:
+    type: phandle-array
+    description: |
+      Set of GPIOs connected to the endpoints, positionally must match endpoint-mapping.
