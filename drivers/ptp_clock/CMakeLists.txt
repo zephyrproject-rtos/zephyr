@@ -6,3 +6,4 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK ptp_clock.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET ptp_clock_nxp_enet.c)
+zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_HA1588 ptp_clock_ha1588.c)
