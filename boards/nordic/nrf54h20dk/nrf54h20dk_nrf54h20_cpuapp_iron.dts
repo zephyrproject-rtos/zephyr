@@ -43,3 +43,5 @@ slot2_partition: &cpurad_slot0_partition {
 slot3_partition: &cpurad_slot1_partition {
 	label = "image-3";
 };
+
+uicr: &cpuapp_uicr {};
