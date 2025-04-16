@@ -75,7 +75,7 @@ int mspi_ti_k3_wait_for_idle(const struct device *controller)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
 	uint32_t idle = MSPI_TI_K3_REG_READ_MASKED(CONFIG, IDLE, base_addr);
-	uint32_t retries = TI_K3_OSPI_GET_NUM_RETRIES(TI_K3_OSPI_DEFAULT_TIMEOUT_MS);
+	uint32_t retries = TI_K3_OSPI_GET_NUM_RETRIES(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE);
 
 	while (idle == 0 && retries > 0) {
 		k_sleep(TI_K3_OSPI_TIME_BETWEEN_RETRIES);
@@ -502,6 +502,11 @@ static int mspi_ti_k3_transceive(const struct device *controller, const struct m
 		return ret;
 	}
 
+	if (req->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
+		LOG_ERR("Request timeout exceeds configured maximum in Kconfig");
+		return -EINVAL;
+	}
+
 	ret = k_mutex_lock(&data->lock, K_MSEC(req->timeout));
 	if (ret < 0) {
 		return ret;
@@ -627,7 +632,12 @@ int mspi_ti_k3_dev_config(const struct device *controller, const struct mspi_dev
 	struct mspi_ti_k3_data *data = controller->data;
 	int ret = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE));
+
+	if (ret < 0) {
+		LOG_ERR("Error waiting for MSPI controller lock for changing device config");
+		return ret;
+	}
 
 	if (param_mask & TI_K3_OSPI_NOT_IMPLEMENT_DEV_CONFIG_PARAMS) {
 		LOG_ERR("Device config includes non implemented features");
@@ -747,8 +757,14 @@ int mspi_ti_k3_timing(const struct device *controller, const struct mspi_dev_id 
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
 	struct mspi_ti_k3_data *data = controller->data;
 	struct mspi_ti_k3_timing_cfg *timing = timing_cfg;
+	int ret;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE));
+
+	if (ret < 0) {
+		LOG_ERR("Error waiting for MSPI controller lock for changing timing");
+		return ret;
+	}
 
 	if (param_mask & MSPI_TI_K3_TIMING_PARAM_NSS) {
 		MSPI_TI_K3_REG_WRITE(timing->nss, DEV_DELAY, D_NSS, base_addr);

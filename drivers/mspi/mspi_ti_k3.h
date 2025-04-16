@@ -57,7 +57,6 @@ enum mspi_ti_k3_timing_param {
 /* Timeout calculations and default timeout values */
 #define TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS     10
 #define TI_K3_OSPI_TIME_BETWEEN_RETRIES        K_MSEC(TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
-#define TI_K3_OSPI_DEFAULT_TIMEOUT_MS          100
 #define TI_K3_OSPI_GET_NUM_RETRIES(timeout_ms) (timeout_ms / TI_K3_OSPI_TIME_BETWEEN_RETRIES_MS)
 
 /* General register offsets */
