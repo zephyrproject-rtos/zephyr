@@ -187,8 +187,8 @@ static int mspm0_capture_configure(const struct device *dev,
 	case PWM_CAPTURE_TYPE_PULSE:
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
-		/* CCD1 event */ 
-		intr_mask = 0x2 << MSPM0_CC_INTR_BIT_OFFSET;
+		/* CCD1/CCD0 event for capture index 0/1 respectively */
+		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
 		break;
 
 	default:
@@ -235,8 +235,8 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_PULSE:
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
-		/* CCD1 event */ 
-		intr_mask = 0x2 << MSPM0_CC_INTR_BIT_OFFSET;
+		/* CCD1/CCD0 event for capture index 0/1 respectively */
+		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
 		break;
 
 	default:
@@ -276,8 +276,8 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_PULSE:
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
-		/* CCD1 event */ 
-		intr_mask = 0x2 << MSPM0_CC_INTR_BIT_OFFSET;
+		/* CCD1/CCD0 event for capture index 0/1 respectively */
+		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
 		break;
 
 	default:
@@ -360,7 +360,7 @@ static void mspm0_cc_isr(const struct device *dev)
 	if (data->flags & PWM_CAPTURE_TYPE_PERIOD) {
 		period = data->period - DL_Timer_getCaptureCompareValue(
 						config->base,
-						DL_TIMER_CC_1_INDEX);
+						!(config->cc_idx));
 	}
 
 	if (data->flags & PWM_CAPTURE_TYPE_PULSE ||
