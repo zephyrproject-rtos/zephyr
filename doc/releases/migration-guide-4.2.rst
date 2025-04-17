@@ -296,6 +296,10 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
+* :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
+  the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
+  is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+
 SPI
 ===
 
