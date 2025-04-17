@@ -13,6 +13,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Virtio Interface
+ * @defgroup virtio_interface Virtio Interface
+ * @{
+ */
+
 
 /**
  * Callback used during virtqueue enumeration
