@@ -85,8 +85,9 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 	cfg.ui32InterruptValue = data->timeout;
 	cfg.bResetEnable = data->reset;
 	cfg.ui32ResetValue = data->timeout;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	cfg.bAlertOnDSPReset = false;
-
+#endif
 	am_hal_wdt_config(AM_HAL_WDT_MCU, &cfg);
 	am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
 	am_hal_wdt_start(AM_HAL_WDT_MCU, false);
