@@ -136,6 +136,7 @@ enum {
 	BT_HFP_AG_CREATING_SCO,  /* SCO is creating */
 	BT_HFP_AG_VRE_ACTIVATE,  /* VRE is activated */
 	BT_HFP_AG_VRE_R2A,       /* HF is ready to accept audio */
+	BT_HGP_AG_ONGOING_CALLS, /* Waiting ongoing calls */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
@@ -239,6 +240,8 @@ struct bt_hfp_ag {
 	/* ongoing calls */
 	struct bt_hfp_ag_ongoing_call ongoing_calls[CONFIG_BT_HFP_AG_MAX_CALLS];
 	size_t ongoing_call_count;
+	/* ongoing calls work */
+	struct k_work_delayable ongoing_call_work;
 
 	/* last dialing number and type */
 	char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
