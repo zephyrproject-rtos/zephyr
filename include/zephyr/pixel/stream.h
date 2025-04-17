@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_PIXEL_STREAM_H
 #define ZEPHYR_INCLUDE_PIXEL_STREAM_H
 
+#include <stdarg.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/ring_buffer.h>

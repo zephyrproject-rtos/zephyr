@@ -1,0 +1,14 @@
+sample:
+  name: Video software pipeline sample
+tests:
+  sample.drivers.video.sw_pipeline:
+    depends_on: usbd
+    tags: usb video pixel
+    integration_platforms:
+      - rpi_pico
+    extra_args:
+      - SNIPPET=video-sw-generator
+  sample.drivers.video.sw_pipeline.camera:
+    depends_on: usbd
+    tags: usb video pixel
+    filter: dt_chosen_enabled("zephyr,camera")

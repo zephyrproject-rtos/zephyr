@@ -1,0 +1,15 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	uvc: uvc {
+		compatible = "zephyr,uvc-device";
+	};
+
+	video_sw_pipeline: video_sw_pipeline {
+		compatible = "zephyr,video-sw-pipeline";
+	};
+};

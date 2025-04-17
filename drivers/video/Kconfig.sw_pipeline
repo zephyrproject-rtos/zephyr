@@ -1,0 +1,18 @@
+# Copyright (c) 2025 tinyVision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SW_PIPELINE
+	bool "Video Software Pipeline"
+	depends on DT_HAS_ZEPHYR_VIDEO_SW_PIPELINE_ENABLED
+	default y
+	help
+	  Enable the video stream processing based on the lib/pixel.
+
+config VIDEO_SW_PIPELINE_THREAD_PRIORITY
+	int "Video Software Pipeline thread priority"
+	default 2
+	depends on VIDEO_SW_PIPELINE
+	help
+	  The Video Software Pipeline has a thread in which video frames are processed.
+	  This options sets the priority of that thread.
+	  The default is some arbitrary value above 0.
