@@ -63,6 +63,12 @@ typedef enum __packed {
 	BT_AVRCP_RSP_INTERIM = 0xf,
 } bt_avrcp_rsp_t;
 
+/** @brief AV/C subunit type, also used for unit type */
+typedef enum __packed {
+	BT_AVRCP_SUBUNIT_TYPE_PANEL = 0x09,
+	BT_AVRCP_SUBUNIT_TYPE_UNIT = 0x1f,
+} bt_avrcp_subunit_type_t;
+
 /** @brief AV/C operation ids used in AVRCP passthrough commands */
 typedef enum __packed {
 	BT_AVRCP_OPID_SELECT = 0x00,
@@ -137,14 +143,16 @@ typedef enum __packed {
 
 /** @brief AVRCP CT structure */
 struct bt_avrcp_ct;
+/** @brief AVRCP TG structure */
+struct bt_avrcp_tg;
 
 struct bt_avrcp_unit_info_rsp {
-	uint8_t unit_type;
+	bt_avrcp_subunit_type_t unit_type;
 	uint32_t company_id;
 };
 
 struct bt_avrcp_subunit_info_rsp {
-	uint8_t subunit_type;
+	bt_avrcp_subunit_type_t subunit_type;
 	uint8_t max_subunit_id;
 	const uint8_t *extended_subunit_type; /**< contains max_subunit_id items */
 	const uint8_t *extended_subunit_id;   /**< contains max_subunit_id items */
@@ -168,7 +176,7 @@ struct bt_avrcp_get_cap_rsp {
 };
 
 struct bt_avrcp_ct_cb {
-	/** @brief An AVRCP connection has been established.
+	/** @brief An AVRCP CT connection has been established.
 	 *
 	 *  This callback notifies the application of an avrcp connection,
 	 *  i.e., an AVCTP L2CAP connection.
@@ -178,7 +186,7 @@ struct bt_avrcp_ct_cb {
 	 */
 	void (*connected)(struct bt_conn *conn, struct bt_avrcp_ct *ct);
 
-	/** @brief An AVRCP connection has been disconnected.
+	/** @brief An AVRCP CT connection has been disconnected.
 	 *
 	 *  This callback notifies the application that an avrcp connection
 	 *  has been disconnected.
@@ -318,6 +326,58 @@ int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid);
 int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, uint8_t state,
 			    const uint8_t *payload, uint8_t len);
 
+struct bt_avrcp_tg_cb {
+	/** @brief An AVRCP TG connection has been established.
+	 *
+	 *  This callback notifies the application of an avrcp connection,
+	 *  i.e., an AVCTP L2CAP connection.
+	 *
+	 *  @param conn Connection object.
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*connected)(struct bt_conn *conn, struct bt_avrcp_tg *tg);
+
+	/** @brief An AVRCP TG connection has been disconnected.
+	 *
+	 *  This callback notifies the application that an avrcp connection
+	 *  has been disconnected.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*disconnected)(struct bt_avrcp_tg *tg);
+
+	/** @brief Unit info request callback.
+	 *
+	 *  This callback is called whenever an AVRCP unit info is requested.
+	 *
+	 *  @param tid The transaction label of the request.
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+};
+
+/** @brief Register callback.
+ *
+ *  Register AVRCP callbacks to monitor the state and interact with the remote device.
+ *
+ *  @param cb The AVRCP TG callback function.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
+
+/** @brief Send the unit info response.
+ *
+ *  This function is called by the application to send the unit info response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param rsp The response for UNIT INFO command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+				   struct bt_avrcp_unit_info_rsp *rsp);
 #ifdef __cplusplus
 }
 #endif
