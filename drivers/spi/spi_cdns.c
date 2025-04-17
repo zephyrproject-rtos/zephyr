@@ -837,10 +837,13 @@ static DEVICE_API(spi, spi_cdns_api) = {
 	.transceive_async = spi_cdns_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
 	.release = spi_cdns_release,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif /* CONFIG_SPI_RTIO */
 };
 
 /* Set clock-frequency-ext to pclk / 5 if there is no clock-frequency-ext */
-#define SPI_CLOCK_FREQUENCY_EXT(n)                                                                 \
+#define SPI_CLOCK_FREQUENCY_EXT(n)                                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency_ext), \
 		(DT_INST_PROP(n, clock_frequency_ext)),            \
 		(DT_INST_PROP(n, clock_frequency) / 5))
@@ -856,6 +859,9 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		.irq_config = spi_cdns_irq_config_##n,                                             \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
 		.ext_clock = SPI_CLOCK_FREQUENCY_EXT(n),                                           \
+		.fifo_width = DT_INST_PROP(n, fifo_width),                                         \
+		.tx_fifo_depth = DT_INST_PROP(n, tx_fifo_depth),                                   \
+		.rx_fifo_depth = DT_INST_PROP(n, rx_fifo_depth),                                   \
 	};                                                                                         \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_cdns_init, spi_cdns_pm_action, &spi_cdns_data_##n,        \
 				  &spi_cdns_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
