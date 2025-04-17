@@ -253,6 +253,7 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 		return -EBUSY;
 	}
 
+	DL_TimerG_setTimerCount(config->base, data->period);
 	DL_Timer_startCounter(config->base);
 	DL_Timer_enableInterrupt(config->base, intr_mask);
 
@@ -289,6 +290,7 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 
 	DL_Timer_disableInterrupt(config->base, intr_mask);
 	DL_Timer_stopCounter(config->base);
+	data->is_synced = false;
 	k_mutex_unlock(&data->lock);
 
 	return 0;
@@ -381,6 +383,7 @@ static void mspm0_cc_isr(const struct device *dev)
 
 	if (!(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
 		DL_Timer_stopCounter(config->base);
+		data->is_synced = false;
 	}
 
 	if (data->callback) {
