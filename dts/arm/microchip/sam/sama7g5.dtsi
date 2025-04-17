@@ -46,6 +46,39 @@
 			#clock-cells = <1>;
 		};
 
+		dma0: dma-controller@e2808000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0xe2808000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
+			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
+		dma1: dma-controller@e280c000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0xe280c000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
+			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
+		dma2: dma-controller@e1200000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0xe1200000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 24>;
+			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
 		flx0: flexcom@e1818000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1818000 0x200>;
