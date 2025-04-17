@@ -3,13 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_ZPERF
-	bool "zperf shell utility"
+	bool "zperf library"
 	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_UDP
 	select NET_SOCKETS_SERVICE
 	select NET_SOCKETS
 	help
-	  This option enables zperf shell utility, which allows to generate
-	  network traffic and evaluate network bandwidth.
+	  This option enables zperf library, which allows to generate
+	  network traffic and evaluate network bandwidth in conjunction
+	  with other devices running zperf or a desktop running the
+	  iperf2 utility.
 
 if NET_ZPERF
 
