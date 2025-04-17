@@ -161,3 +161,11 @@ child-binding:
           Polarity select for NCE
           LOW = 0x0 - Polarity is active low
           HIGH = 0x1 - Polarity is active high
+      ambiq,sdif-cdwp:
+        type: int
+        default: 0
+        description: |
+          Configure SD Card Detection and Write Protection pin
+          0x0 - Not SDIF pin
+          0x1 - SDIFCD
+          0x2 - SDIFWP
