@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Texas Instruments
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI SOC EHRPWM based PWM controller
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "ti,am3352-ehrpwm"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  symmetric:
+    type: boolean
+    description: Generate a symmetric PWM by using up-down count mode
+
+  clock-frequency:
+    type: int
+    description: Optional peripheral frequency to use if the clock is absent
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags
