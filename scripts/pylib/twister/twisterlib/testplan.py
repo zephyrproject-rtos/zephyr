@@ -38,7 +38,7 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
-from plugin_filters.filter_framework import FilterFramework
+from plugin_filters.filter_interface import FilterInterface
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -532,7 +532,7 @@ class TestPlan:
 
             return None
 
-        plugin_filters: list[FilterFramework] = []
+        plugin_filters: list[FilterInterface] = []
 
         if plugin_filter_dictionaries := self.options.plugin_filter:
             for plugin_filter in plugin_filter_dictionaries:
@@ -550,7 +550,7 @@ class TestPlan:
                         for root in TWISTER_PLUGIN_FILTER_ROOTS:
                             filter_obj = get_class(file_path, root)
 
-                            if isinstance(filter_obj, FilterFramework):
+                            if isinstance(filter_obj, FilterInterface):
                                 filter_obj.setup(*args, **kwargs)
 
                                 plugin_filters.append(filter_obj)
@@ -652,7 +652,7 @@ class TestPlan:
                             suite.skip = True
 
                             for filter_obj in plugin_filters:
-                                if not filter_obj.filter(suite):
+                                if not filter_obj.exclude(suite):
                                     suite.skip = False
 
                                 filter_obj.teardown()

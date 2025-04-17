@@ -1,15 +1,18 @@
 import subprocess
 
 from twisterlib.testplan import TestSuite
-from plugin_filters.filter_framework import FilterFramework
+from plugin_filters.filter_interface import FilterInterface
 
 
-class Filter(FilterFramework):
+class Filter(FilterInterface):
+    changed_files = None
+    changed_c_files = None
+
     def setup(self):
         self.generate_change_list()
-        return super().setup()
 
-    def filter(self, suite: TestSuite):
+
+    def exclude(self, suite: TestSuite):
         return True
 
     def get_common_ancestor_commit(self):
