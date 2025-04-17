@@ -13,13 +13,8 @@ Overview
 zperf is a shell utility which allows to generate network traffic in Zephyr. The
 tool may be used to evaluate network bandwidth.
 
-zperf is compatible with iPerf_2.0.5. Note that in newer iPerf versions,
-an error message like this is printed and the server reported statistics
-are missing.
-
-.. code-block:: console
-
-   LAST PACKET NOT RECEIVED!!!
+zperf is compatible with iPerf 2.0.10 and newer. For compatability with older versions,
+enable :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
 
 zperf can be enabled in any application, a dedicated sample is also present
 in Zephyr. See :zephyr:code-sample:`zperf sample application <zperf>` for details.
