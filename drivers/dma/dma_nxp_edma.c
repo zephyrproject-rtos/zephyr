@@ -7,6 +7,7 @@
 #include "dma_nxp_edma.h"
 
 #define EDMA_ACTIVE_TIMEOUT 50
+uint32_t transfer_type;
 
 /* TODO list:
  * 1) Support for requesting a specific channel.
@@ -60,6 +61,12 @@ static void edma_isr(const void *parameter)
 		}
 	}
 
+	/* Once dma channel request done, updated machine state into CHAN_STATE_DONE. */
+	if ((EDMA_ChannelRegRead(data->hal_cfg, chan->id, EDMA_TCD_CH_CSR) & EDMA_TCD_CH_CSR_DONE_MASK) == EDMA_TCD_CH_CSR_DONE_MASK)
+	{
+		chan->state = CHAN_STATE_DONE;
+	}
+
 	/* TODO: are there any sanity checks we have to perform before invoking
 	 * the registered callback?
 	 */
@@ -111,7 +118,6 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	struct edma_data *data;
 	const struct edma_config *cfg;
 	struct edma_channel *chan;
-	uint32_t transfer_type;
 	int ret;
 
 	data = dev->data;
@@ -519,10 +525,29 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 
 	LOG_DBG("starting channel %u", chan_id);
 
-	/* enable HW requests */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
-			      EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+	/* enable dma channel request according into transfer type. */
+	if (kEDMA_TransferTypeM2M == transfer_type)
+	{
+		/* the software channel trigger will be cleared after once time burst request finised
+		 * loop enable this reuqest until CITER=0
+		 * */
+		uint16_t citer;
+		citer = EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CITER);
 
+		while(citer >= 1)
+		{
+			if (!(EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CSR) & EDMA_TCD_CSR_START_MASK))
+			{
+				EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CSR, EDMA_TCD_CSR_START_MASK, 0);
+				citer--;
+			}
+		}
+	}
+	else
+	{
+		/* enable HW requests */
+                EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+	}
 	chan->state = CHAN_STATE_STARTED;
 
 	return 0;
@@ -754,6 +779,7 @@ static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);	\
 static void interrupt_config_function_##inst(void)				\
 {										\
 	EDMA_CONNECT_INTERRUPTS(inst);						\
+	EDMA_INTERRUPTS_ENABLE(inst);						\
 }										\
 										\
 static struct edma_config edma_config_##inst = {				\
