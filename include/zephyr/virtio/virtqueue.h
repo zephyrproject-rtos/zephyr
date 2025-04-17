@@ -10,10 +10,20 @@
 #include <stddef.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Based on Virtual I/O Device (VIRTIO) Version 1.3 specification:
  * https://docs.oasis-open.org/virtio/virtio/v1.3/csd01/virtio-v1.3-csd01.pdf
  */
+
+ /**
+  * @brief Virtqueue Interface
+  * @defgroup virtqueue_interface Virtqueue Interface
+  * @{
+  */
 
 /**
  * used in virtq_desc::flags, enables chaining descriptor via virtq_desc::next
@@ -223,5 +233,13 @@ struct virtq_buf {
 int virtq_add_buffer_chain(
 	struct virtq *v, struct virtq_buf *bufs, uint16_t bufs_size,
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_VIRTIO_VIRTQUEUE_H_ */

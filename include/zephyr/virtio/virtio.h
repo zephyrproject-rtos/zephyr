@@ -13,6 +13,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Virtio Interface
+ * @defgroup virtio_interface Virtio Interface
+ * @{
+ */
+
 
 /**
  * Callback used during virtqueue enumeration
@@ -94,6 +100,10 @@ __subsystem struct virtio_driver_api {
 	 */
 	int (*init_virtqueues)(const struct device *dev, virtio_enumerate_queues cb, void *opaque);
 };
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
