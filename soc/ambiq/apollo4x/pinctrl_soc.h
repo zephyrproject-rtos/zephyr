@@ -39,6 +39,8 @@ struct apollo4_pinctrl_soc_pin {
 	uint32_t nce : 6;
 	/** nCE module polarity */
 	uint32_t nce_pol: 1;
+	/** SDIF CD WP pad select */
+	uint32_t sdif_cdwp: 2;
 };
 
 typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
@@ -65,6 +67,7 @@ typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
 		DT_ENUM_IDX(node_id, ambiq_pull_up_ohms),                                          \
 		DT_PROP(node_id, ambiq_nce_src),                                                   \
 		DT_PROP(node_id, ambiq_nce_pol),                                                   \
+		DT_PROP(node_id, ambiq_sdif_cdwp),                                                 \
 	},
 
 /**
