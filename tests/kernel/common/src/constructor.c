@@ -8,14 +8,15 @@
 #include <errno.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
-/**
- * @addtogroup kernel_common_tests
- * @{
- */
 
 /**
- * @brief Test if constructors work
+ * @defgroup kernel_constructor_tests Constructors
+ * @ingroup all_tests
+ * @{
+ * @}
  *
+ * @addtogroup kernel_constructor_tests
+ * @{
  */
 
 static int constructor_number;
@@ -35,7 +36,10 @@ void __attribute__((__constructor__(1000))) __constructor_init_priority_1000(voi
 {
 	constructor_values[constructor_number++] = 1000;
 }
-
+/**
+ * @brief Test if constructors work
+ *
+ */
 ZTEST(constructor, test_constructor)
 {
 	zassert_equal(constructor_number, 3,
@@ -51,9 +55,9 @@ ZTEST(constructor, test_constructor)
 		      "constructor without priority not called last");
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(constructor, NULL, common_setup, NULL, NULL, NULL);
-
 /**
  * @}
  */
+
+ extern void *common_setup(void);
+ ZTEST_SUITE(constructor, NULL, common_setup, NULL, NULL, NULL);
