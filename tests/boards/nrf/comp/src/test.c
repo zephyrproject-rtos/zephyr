@@ -15,20 +15,30 @@ static const struct gpio_dt_spec test_pin_2 = GPIO_DT_SPEC_GET(DT_PATH(zephyr_us
 
 
 struct comp_nrf_comp_se_config comp_se_config = {
+#if defined(CONFIG_BOARD_NRF54LM20APDK)
+	.psel = COMP_NRF_COMP_PSEL_AIN1,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN5,
+#else
 	.psel = COMP_NRF_COMP_PSEL_AIN5,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN1,
+#endif
 	.sp_mode = COMP_NRF_COMP_SP_MODE_HIGH,
 	.isource = COMP_NRF_COMP_ISOURCE_DISABLED,
 	.refsel = COMP_NRF_COMP_REFSEL_AREF,
-	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN1,
 	.th_up = 32,
 	.th_down = 32,
 };
 
 struct comp_nrf_comp_diff_config comp_diff_config = {
+#if defined(CONFIG_BOARD_NRF54LM20APDK)
+	.psel = COMP_NRF_COMP_PSEL_AIN3,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN1,
+#else
 	.psel = COMP_NRF_COMP_PSEL_AIN4,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN5,
+#endif
 	.sp_mode = COMP_NRF_COMP_SP_MODE_LOW,
 	.isource = COMP_NRF_COMP_ISOURCE_DISABLED,
-	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN5,
 	.enable_hyst = true,
 };
 
