@@ -308,6 +308,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return err;
 	}
 
+	LOG_INF("Lower HCI transport: %s", BT_HCI_NAME);
 	LOG_INF("Bluetooth enabled in RAW mode");
 
 	return 0;
