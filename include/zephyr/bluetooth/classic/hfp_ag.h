@@ -149,19 +149,23 @@ struct bt_hfp_ag_cb {
 
 	/** Get ongoing call information Callback
 	 *
-	 *  If this callback is provided it will be called whenever the response
-	 *  of the AT command `AT+CIND=?` from HF has been sent. It is used to get all
-	 *  ongoing calls one bye one from the upper layer.
-	 *  Then set the `Call`, `Call Setup`, and `Held Call` indicators and report the
-	 *  values int the response of AT command `AT+CIND?`. Then report all ongoing
-	 *  calls in the `+CLCC` response.
+	 *  If this callback is provided it will be called whenever the AT command `AT+CIND?` is
+	 *  received from HF has been sent.
+	 *  After the callback notified, the ongoing calls should be set via function
+	 *  `bt_hfp_ag_ongoing_calls()` within the timeout
+	 *  @kconfig{CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT}.
 	 *
 	 *  @param ag HFP AG object.
-	 *  @param call Pointer to store the ongoing call information.
 	 *
-	 *  @return 0 in case of success and will get next one or negative value in case of error.
+	 *  @note The AG is in SLC establishment phase. The AG callback `connected()` is not
+	 *        notified at this time.
+	 *
+	 *  @return 0 in case of success. The response `+CIND` will be sent after the function
+	 *          `bt_hfp_ag_ongoing_calls()` called or after the time exceeds
+	 *          @kconfig{CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT}. Or negative value in case
+	 *          of error. The response `+CIND` will be replied immediately.
 	 */
-	int (*get_ongoing_call)(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *call);
+	int (*get_ongoing_call)(struct bt_hfp_ag *ag);
 
 	/** HF memory dialing request Callback
 	 *
@@ -837,6 +841,19 @@ int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator, bool enable);
+
+/** @brief Set the ongoing calls
+ *
+ *  It is used to set the ongoing calls when AT command `AT+CIND?` is received.
+ *
+ *  @param ag HFP AG object.
+ *  @param calls Ongoing calls.
+ *  @param count Ongoing call count.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_ongoing_calls(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *calls,
+			    size_t count);
 
 #ifdef __cplusplus
 }
