@@ -35,6 +35,10 @@ struct bt_avrcp {
 	struct bt_avctp session;
 };
 
+struct bt_avrcp_ct {
+	struct bt_avrcp *avrcp;
+};
+
 struct avrcp_handler {
 	bt_avrcp_opcode_t opcode;
 	void (*func)(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf, bt_avctp_cr_t cr);
@@ -42,8 +46,9 @@ struct avrcp_handler {
 
 #define AVRCP_AVCTP(_avctp) CONTAINER_OF(_avctp, struct bt_avrcp, session)
 
-static const struct bt_avrcp_cb *avrcp_cb;
+static const struct bt_avrcp_ct_cb *avrcp_ct_cb;
 static struct bt_avrcp avrcp_connection[CONFIG_BT_MAX_CONN];
+static struct bt_avrcp_ct bt_avrcp_ct_pool[CONFIG_BT_MAX_CONN];
 
 #if defined(CONFIG_BT_AVRCP_TARGET)
 static struct bt_sdp_attribute avrcp_tg_attrs[] = {
@@ -193,12 +198,12 @@ static struct bt_sdp_attribute avrcp_ct_attrs[] = {
 static struct bt_sdp_record avrcp_ct_rec = BT_SDP_RECORD(avrcp_ct_attrs);
 #endif /* CONFIG_BT_AVRCP_CONTROLLER */
 
-static struct bt_avrcp *get_new_connection(struct bt_conn *conn)
+static struct bt_avrcp *avrcp_get_connection(struct bt_conn *conn)
 {
 	struct bt_avrcp *avrcp;
 
 	if (!conn) {
-		LOG_ERR("Invalid Input (err: %d)", -EINVAL);
+		LOG_ERR("Invalid parameter");
 		return NULL;
 	}
 
@@ -207,13 +212,30 @@ static struct bt_avrcp *get_new_connection(struct bt_conn *conn)
 	return avrcp;
 }
 
+static struct bt_avrcp_ct *get_avrcp_ct(struct bt_avrcp *avrcp)
+{
+	struct bt_avrcp_ct *ct;
+
+	if (!avrcp) {
+		LOG_ERR("Invalid parameter");
+		return NULL;
+	}
+
+	ct = &bt_avrcp_ct_pool[bt_conn_index(avrcp->session.br_chan.chan.conn)];
+	if(ct->avrcp == NULL) {
+		ct->avrcp = avrcp;
+	}
+
+	return ct;
+}
+
 /* The AVCTP L2CAP channel established */
 static void avrcp_connected(struct bt_avctp *session)
 {
 	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
 
-	if ((avrcp_cb != NULL) && (avrcp_cb->connected != NULL)) {
-		avrcp_cb->connected(avrcp);
+	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->connected != NULL)) {
+		avrcp_ct_cb->connected(session->br_chan.chan.conn, get_avrcp_ct(avrcp));
 	}
 }
 
@@ -222,8 +244,8 @@ static void avrcp_disconnected(struct bt_avctp *session)
 {
 	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
 
-	if ((avrcp_cb != NULL) && (avrcp_cb->disconnected != NULL)) {
-		avrcp_cb->disconnected(avrcp);
+	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->disconnected != NULL)) {
+                avrcp_ct_cb->disconnected(get_avrcp_ct(avrcp));
 	}
 }
 
@@ -253,7 +275,7 @@ static void process_get_cap_rsp(struct bt_avrcp *avrcp, uint8_t tid, struct net_
 		return;
 	}
 
-	if ((avrcp_cb == NULL) || (avrcp_cb->get_cap_rsp == NULL)) {
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_cap_rsp == NULL)) {
 		return;
 	}
 
@@ -276,7 +298,7 @@ static void process_get_cap_rsp(struct bt_avrcp *avrcp, uint8_t tid, struct net_
 		return;
 	}
 
-	avrcp_cb->get_cap_rsp(avrcp, tid, rsp);
+	avrcp_ct_cb->get_cap_rsp(get_avrcp_ct(avrcp), tid, rsp);
 }
 
 static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
@@ -326,7 +348,7 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, struct 
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
-		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
+		if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->unit_info_rsp != NULL)) {
 			if (buf->len != 5) {
 				LOG_ERR("Invalid unit info length: %d", buf->len);
 				return;
@@ -334,7 +356,7 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, struct 
 			net_buf_pull_u8(buf); /* Always 0x07 */
 			rsp.unit_type = FIELD_GET(GENMASK(7, 3), net_buf_pull_u8(buf));
 			rsp.company_id = net_buf_pull_be24(buf);
-			avrcp_cb->unit_info_rsp(avrcp, tid, &rsp);
+			avrcp_ct_cb->unit_info_rsp(get_avrcp_ct(avrcp), tid, &rsp);
 		}
 	}
 }
@@ -351,7 +373,7 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, stru
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
-		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
+		if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->subunit_info_rsp != NULL)) {
 			if (buf->len < 5) {
 				LOG_ERR("Invalid subunit info length: %d", buf->len);
 				return;
@@ -366,7 +388,7 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, uint8_t tid, stru
 			}
 			rsp.extended_subunit_type = buf->data;
 			rsp.extended_subunit_id = rsp.extended_subunit_type + rsp.max_subunit_id;
-			avrcp_cb->subunit_info_rsp(avrcp, tid, &rsp);
+			avrcp_ct_cb->subunit_info_rsp(get_avrcp_ct(avrcp), tid, &rsp);
 		}
 	}
 }
@@ -383,7 +405,7 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, uint8_t tid, stru
 	if (cr == BT_AVCTP_CMD) {
 		/* ToDo */
 	} else { /* BT_AVCTP_RESPONSE */
-		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
+		if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->subunit_info_rsp != NULL)) {
 			if (buf->len < sizeof(*rsp)) {
 				LOG_ERR("Invalid passthrough length: %d", buf->len);
 				return;
@@ -392,7 +414,7 @@ static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, uint8_t tid, stru
 			result = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 			rsp = (struct bt_avrcp_passthrough_rsp *)buf->data;
 
-			avrcp_cb->passthrough_rsp(avrcp, tid, result, rsp);
+			avrcp_ct_cb->passthrough_rsp(get_avrcp_ct(avrcp), tid, result, rsp);
 		}
 	}
 }
@@ -456,7 +478,7 @@ static int avrcp_accept(struct bt_conn *conn, struct bt_avctp **session)
 {
 	struct bt_avrcp *avrcp;
 
-	avrcp = get_new_connection(conn);
+	avrcp = avrcp_get_connection(conn);
 	if (!avrcp) {
 		return -ENOMEM;
 	}
@@ -496,15 +518,15 @@ int bt_avrcp_init(void)
 	return 0;
 }
 
-struct bt_avrcp *bt_avrcp_connect(struct bt_conn *conn)
+int bt_avrcp_connect(struct bt_conn *conn)
 {
 	struct bt_avrcp *avrcp;
 	int err;
 
-	avrcp = get_new_connection(conn);
+	avrcp = avrcp_get_connection(conn);
 	if (!avrcp) {
 		LOG_ERR("Cannot allocate memory");
-		return NULL;
+		return -ENOTCONN;
 	}
 
 	avrcp->session.ops = &avctp_ops;
@@ -513,16 +535,23 @@ struct bt_avrcp *bt_avrcp_connect(struct bt_conn *conn)
 		/* If error occurs, undo the saving and return the error */
 		memset(avrcp, 0, sizeof(struct bt_avrcp));
 		LOG_DBG("AVCTP Connect failed");
-		return NULL;
+		return err;
 	}
 
 	LOG_DBG("Connection request sent");
-	return avrcp;
+	return err;
 }
 
-int bt_avrcp_disconnect(struct bt_avrcp *avrcp)
+int bt_avrcp_disconnect(struct bt_conn *conn)
 {
 	int err;
+	struct bt_avrcp *avrcp;
+
+	avrcp = avrcp_get_connection(conn);
+	if (!avrcp) {
+		LOG_ERR("Cannot allocate memory");
+		return -ENOTCONN;
+	}
 
 	err = bt_avctp_disconnect(&(avrcp->session));
 	if (err < 0) {
@@ -651,12 +680,16 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	return 0;
 }
 
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cap_id)
+int bt_avrcp_ct_get_cap(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t cap_id)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_avc_pdu *pdu;
 
-	buf = avrcp_create_vendor_pdu(avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
+        if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	buf = avrcp_create_vendor_pdu(ct->avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -668,15 +701,19 @@ int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cap_id)
 	pdu->param_len = sys_cpu_to_be16(sizeof(cap_id));
 	net_buf_add_u8(buf, cap_id);
 
-	return avrcp_send(avrcp, buf);
+	return avrcp_send(ct->avrcp, buf);
 }
 
-int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp, uint8_t tid)
+int bt_avrcp_ct_get_unit_info(struct bt_avrcp_ct *ct, uint8_t tid)
 {
 	struct net_buf *buf;
 	uint8_t param[5];
 
-	buf = avrcp_create_unit_pdu(avrcp, tid, BT_AVCTP_CMD);
+        if ((ct == NULL) || (ct->avrcp == NULL)) {
+                return -EINVAL;
+        }
+
+	buf = avrcp_create_unit_pdu(ct->avrcp, tid, BT_AVCTP_CMD);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -684,15 +721,19 @@ int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp, uint8_t tid)
 	memset(param, 0xFF, ARRAY_SIZE(param));
 	net_buf_add_mem(buf, param, sizeof(param));
 
-	return avrcp_send(avrcp, buf);
+	return avrcp_send(ct->avrcp, buf);
 }
 
-int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid)
+int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid)
 {
 	struct net_buf *buf;
 	uint8_t param[5];
 
-	buf = avrcp_create_subunit_pdu(avrcp, tid, BT_AVCTP_CMD);
+        if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	buf = avrcp_create_subunit_pdu(ct->avrcp, tid, BT_AVCTP_CMD);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -702,15 +743,19 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid)
 		   FIELD_PREP(GENMASK(2, 0), AVRCP_SUBUNIT_EXTENSION_CODE);
 	net_buf_add_mem(buf, param, sizeof(param));
 
-	return avrcp_send(avrcp, buf);
+	return avrcp_send(ct->avrcp, buf);
 }
 
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t tid, uint8_t opid, uint8_t state,
-			 const uint8_t *payload, uint8_t len)
+int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, uint8_t state,
+			    const uint8_t *payload, uint8_t len)
 {
 	struct net_buf *buf;
 
-	buf = avrcp_create_passthrough_pdu(avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
+        if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	buf = avrcp_create_passthrough_pdu(ct->avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_CONTROL);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -721,11 +766,19 @@ int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t tid, uint8_t opid, uint
 		net_buf_add_mem(buf, payload, len);
 	}
 
-	return avrcp_send(avrcp, buf);
+	return avrcp_send(ct->avrcp, buf);
 }
 
-int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb)
+int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 {
-	avrcp_cb = cb;
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	if (avrcp_ct_cb) {
+		return -EALREADY;
+	}
+
+	avrcp_ct_cb = cb;
 	return 0;
 }
