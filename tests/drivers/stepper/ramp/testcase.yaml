@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - ramp
+tests:
+  drivers.stepper.ramp:
+    platform_allow:
+      - native_sim/native/64
