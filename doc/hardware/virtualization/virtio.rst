@@ -10,7 +10,7 @@ interfacing with virtual devices from within a virtual machine. The communicatio
 and standard transfer methods like PCI or MMIO.
 
 Concepts
-********
+**********************************
 
 Virtio defines various components used during communication and initialization. It specifies both the
 host (named "device" in the specification) and guest (named "driver" in the specification) sides.
