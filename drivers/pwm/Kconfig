@@ -122,4 +122,6 @@ source "drivers/pwm/Kconfig.fake"
 
 source "drivers/pwm/Kconfig.renesas_rz"
 
+source "drivers/pwm/Kconfig.ti_am3352_ehrpwm"
+
 endif # PWM
