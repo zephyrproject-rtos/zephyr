@@ -1016,77 +1016,28 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
-static void bt_hfp_ag_get_ongoing_calls(struct bt_hfp_ag *ag)
+static int bt_hfp_ag_get_ongoing_calls(struct bt_hfp_ag *ag)
 {
-	struct bt_hfp_ag_ongoing_call *call;
 	int err;
-	bool valid;
-	size_t len;
 
 	ag->ongoing_call_count = 0;
 
 	if ((bt_ag == NULL) || (bt_ag->get_ongoing_call == NULL)) {
 		LOG_DBG("No ongoing call retrieval method available");
-		return;
+		return -EINVAL;
 	}
 
-	do {
-		call = &ag->ongoing_calls[ag->ongoing_call_count];
-		memset(call, 0, sizeof(*call));
-
-		valid = true;
-
-		err = bt_ag->get_ongoing_call(ag, call);
-		if (err != 0) {
-			LOG_DBG("No ongoing call retrieved");
-			break;
-		}
-
-		len = strlen(call->number);
-		if ((len == 0) || (len >= ARRAY_SIZE(call->number))) {
-			LOG_WRN("Invalid call number");
-			break;
-		}
-
-		switch (call->status) {
-		case BT_HFP_AG_CALL_STATUS_DIALING:
-		case BT_HFP_AG_CALL_STATUS_ALERTING:
-			if (call->dir == BT_HFP_AG_CALL_DIR_INCOMING) {
-				LOG_ERR("Dialing call cannot be incoming");
-				valid = false;
-			}
-			break;
-		case BT_HFP_AG_CALL_STATUS_INCOMING:
-		case BT_HFP_AG_CALL_STATUS_WAITING:
-		case BT_HFP_AG_CALL_STATUS_INCOMING_HELD:
-			if (call->dir == BT_HFP_AG_CALL_DIR_OUTGOING) {
-				LOG_ERR("Incoming call cannot be outgoing");
-				valid = false;
-			}
-			break;
-		default:
-			break;
-		}
-
-		if (!valid) {
-			continue;
-		}
-
-		ag->ongoing_call_count++;
-	} while (ag->ongoing_call_count < ARRAY_SIZE(ag->ongoing_calls));
-
-	if (ag->ongoing_call_count > 1) {
-		switch (ag->ongoing_calls[0].status) {
-		case BT_HFP_AG_CALL_STATUS_ACTIVE:
-		case BT_HFP_AG_CALL_STATUS_HELD:
-		case BT_HFP_AG_CALL_STATUS_INCOMING_HELD:
-			break;
-		default:
-			LOG_ERR("Unexpected call status for multiple calls");
-			ag->ongoing_call_count = 1;
-			break;
-		}
+	if (ag->state == BT_HFP_CONNECTED) {
+		LOG_ERR("Only works during SLC establishment phase");
+		return -EINVAL;
 	}
+
+	err = bt_ag->get_ongoing_call(ag);
+	if (err != 0) {
+		LOG_DBG("No ongoing call retrieved");
+	}
+
+	return err;
 }
 
 static int bt_hfp_ag_notify_cind_value(struct bt_hfp_ag *ag)
@@ -1195,10 +1146,16 @@ static int bt_hfp_ag_cind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			ag_ind[BT_HFP_AG_ROAM_IND].max, ag_ind[BT_HFP_AG_BATTERY_IND].name,
 			ag_ind[BT_HFP_AG_BATTERY_IND].min, ag_ind[BT_HFP_AG_BATTERY_IND].connector,
 			ag_ind[BT_HFP_AG_BATTERY_IND].max);
-
-		bt_hfp_ag_get_ongoing_calls(ag);
 	} else {
-		err = bt_hfp_ag_notify_cind_value(ag);
+		err = bt_hfp_ag_get_ongoing_calls(ag);
+		if (err != 0) {
+			err = bt_hfp_ag_notify_cind_value(ag);
+		} else {
+			err = -EINPROGRESS;
+			atomic_set_bit(ag->flags, BT_HGP_AG_ONGOING_CALLS);
+			k_work_reschedule(&ag->ongoing_call_work,
+					  K_MSEC(CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT));
+		}
 	}
 
 	return err;
@@ -3534,6 +3491,11 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		}
 	}
 
+	if (err == -EINPROGRESS) {
+		LOG_DBG("OK code will be replied later");
+		return;
+	}
+
 	if ((err != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CMEE_ENABLE)) {
 		cme_err = bt_hfp_ag_get_cme_err(err);
 		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
@@ -3784,6 +3746,29 @@ static void bt_ag_ringing_work(struct k_work *work)
 	(void)hfp_ag_next_step(call->ag, bt_ag_ringing_work_cb, call);
 }
 
+static void bt_ag_send_ok_code(struct bt_hfp_ag *ag)
+{
+	if (hfp_ag_send_data(ag, NULL, NULL, "\r\nOK\r\n") != 0) {
+		LOG_ERR("Failed to send OK code");
+	}
+}
+
+static void bt_ag_ongoing_call_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_hfp_ag *ag = CONTAINER_OF(dwork, struct bt_hfp_ag, ongoing_call_work);
+
+	LOG_DBG("");
+
+	if (!atomic_test_and_clear_bit(ag->flags, BT_HGP_AG_ONGOING_CALLS)) {
+		return;
+	}
+
+	ag->ongoing_call_count = 0;
+	bt_hfp_ag_notify_cind_value(ag);
+	bt_ag_send_ok_code(ag);
+}
+
 static K_KERNEL_STACK_MEMBER(ag_thread_stack, CONFIG_BT_HFP_AG_THREAD_STACK_SIZE);
 
 static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
@@ -3883,6 +3868,8 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Init delay work */
 	k_work_init_delayable(&ag->tx_work, bt_ag_tx_work);
+	/* Init delay work */
+	k_work_init_delayable(&ag->ongoing_call_work, bt_ag_ongoing_call_work);
 
 	return ag;
 }
@@ -5207,4 +5194,99 @@ int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indic
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+}
+
+int bt_hfp_ag_ongoing_calls(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *calls,
+			    size_t count)
+{
+	struct bt_hfp_ag_ongoing_call *call;
+	bool valid;
+	size_t len;
+	int err = -EINVAL;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		LOG_ERR("Invalid AG object");
+		return -EINVAL;
+	}
+
+	if (count > ARRAY_SIZE(ag->ongoing_calls)) {
+		LOG_ERR("Out of buffer (%u > %u)", count, ARRAY_SIZE(ag->ongoing_calls));
+		return -ENOMEM;
+	}
+
+	if (!atomic_test_and_clear_bit(ag->flags, BT_HGP_AG_ONGOING_CALLS)) {
+		LOG_ERR("Cannot set ongoing calls");
+		return -ESRCH;
+	}
+
+	for (ag->ongoing_call_count = 0; ag->ongoing_call_count < count; ag->ongoing_call_count++) {
+		call = &calls[ag->ongoing_call_count];
+		valid = true;
+
+		len = strlen(call->number);
+		if ((len == 0) || (len >= ARRAY_SIZE(call->number))) {
+			LOG_WRN("Invalid call number");
+			/* Clear all calls */
+			ag->ongoing_call_count = 0;
+			goto failed;
+		}
+
+		switch (call->status) {
+		case BT_HFP_AG_CALL_STATUS_DIALING:
+		case BT_HFP_AG_CALL_STATUS_ALERTING:
+			if (call->dir == BT_HFP_AG_CALL_DIR_INCOMING) {
+				LOG_ERR("Dialing call cannot be incoming");
+				valid = false;
+			}
+			break;
+		case BT_HFP_AG_CALL_STATUS_INCOMING:
+		case BT_HFP_AG_CALL_STATUS_WAITING:
+		case BT_HFP_AG_CALL_STATUS_INCOMING_HELD:
+			if (call->dir == BT_HFP_AG_CALL_DIR_OUTGOING) {
+				LOG_ERR("Incoming call cannot be outgoing");
+				valid = false;
+			}
+			break;
+		case BT_HFP_AG_CALL_STATUS_ACTIVE:
+		case BT_HFP_AG_CALL_STATUS_HELD:
+			break;
+		default:
+			LOG_ERR("Invalid status");
+			valid = false;
+			break;
+		}
+
+		if (!valid) {
+			/* Clear all calls */
+			ag->ongoing_call_count = 0;
+			goto failed;
+		}
+
+		memcpy(&ag->ongoing_calls[ag->ongoing_call_count], call,
+		       sizeof(ag->ongoing_calls[ag->ongoing_call_count]));
+	}
+
+	if (ag->ongoing_call_count > 1) {
+		switch (ag->ongoing_calls[0].status) {
+		case BT_HFP_AG_CALL_STATUS_ACTIVE:
+		case BT_HFP_AG_CALL_STATUS_HELD:
+		case BT_HFP_AG_CALL_STATUS_INCOMING_HELD:
+			break;
+		default:
+			LOG_ERR("Unexpected call status for multiple calls");
+			/* Clear all calls */
+			ag->ongoing_call_count = 0;
+			goto failed;
+		}
+	}
+
+	err = 0;
+
+failed:
+	k_work_cancel_delayable(&ag->ongoing_call_work);
+	bt_hfp_ag_notify_cind_value(ag);
+	bt_ag_send_ok_code(ag);
+	return err;
 }
