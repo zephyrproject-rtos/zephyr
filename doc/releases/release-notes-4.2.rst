@@ -172,6 +172,11 @@ New APIs and options
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
 
+* Devicetree
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 New Boards
 **********
 
