@@ -39,23 +39,29 @@ struct qdec_stm32_dev_cfg {
 /* Device run time data */
 struct qdec_stm32_dev_data {
 	uint32_t position;
+	uint32_t counts;
 };
 
 static int qdec_stm32_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct qdec_stm32_dev_data *dev_data = dev->data;
 	const struct qdec_stm32_dev_cfg *dev_cfg = dev->config;
+	uint32_t total_counter_value;
 	uint32_t counter_value;
 
-	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION)) {
+	if ((chan != SENSOR_CHAN_ALL) &&
+	    (chan != SENSOR_CHAN_ROTATION) && (chan != SENSOR_CHAN_ENCODER_COUNT)) {
 		return -ENOTSUP;
 	}
+
+	total_counter_value = LL_TIM_GetCounter(dev_cfg->timer_inst);
+	dev_data->counts = total_counter_value;
 
 	/* We're only interested in the remainder between the current counter value and
 	 * counts_per_revolution. The integer part represents an entire rotation so it
 	 * can be ignored
 	 */
-	counter_value = LL_TIM_GetCounter(dev_cfg->timer_inst) % dev_cfg->counts_per_revolution;
+	counter_value = total_counter_value % dev_cfg->counts_per_revolution;
 
 	/* The angle calculated in the fixed-point format (Q26.6 format) */
 	dev_data->position = (counter_value * 23040) / dev_cfg->counts_per_revolution;
@@ -71,6 +77,9 @@ static int qdec_stm32_get(const struct device *dev, enum sensor_channel chan,
 	if (chan == SENSOR_CHAN_ROTATION) {
 		val->val1 = dev_data->position >> 6;
 		val->val2 = (dev_data->position & 0x3F) * 15625;
+	} else if (chan == SENSOR_CHAN_ENCODER_COUNT) {
+		val->val1 = dev_data->counts;
+		val->val2 = 0;
 	} else {
 		return -ENOTSUP;
 	}
