@@ -26,6 +26,47 @@
 
 .. _zephyr_4.1:
 
+.. _zephyr_4.1.1:
+
+Zephyr 4.1.1
+############
+
+This is an LTS maintenance release with fixes.
+
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+* :cve:`2025-27809` `TLS clients may unwittingly skip server authentication
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
+* :cve:`2025-27810` `Potential authentication bypass in TLS handshake
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues fixed
+************
+
+These GitHub issues were addressed since the previous 4.1.0 tagged release:
+
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.3 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+
+Mbed TLS 3.6 is an LTS release that will be supported
+with security and bug fixes until at least March 2027.
+
+Trusted Firmware-M (TF-M)
+*************************
+* Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
+  https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
+
+.. _zephyr_4.1.0:
+
 Zephyr 4.1.0
 ############
 
