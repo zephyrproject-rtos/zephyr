@@ -54,9 +54,12 @@
 #define ZPERF_VERSION "1.1"
 
 struct zperf_udp_datagram {
-	int32_t id;
+	uint32_t id;
 	uint32_t tv_sec;
 	uint32_t tv_usec;
+#ifndef CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT
+	uint32_t id2;
+#endif
 } __packed;
 
 BUILD_ASSERT(sizeof(struct zperf_udp_datagram) <= PACKET_SIZE_MAX, "Invalid PACKET_SIZE_MAX");

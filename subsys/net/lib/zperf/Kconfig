@@ -13,6 +13,14 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
+config NET_ZPERF_LEGACY_HEADER_COMPAT
+	bool "Legacy iperf UDP header format"
+	help
+	  iperf 2.0.10 (2017) updated the UDP header format in a
+	  backwards incompatible manner that cannot be automatically
+	  detected. This option reverts the header format for use with
+	  iperf version 2.0.9 and earlier.
+
 config ZPERF_WORK_Q_THREAD_PRIORITY
 	int "zperf work queue thread priority"
 	default NUM_PREEMPT_PRIORITIES
