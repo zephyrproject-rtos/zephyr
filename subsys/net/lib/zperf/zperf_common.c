@@ -237,7 +237,9 @@ static int zperf_init(void)
 	zperf_udp_uploader_init();
 	zperf_tcp_uploader_init();
 
-	zperf_session_init();
+	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER)) {
+		zperf_session_init();
+	}
 
 	if (IS_ENABLED(CONFIG_NET_SHELL)) {
 		zperf_shell_init();
