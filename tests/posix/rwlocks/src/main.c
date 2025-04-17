@@ -144,14 +144,4 @@ ZTEST(posix_rw_locks, test_pthread_rwlockattr_setpshared)
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_SHARED);
 }
 
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(posix_rw_locks, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_rw_locks, NULL, NULL, NULL, NULL, NULL);
