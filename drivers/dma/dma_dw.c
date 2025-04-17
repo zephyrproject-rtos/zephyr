@@ -105,7 +105,7 @@ static DEVICE_API(dma, dw_dma_driver_api) = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &dw_dma_init,				\
+			    dw_dma_init,				\
 			    NULL,					\
 			    &dw_dma##inst##_data,			\
 			    &dw_dma##inst##_config, POST_KERNEL,	\
