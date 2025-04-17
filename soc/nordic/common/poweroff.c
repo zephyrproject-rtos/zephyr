@@ -16,10 +16,16 @@
 #endif
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
 #include <helpers/nrfx_reset_reason.h>
+#include <hal/nrf_memconf.h>
 #endif
 
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
 #include <helpers/nrfx_ram_ctrl.h>
+#endif
+
+#if defined(CONFIG_SOC_SERIES_NRF54LX)
+#define VPR_POWER_IDX 1
+#define VPR_RET_BIT   MEMCONF_POWER_RET_MEM0_Pos
 #endif
 
 void z_sys_poweroff(void)
@@ -59,6 +65,9 @@ void z_sys_poweroff(void)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
+	/* Set VPR to remain in its reset state when waking from OFF */
+	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, VPR_POWER_IDX, VPR_RET_BIT, false);
+
 	nrfx_reset_reason_clear(UINT32_MAX);
 #endif
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
