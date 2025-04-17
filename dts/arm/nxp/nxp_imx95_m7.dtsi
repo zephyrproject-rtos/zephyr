@@ -132,8 +132,8 @@
 		edma2: dma@42000000 {
 			compatible = "nxp,edma";
 			reg = <0x42000000 (DT_SIZE_K(64) * 33)>;
-			valid-channels = <30>, <31>;
-			interrupts = <143 0>, <143 0>;
+			valid-channels = <0>, <2>, <30>, <31>;
+			interrupts = <128 0>, <129 0>, <143 0>, <144 0>;
 			#dma-cells = <2>;
 			status = "disabled";
 		};
