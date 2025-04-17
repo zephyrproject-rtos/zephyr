@@ -981,12 +981,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 #if defined(CONFIG_BT_HFP_AG)
 
 struct bt_hfp_ag *hfp_ag;
+struct bt_hfp_ag *hfp_ag_ongoing;
 struct bt_conn *hfp_ag_sco_conn;
 static struct bt_hfp_ag_call *hfp_ag_call[CONFIG_BT_HFP_AG_MAX_CALLS];
 
 static struct bt_hfp_ag_ongoing_call ag_ongoing_call_info[CONFIG_BT_HFP_AG_MAX_CALLS];
 
 static size_t ag_ongoing_calls;
+
+static bool has_ongoing_calls;
 
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
@@ -1056,27 +1059,14 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	}
 }
 
-static int ag_get_ongoing_call(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *call)
+static int ag_get_ongoing_call(struct bt_hfp_ag *ag)
 {
-	static int call_index;
-
-	if ((ag_ongoing_calls < 1) || (call == NULL)) {
+	if (!has_ongoing_calls) {
 		return -EINVAL;
 	}
 
-	if (ag_ongoing_calls > ARRAY_SIZE(ag_ongoing_call_info)) {
-		ag_ongoing_calls = ARRAY_SIZE(ag_ongoing_call_info);
-	}
-
-	if (call_index >= ag_ongoing_calls) {
-		call_index = 0;
-		ag_ongoing_calls = 0;
-		return -EINVAL;
-	}
-
-	memcpy(call, &ag_ongoing_call_info[call_index], sizeof(*call));
-	call_index++;
-
+	hfp_ag_ongoing = ag;
+	bt_shell_print("Please set ongoing calls");
 	return 0;
 }
 
@@ -1366,14 +1356,37 @@ static int cmd_ag_sco_disconnect(const struct shell *sh, size_t argc, char **arg
 	return err;
 }
 
-static int cmd_ag_ongoing_call(const struct shell *sh, size_t argc, char **argv)
+static int set_ongoing_calls(void)
+{
+	int err;
+
+	err = bt_hfp_ag_ongoing_calls(hfp_ag_ongoing, &ag_ongoing_call_info[0], ag_ongoing_calls);
+	ag_ongoing_calls = 0;
+	hfp_ag_ongoing = NULL;
+	if (err != 0) {
+		bt_shell_error("Failed to set ongoing calls (err %d)", err);
+	}
+	return err;
+}
+
+static int cmd_ag_ongoing_calls(const struct shell *sh, size_t argc, char **argv)
+{
+	if (!strcmp(argv[1], "yes")) {
+		has_ongoing_calls = true;
+	} else {
+		has_ongoing_calls = false;
+	}
+	return 0;
+}
+
+static int cmd_ag_set_ongoing_calls(const struct shell *sh, size_t argc, char **argv)
 {
 	size_t max_calls;
 
 	max_calls =  MIN(CONFIG_BT_HFP_AG_MAX_CALLS, ARRAY_SIZE(ag_ongoing_call_info));
 	if (ag_ongoing_calls >= max_calls) {
 		shell_error(sh, "Supported max call count %d", max_calls);
-		return -EINVAL;
+		return set_ongoing_calls();
 	}
 
 	memset(ag_ongoing_call_info[ag_ongoing_calls].number, 0,
@@ -1385,6 +1398,10 @@ static int cmd_ag_ongoing_call(const struct shell *sh, size_t argc, char **argv)
 	ag_ongoing_call_info[ag_ongoing_calls].dir = (enum bt_hfp_ag_call_dir)atoi(argv[4]);
 
 	ag_ongoing_calls++;
+
+	if ((argc > 5) && !strcmp(argv[5], "all")) {
+		return set_ongoing_calls();
+	}
 	return 0;
 }
 
@@ -1928,8 +1945,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ag_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_ag_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_ag_disconnect, 1, 0),
 	SHELL_CMD_ARG(sco_disconnect, NULL, HELP_NONE, cmd_ag_sco_disconnect, 1, 0),
-	SHELL_CMD_ARG(ongoing_calls, NULL, "<number> <type> <status> <dir>", cmd_ag_ongoing_call, 5,
-		      0),
+	SHELL_CMD_ARG(ongoing_calls, NULL, "<yes or no>", cmd_ag_ongoing_calls, 2, 0),
+	SHELL_CMD_ARG(set_ongoing_calls, NULL, "<number> <type> <status> <dir> [all]",
+		      cmd_ag_set_ongoing_calls, 5, 1),
 	SHELL_CMD_ARG(remote_incoming, NULL, "<number>", cmd_ag_remote_incoming, 2, 0),
 	SHELL_CMD_ARG(hold_incoming, NULL, "<number>", cmd_ag_hold_incoming, 2, 0),
 	SHELL_CMD_ARG(remote_reject, NULL, "<call index>", cmd_ag_remote_reject, 2, 0),
