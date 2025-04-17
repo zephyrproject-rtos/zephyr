@@ -14,29 +14,31 @@
  */
 struct apollo5_pinctrl_soc_pin {
 	/** Pin number 0..223 */
-	uint32_t pin_num: 8;
+	uint64_t pin_num: 8;
 	/** Alternative function (UART, SPI, etc.) */
-	uint32_t alt_func: 4;
+	uint64_t alt_func: 4;
 	/** Enable the pin as an input */
-	uint32_t input_enable: 1;
+	uint64_t input_enable: 1;
 	/** Drive strength, relative to full-driver strength */
-	uint32_t drive_strength: 3;
+	uint64_t drive_strength: 3;
 	/** Drive actively high or low */
-	uint32_t push_pull: 1;
+	uint64_t push_pull: 1;
 	/** Drive with open drain */
-	uint32_t open_drain: 1;
+	uint64_t open_drain: 1;
 	/** High impedance mode */
-	uint32_t tristate: 1;
+	uint64_t tristate: 1;
 	/** Enable the internal pull up resistor */
-	uint32_t bias_pull_up: 1;
+	uint64_t bias_pull_up: 1;
 	/** Enable the internal pull down resistor */
-	uint32_t bias_pull_down: 1;
+	uint64_t bias_pull_down: 1;
 	/** pullup resistor value */
-	uint32_t ambiq_pull_up_ohms: 3;
+	uint64_t ambiq_pull_up_ohms: 3;
 	/** nCE module select */
-	uint32_t nce: 6;
+	uint64_t nce: 6;
 	/** nCE module polarity */
-	uint32_t nce_pol: 1;
+	uint64_t nce_pol: 1;
+	/** SDIF CD WP pad select */
+	uint64_t sdif_cdwp: 3;
 };
 
 typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
@@ -62,6 +64,7 @@ typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
 		DT_ENUM_IDX(node_id, ambiq_pull_up_ohms),                                          \
 		DT_PROP(node_id, ambiq_nce_src),                                                   \
 		DT_PROP(node_id, ambiq_nce_pol),                                                   \
+		DT_PROP(node_id, ambiq_sdif_cdwp),                                                 \
 	},
 
 /**
@@ -74,7 +77,7 @@ typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
         {DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),          \
                     DT_FOREACH_PROP_ELEM, pinmux,           \
                     Z_PINCTRL_STATE_PIN_INIT)}
-    
+
 #define APOLLO5_GET_PIN_NUM(pinctrl) \
         (((pinctrl) >> APOLLO5_PIN_NUM_POS) & APOLLO5_PIN_NUM_MASK)
 #define APOLLO5_GET_PIN_ALT_FUNC(pinctrl) \

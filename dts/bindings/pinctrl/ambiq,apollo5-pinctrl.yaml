@@ -21,7 +21,7 @@ description: |
        */
 
       /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+      #include <dt-bindings/pinctrl/ambiq-apollo5-pinctrl.h>
 
       &pinctrl {
         uart0_default: uart0_default {
@@ -144,3 +144,13 @@ child-binding:
           Polarity select for NCE
           LOW = 0x0 - Polarity is active low
           HIGH = 0x1 - Polarity is active high
+      ambiq,sdif-cdwp:
+        type: int
+        default: 0
+        description: |
+          Configure SD Card Detection and Write Protection pin
+          0x0 - Not SDIF pin
+          0x1 - SDIF0CD
+          0x2 - SDIF0WP
+          0x3 - SDIF1CD
+          0x4 - SDIF1WP

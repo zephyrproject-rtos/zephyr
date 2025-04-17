@@ -23,8 +23,6 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
-    - name: ambiqzephyr
-      url-base: https://github.com/AmbiqMicro
 
   group-filter: [-babblesim, -optional]
 
@@ -153,9 +151,8 @@ manifest:
       path: modules/hal/altera
       groups:
         - hal
-    - name: ambiqhal_ambiq
-      remote: ambiqzephyr
-      revision: fd31734bd47353848f54653def8cd1847a9b4bc2
+    - name: hal_ambiq
+      revision: d3af696c3d7e68823aaeae9f91e45ee996656405
       path: modules/hal/ambiq
       groups:
         - hal
