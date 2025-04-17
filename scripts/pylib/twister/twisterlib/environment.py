@@ -15,7 +15,6 @@ import re
 import shutil
 import subprocess
 import sys
-import shlex
 from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib import metadata
@@ -26,6 +25,9 @@ from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
+
+from plugin_filters.twister_args.args_parser import parse_twister_args
+from plugin_filters.twister_args.plugin_environment import add_plugin_arguments
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -105,8 +107,6 @@ Artificially long but functional example:
 
     test_or_build = parser.add_mutually_exclusive_group()
 
-    plugin_filter_mex_group = case_select.add_mutually_exclusive_group()
-
     test_xor_subtest = case_select.add_mutually_exclusive_group()
 
     test_xor_generator = case_select.add_mutually_exclusive_group()
@@ -155,84 +155,7 @@ Artificially long but functional example:
         help="Run only those tests that failed the previous twister run "
              "invocation.")
 
-    plugin_filter_mex_group.add_argument(
-        "--plugin-filter",
-        nargs="+",
-        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
-            "Because the filter files might require arguments to work properly, the command parameters are divided in 'blocks'. "
-            "The symbol to signal the start of a new block is a semicolon (;), while a double semicolon marks the start of a kwarg section. "
-
-            "The argument should have one the two following formats: "
-            "--plugin-filter 'filter_file_path_1 arg1 arg2;; kwarg1=1234 kwarg2=5678; filter_file_path_2 arg3', or alternatively "
-            "--plugin-filter filter_file_path_1 arg1 arg2\\;\\; kwarg1=1234 kwarg2=5678\\; filter_file_path_2 arg3"
-
-            "NOTE: "
-            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
-            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
-            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
-            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
-            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
-            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
-            "Since plugin_filters is the container for the filter framework and regex filter example, "
-            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
-    )
-
-    plugin_filter_mex_group.add_argument(
-        "--plugin-filter-json-string",
-        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
-            "The names of these filters, along with their arguments, will be passed through a json string. "
-            "Said string should follow these structural guidelines: "
-            "The outermost layer must be a list, which is used to contain the dictionaries with the filter data. "
-            "Each of these dictionaries must always contain a 'filter_file_path' key-value pair. "
-            "This variable specifies the relative path of the file where the filter is located "
-            "(the absolute path is generated separately by iterating through the TWISTER_PLUGIN_FILTER_ROOTS environmental variable). "
-            "The dictionary also allows to specify args and kwargs to feed to the filter, while all other items in the dictionary will be ignored. "
-            "If used, the args key must be linked to a list, while kwargs one must be linked to a dictionary. "
-
-            "Examples: "
-            "Without arguments: "
-            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\"}]', with the usage of kwargs: "
-            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]', and with both args and kwargs: "
-            "--plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"args\": [123, 456], \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' "
-
-            "NOTE: "
-            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
-            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
-            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
-            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
-            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
-            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
-            "Since plugin_filters is the container for the filter framework and regex filter example, "
-            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
-    )
-
-    plugin_filter_mex_group.add_argument(
-        "--plugin-filter-json-path",
-        help="Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
-            "The names of these filters, along with their arguments, will be contained inside a json file. "
-            f"When trying to pass a relative path (for the json file), always take the current working directory '{ os.getcwd() }' into consideration. "
-            "The content of the json file should follow these structural guidelines: "
-            "The outermost layer must be a list, which is used to contain the dictionaries with the filter data. "
-            "Each of these dictionaries must always contain a 'filter_file_path' key-value pair. "
-            "This variable specifies the relative path of the file where the filter is located "
-            "(the absolute path is generated separately by iterating through the TWISTER_PLUGIN_FILTER_ROOTS environmental variable). "
-            "The dictionary also allows to specify args and kwargs to feed to the filter, while all other items in the dictionary will be ignored. "
-            "If used, the args key must be linked to a list, while kwargs one must be linked to a dictionary. "
-
-            "Examples: "
-            "--plugin-filter-json-path filter_details.json, or also "
-            "--plugin-filter-json-path \"C:/users/Desktop/filter_details.json\""
-
-            "NOTE: "
-            "If the filter_file_path is supposed to be accessed with a relative root, it can be inserted just like a pyhton import. "
-            "For example, if the root is 'plugin_filters' (DEFAULT VALUE), filter file path could be 'file_name', but also 'dir.file_name'. "
-            "On the other hand, if the root is absolute (for example 'C:/Users/Me/Desktop'), a path must be specified instead. "
-            "Valid paths in this situation would be 'file_name.py' or 'dir/file_name.py'."
-            "The root list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
-            "An example for said variable could be: ['/home/rmaf/external_filters', 'plugin_filters']. "
-            "Since plugin_filters is the container for the filter framework and regex filter example, "
-            "this path should always be included in the environmental variable. This constraint isn't enforced, however. "
-    )
+    add_plugin_arguments(case_select)
 
     test_plan_report_xor.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
@@ -1115,73 +1038,7 @@ def parse_arguments(
         logger.warning("You work with installed version of "
                        "pytest-twister-harness plugin.")
 
-    if filter_parameters := options.plugin_filter:
-        filters = []
-        current_args = []
-        current_kwargs = {}
-        parsing_args = False
-        parsing_kwargs = False
-
-        def initialize_filter(filter_list, file_path):
-            args = []
-            kwargs = {}
-
-            filter_list.append({ 'filter_file_path': file_path,'args': args, 'kwargs': kwargs })
-
-            return args, kwargs
-
-        def handle_kwarg(arg, kwarg_dict):
-            kwarg, value = arg.split('=', 1)
-            kwarg_dict[kwarg] = value
-
-        for args_wrapper in filter_parameters:
-            for arg in shlex.split(args_wrapper):
-                if arg.endswith(';;'):
-                    arg = arg[:-2]
-
-                    if not parsing_args and not parsing_kwargs:
-                        current_args, current_kwargs = initialize_filter(filters, arg)
-                    elif parsing_args:
-                        current_args.append(arg)
-                    elif parsing_kwargs:
-                        handle_kwarg(arg, current_kwargs)
-
-                    parsing_args = False
-                    parsing_kwargs = True
-                elif arg.endswith(';'):
-                    arg = arg[:-1]
-
-                    if not parsing_args and not parsing_kwargs:
-                        current_args, current_kwargs = initialize_filter(filters, arg)
-                    elif parsing_args:
-                        current_args.append(arg)
-                    elif parsing_kwargs:
-                        handle_kwarg(arg, current_kwargs)
-
-                    parsing_args = False
-                    parsing_kwargs = False
-                elif parsing_args:
-                    current_args.append(arg)
-                elif parsing_kwargs:
-                    handle_kwarg(arg, current_kwargs)
-                else:
-                    current_args, current_kwargs = initialize_filter(filters, arg)
-
-                    parsing_args = True
-                    parsing_kwargs = False
-
-        options.plugin_filter = filters
-
-    else:
-        try:
-            if filter_data := options.plugin_filter_json_string:
-                options.plugin_filter = json.loads(filter_data)
-            elif filter_data := options.plugin_filter_json_path:
-                with open(filter_data, 'r') as json_file:
-                    options.plugin_filter = json.load(json_file)
-        except Exception as e:
-            logger.error(f"JSON String parser crashed with error { e } when trying to parse { filter_data }. Halting twister process...")
-            quit()
+    parse_twister_args(options, logger)
 
     return options
 
