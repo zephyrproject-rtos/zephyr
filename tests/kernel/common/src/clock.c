@@ -29,7 +29,12 @@ static ZTEST_BMEM struct timer_data tdata;
 #define LESS_DURATION 70
 
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_clock_tests Clock Operations
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_clock_tests
  * @{
  */
 
@@ -231,9 +236,9 @@ ZTEST(clock, test_ms_time_duration)
 	k_timer_stop(&ktimer);
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);
-
 /**
  * @}
  */
+
+ extern void *common_setup(void);
+ ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);
