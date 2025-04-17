@@ -163,23 +163,15 @@ static uint8_t ssp_pair_method(const struct bt_conn *conn)
 static uint8_t ssp_get_auth(const struct bt_conn *conn)
 {
 	bt_security_t max_sec_level;
-	uint8_t mitm = 0;
 
 	/* Check if the MITM is required by service */
 	max_sec_level = bt_l2cap_br_get_max_sec_level();
+
+	/*
+	 * The local device shall only set the MITM protection required flag
+	 * if the local device itself requires MITM protection.
+	 */
 	if ((max_sec_level > BT_SECURITY_L2) && (ssp_pair_method(conn) > JUST_WORKS)) {
-		mitm = BT_MITM;
-	}
-
-	/* Validate no bond auth request, and if valid use it. */
-	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
-	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
-	     (ssp_pair_method(conn) > JUST_WORKS))) {
-		return conn->br.remote_auth | mitm;
-	}
-
-	/* Local & remote have enough IO capabilities to get MITM protection. */
-	if (ssp_pair_method(conn) > JUST_WORKS) {
 		return conn->br.remote_auth | BT_MITM;
 	}
 
