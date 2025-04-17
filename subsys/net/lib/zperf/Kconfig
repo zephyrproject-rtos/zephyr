@@ -5,7 +5,6 @@
 menuconfig NET_ZPERF
 	bool "zperf library"
 	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_UDP
-	select NET_SOCKETS_SERVICE
 	select NET_SOCKETS
 	help
 	  This option enables zperf library, which allows to generate
@@ -47,8 +46,15 @@ config NET_ZPERF_MAX_PACKET_SIZE
 	help
 	  Upper size limit for packets sent by zperf.
 
+config NET_ZPERF_SERVER
+	bool "zperf server support"
+	select NET_SOCKETS_SERVICE
+	help
+	  Support running a zperf server for testing downloads from the application
+
 config NET_ZPERF_MAX_SESSIONS
 	int "Maximum number of zperf sessions"
+	depends on NET_ZPERF_SERVER
 	default 4
 	help
 	  Upper size limit for connections handled by zperf.
