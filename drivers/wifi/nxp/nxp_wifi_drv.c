@@ -564,7 +564,11 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	case WIFI_FREQ_BANDWIDTH_20MHZ:
 	case WIFI_FREQ_BANDWIDTH_40MHZ:
 	case WIFI_FREQ_BANDWIDTH_80MHZ:
-		wlan_uap_set_bandwidth(params->bandwidth);
+		ret = wlan_uap_set_bandwidth(params->bandwidth);
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("Bandwidth is not supported");
+			return -EAGAIN;
+		}
 		break;
 	default:
 		LOG_ERR("Invalid bandwidth");
@@ -670,7 +674,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_uap_set_bandwidth(params->bandwidth);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
-				LOG_ERR("Failed to set Wi-Fi AP bandwidth");
+				LOG_ERR("Bandwidth is not supported");
 			} else {
 				LOG_INF("Set  Wi-Fi AP bandwidth: %d", params->bandwidth);
 			}
