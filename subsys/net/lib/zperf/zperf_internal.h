@@ -64,6 +64,11 @@ struct zperf_udp_datagram {
 
 BUILD_ASSERT(sizeof(struct zperf_udp_datagram) <= PACKET_SIZE_MAX, "Invalid PACKET_SIZE_MAX");
 
+#define ZPERF_FLAGS_VERSION1      0x80000000
+#define ZPERF_FLAGS_EXTEND        0x40000000
+#define ZPERF_FLAGS_UDPTESTS      0x20000000
+#define ZPERF_FLAGS_SEQNO64B      0x08000000
+
 struct zperf_client_hdr_v1 {
 	int32_t flags;
 	int32_t num_of_threads;
