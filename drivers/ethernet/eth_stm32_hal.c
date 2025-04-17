@@ -326,7 +326,7 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
-	ETH_HandleTypeDef *heth;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int res;
 	size_t total_len;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -344,10 +344,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(dev_data != NULL);
-
-	heth = &dev_data->heth;
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
@@ -518,8 +514,8 @@ static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx)
 
 static struct net_pkt *eth_rx(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *dev_data;
-	ETH_HandleTypeDef *heth;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	struct net_pkt *pkt;
 	size_t total_len = 0;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -537,14 +533,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-
-	heth = &dev_data->heth;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
@@ -657,20 +645,14 @@ out:
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	const struct device *dev;
-	struct eth_stm32_hal_dev_data *dev_data;
+	const struct device *dev = (const struct device *)arg1;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	int res;
 
-	__ASSERT_NO_MSG(arg1 != NULL);
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
-
-	dev = (const struct device *)arg1;
-	dev_data = dev->data;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
 
 	while (1) {
 		res = k_sem_take(&dev_data->rx_int_sem, K_FOREVER);
@@ -696,18 +678,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *dev_data;
-	ETH_HandleTypeDef *heth;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-
-	heth = &dev_data->heth;
-
-	__ASSERT_NO_MSG(heth != NULL);
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 
 	HAL_ETH_IRQHandler(heth);
 }
@@ -966,12 +938,10 @@ static int eth_initialize(const struct device *dev)
 static void eth_stm32_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
 	struct eth_stm32_hal_dev_data *dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
-	ETH_HandleTypeDef *heth;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	uint32_t crc;
 	uint32_t hash_table[2];
 	uint32_t hash_index;
-
-	heth = &dev_data->heth;
 
 	crc = __RBIT(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
 	hash_index = (crc >> 26) & 0x3f;
@@ -1016,11 +986,8 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 static int eth_init_api_v2(const struct device *dev)
 {
 	HAL_StatusTypeDef hal_ret = HAL_OK;
-	struct eth_stm32_hal_dev_data *dev_data;
-	ETH_HandleTypeDef *heth;
-
-	dev_data = dev->data;
-	heth = &dev_data->heth;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
@@ -1173,21 +1140,10 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 
 static void eth_iface_init(struct net_if *iface)
 {
-	const struct device *dev;
-	struct eth_stm32_hal_dev_data *dev_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 	bool is_first_init = false;
-	ETH_HandleTypeDef *heth;
-
-	__ASSERT_NO_MSG(iface != NULL);
-
-	dev = net_if_get_device(iface);
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-	__ASSERT_NO_MSG(dev_data != NULL);
-
-	heth = &dev_data->heth;
-	__ASSERT_NO_MSG(heth != NULL);
 
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
@@ -1277,21 +1233,16 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_config_type type,
 				    struct ethernet_config *config)
 {
-	int ret = -ENOTSUP;
-	struct eth_stm32_hal_dev_data *dev_data;
-	ETH_HandleTypeDef *heth;
-
-	dev_data = dev->data;
-	heth = &dev_data->heth;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(config->mac_address.addr, dev_data->mac_addr,
 		       sizeof(config->mac_address.addr));
-		ret = 0;
-		break;
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		ETH_HandleTypeDef *heth = &dev_data->heth;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 		ETH_MACFilterConfigTypeDef MACFilterConf;
 
@@ -1305,26 +1256,21 @@ static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_conf
 			config->promisc_mode = false;
 		}
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-		ret = 0;
+		return 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
-		break;
 	default:
 		break;
 	}
 
-	return ret;
+	return -ENOTSUP;
 }
 
 static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
-	int ret = -ENOTSUP;
-	struct eth_stm32_hal_dev_data *dev_data;
-	ETH_HandleTypeDef *heth;
-
-	dev_data = dev->data;
-	heth = &dev_data->heth;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
@@ -1338,10 +1284,9 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr),
 				     NET_LINK_ETHERNET);
-		ret = 0;
-		break;
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 		ETH_MACFilterConfigTypeDef MACFilterConf;
 
@@ -1357,19 +1302,18 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 			heth->Instance->MACFFR &= ~ETH_MACFFR_PM;
 		}
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-		ret = 0;
+		return 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
-		break;
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		eth_stm32_mcast_filter(dev, &config->filter);
-		break;
+		return 0;
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 	default:
 		break;
 	}
 
-	return ret;
+	return -ENOTSUP;
 }
 
 static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
