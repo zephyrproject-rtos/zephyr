@@ -90,6 +90,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
 #endif
+#ifdef CONFIG_COUNTER_SIWX91X_STIMER
+	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+#endif
 #ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
 #endif
