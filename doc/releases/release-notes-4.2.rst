@@ -172,6 +172,10 @@ New APIs and options
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
 
+* Other
+
+  * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
+
 New Boards
 **********
 
