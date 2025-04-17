@@ -212,6 +212,10 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
 
+* Other
+
+  * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
+
 New Boards
 **********
 
