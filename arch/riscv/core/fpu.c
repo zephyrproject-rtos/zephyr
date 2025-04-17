@@ -72,6 +72,7 @@ void z_riscv_vstate_save_thread(struct k_thread *thread)
 	save_to->is_dirty = (mstatus & MSTATUS_VS) == MSTATUS_VS_DIRTY;
 	if (!save_to->is_dirty) {
 		csr_clear(mstatus, MSTATUS_VS_DIRTY);
+		csr_set(mstatus, MSTATUS_VS_CLEAN);
 		return;
 	}
 
@@ -101,6 +102,7 @@ void z_riscv_vstate_save_thread(struct k_thread *thread)
 		: "r"(save_to->vreg)
 		: "memory");
 	csr_clear(mstatus, MSTATUS_VS_DIRTY);
+	csr_set(mstatus, MSTATUS_VS_CLEAN);
 }
 void z_riscv_vstate_save()
 {
@@ -141,7 +143,8 @@ void z_riscv_vstate_restore_thread(struct k_thread *thread){
 		"csrw	vcsr, %3\n\t"
 		: : "r"(restore_from->vstart), "r"(restore_from->vtype), "r"(restore_from->vl), "r"(restore_from->vcsr)
 		:);
-	csr_clear(mstatus, MSTATUS_VS_INIT);
+	csr_clear(mstatus, MSTATUS_VS_DIRTY);
+	csr_set(mstatus, MSTATUS_VS_CLEAN);
 }
 
 void z_riscv_vstate_restore()
