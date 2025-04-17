@@ -26,19 +26,3 @@ properties:
     type: int
     required: true
     description: SDIO RX delay tap setting. Range 0 - 31.
-
-  cd-gpios:
-    type: phandle-array
-    description: |
-      Detect pin
-      This pin defaults to active low when produced by the SD card. The
-      property value should ensure the flags properly describe the signal
-      that is presented to the driver.
-
-  wp-gpios:
-    type: phandle-array
-    description: |
-      Write protection pin
-      This pin defaults to active low when produced by the SD card. The
-      property value should ensure the flags properly describe the signal
-      that is presented to the driver.

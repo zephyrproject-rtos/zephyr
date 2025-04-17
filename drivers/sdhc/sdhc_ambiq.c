@@ -10,7 +10,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/irq.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
@@ -18,14 +17,9 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include <zephyr/drivers/gpio/gpio_ambiq.h>
-
 #include <soc.h>
 
 LOG_MODULE_REGISTER(ambiq_sdio, CONFIG_SDHC_LOG_LEVEL);
-
-#define AMBIQ_SDIO_FREQ_MAX MHZ(96)
-#define AMBIQ_SDIO_FREQ_MIN KHZ(375)
 
 #if defined(CONFIG_SOC_SERIES_APOLLO4X)
 #define SDIO_BASE_ADDR     SDIO_BASE
@@ -42,8 +36,9 @@ struct ambiq_sdio_config {
 	uint32_t inst;
 	uint8_t tx_delay;
 	uint8_t rx_delay;
-	const struct gpio_dt_spec cd_gpio;
-	const struct gpio_dt_spec wp_gpio;
+	uint32_t max_bus_freq;
+	uint32_t min_bus_freq;
+	uint32_t power_delay_ms;
 };
 
 struct ambiq_sdio_data {
@@ -130,13 +125,11 @@ static int ambiq_sdio_reset(const struct device *dev)
 	uint32_t ui32Status = 0;
 	int ret = 0;
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	LOG_DBG("SDHC Software Reset");
 	ui32Status = am_hal_sdhc_software_reset(config->pSDHC, AM_HAL_SDHC_SW_RESET_ALL);
@@ -145,7 +138,6 @@ static int ambiq_sdio_reset(const struct device *dev)
 		ret = -EIO;
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
@@ -154,7 +146,6 @@ static int ambiq_sdio_reset(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	return ret;
 }
@@ -164,11 +155,13 @@ static int ambiq_sdio_reset(const struct device *dev)
  */
 static int ambiq_sdio_get_host_props(const struct device *dev, struct sdhc_host_props *props)
 {
+	const struct ambiq_sdio_config *config = dev->config;
+
 	LOG_DBG("SDHC get host props");
 	memset(props, 0, sizeof(*props));
-	props->f_max = AMBIQ_SDIO_FREQ_MAX;
-	props->f_min = AMBIQ_SDIO_FREQ_MIN;
-	props->power_delay = 50; /* power_delay could be changed based on board power design */
+	props->f_max = config->max_bus_freq;
+	props->f_min = config->min_bus_freq;
+	props->power_delay = config->power_delay_ms;
 	props->host_caps.suspend_res_support = true;
 	props->host_caps.adma_2_support = true;
 	props->host_caps.sdio_async_interrupt_support = true;
@@ -179,7 +172,7 @@ static int ambiq_sdio_get_host_props(const struct device *dev, struct sdhc_host_
 	props->host_caps.sdr50_support = true;
 	props->host_caps.sdr104_support = true;
 	props->host_caps.ddr50_support = true;
-	props->host_caps.hs200_support = true; /* Ambiq SDIO only supports 96MHz MAX frequence */
+	props->host_caps.hs200_support = true;
 	props->max_current_330 = 1020;
 	props->max_current_300 = 1020;
 	props->max_current_180 = 1020;
@@ -192,6 +185,7 @@ static int ambiq_sdio_get_host_props(const struct device *dev, struct sdhc_host_
  */
 static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 {
+	const struct ambiq_sdio_config *config = dev->config;
 	struct ambiq_sdio_data *data = dev->data;
 	am_hal_host_bus_voltage_e eBusVoltage;
 	am_hal_host_bus_width_e eBusWidth;
@@ -202,13 +196,13 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 	LOG_DBG("(SDIO clock_freq=%d, bus_width=%d, timing_mode=%d, bus_mode=%d)", ios->clock,
 		ios->bus_width, ios->timing, ios->bus_mode);
 
-	if (ios->clock != 0 && (ios->clock <= AMBIQ_SDIO_FREQ_MAX) &&
-	    (ios->clock >= AMBIQ_SDIO_FREQ_MIN)) {
+	if (ios->clock != 0 && (ios->clock <= config->max_bus_freq) &&
+	    (ios->clock >= config->min_bus_freq)) {
 		data->card.cfg.ui32Clock = ios->clock;
-	} else if (ios->clock != 0 && (ios->clock > AMBIQ_SDIO_FREQ_MAX) &&
+	} else if (ios->clock != 0 && (ios->clock > config->max_bus_freq) &&
 		   (ios->clock <= MMC_CLOCK_HS200)) {
-		/*Limit HS200 frequency to AMBIQ_SDIO_FREQ_MAX(96MHz) */
-		data->card.cfg.ui32Clock = AMBIQ_SDIO_FREQ_MAX;
+		/*Limit HS200 frequency to config->max_bus_freq*/
+		data->card.cfg.ui32Clock = config->max_bus_freq;
 		eUHSMode = AM_HAL_HOST_UHS_SDR104;
 	} else if (ios->clock != 0) {
 		return -ENOTSUP;
@@ -246,27 +240,18 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 		return -ENOTSUP;
 	}
 
-	/*
-	 * Recommend to use 1.8V IO for SDIO Host controller.
-	 * External level shifter is required for voltage switch between 1.8V and 3V.
-	 */
-	if (ios->signal_voltage != SD_VOL_1_8_V) {
-		return -ENOTSUP;
-	}
-
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	/* Change SDIO Host Bus Voltage */
 	if (eBusVoltage != data->card.cfg.eIoVoltage) {
 		data->card.cfg.eIoVoltage = eBusVoltage;
 		ui32Status = data->host->ops->set_bus_voltage(data->host->pHandle, eBusVoltage);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
+			pm_device_runtime_put(dev);
 			return -ENOTSUP;
 		}
 	}
@@ -276,6 +261,7 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 		data->card.cfg.eBusWidth = eBusWidth;
 		ui32Status = data->host->ops->set_bus_width(data->host->pHandle, eBusWidth);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
+			pm_device_runtime_put(dev);
 			return -ENOTSUP;
 		}
 	}
@@ -283,6 +269,7 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 	/* Change SDIO Host Clock Speed */
 	ui32Status = data->host->ops->set_bus_clock(data->host->pHandle, data->card.cfg.ui32Clock);
 	if (ui32Status != AM_HAL_STATUS_SUCCESS) {
+		pm_device_runtime_put(dev);
 		return -ENOTSUP;
 	}
 
@@ -290,6 +277,7 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 		LOG_DBG("MMC Card DDR50 Mode");
 		/* DDR50 mode must be 4bit or 8bit width according to EMMC Spec */
 		if (eBusWidth == AM_HAL_HOST_BUS_WIDTH_1) {
+			pm_device_runtime_put(dev);
 			return -ENOTSUP;
 		}
 		eUHSMode = AM_HAL_HOST_UHS_DDR50;
@@ -300,11 +288,11 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 		data->card.cfg.eUHSMode = eUHSMode;
 		ui32Status = data->host->ops->set_uhs_mode(data->host->pHandle, eUHSMode);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
+			pm_device_runtime_put(dev);
 			return -ENOTSUP;
 		}
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
@@ -313,7 +301,6 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	return ret;
 }
@@ -334,34 +321,6 @@ static int ambiq_sdio_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->cd_gpio.port) {
-		ret = gpio_pin_configure_dt(&config->cd_gpio, GPIO_INPUT);
-		if (ret) {
-			return ret;
-		}
-		gpio_pin_t pin = ambiq_gpio_get_pinnum(config->cd_gpio.port, config->cd_gpio.pin);
-		if (config->inst == 0) {
-			am_hal_gpio_cd0_pin_config(pin);
-		}
-		else {
-			am_hal_gpio_cd1_pin_config(pin);
-		}
-	}
-
-	if (config->wp_gpio.port) {
-		ret = gpio_pin_configure_dt(&config->wp_gpio, GPIO_INPUT);
-		if (ret) {
-			return ret;
-		}
-		gpio_pin_t pin = ambiq_gpio_get_pinnum(config->wp_gpio.port, config->wp_gpio.pin);
-		if (config->inst == 0) {
-			am_hal_gpio_wp0_pin_config(pin);
-		}
-		else {
-			am_hal_gpio_wp1_pin_config(pin);
-		}
-	}
-
 	/* Get the uderlying SDHC host instance */
 	data->host = am_hal_get_card_host(AM_HAL_SDHC_CARD_HOST + config->inst, true);
 
@@ -372,12 +331,12 @@ static int ambiq_sdio_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	/* Check whether card is present */
-	while (am_hal_card_host_find_card(data->host, &data->card) != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("No card is present now\n");
-		k_sleep(K_MSEC(1000));
-		LOG_ERR("Checking if card is available again\n");
-	}
+	/* Fill the Card default setting with the host's default value  */
+	data->card.pHost = data->host;
+	data->card.cfg.eBusWidth = data->host->eBusWidth;
+	data->card.cfg.eIoVoltage = data->host->eBusVoltage;
+	data->card.cfg.ui32Clock = data->host->ui32MinClock;
+	data->card.cfg.eUHSMode = data->host->eUHSMode;
 
 	/* Set AM_HAL_CARD_PWR_CTRL_SDHC_OFF as default SDIO power control policy  */
 	data->card.eCardPwrCtrlPolicy = AM_HAL_CARD_PWR_CTRL_SDHC_OFF;
@@ -428,17 +387,14 @@ static int ambiq_sdio_execute_tuning(const struct device *dev)
 
 	/* Timing delay is disabled if both TX and RX delay are set into 0 */
 	if (ui8TxRxDelays[0] != 0 || ui8TxRxDelays[1] != 0) {
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 		ret = pm_device_runtime_get(dev);
 
 		if (ret < 0) {
 			LOG_ERR("pm_device_runtime_get failed: %d", ret);
 		}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 		am_hal_card_host_set_txrx_delay(data->host, ui8TxRxDelays);
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 		/* Use async put to avoid useless device suspension/resumption
 		 * when doing consecutive transmission.
 		 */
@@ -447,7 +403,6 @@ static int ambiq_sdio_execute_tuning(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("pm_device_runtime_put failed: %d", ret);
 		}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 	}
 
 	return ret;
@@ -460,17 +415,15 @@ static int ambiq_sdio_get_card_present(const struct device *dev)
 {
 	struct ambiq_sdio_data *data = dev->data;
 	int status = 0;
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	int ret = 0;
+
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 	LOG_DBG("Get card present status");
 	status = data->host->ops->get_cd(data->host->pHandle);
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
@@ -479,7 +432,6 @@ static int ambiq_sdio_get_card_present(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 	return status;
 }
 
@@ -490,17 +442,15 @@ static int ambiq_sdio_card_busy(const struct device *dev)
 {
 	struct ambiq_sdio_data *data = dev->data;
 	uint32_t ui32Status;
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	int ret = 0;
+
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 	ui32Status = data->host->ops->card_busy(data->host->pHandle, DEFAULT_GET_STATUS_TIMEOUT_MS);
 	LOG_DBG("Check card busy status");
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
@@ -509,7 +459,7 @@ static int ambiq_sdio_card_busy(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
+
 
 	return (ui32Status != AM_HAL_STATUS_SUCCESS) ? 1 : 0;
 }
@@ -587,18 +537,16 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	}
 #endif /* CONFIG_AMBIQ_SDIO_ASYNC */
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	ret = pm_device_runtime_get(dev);
-
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
-	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
-
 	ret = k_mutex_lock(&dev_data->access_mutex, K_MSEC(cmd->timeout_ms));
 	if (ret) {
 		LOG_ERR("Could not access card");
 		return -EBUSY;
+	}
+
+	ret = pm_device_runtime_get(dev);
+
+	if (ret < 0) {
+		LOG_ERR("pm_device_runtime_get failed: %d", ret);
 	}
 
 	if (data) {
@@ -661,7 +609,6 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 		data->bytes_xfered = (ui32Status >> 16) & 0xFFFF;
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
@@ -670,7 +617,6 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	if (ret < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", ret);
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	return ret;
 }
@@ -690,12 +636,12 @@ static int ambiq_sdio_card_interrupt_enable(const struct device *dev, sdhc_inter
 	if (sources & SDHC_INT_SDIO) {
 		/* Enable SDIO Card Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_enable(data->host->pHandle,
-							    SDIO0_INTSIG_CARDINTEN_Msk);
+							    SDIO_INTSIG_CARDINTEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_enable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -704,12 +650,12 @@ static int ambiq_sdio_card_interrupt_enable(const struct device *dev, sdhc_inter
 	if (sources & SDHC_INT_INSERTED) {
 		/* Enable Card Insert Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_enable(data->host->pHandle,
-							    SDIO0_INTSIG_CARDINSERTEN_Msk);
+							    SDIO_INTSIG_CARDINSERTEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_enable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -718,12 +664,12 @@ static int ambiq_sdio_card_interrupt_enable(const struct device *dev, sdhc_inter
 	if (sources & SDHC_INT_REMOVED) {
 		/* Enable Card Removal Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_enable(data->host->pHandle,
-							    SDIO0_INTSIG_CARDREMOVALEN_Msk);
+							    SDIO_INTSIG_CARDREMOVALEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_enable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDREMOVALSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDREMOVALSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -746,12 +692,12 @@ static int ambiq_sdio_card_interrupt_disable(const struct device *dev, int sourc
 	if (sources & SDHC_INT_SDIO) {
 		/* Disable SDIO Card Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_disable(data->host->pHandle,
-							     SDIO0_INTSIG_CARDINTEN_Msk);
+							     SDIO_INTSIG_CARDINTEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_disable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -760,12 +706,12 @@ static int ambiq_sdio_card_interrupt_disable(const struct device *dev, int sourc
 	if (sources & SDHC_INT_INSERTED) {
 		/* Disable Card Insert Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_disable(data->host->pHandle,
-							     SDIO0_INTSIG_CARDINSERTEN_Msk);
+							     SDIO_INTSIG_CARDINSERTEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_disable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -774,12 +720,12 @@ static int ambiq_sdio_card_interrupt_disable(const struct device *dev, int sourc
 	if (sources & SDHC_INT_REMOVED) {
 		/* Disable Card Removal Interrupt */
 		ui32Status = am_hal_sdhc_intr_signal_disable(data->host->pHandle,
-							     SDIO0_INTSIG_CARDREMOVALEN_Msk);
+							     SDIO_INTSIG_CARDREMOVALEN_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
 		ui32Status = am_hal_sdhc_intr_status_disable(
-			data->host->pHandle, SDIO0_INTENABLE_CARDREMOVALSTATUSENABLE_Msk);
+			data->host->pHandle, SDIO_INTENABLE_CARDREMOVALSTATUSENABLE_Msk);
 		if (ui32Status != AM_HAL_STATUS_SUCCESS) {
 			return -EIO;
 		}
@@ -845,8 +791,9 @@ static int ambiq_sdio_pm_action(const struct device *dev, enum pm_device_action 
 		.inst = (DT_INST_REG_ADDR(n) - SDIO_BASE_ADDR) / SDIO_ADDR_INTERVAL,               \
 		.tx_delay = DT_INST_PROP(n, txdelay),                                              \
 		.rx_delay = DT_INST_PROP(n, rxdelay),                                              \
-		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
-		.wp_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wp_gpios, {0}),                             \
+		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                     \
+		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                     \
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
 	};                                                                                         \
                                                                                                    \
 	static struct ambiq_sdio_data ambiq_sdio_data_##n;                                         \

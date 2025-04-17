@@ -246,14 +246,29 @@
 				 drive-strength = "1.0";
 		};
 		group1 {
-			pinmux =
-				 <SDIF0_DAT0_P84>,
+			pinmux = <SDIF0_DAT0_P84>,
 				 <SDIF0_DAT2_P86>,
 				 <SDIF0_CMD_P160>,
 				 <SDIF0_CLKOUT_P88>;
 				 drive-strength = "1.0";
 				 bias-pull-up;
 				 ambiq,pull-up-ohms = <12000>;
+		};
+		group2 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <1>;
+		};
+		group3 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <2>;
+		};
+		group4 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <3>;
+		};
+		group5 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <4>;
 		};
 	};
 	sdio1_default: sdio1_default {
@@ -274,6 +289,22 @@
 				 drive-strength = "1.0";
 				 bias-pull-up;
 				 ambiq,pull-up-ohms = <12000>;
+		};
+		group2 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <1>;
+		};
+		group3 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <2>;
+		};
+		group4 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <3>;
+		};
+		group5 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <4>;
 		};
 	};
 	pdm0_default: pdm0_default {

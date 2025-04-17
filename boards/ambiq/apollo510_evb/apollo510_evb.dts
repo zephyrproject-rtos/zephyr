@@ -156,8 +156,6 @@
 	pinctrl-names = "default";
 	txdelay = <0>;
 	rxdelay = <0>;
-	cd-gpios = <&gpio160_191 21 GPIO_ACTIVE_LOW>;
-	wp-gpios = <&gpio160_191 22 GPIO_ACTIVE_LOW>;
 	status = "okay";
 	mmc {
 		compatible = "zephyr,mmc-disk";
