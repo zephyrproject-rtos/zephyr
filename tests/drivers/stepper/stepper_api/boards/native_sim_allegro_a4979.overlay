@@ -20,8 +20,7 @@
 		dir-gpios = <&gpio1 0 0>;
 		step-gpios = <&gpio1 1 0>;
 		en-gpios = <&gpio2 1 0>;
-		m0-gpios = <&gpio3 0 0>;
-		m1-gpios = <&gpio3 1 0>;
+		msx-gpios = <&gpio3 0 0>, <&gpio3 1 0>;
 		counter = <&counter0>;
 	};
 };
