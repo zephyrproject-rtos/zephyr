@@ -10,6 +10,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -77,9 +78,9 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 	}
 
 	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
+		if (fmt->pixelformat == fmts[i].pixelformat &&
+		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
+		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
 			break;
 		}
 	}
@@ -311,10 +312,9 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 		i++;
 	}
 
-	if ((i == ARRAY_SIZE(fmts)) || (fie->format->width > fmts[i].width_max) ||
-	    (fie->format->width < fmts[i].width_min) ||
-	    (fie->format->height > fmts[i].height_max) ||
-	    (fie->format->height < fmts[i].height_min)) {
+	if ((i == ARRAY_SIZE(fmts)) ||
+	    !IN_RANGE(fie->format->width, fmts[i].width_min, fmts[i].width_max) &&
+	    !IN_RANGE(fie->format->height, fmts[i].height_min, fmts[i].height_max)) {
 		return -EINVAL;
 	}
 
