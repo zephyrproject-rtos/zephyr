@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+config INA228
+	bool "INA228 current sensor"
+	default y
+	depends on DT_HAS_TI_INA228_ENABLED
+	select I2C
+	help
+	  Enable driver for INA228 Bidirectional Current/Power Monitor.
+
+config INA228_VSHUNT
+	bool "INA228 shunt voltage measurement enable"
+	depends on DT_HAS_TI_INA228_ENABLED
+	help
+	  Enable shunt voltage measurement for INA228.
+
+	  This is the actual shunt voltage measured which is scaled within the
+	  INA228 based upon the SHUNT_CAL register.
+
+	  Note that enabling this option requires an extra I2C read when
+	  SENSOR_CHAN_ALL is selected, so only enable if the shunt voltage
+	  measurement is required.
+
+config INA228_TEMPERATURE
+	bool "INA228 temperature measurement enable"
+	depends on DT_HAS_TI_INA228_ENABLED
+	help
+	  Enable temperature measurement for INA228.
+
+	  Note that enabling this option requires an extra I2C read when
+	  SENSOR_CHAN_ALL is selected, so only enable if the temperature
+	  measurement is required.
+
+config INA228_CUMULATIVE
+	bool "INA228 cumulative charge and energy enable"
+	depends on DT_HAS_TI_INA228_ENABLED
+	help
+	  Enable cumulative charge and energy measurement for INA228.
+
+	  Upon overflow, the charge and energy values will roll over and start
+	  from zero.
+
+	  Note that enabling this option requires two extra I2C reads when
+	  SENSOR_CHAN_ALL is selected, so only enable if the cumulative charge or
+	  energy is required.

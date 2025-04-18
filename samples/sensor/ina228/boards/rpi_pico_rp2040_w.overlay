@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	ina228@40 {
+		compatible = "ti,ina228";
+		reg = <0x40>;
+		rshunt-micro-ohms = <15000>;
+		lsb-nanoamp = <20000>;
+		status = "okay";
+	};
+
+};
