@@ -16,8 +16,8 @@ description: |
       dir-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
       step-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
       en-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-      m0-gpios = <&gpiod 13 0>;
-      m1-gpios = <&gpiod 12 0>;
+      msx-gpios = <&gpiod 13 0>,
+                  <&gpiod 12 0>;
       counter = <&counter5>;
   };
 
@@ -27,16 +27,6 @@ include:
   - name: stepper-controller.yaml
 
 properties:
-  m0-gpios:
-    required: true
-    type: phandle-array
-    description: Microstep configuration pin 0.
-
-  m1-gpios:
-    required: true
-    type: phandle-array
-    description: Microstep configuration pin 1.
-
   reset-gpios:
     type: phandle-array
     required: true

@@ -21,8 +21,8 @@ description: |
     fault-gpios = <&arduino_header 16 0>;
     sleep-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;
     en-gpios  = <&arduino_header 14 0>;
-    m0-gpios = <&mikroe_stepper_gpios 0 0>;
-    m1-gpios = <&mikroe_stepper_gpios 1 0>;
+    msx-gpios = <&mikroe_stepper_gpios 0 0>,
+                <&mikroe_stepper_gpios 1 0>;
     counter = <&counter2>;
   };
 
@@ -40,11 +40,3 @@ properties:
   sleep-gpios:
     type: phandle-array
     description: Sleep pin (active low).
-
-  m0-gpios:
-    type: phandle-array
-    description: Microstep configuration pin 0.
-
-  m1-gpios:
-    type: phandle-array
-    description: Microstep configuration pin 1.

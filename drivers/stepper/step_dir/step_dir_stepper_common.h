@@ -29,6 +29,7 @@
 struct step_dir_stepper_common_config {
 	const struct gpio_dt_spec step_pin;
 	const struct gpio_dt_spec dir_pin;
+	const struct gpio_dt_spec *msx_pins;
 	bool dual_edge;
 	const struct stepper_timing_source_api *timing_source;
 	const struct device *counter;
@@ -42,8 +43,9 @@ struct step_dir_stepper_common_config {
  *
  * @param node_id The devicetree node identifier.
  */
-#define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id)                                            \
-	{                                                                                          \
+#define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id, msx_gpio_array)				   \
+	{											   \
+		IF_ENABLED(DT_NODE_HAS_PROP(node_id, msx_gpios), (.msx_pins = msx_gpio_array,))    \
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
@@ -51,15 +53,15 @@ struct step_dir_stepper_common_config {
 		.invert_direction = DT_PROP(node_id, invert_direction),                            \
 		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
 						(&step_counter_timing_source_api),                 \
-						(&step_work_timing_source_api)),                   \
+						(&step_work_timing_source_api)),		   \
 	}
 
 /**
  * @brief Initialize common step direction stepper config from devicetree instance.
  * @param inst Instance.
  */
-#define STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst)                                          \
-	STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(DT_DRV_INST(inst))
+#define STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst, msx_gpio_array)                          \
+	STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(DT_DRV_INST(inst), msx_gpio_array)
 
 /**
  * @brief Common step direction stepper data.

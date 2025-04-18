@@ -41,6 +41,15 @@ properties:
       The GPIO pins used to send direction signals to the stepper motor.
       Pin will be driven high for forward direction and low for reverse direction.
 
+  msx-gpios:
+    type: phandle-array
+    description: |
+      An array of GPIO pins for configuring the microstep resolution of the driver.
+      The pins should be listed in the following order:
+      - MS1
+      - MS2
+      - MS3
+
   counter:
     type: phandle
     description: Counter used for generating step-accurate pulse signals.

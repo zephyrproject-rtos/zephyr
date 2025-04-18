@@ -27,8 +27,8 @@ allegro_a4979: allegro_a4979 {
 	dir-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
 	en-gpios = <&test_gpio 0 0>;
-	m0-gpios = <&test_gpio 0 0>;
-	m1-gpios = <&test_gpio 0 0>;
+	msx-gpios = <&test_gpio 0 0>,
+		    <&test_gpio 0 0>;
 	counter = <&counter0>;
 };
 
@@ -40,8 +40,8 @@ ti_drv84xx: ti_drv84xx {
 	step-gpios = <&test_gpio 0 0>;
 	sleep-gpios = <&test_gpio 0 0>;
 	en-gpios  = <&test_gpio 0 0>;
-	m0-gpios = <&test_gpio 0 0>;
-	m1-gpios = <&test_gpio 0 0>;
+	msx-gpios = <&test_gpio 0 0>,
+		    <&test_gpio 0 0>;
 	counter = <&counter0>;
 };
 

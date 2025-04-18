@@ -30,8 +30,6 @@ struct drv84xx_config {
 	struct step_dir_stepper_common_config common;
 	struct gpio_dt_spec sleep_pin;
 	struct gpio_dt_spec en_pin;
-	struct gpio_dt_spec m0_pin;
-	struct gpio_dt_spec m1_pin;
 	struct gpio_dt_spec fault_pin;
 };
 
@@ -106,14 +104,14 @@ int drv84xx_microstep_recovery(const struct device *dev)
 	uint8_t m0_value = data->pin_states.m0;
 	uint8_t m1_value = data->pin_states.m1;
 
-	ret = drv84xx_set_microstep_pin(dev, &config->m0_pin, m0_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->common.msx_pins[0], m0_value);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
 			ret);
 		return ret;
 	}
 
-	ret = drv84xx_set_microstep_pin(dev, &config->m1_pin, m1_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->common.msx_pins[1], m1_value);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
 			ret);
@@ -272,7 +270,8 @@ static int drv84xx_set_micro_step_res(const struct device *dev,
 	uint8_t m0_value = 0;
 	uint8_t m1_value = 0;
 
-	if ((config->m0_pin.port == NULL) || (config->m1_pin.port == NULL)) {
+	if ((config->common.msx_pins[0].port == NULL) ||
+	    (config->common.msx_pins[1].port == NULL)) {
 
 		LOG_ERR("%s: Failed to set microstep resolution: microstep pins are not defined "
 			"(error: %d)",
@@ -326,12 +325,12 @@ static int drv84xx_set_micro_step_res(const struct device *dev,
 		return -ENOTSUP;
 	};
 
-	ret = drv84xx_set_microstep_pin(dev, &config->m0_pin, m0_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->common.msx_pins[0], m0_value);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = drv84xx_set_microstep_pin(dev, &config->m1_pin, m1_value);
+	ret = drv84xx_set_microstep_pin(dev, &config->common.msx_pins[1], m1_value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -421,8 +420,8 @@ static int drv84xx_init(const struct device *dev)
 	}
 
 	/* Configure microstep pin 0 if it is available */
-	if (config->m0_pin.port != NULL) {
-		ret = gpio_pin_configure_dt(&config->m0_pin, GPIO_OUTPUT_INACTIVE);
+	if (config->common.msx_pins[0].port != NULL) {
+		ret = gpio_pin_configure_dt(&config->common.msx_pins[0], GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
 			return ret;
@@ -431,8 +430,8 @@ static int drv84xx_init(const struct device *dev)
 	}
 
 	/* Configure microstep pin 1 if it is available */
-	if (config->m1_pin.port != NULL) {
-		ret = gpio_pin_configure_dt(&config->m1_pin, GPIO_OUTPUT_INACTIVE);
+	if (config->common.msx_pins[1].port != NULL) {
+		ret = gpio_pin_configure_dt(&config->common.msx_pins[1], GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
 			return ret;
@@ -440,7 +439,8 @@ static int drv84xx_init(const struct device *dev)
 		data->pin_states.m1 = 0U;
 	}
 
-	if ((config->m0_pin.port != NULL) && (config->m1_pin.port != NULL)) {
+	if ((config->common.msx_pins[0].port != NULL) &&
+	    (config->common.msx_pins[1].port != NULL)) {
 		ret = drv84xx_set_micro_step_res(dev, data->ustep_res);
 		if (ret != 0) {
 			return ret;
@@ -492,13 +492,21 @@ static DEVICE_API(stepper, drv84xx_stepper_api) = {
 };
 
 #define DRV84XX_DEVICE(inst)                                                                       \
-                                                                                                   \
-	static const struct drv84xx_config drv84xx_config_##inst = {                               \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, msx_gpios), (                                       \
+	static const struct gpio_dt_spec drv84xx_stepper_msx_pins_##inst[] = {			   \
+		DT_INST_FOREACH_PROP_ELEM_SEP(							   \
+			inst, msx_gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)				   \
+		),										   \
+	};											   \
+	BUILD_ASSERT(										   \
+		ARRAY_SIZE(drv84xx_stepper_msx_pins_##inst) == 2,				   \
+		"Two microstep config pins needed");						   \
+	))											   \
+	static const struct drv84xx_config drv84xx_config_##inst = {				   \
+		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(				   \
+			inst, drv84xx_stepper_msx_pins_##inst),					   \
 		.sleep_pin = GPIO_DT_SPEC_INST_GET_OR(inst, sleep_gpios, {0}),                     \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
-		.m0_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m0_gpios, {0}),                           \
-		.m1_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m1_gpios, {0}),                           \
 		.fault_pin = GPIO_DT_SPEC_INST_GET_OR(inst, fault_gpios, {0}),                     \
 	};                                                                                         \
                                                                                                    \
