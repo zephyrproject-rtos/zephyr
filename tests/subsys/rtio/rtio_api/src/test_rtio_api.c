@@ -649,6 +649,62 @@ ZTEST(rtio_api, test_rtio_cqe_count_overflow)
 	}
 }
 
+#define RTIO_DELAY_NUM_ELEMS 10
+
+RTIO_DEFINE(r_delay, RTIO_DELAY_NUM_ELEMS, RTIO_DELAY_NUM_ELEMS);
+
+ZTEST(rtio_api, test_rtio_delay)
+{
+	int res;
+	struct rtio *r = &r_delay;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	uint8_t expected_expiration_order[RTIO_DELAY_NUM_ELEMS] = {4, 3, 2, 1, 0, 5, 6, 7, 8, 9};
+
+	for (size_t i = 0; i < RTIO_DELAY_NUM_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+
+		/** Half of the delays will be earlier than the previous one submitted.
+		 * The other half will be later.
+		 */
+		if (i < (RTIO_DELAY_NUM_ELEMS / 2)) {
+			rtio_sqe_prep_delay(sqe, K_SECONDS(10 - i), (void *)i);
+		} else {
+			rtio_sqe_prep_delay(sqe, K_SECONDS(10 - 4 + i), (void *)i);
+		}
+	}
+
+	res = rtio_submit(r, 0);
+	zassert_ok(res, "Should return ok from rtio_execute");
+
+	cqe = rtio_cqe_consume(r);
+	zassert_is_null(cqe, "There should not be a cqe since delay has not expired");
+
+	/** Wait until we expect delays start expiring */
+	k_sleep(K_SECONDS(10 - (RTIO_DELAY_NUM_ELEMS / 2)));
+
+	for (int i = 0; i < RTIO_DELAY_NUM_ELEMS; i++) {
+		k_sleep(K_SECONDS(1));
+
+		TC_PRINT("consume %d\n", i);
+		cqe = rtio_cqe_consume(r);
+		zassert_not_null(cqe, "Expected a valid cqe");
+		zassert_ok(cqe->result, "Result should be ok");
+
+		size_t expired_id = (size_t)(cqe->userdata);
+
+		zassert_equal(expected_expiration_order[i], expired_id,
+			      "Expected order not valid. Obtained: %d, expected: %d",
+			      (int)expired_id, (int)expected_expiration_order[i]);
+
+		rtio_cqe_release(r, cqe);
+
+		cqe = rtio_cqe_consume(r);
+		zassert_is_null(cqe, "There should not be a cqe since next delay has not expired");
+	}
+}
 
 #define THROUGHPUT_ITERS 100000
 RTIO_DEFINE(r_throughput, SQE_POOL_SIZE, CQE_POOL_SIZE);
