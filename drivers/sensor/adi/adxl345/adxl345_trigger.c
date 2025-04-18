@@ -11,9 +11,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+
 #include "adxl345.h"
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD) || defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
