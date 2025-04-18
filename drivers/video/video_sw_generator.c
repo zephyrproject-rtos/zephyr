@@ -78,7 +78,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
+	for (i = 0; i < ARRAY_SIZE(fmts) - 1; ++i) {
 		if (fmt->pixelformat == fmts[i].pixelformat &&
 		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
 		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
@@ -86,7 +86,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 		}
 	}
 
-	if (i == ARRAY_SIZE(fmts)) {
+	if (i == ARRAY_SIZE(fmts) - 1) {
 		LOG_ERR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
