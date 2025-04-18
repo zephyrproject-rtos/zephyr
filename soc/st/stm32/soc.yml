@@ -201,6 +201,9 @@ family:
     - name: stm32u031xx
     - name: stm32u073xx
     - name: stm32u083xx
+  - name: stm32u3x
+    socs:
+    - name: stm32u385xx
   - name: stm32u5x
     socs:
     - name: stm32u5a5xx
