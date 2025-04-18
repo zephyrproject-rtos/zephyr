@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(led_axp192, CONFIG_LED_LOG_LEVEL);
 #define AXP2101_CHGLED_CTRL_OFFSET 1
 
 struct led_axp192_config {
-	struct i2c_dt_spec i2c;
+	const struct device *mfd;
 	uint8_t addr;
 	uint8_t mode;
 	uint8_t mode_mask;
@@ -52,6 +52,7 @@ struct led_axp192_config {
 static int led_axp192_on(const struct device *dev, uint32_t led)
 {
 	const struct led_axp192_config *config = dev->config;
+	int ret;
 
 	ARG_UNUSED(led);
 
@@ -59,12 +60,18 @@ static int led_axp192_on(const struct device *dev, uint32_t led)
 		return -EINVAL;
 	}
 
-	return i2c_reg_update_byte_dt(&config->i2c, config->addr, CHGLED_OUTPUT_MASK, CHGLED_ON);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->addr,
+				     CHGLED_OUTPUT_MASK, CHGLED_ON);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int led_axp192_off(const struct device *dev, uint32_t led)
 {
 	const struct led_axp192_config *config = dev->config;
+	int ret;
 
 	ARG_UNUSED(led);
 
@@ -72,7 +79,12 @@ static int led_axp192_off(const struct device *dev, uint32_t led)
 		return -EINVAL;
 	}
 
-	return i2c_reg_update_byte_dt(&config->i2c, config->addr, CHGLED_OUTPUT_MASK, CHGLED_OFF);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->addr,
+				     CHGLED_OUTPUT_MASK, CHGLED_OFF);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int led_axp192_blink(const struct device *dev, uint32_t led, uint32_t delay_on,
@@ -87,18 +99,23 @@ static int led_axp192_blink(const struct device *dev, uint32_t led, uint32_t del
 	}
 
 	if ((delay_on == SLOW_BLINK_DELAY_ON) && (delay_off == SLOW_BLINK_DELAY_OFF)) {
-		return i2c_reg_update_byte_dt(&config->i2c, config->addr, CHGLED_OUTPUT_MASK,
-					      CHGLED_BLINK_SLOW);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->addr,
+					     CHGLED_OUTPUT_MASK, CHGLED_BLINK_SLOW);
+		k_sem_give(axp192_get_lock(config->mfd));
 	} else if ((delay_on == FAST_BLINK_DELAY_ON) && (delay_off == FAST_BLINK_DELAY_OFF)) {
-		return i2c_reg_update_byte_dt(&config->i2c, config->addr, CHGLED_OUTPUT_MASK,
-					      CHGLED_BLINK_FAST);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->addr,
+					     CHGLED_OUTPUT_MASK, CHGLED_BLINK_FAST);
+		k_sem_give(axp192_get_lock(config->mfd));
 	} else {
 		LOG_ERR("The AXP192 blink setting can only %d/%d or %d/%d. (%d/%d)",
 			SLOW_BLINK_DELAY_ON, SLOW_BLINK_DELAY_OFF, FAST_BLINK_DELAY_ON,
 			FAST_BLINK_DELAY_OFF, delay_on, delay_off);
+		ret = -ENOTSUP;
 	}
 
-	return -ENOTSUP;
+	return ret;
 }
 
 static DEVICE_API(led, led_axp192_api) = {
@@ -110,23 +127,26 @@ static DEVICE_API(led, led_axp192_api) = {
 static int led_axp192_init(const struct device *dev)
 {
 	const struct led_axp192_config *config = dev->config;
+	int ret = -EINVAL;
 
 	switch (config->mode) {
 	case CHGLED_CTRL_TYPE_A:
 	case CHGLED_CTRL_TYPE_B:
 	case CHGLED_CTRL_BY_REG:
 	case CHGLED_CTRL_BY_CHARGE:
-		return i2c_reg_update_byte_dt(&config->i2c, config->addr,
-					      config->mode_mask << config->mode_offset,
-					      config->mode << config->mode_offset);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->addr,
+					     config->mode_mask << config->mode_offset,
+					     config->mode << config->mode_offset);
+		k_sem_give(axp192_get_lock(config->mfd));
 	}
 
-	return -EINVAL;
+	return ret;
 }
 
 #define LED_AXPXXXX_DEFINE(n, model, compat)                                                       \
 	static const struct led_axp192_config led_axp_config_##model##_##n = {                     \
-		.i2c = I2C_DT_SPEC_GET(DT_PARENT(n)),                                              \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.addr = AXP##model##_REG_CHGLED,                                                   \
 		.mode = UTIL_CAT(CHGLED_CTRL_, DT_STRING_UPPER_TOKEN(n, x_powers_mode)),           \
 		.mode_mask = AXP##model##_CHGLED_CTRL_MASK,                                        \
