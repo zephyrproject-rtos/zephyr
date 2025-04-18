@@ -1,0 +1,15 @@
+tests:
+  bluetooth.classic.l2cap:
+    platform_allow:
+      - native_sim
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - l2cap
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 480
