@@ -1,8 +1,6 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-source "Kconfig.zephyr"
-
 config NET_SAMPLE_CODE_RELOCATE
 	bool "Relocate networking code into RAM"
 	select CODE_DATA_RELOCATION
@@ -27,3 +25,9 @@ if USB_DEVICE_STACK_NEXT
 # tree, you cannot use them in your own application.
 	source "samples/subsys/usb/common/Kconfig.sample_usbd"
 endif
+
+configdefault NRF_WIFI_DATA_HEAP_SIZE
+	default 30000 if NRF_WIFI_ZERO_COPY_TX
+	default 50000
+
+source "Kconfig.zephyr"
