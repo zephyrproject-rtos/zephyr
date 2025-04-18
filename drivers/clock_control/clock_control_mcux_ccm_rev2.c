@@ -225,11 +225,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_MCUX_FLEXIO
-	case IMX_CCM_FLEXIO1_CLK:
-		clock_root = kCLOCK_Root_Flexio1;
-		break;
-	case IMX_CCM_FLEXIO2_CLK:
-		clock_root = kCLOCK_Root_Flexio2;
+	case IMX_CCM_FLEXIO_CLK:
+		clock_root = kCLOCK_Root_Flexio1 + instance;
 		break;
 #endif
 
