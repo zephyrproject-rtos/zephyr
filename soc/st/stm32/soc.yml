@@ -43,6 +43,7 @@ family:
   - name: stm32f4x
     socs:
     - name: stm32f401xc
+    - name: stm32f401xd
     - name: stm32f401xe
     - name: stm32f405xx
     - name: stm32f407xx
