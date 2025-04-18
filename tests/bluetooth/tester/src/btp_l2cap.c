@@ -317,9 +317,35 @@ static void br_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
 }
 
+static struct net_buf *br_alloc_buf_cb(struct bt_l2cap_chan *chan)
+{
+	return net_buf_alloc(&data_pool, K_FOREVER);
+}
+
+static uint8_t br_recv_cb_buf[DATA_MTU + sizeof(struct btp_l2cap_data_received_ev)];
+
+static int br_recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
+{
+	struct btp_l2cap_data_received_ev *ev = (void *)br_recv_cb_buf;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+
+	ev->chan_id = chan->chan_id;
+	ev->data_length = sys_cpu_to_le16(buf->len);
+	memcpy(ev->data, buf->data, buf->len);
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
+		     br_recv_cb_buf, sizeof(*ev) + buf->len);
+
+	return 0;
+}
+
 static const struct bt_l2cap_chan_ops br_l2cap_ops = {
 	.connected = br_connected_cb,
 	.disconnected = br_disconnected_cb,
+	.alloc_buf = br_alloc_buf_cb,
+	.recv = br_recv_cb,
 };
 
 static struct br_channel *get_free_br_channel(void)
