@@ -75,6 +75,22 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 	case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = __HIRC / clkdiv_divider;
 		break;
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+	case (CLK_CANFDSEL_CANFD0SEL_HXT >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = __HXT / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_APLL0_DIV2 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = (CLK_GetAPLL0ClockFreq() / 2) / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HCLK0 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = CLK_GetHCLK0Freq() / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HIRC >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = __HIRC / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HIRC48M_DIV4 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = (__HIRC48M / 4) / clkdiv_divider;
+		break;
 #endif
 	default:
 		LOG_ERR("Invalid clock source rate index");
