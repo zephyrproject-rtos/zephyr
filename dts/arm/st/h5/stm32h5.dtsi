@@ -655,6 +655,15 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 3U)>;
 			status = "disabled";
 		};
+
+		dcmi: dcmi@4202c000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x4202c000 0x400>;
+			interrupts = <108 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
