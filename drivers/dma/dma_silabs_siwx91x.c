@@ -343,6 +343,9 @@ static int siwx91x_direct_chan_config(const struct device *dev, RSI_UDMA_HANDLE_
 		channel_control.dstInc = UDMA_DST_INC_NONE;
 	}
 
+	/* Clear the CHNL_PRI_ALT_CLR to use primary DMA descriptor structure */
+	sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->CHNL_PRI_ALT_CLR);
+
 	status = UDMAx_ChannelConfigure(&udma_resources, (uint8_t)channel,
 					config->head_block->source_address,
 					config->head_block->dest_address,
