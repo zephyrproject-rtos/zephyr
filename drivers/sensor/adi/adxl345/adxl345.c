@@ -129,7 +129,7 @@ static inline bool adxl345_bus_is_ready(const struct device *dev)
 
 int adxl345_get_status(const struct device *dev,
 			   uint8_t *status1,
-			   uint16_t *fifo_entries)
+			   uint8_t *fifo_entries)
 {
 	uint8_t buf[2], length = 1U;
 	int ret;
@@ -165,7 +165,7 @@ int adxl345_get_status(const struct device *dev,
 int adxl345_configure_fifo(const struct device *dev,
 				  enum adxl345_fifo_mode mode,
 				  enum adxl345_fifo_trigger trigger,
-				  uint16_t fifo_samples)
+				  uint8_t fifo_samples)
 {
 	struct adxl345_dev_data *data = dev->data;
 	uint8_t fifo_config;

@@ -159,7 +159,7 @@ enum adxl345_odr {
 struct adxl345_fifo_config {
 	enum adxl345_fifo_mode fifo_mode;
 	enum adxl345_fifo_trigger fifo_trigger;
-	uint16_t fifo_samples;
+	uint8_t fifo_samples; /* number of entries to read for STREAM */
 };
 
 struct adxl345_fifo_data {
@@ -254,7 +254,7 @@ void adxl345_stream_irq_handler(const struct device *dev);
 
 #ifdef CONFIG_ADXL345_TRIGGER
 int adxl345_get_status(const struct device *dev,
-		       uint8_t *status, uint16_t *fifo_entries);
+		       uint8_t *status, uint8_t *fifo_entries);
 
 int adxl345_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
@@ -299,7 +299,7 @@ void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
 int adxl345_configure_fifo(const struct device *dev,
 			   enum adxl345_fifo_mode mode,
 			   enum adxl345_fifo_trigger trigger,
-			   uint16_t fifo_samples);
+			   uint8_t fifo_samples);
 size_t adxl345_get_packet_size(const struct adxl345_dev_config *cfg);
 #endif /* CONFIG_ADXL345_STREAM */
 
