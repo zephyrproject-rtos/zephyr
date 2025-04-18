@@ -91,9 +91,16 @@ For :ref:`native_sim`, build this sample application with the following commands
    :goals: build
    :compact:
 
-For testing purpose without the need of any real video capture and/or display hardwares,
+For testing purpose and without the need of any real video capture and/or display hardwares,
 a video software pattern generator is supported by the above build commands without
-specifying the shields.
+specifying the shields, and using :ref:`snippet-video-sw-generator`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: native_sim/native/64
+   :snippets: video-sw-generator
+   :goals: build
+   :compact:
 
 For controlling the camera device using shell commands instead of continuously capturing the data,
 append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
