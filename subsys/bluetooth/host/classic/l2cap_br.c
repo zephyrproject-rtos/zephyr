@@ -4685,6 +4685,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
+		br_chan->ident = ident;
 		k_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
