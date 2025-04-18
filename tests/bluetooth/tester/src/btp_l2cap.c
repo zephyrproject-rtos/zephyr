@@ -605,6 +605,50 @@ static uint8_t disconnect_eatt_chans(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t br_send_data(uint8_t chan_id, const struct btp_l2cap_send_data_cmd *cp,
+			    void *rsp, uint16_t *rsp_len)
+{
+	struct br_channel *br_chan;
+	struct net_buf *buf;
+	uint16_t data_len;
+	int err;
+
+	if (chan_id >= CHANNELS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	br_chan = &br_channels[chan_id];
+	data_len = sys_le16_to_cpu(cp->data_len);
+
+	if (data_len > DATA_MTU) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (data_len > br_chan->br.tx.mtu) {
+		return BTP_STATUS_FAILED;
+	}
+
+	buf = net_buf_alloc(&data_pool, K_FOREVER);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+
+	net_buf_add_mem(buf, cp->data, data_len);
+	err = bt_l2cap_chan_send(&br_chan->br.chan, buf);
+	if (err < 0) {
+		LOG_ERR("Unable to send data: %d", -err);
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#else
+static uint8_t br_send_data(uint8_t chan_id, const struct btp_l2cap_send_data_cmd *cp,
+			    void *rsp, uint16_t *rsp_len)
+{
+	return BTP_STATUS_FAILED;
+}
+#endif /* CONFIG_BT_CLASSIC */
 
 static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
@@ -618,6 +662,16 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 	if (cmd_len < sizeof(*cp) ||
 	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_len)) {
 		return BTP_STATUS_FAILED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		uint8_t chan_id;
+
+		chan_id = cp->chan_id;
+		if (chan_id >= ARRAY_SIZE(channels)) {
+			chan_id = chan_id - ARRAY_SIZE(channels);
+			return br_send_data(chan_id, cp, rsp, rsp_len);
+		}
 	}
 
 	if (cp->chan_id >= CHANNELS) {
