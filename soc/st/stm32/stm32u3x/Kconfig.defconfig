@@ -1,0 +1,10 @@
+# ST Microelectronics STM32U3 MCU line
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32U3X
+
+rsource "Kconfig.defconfig.stm32u3*"
+
+endif # SOC_SERIES_STM32U3X
