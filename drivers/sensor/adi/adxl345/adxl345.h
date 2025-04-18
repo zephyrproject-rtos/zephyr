@@ -165,7 +165,7 @@ struct adxl345_fifo_config {
 struct adxl345_fifo_data {
 	uint8_t is_fifo: 1;
 	uint8_t is_full_res: 1;
-	uint8_t selected_range: 2;
+	enum adxl345_range selected_range: 2;
 	uint8_t sample_set_size: 4;
 	uint8_t int_status;
 	uint16_t accel_odr: 4;
@@ -178,7 +178,7 @@ struct adxl345_sample {
 	uint8_t is_fifo: 1;
 	uint8_t res: 7;
 #endif /* CONFIG_ADXL345_STREAM */
-	uint8_t selected_range;
+	enum adxl345_range selected_range;
 	bool is_full_res;
 	int16_t x;
 	int16_t y;
@@ -201,7 +201,7 @@ struct adxl345_dev_data {
 	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
 	struct adxl345_fifo_config fifo_config;
 	uint8_t is_full_res;
-	uint8_t selected_range;
+	enum adxl345_range selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback gpio_cb;
