@@ -90,12 +90,6 @@
 			};
 		};
 
-		pwrcfg: pwrcfg@40021000 {
-			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
-			#pwrcfg-cells = <2>;
-		};
-
 		stimer0: stimer@40008140 {
 			compatible = "ambiq,stimer";
 			reg = <0x40008140 0x80>;
@@ -182,7 +176,6 @@
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -193,7 +186,6 @@
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
 			zephyr,pm-device-runtime-auto;
 		};
 
