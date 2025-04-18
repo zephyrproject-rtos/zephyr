@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: TI INA228 Power/Energy/Charge Monitor
+tests:
+  sample.drivers.ina228:
+    build_only: true
+    platform_allow: rpi_pico/rp2040/w
+    tags: sensors

@@ -1,0 +1,122 @@
+#
+# Copyright 2025 Jonas Berg
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Texas Instruments INA 228 current, voltage and temperature sensor.
+  It also calculates the power, charge and energy.
+  See https://www.ti.com/product/INA228
+
+compatible: "ti,ina228"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+
+  rshunt-micro-ohms:
+    type: int
+    required: true
+    description:
+      Shunt resistor value in micro-ohms.
+
+  lsb-nanoamp:
+    type: int
+    required: true
+    description: |
+      Current LSB in nano-ampere.
+
+      This value should be selected so that measurement resolution is
+      maximized, that is:
+
+        current-lsb(A) = maximum expected current(A) / 2^19
+
+      For example, if maximum expected current is 10 A:
+
+        current-lsb(A) = 10 A / 2^19 = 19073 nA
+
+      Rounded larger values may be used for convenience, e.g. 20000 nA/LSB
+      or 100000 nA/LSB while keeping a good measurement resolution.
+
+  initial-delay-ms:
+    type: int
+    description: |
+      Initial ADC conversion delay.
+      Sets the delay for initial ADC conversion in steps of 2 ms.
+      Valid values are 0, 2, 4, ..., 508, 510.
+      Default is the power-on reset value.
+    default: 0
+
+  temp-compensation-ppm:
+    type: int
+    description: |
+      Temperature compensation for shunt resistor.
+      Calculated with respect to 25 °C. Resolution 1 ppm/°C/LSB.
+      Min 0h = 0 ppm/°C
+      Max 0x3FFF = 16383 ppm/°C
+      Default is the power-on reset value.
+    default: 0
+
+  adc-low-range:
+    type: boolean
+    description: |
+      Use a lower range for the shunt voltage (±40.96 mV instead of the default ±163.84 mV).
+      Default is the power-on reset value.
+
+  operating-mode:
+    type: string
+    description: |
+      Selects mode of operation.
+      Default is the power-on reset value.
+    default: "Temperature, bus, and shunt voltage continuous"
+    enum:
+      - "Shutdown single shot"
+      - "Bus Voltage single shot"
+      - "Shunt Voltage single shot"
+      - "Bus and Shunt Voltage single shot"
+      - "Temperature Single shot"
+      - "Temperature and bus voltage single shot"
+      - "Temperature and shunt voltage single shot"
+      - "Temperature, bus, and shunt voltage single shot"
+      - "Shutdown continuous"
+      - "Bus voltage continuous"
+      - "Shunt voltage continuous"
+      - "Bus and shunt voltage continuous"
+      - "Temperature continuous"
+      - "Temperature and bus voltage continuous"
+      - "Temperature and shunt voltage continuous"
+      - "Temperature, bus, and shunt voltage continuous"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  temp-conversion-time-us:
+    type: int
+    description: |
+      Temperature conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]

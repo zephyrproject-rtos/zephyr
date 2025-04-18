@@ -201,6 +201,10 @@ enum sensor_channel {
 	SENSOR_CHAN_GRAVITY_VECTOR,
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
+	/** Accumulated charge, in Coulombs */
+	SENSOR_CHAN_CHARGE,
+	/** Accumulated energy, in Joule */
+	SENSOR_CHAN_ENERGY,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
