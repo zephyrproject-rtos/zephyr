@@ -45,6 +45,8 @@ tests:
       - CONFIG_VIDEO_SHELL=y
       - CONFIG_FPU=y
       - CONFIG_DISPLAY=n
+    extra_args:
+      - platform:native_sim/native/64:SNIPPET="video-sw-generator"
     harness: console
     harness_config:
       type: one_line
