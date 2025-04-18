@@ -103,23 +103,21 @@ int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 	return adxl345_reg_read(dev, addr, buf, 1);
 }
 
-int adxl345_reg_write_mask(const struct device *dev,
-			       uint8_t reg_addr,
-			       uint8_t mask,
-			       uint8_t data)
+int adxl345_reg_update_bits(const struct device *dev, uint8_t reg,
+			    uint8_t mask, uint8_t val)
 {
-	int ret;
-	uint8_t tmp;
+	uint8_t regval, tmp;
+	int rc;
 
-	ret = adxl345_reg_read_byte(dev, reg_addr, &tmp);
-	if (ret) {
-		return ret;
+	rc = adxl345_reg_read_byte(dev, reg, &regval);
+	if (rc) {
+		return rc;
 	}
 
-	tmp &= ~mask;
-	tmp |= data;
+	tmp = regval & ~mask;
+	tmp |= val & mask;
 
-	return adxl345_reg_write_byte(dev, reg_addr, tmp);
+	return adxl345_reg_write_byte(dev, reg, tmp);
 }
 
 static inline bool adxl345_bus_is_ready(const struct device *dev)
@@ -222,9 +220,8 @@ int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode)
  */
 static int adxl345_set_odr(const struct device *dev, enum adxl345_odr odr)
 {
-	return adxl345_reg_write_mask(dev, ADXL345_REG_RATE,
-					   ADXL345_ODR_MSK,
-					   ADXL345_ODR_MODE(odr));
+	return adxl345_reg_update_bits(dev, ADXL345_REG_RATE,
+				       ADXL345_ODR_MSK, ADXL345_ODR_MODE(odr));
 }
 
 static int adxl345_attr_set_odr(const struct device *dev,

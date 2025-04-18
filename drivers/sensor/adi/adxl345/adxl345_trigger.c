@@ -118,8 +118,8 @@ int adxl345_trigger_set(const struct device *dev,
 		int_en = 0U;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_REG_INT_MAP, int_mask,
-				     int_en);
+	ret = adxl345_reg_update_bits(dev, ADXL345_REG_INT_MAP,
+				      int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
