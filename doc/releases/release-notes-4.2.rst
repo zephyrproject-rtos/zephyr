@@ -159,6 +159,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
 
+  * OpenThread
+
+    * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
+
 * Stepper
 
   * :c:func:`stepper_stop()`
