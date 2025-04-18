@@ -105,7 +105,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr dhcps_addr4;
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
-	struct wifi_iface_status status = { 0 };
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
 #endif
 
@@ -284,31 +283,35 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		s_nxp_wifi_UapActivated = true;
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		wlan_get_current_uap_network(&nxp_wlan_uap_network);
-#ifdef CONFIG_NXP_WIFI_11AX
-		if (nxp_wlan_uap_network.dot11ax) {
-			ap_sta_info.link_mode = WIFI_6;
-		} else
-#endif
-#ifdef CONFIG_NXP_WIFI_11AC
-			if (nxp_wlan_uap_network.dot11ac) {
-				ap_sta_info.link_mode = WIFI_5;
-		} else
-#endif
-			if (nxp_wlan_uap_network.dot11n) {
-				ap_sta_info.link_mode = WIFI_4;
+		sta_node *con_sta_info = (sta_node *)data;
+
+		if (con_sta_info->is_11n_enabled) {
+			ap_sta_info.link_mode = WIFI_4;
 		} else {
 			ap_sta_info.link_mode = WIFI_3;
 		}
+#ifdef CONFIG_NXP_WIFI_11AC
+		if (con_sta_info->is_11ac_enabled) {
+			ap_sta_info.link_mode = WIFI_5;
+		}
+#endif
+#ifdef CONFIG_NXP_WIFI_11AX
+		if (con_sta_info->is_11ax_enabled) {
+			ap_sta_info.link_mode = WIFI_6;
+		}
+#endif
 
-		memcpy(ap_sta_info.mac, data, WIFI_MAC_ADDR_LEN);
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+		ap_sta_info.twt_capable = true;
+#endif
+
+		memcpy(ap_sta_info.mac, con_sta_info->mac_addr, WIFI_MAC_ADDR_LEN);
 		ap_sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
-		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
 		LOG_DBG("WLAN: UAP a Client Associated");
 		LOG_DBG("Client => ");
-		print_mac((const char *)data);
+		print_mac((const char *)con_sta_info->mac_addr);
 		LOG_DBG("Associated with Soft AP");
 		break;
 	case WLAN_REASON_UAP_CLIENT_CONN:
