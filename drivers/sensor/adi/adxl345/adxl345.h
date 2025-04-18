@@ -200,7 +200,7 @@ struct adxl345_dev_data {
 	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
 	struct adxl345_fifo_config fifo_config;
-	uint8_t is_full_res;
+	bool is_full_res;
 	enum adxl345_range selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER

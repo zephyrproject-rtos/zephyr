@@ -53,7 +53,7 @@ static const uint32_t range_to_shift[] = {
 
 static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample,
 					     enum adxl345_range range,
-					     uint8_t is_full_res)
+					     bool is_full_res)
 {
 	if (is_full_res) {
 		switch (range) {
@@ -125,7 +125,7 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 	uint8_t sample_set_size = enc_data->sample_set_size;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
-	uint8_t is_full_res = enc_data->is_full_res;
+	bool is_full_res = enc_data->is_full_res;
 
 	/* Calculate which sample is decoded. */
 	if ((uint8_t *)*fit >= buffer) {
