@@ -517,4 +517,12 @@ config TFM_EXCEPTION_INFO_DUMP
 	  On fatal errors in the secure firmware, capture info about the exception.
 	  Print the info if the SPM log level is sufficient.
 
+config TFM_STM32_FLASH_LAYOUT_BEGIN_OFFSET
+	int "Offset gap at beginning of flash layout"
+	default 0
+	help
+	  Add an offset at the beginning of the platform flash layout defined by
+	  TF-M. The platform uses this gap for platform specific reason, as for
+	  example when a bootloader that is external to TF-M is used.
+
 endif # BUILD_WITH_TFM
