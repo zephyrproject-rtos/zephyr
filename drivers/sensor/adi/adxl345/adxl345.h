@@ -173,7 +173,7 @@ struct adxl345_fifo_data {
 	uint64_t timestamp;
 } __attribute__((__packed__));
 
-struct adxl345_sample {
+struct adxl345_xyz_accel_data {
 #ifdef CONFIG_ADXL345_STREAM
 	uint8_t is_fifo: 1;
 	uint8_t res: 7;
@@ -183,7 +183,7 @@ struct adxl345_sample {
 	int16_t x;
 	int16_t y;
 	int16_t z;
-};
+} __attribute__((__packed__));
 
 union adxl345_bus {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
@@ -286,7 +286,8 @@ int adxl345_reg_update_bits(const struct device *dev, uint8_t reg,
 			    uint8_t mask, uint8_t val);
 
 #ifdef CONFIG_SENSOR_ASYNC_API
-int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample);
+int adxl345_read_sample(const struct device *dev,
+			struct adxl345_xyz_accel_data *sample);
 void adxl345_submit(const struct device *dev,
 		    struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev,

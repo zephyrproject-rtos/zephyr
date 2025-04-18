@@ -263,7 +263,7 @@ static int adxl345_attr_set(const struct device *dev,
 }
 
 int adxl345_read_sample(const struct device *dev,
-			       struct adxl345_sample *sample)
+			struct adxl345_xyz_accel_data *sample)
 {
 	int16_t raw_x, raw_y, raw_z;
 	uint8_t axis_data[6], status1;
@@ -310,7 +310,7 @@ static int adxl345_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct adxl345_dev_data *data = dev->data;
-	struct adxl345_sample sample;
+	struct adxl345_xyz_accel_data sample;
 	uint8_t samples_count;
 	int rc;
 

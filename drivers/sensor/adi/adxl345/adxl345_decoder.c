@@ -221,9 +221,11 @@ static int adxl345_decoder_get_frame_count(const uint8_t *buffer, struct sensor_
 	return ret;
 }
 
-static int adxl345_decode_sample(const struct adxl345_sample *data,
-				 struct sensor_chan_spec chan_spec, uint32_t *fit,
-				 uint16_t max_count, void *data_out)
+static int adxl345_decode_sample(const struct adxl345_xyz_accel_data *data,
+				 struct sensor_chan_spec chan_spec,
+				 uint32_t *fit,
+				 uint16_t max_count,
+				 void *data_out)
 {
 	struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
 
@@ -257,7 +259,9 @@ static int adxl345_decode_sample(const struct adxl345_sample *data,
 static int adxl345_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	const struct adxl345_sample *data = (const struct adxl345_sample *)buffer;
+	const struct adxl345_xyz_accel_data *data;
+
+	data = (const struct adxl345_xyz_accel_data *)buffer;
 
 #ifdef CONFIG_ADXL345_STREAM
 	if (data->is_fifo) {
