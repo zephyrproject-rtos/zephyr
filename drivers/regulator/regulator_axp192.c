@@ -87,7 +87,6 @@ struct regulator_axp192_config {
 	struct regulator_common_config common;
 	const struct regulator_axp192_desc *desc;
 	const struct device *mfd;
-	const struct i2c_dt_spec i2c;
 };
 
 static const struct linear_range axp192_dcdc1_ranges[] = {
@@ -446,8 +445,11 @@ static int axp192_enable(const struct device *dev)
 		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_LDO);
 	} else {
 #endif
-		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
-					     config->desc->enable_mask, config->desc->enable_val);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+					     config->desc->enable_reg, config->desc->enable_mask,
+					     config->desc->enable_val);
+		k_sem_give(axp192_get_lock(config->mfd));
 #if AXP192_ANY_HAS_CHILD(ldoio0)
 	}
 #endif
@@ -474,8 +476,11 @@ static int axp192_disable(const struct device *dev)
 		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_OUTPUT_LOW);
 	} else {
 #endif
-		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
-					     config->desc->enable_mask, 0u);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+					     config->desc->enable_reg, config->desc->enable_mask,
+					     0u);
+		k_sem_give(axp192_get_lock(config->mfd));
 #if AXP192_ANY_HAS_CHILD(ldoio0)
 	}
 #endif
@@ -522,8 +527,10 @@ static int axp192_set_voltage(const struct device *dev, int32_t min_uv, int32_t 
 
 	LOG_DBG("[0x%x]=0x%x mask=0x%x", config->desc->vsel_reg, idx,
 		     config->desc->vsel_mask);
-	ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->vsel_reg, config->desc->vsel_mask,
-				     (uint8_t)idx);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->desc->vsel_reg,
+				     config->desc->vsel_mask, (uint8_t)idx);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret != 0) {
 		LOG_ERR("Failed to set regulator voltage");
 	}
@@ -538,7 +545,10 @@ static int axp192_get_voltage(const struct device *dev, int32_t *volt_uv)
 	uint8_t raw_reg;
 
 	/* read voltage */
-	ret = i2c_reg_read_byte_dt(&config->i2c, config->desc->vsel_reg, &raw_reg);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->desc->vsel_reg,
+				   &raw_reg);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret != 0) {
 		return ret;
 	}
@@ -561,9 +571,11 @@ static int axp192_set_mode(const struct device *dev, regulator_mode_t mode)
 
 		/* configure PWM mode */
 		LOG_DBG("PWM mode enabled");
-		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->workmode_reg,
-					     config->desc->workmode_mask,
-					     config->desc->workmode_pwm_val);
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(
+			axp192_get_i2c_dt_spec(config->mfd), config->desc->workmode_reg,
+			config->desc->workmode_mask, config->desc->workmode_pwm_val);
+		k_sem_give(axp192_get_lock(config->mfd));
 		if (ret != 0) {
 			return ret;
 		}
@@ -571,8 +583,11 @@ static int axp192_set_mode(const struct device *dev, regulator_mode_t mode)
 
 		/* configure AUTO mode (default) */
 		if (config->desc->workmode_reg != 0) {
-			ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->workmode_reg,
+			k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+			ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+						     config->desc->workmode_reg,
 						     config->desc->workmode_mask, 0u);
+			k_sem_give(axp192_get_lock(config->mfd));
 			if (ret != 0) {
 				return ret;
 			}
@@ -624,7 +639,10 @@ static int regulator_axp192_init(const struct device *dev)
 	}
 
 	/* read regulator state */
-	ret = i2c_reg_read_byte_dt(&config->i2c, config->desc->enable_reg, &enabled_val);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), config->desc->enable_reg,
+				   &enabled_val);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret != 0) {
 		LOG_ERR("Reading enable status failed!");
 		return ret;
@@ -640,8 +658,7 @@ static int regulator_axp192_init(const struct device *dev)
 	static const struct regulator_axp192_config config_##id = {                                \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
 		.desc = &id##_desc,                                                                \
-		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
-		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id))};                                      \
+		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id))};                                        \
 	DEVICE_DT_DEFINE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id,           \
 			 POST_KERNEL, CONFIG_REGULATOR_AXP192_AXP2101_INIT_PRIORITY, &api);
 
