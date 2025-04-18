@@ -191,24 +191,6 @@ int adxl345_configure_fifo(const struct device *dev,
 	return 0;
 }
 
-/**
- * Set Output data rate.
- * @param dev - The device structure.
- * @param odr - Output data rate.
- *		Accepted values: ADXL345_ODR_12HZ
- *				 ADXL345_ODR_25HZ
- *				 ADXL345_ODR_50HZ
- *				 ADXL345_ODR_100HZ
- *				 ADXL345_ODR_200HZ
- *				 ADXL345_ODR_400HZ
- * @return 0 in case of success, negative error code otherwise.
- */
-static int adxl345_set_odr(const struct device *dev, enum adxl345_odr odr)
-{
-	return adxl345_reg_update_bits(dev, ADXL345_REG_RATE,
-				       ADXL345_ODR_MSK, ADXL345_ODR_MODE(odr));
-}
-
 static int adxl345_attr_set_odr(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -240,13 +222,10 @@ static int adxl345_attr_set_odr(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int ret = adxl345_set_odr(dev, odr);
+	data->odr = odr;
 
-	if (ret == 0) {
-		data->odr = odr;
-	}
-
-	return ret;
+	return adxl345_reg_update_bits(dev, ADXL345_REG_RATE, ADXL345_ODR_MSK,
+				       ADXL345_ODR_MODE(odr));
 }
 
 static int adxl345_attr_set(const struct device *dev,
@@ -491,10 +470,12 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl345_set_odr(dev, cfg->odr);
+	rc = adxl345_reg_update_bits(dev, ADXL345_REG_RATE, ADXL345_ODR_MSK,
+				     ADXL345_ODR_MODE(cfg->odr));
 	if (rc) {
 		return rc;
 	}
+
 	rc = adxl345_interrupt_config(dev, ADXL345_INT_WATERMARK);
 	if (rc) {
 		return rc;
