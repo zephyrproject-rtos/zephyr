@@ -38,13 +38,12 @@ __unused void buf_destroyed(struct net_buf *buf)
 		bi->ep == 0x01 ? "OUT" : "IN", allocated_bufs);
 }
 
-UDC_BUF_POOL_DEFINE(mtp_ep_pool, 3, 512, sizeof(struct udc_buf_info), buf_destroyed);
+UDC_BUF_POOL_DEFINE(mtp_ep_pool, 2, 512, sizeof(struct udc_buf_info), buf_destroyed);
 #else
-UDC_BUF_POOL_DEFINE(mtp_ep_pool, 3, 512, sizeof(struct udc_buf_info), NULL);
+UDC_BUF_POOL_DEFINE(mtp_ep_pool, 2, 512, sizeof(struct udc_buf_info), NULL);
 #endif
 
 struct mtp_desc {
-
 	struct usb_if_descriptor if0;
 	/* Full Speed Descriptors */
 	struct usb_ep_descriptor if0_out_ep;
@@ -79,9 +78,6 @@ static uint8_t mtp_get_bulk_in(struct usbd_class_data *const c_data)
 	struct mtp_data *data = usbd_class_get_private(c_data);
 	struct mtp_desc *desc = data->desc;
 
-	LOG_WRN("FS EP IN: 0x%x, HS EP IN: 0x%x", desc->if0_in_ep.bEndpointAddress,
-		desc->if0_hs_in_ep.bEndpointAddress);
-
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
@@ -94,9 +90,6 @@ static uint8_t mtp_get_bulk_out(struct usbd_class_data *const c_data)
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct mtp_data *data = usbd_class_get_private(c_data);
 	struct mtp_desc *desc = data->desc;
-
-	LOG_WRN("FS EP OUT: 0x%x, HS EP OUT: 0x%x", desc->if0_out_ep.bEndpointAddress,
-		desc->if0_hs_out_ep.bEndpointAddress);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
@@ -165,9 +158,6 @@ static void usbd_mtp_enable(struct usbd_class_data *const c_data);
 
 static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_buf *buf, int err)
 {
-	LOG_INF("\n\n");
-	LOG_INF(BOLDWHITE "==[mtp_request_handler]=============Entry============" RESET);
-
 	struct mtp_data *data = usbd_class_get_private(c_data);
 	struct mtp_context *ctx = &data->mtp_ctx;
 
@@ -178,14 +168,15 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 	struct net_buf *buf_resp = NULL;
 
 	if (bi->ep == mtp_get_bulk_out(c_data)) {
+
 		LOG_INF(BOLDWHITE
-			"==[START] -> [Host Sent a command]=========================" RESET);
+			"\n\n=============[START] -> [Host Sent a command]=============" RESET);
 		LOG_INF("%s: %p -> ep 0x%02x, buf: %p len %u, err %d", __func__, c_data, bi->ep,
 			buf, buf->len, err);
+
 		buf_resp = mtp_buf_alloc(mtp_get_bulk_in(c_data));
 		if (buf_resp == NULL) {
-			LOG_ERR("%s: Buffer allocation failed!", __func__);
-			LOG_ERR("REF COUNT %u", buf_resp->ref);
+			LOG_ERR("%s: Buffer allocation failed!, REF COUNT %u", __func__, buf_resp->ref);
 			return -1;
 		}
 
@@ -202,15 +193,21 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 			net_buf_unref(buf_resp);
 			LOG_ERR("mtp_commands_handler failed");
 		} else if (ret == 0) {
-			net_buf_unref(buf_resp);
 			LOG_WRN("Nothing to Send!");
+			net_buf_unref(buf_resp);
 			usbd_mtp_enable(c_data);
 		}
 
-
 	} else if (bi->ep == mtp_get_bulk_in(c_data)) {
-		LOG_WRN("Host event EP: %x[%s] (buf %p, len: %u)", bi->ep,
-			bi->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR", buf, buf->len);
+		LOG_INF(BOLDWHITE
+			"\n=============[Host ACK'd]=============" RESET);
+		if (buf->len == 0) {
+			LOG_INF("Host [ACK] EP: %x[%s] (buf %p)", bi->ep,
+				bi->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR", buf);
+		} else {
+			LOG_WRN("Host Event EP: %x[%s] (buf %p, len: %u)", bi->ep,
+				bi->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR", buf, buf->len);
+		}
 
 		if (mtp_packet_pending(ctx)) {
 			LOG_INF("Sending Pending packet");
@@ -221,26 +218,32 @@ static int usbd_mtp_request_handler(struct usbd_class_data *c_data, struct net_b
 				return -1;
 			}
 
-			send_pending_packet(ctx, buf_resp);
+			ret = mtp_get_pending_packet(ctx, buf_resp);
+			if (ret < 0) {
+				LOG_ERR("Failed to get pending packet %d", ret);
+				net_buf_unref(buf_resp);
+				return -1;
+			}
+
 			ret = usbd_ep_enqueue(c_data, buf_resp);
 			if (ret) {
 				LOG_ERR("Failed to enqueue net_buf %d", ret);
 				net_buf_unref(buf_resp);
 			}
-			LOG_DBG("Pending DONE");
 		} else {
 			LOG_WRN("No Pending packet");
 			usbd_mtp_enable(c_data);
 		}
 		LOG_INF(BOLDWHITE
-			"==[END] -> [Host Confirmed a reply]======================" RESET);
+			"\n=============[Host ACK handling END]=============\n" RESET);
 	} else {
 		LOG_ERR("SHOULDN'T BE HERE! buf->len: %u", buf->len);
+		__ASSERT(0, "Invalid endpoint %x", bi->ep);
 	}
 
-	LOG_INF(BOLDWHITE "==[mtp_request_handler]==== Destroy buf %p EP: 0x%x [%s] =====" RESET,
-		buf, udc_get_buf_info(buf)->ep,
-		udc_get_buf_info(buf)->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR");
+	//LOG_INF(BOLDWHITE "==[mtp_request_handler]==== Destroy buf %p EP: 0x%x [%s] =====" RESET,
+	//	buf, udc_get_buf_info(buf)->ep,
+	//	udc_get_buf_info(buf)->ep == 0x01 ? "MTP_OUT_EP_ADDR" : "MTP_IN_EP_ADDR");
 
 	return usbd_ep_buf_free(uds_ctx, buf);
 }

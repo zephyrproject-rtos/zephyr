@@ -35,7 +35,7 @@ struct mtp_context {
 bool mtp_packet_pending(struct mtp_context* ctx);
 bool mtp_needs_more_data(struct mtp_context* ctx, struct net_buf *buf);
 int mtp_commands_handler(struct mtp_context* ctx, struct net_buf *buf_in, struct net_buf *buf);
-int send_pending_packet(struct mtp_context* ctx, struct net_buf *buf);
+int mtp_get_pending_packet(struct mtp_context* ctx, struct net_buf *buf);
 int mtp_control_handler(struct mtp_context* ctx, uint8_t request, struct net_buf *buf);
 int mtp_init(struct mtp_context* ctx, const char *manufacturer, const char *model, const char *device_version, const char *serial_number);
 
