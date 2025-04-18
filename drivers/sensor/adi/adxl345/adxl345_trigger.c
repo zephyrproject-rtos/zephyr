@@ -59,7 +59,7 @@ static void adxl345_handle_interrupt(const struct device *dev)
 	uint8_t status;
 	int rc;
 
-	rc = adxl345_get_status(dev, &status, NULL);
+	rc = adxl345_get_status(dev, &status);
 	__ASSERT(rc == 0, "Interrupt configuration failed");
 
 	if (FIELD_GET(ADXL345_INT_DATA_RDY, status)) {
@@ -187,7 +187,7 @@ done:
 		return rc;
 	}
 	/* Clear status */
-	rc = adxl345_get_status(dev, &status1, NULL);
+	rc = adxl345_get_status(dev, &status1);
 	if (rc < 0) {
 		return rc;
 	}

@@ -97,9 +97,9 @@ static const uint8_t adxl345_range_init[] = {
 #define ADXL345_POWER_CTL_WAKEUP_2HZ	BIT(1)
 #define ADXL345_POWER_CTL_SLEEP		BIT(2)
 
+#define ADXL345_POWER_CTL_MEASURE_MODE	BIT(3)
 #define ADXL345_POWER_CTL_STANDBY_MODE	0x0
 #define ADXL345_POWER_CTL_MODE_MSK	BIT(3)
-#define ADXL345_POWER_CTL_MEASURE_MODE(x)	(((x) & 0x1) << 3)
 
 /* ADXL345_FIFO_CTL */
 #define ADXL345_FIFO_CTL_MODE_MSK	GENMASK(7, 6)
@@ -107,10 +107,6 @@ static const uint8_t adxl345_range_init[] = {
 #define ADXL345_FIFO_CTL_MODE_OLD_SAVED	0x40
 #define ADXL345_FIFO_CTL_MODE_STREAMED	0x80
 #define ADXL345_FIFO_CTL_MODE_TRIGGERED	0xc0
-#define ADXL345_FIFO_CTL_MODE_MODE(x)	(((x) & 0x3) << 6)
-#define ADXL345_FIFO_CTL_TRIGGER_MODE(x)	(((x) & 0x1) << 5)
-#define ADXL345_FIFO_CTL_SAMPLES_MODE(x)	((x) & 0x1F)
-#define ADXL345_FIFO_STREAM_MODE	(1 << 7)
 
 enum adxl345_fifo_mode {
 	ADXL345_FIFO_BYPASSED,
@@ -158,6 +154,11 @@ enum adxl345_odr {
 #define ADXL345_BUS_I2C			0
 #define ADXL345_BUS_SPI			1
 
+enum adxl345_op_mode {
+	ADXL345_OP_STANDBY,
+	ADXL345_OP_MEASURE,
+};
+
 struct adxl345_fifo_config {
 	enum adxl345_fifo_mode fifo_mode;
 	enum adxl345_fifo_trigger fifo_trigger;
@@ -201,6 +202,7 @@ struct adxl345_dev_data {
 	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	uint8_t sample_idx; /* index counting up sample_number entries */
 	struct adxl345_fifo_config fifo_config;
 	bool is_full_res;
 	enum adxl345_range selected_range;
@@ -227,7 +229,6 @@ struct adxl345_dev_data {
 	uint8_t fifo_ent[1];
 	uint64_t timestamp;
 	struct rtio *r_cb;
-	uint8_t fifo_watermark_irq;
 	uint8_t fifo_samples;
 	uint16_t fifo_total_bytes;
 #endif /* CONFIG_ADXL345_STREAM */
@@ -242,8 +243,6 @@ struct adxl345_dev_config {
 	adxl345_bus_is_ready_fn bus_is_ready;
 	adxl345_reg_access_fn reg_access;
 	enum adxl345_odr odr;
-	bool op_mode;
-	struct adxl345_fifo_config fifo_config;
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_dt_spec gpio_int1;
@@ -257,9 +256,10 @@ int adxl345_set_gpios_en(const struct device *dev, bool enable);
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl345_stream_irq_handler(const struct device *dev);
 
+int adxl345_set_measure_en(const struct device *dev, bool en);
+
 #ifdef CONFIG_ADXL345_TRIGGER
-int adxl345_get_status(const struct device *dev,
-		       uint8_t *status, uint8_t *fifo_entries);
+int adxl345_get_status(const struct device *dev, uint8_t *status);
 
 int adxl345_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
@@ -268,11 +268,6 @@ int adxl345_trigger_set(const struct device *dev,
 int adxl345_init_interrupt(const struct device *dev);
 
 #endif /* CONFIG_ADXL345_TRIGGER */
-
-int adxl345_reg_write_mask(const struct device *dev,
-			       uint8_t reg_addr,
-			       uint8_t mask,
-			       uint8_t data);
 
 int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
 		       uint8_t *data, size_t len);
@@ -301,10 +296,6 @@ void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 #ifdef CONFIG_ADXL345_STREAM
-int adxl345_configure_fifo(const struct device *dev,
-			   enum adxl345_fifo_mode mode,
-			   enum adxl345_fifo_trigger trigger,
-			   uint8_t fifo_samples);
 size_t adxl345_get_packet_size(const struct adxl345_dev_config *cfg);
 #endif /* CONFIG_ADXL345_STREAM */
 
