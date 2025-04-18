@@ -6,14 +6,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
 #include <zephyr/net/socket.h>
-
 #include <zephyr/drivers/video.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
+
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
