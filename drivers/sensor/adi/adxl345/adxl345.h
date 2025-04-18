@@ -173,11 +173,6 @@ struct adxl345_fifo_data {
 	uint64_t timestamp;
 } __attribute__((__packed__));
 
-enum adxl345_op_mode {
-	ADXL345_STANDBY,
-	ADXL345_MEASURE
-};
-
 struct adxl345_sample {
 #ifdef CONFIG_ADXL345_STREAM
 	uint8_t is_fifo: 1;
@@ -287,7 +282,6 @@ int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
-int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode);
 int adxl345_reg_update_bits(const struct device *dev, uint8_t reg,
 			    uint8_t mask, uint8_t val);
 
