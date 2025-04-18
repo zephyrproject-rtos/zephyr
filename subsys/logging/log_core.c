@@ -27,6 +27,11 @@
 #include <zephyr/posix/time.h>
 #endif
 
+#if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
+#include <zephyr/app_memory/app_memdomain.h>
+K_APPMEM_PARTITION_DEFINE(k_log_partition);
+#endif
+
 LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_PROCESS_THREAD_SLEEP_MS
