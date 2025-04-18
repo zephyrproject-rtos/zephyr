@@ -29,6 +29,7 @@ common:
     - frdm_mcxa156
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
+    - stm32h573i_dk
   depends_on: usb_device
   filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions")
     and dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")

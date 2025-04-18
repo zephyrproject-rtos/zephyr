@@ -302,6 +302,16 @@ SPI
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 
+xSPI
+===
+
+* For STM32, the external memory base address and max possible size is given by the reg property
+  of the compatible = "st,stm32-xspi"; (usually in the device DTS).
+  The reg property of the compatible = "st,stm32-xspi-nor"; (usually in the board DTS)
+  is kept <0> and the <size> property gives the actual size of the memory device.
+
+
+
 Other subsystems
 ****************
 

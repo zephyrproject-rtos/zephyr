@@ -687,7 +687,7 @@
 
 		xspi1: xspi@58025000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x58025000 0x1000>;
+			reg = <0x58025000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <170 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
@@ -700,7 +700,7 @@
 
 		xspi2: spi@5802a000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x5802A000 0x1000>;
+			reg = <0x5802A000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <171 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
