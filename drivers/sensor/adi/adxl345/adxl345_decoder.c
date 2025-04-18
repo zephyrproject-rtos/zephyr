@@ -16,13 +16,13 @@
  */
 static const uint32_t qscale_factor_no_full_res[] = {
 	/* (1.0 / Resolution-LSB-per-g * (2^31 / 2^5) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_2G] = UINT32_C(2570754),
+	[ADXL345_DATA_FORMAT_RANGE_2G] = UINT32_C(2570754),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^6) * SENSOR_G / 1000000  */
-	[ADXL345_RANGE_4G] = UINT32_C(2570754),
+	[ADXL345_DATA_FORMAT_RANGE_4G] = UINT32_C(2570754),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^7) ) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_8G] = UINT32_C(2570754),
+	[ADXL345_DATA_FORMAT_RANGE_8G] = UINT32_C(2570754),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^8) ) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_16G] = UINT32_C(2570754),
+	[ADXL345_DATA_FORMAT_RANGE_16G] = UINT32_C(2570754),
 };
 
 
@@ -35,20 +35,20 @@ static const uint32_t qscale_factor_no_full_res[] = {
  */
 static const uint32_t qscale_factor_full_res[] = {
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^5) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_2G] = UINT32_C(2570754),
+	[ADXL345_DATA_FORMAT_RANGE_2G] = UINT32_C(2570754),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^6) * SENSOR_G / 1000000  */
-	[ADXL345_RANGE_4G] = UINT32_C(1285377),
+	[ADXL345_DATA_FORMAT_RANGE_4G] = UINT32_C(1285377),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^7) ) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_8G] = UINT32_C(642688),
+	[ADXL345_DATA_FORMAT_RANGE_8G] = UINT32_C(642688),
 	/* (1.0 / Resolution-LSB-per-g) * (2^31 / 2^8) ) * SENSOR_G / 1000000 */
-	[ADXL345_RANGE_16G] = UINT32_C(321344),
+	[ADXL345_DATA_FORMAT_RANGE_16G] = UINT32_C(321344),
 };
 
 static const uint32_t range_to_shift[] = {
-	[ADXL345_RANGE_2G] = 5,
-	[ADXL345_RANGE_4G] = 6,
-	[ADXL345_RANGE_8G] = 7,
-	[ADXL345_RANGE_16G] = 8,
+	[ADXL345_DATA_FORMAT_RANGE_2G] = 5,
+	[ADXL345_DATA_FORMAT_RANGE_4G] = 6,
+	[ADXL345_DATA_FORMAT_RANGE_8G] = 7,
+	[ADXL345_DATA_FORMAT_RANGE_16G] = 8,
 };
 
 static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample, int32_t range,
@@ -56,22 +56,22 @@ static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample, int32_t
 {
 	if (is_full_res) {
 		switch (range) {
-		case ADXL345_RANGE_2G:
+		case ADXL345_DATA_FORMAT_RANGE_2G:
 			if (sample & BIT(9)) {
 				sample |= ADXL345_COMPLEMENT_MASK(10);
 			}
 			break;
-		case ADXL345_RANGE_4G:
+		case ADXL345_DATA_FORMAT_RANGE_4G:
 			if (sample & BIT(10)) {
 				sample |= ADXL345_COMPLEMENT_MASK(11);
 			}
 			break;
-		case ADXL345_RANGE_8G:
+		case ADXL345_DATA_FORMAT_RANGE_8G:
 			if (sample & BIT(11)) {
 				sample |= ADXL345_COMPLEMENT_MASK(12);
 			}
 			break;
-		case ADXL345_RANGE_16G:
+		case ADXL345_DATA_FORMAT_RANGE_16G:
 			if (sample & BIT(12)) {
 				sample |= ADXL345_COMPLEMENT_MASK(13);
 			}
@@ -275,7 +275,7 @@ static bool adxl345_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 
 	switch (trigger) {
 	case SENSOR_TRIG_FIFO_WATERMARK:
-		return FIELD_GET(ADXL345_INT_MAP_WATERMARK_MSK, data->int_status);
+		return FIELD_GET(ADXL345_INT_WATERMARK, data->int_status);
 	default:
 		return false;
 	}

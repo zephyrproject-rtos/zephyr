@@ -32,7 +32,7 @@ static void adxl345_thread_cb(const struct device *dev)
 	}
 
 	if ((drv_data->drdy_handler != NULL) &&
-		ADXL345_STATUS_DATA_RDY(status1)) {
+		FIELD_GET(ADXL345_INT_DATA_RDY, status1)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
@@ -105,7 +105,7 @@ int adxl345_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
-		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK;
+		int_mask = ADXL345_INT_DATA_RDY;
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
@@ -118,7 +118,8 @@ int adxl345_trigger_set(const struct device *dev,
 		int_en = 0U;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask, int_en);
+	ret = adxl345_reg_write_mask(dev, ADXL345_REG_INT_MAP, int_mask,
+				     int_en);
 	if (ret < 0) {
 		return ret;
 	}
