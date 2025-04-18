@@ -102,13 +102,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		code_partition: partition@0 {
-			reg = <0x0000000 DT_SIZE_K(2008)>;
+		code_partition: partition@202000 {
+			reg = <0x00202000 DT_SIZE_K(2008)>;
 			label = "code_partition";
 		};
 
-		storage_partition: partition@1f6000 {
-			reg = <0x001f6000 DT_SIZE_K(32)>;
+		storage_partition: partition@3f8000 {
+			reg = <0x003f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};
