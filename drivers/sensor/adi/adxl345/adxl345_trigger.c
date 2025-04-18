@@ -18,93 +18,156 @@
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
-#if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD) || defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
-static void adxl345_thread_cb(const struct device *dev)
+static int adxl345_set_int_pad_state(const struct device *dev, uint8_t pad,
+				     bool en)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
-	struct adxl345_dev_data *drv_data = dev->data;
-	uint8_t status1;
-	int ret;
+	int state = en ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
-	/* Clear the status */
-	if (adxl345_get_status(dev, &status1, NULL) < 0) {
-		return;
+	/* in case of neither INT_1 nor INT_2 being defined */
+	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {
+		return -ENOTSUP;
 	}
 
-	if ((drv_data->drdy_handler != NULL) &&
-		FIELD_GET(ADXL345_INT_DATA_RDY, status1)) {
-		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
+	if (pad == 1) {
+		return gpio_pin_interrupt_configure_dt(&cfg->gpio_int1, state);
+	} else if (pad == 2) {
+		return gpio_pin_interrupt_configure_dt(&cfg->gpio_int2, state);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-	__ASSERT(ret == 0, "Interrupt configuration failed");
+	/* pad may be -1, e.g. if no INT line defined in DT */
+	return -EINVAL;
+}
+
+int adxl345_set_gpios_en(const struct device *dev, bool en)
+{
+	const struct adxl345_dev_config *cfg = dev->config;
+
+	return adxl345_set_int_pad_state(dev, cfg->drdy_pad, en);
+}
+
+#if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD) || \
+	defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
+
+/** adxl345_handle_interrupt - Interrupt service routine for the sensor.
+ * @dev: The device instance.
+ * Handle and reset the sensor interrupt events.
+ */
+static void adxl345_handle_interrupt(const struct device *dev)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t status;
+	int rc;
+
+	rc = adxl345_get_status(dev, &status, NULL);
+	__ASSERT(rc == 0, "Interrupt configuration failed");
+
+	if (FIELD_GET(ADXL345_INT_DATA_RDY, status)) {
+		if (data->drdy_handler) {
+			/*
+			 * A handler needs to flush FIFO, i.e. fetch and get
+			 * samples to get new events
+			 */
+			data->drdy_handler(dev, data->drdy_trigger);
+		}
+	}
 }
 #endif
 
-static void adxl345_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void adxl345_int1_gpio_callback(const struct device *dev,
+				       struct gpio_callback *cb,
+				       uint32_t pins)
 {
-	struct adxl345_dev_data *drv_data =
-		CONTAINER_OF(cb, struct adxl345_dev_data, gpio_cb);
-	const struct adxl345_dev_config *cfg = drv_data->dev->config;
+	struct adxl345_dev_data *data =
+		CONTAINER_OF(cb, struct adxl345_dev_data, int1_cb);
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+	ARG_UNUSED(pins);
 
-	if (IS_ENABLED(CONFIG_ADXL345_STREAM)) {
-		adxl345_stream_irq_handler(drv_data->dev);
-	}
+	adxl345_set_int_pad_state(dev, 1, false);
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
-	k_sem_give(&drv_data->gpio_sem);
+	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&drv_data->work);
+	k_work_submit(&data->work);
+#endif
+}
+
+static void adxl345_int2_gpio_callback(const struct device *dev,
+				       struct gpio_callback *cb, uint32_t pins)
+{
+	struct adxl345_dev_data *data =
+		CONTAINER_OF(cb, struct adxl345_dev_data, int2_cb);
+
+	ARG_UNUSED(pins);
+
+	adxl345_set_int_pad_state(dev, 2, false);
+
+#if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
+	k_sem_give(&data->gpio_sem);
+#elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&data->work);
 #endif
 }
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
-static void adxl345_thread(void *p1, void *p2, void *p3)
+static void adxl345_thread(struct adxl345_dev_data *data)
 {
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	struct adxl345_dev_data *drv_data = p1;
-
 	while (true) {
-		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		adxl345_thread_cb(drv_data->dev);
+		k_sem_take(&data->gpio_sem, K_FOREVER);
+		adxl345_handle_interrupt(data->dev);
 	}
 }
 
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
 static void adxl345_work_cb(struct k_work *work)
 {
-	struct adxl345_dev_data *drv_data =
+	struct adxl345_dev_data *data =
 		CONTAINER_OF(work, struct adxl345_dev_data, work);
 
-	adxl345_thread_cb(drv_data->dev);
+#if !defined CONFIG_ADXL345_STREAM
+	/*
+	 * Make sure, STREAM ISR w/ RTIO is handling the interrupt, and not
+	 * cleaned up afterwards by the TRIGGER handler, if STREAM is enabled.
+	 * So, disable TRIGGER ISR if STREAM is defined.
+	 */
+	adxl345_handle_interrupt(data->dev);
+#endif /* !defined CONFIG_ADXL345_STREAM */
+
 }
 #endif
 
+/**
+ * adxl345_trigger_set - Register a handler for a sensor trigger from the app.
+ * @dev: The device instance.
+ * @trig: The interrupt event type of the sensor.
+ * @handler: A handler for the sensor event to be registered.
+ * Map sensor events to the interrupt lines.
+ * return: 0 for success, or error.
+ */
 int adxl345_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
-	struct adxl345_dev_data *drv_data = dev->data;
-	uint8_t int_mask, int_en, status1;
-	int ret;
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t status1, int_mask, int_en = 0;
+	int rc;
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_DISABLE);
-	if (ret < 0) {
-		return ret;
+	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {
+		/* might be in FIFO BYPASS mode */
+		goto done;
+	}
+
+	/* generally turn off interrupts */
+	rc = adxl345_set_gpios_en(dev, false);
+	if (rc) {
+		return rc;
 	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		drv_data->drdy_handler = handler;
-		drv_data->drdy_trigger = trig;
+		data->drdy_handler = handler;
+		data->drdy_trigger = trig;
 		int_mask = ADXL345_INT_DATA_RDY;
 		break;
 	default:
@@ -112,27 +175,21 @@ int adxl345_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (handler) {
-		int_en = int_mask;
-	} else {
-		int_en = 0U;
+done:
+	rc = adxl345_set_gpios_en(dev, true);
+	if (rc) {
+		return rc;
 	}
 
-	ret = adxl345_reg_update_bits(dev, ADXL345_REG_INT_MAP,
+	rc = adxl345_reg_update_bits(dev, ADXL345_REG_INT_MAP,
 				      int_mask, int_en);
-	if (ret < 0) {
-		return ret;
+	if (rc < 0) {
+		return rc;
 	}
 	/* Clear status */
-	ret = adxl345_get_status(dev, &status1, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-	if (ret < 0) {
-		return ret;
+	rc = adxl345_get_status(dev, &status1, NULL);
+	if (rc < 0) {
+		return rc;
 	}
 
 	return 0;
@@ -141,42 +198,77 @@ int adxl345_trigger_set(const struct device *dev,
 int adxl345_init_interrupt(const struct device *dev)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
-	struct adxl345_dev_data *drv_data = dev->data;
-	int ret;
+	struct adxl345_dev_data *data = dev->data;
+	int rc;
 
-	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
-		return -EINVAL;
+	/* TRIGGER is set, but not INT line was defined in DT */
+	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {
+		return -ENOTSUP;
 	}
 
-	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
-	if (ret < 0) {
-		return ret;
+	if (cfg->gpio_int1.port) {
+		if (!gpio_is_ready_dt(&cfg->gpio_int1)) {
+			LOG_ERR("INT_1 line defined, but not ready");
+			return -ENODEV;
+		}
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   adxl345_gpio_callback,
-			   BIT(cfg->interrupt.pin));
-
-	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
-	if (ret < 0) {
-		LOG_ERR("Failed to set gpio callback!");
-		return ret;
+	if (cfg->gpio_int2.port) {
+		if (!gpio_is_ready_dt(&cfg->gpio_int2)) {
+			LOG_ERR("INT_2 line defined, but not ready");
+			return -ENODEV;
+		}
 	}
-
-	drv_data->dev = dev;
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
-	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
+	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_ADXL345_THREAD_STACK_SIZE,
-			adxl345_thread, drv_data,
+			adxl345_thread, data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL345_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
-	drv_data->work.handler = adxl345_work_cb;
+	data->work.handler = adxl345_work_cb;
 #endif
+
+	if (cfg->gpio_int1.port) {
+		rc = gpio_pin_configure_dt(&cfg->gpio_int1, GPIO_INPUT);
+		if (rc < 0) {
+			return rc;
+		}
+
+		gpio_init_callback(&data->int1_cb,
+				   adxl345_int1_gpio_callback,
+				   BIT(cfg->gpio_int1.pin));
+
+		rc = gpio_add_callback(cfg->gpio_int1.port,
+					&data->int1_cb);
+		if (rc < 0) {
+			LOG_ERR("Failed to set INT_1 gpio callback!");
+			return -EIO;
+		}
+	}
+
+	if (cfg->gpio_int2.port) {
+		rc = gpio_pin_configure_dt(&cfg->gpio_int2, GPIO_INPUT);
+		if (rc < 0) {
+			return rc;
+		}
+
+		gpio_init_callback(&data->int2_cb,
+				   adxl345_int2_gpio_callback,
+				   BIT(cfg->gpio_int2.pin));
+
+		rc = gpio_add_callback(cfg->gpio_int2.port,
+					&data->int2_cb);
+		if (rc < 0) {
+			LOG_ERR("Failed to set INT_2 gpio callback!");
+			return -EIO;
+		}
+	}
+
+	data->dev = dev;
 
 	return 0;
 }

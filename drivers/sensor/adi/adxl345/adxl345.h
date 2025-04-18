@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/drivers/gpio.h>
+
 #ifdef CONFIG_ADXL345_STREAM
 #include <zephyr/rtio/rtio.h>
 #endif /* CONFIG_ADXL345_STREAM */
@@ -204,9 +206,8 @@ struct adxl345_dev_data {
 	enum adxl345_range selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
-	struct gpio_callback gpio_cb;
-	sensor_trigger_handler_t th_handler;
-	const struct sensor_trigger *th_trigger;
+	struct gpio_callback int1_cb;
+	struct gpio_callback int2_cb;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
 	const struct device *dev;
@@ -245,9 +246,13 @@ struct adxl345_dev_config {
 	struct adxl345_fifo_config fifo_config;
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
-	struct gpio_dt_spec interrupt;
+	struct gpio_dt_spec gpio_int1;
+	struct gpio_dt_spec gpio_int2;
+	int8_t drdy_pad;
 #endif
 };
+
+int adxl345_set_gpios_en(const struct device *dev, bool enable);
 
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl345_stream_irq_handler(const struct device *dev);

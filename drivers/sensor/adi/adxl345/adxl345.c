@@ -366,41 +366,6 @@ static DEVICE_API(sensor, adxl345_api_funcs) = {
 #endif
 };
 
-#ifdef CONFIG_ADXL345_TRIGGER
-/**
- * Configure the INT1 and INT2 interrupt pins.
- * @param dev - The device structure.
- * @param int1 -  INT1 interrupt pins.
- * @return 0 in case of success, negative error code otherwise.
- */
-static int adxl345_interrupt_config(const struct device *dev,
-				    uint8_t int1)
-{
-	int ret;
-	const struct adxl345_dev_config *cfg = dev->config;
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_REG_INT_MAP, int1);
-	if (ret) {
-		return ret;
-	}
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_REG_INT_ENABLE, int1);
-	if (ret) {
-		return ret;
-	}
-
-	uint8_t samples;
-
-	ret = adxl345_reg_read_byte(dev, ADXL345_REG_INT_MAP, &samples);
-	ret = adxl345_reg_read_byte(dev, ADXL345_REG_INT_ENABLE, &samples);
-#ifdef CONFIG_ADXL345_TRIGGER
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-#endif
-	return 0;
-}
-#endif
-
 static int adxl345_init(const struct device *dev)
 {
 	int rc;
@@ -476,10 +441,6 @@ static int adxl345_init(const struct device *dev)
 		return rc;
 	}
 
-	rc = adxl345_interrupt_config(dev, ADXL345_INT_WATERMARK);
-	if (rc) {
-		return rc;
-	}
 #endif
 
 	rc = adxl345_reg_read_byte(dev, ADXL345_REG_DATA_FORMAT, &full_res);
@@ -491,10 +452,17 @@ static int adxl345_init(const struct device *dev)
 
 #ifdef CONFIG_ADXL345_TRIGGER
 #define ADXL345_CFG_IRQ(inst) \
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),
+	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),	\
+	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),	\
+	.drdy_pad = DT_INST_PROP_OR(inst, drdy_pin, -1)
 #else
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
+
+#define ADXL345_CONFIG_COMMON(inst)	\
+	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
+			   (ADXL345_CFG_IRQ(inst)))
 
 #define ADXL345_RTIO_SPI_DEFINE(inst)   \
 	COND_CODE_1(CONFIG_SPI_RTIO,    \
@@ -544,8 +512,10 @@ static int adxl345_init(const struct device *dev)
 		.reg_access = adxl345_reg_access_spi,			\
 		.bus_type = ADXL345_BUS_SPI,				\
 		ADXL345_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+				(ADXL345_CONFIG_COMMON(inst)), ())	\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
-		(ADXL345_CFG_IRQ(inst)), ())				\
+				(ADXL345_CONFIG_COMMON(inst)), ())	\
 	}
 
 #define ADXL345_CONFIG_I2C(inst)					\
@@ -555,8 +525,10 @@ static int adxl345_init(const struct device *dev)
 		.reg_access = adxl345_reg_access_i2c,			\
 		.bus_type = ADXL345_BUS_I2C,				\
 		ADXL345_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+				(ADXL345_CONFIG_COMMON(inst)), ())	\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
-		(ADXL345_CFG_IRQ(inst)), ())				\
+				(ADXL345_CONFIG_COMMON(inst)), ())	\
 	}
 
 #define ADXL345_DEFINE(inst)						\
@@ -578,6 +550,11 @@ static int adxl345_init(const struct device *dev)
 				     &adxl345_config_##inst,		\
 				     POST_KERNEL,			\
 				     CONFIG_SENSOR_INIT_PRIORITY,	\
-				     &adxl345_api_funcs)
+				     &adxl345_api_funcs);		\
+	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_pin),		\
+		   (BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst,		\
+			   CONCAT(int, DT_INST_PROP(inst, drdy_pin), _gpios)), \
+			"No GPIO pin defined for ADXL345 DRDY interrupt");))
 
 DT_INST_FOREACH_STATUS_OKAY(ADXL345_DEFINE)
