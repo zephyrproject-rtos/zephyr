@@ -1,0 +1,39 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_cat1.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0_0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM MB1";
+		};
+	};
+};
+
+&pwm0_0 {
+	status        = "okay";
+	pinctrl-0     = <&p1_1_pwm0_0>;
+	pinctrl-names = "default";
+	divider-type  = <CY_SYSCLK_DIV_16_BIT>;
+	divider-sel   = <1>;
+	divider-val   = <9599>;
+};
+
+
+&pinctrl {
+	p1_1_pwm0_0: p1_1_pwm0_0 {
+		drive-push-pull;
+	};
+};
