@@ -10,6 +10,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -69,25 +70,18 @@ static const struct video_format_cap fmts[] = {
 static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_sw_generator_data *data = dev->data;
-	int i = 0;
+	size_t idx;
+	int ret;
 
-	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(fmts)) {
+	ret = video_format_caps_index(fmts, fmt, &idx);
+	if (ret < 0) {
 		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
+		return ret;
 	}
 
 	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	data->fmt = *fmt;
-
 	return 0;
 }
 
@@ -279,17 +273,13 @@ static int video_sw_generator_get_frmival(const struct device *dev, struct video
 
 static int video_sw_generator_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	int i = 0;
+	size_t idx;
+	int ret;
 
-	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat)) {
-		i++;
-	}
-
-	if ((i == ARRAY_SIZE(fmts)) || (fie->format->width > fmts[i].width_max) ||
-	    (fie->format->width < fmts[i].width_min) ||
-	    (fie->format->height > fmts[i].height_max) ||
-	    (fie->format->height < fmts[i].height_min)) {
-		return -EINVAL;
+	ret = video_format_caps_index(fmts, fie->format, &idx);
+	if (ret < 0) {
+		LOG_ERR("Unsupported pixel format or resolution");
+		return ret;
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
