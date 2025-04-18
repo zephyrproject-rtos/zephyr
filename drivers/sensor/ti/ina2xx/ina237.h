@@ -36,8 +36,10 @@
 #define INA237_REG_PWR_LIMIT  0x11
 #define INA237_REG_MANUFACTURER_ID 0x3E
 
+#define INA228_REG_SHUNT_TEMPCO 0x03
 #define INA228_REG_ENERGY      0x09
 #define INA228_REG_CHARGE      0x0A
+#define INA228_REG_DEVICE_ID   0x3F
 
 struct ina237_data {
 	struct ina2xx_data common;
