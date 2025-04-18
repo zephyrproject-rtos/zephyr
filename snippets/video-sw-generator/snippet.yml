@@ -1,0 +1,3 @@
+name: video-sw-generator
+append:
+  EXTRA_DTC_OVERLAY_FILE: video-sw-generator.overlay
