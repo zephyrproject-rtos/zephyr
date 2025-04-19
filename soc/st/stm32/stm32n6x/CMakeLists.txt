@@ -24,6 +24,7 @@ if(SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
   Refer to board documentation for more information")
 else()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
     COMMAND ${SIGNING_TOOL}
     -in ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
     -nk -t fsbl -hv 2.3
