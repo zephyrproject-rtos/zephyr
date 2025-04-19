@@ -210,6 +210,10 @@ struct adxl345_dev_data {
 	struct gpio_callback int2_cb;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t wm_handler;
+	const struct sensor_trigger *wm_trigger;
+	sensor_trigger_handler_t overrun_handler;
+	const struct sensor_trigger *overrun_trigger;
 	const struct device *dev;
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL345_THREAD_STACK_SIZE);

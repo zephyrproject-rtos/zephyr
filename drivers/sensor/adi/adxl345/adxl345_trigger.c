@@ -71,6 +71,42 @@ static void adxl345_handle_interrupt(const struct device *dev)
 			data->drdy_handler(dev, data->drdy_trigger);
 		}
 	}
+
+	if (FIELD_GET(ADXL345_INT_WATERMARK, status)) {
+		if (data->wm_handler) {
+			/*
+			 * Impede further IRQs by turning off measurement,
+			 * this avoids falling into permanent overrun
+			 */
+			adxl345_set_measure_en(dev, false);
+
+			/*
+			 * A handler needs to implement fetch, then get FIFO
+			 * entries according to configured watermark in order
+			 * to obtain new sensor events
+			 */
+			data->wm_handler(dev, data->wm_trigger);
+
+			adxl345_set_measure_en(dev, true);
+		}
+	}
+
+	/* handle FIFO: overrun */
+	if (FIELD_GET(ADXL345_INT_OVERRUN, status)) {
+		if (data->overrun_handler) {
+			/*
+			 * A handler may handle read outs, the fallback flushes
+			 * the fifo and interrupt status register
+			 */
+			data->overrun_handler(dev, data->overrun_trigger);
+		}
+
+		/*
+		 * If overrun handling is enabled, reset status register and
+		 * fifo here, if not handled before in any way
+		 */
+		adxl345_flush_fifo(dev);
+	}
 }
 #endif
 
@@ -168,7 +204,33 @@ int adxl345_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		data->drdy_handler = handler;
 		data->drdy_trigger = trig;
-		int_mask = ADXL345_INT_DATA_RDY;
+		rc = adxl345_reg_update_bits(dev, ADXL345_REG_INT_ENABLE,
+					     ADXL345_INT_DATA_RDY,
+					     0xff);
+		if (rc) {
+			return rc;
+		}
+
+		break;
+	case SENSOR_TRIG_FIFO_WATERMARK:
+		data->wm_handler = handler;
+		data->wm_trigger = trig;
+		rc = adxl345_reg_update_bits(dev, ADXL345_REG_INT_ENABLE,
+					     ADXL345_INT_WATERMARK,
+					     0xff);
+		if (rc) {
+			return rc;
+		}
+		break;
+	case SENSOR_TRIG_FIFO_FULL:
+		data->overrun_handler = handler;
+		data->overrun_trigger = trig;
+		rc = adxl345_reg_update_bits(dev, ADXL345_REG_INT_ENABLE,
+					     ADXL345_INT_OVERRUN,
+					     0xff);
+		if (rc) {
+			return rc;
+		}
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
