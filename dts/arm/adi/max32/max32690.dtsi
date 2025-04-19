@@ -119,6 +119,15 @@
 			};
 		};
 
+		hpb: hpb@40039000 {
+			compatible = "adi,max32-hpb";
+			reg = <0x40039000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 4 &gcr ADI_MAX32_CLOCK_BUS1 7>;
+			status = "disabled";
+		};
+
 		spi0: spi@40046000 {
 			compatible = "adi,max32-spi";
 			reg = <0x40046000 0x1000>;
