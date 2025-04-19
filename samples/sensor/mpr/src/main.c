@@ -21,20 +21,22 @@ int main(void)
 
 	while (1) {
 		struct sensor_value pressure;
+		int8_t shift;
+		q31_t pressure_value;
+		struct sensor_chan_spec channels[1] = {
+			{.chan_type = SENSOR_CHAN_PRESS, .chan_idx = 0},
+		};
 
-		rc = sensor_sample_fetch(dev);
+		rc = sensor_read_and_decode(dev, channels, ARRAY_SIZE(channels), &shift,
+					    &pressure_value, 1);
 		if (rc != 0) {
-			printf("sensor_sample_fetch error: %d\n", rc);
+			printf("sensor_read_and_decode error: %d\n", rc);
 			break;
 		}
+		printf("pressure (q31): %" PRIq(6) " kPa\n", PRIq_arg(pressure_value, 6, shift));
 
-		rc = sensor_channel_get(dev, SENSOR_CHAN_PRESS, &pressure);
-		if (rc != 0) {
-			printf("sensor_channel_get error: %d\n", rc);
-			break;
-		}
-
-		printf("pressure: %u.%u kPa\n", pressure.val1, pressure.val2);
+		q31_to_sensor_value(pressure_value, shift, &pressure);
+		printf("pressure (sensor_value): %u.%u kPa\n", pressure.val1, pressure.val2);
 
 		k_sleep(K_SECONDS(1));
 	}
