@@ -1,0 +1,6 @@
+common:
+  tags: linker
+tests:
+  application_development.vector_table_relocation.arm:
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
