@@ -1,0 +1,13 @@
+sample:
+  name: UART ASYNC API driver sample
+tests:
+  sample.drivers.uart.async_api:
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags:
+      - serial
+      - uart
+    filter: CONFIG_SERIAL and
+            CONFIG_UART_ASYNC_API and
+            dt_chosen_enabled("zephyr,shell-uart")
+    harness: keyboard
