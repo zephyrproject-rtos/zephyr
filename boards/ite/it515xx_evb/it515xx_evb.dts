@@ -15,6 +15,7 @@
 	compatible = "ite,it515xx-evb";
 
 	aliases {
+		i2c-0 = &i2c0;
 		led0 = &led0;
 		watchdog0 = &twd0;
 	};
@@ -36,6 +37,14 @@
 			label = "Green LED";
 		};
 	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpf2_default
+		     &i2c0_data_gpf3_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
