@@ -100,7 +100,7 @@ static int api_configure(const struct device *dev, uint32_t dev_cfg)
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return ((ret > 0) ? 0 : -EIO);
 }
 
 #ifdef CONFIG_I2C_TARGET
