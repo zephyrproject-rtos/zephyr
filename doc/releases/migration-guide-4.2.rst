@@ -305,6 +305,13 @@ SPI
 Other subsystems
 ****************
 
+Posix
+=====
+
+* :kconfig:option:`POSIX_API` no longer enables individual features by default. Users can
+  enable features associated with a posix profile through the :kconfig:option:`POSIX_AEP_CHOICE`
+  choice, or enable required features individually.
+
 ZBus
 ====
 

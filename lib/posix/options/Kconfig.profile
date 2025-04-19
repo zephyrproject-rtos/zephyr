@@ -6,12 +6,6 @@ config POSIX_API
 	bool "POSIX APIs"
 	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
-	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
-	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
-	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
-	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
-	imply POSIX_FD_MGMT # open(), close(), read(), write()
-	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	help
 	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
 	  and some features found in PSE52.
@@ -20,6 +14,7 @@ config POSIX_API
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"
+	depends on POSIX_API
 	default POSIX_AEP_CHOICE_NONE
 	help
 	  This choice is intended to help users select the correct POSIX profile for their
@@ -37,8 +32,6 @@ config POSIX_AEP_CHOICE_NONE
 
 config POSIX_AEP_CHOICE_BASE
 	bool "Base definitions (system interfaces)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	help
 	  Only enable the base definitions required for all POSIX systems.
@@ -48,8 +41,6 @@ config POSIX_AEP_CHOICE_BASE
 
 config POSIX_AEP_CHOICE_PSE51
 	bool "Minimal Realtime System Profile (PSE51)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	help
@@ -62,8 +53,6 @@ config POSIX_AEP_CHOICE_PSE51
 
 config POSIX_AEP_CHOICE_PSE52
 	bool "Realtime Controller System Profile (PSE52)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
@@ -77,8 +66,6 @@ config POSIX_AEP_CHOICE_PSE52
 
 config POSIX_AEP_CHOICE_PSE53
 	bool "Dedicated Realtime System Profile (PSE53)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
