@@ -59,9 +59,8 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 	return 0;
 }
 
-/* MDIO Read API implementation */
-static int nxp_enet_mdio_read(const struct device *dev,
-			uint8_t prtad, uint8_t regad, uint16_t *read_data)
+static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
+			 enum mdio_opcode op, bool c45, uint16_t data_in, uint16_t *data_out)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
@@ -71,25 +70,27 @@ static int nxp_enet_mdio_read(const struct device *dev,
 
 	/*
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
-	 * prepare to wait for it to be set once this read is done
+	 * prepare to wait for it to be set once this transfer is done
 	 */
 	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
-	 * send the read command and data out to the MDIO bus as this frame:
-	 * ST = start, 1 means start
-	 * OP = operation, 2 means read
+	 * send the command and data out to the MDIO bus as this frame:
+	 * ST = start, C22: 1 means start
+	 *             C45: 0 means start
+	 * OP = operation, see mdio_opcode for specifics on what the values are
 	 * PA = PHY/Port address
 	 * RA = Register/Device Address
 	 * TA = Turnaround, must be 2 to be valid
 	 * data = data to be written to the PHY register
 	 */
-	data->base->MMFR = ENET_MMFR_ST(0x1U) |
-				ENET_MMFR_OP(MDIO_OP_C22_READ) |
-				ENET_MMFR_PA(prtad) |
-				ENET_MMFR_RA(regad) |
-				ENET_MMFR_TA(0x2U);
+	data->base->MMFR = ENET_MMFR_ST(c45 ? 0x0U : 0x1U)
+					 | ENET_MMFR_OP(op)
+					 | ENET_MMFR_PA(prtad)
+					 | ENET_MMFR_RA(regad)
+					 | ENET_MMFR_TA(0x2U)
+					 | data_in;
 
 	ret = nxp_enet_mdio_wait_xfer(dev);
 	if (ret) {
@@ -98,54 +99,8 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	}
 
 	/* The data is received in the same register that we wrote the command to */
-	*read_data = (data->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
-
-	/* Clear the same bit as before because the event has been handled */
-	data->base->EIR = ENET_EIR_MII_MASK;
-
-	/* This MDIO interaction is finished */
-	(void)k_mutex_unlock(&data->mdio_mutex);
-
-	return ret;
-}
-
-/* MDIO Write API implementation */
-static int nxp_enet_mdio_write(const struct device *dev,
-			uint8_t prtad, uint8_t regad, uint16_t write_data)
-{
-	struct nxp_enet_mdio_data *data = dev->data;
-	int ret;
-
-	/* Only one MDIO bus operation attempt at a time */
-	(void)k_mutex_lock(&data->mdio_mutex, K_FOREVER);
-
-	/*
-	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
-	 * prepare to wait for it to be set once this write is done
-	 */
-	data->base->EIR = ENET_EIR_MII_MASK;
-
-	/*
-	 * Write MDIO frame to MII management register which will
-	 * send the write command and data out to the MDIO bus as this frame:
-	 * ST = start, 1 means start
-	 * OP = operation, 1 means write
-	 * PA = PHY/Port address
-	 * RA = Register/Device Address
-	 * TA = Turnaround, must be 2 to be valid
-	 * data = data to be written to the PHY register
-	 */
-	data->base->MMFR = ENET_MMFR_ST(0x1U) |
-				ENET_MMFR_OP(MDIO_OP_C22_WRITE) |
-				ENET_MMFR_PA(prtad) |
-				ENET_MMFR_RA(regad) |
-				ENET_MMFR_TA(0x2U) |
-				write_data;
-
-	ret = nxp_enet_mdio_wait_xfer(dev);
-	if (ret) {
-		(void)k_mutex_unlock(&data->mdio_mutex);
-		return ret;
+	if (data_out != NULL) {
+		*data_out = (data->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
 	}
 
 	/* Clear the same bit as before because the event has been handled */
@@ -157,9 +112,49 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	return ret;
 }
 
+static int nxp_enet_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *read_data)
+{
+	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false, 0, read_data);
+}
+
+static int nxp_enet_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t write_data)
+{
+	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false, write_data, NULL);
+}
+
+static int nxp_enet_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
+				  uint16_t regad, uint16_t *data)
+{
+	int err;
+
+	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
+	if (!err) {
+		err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_READ, true, 0, data);
+	}
+
+	return err;
+}
+
+int nxp_enet_mdio_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t regad,
+			    uint16_t data)
+{
+	int err;
+
+	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
+	if (!err) {
+		err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_WRITE, true, data, NULL);
+	}
+
+	return err;
+}
+
 static DEVICE_API(mdio, nxp_enet_mdio_api) = {
 	.read = nxp_enet_mdio_read,
 	.write = nxp_enet_mdio_write,
+	.read_c45 = nxp_enet_mdio_read_c45,
+	.write_c45 = nxp_enet_mdio_write_c45
 };
 
 static void nxp_enet_mdio_isr_cb(const struct device *dev)
