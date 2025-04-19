@@ -4,18 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/renesas-ra-gpio-ioport.h>
+
 / {
-	renesas_parallel_graphics_connector: parallel-graphics-connector {
+	ek_ra8d1_parallel_lcd_expandsion: parallel-lcd-expandsion {
 		compatible = "renesas,ra-parallel-graphics-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<2 0 &ioport5 11 0>,	/* IIC_SDA */
-				<3 0 &ioport5 10 0>,	/* DISP_INT */
-				<4 0 &ioport5 12 0>,	/* IIC_SCL */
-				<6 0 &ioporta 1 0>;	/* DISP_RST */
+		gpio-map = <EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_BLEN 0 &ioport4 4 0>,
+			   <EK_RA8D1_PARALLEL_GRAPHICS_HEADER_IIC_SDA 0 &ioport5 11 0>,
+			   <EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_INT 0 &ioport5 10 0>,
+			   <EK_RA8D1_PARALLEL_GRAPHICS_HEADER_IIC_SCL 0 &ioport5 12 0>,
+			   <EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_RST 0 &ioporta 1 0>;
 	};
+};
+
+&lcd_expansion_rtk7eka6m3b00001bu {
+	compatible = "renesas,ra-parallel-graphics-header";
+	#gpio-cells = <2>;
+	gpio-map-mask = <0xffffffff 0xffffffc0>;
+	gpio-map-pass-thru = <0 0x3f>;
+	gpio-map = <EK_RA6M3G_PARALLEL_GRAPHICS_HEADER_DISP_BLEN 0
+		&ek_ra8d1_parallel_lcd_expandsion EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_BLEN 0>,
+		   <EK_RA6M3G_PARALLEL_GRAPHICS_HEADER_IIC_SDA 0
+		&ek_ra8d1_parallel_lcd_expandsion EK_RA8D1_PARALLEL_GRAPHICS_HEADER_IIC_SDA 0>,
+		   <EK_RA6M3G_PARALLEL_GRAPHICS_HEADER_DISP_INT 0
+		&ek_ra8d1_parallel_lcd_expandsion EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_INT 0>,
+		   <EK_RA6M3G_PARALLEL_GRAPHICS_HEADER_IIC_SCL2 0
+		&ek_ra8d1_parallel_lcd_expandsion EK_RA8D1_PARALLEL_GRAPHICS_HEADER_IIC_SCL 0>,
+		   <EK_RA6M3G_PARALLEL_GRAPHICS_HEADER_DISP_RST 0
+		&ek_ra8d1_parallel_lcd_expandsion EK_RA8D1_PARALLEL_GRAPHICS_HEADER_DISP_RST 0>;
 };
 
 &port_irq3 {
