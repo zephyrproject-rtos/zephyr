@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PAJ7620 sample application"
+
+config APP_USE_POLLING
+	bool "Select y to use polling, otherwise the sample will use triggers"
+	default y
+
+source "Kconfig.zephyr"
