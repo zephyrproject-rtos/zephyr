@@ -1,0 +1,12 @@
+# Copyright 2025 Yoan Dumas
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BCM2711
+
+config BCM2711_VC_IF
+	bool "Broadcom BCM2711 Video Core IV interface"
+	default y if MBOX_BCM2711
+	help
+	  Video Core IV interface on top of the ARM to VC mailbox.
+
+endif # SOC_BCM2711
