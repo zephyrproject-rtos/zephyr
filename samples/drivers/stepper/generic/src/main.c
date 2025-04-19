@@ -74,6 +74,12 @@ int main(void)
 	stepper_set_event_callback(stepper, stepper_callback, NULL);
 	stepper_set_reference_position(stepper, 0);
 	stepper_set_microstep_interval(stepper, CONFIG_STEP_INTERVAL_NS);
+	struct stepper_ramp_profile ramp_profile = {
+		.acceleration = CONFIG_RAMP_ACCELERATION,
+		.max_velocity = CONFIG_RAMP_MAX_VELOCITY,
+		.deceleration = CONFIG_RAMP_DECELERATION,
+	};
+	stepper_set_ramp_profile(stepper, &ramp_profile);
 
 	for (;;) {
 		k_sem_take(&stepper_generic_sem, K_FOREVER);

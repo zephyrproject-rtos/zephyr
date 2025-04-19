@@ -18,7 +18,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/counter.h>
-
+#include "../stepper_common.h"
 #include "step_dir_stepper_timing_source.h"
 
 /**
