@@ -15,7 +15,7 @@ if(CONFIG_PM)
   endif()
 endif()
 
-if(CONFIG_MEMC_MCUX_FLEXSPI)
+if(CONFIG_MEMC_MCUX_FLEXSPI OR CONFIG_MSPI_NXP_FLEXSPI)
   zephyr_sources(flexspi.c)
   if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
     zephyr_code_relocate(FILES flexspi.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
