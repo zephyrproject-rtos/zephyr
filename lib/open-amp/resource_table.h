@@ -37,6 +37,9 @@ enum rsc_table_entries {
 #if defined(CONFIG_RAM_CONSOLE)
 	RSC_TABLE_TRACE_ENTRY,
 #endif
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 0)
+	RSC_TABLE_VENDOR_ENTRY,
+#endif
 	RSC_TABLE_NUM_ENTRY
 };
 
@@ -53,6 +56,13 @@ struct fw_resource_table {
 #if defined(CONFIG_RAM_CONSOLE)
 	/* rpmsg trace entry */
 	struct fw_rsc_trace cm_trace;
+#endif
+
+#if (CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH > 0)
+	/* vendor-specific resource header */
+	struct fw_rsc_vendor vendor_hdr;
+	/* array storing vendor-specific feature flags */
+	uint32_t vendor_data[CONFIG_OPENAMP_RSC_TABLE_VENDOR_RSC_LENGTH];
 #endif
 } METAL_PACKED_END;
 
