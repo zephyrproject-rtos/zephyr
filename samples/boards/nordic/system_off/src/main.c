@@ -14,6 +14,7 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/kernel.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>

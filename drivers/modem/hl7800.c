@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/util.h>
