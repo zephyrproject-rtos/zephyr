@@ -1,0 +1,11 @@
+description: Silabs GSPI
+compatible: "silabs,siwx91x-gspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

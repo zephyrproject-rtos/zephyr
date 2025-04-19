@@ -305,3 +305,7 @@ tests:
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=y
       - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_siwx91x.loopback:
+    filter: CONFIG_SOC_FAMILY_SILABS_SIWX91X
+    platform_allow:
+      - siwx917_rb4338a
