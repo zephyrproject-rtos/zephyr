@@ -67,6 +67,8 @@ compatible: "x-powers,axp2101-regulator"
 
 include: base.yaml
 
+on-bus: axp2101
+
 child-binding:
   include:
     - name: regulator.yaml
