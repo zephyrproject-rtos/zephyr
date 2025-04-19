@@ -411,7 +411,7 @@ struct node_rx_iso_meta {
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
-		void        *next;    /* For slist, by hci module */
+		void        *next;    /* For slist and/or fifo, by hci module */
 		memq_link_t *link;    /* Supply memq_link from ULL to LLL */
 		uint8_t     ack_last; /* Tx ack queue index at this node rx */
 	};
