@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,13 +175,26 @@ int main(void)
 		fie.index++;
 	}
 
+	/* Get supported controls */
+	LOG_INF("- Supported controls:");
+
+	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+
+	while (!video_query_ctrl(video_dev, &cq)) {
+		video_print_ctrl(video_dev, &cq);
+		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
+	}
+
 	/* Set controls */
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
+		video_set_ctrl(video_dev, &ctrl);
 	}
 
 #ifdef CONFIG_TEST
-	video_set_ctrl(video_dev, VIDEO_CID_TEST_PATTERN, (void *)1);
+	ctrl.id = VIDEO_CID_TEST_PATTERN;
+	video_set_ctrl(video_dev, &ctrl);
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)

@@ -11,6 +11,9 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
@@ -24,16 +27,19 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
  */
 #define MAX_FRAME_RATE          60
 
+struct sw_ctrls {
+	struct video_ctrl hflip;
+};
+
 struct video_sw_generator_data {
 	const struct device *dev;
+	struct sw_ctrls ctrls;
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_work_delayable buf_work;
 	struct k_work_sync work_sync;
 	int pattern;
-	bool ctrl_hflip;
-	bool ctrl_vflip;
 	struct k_poll_signal *signal;
 	uint32_t frame_rate;
 };
@@ -125,7 +131,7 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct 
 
 	for (h = 0; h < data->fmt.height; h++) {
 		for (w = 0; w < data->fmt.width; w++) {
-			int color_idx = data->ctrl_vflip ? 7 - w / bw : w / bw;
+			int color_idx = data->ctrls.hflip.val ? 7 - w / bw : w / bw;
 			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
 				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
 				*pixel = rgb565_colorbar_value[color_idx];
@@ -255,22 +261,6 @@ static int video_sw_generator_set_signal(const struct device *dev, enum video_en
 }
 #endif
 
-static inline int video_sw_generator_set_ctrl(const struct device *dev, unsigned int cid,
-					      void *value)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	switch (cid) {
-	case VIDEO_CID_VFLIP:
-		data->ctrl_vflip = (bool)value;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 static int video_sw_generator_set_frmival(const struct device *dev, enum video_endpoint_id ep,
 					  struct video_frmival *frmival)
 {
@@ -340,7 +330,6 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.enqueue = video_sw_generator_enqueue,
 	.dequeue = video_sw_generator_dequeue,
 	.get_caps = video_sw_generator_get_caps,
-	.set_ctrl = video_sw_generator_set_ctrl,
 	.set_frmival = video_sw_generator_set_frmival,
 	.get_frmival = video_sw_generator_get_frmival,
 	.enum_frmival = video_sw_generator_enum_frmival,
@@ -357,6 +346,14 @@ static struct video_sw_generator_data video_sw_generator_data_0 = {
 	.frame_rate = DEFAULT_FRAME_RATE,
 };
 
+static int video_sw_generator_init_controls(const struct device *dev)
+{
+	struct video_sw_generator_data *data = dev->data;
+
+	return video_init_ctrl(&data->ctrls.hflip, dev, VIDEO_CID_HFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+}
+
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -366,9 +363,11 @@ static int video_sw_generator_init(const struct device *dev)
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->buf_work, __buffer_work);
 
-	return 0;
+	return video_sw_generator_init_controls(dev);
 }
 
 DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR", &video_sw_generator_init, NULL,
 	      &video_sw_generator_data_0, NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 	      &video_sw_generator_driver_api);
+
+VIDEO_DEVICE_DEFINE(video_sw_generator, DEVICE_GET(video_sw_generator), NULL);
