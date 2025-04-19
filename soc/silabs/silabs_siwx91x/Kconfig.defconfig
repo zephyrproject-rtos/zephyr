@@ -13,6 +13,21 @@ configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 128 if !TICKLESS_KERNEL && SILABS_SLEEPTIMER_TIMER
 	default 1024 if SILABS_SLEEPTIMER_TIMER
 
+config SILABS_COMMANDER_SIGN
+	default n
+	select BUILD_OUTPUT_BIN
+
+if SILABS_COMMANDER_SIGN
+config M4_OTA_KEY
+	default "Full_OTA_KEY_in_HEX"
+
+config M4_PRIVATE_KEY
+	default "Full_path_to_m4_private_key.pem"
+
+config COMMANDER_PATH
+	default "Full_path_to_SimplicityCommander-Linux/commander/commander"
+endif
+
 config WISECONNECT_NETWORK_STACK
 	bool
 	select CMSIS_RTOS_V2
