@@ -149,18 +149,33 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*** Configure the DMA ***/
 	/* Set the parameters to be configured */
-	hdma.Init.Request		= DMA_REQUEST_DCMI;
-	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
-	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
-	hdma.Init.MemInc		= DMA_MINC_ENABLE;
-	hdma.Init.PeriphDataAlignment	= DMA_PDATAALIGN_WORD;
-	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
-	hdma.Init.Mode			= DMA_CIRCULAR;
-	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
-	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
+#if defined(GPDMA1) // GPDMA
+	hdma.Init.Request = GPDMA1_REQUEST_DCMI;
+	hdma.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Init.SrcInc = DMA_SINC_FIXED;
+	hdma.Init.DestInc = DMA_DINC_INCREMENTED;
+	hdma.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD;
+	hdma.Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD;
+	hdma.Init.Priority = DMA_HIGH_PRIORITY;
+	hdma.Init.SrcBurstLength = 1;
+	hdma.Init.DestBurstLength = 1;
+	hdma.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+	hdma.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+	hdma.Init.Mode = DMA_NORMAL;
+#else // standard DMA
+	hdma.Init.Request = DMA_REQUEST_DCMI;
+	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	hdma.Init.MemInc = DMA_MINC_ENABLE;
+	hdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+	hdma.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+	hdma.Init.Mode = DMA_CIRCULAR;
+	hdma.Init.Priority = DMA_PRIORITY_HIGH;
+	hdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
 
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
-						config->dma.channel);
+	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(config->dma.reg, config->dma.channel);
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
