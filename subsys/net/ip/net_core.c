@@ -117,7 +117,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
 		 * (after L2 removed header).
 		 */
-		ret = net_packet_socket_input(pkt, ETH_P_ALL);
+		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt));
 		if (ret != NET_CONTINUE) {
 			return ret;
 		}

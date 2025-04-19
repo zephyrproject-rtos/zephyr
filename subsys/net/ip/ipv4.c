@@ -387,7 +387,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	ip.ipv4 = hdr;
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
-		if (net_conn_input(pkt, &ip, hdr->proto, NULL) == NET_DROP) {
+		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
 			goto drop;
 		}
 	}

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "connection.h"
 #include "packet_socket.h"
 
-enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
+enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint16_t proto)
 {
 	sa_family_t orig_family;
 	enum net_verdict net_verdict;
@@ -39,13 +39,9 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	net_verdict = net_conn_input(pkt, NULL, proto, NULL);
+	net_verdict = net_conn_packet_input(pkt, proto);
 
 	net_pkt_set_family(pkt, orig_family);
 
-	if (net_verdict == NET_DROP) {
-		return NET_CONTINUE;
-	} else {
-		return net_verdict;
-	}
+	return net_verdict;
 }
