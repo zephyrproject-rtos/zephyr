@@ -257,11 +257,6 @@ static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_as
 	return 0;
 }
 
-static struct bt_bap_unicast_server_register_param param = {
-	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
-};
-
 static struct bt_bap_unicast_server_cb unicast_server_cbs = {
 	.config = unicast_server_config,
 	.reconfig = unicast_server_reconfig,
@@ -272,6 +267,12 @@ static struct bt_bap_unicast_server_cb unicast_server_cbs = {
 	.disable = unicast_server_disable,
 	.stop = unicast_server_stop,
 	.release = unicast_server_release,
+};
+
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+	&unicast_server_cbs
 };
 
 static void set_location(void)
@@ -483,13 +484,6 @@ static void test_main(void)
 	err = bt_bap_unicast_server_register(&param);
 	if (err != 0) {
 		FAIL("Failed to register unicast server (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_bap_unicast_server_register_cb(&unicast_server_cbs);
-	if (err != 0) {
-		FAIL("Failed to register unicast server callbacks (err %d)\n", err);
 
 		return;
 	}
