@@ -218,3 +218,24 @@ should see the following message in the terminal:
 
 .. _MIMXRT700-EVK Debug Firmware:
    https://www.nxp.com/docs/en/application-note/AN13206.pdf
+
+Display Support
+***************
+
+The mimxrt700_evk board supports following in-tree display module(s). Setup for
+each module is described below:
+
+NXP G1120B0MIPI MIPI Display
+============================
+
+The :ref:`g1120b0mipi` connects to the board's MIPI connector J52
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/g1120b0mipi/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: g1120b0mipi
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
