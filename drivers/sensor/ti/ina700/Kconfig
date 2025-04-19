@@ -1,0 +1,18 @@
+# Original license from ina23x driver:
+# 	Copyright 2021 The Chromium OS Authors
+# 	Copyright 2021 Grinn
+#
+# Copyright 2024, Remie Lowik
+#
+# SPDX-License-Identifier: Apache-2.0
+config INA700
+	bool "INA700 Current and Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA700_ENABLED
+	select I2C
+	help
+	  Enable driver for INA700 Current and Power Monitor.
+
+if INA700
+
+endif # INA700
