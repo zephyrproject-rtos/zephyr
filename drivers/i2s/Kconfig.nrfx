@@ -22,3 +22,25 @@ config I2S_NRFX_TX_BLOCK_COUNT
 	default 4
 
 endif # I2S_NRFX
+
+menuconfig TDM_NRFX
+	bool "nRF TDM nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_TDM_ENABLED
+	select NRFX_TDM130 if HAS_HW_NRF_TDM130
+	select CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for nrfx TDM driver for nRF MCU series.
+
+if TDM_NRFX
+
+config TDM_NRFX_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config TDM_NRFX_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # TDM_NRFX
