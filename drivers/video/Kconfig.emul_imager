@@ -5,6 +5,7 @@ config VIDEO_EMUL_IMAGER
 	bool "Software implementation of an imager"
 	depends on DT_HAS_ZEPHYR_VIDEO_EMUL_IMAGER_ENABLED
 	default y
+	depends on EMUL
 	help
 	  Enable driver for the emulated Imager. A line buffer contains
 	  the color pattern within the imager data struct, at the first
