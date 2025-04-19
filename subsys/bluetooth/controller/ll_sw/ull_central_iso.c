@@ -65,6 +65,8 @@
 #define PHY_VALID_MASK (BT_HCI_ISO_PHY_VALID_MASK & ~BIT(2))
 #endif
 
+#define CIS_CREATE_INSTANT_DELTA 4U
+
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
 static void cig_offset_get(struct ll_conn_iso_stream *cis);
 static void mfy_cig_offset_get(void *param);
@@ -925,10 +927,10 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->lll.prepared = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
-	cis->central.instant = instant;
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 	cis->pkt_seq_num = 0U;
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+
 	/* It is intentional to initialize to the 39 bit maximum value and rollover to 0 in the
 	 * prepare function, the event counter is pre-incremented in prepare function for the
 	 * current ISO event.
@@ -984,10 +986,8 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	 *       `ull_conn_llcp()` is called before `ull_ref_inc()` hence we do not need to use
 	 *       `ull_conn_event_counter()`.
 	 */
-	cis->central.instant = conn->lll.event_counter + conn->lll.latency_prepare +
-			       conn->llcp.prep.lazy + 4U;
-
-	*conn_event_count = cis->central.instant;
+	*conn_event_count = conn->lll.event_counter + conn->lll.latency_prepare +
+			    conn->llcp.prep.lazy + CIS_CREATE_INSTANT_DELTA;
 
 	/* Provide CIS offset range
 	 * CIS_Offset_Max < (connInterval - (CIG_Sync_Delay + T_MSS))
@@ -1090,7 +1090,6 @@ static void cis_offset_get(struct ll_conn_iso_stream *cis)
 static void mfy_cis_offset_get(void *param)
 {
 	uint32_t elapsed_acl_us, elapsed_cig_us;
-	uint16_t latency_acl, latency_cig;
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t cig_remainder_us;
@@ -1098,10 +1097,11 @@ static void mfy_cis_offset_get(void *param)
 	uint32_t cig_interval_us;
 	uint32_t offset_limit_us;
 	uint32_t ticks_to_expire;
+	uint32_t remainder = 0U;
 	uint32_t ticks_current;
 	uint32_t offset_min_us;
 	struct ll_conn *conn;
-	uint32_t remainder = 0U;
+	uint16_t latency_cig;
 	uint8_t ticker_id;
 	uint16_t lazy;
 	uint8_t retry;
@@ -1188,13 +1188,7 @@ static void mfy_cis_offset_get(void *param)
 	 * and latency counts (typically 3) is low enough to avoid 32-bit
 	 * overflow. Refer to ull_central_iso_cis_offset_get().
 	 */
-	/* FIXME: Mayfly execution of `mfy_cig_offset_get()` could be before "LLL Prepare" or after
-	 *        conn->lll.event_counter could have been pre-incremented.
-	 *        This race condition needs a fix.
-	 */
-	latency_acl = cis->central.instant - conn->lll.event_counter - conn->lll.latency_prepare -
-		      conn->llcp.prep.lazy;
-	elapsed_acl_us = latency_acl * conn->lll.interval * CONN_INT_UNIT_US;
+	elapsed_acl_us = CIS_CREATE_INSTANT_DELTA * conn->lll.interval * CONN_INT_UNIT_US;
 
 	/* Calculate elapsed CIG intervals until the instant */
 	cig_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
