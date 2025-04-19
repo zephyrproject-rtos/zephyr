@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Reto Schneider
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: boac
+  full_name: AquaPrecise
+  vendor: gardena
+  socs:
+    - name: nrf52840
