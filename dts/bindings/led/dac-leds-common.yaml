@@ -1,0 +1,24 @@
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common fields for DAC LEDs
+
+child-binding:
+  description: Common DAC LED child node
+  properties:
+    dac:
+      type: phandle
+      required: true
+      description: |
+        Property containing phandle to DAC e.g. &dac.
+    channel:
+      type: int
+      required: true
+      description: |
+        The DAC channel.
+    resolution:
+      type: int
+      required: true
+      description: |
+        The DAC resolution to use.

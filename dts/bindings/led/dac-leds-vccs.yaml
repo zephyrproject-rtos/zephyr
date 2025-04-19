@@ -1,0 +1,29 @@
+# Copyright (c) 2018, Linaro Limited
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Group of DAC-controlled LEDs using voltage control current source (vccs) circuit.
+
+  Each LED is defined in a child node of the dac-leds node.
+
+  Here is an example which defines an LED in the node /leds:
+
+  / {
+          leds {
+                  compatible = "dac-leds-vccs";
+                  led_0 {
+                          dac = <&dac1>;
+                          channel = <0>;
+                          resolution = <12>;
+                  };
+          };
+  };
+
+  Above:
+
+  - led_0 uses dac1 channel 0 with 12 bit resolution.
+
+compatible: "dac-leds-vccs"
+
+include: ["dac-leds-common.yaml"]
