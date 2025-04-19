@@ -40,15 +40,15 @@ struct net_if;
 #define NET_MGMT_ON_IFACE_MASK		0x40000000
 #define NET_MGMT_LAYER_MASK		0x30000000
 #define NET_MGMT_SYNC_EVENT_MASK	0x08000000
-#define NET_MGMT_LAYER_CODE_MASK	0x07FF0000
-#define NET_MGMT_COMMAND_MASK		0x0000FFFF
+#define NET_MGMT_LAYER_CODE_MASK	0x07F00000
+#define NET_MGMT_COMMAND_MASK		0x000FFFFF
 
 #define NET_MGMT_EVENT_BIT		BIT(31)
 #define NET_MGMT_IFACE_BIT		BIT(30)
 #define NET_MGMT_SYNC_EVENT_BIT		BIT(27)
 
 #define NET_MGMT_LAYER(_layer)		(_layer << 28)
-#define NET_MGMT_LAYER_CODE(_code)	(_code << 16)
+#define NET_MGMT_LAYER_CODE(_code)	(_code << 20)
 
 #define NET_MGMT_EVENT(mgmt_request)		\
 	(mgmt_request & NET_MGMT_EVENT_MASK)
@@ -63,7 +63,7 @@ struct net_if;
 	((mgmt_request & NET_MGMT_LAYER_MASK) >> 28)
 
 #define NET_MGMT_GET_LAYER_CODE(mgmt_request)	\
-	((mgmt_request & NET_MGMT_LAYER_CODE_MASK) >> 16)
+	((mgmt_request & NET_MGMT_LAYER_CODE_MASK) >> 20)
 
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
