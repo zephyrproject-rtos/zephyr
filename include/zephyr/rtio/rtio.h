@@ -281,6 +281,14 @@ struct rtio_iodev_sqe;
 typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
 
 /**
+ * @typedef rtio_signaled_t
+ * @brief Callback signature for RTIO_OP_AWAIT signaled
+ * @param iodev_sqe IODEV submission for the await op
+ * @param userdata Userdata
+ */
+typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata);
+
+/**
  * @brief A submission queue event
  */
 struct rtio_sqe {
@@ -349,6 +357,13 @@ struct rtio_sqe {
 		/** OP_I3C_CCC */
 		/* struct i3c_ccc_payload *ccc_payload; */
 		void *ccc_payload;
+
+		/** OP_AWAIT */
+		struct {
+			atomic_t ok;
+			rtio_signaled_t callback;
+			void *userdata;
+		} await;
 	};
 };
 
@@ -555,6 +570,9 @@ struct rtio_iodev {
 /** An operation to sends I3C CCC */
 #define RTIO_OP_I3C_CCC (RTIO_OP_I3C_CONFIGURE+1)
 
+/** An operation to suspend bus while awaiting signal */
+#define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
+
 /**
  * @brief Prepare a nop (no op) submission
  */
@@ -714,6 +732,18 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	sqe->txrx.buf_len = buf_len;
 	sqe->txrx.tx_buf = tx_buf;
 	sqe->txrx.rx_buf = rx_buf;
+	sqe->userdata = userdata;
+}
+
+static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
+				       const struct rtio_iodev *iodev,
+				       int8_t prio,
+				       void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_AWAIT;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
 	sqe->userdata = userdata;
 }
 
@@ -1405,6 +1435,50 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
 	} while (iodev_sqe != NULL);
 
 	return 0;
+}
+
+/**
+ * @brief Signal an AWAIT SQE
+ *
+ * If the SQE is currently blocking execution, execution is unblocked. If the SQE is not
+ * currently blocking execution, The SQE will be skipped.
+ *
+ * @note To await the AWAIT SQE blocking execution, chain a nop or callback SQE before
+ * the await SQE.
+ *
+ * @param[in] sqe The SQE to signal
+ */
+__syscall void rtio_sqe_signal(struct rtio_sqe *sqe);
+
+static inline void z_impl_rtio_sqe_signal(struct rtio_sqe *sqe)
+{
+	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+
+	if (!atomic_cas(&iodev_sqe->sqe.await.ok, 0, 1)) {
+		iodev_sqe->sqe.await.callback(iodev_sqe, iodev_sqe->sqe.await.userdata);
+	}
+}
+
+/**
+ * @brief Await an AWAIT SQE signal from RTIO IODEV
+ *
+ * If the SQE is already signaled, the callback is called immediately. Otherwise the
+ * callback will be called once the AWAIT SQE is signaled.
+ *
+ * @param[in] iodev_sqe The IODEV SQE to await signaled
+ * @param[in] callback Callback called when SQE is signaled
+ * @param[in] userdata User data passed to callback
+ */
+static inline void rtio_iodev_sqe_await_signal(struct rtio_iodev_sqe *iodev_sqe,
+					       rtio_signaled_t callback,
+					       void *userdata)
+{
+	iodev_sqe->sqe.await.callback = callback;
+	iodev_sqe->sqe.await.userdata = userdata;
+
+	if (!atomic_cas(&iodev_sqe->sqe.await.ok, 0, 1)) {
+		callback(iodev_sqe, userdata);
+	}
 }
 
 /**
