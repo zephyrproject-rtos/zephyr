@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_sw_generator
+#define DT_DRV_COMPAT zephyr_video_sw_generator
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/video.h>
@@ -349,14 +349,6 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 #endif
 };
 
-static struct video_sw_generator_data video_sw_generator_data_0 = {
-	.fmt.width = 320,
-	.fmt.height = 160,
-	.fmt.pitch = 320 * 2,
-	.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,
-	.frame_rate = DEFAULT_FRAME_RATE,
-};
-
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -369,6 +361,17 @@ static int video_sw_generator_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR", &video_sw_generator_init, NULL,
-	      &video_sw_generator_data_0, NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-	      &video_sw_generator_driver_api);
+#define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
+	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
+		.fmt.width = 320,                                                                  \
+		.fmt.height = 160,                                                                 \
+		.fmt.pitch = 320 * 2,                                                              \
+		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
+		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \
+			      NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,                       \
+			      &video_sw_generator_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(VIDEO_SW_GENERATOR_DEFINE)
