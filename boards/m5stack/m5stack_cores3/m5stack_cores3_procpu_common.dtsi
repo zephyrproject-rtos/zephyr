@@ -78,6 +78,18 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
+	axp2101@34 {
+		compatible = "x-powers,axp2101";
+		reg = <0x34>;
+
+		charger: charger {
+			compatible = "x-powers,axp2101-charger";
+			constant-charge-current-max-microamp = <200000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			charge-term-current-microamp = <125000>;
+		};
+	};
+
 	bm8563_rtc: bm8563@51 {
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
