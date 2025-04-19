@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB        timer_dtmr_cmsdk
 zephyr_library_sources_ifdef(CONFIG_COUNTER_AMBIQ               counter_ambiq_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_GECKO_RTCC          counter_gecko_rtcc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_GECKO_STIMER        counter_gecko_stimer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_SIWX91X_STIMER      counter_gecko_stimer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_IMX_EPIT            counter_imx_epit.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT8XXX2         counter_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_CTIMER         counter_mcux_ctimer.c)

@@ -16,8 +16,21 @@ config COUNTER_GECKO_RTCC
 config COUNTER_GECKO_STIMER
 	bool "Silicon Labs Gecko Counter Sleep Timer driver"
 	default y
-	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
+	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED && !SOC_FAMILY_SILABS_SIWX91X
 	select SOC_SILABS_SLEEPTIMER
 	help
 	  Enable the counter driver for Sleep Timer module for Silicon Labs
 	  Gecko chips.
+
+if SOC_FAMILY_SILABS_SIWX91X
+
+config COUNTER_SIWX91X_STIMER
+	bool "Silicon Labs siwx91x Counter Sleep Timer driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
+	select SOC_SILABS_SLEEPTIMER
+	help
+	  Enable the counter driver for Sleep Timer module for Silicon Labs
+	  siwx91x chips.
+
+endif

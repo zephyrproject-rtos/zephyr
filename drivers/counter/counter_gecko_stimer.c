@@ -15,24 +15,19 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <em_cmu.h>
 #include <sl_atomic.h>
 #include <sl_sleeptimer.h>
 #include <sli_sleeptimer_hal.h>
 
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
-#if SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_RTCC
-#define STIMER_IRQ_HANDLER RTCC_IRQHandler
-#define STIMER_MAX_VALUE _RTCC_CNT_MASK
-#elif SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_SYSRTC
-#define STIMER_IRQ_HANDLER SYSRTC_APP_IRQHandler
-#define STIMER_MAX_VALUE _SYSRTC_CNT_MASK
-#else
-#error "Unsupported sleep timer peripheral"
-#endif
+#define DT_RTC DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_stimer)
+
+/* Ensure interrupt names don't expand to register interface struct pointers */
+#undef RTCC
 
 #define STIMER_ALARM_NUM 2
+#define STIMER_MAX_VALUE 0xFFFFFFFFUL
 
 struct counter_gecko_config {
 	struct counter_config_info info;
@@ -281,7 +276,9 @@ BUILD_ASSERT((DT_INST_PROP(0, prescaler) > 0U) && (DT_INST_PROP(0, prescaler) <=
 
 static void counter_gecko_0_irq_config(void)
 {
-	IRQ_DIRECT_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), STIMER_IRQ_HANDLER, 0);
+	IRQ_DIRECT_CONNECT(DT_IRQ(DT_RTC, irq), DT_IRQ(DT_RTC, priority),
+			   CONCAT(DT_STRING_UPPER_TOKEN_BY_IDX(DT_RTC, interrupt_names, 0),
+			   _IRQHandler), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
