@@ -717,7 +717,8 @@ static int adxl362_chip_init(const struct device *dev)
 	}
 
 	/* Configures the FIFO feature. */
-	ret = adxl362_fifo_setup(dev, ADXL362_FIFO_DISABLE, 0, 0);
+	ret = adxl362_fifo_setup(dev, ADXL362_DEFAULT_FIFO_MODE,
+								ADXL362_DEFAULT_WATER_MARK_LVL, 0);
 	if (ret) {
 		return ret;
 	}

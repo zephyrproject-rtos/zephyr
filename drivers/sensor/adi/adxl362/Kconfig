@@ -91,6 +91,25 @@ config ADXL362_STREAM
 	help
 	  Use this configuration option to enable streaming sensor data via RTIO.
 
+choice
+	prompt "Accelerometer FIFO mode."
+	default ADXL362_FIFO_STREAM_MODE if ADXL362_STREAM
+	default ADXL362_FIFO_DISABLED if !ADXL362_STREAM
+
+config ADXL362_FIFO_DISABLED
+	bool "FIFO disabled"
+
+config ADXL362_FIFO_OLDEST_SAVED
+	bool "FIFO Oldest saved mode"
+
+config ADXL362_FIFO_STREAM_MODE
+	bool "FIFO Stream mode"
+
+config ADXL362_FIFO_TRIGGERED_MODE
+	bool "FIFO Triggered mode"
+
+endchoice
+
 config ADXL362_TRIGGER
 	bool
 

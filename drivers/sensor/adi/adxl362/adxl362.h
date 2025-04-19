@@ -290,6 +290,22 @@ BUILD_ASSERT(sizeof(struct adxl362_fifo_data) % 4 == 0,
 #	define ADXL362_DEFAULT_ODR_ACC		ADXL362_ODR_400_HZ
 #endif
 
+#if CONFIG_ADXL362_FIFO_DISABLED
+#	define ADXL362_DEFAULT_FIFO_MODE		ADXL362_FIFO_DISABLE
+#elif CONFIG_ADXL362_FIFO_OLDEST_SAVED
+#	define ADXL362_DEFAULT_FIFO_MODE		ADXL362_FIFO_OLDEST_SAVED
+#elif CONFIG_ADXL362_FIFO_STREAM_MODE
+#	define ADXL362_DEFAULT_FIFO_MODE		ADXL362_FIFO_STREAM
+#else
+#	define ADXL362_DEFAULT_FIFO_MODE		ADXL362_FIFO_TRIGGERED
+#endif
+
+#if (ADXL362_DEFAULT_FIFO_MODE != ADXL362_FIFO_DISABLE)
+#	define ADXL362_DEFAULT_WATER_MARK_LVL		0x80
+#else
+#	define ADXL362_DEFAULT_WATER_MARK_LVL		0
+#endif
+
 void adxl362_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl362_stream_irq_handler(const struct device *dev);
 int adxl362_fifo_read(const struct device *dev, void *buff, size_t length);
