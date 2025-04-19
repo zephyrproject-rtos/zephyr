@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI K3 MSPI Controller
+
+compatible: "ti,k3-mspi-controller"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Address and length of the MSPI configuration register and the indirect
+      write FIFO location.
+
+  sram-allocated-for-read:
+    required: true
+    type: int
+    description: |
+      Amount of SRAM that is allocated for read data from the MSPI bus. The rest
+      is allocated for data written to the MSPI bus.
+      The value needs to be between 0 and 255
+
+  init-nss-delay:
+    type: int
+    description: |
+      Amount of clock cycles between the CS pin is deasserted between
+      transactions after startup. Can be changed during runtime via the timing
+      config
+
+  init-btwn-delay:
+    type: int
+    description: |
+      Amount of clock cycles no peripheral is selected during switching device
+      after startup. Can be changed during runtime via the timing config
+
+  init-after-delay:
+    type: int
+    description: |
+      Amount of clock cycles the CS pin is continue being held after the last
+      bit was transferred. Can be changed during runtime via the timing config
+
+  init-init-delay:
+    type: int
+    description: |
+      Amount of clock cycles is asserted before sending the first bit of the
+      transmission. Can be changed during runtime via the timing config
