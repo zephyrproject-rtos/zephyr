@@ -104,6 +104,17 @@ To use this command:
 
       west spdx -d BUILD_DIR
 
+ When building with sysbuilds, ensure you run spdx for the application
+ which you want to generate the SBOM for.
+
+    .. code-block:: bash
+
+       west spdx --init  -d BUILD_DIR/hello_world
+       west build -d BUILD_DIR/
+       west spdx -d BUILD_DIR/hello_world
+
+
+
 This generates the following SPDX bill-of-materials (BOM) documents in
 :file:`BUILD_DIR/spdx/`:
 
