@@ -1434,7 +1434,8 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
-#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT
+#if 0
+//#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT
 	ARG_UNUSED(dev);
 
 	/*
@@ -1532,8 +1533,6 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 					stat.pending_length;
 	}
 
-	data->dma_tx.buffer_length = 0;
-
 	irq_unlock(key);
 }
 
@@ -1617,6 +1616,7 @@ static int uart_stm32_async_tx(const struct device *dev,
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
+	unsigned int key;
 	int ret;
 
 	if (data->dma_tx.dma_dev == NULL) {
@@ -1650,25 +1650,27 @@ static int uart_stm32_async_tx(const struct device *dev,
 	/* Enable TC interrupt so we can signal correct TX done */
 	LL_USART_EnableIT_TC(usart);
 
-	/* set source address */
-	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
-	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
+	if(data->dma_tx.buffer_length > 1){
+		/* set source address */
+		data->dma_tx.blk_cfg.source_address = ((uint32_t)data->dma_tx.buffer)+1;
+		data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length-1;
 
-	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel,
-				&data->dma_tx.dma_cfg);
+		ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel,
+					&data->dma_tx.dma_cfg);
 
-	if (ret != 0) {
-		LOG_ERR("dma tx config error!");
-		return -EINVAL;
+		if (ret != 0) {
+			LOG_ERR("dma tx config error!");
+			return -EINVAL;
+		}
+
+		if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
+			LOG_ERR("UART err: TX DMA start failed!");
+			return -EFAULT;
+		}
+
+		/* Start TX timer */
+		async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 	}
-
-	if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
-		LOG_ERR("UART err: TX DMA start failed!");
-		return -EFAULT;
-	}
-
-	/* Start TX timer */
-	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
 #ifdef CONFIG_PM
 
@@ -1676,8 +1678,16 @@ static int uart_stm32_async_tx(const struct device *dev,
 	uart_stm32_pm_policy_state_lock_get_unconditional();
 #endif
 
-	/* Enable TX DMA requests */
-	uart_stm32_dma_tx_enable(dev);
+	key = irq_lock();
+
+	LL_USART_TransmitData8(usart, tx_data[0]);
+
+	if(data->dma_tx.buffer_length > 1){
+		/* Enable TX DMA requests */
+		uart_stm32_dma_tx_enable(dev);
+	}
+
+	irq_unlock(key);
 
 	return 0;
 }
