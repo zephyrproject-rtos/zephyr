@@ -30,6 +30,25 @@ struct modem_backend_uart_isr {
 	uint32_t transmit_buf_put_limit;
 };
 
+#if CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_ENABLED
+struct rx_queue_event_t {
+	uint8_t *buf;
+	size_t len;
+};
+
+struct modem_backend_uart_async {
+	struct k_mem_slab rx_slab;
+	struct k_msgq rx_queue;
+	struct rx_queue_event_t rx_event;
+	struct rx_queue_event_t rx_queue_buf[CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT];
+	uint32_t rx_buf_size;
+	uint8_t rx_buf_count;
+	uint8_t *transmit_buf;
+	uint32_t transmit_buf_size;
+	struct k_work rx_disabled_work;
+	atomic_t state;
+};
+#else
 struct modem_backend_uart_async {
 	uint8_t *receive_bufs[2];
 	uint32_t receive_buf_size;
@@ -40,7 +59,7 @@ struct modem_backend_uart_async {
 	struct k_work rx_disabled_work;
 	atomic_t state;
 };
-
+#endif /* CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_ENABLED */
 struct modem_backend_uart {
 	const struct device *uart;
 	struct modem_pipe pipe;
@@ -60,7 +79,7 @@ struct modem_backend_uart {
 
 struct modem_backend_uart_config {
 	const struct device *uart;
-	uint8_t *receive_buf;
+	uint8_t *receive_buf __aligned(sizeof(uint32_t));
 	uint32_t receive_buf_size;
 	uint8_t *transmit_buf;
 	uint32_t transmit_buf_size;
