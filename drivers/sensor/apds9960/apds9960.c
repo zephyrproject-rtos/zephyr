@@ -26,6 +26,7 @@
 
 LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
+#if CONFIG_APDS9960_INTERRUPT_PIN
 static void apds9960_handle_cb(struct apds9960_data *drv_data)
 {
 	apds9960_setup_int(drv_data->dev->config, false);
@@ -45,6 +46,7 @@ static void apds9960_gpio_callback(const struct device *dev,
 
 	apds9960_handle_cb(drv_data);
 }
+#endif
 
 static int apds9960_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
@@ -59,6 +61,7 @@ static int apds9960_sample_fetch(const struct device *dev,
 	}
 
 #ifndef CONFIG_APDS9960_TRIGGER
+#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	apds9960_setup_int(config, true);
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
@@ -71,14 +74,23 @@ static int apds9960_sample_fetch(const struct device *dev,
 		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
-
 	k_sem_take(&data->data_sem, K_FOREVER);
+#endif
 #endif
 
 	if (i2c_reg_read_byte_dt(&config->i2c,
 			      APDS9960_STATUS_REG, &tmp)) {
 		return -EIO;
 	}
+
+#ifndef CONFIG_APDS9960_INTERRUPT_PIN
+	while (!(tmp & APDS9960_STATUS_PINT) && !(tmp & APDS9960_STATUS_AINT)) {
+		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
+		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
+			return -EIO;
+		}
+	}
+#endif
 
 	LOG_DBG("status: 0x%x", tmp);
 	if (tmp & APDS9960_STATUS_PINT) {
@@ -99,12 +111,14 @@ static int apds9960_sample_fetch(const struct device *dev,
 	}
 
 #ifndef CONFIG_APDS9960_TRIGGER
+#ifdef CONFIG_APDS9960_INTERRUPT_PIN
 	if (i2c_reg_update_byte_dt(&config->i2c,
 				APDS9960_ENABLE_REG,
 				APDS9960_ENABLE_PON,
 				0)) {
 		return -EIO;
 	}
+#endif
 #endif
 
 	if (i2c_reg_write_byte_dt(&config->i2c,
@@ -352,9 +366,18 @@ static int apds9960_sensor_setup(const struct device *dev)
 	}
 #endif
 
+#ifndef CONFIG_APDS9960_INTERRUPT_PIN
+	if (i2c_reg_update_byte_dt(&config->i2c, APDS9960_ENABLE_REG, APDS9960_ENABLE_PON,
+				   APDS9960_ENABLE_PON)) {
+		LOG_ERR("Power on bit not set.");
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 
+#if CONFIG_APDS9960_INTERRUPT_PIN
 static int apds9960_init_interrupt(const struct device *dev)
 {
 	const struct apds9960_config *config = dev->config;
@@ -400,6 +423,7 @@ static int apds9960_init_interrupt(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_PM_DEVICE
 static int apds9960_pm_action(const struct device *dev,
@@ -458,10 +482,12 @@ static int apds9960_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if CONFIG_APDS9960_INTERRUPT_PIN
 	if (apds9960_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt!");
 		return -EIO;
 	}
+#endif
 
 	return 0;
 }
@@ -477,7 +503,9 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 
 static const struct apds9960_config apds9960_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if CONFIG_APDS9960_INTERRUPT_PIN
 	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+#endif
 #if CONFIG_APDS9960_PGAIN_8X
 	.pgain = APDS9960_PGAIN_8X,
 #elif CONFIG_APDS9960_PGAIN_4X
