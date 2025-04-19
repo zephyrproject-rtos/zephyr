@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <common/mem.h>
+
+/ {
+	storage_sram: sram@2000C000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000C000 0x4000>;
+		zephyr,memory-region = "STORAGE_SRAM";
+		status = "okay";
+	};
+};
