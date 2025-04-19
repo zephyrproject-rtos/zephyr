@@ -34,13 +34,6 @@ int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm)
 	return 0;
 }
 
-PIO pio_rpi_pico_get_pio(const struct device *dev)
-{
-	const struct pio_rpi_pico_config *config = dev->config;
-
-	return config->pio;
-}
-
 static int pio_rpi_pico_init(const struct device *dev)
 {
 	const struct pio_rpi_pico_config *config = dev->config;
