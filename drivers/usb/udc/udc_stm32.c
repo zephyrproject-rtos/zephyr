@@ -62,6 +62,10 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #else
 #define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
 #endif
+/* Values comes from HAL macros. */
+#define USB_OTG_HS_PHY_ULPI	1U
+#define USB_FS_EMBEDDED_PHY	2U
+#define USB_OTG_HS_EMBEDDED_PHY	3U
 
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
@@ -992,27 +996,12 @@ static void priv_pcd_prepare(const struct device *dev)
 
 	memset(&priv->pcd, 0, sizeof(priv->pcd));
 
-	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
-	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
-
 	/* Per controller/Phy values */
-#if defined(USB)
-	priv->pcd.Instance = USB;
-#elif defined(USB_DRD_FS)
-	priv->pcd.Instance = USB_DRD_FS;
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
-#endif /* USB */
-
-#if USB_OTG_HS_EMB_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	priv->pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_OTG_HS_EMB_PHY */
+	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
+	priv->pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	priv->pcd.Init.phy_itface = DT_INST_STRING_UPPER_TOKEN(0, physel);
 }
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);

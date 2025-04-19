@@ -59,11 +59,15 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_VBUS_SENSING false
 #endif
 
-#define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+
+/* Values comes from HAL macros. */
+#define USB_OTG_HS_PHY_ULPI	1U
+#define USB_FS_EMBEDDED_PHY	2U
+#define USB_OTG_HS_EMBEDDED_PHY	3U
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
@@ -461,29 +465,16 @@ static int usb_dc_stm32_init(void)
 	HAL_StatusTypeDef status;
 	unsigned int i;
 
+	/* Per controller/Phy values */
 	usb_dc_stm32_state.pcd.Init.speed =
 			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
-
-#if defined(USB) || defined(USB_DRD_FS)
-#ifdef USB
-	usb_dc_stm32_state.pcd.Instance = USB;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
-#endif
+	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	usb_dc_stm32_state.pcd.Init.phy_itface = DT_INST_STRING_UPPER_TOKEN(0, physel);
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
+#if defined(USB) || defined(USB_DRD_FS)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-	usb_dc_stm32_state.pcd.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE_ADDRESS;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
@@ -744,7 +735,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+	if (ep_idx >= USB_NUM_BIDIR_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
