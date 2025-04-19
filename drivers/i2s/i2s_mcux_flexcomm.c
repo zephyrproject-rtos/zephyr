@@ -28,6 +28,7 @@ struct i2s_mcux_config {
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
+	int frameLength ;
 };
 
 struct stream {
@@ -67,7 +68,8 @@ struct i2s_mcux_data {
 static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 					 enum i2s_dir dir,
 					 const struct i2s_config *i2s_cfg,
-					 i2s_config_t *fsl_cfg)
+					 i2s_config_t *fsl_cfg ,
+					 int frameLength )
 {
 	if (dir == I2S_DIR_RX) {
 		I2S_RxGetDefaultConfig(fsl_cfg);
@@ -81,7 +83,11 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		/* Classic I2S. We always use 2 channels */
 		fsl_cfg->frameLength = 2 * i2s_cfg->word_size;
 	} else {
-		fsl_cfg->frameLength = i2s_cfg->channels * i2s_cfg->word_size;
+		if( 0  == frameLength ) {
+		    fsl_cfg->frameLength = i2s_cfg->channels * i2s_cfg->word_size;
+		} else {
+			fsl_cfg->frameLength = frameLength ;
+		}
 	}
 
 	if (fsl_cfg->dataLength < 4 || fsl_cfg->dataLength > 32) {
@@ -245,7 +251,7 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 	 * format.
 	 */
 	result = i2s_mcux_flexcomm_cfg_convert(base_frequency, dir, i2s_cfg,
-					       &fsl_cfg);
+					       &fsl_cfg, cfg->frameLength );
 	if (result != 0) {
 		return result;
 	}
@@ -966,6 +972,7 @@ static int i2s_mcux_init(const struct device *dev)
 		.clock_subsys =				\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config = i2s_mcux_config_func_##id,		\
+		.frameLength = DT_INST_PROP_OR(id, framelength , 0 ), \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 	static struct i2s_mcux_data i2s_mcux_data_##id = {		\
