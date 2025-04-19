@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_TI_SYSCON
+	bool "TI Syscon backed gate-clock driver"
+	default y
+	depends on DT_HAS_TI_AM654_EHRPWM_TBCLK_ENABLED || DT_HAS_TI_AM64_EPWM_TBCLK_ENABLED || DT_HAS_TI_AM62_EPWM_TBCLK_ENABLED
+	select SYSCON
+	help
+	  Enable driver for TI Syscon backed gate-clock controller.

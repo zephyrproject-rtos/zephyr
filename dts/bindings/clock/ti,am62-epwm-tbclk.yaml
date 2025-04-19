@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Texas Instrumetns
+# SPDX-License-Identifier: Apache-2.0
+
+description: Syscon backed gate-clock driver
+
+compatible: "ti,am62-epwm-tbclk"
+
+include: ["ti,am654-ehrpwm-tbclk.yaml"]
