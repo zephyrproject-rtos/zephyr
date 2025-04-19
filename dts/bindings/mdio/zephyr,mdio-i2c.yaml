@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr MDIO bitbang driver
+
+compatible: "zephyr,mdio-i2c"
+
+include: mdio-controller.yaml
+
+on-bus: i2c
