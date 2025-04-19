@@ -371,9 +371,8 @@ int ps8xxx_tcpc_get_snk_ctrl(const struct device *dev)
 int ps8xxx_tcpc_set_snk_ctrl(const struct device *dev, bool enable)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
-	uint8_t cmd = (enable) ? TCPC_REG_COMMAND_SNK_CTRL_HIGH : TCPC_REG_COMMAND_SNK_CTRL_LOW;
 
-	return tcpci_write_reg8(&cfg->bus, TCPC_REG_COMMAND, cmd);
+	return tcpci_tcpm_set_snk_ctrl(&cfg->bus, enable);
 }
 
 int ps8xxx_tcpc_get_src_ctrl(const struct device *dev)
@@ -384,9 +383,8 @@ int ps8xxx_tcpc_get_src_ctrl(const struct device *dev)
 int ps8xxx_tcpc_set_src_ctrl(const struct device *dev, bool enable)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
-	uint8_t cmd = (enable) ? TCPC_REG_COMMAND_SRC_CTRL_DEF : TCPC_REG_COMMAND_SRC_CTRL_LOW;
 
-	return tcpci_write_reg8(&cfg->bus, TCPC_REG_COMMAND, cmd);
+	return tcpci_tcpm_set_src_ctrl(&cfg->bus, enable);
 }
 
 int ps8xxx_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
@@ -419,7 +417,7 @@ int ps8xxx_tcpc_set_low_power_mode(const struct device *dev, bool enable)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
 
-	return tcpci_write_reg8(&cfg->bus, TCPC_REG_COMMAND, TCPC_REG_COMMAND_I2CIDLE);
+	return tcpci_tcpm_set_low_power_mode(&cfg->bus, enable);
 }
 
 int ps8xxx_tcpc_sop_prime_enable(const struct device *dev, bool enable)
