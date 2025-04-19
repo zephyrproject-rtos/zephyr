@@ -216,6 +216,23 @@ config MCUMGR_GRP_IMG_SLOT_INFO_HOOKS
 	  This will enable the slot info function hooks which can be used to add additional
 	  information to responses.
 
+config MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS
+	bool "Skip erasing sectors that are already erased"
+	default y
+	help
+	  If enabled, will skip erasing already erased sectors in the flash area when an image
+	  upload command or slot erase command is issued.
+
+config MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS_BUFFER_SIZE
+	int "Skip erasing sectors buffer size"
+	depends on MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS
+	range 8 32768
+	default 64
+	help
+	  The size of the on-stack buffer which is used for checking if data in flash is erased.
+	  This much data will be read from the flash at a time, a higher value will increase
+	  performance at cost of higher stack usage. This value must be a multiple of 4.
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
