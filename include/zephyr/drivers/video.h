@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2019 Linaro Limited.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +37,8 @@ extern "C" {
  * buffers the size of the video frame
  */
 #define LINE_COUNT_HEIGHT (-1)
+
+struct video_control;
 
 /**
  * @struct video_format
@@ -314,21 +317,15 @@ typedef int (*video_api_flush_t)(const struct device *dev, enum video_endpoint_i
  */
 typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable);
 
-/**
- * @typedef video_api_set_ctrl_t
- * @brief Set a video control value.
- *
- * See video_set_ctrl() for argument descriptions.
- */
-typedef int (*video_api_set_ctrl_t)(const struct device *dev, unsigned int cid, void *value);
+struct video_ctrl;
 
 /**
- * @typedef video_api_get_ctrl_t
- * @brief Get a video control value.
+ * @typedef video_api_sg_ctrl_t
+ * @brief Set/Get a video control value.
  *
- * See video_get_ctrl() for argument descriptions.
+ * @param ctrl Pointer to the internal video_ctrl structure to set/get value
  */
-typedef int (*video_api_get_ctrl_t)(const struct device *dev, unsigned int cid, void *value);
+typedef int (*video_api_sg_ctrl_t)(struct video_ctrl *ctrl);
 
 /**
  * @typedef video_api_get_caps_t
@@ -358,8 +355,8 @@ __subsystem struct video_driver_api {
 	video_api_enqueue_t enqueue;
 	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
-	video_api_set_ctrl_t set_ctrl;
-	video_api_get_ctrl_t get_ctrl;
+	video_api_sg_ctrl_t set_ctrl;
+	video_api_sg_ctrl_t get_volatile_ctrl;
 	video_api_set_signal_t set_signal;
 	video_api_set_frmival_t set_frmival;
 	video_api_get_frmival_t get_frmival;
@@ -653,24 +650,14 @@ static inline int video_get_caps(const struct device *dev, enum video_endpoint_i
  * must be interpreted accordingly.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param cid Control ID.
- * @param value Pointer to the control value.
+ * @param video_control Pointer to the video control struct.
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	if (api->set_ctrl == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_ctrl(dev, cid, value);
-}
+int video_set_ctrl(const struct device *dev, struct video_control *control);
 
 /**
  * @brief Get the current value of a control.
@@ -679,24 +666,36 @@ static inline int video_set_ctrl(const struct device *dev, unsigned int cid, voi
  * and must be interpreted accordingly.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param cid Control ID.
- * @param value Pointer to the control value.
+ * @param video_control Pointer to the video control struct.
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+int video_get_ctrl(const struct device *dev, struct video_control *control);
 
-	if (api->get_ctrl == NULL) {
-		return -ENOSYS;
-	}
+struct video_ctrl_query;
 
-	return api->get_ctrl(dev, cid, value);
-}
+/**
+ * @brief Query information about a control.
+ *
+ * Applications set the id field of query, the video framework fills the rest of the structure.
+ * It is possible to enumerate basic controls by calling this function with successive id values
+ * starting from VIDEO_CID_BASE up to and exclusive VIDEO_CID_LASTP1. The framework may return
+ * -ENOTSUP if a control in this range is not supported. Applications can also enumerate private
+ * controls by starting at VIDEO_CID_PRIVATE_BASE and incrementing id until the driver returns
+ * -ENOTSUP. For control classes, it's a bit more difficult. Hence, the best way to enumerate
+ * all kinds of device's supported controls is to iterate with VIDEO_CTRL_FLAG_NEXT_CTRL.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cq Pointer to the control query struct.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If the control id is invalid.
+ * @retval -ENOTSUP If the control id is not supported.
+ */
+int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
 
 /**
  * @brief Register/Unregister k_poll signal for a video endpoint.
@@ -807,6 +806,26 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
  */
 void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_frmival_enum *match);
+
+/**
+ * @brief Get a video device by index
+ *
+ * The video subsystem keeps a list of registered video devices that application
+ * can use for streaming. This function is to get a video device in this list by
+ * specifying an index.
+ *
+ * @param i Index of the video device to get
+ */
+const struct device *video_get_dev(uint8_t i);
+
+/**
+ * @brief Get the number of registered video devices
+ *
+ * The video subsystem keeps a list of registered video devices that application
+ * can use for streaming. This function is to retrieve the size of this list.
+ *
+ */
+uint8_t video_get_devs_num(void);
 
 /**
  * @defgroup video_pixel_formats Video pixel formats

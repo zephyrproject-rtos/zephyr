@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
-	chosen {
-		zephyr,camera = &dvp_fpc24_interface;
-	};
-};
-
 &dvp_fpc24_i2c {
 	mt9m114: mt9m114@48 {
 		compatible = "aptina,mt9m114";

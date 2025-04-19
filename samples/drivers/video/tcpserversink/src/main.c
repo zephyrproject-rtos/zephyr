@@ -42,21 +42,24 @@ int main(void)
 	int i, ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;
-#if DT_HAS_CHOSEN(zephyr_camera)
-	const struct device *const video = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	const struct device *video = NULL;
+	const struct device *const vsg = device_get_binding(VIDEO_DEV_SW);
+	uint8_t vdevs_num = video_get_devs_num();
+	bool found_vdev = false;
 
-	if (!device_is_ready(video)) {
-		LOG_ERR("%s: video device not ready.", video->name);
+	/* Get the 1st video HW available, otherwise fallbacks to video sw generator */
+	for (int j = 0; j < vdevs_num; j++) {
+		video = video_get_dev(j);
+		if (device_is_ready(video) && (vdevs_num == 1 || video != vsg)) {
+			found_vdev = true;
+			break;
+		}
+	}
+
+	if (!found_vdev) {
+		LOG_ERR("No video device ready!");
 		return 0;
 	}
-#else
-	const struct device *const video = device_get_binding(VIDEO_DEV_SW);
-
-	if (video == NULL) {
-		LOG_ERR("%s: video device not found or failed to initialized.", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
