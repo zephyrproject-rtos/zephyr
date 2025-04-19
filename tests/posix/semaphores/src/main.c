@@ -73,9 +73,7 @@ static void semaphore_test(sem_t *sem)
 	zassert_equal(sem_getvalue(sem, &val), 0);
 	zassert_equal(val, 1);
 
-	zassert_equal(sem_destroy(sem), -1,
-		      "acquired semaphore"
-		      " is destroyed");
+	zassert_equal(sem_destroy(sem), -1, "acquired semaphore is destroyed");
 	zassert_equal(errno, EBUSY);
 
 	/* TESTPOINT: take semaphore which is initialized with 1 */
