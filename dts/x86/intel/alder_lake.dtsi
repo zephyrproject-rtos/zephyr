@@ -362,6 +362,33 @@
 
 			status = "okay";
 		};
+
+		ethernet0: ethernet0 {
+			compatible = "intel,eth-plat";
+			vendor-id  = <0x8086>;
+			device-id  = <0x125b>;
+
+			igc0: igc0 {
+				compatible = "intel,igc-mac";
+				interrupt-parent = <&intc>;
+				mac-addr-exist-in-nvm;
+				local-mac-address = [aa ab c9 00 11 22];
+				status = "okay";
+			};
+
+			mdio0: mdio0 {
+				compatible = "intel,igc-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "okay";
+
+				ethphy0: igc-phy@0 {
+					compatible = "intel,igc-phy";
+					reg = <0x0>;
+					status = "okay";
+				};
+			};
+		};
 	};
 
 	soc {
