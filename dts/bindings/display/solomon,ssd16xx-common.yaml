@@ -39,6 +39,20 @@ properties:
       Display rotation (CW) in degrees.
       If not defined, rotation is off by default.
 
+  scan-y-reverse:
+    type: boolean
+    description: Reverse the scan direction along Y axis for the display.
+
+      Some displays have the scan direction reversed along the Y axis.
+
+  gdo-flags:
+    type: int
+    description: Gate scanning sequence and direction
+
+      Additional flags passed into Driver Output control command to
+      determine the how the output pin layout for the panel is and
+      what should be scanning sequence and the direction.
+
 child-binding:
   description: |
     Child nodes describe refresh profiles. Each refresh profile
