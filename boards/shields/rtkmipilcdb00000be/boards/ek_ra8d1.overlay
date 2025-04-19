@@ -4,32 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&pinctrl {
-	iic1_default: iic1_default {
-		group1 {
-			/* SCL1 SDA1 */
-			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
-				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
-			drive-strength = "medium";
-		};
-	};
-};
-
-&iic1 {
-	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
+&renesas_mipi_i2c {
 	clock-frequency = <DT_FREQ_K(100)>;
-	pinctrl-0 = <&iic1_default>;
-	pinctrl-names = "default";
 };
 
 &zephyr_lcdif {
+	interrupts = <89 12>;
+	interrupt-names = "line";
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 };
 
-&mipi_dsi {
-	status = "okay";
+&zephyr_mipi_dsi {
+	interrupts = <90 12>, <91 12>, <92 12>, <93 12>, <94 12>, <95 12>;
+	interrupt-names = "sq0", "sq1", "vm", "rcv", "ferr", "ppi";
 	pll-div = <1>;
 	pll-mul-int = <50>;
 	pll-mul-frac = "0.00";
