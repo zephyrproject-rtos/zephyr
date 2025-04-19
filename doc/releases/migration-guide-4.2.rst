@@ -227,6 +227,14 @@ Stepper
 Bluetooth
 *********
 
+* The buffer types passing through the HCI driver interface are now indicated as H:4 encoded prefix
+  bytes as part of the buffer payload itself. The bt_buf_set_type() and bt_buf_get_type() functions
+  are still usable, except that the latter can only be called once per buffer.
+
+* As part of the HCI buffer encoding change, since packet type values are no longer independent
+  bits, the callback used by :c:func:`bt_buf_rx_freed_cb_set` has been changed to take a bitmask
+  that's constructed using bitwise or of ``BIT(type)``` values.
+
 Bluetooth Audio
 ===============
 

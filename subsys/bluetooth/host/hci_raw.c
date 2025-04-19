@@ -38,12 +38,6 @@ LOG_MODULE_REGISTER(bt_hci_raw);
 
 static struct k_fifo *raw_rx;
 
-#if defined(CONFIG_BT_HCI_RAW_H4_ENABLE)
-static uint8_t raw_mode = BT_HCI_RAW_MODE_H4;
-#else
-static uint8_t raw_mode;
-#endif
-
 static bt_buf_rx_freed_cb_t buf_rx_freed_cb;
 
 static void hci_rx_buf_destroy(struct net_buf *buf)
@@ -52,22 +46,18 @@ static void hci_rx_buf_destroy(struct net_buf *buf)
 
 	if (buf_rx_freed_cb) {
 		/* bt_buf_get_rx is used for all types of RX buffers */
-		buf_rx_freed_cb(BT_BUF_EVT | BT_BUF_ACL_IN | BT_BUF_ISO_IN);
+		buf_rx_freed_cb(BIT(BT_BUF_EVT) | BIT(BT_BUF_ACL_IN) | BIT(BT_BUF_ISO_IN));
 	}
 }
 
-NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, sizeof(struct bt_buf_data),
-			  hci_rx_buf_destroy);
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, 0, hci_rx_buf_destroy);
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
-			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE),
-			  sizeof(struct bt_buf_data), NULL);
+			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE), 0, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, CONFIG_BT_BUF_ACL_TX_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE),
-			  sizeof(struct bt_buf_data), NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 0, NULL);
 #if defined(CONFIG_BT_ISO)
 NET_BUF_POOL_FIXED_DEFINE(hci_iso_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  sizeof(struct bt_buf_data), NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 0, NULL);
 #endif /* CONFIG_BT_ISO */
 
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
@@ -137,37 +127,6 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 		pool = &hci_iso_pool;
 		break;
 #endif /* CONFIG_BT_ISO */
-	case BT_BUF_H4:
-		if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
-		    raw_mode == BT_HCI_RAW_MODE_H4) {
-			uint8_t h4_type = ((uint8_t *)data)[0];
-
-			switch (h4_type) {
-			case BT_HCI_H4_CMD:
-				type = BT_BUF_CMD;
-				pool = &hci_cmd_pool;
-				break;
-			case BT_HCI_H4_ACL:
-				type = BT_BUF_ACL_OUT;
-				pool = &hci_acl_pool;
-				break;
-#if defined(CONFIG_BT_ISO)
-			case BT_HCI_H4_ISO:
-				type = BT_BUF_ISO_OUT;
-				pool = &hci_iso_pool;
-				break;
-#endif /* CONFIG_BT_ISO */
-			default:
-				LOG_ERR("Unknown H4 type %u", h4_type);
-				return NULL;
-			}
-
-			/* Adjust data pointer to discard the header */
-			data = (uint8_t *)data + 1;
-			size--;
-			break;
-		}
-		__fallthrough;
 	default:
 		LOG_ERR("Invalid tx type: %u", type);
 		return NULL;
@@ -200,34 +159,14 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
 
 int bt_hci_recv(const struct device *dev, struct net_buf *buf)
 {
+	uint8_t type = buf->data[0];
+
 	ARG_UNUSED(dev);
 
 	LOG_DBG("buf %p len %u", buf, buf->len);
 
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_RX), buf->data + 1, buf->len - 1);
 
-	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
-	    raw_mode == BT_HCI_RAW_MODE_H4) {
-		switch (bt_buf_get_type(buf)) {
-		case BT_BUF_EVT:
-			net_buf_push_u8(buf, BT_HCI_H4_EVT);
-			break;
-		case BT_BUF_ACL_IN:
-			net_buf_push_u8(buf, BT_HCI_H4_ACL);
-			break;
-		case BT_BUF_ISO_IN:
-			if (IS_ENABLED(CONFIG_BT_ISO)) {
-				net_buf_push_u8(buf, BT_HCI_H4_ISO);
-				break;
-			}
-			__fallthrough;
-		default:
-			LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-			return -EINVAL;
-		}
-	}
-
-	/* Queue to RAW rx queue */
 	k_fifo_put(raw_rx, buf);
 
 	return 0;
@@ -304,16 +243,17 @@ static uint8_t bt_send_ext(struct net_buf *buf)
 
 int bt_send(struct net_buf *buf)
 {
-	LOG_DBG("buf %p len %u", buf, buf->len);
+	uint8_t type = bt_buf_get_type(buf);
+
+	LOG_DBG("buf %p type %u len %u", buf, type, buf->len);
 
 	if (buf->len == 0) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_TX), buf->data, buf->len);
 
-	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT) &&
-	    bt_buf_get_type(buf) == BT_BUF_CMD) {
+	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT) && type == BT_BUF_CMD) {
 		uint8_t status;
 
 		status = bt_send_ext(buf);
@@ -322,32 +262,21 @@ int bt_send(struct net_buf *buf)
 		}
 	}
 
+	/* Put back the type byte */
+	bt_buf_set_type(buf, type);
+
 	return bt_hci_send(bt_dev.hci, buf);
 }
 
 int bt_hci_raw_set_mode(uint8_t mode)
 {
 	LOG_DBG("mode %u", mode);
-
-	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4)) {
-		switch (mode) {
-		case BT_HCI_RAW_MODE_PASSTHROUGH:
-		case BT_HCI_RAW_MODE_H4:
-			raw_mode = mode;
-			return 0;
-		}
-	}
-
-	return -EINVAL;
+	return 0;
 }
 
 uint8_t bt_hci_raw_get_mode(void)
 {
-	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4)) {
-		return raw_mode;
-	}
-
-	return BT_HCI_RAW_MODE_PASSTHROUGH;
+	return BT_HCI_RAW_MODE_H4;
 }
 
 void bt_hci_raw_cmd_ext_register(struct bt_hci_raw_cmd_ext *cmds, size_t size)
@@ -379,6 +308,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return err;
 	}
 
+	LOG_INF("Lower HCI transport: %s", BT_HCI_NAME);
 	LOG_INF("Bluetooth enabled in RAW mode");
 
 	return 0;

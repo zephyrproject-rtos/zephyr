@@ -29,6 +29,9 @@
 
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
+BUILD_ASSERT(sizeof(enum bt_buf_type) == sizeof(uint8_t),
+	     "bt_buf_type must fit in a byte");
+
 /* Events have a length field of 1 byte. This size fits all events.
  *
  * It's true that we don't put all kinds of events there (yet). However, the
@@ -52,7 +55,7 @@ static void buf_rx_freed_notify(enum bt_buf_type mask)
 #if defined(CONFIG_BT_ISO_RX)
 static void iso_rx_freed_cb(void)
 {
-	buf_rx_freed_notify(BT_BUF_ISO_IN);
+	buf_rx_freed_notify(BIT(BT_BUF_ISO_IN));
 }
 #endif
 
@@ -64,31 +67,31 @@ static void iso_rx_freed_cb(void)
  * the HCI transport to fill buffers in parallel with `bt_recv`
  * consuming them.
  */
-NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, sizeof(struct bt_buf_data), NULL);
+NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, 0, NULL);
 
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
-			  sizeof(struct bt_buf_data), NULL);
+			  0, NULL);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static void acl_in_pool_destroy(struct net_buf *buf)
 {
 	bt_hci_host_num_completed_packets(buf);
-	buf_rx_freed_notify(BT_BUF_ACL_IN);
+	buf_rx_freed_notify(BIT(BT_BUF_ACL_IN));
 }
 
 static void evt_pool_destroy(struct net_buf *buf)
 {
 	net_buf_destroy(buf);
-	buf_rx_freed_notify(BT_BUF_EVT);
+	buf_rx_freed_notify(BIT(BT_BUF_EVT));
 }
 
 NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT),
 		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct acl_data),
 		    acl_in_pool_destroy);
 
-NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE,
-			  sizeof(struct bt_buf_data), evt_pool_destroy);
+NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE, 0,
+			  evt_pool_destroy);
 #else
 static void hci_rx_pool_destroy(struct net_buf *buf)
 {
@@ -98,7 +101,7 @@ static void hci_rx_pool_destroy(struct net_buf *buf)
 	 * Therefore the callback will always notify about both types of buffers, BT_BUF_EVT and
 	 * BT_BUF_ACL_IN.
 	 */
-	buf_rx_freed_notify(BT_BUF_EVT | BT_BUF_ACL_IN);
+	buf_rx_freed_notify(BIT(BT_BUF_EVT) | BIT(BT_BUF_ACL_IN));
 }
 
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, sizeof(struct acl_data),

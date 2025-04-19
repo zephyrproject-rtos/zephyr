@@ -98,7 +98,8 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 
 	if (buf) {
 		/* Increase reserved space for headers */
-		net_buf_reserve(buf, SDU_HCI_HDR_SIZE + net_buf_headroom(buf));
+		net_buf_reset(buf);
+		net_buf_reserve(buf, BT_BUF_RESERVE + SDU_HCI_HDR_SIZE);
 
 		sdu_buffer->dbuf = buf;
 		sdu_buffer->size = net_buf_tailroom(buf);
@@ -197,6 +198,8 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
 
+		bt_buf_set_type(buf, BT_BUF_ISO_IN);
+
 		/* send fragment up the chain */
 		data->recv(dev, buf);
 	}
@@ -268,8 +271,8 @@ static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
 {
 	const struct hci_driver_data *data = dev->data;
 
-	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+	if (buf->data[0] == BT_BUF_EVT) {
+		struct bt_hci_evt_hdr *hdr = (void *)(buf->data + 1);
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
 		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
@@ -870,7 +873,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			buf = net_buf_frag_del(NULL, buf);
 
 			if (frag->len) {
-				LOG_DBG("Packet in: type:%u len:%u", bt_buf_get_type(frag),
+				LOG_DBG("Packet in: type:%u len:%u", frag->data[0],
 					frag->len);
 
 				data->recv(dev, frag);

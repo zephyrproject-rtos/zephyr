@@ -203,11 +203,13 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		struct net_buf *bt_buf;
+		uint8_t type;
 		uint8_t ep;
 
 		bt_buf = k_fifo_get(&bt_hci_tx_queue, K_FOREVER);
+		type = bt_buf_get_type(bt_buf);
 
-		switch (bt_buf_get_type(bt_buf)) {
+		switch (type) {
 		case BT_BUF_EVT:
 			ep = bt_hci_get_int_in(c_data);
 			break;
@@ -215,10 +217,9 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 			ep = bt_hci_get_bulk_in(c_data);
 			break;
 		default:
-			LOG_ERR("Unknown type %u", bt_buf_get_type(bt_buf));
+			LOG_ERR("Unknown type %u", type);
 			continue;
 		}
-
 
 		bt_hci_tx_sync_in(c_data, bt_buf, ep);
 		net_buf_unref(bt_buf);
