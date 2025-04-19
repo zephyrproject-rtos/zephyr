@@ -44,6 +44,9 @@ class ZephyrAppCommandsDirective(Directive):
         'compact': directives.flag,
         'west-args': directives.unchanged,
         'flash-args': directives.unchanged,
+        'debug-args': directives.unchanged,
+        'debugserver-args': directives.unchanged,
+        'attach-args': directives.unchanged,
     }
 
     TOOLS = ['cmake', 'west', 'all']
@@ -76,6 +79,9 @@ class ZephyrAppCommandsDirective(Directive):
         compact = 'compact' in self.options
         west_args = self.options.get('west-args', None)
         flash_args = self.options.get('flash-args', None)
+        debug_args = self.options.get('debug-args', None)
+        debugserver_args = self.options.get('debugserver-args', None)
+        attach_args = self.options.get('attach-args', None)
 
         if tool not in self.TOOLS:
             raise self.error(f'Unknown tool {tool}; choose from: {self.TOOLS}')
@@ -146,6 +152,9 @@ class ZephyrAppCommandsDirective(Directive):
             'generator': generator,
             'west_args': west_args,
             'flash_args': flash_args,
+            'debug_args': debug_args,
+            'debugserver_args': debugserver_args,
+            'attach_args': attach_args,
             }
 
         if 'west' in tools:
@@ -199,6 +208,9 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = kwargs["build_args"]
         west_args = kwargs['west_args']
         flash_args = kwargs['flash_args']
+        debug_args = kwargs['debug_args']
+        debugserver_args = kwargs['debugserver_args']
+        attach_args = kwargs['attach_args']
         kwargs['board'] = None
         # west always defaults to ninja
         gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
@@ -207,6 +219,9 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = "".join(f" -o {b}" for b in build_args) if build_args else ""
         west_args = f' {west_args}' if west_args else ''
         flash_args = f' {flash_args}' if flash_args else ''
+        debug_args = f' {debug_args}' if debug_args else ''
+        debugserver_args = f' {debugserver_args}' if debugserver_args else ''
+        attach_args = f' {attach_args}' if attach_args else ''
         snippet_args = ''.join(f' -S {s}' for s in snippets) if snippets else ''
         shield_args = ''.join(f' --shield {s}' for s in shield) if shield else ''
         # ignore zephyr_app since west needs to run within
@@ -255,11 +270,11 @@ class ZephyrAppCommandsDirective(Directive):
             elif goal == 'flash':
                 content.append(f'west flash{flash_args}{dst}')
             elif goal == 'debug':
-                content.append(f'west debug{dst}')
+                content.append(f'west debug{debug_args}{dst}')
             elif goal == 'debugserver':
-                content.append(f'west debugserver{dst}')
+                content.append(f'west debugserver{debugserver_args}{dst}')
             elif goal == 'attach':
-                content.append(f'west attach{dst}')
+                content.append(f'west attach{attach_args}{dst}')
             else:
                 content.append(f'west build -t {goal}{dst}')
 
