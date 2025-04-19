@@ -10,6 +10,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/ina230.h>
 
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -24,13 +25,17 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 #define INA230_POWER_SCALING 25
 #define INA236_POWER_SCALING 32
 
+#define INA230_VSHUNT_NV_LSV 2500
+
+#define INA230_MASK_REG_MASK (INA230_ALERT_POLARITY | INA230_ALERT_LATCH_ENABLE)
+
 static int ina230_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
 	uint32_t bus_uv, power_uw;
-	int32_t current_ua;
+	int32_t current_ua, shunt_nv;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -54,9 +59,16 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 		power_uw = data->power * config->power_scale * config->current_lsb;
 
 		/* convert to fractional watts */
-		val->val1 = (int32_t)(power_uw / 1000000U);
-		val->val2 = (int32_t)(power_uw % 1000000U);
+		val->val1 = power_uw / 1000000U;
+		val->val2 = power_uw % 1000000U;
+		break;
 
+	case SENSOR_CHAN_VSHUNT:
+		shunt_nv = data->shunt_voltage * INA230_VSHUNT_NV_LSV;
+
+		/* convert to fractional milli-volts */
+		val->val1 = shunt_nv / 1000000L;
+		val->val2 = shunt_nv % 1000000L;
 		break;
 
 	default:
@@ -73,7 +85,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER) {
+	    chan != SENSOR_CHAN_POWER && chan != SENSOR_CHAN_VSHUNT) {
 		return -ENOTSUP;
 	}
 
@@ -101,6 +113,14 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 		}
 	}
 
+	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VSHUNT)) {
+		ret = ina23x_reg_read_16(&config->bus, INA230_REG_SHUNT_VOLT, &data->shunt_voltage);
+		if (ret < 0) {
+			LOG_ERR("Failed to read shunt voltage");
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -108,7 +128,12 @@ static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct ina230_config *config = dev->config;
+	struct ina230_data *d = dev->data;
 	uint16_t data = val->val1;
+	uint16_t new_val;
+	int ret;
+
+	ARG_UNUSED(chan);
 
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
@@ -116,7 +141,15 @@ static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_CALIBRATION:
 		return ina23x_reg_write(&config->bus, INA230_REG_CALIB, data);
 	case SENSOR_ATTR_FEATURE_MASK:
-		return ina23x_reg_write(&config->bus, INA230_REG_MASK, data);
+		new_val = (d->mask & ~INA230_MASK_REG_MASK) | (data & INA230_MASK_REG_MASK);
+
+		ret = ina23x_reg_write(&config->bus, INA230_REG_MASK, new_val);
+		if (!ret) {
+			d->mask = new_val;
+		}
+
+		return ret;
+
 	case SENSOR_ATTR_ALERT:
 		return ina23x_reg_write(&config->bus, INA230_REG_ALERT, data);
 	default:
@@ -185,6 +218,9 @@ static int ina230_calibrate(const struct device *dev)
 static int ina230_init(const struct device *dev)
 {
 	const struct ina230_config *const config = dev->config;
+#ifdef CONFIG_INA230_TRIGGER
+	struct ina230_data *data = dev->data;
+#endif
 	int ret;
 
 	if (!device_is_ready(config->bus.bus)) {
@@ -205,25 +241,25 @@ static int ina230_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_INA230_TRIGGER
-	if (config->trig_enabled) {
-		ret = ina230_trigger_mode_init(dev);
-		if (ret < 0) {
-			LOG_ERR("Failed to init trigger mode\n");
-			return ret;
-		}
-
-		ret = ina23x_reg_write(&config->bus, INA230_REG_ALERT, config->alert_limit);
-		if (ret < 0) {
-			LOG_ERR("Failed to write alert register!");
-			return ret;
-		}
-
-		ret = ina23x_reg_write(&config->bus, INA230_REG_MASK, config->mask);
-		if (ret < 0) {
-			LOG_ERR("Failed to write mask register!");
-			return ret;
-		}
+	ret = ina230_trigger_mode_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to init trigger mode\n");
+		return ret;
 	}
+
+	ret = ina23x_reg_write(&config->bus, INA230_REG_ALERT, config->alert_limit);
+	if (ret < 0) {
+		LOG_ERR("Failed to write alert register!");
+		return ret;
+	}
+
+	ret = ina23x_reg_write(&config->bus, INA230_REG_MASK, config->mask);
+	if (ret < 0) {
+		LOG_ERR("Failed to write mask register!");
+		return ret;
+	}
+
+	data->mask = config->mask;
 #endif /* CONFIG_INA230_TRIGGER */
 
 	return 0;
@@ -241,7 +277,7 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)                                                                       \
-	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
+	.mask = DT_INST_PROP(inst, mask) & INA230_MASK_REG_MASK,                                   \
 	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
 	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
 #else
