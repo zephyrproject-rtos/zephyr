@@ -12,6 +12,11 @@ properties:
   reg:
     required: true
 
+  max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's xSPI interface in Hz
+
   fixed-latency:
     type: boolean
     description: |
