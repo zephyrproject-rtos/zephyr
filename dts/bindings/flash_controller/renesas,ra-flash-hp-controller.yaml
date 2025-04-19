@@ -8,6 +8,16 @@ compatible: "renesas,ra-flash-hp-controller"
 include: flash-controller.yaml
 
 properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+        - "frdyi": flash sequencer ready
+        - "fiferr": flash sequencer error
+
   block-32kb-linear-end:
     type: int
     required: true

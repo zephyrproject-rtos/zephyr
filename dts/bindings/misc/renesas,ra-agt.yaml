@@ -49,3 +49,7 @@ properties:
 
   interrupt-names:
     required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      - "agti": counter underflows
+      - "agtcmai": counter compare match channel A occur
