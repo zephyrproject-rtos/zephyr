@@ -6,28 +6,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/net_buf.h>
-
-#include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_gatt
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <sys/types.h>
 
 #include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_gatt
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define MAX_BUFFER_SIZE 2048
 #define MAX_UUID_LEN 16
@@ -2063,7 +2068,7 @@ static uint8_t config_subscription_ind(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 static void notify_cb(struct bt_conn *conn, void *user_data)
 {
-	LOG_DBG("Nofication sent");
+	LOG_DBG("Notification sent");
 }
 
 static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
