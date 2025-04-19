@@ -12,5 +12,7 @@
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
 		status = "okay";
+		odr = <25>;
+		fifo-watermark = <31>;
 	};
 };
