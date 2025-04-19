@@ -33,4 +33,11 @@ config POSIX_SEM_NAMELEN_MAX
 	  Maximum length of name for a named semaphore.
 	  The max value of 255 corresponds to {NAME_MAX}.
 
+config HEAP_MEM_POOL_ADD_SIZE_MQUEUE
+	# This seems to be sufficient so that tests/posix/semaphores pass
+	# with otherwise default configurations. Note: posix semaphores have
+	# historically been allocated from the heap and no effort has been
+	# made to convert them to optionally use pooled allocators.
+	def_int 256
+
 endif # POSIX_SEMAPHORES
