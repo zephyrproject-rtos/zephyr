@@ -425,6 +425,10 @@ device.
    * - zephyr,ipc_rsc_table
      - Specifies a memory region that will be used for the OpenAMP resource table.
        Only needed if :kconfig:option:`CONFIG_OPENAMP_COPY_RSC_TABLE` is enabled.
+   * - zephyr,ipc_shm_translation
+     - A node whose ``dma-ranges`` is used by the addr_translation driver to convert,
+       in OpenAMP subsystem, the base address of the shared memory (SHM) from
+       driver to device address, since for some SoCs these are different
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,log-uart
