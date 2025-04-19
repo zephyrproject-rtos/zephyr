@@ -179,6 +179,10 @@ New APIs and options
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
 
+* PCIe
+
+   * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
+
 New Boards
 **********
 
