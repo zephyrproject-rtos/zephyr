@@ -61,8 +61,6 @@ include:
   - name: adi,trinamic-gconf.yaml
     property-allowlist:
       - poscmp-enable
-      - shaft1
-      - shaft2
       - test-mode
       - lock-gconf
 
