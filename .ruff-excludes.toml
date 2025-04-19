@@ -435,12 +435,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-]
-"./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-]
 "./scripts/dts/python-devicetree/src/devicetree/grutils.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
