@@ -17,6 +17,7 @@
 	aliases {
 		led0 = &led0;
 		watchdog0 = &twd0;
+		pwm-0 = &pwm0;
 	};
 
 	chosen {
@@ -103,4 +104,26 @@
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <16>;
+};
+
+/* test pwm */
+&pwm0 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C6>;
+	/*
+	 * If we need pwm output in ITE chip power saving mode,
+	 * then we should set frequency <=324Hz.
+	 */
+	pwm-output-frequency = <324>;
+	pinctrl-0 = <&pwm0_gpa0_default>;
+	pinctrl-names = "default";
+};
+
+/* test fan */
+&pwm7 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C4>;
+	pwm-output-frequency = <30000>;
+	pinctrl-0 = <&pwm7_gpa7_default>;
+	pinctrl-names = "default";
 };
