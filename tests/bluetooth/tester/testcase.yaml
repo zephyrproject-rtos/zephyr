@@ -50,18 +50,17 @@ tests:
       # Build config used by AutoPTS for nRF53
       - EXTRA_CONF_FILE="hci_ipc.conf"
     sysbuild: true
-  bluetooth.general.tester_le_audio:
+  bluetooth.general.tester_hci_ipc_le_audio:
     build_only: true
     platform_allow:
-      - qemu_x86
-      - native_sim
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_args:
-      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+      - hci_ipc_EXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/overlay-le-audio-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=overlay-le-audio.conf
     tags: bluetooth
     harness: bluetooth
     sysbuild: true

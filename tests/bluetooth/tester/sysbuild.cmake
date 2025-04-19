@@ -13,16 +13,6 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
 		BOARD       ${SB_CONFIG_NET_CORE_BOARD}
 	)
 
-	set(${NET_APP}_CONF_FILE
-	 ${NET_APP_SRC_DIR}/nrf5340_cpunet_iso-bt_ll_sw_split.conf
-	 CACHE INTERNAL ""
-	)
-
-	set(${NET_APP}_EXTRA_CONF_FILE
-	 ${APP_DIR}/hci_ipc_cpunet.conf
-	 CACHE INTERNAL ""
-	)
-
 	native_simulator_set_child_images(${DEFAULT_IMAGE} ${NET_APP})
 endif()
 
