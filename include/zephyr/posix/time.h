@@ -85,11 +85,6 @@ extern "C" {
 #define TIMER_ABSTIME 4
 #endif
 
-static inline int32_t _ts_to_ms(const struct timespec *to)
-{
-	return (int32_t)(to->tv_sec * MSEC_PER_SEC) + (int32_t)(to->tv_nsec / NSEC_PER_MSEC);
-}
-
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 int clock_getres(clockid_t clock_id, struct timespec *ts);
 int clock_settime(clockid_t clock_id, const struct timespec *ts);

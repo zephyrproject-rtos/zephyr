@@ -6,6 +6,9 @@
  */
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+
+#include "posix_clock.h"
+
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -18,6 +21,11 @@
 #define NOT_ACTIVE 0
 
 LOG_MODULE_REGISTER(posix_timer);
+
+static inline int32_t _ts_to_ms(const struct timespec *ts)
+{
+	return ts->tv_sec * MSEC_PER_SEC + ts->tv_nsec / NSEC_PER_MSEC;
+}
 
 static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
@@ -241,11 +249,8 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	struct timer_obj *timer = (struct timer_obj *) timerid;
 	uint32_t duration, current;
 
-	if (timer == NULL ||
-	    value->it_interval.tv_nsec < 0 ||
-	    value->it_interval.tv_nsec >= NSEC_PER_SEC ||
-	    value->it_value.tv_nsec < 0 ||
-	    value->it_value.tv_nsec >= NSEC_PER_SEC) {
+	if (timer == NULL || !is_timespec_valid(&value->it_interval) ||
+	    !is_timespec_valid(&value->it_value)) {
 		errno = EINVAL;
 		return -1;
 	}
