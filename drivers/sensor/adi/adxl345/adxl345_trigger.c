@@ -150,7 +150,7 @@ int adxl345_trigger_set(const struct device *dev,
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *data = dev->data;
-	uint8_t status1, int_mask, int_en = 0;
+	uint8_t int_mask;
 	int rc;
 
 	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {
@@ -181,18 +181,7 @@ done:
 		return rc;
 	}
 
-	rc = adxl345_reg_update_bits(dev, ADXL345_REG_INT_MAP,
-				      int_mask, int_en);
-	if (rc < 0) {
-		return rc;
-	}
-	/* Clear status */
-	rc = adxl345_get_status(dev, &status1);
-	if (rc < 0) {
-		return rc;
-	}
-
-	return 0;
+	return adxl345_flush_fifo(dev);
 }
 
 int adxl345_init_interrupt(const struct device *dev)

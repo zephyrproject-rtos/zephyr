@@ -147,6 +147,37 @@ int adxl345_set_measure_en(const struct device *dev, bool en)
 				      ADXL345_POWER_CTL_MODE_MSK, val);
 }
 
+int adxl345_flush_fifo(const struct device *dev)
+{
+#ifdef CONFIG_ADXL345_TRIGGER
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t regval;
+	int rc;
+
+	rc = adxl345_set_measure_en(dev, false);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl345_get_fifo_entries(dev, &data->sample_number);
+	if (rc) {
+		return rc;
+	}
+
+	do { /* Read FIFO entries + 1 sample lines */
+		rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+				      &regval, ADXL345_FIFO_SAMPLE_SIZE);
+		if (rc) {
+			return rc;
+		}
+
+		data->sample_number--;
+	} while (data->sample_number > 0);
+#endif /* CONFIG_ADXL345_TRIGGER */
+
+	return adxl345_set_measure_en(dev, true);
+}
+
 int adxl345_get_fifo_entries(const struct device *dev, uint8_t *fifo_entries)
 {
 	uint8_t regval;

@@ -256,6 +256,8 @@ void adxl345_stream_irq_handler(const struct device *dev);
 
 int adxl345_set_measure_en(const struct device *dev, bool en);
 
+int adxl345_flush_fifo(const struct device *dev);
+
 #ifdef CONFIG_ADXL345_TRIGGER
 int adxl345_get_fifo_entries(const struct device *dev, uint8_t *fifo_entries);
 int adxl345_get_status(const struct device *dev, uint8_t *status);
