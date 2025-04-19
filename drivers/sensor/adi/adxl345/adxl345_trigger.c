@@ -186,7 +186,6 @@ int adxl345_trigger_set(const struct device *dev,
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *data = dev->data;
-	uint8_t int_mask;
 	int rc;
 
 	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {

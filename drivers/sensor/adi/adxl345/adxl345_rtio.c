@@ -17,17 +17,18 @@ static void adxl345_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 	const struct sensor_read_config *cfg =
 			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
-	int rc;
 	uint32_t min_buffer_len = sizeof(struct adxl345_dev_data);
 	uint8_t *buffer;
 	uint32_t buffer_len;
 	struct adxl345_xyz_accel_data *data;
+	int rc;
 
-	rc = rtio_sqe_rx_buf(iodev_sqe, min_buffer_len, min_buffer_len, &buffer, &buffer_len);
-	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buffer_len);
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
+	rc = rtio_sqe_rx_buf(iodev_sqe, min_buffer_len, min_buffer_len,
+			     &buffer, &buffer_len);
+	if (rc) {
+		LOG_ERR("Failed to get a read buffer of size %u bytes",
+			min_buffer_len);
+		goto err;
 	}
 
 	data = (struct adxl345_xyz_accel_data *)buffer;
@@ -35,11 +36,14 @@ static void adxl345_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 	rc = adxl345_get_accel_data(dev, data);
 	if (rc) {
 		LOG_ERR("Failed to fetch samples");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
+		goto err;
 	}
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
+
+	return;
+err:
+	rtio_iodev_sqe_err(iodev_sqe, rc);
 }
 
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
