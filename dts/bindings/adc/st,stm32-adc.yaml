@@ -1,5 +1,6 @@
 # Copyright (c) 2018, Endre Karlson
 # Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2025, John Bason Mitchell
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 ADC
@@ -9,6 +10,30 @@ compatible: "st,stm32-adc"
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
+  timer:
+    type: phandle
+    description: |
+      Hardware timer:
+      Hardware timer.
+
+  #adc-timer:
+  #  type: phandle-array
+  #  description: |
+  #    ADC Hardware timer:
+  #    ADC Hardware timer.
+
+  trigger-name:
+    type : string
+    description : |
+      Abbreviation used to refer to the channel used for triggering:
+      E.g. "TRGO" or "TRGO2"
+
+  timer-number:
+    type : int
+    description : |
+      Number associated with the timer peripheral:
+      E.g. 2 for Timer2
+
   reg:
     required: true
 
