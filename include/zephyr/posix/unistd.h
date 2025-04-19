@@ -11,11 +11,6 @@
 #ifdef CONFIG_POSIX_API
 #include <zephyr/fs/fs.h>
 #endif
-#ifdef CONFIG_NETWORKING
-/* For zsock_gethostname() */
-#include <zephyr/net/socket.h>
-#include <zephyr/net/hostname.h>
-#endif
 #include <zephyr/posix/sys/confstr.h>
 #include <zephyr/posix/sys/stat.h>
 #include <zephyr/posix/sys/sysconf.h>
@@ -49,10 +44,7 @@ int rmdir(const char *path);
 FUNC_NORETURN void _exit(int status);
 
 #ifdef CONFIG_NETWORKING
-static inline int gethostname(char *buf, size_t len)
-{
-	return zsock_gethostname(buf, len);
-}
+int gethostname(char *buf, size_t len);
 #endif /* CONFIG_NETWORKING */
 
 #endif /* CONFIG_POSIX_API */
@@ -72,7 +64,8 @@ size_t confstr(int name, char *buf, size_t len);
 #endif
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
-#define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
+/* Can't use CONCAT(), must concat directly to prevent expansion of 'x' */
+#define sysconf(x) (long)__z_posix_sysconf##x
 #else
 long sysconf(int opt);
 #endif /* CONFIG_POSIX_SYSCONF_IMPL_FULL */
