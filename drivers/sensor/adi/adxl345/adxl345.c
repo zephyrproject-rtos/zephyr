@@ -235,6 +235,24 @@ static int adxl345_attr_set_odr(const struct device *dev,
 				       ADXL345_ODR_MODE(odr));
 }
 
+static int adxl345_attr_set_watermark(const struct device *dev,
+				      enum sensor_channel chan,
+				      enum sensor_attribute attr,
+				      const struct sensor_value *val)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t wm = val->val1;
+
+	if (wm < 1 || wm > ADXL345_MAX_FIFO_SIZE) {
+		return -EINVAL;
+	}
+
+	data->fifo_config.fifo_samples = wm;
+
+	return adxl345_reg_update_bits(dev, ADXL345_REG_FIFO_CTL,
+				       ADLX345_FIFO_STATUS_ENTRIES_MSK, wm);
+}
+
 static int adxl345_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -243,6 +261,8 @@ static int adxl345_attr_set(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return adxl345_attr_set_odr(dev, chan, attr, val);
+	case SENSOR_ATTR_MAX:
+		return adxl345_attr_set_watermark(dev, chan, attr, val);
 	default:
 		return -ENOTSUP;
 	}
