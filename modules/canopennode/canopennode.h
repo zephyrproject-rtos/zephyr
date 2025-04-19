@@ -21,24 +21,19 @@
 #define ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_
 
 #include <CANopen.h>
-#include <CO_Emergency.h>
-#include <CO_SDO.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief CANopen object dictionary storage types.
- */
-enum canopen_storage {
-	CANOPEN_STORAGE_RAM,
-	CANOPEN_STORAGE_ROM,
-	CANOPEN_STORAGE_EEPROM,
-};
-
 struct canopen_context {
 	const struct device *dev;
+	uint8_t pending_nodeid;
+	uint16_t pending_bitrate;
+	uint8_t active_nodeid;
+	uint16_t active_bitrate;
+
+	CO_t *co; /* back reference to canopen instance */
 };
 
 /**
@@ -70,31 +65,11 @@ struct canopen_context {
  * @param sdo CANopenNode SDO server object
  * @param em  CANopenNode Emergency object
  */
-void canopen_storage_attach(CO_SDO_t *sdo, CO_EM_t *em);
-
-/**
- * @brief Save CANopen object dictionary entries to non-volatile storage.
- *
- * Save object dictionary entries of a given type to non-volatile
- * storage.
- *
- * @param storage CANopen object dictionary entry type
- *
- * @return 0 if successful, negative errno code if failure
- */
-int canopen_storage_save(enum canopen_storage storage);
-
-/**
- * @brief Erase CANopen object dictionary entries from non-volatile storage.
- *
- * Erase object dictionary entries of a given type from non-volatile
- * storage.
- *
- * @param storage CANopen object dictionary entry type
- *
- * @return 0 if successful, negative errno code if failure
- */
-int canopen_storage_erase(enum canopen_storage storage);
+void canopen_storage_attach(struct canopen_context *ctx,
+			    OD_entry_t *OD_1010_entry, /* store */
+			    OD_entry_t *OD_1011_entry, /* restore */
+			    CO_storage_entry_t *storage_entries,
+			    OD_size_t storage_entries_count);
 
 /**
  * @brief Attach CANopen object dictionary program download handlers.
@@ -107,7 +82,7 @@ int canopen_storage_erase(enum canopen_storage storage);
  * @param sdo CANopenNode SDO server object
  * @param em  CANopenNode Emergency object
  */
-void canopen_program_download_attach(CO_NMT_t *nmt, CO_SDO_t *sdo, CO_EM_t *em);
+void canopen_program_download_attach(struct canopen_context *ctx);
 
 /**
  * @typedef canopen_led_callback_t
@@ -125,24 +100,25 @@ typedef void (*canopen_led_callback_t)(bool value, void *arg);
  * their state. Two LED indicators, a red and a green, are supported
  * according to CiA 303-3.
  *
- * @param nmt CANopenNode NMT object.
+ * @param ctx canopennode context for reference
  * @param green_cb callback for changing state on the green LED indicator.
  * @param green_arg argument to pass to the green LED indicator callback.
  * @param red_cb callback for changing state on the red LED indicator.
  * @param red_arg argument to pass to the red LED indicator callback.
  */
-void canopen_leds_init(CO_NMT_t *nmt,
+void canopen_leds_init(struct canopen_context *ctx,
 		       canopen_led_callback_t green_cb, void *green_arg,
 		       canopen_led_callback_t red_cb, void *red_arg);
 
 /**
- * @brief Indicate CANopen program download in progress
+ * @brief Update CANopen LED indicators.
  *
- * Indicate that a CANopen program download is in progress.
+ * Update the CANopen LED indicators and from the processing loop to
+ * query the CO_LEDs object and update callbacks as needed.
  *
- * @param in_progress true if program download is in progress, false otherwise
+ * @param ctx canopennode context for reference
  */
-void canopen_leds_program_download(bool in_progress);
+void canopen_leds_update(struct canopen_context *ctx);
 
 /**
  * @brief Callback for incoming CAN message
