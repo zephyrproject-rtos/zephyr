@@ -21,4 +21,12 @@ config TEST_LIB_HASH_MAP_MAX_ENTRIES
 	  For native_sim, the number of entries can be configured
 	  independently of the arena size since the native libc is used.
 
+config TEST_USE_CUSTOM_EQ_FUNC
+	bool "Use a custom equality function"
+	depends on BASE64
+	help
+	  Run tests on an hashmap using a custom equality function.
+	  This helps to cover edgecases specific to hashmaps that have the eq_func
+	  different from the default one that performs a simple == comparison.
+
 source "Kconfig.zephyr"
