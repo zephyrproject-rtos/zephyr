@@ -219,13 +219,17 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	push    {r0, lr}
 	bl      pm_s2ram_mark_check_and_clear
 	cmp	r0, #0x1
-	pop     {r0, lr}
 	beq	.L_resume
-	bx	lr
+	pop	{r0, pc}
 
 .L_resume:
 	/*
-	 * Restore the CPU context
+	 * Switch to the stack used to execute "arch_pm_s2ram_suspend"
+	 * and restore CPU context backed up by that function, then
+	 * return to the call site of "arch_pm_s2ram_suspend".
+	 *
+	 * Note: the "push {r0, lr}" performed earlier doesn't
+	 * need to be balanced out since we are switching stacks.
 	 */
 	ldr	r0, =_cpu_context
 
