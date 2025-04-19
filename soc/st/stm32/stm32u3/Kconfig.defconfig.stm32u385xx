@@ -1,0 +1,11 @@
+# STMicroelectronics STM32U385XX MCU
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U385XX
+
+config NUM_IRQS
+	default 125
+
+endif # SOC_STM32U385XX
