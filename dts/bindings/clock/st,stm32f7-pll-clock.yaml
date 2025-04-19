@@ -6,11 +6,12 @@ description: |
 
   Takes one of clk_hse or clk_hsi as input clock.
 
-  Up to 2 output clocks could be supported and for each output clock, the
+  Up to 3 output clocks could be supported and for each output clock, the
   frequency can be computed with the following formula:
 
     f(PLL_P) = f(VCO clock) / PLLP  --> PLLCLK (System Clock)
     f(PLL_Q) = f(VCO clock) / PLLQ  --> PLL48CLK (Optional)
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLDSICLK (Optional)
 
       with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
 
@@ -56,3 +57,9 @@ properties:
     description: |
         PLL division factor for PLL48CK
         Valid range: 2 - 15
+
+  div-r:
+    type: int
+    description: |
+        PLL division factor for PLLDSICLK
+        Valid range: 2 - 7
