@@ -109,11 +109,11 @@
  * separate PPI is used because packet end is marked by PHYEND event while last
  * bit or CRC is marked by END event.
  */
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && !defined(CONFIG_BT_CTLR_DF)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 5
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -127,7 +127,7 @@
  * Note: we do not need an additional PPI, since we have already set up
  * a PPI to publish RADIO END event.
  */
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI HAL_SW_SWITCH_TIMER_CLEAR_PPI
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
 
 /* Enable Radio on SW Switch timer event.
  * Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
