@@ -234,10 +234,16 @@ static int zperf_init(void)
 			   NULL);
 	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
 
-	zperf_udp_uploader_init();
-	zperf_tcp_uploader_init();
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		zperf_udp_uploader_init();
+	}
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		zperf_tcp_uploader_init();
+	}
 
-	zperf_session_init();
+	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER)) {
+		zperf_session_init();
+	}
 
 	if (IS_ENABLED(CONFIG_NET_SHELL)) {
 		zperf_shell_init();

@@ -200,6 +200,8 @@ static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
 	return 0;
 }
 
+#ifdef CONFIG_NET_ZPERF_SERVER
+
 static int zperf_bind_host(const struct shell *sh,
 			   size_t argc, char *argv[],
 			   struct zperf_download_params *param)
@@ -232,6 +234,8 @@ static int zperf_bind_host(const struct shell *sh,
 
 	return 0;
 }
+
+#endif
 
 static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -310,6 +314,8 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#ifdef CONFIG_NET_ZPERF_SERVER
 
 static void udp_session_cb(enum zperf_status status,
 			   struct zperf_results *result,
@@ -474,6 +480,8 @@ static int cmd_udp_download(const struct shell *sh, size_t argc,
 		return -ENOTSUP;
 	}
 }
+
+#endif
 
 static void shell_udp_upload_print_stats(const struct shell *sh,
 					 struct zperf_results *results)
@@ -1291,6 +1299,8 @@ static int cmd_connectap(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_NET_ZPERF_SERVER
+
 static void tcp_session_cb(enum zperf_status status,
 			   struct zperf_results *result,
 			   void *user_data)
@@ -1395,6 +1405,8 @@ static int cmd_tcp_download(const struct shell *sh, size_t argc,
 	}
 }
 
+#endif
+
 static int cmd_version(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_NORMAL, "Version: %s\nConfig: %s\n",
@@ -1454,10 +1466,14 @@ void zperf_shell_init(void)
 	}
 }
 
+#ifdef CONFIG_NET_ZPERF_SERVER
+
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp_download,
 	SHELL_CMD(stop, NULL, "Stop TCP server\n", cmd_tcp_download_stop),
 	SHELL_SUBCMD_SET_END
 );
+
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(upload, NULL,
@@ -1510,18 +1526,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 #endif
 		  ,
 		  cmd_tcp_upload2),
+#ifdef CONFIG_NET_ZPERF_SERVER
 	SHELL_CMD(download, &zperf_cmd_tcp_download,
 		  "[<port>]:  Server port to listen on/connect to\n"
 		  "[<host>]:  Bind to <host>, an interface address\n"
 		  "Example: tcp download 5001 192.168.0.1\n",
 		  cmd_tcp_download),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 
+#ifdef CONFIG_NET_ZPERF_SERVER
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp_download,
 	SHELL_CMD(stop, NULL, "Stop UDP server\n", cmd_udp_download_stop),
 	SHELL_SUBCMD_SET_END
 );
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 	SHELL_CMD(upload, NULL,
@@ -1577,6 +1597,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #endif
 		  ,
 		  cmd_udp_upload2),
+#ifdef CONFIG_NET_ZPERF_SERVER
 	SHELL_CMD(download, &zperf_cmd_udp_download,
 		  "[<options>] command options (optional): [-I eth0]\n"
 		  "[<port>]:  Server port to listen on/connect to\n"
@@ -1585,6 +1606,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "-I <interface name>: Specify host interface name\n"
 		  "Example: udp download 5001 192.168.0.1\n",
 		  cmd_udp_download),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 
