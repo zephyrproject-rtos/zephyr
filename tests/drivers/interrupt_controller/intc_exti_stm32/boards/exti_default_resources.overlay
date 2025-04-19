@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/**
+ * NOTE: For this test, a _configurable_ EXTI line that doesn't conflict
+ * with other users should be specified, along with the associated IRQn.
+ *
+ * On most STM32 series so far, EXTI line 16 is configurable, generates an
+ * interrupt on IRQn 1, and corresponds to events raised by the PVD. Since
+ * the PVD is not available in Zephyr yet, there is no risk of conflict.
+ *
+ * This overlay will be used by default and configures EXTI line 16 with
+ * IRQn 1 for use by the test, which should work on most hardware. Series
+ * where this does not apply can define their own overlay to override it.
+ */
+
+/ {
+	resources {
+		compatible = "test-st-stm32-exti";
+		exti-line-nr = <16>;
+		exti-line-irq-nr = <1>;
+		exti-line-irq-prio = <0>;
+		status = "okay";
+	};
+};
