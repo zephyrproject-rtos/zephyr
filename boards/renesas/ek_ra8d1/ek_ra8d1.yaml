@@ -13,4 +13,5 @@ supported:
   - watchdog
   - usbd
   - display
+  - counter
 vendor: renesas
