@@ -79,6 +79,13 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+Devicetree
+==========
+
+* Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
+  all previously used underscores(``_``). For local code, you can migrate property names in
+  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
+
 DAI
 ===
 
