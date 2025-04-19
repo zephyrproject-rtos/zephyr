@@ -4982,11 +4982,20 @@
  * @param fn Macro to call for each enabled node. Must accept an
  *           instance number as its only parameter.
  */
-#define DT_INST_FOREACH_STATUS_OKAY(fn) \
+#if defined(DT_DRV_COMPAT)
+#define DT_INST_FOREACH_STATUS_OKAY(fn)                         \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
 		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
 			      DT_DRV_COMPAT)(fn)),		\
-		    ())
+		())
+#else
+#define DT_INST_FOREACH_STATUS_OKAY(fn)                         \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
+			      DT_DRV_COMPAT)(fn)),		\
+		(BUILD_ASSERT(0, "DT_DRV_COMPAT check failed! "	\
+			"- are there any compatible nodes enabled in the devicetree?");))
+#endif
 
 /**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
