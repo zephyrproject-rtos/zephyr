@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+    - interrupt_controller
+    - intc_exti_stm32
+    - stm32
+  min_ram: 8
+  harness: ztest
+
+tests:
+  drivers.interrupt_controller.intc_exti_stm32:
+    filter: dt_compat_enabled("st,stm32-exti") and dt_compat_enabled("test-st-stm32-exti")
