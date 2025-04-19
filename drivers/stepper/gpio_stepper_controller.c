@@ -107,20 +107,14 @@ static void update_coil_charge(const struct device *dev)
 	}
 }
 
-static void update_remaining_steps(struct gpio_stepper_data *data)
+static void update_remaining_steps(const struct device *dev)
 {
+	struct gpio_stepper_data *data = dev->data;
+
 	if (data->step_count > 0) {
 		data->step_count--;
-		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
 	} else if (data->step_count < 0) {
 		data->step_count++;
-		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
-	} else {
-		if (!data->callback) {
-			LOG_WRN_ONCE("No callback set");
-			return;
-		}
-		data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED, data->event_cb_user_data);
 	}
 }
 
@@ -141,11 +135,18 @@ static void position_mode_task(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
 
+	update_remaining_steps(dev);
+	(void)stepper_motor_set_coil_charge(dev);
+	update_coil_charge(dev);
 	if (data->step_count) {
-		(void)stepper_motor_set_coil_charge(dev);
-		update_coil_charge(dev);
+		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
+	} else {
+		if (data->callback) {
+			data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED,
+				       data->event_cb_user_data);
+		}
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
 	}
-	update_remaining_steps(dev->data);
 }
 
 static void velocity_mode_task(const struct device *dev)
