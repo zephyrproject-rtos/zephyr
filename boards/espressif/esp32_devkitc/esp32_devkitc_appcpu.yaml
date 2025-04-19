@@ -1,5 +1,5 @@
-identifier: esp32_devkitc_wrover/esp32/appcpu
-name: ESP32-DevkitC-WROVER-E APPCPU
+identifier: esp32_devkitc/esp32/appcpu
+name: ESP32-DevkitC APPCPU
 type: mcu
 arch: xtensa
 toolchain:

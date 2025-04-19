@@ -41,7 +41,7 @@ if(CONFIG_INCLUDE_REMOTE_DIR)
     INTERFACE ${REMOTE_ZEPHYR_DIR}/include/public)
 endif()
 
-if("${BOARD}" STREQUAL "esp32_devkitc_wrover_procpu" OR "${BOARD}" STREQUAL "esp32s3_devkitm_procpu")
+if("${BOARD}" STREQUAL "esp32_devkitc_procpu" OR "${BOARD}" STREQUAL "esp32s3_devkitm_procpu")
   set_source_files_properties(${REMOTE_ZEPHYR_DIR}/esp32_appcpu_firmware.c PROPERTIES GENERATED TRUE)
   target_sources(app PRIVATE src/main.c ${REMOTE_ZEPHYR_DIR}/esp32_appcpu_firmware.c)
 else()
