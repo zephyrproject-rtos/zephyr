@@ -151,6 +151,13 @@
 				status = "okay";
 			};
 		};
+
+		charger: charger {
+			compatible = "x-powers,axp2101-charger";
+			constant-charge-current-max-microamp = <200000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			charge-term-current-microamp = <125000>;
+		};
 	};
 
 	bm8563_rtc: bm8563@51 {
