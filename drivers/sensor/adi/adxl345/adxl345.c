@@ -147,6 +147,21 @@ int adxl345_set_measure_en(const struct device *dev, bool en)
 				      ADXL345_POWER_CTL_MODE_MSK, val);
 }
 
+int adxl345_get_fifo_entries(const struct device *dev, uint8_t *fifo_entries)
+{
+	uint8_t regval;
+	int rc;
+
+	rc = adxl345_reg_read_byte(dev, ADXL345_REG_FIFO_STATUS, &regval);
+	if (rc) {
+		return rc;
+	}
+
+	*fifo_entries = FIELD_GET(ADLX345_FIFO_STATUS_ENTRIES_MSK, regval);
+
+	return 0;
+}
+
 int adxl345_get_status(const struct device *dev, uint8_t *status)
 {
 	return adxl345_reg_read_byte(dev, ADXL345_REG_INT_SOURCE, status);
@@ -202,114 +217,140 @@ static int adxl345_attr_set(const struct device *dev,
 	}
 }
 
-int adxl345_read_sample(const struct device *dev,
-			struct adxl345_xyz_accel_data *sample)
+int adxl345_get_accel_data(const struct device *dev,
+			   struct adxl345_xyz_accel_data *sample)
 {
-	int16_t raw_x, raw_y, raw_z;
-	uint8_t axis_data[6], status1;
-	struct adxl345_dev_data *data = dev->data;
+	uint8_t axis_data[ADXL345_FIFO_SAMPLE_SIZE];
+	int rc;
 
-	if (!IS_ENABLED(CONFIG_ADXL345_TRIGGER)) {
-		do {
-			adxl345_get_status(dev, &status1);
-		} while (!FIELD_GET(ADXL345_INT_DATA_RDY, status1));
-	}
-
-	int rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS, axis_data, 6);
-
+	rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+			      axis_data, ADXL345_FIFO_SAMPLE_SIZE);
 	if (rc < 0) {
 		LOG_ERR("Samples read failed with rc=%d\n", rc);
 		return rc;
 	}
 
-	raw_x = axis_data[0] | (axis_data[1] << 8);
-	raw_y = axis_data[2] | (axis_data[3] << 8);
-	raw_z = axis_data[4] | (axis_data[5] << 8);
+	sample->x = axis_data[0] | axis_data[1] << 8;
+	sample->y = axis_data[2] | axis_data[3] << 8;
+	sample->z = axis_data[4] | axis_data[5] << 8;
 
-	sample->x = raw_x;
-	sample->y = raw_y;
-	sample->z = raw_z;
+#ifdef CONFIG_ADXL345_TRIGGER
+	struct adxl345_dev_data *data = dev->data;
 
+	sample->is_full_res = data->is_full_res; /* needed for decoder */
 	sample->selected_range = data->selected_range;
-	sample->is_full_res = data->is_full_res;
+#endif
 
-	return 0;
+	return rc;
 }
 
-void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+/**
+ * adxl345_accel_convert - The fallback conversion of raw measurements.
+ * @out: Converted value for output, containing the initialized fractional.
+ * @sample: Input raw measurement.
+ * When working without decoder, neither TRIGGER, nor STREAM is enabled,
+ * this small converter is used. It assumes full scale resolution and 8g.
+ */
+void adxl345_accel_convert(struct sensor_value *out, int16_t sample)
 {
-	if (sample & BIT(9)) {
-		sample |= ADXL345_COMPLEMENT;
+	/* full resolution enabled w/ 8g */
+	if (sample & BIT(11)) {
+		sample |= ADXL345_COMPLEMENT_MASK(12);
 	}
-
-	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
-	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
+	out->val1 = ((sample * SENSOR_G) / 32) / 1000000;
+	out->val2 = ((sample * SENSOR_G) / 32) % 1000000;
 }
 
 static int adxl345_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct adxl345_dev_data *data = dev->data;
-	struct adxl345_xyz_accel_data sample;
-	uint8_t samples_count;
+	uint8_t count;
 	int rc;
 
-	data->sample_number = 0;
-	rc = adxl345_reg_read_byte(dev, ADXL345_REG_FIFO_STATUS,
-				   &samples_count);
-	if (rc < 0) {
-		LOG_ERR("Failed to read FIFO status rc = %d\n", rc);
-		return rc;
+	count = 1;
+
+	/* FIFO BYPASSED is the only mode not using a FIFO buffer */
+	if (data->fifo_config.fifo_mode != ADXL345_FIFO_BYPASSED) {
+		rc = adxl345_get_fifo_entries(dev, &count);
+		if (rc) {
+			LOG_ERR("Failed to read FIFO status rc=%d\n", rc);
+			return rc;
+		}
 	}
 
-	__ASSERT_NO_MSG(samples_count <= ARRAY_SIZE(data->bufx));
+	__ASSERT_NO_MSG(count <= ARRAY_SIZE(data->sample));
 
-	for (uint8_t s = 0; s < samples_count; s++) {
-		rc = adxl345_read_sample(dev, &sample);
+	for (uint8_t s = 0; s < count; s++) {
+		rc = adxl345_get_accel_data(dev, &data->sample[s]);
 		if (rc < 0) {
 			LOG_ERR("Failed to fetch sample rc=%d\n", rc);
 			return rc;
 		}
-		data->bufx[s] = sample.x;
-		data->bufy[s] = sample.y;
-		data->bufz[s] = sample.z;
+
+#ifdef CONFIG_ADXL345_STREAM
+		data->sample[s].is_fifo = 0;
+#endif
 	}
+
+	/* new sample available, reset book-keeping */
+	data->sample_idx = 0;
+	data->sample_number = count;
 
 	return 0;
 }
 
+/**
+ * adxl345_channel_get - Read a single element of one or three axis.
+ * @dev: The sensor device.
+ * @chan: The axis channel, can be x, y, z or xyz.
+ * @val: The resulting value after conversion of the raw axis data. Val can be
+ * a single value or an array of three values, where the index correspondes to
+ * x, y, z axis entries.
+ */
 static int adxl345_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct adxl345_dev_data *data = dev->data;
+	int idx;
 
-	if (data->sample_number >= ARRAY_SIZE(data->bufx)) {
-		data->sample_number = 0;
+	if (data->sample_number <= 0) { /* empty */
+		val->val1 = 0;
+		val->val2 = 0;
+		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+			val[1].val1 = 0;
+			val[1].val2 = 0;
+			val[2].val1 = 0;
+			val[2].val2 = 0;
+		}
+		return -ENOTSUP;
 	}
+
+	data->sample_idx = data->sample_idx % data->sample_number;
+	idx = data->sample_idx;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->bufx[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->sample[idx].x);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->bufy[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->sample[idx].y);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->bufz[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->sample[idx].z);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->bufx[data->sample_number]);
-		adxl345_accel_convert(val++, data->bufy[data->sample_number]);
-		adxl345_accel_convert(val,   data->bufz[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val++, data->sample[idx].x);
+		adxl345_accel_convert(val++, data->sample[idx].y);
+		adxl345_accel_convert(val,   data->sample[idx].z);
+
 		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	data->sample_idx++;
 
 	return 0;
 }

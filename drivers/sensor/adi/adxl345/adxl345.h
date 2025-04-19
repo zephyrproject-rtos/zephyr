@@ -198,10 +198,8 @@ union adxl345_bus {
 };
 
 struct adxl345_dev_data {
-	unsigned int sample_number;
-	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	struct adxl345_xyz_accel_data sample[ADXL345_MAX_FIFO_SIZE];
+	uint8_t sample_number; /* number of samples to read from sensor */
 	uint8_t sample_idx; /* index counting up sample_number entries */
 	struct adxl345_fifo_config fifo_config;
 	bool is_full_res;
@@ -259,6 +257,7 @@ void adxl345_stream_irq_handler(const struct device *dev);
 int adxl345_set_measure_en(const struct device *dev, bool en);
 
 #ifdef CONFIG_ADXL345_TRIGGER
+int adxl345_get_fifo_entries(const struct device *dev, uint8_t *fifo_entries);
 int adxl345_get_status(const struct device *dev, uint8_t *status);
 
 int adxl345_trigger_set(const struct device *dev,
@@ -286,8 +285,8 @@ int adxl345_reg_update_bits(const struct device *dev, uint8_t reg,
 			    uint8_t mask, uint8_t val);
 
 #ifdef CONFIG_SENSOR_ASYNC_API
-int adxl345_read_sample(const struct device *dev,
-			struct adxl345_xyz_accel_data *sample);
+int adxl345_get_accel_data(const struct device *dev,
+			   struct adxl345_xyz_accel_data *sample);
 void adxl345_submit(const struct device *dev,
 		    struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev,

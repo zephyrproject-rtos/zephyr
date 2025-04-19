@@ -32,8 +32,8 @@ static void adxl345_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	data = (struct adxl345_xyz_accel_data *)buffer;
 
-	rc = adxl345_read_sample(dev, data);
-	if (rc != 0) {
+	rc = adxl345_get_accel_data(dev, data);
+	if (rc) {
 		LOG_ERR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
