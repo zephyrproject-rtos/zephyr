@@ -5,7 +5,7 @@ config LED_STRIP_MATRIX
 	bool "LED strip matrix display driver"
 	default y
 	depends on DT_HAS_LED_STRIP_MATRIX_ENABLED
-	depends on LED_STRIP
+	select LED_STRIP
 	help
 	  Enable LED strip matrix display (LED strip arranged in
 	  a grid pattern) driver.
