@@ -17,6 +17,9 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 
 #define EMUL_IMAGER_REG_SENSOR_ID 0x0000
@@ -63,6 +66,10 @@ struct emul_imager_config {
 	struct i2c_dt_spec i2c;
 };
 
+struct emul_imager_ctrls {
+	struct video_ctrl custom;
+};
+
 struct emul_imager_data {
 	/* First field is a line buffer for I/O emulation purpose */
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
@@ -70,6 +77,7 @@ struct emul_imager_data {
 	const struct emul_imager_mode *mode;
 	enum emul_imager_fmt_id fmt_id;
 	struct video_format fmt;
+	struct emul_imager_ctrls ctrls;
 };
 
 /* All the I2C registers sent on various scenario */
@@ -163,17 +171,6 @@ static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr
 	return 0;
 }
 
-/* Helper to read a full integer directly from a register */
-static int emul_imager_read_int(const struct device *const dev, uint8_t reg_addr, int *value)
-{
-	uint8_t val8;
-	int ret;
-
-	ret = emul_imager_read_reg(dev, reg_addr, &val8);
-	*value = val8;
-	return ret;
-}
-
 /* Some sensors will need reg8 or reg16 variants. */
 static int emul_imager_write_reg(const struct device *const dev, uint8_t reg_addr, uint8_t value)
 {
@@ -196,24 +193,11 @@ static int emul_imager_write_multi(const struct device *const dev,
 	return 0;
 }
 
-static int emul_imager_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int emul_imager_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (cid) {
-	case EMUL_IMAGER_CID_CUSTOM:
-		return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, (int)value);
-	default:
-		return -ENOTSUP;
-	}
-}
+	struct emul_imager_data *data = dev->data;
 
-static int emul_imager_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	switch (cid) {
-	case EMUL_IMAGER_CID_CUSTOM:
-		return emul_imager_read_int(dev, EMUL_IMAGER_REG_CUSTOM, value);
-	default:
-		return -ENOTSUP;
-	}
+	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CUSTOM, data->ctrls.custom.val);
 }
 
 /* Customize this function according to your "struct emul_imager_mode". */
@@ -371,7 +355,6 @@ static int emul_imager_set_stream(const struct device *dev, bool enable)
 
 static DEVICE_API(video, emul_imager_driver_api) = {
 	.set_ctrl = emul_imager_set_ctrl,
-	.get_ctrl = emul_imager_get_ctrl,
 	.set_frmival = emul_imager_set_frmival,
 	.get_frmival = emul_imager_get_frmival,
 	.enum_frmival = emul_imager_enum_frmival,
@@ -380,6 +363,15 @@ static DEVICE_API(video, emul_imager_driver_api) = {
 	.get_caps = emul_imager_get_caps,
 	.set_stream = emul_imager_set_stream,
 };
+
+static int emul_imager_init_controls(const struct device *dev)
+{
+	struct emul_imager_data *drv_data = dev->data;
+
+	return video_init_ctrl(
+		&drv_data->ctrls.custom, dev, EMUL_IMAGER_CID_CUSTOM,
+		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 128});
+}
 
 int emul_imager_init(const struct device *dev)
 {
@@ -415,7 +407,8 @@ int emul_imager_init(const struct device *dev)
 			fmt.pixelformat, fmt.width, fmt.height);
 	}
 
-	return 0;
+	/* Initialize controls */
+	return emul_imager_init_controls(dev);
 }
 
 #define EMUL_IMAGER_DEFINE(inst)                                                                   \
@@ -427,6 +420,8 @@ int emul_imager_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
 			      &emul_imager_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
-			      &emul_imager_driver_api);
+			      &emul_imager_driver_api);                                            \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(emul_imager_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)

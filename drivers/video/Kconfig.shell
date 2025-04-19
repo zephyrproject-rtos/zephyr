@@ -1,0 +1,8 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SHELL
+	bool "Video shell"
+	depends on SHELL
+	help
+	  This shell provides control and query commands for video drivers.
