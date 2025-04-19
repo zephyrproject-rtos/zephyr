@@ -12,3 +12,6 @@ add_subdirectory_ifdef(CONFIG_NEWLIB_LIBC       newlib)
 add_subdirectory_ifdef(CONFIG_PICOLIBC          picolibc)
 
 add_subdirectory(common)
+
+# Additional libraries or modules can be added here as needed
+
