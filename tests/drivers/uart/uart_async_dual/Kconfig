@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ASYNC_DUAL_TEST_TIMEOUT
+	int "Single test case length (in milliseconds)"
+	# For the simulated devices, which are run by default in CI, we set it to less to not spend too
+	# much CI time
+	default 500 if SOC_SERIES_BSIM_NRFXX
+	default 3000
+	help
+	  For how many loops will the stress test run. The higher this number the longer the
+	  test and therefore the higher likelihood an unlikely race/event will be triggered.
+
+config PM_RUNTIME_IN_TEST
+	bool "Use runtime PM in the test"
+	select PM_DEVICE
+	select PM_DEVICE_RUNTIME
+
+# Include Zephyr's Kconfig
+source "Kconfig"
