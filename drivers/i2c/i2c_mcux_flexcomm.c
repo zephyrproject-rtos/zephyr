@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"
 
+#include <zephyr/pm/device.h>
 #define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
 	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
 		    (K_MSEC(CONFIG_I2C_NXP_TRANSFER_TIMEOUT)))
@@ -611,6 +612,28 @@ static int mcux_flexcomm_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+
+static int i2c_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	case PM_DEVICE_ACTION_TURN_ON:
+		mcux_flexcomm_init(dev);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+#endif /*CONFIG_PM_DEVICE*/
+
+
 static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 	.configure = mcux_flexcomm_configure,
 	.transfer = mcux_flexcomm_transfer,
@@ -650,9 +673,10 @@ static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_mcux_flexcomm_pm_action);	\
 	I2C_DEVICE_DT_INST_DEFINE(id,					\
 			    mcux_flexcomm_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(id),			\
 			    &mcux_flexcomm_data_##id,			\
 			    &mcux_flexcomm_config_##id,			\
 			    POST_KERNEL,				\
