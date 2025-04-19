@@ -185,7 +185,8 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 	SYS_SLIST_FOR_EACH_CONTAINER(&dl_callbacks, cb, node) {
 		if ((cb->port == LW_RECV_PORT_ANY) ||
 		    (cb->port == mcps_indication->Port)) {
-			cb->cb(mcps_indication->Port, flags, mcps_indication->Rssi,
+			cb->cb(cb,
+			       mcps_indication->Port, flags, mcps_indication->Rssi,
 			       mcps_indication->Snr, mcps_indication->BufferSize,
 			       mcps_indication->Buffer);
 		}
