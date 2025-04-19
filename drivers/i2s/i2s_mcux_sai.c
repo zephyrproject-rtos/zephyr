@@ -1124,6 +1124,9 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/*clock configuration*/
 	audio_clock_settings(dev);
 
+	/* enable SAI mclk */
+	enable_mclk_direction(dev, true);
+
 	SAI_Init(base);
 
 	dev_data->tx.state = I2S_STATE_NOT_READY;
