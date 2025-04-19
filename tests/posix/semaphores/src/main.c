@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#define WAIT_TIME_MS 100
+
 static void *child_func(void *p1)
 {
 	sem_t *sem = (sem_t *)p1;
@@ -51,11 +53,9 @@ static void semaphore_test(sem_t *sem)
 
 	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0, "clock_gettime failed");
 
-	abstime.tv_sec += 5;
+	abstime.tv_nsec += WAIT_TIME_MS * NSEC_PER_MSEC;
 
-	/* TESPOINT: Wait for 5 seconds and acquire sema given
-	 * by thread1
-	 */
+	/* TESPOINT: Wait to acquire sem given by thread1 */
 	zassert_equal(sem_timedwait(sem, &abstime), 0);
 
 	/* TESTPOINT: Semaphore is already acquired, check if
@@ -71,9 +71,7 @@ static void semaphore_test(sem_t *sem)
 	zassert_equal(sem_getvalue(sem, &val), 0);
 	zassert_equal(val, 1);
 
-	zassert_equal(sem_destroy(sem), -1,
-		      "acquired semaphore"
-		      " is destroyed");
+	zassert_equal(sem_destroy(sem), -1, "acquired semaphore is destroyed");
 	zassert_equal(errno, EBUSY);
 
 	/* TESTPOINT: take semaphore which is initialized with 1 */
@@ -312,14 +310,4 @@ ZTEST(posix_semaphores, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 0);
 }
 
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(posix_semaphores, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_semaphores, NULL, NULL, NULL, NULL, NULL);
