@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,10 +20,18 @@
 #endif
 
 #define WDT_FEED_TRIES		2
-#define WDT_MAX_WINDOW		1000
-#define WDT_TIMEOUT		K_MSEC(1100)
-#define SLEEP_TIME		K_MSEC(500)
 #define WDT_TEST_CB_TEST_VALUE	0xCB
+#define WDT_TIMEOUT_VALUE	CONFIG_TEST_WDT_MAX_WINDOW_TIME + 10
+
+#if defined(CONFIG_WDT_NXP_EWM)
+#define WDT_SETUP_FLAGS		0
+#define WDT_TIMEOUT		K_TICKS(WDT_TIMEOUT_VALUE)
+#define SLEEP_TIME		K_TICKS(CONFIG_TEST_WDT_SLEEP_TIME)
+#else
+#define WDT_SETUP_FLAGS		WDT_OPT_PAUSE_HALTED_BY_DBG
+#define WDT_TIMEOUT		K_MSEC(WDT_TIMEOUT_VALUE)
+#define SLEEP_TIME		K_MSEC(CONFIG_TEST_WDT_SLEEP_TIME)
+#endif
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
 static volatile int wdt_interrupted_flag;
@@ -49,7 +57,7 @@ static int test_wdt_callback_reset_none(void)
 	}
 
 	m_cfg_wdt0.window.min = 0U;
-	m_cfg_wdt0.window.max = WDT_MAX_WINDOW;
+	m_cfg_wdt0.window.max = CONFIG_TEST_WDT_MAX_WINDOW_TIME;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_NONE;
 	m_cfg_wdt0.callback = wdt_callback;
 
@@ -62,7 +70,7 @@ static int test_wdt_callback_reset_none(void)
 		return TC_FAIL;
 	}
 
-	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	err = wdt_setup(wdt, WDT_SETUP_FLAGS);
 	if (err != 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;

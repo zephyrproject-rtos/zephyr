@@ -10,3 +10,14 @@ tests:
       - drivers
       - watchdog
     depends_on: watchdog
+  drivers.watchdog.reset_none_ewm:
+    filter: dt_compat_enabled("nxp,ewm")
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
+    integration_platforms:
+      - frdm_mcxw71
+    extra_args: DTC_OVERLAY_FILE="boards/mcxw7x_ewm.overlay"
+    extra_configs:
+      - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
+      - CONFIG_TEST_WDT_SLEEP_TIME=68
