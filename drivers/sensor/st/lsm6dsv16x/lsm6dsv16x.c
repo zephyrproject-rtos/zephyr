@@ -1387,8 +1387,8 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	static struct lsm6dsv16x_data prefix##_data_##inst =	{	\
 		IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
 				    CONFIG_I2C_RTIO),			\
-			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
-			 .iodev = &lsm6dsv16x_iodev_##inst,		\
+			(.rtio_ctx = &prefix##_rtio_ctx_##inst,	\
+			 .iodev = &prefix##_iodev_##inst,		\
 			 .bus_type = BUS_I2C,))				\
 	};								\
 	static const struct lsm6dsv16x_config prefix##_config_##inst =	\
