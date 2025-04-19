@@ -13,6 +13,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#define WAIT_TIME_MS 100
+BUILD_ASSERT(WAIT_TIME_MS > 0, "WAIT_TIME_MS must be posistive");
+
 static void *child_func(void *p1)
 {
 	sem_t *sem = (sem_t *)p1;
@@ -51,11 +54,10 @@ static void semaphore_test(sem_t *sem)
 
 	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0, "clock_gettime failed");
 
-	abstime.tv_sec += 5;
+	abstime.tv_sec += WAIT_TIME_MS / MSEC_PER_SEC;
+	abstime.tv_nsec += (WAIT_TIME_MS % MSEC_PER_SEC) * NSEC_PER_MSEC;
 
-	/* TESPOINT: Wait for 5 seconds and acquire sema given
-	 * by thread1
-	 */
+	/* TESPOINT: Wait to acquire sem given by thread1 */
 	zassert_equal(sem_timedwait(sem, &abstime), 0);
 
 	/* TESTPOINT: Semaphore is already acquired, check if
