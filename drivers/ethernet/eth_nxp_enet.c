@@ -252,7 +252,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #endif
 	enum ethernet_hw_caps caps;
 
-	caps = ETHERNET_LINK_10BASE_T |
+	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
@@ -267,11 +267,11 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (config->phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		caps |= ETHERNET_LINK_1000BASE_T;
+		caps |= ETHERNET_LINK_1000BASE;
 	}
 
 	return caps;
@@ -459,14 +459,14 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
+				     LINK_HALF_100BASE | LINK_FULL_100BASE;
 	int ret;
 	struct phy_link_state state;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
 	}
 
 	/* Configure the PHY */

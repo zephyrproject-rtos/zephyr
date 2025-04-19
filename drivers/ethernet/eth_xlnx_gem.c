@@ -622,21 +622,19 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 
 	if (dev_conf->max_link_speed == LINK_1GBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_1000BASE_T |
-				ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE |
+				 ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_1000BASE_T;
+			caps |= ETHERNET_LINK_1000BASE;
 		}
 	} else if (dev_conf->max_link_speed == LINK_100MBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_100BASE_T;
+			caps |= ETHERNET_LINK_100BASE;
 		}
 	} else {
-		caps |= ETHERNET_LINK_10BASE_T;
+		caps |= ETHERNET_LINK_10BASE;
 	}
 
 	if (dev_conf->enable_rx_chksum_offload) {
