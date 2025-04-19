@@ -4,6 +4,7 @@ sample:
 common:
   platform_allow:
     - frdm_mcxn947/mcxn947/cpu0
+    - mcx_n9xx_evk/mcxn947/cpu0
     - frdm_mcxn236
     - frdm_mcxa156
   integration_platforms:
