@@ -8,6 +8,10 @@
 
 #define NETC_BD_ALIGN 128
 
+#define FREESCALE_OUI_B0 0x00
+#define FREESCALE_OUI_B1 0x04
+#define FREESCALE_OUI_B2 0x9f
+
 /* Get phy mode from dts. Default RMII for i.MXRT1180 ENETC which hasn't added the property. */
 #define NETC_PHY_MODE(node_id)                                                                     \
 	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                                      \
