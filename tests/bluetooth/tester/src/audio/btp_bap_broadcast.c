@@ -25,6 +25,7 @@
 #define LOG_MODULE_NAME bttester_bap_broadcast
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp/btp.h"
+#include "btp_bap_audio_stream.h"
 #include "btp_bap_broadcast.h"
 
 static K_SEM_DEFINE(sem_stream_stopped, 0U,
@@ -179,16 +180,19 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_broadcast_remote_source *broadcaster;
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
-	int err;
 
 	/* Callback called on transition to Streaming state */
 
 	LOG_DBG("Started stream %p", stream);
 
-	/* Start TX */
-	err = btp_bap_audio_stream_tx_register(&b_stream->audio_stream);
-	if (err != 0) {
-		LOG_ERR("Failed to register stream: %d", err);
+	if (btp_bap_audio_stream_can_send(&b_stream->audio_stream)) {
+		int err;
+		/* Start TX */
+
+		err = btp_bap_audio_stream_tx_register(&b_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to register stream: %d", err);
+		}
 	}
 
 	b_stream->bis_synced = true;
@@ -200,14 +204,16 @@ static void stream_started(struct bt_bap_stream *stream)
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
-	int err;
 
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
-	/* Stop TX */
-	err = btp_bap_audio_stream_tx_unregister(&b_stream->audio_stream);
-	if (err != 0) {
-		LOG_ERR("Failed to unregister stream: %d", err);
+	if (btp_bap_audio_stream_can_send(&b_stream->audio_stream)) {
+		int err;
+		/* Stop TX */
+		err = btp_bap_audio_stream_tx_unregister(&b_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister stream: %d", err);
+		}
 	}
 
 	b_stream->bis_synced = false;
