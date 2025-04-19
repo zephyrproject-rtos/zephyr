@@ -135,6 +135,10 @@
 	gpio-as-nreset;
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpiote {
 	status = "okay";
 };
