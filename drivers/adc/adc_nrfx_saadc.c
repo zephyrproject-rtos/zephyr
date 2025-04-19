@@ -719,6 +719,29 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #endif
 };
 
+#ifdef NRF_SAADC_AIN8
+/* AIN8-AIN14 inputs are on 3v3 GPIO port and they cannot be mixed with other
+ * analog inputs (from 1v8 ports) in differential mode.
+ */
+#define CH_IS_3V3(val) (val >= NRF_SAADC_AIN8)
+
+#define CH_IS_DIFF(node) DT_PROP(node, zephyr_differential)
+
+#define CH_MIX_3V3_1V8_CHECK(node)					\
+	(!CH_IS_DIFF(node) ||						\
+	 !(CH_IS_3V3(DT_PROP_OR(node, zephyr_input_positive, 0)) ^	\
+	   CH_IS_3V3(DT_PROP_OR(node, zephyr_input_negative, 0))))
+#else
+#define CH_MIX_3V3_1V8_CHECK(node) true
+#endif
+
+#define VALIDATE_CHANNEL_CONFIG(node)					\
+	BUILD_ASSERT(CH_MIX_3V3_1V8_CHECK(node) == true,		\
+		     "1v8 inputs cannot be mixed with 3v3 inputs");
+
+/* Validate configuration of all channels. */
+#define VALIDATE_CHANNELS_CONFIG(inst) DT_FOREACH_CHILD(DT_DRV_INST(inst), VALIDATE_CHANNEL_CONFIG)
+
 /*
  * There is only one instance on supported SoCs, so inst is guaranteed
  * to be 0 if any instance is okay. (We use adc_0 above, so the driver
@@ -731,6 +754,7 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
+	VALIDATE_CHANNELS_CONFIG(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(0, saadc_pm_hook, 1);			\
 	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\
