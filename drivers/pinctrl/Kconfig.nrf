@@ -8,3 +8,7 @@ config PINCTRL_NRF
 	select PINCTRL_STORE_REG
 	help
 	  nRF pin controller driver
+
+config PINCTRL_NRF_CUSTOM_HOOKS
+	bool "nRF pin controller custom hooks"
+	depends on PINCTRL_NRF

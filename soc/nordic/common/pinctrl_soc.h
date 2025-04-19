@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
 #include <zephyr/dt-bindings/power/nordic-nrf-gpd.h>
 #include <zephyr/types.h>
+#include <hal/nrf_gpio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,18 @@ extern "C" {
 /** Type for nRF pin. */
 typedef uint32_t pinctrl_soc_pin_t;
 
+
+struct nrf_pinctrl_pin {
+	uint32_t fun;
+	uintptr_t reg;
+	uint32_t psel;
+	uint32_t write;
+	uint32_t invert;
+	nrf_gpio_pin_dir_t dir;
+	nrf_gpio_pin_input_t input;
+	nrf_gpio_pin_drive_t drive;
+	uint8_t drive_idx;
+};
 /**
  * @brief Utility macro to check if a function requires clockpin enable.
  *
@@ -154,6 +167,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  */
 #define NRF_GET_PIN(pincfg) (((pincfg) >> NRF_PIN_POS) & NRF_PIN_MSK)
 
+int nrf_pinctrl_hook_start(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
+			    uintptr_t reg);
+bool nrf_pinctrl_hook_custom_periph(struct nrf_pinctrl_pin *pin);
+int nrf_pinctrl_hook_pre_write(const pinctrl_soc_pin_t pin);
+int nrf_pinctrl_hook_post_write(const pinctrl_soc_pin_t pin);
+int nrf_pinctrl_hook_end(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
+			    uintptr_t reg);
 /** @endcond */
 
 #ifdef __cplusplus
