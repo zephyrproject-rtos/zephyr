@@ -64,6 +64,14 @@ zephyr_answer_file=~/zephyr-env_install.bash
 	. ${zephyr_answer_file}
 }
 unset zephyr_answer_file
-zephyr_answer_file=~/.zephyrrc
-[ -f ${zephyr_answer_file} ] &&  . ${zephyr_answer_file}
-unset zephyr_answer_file
+xdg_config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+zephyr_xdg_rc="${xdg_config_home}/zephyr/zephyrrc"
+if [ -f "${zephyr_xdg_rc}" ]; then
+    . "${zephyr_xdg_rc}"
+else
+    zephyr_answer_file=~/.zephyrrc
+    [ -f "${zephyr_answer_file}" ] && . "${zephyr_answer_file}"
+    unset zephyr_answer_file
+fi
+unset zephyr_xdg_rc
+unset xdg_config_home
