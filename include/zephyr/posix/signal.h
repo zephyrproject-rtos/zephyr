@@ -10,6 +10,8 @@
 #include <zephyr/posix/posix_types.h>
 #include "posix_features.h"
 
+#include <zephyr/posix/limits.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
