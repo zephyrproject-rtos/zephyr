@@ -732,7 +732,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	default: {
 		k_tid_t current_thread = k_current_get();
 
-		if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
+		if (k_is_in_sys_work()) {
 			/* No blocking in the sysqueue. */
 			timeout = K_NO_WAIT;
 		} else if (current_thread == att_handle_rsp_thread) {
