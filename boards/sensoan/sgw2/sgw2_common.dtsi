@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Sensoan Oy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Cannot be enabled on both nrf9160 and nrf5340 at the same time */
+sensorbus: &i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&sensorbus_default>;
+	pinctrl-1 = <&sensorbus_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	lis2dh: lis2dh@18 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		status = "disabled";
+		reg = <0x18>;
+		disconnect-sdo-sa0-pull-up;
+	};
+};
+
+/* Cannot be enabled on both nrf9160 and nrf5340 at the same time */
+flash_spi: &spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "disabled";
+	pinctrl-0 = <&flash_spi_default>;
+	pinctrl-1 = <&flash_spi_sleep>;
+	pinctrl-names = "default", "sleep";
+	w25q80dv: w25q80dv@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		size = <0x800000>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <30000>;
+		jedec-id = [ ef 40 14  ];
+	};
+};

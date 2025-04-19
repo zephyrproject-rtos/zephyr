@@ -1,0 +1,20 @@
+identifier: sgw2/nrf5340/cpuapp/ns
+name: SGW2-NRF5340-application-MCU-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 192
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - usb_cdc
+  - usb_device
+  - netif:openthread
+vendor: sensoan
