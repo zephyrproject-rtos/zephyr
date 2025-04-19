@@ -11,7 +11,7 @@
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
 
-LOG_MODULE_DECLARE(ICM42688_RTIO);
+LOG_MODULE_DECLARE(ICM42688_RTIO, CONFIG_SENSOR_LOG_LEVEL);
 
 void icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
 {
