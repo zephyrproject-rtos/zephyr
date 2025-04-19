@@ -30,6 +30,7 @@
 #include <zephyr/smf.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #include <bootutil/bootutil_public.h>
 
