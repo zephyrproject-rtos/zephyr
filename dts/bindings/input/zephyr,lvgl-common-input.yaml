@@ -8,3 +8,10 @@ properties:
     type: phandle
     description: |
       Input device phandle.
+  display-idx:
+    type: int
+    description: |
+      Index of display device to pass input commands to.
+      Represents the index of the display phandle in "displays" property of
+      "zephyr,displays" compatible node.
+      Used in multi-display setup.
