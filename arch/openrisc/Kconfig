@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2025 NVIDIA Corporation <jholdsworth@nvidia.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "OpenRISC Options"
+	depends on OPENRISC
+
+config ARCH
+	string
+	default "openrisc"
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config NUM_IRQS
+	int
+
+endmenu
