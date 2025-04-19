@@ -4,6 +4,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "posix_internal.h"
+
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <string.h>
@@ -34,7 +37,6 @@ K_SEM_DEFINE(mq_sem, 1, 1);
 /* Initialize the list */
 sys_slist_t mq_list = SYS_SLIST_STATIC_INIT(&mq_list);
 
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static mqueue_object *find_in_list(const char *name);
 static int32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 			  k_timeout_t timeout);
@@ -254,10 +256,15 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 		 unsigned int msg_prio, const struct timespec *abstime)
 {
-	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	int32_t timeout = (int32_t) timespec_to_timeoutms(abstime);
+	mqueue_desc *const mqd = (mqueue_desc *)mqdes;
 
-	return send_message(mqd, msg_ptr, msg_len, K_MSEC(timeout));
+	if (!is_timespec_valid(abstime)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return send_message(mqd, msg_ptr, msg_len,
+			    K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**
@@ -285,10 +292,15 @@ int mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 			unsigned int *msg_prio, const struct timespec *abstime)
 {
-	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	int32_t timeout = (int32_t) timespec_to_timeoutms(abstime);
+	mqueue_desc *const mqd = (mqueue_desc *)mqdes;
 
-	return receive_message(mqd, msg_ptr, msg_len, K_MSEC(timeout));
+	if (!is_timespec_valid(abstime)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return receive_message(mqd, msg_ptr, msg_len,
+			       K_MSEC((int32_t)timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**

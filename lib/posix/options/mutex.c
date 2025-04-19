@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 
 static SYS_SEM_DEFINE(lock, 1, 1);
 
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
-
 #define MUTEX_MAX_REC_LOCK 32767
 
 /*
@@ -141,7 +139,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				LOG_DBG("Timeout locking mutex %p", m);
-				ret = EBUSY;
+				ret = ETIMEDOUT;
 				break;
 			}
 			/* On most POSIX systems, this usually results in an infinite loop */
@@ -212,8 +210,15 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
 int pthread_mutex_timedlock(pthread_mutex_t *m,
 			    const struct timespec *abstime)
 {
-	int32_t timeout = (int32_t)timespec_to_timeoutms(abstime);
-	return acquire_mutex(m, K_MSEC(timeout));
+	__ASSERT(m != NULL, "%s is NULL", "mutex");
+	__ASSERT(abstime != NULL, "%s is NULL", "abstime");
+
+	if (!is_timespec_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
+		return EINVAL;
+	}
+
+	return acquire_mutex(m, K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**

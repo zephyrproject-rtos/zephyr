@@ -55,7 +55,7 @@ ZTEST(cond, test_pthread_condattr)
 	zassert_ok(pthread_condattr_init(&att));
 
 	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_getclock failed");
-	zassert_equal(clock_id, CLOCK_MONOTONIC, "clock attribute not set correctly");
+	zassert_equal(clock_id, CLOCK_REALTIME, "clock attribute not set correctly");
 
 	zassert_ok(pthread_condattr_setclock(&att, CLOCK_REALTIME),
 		   "pthread_condattr_setclock failed");
