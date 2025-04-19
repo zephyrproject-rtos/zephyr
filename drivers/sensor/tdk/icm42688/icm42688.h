@@ -9,7 +9,6 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dt-bindings/sensor/icm42688.h>
 #include <stdlib.h>
@@ -320,6 +319,8 @@ struct icm42688_trigger_entry {
  */
 struct icm42688_dev_data {
 	struct icm42688_cfg cfg;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *rtio_iodev;
 #ifdef CONFIG_ICM42688_TRIGGER
 #if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM42688_THREAD_STACK_SIZE);
@@ -330,8 +331,6 @@ struct icm42688_dev_data {
 #endif
 #ifdef CONFIG_ICM42688_STREAM
 	struct rtio_iodev_sqe *streaming_sqe;
-	struct rtio *r;
-	struct rtio_iodev *spi_iodev;
 	uint8_t int_status;
 	uint16_t fifo_count;
 	uint64_t timestamp;
@@ -351,9 +350,9 @@ struct icm42688_dev_data {
  * @brief Device config (struct device)
  */
 struct icm42688_dev_cfg {
-	struct spi_dt_spec spi;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
+	uint8_t inst_on_bus;
 };
 
 /**
