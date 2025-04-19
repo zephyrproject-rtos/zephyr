@@ -64,4 +64,12 @@ config I2C_STM32_V2_DMA
 	help
 	  Enable DMA support for the STM32 I2C driver.
 
+config STM32_I2C_TRANSFER_TIMEOUT_MSEC
+	int "I2C transfer timeout in milliseconds"
+	default 500
+	depends on I2C_STM32_V1 || I2C_STM32_V2
+	help
+	  Timeout for I2C transfer in milliseconds. This is used to set the timeout
+	  for the I2C transfer operations.
+
 endif # I2C_STM32
