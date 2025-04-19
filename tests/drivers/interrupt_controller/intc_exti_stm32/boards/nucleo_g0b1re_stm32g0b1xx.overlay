@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-st-stm32-exti";
+		exti-line-nr = <16>;
+		exti-line-irq-nr = <1>;
+		exti-line-irq-prio = <0>;
+		status = "okay";
+	};
+};
