@@ -10,6 +10,7 @@
 #include <zephyr/sys/sys_io.h>
 
 #include <adsp/cache.h>
+#include <pinctrl_soc.h>
 
 #ifndef __INC_IMX_SOC_H
 #define __INC_IMX_SOC_H
@@ -29,5 +30,10 @@
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
+
+/* Workaround to handle macro variation in the SDK */
+#ifndef INPUTMUX_PINTSEL_COUNT
+#define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
+#endif
 
 #endif /* __INC_IMX_SOC_H */
