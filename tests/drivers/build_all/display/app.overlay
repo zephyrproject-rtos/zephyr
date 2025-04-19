@@ -159,6 +159,21 @@
 				height = <64>;
 				column-offset =	<28>;
 			};
+
+			test_mipi_dbi_st75256: st75256@10 {
+				compatible = "sitronix,st75256";
+				mipi-max-frequency = <10000000>;
+				reg = <10>;
+				width = <256>;
+				height = <128>;
+				booster-frequency = <0>;
+				bias-ratio = <0>;
+				flip-configuration = <0>;
+				duty = <0>;
+				light-grey = <0>;
+				dark-grey = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
