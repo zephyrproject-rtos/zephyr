@@ -65,6 +65,12 @@
 			reg = <0x40007000 16>;
 		};
 
+		iwdg: watchdog@40003000 {
+			compatible = "wch,iwdg";
+			reg = <0x40003000 0x10>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "wch,20x_30x-afio";
 			reg = <0x40010000 16>;
