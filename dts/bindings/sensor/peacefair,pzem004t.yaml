@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Srishtik Bhandarkar
+# SPDX-License-Identifier: Apache-2.0
+description: Peacefair PZEM004T energy meter sensor
+
+compatible: "peacefair,pzem004t"
+
+include: [sensor-device.yaml]
+
+properties:
+  modbus-address:
+    type: int
+    default: 0xf8
+    required: true
+    description: |
+      Modbus slave address of the PZEM004T sensor (0x00 - 0xf7).
+      Every sensor will answer to the default address 0xF8 if there is only one
+      sensor connected to the bus. If there are multiple sensors, each one must
+      have a different address. To set modbus address, each device has to be
+      connected independently and snsor_attr_set has to be used for each device
+      after which multiple devices with different addresses can be connected
+      on the same bus.

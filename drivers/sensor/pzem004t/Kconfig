@@ -1,0 +1,27 @@
+# PZEM004T Multifunction AC Meter configuration options
+
+# Copyright (c) 2025 Srishtik Bhandarkar
+# SPDX-License-Identifier: Apache-2.0
+
+config PZEM004T
+    bool "PZEM004T Multifunction AC Meter"
+    default y
+    depends on DT_HAS_PEACEFAIR_PZEM004T_ENABLED
+    select MODBUS
+    select MODBUS_SERIAL
+    select MODBUS_RAW_ADU
+    help
+      Enable the driver for the Peacefair PZEM004T Multifunction AC Meter.
+
+      This driver communicates with the PZEM004T sensor using the Modbus protocol
+      over a UART interface. Ensue that you define pzem004t node as a child of
+      modbus node in your device tree.
+
+config PZEM004T_ENABLE_RESET_ENERGY
+      bool "Include support for resetting energy value"
+    default n
+    depends on PZEM004T
+    help
+      Enable support for resetting the energy counter on the PZEM004T device.
+      This feature sends a custom Modbus command to reset the energy value.
+      Enable this option to use the reset energy functionality.
