@@ -56,6 +56,9 @@ LOG_MODULE_REGISTER(nxp_edma);
 		    0, edma_isr,				\
 		    &channels_##inst[idx], 0)
 
+#define _EDMA_INT_ENABLE(idx, inst)				\
+	irq_enable(DT_INST_IRQN_BY_IDX(inst, idx))		\
+
 #define _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst)						\
 	COND_CODE_1(CONFIG_PM_DEVICE_POWER_DOMAIN,						\
 		    (DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE_BY_IDX(inst, power_domains, idx))),	\
@@ -100,6 +103,10 @@ LOG_MODULE_REGISTER(nxp_edma);
 /* used to register edma_isr for all specified interrupts */
 #define EDMA_CONNECT_INTERRUPTS(inst)				\
 	FOR_EACH_FIXED_ARG(_EDMA_INT_CONNECT, (;),		\
+			   inst, _EDMA_INT_INDEX_ARRAY(inst))
+
+#define EDMA_INTERRUPTS_ENABLE(inst)				\
+	FOR_EACH_FIXED_ARG(_EDMA_INT_ENABLE, (;),		\
 			   inst, _EDMA_INT_INDEX_ARRAY(inst))
 
 #define EDMA_CHANS_ARE_CONTIGUOUS(inst)\
@@ -185,6 +192,7 @@ enum channel_state {
 	CHAN_STATE_STOPPED,
 	CHAN_STATE_SUSPENDED,
 	CHAN_STATE_RELEASING,
+	CHAN_STATE_DONE,
 };
 
 struct edma_channel {
@@ -274,6 +282,13 @@ static inline bool channel_allows_transition(struct edma_channel *chan,
 			return false;
 		}
 		break;
+        case CHAN_STATE_DONE:
+                if (next != CHAN_STATE_CONFIGURED &&
+		    next != CHAN_STATE_STOPPED &&
+		    next != CHAN_STATE_RELEASING) {
+                        return false;
+                }
+                break;
 	default:
 		LOG_ERR("invalid channel previous state: %d", prev);
 		return false;
