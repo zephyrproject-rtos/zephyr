@@ -2509,7 +2509,8 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
-    - lib/crc/
+    - subsys/crc/crc*_sw.c
+    - subsys/crc/crc_shell.c
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
