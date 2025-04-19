@@ -65,12 +65,18 @@ class DeviceTreeUtils:
     def get_cached_description(cls, node):
         """Get the cached description for a devicetree node.
 
+        Use the title attribute if available. If it doesn't exist, extract the first sentence of the
+        description and cache it.
+
         Args:
-            node: A devicetree node object with matching_compat and description attributes.
+            node: A devicetree node object with matching_compat and title or description attributes.
 
         Returns:
             The cached description for the node's compatible, creating it if needed.
         """
+        if node.title:
+            return node.title
+
         return cls._compat_description_cache.setdefault(
             node.matching_compat,
             cls.get_first_sentence(node.description)
