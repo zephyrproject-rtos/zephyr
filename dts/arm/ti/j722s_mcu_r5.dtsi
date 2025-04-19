@@ -58,4 +58,14 @@
 		interrupt-parent = <&vim>;
 		status = "disabled";
 	};
+
+	mbox1: mailbox@29010000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29010000 0x200>;
+		interrupts = <0 241 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		usr-id = <2>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
 };
