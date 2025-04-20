@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The p3t1755 shield board is plugged into the arduino interface on
+ * the FRDM-MCXW71 board, and the J13 on the shield board is connected
+ * to the J22 on the MCXW71 referred below.
+ * J13-1 -> J22-8; J13-2 -> J22-6;
+ * J13-3 -> J22-1; J13-4 -> J22-10;
+ */
+
+#include <freq.h>
+
+&i3c0 {
+	status = "okay";
+
+	i2c-scl-hz = <DT_FREQ_K(200)>;
+	i3c-scl-hz = <DT_FREQ_K(1200)>;
+	i3c-od-scl-hz = <DT_FREQ_K(600)>;
+};
+
+&lpi2c1 {
+	status = "disabled";
+};
