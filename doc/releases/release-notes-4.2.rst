@@ -48,6 +48,8 @@ The following CVEs are addressed by this release:
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
 
+* :cve:`2025-2962` Under embargo until 2025-06-07
+
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
