@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,8 @@
 };
 
 /* To test this sample, connect
- * LPI2C1 SCL(J2-12, P1_25/FC1_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
- * LPI2C1 SDA(J2-8, P1_24/FC1_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
+ * LPI2C1 SCL(J2-12, P0_25/FC1_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
+ * LPI2C1 SDA(J2-8, P0_24/FC1_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
  */
 &flexcomm1_lpi2c1 {
 	pinctrl-0 = <&pinmux_flexcomm1_lpi2c>;
