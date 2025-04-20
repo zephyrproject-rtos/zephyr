@@ -180,6 +180,9 @@ GPIO
   :dtcompatible:`raspberrypi,rpi-gpio-port`, and :dtcompatible:`raspberrypi,rpi-gpio` is
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
+* ``arduino-nano-header-r3`` is renamed to :dtcompatible:`arduino-nano-header`.
+  Because the R3 comes from the Arduino UNO R3, which has changed the connector from
+  the former version, and is unrelated to the Arduino Nano.
 
 I2S
 ===
