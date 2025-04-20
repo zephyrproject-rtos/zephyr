@@ -406,7 +406,7 @@
 		reg = <0x40035000 0xFFF>;
 		interrupts = <41 0>;
 		clocks = <&scg SCG_K4_I3C_CLK 0xd4>;
-		clk-divider = <6>;
+		clk-divider = <15>;
 		clk-divider-slow = <1>;
 		clk-divider-tc = <1>;
 		status = "disabled";

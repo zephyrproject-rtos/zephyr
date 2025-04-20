@@ -1399,6 +1399,11 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 		goto err_out;
 	}
 
+	struct i3c_device_desc *desc = &dev_list->i3c[0];
+	struct i3c_ccc_getpid getpid;
+	ret = i3c_ccc_do_getpid(desc, &getpid);
+
+
 	/*
 	 * Perform Set All Addresses to Static Address if possible.
 	 */

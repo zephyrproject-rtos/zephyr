@@ -98,5 +98,11 @@
 			input-enable;
 			bias-pull-up;
 		};
+		group1 {
+			pinmux = <I3C0_PUR_PTC2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
 	};
 };

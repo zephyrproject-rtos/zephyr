@@ -135,7 +135,7 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
 	CLOCK_SetIpSrc(kCLOCK_I3c0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrcDiv(kCLOCK_I3c0, kSCG_SysClkDivBy16);
+	CLOCK_SetIpSrcDiv(kCLOCK_I3c0, DT_PROP(DT_NODELABEL(i3c0), clk_divider));
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
