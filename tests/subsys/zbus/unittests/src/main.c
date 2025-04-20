@@ -137,8 +137,7 @@ static struct action_msg ga;
 
 static void isr_handler(const void *operation)
 {
-	static struct zbus_observer_node fast_node, aux_node;
-	enum operation *op = (enum operation *)operation;
+	const enum operation *op = (const enum operation *)operation;
 
 	switch (*op) {
 	case PUB_ISR_INVAL:
@@ -157,7 +156,7 @@ static void isr_handler(const void *operation)
 		isr_return = zbus_chan_finish(NULL);
 		break;
 	case ADD_OBS_ISR_INVAL:
-		isr_return = zbus_chan_add_obs(&aux2_chan, &fast_lis, &fast_node, K_MSEC(200));
+		isr_return = zbus_chan_add_obs(&aux2_chan, &fast_lis, K_MSEC(200));
 		break;
 	case RM_OBS_ISR_INVAL:
 		isr_return = zbus_chan_rm_obs(&aux2_chan, &fast_lis, K_MSEC(200));
@@ -178,7 +177,7 @@ static void isr_handler(const void *operation)
 		isr_return = zbus_chan_finish(&aux2_chan);
 		break;
 	case ADD_OBS_ISR:
-		isr_return = zbus_chan_add_obs(&aux2_chan, NULL, &aux_node, K_MSEC(200));
+		isr_return = zbus_chan_add_obs(&aux2_chan, NULL, K_MSEC(200));
 		break;
 	case RM_OBS_ISR:
 		isr_return = zbus_chan_rm_obs(&aux2_chan, NULL, K_MSEC(200));
@@ -245,7 +244,6 @@ const STRUCT_SECTION_ITERABLE(zbus_observer, invalid_obs) = {
 
 ZTEST(basic, test_specification_based__zbus_chan)
 {
-	static struct zbus_observer_node node;
 	struct action_msg a = {0};
 
 	/* Trying invalid parameters */
@@ -271,11 +269,9 @@ ZTEST(basic, test_specification_based__zbus_chan)
 
 	zassert_equal(-EFAULT, zbus_chan_finish(NULL), "It must be -EFAULT");
 
-	zassert_equal(-EFAULT, zbus_chan_add_obs(NULL, &sub1, &node, K_MSEC(200)), NULL);
+	zassert_equal(-EFAULT, zbus_chan_add_obs(NULL, &sub1, K_MSEC(200)), NULL);
 
-	zassert_equal(-EFAULT, zbus_chan_add_obs(&aux2_chan, NULL, &node, K_MSEC(200)), NULL);
-
-	zassert_equal(-EFAULT, zbus_chan_add_obs(&aux2_chan, &sub1, NULL, K_MSEC(200)), NULL);
+	zassert_equal(-EFAULT, zbus_chan_add_obs(&aux2_chan, NULL, K_MSEC(200)), NULL);
 
 	zassert_equal(-EFAULT, zbus_chan_rm_obs(NULL, &sub1, K_MSEC(200)), NULL);
 
@@ -330,7 +326,7 @@ ZTEST(basic, test_specification_based__zbus_chan)
 
 	k_msleep(100);
 
-	zassert_equal(0, zbus_chan_add_obs(&stuck_chan, &sub1, &node, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&stuck_chan, &sub1, K_MSEC(200)), NULL);
 
 	zassert_equal(0, zbus_chan_notify(&stuck_chan, K_MSEC(200)), "It must finish correctly");
 
@@ -603,7 +599,6 @@ ZTEST(basic, test_hard_channel)
 
 ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 {
-	struct zbus_observer_node node;
 	bool enable;
 
 	count_fast = 0;
@@ -622,7 +617,7 @@ ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 	zbus_obs_is_enabled(&rt_fast_lis, &enable);
 	zassert_equal(false, enable);
 
-	zassert_equal(0, zbus_chan_add_obs(&aux1_chan, &rt_fast_lis, &node, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&aux1_chan, &rt_fast_lis, K_MSEC(200)), NULL);
 
 	zassert_equal(0, zbus_obs_set_enable(&fast_lis, false),
 		      "Must be zero. The observer must be disabled");
