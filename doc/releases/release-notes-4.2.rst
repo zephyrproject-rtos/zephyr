@@ -237,6 +237,19 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
 
+* ZBus
+
+  * Runtime observers can work without heap. Now it is possible to choose between static, dynamic,
+    and none allocation for the runtime observers nodes.
+  * Runtime observers using :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` must use
+    the new function :c:func:`zbus_chan_add_obs_with_node`.
+
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC`
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC`
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE`
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE`
+
+
 New Boards
 **********
 
