@@ -194,6 +194,16 @@ New APIs and options
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
 
+* ZBus
+
+  * Runtime observers can work without heap. Now it is possible to choose between static and dynamic
+    allocation for the runtime observers nodes.
+
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC`
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC`
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE`
+
+
 New Boards
 **********
 
