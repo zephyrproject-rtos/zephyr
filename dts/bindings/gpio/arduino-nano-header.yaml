@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    GPIO pins exposed on Arduino Nano (R3) headers.
+    GPIO pins exposed on Arduino Nano headers.
 
     The Arduino Nano layout provides two headers on opposite edges of the board.
 
@@ -33,6 +33,6 @@ description: |
         12 D12                  D13    13
 
 
-compatible: "arduino-nano-header-r3"
+compatible: "arduino-nano-header"
 
 include: [gpio-nexus.yaml, base.yaml]
