@@ -7,7 +7,7 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <wch/qingke-v2.dtsi>
+#include <wch/qingke-v2a.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
