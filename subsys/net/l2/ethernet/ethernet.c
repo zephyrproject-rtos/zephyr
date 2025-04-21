@@ -508,21 +508,23 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
 		struct net_pkt *arp_pkt;
+		int ret;
 
-		arp_pkt = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL);
-		if (!arp_pkt) {
-			return NULL;
-		}
-
-		if (pkt != arp_pkt) {
+		ret = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, &arp_pkt);
+		if (ret == NET_ARP_COMPLETE) {
+			NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
+				pkt, net_if_get_by_iface(iface), iface);
+		} else if (ret == NET_ARP_PKT_REPLACED) {
 			NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
 				arp_pkt, pkt, net_if_get_by_iface(iface), iface);
-			net_pkt_unref(pkt);
 			return arp_pkt;
+		} else if (ret == NET_ARP_PKT_QUEUED) {
+			NET_DBG("Pending ARP request, pkt %p queued", pkt);
+			return NULL;
+		} else {
+			NET_WARN("ARP failure (%d)", ret);
+			return NULL;
 		}
-
-		NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
-			pkt, net_if_get_by_iface(iface), iface);
 	}
 
 	return pkt;

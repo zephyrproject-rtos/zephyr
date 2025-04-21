@@ -320,7 +320,7 @@ ZTEST(arp_fn_tests, test_arp)
 	struct net_if_addr *ifaddr;
 	struct net_arp_hdr *arp_hdr;
 	struct net_ipv4_hdr *ipv4;
-	int len;
+	int len, ret;
 
 	struct in_addr dst = { { { 192, 0, 2, 2 } } };
 	struct in_addr dst_far = { { { 10, 11, 12, 13 } } };
@@ -367,7 +367,9 @@ ZTEST(arp_fn_tests, test_arp)
 
 	memcpy(net_buf_add(pkt->buffer, len), app_data, len);
 
-	pkt2 = net_arp_prepare(pkt, &dst, NULL);
+	ret = net_arp_prepare(pkt, &dst, NULL, &pkt2);
+
+	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
 	/* pkt2 is the ARP packet and pkt is the IPv4 packet and it was
 	 * stored in ARP table.
@@ -453,7 +455,9 @@ ZTEST(arp_fn_tests, test_arp)
 	/* Then a case where target is not in the same subnet */
 	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
 
-	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
+	ret = net_arp_prepare(pkt, &dst_far, NULL, &pkt2);
+
+	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
 	zassert_not_equal((void *)(pkt2), (void *)(pkt),
 		"ARP cache should not find anything");
@@ -484,7 +488,9 @@ ZTEST(arp_fn_tests, test_arp)
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
+	ret = net_arp_prepare(pkt, &dst_far, NULL, &pkt2);
+
+	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
 	zassert_not_null(pkt2,
 		"ARP cache is not sending the request again");
@@ -501,7 +507,9 @@ ZTEST(arp_fn_tests, test_arp)
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &dst_far2, NULL);
+	ret = net_arp_prepare(pkt, &dst_far2, NULL, &pkt2);
+
+	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
 	zassert_not_null(pkt2,
 		"ARP cache did not send a req");
