@@ -204,13 +204,13 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
 	timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
 	timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
-	/* Low 8-bits are used to configure baudrate. */
+	/* Low 8-bits are used to configure band rate. */
 	timerDiv = (uint16_t)(srcClock_Hz / masterConfig->baudRate_Bps);
 
 	/* Add protection if the required band rate overflows.
 	 * FLEXIO input freq can't meet required band rate. Max band rate can
 	 * not exceed 1/4 of input freq. You can raise input freq or lower
-	 * bandrate required to remove this warning.
+	 * band rate required to remove this warning.
 	 */
 	if (timerDiv < 4) {
 		timerDiv = 4;
