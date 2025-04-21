@@ -1,0 +1,6 @@
+board:
+  name: raytac_an7002q_db
+  full_name: Raytac AN7002Q-DB
+  vendor: raytac
+  socs:
+    - name: nrf5340
