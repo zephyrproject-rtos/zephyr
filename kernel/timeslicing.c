@@ -53,7 +53,7 @@ static bool thread_is_sliceable(struct k_thread *thread)
 
 static void slice_timeout(struct _timeout *timeout)
 {
-	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
+	unsigned int cpu = ARRAY_INDEX(slice_timeouts, timeout);
 
 	slice_expired[cpu] = true;
 
@@ -65,10 +65,8 @@ static void slice_timeout(struct _timeout *timeout)
 	}
 }
 
-void z_reset_time_slice(struct k_thread *thread)
+void z_reset_time_slice(unsigned int cpu, struct k_thread *thread)
 {
-	int cpu = _current_cpu->id;
-
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
 	if (thread_is_sliceable(thread)) {
@@ -79,10 +77,16 @@ void z_reset_time_slice(struct k_thread *thread)
 
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
+	unsigned int cpu = 0;
+
 	K_SPINLOCK(&_sched_spinlock) {
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		slice_max_prio = prio;
-		z_reset_time_slice(_current);
+
+#ifdef CONFIG_SMP
+		cpu = _current_cpu->id;
+#endif
+		z_reset_time_slice(cpu, _kernel.cpus[cpu].current);
 	}
 }
 
@@ -90,11 +94,18 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data)
 {
+	unsigned int cpu = 0;
+
 	K_SPINLOCK(&_sched_spinlock) {
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
-		z_reset_time_slice(thread);
+#ifdef CONFIG_SMP
+		cpu = thread->base.cpu;
+#endif
+		if (_kernel.cpus[cpu].current == thread) {
+			z_reset_time_slice(cpu, thread);
+		}
 	}
 }
 #endif
@@ -107,7 +118,7 @@ void z_time_slice(void)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {
-		z_reset_time_slice(curr);
+		z_reset_time_slice(0, curr);
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -125,7 +136,7 @@ void z_time_slice(void)
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_thread_to_end_of_prio_q(curr);
 		}
-		z_reset_time_slice(curr);
+		z_reset_time_slice(_current_cpu->id, curr);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 }
