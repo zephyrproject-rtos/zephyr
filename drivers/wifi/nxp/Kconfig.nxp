@@ -999,7 +999,7 @@ if NXP_WIFI_SMOKE_TESTS
 
 config NXP_WIFI_SIGMA_AGENT
 	bool "Wi-Fi Alliance Sigma Agent Support"
-	select POSIX_API
+	select POSIX_SYSTEM_HEADERS
 	select POSIX_THREADS
 	select PTHREAD_CREATE_BARRIER
 	select POSIX_TIMERS
