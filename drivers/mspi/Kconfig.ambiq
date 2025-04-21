@@ -46,4 +46,29 @@ config MSPI_AMBIQ_BUFF_ALIGNMENT
 	help
 	  This option specifies the mspi buffer alignment
 
+config MSPI_AMBIQ_TIMING_SCAN
+	bool "Turn on Ambiq timing scan utility"
+	depends on MSPI_TIMING
+	help
+	  Enable timing scan will cost time and space during init
+
+if MSPI_AMBIQ_TIMING_SCAN
+
+config MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE
+	int "Timing scan buffer size in bytes"
+	default 131072
+	help
+	  This option specifies the memory buffer size used for timing scan,
+	  carefully adjust this size between a few KBs to hundreds of KBs to achieve
+	  balance between time and accurary
+
+config MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE
+	int "Total data sizes in bytes used in timing scan"
+	default 131072
+	help
+	  This option specifies the total data size used in timing scan,
+	  it must be divisible by MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE
+
+endif # MSPI_AMBIQ_TIMING_SCAN
+
 endif # MSPI_AMBIQ_CONTROLLER
