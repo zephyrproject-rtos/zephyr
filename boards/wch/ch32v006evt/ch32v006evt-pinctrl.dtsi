@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v00x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PD5_0>;
+			output-high;
+			drive-push-pull;
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PD6_0>;
+			bias-pull-up;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <USART2_TX_PA7_0>;
+			output-high;
+			drive-push-pull;
+		};
+
+		group2 {
+			pinmux = <USART2_RX_PB3_0>;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_PC1_0>, <I2C1_SCL_PC2_0>;
+			output-high;
+			drive-open-drain;
+		};
+	};
+
+	blue_pwm_pinctrl: blue_pwm_pinctrl {
+		group1 {
+			pinmux = <TIM2_CH3_PC0_0>;
+			output-high;
+			drive-push-pull;
+		};
+	};
+};

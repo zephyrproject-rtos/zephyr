@@ -1,0 +1,15 @@
+identifier: ch32v006evt
+name: WCH CH32V006 Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 8
+flash: 62
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+vendor: wch
