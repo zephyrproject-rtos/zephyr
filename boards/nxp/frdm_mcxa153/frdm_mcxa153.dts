@@ -20,6 +20,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		pwm-0 = &flexpwm0_pwm0;
 	};
 
 	chosen {
@@ -91,6 +92,12 @@
 			reg = <0x0001C000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {
