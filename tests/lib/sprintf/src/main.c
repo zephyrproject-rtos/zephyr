@@ -19,8 +19,7 @@
 /**
  *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
- * @ingroup all_tests
+ * @ingroup libc_api
  * @{
  *
  */
