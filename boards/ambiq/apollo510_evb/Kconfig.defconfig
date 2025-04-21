@@ -12,4 +12,11 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	default 1000000
 	depends on LOG_BACKEND_SWO
 
+if MSPI
+
+config MSPI_INIT_PRIORITY
+	default 40
+
+endif # MSPI
+
 endif # BOARD_APOLLO510_EVB
