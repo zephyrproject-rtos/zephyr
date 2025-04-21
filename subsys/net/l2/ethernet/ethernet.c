@@ -728,15 +728,23 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			struct net_pkt *tmp;
 
 			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
-			if (tmp == NULL) {
+			if (IS_ENABLED(CONFIG_NET_ARP)) {
+				if (tmp == NULL) {
+					/* Original pkt got queued pending the resolution of an
+					 * ongoing ARP request
+					 */
+					ret = 0;
+					goto error;
+				} else if (tmp != pkt) {
+					/* Original pkt got queued and is replaced
+					 * by an ARP request packet.
+					 */
+					pkt = tmp;
+					ptype = htons(net_pkt_ll_proto_type(pkt));
+				}
+			} else if (tmp == NULL) {
 				ret = -ENOMEM;
 				goto error;
-			} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
-				/* Original pkt got queued and is replaced
-				 * by an ARP request packet.
-				 */
-				pkt = tmp;
-				ptype = htons(net_pkt_ll_proto_type(pkt));
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
