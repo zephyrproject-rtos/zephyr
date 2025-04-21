@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech SX1262 LoRa radio module
+
+compatible: "semtech,sx1262-new"
+
+include: semtech,sx126x-new-common.yaml

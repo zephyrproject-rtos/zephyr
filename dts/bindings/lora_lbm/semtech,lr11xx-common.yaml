@@ -1,0 +1,253 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech LR11XX LoRa radio module
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the radio's NRESET signal.
+
+      This signal is open-drain, active-low as interpreted by the modem.
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the radio's BUSY/DIO0.
+
+      This signal is high when the radio is ready to accept commands, and
+      low when it is processing a command.
+
+
+  event-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the radio's LR_EVENT/DIO9.
+
+      This signal is high to indicate an event is available on the radio. It
+      becomes low when all events are cleared.
+
+  lf-tx-path:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Configures which low frequency paths are available on the board.
+
+      See constants LR11XX_TX_PATH_* in dt-bindings/lora_lbm/lr11xx.h
+
+  tcxo-voltage:
+    type: int
+    required: true
+    description: |
+      Supply voltage on the radio's VTCXO signal, if enabled.
+
+      See constants LR11XX_TCXO_SUPPLY_* in dt-bindings/lora_lbm/lr11xx.h
+
+  tcxo-wakeup-time:
+    type: int
+    required: true
+    description: |
+      In milliseconds, the wakeup (or stabilization) time of the TCXO used
+      by the radio.
+
+      Set this value to 0 to disable the TCXO management feature.
+
+  lf-clk:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Low frequency clock source for the radio.
+
+      See constants LR11XX_LFCLK_* in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-enable:
+    type: int
+    description: |
+      Bitmask of all radio's rf switches RFSW0..RFSW4 (pins DIO5..DIO8) that
+      will be used in any of the RF modes.
+
+      If a switch is selected here, it will be low by default and high when a
+      rf mode using it is entered.
+      If a switch is not selected here, it will always be left in High-Z state.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-standby-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in standby mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-rx-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in RX mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-tx-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in low power TX mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-tx-hp-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in high power TX mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-tx-hf-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in high frequency TX mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-wifi-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in wifi scanning mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  rf-sw-gnss-mode:
+    type: int
+    description: |
+      Bitmask of the radio's rf switches to be set high in GNSS scanning mode.
+
+      See constants LR11XX_DIO5..8 in dt-bindings/lora_lbm/lr11xx.h
+
+  reg-mode:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Configuration of the radio's power regulator mode.
+
+      See constants LR11XX_REG_MODE_* in dt-bindings/lora_lbm/lr11xx.h
+
+  rx-boosted:
+    type: boolean
+    description: |
+      Sets the radio in RX Boosted mode, allowing a ~2dB increased sensitivity,
+      at the expense of a ~2mA higher current consumption in RX mode.
+
+  tx-power-offset:
+    type: int
+    description: |
+      Default board-specific TX Power offset in dB. Defaults to 0.
+
+      Can be reconfigured at runtime via radio_utilities_set_tx_power_offset.
+
+  tx-power-cfg-lf-lp:
+    type: array
+    required: true
+    description: |
+      Low-power, low-frequency board output TX power calibrated configuration,
+      from -17dBm to +15dBm (in 1dBm steps).
+
+      An array of 3-element cells is expected. Each cell describes the
+      configuration for a particular TX power with the following format:
+      <power, power amplifier duty cycle, power amplifier selection>.
+      This config depends on the board BOM and layout.
+
+  tx-power-cfg-lf-hp:
+    type: array
+    required: true
+    description: |
+      High-power, low-frequency board output TX power calibrated configuration,
+      from -9dBm to +22dBm (in 1dBm steps).
+
+      An array of 3-element cells is expected. Each cell describes the
+      configuration for a particular TX power with the following format:
+      <power, power amplifier duty cycle, power amplifier selection>.
+      This config depends on the board BOM and layout.
+
+  tx-power-cfg-hf:
+    type: array
+    required: true
+    description: |
+      High-frequency board output TX power calibrated configuration,
+      from -18dBm to +13dBm (in 1dBm steps).
+
+      An array of 3-element cells is expected. Each cell describes the
+      configuration for a particular TX power with the following format:
+      <power, power amplifier duty cycle, power amplifier selection>.
+      This config depends on the board BOM and layout.
+
+  rssi-calibration-lf-offset:
+    type: int
+    required: true
+    description: |
+      RSSI offset calibration value, for frequencies below 600MHz.
+
+      This config depends on the board BOM and layout.
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
+
+  rssi-calibration-lf-tune:
+    type: array
+    required: true
+    description: |
+      RSSI tuning calibration values, for frequencies below 600MHz.
+
+      This config depends on the board BOM and layout. Array order is:
+      G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G13hp1 G13hp2 G13hp3 G13hp4 G13hp5 G13hp6 G13hp7
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
+
+  rssi-calibration-mf-offset:
+    type: int
+    required: true
+    description: |
+      RSSI offset calibration value, for frequencies between 600MHz and 2GHz.
+
+      This config depends on the board BOM and layout.
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
+
+  rssi-calibration-mf-tune:
+    type: array
+    required: true
+    description: |
+      RSSI tuning calibration values, for frequencies between 600MHz and 2GHz.
+
+      This config depends on the board BOM and layout. Array order is:
+      G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G13hp1 G13hp2 G13hp3 G13hp4 G13hp5 G13hp6 G13hp7
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
+
+  rssi-calibration-hf-offset:
+    type: int
+    required: true
+    description: |
+      RSSI offset calibration value, for frequencies over 2GHz.
+
+      This config depends on the board BOM and layout.
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
+
+  rssi-calibration-hf-tune:
+    type: array
+    required: true
+    description: |
+      RSSI tuning calibration values, for frequencies over 2GHz.
+
+      This config depends on the board BOM and layout. Array order is:
+      G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G13hp1 G13hp2 G13hp3 G13hp4 G13hp5 G13hp6 G13hp7
+      See the LR1110 User Manual, 7.2.15 SetRssiCalibration.
