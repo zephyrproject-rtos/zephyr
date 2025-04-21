@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Linaro Limited
+ * Copyright (c) 2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,19 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
+
+/*
+ * When the TrustZone security extension is implemented, the Base element instantiates two APB
+ * watchdog timers. Each watchdog is permanently mapped to either a Secure or a Non-secure region of
+ * address space. The Non-secure watchdog can raise a separate interrupt. The Secure watchdog can
+ * raise a Non-Maskable Interrupt (NMI), which combines other interrupt sources.
+ *
+ * If the node in the devicetree has a property named 'interrupts', it is treated as the Non-secure
+ * watchdog.
+ */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
+#include <zephyr/irq.h>
+#endif
 
 struct wdog_cmsdk_apb {
 	/* offset: 0x000 (r/w) watchdog load register */
@@ -174,6 +188,32 @@ static DEVICE_API(wdt, wdog_cmsdk_apb_api) = {
 	.feed = wdog_cmsdk_apb_feed,
 };
 
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
+static void wdog_cmsdk_apb_isr(void)
+{
+	void (*isr_user_cb)(const struct device *dev, int channel_id) = user_cb;
+
+	if (flags == WDT_FLAG_RESET_NONE) {
+		/* Clear interrupt so reset will not happen */
+		volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
+
+		wdog->intclr = CMSDK_APB_WDOG_INTCLR;
+	} else {
+		/*
+		 * WDT_FLAG_RESET_CPU_CORE or WDT_FLAG_RESET_SOC
+		 * Clear user_cb and wait for watchdog reset
+		 *
+		 * Within the original callback, the user may still feed the watchdog to clear the
+		 * interrupt, or disable it and install a new timeout/callback to allow another
+		 * chance before a reset occurs.
+		 */
+		user_cb = NULL;
+	}
+	if (isr_user_cb != NULL) {
+		isr_user_cb(wdog_r, 0);
+	}
+}
+#else /* DT_NODE_HAS_PROP */
 #ifdef CONFIG_RUNTIME_NMI
 
 static int wdog_cmsdk_apb_has_fired(void)
@@ -200,6 +240,7 @@ static void wdog_cmsdk_apb_isr(void)
 	}
 }
 #endif /* CONFIG_RUNTIME_NMI */
+#endif /* DT_NODE_HAS_PROP */
 
 static int wdog_cmsdk_apb_init(const struct device *dev)
 {
@@ -213,10 +254,16 @@ static int wdog_cmsdk_apb_init(const struct device *dev)
 	/* set default reload value */
 	wdog->load = reload_cycles;
 
-#ifdef CONFIG_RUNTIME_NMI
 	/* Configure the interrupts */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wdog_cmsdk_apb_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
+#else /* DT_NODE_HAS_PROP */
+#ifdef CONFIG_RUNTIME_NMI
 	z_arm_nmi_set_handler(wdog_cmsdk_apb_isr);
 #endif
+#endif /* DT_NODE_HAS_PROP */
 
 #ifdef CONFIG_WDOG_CMSDK_APB_START_AT_BOOT
 	wdog_cmsdk_apb_setup(dev, 0);
