@@ -671,7 +671,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 				     CONFIG_DMA_SILABS_SIWX91X_SG_BUFFER_COUNT, 4);                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
 		    (),                                                                            \
-		    (static __aligned(512) RSI_UDMA_DESC_T                                         \
+		    (static __aligned(1024) RSI_UDMA_DESC_T                                        \
 			     siwx91x_dma_chan_desc##inst[DT_INST_PROP(inst, dma_channels) * 2];))  \
 	static struct dma_siwx91x_channel_info                                                     \
 		zephyr_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];                      \
