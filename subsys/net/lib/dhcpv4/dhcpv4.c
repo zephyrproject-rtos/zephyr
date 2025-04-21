@@ -977,6 +977,10 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			NET_DBG("options_end");
 			goto end;
 		}
+		else if (type == DHCPV4_OPTIONS_PAD) {
+			NET_DBG("options_pad");
+			continue;
+		}
 
 		if (net_pkt_read_u8(pkt, &length)) {
 			NET_ERR("option parsing, bad length");
