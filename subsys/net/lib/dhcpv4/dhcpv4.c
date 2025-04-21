@@ -711,8 +711,6 @@ static void dhcpv4_enter_requesting(struct net_if *iface, struct dhcp_msg *msg)
 
 	memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
 	       msg->yiaddr, sizeof(msg->yiaddr));
-
-	dhcpv4_send_request(iface);
 }
 
 /* Must be invoked with lock held */
@@ -1324,6 +1322,13 @@ static inline void dhcpv4_handle_msg_offer(struct net_if *iface,
 		break;
 	case NET_DHCPV4_SELECTING:
 		dhcpv4_enter_requesting(iface, msg);
+		/* The xid field is incremented inside dhcpv4_send_request.
+		 * But the protocol say that the xid of the request must
+		 * be the same that the offer. So decrement xid here to
+		 * compensate the increment.
+		 */
+		iface->config.dhcpv4.xid--;
+		dhcpv4_send_request(iface);
 		break;
 	}
 }
