@@ -101,10 +101,10 @@ static void trapezoidal_recalculate_ramp(struct stepper_ramp_common *ramp_common
 	struct stepper_ramp_distance_profile *distance_profile =
 		&ramp_common->ramp_distance_profile;
 	distance_profile->acceleration = (ramp_profile->max_velocity * ramp_profile->max_velocity) /
-					 (ramp_profile->acceleration * 2);
+					 (ramp_profile->acceleration * 2 * 100);
 
 	distance_profile->deceleration = (ramp_profile->max_velocity * ramp_profile->max_velocity) /
-					 (ramp_profile->deceleration * 2);
+					 (ramp_profile->deceleration * 2 * 100);
 
 	if ((distance_profile->acceleration + distance_profile->deceleration) >
 	    total_steps_to_move) {
