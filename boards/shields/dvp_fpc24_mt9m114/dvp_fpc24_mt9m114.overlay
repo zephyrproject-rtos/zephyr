@@ -12,7 +12,7 @@
 
 &dvp_fpc24_i2c {
 	mt9m114: mt9m114@48 {
-		compatible = "aptina,mt9m114";
+		compatible = "onnn,mt9m114";
 		reg = <0x48>;
 
 		port {

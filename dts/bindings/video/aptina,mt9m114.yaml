@@ -5,7 +5,7 @@
 
 description: MT9M114 CMOS video sensor
 
-compatible: "aptina,mt9m114"
+compatible: "onnn,mt9m114"
 
 include: i2c-device.yaml
 
