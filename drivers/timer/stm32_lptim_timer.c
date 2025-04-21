@@ -518,7 +518,8 @@ static int sys_clock_driver_init(void)
 
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
+	defined(CONFIG_SOC_SERIES_STM32U0X)
 	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
 				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #else
@@ -532,7 +533,8 @@ static int sys_clock_driver_init(void)
 
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
+	defined(CONFIG_SOC_SERIES_STM32U0X)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
 
