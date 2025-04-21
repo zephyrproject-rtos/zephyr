@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
@@ -18,6 +19,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include "host/buf_view.h"
 #include "host/hci_core.h"
@@ -75,6 +77,7 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_BR_CFG_TIMEOUT     K_SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT K_SECONDS(1)
 #define L2CAP_BR_CONN_TIMEOUT    K_SECONDS(40)
+#define L2CAP_BR_ECHO_TIMEOUT    K_SECONDS(30)
 
 #define L2CAP_FEAT_FC_MASK           BIT(0)
 #define L2CAP_FEAT_RET_MASK          BIT(1)
@@ -228,6 +231,8 @@ struct bt_l2cap_br {
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BT_MAX_CONN];
 
+static sys_slist_t bt_l2cap_br_echo_cbs = SYS_SLIST_STATIC_INIT(&bt_l2cap_br_echo_cbs);
+
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid)
 {
@@ -343,6 +348,7 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
 		LOG_DBG("Skip BR/EDR signalling channel ");
 		atomic_clear_bit(chan->flags, L2CAP_FLAG_SIG_INFO_PENDING);
+		chan->ident = 0;
 		return;
 	}
 
@@ -4521,6 +4527,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 		 * so this should always succeed.
 		 */
 		(void)k_work_cancel_delayable(&br_chan->rtx_work);
+		br_chan->ident = 0;
 	}
 }
 
@@ -4820,6 +4827,40 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	} while (chan != NULL);
 }
 
+static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_echo_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+		if (callback->req) {
+			callback->req(conn, ident, buf);
+		}
+	}
+}
+
+static void l2cap_br_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_echo_cb *callback;
+
+	if (ident != l2cap->chan.ident) {
+		LOG_WRN("ident mismatch (%u != %u)!", l2cap->chan.ident, ident);
+		goto failed;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+		if (callback->rsp) {
+			callback->rsp(conn, buf);
+		}
+	}
+
+failed:
+	l2cap->chan.ident = 0;
+	/* Release RTX work since got the response */
+	k_work_cancel_delayable(&l2cap->chan.rtx_work);
+}
+
 static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_hdr *hdr,
 				struct net_buf *buf)
 {
@@ -4857,6 +4898,12 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 		break;
 	case BT_L2CAP_CMD_REJECT:
 		l2cap_br_reject_rsp(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_ECHO_REQ:
+		l2cap_br_echo_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_ECHO_RSP:
+		l2cap_br_echo_rsp(l2cap, hdr->ident, buf);
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
@@ -6002,4 +6049,134 @@ void bt_l2cap_br_init(void)
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();
 	}
+}
+
+int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bt_l2cap_br_echo_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&bt_l2cap_br_echo_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bt_l2cap_br_echo_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_sig_hdr *hdr;
+	int err;
+
+	if ((conn == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		return -EMSGSIZE;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_BR_ECHO_REQ_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_echo_req().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan == NULL) {
+		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		return -ENOTCONN;
+	}
+
+	if (BR_CHAN(chan)->ident) {
+		LOG_ERR("Waiting for ECHO RSP");
+		return -EBUSY;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+
+	hdr->code = BT_L2CAP_ECHO_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	/* Set the ident for the signaling request */
+	BR_CHAN(chan)->ident = hdr->ident;
+
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+	if (err == 0) {
+		k_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+	}
+
+	return err;
+}
+
+int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	if ((conn == NULL) || (buf == NULL) || (identifier == 0)) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		return -EMSGSIZE;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_BR_ECHO_RSP_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_RSP_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_echo_rsp().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan == NULL) {
+		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		return -ENOTCONN;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = identifier;
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
 }
