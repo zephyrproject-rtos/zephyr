@@ -6,6 +6,7 @@ zephyr_library()
 # zephyr-keep-sorted-start
 zephyr_library_sources(bayer.c)
 zephyr_library_sources(convert.c)
+zephyr_library_sources(distort.c)
 zephyr_library_sources(image.c)
 zephyr_library_sources(kernel.c)
 zephyr_library_sources(print.c)
