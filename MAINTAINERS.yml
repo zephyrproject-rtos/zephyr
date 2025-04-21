@@ -5568,6 +5568,15 @@ West:
   labels:
     - "area: AMP"
 
+"West project: libsbc":
+  status: maintained
+  maintainers:
+    - MarkWangChinese
+  files:
+    - modules/libsbc/
+  labels:
+    - "area: Audio"
+
 "West project: littlefs":
   status: odd fixes
   files:
