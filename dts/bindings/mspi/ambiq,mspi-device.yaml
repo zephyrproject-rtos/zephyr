@@ -48,7 +48,7 @@ properties:
 
   ambiq,timing-config:
     type: array
-    default: [0, 0, 0, 0, 0, 0, 0, 0]
+    default: [0, 0, 0, 0, 0, 0, 0]
     description: |
       Array of tuples to configure the timing parameters
       default =
@@ -60,5 +60,4 @@ properties:
         .bRxCap            = false,
         .ui32TxDQSDelay    = 0,
         .ui32RxDQSDelay    = 0,
-        .ui32RXDQSDelayEXT = 0,
       >

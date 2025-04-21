@@ -48,6 +48,7 @@ struct memc_mspi_aps_z8_config {
 	MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(tar_scramble_cfg)
 	MSPI_TIMING_CFG_STRUCT_DECLARE(tar_timing_cfg)
 	MSPI_TIMING_PARAM_DECLARE(timing_cfg_mask)
+	MSPI_XIP_BASE_ADDR_DECLARE(xip_base_addr)
 
 	bool                           sw_multi_periph;
 	bool                           pm_dev_rt_auto;
@@ -598,6 +599,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 					      tar_timing_cfg, MSPI_TIMING_CONFIG(n))              \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
 					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
+		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
 		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto)              \
 	};                                                                                        \
