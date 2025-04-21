@@ -120,7 +120,7 @@ void arm_isr_handler(const void *args)
  * @{
  */
 
-ZTEST(arm_custom_interrupt, test_arm_interrupt)
+ZTEST(arm_custom_interrupt, test_arm_custom_interrupt)
 {
 	zassert_true(custom_init_called, "Custom IRQ init not called\n");
 
