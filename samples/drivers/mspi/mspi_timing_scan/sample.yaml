@@ -1,0 +1,47 @@
+sample:
+  name: MSPI Flash Sample
+tests:
+  sample.drivers.mspi.timing_scan.flash:
+    tags:
+      - mspi
+    filter: dt_compat_enabled("ambiq,mspi-device")
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
+        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
+        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
+    platform_allow:
+      - apollo510_evb
+    integration_platforms:
+      - apollo510_evb
+    depends_on: mspi
+    extra_configs:
+      - CONFIG_FLASH=y
+      - CONFIG_FLASH_INIT_PRIORITY=50
+      - CONFIG_FLASH_MSPI_XIP_READ=y
+      - CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE=8192
+      - CONFIG_MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE=131072
+
+  sample.drivers.mspi.timing_scan.memc:
+    tags:
+      - mspi
+    filter: dt_compat_enabled("ambiq,mspi-device")
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
+        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
+        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
+    platform_allow:
+      - apollo510_evb
+    integration_platforms:
+      - apollo510_evb
+    depends_on: mspi
+    extra_configs:
+      - CONFIG_MEMC=y
+      - CONFIG_MEMC_INIT_PRIORITY=50
