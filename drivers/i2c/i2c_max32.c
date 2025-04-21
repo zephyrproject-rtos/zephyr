@@ -21,8 +21,6 @@
 #define ADI_MAX32_I2C_INT_FL0_MASK 0x00FFFFFF
 #define ADI_MAX32_I2C_INT_FL1_MASK 0x7
 
-#define ADI_MAX32_I2C_STATUS_MASTER_BUSY BIT(5)
-
 #define I2C_RECOVER_MAX_RETRIES 3
 
 #ifdef CONFIG_I2C_MAX32_DMA
@@ -540,8 +538,7 @@ static int i2c_max32_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 					/* Wait for busy flag to be cleared for clock stetching
 					 * use-cases
 					 */
-					while (i2c->status & ADI_MAX32_I2C_STATUS_MASTER_BUSY) {
-					}
+					Wrap_MXC_I2C_WaitForBusyClear(i2c);
 					MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK,
 							   ADI_MAX32_I2C_INT_FL1_MASK);
 				}
@@ -650,7 +647,7 @@ static void i2c_max32_isr_target(const struct device *dev, mxc_i2c_regs_t *i2c)
 	uint32_t int_en0;
 	uint32_t int_en1;
 
-	ctrl = i2c->ctrl;
+	Wrap_MXC_I2C_GetCtrl(i2c, &ctrl);
 	Wrap_MXC_I2C_GetIntEn(i2c, &int_en0, &int_en1);
 	MXC_I2C_GetFlags(i2c, &int_fl0, &int_fl1);
 	MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK, ADI_MAX32_I2C_INT_FL1_MASK);
@@ -710,7 +707,7 @@ static void i2c_max32_isr_target(const struct device *dev, mxc_i2c_regs_t *i2c)
 	if (int_en0 & ADI_MAX32_I2C_INT_EN0_ADDR_MATCH) {
 		if (int_fl0 & ADI_MAX32_I2C_INT_FL0_ADDR_MATCH) {
 			/* Address match occurred, prepare for transaction */
-			if (i2c->ctrl & MXC_F_I2C_CTRL_READ) {
+			if (Wrap_MXC_I2C_GetReadWriteBitStatus(i2c)) {
 				/* Read request received from the master */
 				i2c_max32_target_callback(dev, i2c, MXC_I2C_EVT_MASTER_RD);
 				int_en0 = ADI_MAX32_I2C_INT_EN0_TX_THD |
