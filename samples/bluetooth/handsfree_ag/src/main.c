@@ -236,7 +236,7 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 
 	for (i = 0; i < count; i++) {
 		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
-		printk("Device[%d]: %s, rssi %d, cod 0x%X%X%X", i, addr, results[i].rssi,
+		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);
