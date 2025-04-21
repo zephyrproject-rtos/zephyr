@@ -423,15 +423,19 @@ int net_arp_prepare(struct net_pkt *pkt,
 			/* There is a pending ARP request already, check if this packet is already
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
+			 * Ensure the packet reference is incremented to account for the queue
+			 * holding the reference.
 			 */
-			if (k_queue_unique_append(&entry->pending_queue._queue,
-						  net_pkt_ref(pkt))) {
+			pkt = net_pkt_ref(pkt);
+			if (k_queue_unique_append(&entry->pending_queue._queue, pkt)) {
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);
 				k_mutex_unlock(&arp_mutex);
 				return NET_ARP_PKT_QUEUED;
 			}
 
+			/* Queueing the packet failed, undo the net_pkt_ref */
+			net_pkt_unref(pkt);
 			entry = NULL;
 		}
 
