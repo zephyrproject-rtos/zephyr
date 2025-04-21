@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nuvoton Technology Corporation.
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,11 +47,11 @@
 
 /* I3C clock divider */
 #if (OFMCLK == MHZ(120)) /* MCLkD must between 40 mhz to 50 mhz*/
-#define MCLKD_SL 2       /* I3C_CLK = (MCLK / 3) */
+#define MCLKD_SL 2    /* I3C_CLK = (MCLK / 3) */
 #elif (OFMCLK <= MHZ(100) && OFMCLK >= MHZ(80))
-#define MCLKD_SL 1 /* I3C_CLK = (MCLK / 2) */
+#define MCLKD_SL 1    /* I3C_CLK = (MCLK / 2) */
 #else
-#define MCLKD_SL 0 /* I3C_CLK = MCLK */
+#define MCLKD_SL 0    /* I3C_CLK = MCLK */
 #endif
 
 /* Get APB clock freq */
@@ -62,34 +62,34 @@
  * OFMCLK (Unit:Hz).
  */
 #if (OFMCLK > (MAX_OFMCLK / 2))
-#define HFCGN_VAL 0x82 /* Set XF_RANGE as 1 */
+#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 */
 #else
-#define HFCGN_VAL 0x02
+#define HFCGN_VAL    0x02
 #endif
-#if (OFMCLK == 120000000)
-#define HFCGMH_VAL 0x0E
-#define HFCGML_VAL 0x4E
+#if   (OFMCLK == 120000000)
+#define HFCGMH_VAL   0x0E
+#define HFCGML_VAL   0x4E
 #elif (OFMCLK == 100000000)
-#define HFCGMH_VAL 0x0B
-#define HFCGML_VAL 0xEC
+#define HFCGMH_VAL   0x0B
+#define HFCGML_VAL   0xEC
 #elif (OFMCLK == 96000000)
-#define HFCGMH_VAL 0x0B
-#define HFCGML_VAL 0x72
+#define HFCGMH_VAL   0x0B
+#define HFCGML_VAL   0x72
 #elif (OFMCLK == 90000000)
-#define HFCGMH_VAL 0x0A
-#define HFCGML_VAL 0xBA
+#define HFCGMH_VAL   0x0A
+#define HFCGML_VAL   0xBA
 #elif (OFMCLK == 80000000)
-#define HFCGMH_VAL 0x09
-#define HFCGML_VAL 0x89
+#define HFCGMH_VAL   0x09
+#define HFCGML_VAL   0x89
 #elif (OFMCLK == 66000000)
-#define HFCGMH_VAL 0x07
-#define HFCGML_VAL 0xDE
+#define HFCGMH_VAL   0x07
+#define HFCGML_VAL   0xDE
 #elif (OFMCLK == 50000000)
-#define HFCGMH_VAL 0x0B
-#define HFCGML_VAL 0xEC
+#define HFCGMH_VAL   0x0B
+#define HFCGML_VAL   0xEC
 #elif (OFMCLK == 48000000)
-#define HFCGMH_VAL 0x0B
-#define HFCGML_VAL 0x72
+#define HFCGMH_VAL   0x0B
+#define HFCGML_VAL   0x72
 #else
 #error "Unsupported OFMCLK Frequency"
 #endif

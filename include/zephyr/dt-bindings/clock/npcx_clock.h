@@ -23,15 +23,16 @@
 #define NPCX_CLOCK_BUS_MCLKD       12
 
 /* clock enable/disable references */
-#define NPCX_PWDWN_CTL1            0
-#define NPCX_PWDWN_CTL2            1
-#define NPCX_PWDWN_CTL3            2
-#define NPCX_PWDWN_CTL4            3
-#define NPCX_PWDWN_CTL5            4
-#define NPCX_PWDWN_CTL6            5
-#define NPCX_PWDWN_CTL7            6
-#define NPCX_PWDWN_CTL8            7
-#define NPCX_PWDWN_CTL9            8
-#define NPCX_PWDWN_CTL_COUNT       9
+#define NPCX_PWDWN_CTL0            0
+#define NPCX_PWDWN_CTL1            1
+#define NPCX_PWDWN_CTL2            2
+#define NPCX_PWDWN_CTL3            3
+#define NPCX_PWDWN_CTL4            4
+#define NPCX_PWDWN_CTL5            5
+#define NPCX_PWDWN_CTL6            6
+#define NPCX_PWDWN_CTL7            7
+#define NPCX_PWDWN_CTL8            8
+#define NPCX_PWDWN_CTL9            9
+#define NPCX_PWDWN_CTL_COUNT       10
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NPCX_CLOCK_H_ */

@@ -214,7 +214,7 @@ def _check_chip(output, ecst_args):
     if ecst_args.chip_name == INVALID_INPUT:
         message = f'Invalid chip name, '
         message += "should be npcx4m3, npcx4m8, npcx9m8, npcx9m7, npcx9m6, " \
-                   "npcx7m7, npcx7m6, npcx7m5."
+                   "npcx7m7, npcx7m6, npcx7m5, npck3m8k."
         _exit_with_failure_delete_file(output, message)
 
 def _set_anchor(output, ecst_args):
