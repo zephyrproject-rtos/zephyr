@@ -63,11 +63,13 @@
 #define _OCM_BSS_SECTION_NAME		.ocm_bss
 #endif
 
-#define _IMX_BOOT_CONF_SECTION_NAME	.boot_hdr.conf
-#define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
-#define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
-#define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
-#define _IMX_BOOT_CONTAINER_SECTION_NAME .boot_hdr.container
+#define _IMX_BOOT_CONF_SECTION_NAME       .boot_hdr.conf
+#define _IMX_BOOT_DATA_SECTION_NAME       .boot_hdr.data
+#define _IMX_BOOT_IVT_SECTION_NAME        .boot_hdr.ivt
+#define _IMX_BOOT_DCD_SECTION_NAME        .boot_hdr.dcd_data
+#define _IMX_BOOT_CONTAINER_SECTION_NAME  .boot_hdr.container
+#define _IMX_BOOT_FLASH_CONF_SECTION_NAME .flash_conf
+#define _IMX_BOOT_XMCD_SECTION_NAME       .boot_hdr.xmcd_data
 
 #define _STM32_SDRAM1_SECTION_NAME	.stm32_sdram1
 #define _STM32_SDRAM2_SECTION_NAME	.stm32_sdram2
