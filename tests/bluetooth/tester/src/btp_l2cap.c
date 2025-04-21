@@ -979,15 +979,79 @@ static const struct btp_handler handlers[] = {
 #endif
 };
 
+#if defined(CONFIG_BT_CLASSIC)
+static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
+{
+	struct net_buf *tx_buf;
+	int err;
+
+	tx_buf = net_buf_alloc(&data_pool, K_FOREVER);
+	net_buf_reserve(tx_buf, BT_L2CAP_BR_ECHO_RSP_RESERVE);
+	net_buf_add_mem(tx_buf, buf->data, buf->len);
+
+	err = bt_l2cap_br_echo_rsp(conn, identifier, tx_buf);
+	if (err != 0) {
+		LOG_ERR("Unable to ECHO REQ: %d", -err);
+		net_buf_unref(tx_buf);
+	}
+}
+
+static void l2cap_br_echo_rsp(struct bt_conn *conn, struct net_buf *buf)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(buf);
+}
+
+static struct bt_l2cap_br_echo_cb echo_cb = {
+	.req = l2cap_br_echo_req,
+	.rsp = l2cap_br_echo_rsp,
+};
+
+static int l2cap_br_echo_reg(void)
+{
+	return bt_l2cap_br_echo_cb_register(&echo_cb);
+}
+
+static int l2cap_br_echo_unreg(void)
+{
+	return bt_l2cap_br_echo_cb_unregister(&echo_cb);
+}
+#else
+static int l2cap_br_echo_reg(void)
+{
+	return -ENOTSUP;
+}
+
+static int l2cap_br_echo_unreg(void)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 uint8_t tester_init_l2cap(void)
 {
 	tester_register_command_handlers(BTP_SERVICE_ID_L2CAP, handlers,
 					 ARRAY_SIZE(handlers));
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		int err = l2cap_br_echo_reg();
+
+		if (err < 0) {
+			return BTP_STATUS_FAILED;
+		}
+	}
 	return BTP_STATUS_SUCCESS;
 }
 
 uint8_t tester_unregister_l2cap(void)
 {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		int err = l2cap_br_echo_unreg();
+
+		if (err < 0) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
