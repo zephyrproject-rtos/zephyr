@@ -21,7 +21,10 @@
 extern "C" {
 #endif
 
-#define BT_A2DP_STREAM_BUF_RESERVE (12U + BT_L2CAP_BUF_SIZE(0))
+/** The reserved buf size that occupy the l2cap MTU */
+#define BT_A2DP_STREAM_BUF_MTU_RESERVE (12U) /* sizeof (struct bt_avdtp_media_hdr) */
+/** The reserved buf size when creating buf to send media data */
+#define BT_A2DP_STREAM_BUF_RESERVE (BT_A2DP_STREAM_BUF_MTU_RESERVE + BT_L2CAP_BUF_SIZE(0))
 
 /** SBC IE length */
 #define BT_A2DP_SBC_IE_LENGTH      (4U)
