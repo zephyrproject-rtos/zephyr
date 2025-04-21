@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	aliases {
+		mspi0 = &mspi2;
+	};
+};
+
+&mspi2 {
+	pinctrl-0 = <&mspi2_default>;
+	pinctrl-1 = <&mspi2_sleep>;
+	pinctrl-2 = <&mspi2_default>;
+
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	status = "okay";
+	ce-gpios = <&gpio32_63 31 GPIO_ACTIVE_LOW>;
+
+	mspi_device: mspi_device@0 {
+		status = "okay";
+		compatible = "zephyr,mspi-emul-device";
+		reg = <0x0>;
+		mspi-max-frequency = <48000000>;
+	};
+};
+
+&pinctrl {
+	mspi2_default: mspi2_default {
+		group0 {
+			pinmux = <MSPI2_0_P74>,
+				 <MSPI2_1_P75>,
+				 <MSPI2_8_P82>,
+				 <MNCE2_0_P63>;
+			drive-strength = "0.5";
+		};
+	};
+
+	mspi2_sleep: mspi2_sleep {
+		group0 {
+			pinmux = <GPIO_P74>,
+				 <GPIO_P75>,
+				 <GPIO_P76>,
+				 <GPIO_P77>,
+				 <GPIO_P78>,
+				 <GPIO_P79>,
+				 <GPIO_P80>,
+				 <GPIO_P81>,
+				 <GPIO_P82>,
+				 <GPIO_P83>,
+				 <GPIO_P63>;
+		};
+	};
+};

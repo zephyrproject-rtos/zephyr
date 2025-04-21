@@ -11,17 +11,19 @@
 
 #define TEST_MSPI_REINIT    1
 
+#define MSPI_BUS_NODE       DT_ALIAS(mspi0)
+
 /* add else if for other SoC platforms */
 #if defined(CONFIG_SOC_POSIX)
 typedef struct mspi_timing_cfg mspi_timing_cfg;
 typedef enum mspi_timing_param mspi_timing_param;
+#define MSPI_PORT 0
 #elif defined(CONFIG_SOC_FAMILY_AMBIQ)
 #include "mspi_ambiq.h"
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
+#define MSPI_PORT ((DT_REG_ADDR(MSPI_BUS_NODE) - MSPI0_BASE) / (MSPI1_BASE - MSPI0_BASE))
 #endif
-
-#define MSPI_BUS_NODE       DT_ALIAS(mspi0)
 
 static const struct device *mspi_devices[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, DEVICE_DT_GET, (,))
@@ -31,7 +33,7 @@ static struct gpio_dt_spec ce_gpios[] = MSPI_CE_GPIOS_DT_SPEC_GET(MSPI_BUS_NODE)
 
 #if TEST_MSPI_REINIT
 struct mspi_cfg hardware_cfg = {
-	.channel_num              = 0,
+	.channel_num              = MSPI_PORT,
 	.op_mode                  = DT_ENUM_IDX_OR(MSPI_BUS_NODE, op_mode, MSPI_OP_MODE_CONTROLLER),
 	.duplex                   = DT_ENUM_IDX_OR(MSPI_BUS_NODE, duplex, MSPI_HALF_DUPLEX),
 	.dqs_support              = DT_PROP_OR(MSPI_BUS_NODE, dqs_support, false),

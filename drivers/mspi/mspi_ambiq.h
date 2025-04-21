@@ -53,8 +53,8 @@
 
 #define MSPI_AMBIQ_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
 
-#define MSPI_AMBIQ_PORT(n)                                                                        \
-		((DT_REG_ADDR(DT_INST_BUS(n)) - MSPI0_BASE) / (DT_REG_SIZE(DT_INST_BUS(n)) * 4))
+#define MSPI_AMBIQ_PORT(n) ((DT_REG_ADDR(DT_INST_BUS(n)) - MSPI0_BASE) /                          \
+				(MSPI1_BASE - MSPI0_BASE))
 
 
 struct mspi_ambiq_timing_cfg {
@@ -78,5 +78,17 @@ enum mspi_ambiq_timing_param {
 	MSPI_AMBIQ_SET_RXDQSDLY       = BIT(6),
 	MSPI_AMBIQ_SET_RXDQSDLYEXT    = BIT(7),
 };
+
+#define TIMING_CFG_GET_RX_DUMMY(cfg)                                                              \
+	{                                                                                         \
+		mspi_timing_cfg *timing = (mspi_timing_cfg *)cfg;                                 \
+		timing->ui8TurnAround;                                                            \
+	}
+
+#define TIMING_CFG_SET_RX_DUMMY(cfg, num)                                                         \
+	{                                                                                         \
+		mspi_timing_cfg *timing = (mspi_timing_cfg *)cfg;                                 \
+		timing->ui8TurnAround = num;                                                      \
+	}
 
 #endif
