@@ -229,29 +229,25 @@ regularly scheduled execution of the CI infrastructure.
 Submission and review process
 *****************************
 
-For references to binary blobs to be included in the project, they must be
-reviewed and accepted by the Technical Steering Committee (TSC). This process is
-only required for new binary blobs, updates to binary blobs follow the
-:ref:`module update procedure <modules_changes>`.
+For references to binary blobs to be included in the project, they shall be submitted
+through the standard pull request (PR) workflow and do not require Technical
+Steering Committee (TSC) approval. Maintainers and reviewers are responsible for
+ensuring that all blob-related submissions conform to the documented criteria as
+defined in :ref:`bin-blobs`.
 
-A request for integration with binary blobs must be made by creating a new
-issue in the Zephyr project issue tracking system on GitHub with details
-about the blobs and the functionality they provide to the project.
+The PR for initial integration with binary blobs shall include details about the blobs
+and the functionality they provide. The PR shall have the following information to
+support the review:
 
-Follow the steps below to begin the submission process:
+* Binary blob origin.
+* Type of blob (precompiled library, firmware image).
+* Zephyr module that the blob(s) will be referenced from.
+* Brief description of what the blob(s) do.
+* What other components do the blob(s) depend on, if any?
+* License the blob(s) are distributed under.
 
-#. Make sure to read through the :ref:`bin-blobs` section in
-   detail, so that you are informed of the criteria used by the TSC in order to
-   approve or reject a request
-#. Use the :github:`New Binary Blobs Issue
-   <new?assignees=&labels=RFC&template=008_bin-blobs.md&title=>` to open an issue
-#. Fill out all required sections, making sure you provide enough detail for the
-   TSC to assess the merit of the request. Additionally you must also create a Pull
-   Request that demonstrates the integration of the binary blobs and then
-   link to it from the issue
-#. Wait for feedback from the TSC, respond to any additional questions added as
-   GitHub issue comments
+If the initial integration PR receives the appropriate approvals the binary blob(s)
+can be integrated. The standard :ref:`PR escalation procedures <pr_technical_escalation>`
+shall apply for any technical disagreements.
 
-If, after consideration by the TSC, the submission of the binary blob(s) is
-approved, the submission process is complete and the binary blob(s) can be
-integrated.
+Subsequent updates to binary blobs follow the :ref:`module update procedure <modules_changes>`.
