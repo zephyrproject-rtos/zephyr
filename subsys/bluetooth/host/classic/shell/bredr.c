@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -646,6 +647,124 @@ static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
+{
+	bt_shell_print("Incoming ECHO REQ data identifier %u len %u", identifier, buf->len);
+
+	if (buf->len > 0) {
+		bt_shell_hexdump(buf->data, buf->len);
+	}
+}
+
+static void l2cap_br_echo_rsp(struct bt_conn *conn, struct net_buf *buf)
+{
+	bt_shell_print("Incoming ECHO RSP data len %u", buf->len);
+
+	if (buf->len > 0) {
+		bt_shell_hexdump(buf->data, buf->len);
+	}
+}
+
+static struct bt_l2cap_br_echo_cb echo_cb = {
+	.req = l2cap_br_echo_req,
+	.rsp = l2cap_br_echo_rsp,
+};
+
+static int cmd_l2cap_echo_reg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_br_echo_cb_register(&echo_cb);
+	if (err) {
+		shell_error(sh, "Failed to register echo callback: %d", -err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_echo_unreg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_br_echo_cb_unregister(&echo_cb);
+	if (err) {
+		shell_error(sh, "Failed to unregister echo callback: %d", -err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_echo_req(const struct shell *sh, size_t argc, char *argv[])
+{
+	static uint8_t buf_data[DATA_BREDR_MTU];
+	int err, len = DATA_BREDR_MTU;
+	struct net_buf *buf;
+
+	len = strtoul(argv[1], NULL, 10);
+	if (len > DATA_BREDR_MTU) {
+		shell_error(sh, "Length exceeds TX MTU for the channel");
+		return -ENOEXEC;
+	}
+
+	buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+	if (!buf) {
+		shell_error(sh, "Allocation timeout, stopping TX");
+		return -EAGAIN;
+	}
+	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
+	for (int i = 0; i < len; i++) {
+		buf_data[i] = (uint8_t)i;
+	}
+
+	net_buf_add_mem(buf, buf_data, len);
+	err = bt_l2cap_br_echo_req(default_conn, buf);
+	if (err < 0) {
+		shell_error(sh, "Unable to send ECHO REQ: %d", -err);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_echo_rsp(const struct shell *sh, size_t argc, char *argv[])
+{
+	static uint8_t buf_data[DATA_BREDR_MTU];
+	int err, len = DATA_BREDR_MTU;
+	uint8_t identifier;
+	struct net_buf *buf;
+
+	identifier = (uint8_t)strtoul(argv[1], NULL, 10);
+
+	len = strtoul(argv[2], NULL, 10);
+	if (len > DATA_BREDR_MTU) {
+		shell_error(sh, "Length exceeds TX MTU for the channel");
+		return -ENOEXEC;
+	}
+
+	buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+	if (!buf) {
+		shell_error(sh, "Allocation timeout, stopping TX");
+		return -EAGAIN;
+	}
+	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_RSP_RESERVE);
+	for (int i = 0; i < len; i++) {
+		buf_data[i] = (uint8_t)i;
+	}
+
+	net_buf_add_mem(buf, buf_data, len);
+	err = bt_l2cap_br_echo_rsp(default_conn, identifier, buf);
+	if (err < 0) {
+		shell_error(sh, "Unable to send ECHO RSP: %d", -err);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -1110,6 +1229,14 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"<psm> <mode: none, ret, fc, eret, stream> [hold_credit] "    \
 	"[mode_optional] [extended_control]"
 
+SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
+	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_l2cap_echo_reg, 1, 0),
+	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_echo_unreg, 1, 0),
+	SHELL_CMD_ARG(req, NULL, "<length of data>", cmd_l2cap_echo_req, 2, 0),
+	SHELL_CMD_ARG(rsp, NULL, "<identifier> <length of data>", cmd_l2cap_echo_rsp, 3, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	SHELL_CMD_ARG(register, NULL, HELP_REG, cmd_l2cap_register, 3, 3),
@@ -1124,6 +1251,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	SHELL_CMD_ARG(credits, NULL, HELP_NONE, cmd_l2cap_credits, 1, 0),
 #endif /* CONFIG_BT_L2CAP_RET_FC */
+	SHELL_CMD(echo, &echo_cmds, "L2CAP BR ECHO commands", cmd_default_handler),
 	SHELL_SUBCMD_SET_END
 );
 
