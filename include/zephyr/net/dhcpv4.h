@@ -122,6 +122,62 @@ struct net_dhcpv4_option_callback {
 
 /** @endcond */
 
+struct net_dhcpv4_option_request_callback;
+
+/**
+ * @typedef net_dhcpv4_option_request_callback_handler_t
+ * @brief Define the application callback handler function signature
+ *
+ * @param cb Original struct net_dhcpv4_option_request_callback owning this handler
+ * @param length The length of data returned by the callback function in cb->data.
+ * 		 This must not be greater than the value cb->max_length.
+ * @param msg_type Type of DHCP message that triggered the callback
+ * @param iface The interface on which the DHCP message will be send
+ *
+ * Note: cb pointer can be used to retrieve private data through
+ * CONTAINER_OF() if original struct net_dhcpv4_option_callback is stored in
+ * another private structure.
+ */
+typedef void (*net_dhcpv4_option_request_callback_handler_t)(struct net_dhcpv4_option_request_callback *cb,
+						     size_t *length,
+						     enum net_dhcpv4_msg_type msg_type,
+						     struct net_if *iface);
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief DHCP option request callback structure
+ *
+ * Used to register a callback in the DHCPv4 client callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct net_dhcpv4_option_request_callback.
+ * Beware such structure should not be allocated on stack.
+ *
+ * Note: To help setting it, see net_dhcpv4_init_option_request_callback() below
+ */
+struct net_dhcpv4_option_request_callback {
+	/** This is meant to be used internally and the user should not
+	 * mess with it.
+	 */
+	sys_snode_t node;
+
+	/** Actual callback function being called when relevant. */
+	net_dhcpv4_option_request_callback_handler_t handler;
+
+	/** The DHCP option this callback is attached to. */
+	uint8_t option;
+
+	/** Maximum length of data buffer. */
+	size_t max_length;
+
+	/** Pointer to a buffer of size max_length that is used to store the
+	 * option data.
+	 */
+	void *data;
+};
+
+/** @endcond */
+
 /**
  * @brief Helper to initialize a struct net_dhcpv4_option_callback properly
  * @param callback A valid Application's callback structure pointer.
@@ -197,6 +253,44 @@ int net_dhcpv4_add_option_vendor_callback(struct net_dhcpv4_option_callback *cb)
  * @return 0 if successful, negative errno code on failure.
  */
 int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
+
+/**
+ * @brief Helper to initialize a struct net_dhcpv4_option_request_callback for request options
+ * @param callback A valid Application's callback structure pointer.
+ * @param handler A valid handler function pointer.
+ * @param option The DHCP option the callback generate.
+ * @param data A pointer to a buffer for max_length bytes.
+ * @param max_length The maximum length of the data returned.
+ */
+static inline void net_dhcpv4_init_option_request_callback(struct net_dhcpv4_option_request_callback *callback,
+	net_dhcpv4_option_request_callback_handler_t handler,
+	uint8_t option,
+	void *data,
+	size_t max_length)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+	__ASSERT(data, "Data pointer should not be NULL");
+
+	callback->handler = handler;
+	callback->option = option;
+	callback->data = data;
+	callback->max_length = max_length;
+}
+
+/**
+* @brief Add an application callback for request options
+* @param cb A valid application's callback structure pointer.
+* @return 0 if successful, negative errno code on failure.
+*/
+int net_dhcpv4_add_option_request_callback(struct net_dhcpv4_option_request_callback *cb);
+
+/**
+* @brief Remove an application callback for request options
+* @param cb A valid application's callback structure pointer.
+* @return 0 if successful, negative errno code on failure.
+*/
+int net_dhcpv4_remove_option_request_callback(struct net_dhcpv4_option_request_callback *cb);
 
 /**
  *  @brief Start DHCPv4 client on an iface
