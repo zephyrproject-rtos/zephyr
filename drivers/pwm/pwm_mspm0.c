@@ -188,7 +188,8 @@ static int mspm0_capture_configure(const struct device *dev,
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
@@ -236,7 +237,8 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
@@ -278,7 +280,8 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = 0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
@@ -354,6 +357,13 @@ static void mspm0_cc_isr(const struct device *dev)
 	uint32_t pulse = 0;
 
 	status = DL_Timer_getPendingInterrupt(config->base);
+
+	/* Timer reached zero no pwm signal is detected */
+	if (status & DL_TIMERG_IIDX_ZERO) {
+		data->is_synced = false;
+		return;
+	}
+
 	if (!(status & DL_TIMER_IIDX_CC0_DN) &&
 	    !(status & DL_TIMER_IIDX_CC1_DN)) {
 		return;
