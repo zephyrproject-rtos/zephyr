@@ -1,0 +1,55 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
+	status = "disabled";
+};
+
+
+&pinctrl {
+	pinmux_flexio2spi1: pinmux_flexio2spi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_gpio9_io28>, /* cs */
+				 <&iomuxc_gpio_ad_28_flexio2_flexio28>, /* sck */
+				 <&iomuxc_gpio_ad_30_flexio2_flexio30>, /* sdo */
+				 <&iomuxc_gpio_ad_31_flexio2_flexio31>; /* sdi */
+			drive-strength = "high";
+			slew-rate = "slow";
+
+		};
+	};
+};
+
+
+&flexio2 {
+	status = "okay";
+
+	flexio2spi1: flexio2spi1 {
+		compatible = "nxp,flexio-spi";
+		cs-gpios = <&gpio9 28 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sdo-pin = <30>;
+		sdi-pin = <31>;
+		sck-pin = <28>;
+		pinctrl-0 = <&pinmux_flexio2spi1>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <16000000>;
+		};
+	};
+};
