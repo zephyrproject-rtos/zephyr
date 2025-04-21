@@ -196,12 +196,21 @@ tests:
     extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow: mimxrt1064_evk
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+  drivers.spi.mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
   drivers.spi.mimxrt1040evk_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow: mimxrt1040_evk
+    platform_allow:
+      - mimxrt1040_evk
   drivers.spi.nrf54h_fast_2mhz:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
