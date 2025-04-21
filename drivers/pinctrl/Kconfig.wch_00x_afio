@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_WCH_00X_AFIO
+	bool "WCH AFIO pin controller driver for CH32V00x"
+	default y
+	depends on DT_HAS_WCH_00X_AFIO_ENABLED
+	help
+	  WCH CH32V00x AFIO pin controller driver, excluding the CH32V003.
