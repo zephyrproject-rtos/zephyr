@@ -1896,7 +1896,6 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 		.bSendInstr            = false,                                                  \
 		.bTurnaround           = false,                                                  \
 		.bEmulateDDR           = false,                                                  \
-		.bNewDDR               = false,                                                  \
 		.eCeLatency            = AM_HAL_MSPI_CE_LATENCY_NORMAL,                          \
 		.ui16DMATimeLimit      = 0,                                                      \
 		.eDMABoundary          = AM_HAL_MSPI_BOUNDARY_NONE,                              \
