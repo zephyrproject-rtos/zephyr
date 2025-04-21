@@ -1,0 +1,30 @@
+# Nuvoton NPCK3 EC series
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCK3
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_PM
+	select HAS_SWO
+
+if SOC_SERIES_NPCK3
+
+config SOC_NPCK_EPURST_DISABLE
+	bool "Disable all External Power-Up Reset Inputs"
+	default y
+	help
+	  Disable all External Power-Up Reset Inputs during initialization. All
+	  signals such as EXT_PURST# are disabled by default. The users can
+	  enable it if needed.
+
+config SOC_NPCK_DEBUG_DISABLE
+	bool "Disable all K3 debug interfaces"
+	help
+	  Disable all K3 debug interface during initialization.
+
+endif # SOC_SERIES_NPCK3
