@@ -17,5 +17,6 @@ supported:
   - dma
   - flash
   - gpio
+  - pwm
   - uart
 vendor: nxp
