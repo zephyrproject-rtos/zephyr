@@ -370,6 +370,10 @@ static int __noinline arch_swap_wrapper(void)
 }
 #endif
 
+/**
+ * @brief Test the ARM thread swap mechanism
+ * @ingroup kernel_arch_sched_tests
+ */
 ZTEST(arm_thread_swap, test_arm_thread_swap)
 {
 	int test_flag;
@@ -662,6 +666,3 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 #endif
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 }
-/**
- * @}
- */
