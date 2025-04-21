@@ -10,14 +10,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// file issue on github, done
-// refactor all hardware timer stuff out
 // driver should be usable with hardware timing, kernel timing or both
-// currently compiles but doesn't work with hardware config
-// work with dma
+// work with dma, does
 // have variable timing, understand base timing
-// enable config option, done
-// get ll files without enabling CONFIG_COUNTER, done
 // enable configuration automatically from devicetree, is it possible or just for drivers?
 // do checking that configuration make sense
 // check compatibility with other socs, wl ok, f4 ok, l4 ok!
@@ -233,6 +228,7 @@ struct adc_stm32_cfg {
 	const uint32_t res_table[];
 };
 
+#ifdef CONFIG_ADC_STM32_TIMER
 /**
  * Obtain timer clock speed.
  *
@@ -350,6 +346,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken* pclken, uint32_t
 
 	return 0;
 }
+#endif /* CONFIG_ADC_STM32_TIMER */
 
 #ifdef CONFIG_ADC_STM32_DMA
 static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
@@ -1334,12 +1331,12 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 static void adc_context_enable_timer(struct adc_context* ctx)
 {
 	//! should set the ARR etc. here based on ctx
-	int r;
-	uint32_t tim_clk;
-	uint32_t auto_reload_value=100;
+	uint32_t auto_reload_value=100; //! fails silently if too low
 
 	//! need a decision on where config should come from
 	/*
+	int r;
+	uint32_t tim_clk;
 	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
 
 	if (r < 0) {
@@ -2281,6 +2278,13 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_TIMER_INIT)
 
 #endif /* CONFIG_ADC_STM32_TIMER*/
 
+// doesn't have a , 
+#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name) ADC_CONTEXT_INIT_TIMER(data, ctx_name),
+#else
+#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name) 
+#endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
+
 
 #define ADC_STM32_INIT(index)						\
 									\
@@ -2310,7 +2314,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 };									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
-	/*ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),*/	\
+	ADC_STM32_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx)	\
 	ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),		\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 	ADC_DMA_CHANNEL(index, PERIPHERAL, MEMORY)			\

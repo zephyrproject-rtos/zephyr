@@ -21,6 +21,12 @@ tests:
       - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
     platform_allow:
       - nucleo_f103rb
+  drivers.adc.hwtim_st_stm32:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-hwtim-stm32.conf"
+    depends_on: adc
+    platform_allow:
+      - nucleo_wl55jc
   drivers.adc.dma_st_stm32:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
