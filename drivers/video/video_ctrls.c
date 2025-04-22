@@ -17,17 +17,33 @@ LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
 
 static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
-	static const char *const camera_power_line_frequency[] = {"Disabled", "50 Hz", "60 Hz",
-								  "Auto", NULL};
-	static const char *const camera_exposure_auto[] = {"Auto Mode", "Manual Mode",
-							   "Shutter Priority Mode",
-							   "Aperture Priority Mode", NULL};
+	static char const *const power_line_frequency[] = {
+		"Disabled", "50 Hz", "60 Hz", "Auto", NULL,
+	};
+	static char const *const exposure_auto[] = {
+		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
+	};
+	static char const *const colorfx[] = {
+		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
+		"Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze", "Silhouette",
+		"Solarization", "Antique", "Set Cb/Cr", NULL,
+	};
+	static char const *const camera_orientation[] = {
+		"Front", "Back", "External", NULL,
+	};
 
 	switch (id) {
+	/* User control menus */
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		return camera_power_line_frequency;
+		return power_line_frequency;
+
+	/* Camera control menus */
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return camera_exposure_auto;
+		return exposure_auto;
+	case VIDEO_CID_COLORFX:
+		return colorfx;
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return camera_orientation;
 	default:
 		return NULL;
 	}
@@ -69,12 +85,22 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	*flags = 0;
 
 	switch (id) {
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+	case VIDEO_CID_AUTOGAIN:
 	case VIDEO_CID_HFLIP:
 	case VIDEO_CID_VFLIP:
+	case VIDEO_CID_HUE_AUTO:
+	case VIDEO_CID_AUTOBRIGHTNESS:
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+	case VIDEO_CID_FOCUS_AUTO:
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
 		*type = VIDEO_CTRL_TYPE_BOOLEAN;
 		break;
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
+	case VIDEO_CID_EXPOSURE_AUTO:
+	case VIDEO_CID_COLORFX:
 	case VIDEO_CID_TEST_PATTERN:
+	case VIDEO_CID_CAMERA_ORIENTATION:
 		*type = VIDEO_CTRL_TYPE_MENU;
 		break;
 	case VIDEO_CID_PIXEL_RATE:
@@ -388,6 +414,14 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Saturation";
 	case VIDEO_CID_HUE:
 		return "Hue";
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+		return "White Balance, Automatic";
+	case VIDEO_CID_RED_BALANCE:
+		return "Red Balance";
+	case VIDEO_CID_BLUE_BALANCE:
+		return "Blue Balance";
+	case VIDEO_CID_GAMMA:
+		return "Gamma";
 	case VIDEO_CID_EXPOSURE:
 		return "Exposure";
 	case VIDEO_CID_AUTOGAIN:
@@ -402,10 +436,64 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Vertical Flip";
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
 		return "Power Line Frequency";
+	case VIDEO_CID_HUE_AUTO:
+		return "Hue, Automatic";
+	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
+		return "White Balance Temperature";
+	case VIDEO_CID_SHARPNESS:
+		return "Sharpness";
+	case VIDEO_CID_BACKLIGHT_COMPENSATION:
+		return "Backlight Compensation";
+	case VIDEO_CID_COLORFX:
+		return "Color Effects";
+	case VIDEO_CID_AUTOBRIGHTNESS:
+		return "Brightness, Automatic";
+	case VIDEO_CID_BAND_STOP_FILTER:
+		return "Band-Stop Filter";
+	case VIDEO_CID_ALPHA_COMPONENT:
+		return "Alpha Component";
 
 	/* Camera controls */
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return "Auto Exposure";
+	case VIDEO_CID_EXPOSURE_ABSOLUTE:
+		return "Exposure Time, Absolute";
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+		return "Exposure, Dynamic Framerate";
+	case VIDEO_CID_PAN_RELATIVE:
+		return "Pan, Relative";
+	case VIDEO_CID_TILT_RELATIVE:
+		return "Tilt, Reset";
+	case VIDEO_CID_PAN_ABSOLUTE:
+		return "Pan, Absolute";
+	case VIDEO_CID_TILT_ABSOLUTE:
+		return "Tilt, Absolute";
+	case VIDEO_CID_FOCUS_ABSOLUTE:
+		return "Focus, Absolute";
+	case VIDEO_CID_FOCUS_RELATIVE:
+		return "Focus, Relative";
+	case VIDEO_CID_FOCUS_AUTO:
+		return "Focus, Automatic Continuous";
 	case VIDEO_CID_ZOOM_ABSOLUTE:
 		return "Zoom, Absolute";
+	case VIDEO_CID_ZOOM_RELATIVE:
+		return "Zoom, Relative";
+	case VIDEO_CID_ZOOM_CONTINUOUS:
+		return "Zoom, Continuous";
+	case VIDEO_CID_IRIS_ABSOLUTE:
+		return "Iris, Absolute";
+	case VIDEO_CID_IRIS_RELATIVE:
+		return "Iris, Relative";
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+		return "Wide Dynamic Range";
+	case VIDEO_CID_PAN_SPEED:
+		return "Pan, Speed";
+	case VIDEO_CID_TILT_SPEED:
+		return "Tilt, Speed";
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return "Camera Orientation";
+	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
+		return "Camera Sensor Rotation";
 
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
