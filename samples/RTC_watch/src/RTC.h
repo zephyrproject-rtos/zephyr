@@ -1,6 +1,4 @@
 
-#include <zephyr/drivers/i2c.h>
-
 #define CLOCK_H24 0
 #define CLOCK_H12 1
 
@@ -9,6 +7,8 @@
 #define HOUR_24 2
 
 #define DS3231_ADDR 0x68
+
+
 /*ftypes*/
 uint8_t bitSet(uint8_t data,uint8_t shift);
 uint8_t bitClear(uint8_t data,uint8_t shift);

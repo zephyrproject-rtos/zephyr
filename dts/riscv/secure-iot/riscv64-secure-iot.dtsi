@@ -67,7 +67,7 @@
     };
 
     uart1: serial@11400 {
-        compatible = "shakti,uart";
+        compatible = "shakti,uart1";
         reg= < 0x0 0x11400 0x0 0x100>;
     };    
 

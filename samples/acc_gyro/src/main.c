@@ -20,10 +20,10 @@ float _magXcoef, _magYcoef, _magZcoef; // Magnetometer calibration coefficients 
 const double lowPassFilterAlpha = 0.9; // alpha value for the low-pass filter applied to the accelerometer data
 const double highLineAlpha = 0.0005; // rate of adjustment for the high line threshold
 const double lowLineAlpha = 0.0005; // rate of adjustment for the low line threshold
-const double highLineMin = 1.0; // minimum value for the high line threshold
-const double highLineMax = 1.75; // maximum value for the high line threshold
-const double lowLineMin = -1.0; // minimum value for the low line threshold
-const double lowLineMax = -1.75; // maximum value for the low line threshold
+const double highLineMin = 1.5; // minimum value for the high line threshold
+const double highLineMax = 2.0; // maximum value for the high line threshold
+const double lowLineMin = -2.0; // minimum value for the low line threshold
+const double lowLineMax = -1.5; // maximum value for the low line threshold
 const long stepTimeInterval = 100; // Milliseconds
 
 // Step detection variables

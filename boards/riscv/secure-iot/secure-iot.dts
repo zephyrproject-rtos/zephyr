@@ -14,14 +14,12 @@ chosen {
 
 &uart0 {
 	status = "okay";
-	base = <0x11300>;
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
 };
 
 &uart1 {
 	status = "okay";
-	base = <0x11400>;
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
 };
@@ -85,10 +83,6 @@ chosen {
 		  ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
 		  madctrl = [48];
 		  pixset = [55];
-        //   pixel-format = <16>;
-        //   width = <240>;
-        //   height = <240>;
-		//   display-inversion;
         };
 };
 
