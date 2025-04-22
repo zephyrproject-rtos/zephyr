@@ -119,9 +119,4 @@ void stm32_power_init(void)
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#ifdef CONFIG_STM32_STOP3_LP_MODE
-	IRQ_CONNECT(PWR_S3WU_IRQn, 0,
-		    pwr_stop3_isr, 0, 0);
-	irq_enable(PWR_S3WU_IRQn);
-#endif
 }
