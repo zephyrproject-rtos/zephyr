@@ -26,31 +26,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
-#ifdef CONFIG_STM32_STOP3_LP_MODE
-static void pwr_stop3_isr(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Clear all wake-up flags */
-	LL_PWR_ClearFlag_WU();
-}
-
-static void disable_cache(void)
-{
-	/* Disabling ICACHE */
-	LL_ICACHE_Disable();
-	while (LL_ICACHE_IsEnabled() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BUSYF is cleared */
-	while (LL_ICACHE_IsActiveFlag_BUSY() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BSYENDF is set */
-	while (LL_ICACHE_IsActiveFlag_BSYEND() == 0U) {
-	}
-}
-#endif
 
 void set_mode_stop(uint8_t substate_id)
 {
