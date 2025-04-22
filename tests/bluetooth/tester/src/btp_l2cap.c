@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/classic/l2cap_br.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
@@ -922,6 +923,48 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t send_echo_req(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_send_echo_req_cmd *cp = cmd;
+	struct bt_conn *conn;
+	struct net_buf *buf;
+	uint16_t data_len;
+	int err;
+
+	if (cp->address.type != BTP_BR_ADDRESS_TYPE) {
+		LOG_ERR("Only support Classic");
+		return BTP_STATUS_FAILED;
+	}
+
+	conn = bt_conn_lookup_addr_br(&cp->address.a);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	data_len = sys_le16_to_cpu(cp->data_length);
+
+	if (data_len > DATA_MTU) {
+		return BTP_STATUS_FAILED;
+	}
+
+	buf = net_buf_alloc(&data_pool, K_FOREVER);
+	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
+	net_buf_add_mem(buf, cp->data, data_len);
+
+	err = bt_l2cap_br_echo_req(conn, buf);
+	bt_conn_unref(conn);
+	if (err != 0) {
+		LOG_ERR("Unable to ECHO REQ: %d", -err);
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
@@ -977,6 +1020,13 @@ static const struct btp_handler handlers[] = {
 		.func = disconnect_eatt_chans,
 	},
 #endif
+#if defined(CONFIG_BT_CLASSIC)
+	{
+		.opcode = BTP_L2CAP_SEND_ECHO_REQ,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = send_echo_req,
+	},
+#endif /* CONFIG_BT_CLASSIC */
 };
 
 #if defined(CONFIG_BT_CLASSIC)
