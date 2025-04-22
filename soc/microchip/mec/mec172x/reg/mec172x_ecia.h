@@ -1132,7 +1132,7 @@ struct girq_regs {
 	volatile uint32_t EN_SET;
 	volatile uint32_t RESULT;
 	volatile uint32_t EN_CLR;
-	uint32_t RSVD1[1];
+	volatile uint32_t RSVD1;
 };
 
 /** @brief ECIA registers with each GIRQ elucidated */
