@@ -41,11 +41,13 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
-  drivers.pwm.frdm_mcxn947_mcxn947_cpu0_sctimer:
+  drivers.pwm.mcxn947_cpu0_sctimer:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxn947_mcxn947_cpu0_sctimer.overlay"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu0/qspi
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0/qspi
   drivers.pwm.native_sim:
     platform_allow:
       - native_sim
