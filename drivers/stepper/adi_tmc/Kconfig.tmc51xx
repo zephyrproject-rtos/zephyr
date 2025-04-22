@@ -7,6 +7,13 @@ config STEPPER_ADI_TMC51XX
 	select STEPPER_ADI_TMC_SPI
 	default y
 
+config STEPPER_ADI_TMC51XX_LOG_STATUS
+	bool "Decode SPI status"
+	depends on STEPPER_ADI_TMC51XX
+	default n
+	help
+	  Enable decoding of SPI status flag for each SPI transmission.
+
 module = TMC51XX
 module-str = tmc51xx
 rsource "Kconfig.tmc_rampgen_template"
