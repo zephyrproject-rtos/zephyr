@@ -14,6 +14,10 @@
 #include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
+
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 
 #define GC2145_REG_AMODE1               0x17
@@ -689,7 +693,13 @@ struct gc2145_config {
 #endif
 };
 
+struct gc2145_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct gc2145_data {
+	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -1100,13 +1110,15 @@ static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (cid) {
+	struct gc2145_data *drv_data = dev->data;
+
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return gc2145_set_ctrl_hmirror(dev, (int)value);
+		return gc2145_set_ctrl_hmirror(dev, drv_data->ctrls.hflip.val);
 	case VIDEO_CID_VFLIP:
-		return gc2145_set_ctrl_vflip(dev, (int)value);
+		return gc2145_set_ctrl_vflip(dev, drv_data->ctrls.vflip.val);
 	default:
 		return -ENOTSUP;
 	}
@@ -1119,6 +1131,22 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
 };
+
+static int gc2145_init_controls(const struct device *dev)
+{
+	int ret;
+	struct gc2145_data *drv_data = dev->data;
+	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+}
 
 static int gc2145_init(const struct device *dev)
 {
@@ -1166,7 +1194,8 @@ static int gc2145_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	/* Initialize controls */
+	return gc2145_init_controls(dev);
 }
 
 /* Unique Instance */
@@ -1208,3 +1237,5 @@ static int gc2145_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
+
+VIDEO_DEVICE_DEFINE(gc2145, DEVICE_DT_INST_GET(0), NULL);

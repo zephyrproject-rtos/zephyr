@@ -691,10 +691,10 @@
 			interrupts = <170 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
-				 <&rcc STM32_SRC_CKPER XSPI1_SEL(1)>,
+				 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -704,10 +704,10 @@
 			interrupts = <171 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-				 <&rcc STM32_SRC_CKPER XSPI2_SEL(1)>,
+				 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -730,6 +730,17 @@
 			reg = <0x5803FC00 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB5, 27)>;
 			#phy-cells = <0>;
+		};
+
+		ltdc: ltdc@58001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x58001000 0x1000>;
+			interrupts = <193 0>, <194 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+				 <&rcc STM32_SRC_PCLK5 LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB5, 1)>;
+			status = "disabled";
 		};
 	};
 };

@@ -2,13 +2,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
+#include <testlib/scan.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log.h>
-
-#include <testlib/scan.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(bt_testlib_scan, LOG_LEVEL_INF);
 

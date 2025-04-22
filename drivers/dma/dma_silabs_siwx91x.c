@@ -28,15 +28,17 @@
 
 LOG_MODULE_REGISTER(si91x_dma, CONFIG_DMA_LOG_LEVEL);
 
-enum {
+enum dma_xfer_dir {
 	TRANSFER_MEM_TO_MEM,
 	TRANSFER_TO_OR_FROM_PER,
+	TRANSFER_DIR_INVALID = -1,
 };
 
 struct dma_siwx91x_channel_info {
 	dma_callback_t dma_callback;        /* User callback */
 	void *cb_data;                      /* User callback data */
 	RSI_UDMA_DESC_T *sg_desc_addr_info; /* Scatter-Gather table start address */
+	enum dma_xfer_dir xfer_direction;   /* mem<->mem ot per<->mem */
 };
 
 struct dma_siwx91x_config {
@@ -58,7 +60,7 @@ struct dma_siwx91x_data {
 					      */
 };
 
-static int siwx91x_transfer_direction(uint32_t dir)
+static enum dma_xfer_dir siwx91x_transfer_direction(uint32_t dir)
 {
 	if (dir == MEMORY_TO_MEMORY) {
 		return TRANSFER_MEM_TO_MEM;
@@ -68,7 +70,7 @@ static int siwx91x_transfer_direction(uint32_t dir)
 		return TRANSFER_TO_OR_FROM_PER;
 	}
 
-	return -EINVAL;
+	return TRANSFER_DIR_INVALID;
 }
 
 static bool siwx91x_is_data_width_valid(uint32_t data_width)
@@ -206,13 +208,17 @@ static int siwx91x_sg_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 	struct dma_siwx91x_data *data = dev->data;
 	RSI_UDMA_DESC_T *sg_desc_base_addr = NULL;
 	uint8_t transfer_type;
-	int ret;
+	enum dma_xfer_dir xfer_dir;
 
-	ret = siwx91x_transfer_direction(config->channel_direction);
-	if (ret < 0) {
+	xfer_dir = siwx91x_transfer_direction(config->channel_direction);
+	if (xfer_dir == TRANSFER_DIR_INVALID) {
 		return -EINVAL;
 	}
-	transfer_type = ret ? UDMA_MODE_PER_SCATTER_GATHER : UDMA_MODE_MEM_SCATTER_GATHER;
+	if (xfer_dir == TRANSFER_TO_OR_FROM_PER) {
+		transfer_type = UDMA_MODE_PER_SCATTER_GATHER;
+	} else {
+		transfer_type = UDMA_MODE_MEM_SCATTER_GATHER;
+	}
 
 	if (!siwx91x_is_data_width_valid(config->source_data_size) ||
 	    !siwx91x_is_data_width_valid(config->dest_data_size)) {
@@ -239,6 +245,12 @@ static int siwx91x_sg_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 	 */
 	data->chan_info[channel].Cnt = config->block_count;
 	data->zephyr_channel_info[channel].sg_desc_addr_info = sg_desc_base_addr;
+
+	/* Store the transfer direction. This is used to trigger SW request for
+	 * Memory to Memory transfers.
+	 */
+	data->zephyr_channel_info[channel].xfer_direction = xfer_dir;
+
 	RSI_UDMA_InterruptClear(udma_handle, channel);
 	RSI_UDMA_ErrorStatusClear(udma_handle);
 
@@ -275,9 +287,11 @@ static int siwx91x_direct_chan_config(const struct device *dev, RSI_UDMA_HANDLE_
 		.transferType = UDMA_MODE_BASIC,
 	};
 	RSI_UDMA_CHA_CFG_T channel_config = {};
+	enum dma_xfer_dir xfer_dir;
 	int status;
 
-	if (siwx91x_transfer_direction(config->channel_direction) < 0) {
+	xfer_dir = siwx91x_transfer_direction(config->channel_direction);
+	if (xfer_dir == TRANSFER_DIR_INVALID) {
 		return -EINVAL;
 	}
 
@@ -329,6 +343,9 @@ static int siwx91x_direct_chan_config(const struct device *dev, RSI_UDMA_HANDLE_
 		channel_control.dstInc = UDMA_DST_INC_NONE;
 	}
 
+	/* Clear the CHNL_PRI_ALT_CLR to use primary DMA descriptor structure */
+	sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->CHNL_PRI_ALT_CLR);
+
 	status = UDMAx_ChannelConfigure(&udma_resources, (uint8_t)channel,
 					config->head_block->source_address,
 					config->head_block->dest_address,
@@ -338,6 +355,11 @@ static int siwx91x_direct_chan_config(const struct device *dev, RSI_UDMA_HANDLE_
 	if (status) {
 		return -EIO;
 	}
+
+	/* Store the transfer direction. This is used to trigger SW request for
+	 * Memory to Memory transfers.
+	 */
+	data->zephyr_channel_info[channel].xfer_direction = xfer_dir;
 
 	return 0;
 }
@@ -450,7 +472,6 @@ static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32
 static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
-	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
 	struct dma_siwx91x_data *data = dev->data;
 	void *udma_handle = &data->udma_handle;
 
@@ -464,8 +485,7 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 	}
 
 	/* Check if the transfer type is memory-memory */
-	if (udma_table[channel].vsUDMAChaConfigData1.srcInc != UDMA_SRC_INC_NONE &&
-	    udma_table[channel].vsUDMAChaConfigData1.dstInc != UDMA_DST_INC_NONE) {
+	if (data->zephyr_channel_info[channel].xfer_direction == TRANSFER_MEM_TO_MEM) {
 		/* Apply software trigger to start transfer */
 		sys_set_bit((mem_addr_t)&cfg->reg->CHNL_SW_REQUEST, channel);
 	}
@@ -651,7 +671,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 				     CONFIG_DMA_SILABS_SIWX91X_SG_BUFFER_COUNT, 4);                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
 		    (),                                                                            \
-		    (static __aligned(512) RSI_UDMA_DESC_T                                         \
+		    (static __aligned(1024) RSI_UDMA_DESC_T                                        \
 			     siwx91x_dma_chan_desc##inst[DT_INST_PROP(inst, dma_channels) * 2];))  \
 	static struct dma_siwx91x_channel_info                                                     \
 		zephyr_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];                      \

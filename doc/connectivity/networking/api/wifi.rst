@@ -73,6 +73,14 @@ Run time certificates
 The Wi-Fi shell module uses TLS credentials subsystem to store and manage the certificates. The certificates can be added at runtime using the shell commands, see :ref:`tls_credentials_shell` for more details.
 The sample or application need to enable the :kconfig:option:`CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES` option to use this feature.
 
+To facilitate installation of the certificates, a helper script is provided in the ``samples/net/wifi/test_certs`` directory. The script can be used to install the certificates at runtime.
+
+.. code-block:: bash
+
+    $ ./scripts/utils/wifi_ent_cert_installer.py -p samples/net/wifi/test_certs/rsa2k
+
+The script will install the certificates in the ``rsa2k`` directory to the TLS credentials store in the device over UART and using TLS credentials shell commands.
+
 
 To initiate Wi-Fi connection, the following command can be used:
 

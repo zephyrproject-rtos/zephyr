@@ -39,6 +39,12 @@
 @{
 @}
 
+@brief Debug Services
+@defgroup debug Debug
+@ingroup os_services
+@{
+@}
+
 @brief Connectivity
 @defgroup connectivity Connectivity
 @{
@@ -76,16 +82,6 @@
 
 @brief Memory Management APIs
 @defgroup mem_mgmt Memory Management APIs
-@{
-@}
-
-@brief Tests
-@defgroup all_tests Tests
-@{
-@}
-
-@defgroup kernel_memprotect_tests Memory Protection
-@ingroup all_tests
 @{
 @}
 

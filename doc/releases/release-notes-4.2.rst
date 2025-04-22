@@ -48,6 +48,8 @@ The following CVEs are addressed by this release:
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
 
+* :cve:`2025-2962` Under embargo until 2025-06-07
+
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
@@ -68,6 +70,8 @@ Removed APIs and options
 
 * Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`.
+
+* Removed the ``get_ctrl`` video driver API
 
 Deprecated APIs and options
 ===========================
@@ -159,6 +163,11 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
 
+* Sensor
+
+  * :c:func:`sensor_value_to_deci`
+  * :c:func:`sensor_value_to_centi`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
@@ -178,6 +187,12 @@ New APIs and options
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
+
+* Video
+
+  * :c:func:`video_api_ctrl_t`
+  * :c:func:`video_query_ctrl`
+  * :c:func:`video_print_ctrl`
 
 New Boards
 **********
@@ -562,3 +577,6 @@ Other notable changes
 
 * Updated Mbed TLS to version 3.6.3 (from 3.6.2). The release notes can be found at:
   https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+
+* Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
+  https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html

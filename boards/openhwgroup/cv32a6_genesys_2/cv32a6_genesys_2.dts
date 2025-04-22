@@ -30,6 +30,10 @@
 	status = "okay";
 };
 
+&mtimer {
+	status = "okay";
+};
+
 &eth {
 	local-mac-address = [00 18 3e 02 e3 7f];
 	status = "okay";

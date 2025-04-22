@@ -5801,6 +5801,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
 /**
  * @defgroup heap_apis Heap APIs
+ * @brief Memory allocation from the Heap
  * @ingroup kernel_apis
  * @{
  */
@@ -5958,6 +5959,8 @@ enum _poll_states_bits {
 
 /**
  * @defgroup poll_apis Async polling APIs
+ * @brief An API to wait concurrently for any one of multiple conditions to be
+ *        fulfilled
  * @ingroup kernel_apis
  * @{
  */

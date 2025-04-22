@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: a6dff0a5f49e898f29bc428e01538a8911364460
+      revision: e916e84a103e13ce8bcf8b7f53dafbe57ed0b846
       path: modules/hal/ambiq
       groups:
         - hal
@@ -318,7 +318,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
+      revision: d5b95fdd0260e8189e788d40d2863d1e2d4be159
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: eeceee739252cf2d56a5ad9356553d87aae8c57d
@@ -353,7 +353,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 857f3697ece6f44a663f007de71205a7b34974ef
+      revision: e2288c13ee0abc16163186523897e7910b03dd31
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

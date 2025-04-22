@@ -329,6 +329,10 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* reset test data to positive value */
 	data.val1 = 3;
 	data.val2 = 300000;
+	zassert_equal(sensor_value_to_deci(&data), 33LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), 330LL,
+			"the result does not match");
 	zassert_equal(sensor_value_to_milli(&data), 3300LL,
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), 3300000LL,
@@ -336,11 +340,21 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* reset test data to negative value */
 	data.val1 = -data.val1;
 	data.val2 = -data.val2;
+	zassert_equal(sensor_value_to_deci(&data), -33LL,
+		"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), -330LL,
+		"the result does not match");
 	zassert_equal(sensor_value_to_milli(&data), -3300LL,
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), -3300000LL,
 			"the result does not match");
 	/* Test when result is greater than 32-bit wide */
+	data.val1 = 2123456789;
+	data.val2 = 876543;
+	zassert_equal(sensor_value_to_deci(&data), 21234567898LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), 212345678987LL,
+			"the result does not match");
 	data.val1 = 5432109;
 	data.val2 = 876543;
 	zassert_equal(sensor_value_to_milli(&data), 5432109876LL,
