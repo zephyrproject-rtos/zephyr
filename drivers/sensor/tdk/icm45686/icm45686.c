@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/rtio/rtio.h>
 
@@ -202,6 +203,8 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 			   NULL);
 	if (data->rtio.type == ICM45686_BUS_I2C) {
 		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -262,30 +265,38 @@ static int icm45686_init(const struct device *dev)
 	}
 #endif
 
-	/* Soft-reset sensor to restore config to defaults */
+	/** Soft-reset sensor to restore config to defaults,
+	 * unless it's already handled by I3C initialization.
+	 */
+	if (data->rtio.type != ICM45686_BUS_I3C) {
+		err = reg_write(dev, REG_MISC2, REG_MISC2_SOFT_RST(1));
+		if (err) {
+			LOG_ERR("Failed to write soft-reset: %d", err);
+			return err;
+		}
+		/* Wait for soft-reset to take effect */
+		k_sleep(K_MSEC(1));
 
-	err = reg_write(dev, REG_MISC2, REG_MISC2_SOFT_RST(1));
-	if (err) {
-		LOG_ERR("Failed to write soft-reset: %d", err);
-		return err;
-	}
-	/* Wait for soft-reset to take effect */
-	k_sleep(K_MSEC(1));
-
-	/* A complete soft-reset clears the bit */
-	err = reg_read(dev, REG_MISC2, &read_val);
-	if (err) {
-		LOG_ERR("Failed to read soft-reset: %d", err);
-		return err;
-	}
-	if ((read_val & REG_MISC2_SOFT_RST(1)) != 0) {
-		LOG_ERR("Soft-reset command failed");
-		return -EIO;
+		/* A complete soft-reset clears the bit */
+		err = reg_read(dev, REG_MISC2, &read_val);
+		if (err) {
+			LOG_ERR("Failed to read soft-reset: %d", err);
+			return err;
+		}
+		if ((read_val & REG_MISC2_SOFT_RST(1)) != 0) {
+			LOG_ERR("Soft-reset command failed");
+			return -EIO;
+		}
 	}
 
 	/* Set Slew-rate to 10-ns typical, to allow proper SPI readouts */
 
 	err = reg_write(dev, REG_DRIVE_CONFIG0, REG_DRIVE_CONFIG0_SPI_SLEW(2));
+	if (err) {
+		LOG_ERR("Failed to write slew-rate: %d", err);
+		return err;
+	}
+	err = reg_write(dev, REG_DRIVE_CONFIG1, REG_DRIVE_CONFIG1_I3C_SLEW(3));
 	if (err) {
 		LOG_ERR("Failed to write slew-rate: %d", err);
 		return err;
@@ -396,6 +407,13 @@ static int icm45686_init(const struct device *dev)
 												   \
 	RTIO_DEFINE(icm45686_rtio_ctx_##inst, 8, 8);						   \
 												   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i3c),							   \
+		    (I3C_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
+					 DT_DRV_INST(inst))),					   \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
+		    (I2C_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
+					 DT_DRV_INST(inst))),					   \
+		    ())));									   \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
 		    (SPI_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
 					 DT_DRV_INST(inst),					   \
@@ -403,10 +421,6 @@ static int icm45686_init(const struct device *dev)
 					 0U)),							   \
 		    ());									   \
 												   \
-	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
-		    (I2C_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
-					 DT_DRV_INST(inst))),					   \
-		    ());									   \
 												   \
 	static const struct icm45686_config icm45686_cfg_##inst = {				   \
 		.settings = {									   \
@@ -434,9 +448,11 @@ static int icm45686_init(const struct device *dev)
 		.rtio = {									   \
 			.iodev = &icm45686_bus_##inst,						   \
 			.ctx = &icm45686_rtio_ctx_##inst,					   \
-			COND_CODE_1(DT_INST_ON_BUS(inst, i2c),					   \
-				(.type = ICM45686_BUS_I2C), ())					   \
-				COND_CODE_1(DT_INST_ON_BUS(inst, spi),				   \
+			COND_CODE_1(DT_INST_ON_BUS(inst, i3c),					   \
+				(.type = ICM45686_BUS_I3C),					   \
+			(COND_CODE_1(DT_INST_ON_BUS(inst, i2c),					   \
+				(.type = ICM45686_BUS_I2C), ())))				   \
+			COND_CODE_1(DT_INST_ON_BUS(inst, spi),					   \
 				(.type = ICM45686_BUS_SPI), ())					   \
 		},										   \
 	};											   \
