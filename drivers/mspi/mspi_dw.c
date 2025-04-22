@@ -17,6 +17,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/mspi/mspi_dw.h>
 
 #include "mspi_dw.h"
 
@@ -107,6 +108,7 @@ DEFINE_MM_REG_RD(isr,		0x30)
 DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD(icr,		0x48)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
+DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 
 #if defined(CONFIG_MSPI_XIP)
@@ -1232,6 +1234,17 @@ static int _api_xip_config(const struct device *dev,
 	dev_data->xip_enabled |= BIT(dev_id->dev_idx);
 
 	return 0;
+}
+
+static int api_timing_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const uint32_t param_mask, void *cfg)
+{
+	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
+		write_rx_sample_dly(dev, (uint32_t)(uintptr_t)cfg);
+		return 0;
+	}
+	return -ENOTSUP;
 }
 
 static int api_xip_config(const struct device *dev,
