@@ -97,8 +97,10 @@ void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16
 
 	for (int i = 0; (i < seconds) || infinite; i++) {
 		k_sleep(K_SECONDS(1));
+		if (default_conn == NULL) {
+			printk("Skipping notification since connection is not yet established\n");
 		/* Only send the notification if the UATT MTU supports the required length */
-		if (bt_gatt_get_uatt_mtu(default_conn) >= ATT_NTF_SIZE(notify_data_size)) {
+		} else if (bt_gatt_get_uatt_mtu(default_conn) >= ATT_NTF_SIZE(notify_data_size)) {
 			bt_gatt_notify(default_conn, notify_crch, notify_data, notify_data_size);
 		} else {
 			printk("Skipping notification since UATT MTU is not sufficient."
