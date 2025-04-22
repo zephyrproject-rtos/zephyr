@@ -36,19 +36,26 @@ static inline int slice_time(struct k_thread *thread)
 	return ret;
 }
 
-static bool thread_is_sliceable(struct k_thread *thread)
+static int z_time_slice_size(struct k_thread *thread)
 {
-	bool ret = thread_is_preemptible(thread)
-		&& slice_time(thread) != 0
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_idle_thread_object(thread);
+	if (z_is_thread_prevented_from_running(thread) ||
+	    z_is_idle_thread_object(thread) ||
+	    (slice_time(thread) == 0)) {
+		return 0;
+	}
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
+	if (thread->base.slice_ticks != 0) {
+		return thread->base.slice_ticks;
+	}
 #endif
 
-	return ret;
+	if (thread_is_preemptible(thread) &&
+	    !z_is_prio_higher(thread->base.prio, slice_max_prio)) {
+		return slice_ticks;
+	}
+
+	return 0;
 }
 
 static void slice_timeout(struct _timeout *timeout)
@@ -67,11 +74,13 @@ static void slice_timeout(struct _timeout *timeout)
 
 void z_reset_time_slice(unsigned int cpu, struct k_thread *thread)
 {
+	int slice_size = z_time_slice_size(thread);
+
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
-	if (thread_is_sliceable(thread)) {
+	if (slice_size != 0) {
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_time(thread) - 1));
+			      K_TICKS(slice_size - 1));
 	}
 }
 
@@ -125,7 +134,7 @@ void z_time_slice(void)
 	pending_current = NULL;
 #endif
 
-	if (slice_expired[_current_cpu->id] && thread_is_sliceable(curr)) {
+	if (slice_expired[_current_cpu->id] && (z_time_slice_size(curr) != 0)) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&_sched_spinlock, key);
