@@ -41,6 +41,8 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET,
 	/* Core should exit hibernation due to host resume */
 	DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME,
+	/* SOF interrupt */
+	DWC2_DRV_EVT_SOF,
 };
 
 /* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
@@ -2898,8 +2900,7 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 			dsts = sys_read32((mem_addr_t)&base->dsts);
 			priv->sof_num = usb_dwc2_get_dsts_soffn(dsts);
-			udc_update_sof_stamp(dev, priv->sof_num);
-			udc_submit_sof_event(dev);
+			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_SOF));
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_USBRST) {
@@ -3175,6 +3176,11 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
 
 		dwc2_ensure_setup_ready(dev);
+	}
+
+	if (evt & BIT(DWC2_DRV_EVT_SOF)) {
+		udc_update_sof_stamp(dev, priv->sof_num);
+		udc_submit_sof_event(dev);
 	}
 
 	udc_unlock_internal(dev);
