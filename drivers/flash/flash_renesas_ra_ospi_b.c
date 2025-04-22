@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,10 +56,8 @@ static void release_device(const struct device *dev)
 	k_sem_give(&dev_data->sem);
 }
 
-static fsp_err_t flash_renesas_ra_ospi_b_wait_operation(ospi_b_instance_ctrl_t *p_ctrl,
-							uint32_t timeout)
+static int flash_renesas_ra_ospi_b_wait_operation(ospi_b_instance_ctrl_t *p_ctrl, uint32_t timeout)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	spi_flash_status_t status = {RESET_VALUE};
 
 	status.write_in_progress = true;
@@ -67,20 +65,20 @@ static fsp_err_t flash_renesas_ra_ospi_b_wait_operation(ospi_b_instance_ctrl_t *
 		/* Get device status */
 		R_OSPI_B_StatusGet(p_ctrl, &status);
 		if (timeout == RESET_VALUE) {
-			LOG_ERR("Time out for operation");
-			return FSP_ERR_TIMEOUT;
+			LOG_DBG("Time out for operation");
+			return -EIO;
 		}
 		k_sleep(K_USEC(50));
 		timeout--;
 	}
 
-	return err;
+	return 0;
 }
 
-static fsp_err_t flash_renesas_ra_ospi_b_write_enable(ospi_b_instance_ctrl_t *p_ctrl)
+static int flash_renesas_ra_ospi_b_write_enable(ospi_b_instance_ctrl_t *p_ctrl)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
+	fsp_err_t err;
 
 	/* Transfer write enable command */
 	transfer = (SPI_FLASH_PROTOCOL_EXTENDED_SPI == p_ctrl->spi_protocol)
@@ -88,45 +86,43 @@ static fsp_err_t flash_renesas_ra_ospi_b_write_enable(ospi_b_instance_ctrl_t *p_
 			   : direct_transfer[TRANSFER_WRITE_ENABLE_OSPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
 	if (err != FSP_SUCCESS) {
-		return err;
+		return -EIO;
 	}
 	/* Read Status Register */
 	transfer = (SPI_FLASH_PROTOCOL_EXTENDED_SPI == p_ctrl->spi_protocol)
 			   ? direct_transfer[TRANSFER_READ_STATUS_SPI]
 			   : direct_transfer[TRANSFER_READ_STATUS_OSPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-	if (err != FSP_SUCCESS) {
-		return err;
-	}
-
 	/* Check Write Enable bit in Status Register */
-	if (SPI_NOR_WREN_MASK != (transfer.data & SPI_NOR_WREN_MASK)) {
-		LOG_ERR("Write enable failed");
-		return FSP_ERR_ABORTED;
+	if ((err != FSP_SUCCESS) || (SPI_NOR_WREN_MASK != (transfer.data & SPI_NOR_WREN_MASK))) {
+		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 
-static fsp_err_t flash_renesas_ra_ospi_b_setup_calibrate_data(ospi_b_instance_ctrl_t *p_ctrl)
+static int flash_renesas_ra_ospi_b_setup_calibrate_data(ospi_b_instance_ctrl_t *p_ctrl)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	uint32_t autocalibration_data[] = {0xFFFF0000U, 0x000800FFU, 0x00FFF700U, 0xF700F708U};
 
 	/* Verify auto-calibration data */
 	if (memcmp((uint8_t *)APP_ADDRESS(SECTOR_THREE), &autocalibration_data,
 		   sizeof(autocalibration_data)) != RESET_VALUE) {
+		fsp_err_t err;
+
 		/* Erase the flash sector that stores auto-calibration data */
 		err = R_OSPI_B_Erase(p_ctrl, (uint8_t *)APP_ADDRESS(SECTOR_THREE),
 				     SPI_NOR_SECTOR_SIZE);
 		if (err != FSP_SUCCESS) {
-			return err;
+			LOG_DBG("Erase the flash sector Failed");
+			return -EIO;
 		}
 
 		/* Wait until erase operation completes */
 		err = flash_renesas_ra_ospi_b_wait_operation(p_ctrl, TIME_ERASE_4K);
 		if (err != FSP_SUCCESS) {
-			return err;
+			LOG_DBG("Wait for erase operation completes Failed");
+			return -EIO;
 		}
 
 		/* Write auto-calibration data to the flash */
@@ -134,30 +130,36 @@ static fsp_err_t flash_renesas_ra_ospi_b_setup_calibrate_data(ospi_b_instance_ct
 				     (uint8_t *)APP_ADDRESS(SECTOR_THREE),
 				     sizeof(autocalibration_data));
 		if (err != FSP_SUCCESS) {
-			return err;
+			LOG_DBG("Write auto-calibration data Failed");
+			return -EIO;
 		}
 
 		/* Wait until write operation completes */
 		err = flash_renesas_ra_ospi_b_wait_operation(p_ctrl, TIME_WRITE);
 		if (err != FSP_SUCCESS) {
-			return err;
+			LOG_DBG("Wait for write operation completes Failed");
+			return -EIO;
 		}
 	}
 
-	return err;
+	return 0;
 }
 
-static fsp_err_t flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p_ctrl,
-						       spi_flash_cfg_t *p_cfg)
+static int flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p_ctrl,
+						 spi_flash_cfg_t *p_cfg)
 {
 	/* By default, the flash device is in SPI mode, so it is necessary to open the OSPI module
 	 * in SPI mode
 	 */
-	fsp_err_t err = FSP_SUCCESS;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
+	fsp_err_t err;
 
 	/* Open OSPI module */
 	err = R_OSPI_B_Open(p_ctrl, p_cfg);
+	if (err != FSP_SUCCESS) {
+		LOG_DBG("OSPI open Failed");
+		return -EIO;
+	}
 
 	/* DDR sampling window extend */
 	R_XSPI->LIOCFGCS_b[p_ctrl->channel].DDRSMPEX = 1;
@@ -165,7 +167,8 @@ static fsp_err_t flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p
 	/* Switch OSPI module to 1S-1S-1S mode to configure flash device */
 	err = R_OSPI_B_SpiProtocolSet(p_ctrl, SPI_FLASH_PROTOCOL_EXTENDED_SPI);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Switch OSPI module to 1S-1S-1S mode Failed");
+		return -EIO;
 	}
 
 	/* Reset flash device by driving OM_RESET pin */
@@ -177,7 +180,8 @@ static fsp_err_t flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p
 	/* Transfer write enable command */
 	err = flash_renesas_ra_ospi_b_write_enable(p_ctrl);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Enable write Failed");
+		return -EIO;
 	}
 
 	/* Write to CFR2V to configure Address Byte Length and Memory Array Read Latency */
@@ -185,65 +189,72 @@ static fsp_err_t flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p
 	transfer.address_length = ADDRESS_LENGTH_THREE;
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Configure Address Byte Length and Memory Array Read Latency Failed");
+		return -EIO;
 	}
 
 	/* Transfer write enable command */
 	err = flash_renesas_ra_ospi_b_write_enable(p_ctrl);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Enable write Failed");
+		return -EIO;
 	}
 
 	/* Write to CFR3V to configure Volatile Register Read Latency */
 	transfer = direct_transfer[TRANSFER_WRITE_CFR3V_SPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Configure Volatile Register Read Latency Failed");
+		return -EIO;
 	}
 
 	/* Read back and verify CFR2V register data */
 	transfer = direct_transfer[TRANSFER_READ_CFR2V_SPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Read back CFR2V register Failed");
+		return -EIO;
 	}
 
 	if (DATA_CFR2V_REGISTER != (uint8_t)transfer.data) {
-		LOG_ERR("Verify CFR2V register data Failed");
-		return FSP_ERR_ABORTED;
+		LOG_DBG("Verify CFR2V register data Failed");
+		return -EIO;
 	}
 
 	/* Read back and verify CFR3V register data */
 	transfer = direct_transfer[TRANSFER_READ_CFR3V_SPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Read back CFR3V register Failed");
+		return -EIO;
 	}
 
 	if (DATA_CFR3V_REGISTER != (uint8_t)transfer.data) {
-		LOG_ERR("Verify CFR3V register data Failed");
-		return FSP_ERR_ABORTED;
+		LOG_DBG("Verify CFR3V register data Failed");
+		return -EIO;
 	}
 
 	/* Setup calibrate data */
 	err = flash_renesas_ra_ospi_b_setup_calibrate_data(p_ctrl);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Setup calibrate data Failed");
+		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 
-static fsp_err_t flash_renesas_ra_ospi_b_set_protocol_to_opi(ospi_b_instance_ctrl_t *p_ctrl,
-							     const struct device *dev)
+static int flash_renesas_ra_ospi_b_set_protocol_to_opi(ospi_b_instance_ctrl_t *p_ctrl,
+						       const struct device *dev)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
+	fsp_err_t err;
 
 	/* Transfer write enable command */
 	err = flash_renesas_ra_ospi_b_write_enable(p_ctrl);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Enable write Failed");
+		return -EIO;
 	}
 
 	/* Write to CFR5V Register to Configure flash device interface mode */
@@ -251,28 +262,31 @@ static fsp_err_t flash_renesas_ra_ospi_b_set_protocol_to_opi(ospi_b_instance_ctr
 	transfer.data = DATA_SET_OSPI_CFR5V_REGISTER;
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Configure flash device interface mode Failed");
+		return -EIO;
 	}
 
 	/* Switch OSPI module mode to OPI mode */
 	err = R_OSPI_B_SpiProtocolSet(p_ctrl, SPI_FLASH_PROTOCOL_8D_8D_8D);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Switch to OPI mode Failed");
+		return -EIO;
 	}
 
 	/* Read back and verify CFR5V register data */
 	transfer = direct_transfer[TRANSFER_READ_CFR5V_OSPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 	if (err != FSP_SUCCESS) {
-		return err;
+		LOG_DBG("Read back CFR5V register Failed");
+		return -EIO;
 	}
 
 	if (DATA_SET_OSPI_CFR5V_REGISTER != (uint8_t)transfer.data) {
-		LOG_ERR("Verify CFR5V register data Failed");
-		return FSP_ERR_ABORTED;
+		LOG_DBG("CFR5V register data is Incorrect");
+		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 
 static inline bool flash_renesas_ra_ospi_b_is_valid_address(const struct device *dev, off_t offset,
@@ -285,13 +299,12 @@ static inline bool flash_renesas_ra_ospi_b_is_valid_address(const struct device 
 }
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED)
-
 static int flash_renesas_ra_ospi_b_ex_op(const struct device *dev, uint16_t code,
 					 const uintptr_t in, void *out)
 {
 	struct flash_renesas_ra_ospi_b_data *ospi_b_data = dev->data;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
-	int err = -ENOTSUP;
+	int ret = -ENOTSUP;
 
 	ARG_UNUSED(in);
 	ARG_UNUSED(out);
@@ -299,7 +312,8 @@ static int flash_renesas_ra_ospi_b_ex_op(const struct device *dev, uint16_t code
 	acquire_device(dev);
 
 	if (code == FLASH_EX_OP_RESET) {
-		err = flash_renesas_ra_ospi_b_write_enable(&ospi_b_data->ospi_b_ctrl);
+		fsp_err_t err = flash_renesas_ra_ospi_b_write_enable(&ospi_b_data->ospi_b_ctrl);
+
 		if (err == FSP_SUCCESS) {
 			/* Enable reset */
 			transfer = (SPI_FLASH_PROTOCOL_EXTENDED_SPI ==
@@ -320,19 +334,20 @@ static int flash_renesas_ra_ospi_b_ex_op(const struct device *dev, uint16_t code
 						      SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
 		}
 
-		if (err != FSP_SUCCESS) {
-			err = -EIO;
+		if (err == FSP_SUCCESS) {
+			ret = 0;
+		} else {
+			ret = -EIO;
 		}
 	}
 
 	release_device(dev);
 
-	return err;
+	return ret;
 }
-#endif
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
-#if CONFIG_FLASH_PAGE_LAYOUT
-
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 #define SET_PAGES(node_id)                                                                         \
 	{.pages_count = DT_PROP(node_id, pages_count), .pages_size = DT_PROP(node_id, pages_size)},
 
@@ -350,12 +365,11 @@ void flash_renesas_ra_ospi_b_page_layout(const struct device *dev,
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #if defined(CONFIG_FLASH_JESD216_API)
-
-static fsp_err_t flash_renesas_ra_ospi_b_read_device_id(ospi_b_instance_ctrl_t *p_ctrl,
-							uint8_t *const p_id)
+static int flash_renesas_ra_ospi_b_read_device_id(ospi_b_instance_ctrl_t *p_ctrl,
+						  uint8_t *const p_id)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
+	fsp_err_t err;
 
 	/* Read and check flash device ID */
 	transfer = (SPI_FLASH_PROTOCOL_EXTENDED_SPI == p_ctrl->spi_protocol)
@@ -363,19 +377,19 @@ static fsp_err_t flash_renesas_ra_ospi_b_read_device_id(ospi_b_instance_ctrl_t *
 			   : direct_transfer[TRANSFER_READ_DEVICE_ID_OSPI];
 	err = R_OSPI_B_DirectTransfer(p_ctrl, &transfer, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 	if (err != FSP_SUCCESS) {
-		return err;
+		return -EIO;
 	}
 
 	/* Get flash device ID */
 	memcpy(p_id, &transfer.data, sizeof(transfer.data));
 
-	return err;
+	return 0;
 }
 
 static int flash_renesas_ra_ospi_b_read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	struct flash_renesas_ra_ospi_b_data *ospi_b_data = dev->data;
-	int err = 0;
+	int ret;
 
 	if (id == NULL) {
 		return -EINVAL;
@@ -383,11 +397,9 @@ static int flash_renesas_ra_ospi_b_read_jedec_id(const struct device *dev, uint8
 
 	acquire_device(dev);
 
-	err = flash_renesas_ra_ospi_b_read_device_id(&ospi_b_data->ospi_b_ctrl, id);
-	if (err) {
+	ret = flash_renesas_ra_ospi_b_read_device_id(&ospi_b_data->ospi_b_ctrl, id);
+	if (ret) {
 		LOG_ERR("Failed to read jedec id");
-		err = -EIO;
-
 	} else {
 		LOG_INF("Manuf ID = %02x   Memory Type = %02x   Memory Density = %02x   ID Length "
 			"= %02x\n",
@@ -396,7 +408,7 @@ static int flash_renesas_ra_ospi_b_read_jedec_id(const struct device *dev, uint8
 
 	release_device(dev);
 
-	return err;
+	return ret;
 }
 
 static int flash_renesas_ra_ospi_b_sfdp_read(const struct device *dev, off_t offset, void *data,
@@ -405,19 +417,16 @@ static int flash_renesas_ra_ospi_b_sfdp_read(const struct device *dev, off_t off
 	struct flash_renesas_ra_ospi_b_data *ospi_b_data = dev->data;
 	spi_flash_direct_transfer_t transfer = {RESET_VALUE};
 	uint64_t size;
-	uint8_t *p_src;
-	int err = 0;
+	fsp_err_t err;
 
 	if (len == 0) {
 		return 0;
 	}
 
-	if (data != NULL) {
-		p_src = data;
-	} else {
+	if (data == NULL) {
+		LOG_ERR("The data buffer is NULL");
 		return -EINVAL;
 	}
-
 	acquire_device(dev);
 
 	if (ospi_b_data->ospi_b_ctrl.spi_protocol == SPI_FLASH_PROTOCOL_EXTENDED_SPI) {
@@ -434,33 +443,33 @@ static int flash_renesas_ra_ospi_b_sfdp_read(const struct device *dev, off_t off
 		err = R_OSPI_B_DirectTransfer(&ospi_b_data->ospi_b_ctrl, &transfer,
 					      SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 
-		if (err) {
+		if (err != FSP_SUCCESS) {
 			LOG_ERR("Failed to read SFDP id");
 			release_device(dev);
 			return -EIO;
 		}
 
-		memcpy(p_src, &transfer.data, size);
+		memcpy(data, &transfer.data, size);
 
 		len -= size;
 		offset += size;
-		p_src += size;
+		data += size;
 	}
 
 	release_device(dev);
 
-	return err;
+	return 0;
 }
-#endif
+#endif /* CONFIG_FLASH_JESD216_API */
 
 static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_renesas_ra_ospi_b_data *ospi_b_data = dev->data;
 	const struct flash_renesas_ra_ospi_b_config *config = dev->config;
 	uint32_t erase_size, erase_timeout;
-	int err = 0;
+	fsp_err_t err;
 	struct flash_pages_info page_info_start, page_info_end;
-	int rc;
+	int ret;
 
 	if (!len) {
 		return 0;
@@ -471,21 +480,20 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
 		LOG_ERR("Address or size exceeds expected values: "
-			"addr 0x%lx, size %u",
+			"Address 0x%lx, size %u",
 			(long)offset, len);
 		return -EINVAL;
 	}
 
 	/* check offset and len that valid in sector layout */
-	rc = flash_get_page_info_by_offs(dev, offset, &page_info_start);
-	if ((rc != 0) || (offset != page_info_start.start_offset)) {
+	ret = flash_get_page_info_by_offs(dev, offset, &page_info_start);
+	if ((ret != 0) || (offset != page_info_start.start_offset)) {
 		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
 		return -EINVAL;
 	}
 
-	rc = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
-
-	if ((rc != 0) || ((offset + len) != page_info_end.start_offset)) {
+	ret = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
+	if ((ret != 0) || ((offset + len) != page_info_end.start_offset)) {
 		LOG_ERR("The size %u is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
@@ -513,14 +521,16 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset),
 			erase_size);
 		if (err != FSP_SUCCESS) {
-			err = -EIO;
+			LOG_ERR("Erase at address 0x%lx, size %zu Failed", offset, erase_size);
+			ret = -EIO;
 			break;
 		}
 
 		err = flash_renesas_ra_ospi_b_wait_operation(&ospi_b_data->ospi_b_ctrl,
 							     erase_timeout);
 		if (err != FSP_SUCCESS) {
-			err = -EIO;
+			LOG_ERR("Wait for erase to finish timeout");
+			ret = -EIO;
 			break;
 		}
 
@@ -530,20 +540,19 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 
 	release_device(dev);
 
-	return err;
+	return ret;
 }
 
 static int flash_renesas_ra_ospi_b_read(const struct device *dev, off_t offset, void *data,
 					size_t len)
 {
-
 	if (!len) {
 		return 0;
 	}
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
-		LOG_ERR("address or size exceeds expected values: "
-			"addr 0x%lx, size %zu",
+		LOG_ERR("Address or size exceeds expected values: "
+			"Address 0x%lx, size %zu",
 			(long)offset, len);
 		return -EINVAL;
 	}
@@ -557,7 +566,8 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 					 size_t len)
 {
 	struct flash_renesas_ra_ospi_b_data *ospi_b_data = dev->data;
-	int err = 0;
+	fsp_err_t err;
+	int ret = 0;
 	uint32_t size;
 	const uint8_t *p_src;
 
@@ -568,12 +578,13 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 	if (data != NULL) {
 		p_src = data;
 	} else {
+		LOG_ERR("The data buffer is NULL");
 		return -EINVAL;
 	}
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
-		LOG_ERR("address or size exceeds expected values: "
-			"addr 0x%lx, size %zu",
+		LOG_ERR("Address or size exceeds expected values: "
+			"Address 0x%lx, size %zu",
 			(long)offset, len);
 		return -EINVAL;
 	}
@@ -589,13 +600,15 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 			&ospi_b_data->ospi_b_ctrl, p_src,
 			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset), size);
 		if (err != FSP_SUCCESS) {
-			err = -EIO;
+			LOG_ERR("Write at address 0x%lx, size %zu", offset, size);
+			ret = -EIO;
 			break;
 		}
 
 		err = flash_renesas_ra_ospi_b_wait_operation(&ospi_b_data->ospi_b_ctrl, TIME_WRITE);
 		if (err != FSP_SUCCESS) {
-			err = -EIO;
+			LOG_ERR("Wait for write to finish timeout");
+			ret = -EIO;
 			break;
 		}
 
@@ -606,7 +619,7 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 
 	release_device(dev);
 
-	return err;
+	return ret;
 }
 
 static const struct flash_parameters *
@@ -648,7 +661,7 @@ static int flash_renesas_ra_ospi_b_init(const struct device *dev)
 	const struct flash_renesas_ra_ospi_b_config *config = dev->config;
 	struct flash_renesas_ra_ospi_b_data *data = dev->data;
 	uint32_t clock_freq;
-	int err = 0;
+	int ret;
 
 	/* protocol/data_rate of XSPI checking */
 	if (config->protocol == XSPI_DUAL_MODE || config->protocol == XSPI_QUAD_MODE) {
@@ -667,18 +680,17 @@ static int flash_renesas_ra_ospi_b_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_subsys);
-	if (err < 0) {
-		LOG_ERR("Could not initialize clock (%d)", err);
-		return err;
+	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("Could not initialize clock (%d)", ret);
+		return ret;
 	}
 
-	err = clock_control_get_rate(config->clock_dev,
+	ret = clock_control_get_rate(config->clock_dev,
 				     (clock_control_subsys_t)&config->clock_subsys, &clock_freq);
-
-	if (err) {
-		LOG_ERR("Failed to get clock frequency (%d)", err);
-		return err;
+	if (ret) {
+		LOG_ERR("Failed to get clock frequency (%d)", ret);
+		return ret;
 	}
 
 	if ((config->protocol == XSPI_SPI_MODE && (config->max_frequency / 2) < clock_freq) ||
@@ -687,32 +699,31 @@ static int flash_renesas_ra_ospi_b_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		LOG_ERR("Failed to configure pins (%d)", err);
-		return err;
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		LOG_ERR("Failed to configure pins (%d)", ret);
+		return ret;
 	}
 
 	k_sem_init(&data->sem, 1, 1);
 
-	err = flash_renesas_ra_ospi_b_spi_mode_init(&data->ospi_b_ctrl, &data->ospi_b_cfg);
-
-	if (err) {
+	ret = flash_renesas_ra_ospi_b_spi_mode_init(&data->ospi_b_ctrl, &data->ospi_b_cfg);
+	if (ret) {
 		LOG_ERR("Init SPI mode failed");
-		return -EIO;
+		return ret;
 	}
 
 	if (config->protocol == XSPI_OCTO_MODE) {
-		err = flash_renesas_ra_ospi_b_set_protocol_to_opi(&data->ospi_b_ctrl, dev);
-		if (err) {
+		ret = flash_renesas_ra_ospi_b_set_protocol_to_opi(&data->ospi_b_ctrl, dev);
+		if (ret) {
 			LOG_ERR("Init OPI mode failed");
-			return -EIO;
+			return ret;
 		}
 	}
 
 	LOG_INF("Mode: %d	Freq: %u", config->protocol, clock_freq);
 
-	return err;
+	return ret;
 }
 
 PINCTRL_DT_DEFINE(DT_INST_PARENT(0));
