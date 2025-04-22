@@ -42,25 +42,6 @@ void set_mode_stop(uint8_t substate_id)
 	case 3: /* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
 		break;
-#ifdef CONFIG_STM32_STOP3_LP_MODE
-	case 4: /* enter STOP3 mode */
-
-		LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_FULL_RETENTION);
-		/* Enable RTC wakeup
-		 * This configures an internal pin that generates an event to wakeup the system
-		 */
-		LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN7);
-		LL_PWR_SetWakeUpPinSignal3Selection(LL_PWR_WAKEUP_PIN7);
-
-		/* Clear flags */
-		LL_PWR_ClearFlag_SB();
-		LL_PWR_ClearFlag_WU();
-
-		disable_cache();
-
-		LL_PWR_SetPowerMode(LL_PWR_STOP3_MODE);
-		break;
-#endif
 	default:
 		LOG_DBG("Unsupported power state substate-id %u", substate_id);
 		break;
