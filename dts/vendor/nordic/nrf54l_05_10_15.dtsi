@@ -165,6 +165,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				status = "disabled";
+				enable-secure;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
