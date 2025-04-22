@@ -74,8 +74,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	/* Set SLEEPDEEP bit of Cortex System Control Register */
 	LL_LPM_EnableDeepSleep();
 
-	/* Select mode entry : WFE or WFI and enter the CPU selected mode */
-	k_cpu_idle();
+	__WFI();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
