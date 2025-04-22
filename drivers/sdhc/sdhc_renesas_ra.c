@@ -65,7 +65,7 @@ struct sdhc_ra_priv {
 	/* Transfer DTC */
 	struct st_transfer_instance transfer;
 	struct st_dtc_instance_ctrl transfer_ctrl;
-	struct st_transfer_info transfer_info;
+	struct st_transfer_info transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg transfer_cfg;
 	struct st_dtc_extended_cfg transfer_cfg_extend;
 };
