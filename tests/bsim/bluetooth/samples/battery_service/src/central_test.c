@@ -597,7 +597,7 @@ static void test_bas_central_main(void)
 
 	LOG_DBG("Bluetooth initialized\n");
 
-	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_DEVICE_NAME);
+	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_GAP_DEVICE_NAME);
 	TEST_ASSERT(!err, "Failed to start scan (err %d)", err);
 
 	/* Create a connection using that address */

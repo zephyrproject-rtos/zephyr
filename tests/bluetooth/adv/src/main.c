@@ -10,7 +10,7 @@
 
 #include <zephyr/ztest.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 #define TIMEOUT_MS 300000 /* 5 minutes */

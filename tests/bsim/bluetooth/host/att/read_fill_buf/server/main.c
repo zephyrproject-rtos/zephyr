@@ -4,6 +4,7 @@
 
 #include <argparse.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
@@ -37,15 +38,16 @@ BT_GATT_SERVICE_DEFINE(long_attr_svc, BT_GATT_PRIMARY_SERVICE(MTU_VALIDATION_SVC
 static void test_srv_main(void)
 {
 	int err;
+	char *name = "d1";
 
 	err = bt_enable(NULL);
 	__ASSERT_NO_MSG(!err);
 
 	__ASSERT_NO_MSG(get_device_nbr() == 1);
-	err = bt_set_name("d1");
+	err = bt_gap_set_device_name(name, sizeof(name));
 	__ASSERT_NO_MSG(!err);
 
-	err = bt_testlib_adv_conn(NULL, BT_ID_DEFAULT, bt_get_name());
+	err = bt_testlib_adv_conn(NULL, BT_ID_DEFAULT, name);
 	__ASSERT_NO_MSG(!err);
 
 	TEST_PASS("PASS");

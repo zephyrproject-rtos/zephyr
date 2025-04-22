@@ -68,7 +68,7 @@ void dut_procedure_connect_short_rpa_timeout(void)
 	err = bt_le_set_rpa_timeout(rpa_timeout_s);
 	TEST_ASSERT(!err, "Failed to set RPA timeout (err %d)", err);
 
-	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_DEVICE_NAME);
+	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_GAP_DEVICE_NAME);
 	TEST_ASSERT(!err, "Failed to start scan (err %d)", err);
 
 	/* Indicate to the peer device that we have found the advertiser. */

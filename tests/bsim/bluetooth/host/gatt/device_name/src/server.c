@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -112,15 +113,17 @@ void server_procedure(void)
 
 	bool names_are_matching;
 
-	uint8_t expected_name[CONFIG_BT_DEVICE_NAME_MAX];
+	char *name = "Server Super Name";
+
+	uint8_t expected_name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
 
 	/* add one for the null character */
-	char original_name[CONFIG_BT_DEVICE_NAME_MAX + 1];
-	char new_name[CONFIG_BT_DEVICE_NAME_MAX + 1];
+	uint8_t original_name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
+	size_t original_name_size;
+	uint8_t new_name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
+	size_t new_name_size;
 
-	const char *name;
-
-	generate_name(expected_name, CONFIG_BT_DEVICE_NAME_MAX);
+	generate_name(expected_name, CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX);
 
 	TEST_START("server");
 
@@ -131,11 +134,12 @@ void server_procedure(void)
 
 	LOG_DBG("Bluetooth initialized");
 
-	err = bt_set_name("Server Super Name");
+	err = bt_gap_set_device_name(name, sizeof(name));
 	TEST_ASSERT(err == 0, "Failed to set the name (err %d)", err);
 
-	name = bt_get_name();
-	memcpy(original_name, name, strlen(name) + 1);
+	original_name_size = bt_gap_get_device_name(original_name, sizeof(original_name));
+        TEST_ASSERT(original_name_size >= 0,
+                    "Failed to get device name (err %d)", original_name_size);
 
 	init_server_conn_callbacks();
 
@@ -144,18 +148,19 @@ void server_procedure(void)
 	/* wait for client to do gatt write */
 	bk_sync_wait();
 
-	name = bt_get_name();
-	memcpy(new_name, name, strlen(name) + 1);
+	new_name_size = bt_gap_get_device_name(new_name, sizeof(new_name));
+        TEST_ASSERT(new_name_size >= 0, "Failed to get device name (err %d)",
+                    new_name_size);
 
-	LOG_DBG("Original Device Name: %s", original_name);
-	LOG_DBG("New Device Name: %s", new_name);
+        LOG_DBG("Original Device Name: %.*s", original_name_size, original_name);
+	LOG_DBG("New Device Name: %.*s", new_name_size, new_name);
 
 	names_are_matching =
 		memeq(expected_name, sizeof(expected_name), new_name, strlen(new_name));
 	TEST_ASSERT(names_are_matching,
 		    "The name of the server doesn't match the one set by the client (server name: "
-		    "`%s`, expected name: `%.*s`)",
-		    new_name, sizeof(expected_name), expected_name);
+		    "`%.*s`, expected name: `%.*s`)",
+		    new_name_size, new_name, sizeof(expected_name), expected_name);
 
 	TEST_PASS("server");
 }

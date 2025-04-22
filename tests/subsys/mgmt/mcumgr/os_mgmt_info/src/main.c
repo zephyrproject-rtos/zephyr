@@ -71,7 +71,7 @@ static struct state test_state = {
 const uint8_t response_kernel_name[] = "Zephyr";
 
 #if defined(CONFIG_BT)
-const uint8_t response_node_name[] = CONFIG_BT_DEVICE_NAME;
+const uint8_t response_node_name[] = CONFIG_BT_GAP_DEVICE_NAME;
 #elif defined(CONFIG_NET_HOSTNAME_ENABLE)
 const uint8_t response_node_name[] = CONFIG_NET_HOSTNAME;
 #else
@@ -90,7 +90,7 @@ const uint8_t response_os_custom[] = CONFIG_CUSTOM_OS_NAME_VALUE;
 
 const uint8_t response_all_board_revision[] = "Zephyr "
 #if defined(CONFIG_BT)
-					      CONFIG_BT_DEVICE_NAME
+					      CONFIG_BT_GAP_DEVICE_NAME
 #elif defined(CONFIG_NET_HOSTNAME_ENABLE)
 					      CONFIG_NET_HOSTNAME
 #else
@@ -103,7 +103,7 @@ const uint8_t response_all_board_revision[] = "Zephyr "
 
 const uint8_t response_all[] = "Zephyr "
 #if defined(CONFIG_BT)
-			       CONFIG_BT_DEVICE_NAME
+			       CONFIG_BT_GAP_DEVICE_NAME
 #elif defined(CONFIG_NET_HOSTNAME_ENABLE)
 			       CONFIG_NET_HOSTNAME
 #else

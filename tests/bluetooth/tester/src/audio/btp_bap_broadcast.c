@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include "bap_endpoint.h"
 #include <zephyr/logging/log.h>
@@ -375,6 +376,8 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
 	uint32_t broadcast_id;
+	uint8_t device_name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+	size_t device_name_size;
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
@@ -439,9 +442,10 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	base_ad[0].type = BT_DATA_SVC_DATA16;
 	base_ad[0].data_len = ad_buf.len;
 	base_ad[0].data = ad_buf.data;
+	device_name_size = bt_gap_get_device_name(device_name, sizeof(device_name));
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
-	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
-	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+	base_ad[1].data_len = device_name_size;
+	base_ad[1].data = device_name;
 
 	err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY,
 					     base_ad, ARRAY_SIZE(base_ad), NULL, 0, &gap_settings,
@@ -497,6 +501,8 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len,
 	struct bt_audio_codec_cfg codec_cfg;
 	const struct btp_bap_broadcast_source_setup_v2_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_v2_rp *rp = rsp;
+	uint8_t device_name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+	size_t device_name_size;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->cc_ltvs_len)) {
@@ -554,9 +560,10 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len,
 	base_ad[0].type = BT_DATA_SVC_DATA16;
 	base_ad[0].data_len = ad_buf.len;
 	base_ad[0].data = ad_buf.data;
+	device_name_size = bt_gap_get_device_name(device_name, sizeof(device_name));
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
-	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
-	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+	base_ad[1].data_len = device_name_size;
+	base_ad[1].data = device_name;
 
 	err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY,
 					     base_ad, ARRAY_SIZE(base_ad), NULL, 0, &gap_settings,
