@@ -336,7 +336,6 @@ The following code demonstrates a direct ISR:
 
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-    /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
