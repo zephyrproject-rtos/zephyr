@@ -113,13 +113,13 @@ static void intc_miwu_isr_pri(int wui_table, int wui_group)
 	const uint32_t base = config->base;
 	uint8_t mask = NPCM_WKPND(base, wui_group) & NPCM_WKEN(base, wui_group);
 
+	/* Dispatch registered gpio isrs */
+	intc_miwu_dispatch_isr(&data->cb_list_grp[wui_group], mask);
+
 	/* Clear pending bits before dispatch ISR */
 	if (mask) {
 		NPCM_WKPCL(base, wui_group) = mask;
 	}
-
-	/* Dispatch registered gpio isrs */
-	intc_miwu_dispatch_isr(&data->cb_list_grp[wui_group], mask);
 }
 
 /* Platform specific MIWU functions */
