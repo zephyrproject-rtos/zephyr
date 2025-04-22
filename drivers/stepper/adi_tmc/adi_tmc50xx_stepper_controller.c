@@ -105,6 +105,23 @@ static int tmc50xx_stepper_set_event_callback(const struct device *dev,
 	return 0;
 }
 
+static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *actual_velocity)
+{
+	int err;
+
+	err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index), actual_velocity);
+	if (err) {
+		LOG_ERR("Failed to read VACTUAL register");
+		return err;
+	}
+
+	*actual_velocity = sign_extend(*actual_velocity, TMC_RAMP_VACTUAL_SHIFT);
+	if (actual_velocity) {
+		LOG_DBG("actual velocity: %d", *actual_velocity);
+	}
+	return 0;
+}
+
 static int stallguard_enable(const struct device *dev, const bool enable)
 {
 	const struct tmc50xx_stepper_config *config = dev->config;
@@ -122,17 +139,10 @@ static int stallguard_enable(const struct device *dev, const bool enable)
 
 		int32_t actual_velocity;
 
-		err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index),
-				   &actual_velocity);
+		err = read_vactual(config, &actual_velocity);
 		if (err) {
-			LOG_ERR("Failed to read VACTUAL register");
 			return -EIO;
 		}
-
-		actual_velocity = (actual_velocity << (31 - TMC_RAMP_VACTUAL_SHIFT)) >>
-				  (31 - TMC_RAMP_VACTUAL_SHIFT);
-		LOG_DBG("actual velocity: %d", actual_velocity);
-
 		if (abs(actual_velocity) < config->sg_threshold_velocity) {
 			return -EAGAIN;
 		}
@@ -197,11 +207,17 @@ static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint
 	const uint8_t sg_result = FIELD_GET(TMC5XXX_DRV_STATUS_SG_RESULT_MASK, drv_status);
 	const bool sg_status = FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status);
 
-	LOG_DBG("%s position: %d | sg result: %d status: %d",
+	LOG_DBG("%s position: %d | sg result: %3d status: %d",
 		stepper_data->stepper->name, position, sg_result, sg_status);
 }
 
 #endif
+
+static void rampstat_work_reschedule(struct k_work_delayable *rampstat_callback_dwork)
+{
+	k_work_reschedule(rampstat_callback_dwork,
+		K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+}
 
 static void rampstat_work_handler(struct k_work *work)
 {
@@ -277,9 +293,7 @@ static void rampstat_work_handler(struct k_work *work)
 			break;
 		}
 	} else {
-		k_work_reschedule(
-			&stepper_data->rampstat_callback_dwork,
-			K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+		rampstat_work_reschedule(&stepper_data->rampstat_callback_dwork);
 	}
 }
 
@@ -474,9 +488,7 @@ static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	if (data->callback) {
-		k_work_reschedule(
-			&data->rampstat_callback_dwork,
-			K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+		rampstat_work_reschedule(&data->rampstat_callback_dwork);
 	}
 #endif
 	return 0;
@@ -536,9 +548,7 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	if (data->callback) {
-		k_work_reschedule(
-			&data->rampstat_callback_dwork,
-			K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+		rampstat_work_reschedule(&data->rampstat_callback_dwork);
 	}
 #endif
 	return 0;
@@ -687,8 +697,7 @@ static int tmc50xx_stepper_init(const struct device *dev)
 
 #if CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
-	k_work_reschedule(&data->rampstat_callback_dwork,
-			  K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	rampstat_work_reschedule(&data->rampstat_callback_dwork);
 #endif
 	err = tmc50xx_stepper_set_micro_step_res(dev, stepper_config->default_micro_step_res);
 	if (err != 0) {
