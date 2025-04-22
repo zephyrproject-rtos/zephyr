@@ -13,6 +13,7 @@ if(CONFIG_NRF_REGTOOL_GENERATE_UICR)
 endif()
 if(DEFINED nrf_regtool_components)
   find_package(nrf-regtool 9.1.0
+    REQUIRED
     COMPONENTS ${nrf_regtool_components}
     PATHS ${CMAKE_CURRENT_LIST_DIR}/nrf-regtool
     NO_CMAKE_PATH
