@@ -89,6 +89,13 @@ struct btp_l2cap_disconnect_eatt_chans_cmd {
 	uint8_t count;
 } __packed;
 
+#define BTP_L2CAP_SEND_ECHO_REQ				0x0a
+struct btp_l2cap_send_echo_req_cmd {
+	bt_addr_le_t address;
+	uint16_t data_length;
+	uint8_t data[];
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
