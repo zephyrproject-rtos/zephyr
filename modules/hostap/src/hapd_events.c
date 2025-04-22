@@ -35,10 +35,17 @@ static enum wifi_link_mode hapd_get_sta_link_mode(struct hostapd_iface *iface,
 	}
 }
 
-static bool hapd_is_twt_capable(struct hostapd_iface *iface, struct sta_info *sta)
+#define HE_MACCAP_TWT_REQUESTER BIT(1)
+
+static bool hapd_get_sta_he_twt_capable(struct hostapd_iface *iface, struct sta_info *sta)
 {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
-	return hostapd_get_he_twt_responder(iface->bss[0], IEEE80211_MODE_AP);
+	if (sta->flags & WLAN_STA_HE) {
+		return (sta->he_capab->he_mac_capab_info[0]
+			& HE_MACCAP_TWT_REQUESTER ? true : false);
+	} else {
+		return false;
+	}
 #else
 	return false;
 #endif
@@ -73,7 +80,7 @@ int hostapd_send_wifi_mgmt_ap_sta_event(struct hostapd_iface *ap_ctx,
 
 	if (event == NET_EVENT_WIFI_CMD_AP_STA_CONNECTED) {
 		sta_info.link_mode = hapd_get_sta_link_mode(ap_ctx, sta);
-		sta_info.twt_capable = hapd_is_twt_capable(ap_ctx, sta);
+		sta_info.twt_capable = hapd_get_sta_he_twt_capable(ap_ctx, sta);
 	}
 
 	return supplicant_send_wifi_mgmt_event(ifname,
