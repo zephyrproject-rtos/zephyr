@@ -464,6 +464,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.logger.debug(f'Erase modes: chip:{erase_arg} ext_mem:'
                           f'{ext_mem_erase_opt}')
 
+        # Temp hack while waiting for NRF54H20_IRON support for Network in nrfutil
+        if self.build_conf.get('CONFIG_SOC_NRF54H20_IRON') and core == "Network":
+            core = "Application"
+
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
 
