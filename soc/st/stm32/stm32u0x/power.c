@@ -86,18 +86,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		if (substate_id <= 3) {
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
-#ifdef CONFIG_STM32_STOP3_LP_MODE
-		} else if (substate_id == 4) {
-			stm32_clock_control_standby_exit();
-
-			LL_ICACHE_SetMode(LL_ICACHE_1WAY);
-			LL_ICACHE_Enable();
-			while (LL_ICACHE_IsEnabled() == 0U) {
-			}
-
-			LL_LPM_DisableSleepOnExit();
-			LL_LPM_EnableSleep();
-#endif
 		} else {
 			LOG_DBG("Unsupported power substate-id %u",
 							substate_id);
