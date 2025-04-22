@@ -4856,12 +4856,13 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 	struct bt_l2cap_sig_hdr *hdr;
+	uint8_t ident = 0;
 	uint16_t len;
 
 	while (buf->len > 0) {
 		if (buf->len < sizeof(*hdr)) {
 			LOG_ERR("Too small L2CAP signaling PDU");
-			return 0;
+			goto reject;
 		}
 
 		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
@@ -4871,7 +4872,7 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 		if (buf->len < len) {
 			LOG_ERR("L2CAP length is short (%u < %u)", buf->len, len);
-			return 0;
+			goto reject;
 		}
 
 		if (!hdr->ident) {
@@ -4880,7 +4881,19 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			continue;
 		}
 
+		if (ident == 0) {
+			LOG_DBG("Save identifier of the first request in the L2CAP packet.");
+			ident = hdr->ident;
+		}
+
 		l2cap_br_sig_handle(l2cap, hdr, buf);
+	}
+
+	return 0;
+
+reject:
+	if (ident != 0) {
+		l2cap_br_send_reject(chan->conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 	}
 
 	return 0;
