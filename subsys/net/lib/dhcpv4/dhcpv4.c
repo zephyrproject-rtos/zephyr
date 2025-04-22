@@ -51,6 +51,10 @@ static struct net_mgmt_event_callback mgmt4_if_cb;
 static struct net_mgmt_event_callback mgmt4_acd_cb;
 #endif
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+static sys_slist_t option_request_callbacks = SYS_SLIST_STATIC_INIT(&option_request_callbacks);
+#endif
+
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
 static int unique_types_in_callbacks;
@@ -88,6 +92,20 @@ static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 
 	return true;
 }
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+static uint16_t dhcpv4_get_request_options_length(void)
+{
+	struct net_dhcpv4_option_request_callback *cb, *tmp;
+	uint16_t length = 0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_request_callbacks, cb, tmp, node) {
+		length += 2; // OPTION ID + LENGTH
+		length += cb->max_length;
+	}
+	return length;
+}
+#endif /* CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS */
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static void dhcpv4_option_callback_get_unique_types(uint8_t *types)
@@ -230,6 +248,24 @@ static inline bool dhcpv4_add_sname(struct net_pkt *pkt)
 	return true;
 }
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+static inline bool dhcpv4_add_request_options(struct net_if *iface, struct net_pkt *pkt, uint8_t type)
+{
+	struct net_dhcpv4_option_request_callback *cb, *tmp;
+	bool retcode = true;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_request_callbacks, cb, tmp, node) {
+		size_t length = 0;
+		NET_ASSERT(cb->handler, "No callback handler!");
+		cb->handler(cb, &length, type, iface);
+		NET_ASSERT(length <= cb->max_length, "Length for option %u too big (max %u, len %u)", cb->option, cb->max_length, length);
+		retcode &= dhcpv4_add_option_length_value(pkt, cb->option, length, cb->data);
+	}
+
+	return retcode;
+}
+#endif /* CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS */
+
 /* Create DHCPv4 message and add options as per message type */
 static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 					     const struct in_addr *ciaddr,
@@ -282,6 +318,10 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	if (vendor_class_id_size > 0) {
 		size += DHCPV4_OLV_MSG_VENDOR_CLASS_ID + vendor_class_id_size;
 	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+	size += dhcpv4_get_request_options_length();
 #endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, size, AF_INET,
@@ -352,6 +392,12 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
 	if (vendor_class_id_size > 0 &&
 	     !dhcpv4_add_vendor_class_id(pkt, vendor_class_id, vendor_class_id_size)) {
+		goto fail;
+	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+	if (!dhcpv4_add_request_options(iface, pkt, type)) {
 		goto fail;
 	}
 #endif
@@ -1729,6 +1775,38 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 	k_mutex_unlock(&lock);
 }
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS)
+
+int net_dhcpv4_add_option_request_callback(struct net_dhcpv4_option_request_callback *cb)
+{
+	if (cb == NULL || cb->handler == NULL ||cb->max_length > 255) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	sys_slist_prepend(&option_request_callbacks, &cb->node);
+	k_mutex_unlock(&lock);
+	return 0;
+}
+
+int net_dhcpv4_remove_option_request_callback(struct net_dhcpv4_option_request_callback *cb)
+{
+	int ret = 0;
+
+	if (cb == NULL || cb->handler == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	if (!sys_slist_find_and_remove(&option_request_callbacks, &cb->node)) {
+		ret = -EINVAL;
+	}
+	k_mutex_unlock(&lock);
+	return ret;
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_REQUEST_CALLBACKS */
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 

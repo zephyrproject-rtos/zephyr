@@ -86,6 +86,14 @@ config NET_DHCPV4_OPTION_NTP_SERVER
 	  If this option is set, then the NTP server can be set from the
 	  DHCPv4 option.
 
+config NET_DHCPV4_OPTION_REQUEST_CALLBACKS
+	bool "Option callbacks for DHCP requests"
+	depends on NET_DHCPV4
+	help
+	  If set, custom callbacks for arbitrary DHCP options
+	  can be added. These can be used to add DHCP options
+	  to the DHCP requests.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
