@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_PCM1681_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_TI_PCM1681),i2c)
+	help
+	  I2C version of pcm1681xx driver
+
+config AUDIO_CODEC_PCM1681_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_TI_PCM1681),spi)
+	help
+	  SPI version of pcm1681xx driver
+
+config AUDIO_CODEC_PCM1681
+	bool "PCM1681(-Q1) DAC support"
+	default y
+	depends on DT_HAS_TI_PCM1681_ENABLED
+	select I2C if AUDIO_CODEC_PCM1681_I2C
+	select SPI if AUDIO_CODEC_PCM1681_SPI
+	help
+	  Enable PCM1681 or PCM1681-Q1 support
