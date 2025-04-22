@@ -8,10 +8,14 @@
 #include <ksched.h>
 #include <ipi.h>
 
+struct timeslice_data {
+	struct _timeout timeout;  /* timeout for the timeslice */
+	bool expired;             /* true if timeslice expired */
+};
+
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
-static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
-static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
+static struct timeslice_data slice_data[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -60,9 +64,13 @@ int z_time_slice_size(struct k_thread *thread)
 
 static void slice_timeout(struct _timeout *timeout)
 {
-	unsigned int cpu = ARRAY_INDEX(slice_timeouts, timeout);
+	struct timeslice_data *ts;
+	unsigned int cpu;
 
-	slice_expired[cpu] = true;
+	ts = CONTAINER_OF(timeout, struct timeslice_data, timeout);
+	cpu = ARRAY_INDEX(slice_data, ts);
+
+	ts->expired = true;
 
 	/* We need an IPI if we just handled a timeslice expiration
 	 * for a different CPU.
@@ -76,10 +84,10 @@ void z_reset_time_slice(unsigned int cpu, struct k_thread *thread)
 {
 	int slice_size = z_time_slice_size(thread);
 
-	z_abort_timeout(&slice_timeouts[cpu]);
-	slice_expired[cpu] = false;
+	z_abort_timeout(&slice_data[cpu].timeout);
+	slice_data[cpu].expired = false;
 	if (slice_size != 0) {
-		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
+		z_add_timeout(&slice_data[cpu].timeout, slice_timeout,
 			      K_TICKS(slice_size - 1));
 	}
 }
@@ -134,7 +142,7 @@ void z_time_slice(void)
 	pending_current = NULL;
 #endif
 
-	if (slice_expired[_current_cpu->id] && (z_time_slice_size(curr) != 0)) {
+	if (slice_data[_current_cpu->id].expired && (z_time_slice_size(curr) != 0)) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&_sched_spinlock, key);
