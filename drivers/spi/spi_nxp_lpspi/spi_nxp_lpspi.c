@@ -219,6 +219,23 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 	lpspi_next_tx_fill(data->dev);
 }
 
+static inline void lpspi_end_xfer(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+
+	spi_context_complete(ctx, dev, 0);
+	NVIC_ClearPendingIRQ(config->irqn);
+	if (!(ctx->config->operation & SPI_HOLD_ON_CS)) {
+		base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
+	}
+	lpspi_wait_tx_fifo_empty(dev);
+	spi_context_cs_control(ctx, false);
+	spi_context_release(&data->ctx, 0);
+}
+
 static void lpspi_isr(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -253,15 +270,13 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_data->fill_len = fill_len;
 	}
 
-	if (spi_context_rx_len_left(ctx) == 1) {
-		base->TCR &= ~LPSPI_TCR_CONT_MASK;
+	if (spi_context_rx_len_left(ctx) == 1 && (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
+		/* Due to stalling behavior on older LPSPI,
+		 * need to end xfer in order to get last bit clocked out on bus.
+		 */
+		base->TCR |= LPSPI_TCR_CONT_MASK;
 	} else if (spi_context_rx_len_left(ctx) == 0) {
-		spi_context_complete(ctx, dev, 0);
-		NVIC_ClearPendingIRQ(config->irqn);
-		base->TCR &= ~LPSPI_TCR_CONT_MASK;
-		lpspi_wait_tx_fifo_empty(dev);
-		spi_context_cs_control(ctx, false);
-		spi_context_release(&data->ctx, 0);
+		lpspi_end_xfer(dev);
 	}
 }
 
@@ -302,8 +317,16 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	base->CR |= LPSPI_CR_MEN_MASK;
 
-	/* keep the chip select asserted until the end of the zephyr xfer */
-	base->TCR |= LPSPI_TCR_CONT_MASK;
+	/* keep the chip select asserted until the end of the zephyr xfer by using
+	 * continunous transfer mode. If SPI_HOLD_ON_CS is requested, we need
+	 * to also set CONTC in order to continue the previous command to keep CS
+	 * asserted.
+	 */
+	if (spi_cfg->operation & SPI_HOLD_ON_CS || base->TCR & LPSPI_TCR_CONTC_MASK) {
+		base->TCR |= LPSPI_TCR_CONTC_MASK | LPSPI_TCR_CONT_MASK;
+	} else {
+		base->TCR |= LPSPI_TCR_CONT_MASK;
+	}
 	/* tcr is written to tx fifo */
 	lpspi_wait_tx_fifo_empty(dev);
 
@@ -352,6 +375,7 @@ static DEVICE_API(spi, lpspi_driver_api) = {
 
 static int lpspi_init(const struct device *dev)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
 	int err = 0;
 
@@ -359,6 +383,14 @@ static int lpspi_init(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	/* Starting config should be master with active low CS, to make sure
+	 * the CS lines are configured properly at init for the most common use
+	 * cases. This can be changed later on transceive call if user specifies
+	 * different spi configuration.
+	 */
+	base->CFGR1 |= LPSPI_CFGR1_MASTER_MASK;
+	base->CFGR1 &= ~LPSPI_CFGR1_PCSPOL_MASK;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
