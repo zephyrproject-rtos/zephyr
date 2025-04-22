@@ -133,6 +133,7 @@ struct icm45686_stream {
 enum icm45686_bus_type {
 	ICM45686_BUS_SPI,
 	ICM45686_BUS_I2C,
+	ICM45686_BUS_I3C,
 };
 
 struct icm45686_data {

@@ -206,6 +206,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			data_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			data_rd_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 		}
 		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -237,6 +239,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 					 NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 		}
 		write_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -277,6 +281,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
 	}
@@ -329,6 +335,8 @@ static void icm45686_event_handler(const struct device *dev)
 					 NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 		}
 		rtio_submit(data->rtio.ctx, 0);
 
@@ -389,6 +397,8 @@ static void icm45686_event_handler(const struct device *dev)
 			   NULL);
 	if (data->rtio.type == ICM45686_BUS_I2C) {
 		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -413,6 +423,8 @@ static void icm45686_event_handler(const struct device *dev)
 			   NULL);
 	if (data->rtio.type == ICM45686_BUS_I2C) {
 		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
 	read_fifo_ct_sqe->flags |= RTIO_SQE_CHAINED;
 
