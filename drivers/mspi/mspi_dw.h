@@ -1,8 +1,17 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(snps_designware_ssi_v2)
+/*
+ * Later versions of the SSI have different register offsets. Define a macro
+ * to use these.
+ */
+#define SSI_VERSION_2 1
+#endif
 
 /*
  * This header is part of mspi_dw.c extracted only for clarity.
@@ -27,6 +36,7 @@
 #define CTRLR0_FRF_SSP		1UL
 #define CTRLR0_FRF_MICROWIRE	2UL
 #define CTRLR0_DFS_MASK		GENMASK(4, 0)
+#define CTRLR0_DFS32_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(20, 16), (0))
 
 /* CTRLR1- Control Register 1 */
 #define CTRLR1_NDF_MASK		GENMASK(15, 0)
