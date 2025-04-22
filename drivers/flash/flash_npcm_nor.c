@@ -23,6 +23,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcm_nor, CONFIG_FLASH_LOG_LEVEL);
 
+#ifdef CONFIG_XIP
+	#include <zephyr/linker/linker-defs.h>
+	#define RAMFUNC __attribute__ ((section(".ramfunc")))
+#else
+	#define RAMFUNC
+#endif
+
 #define BLOCK_64K_SIZE KB(64)
 #define BLOCK_4K_SIZE  KB(4)
 #define MAPPED_ADDR_NOT_SUPPORT	0xffffffff
@@ -61,7 +68,7 @@ static const struct flash_parameters flash_npcm_parameters = {
 		     DT_INST_STRING_TOKEN(inst, quad_enable_requirements))),	\
 		    ((JESD216_DW15_QER_VAL_NONE)))
 
-static inline bool is_within_region(off_t addr, size_t size, off_t region_start,
+RAMFUNC static inline bool is_within_region(off_t addr, size_t size, off_t region_start,
 				    size_t region_size)
 {
 	return (addr >= region_start &&
@@ -69,13 +76,20 @@ static inline bool is_within_region(off_t addr, size_t size, off_t region_start,
 		((addr + size) <= (region_start + region_size)));
 }
 
-static int flash_npcm_transceive(const struct device *dev, struct npcm_transceive_cfg *cfg,
+RAMFUNC static int flash_npcm_transceive(const struct device *dev, struct npcm_transceive_cfg *cfg,
 				     uint32_t flags)
 {
 	const struct flash_npcm_nor_config *config = dev->config;
 	struct flash_npcm_nor_data *data = dev->data;
 	struct npcm_qspi_data *qspi_data = config->qspi_bus->data;
 	int ret;
+
+#ifdef CONFIG_XIP
+	unsigned int key = 0;
+
+	/* Disable IRQ */
+ 	key = irq_lock();
+#endif
 
 	/* Lock SPI bus and configure it if needed */
 	qspi_data->qspi_ops->lock_configure(config->qspi_bus, &config->qspi_cfg,
@@ -87,18 +101,22 @@ static int flash_npcm_transceive(const struct device *dev, struct npcm_transceiv
 	/* Unlock SPI bus */
 	qspi_data->qspi_ops->unlock(config->qspi_bus);
 
+#ifdef CONFIG_XIP
+ 	irq_unlock(key);
+#endif
+
 	return ret;
 }
 
 /* NPCM functions for SPI NOR flash */
-static int flash_npcm_transceive_cmd_only(const struct device *dev, uint8_t opcode)
+RAMFUNC static int flash_npcm_transceive_cmd_only(const struct device *dev, uint8_t opcode)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode};
 
 	return flash_npcm_transceive(dev, &cfg, 0); /* opcode only */
 }
 
-static int flash_npcm_transceive_cmd_by_addr(const struct device *dev, uint8_t opcode,
+RAMFUNC static int flash_npcm_transceive_cmd_by_addr(const struct device *dev, uint8_t opcode,
 					     uint32_t addr)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode};
@@ -107,7 +125,7 @@ static int flash_npcm_transceive_cmd_by_addr(const struct device *dev, uint8_t o
 	return flash_npcm_transceive(dev, &cfg, NPCM_TRANSCEIVE_ACCESS_ADDR);
 }
 
-static int flash_npcm_transceive_read_by_addr(const struct device *dev, uint8_t opcode,
+RAMFUNC static int flash_npcm_transceive_read_by_addr(const struct device *dev, uint8_t opcode,
 					      uint8_t *dst, const size_t size, uint32_t addr)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode,
@@ -119,7 +137,7 @@ static int flash_npcm_transceive_read_by_addr(const struct device *dev, uint8_t 
 					NPCM_TRANSCEIVE_ACCESS_ADDR);
 }
 
-static int flash_npcm_transceive_read(const struct device *dev, uint8_t opcode,
+RAMFUNC static int flash_npcm_transceive_read(const struct device *dev, uint8_t opcode,
 			       uint8_t *dst, const size_t size)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode,
@@ -129,7 +147,7 @@ static int flash_npcm_transceive_read(const struct device *dev, uint8_t opcode,
 	return flash_npcm_transceive(dev, &cfg, NPCM_TRANSCEIVE_ACCESS_READ);
 }
 
-static int flash_npcm_transceive_write(const struct device *dev, uint8_t opcode,
+RAMFUNC static int flash_npcm_transceive_write(const struct device *dev, uint8_t opcode,
 				       uint8_t *src, const size_t size)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode,
@@ -139,7 +157,7 @@ static int flash_npcm_transceive_write(const struct device *dev, uint8_t opcode,
 	return flash_npcm_transceive(dev, &cfg, NPCM_TRANSCEIVE_ACCESS_WRITE);
 }
 
-static int flash_npcm_transceive_write_by_addr(const struct device *dev, uint8_t opcode,
+RAMFUNC static int flash_npcm_transceive_write_by_addr(const struct device *dev, uint8_t opcode,
 					       uint8_t *src, const size_t size, uint32_t addr)
 {
 	struct npcm_transceive_cfg cfg = { .opcode = opcode,
@@ -152,7 +170,7 @@ static int flash_npcm_transceive_write_by_addr(const struct device *dev, uint8_t
 }
 
 /* Local SPI NOR flash functions */
-static int flash_npcm_nor_wait_until_ready(const struct device *dev)
+RAMFUNC static int flash_npcm_nor_wait_until_ready(const struct device *dev)
 {
 	int ret;
 	uint8_t reg;
@@ -172,36 +190,51 @@ static int flash_npcm_nor_wait_until_ready(const struct device *dev)
 	return -EBUSY;
 }
 
-static int flash_npcm_nor_read_status_regs(const struct device *dev, uint8_t *sts_reg)
+RAMFUNC static int flash_npcm_nor_read_status_regs(const struct device *dev, uint8_t *sts_reg)
 {
 	int ret = flash_npcm_transceive_read(dev, SPI_NOR_CMD_RDSR, sts_reg, 1);
 
 	if (ret != 0) {
 		return ret;
 	}
+	
 	return flash_npcm_transceive_read(dev, SPI_NOR_CMD_RDSR2, sts_reg + 1, 1);
 }
 
-static int flash_npcm_nor_write_status_regs(const struct device *dev, uint8_t *sts_reg)
+RAMFUNC static int flash_npcm_nor_write_status_regs(const struct device *dev, uint8_t *sts_reg)
 {
 	int ret;
 
+#ifdef CONFIG_XIP
+	unsigned int key = 0;
+	
+	key = irq_lock();
+#endif
+
 	ret = flash_npcm_transceive_cmd_only(dev, SPI_NOR_CMD_WREN);
 	if (ret != 0) {
-		return ret;
+		goto exit;
 	}
 
 	ret = flash_npcm_transceive_write(dev, SPI_NOR_CMD_WRSR, sts_reg, 2);
 	if (ret != 0) {
-		return ret;
+		goto exit;
 	}
 
-	return flash_npcm_nor_wait_until_ready(dev);
+	ret = flash_npcm_nor_wait_until_ready(dev);
+
+exit:
+
+#ifdef CONFIG_XIP
+	key = irq_lock();
+#endif
+
+	return ret;
 }
 
 /* Flash API functions */
 #if defined(CONFIG_FLASH_JESD216_API)
-static int flash_npcm_nor_read_jedec_id(const struct device *dev, uint8_t *id)
+RAMFUNC static int flash_npcm_nor_read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	if (id == NULL) {
 		return -EINVAL;
@@ -210,7 +243,7 @@ static int flash_npcm_nor_read_jedec_id(const struct device *dev, uint8_t *id)
 	return flash_npcm_transceive_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
 }
 
-static int flash_npcm_nor_read_sfdp(const struct device *dev, off_t addr,
+RAMFUNC static int flash_npcm_nor_read_sfdp(const struct device *dev, off_t addr,
 				    void *data, size_t size)
 {
 	uint8_t sfdp_addr[4];
@@ -234,7 +267,7 @@ static int flash_npcm_nor_read_sfdp(const struct device *dev, off_t addr,
 #endif /* CONFIG_FLASH_JESD216_API */
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void flash_npcm_nor_pages_layout(const struct device *dev,
+RAMFUNC static void flash_npcm_nor_pages_layout(const struct device *dev,
 					const struct flash_pages_layout **layout,
 					size_t *layout_size)
 {
@@ -245,7 +278,7 @@ static void flash_npcm_nor_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_npcm_nor_read(const struct device *dev, off_t addr,
+RAMFUNC static int flash_npcm_nor_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
 	const struct flash_npcm_nor_config *config = dev->config;
@@ -275,10 +308,14 @@ static int flash_npcm_nor_read(const struct device *dev, off_t addr,
 	return 0;
 }
 
-static int flash_npcm_nor_erase(const struct device *dev, off_t addr, size_t size)
+RAMFUNC static int flash_npcm_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_npcm_nor_config *config = dev->config;
 	int ret = 0;
+
+#ifdef CONFIG_XIP
+	unsigned int key = 0;
+#endif
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -297,6 +334,15 @@ static int flash_npcm_nor_erase(const struct device *dev, off_t addr, size_t siz
 		LOG_ERR("Size %d is not a multiple of sectors", size);
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_XIP
+	/* if execute in the place, disable IRQ to avoid interrupt and context
+	 * switch, to make sure always execute code in the RAM(SRAM) when use
+	 * spim driver. npcm4xx only have one core, we don't need use lock to
+	 * handle race condition.
+	 */
+	key = irq_lock();
+#endif
 
 	/* Select erase opcode by size */
 	if (size == config->flash_size) {
@@ -324,16 +370,27 @@ static int flash_npcm_nor_erase(const struct device *dev, off_t addr, size_t siz
 		}
 	}
 
+#ifdef CONFIG_XIP
+	irq_unlock(key);
+#endif
+
 	return ret;
 }
 
-static int flash_npcm_nor_write(const struct device *dev, off_t addr,
+uintptr_t npcm4xx_vector_table_save(void);
+void npcm4xx_vector_table_restore(uintptr_t vtor);
+
+RAMFUNC static int flash_npcm_nor_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
 	const struct flash_npcm_nor_config *config = dev->config;
 	uint8_t *tx_buf = (uint8_t *)data;
 	int ret = 0;
 	size_t sz_write;
+
+#ifdef CONFIG_XIP
+	unsigned int key = 0;
+#endif
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -354,6 +411,10 @@ static int flash_npcm_nor_write(const struct device *dev, off_t addr,
 	if (((addr + sz_write - 1U) / SPI_NOR_PAGE_SIZE) != (addr / SPI_NOR_PAGE_SIZE)) {
 		sz_write -= (addr + sz_write) & (SPI_NOR_PAGE_SIZE - 1);
 	}
+
+#ifdef CONFIG_XIP
+	key = irq_lock();
+#endif
 
 	while (size > 0) {
 		/* Start to write */
@@ -381,10 +442,14 @@ static int flash_npcm_nor_write(const struct device *dev, off_t addr,
 		}
 	}
 
+#ifdef CONFIG_XIP
+	irq_unlock(key);
+#endif
+
 	return ret;
 }
 
-static const struct flash_parameters *
+RAMFUNC static const struct flash_parameters *
 flash_npcm_nor_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -393,7 +458,7 @@ flash_npcm_nor_get_parameters(const struct device *dev)
 };
 
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
-static int flash_npcm_nor_ex_exec_transceive(const struct device *dev,
+RAMFUNC static int flash_npcm_nor_ex_exec_transceive(const struct device *dev,
 				      const struct npcm_ex_ops_transceive_in *op_in,
 				      const struct npcm_ex_ops_transceive_out *op_out)
 {
@@ -426,7 +491,7 @@ static int flash_npcm_nor_ex_exec_transceive(const struct device *dev,
 	return flash_npcm_transceive(dev, &cfg, flag);
 }
 
-static int flash_npcm_nor_ex_set_spi_spec(const struct device *dev,
+RAMFUNC static int flash_npcm_nor_ex_set_spi_spec(const struct device *dev,
 					  const struct npcm_ex_ops_qspi_oper_in *op_in)
 {
 	struct flash_npcm_nor_data *data = dev->data;
@@ -440,7 +505,7 @@ static int flash_npcm_nor_ex_set_spi_spec(const struct device *dev,
 	return 0;
 }
 
-static int flash_npcm_nor_ex_get_spi_spec(const struct device *dev,
+RAMFUNC static int flash_npcm_nor_ex_get_spi_spec(const struct device *dev,
 					  struct npcm_ex_ops_qspi_oper_out *op_out)
 {
 	struct flash_npcm_nor_data *data = dev->data;
@@ -449,7 +514,7 @@ static int flash_npcm_nor_ex_get_spi_spec(const struct device *dev,
 	return 0;
 }
 
-static int flash_npcm_nor_ex_op(const struct device *dev, uint16_t code,
+RAMFUNC static int flash_npcm_nor_ex_op(const struct device *dev, uint16_t code,
 				const uintptr_t in, void *out)
 {
 #ifdef CONFIG_USERSPACE
@@ -542,7 +607,7 @@ static const struct flash_driver_api flash_npcm_nor_driver_api = {
 #endif
 };
 
-static int flash_npcm_nor_init(const struct device *dev)
+RAMFUNC static int flash_npcm_nor_init(const struct device *dev)
 {
 	const struct flash_npcm_nor_config *config = dev->config;
 	int ret;
@@ -611,7 +676,7 @@ BUILD_ASSERT(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE ||		\
 	     DT_INST_STRING_TOKEN(n, rd_mode) == NPCM_RD_MODE_FAST_DUAL,	\
 	     "Fast Dual IO read must be selected in Quad mode");		\
 PINCTRL_DT_INST_DEFINE(n);							\
-static const struct flash_npcm_nor_config flash_npcm_nor_config_##n = {		\
+static struct flash_npcm_nor_config flash_npcm_nor_config_##n = {		\
 	.qspi_bus = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),			\
 	.mapped_addr = DT_INST_PROP_OR(n, mapped_addr, MAPPED_ADDR_NOT_SUPPORT),\
 	.flash_size = DT_INST_PROP(n, size) / 8,				\

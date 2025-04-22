@@ -173,7 +173,6 @@ static int gpio_npcm_config(const struct device *dev,
 static int gpio_npcm_pin_get_config(const struct device *port, gpio_pin_t pin,
 				    gpio_flags_t *out_flags)
 {
-	const struct gpio_npcm_config *const config = port->config;
 	struct gpio_reg *const inst = HAL_INSTANCE(port);
 	uint32_t mask = BIT(pin);
 	gpio_flags_t flags = 0;

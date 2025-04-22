@@ -34,3 +34,6 @@ properties:
     required: true
   clocks:
     required: true
+  zephyr,mutable:
+    type: boolean
+    description: Place this device in RAM instead of flash
