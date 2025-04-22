@@ -365,11 +365,13 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.flush = nxp_video_sdma_flush
 };
 
+#define SOURCE_DEV(inst) DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor))
+
 #define NXP_VIDEO_SDMA_INIT(inst)                                                                  \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
 		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor)),                        \
+		.sensor_dev = SOURCE_DEV(n),                                                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
 		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \
@@ -383,6 +385,6 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 			      &sdma_config_##inst, POST_KERNEL,                                    \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);            \
                                                                                                    \
-	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), sdma_config_##inst.sensor_dev);
+	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)
