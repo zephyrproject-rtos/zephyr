@@ -138,3 +138,10 @@ tests:
     filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
     extra_args:
       - CONFIG_SPI_NOR=n
+  drivers.flash.common.ra_ospi_b_nor:
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"
