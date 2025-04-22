@@ -1,0 +1,45 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <mem.h>
+#include <ti/mspm0gx51x/mspm0gx51x.dtsi>
+
+/* Currently SRAM Bank 0 Set to Uncorrected Aperture 
+ * Sram Bank 0 (sram0) 
+ * SRAM ECC Corrected: 0x2000.0000
+ * SRAM Parity Checked 0x2010.0000
+ *
+ * Sram Bank 1 (sram1) is only available as unchecked 
+ */
+
+/ {
+	sram0: memory@20200000 {
+		reg = <0x20200000 DT_SIZE_K(64)>;
+	};
+
+	sram1: memory@20210000 {
+		reg = <0x20210000 DT_SIZE_K(64)>;
+	};
+};
+
+&flashctl {
+	flash0: nv-flash@0 {
+		compatible = "ti,mspm0-nv-flash", "soc-nv-flash";
+		erase-block-size = <1024>;
+		write-block-size = <8>;
+		reg = <0x0 DT_SIZE_K(128)>;
+	};
+
+	flash1: nv-flash@20000 {
+		compatible = "ti,mspm0-nv-flash", "soc-nv-flash";
+		erase-block-size = <1024>;
+		write-block-size = <8>;
+		reg = <0x40000 DT_SIZE_K(128)>;
+	};
+	
+	flash2: nv-flash@41E00000 {
+		compatible = "ti,mspm0-nv-flash", "soc-nv-flash";
+		erase-block-size = <1024>;
+		write-block-size = <8>;
+		reg = <0x41E00000 DT_SIZE_K(16)>;
+	}
+};
