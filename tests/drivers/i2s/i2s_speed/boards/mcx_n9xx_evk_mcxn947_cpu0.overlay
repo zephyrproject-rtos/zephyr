@@ -1,0 +1,23 @@
+/ {
+	aliases {
+		i2s-node0 = &sai1;
+	};
+};
+
+&sai1 {
+	mclk-output;
+};
+
+&pinmux_sai1 {
+	group0 {
+		pinmux = <SAI1_TX_BCLK_PIO3_16>,
+			<SAI1_TX_FS_PIO3_17>,
+			<SAI1_TXD0_PIO2_8>,
+			<SAI1_RX_FS_PIO3_19>,
+			<SAI1_RX_BCLK_PIO3_18>,
+			<SAI1_RXD0_PIO2_9>;
+		drive-strength = "high";
+		slew-rate = "fast";
+		input-enable;
+	};
+};

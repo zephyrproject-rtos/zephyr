@@ -21,6 +21,7 @@ tests:
       - rddrone_fmuk66
       - twr_ke18f
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - lpcxpresso55s06
       - lpcxpresso55s16
       - lpcxpresso55s28

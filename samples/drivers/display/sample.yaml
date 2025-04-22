@@ -107,6 +107,7 @@ tests:
       - platform:mimxrt1050_evk/mimxrt1052:SHIELD=rk043fn66hs_ctg
       - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn66hs_ctg
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:mcx_n9xx_evk/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
       - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
