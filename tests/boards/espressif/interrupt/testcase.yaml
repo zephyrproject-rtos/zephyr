@@ -1,0 +1,3 @@
+common:
+  integration_platforms:
+    - esp32s3_devkitm/esp32s3/procpu
