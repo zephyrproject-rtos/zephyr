@@ -127,12 +127,13 @@ ZTEST(video_common, test_video_frmival)
 
 ZTEST(video_common, test_video_ctrl)
 {
-	int value;
+	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
 
-	/* Exposure control, expected to be supported by all imagers */
-	zexpect_ok(video_set_ctrl(imager_dev, VIDEO_CID_PRIVATE_BASE + 0x01, (void *)30));
-	zexpect_ok(video_get_ctrl(imager_dev, VIDEO_CID_PRIVATE_BASE + 0x01, &value));
-	zexpect_equal(value, 30);
+	/* Emulated vendor specific control, expected to be supported by all imagers */
+	zexpect_ok(video_set_ctrl(imager_dev, &ctrl));
+	ctrl.val = 0;
+	zexpect_ok(video_get_ctrl(imager_dev, &ctrl));
+	zexpect_equal(ctrl.val, 30);
 }
 
 ZTEST(video_common, test_video_vbuf)

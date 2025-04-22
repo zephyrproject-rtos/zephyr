@@ -676,6 +676,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	if (!net_pkt_filter_local_in_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_local_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
@@ -792,7 +793,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * case.
 			 */
 			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
-				if (proto != ETH_P_ALL) {
+				if (conn->proto == 0 || proto != ETH_P_ALL) {
 					continue; /* wrong protocol */
 				}
 			} else if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW) && raw_ip_pkt) {

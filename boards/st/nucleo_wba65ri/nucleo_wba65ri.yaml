@@ -1,0 +1,19 @@
+identifier: nucleo_wba65ri
+name: ST Nucleo WBA65RI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - adc
+  - rng
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+ram: 512
+flash: 2048
+vendor: st

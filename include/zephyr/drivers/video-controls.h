@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright (c) 2024 tinyVision.ai Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +30,8 @@
  * @{
  */
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,7 +57,13 @@ extern "C" {
 /** Amount of time an image sensor is exposed to light, affecting the brightness */
 #define VIDEO_CID_EXPOSURE (VIDEO_CID_BASE + 17)
 
-/** Amount of amplification performed to each pixel electrical signal, affecting the brightness */
+/** Automatic gain control */
+#define VIDEO_CID_AUTOGAIN (VIDEO_CID_BASE + 18)
+
+/** Gain control. Most devices control only digital gain with this control.
+ * Devices that recognise the difference between digital and analogue gain use
+ * VIDEO_CID_DIGITAL_GAIN and VIDEO_CID_ANALOGUE_GAIN.
+ */
 #define VIDEO_CID_GAIN (VIDEO_CID_BASE + 19)
 
 /** Flip the image horizontally: the left side becomes the right side */
@@ -75,6 +84,9 @@ enum video_power_line_frequency {
 /** Balance of colors in direction of blue (cold) or red (warm) */
 #define VIDEO_CID_WHITE_BALANCE_TEMPERATURE (VIDEO_CID_BASE + 26)
 
+/** Last base CID + 1 */
+#define VIDEO_CID_LASTP1 (VIDEO_CID_BASE + 44)
+
 /**
  * @}
  */
@@ -94,6 +106,15 @@ enum video_power_line_frequency {
  * @{
  */
 #define VIDEO_CID_CAMERA_CLASS_BASE 0x009a0900
+
+/** Adjustments of exposure time and/or iris aperture. */
+#define VIDEO_CID_EXPOSURE_AUTO (VIDEO_CID_CAMERA_CLASS_BASE + 1)
+enum video_exposure_auto_type {
+	VIDEO_EXPOSURE_AUTO = 0,
+	VIDEO_EXPOSURE_MANUAL = 1,
+	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2,
+	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3
+};
 
 /** Amount of optical zoom applied through to the camera optics */
 #define VIDEO_CID_ZOOM_ABSOLUTE (VIDEO_CID_CAMERA_CLASS_BASE + 13)
@@ -131,6 +152,9 @@ enum video_power_line_frequency {
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
+/** Analogue gain control. */
+#define VIDEO_CID_ANALOGUE_GAIN (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 3)
+
 /**
  * @}
  */
@@ -156,6 +180,94 @@ enum video_power_line_frequency {
  * @{
  */
 #define VIDEO_CID_PRIVATE_BASE 0x08000000
+
+/**
+ * @}
+ */
+
+/**
+ * @name Query flags, to be ORed with the control ID
+ * @{
+ */
+#define VIDEO_CTRL_FLAG_NEXT_CTRL 0x80000000
+
+/**
+ * @}
+ */
+
+/**
+ * @name Public video control structures
+ * @{
+ */
+
+/**
+ * @struct video_control
+ * @brief Video control structure
+ *
+ * Used to get/set a video control.
+ * @see video_ctrl for the struct used in the driver implementation
+ */
+struct video_control {
+	/** control id */
+	uint32_t id;
+	/** control value */
+	union {
+		int32_t val;
+		int64_t val64;
+	};
+};
+
+/**
+ * @struct video_control_range
+ * @brief Video control range structure
+ *
+ * Describe range of a control including min, max, step and default values
+ */
+struct video_ctrl_range {
+	/** control minimum value, inclusive */
+	union {
+		int32_t min;
+		int64_t min64;
+	};
+	/** control maximum value, inclusive */
+	union {
+		int32_t max;
+		int64_t max64;
+	};
+	/** control value step */
+	union {
+		int32_t step;
+		int64_t step64;
+	};
+	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
+	 * _INTEGER_MENU, not valid for other types
+	 */
+	union {
+		int32_t def;
+		int64_t def64;
+	};
+};
+
+/**
+ * @struct video_control_query
+ * @brief Video control query structure
+ *
+ * Used to query information about a control.
+ */
+struct video_ctrl_query {
+	/** control id */
+	uint32_t id;
+	/** control type */
+	uint32_t type;
+	/** control name */
+	const char *name;
+	/** control flags */
+	uint32_t flags;
+	/** control range */
+	struct video_ctrl_range range;
+	/** menu if control is of menu type */
+	const char *const *menu;
+};
 
 /**
  * @}

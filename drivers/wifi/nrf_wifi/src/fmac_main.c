@@ -75,6 +75,11 @@ BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
+BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE % 4 == 0,
+	"TX buffer size must be a multiple of 4");
+BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE % 4 == 0,
+	"RX buffer size must be a multiple of 4");
+
 static const unsigned char aggregation = 1;
 static const unsigned char max_num_tx_agg_sessions = 4;
 static const unsigned char max_num_rx_agg_sessions = 8;
@@ -634,7 +639,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 #if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
 	defined(CONFIG_NRF70_SYSTEM_MODE)
-	LOG_INF("Configuring SLEEP CTRL GPIO control register\n");
+	LOG_DBG("Configuring SLEEP CTRL GPIO control register\n");
 	status = nrf_wifi_coex_config_sleep_ctrl_gpio_ctrl(rpu_ctx_zep->rpu_ctx,
 			alt_swctrl1_function_bt_coex_status1,
 			invert_bt_coex_grant_output);

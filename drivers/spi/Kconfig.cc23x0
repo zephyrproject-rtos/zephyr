@@ -1,0 +1,12 @@
+# TI CC23x0 SPI configuration options
+
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_CC23X0
+	bool "TI SimpleLink CC23x0 SPI driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_SPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the TI SimpleLink CC23x0 SPI peripheral

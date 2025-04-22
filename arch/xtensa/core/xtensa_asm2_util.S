@@ -153,8 +153,33 @@ _restore_context:
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	wsr a0, ZSR_EPC
+
+#ifdef CONFIG_USERSPACE
+	/* When restoring context via xtensa_switch and
+	 * returning from non-nested interrupts, we use
+	 * the stashed PS value in the thread struct
+	 * instead of the one in the thread stack.
+	 * Both scenarios will have nested value of 0.
+	 */
+	rsr.ZSR_CPU a2
+	l32i a0, a2, ___cpu_t_nested_OFFSET
+	bnez a0, _restore_ps_from_stack
+
+	l32i a0, a2, ___cpu_t_current_OFFSET
+	l32i a0, a0, _thread_offset_to_return_ps
+	wsr a0, ZSR_EPS
+
+	j _restore_ps_after
+
+_restore_ps_from_stack:
+#endif
+
 	l32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr a0, ZSR_EPS
+
+#ifdef CONFIG_USERSPACE
+_restore_ps_after:
+#endif
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_RESTORE
@@ -165,25 +190,8 @@ _restore_context:
 	call0 _xtensa_hifi_load
 #endif
 
-	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
-	wsr a0, SAR
-#if XCHAL_HAVE_LOOPS
-	l32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	wsr a0, LBEG
-	l32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	wsr a0, LEND
-	l32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
-	wsr a0, LCOUNT
-#endif
-#if XCHAL_HAVE_S32C1I
-	l32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
-	wsr a0, SCOMPARE1
-#endif
-#if XCHAL_HAVE_THREADPTR && \
-	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
-	l32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
-	wur a0, THREADPTR
-#endif
+	ODD_REG_RESTORE a0, a1
+
 	rsync
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
@@ -232,7 +240,31 @@ xtensa_arch_kernel_oops_epc:
 .global xtensa_switch
 .align 4
 xtensa_switch:
+#ifdef CONFIG_USERSPACE
+	entry a1, 32
+
+	s32i a4, a1, 0
+	s32i a5, a1, 4
+	s32i a6, a1, 8
+	s32i a7, a1, 12
+
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+#ifdef CONFIG_XTENSA_MMU
+	SWAP_PAGE_TABLE a6, a4, a7
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
+
+	l32i a7, a1, 12
+	l32i a6, a1, 8
+	l32i a5, a1, 4
+	l32i a4, a1, 0
+#else
 	entry a1, 16
+#endif
+
 	SPILL_ALL_WINDOWS
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 
@@ -245,11 +277,27 @@ xtensa_switch:
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
-	ODD_REG_SAVE
+	ODD_REG_SAVE a0, a1
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
+#endif
 
 	/* Stash our PS register contents and a "restore" PC. */
 	rsr a0, PS
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
+
+#ifdef CONFIG_USERSPACE
+	/* Backtrack to the head of thread struct and
+	 * then store the PS value to be restored in
+	 * the architecture specific section.
+	 * This will be used to restore PS instead of
+	 * the one stashed inside stack.
+	 */
+	addi a3, a3, -___thread_t_switch_handle_OFFSET
+	s32i a0, a3, _thread_offset_to_return_ps
+#endif
+
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
@@ -260,10 +308,11 @@ xtensa_switch:
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
 
-#ifdef CONFIG_KERNEL_COHERENCE
+#if defined(CONFIG_KERNEL_COHERENCE) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	/* Flush the stack.  The top of stack was stored for us by
 	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */
+	rsync
 	rsr a0, ZSR_FLUSH
 	beqz a0, noflush
 	mov a3, a1
@@ -281,21 +330,6 @@ noflush:
 	l32i a2, a1, 0
 	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
-
-#ifdef CONFIG_USERSPACE
-	/* Switch page tables */
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
-#ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
-#endif
-
-	l32i a2, a3, 0
-	l32i a2, a2, 0
-#endif
 
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange

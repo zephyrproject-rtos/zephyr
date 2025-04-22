@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: a6dff0a5f49e898f29bc428e01538a8911364460
+      revision: e916e84a103e13ce8bcf8b7f53dafbe57ed0b846
       path: modules/hal/ambiq
       groups:
         - hal
@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 468e955eb49b8a731474ff194ca17b6e6a08c2d9
+      revision: 9df9d40571b25171cb752459c6dd96bd83ec8570
       path: modules/hal/infineon
       groups:
         - hal
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 46c5ca5ac099ac1ed530975ea2bb5dc4ebb4dfb2
+      revision: f467d8e039216b4f5f9b55dd8a1ffa8582fc516d
       path: modules/hal/stm32
       groups:
         - hal
@@ -274,7 +274,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 86044b5f2487a6c5e4a78e469eafa75bc61ef2e6
+      revision: fb6452c246b441434172235b2070259945ca9d44
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: c8470fb145f8aff92696d05396fb77c3b8068b32
+      revision: 20f98e0a975c24864872e0df5701eb1082e9c957
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -318,10 +318,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
+      revision: d5b95fdd0260e8189e788d40d2863d1e2d4be159
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 8fd3cd7b088d62f145b8b9f5ecc985dd73bd9e77
+      revision: eeceee739252cf2d56a5ad9356553d87aae8c57d
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: f7f4d083c7909a39d86e217376c69b416ec4faf3

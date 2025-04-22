@@ -1005,5 +1005,12 @@
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		};
+
+		twd0: watchdog@f04780 {
+			compatible = "ite,it51xxx-watchdog";
+			reg = <0x00f04780 0x20>;
+			interrupts = <IT51XXX_IRQ_TIMER1_DW IRQ_TYPE_EDGE_RISING>; /* Warn timer */
+			interrupt-parent = <&intc>;
+		};
 	};
 };

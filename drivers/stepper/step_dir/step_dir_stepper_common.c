@@ -288,22 +288,14 @@ int step_dir_stepper_common_get_actual_position(const struct device *dev, int32_
 int step_dir_stepper_common_move_to(const struct device *dev, const int32_t value)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
-	const struct step_dir_stepper_common_config *config = dev->config;
+	int32_t steps_to_move;
 
-	if (data->microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
-		return -EINVAL;
-	}
-
+	/* Calculate the relative movement required */
 	K_SPINLOCK(&data->lock) {
-		data->run_mode = STEPPER_RUN_MODE_POSITION;
-		data->step_count = value - data->actual_position;
-		config->timing_source->update(dev, data->microstep_interval_ns);
-		update_direction_from_step_count(dev);
-		config->timing_source->start(dev);
+		steps_to_move = value - data->actual_position;
 	}
 
-	return 0;
+	return step_dir_stepper_common_move_by(dev, steps_to_move);
 }
 
 int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)

@@ -26,6 +26,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 	};
@@ -62,6 +63,32 @@
 			label = "User SW3";
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+			read-only;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(40)>;
+		};
+		slot1_partition: partition@12000 {
+			label = "image-1";
+			reg = <0x00012000 DT_SIZE_K(40)>;
+		};
+		storage_partition: partition@1C000 {
+			label = "storage";
+			reg = <0x0001C000 DT_SIZE_K(16)>;
 		};
 	};
 };

@@ -1,0 +1,12 @@
+identifier: cv64a6_genesys_2
+name: OpenHW Group cv64a6 on Genesys 2
+type: mcu
+arch: riscv
+ram: 1048576
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - spi
+  - uart
+vendor: openhwgroup

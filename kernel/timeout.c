@@ -99,11 +99,12 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 	return ret;
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
-		   k_timeout_t timeout)
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
 {
+	k_ticks_t ticks = 0;
+
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -122,10 +123,12 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			ticks_elapsed = elapsed();
 			has_elapsed = true;
 			to->dticks = timeout.ticks + 1 + ticks_elapsed;
+			ticks = curr_tick + to->dticks;
 		} else {
-			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
+			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
-			to->dticks = MAX(1, ticks);
+			to->dticks = MAX(1, dticks);
+			ticks = timeout.ticks;
 		}
 
 		for (t = first(); t != NULL; t = next(t)) {
@@ -151,6 +154,8 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
 		}
 	}
+
+	return ticks;
 }
 
 int z_abort_timeout(struct _timeout *to)
@@ -162,6 +167,7 @@ int z_abort_timeout(struct _timeout *to)
 			bool is_first = (to == first());
 
 			remove_timeout(to);
+			to->dticks = TIMEOUT_DTICKS_ABORTED;
 			ret = 0;
 			if (is_first) {
 				sys_clock_set_timeout(next_timeout(elapsed()), false);

@@ -291,6 +291,21 @@ Ambiq Platforms:
   labels:
     - "platform: Ambiq"
 
+AndesTech Platforms:
+  status: maintained
+  maintainers:
+    - jimmyzhe
+  collaborators:
+    - kevinwang821020
+  files:
+    - boards/andestech/
+    - drivers/*/*andes*
+    - dts/bindings/*/*andestech*
+    - dts/riscv/andes/
+    - soc/andestech/
+  labels:
+    - "platform: Andes Technology"
+
 BeagleBoard Platforms:
   status: maintained
   maintainers:
@@ -3188,6 +3203,20 @@ PHYTEC Platforms:
   labels:
     - "platform: PHYTEC"
 
+PMCI:
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+    - kehintel
+  files:
+    - subsys/pmci/
+    - samples/modules/pmci/
+  labels:
+    - "area: PMCI"
+
 POSIX API layer:
   status: maintained
   maintainers:
@@ -5189,8 +5218,7 @@ West:
   collaborators:
     - nashif
     - inteljiangwe1
-  files:
-    - samples/modules/mctp/
+  files: []
   labels:
     - "area: MCTP"
 

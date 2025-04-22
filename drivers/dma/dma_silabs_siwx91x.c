@@ -649,6 +649,10 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 	static UDMA_Channel_Info dma_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];        \
 	SYS_MEM_BLOCKS_DEFINE_STATIC(desc_pool_##inst, sizeof(RSI_UDMA_DESC_T),                    \
 				     CONFIG_DMA_SILABS_SIWX91X_SG_BUFFER_COUNT, 4);                \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
+		    (),                                                                            \
+		    (static __aligned(512) RSI_UDMA_DESC_T                                         \
+			     siwx91x_dma_chan_desc##inst[DT_INST_PROP(inst, dma_channels) * 2];))  \
 	static struct dma_siwx91x_channel_info                                                     \
 		zephyr_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];                      \
 	static struct dma_siwx91x_data dma_data_##inst = {                                         \
@@ -670,10 +674,12 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.reg = (UDMA0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.irq_number = DT_INST_PROP_BY_IDX(inst, interrupts, 0),                            \
-		.sram_desc_addr = (RSI_UDMA_DESC_T *)DT_INST_PROP(inst, silabs_sram_desc_addr),    \
+		.sram_desc_addr = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),     \
+					      ((RSI_UDMA_DESC_T *)DT_REG_ADDR(DT_INST_PHANDLE(inst, silabs_sram_region))), \
+					      (siwx91x_dma_chan_desc##inst)),                      \
 		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,    \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
+			      POST_KERNEL, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_DMA_INIT)

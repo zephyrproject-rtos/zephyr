@@ -6,12 +6,29 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -21,36 +38,29 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/direction.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/bluetooth/att.h>
-
+#include "addr_internal.h"
+#include "adv.h"
+#include "att_internal.h"
+#include "buf_view.h"
+#include "classic/conn_br_internal.h"
+#include "classic/sco_internal.h"
+#include "classic/ssp.h"
 #include "common/assert.h"
 #include "common/bt_str.h"
-
-#include "buf_view.h"
-#include "addr_internal.h"
+#include "conn_internal.h"
+#include "direction_internal.h"
 #include "hci_core.h"
 #include "id.h"
-#include "adv.h"
-#include "scan.h"
-#include "conn_internal.h"
-#include "l2cap_internal.h"
-#include "keys.h"
-#include "smp.h"
-#include "classic/ssp.h"
-#include "att_internal.h"
 #include "iso_internal.h"
-#include "direction_internal.h"
-#include "classic/sco_internal.h"
-#include "classic/conn_br_internal.h"
+#include "keys.h"
+#include "l2cap_internal.h"
+#include "scan.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
 
 K_FIFO_DEFINE(free_tx);

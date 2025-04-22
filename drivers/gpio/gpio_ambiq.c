@@ -13,8 +13,9 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/gpio/gpio_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 typedef void (*ambiq_gpio_cfg_func_t)(void);
 
@@ -488,7 +489,12 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 			 * GPIO_INT_TRIG_BOTH is not supported on Ambiq Apollo4 Plus Platform
 			 * ERR008: GPIO: Dual-edge interrupts are not vectoring
 			 */
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 			return -ENOTSUP;
+#elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+			pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_BOTH;
+			break;
+#endif
 		default:
 			return -EINVAL;
 		}
@@ -566,6 +572,18 @@ static DEVICE_API(gpio, ambiq_gpio_drv_api) = {
 	.port_get_direction = ambiq_gpio_port_get_direction,
 #endif
 };
+
+gpio_pin_t ambiq_gpio_get_pinnum(const struct device *dev, gpio_pin_t pin)
+{
+	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	pin += dev_cfg->offset;
+#else
+	pin += (dev_cfg->offset >> 2);
+#endif
+	return pin;
+}
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 /* Apollo3 GPIO banks share the same irq number, connect irq here will cause build error, so we

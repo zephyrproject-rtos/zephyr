@@ -21,6 +21,9 @@
 #include <hal/cam_ll.h>
 
 #include <zephyr/logging/log.h>
+
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
@@ -325,20 +328,6 @@ static int video_esp32_dequeue(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
-static int video_esp32_set_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_set_ctrl(cfg->source_dev, cid, value);
-}
-
-static int video_esp32_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_ctrl(cfg->source_dev, cid, value);
-}
-
 static int video_esp32_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
 	struct video_esp32_data *data = dev->data;
@@ -432,8 +421,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
 	.flush = video_esp32_flush,
-	.set_ctrl = video_esp32_set_ctrl,
-	.get_ctrl = video_esp32_get_ctrl,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif
@@ -462,6 +449,8 @@ static struct video_esp32_data esp32_data = {0};
 
 DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
+
+VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), esp32_config.source_dev);
 
 static int video_esp32_cam_init_master_clock(void)
 {

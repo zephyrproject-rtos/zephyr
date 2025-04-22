@@ -18,6 +18,8 @@ extern "C" {
  * @ingroup kernel_apis
  * @{
  *
+ * @brief Kernel Version APIs
+ *
  * The kernel version has been converted from a string to a four-byte
  * quantity that is divided into two parts.
  *

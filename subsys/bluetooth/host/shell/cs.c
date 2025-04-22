@@ -9,23 +9,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/cs.h>
-#include <errno.h>
+#include <zephyr/kernel.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
@@ -137,6 +140,7 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 static bool process_step_data(struct bt_le_cs_subevent_step *step, void *user_data)
 {
 	bt_shell_print("Subevent results contained step data: ");
@@ -254,6 +258,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 static int cmd_remove_config(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -430,6 +435,7 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -442,6 +448,7 @@ static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 static int cmd_read_local_supported_capabilities(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -702,9 +709,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		" <CS_SYNC antenna selection: 0x01 - 0x04, 0xFE, 0xFF> <Max TX power: -127 - 20>",
 		cmd_set_default_settings, 5, 0),
 	SHELL_CMD_ARG(read_remote_fae_table, NULL, "<None>", cmd_read_remote_fae_table, 1, 0),
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	SHELL_CMD_ARG(start_simple_cs_test, NULL, "<Role selection (initiator, reflector): 0, 1>",
 		      cmd_cs_test_simple, 2, 0),
 	SHELL_CMD_ARG(stop_cs_test, NULL, "<None>", cmd_cs_stop_test, 1, 0),
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 	SHELL_CMD_ARG(
 		create_config, NULL,
 		"<id> <context: local-only, local-remote> <role: initiator, reflector> "
