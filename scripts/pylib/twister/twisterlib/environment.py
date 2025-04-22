@@ -27,7 +27,7 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 from plugin_filters.twister_args.args_parser import parse_twister_args
-from plugin_filters.twister_args.plugin_environment import add_plugin_arguments
+from plugin_filters.twister_args.args_descriptor import add_plugin_arguments
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
