@@ -282,6 +282,7 @@ int emul_rx_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);       \
                                                                                                    \
-	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n), emul_rx_cfg_##n.source_dev);
+	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n),                                    \
+			    DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)));
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)
