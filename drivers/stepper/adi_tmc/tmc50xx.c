@@ -13,6 +13,7 @@
 
 #include "adi_tmc_spi.h"
 #include "adi_tmc5xxx_common.h"
+#include "tmc5xxx.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
@@ -55,6 +56,31 @@ struct tmc50xx_stepper_config {
 
 static int read_actual_position(const struct tmc50xx_stepper_config *config, int32_t *position);
 
+static void parse_tmc_spi_status(const uint8_t status_byte)
+{
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_LOG_STATUS
+	static const char *spi_status[TMC5XXX_SPI_STATUS_BITS] = {
+		"reset_flag",
+		"driver_error1",
+		"driver_error2",
+		"velocity_reached1",
+		"velocity_reached2",
+		"status_stop_l1",
+		"status_stop_l2",
+		"-"
+	};
+
+	static uint8_t status_last;
+
+	if (status_byte != status_last) {
+		status_last = status_byte;
+		log_status(status_byte & ~0x1, spi_status); /* ignore reset_flag */
+	}
+#else
+	(void)status_byte;
+#endif
+}
+
 static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
 	const struct tmc50xx_config *config = dev->config;
@@ -64,7 +90,8 @@ static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
+	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val,
+					parse_tmc_spi_status);
 
 	k_sem_give(&data->sem);
 
@@ -84,7 +111,8 @@ static int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
+	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val,
+					parse_tmc_spi_status);
 
 	k_sem_give(&data->sem);
 
@@ -634,7 +662,7 @@ static int tmc50xx_init(const struct device *dev)
 	}
 
 	/* Init non motor-index specific registers here. */
-	LOG_DBG("GCONF: %d", config->gconf);
+	LOG_DBG("GCONF: %08x", config->gconf);
 	err = tmc50xx_write(dev, TMC5XXX_GCONF, config->gconf);
 	if (err != 0) {
 		return -EIO;
