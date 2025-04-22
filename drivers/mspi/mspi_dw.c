@@ -107,6 +107,7 @@ DEFINE_MM_REG_RD(rxflr,		0x24)
 DEFINE_MM_REG_RD(sr,		0x28)
 DEFINE_MM_REG_WR(imr,		0x2c)
 DEFINE_MM_REG_RD(isr,		0x30)
+DEFINE_MM_REG_RD(icr,		0x48)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 
@@ -279,7 +280,9 @@ static void mspi_dw_isr(const struct device *dev)
 		}
 	}
 
+	read_icr(dev);
 	vendor_specific_irq_clear(dev);
+
 }
 
 static int api_config(const struct mspi_dt_spec *spec)
