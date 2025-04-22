@@ -25,10 +25,9 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
-	pclken->enr);
-	/* Delay after enabling the clock, to allow it to become active.
-	* See (for example) RM0440 7.2.17
+	/*
+	* Note: GPIO clocks are actually enabled by the cortex-A35 and are
+	* protected by the RIF. Enabling them here would only trigger an IAC event
 	*/
 	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	UNUSED(temp);
