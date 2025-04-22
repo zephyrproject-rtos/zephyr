@@ -428,9 +428,11 @@ static DEVICE_API(video, esp32_driver_api) = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))
+
 static const struct video_esp32_config esp32_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.source_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, source)),
+	.source_dev = SOURCE_DEV(0),
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(0, rx),
 	.rx_dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 	.data_width = DT_INST_PROP_OR(0, data_width, 8),
@@ -450,7 +452,7 @@ static struct video_esp32_data esp32_data = {0};
 DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
 
-VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), esp32_config.source_dev);
+VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
 
 static int video_esp32_cam_init_master_clock(void)
 {

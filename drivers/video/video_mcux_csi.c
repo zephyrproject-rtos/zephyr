@@ -456,9 +456,11 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 #if 1 /* Unique Instance */
 PINCTRL_DT_INST_DEFINE(0);
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
+
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
-	.source_dev = DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(0, 0, 0))),
+	.source_dev = SOURCE_DEV(0),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
@@ -481,6 +483,6 @@ DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
 		      &video_mcux_csi_config_0, POST_KERNEL, CONFIG_VIDEO_MCUX_CSI_INIT_PRIORITY,
 		      &video_mcux_csi_driver_api);
 
-VIDEO_DEVICE_DEFINE(csi, DEVICE_DT_INST_GET(0), video_mcux_csi_config_0.source_dev);
+VIDEO_DEVICE_DEFINE(csi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
 
 #endif
