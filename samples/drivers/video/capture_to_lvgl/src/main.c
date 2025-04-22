@@ -26,6 +26,9 @@ int main(void)
 	const struct device *video_dev;
 	size_t bsize;
 	int i = 0;
+	const struct device *const vsg = device_get_binding(VIDEO_DEV_SW);
+	uint8_t vdevs_num = video_get_devs_num();
+	bool found_vdev = false;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -33,19 +36,19 @@ int main(void)
 		return 0;
 	}
 
-#if DT_HAS_CHOSEN(zephyr_camera)
-	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
-	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s device is not ready", video_dev->name);
+	/* Get the 1st video HW available, otherwise fallbacks to video sw generator */
+	for (int j = 0; j < vdevs_num; j++) {
+		video_dev = video_get_dev(j);
+		if (device_is_ready(video_dev) && (vdevs_num == 1 || video_dev != vsg)) {
+			found_vdev = true;
+			break;
+		}
+	}
+
+	if (!found_vdev) {
+		LOG_ERR("No video device ready!");
 		return 0;
 	}
-#else
-	video_dev = device_get_binding(VIDEO_DEV_SW);
-	if (video_dev == NULL) {
-		LOG_ERR("%s device not found", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 
 	LOG_INF("- Device name: %s", video_dev->name);
 
