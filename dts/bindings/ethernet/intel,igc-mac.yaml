@@ -1,0 +1,32 @@
+# Copyright 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel IGC MAC bindings.
+
+compatible: "intel,igc-mac"
+
+include: [base.yaml, ethernet-controller.yaml, pcie-device.yaml]
+
+properties:
+  num-queues:
+    type: int
+    default: 4
+    description: Number of queues supported by the IGC MAC.
+
+  num-tx-desc:
+    type: int
+    default: 512
+    description: The number of transmit descriptors per queue can range from 128 to 4096,
+                 depending on the configuration.
+
+  num-rx-desc:
+    type: int
+    default: 512
+    description: The number of receive descriptors per queue can range from 128 to 4096,
+                 depending on the configuration.
+
+  mac-addr-exist-in-nvm:
+    type: boolean
+    description: Flag of pre-programmed MAC address. If true, the MAC address is
+                 retrieved from NVM. If false, the MAC address will be
+                 over-written by local-mac-address or random-mac-address.
