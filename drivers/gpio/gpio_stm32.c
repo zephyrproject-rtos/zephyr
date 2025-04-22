@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -708,7 +709,7 @@ static int gpio_stm32_pm_action(const struct device *dev,
  *
  * @return 0
  */
-static int gpio_stm32_init(const struct device *dev)
+__maybe_unused static int gpio_stm32_init(const struct device *dev)
 {
 	struct gpio_stm32_data *data = dev->data;
 
@@ -737,12 +738,16 @@ static int gpio_stm32_init(const struct device *dev)
 		},							       \
 		.base = (uint32_t *)__base_addr,				       \
 		.port = __port,						       \
-		.pclken = { .bus = __bus, .enr = __cenr }		       \
+		COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		       \
+			   (.pclken = { .bus = __bus, .enr = __cenr },),       \
+			   (/* Nothing if clocks not present */))	       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
 	DEVICE_DT_DEFINE(__node,					       \
-			    gpio_stm32_init,				       \
+			    COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),      \
+					(gpio_stm32_init),		       \
+					(NULL)),			       \
 			    PM_DEVICE_DT_GET(__node),			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
