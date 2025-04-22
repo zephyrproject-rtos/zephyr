@@ -34,6 +34,7 @@ tests:
       - longan_nano/gd32vf103/lite
       - rd_rw612_bga
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxc242
       - ucans32k1sic
       - xg24_rb4187c
