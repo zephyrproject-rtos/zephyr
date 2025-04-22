@@ -139,7 +139,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SMP)
 		/* In a UP system, this was already done in update_cache() */
-		z_reset_time_slice(cpu, new_thread);
+		z_reset_time_slice(cpu, new_thread, IS_ENABLED(CONFIG_TIMESLICE_AUTO_RESET));
 #endif /* CONFIG_TIMESLICING && CONFIG_SMP */
 
 #ifdef CONFIG_SPIN_VALIDATE

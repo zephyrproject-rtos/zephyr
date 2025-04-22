@@ -194,6 +194,12 @@ only when dealing with lower priority threads that are less time-sensitive.
    execute. However, the algorithm *does* ensure that a thread never executes
    for longer than a single time slice without being required to yield.
 
+By default, a time slice is reset when a new thread is scheduled. Developers
+that do not wish to incur the overhead associated with this may choose to
+disable :kconfig:option:`CONFIG_TIMESLICE_AUTO_RESET`. Disabling this may
+result with the incoming thread having a shorter than expected time slice as
+the outgoing thread already consumed a portion of it.
+
 Scheduler Locking
 =================
 

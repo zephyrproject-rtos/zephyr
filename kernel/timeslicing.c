@@ -11,6 +11,7 @@
 struct timeslice_data {
 	struct _timeout timeout;  /* timeout for the timeslice */
 	bool expired;             /* true if timeslice expired */
+	int  size;                /* size of the timeslice */
 };
 
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
@@ -80,15 +81,25 @@ static void slice_timeout_handler(struct _timeout *timeout)
 	}
 }
 
-void z_reset_time_slice(unsigned int cpu, struct k_thread *thread)
+/**
+ * When <force> is true, the timeslice must be reset. If it is ever false, then
+ * we know that a new thread will be scheduled and we might want to continue
+ * using the same time slice. However, if the new thread requires a shorter
+ * time slice then we must reset.
+ */
+void z_reset_time_slice(unsigned int cpu, struct k_thread *thread, bool force)
 {
 	int slice_size = z_time_slice_size(thread);
 
-	z_abort_timeout(&slice_data[cpu].timeout);
-	slice_data[cpu].expired = false;
-	if (slice_size != 0) {
-		z_add_timeout(&slice_data[cpu].timeout, slice_timeout_handler,
-			      K_TICKS(slice_size - 1));
+	if (force || (slice_size < slice_data[cpu].size) ||
+	    ((slice_data[cpu].size == 0) && (slice_size != 0))) {
+		z_abort_timeout(&slice_data[cpu].timeout);
+		slice_data[cpu].expired = false;
+		slice_data[cpu].size = slice_size;
+		if (slice_size != 0) {
+			z_add_timeout(&slice_data[cpu].timeout, slice_timeout_handler,
+				      K_TICKS(slice_size - 1));
+		}
 	}
 }
 
@@ -103,7 +114,7 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 #ifdef CONFIG_SMP
 		cpu = _current_cpu->id;
 #endif
-		z_reset_time_slice(cpu, _kernel.cpus[cpu].current);
+		z_reset_time_slice(cpu, _kernel.cpus[cpu].current, true);
 	}
 }
 
@@ -121,13 +132,13 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 		cpu = thread->base.cpu;
 #endif
 		if (_kernel.cpus[cpu].current == thread) {
-			z_reset_time_slice(cpu, thread);
+			z_reset_time_slice(cpu, thread, true);
 		}
 	}
 }
 #endif
 
-/* Called out of each timer and IPI interrupt */
+/* Called out of each timer interrupt and sched IPI */
 void z_time_slice(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
@@ -135,7 +146,7 @@ void z_time_slice(void)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {
-		z_reset_time_slice(0, curr);
+		z_reset_time_slice(0, curr, true);
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -153,7 +164,7 @@ void z_time_slice(void)
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_thread_to_end_of_prio_q(curr);
 		}
-		z_reset_time_slice(_current_cpu->id, curr);
+		z_reset_time_slice(_current_cpu->id, curr, true);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 }
