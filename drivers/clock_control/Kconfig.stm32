@@ -2,6 +2,7 @@
 
 # Copyright (c) 2017 Linaro
 # Copyright (c) 2017 RnDity Sp. z o.o.
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CLOCK_CONTROL_STM32_CUBE
@@ -9,8 +10,9 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	depends on SOC_FAMILY_STM32
 	default y
 	select USE_STM32_LL_UTILS
-	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32MP13X || SOC_SERIES_STM32H7X || \
-		SOC_SERIES_STM32H7RSX || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || \
+	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32MP13X || \
+		SOC_SERIES_STM32MP2X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || \
+		SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || \
 		SOC_SERIES_STM32N6X)
 	select RUNTIME_NMI if ($(dt_nodelabel_enabled,clk_hse) && \
 		$(dt_nodelabel_bool_prop,clk_hse,css-enabled))
