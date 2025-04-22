@@ -302,7 +302,10 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #endif
 
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
-		ap_sta_info.twt_capable = true;
+		IEEEtypes_HECap_t sta_he_cap = con_sta_info->he_cap;
+		uint8_t sta_twt_cap = sta_he_cap.he_mac_cap[0];
+
+		ap_sta_info.twt_capable = sta_twt_cap & HE_MAC_CAP_TWT_REQ_SUPPORT ? true : false;
 #endif
 
 		memcpy(ap_sta_info.mac, con_sta_info->mac_addr, WIFI_MAC_ADDR_LEN);
