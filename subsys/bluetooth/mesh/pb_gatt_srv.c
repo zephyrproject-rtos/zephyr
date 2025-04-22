@@ -10,6 +10,7 @@
 
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -215,9 +216,10 @@ static const struct bt_data prov_ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, prov_svc_data, sizeof(prov_svc_data)),
 };
 
-static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
-{
-	size_t prov_sd_len = 0;
+static size_t gatt_prov_adv_create(struct bt_data prov_sd[2],
+                                   const uint8_t *device_name,
+                                   size_t device_name_size) {
+        size_t prov_sd_len = 0;
 
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
 	size_t uri_len;
@@ -245,8 +247,8 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 dev_name:
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)) {
 		prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-		prov_sd[prov_sd_len].data_len = BT_DEVICE_NAME_LEN;
-		prov_sd[prov_sd_len].data = BT_DEVICE_NAME;
+		prov_sd[prov_sd_len].data_len = device_name_size;
+		prov_sd[prov_sd_len].data = device_name;
 		prov_sd_len += 1;
 	}
 
@@ -289,7 +291,14 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 	int64_t timestamp = fast_adv_timestamp;
 	int64_t elapsed_time = k_uptime_delta(&timestamp);
 
-	prov_sd_len = gatt_prov_adv_create(prov_sd);
+        uint8_t device_name[DEVICE_NAME_SIZE];
+        size_t device_name_size = bt_gap_get_device_name(device_name, sizeof(device_name));
+	if (device_name_size < 0) {
+		LOG_DBG("Failed to get name (err %d)", device_name_size);
+		return -ENOMEM;
+	}
+
+	prov_sd_len = gatt_prov_adv_create(prov_sd, device_name, device_name_size);
 
 	if (elapsed_time > FAST_ADV_TIME) {
 		struct bt_le_adv_param slow_adv_param = {

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/gap/device_name.h>
+
 #define ADV_SLOW_INT                                                           \
 	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
 	.interval_max = BT_GAP_ADV_SLOW_INT_MAX
@@ -12,8 +14,8 @@
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
-#define BT_DEVICE_NAME (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC) ? \
-			(const uint8_t *)bt_get_name() : \
-			(const uint8_t *)CONFIG_BT_DEVICE_NAME)
-#define BT_DEVICE_NAME_LEN (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC) ? strlen(bt_get_name()) : \
-			    (sizeof(CONFIG_BT_DEVICE_NAME) - 1))
+#if defined(CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC)
+#define DEVICE_NAME_SIZE CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX
+#else
+#define DEVICE_NAME_SIZE BT_GAP_DEVICE_NAME_MAX_SIZE
+#endif /* CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC */
