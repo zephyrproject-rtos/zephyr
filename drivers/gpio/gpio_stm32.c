@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -349,6 +350,14 @@ static void gpio_stm32_configure_raw(const struct device *dev, gpio_pin_t pin,
  */
 static int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
+#if CONFIG_SOC_STM32MP2X_M33 && !DT_NODE_HAS_PROP(gpioa, clocks)
+	ARG_UNUSED(*dev);
+	ARG_UNUSED(on);
+	/* On STM32MP2x, the GPIO clocks are managed by the cortex-A core,
+	 * so we do not need to handle them here.
+	 */
+	return 0;
+#else
 	const struct gpio_stm32_config *cfg = dev->config;
 	int ret;
 
@@ -366,6 +375,7 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	}
 
 	return ret;
+#endif /* CONFIG_SOC_STM32MP2X_M33 */
 }
 
 static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
@@ -737,7 +747,9 @@ static int gpio_stm32_init(const struct device *dev)
 		},							       \
 		.base = (uint32_t *)__base_addr,				       \
 		.port = __port,						       \
-		.pclken = { .bus = __bus, .enr = __cenr }		       \
+		COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),	               	\
+			   (.pclken = { .bus = __bus, .enr = __cenr },),	\
+			   (/* Nothing if clocks not present */))		       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
