@@ -99,6 +99,15 @@ Deprecated APIs and options
 * ``xiao_esp32c6`` board target has been deprecated and renamed to
   ``xiao_esp32c6/esp32c6/hpcore``.
 
+* The :c:func:`bt_get_name` and :c:func:`bt_set_name` are deprecated in favor of
+  the new :c:func:`bt_gap_get_device_name` and :c:func:`bt_gap_set_device_name`.
+  :kconfig:option:`CONFIG_BT_DEVICE_NAME`,
+  :kconfig:option:`CONFIG_BT_DEVICE_NAME_DYNAMIC` and
+  :kconfig:option:`CONFIG_BT_DEVICE_NAME_MAX` are deprecated in favor of
+  :kconfig:option:`CONFIG_BT_GAP_DEVICE_NAME`,
+  :kconfig:option:`CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC` and
+  :kconfig:option:`CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX`.
+
 New APIs and options
 ====================
 

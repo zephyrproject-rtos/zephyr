@@ -862,13 +862,14 @@ config BT_SCAN_AND_INITIATE_IN_PARALLEL
 	  feature is enabled.
 
 config BT_DEVICE_NAME_DYNAMIC
-	bool "Allow to set Bluetooth device name on runtime"
+	bool "Allow to set Bluetooth device name on runtime [DEPRECATED]"
+	select DEPRECATED
 	help
 	  Enabling this option allows for runtime configuration of Bluetooth
 	  device name.
 
 config BT_DEVICE_NAME_MAX
-	int "Maximum size in bytes for device name"
+	int "Maximum size in bytes for device name [DEPRECATED]"
 	depends on BT_DEVICE_NAME_DYNAMIC
 	default 28
 	range 2 248
@@ -877,7 +878,7 @@ config BT_DEVICE_NAME_MAX
 	  long (excluding NULL termination).
 
 config BT_DEVICE_NAME
-	string "Bluetooth device name"
+	string "Bluetooth device name [DEPRECATED]"
 	default "Zephyr"
 	help
 	  Bluetooth device name. Name can be up to 248 bytes long (excluding
