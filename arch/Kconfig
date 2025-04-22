@@ -589,6 +589,21 @@ config SRAM_SW_ISR_TABLE
 	  The option specifies that the software interrupts vector table will be
 	  placed inside SRAM instead of the flash.
 
+config SRAM_ISR_EXEC_CONTEXT
+	bool "Interruption context in SRAM"
+	select SRAM_VECTOR_TABLE
+	select SRAM_SW_ISR_TABLE
+	select CODE_DATA_RELOCATION
+	# In case you want to remove this dependency, place all code for the tracing susbys in RAM
+	depends on !TRACING_ISR
+	help
+	  Relocate all the vector table and the necessary files (isr_wrapper)
+	  in SRAM in order to have a fully SRAM context when an interruption is triggered.
+	  (except if it's to get out of idle state with CONFIG_PM=y)
+	  It remains to the user to place ISR callbacks and their dependencies in RAM.
+	  This option allows to not get latency (by accessing flash) when an interrupt is triggered
+	  in a real time application.
+
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
 	depends on IRQ_OFFLOAD
