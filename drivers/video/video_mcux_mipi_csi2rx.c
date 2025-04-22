@@ -320,6 +320,8 @@ static int mipi_csi2rx_init(const struct device *dev)
 	return mipi_csi2rx_update_settings(dev, VIDEO_EP_ALL);
 }
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 1, 0)))
+
 #define MIPI_CSI2RX_INIT(n)                                                                        \
 	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
 		.csi2rxConfig.laneNum = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 1, 0), data_lanes),  \
@@ -331,15 +333,13 @@ static int mipi_csi2rx_init(const struct device *dev)
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
 		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
-		.sensor_dev =                                                                      \
-			DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 1, 0))),     \
+		.sensor_dev = SOURCE_DEV(n),                                                       \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
 			      &mipi_csi2rx_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
 			      &mipi_csi2rx_driver_api);                                            \
                                                                                                    \
-	VIDEO_DEVICE_DEFINE(mipi_csi2rx_##n, DEVICE_DT_INST_GET(n),                                \
-			    mipi_csi2rx_config_##n.sensor_dev);
+	VIDEO_DEVICE_DEFINE(mipi_csi2rx_##n, DEVICE_DT_INST_GET(n), SOURCE_DEV(n));
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_CSI2RX_INIT)
