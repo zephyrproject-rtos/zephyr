@@ -436,6 +436,8 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	},
 };
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, sensor))
+
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
@@ -443,7 +445,7 @@ static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	},
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, sensor)),
+	.sensor_dev = SOURCE_DEV(0),
 	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
@@ -500,4 +502,4 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
 
-VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), video_stm32_dcmi_config_0.sensor_dev);
+VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
