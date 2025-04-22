@@ -31,13 +31,6 @@
 		dht0 = &si7021;
 	};
 
-	psram: psram@a000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xa000000 DT_SIZE_M(8)>;
-		zephyr,memory-region = "psram";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -57,6 +50,17 @@
 };
 
 &pinctrl0 {
+	psram_default: psram_default {
+		group {
+			pinmux = <PSRAM_CLK_HP52>,
+				 <PSRAM_D0_HP53>,
+				 <PSRAM_D1_HP54>,
+				 <PSRAM_D2_HP56>,
+				 <PSRAM_D3_HP57>,
+				 <PSRAM_CSN0_HP55>;
+		};
+	};
+
 	ulpuart_default: ulpuart_default {
 		out {
 			pinmux = <ULPUART_TX_ULP11>;
@@ -106,6 +110,23 @@
 			label = "storage";
 			reg = <0x001f6000 DT_SIZE_K(32)>;
 		};
+	};
+};
+
+&psramctrl0 {
+	status = "okay";
+	clocks = <&clock0 SIWX91X_CLK_QSPI>;
+	pinctrl-0 = <&psram_default>;
+	pinctrl-names = "default";
+	device-id = [ 0d 5d 00 00 00 00 00 00 ];
+	normal-freq = <DT_FREQ_M(33)>;
+	fast-freq = <DT_FREQ_M(144)>;
+
+	psram: psram@a000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "psram";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 };
 
