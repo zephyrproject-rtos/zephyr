@@ -1700,10 +1700,11 @@ Release Notes:
     - drivers.memc
 
 "Drivers: MDIO":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
-    - maass-hamburg
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
