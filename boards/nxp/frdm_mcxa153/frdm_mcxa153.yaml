@@ -14,6 +14,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - dma
   - flash
   - gpio
