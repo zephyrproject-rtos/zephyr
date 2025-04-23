@@ -294,7 +294,7 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev, uin
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) \
-        ||  (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+		||  (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
 
 #define GPIO_MCUX_INTERRUPT_DISABLED     0
 #define GPIO_MCUX_INTERRUPT_LOGIC_0      0x8
@@ -364,7 +364,7 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) \
-        ||  (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+		||  (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
 	uint32_t icr = get_gpio_icr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	gpio_base->ICR[pin] = (gpio_base->ICR[pin] & ~GPIO_ICR_IRQC_MASK) | icr;
@@ -393,7 +393,7 @@ static void gpio_mcux_port_isr(const struct device *dev)
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) \
-        || (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+		|| (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
 	int_status = config->gpio_base->ISFR[0];
 
 	/* Clear the gpio interrupts */
