@@ -211,6 +211,11 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
 int pthread_mutex_timedlock(pthread_mutex_t *m,
 			    const struct timespec *abstime)
 {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
+		return EINVAL;
+	}
+
 	return acquire_mutex(m, K_MSEC(timespec_to_timeoutms(abstime)));
 }
 
