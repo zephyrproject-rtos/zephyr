@@ -5,7 +5,6 @@
  */
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
