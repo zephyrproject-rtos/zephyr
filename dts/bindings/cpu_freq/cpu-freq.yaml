@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for CPU Frequency
+
+include: base.yaml
+
+description: CPU Frequency Configuration Node
+compatible: "zephyr,cpu-freq"
+properties:
+  cfgdata:
+    type: array
+    required: true
+    description:  |
+      List of configuration pairs representing a CPU usage threshold and
+      corresponding CPU frequency in Hz. Each configuration pair consists of
+      [threshold, frequency].
+      For example
+        cfgdata = <75 1000000000>, <50 800000000>, <25 300000000>;
+      This means
+        - If threshold is 75% or higher, set frequency to 1 GHz
+        - If threshold is 50% or higher, set frequency to 800 MHz
+        - If threshold is 25% or higher, set frequency to 300 MHz
