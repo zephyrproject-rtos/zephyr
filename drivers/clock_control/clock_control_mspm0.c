@@ -55,6 +55,17 @@ static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 
 static int clock_mspm0_off(const struct device *dev, clock_control_subsys_t sys)
 {
+#if MSPM0_CLK_OUT_ENABLED
+	struct mspm0_clockSys *clockSys = (struct mspm0_clockSys *)sys;
+
+	switch (clockSys->bus) {
+	case MSPM0_CLOCK_BUS_CLK_OUT:
+		DL_SYSCTL_disableExternalClock();
+	break;
+	default:
+		break;
+	}
+#endif
 	return 0;
 }
 
