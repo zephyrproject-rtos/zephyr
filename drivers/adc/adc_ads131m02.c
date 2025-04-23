@@ -604,11 +604,16 @@ static int ads131m02_pm_action(const struct device *dev,
 		}
 		return ads131m02_pm(dev, ADS131M02_WAKEUP_CMD);
 	case PM_DEVICE_ACTION_SUSPEND:
+		ret = ads131m02_pm(dev, ADS131M02_STANDBY_CMD);
+		if (ret < 0) {
+			return ret;
+		}
+
 		if (cfg->clock_frequency) {
 			clock_control_off(DEVICE_DT_GET(DT_NODELABEL(clkmux)),
 					  (clock_control_subsys_t)&cfg->bus_clk);
 		}
-		return ads131m02_pm(dev, ADS131M02_STANDBY_CMD);
+		return 0;
 	default:
 		return -EINVAL;
 	}
