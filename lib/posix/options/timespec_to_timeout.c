@@ -10,7 +10,7 @@
 #include <ksched.h>
 #include <zephyr/posix/time.h>
 
-uint32_t timespec_to_clock_timeoutms(clockid_t clock_id, const struct timespec *abstime)
+uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime)
 {
 	int64_t milli_secs, secs, nsecs;
 	struct timespec curtime;
@@ -26,9 +26,4 @@ uint32_t timespec_to_clock_timeoutms(clockid_t clock_id, const struct timespec *
 	}
 
 	return milli_secs;
-}
-
-uint32_t timespec_to_timeoutms(const struct timespec *abstime)
-{
-	return timespec_to_clock_timeoutms(CLOCK_MONOTONIC, abstime);
 }

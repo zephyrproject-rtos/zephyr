@@ -264,7 +264,7 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 	}
 
 	return send_message(mqd, msg_ptr, msg_len,
-			    K_MSEC(timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)));
+			    K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**
@@ -300,7 +300,7 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 	}
 
 	return receive_message(mqd, msg_ptr, msg_len,
-			       K_MSEC(timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)));
+			       K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**
