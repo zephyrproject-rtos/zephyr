@@ -466,11 +466,9 @@ GROUP_END(DTCM)
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,,)
 {
-#ifdef CONFIG_LINKER_LAST_SECTION_ID
-  /* Fill last section with a word to ensure location counter and actual rom
-   * region data usage match. */
-  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
-#endif
+  /* .last_section contains a fixed word to ensure location counter and actual
+   * rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y. */
+  KEEP(*(.last_section))
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* To provide the image size as a const expression,
