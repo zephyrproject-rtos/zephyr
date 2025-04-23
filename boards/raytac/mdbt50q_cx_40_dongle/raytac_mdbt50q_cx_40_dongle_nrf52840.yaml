@@ -1,0 +1,23 @@
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Raytac Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: raytac_mdbt50q_cx_40_dongle/nrf52840
+name: Raytac MDBT50Q-CX-40 Dongle
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - usb_device
+  - usb_cdc
+  - ble
+  - pwm
+  - watchdog
+  - counter
+  - netif:openthread
+  - gpio
+vendor: raytac
