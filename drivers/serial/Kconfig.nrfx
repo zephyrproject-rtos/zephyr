@@ -63,6 +63,11 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
+config UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
+	bool
+	help
+	  Apply workaround for spurious RXTO during restart.
+
 if HAS_HW_NRF_UART0 || HAS_HW_NRF_UARTE0
 nrfx_uart_num = 0
 rsource "Kconfig.nrfx_uart_instance"

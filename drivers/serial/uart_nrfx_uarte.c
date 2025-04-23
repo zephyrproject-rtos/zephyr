@@ -266,6 +266,9 @@ struct uarte_nrfx_data {
 /* If enabled then UARTE peripheral is using memory which is cacheable. */
 #define UARTE_CFG_FLAG_CACHEABLE BIT(3)
 
+/* Indicates that workaround for spurious RXTO during restart shall be applied. */
+#define UARTE_CFG_FLAG_SPURIOUS_RXTO BIT(3)
+
 /* Formula for getting the baudrate settings is following:
  * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
  * drives the UARTE.
@@ -1546,6 +1549,17 @@ static void endrx_isr(const struct device *dev)
 		unsigned int key = irq_lock();
 
 		if (async_rx->buf) {
+
+#if CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
+			/* Check for spurious RXTO event. */
+			const struct uarte_nrfx_config *config = dev->config;
+
+			if ((config->flags & UARTE_CFG_FLAG_SPURIOUS_RXTO) &&
+			    nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+			}
+#endif
+
 			/* Check is based on assumption that ISR handler handles
 			 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
 			 * event will be set.
@@ -2567,6 +2581,9 @@ static int uarte_instance_init(const struct device *dev,
 			(!IS_ENABLED(CONFIG_HAS_NORDIC_DMM) ? 0 :	       \
 			  (UARTE_IS_CACHEABLE(idx) ?			       \
 				UARTE_CFG_FLAG_CACHEABLE : 0)) |	       \
+			(IS_ENABLED(CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND) && \
+			 INSTANCE_IS_HIGH_SPEED(_, /*empty*/, idx, _) ?	       \
+			 UARTE_CFG_FLAG_SPURIOUS_RXTO : 0) |		       \
 			USE_LOW_POWER(idx),				       \
 		UARTE_DISABLE_RX_INIT(UARTE(idx)),			       \
 		.poll_out_byte = &uarte##idx##_poll_out_byte,		       \
