@@ -2131,8 +2131,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 			break;
 		}
 	}
-	__ASSERT_NO_MSG(prescaler >= STM32_XSPI_CLOCK_PRESCALER_MIN &&
-			prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX);
+
+	if (prescaler > STM32_XSPI_CLOCK_PRESCALER_MAX) {
+		LOG_ERR("XSPI could not find valid prescaler value");
+		return -EINVAL;
+	}
 
 	/* Initialize XSPI HAL structure completely */
 	dev_data->hxspi.Init.ClockPrescaler = prescaler;
