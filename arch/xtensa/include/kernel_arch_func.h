@@ -24,8 +24,18 @@ extern "C" {
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
+#if defined(CONFIG_XTENSA_LIBC)
+void _Initlocks(void);
+#endif
+
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#if defined(CONFIG_XTENSA_LIBC)
+	if (arch_proc_id() == 0) {
+		_Initlocks();
+	}
+#endif
+
 #ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
 #endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
