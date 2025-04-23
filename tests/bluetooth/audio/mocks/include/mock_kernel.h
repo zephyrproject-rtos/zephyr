@@ -8,6 +8,8 @@
 #ifndef MOCKS_KERNEL_H_
 #define MOCKS_KERNEL_H_
 
+#include <stdbool.h>
+
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
