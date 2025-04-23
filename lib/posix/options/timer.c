@@ -267,12 +267,12 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	}
 
 	/* Calculate timer period */
-	timer->reload = _ts_to_ms(&value->it_interval);
+	timer->reload = ts_to_ms(&value->it_interval);
 	timer->interval.tv_sec = value->it_interval.tv_sec;
 	timer->interval.tv_nsec = value->it_interval.tv_nsec;
 
 	/* Calculate timer duration */
-	duration = _ts_to_ms(&(value->it_value));
+	duration = ts_to_ms(&(value->it_value));
 	if ((flags & TIMER_ABSTIME) != 0) {
 		current = k_timer_remaining_get(&timer->ztimer);
 
