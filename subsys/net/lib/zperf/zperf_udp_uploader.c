@@ -25,6 +25,7 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 					    struct zperf_results *results)
 {
 	struct zperf_server_hdr *stat;
+	uint32_t flags;
 
 	if (datalen < sizeof(struct zperf_udp_datagram) +
 		      sizeof(struct zperf_server_hdr)) {
@@ -33,6 +34,10 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 
 	stat = (struct zperf_server_hdr *)
 			(data + sizeof(struct zperf_udp_datagram));
+	flags = ntohl(UNALIGNED_GET(&stat->flags));
+	if (!(flags & ZPERF_FLAGS_VERSION1)) {
+		NET_WARN("Unexpected response flags");
+	}
 
 	results->nb_packets_rcvd = ntohl(UNALIGNED_GET(&stat->datagrams));
 	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));

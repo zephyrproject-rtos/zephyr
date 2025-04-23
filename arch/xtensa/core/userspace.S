@@ -53,6 +53,12 @@ _is_user_context_return:
 _not_checking_user_context:
 	rsr a2, ZSR_SYSCALL_SCRATCH
 #endif
+
+	/* Need to disable any interrupts while we are saving
+	 * register content to avoid any interferences.
+	 */
+	rsil a0, 0xf
+
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
 	l32i a0, a0, _thread_offset_to_psp
@@ -65,21 +71,27 @@ _not_checking_user_context:
 	rsr a2, ZSR_A0SAVE
 	s32i a2, a0, ___xtensa_irq_bsa_t_a0_OFFSET
 	rsr.ps a2
-	movi a3, ~PS_OWB_MASK
+	movi a3, ~PS_OWB_MASK & ~PS_EXCM_MASK
 	and a2, a2, a3
 	s32i a2, a0, ___xtensa_irq_bsa_t_ps_OFFSET
-	rsr.epc1 a2
-	s32i a2, a0, ___xtensa_irq_bsa_t_pc_OFFSET
 
-#if XCHAL_HAVE_NMI
-	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NMILEVEL)
-#elif XCHAL_HAVE_INTERRUPTS
-	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NUM_INTLEVELS)
-#else
-#error Xtensa core with no interrupt support is used
-#endif
+	/* Manipulate PC where we will return to after syscall.
+	 * This is needed as syscall will stash the PC where
+	 * the syscall instruction locates, instead of
+	 * the instruction after it. We need to increment it to
+	 * execute the next instruction when we return.
+	 * The instruction size is 3 bytes, so lets just add it.
+	 */
+	rsr.epc1 a3
+	addi a3, a3, 3
+	s32i a3, a0, ___xtensa_irq_bsa_t_pc_OFFSET
+
+	/* Need to setup PS so we can spill all registers.
+	 * EXCM and RING bits need to be cleared as CPU
+	 * needs to run in kernel and non-exception modes
+	 * for window rotation to work.
+	 */
 	rsr.ps a3
-	or a3, a3, a2
 	movi a2, ~(PS_EXCM | PS_RING_MASK)
 	and a3, a3, a2
 	wsr.ps a3
@@ -95,34 +107,7 @@ _not_checking_user_context:
 
 	mov a1, a0
 
-	l32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
-#if XCHAL_HAVE_LOOPS
-	/* If the syscall instruction was the last instruction in the body of
-	 * a zero-overhead loop, and the loop will execute again, decrement
-	 * the loop count and resume execution at the head of the loop.
-	 */
-	rsr.lend a2
-	addi a3, a3, 3
-	bne a2, a3, end_loop
-	rsr.lcount a2
-	beqz a2, end_loop
-	addi a2, a2, -1
-	wsr.lcount a2
-	rsr.lbeg a3
-end_loop:
-#else
-	/* EPC1 (and now a3) contains the address that invoked syscall.
-	 * We need to increment it to execute the next instruction when
-	 * we return. The instruction size is 3 bytes, so lets just add it.
-	 */
-	addi a3, a3, 3
-#endif
-	s32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
-	ODD_REG_SAVE
-
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
-	call0 _xtensa_hifi_save
-#endif
+	ODD_REG_SAVE a0, a1
 
 	call0 xtensa_save_high_regs
 
@@ -134,8 +119,7 @@ end_loop:
 _id_ok:
 	/* Find the function handler for the given syscall id. */
 	movi a3, _k_syscall_table
-	slli a2, a2, 2
-	add a2, a2, a3
+	addx4 a2, a2, a3
 	l32i a2, a2, 0
 
 #if XCHAL_HAVE_THREADPTR
@@ -173,12 +157,14 @@ _id_ok:
 
 	/* Stack frame pointer is the 7th argument to z_mrsh_*()
 	 * as ssf, and must be put on stack to be consumed.
+	 *
+	 * Subtract 16 bytes as stack needs to be 16-byte aligned.
 	 */
 	mov a3, a1
-	addi a1, a1, -4
+	addi a1, a1, -16
 	s32i a3, a1, 0
 
-	l32i a3, a1, 4
+	l32i a3, a1, 16
 	l32i a7, a3, ___xtensa_irq_bsa_t_a3_OFFSET
 
 
@@ -195,7 +181,7 @@ _id_ok:
 	 * actual the stack frame. So restoration of registers
 	 * can be done properly when finishing syscalls.
 	 */
-	addi a1, a1, 4
+	addi a1, a1, 16
 
 	/* copy return value. Lets put it in the top of stack
 	 * because registers will be clobbered in
@@ -204,25 +190,13 @@ _id_ok:
 	l32i a3, a1, 0
 	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
-	j _syscall_returned
-
 _syscall_returned:
+	/* Disable interrupts as we are restoring context. */
+	rsil a0, 0xf
+
 	call0 xtensa_restore_high_regs
 
-	l32i a3, a1, ___xtensa_irq_bsa_t_sar_OFFSET
-	wsr a3, SAR
-#if XCHAL_HAVE_LOOPS
-	l32i a3, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	wsr a3, LBEG
-	l32i a3, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	wsr a3, LEND
-	l32i a3, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
-	wsr a3, LCOUNT
-#endif
-#if XCHAL_HAVE_S32C1I
-	l32i a3, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
-	wsr a3, SCOMPARE1
-#endif
+	ODD_REG_RESTORE a3, a1
 
 #if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -231,18 +205,14 @@ _syscall_returned:
 	add a0, a3, a0
 	movi a3, 1
 	s32i a3, a0, 0
-#else
-	rsr a3, ZSR_CPU
-	l32i a3, a3, ___cpu_t_current_OFFSET
-	wur.THREADPTR a3
 #endif
 #endif /* XCHAL_HAVE_THREADPTR */
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_ps_OFFSET
-	wsr.ps a3
+	wsr.ZSR_EPS a3
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
-	wsr.epc1 a3
+	wsr.ZSR_EPC a3
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	l32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
@@ -251,7 +221,7 @@ _syscall_returned:
 	l32i a1, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 	rsync
 
-	rfe
+	rfi ZSR_RFI_LEVEL
 
 _bad_syscall:
 	movi a2, K_SYSCALL_BAD
@@ -300,7 +270,7 @@ xtensa_userspace_enter:
 
 	l32i a6, a1, 24
 #ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
+	SWAP_PAGE_TABLE a6, a3, a7
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	call4 xtensa_mpu_map_write
@@ -331,8 +301,11 @@ xtensa_userspace_enter:
 	/* Go back to user stack */
 	l32i a1, a1, 4
 
+	/* Disabling interrupts as we need to use ZSR_EPC and ZSR_EPS */
+	rsil a0, 0xf
+
 	movi a0, z_thread_entry
-	wsr.epc2 a0
+	wsr.ZSR_EPC a0
 
 	/* Configuring PS register.
 	 * We have to set callinc as well, since the called
@@ -346,9 +319,9 @@ xtensa_userspace_enter:
 	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(1)
 #endif
 
-	wsr a0, EPS2
+	wsr.ZSR_EPS a0
 
 	/* Wipe out a0 (thre is no return from this function */
 	movi a0, 0
 
-	rfi 2
+	rfi ZSR_RFI_LEVEL

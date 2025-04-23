@@ -859,9 +859,25 @@ static int espi_npcx_send_vwire(const struct device *dev,
 	if (signal >= ESPI_VWIRE_SIGNAL_TARGET_GPIO_0) {
 		SET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 		reg_val = inst->VWGPSM[reg_idx];
+
+		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
+			if (!WAIT_FOR(!IS_BIT_SET(inst->VWGPSM[reg_idx], NPCX_VWEVSM_DIRTY),
+				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
+				LOG_ERR("%s signal %d timeout", __func__, signal);
+				return -ETIMEDOUT;
+			}
+		}
 	} else {
 		SET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 		reg_val = inst->VWEVSM[reg_idx];
+
+		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
+			if (!WAIT_FOR(!IS_BIT_SET(inst->VWEVSM[reg_idx], NPCX_VWEVSM_DIRTY),
+				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
+				LOG_ERR("%s signal %d timeout", __func__, signal);
+				return -ETIMEDOUT;
+			}
+		}
 	}
 
 	LOG_DBG("Send VW: %s%d 0x%08X", reg_name, reg_idx, reg_val);

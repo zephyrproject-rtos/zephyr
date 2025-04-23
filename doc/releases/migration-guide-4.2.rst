@@ -249,6 +249,12 @@ Bluetooth Host
   each role may be different. Any existing uses/checks for ``BT_ISO_CHAN_TYPE_CONNECTED``
   can be replaced with an ``||`` of the two. (:github:`75549`)
 
+* The ``struct _bt_gatt_ccc`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h` has been renamed to
+  struct :c:struct:`bt_gatt_ccc_managed_user_data`. (:github:`88652`)
+
+* The macro ``BT_GATT_CCC_INITIALIZER`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h`
+  has been renamed to :c:macro:`BT_GATT_CCC_MANAGED_USER_DATA_INIT`. (:github:`88652`)
+
 Bluetooth Classic
 =================
 
@@ -289,6 +295,14 @@ Networking
   you provide applicable values to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
+
+* :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
+  the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
+  is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+
+* The OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` have been moved to
+  ``modules/openthread/Kconfig``. All the Kconfig options remain the same. You can still use them in the
+  same way as before, but to modify them, use the new path in the menuconfig or guiconfig.
 
 SPI
 ===

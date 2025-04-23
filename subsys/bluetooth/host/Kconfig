@@ -21,7 +21,7 @@ config BT_LONG_WQ_STACK_SIZE
 	default 1024
 
 config BT_LONG_WQ_PRIO
-	int "Long workqueue priority. Should be pre-emptible."
+	int "Long workqueue priority. Should be preemptible."
 	default 10
 	range 0 NUM_PREEMPT_PRIORITIES
 
@@ -979,7 +979,7 @@ config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
 	depends on BT_DF_CONNECTIONLESS_CTE_RX && BT_HCI_VS
 	help
-	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
+	  Direction Finding connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific Host
 	  extension to handle connectionless IQ reports with samples that are in 16 bit signed
@@ -989,7 +989,7 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
 	depends on BT_DF_CONNECTION_CTE_RX && BT_HCI_VS
 	help
-	  Direction Finging connection IQ reports provide a set of IQ samples collected during
+	  Direction Finding connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E sections 7.7.65.22. This option enables a vendor specific Host
 	  extension to handle connection IQ report with samples that are in 16 bit signed integer

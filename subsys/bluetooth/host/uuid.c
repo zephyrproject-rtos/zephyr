@@ -6,12 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
 #include <errno.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
 #define UUID_16_BASE_OFFSET 12
 

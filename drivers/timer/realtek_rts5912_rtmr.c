@@ -28,8 +28,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define RTMR_REG ((RTOSTMR_Type *)DT_INST_REG_ADDR(0))
 
-#define SLWTMR_REG                                                                                 \
-	((RTOSTMR_Type *)(DT_REG_ADDR(DT_COMPAT_GET_ANY_STATUS_OKAY(realtek_rts5912_slwtimer))))
+#define SLWTMR_REG ((RTOSTMR_Type *)(DT_REG_ADDR(DT_NODELABEL(slwtmr0))))
 
 #define SSCON_REG ((SYSTEM_Type *)(DT_REG_ADDR(DT_NODELABEL(sccon))))
 

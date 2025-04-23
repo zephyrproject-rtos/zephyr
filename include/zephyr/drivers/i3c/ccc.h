@@ -179,6 +179,14 @@ extern "C" {
  */
 #define I3C_CCC_VENDOR(broadcast, id)		((id) + ((broadcast) ? 0x61U : 0xE0U))
 
+/**
+ * Reset Dynamic Address (Direct)
+ *
+ * @note This should not be used by devices that support I3C v1.0 and this
+ * shall not be used for devices that support I3C v1.1 or later.
+ */
+#define I3C_CCC_RSTDAA_DC			0x86U
+
 /** Set Dynamic Address from Static Address (Direct) */
 #define I3C_CCC_SETDASA				0x87U
 
@@ -1503,6 +1511,21 @@ static inline int i3c_ccc_do_rstact_fmt3(const struct i3c_device_desc *target,
 }
 
 /**
+ * @brief Reset dynamic addresses for a targets.
+ *
+ * Helper function to reset a dynamic addresses of a targets.
+ *
+ * @note This should not be used by devices that support I3C v1.0 and this
+ * shall not be used for devices that support I3C v1.1 or later.
+ *
+ * @param[in] target Pointer to the target device descriptor where
+ *                   the device is configured with a dynamic address.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_rstdaa(struct i3c_device_desc *target);
+
+/**
  * @brief Broadcast RSTDAA to reset dynamic addresses for all targets.
  *
  * Helper function to reset dynamic addresses of all connected targets.
@@ -1538,7 +1561,7 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target,
  * Note this does not update @p target with the new dynamic address.
  *
  * @param[in] target Pointer to the target device descriptor where
- *                   the device is configured with a static address.
+ *                   the device is configured with a dynamic address.
  * @param[in] new_da Struct of the Dynamic address
  *
  * @return @see i3c_do_ccc

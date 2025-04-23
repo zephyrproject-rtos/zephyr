@@ -6,10 +6,12 @@
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <freq.h>
 
 / {
 	chosen {
+		zephyr,sram = &sram0;
 		zephyr,entropy = &rng0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl0;
@@ -27,7 +29,24 @@
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		reg = <0x00000000 DT_SIZE_K(191)>;
+		/* siwx91x has 672kB of SRAM shared between the Cortex-M4
+		 * (Zephyr) and the NWP (Network Processor). 3 memory
+		 * configurations are
+		 * possible:
+		 *  - 196kB
+		 *  - 256kB
+		 *  - 320kB
+		 * Less memory is allocated to Zephyr, more memory is allocated
+		 * to NWP, better are the WiFi and BLE performances.
+		 */
+		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+
+	sram_dma1: memory-dma@24061c00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x24061c00 DT_SIZE_K(1)>;
+		zephyr,memory-region = "dma1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	bt_hci0: bt_hci {
@@ -243,7 +262,6 @@
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
-			silabs,sram-desc-addr = <0x2fc00>;
 			#dma-cells = < 1>;
 			dma-channels = <32>;
 			status = "disabled";
@@ -257,7 +275,7 @@
 			interrupts = <10 0>;
 			interrupt-names = "ulpdma";
 			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
-			silabs,sram-desc-addr = <0x24061c00>;
+			silabs,sram-region = <&sram_dma1>;
 			#dma-cells = < 1>;
 			dma-channels = <12>;
 			status = "disabled";

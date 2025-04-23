@@ -1372,8 +1372,7 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 		internal_state->index, src_id);
 
 	if (internal_state->state.encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-		(void)memcpy(internal_state->state.bad_code,
-			     internal_state->broadcast_code,
+		(void)memset(internal_state->state.bad_code, 0xFF,
 			     sizeof(internal_state->state.bad_code));
 	}
 
@@ -1570,8 +1569,7 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 		state->encrypt_state = param->encrypt_state;
 
 		if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-			(void)memcpy(state->bad_code, internal_state->broadcast_code,
-				     sizeof(internal_state->state.bad_code));
+			(void)memset(state->bad_code, 0xFF, sizeof(internal_state->state.bad_code));
 		}
 
 		state_changed = true;

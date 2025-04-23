@@ -105,6 +105,7 @@ static int tcp_upload(int sock,
 				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 	results->nb_packets_errors = nb_errors;
+	results->total_len = (uint64_t)nb_packets * packet_size;
 
 	if (alloc_errors > 0) {
 		NET_WARN("There was %u network buffer allocation "

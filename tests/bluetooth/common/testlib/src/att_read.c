@@ -3,17 +3,21 @@
  */
 
 #include <stdint.h>
+#include <testlib/att_read.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
-
-#include <testlib/att_read.h>
+#include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(bt_testlib_att_read, LOG_LEVEL_DBG);
 

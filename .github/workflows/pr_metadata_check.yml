@@ -16,7 +16,7 @@ permissions:
 jobs:
   do-not-merge:
     name: Prevent Merging
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check for label
         if: ${{ contains(github.event.*.labels.*.name, 'DNM') ||
@@ -32,7 +32,7 @@ jobs:
   empty_pr_description:
     if: ${{ github.event.pull_request.body == '' }}
     name: PR Description
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check for PR description
         run: |

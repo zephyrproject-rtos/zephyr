@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # fsl_common driver
-zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c
-                       ${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
+zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common.c)
 zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/common)
+
+if(CONFIG_ARCH STREQUAL "xtensa")
+  zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_dsp.c)
+elseif(CONFIG_ARCH STREQUAL "arm")
+  zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
+endif()
 
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2    CONFIG_MCUX_COMPONENT_driver.src_2)
 set_variable_ifdef(CONFIG_GPIO_MCUX_IGPIO       CONFIG_MCUX_COMPONENT_driver.igpio)
@@ -131,6 +136,7 @@ set_variable_ifdef(CONFIG_PINCTRL_NXP_PORT      CONFIG_MCUX_COMPONENT_driver.por
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_soc_rev2)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS_SRTC    CONFIG_MCUX_COMPONENT_driver.snvs_lp)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
+set_variable_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver.flexio_mculcd)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)
 set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc)

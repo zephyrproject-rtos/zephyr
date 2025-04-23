@@ -150,6 +150,7 @@ endchoice
 
 config NRF_WIFI_LOW_POWER
 	bool "Low power mode in nRF Wi-Fi chipsets"
+	depends on !NRF70_RADIO_TEST && !NRF70_AP_MODE
 	default y
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
@@ -687,9 +688,8 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"
-	# Relies on power-save mode, so, LPM is needed and AP mode is not supported
+	# Relies on power-save mode, so, LPM is needed
 	depends on NRF_WIFI_LOW_POWER
-	depends on !NRF70_AP_MODE
 	default y
 	select EXPERIMENTAL
 	help
