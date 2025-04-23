@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Enphase Energy
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/ti/ti_am62x_a53.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+		};
+	};
+};
