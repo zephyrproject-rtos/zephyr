@@ -201,7 +201,8 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 	uint32_t ret = 0U;
 	struct posix_rwlock *rwl;
 
-	if (abstime->tv_nsec < 0 || abstime->tv_nsec > NSEC_PER_SEC) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
 
@@ -271,7 +272,8 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 	uint32_t ret = 0U;
 	struct posix_rwlock *rwl;
 
-	if (abstime->tv_nsec < 0 || abstime->tv_nsec > NSEC_PER_SEC) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
 

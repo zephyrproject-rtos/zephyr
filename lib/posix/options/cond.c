@@ -175,6 +175,11 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struct timespec *abstime)
 {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
+		return EINVAL;
+	}
+
 	return cond_wait(cv, mut, abstime);
 }
 

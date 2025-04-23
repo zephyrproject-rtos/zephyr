@@ -258,6 +258,11 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
 
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	return send_message(mqd, msg_ptr, msg_len, K_MSEC(timespec_to_timeoutms(abstime)));
 }
 
@@ -287,6 +292,11 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 			unsigned int *msg_prio, const struct timespec *abstime)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
+
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	return receive_message(mqd, msg_ptr, msg_len, K_MSEC(timespec_to_timeoutms(abstime)));
 }

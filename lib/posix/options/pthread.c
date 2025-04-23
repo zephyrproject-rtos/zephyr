@@ -1149,11 +1149,8 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
  */
 int pthread_timedjoin_np(pthread_t pthread, void **status, const struct timespec *abstime)
 {
-	if (abstime == NULL) {
-		return EINVAL;
-	}
-
-	if (abstime->tv_sec < 0 || abstime->tv_nsec < 0 || abstime->tv_nsec >= NSEC_PER_SEC) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
 

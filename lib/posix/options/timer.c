@@ -4,8 +4,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+
+#include "posix_clock.h"
+
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -241,11 +245,8 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	struct timer_obj *timer = (struct timer_obj *) timerid;
 	uint32_t duration, current;
 
-	if (timer == NULL ||
-	    value->it_interval.tv_nsec < 0 ||
-	    value->it_interval.tv_nsec >= NSEC_PER_SEC ||
-	    value->it_value.tv_nsec < 0 ||
-	    value->it_value.tv_nsec >= NSEC_PER_SEC) {
+	if ((timer == NULL) || !timespec_is_valid(&value->it_interval) ||
+	    !timespec_is_valid(&value->it_value)) {
 		errno = EINVAL;
 		return -1;
 	}
