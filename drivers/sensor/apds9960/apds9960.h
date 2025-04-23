@@ -214,6 +214,7 @@
 
 /* Polling Wait Times (ms) */
 #define APDS9960_DEFAULT_WAIT_TIME      2.78
+#define APDS9960_MAX_WAIT_TIME          10000
 
 struct apds9960_config {
 	struct i2c_dt_spec i2c;
