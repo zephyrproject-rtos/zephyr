@@ -28,6 +28,9 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1024 if PM
 
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 # add additional die specific params
 
 endif # SOC_DIE_CYW20829
