@@ -214,7 +214,9 @@
 
 struct apds9960_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
 	struct gpio_dt_spec int_gpio;
+#endif
 	uint8_t pgain;
 	uint8_t again;
 	uint8_t ppcount;
@@ -231,11 +233,12 @@ struct apds9960_data {
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
 	const struct sensor_trigger *p_th_trigger;
-#else
+#elif CONFIG_APDS9960_FETCH_MODE_INTERRUPT
 	struct k_sem data_sem;
 #endif
 };
 
+#ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
 static inline void apds9960_setup_int(const struct apds9960_config *cfg,
 				      bool enable)
 {
@@ -245,6 +248,7 @@ static inline void apds9960_setup_int(const struct apds9960_config *cfg,
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
+#endif
 
 #ifdef CONFIG_APDS9960_TRIGGER
 void apds9960_work_cb(struct k_work *work);
