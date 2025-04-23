@@ -85,11 +85,11 @@ void client_procedure(void)
 	struct bt_conn *conn;
 	uint16_t handle;
 
-	char server_new_name[CONFIG_BT_DEVICE_NAME_MAX];
+	char server_new_name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
 
 	NET_BUF_SIMPLE_DEFINE(attr_value_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
-	generate_name(server_new_name, CONFIG_BT_DEVICE_NAME_MAX);
+	generate_name(server_new_name, CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX);
 
 	TEST_START("client");
 

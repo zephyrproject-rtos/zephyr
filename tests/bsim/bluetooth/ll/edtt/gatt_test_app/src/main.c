@@ -6,6 +6,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/printk.h>
@@ -19,15 +20,13 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include <gatt/services.h>
 
 #include "edtt_driver.h"
 #include "bs_tracing.h"
 #include "commands.h"
-
-#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -40,15 +39,20 @@ static const struct bt_data ad[] = {
 		      0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static int service_set;
 
 static int start_advertising(void)
 {
 	int err;
+
+	struct bt_data sd[1];
+
+	uint8_t device_name[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
+	size_t device_name_size = bt_gap_get_device_name(device_name, sizeof(device_name));
+
+	sd[0].type = BT_DATA_NAME_COMPLETE;
+	sd[0].data_len = device_name_size;
+	sd[0].data = device_name;
 
 	err = bt_le_adv_start(BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY,
 					      BT_GAP_ADV_FAST_INT_MIN_1, BT_GAP_ADV_FAST_INT_MAX_1,

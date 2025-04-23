@@ -112,10 +112,10 @@ void entrypoint_dut(void)
 
 	/* Find the address of the peer. In our case, both devices are actually
 	 * the same executable (with the same config) but executed with
-	 * different arguments. We can then just use CONFIG_BT_DEVICE_NAME which
-	 * contains our device name in string form.
+	 * different arguments. We can then just use CONFIG_BT_GAP_DEVICE_NAME
+	 * which contains our device name in string form.
 	 */
-	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_DEVICE_NAME);
+	err = bt_testlib_scan_find_name(&peer, CONFIG_BT_GAP_DEVICE_NAME);
 	TEST_ASSERT(!err, "Failed to start scan (err %d)", err);
 
 	/* Create a connection using that address */

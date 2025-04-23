@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_receiver, LOG_LEVEL_DBG);
 
-#define DEVICE_NAME	CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME	CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME))
 
 #define PA_RETRY_COUNT 6

@@ -17,7 +17,7 @@
 #include "babblekit/testcase.h"
 
 #define NAME_LEN 30
-#define BT_AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_DEVICE_NAME) - 1U + 2U)
+#define BT_AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1U + 2U)
 #define BT_AD_DATA_MFG_DATA_SIZE (254U + 2U)
 /*
  * for testing chaining the manufacturing data is duplicated, hence DATA_LEN needs to
@@ -96,7 +96,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	(void)memset(name, 0, sizeof(name));
 	bt_data_parse(buf, data_cb, name);
 
-	if (strcmp(name, CONFIG_BT_DEVICE_NAME)) {
+	if (strcmp(name, CONFIG_BT_GAP_DEVICE_NAME)) {
 		printk("Wrong name %s\n", name);
 		return;
 	}

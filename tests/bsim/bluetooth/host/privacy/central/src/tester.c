@@ -160,8 +160,8 @@ void tester_procedure_periph_delayed_start_of_conn_adv(void)
 	TEST_ASSERT(!err, "Failed to create advertising set (err %d)", err);
 
 	ad.type = BT_DATA_NAME_COMPLETE;
-	ad.data_len = strlen(CONFIG_BT_DEVICE_NAME);
-	ad.data = (const uint8_t *)CONFIG_BT_DEVICE_NAME;
+	ad.data_len = strlen(CONFIG_BT_GAP_DEVICE_NAME);
+	ad.data = (const uint8_t *)CONFIG_BT_GAP_DEVICE_NAME;
 
 	err = bt_le_ext_adv_set_data(adv, &ad, 1, NULL, 0);
 	TEST_ASSERT(!err, "Failed to set advertising data (err %d)", err);

@@ -64,6 +64,10 @@ module = BT_GATT
 module-str = "Bluetooth Generic Attribute Profile (GATT)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_GAP
+module-str = "Bluetooth Generic Access Profile (GAP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 module = BT_L2CAP
 module-str = "Bluetooth L2CAP"
 source "subsys/logging/Kconfig.template.log_config_inherit"

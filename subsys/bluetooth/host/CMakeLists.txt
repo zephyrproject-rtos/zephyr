@@ -3,6 +3,8 @@
 zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
+add_subdirectory(gap)
+
 add_subdirectory_ifdef(CONFIG_BT_CLASSIC classic)
 add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 

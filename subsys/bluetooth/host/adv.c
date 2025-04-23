@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
@@ -814,7 +815,8 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 	int err;
 
 	if (name_type != ADV_NAME_TYPE_NONE) {
-		const char *name = bt_get_name();
+		uint8_t name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+		size_t name_size = bt_gap_get_device_name(name, sizeof(name));
 
 		if ((ad && ad_has_name(ad, ad_len)) ||
 		    (sd && ad_has_name(sd, sd_len))) {
@@ -824,7 +826,7 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 
 		data = (struct bt_data)BT_DATA(
 			BT_DATA_NAME_COMPLETE,
-			name, strlen(name));
+			name, name_size);
 	}
 
 	if (!(ext_adv && scannable)) {

@@ -10,6 +10,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -522,9 +523,16 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 	memcpy(&proxy_svc_data[3], &hash[8], 8);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+                uint8_t name[DEVICE_NAME_SIZE];
+                size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+		if (name_size < 0) {
+			LOG_DBG("Failed to get name (err %d)", name_size);
+			return -ENOMEM;
+		}
+
 		sd[0].type = BT_DATA_NAME_COMPLETE;
-		sd[0].data_len = BT_DEVICE_NAME_LEN;
-		sd[0].data = BT_DEVICE_NAME;
+		sd[0].data_len = name_size;
+		sd[0].data = name;
 	}
 
 	err = bt_mesh_adv_gatt_start(
@@ -617,9 +625,16 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 	memcpy(proxy_svc_data + 3, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+                uint8_t name[DEVICE_NAME_SIZE];
+                size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+		if (name_size < 0) {
+			LOG_DBG("Failed to get name (err %d)", name_size);
+			return -ENOMEM;
+		}
+
 		sd[0].type = BT_DATA_NAME_COMPLETE;
-		sd[0].data_len = BT_DEVICE_NAME_LEN;
-		sd[0].data = BT_DEVICE_NAME;
+		sd[0].data_len = name_size;
+		sd[0].data = name;
 	}
 
 	err = bt_mesh_adv_gatt_start(&slow_adv_param, duration, net_id_ad,

@@ -7,6 +7,8 @@
  */
 #include <zephyr/bluetooth/audio/cap.h>
 
+#include <zephyr/bluetooth/gap/device_name.h>
+
 #include "btp/btp.h"
 #include "btp_bap_audio_stream.h"
 #include "bap_endpoint.h"
@@ -571,6 +573,9 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	struct bt_data per_ad;
 
+	uint8_t device_name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+	size_t device_name_size;
+
 	/* A more specialized adv instance may already have been created by another btp module */
 	if (source->ext_adv == NULL) {
 		struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
@@ -585,9 +590,10 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 		base_ad[0].type = BT_DATA_SVC_DATA16;
 		base_ad[0].data_len = ad_buf.len;
 		base_ad[0].data = ad_buf.data;
+		device_name_size = bt_gap_get_device_name(device_name, sizeof(device_name));
 		base_ad[1].type = BT_DATA_NAME_COMPLETE;
-		base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
-		base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+		base_ad[1].data_len = device_name_size;
+		base_ad[1].data = device_name;
 
 		err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY,
 						     base_ad, 2, NULL, 0, gap_settings,

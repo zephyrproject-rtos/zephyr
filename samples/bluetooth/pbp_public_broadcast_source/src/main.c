@@ -62,7 +62,8 @@ static struct bt_bap_lc3_preset broadcast_preset_48_2_1 =
 					BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 struct bt_cap_initiator_broadcast_stream_param stream_params;

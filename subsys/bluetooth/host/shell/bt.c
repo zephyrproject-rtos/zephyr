@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/ead.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -1447,12 +1448,16 @@ static int cmd_name(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
+	uint8_t name[BT_GAP_DEVICE_NAME_MAX_SIZE + 1];
+	size_t name_size = bt_gap_get_device_name(name, sizeof(name));
+	name[name_size] = '\0';
+
 	if (argc < 2) {
-		shell_print(sh, "Bluetooth Local Name: %s", bt_get_name());
+		shell_print(sh, "Bluetooth GAP Device Name: %s", name);
 		return 0;
 	}
 
-	err = bt_set_name(argv[1]);
+	err = bt_gap_set_device_name(argv[1], strlen(argv[1]));
 	if (err) {
 		shell_error(sh, "Unable to set name %s (err %d)", argv[1], err);
 		return err;
@@ -1984,18 +1989,16 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	return ad_len;
 }
 
-void set_ad_name_complete(struct bt_data *ad, const char *name)
+void set_ad_name_complete(struct bt_data *ad, const uint8_t *name, size_t name_size)
 {
 	ad->type = BT_DATA_NAME_COMPLETE;
-	ad->data_len = strlen(name);
+	ad->data_len = name_size;
 	ad->data = name;
 }
 
-void set_ad_device_name_complete(struct bt_data *ad)
+void set_ad_device_name_complete(struct bt_data *ad, const uint8_t *name, size_t name_size)
 {
-	const char *name = bt_get_name();
-
-	set_ad_name_complete(ad, name);
+	set_ad_name_complete(ad, name, name_size);
 }
 
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
@@ -2011,6 +2014,8 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	bool with_name = true;
 	bool name_ad = false;
 	bool name_sd = true;
+	uint8_t name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+	size_t name_size;
 
 	if (!strcmp(argv[1], "off")) {
 		if (bt_le_adv_stop() < 0) {
@@ -2069,13 +2074,15 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	name_size = bt_gap_get_device_name(name, sizeof(name));
+
 	if (name_ad && with_name) {
-		set_ad_device_name_complete(&ad[0]);
+		set_ad_device_name_complete(&ad[0], name, name_size);
 		ad_len++;
 	}
 
 	if (name_sd && with_name) {
-		set_ad_device_name_complete(&sd[0]);
+		set_ad_device_name_complete(&sd[0], name, name_size);
 		sd_len++;
 	}
 
@@ -2312,6 +2319,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	bool name = false;
 	bool dev_name = false;
 	const char *name_value = NULL;
+	uint8_t dev_name_value[CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX];
+	size_t dev_name_size;
 
 	if (!adv) {
 		return -EINVAL;
@@ -2337,7 +2346,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			memcpy(&hex_data[hex_data_len], arg, len);
 			name_value = &hex_data[hex_data_len];
 
-			set_ad_name_complete(&data[*data_len], name_value);
+			set_ad_name_complete(&data[*data_len], name_value, len);
 
 			(*data_len)++;
 			hex_data_len += len;
@@ -2405,7 +2414,9 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		set_ad_device_name_complete(&data[*data_len]);
+		dev_name_size = bt_gap_get_device_name(dev_name_value, sizeof(dev_name_value));
+
+		set_ad_device_name_complete(&data[*data_len], dev_name_value, dev_name_size);
 
 		(*data_len)++;
 	}

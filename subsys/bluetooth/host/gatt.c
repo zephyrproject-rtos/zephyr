@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
@@ -107,10 +108,11 @@ static ATOMIC_DEFINE(gatt_flags, GATT_NUM_FLAGS);
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	const char *name = bt_get_name();
+	uint8_t name[BT_GAP_DEVICE_NAME_MAX_SIZE];
+	size_t size = bt_gap_get_device_name(name, sizeof(name));
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
+				 size);
 }
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
@@ -118,22 +120,20 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags)
 {
-	/* adding one to fit the terminating null character */
-	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
+	int err;
 
-	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
+	if (offset >= CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len > CONFIG_BT_DEVICE_NAME_MAX) {
+	if (offset + len > CONFIG_BT_GAP_DEVICE_NAME_DYNAMIC_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(value, buf, len);
-
-	value[len] = '\0';
-
-	bt_set_name(value);
+	err = bt_gap_set_device_name(buf, len);
+	if (err != 0) {
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
 
 	return len;
 }
@@ -258,7 +258,7 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 #else
 			       BT_GATT_PERM_WRITE,
 #endif
-			       read_name, write_name, bt_dev.name),
+			       read_name, write_name, NULL),
 #else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_name, NULL, NULL),

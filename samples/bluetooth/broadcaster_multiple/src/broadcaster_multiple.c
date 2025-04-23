@@ -27,7 +27,7 @@
 #define BT_AD_DATA_FORMAT_LEN_MAX 255U
 
 /* Device name length, size minus one null character */
-#define BT_DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1U)
+#define BT_DEVICE_NAME_LEN (sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1U)
 
 /* Device name length in AD data format, 2 bytes for length and type overhead */
 #define BT_DEVICE_NAME_AD_DATA_LEN (BT_AD_DATA_FORMAT_LEN_SIZE + \
@@ -55,11 +55,12 @@
 static uint8_t mfg_data[BT_MFG_DATA_LEN] = { 0xFF, 0xFF, };
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
+    BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
+    BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #endif
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+            sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 static struct bt_le_ext_adv *adv[CONFIG_BT_EXT_ADV_MAX_ADV_SET];

@@ -359,7 +359,7 @@ bool bt_is_ready(void);
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_set_name(const char *name);
+__deprecated int bt_set_name(const char *name);
 
 /**
  * @brief Get Bluetooth Device Name
@@ -368,7 +368,7 @@ int bt_set_name(const char *name);
  *
  * @return Bluetooth Device Name
  */
-const char *bt_get_name(void);
+__deprecated const char *bt_get_name(void);
 
 /**
  * @brief Get local Bluetooth appearance

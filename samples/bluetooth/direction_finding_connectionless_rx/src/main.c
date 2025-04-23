@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
-#define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME     CONFIG_BT_GAP_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NAME_LEN        30
 #define PEER_NAME_LEN_MAX 30

@@ -4314,11 +4314,6 @@ int bt_enable(bt_ready_cb_t cb)
 		if (err) {
 			return err;
 		}
-	} else if (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC)) {
-		err = bt_set_name(CONFIG_BT_DEVICE_NAME);
-		if (err) {
-			LOG_WRN("Failed to set device name (%d)", err);
-		}
 	}
 
 	ready_cb = cb;

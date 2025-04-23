@@ -9,6 +9,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include "host/att_internal.h"
 
@@ -100,7 +101,7 @@ static struct bt_conn *peripheral_setup(enum bt_att_chan_opt bearer, bool timeou
 {
 	struct bt_conn *conn = NULL;
 
-	EXPECT_ZERO(bt_testlib_adv_conn(&conn, BT_ID_DEFAULT, bt_get_name()));
+	EXPECT_ZERO(bt_testlib_adv_conn(&conn, BT_ID_DEFAULT, "peripheral"));
 
 	trigger_att_timeout = timeout;
 
@@ -275,10 +276,6 @@ void the_test(void)
 	}
 
 	bt_enable_quiet();
-
-	if (peripheral) {
-		EXPECT_ZERO(bt_set_name("peripheral"));
-	}
 
 	bs_sync_all_log("Testing UATT");
 	test_timeout(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);

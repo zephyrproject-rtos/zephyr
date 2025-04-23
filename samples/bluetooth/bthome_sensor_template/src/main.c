@@ -29,10 +29,10 @@ static uint8_t service_data[SERVICE_DATA_LEN] = {
 };
 
 static struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-	BT_DATA(BT_DATA_SVC_DATA16, service_data, ARRAY_SIZE(service_data))
-};
+    BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+            sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
+    BT_DATA(BT_DATA_SVC_DATA16, service_data, ARRAY_SIZE(service_data))};
 
 static void bt_ready(int err)
 {

@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -398,7 +399,11 @@ void test_peripheral_main(void)
 	LOG_DBG("Bluetooth initialized");
 
 	sprintf(name, "per-%d", get_device_nbr());
-	bt_set_name(name);
+	err = bt_gap_set_device_name(name, strlen(name));
+	if (err != 0) {
+		LOG_ERR("Failed to set name (err %d)", err);
+		__ASSERT_NO_MSG(err);
+	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
 	if (err) {

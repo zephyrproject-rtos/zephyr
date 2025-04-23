@@ -9,6 +9,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 #include "testlib/adv.h"
 #include "testlib/att_read.h"
@@ -185,6 +186,7 @@ void the_test(void)
 	bt_addr_le_t adva;
 	struct bt_conn *conn = NULL;
 	uint16_t chrc_value_handle = 0;
+	char *name = "peripheral";
 
 	if (peripheral) {
 		EXPECT_ZERO(bt_gatt_service_register(&svc));
@@ -193,12 +195,12 @@ void the_test(void)
 	bt_enable_quiet();
 
 	if (peripheral) {
-		EXPECT_ZERO(bt_set_name("peripheral"));
-		EXPECT_ZERO(bt_testlib_adv_conn(&conn, BT_ID_DEFAULT, bt_get_name()));
+		EXPECT_ZERO(bt_gap_set_device_name(name, sizeof(name)));
+		EXPECT_ZERO(bt_testlib_adv_conn(&conn, BT_ID_DEFAULT, name));
 	}
 
 	if (central) {
-		EXPECT_ZERO(bt_testlib_scan_find_name(&adva, "peripheral"));
+		EXPECT_ZERO(bt_testlib_scan_find_name(&adva, name));
 		EXPECT_ZERO(bt_testlib_connect(&adva, &conn));
 
 		/* Establish EATT bearers. */

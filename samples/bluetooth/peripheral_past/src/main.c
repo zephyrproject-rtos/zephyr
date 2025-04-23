@@ -111,7 +111,8 @@ static struct bt_conn_cb conn_callbacks = {
 };
 
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_GAP_DEVICE_NAME,
+		sizeof(CONFIG_BT_GAP_DEVICE_NAME) - 1),
 };
 
 int main(void)

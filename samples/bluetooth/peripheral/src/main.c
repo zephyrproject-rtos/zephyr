@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/services/cts.h>
 #include <zephyr/bluetooth/services/hrs.h>
 #include <zephyr/bluetooth/services/ias.h>
+#include <zephyr/bluetooth/gap/device_name.h>
 
 /* Custom Service Variables */
 #define BT_UUID_CUSTOM_SERVICE_VAL \
@@ -227,10 +228,6 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_CUSTOM_SERVICE_VAL),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-};
-
 void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
@@ -283,11 +280,24 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 static void bt_ready(void)
 {
 	int err;
+	struct bt_data sd[1];
+
+	const char *device_name = "Zephyr Peripheral Sample Long Name";
+
+	sd[0].type = BT_DATA_NAME_COMPLETE;
+	sd[0].data_len = sizeof(device_name);
+	sd[0].data = device_name;
 
 	printk("Bluetooth initialized\n");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
+	}
+
+	err = bt_gap_set_device_name(device_name, sizeof(device_name));
+	if (err) {
+		printk("Failed to set device name (err %d)\n", err);
+		return;
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
