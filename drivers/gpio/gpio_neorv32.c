@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 
@@ -39,6 +40,7 @@ struct neorv32_gpio_data {
 	struct gpio_driver_data common;
 	/* Shadow register for output */
 	uint32_t output;
+	struct k_spinlock lock;
 };
 
 static inline uint32_t neorv32_gpio_read(const struct device *dev)
@@ -60,7 +62,7 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 {
 	const struct neorv32_gpio_config *config = dev->config;
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	if (!(BIT(pin) & config->common.port_pin_mask)) {
 		return -EINVAL;
@@ -75,7 +77,7 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
-		key = irq_lock();
+		key = k_spin_lock(&data->lock);
 
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			data->output |= BIT(pin);
@@ -84,7 +86,7 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 		}
 
 		neorv32_gpio_write(dev, data->output);
-		irq_unlock(key);
+		k_spin_unlock(&data->lock, key);
 	}
 
 	return 0;
@@ -102,12 +104,12 @@ static int neorv32_gpio_port_set_masked_raw(const struct device *dev,
 					     gpio_port_value_t value)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output = (data->output & ~mask) | (mask & value);
 	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -116,12 +118,12 @@ static int neorv32_gpio_port_set_bits_raw(const struct device *dev,
 					   gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output |= pins;
 	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -130,12 +132,12 @@ static int neorv32_gpio_port_clear_bits_raw(const struct device *dev,
 					     gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output &= ~pins;
 	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -144,12 +146,12 @@ static int neorv32_gpio_port_toggle_bits(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output ^= pins;
 	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
