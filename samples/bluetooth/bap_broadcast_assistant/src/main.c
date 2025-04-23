@@ -59,6 +59,7 @@ static struct bt_bap_bass_subgroup
 	bass_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 static bool scanning_for_broadcast_source;
+static struct bt_bap_broadcast_assistant_add_src_param param;
 
 static struct k_mutex base_store_mutex;
 static K_SEM_DEFINE(sem_source_discovered, 0, 1);
@@ -201,7 +202,7 @@ static bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_b
 static bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
 					 void *user_data)
 {
-	struct bt_bap_broadcast_assistant_add_src_param *param = user_data;
+	struct bt_bap_broadcast_assistant_add_src_param *parameters = user_data;
 	struct bt_bap_bass_subgroup *subgroup_param;
 	uint8_t *data;
 	int ret;
@@ -211,10 +212,10 @@ static bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgroup *subg
 		return false;
 	}
 
-	subgroup_param = param->subgroups;
+	subgroup_param = parameters->subgroups;
 
 	if (ret > ARRAY_SIZE(subgroup_param->metadata)) {
-		printk("Cannot fit %d octets into subgroup param with size %zu", ret,
+		printk("Cannot fit %d octets into subgroup parameters with size %zu", ret,
 		       ARRAY_SIZE(subgroup_param->metadata));
 		return false;
 	}
@@ -225,7 +226,7 @@ static bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgroup *subg
 		return false;
 	}
 
-	param->num_subgroups++;
+	parameters->num_subgroups++;
 
 	return true;
 }
@@ -480,7 +481,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(broadcast_sink_conn);
+	bt_unpair(BT_ID_DEFAULT, NULL);
+	bt_conn_unref(conn);
 	broadcast_sink_conn = NULL;
 
 	k_sem_give(&sem_sink_disconnected);
@@ -543,11 +545,17 @@ static void reset(void)
 {
 	printk("\n\nReset...\n\n");
 
+	bt_le_per_adv_sync_delete(pa_sync);
+
 	broadcast_sink_conn = NULL;
 	selected_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	selected_sid = 0;
 	selected_pa_interval = 0;
 	(void)memset(&selected_addr, 0, sizeof(selected_addr));
+	(void)memset(&received_base, 0, sizeof(received_base));
+	received_base_size = 0;
+	(void)memset(&bass_subgroups, 0, sizeof(bass_subgroups));
+	(void)memset(&param, 0, sizeof(param));
 
 	k_sem_reset(&sem_source_discovered);
 	k_sem_reset(&sem_sink_discovered);
@@ -568,7 +576,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int main(void)
 {
 	int err;
-	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 
 	err = bt_enable(NULL);
 	if (err) {
