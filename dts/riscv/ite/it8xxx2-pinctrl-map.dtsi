@@ -45,6 +45,15 @@
 		pinmuxs = <&pinctrll 3 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* CEC alternate function */
+	cec_gpf0_default: cec_gpf0_default {
+		pinmuxs = <&pinctrlf 0 IT8XXX2_ALT_FUNC_4>;
+	};
+
+	cec_gpf0_sleep: cec_gpf0_sleep {
+		pinmuxs = <&pinctrlf 0 IT8XXX2_ALT_DEFAULT>;
+	};
+
 	/* I2C alternate function */
 	i2c0_clk_gpb3_default: i2c0_clk_gpb3_default {
 		pinmuxs = <&pinctrlb 3 IT8XXX2_ALT_FUNC_1>;
