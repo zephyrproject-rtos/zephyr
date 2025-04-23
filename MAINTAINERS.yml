@@ -1442,6 +1442,7 @@ Release Notes:
     - decsny
     - lmajewski
     - pdgendt
+    - clamattia
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
