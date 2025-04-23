@@ -12,6 +12,8 @@ supported:
   - watchdog
   - counter
   - gpio
+  - spi
+  - i2c
   - rtc
   - clock_control
   - mspi
