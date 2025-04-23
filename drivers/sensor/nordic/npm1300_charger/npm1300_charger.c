@@ -153,8 +153,8 @@ static const struct linear_range vbus_current_ranges[] = {
 static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
 {
-	/* Ref: Datasheet Figure 42: Battery temperature (Kelvin) */
-	float log_result = log((1024.f / (float)code) - 1);
+	/* Ref: PS v1.2 Section 7.1.4: Battery temperature (Kelvin) */
+	float log_result = logf((1024.f / (float)code) - 1);
 	float inv_temp_k = (1.f / 298.15f) - (log_result / (float)config->thermistor_beta);
 
 	float temp = (1.f / inv_temp_k) - 273.15f;
@@ -165,7 +165,7 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 static void calc_dietemp(const struct npm1300_charger_config *const config, uint16_t code,
 			 struct sensor_value *valp)
 {
-	/* Ref: Datasheet Figure 36: Die temperature (Celsius) */
+	/* Ref: PS v1.2 Section 7.1.4: Die temperature (Celsius) */
 	int32_t temp =
 		DIETEMP_OFFSET_MDEGC - (((int32_t)code * DIETEMP_FACTOR_MUL) / DIETEMP_FACTOR_DIV);
 
