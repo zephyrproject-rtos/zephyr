@@ -300,6 +300,10 @@ Networking
   the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
   is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
 
+* The OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` have been moved to
+  ``modules/openthread/Kconfig``. All the Kconfig options remain the same. You can still use them in the
+  same way as before, but to modify them, use the new path in the menuconfig or guiconfig.
+
 SPI
 ===
 
