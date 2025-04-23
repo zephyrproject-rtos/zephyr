@@ -32,6 +32,26 @@ endchoice
 config APDS9960_TRIGGER
 	bool
 
+choice APDS9960_FETCH_MODE
+	prompt "Fetching Mode"
+	default APDS9960_FETCH_MODE_INTERRUPT
+	help
+	  Specify whether to wait for interrupt
+
+config APDS9960_FETCH_MODE_POLL
+	bool "Poll without interrupt pin"
+	help
+	  Uses I2C to check sample
+
+config APDS9960_FETCH_MODE_INTERRUPT
+	bool "Wait for interrupt"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AVAGO_APDS9960),int-gpios)
+	help
+	  Wait for interrupt before reading
+
+endchoice
+
 config APDS9960_ENABLE_ALS
 	bool "Ambient Light Sense"
 	default y
