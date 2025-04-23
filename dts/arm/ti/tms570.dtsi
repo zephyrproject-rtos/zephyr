@@ -63,6 +63,12 @@
 			      <0xFFA04000 0x10>;   /* POM_CONTROL_BASE */
 		};
 
+		rti: rti@fffffc00 {
+			compatible = "ti,tms570-rti";
+			reg = <0xfffffc00 256>;
+			status = "okay";
+		};
+
 		sram0: memory@8000000 {
 			compatible = "mmio-sram";
 			reg = <0x08000000 DT_SIZE_K(512)>;
