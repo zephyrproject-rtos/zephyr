@@ -86,20 +86,26 @@ static struct posix_cond *to_posix_cond(pthread_cond_t *cvar)
 	/* Record the associated posix_cond in mu and mark as initialized */
 	*cvar = mark_pthread_obj_initialized(bit);
 	cv = &posix_cond_pool[bit];
+	(void)pthread_condattr_init((pthread_condattr_t *)&cv->attr);
 
 	return cv;
 }
 
-static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t timeout)
+static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, const struct timespec *abstime)
 {
 	int ret;
 	struct k_mutex *m;
 	struct posix_cond *cv;
+	k_timeout_t timeout = K_FOREVER;
 
 	m = to_posix_mutex(mu);
 	cv = to_posix_cond(cond);
 	if (cv == NULL || m == NULL) {
 		return EINVAL;
+	}
+
+	if (abstime != NULL) {
+		timeout = K_MSEC(timespec_to_clock_timeoutms(cv->attr.clock, abstime));
 	}
 
 	LOG_DBG("Waiting on cond %p with timeout %llx", cv, timeout.ticks);
@@ -164,22 +170,32 @@ int pthread_cond_broadcast(pthread_cond_t *cvar)
 
 int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 {
-	return cond_wait(cv, mut, K_FOREVER);
+	return cond_wait(cv, mut, NULL);
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struct timespec *abstime)
 {
-	return cond_wait(cv, mut, K_MSEC(timespec_to_timeoutms(abstime)));
+	return cond_wait(cv, mut, abstime);
 }
 
 int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
 {
 	struct posix_cond *cv;
+	struct posix_condattr *attr = (struct posix_condattr *)attr;
 
 	*cvar = PTHREAD_COND_INITIALIZER;
 	cv = to_posix_cond(cvar);
 	if (cv == NULL) {
 		return ENOMEM;
+	}
+
+	if (attr != NULL) {
+		if (!attr->initialized) {
+			return EINVAL;
+		}
+
+		(void)pthread_condattr_destroy((pthread_condattr_t *)&cv->attr);
+		cv->attr = *attr;
 	}
 
 	LOG_DBG("Initialized cond %p", cv);
