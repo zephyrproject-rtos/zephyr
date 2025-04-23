@@ -225,11 +225,18 @@ static int pthread_cond_pool_init(void)
 
 int pthread_condattr_init(pthread_condattr_t *att)
 {
-	__ASSERT_NO_MSG(att != NULL);
-
 	struct posix_condattr *const attr = (struct posix_condattr *)att;
 
+	if (att == NULL) {
+		return EINVAL;
+	}
+	if (attr->initialized) {
+		LOG_DBG("%s %s initialized", "attribute", "already");
+		return EINVAL;
+	}
+
 	attr->clock = CLOCK_MONOTONIC;
+	attr->initialized = true;
 
 	return 0;
 }
@@ -238,7 +245,8 @@ int pthread_condattr_destroy(pthread_condattr_t *att)
 {
 	struct posix_condattr *const attr = (struct posix_condattr *)att;
 
-	if (attr == NULL) {
+	if ((attr == NULL) || !attr->initialized) {
+		LOG_DBG("%s %s initialized", "attribute", "not");
 		return EINVAL;
 	}
 
@@ -252,6 +260,11 @@ int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
 {
 	struct posix_condattr *const attr = (struct posix_condattr *)att;
 
+	if ((attr == NULL) || !attr->initialized) {
+		LOG_DBG("%s %s initialized", "attribute", "not");
+		return EINVAL;
+	}
+
 	*clock_id = attr->clock;
 
 	return 0;
@@ -263,6 +276,11 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id)
 
 	if (clock_id != CLOCK_REALTIME && clock_id != CLOCK_MONOTONIC) {
 		return -EINVAL;
+	}
+
+	if ((attr == NULL) || !attr->initialized) {
+		LOG_DBG("%s %s initialized", "attribute", "not");
+		return EINVAL;
 	}
 
 	attr->clock = clock_id;
