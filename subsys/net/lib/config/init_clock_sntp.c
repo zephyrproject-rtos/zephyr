@@ -54,8 +54,10 @@ int net_init_clock_via_sntp(void)
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	k_work_reschedule(&sntp_resync_work_handle,
-			  K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
+	k_work_reschedule(
+		&sntp_resync_work_handle,
+		(res < 0) ? K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
+			  : K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
 #endif
 	return res;
 }
