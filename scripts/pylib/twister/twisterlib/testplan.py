@@ -7,7 +7,6 @@
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import copy
-import importlib.util
 import itertools
 import json
 import logging
@@ -16,8 +15,6 @@ import random
 import re
 import subprocess
 import sys
-import inspect
-import importlib
 from argparse import Namespace
 from collections import OrderedDict
 from itertools import islice
@@ -38,8 +35,7 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
-from plugin_filters.twister_logic.environment_handler import get_roots_list
-from plugin_filters.twister_logic.filter_handler import get_filter_list, filter_suite
+from plugin_filters.plugin_filters_api import plugin_filter_get_filters, plugin_filter_handle_suite
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -48,8 +44,6 @@ logger.setLevel(logging.DEBUG)
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-TWISTER_PLUGIN_FILTER_ROOTS = get_roots_list()
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
@@ -501,7 +495,7 @@ class TestPlan:
         if testsuite_filter is None:
             testsuite_filter = []
 
-        plugin_filters = get_filter_list(self.options.plugin_filter, TWISTER_PLUGIN_FILTER_ROOTS, logger)
+        plugin_filters = plugin_filter_get_filters(self.options.plugin_filter, logger)
 
         for root in self.env.test_roots:
             root = os.path.abspath(root)
@@ -589,7 +583,7 @@ class TestPlan:
                             self.testsuites[suite.name] = suite
 
                         if plugin_filters:
-                            filter_suite(suite, plugin_filters)
+                            plugin_filter_handle_suite(suite, plugin_filters)
                         else:
                             logger.info("Skipping plugin filter filtering...")
 
