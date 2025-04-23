@@ -20,6 +20,7 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -35,4 +36,8 @@ void soc_early_init_hook(void)
 	SystemCoreClock = 16000000;
 
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
