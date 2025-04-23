@@ -91,52 +91,31 @@ int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *cli
 int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192_gpio_func *func);
 
 /**
- * @brief Enable pull-down on specified GPIO pin. AXP192 only supports
- * pull-down on GPIO3..5. Pull-ups are not supported.
+ * @brief Get the gpio_mask_output value
  *
  * @param dev axp192 mfd device
- * @param gpio GPIO to control pull-downs
- * @param enable true to enable, false to disable pull-down
- * @retval 0 on success
- * @retval -EINVAL if an invalid argument is given (e.g. invalid GPIO number)
- * @retval -ENOTSUP if pull-down is not supported by the givenn GPIO
- * @retval -errno in case of any bus error
+ *
+ * @return gpio_mask_output value
  */
-int mfd_axp192_gpio_pd_ctrl(const struct device *dev, uint8_t gpio, bool enable);
+uint8_t axp192_get_gpio_mask_output(const struct device *dev);
 
 /**
- * @brief Read out the current pull-down configuration of a specific GPIO.
+ * @brief Get the semaphore reference for a AXP192 MFD instance.
  *
  * @param dev axp192 mfd device
- * @param gpio GPIO to control pull-downs
- * @param enabled Pointer to current pull-down configuration (true: pull-down
- * enabled/ false: pull-down disabled)
- * @retval -EINVAL if an invalid argument is given (e.g. invalid GPIO number)
- * @retval -ENOTSUP if pull-down is not supported by the givenn GPIO
- * @retval -errno in case of any bus error
+ *
+ * @return Address of the semaphore
  */
-int mfd_axp192_gpio_pd_get(const struct device *dev, uint8_t gpio, bool *enabled);
+struct k_sem *axp192_get_lock(const struct device *dev);
 
 /**
- * @brief Read GPIO port.
+ * @brief Get the I2C DT spec reference for a AXP192 MFD instance.
  *
  * @param dev axp192 mfd device
- * @param value Pointer to port value
- * @retval 0 on success
- * @retval -errno in case of any bus error
- */
-int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value);
-
-/**
- * @brief Write GPIO port.
  *
- * @param dev axp192 mfd device
- * @param value port value
- * @param mask pin mask within the port
- * @retval 0 on success
- * @retval -errno in case of any bus error
+ * @return Address of the I2C DT spec
  */
-int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t mask);
+const struct i2c_dt_spec *axp192_get_i2c_dt_spec(const struct device *dev);
 
 /**
  * @}

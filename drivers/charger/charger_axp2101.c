@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/charger.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/mfd/axp192.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -45,7 +46,7 @@ LOG_MODULE_REGISTER(charger_axp2101, CONFIG_CHARGER_LOG_LEVEL);
 #define AXP2101_CV_CHARGER_VOLTAGE		0x64
 
 struct axp2101_config {
-	struct i2c_dt_spec i2c;
+	const struct device *mfd;
 	bool vbackup_enable;
 };
 
@@ -103,7 +104,9 @@ static enum charger_online is_charger_online(const struct device *dev, union cha
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_PMU_STATUS1, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_PMU_STATUS1, &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -120,7 +123,10 @@ static int get_constant_charge_current_ua(const struct device *dev, union charge
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_ICC_CHARGER_SETTING, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_ICC_CHARGER_SETTING,
+				   &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -136,6 +142,7 @@ static int set_constant_charge_current_ua(const struct device *dev,
 	const struct axp2101_config *const config = dev->config;
 	struct axp2101_data *data = dev->data;
 	int lut_index;
+	int ret;
 
 	lut_index = get_index_in_lut(val->const_charge_current_ua,
 				     constant_charge_current_lut,
@@ -146,8 +153,12 @@ static int set_constant_charge_current_ua(const struct device *dev,
 
 	data->cc_current_ua = constant_charge_current_lut[lut_index];
 
-	return i2c_reg_write_byte_dt(&config->i2c, AXP2101_ICC_CHARGER_SETTING,
-				     (uint8_t) lut_index);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_write_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+				    AXP2101_ICC_CHARGER_SETTING, (uint8_t)lut_index);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int get_pre_charge_current_ua(const struct device *dev, union charger_propval *val)
@@ -156,7 +167,10 @@ static int get_pre_charge_current_ua(const struct device *dev, union charger_pro
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_IPRECH_CHARGER_SETTING, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+				   AXP2101_IPRECH_CHARGER_SETTING, &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -172,7 +186,10 @@ static int get_termination_current_ua(const struct device *dev,
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_ITERM_CHARGER_SETTING, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+				   AXP2101_ITERM_CHARGER_SETTING, &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -192,6 +209,7 @@ static int set_termination_current_ua(const struct device *dev,
 {
 	const struct axp2101_config *const config = dev->config;
 	uint32_t mask, tmp = 0;
+	int ret;
 
 	tmp = val->charge_term_current_ua;
 	if ((tmp > 200000) || ((tmp % TERMINATION_CURRENT_STEP_UA) != 0)) {
@@ -205,8 +223,12 @@ static int set_termination_current_ua(const struct device *dev,
 
 	mask = TERMINATION_CURRENT_LIMIT | CHARGE_TERMINATION_ENABLE;
 
-	return i2c_reg_update_byte_dt(&config->i2c, AXP2101_ITERM_CHARGER_SETTING,
-				      mask, tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+				     AXP2101_ITERM_CHARGER_SETTING, mask, tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int get_constant_charge_voltage_uv(const struct device *dev, union charger_propval *val)
@@ -215,7 +237,10 @@ static int get_constant_charge_voltage_uv(const struct device *dev, union charge
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_CV_CHARGER_VOLTAGE, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_CV_CHARGER_VOLTAGE,
+				   &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -234,6 +259,7 @@ static int set_constant_charge_voltage_uv(const struct device *dev,
 {
 	const struct axp2101_config *const config = dev->config;
 	int lut_index;
+	int ret;
 
 	lut_index = get_index_in_lut(val->const_charge_voltage_uv,
 				     constant_charge_voltage_lut,
@@ -242,7 +268,12 @@ static int set_constant_charge_voltage_uv(const struct device *dev,
 		return -EINVAL;
 	}
 
-	return i2c_reg_write_byte_dt(&config->i2c, AXP2101_CV_CHARGER_VOLTAGE, (uint8_t) lut_index);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_write_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_CV_CHARGER_VOLTAGE,
+				    (uint8_t)lut_index);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int get_status(const struct device *dev, union charger_propval *val)
@@ -251,7 +282,9 @@ static int get_status(const struct device *dev, union charger_propval *val)
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_PMU_STATUS2, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_PMU_STATUS2, &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -276,7 +309,9 @@ static int get_charge_type(const struct device *dev, union charger_propval *val)
 	uint8_t tmp;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->i2c, AXP2101_PMU_STATUS2, &tmp);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_read_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_PMU_STATUS2, &tmp);
+	k_sem_give(axp192_get_lock(config->mfd));
 	if (ret < 0) {
 		return ret;
 	}
@@ -336,10 +371,15 @@ static int axp2101_set_prop(const struct device *dev, charger_prop_t prop,
 static int axp2101_charge_enable(const struct device *dev, const bool enable)
 {
 	const struct axp2101_config *const config = dev->config;
+	int ret;
 
-	return i2c_reg_update_byte_dt(&config->i2c, AXP2101_CHARGER_CONTROL,
-				      CELL_BATTERY_CHARGE_ENABLE,
-				      (enable) ? CELL_BATTERY_CHARGE_ENABLE : 0);
+	k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+	ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd), AXP2101_CHARGER_CONTROL,
+				     CELL_BATTERY_CHARGE_ENABLE,
+				     (enable) ? CELL_BATTERY_CHARGE_ENABLE : 0);
+	k_sem_give(axp192_get_lock(config->mfd));
+
+	return ret;
 }
 
 static int axp2101_init(const struct device *dev)
@@ -350,9 +390,11 @@ static int axp2101_init(const struct device *dev)
 	int ret;
 
 	if (config->vbackup_enable) {
-		ret = i2c_reg_update_byte_dt(&config->i2c, AXP2101_CHARGER_CONTROL,
-					     BUTTON_BATTERY_CHARGE_ENABLE,
+		k_sem_take(axp192_get_lock(config->mfd), K_FOREVER);
+		ret = i2c_reg_update_byte_dt(axp192_get_i2c_dt_spec(config->mfd),
+					     AXP2101_CHARGER_CONTROL, BUTTON_BATTERY_CHARGE_ENABLE,
 					     BUTTON_BATTERY_CHARGE_ENABLE);
+		k_sem_give(axp192_get_lock(config->mfd));
 		if (ret < 0) {
 			return ret;
 		}
@@ -387,7 +429,7 @@ static DEVICE_API(charger, axp2101_driver_api) = {
 
 #define AXP2101_INIT(inst)                                                                         \
 	static const struct axp2101_config axp2101_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),                   \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.vbackup_enable = DT_INST_PROP(inst, vbackup_enable),                              \
 	};                                                                                         \
 	static struct axp2101_data axp2101_data_##inst = {                                         \
