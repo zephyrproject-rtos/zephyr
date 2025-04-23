@@ -720,8 +720,14 @@ class KconfigCheck(ComplianceTest):
         disallowed_regex = "(" + "|".join(disallowed_symbols.keys()) + ")$"
 
         # Warning: Needs to work with both --perl-regexp and the 're' module
-        regex_boards = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
-        regex_socs = r"\bconfig\s+[A-Z0-9_]+$"
+        # Windows
+        if os.name == 'nt':
+            # Remove word boundaries on Windows implementation
+            regex_boards = r"CONFIG_[A-Z0-9_]+(?!\s*##|[$@{(.*])"
+            regex_socs = r"config[ \t]+[A-Z0-9_]+"
+        else:
+            regex_boards = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
+            regex_socs = r"\bconfig\s+[A-Z0-9_]+$"
 
         grep_stdout_boards = git("grep", "--line-number", "-I", "--null",
                                  "--perl-regexp", regex_boards, "--", ":boards",
