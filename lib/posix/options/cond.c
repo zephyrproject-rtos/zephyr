@@ -256,7 +256,7 @@ int pthread_condattr_init(pthread_condattr_t *att)
 		return EINVAL;
 	}
 
-	attr->clock = CLOCK_MONOTONIC;
+	attr->clock = CLOCK_REALTIME;
 	attr->initialized = true;
 
 	return 0;

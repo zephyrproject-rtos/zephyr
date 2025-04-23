@@ -216,7 +216,7 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
 		return EINVAL;
 	}
 
-	return acquire_mutex(m, K_MSEC(timespec_to_timeoutms(abstime)));
+	return acquire_mutex(m, K_MSEC(timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**
