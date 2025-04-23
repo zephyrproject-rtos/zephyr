@@ -191,28 +191,46 @@ static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
 static void calc_current(const struct npm1300_charger_config *const config,
 			 struct npm1300_charger_data *const data, struct sensor_value *valp)
 {
-	int32_t full_scale_ma;
-	int32_t current;
+	int32_t full_scale_ua;
+	int32_t current_ua;
 
+	/* Largest value of discharge limit and charge limit is 1A.
+	 * We can therefore guarantee that multiplying the uA by 1000 does not overflow.
+	 *    1000 * 1'000'000 uA < 2**31
+	 *             1000000000 < 2147483648
+	 */
 	switch (data->ibat_stat) {
 	case IBAT_STAT_DISCHARGE:
-		full_scale_ma = -config->dischg_limit_microamp / 893;
+		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.12 */
+		full_scale_ua = -(1000 * config->dischg_limit_microamp) / 893;
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_COOL:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_NORMAL:
-		full_scale_ma = config->current_microamp / 800;
+		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.25 */
+		full_scale_ua = (1000 * config->current_microamp) / 800;
 		break;
 	default:
-		full_scale_ma = 0;
+		full_scale_ua = 0;
 		break;
 	}
 
-	current = (data->current * full_scale_ma) / 1024;
+	/* Largest possible value for data->current is 1023
+	 * Limits for full_scale_ua are -1'119'820 and 1'000'000
+	 *    1023 * -1119820 > -2**31
+	 *        -1145575860 > -2147483648
+	 *     1023 * 1000000 < 2**31
+	 *         1023000000 < 2147483648
+	 */
+	__ASSERT_NO_MSG(data->current <= 1023);
+	__ASSERT_NO_MSG(full_scale_ua <= 1000000);
+	__ASSERT_NO_MSG(full_scale_ua >= -1119820);
 
-	(void)sensor_value_from_milli(valp, current);
+	current_ua = (data->current * full_scale_ua) / 1024;
+
+	(void)sensor_value_from_micro(valp, current_ua);
 }
 
 int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel chan,
