@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: IPC configuration for Nordic IRONside calls
+
+compatible: "nordic,ironside-call"
+
+include: base.yaml
+
+properties:
+  memory-region:
+    type: phandle
+    required: true
+    description: phandle to shared memory region
+
+  mboxes:
+    required: true
+    description: MBOX channel specifiers (TX and RX are required)
+
+  mbox-names:
+    required: true
+    description: MBOX channel names (must be called "tx" and "rx")

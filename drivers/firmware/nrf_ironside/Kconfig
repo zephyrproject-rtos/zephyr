@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_IRONSIDE_CALL
+	bool
+	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	depends on SOC_NRF54H20_IRON
+	select EVENTS
+	select MBOX
+	help
+	  This is selected by features that require support for IRONside calls.
+
+if NRF_IRONSIDE_CALL
+
+config NRF_IRONSIDE_CALL_INIT_PRIORITY
+	int "IRONside calls' initialization priority"
+	default 41
+	help
+	  Initialization priority of IRONside calls. It must be below MBOX_INIT_PRIORITY,
+	  but higher than the priority of any feature that selects NRF_IRONSIDE_CALL.
+
+endif # NRF_IRONSIDE_CALL
