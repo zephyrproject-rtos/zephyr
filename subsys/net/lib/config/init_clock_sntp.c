@@ -18,6 +18,11 @@ static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
 #endif
 
+BUILD_ASSERT(
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||
+	(sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) != 1),
+	"SNTP server has to be configured, unless DHCPv4 is used to set it");
+
 static int sntp_init_helper(struct sntp_time *tm)
 {
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
