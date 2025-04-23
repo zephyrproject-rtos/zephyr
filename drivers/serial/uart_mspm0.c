@@ -239,24 +239,23 @@ static void uart_mspm0_async_rx_callback(const struct device *dev, void *user_da
 
 	k_work_cancel_delayable(&data->async_rx.timeout_work);
 
-	ret = dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &stat);
-	if (ret < 0) {
-		irq_unlock(key);
-		return;
-	}
-
-	if (stat.pending_length != 0) {
-		data->async_rx.offset = data->async_rx.buf_len - stat.pending_length;
-		dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0,
-			   (uint32_t)(data->async_rx.buf + data->async_rx.offset),
-			   stat.pending_length);
-		goto out;
+	if (data->async_rx.next_buf) {
+		ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->async_rx.next_buf,
+				 data->async_rx.next_buf_len);
+		if (ret == 0) {
+			dma_start(cfg->dma_dev, cfg->rx_dma_channel);
+		} else {
+			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+			evt.type = UART_RX_STOPPED;
+			evt.data.rx_stop.reason = ret;
+			data->async_cb(uart_dev, &evt, data->async_user_data);
+		}
 	}
 
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async_rx.buf;
 	evt.data.rx.offset = data->async_rx.offset;
-	evt.data.rx.len = data->async_rx.buf_len - stat.pending_length;
+	evt.data.rx.len = data->async_rx.buf_len;
 
 	if (data->async_cb) {
 		data->async_cb(uart_dev, &evt, data->async_user_data);
@@ -273,23 +272,6 @@ static void uart_mspm0_async_rx_callback(const struct device *dev, void *user_da
 		data->async_cb(uart_dev, &evt, data->async_user_data);
 	}
 
-	if (!data->async_rx.buf && data->async_cb) {
-		evt.type = UART_RX_DISABLED;
-		data->async_cb(uart_dev, &evt, data->async_user_data);
-	} else {
-		ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->async_rx.buf,
-				 data->async_rx.buf_len);
-		if (ret == 0) {
-			dma_start(cfg->dma_dev, cfg->rx_dma_channel);
-		} else {
-			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-			evt.type = UART_RX_STOPPED;
-			evt.data.rx_stop.reason = ret;
-			data->async_cb(uart_dev, &evt, data->async_user_data);
-		}
-	}
-
-out:
 	uart_mspm0_async_timer_start(&data->async_rx.timeout_work,
 				     data->async_rx.timeout);
 
@@ -583,7 +565,7 @@ static void uart_mspm0_async_rx_timeout(struct k_work *work)
 
 	dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &stat);
 	recv_size = data->async_rx.buf_len - stat.pending_length;
-	if ((recv_size > 1) && (data->async_cb)) {
+	if ((recv_size) && (data->async_cb)) {
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async_rx.buf;
 		evt.data.rx.len = recv_size;
