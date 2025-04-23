@@ -291,6 +291,184 @@
 			status = "disabled";
 		};
 
+		spid0: spi@IOSLAVE_BASE_NAME {
+			compatible = "ambiq,spid";
+			reg = <IOSLAVE_REG_BASE IOSLAVE_REG_SIZE>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 0>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		iom0: iom@IOM0_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM0_REG_BASE IOM0_REG_SIZE>;
+			interrupts = <6 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom1: iom@IOM1_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM1_REG_BASE IOM1_REG_SIZE>;
+			interrupts = <7 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom2: iom@IOM2_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM2_REG_BASE IOM2_REG_SIZE>;
+			interrupts = <8 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom3: iom@IOM3_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM3_REG_BASE IOM3_REG_SIZE>;
+			interrupts = <9 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom4: iom@IOM4_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM4_REG_BASE IOM4_REG_SIZE>;
+			interrupts = <10 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom5: iom@IOM5_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM5_REG_BASE IOM5_REG_SIZE>;
+			interrupts = <11 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom6: iom@IOM6_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM6_REG_BASE IOM6_REG_SIZE>;
+			interrupts = <12 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom7: iom@IOM7_BASE_NAME {
+			compatible = "ambiq,iom";
+			reg = <IOM7_REG_BASE IOM7_REG_SIZE>;
+			interrupts = <13 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
 		uart0: uart@UART0_BASE_NAME {
 			compatible = "ambiq,uart", "arm,pl011";
 			reg = <UART0_REG_BASE UART0_REG_SIZE>;
