@@ -449,7 +449,8 @@ static int icm45686_init(const struct device *dev)
 			.iodev = &icm45686_bus_##inst,						   \
 			.ctx = &icm45686_rtio_ctx_##inst,					   \
 			COND_CODE_1(DT_INST_ON_BUS(inst, i3c),					   \
-				(.type = ICM45686_BUS_I3C),					   \
+				(.type = ICM45686_BUS_I3C,					   \
+				 .i3c.id = I3C_DEVICE_ID_DT_INST(inst),),			   \
 			(COND_CODE_1(DT_INST_ON_BUS(inst, i2c),					   \
 				(.type = ICM45686_BUS_I2C), ())))				   \
 			COND_CODE_1(DT_INST_ON_BUS(inst, spi),					   \

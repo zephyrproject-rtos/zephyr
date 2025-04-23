@@ -62,8 +62,10 @@ config ICM45686_THREAD_STACK_SIZE
 
 config ICM45686_STREAM
 	bool "Streaming mode"
-	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on GPIO || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
 	help
 	  Enable streaming of sensor data.
 
