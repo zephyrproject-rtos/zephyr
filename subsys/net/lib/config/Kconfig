@@ -244,9 +244,18 @@ config NET_CONFIG_SNTP_INIT_RESYNC
 	  Perform an SNTP request over networking periodically to get and
 	  absolute wall clock time, and resync system time from it.
 
+if NET_CONFIG_SNTP_INIT_RESYNC
+
 config NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
 	int "SNTP resync interval (sec)"
-	depends on NET_CONFIG_SNTP_INIT_RESYNC
 	default 3600
 
+config NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL
+	int "SNTP resync interval (sec) on failure"
+	default NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
+	help
+	  If the SNTP request fails, then this is the interval to wait
+	  before trying again.
+
+endif # NET_CONFIG_SNTP_INIT_RESYNC
 endif # NET_CONFIG_CLOCK_SNTP_INIT
