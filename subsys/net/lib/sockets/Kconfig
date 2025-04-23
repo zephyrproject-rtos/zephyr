@@ -372,7 +372,7 @@ config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
 	int
 	default 9136 if WIFI_NM_HOSTAPD_AP
 	default 6852 if WIFI_NM_WPA_SUPPLICANT
-	default 256
+	default 296
 
 endif # NET_SOCKETPAIR_HEAP
 
