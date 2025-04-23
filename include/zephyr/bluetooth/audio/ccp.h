@@ -31,7 +31,8 @@
  * The profile is not limited to carrier phone calls and can be used with common applications like
  * Discord and Teams.
  */
-#include <stdint.h>
+
+#include <stddef.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
