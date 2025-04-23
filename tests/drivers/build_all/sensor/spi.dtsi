@@ -429,3 +429,13 @@ test_spi_icp201xx: icp201xx@34 {
 	op-mode = "mode0";
 	drive-strength = "current_12mA_1_8V";
 };
+
+test_spi_ad2s1210: ad2s1210@35 {
+	compatible = "adi,ad2s1210";
+	reg = <0x35>;
+	spi-max-frequency = <0>;
+	sample-gpios = <&test_gpio 0 (GPIO_ACTIVE_LOW)>;
+	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
+	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
+	clock-frequency = <8192000>;
+};
