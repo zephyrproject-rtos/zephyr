@@ -102,5 +102,75 @@
 			compatible = "renesas,rza2m-pinctrl";
 			reg = <0xfcffe000 0x1000>;
 		};
+
+		scif0: serial@e8007000 {
+			compatible = "renesas,rza2m-scif-uart";
+			channel = <0>;
+			reg = <0xe8007000 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 297 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 298 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA0, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		scif1: serial@e8007800 {
+			compatible = "renesas,rza2m-scif-uart";
+			channel = <1>;
+			reg = <0xe8007800 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 305 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 306 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA1, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		scif2: serial@e8008000 {
+			compatible = "renesas,rza2m-scif-uart";
+			channel = <2>;
+			reg = <0xe8008000 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 309 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 310 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 311 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 312 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA2, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		scif3: serial@e8008800 {
+			compatible = "renesas,rza2m-scif-uart";
+			channel = <3>;
+			reg = <0xe8008800 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 316 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 317 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 318 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA3, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		scif4: serial@e8009000 {
+			compatible = "renesas,rza2m-scif-uart";
+			channel = <4>;
+			reg = <0xe8009000 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 321 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 322 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 323 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 324 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA4, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
 	};
 };
