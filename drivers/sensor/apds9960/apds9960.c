@@ -54,6 +54,9 @@ static int apds9960_sample_fetch(const struct device *dev,
 	const struct apds9960_config *config = dev->config;
 	struct apds9960_data *data = dev->data;
 	uint8_t tmp;
+#ifdef CONFIG_APDS9960_FETCH_MODE_POLL
+	int64_t start_time;
+#endif
 
 	if (chan != SENSOR_CHAN_ALL) {
 		LOG_ERR("Unsupported sensor channel");
@@ -84,11 +87,15 @@ static int apds9960_sample_fetch(const struct device *dev,
 	}
 
 #ifdef CONFIG_APDS9960_FETCH_MODE_POLL
+	start_time = k_uptime_get();
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	while (!(tmp & APDS9960_STATUS_AINT)) {
 		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
 		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
 			return -EIO;
+		}
+		if ((k_uptime_get() - start_time) > APDS9960_MAX_WAIT_TIME) {
+			return -ETIMEDOUT;
 		}
 	}
 #else
@@ -96,6 +103,9 @@ static int apds9960_sample_fetch(const struct device *dev,
 		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
 		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
 			return -EIO;
+		}
+		if ((k_uptime_get() - start_time) > APDS9960_MAX_WAIT_TIME) {
+			return -ETIMEDOUT;
 		}
 	}
 #endif
