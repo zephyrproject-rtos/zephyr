@@ -2838,6 +2838,18 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = sys_le16_to_cpu(opt_ret_fc->tx_windows_size);
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->tx.max_window = br_chan->rx.max_window;
+		}
 	}
 
 	if (!accept) {
@@ -3251,6 +3263,18 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->tx.max_window = br_chan->rx.max_window;
+		}
 	}
 
 	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
@@ -3975,6 +3999,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		br_chan->tx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->tx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->tx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->rx.max_window = br_chan->tx.max_window;
+		}
 	}
 
 	if (!accept) {
