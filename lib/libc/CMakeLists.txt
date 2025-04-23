@@ -10,5 +10,6 @@ add_subdirectory_ifdef(CONFIG_IAR_LIBC          iar)
 add_subdirectory_ifdef(CONFIG_MINIMAL_LIBC      minimal)
 add_subdirectory_ifdef(CONFIG_NEWLIB_LIBC       newlib)
 add_subdirectory_ifdef(CONFIG_PICOLIBC          picolibc)
+add_subdirectory_ifdef(CONFIG_XTENSA_LIBC       xclib)
 
 add_subdirectory(common)
