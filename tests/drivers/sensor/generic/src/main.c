@@ -17,6 +17,8 @@
 K_SEM_DEFINE(sem, 0, 1);
 #define RETURN_SUCCESS  (0)
 
+#define USER_DATA ((void *)0x12345678)
+
 struct channel_sequence {
 	enum sensor_channel chan;
 	struct sensor_value data;
@@ -38,23 +40,23 @@ static struct channel_sequence chan_elements[] = {
 
 static struct trigger_sequence trigger_elements[] = {
 	/* trigger for SENSOR_TRIG_THRESHOLD */
-	{ {SENSOR_TRIG_THRESHOLD, SENSOR_CHAN_PROX},
+	{ {SENSOR_TRIG_THRESHOLD, SENSOR_CHAN_PROX, USER_DATA},
 	{ 127, 0 }, SENSOR_ATTR_UPPER_THRESH },
 
 	/* trigger for SENSOR_TRIG_TIMER */
-	{ {SENSOR_TRIG_TIMER, SENSOR_CHAN_PROX},
+	{ {SENSOR_TRIG_TIMER, SENSOR_CHAN_PROX, USER_DATA},
 	{ 130, 127 }, SENSOR_ATTR_UPPER_THRESH },
 
 	/* trigger for SENSOR_TRIG_DATA_READY */
-	{ {SENSOR_TRIG_DATA_READY, SENSOR_CHAN_PROX},
+	{ {SENSOR_TRIG_DATA_READY, SENSOR_CHAN_PROX, USER_DATA},
 	{ 150, 130 }, SENSOR_ATTR_UPPER_THRESH },
 
 	/* trigger for SENSOR_TRIG_DELTA */
-	{ {SENSOR_TRIG_DELTA, SENSOR_CHAN_PROX},
+	{ {SENSOR_TRIG_DELTA, SENSOR_CHAN_PROX, USER_DATA},
 	{ 180, 150 }, SENSOR_ATTR_UPPER_THRESH },
 
 	/* trigger for SENSOR_TRIG_NEAR_FAR */
-	{ {SENSOR_TRIG_NEAR_FAR, SENSOR_CHAN_PROX},
+	{ {SENSOR_TRIG_NEAR_FAR, SENSOR_CHAN_PROX, USER_DATA},
 	{ 155, 180 }, SENSOR_ATTR_UPPER_THRESH }
 };
 
@@ -144,7 +146,10 @@ static void trigger_handler(const struct device *dev,
 			    const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(trigger);
+
+	zassert_equal(USER_DATA, trigger->user_data,
+		"Invalid user data: %p, expected: %p",
+		USER_DATA, trigger->user_data);
 
 	k_sem_give(&sem);
 }

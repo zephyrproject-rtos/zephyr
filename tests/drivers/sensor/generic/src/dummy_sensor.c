@@ -151,7 +151,7 @@ int dummy_sensor_trigger_set(const struct device *dev,
 		/* Use the same action to dummy above triggers */
 		if (handler != NULL) {
 			data->handler = handler;
-			data->handler(dev, NULL);
+			data->handler(dev, trig);
 		}
 		break;
 	default:

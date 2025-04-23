@@ -297,6 +297,10 @@ struct sensor_trigger {
 	enum sensor_trigger_type type;
 	/** Channel the trigger is set on. */
 	enum sensor_channel chan;
+	/** Pointer to user data. It can be used to associate the sequence
+	 * with any other data that is needed in the callback function
+	 */
+	void *user_data;
 };
 
 /**
