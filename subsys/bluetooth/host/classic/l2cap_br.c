@@ -4356,9 +4356,10 @@ send_rsp:
 	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-	if (BR_CHAN(chan)->tx.fcs == BT_L2CAP_BR_FCS_16BIT) {
-		/* If peer enables FCS, local also needs to enable it. */
+	if (BR_CHAN(chan)->tx.fcs != BR_CHAN(chan)->rx.fcs) {
+		/* If FCS flag is not consistent of both sides, FCS should be used as default. */
 		BR_CHAN(chan)->rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	}
 
 	if (BR_CHAN(chan)->tx.extended_control) {
