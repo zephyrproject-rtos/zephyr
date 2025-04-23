@@ -2838,6 +2838,10 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = sys_le16_to_cpu(opt_ret_fc->tx_windows_size);
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		/* Make the timeout consistent for both sides */
+		br_chan->tx.monitor_timeout = br_chan->rx.monitor_timeout;
+		br_chan->tx.ret_timeout = br_chan->rx.ret_timeout;
 	}
 
 	if (!accept) {
@@ -3251,6 +3255,10 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		/* Make the timeout consistent for both sides */
+		br_chan->tx.monitor_timeout = br_chan->rx.monitor_timeout;
+		br_chan->tx.ret_timeout = br_chan->rx.ret_timeout;
 	}
 
 	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
@@ -3975,6 +3983,10 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		br_chan->tx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->tx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->tx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		/* Make the timeout consistent for both sides */
+		br_chan->rx.monitor_timeout = br_chan->tx.monitor_timeout;
+		br_chan->rx.ret_timeout = br_chan->tx.ret_timeout;
 	}
 
 	if (!accept) {
