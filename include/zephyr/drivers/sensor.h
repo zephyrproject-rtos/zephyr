@@ -161,11 +161,11 @@ enum sensor_channel {
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_GAUGE_VOLTAGE,
-	/** Average current, in amps **/
+	/** Average current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_AVG_CURRENT,
-	/** Standby current, in amps **/
+	/** Standby current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_STDBY_CURRENT,
-	/** Max load current, in amps **/
+	/** Max load current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT,
 	/** Gauge temperature  **/
 	SENSOR_CHAN_GAUGE_TEMP,
