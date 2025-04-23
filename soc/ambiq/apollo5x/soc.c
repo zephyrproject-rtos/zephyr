@@ -6,7 +6,10 @@
 
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
+#include <zephyr/logging/log.h>
 #include "soc.h"
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define SCRATCH0_OEM_RCV_RETRY_MAGIC 0xA86
 
