@@ -124,5 +124,29 @@
 			reg = <0xfff7e500 256>;
 			status = "disabled";
 		};
+
+		gpio_a: gpio@fff7bc34 {
+			compatible = "ti,tms570-gpio";
+			reg = <0xfff7bc34 0x34	 /* GIO port base */
+			       0xfff7bc00 0x20>; /* GIO base */
+			interrupts = <13 0>;
+			interrupt-parent = <&vim>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		gpio_b: gpio@fff7bc54 {
+			compatible = "ti,tms570-gpio";
+			reg = <0xfff7bc54 0x34	 /* GIO port base */
+			       0xfff7bc00 0x20>; /* GIO base */
+			interrupts = <13 0>;
+			interrupt-parent = <&vim>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
 	};
 };
