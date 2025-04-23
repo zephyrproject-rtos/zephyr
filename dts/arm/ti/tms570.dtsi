@@ -70,6 +70,14 @@
 			      <0xFFA04000 0x10>;   /* POM_CONTROL_BASE */
 		};
 
+		rti: rti@fffffc00 {
+			compatible = "ti,tms570-rti";
+			reg = <0xfffffc00 256>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			tick-frequency = <100>;
+			status = "okay";
+		};
+
 		sram0: memory@8000000 {
 			compatible = "mmio-sram";
 			reg = <0x08000000 DT_SIZE_K(512)>;
