@@ -211,7 +211,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	if (read_lock_acquire(rwl, timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
+	if (read_lock_acquire(rwl, timespec_to_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
 		ret = ETIMEDOUT;
 	}
 
@@ -282,7 +282,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	if (write_lock_acquire(rwl, timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
+	if (write_lock_acquire(rwl, timespec_to_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
 		ret = ETIMEDOUT;
 	}
 

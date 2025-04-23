@@ -105,7 +105,7 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, const struct tim
 	}
 
 	if (abstime != NULL) {
-		timeout = K_MSEC(timespec_to_clock_timeoutms(cv->attr.clock, abstime));
+		timeout = K_MSEC(timespec_to_timeoutms(cv->attr.clock, abstime));
 	}
 
 	LOG_DBG("Waiting on cond %p with timeout %llx", cv, timeout.ticks);
