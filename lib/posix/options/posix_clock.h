@@ -16,6 +16,8 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/__assert.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline bool timespec_is_valid(const struct timespec *ts)
 {
 	__ASSERT_NO_MSG(ts != NULL);
@@ -25,6 +27,8 @@ static inline bool timespec_is_valid(const struct timespec *ts)
 uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime);
 
 __syscall int __posix_clock_get_base(clockid_t clock_id, struct timespec *ts);
+
+/** INTERNAL_HIDDEN @endcond */
 
 #include <zephyr/syscalls/posix_clock.h>
 
