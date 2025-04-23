@@ -451,10 +451,12 @@ static int can_renesas_ra_start(const struct device *dev)
 						 ? &data->data_timing
 						 : &classic_can_data_timing_default);
 
-	if (FSP_SUCCESS != can_api->close(data->fsp_can.p_ctrl)) {
-		LOG_DBG("CAN close failed");
-		ret = -EIO;
-		goto end;
+	if (data->fsp_canfd_ctrl.open != 0) {
+		if (FSP_SUCCESS != can_api->close(data->fsp_can.p_ctrl)) {
+			LOG_DBG("CAN close failed");
+			ret = -EIO;
+			goto end;
+		}
 	}
 
 	if (FSP_SUCCESS != can_api->open(data->fsp_can.p_ctrl, data->fsp_can.p_cfg)) {
@@ -955,7 +957,6 @@ static int can_renesas_ra_init(const struct device *dev)
 {
 	const struct can_renesas_ra_cfg *cfg = dev->config;
 	struct can_renesas_ra_data *data = dev->data;
-	const can_api_t *can_api = data->fsp_can.p_api;
 	int ret = 0;
 
 	if (!device_is_ready(cfg->global_dev)) {
@@ -987,21 +988,6 @@ static int can_renesas_ra_init(const struct device *dev)
 	}
 
 	cfg->irq_configure();
-
-	ret = can_api->open(data->fsp_can.p_ctrl, data->fsp_can.p_cfg);
-	if (ret != FSP_SUCCESS) {
-		LOG_DBG("CAN bus initialize failed");
-		return -EIO;
-	}
-
-	/* Put CAN controller into stopped state */
-	ret = can_api->modeTransition(data->fsp_can.p_ctrl, CAN_OPERATION_MODE_HALT,
-				      CAN_TEST_MODE_DISABLED);
-	if (ret != FSP_SUCCESS) {
-		can_api->close(data->fsp_can.p_ctrl);
-		LOG_DBG("CAN bus initialize failed");
-		return -EIO;
-	}
 
 	return 0;
 }
