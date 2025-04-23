@@ -46,6 +46,12 @@ extern "C" {
 #endif
 
 /**
+ * @defgroup bt_host Bluetooth Host
+ * @ingroup bluetooth
+ * @{
+ */
+
+/**
  * @brief Generic Access Profile (GAP)
  *
  * @details The Generic Access Profile (GAP) defines fundamental Bluetooth
@@ -59,7 +65,7 @@ extern "C" {
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
  * @version 1.0.0
- * @ingroup bluetooth
+ * @ingroup bt_host
  * @{
  */
 
@@ -286,6 +292,16 @@ struct bt_le_ext_adv_cb {
 };
 
 /**
+ * bt_gap
+ * @}
+ */
+
+/**
+ * bt_host
+ * @}
+ */
+
+/**
  * @typedef bt_ready_cb_t
  * @brief Callback for notifying that Bluetooth has been enabled.
  *
@@ -341,6 +357,11 @@ int bt_disable(void);
  * @return true when Bluetooth is ready, false otherwise
  */
 bool bt_is_ready(void);
+
+/**
+ * @addtogroup bt_gap
+ * @{
+ */
 
 /**
  * @brief Set Bluetooth Device Name
@@ -3126,6 +3147,7 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr);
 
 /**
+ * bt_gap
  * @}
  */
 
