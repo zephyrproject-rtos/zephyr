@@ -6,24 +6,19 @@
 
 #include "posix_clock.h"
 
-#include <zephyr/kernel.h>
-#include <ksched.h>
+#include <limits.h>
+#include <stdint.h>
+
 #include <zephyr/posix/time.h>
+#include <zephyr/sys/util.h>
 
 uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime)
 {
-	int64_t milli_secs, secs, nsecs;
 	struct timespec curtime;
 
-	clock_gettime(clock_id, &curtime);
-	secs = abstime->tv_sec - curtime.tv_sec;
-	nsecs = abstime->tv_nsec - curtime.tv_nsec;
-
-	if (secs < 0 || (secs == 0 && nsecs < NSEC_PER_MSEC)) {
-		milli_secs = 0;
-	} else {
-		milli_secs =  secs * MSEC_PER_SEC + nsecs / NSEC_PER_MSEC;
+	if (clock_gettime(clock_id, &curtime) < 0) {
+		return 0;
 	}
 
-	return milli_secs;
+	return CLAMP(tp_diff(abstime, &curtime) / NSEC_PER_MSEC, 0, UINT32_MAX);
 }
