@@ -537,8 +537,8 @@ static void test_lpn_msg_mesh(void)
 	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_lpn_set(true);
 
-	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
-						       K_SECONDS(2)), "LPN not established");
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED, K_SECONDS(2)),
+		      "LPN did not establish friendship");
 	/* LPN polls on establishment. Clear the poll state */
 	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_LPN_POLLED);
 
@@ -546,14 +546,14 @@ static void test_lpn_msg_mesh(void)
 	 * Should not be affected by the LPN mode at all.
 	 */
 	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, NULL, 5, 0, K_NO_WAIT),
-		      "Send to mesh failed");
+		      "Send to the third mesh node failed");
 
 	/* Receive an unsegmented message back */
 	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, NULL, K_FOREVER));
 
 	/* Send a segmented message to the mesh node. */
 	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, NULL, 15, 0, K_FOREVER),
-		      "Send to other failed");
+		      "Send to the third mesh node failed");
 
 	/* Receive a segmented message back */
 	ASSERT_OK(bt_mesh_test_recv(15, cfg->addr, NULL, K_FOREVER));
@@ -568,6 +568,25 @@ static void test_lpn_msg_mesh(void)
 	net_buf_simple_reset(test_model->pub->msg);
 	bt_mesh_model_msg_init(test_model->pub->msg, TEST_MSG_OP_1);
 	ASSERT_OK(bt_mesh_model_publish(test_model));
+
+	/* Give time to complete publication */
+	k_sleep(K_SECONDS(2));
+
+	/* Terminate friendship by disabling the LPN functionality */
+	bt_mesh_lpn_set(false);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED, K_SECONDS(5)),
+		      "LPN did not terminate friendship correctly");
+
+	/* With this enabled feature, LPN leaves scanner disabled after termination. */
+	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+		bt_mesh_scan_enable();
+	}
+
+	/* Send an unsegmented message to a third mesh node. */
+	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, NULL, 5, 0, K_NO_WAIT),
+		      "Send to the third mesh node failed");
+	/* Receive an unsegmented message back */
+	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, NULL, K_FOREVER));
 
 	PASS();
 }
@@ -587,9 +606,9 @@ static void test_lpn_re_est(void)
 			      "LPN not established");
 
 		bt_mesh_lpn_set(false);
-		ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED,
-							       K_SECONDS(5)),
-			      "LPN never terminated friendship");
+		ASSERT_OK_MSG(
+			bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_TERMINATED, K_SECONDS(5)),
+			"LPN did not terminate friendship correctly");
 
 		k_sleep(K_SECONDS(2));
 	}
@@ -965,6 +984,13 @@ static void test_other_msg(void)
 	 */
 	ASSERT_OK_MSG(bt_mesh_test_recv(1, cfg->addr, NULL, K_FOREVER),
 		      "Failed to receive from LPN");
+
+	/* Receive an unsegmented message from the LPN outside of friendship. */
+	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, NULL, K_FOREVER),
+		      "Failed to receive from LPN after friendship termination");
+	/* Send an unsegmented message to the LPN */
+	ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, NULL, 5, 0, K_NO_WAIT),
+		      "Failed to send to LPN after friendship termination");
 
 	PASS();
 }
