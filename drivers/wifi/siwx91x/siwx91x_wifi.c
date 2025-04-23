@@ -481,7 +481,7 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 static int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_wifi_wireless_info_t wlan_info = { };
+	sl_si91x_rsp_wireless_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
 	uint8_t join_config;
 	int32_t rssi;
