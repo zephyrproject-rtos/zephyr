@@ -15,8 +15,6 @@
 
 LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
-
 __pinned_bss
 static struct k_condvar posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
 
@@ -168,7 +166,7 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struct timespec *abstime)
 {
-	return cond_wait(cv, mut, K_MSEC((int32_t)timespec_to_timeoutms(abstime)));
+	return cond_wait(cv, mut, K_MSEC(timespec_to_timeoutms(abstime)));
 }
 
 int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
