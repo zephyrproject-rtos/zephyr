@@ -613,6 +613,8 @@ static int modem_boot(bool allow_autobaud)
 		goto out;
 	}
 
+	sim7080_change_state(SIM7080_STATE_IDLE);
+
 out:
 	return ret;
 }
@@ -661,9 +663,13 @@ static int modem_setup(void)
 		goto error;
 	}
 
-	sim7080_change_state(SIM7080_STATE_IDLE);
-
+#if IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_BOOT_TYPE_CONSTRAINED)
+	ret = mdm_sim7080_power_off();
+#elif IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_BOOT_TYPE_NORMAL)
 	ret = sim7080_pdp_activate();
+#else
+#error No boot type selected
+#endif
 
 error:
 	return ret;
@@ -671,8 +677,17 @@ error:
 
 int mdm_sim7080_start_network(void)
 {
-	sim7080_change_state(SIM7080_STATE_INIT);
-	return modem_setup();
+	int ret = -EINVAL;
+
+	if (sim7080_get_state() != SIM7080_STATE_IDLE) {
+		LOG_WRN("Can only activate networking from idle state");
+		goto out;
+	}
+
+	ret = sim7080_pdp_activate();
+
+out:
+	return ret;
 }
 
 int mdm_sim7080_power_on(void)
