@@ -22,8 +22,7 @@ static inline bool timespec_is_valid(const struct timespec *ts)
 	return (ts->tv_nsec >= 0) && (ts->tv_nsec < NSEC_PER_SEC);
 }
 
-uint32_t timespec_to_clock_timeoutms(clockid_t clock_id, const struct timespec *abstime);
-uint32_t timespec_to_timeoutms(const struct timespec *abstime);
+uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime);
 
 __syscall int __posix_clock_get_base(clockid_t clock_id, struct timespec *ts);
 

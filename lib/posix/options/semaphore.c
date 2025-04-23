@@ -166,7 +166,7 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 		return -1;
 	}
 
-	if (k_sem_take(semaphore, K_MSEC(timespec_to_clock_timeoutms(CLOCK_REALTIME, abstime)))) {
+	if (k_sem_take(semaphore, K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)))) {
 		errno = ETIMEDOUT;
 		return -1;
 	}
