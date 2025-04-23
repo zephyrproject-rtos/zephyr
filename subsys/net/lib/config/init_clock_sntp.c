@@ -36,6 +36,10 @@ static int sntp_init_helper(struct sntp_time *tm)
 		return sntp_simple_addr((struct sockaddr *)&sntp_addr, sizeof(sntp_addr),
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 	}
+	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
+		/* Empty address, skip using SNTP via Kconfig defaults */
+		return -EINVAL;
+	}
 	LOG_INF("SNTP address not set by DHCPv4, using Kconfig defaults");
 #endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
 	return sntp_simple(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
