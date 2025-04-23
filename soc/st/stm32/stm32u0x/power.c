@@ -26,7 +26,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
-
 void set_mode_stop(uint8_t substate_id)
 {
 	/* ensure the proper wake-up system clock */
@@ -86,8 +85,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
 		} else {
-			LOG_DBG("Unsupported power substate-id %u",
-							substate_id);
+			LOG_DBG("Unsupported power substate-id %u", substate_id);
 		}
 		break;
 	case PM_STATE_STANDBY:
@@ -116,8 +114,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 /* Initialize STM32 Power */
 void stm32_power_init(void)
 {
-
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
 }
