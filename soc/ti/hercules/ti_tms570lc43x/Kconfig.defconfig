@@ -24,12 +24,11 @@ config USE_SWITCH
 config RUNTIME_NMI
 	default y
 
-# 10ms OS tick from a 1MHz free-running clock
 config SYS_CLOCK_TICKS_PER_SEC
-	default 100
+	default $(dt_node_int_prop_int,/soc/rti@fffffc00,tick-frequency)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/soc/rti,clock-frequency)
+	default $(dt_node_int_prop_int,/soc/rti@fffffc00,clock-frequency)
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
