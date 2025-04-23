@@ -557,12 +557,6 @@ SECTIONS
 #include <zephyr/linker/debug-sections.ld>
 
 	/DISCARD/ : { *(.note.GNU-stack) }
-/*
- * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
- */
-#if !defined(CONFIG_CPP_EXCEPTIONS)
-	/DISCARD/ : { *(.eh_frame) }
-#endif
 
 /*
  * The sections below are still treated as warnings
