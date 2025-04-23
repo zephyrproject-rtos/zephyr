@@ -590,10 +590,24 @@ static int ads131m02_pm(const struct device *dev, uint16_t cmd)
 static int ads131m02_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+	const struct ads131m02_config *cfg = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		if (cfg->clock_frequency) {
+			ret = clock_control_set_rate(DEVICE_DT_GET(DT_NODELABEL(clkmux)),
+					     (clock_control_subsys_t)&cfg->bus_clk,
+					     (clock_control_subsys_rate_t)&cfg->clock_frequency);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 		return ads131m02_pm(dev, ADS131M02_WAKEUP_CMD);
 	case PM_DEVICE_ACTION_SUSPEND:
+		if (cfg->clock_frequency) {
+			clock_control_off(DEVICE_DT_GET(DT_NODELABEL(clkmux)),
+					  (clock_control_subsys_t)&cfg->bus_clk);
+		}
 		return ads131m02_pm(dev, ADS131M02_STANDBY_CMD);
 	default:
 		return -EINVAL;
