@@ -212,6 +212,9 @@
 #define APDS9960_DEFAULT_GPULSE		0xC9
 #define APDS9960_DEFAULT_GCONF3		0
 
+/* Polling Wait Times (ms) */
+#define APDS9960_DEFAULT_WAIT_TIME      2.78
+
 struct apds9960_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
