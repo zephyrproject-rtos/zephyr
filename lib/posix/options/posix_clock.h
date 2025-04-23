@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <time.h>
 
+uint32_t timespec_to_clock_timeoutms(clockid_t clock_id, const struct timespec *abstime);
 uint32_t timespec_to_timeoutms(const struct timespec *abstime);
 
 __syscall int __posix_clock_get_base(clockid_t clock_id, struct timespec *ts);

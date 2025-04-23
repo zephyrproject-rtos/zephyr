@@ -10,16 +10,12 @@
 #include <ksched.h>
 #include <zephyr/posix/time.h>
 
-uint32_t timespec_to_timeoutms(const struct timespec *abstime)
+uint32_t timespec_to_clock_timeoutms(clockid_t clock_id, const struct timespec *abstime)
 {
 	int64_t milli_secs, secs, nsecs;
 	struct timespec curtime;
 
-	/* FIXME: Zephyr does have CLOCK_REALTIME to get time.
-	 * As per POSIX standard time should be calculated wrt CLOCK_REALTIME.
-	 * Zephyr deviates from POSIX 1003.1 standard on this aspect.
-	 */
-	clock_gettime(CLOCK_MONOTONIC, &curtime);
+	clock_gettime(clock_id, &curtime);
 	secs = abstime->tv_sec - curtime.tv_sec;
 	nsecs = abstime->tv_nsec - curtime.tv_nsec;
 
@@ -30,4 +26,9 @@ uint32_t timespec_to_timeoutms(const struct timespec *abstime)
 	}
 
 	return milli_secs;
+}
+
+uint32_t timespec_to_timeoutms(const struct timespec *abstime)
+{
+	return timespec_to_clock_timeoutms(CLOCK_MONOTONIC, abstime);
 }
