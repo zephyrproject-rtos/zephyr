@@ -3392,6 +3392,8 @@ static void iface_ipv6_stop(struct net_if *iface)
 	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->network_counter++));
 	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = NULL));
 
+	net_if_stop_rs(iface);
+
 	/* Remove all autoconf addresses */
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (ipv6->unicast[i].is_used &&
