@@ -1562,7 +1562,11 @@ void net_if_start_rs(struct net_if *iface)
 		ipv6->rs_start = k_uptime_get_32();
 
 		k_mutex_lock(&lock, K_FOREVER);
+
+		/* Make sure that the RS timer is not in the list twice */
+		(void)sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
+
 		k_mutex_unlock(&lock);
 
 		/* FUTURE: use schedule, not reschedule. */
