@@ -371,7 +371,7 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
 		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-		.sensor_dev = SOURCE_DEV(n),                                                       \
+		.sensor_dev = SOURCE_DEV(inst),                                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
 		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \
