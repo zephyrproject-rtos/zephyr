@@ -1812,7 +1812,17 @@ int shell_obscure_set(const struct shell *sh, bool val)
 		return -EINVAL;
 	}
 
-	return (int)z_flag_obscure_set(sh, val);
+	int ret_val = z_flag_obscure_set(sh, val);
+
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)){
+		if (z_flag_handle_log_get(sh) && !z_flag_obscure_get(sh)){
+			z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
+		} else {
+			z_shell_log_backend_disable(sh->log_backend);
+		}
+	}
+
+	return ret_val;
 }
 
 int shell_mode_delete_set(const struct shell *sh, bool val)
