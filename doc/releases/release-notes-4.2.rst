@@ -167,6 +167,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
 
+  * OpenThread
+
+    * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
+
 * Sensor
 
   * :c:func:`sensor_value_to_deci`
