@@ -17,6 +17,8 @@ tests:
       - nrf9280pdk/nrf9280/cpuapp
       - nrf9280pdk/nrf9280/cpurad
       - ophelia4ev/nrf54l15/cpuapp
+      - raytac_an54l15q_db/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - raytac_an54l15q_db/nrf54l15/cpuapp
