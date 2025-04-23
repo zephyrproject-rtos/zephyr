@@ -3085,10 +3085,12 @@ static uint8_t get_diff_ipv6(const struct in6_addr *src,
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 {
-	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
-	    addr->address.family == AF_INET6 &&
+	if (addr->is_used && addr->address.family == AF_INET6 &&
 	    !net_ipv6_is_ll_addr(&addr->address.in6_addr)) {
-		return true;
+		if (addr->addr_state == NET_ADDR_PREFERRED ||
+		    addr->addr_state == NET_ADDR_DEPRECATED) {
+			return true;
+		}
 	}
 
 	return false;
@@ -3122,6 +3124,7 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 						   uint8_t *best_so_far,
 						   int flags)
 {
+	enum net_addr_state addr_state = NET_ADDR_ANY_STATE;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct net_if_addr *public_addr = NULL;
 	struct in6_addr *src = NULL;
@@ -3179,6 +3182,25 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 				continue;
 			}
 
+			if (len == *best_so_far &&
+			    ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED &&
+			    addr_state == NET_ADDR_PREFERRED) {
+				/* We have a preferred address and a deprecated
+				 * address. We prefer the preferred address if the
+				 * prefix lengths are the same.
+				 * See RFC 6724 chapter 5.
+				 */
+				continue;
+			}
+
+			addr_state = ipv6->unicast[i].addr_state;
+
+			NET_DBG("[%zd] Checking %s (%s) dst %s/%d", i,
+				net_sprint_ipv6_addr(&ipv6->unicast[i].address.in6_addr),
+				addr_state == NET_ADDR_PREFERRED ? "preferred" :
+				addr_state == NET_ADDR_DEPRECATED ? "deprecated" : "?",
+				net_sprint_ipv6_addr(dst), prefix_len);
+
 			ret = use_public_address(iface->pe_prefer_public,
 						 ipv6->unicast[i].is_temporary,
 						 flags);
@@ -3227,6 +3249,14 @@ use_public:
 
 out:
 	net_if_unlock(iface);
+
+	if (src != NULL) {
+		NET_DBG("Selected %s (%s) dst %s/%d",
+			net_sprint_ipv6_addr(src),
+			addr_state == NET_ADDR_PREFERRED ? "preferred" :
+			addr_state == NET_ADDR_DEPRECATED ? "deprecated" : "?",
+			net_sprint_ipv6_addr(dst), prefix_len);
+	}
 
 	return src;
 }
