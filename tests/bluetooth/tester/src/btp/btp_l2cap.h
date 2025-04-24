@@ -22,11 +22,14 @@ struct btp_l2cap_read_supported_commands_rp {
 #define BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT		0x02
 
 #define BTP_L2CAP_CONNECT				0x02
-struct btp_l2cap_connect_cmd {
+struct btp_l2cap_connect_cmd_common {
 	bt_addr_le_t address;
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
+} __packed;
+struct btp_l2cap_connect_cmd {
+	struct btp_l2cap_connect_cmd_common common;
 	uint8_t options;
 } __packed;
 struct btp_l2cap_connect_rp {
@@ -94,6 +97,26 @@ struct btp_l2cap_send_echo_req_cmd {
 	bt_addr_le_t address;
 	uint16_t data_length;
 	uint8_t data[];
+} __packed;
+
+#define BTP_L2CAP_CONNECT_V2_MODE_NONE			0x00
+#define BTP_L2CAP_CONNECT_V2_MODE_BASIC			BTP_L2CAP_CONNECT_V2_MODE_NONE
+#define BTP_L2CAP_CONNECT_V2_MODE_RET			0x01
+#define BTP_L2CAP_CONNECT_V2_MODE_FC			0x02
+#define BTP_L2CAP_CONNECT_V2_MODE_ERET			0x03
+#define BTP_L2CAP_CONNECT_V2_MODE_STREAM		0x04
+
+#define BTP_L2CAP_CONNECT_V2_OPT_ECFC			BTP_L2CAP_CONNECT_OPT_ECFC
+#define BTP_L2CAP_CONNECT_V2_OPT_HOLD_CREDIT		BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT
+#define BTP_L2CAP_CONNECT_V2_OPT_MODE_OPTIONAL		BIT(2)
+#define BTP_L2CAP_CONNECT_V2_OPT_EXT_WIN_SIZE		BIT(3)
+#define BTP_L2CAP_CONNECT_V2_OPT_NO_FCS			BIT(4)
+
+#define BTP_L2CAP_CONNECT_V2				0x0b
+struct btp_l2cap_connect_v2_cmd {
+	struct btp_l2cap_connect_cmd_common common;
+	uint8_t mode;
+	uint32_t options;
 } __packed;
 
 /* events */
