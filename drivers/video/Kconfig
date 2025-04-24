@@ -94,4 +94,6 @@ source "drivers/video/Kconfig.imx335"
 
 source "drivers/video/Kconfig.st_mipid02"
 
+source "drivers/video/Kconfig.stm32_dcmipp"
+
 endif # VIDEO
