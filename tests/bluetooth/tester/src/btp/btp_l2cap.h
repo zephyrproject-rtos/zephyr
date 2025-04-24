@@ -115,6 +115,25 @@ struct btp_l2cap_connect_v2_cmd {
 	uint16_t options;
 } __packed;
 
+#define BTP_L2CAP_LISTEN_V2_OPT_ECFC			0x0001
+#define BTP_L2CAP_LISTEN_V2_OPT_HOLD_CREDIT		0x0002
+#define BTP_L2CAP_LISTEN_V2_OPT_RET			0x0004
+#define BTP_L2CAP_LISTEN_V2_OPT_FC			0x0008
+#define BTP_L2CAP_LISTEN_V2_OPT_ERET			0x0010
+#define BTP_L2CAP_LISTEN_V2_OPT_STREAM			0x0020
+#define BTP_L2CAP_LISTEN_V2_OPT_MODE_OPTIONAL		0x0040
+#define BTP_L2CAP_LISTEN_V2_OPT_EXT_WIN_SIZE		0x0080
+#define BTP_L2CAP_LISTEN_V2_OPT_NO_FCS			0x0100
+
+#define BTP_L2CAP_LISTEN_V2				0x0c
+struct btp_l2cap_listen_v2_cmd {
+	uint16_t psm;
+	uint8_t transport;
+	uint16_t mtu;
+	uint16_t response;
+	uint16_t options;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
