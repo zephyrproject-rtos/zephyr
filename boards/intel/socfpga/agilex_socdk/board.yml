@@ -1,5 +1,6 @@
 board:
   name: intel_socfpga_agilex_socdk
   full_name: Agilex SoC Development Kit
+  vendor: intel
   socs:
     - name: agilex
