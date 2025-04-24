@@ -15,6 +15,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/it51xxx_pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/sensor/it51xxx_tach.h>
 
 / {
@@ -1184,6 +1186,70 @@
 			reg = <0x00f04780 0x20>;
 			interrupts = <IT51XXX_IRQ_TIMER1_DW IRQ_TYPE_EDGE_RISING>; /* Warn timer */
 			interrupt-parent = <&intc>;
+		};
+
+		pwm0: pwm@f04600 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04600 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm1: pwm@f04610 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04610 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm2: pwm@f04620 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04620 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm3: pwm@f04630 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04630 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm4: pwm@f04640 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04640 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm5: pwm@f04650 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04650 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm6: pwm@f04660 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04660 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm7: pwm@f04670 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04670 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 
 		tach0: tach@f046c0 {
