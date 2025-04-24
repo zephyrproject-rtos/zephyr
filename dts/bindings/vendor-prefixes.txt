@@ -779,6 +779,7 @@ yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
+zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	The Zephyr Project
