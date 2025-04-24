@@ -39,10 +39,24 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 #define I2C_DW_CMD_RECV    (1 << 1)
 #define I2C_DW_CMD_ERROR   (1 << 2)
 #define I2C_DW_BUSY        (1 << 3)
+#define I2C_DW_TX_ABRT     (1 << 4)
+#define I2C_DW_NACK        (1 << 5)
+#define I2C_DW_SCL_STUCK   (1 << 6)
+#define I2C_DW_SDA_STUCK   (1 << 7)
 
+#define I2C_DW_ERR_MASK (I2C_DW_CMD_ERROR | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
+
+#define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK)
+
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+#define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
+	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
+	 DW_INTR_STAT_STOP_DET | DW_INTR_STAT_SCL_STUCK_LOW)
+#else
 #define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
 	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
 	 DW_INTR_STAT_STOP_DET)
+#endif
 #define DW_ENABLE_RX_INT_I2C_MASTER                                                                \
 	(DW_INTR_STAT_RX_UNDER | DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_FULL |                     \
 	 DW_INTR_STAT_STOP_DET)
@@ -84,6 +98,7 @@ struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t config_func;
 	uint32_t bitrate;
+	uint32_t irqnumber;
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
 
@@ -101,17 +116,22 @@ struct i2c_dw_rom_config {
 #ifdef CONFIG_I2C_DW_LPSS_DMA
 	const struct device *dma_dev;
 #endif
+
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+	uint32_t sda_timeout_value;
+	uint32_t scl_timeout_value;
+#endif
 };
 
 struct i2c_dw_dev_config {
 	DEVICE_MMIO_RAM;
 	struct k_sem device_sync_sem;
-	struct k_mutex bus_mutex;
+	struct k_sem bus_sem;
 	uint32_t app_config;
 
-	uint8_t *xfr_buf;
-	uint32_t xfr_len;
-	uint32_t rx_pending;
+	volatile uint8_t *xfr_buf;
+	volatile uint32_t xfr_len;
+	volatile uint32_t rx_pending;
 
 	uint16_t hcnt;
 	uint16_t lcnt;
@@ -128,6 +148,12 @@ struct i2c_dw_dev_config {
 #endif
 
 	struct i2c_target_config *slave_cfg;
+
+	i2c_api_recover_bus_t recover_bus_cb;
+	struct device *recover_bus_dev;
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	bool need_setup;
+#endif
 };
 
 #define Z_REG_READ(__sz)  sys_read##__sz
@@ -164,6 +190,10 @@ struct i2c_dw_dev_config {
 	{                                                                                          \
 		return Z_REG_TEST_BIT(addr + __reg_off, __bit);                                    \
 	}
+
+void i2c_dw_register_recover_bus_cb(const struct device *dw_i2c_dev,
+				    i2c_api_recover_bus_t recover_bus_cb,
+				    const struct device *wrapper_dev);
 
 #ifdef __cplusplus
 }
