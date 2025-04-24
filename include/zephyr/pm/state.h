@@ -373,6 +373,8 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 /**
  * Get power state structure.
  *
+ * Function searches in all states assigned to the CPU and in disabled states.
+ *
  * @param cpu CPU index.
  * @param state Power state.
  * @param substate_id Substate.
