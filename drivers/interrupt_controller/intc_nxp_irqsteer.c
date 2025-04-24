@@ -549,7 +549,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	uint32_t parent_irq;
 	int i;
 	const struct irqsteer_config *cfg;
-	bool enabled;
+	bool enabled = false;
 
 	if (irq_get_level(irq) == 1) {
 		K_SPINLOCK(&irqstr_lock) {
@@ -559,7 +559,6 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	}
 
 	parent_irq = irq_parent_level_2(irq);
-	enabled = false;
 
 	/* find dispatcher responsible for this interrupt */
 	for (i = 0; i < ARRAY_SIZE(dispatchers); i++) {
