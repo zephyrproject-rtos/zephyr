@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Croxel, Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    PNI RM3100 3-axis Magnetometer.
+
+    The RM3100 can use either I2C or SPI as a communication bus.
+    This driver currently supports I2C only.
+
+compatible: "pni,rm3100"
+
+include: [sensor-device.yaml, i2c-device.yaml]
