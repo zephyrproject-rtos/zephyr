@@ -10,5 +10,6 @@ config USART_SAM
 	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select MFD if SOC_SERIES_SAMA7G5
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
