@@ -2100,6 +2100,91 @@ list(APPEND
   ${extra_post_build_byproducts}
   )
 
+get_property(mcuboot_bin_byproducts
+  GLOBAL PROPERTY
+  mcuboot_bin_byproducts
+  )
+
+get_property(mcuboot_slot1_bin_byproducts
+  GLOBAL PROPERTY
+  mcuboot_slot1_bin_byproducts
+  )
+
+# Pack the mcuboot-signed .bin files into UF2 format
+if(CONFIG_BUILD_OUTPUT_UF2 AND CONFIG_BOOTLOADER_MCUBOOT)
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
+    set(base_address "${CONFIG_FLASH_BASE_ADDRESS}")
+  else()
+    set(base_address "${CONFIG_FLASH_LOAD_OFFSET}")
+  endif()
+
+  if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+    dt_nodelabel(slot_partition NODELABEL "slot0_partition" REQUIRED)
+    dt_nodelabel(alternate_slot_partition NODELABEL "slot1_partition" REQUIRED)
+    dt_reg_addr(alternate_slot_address PATH ${alternate_slot_partition})
+
+    math(EXPR alternate_flash_address
+        "${base_address} + ${alternate_slot_address}"
+         OUTPUT_FORMAT HEXADECIMAL
+    )
+
+    foreach(bin_byproduct IN LISTS mcuboot_slot1_bin_byproducts)
+      cmake_path(REPLACE_EXTENSION bin_byproduct LAST_ONLY "uf2"
+                 OUTPUT_VARIABLE uf2_output)
+
+      list(APPEND post_build_commands
+        COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+                --convert
+                --family ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+                --base ${alternate_flash_address}
+                --output ${uf2_output}
+                ${bin_byproduct}
+      )
+
+      list(APPEND
+        post_build_byproducts
+        ${uf2_output}
+      )
+    endforeach()
+  elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET OR
+         CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE OR
+         CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH OR
+         CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH OR
+         CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+    dt_nodelabel(slot_partition NODELABEL "slot1_partition" REQUIRED)
+  else()
+    # If mcuboot is configured as SINGLE_APP, DIRECT_XIP, FIRMWARE_UPDATER or
+    # SINGLE_APP_RAM_LOAD use the code-partition
+    dt_chosen(slot_partition PROPERTY "zephyr,code-partition" REQUIRED)
+  endif()
+
+  dt_reg_addr(slot_address PATH ${slot_partition})
+
+  math(EXPR flash_address
+      "${base_address} + ${slot_address}"
+       OUTPUT_FORMAT HEXADECIMAL
+  )
+
+  foreach(bin_byproduct IN LISTS mcuboot_bin_byproducts)
+    cmake_path(REPLACE_EXTENSION bin_byproduct LAST_ONLY "uf2"
+               OUTPUT_VARIABLE uf2_output)
+
+    list(APPEND post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              --convert
+              --family ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              --base ${flash_address}
+              --output ${uf2_output}
+              ${bin_byproduct}
+    )
+
+    list(APPEND
+      post_build_byproducts
+      ${uf2_output}
+    )
+  endforeach()
+endif()
+
 if(CONFIG_LOG_DICTIONARY_DB)
   set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
   set(LOG_DICT_DB_NAME_ARG --json)
