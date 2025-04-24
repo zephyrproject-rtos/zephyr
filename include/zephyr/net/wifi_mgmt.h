@@ -702,6 +702,20 @@ struct wifi_ps_params {
 	enum wifi_ps_exit_strategy exit_strategy;
 };
 
+#define WIFI_BTWT_AGREEMENT_MAX 5
+
+/** @brief Wi-Fi broadcast TWT parameters */
+struct wifi_btwt_params {
+	/** Broadcast TWT ID */
+	uint8_t btwt_id;
+	/** Broadcast TWT mantissa */
+	uint16_t btwt_mantissa;
+	/** Broadcast TWT exponent */
+	uint8_t btwt_exponent;
+	/** Broadcast TWT range */
+	uint8_t btwt_nominal_wake;
+};
+
 /** @brief Wi-Fi TWT parameters */
 struct wifi_twt_params {
 	/** TWT operation, see enum wifi_twt_operation */
@@ -748,20 +762,16 @@ struct wifi_twt_params {
 		} setup;
 		/** Setup specific parameters */
 		struct {
-			/** Broadcast TWT AP config */
-			uint16_t sub_id;
-			/** Range 64-255 */
-			uint8_t nominal_wake;
-			/** Max STA support */
-			uint8_t max_sta_support;
-			/** TWT mantissa */
-			uint16_t twt_mantissa;
-			/** TWT offset */
-			uint16_t twt_offset;
-			/** TWT exponent */
-			uint8_t twt_exponent;
-			/** SP gap */
-			uint8_t sp_gap;
+			/** Broadcast TWT station wait time */
+			uint8_t btwt_sta_wait;
+			/** Broadcast TWT offset */
+			uint16_t btwt_offset;
+			/** In multiple of 4 beacon interval */
+			uint8_t btwt_li;
+			/** Broadcast TWT agreement count */
+			uint8_t btwt_count;
+			/** Broadcast TWT agreement sets */
+			struct wifi_btwt_params btwt_set_cfg[WIFI_BTWT_AGREEMENT_MAX];
 		} btwt;
 		/** Teardown specific parameters */
 		struct {
