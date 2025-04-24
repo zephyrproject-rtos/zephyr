@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2025 Mohamed ElShahawi (extremegtx@hotmail.com)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&mx25l51245g {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@1a0000 {
+			label = "storage";
+			reg = <0x001a0000 DT_SIZE_M(40)>;
+		};
+
+		storage_partition2: partition@2ba0000 {
+			label = "storage2";
+			reg = <0x2ba0000 DT_SIZE_M(20)>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+			automount;
+		};
+
+		lfs2: lfs2 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition2>;
+			mount-point = "/lfs2";
+			automount;
+		};
+	};
+
+	mtp_store0 {
+		status = "okay";
+		compatible = "zephyr,mtp";
+		fstab-entry = <&lfs1>;
+	};
+
+	mtp_store1 {
+		status = "okay";
+		compatible = "zephyr,mtp";
+		fstab-entry = <&lfs2>;
+	};
+};
