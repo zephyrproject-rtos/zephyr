@@ -42,12 +42,17 @@ struct coap_observer;
 
 enum net_event_coap_cmd {
 	/* Service events */
-	NET_EVENT_COAP_CMD_SERVICE_STARTED = 1,
+	NET_EVENT_COAP_CMD_SERVICE_STARTED,
 	NET_EVENT_COAP_CMD_SERVICE_STOPPED,
 	/* Observer events */
 	NET_EVENT_COAP_CMD_OBSERVER_ADDED,
 	NET_EVENT_COAP_CMD_OBSERVER_REMOVED,
+
+	NET_EVENT_COAP_CMD_MAX
 };
+
+BUILD_ASSERT(NET_EVENT_COAP_CMD_MAX <= NET_MGMT_MAX_COMMANDS
+	     "Number of events in net_event_coap_cmd exceeds the limit");
 
 /** @endcond */
 
@@ -55,25 +60,25 @@ enum net_event_coap_cmd {
  * @brief coap_mgmt event raised when a service has started
  */
 #define NET_EVENT_COAP_SERVICE_STARTED			\
-	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STARTED)
+	(NET_COAP_IF_BASE | BIT64(NET_EVENT_COAP_CMD_SERVICE_STARTED))
 
 /**
  * @brief coap_mgmt event raised when a service has stopped
  */
 #define NET_EVENT_COAP_SERVICE_STOPPED			\
-	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STOPPED)
+	(NET_COAP_IF_BASE | BIT64(NET_EVENT_COAP_CMD_SERVICE_STOPPED))
 
 /**
  * @brief coap_mgmt event raised when an observer has been added to a resource
  */
 #define NET_EVENT_COAP_OBSERVER_ADDED			\
-	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_ADDED)
+	(NET_COAP_IF_BASE | BIT64(NET_EVENT_COAP_CMD_OBSERVER_ADDED))
 
 /**
  * @brief coap_mgmt event raised when an observer has been removed from a resource
  */
 #define NET_EVENT_COAP_OBSERVER_REMOVED			\
-	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_REMOVED)
+	(NET_COAP_IF_BASE | BIT64(NET_EVENT_COAP_CMD_OBSERVER_REMOVED))
 
 /**
  * @brief CoAP Service event structure.
