@@ -677,14 +677,35 @@ error:
 
 int mdm_sim7080_start_network(void)
 {
-	int ret = -EINVAL;
+	int ret = -EALREADY;
 
-	if (sim7080_get_state() != SIM7080_STATE_IDLE) {
+	if (sim7080_get_state() == SIM7080_STATE_NETWORKING) {
+		LOG_WRN("Network already active");
+		goto out;
+	} else if (sim7080_get_state() != SIM7080_STATE_IDLE) {
 		LOG_WRN("Can only activate networking from idle state");
+		ret = -EINVAL;
 		goto out;
 	}
 
 	ret = sim7080_pdp_activate();
+
+out:
+	return ret;
+}
+
+int mdm_sim7080_stop_network(void)
+{
+	int ret = -EINVAL;
+
+	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
+		LOG_WRN("Modem not in networking state");
+		goto out;
+	}
+
+	//TODO: close sockets
+
+	ret = sim7080_pdp_deactivate();
 
 out:
 	return ret;
