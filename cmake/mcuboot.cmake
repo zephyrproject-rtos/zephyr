@@ -10,6 +10,39 @@
 # Since this file is brought in via include(), we do the work in a
 # function to avoid polluting the top-level scope.
 
+function(convert_to_uf2 artifacts slot_addr)
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
+    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+  else()
+    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+  endif()
+
+  math(EXPR flash_addr
+      "${flash_addr} + ${slot_addr}"
+       OUTPUT_FORMAT HEXADECIMAL
+  )
+
+  set(uf2_byproducts)
+  foreach(artifact IN LISTS ${artifacts})
+    string(LENGTH ${artifact} len)
+    math(EXPR len "${len} - 3")
+    string(SUBSTRING ${artifact} 0 ${len} output)
+    string(APPEND output "uf2")
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              -c
+              -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              -b ${flash_addr}
+              -o ${output}
+              ${artifact}
+    )
+    list(APPEND uf2_byproducts ${output})
+  endforeach()
+
+  list(APPEND artifacts uf2_byproducts)
+endfunction()
+
 function(zephyr_runner_file type path)
   # Property magic which makes west flash choose the signed build
   # output of a given type.
@@ -209,6 +242,12 @@ function(zephyr_mcuboot_tasks)
                      ${output}.bin ${output}.slot1.signed.encrypted.bin)
       endif()
     endif()
+  endif()
+
+  if(CONFIG_BUILD_OUTPUT_UF2)
+    dt_nodelabel(slot1_partition NODELABEL "slot1_partition" REQUIRED)
+    dt_reg_addr(slot1_partition_address PATH ${slot1_partition})
+    convert_to_uf2(byproducts ${slot1_partition_address})
   endif()
 
   # Set up .hex outputs.
