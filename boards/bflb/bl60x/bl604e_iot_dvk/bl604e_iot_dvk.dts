@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <bouffalolab/bl60x.dtsi>
+#include <bflb/bl60x.dtsi>
 #include "bl604e_iot_dvk-pinctrl.dtsi"
 
 / {
