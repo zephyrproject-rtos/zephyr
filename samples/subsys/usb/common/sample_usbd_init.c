@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_sample_config);
 
-#define ZEPHYR_PROJECT_USB_VID		0x2fe3
+#define ZEPHYR_PROJECT_USB_VID		0x04E8
 
 /* By default, do not register the USB DFU class DFU mode instance. */
 static const char *const blocklist[] = {
@@ -84,7 +84,8 @@ static void sample_fix_code_triple(struct usbd_context *uds_ctx,
 	    IS_ENABLED(CONFIG_USBD_CDC_NCM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_MIDI2_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ||
-	    IS_ENABLED(CONFIG_USBD_VIDEO_CLASS)) {
+	    IS_ENABLED(CONFIG_USBD_VIDEO_CLASS) ||
+	    IS_ENABLED(CONFIG_USBD_MTP_CLASS)) {
 		/*
 		 * Class with multiple interfaces have an Interface
 		 * Association Descriptor available, use an appropriate triple
