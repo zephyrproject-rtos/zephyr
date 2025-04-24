@@ -368,7 +368,7 @@ static int dma_cc23x0_init(const struct device *dev)
 
 static struct dma_cc23x0_data cc23x0_data;
 
-static const struct dma_driver_api dma_cc23x0_api = {
+static DEVICE_API(dma, dma_cc23x0_api) = {
 	.config = dma_cc23x0_config,
 	.start = dma_cc23x0_start,
 	.stop = dma_cc23x0_stop,

@@ -304,11 +304,12 @@ static int xilinx_axienet_mdio_probe(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_xilinx_axienet_api = {
+static DEVICE_API(mdio, mdio_xilinx_axienet_api) = {
 	.bus_disable = mdio_xilinx_axienet_bus_disable,
 	.bus_enable = mdio_xilinx_axienet_bus_enable,
 	.read = mdio_xilinx_axienet_read,
-	.write = mdio_xilinx_axienet_write};
+	.write = mdio_xilinx_axienet_write,
+};
 
 #define SETUP_IRQS(inst)                                                                           \
 	IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), xilinx_axienet_mdio_isr,      \

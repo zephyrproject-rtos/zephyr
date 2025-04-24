@@ -285,7 +285,7 @@ static int spi_cc23x0_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_cc23x0_driver_api = {
+static DEVICE_API(spi, spi_cc23x0_driver_api) = {
 	.transceive = spi_cc23x0_transceive,
 	.release = spi_cc23x0_release,
 };
