@@ -189,6 +189,12 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
+		if (frame_size >= sizeof(frame)) {
+			LOG_ERR("HCI Packet is too big for frame (%d "
+				"bytes). Dropping data", sizeof(frame));
+			frame_size = 0; /* Drop buffer */
+		}
+
 		LOG_DBG("calling read()");
 
 		len = nsi_host_read(uc->fd, frame + frame_size, sizeof(frame) - frame_size);
@@ -218,14 +224,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			if (decoded_len == 0) {
-				if (frame_size == sizeof(frame)) {
-					LOG_ERR("HCI Packet (%d bytes) is too big for frame (%d "
-						"bytes)",
-						decoded_len, sizeof(frame));
-					frame_size = 0; /* Drop buffer */
-					break;
-				}
-				if (frame_start != frame) {
+				if ((frame_start != frame) && (frame_size < sizeof(frame))) {
 					memmove(frame, frame_start, frame_size);
 				}
 				/* Read more */
