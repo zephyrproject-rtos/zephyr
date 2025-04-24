@@ -9,8 +9,8 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include <zephyr/drivers/mfd/npm1300.h>
-#include <zephyr/dt-bindings/gpio/nordic-npm1300-gpio.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
+#include <zephyr/dt-bindings/gpio/nordic-npm13xx-gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
 
