@@ -42,6 +42,19 @@
 #include <zephyr/toolchain/gcc.h>
 #endif
 
+#ifdef __clang__
+/* For some reasons, xt-clang does not like "%hhd" or "%hd" (for example)
+ * being fed int data (same goes for unsigned ones) and will always complain
+ * about mismatched types. GCC and newer LLVM/Clang do not complain.
+ * This could be due to xt-clang being based on older LLVM/Clang.
+ * So skip the check.
+ */
+#ifdef __printf_like
+#undef __printf_like
+#define __printf_like(f, a)
+#endif
+#endif
+
 #ifndef __clang__
 #undef __BYTE_ORDER__
 #endif
