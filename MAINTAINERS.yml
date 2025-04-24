@@ -3508,6 +3508,7 @@ Bouffalolab Platforms:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
     - boards/bflb/
     - drivers/*/*bflb*
@@ -4963,6 +4964,7 @@ West:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
     - modules/hal_bouffalolab/
   labels:
