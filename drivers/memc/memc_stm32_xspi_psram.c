@@ -338,7 +338,7 @@ static const struct memc_stm32_xspi_psram_config memc_stm32_xspi_cfg = {
 	.pclken_mgr = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bus),
 		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bits)},
 #endif
-	.memory_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.memory_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 };
 
 static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
