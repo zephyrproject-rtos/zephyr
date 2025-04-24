@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+iovdd-ctrl-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+bucken-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+host-irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+srrf-switch-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+
+wifi-max-tx-pwr-2g-dsss = <21>;
+wifi-max-tx-pwr-2g-mcs0 = <16>;
+wifi-max-tx-pwr-2g-mcs7 = <16>;
+
+wlan0: wlan {
+	compatible = "nordic,wlan";
+};
