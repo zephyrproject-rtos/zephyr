@@ -1,0 +1,19 @@
+identifier: raytac_an7002q_db/nrf5340/cpuapp
+name: Raytac-AN7002Q-DB-NRF5340-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - watchdog
+  - usbd
+  - usb_device
+  - netif:openthread
+vendor: raytac
