@@ -11,11 +11,15 @@ Overview
 publish/subscribe messaging protocol optimized for small sensors and
 mobile devices.
 
-The Zephyr MQTT Publisher sample application is a MQTT v3.1.1
-client that sends MQTT PUBLISH messages to a MQTT broker.
-See the `MQTT V3.1.1 spec`_ for more information.
+The Zephyr MQTT Publisher sample application is a MQTT client that sends
+MQTT PUBLISH messages to a MQTT broker. The sample supports MQTT client in
+version v3.1.1 (default) and v5.0.
 
-.. _MQTT V3.1.1 spec: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html
+See the `MQTT v3.1.1 spec`_ and `MQTT v5.0 spec`_ for more information about
+MQTT v3.1.1 and v5.0, respectively.
+
+.. _MQTT v3.1.1 spec: https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html
+.. _MQTT v5.0 spec: https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html
 
 The source code of this sample application can be found at:
 :zephyr_file:`samples/net/mqtt_publisher`.
@@ -135,6 +139,23 @@ Open another terminal window and type:
 .. code-block:: console
 
 	$ mosquitto_sub -t sensors
+
+MQTT v5.0 support
+=================
+
+The sample can be configured to use MQTT v5.0 instead of MQTT v3.1.1. To enable
+MQTT v5.0 in the sample, build it with ``-DEXTRA_CONF_FILE=overlay-mqtt-5.conf``
+parameter. The sample should work with any broker supporting MQTT v5.0, however
+it was specifically tested with mosquitto version 2.0.21. Server side
+configuration in this particular case is the same as for MQTT v3.1.1.
+
+When the sample is configured in the MQTT v5.0 mode, it makes use of the topic
+aliasing feature. i.e. if the broker reports it supports topic aliases, the
+client will register a topic alias for the default ``sensors`` topic, and use it
+for consecutive MQTT Publish messages. It can be observed (for example using
+Wireshark) how the actual topic is only present in the first Publish message, and
+all subsequent Publish messages are smaller, as they include topic alias
+property only.
 
 Connecting securely using TLS
 =============================
