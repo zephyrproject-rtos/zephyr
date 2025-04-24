@@ -207,6 +207,11 @@ endif()
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,optimization>>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,optimization>>)
 
+# Genex to fetch linker property defining the target providing optimization settings for linking.
+set(opt_target_genex $<TARGET_PROPERTY:linker,optimization_target>)
+# Genex to use optimization properties from defined target with fallback to linker target.
+set(opt_target_select $<IF:$<BOOL:${opt_target_genex}>,${opt_target_genex},linker>)
+add_link_options($<TARGET_PROPERTY:${opt_target_select},optimization>)
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
