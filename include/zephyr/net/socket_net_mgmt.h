@@ -73,7 +73,7 @@ struct sockaddr_nm {
 	uintptr_t nm_pid;
 
 	/** net_mgmt mask */
-	uint32_t nm_mask;
+	uint64_t nm_mask;
 };
 
 

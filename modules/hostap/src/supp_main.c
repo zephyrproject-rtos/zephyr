@@ -495,14 +495,14 @@ static void submit_iface_work(struct supplicant_context *ctx,
 }
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static void interface_handler(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event, struct net_if *iface)
+			      uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
 		return;
 	}
 
 	if (!is_wanted_interface(iface)) {
-		LOG_DBG("Ignoring event (0x%02x) from interface %d (%p)",
+		LOG_DBG("Ignoring event (0x%" PRIx64 ") from interface %d (%p)",
 			mgmt_event, net_if_get_by_iface(iface), iface);
 		return;
 	}

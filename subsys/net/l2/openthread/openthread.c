@@ -34,7 +34,7 @@ static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 #ifdef CONFIG_NET_MGMT_EVENT
 static struct net_mgmt_event_callback ip6_addr_cb;
 
-static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				    struct net_if *iface)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
