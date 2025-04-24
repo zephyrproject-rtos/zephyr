@@ -1,0 +1,9 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_SAMA7G5
+	select ARM
+	select CPU_CORTEX_A7
+	select SOC_EARLY_INIT_HOOK
