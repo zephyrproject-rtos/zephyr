@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from twisterlib.testplan import TestSuite
 
 
 class FilterInterface(ABC):
@@ -7,7 +6,7 @@ class FilterInterface(ABC):
         pass
 
     @abstractmethod
-    def exclude(self, suite: TestSuite) -> bool:
+    def exclude(self, suite) -> bool:
         """
         Examines a given Test Suite and decides if it should be run or not.
         Returns True if the suite has to be excluded, False if it's supposed to be executed.

@@ -6,14 +6,14 @@ import shlex
 from logging import Logger
 
 
-__FILTER_SEPARATOR = ';'
+_FILTER_SEPARATOR = ';'
 
-__FILTER_DICT_PATH = 'filter_file_path'
-__FILTER_DICT_ARGS = 'args'
-__FILTER_DICT_KWARGS = 'kwargs'
+_FILTER_DICT_PATH = 'filter_file_path'
+_FILTER_DICT_ARGS = 'args'
+_FILTER_DICT_KWARGS = 'kwargs'
 
 
-class __FilterDictionary:
+class _FilterDictionary:
     path: str = None
     args: list = None
     kwargs: dict = None
@@ -26,13 +26,13 @@ class __FilterDictionary:
 
     def to_dictionary(self) -> dict:
         return {
-            __FILTER_DICT_PATH: self.path,
-            __FILTER_DICT_ARGS: self.args,
-            __FILTER_DICT_KWARGS: self.kwargs
+            _FILTER_DICT_PATH: self.path,
+            _FILTER_DICT_ARGS: self.args,
+            _FILTER_DICT_KWARGS: self.kwargs
         }
 
 
-def __handle_simple_filter(filter_args, _logger: Logger=None):
+def _handle_simple_filter(filter_args, _logger: Logger=None):
     filter_list = []
     current_filter = None
 
@@ -41,11 +41,11 @@ def __handle_simple_filter(filter_args, _logger: Logger=None):
 
     for args_wrapper in filter_args:
         for token in shlex.split(args_wrapper, posix=False):
-            filter_block_end = token.endswith(__FILTER_SEPARATOR)
-            clean_token = token.removesuffix(__FILTER_SEPARATOR)
+            filter_block_end = token.endswith(_FILTER_SEPARATOR)
+            clean_token = token.removesuffix(_FILTER_SEPARATOR)
 
             if filter_block_start:
-                current_filter = __FilterDictionary(clean_token)
+                current_filter = _FilterDictionary(clean_token)
                 filter_list.append(current_filter)
                 filter_block_start = False
             else:
@@ -65,11 +65,11 @@ def __handle_simple_filter(filter_args, _logger: Logger=None):
     return [ filter_obj.to_dictionary() for filter_obj in filter_list ]
 
 
-def __handle_json_string_filter(filter_args, _logger: Logger=None):
+def _handle_json_string_filter(filter_args, _logger: Logger=None):
     return json.loads(filter_args)
 
 
-def __handle_json_path_filter(filter_args, _logger: Logger):
+def _handle_json_path_filter(filter_args, _logger: Logger):
     if not os.path.exists(filter_args):
         _logger.error(f"Provided path { filter_args } doesn't exist. Halting twister process...")
         sys.exit(1)
@@ -86,7 +86,7 @@ def __handle_json_path_filter(filter_args, _logger: Logger):
         sys.exit(1)
 
 
-def __handle_json_filter(filter_args, logger: Logger, handle_method):
+def _handle_json_filter(filter_args, logger: Logger, handle_method):
     if callable(handle_method):
         try:
             return handle_method(filter_args)
@@ -100,8 +100,8 @@ def __handle_json_filter(filter_args, logger: Logger, handle_method):
 
 def parse_arguments(options, logger: Logger):
     if filter_args := options.plugin_filter:
-        options.plugin_filter = __handle_simple_filter(filter_args, logger)
+        options.plugin_filter = _handle_simple_filter(filter_args, logger)
     elif filter_args := options.plugin_filter_json_string:
-        options.plugin_filter = __handle_json_filter(filter_args, logger, __handle_json_string_filter)
+        options.plugin_filter = _handle_json_filter(filter_args, logger, _handle_json_string_filter)
     elif filter_args := options.plugin_filter_json_path:
-        options.plugin_filter = __handle_json_filter(filter_args, logger, __handle_json_path_filter)
+        options.plugin_filter = _handle_json_filter(filter_args, logger, _handle_json_path_filter)

@@ -3,29 +3,29 @@ import os
 from argparse import _ArgumentGroup
 
 
-__GENERAL_FILTER_DESCRIPTION = "Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
+_GENERAL_FILTER_DESCRIPTION = "Allows the selection of one (or multiple) filter(s) to reduce the amount of tests to perform on twister launch. "
 
-__COMMAND_DELIMITERS_WARNING = "(< and > are present only for delimiting the command, do not include them in the actual call). "
+_COMMAND_DELIMITERS_WARNING = "(< and > are present only for delimiting the command, do not include them in the actual call). "
 
-__GENERAL_JSON_FILTER_DESCRIPTION = "The names of these filters, along with their arguments, will be parsed from a json "
+_GENERAL_JSON_FILTER_DESCRIPTION = "The names of these filters, along with their arguments, will be parsed from a json "
 
-__JSON_STRING_FILTER_DESCRIPTION = __GENERAL_JSON_FILTER_DESCRIPTION + "string. "
-__JSON_PATH_FILTER_DESCRIPTION = (
-    __GENERAL_JSON_FILTER_DESCRIPTION + "file. " +
+_JSON_STRING_FILTER_DESCRIPTION = _GENERAL_JSON_FILTER_DESCRIPTION + "string. "
+_JSON_PATH_FILTER_DESCRIPTION = (
+    _GENERAL_JSON_FILTER_DESCRIPTION + "file. " +
     "The path to said file can be either absolute or relative. " +
     f"The root for relative paths is the current working directory '{ os.getcwd() }'. "
 )
 
-__BASIC_FILTER_FORMAT = (
+_BASIC_FILTER_FORMAT = (
     "The argument should have one of the two following formats: " +
     "< --plugin-filter 'filter_file_path_1 arg1 arg2 kwarg1=1234 kwarg2=5678; filter_file_path_2 arg3' >, or alternatively " +
     "< --plugin-filter filter_file_path_1 arg1 arg2 kwarg1=1234 kwarg2=5678\\; filter_file_path_2 arg3 > " +
-    __COMMAND_DELIMITERS_WARNING +
+    _COMMAND_DELIMITERS_WARNING +
     "In both cases spaces serve as a separator for the parameters, " +
     "while semicolons are used to mark the end of a filter and its data, allowing the user to append a new one. "
 )
 
-__JSON_FILTER_FORMAT = (
+_JSON_FILTER_FORMAT = (
     "The JSON should comply with the following structural guidelines: "
     "The outermost layer must be a list, which is used to contain one or more dictionaries with the filter data. "
     "Each dictionary must contain a 'filter_file_path' key-value pair. "
@@ -35,23 +35,23 @@ __JSON_FILTER_FORMAT = (
     "If used, the args key must be linked to a list, while kwargs must be linked to a dictionary. "
 )
 
-__JSON_STRING_FILTER_EXAMPLE = (
+_JSON_STRING_FILTER_EXAMPLE = (
     "Examples: " +
     "without arguments: " +
     "< --plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\"}]' >, with the usage of kwargs: " +
     "< --plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' >, and with both args and kwargs: " +
     "< --plugin-filter-json-string '[{\"filter_file_path\": \"skip_matching_id\", \"args\": [123, 456], \"kwargs\": {\"id_filter\": \"sample.kernel.philosopher.semaphores\"}}]' >. " +
-    __COMMAND_DELIMITERS_WARNING
+    _COMMAND_DELIMITERS_WARNING
 )
 
-__JSON_PATH_FILTER_EXAMPLE = (
+_JSON_PATH_FILTER_EXAMPLE = (
     "Examples: " +
     "< --plugin-filter-json-path filter_details.json > (only for .json files located inside the current working directory tree), or also " +
     "< --plugin-filter-json-path '/home/user/filter_configs/filter_details.json' > " +
-    __COMMAND_DELIMITERS_WARNING
+    _COMMAND_DELIMITERS_WARNING
 )
 
-__GENERAL_ROOT_NOTES = (
+_GENERAL_ROOT_NOTES = (
     "NOTE: "
     "In order to search for the filter files, the script must be provided with a list of root directories. "
     "This list can be defined by creating a new environmental variable with the name 'TWISTER_PLUGIN_FILTER_ROOTS'. "
@@ -76,30 +76,30 @@ def add_arguments(case_select: _ArgumentGroup):
         "--plugin-filter",
         nargs="+",
         help=(
-            __GENERAL_FILTER_DESCRIPTION +
-            __BASIC_FILTER_FORMAT +
-            __GENERAL_ROOT_NOTES
+            _GENERAL_FILTER_DESCRIPTION +
+            _BASIC_FILTER_FORMAT +
+            _GENERAL_ROOT_NOTES
         )
     )
 
     plugin_filter_mex_group.add_argument(
         "--plugin-filter-json-string",
         help=(
-            __GENERAL_FILTER_DESCRIPTION +
-            __JSON_STRING_FILTER_DESCRIPTION +
-            __JSON_FILTER_FORMAT +
-            __JSON_STRING_FILTER_EXAMPLE +
-            __GENERAL_ROOT_NOTES
+            _GENERAL_FILTER_DESCRIPTION +
+            _JSON_STRING_FILTER_DESCRIPTION +
+            _JSON_FILTER_FORMAT +
+            _JSON_STRING_FILTER_EXAMPLE +
+            _GENERAL_ROOT_NOTES
         )
     )
 
     plugin_filter_mex_group.add_argument(
         "--plugin-filter-json-path",
         help=(
-            __GENERAL_FILTER_DESCRIPTION +
-            __JSON_PATH_FILTER_DESCRIPTION +
-            __JSON_FILTER_FORMAT +
-            __JSON_PATH_FILTER_EXAMPLE +
-            __GENERAL_ROOT_NOTES
+            _GENERAL_FILTER_DESCRIPTION +
+            _JSON_PATH_FILTER_DESCRIPTION +
+            _JSON_FILTER_FORMAT +
+            _JSON_PATH_FILTER_EXAMPLE +
+            _GENERAL_ROOT_NOTES
         )
     )

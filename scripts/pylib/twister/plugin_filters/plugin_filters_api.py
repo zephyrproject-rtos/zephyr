@@ -1,7 +1,6 @@
 from argparse import _ArgumentGroup
 
 from plugin_filters.logic import filter_handler
-from plugin_filters.filter_interface import FilterInterface
 from plugin_filters.args import args_descriptor, args_parser
 
 
@@ -17,5 +16,5 @@ def plugin_filter_get_filters(filter_dictionaries: list[dict], logger, filter_ro
     return filter_handler.get_filters(filter_dictionaries, logger, filter_roots)
 
 
-def plugin_filter_handle_suite(suite, plugin_filters: list[FilterInterface]):
+def plugin_filter_handle_suite(suite, plugin_filters):
     return filter_handler.handle_suite(suite, plugin_filters)

@@ -7,25 +7,25 @@ import importlib.util
 from plugin_filters.filter_interface import FilterInterface
 
 
-__DEFAULT_ROOT = 'plugin_filters.filters'
-__ROOTS_ENV_VARIABLE_NAME = "TWISTER_PLUGIN_FILTER_ROOTS"
+_DEFAULT_ROOT = 'plugin_filters.filters'
+_ROOTS_ENV_VARIABLE_NAME = "TWISTER_PLUGIN_FILTER_ROOTS"
 
 
-def __get_root_list():
-    root_list = os.getenv(__ROOTS_ENV_VARIABLE_NAME)
+def _get_root_list():
+    root_list = os.getenv(_ROOTS_ENV_VARIABLE_NAME)
 
     if root_list is None:
         root_list = []
     elif not isinstance(root_list, list):
         sys.exit("$The TWISTER_PLUGIN_FILTER_ROOTS environment variable must be a list")
 
-    if __DEFAULT_ROOT not in root_list:
-        root_list.append(__DEFAULT_ROOT)
+    if _DEFAULT_ROOT not in root_list:
+        root_list.append(_DEFAULT_ROOT)
 
     return root_list
 
 
-def __get_class(file_name, file_path, logger, class_name='Filter'):
+def _get_class(file_name, file_path, logger, class_name='Filter'):
     class_reference = None
 
     try:
@@ -56,7 +56,7 @@ def __get_class(file_name, file_path, logger, class_name='Filter'):
 
 def get_filters(filter_dictionaries: list[dict], logger, filter_roots: list[str] = None):
     plugin_filters: list[FilterInterface] = []
-    filter_roots = filter_roots if filter_roots is not None else __get_root_list()
+    filter_roots = filter_roots if filter_roots is not None else _get_root_list()
 
     if filter_dictionaries is None:
         return plugin_filters
@@ -74,7 +74,7 @@ def get_filters(filter_dictionaries: list[dict], logger, filter_roots: list[str]
                 root_found = False
 
                 for root in filter_roots:
-                    filter_obj = __get_class(file_path, root, logger)
+                    filter_obj = _get_class(file_path, root, logger)
 
                     if isinstance(filter_obj, FilterInterface):
                         filter_obj.setup(*args, **kwargs)
