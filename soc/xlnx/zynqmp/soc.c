@@ -10,6 +10,14 @@
 #include <zephyr/cache.h>
 
 #include <cmsis_core.h>
+#include "soc.h"
+
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	sys_write32(CRL_APB_RESET_CTRL_SRST_MASK, CRL_APB_RESET_CTRL);
+}
 
 void soc_reset_hook(void)
 {
