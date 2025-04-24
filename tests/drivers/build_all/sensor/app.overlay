@@ -205,3 +205,10 @@
 &test_spi_iis2dh {
 	status = "disabled";
 };
+
+&test_uart_pzem004t {
+	compatible = "zephyr,modbus-serial";
+	pzem004t: pzem004t {
+		modbus-address = <0xf8>;
+	};
+};
