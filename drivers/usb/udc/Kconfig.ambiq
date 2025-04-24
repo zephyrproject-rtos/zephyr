@@ -8,6 +8,7 @@ config UDC_AMBIQ
 	select GPIO
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_USB
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  Enable USB Device Controller Driver.
 
@@ -25,12 +26,34 @@ config UDC_AMBIQ_THREAD_PRIORITY
 	help
 	  AMBIQ driver thread priority.
 
-
 config UDC_AMBIQ_MAX_QMESSAGES
 	int "UDC AMBIQ maximum number of ISR event messages"
 	range 4 64
 	default 8
 	help
 	  AMBIQ maximum number of ISR event messages.
+
+choice UDC_AMBIQ_DMA_MODE
+	prompt "DMA mode for non-control USB endpoints"
+	default UDC_AMBIQ_DMA0_MODE
+	depends on SOC_SERIES_APOLLO5X
+
+config UDC_AMBIQ_DMA0_MODE
+	bool "DMA0 transfer mode"
+	help
+	  Select this option when synchronous endpoint is used.
+
+config UDC_AMBIQ_DMA1_MODE
+	bool "DMA1 transfer mode"
+	help
+	  This option gives best throughput when endpoint buffer is greater than Max
+	  Packet Size. However this option cannot be chosen when synchronous
+	  endpoint is used.
+
+config UDC_AMBIQ_PIO_MODE
+	bool "PIO transfer mode"
+	help
+	  Select this option when cache coherency handling is to be avoided.
+endchoice
 
 endif # UDC_AMBIQ
