@@ -1,6 +1,6 @@
 board:
   name: litex_vexriscv
   full_name: LiteX VexRiscv
-  vendor: litex
+  vendor: enjoydigital
   socs:
   - name: litex_vexriscv
