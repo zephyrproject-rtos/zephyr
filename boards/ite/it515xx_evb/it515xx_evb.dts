@@ -110,3 +110,12 @@
 	pinctrl-0 = <&adc0_ch3_gpi3_default>;
 	pinctrl-names = "default";
 };
+
+/* test fan tachometer sensor */
+&tach0 {
+	status = "okay";
+	input-pin = <IT51XXX_TACH_INPUT_PIN_A>;
+	pulses-per-round = <2>;
+	pinctrl-0 = <&tach0a_gpd6_default>;
+	pinctrl-names = "default";
+};
