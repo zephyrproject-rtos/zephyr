@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MCHP_SAM_PIT64B_TIMER
+	bool "Microchip SAM 64-bit Periodic Interval Timer (PIT64B)"
+	default y
+	depends on DT_HAS_MICROCHIP_SAM_PIT64B_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Microchip
+	  SAMA7G5 series PIT64B timer and provides the standard "system clock
+	  driver" interfaces.
