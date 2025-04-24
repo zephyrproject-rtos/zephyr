@@ -1,0 +1,6 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AI_WB2_12F
+	select SOC_BL602C00Q2I
