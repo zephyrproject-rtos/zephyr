@@ -1,0 +1,85 @@
+# Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ON Semiconductor LC709203F fuel gauge. For more info visit
+  https://www.onsemi.com/products/power-management/battery-management/battery-fuel-gauges/LC709204F
+
+compatible: "onnn,lc709203f"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  initial-rsoc:
+    type: boolean
+    description: |
+      The LSI can be forced to initialize RSOC by sending the he Initial RSOC Command.
+      The LSI initializes RSOC by the measured voltage at that time when the Initial
+      RSOC command is written
+
+  apa:
+    type: string
+    required: true
+    description: |
+      Adjustment Pack Application: Value for a battery type to improve the RSOC precision.
+      Typical values are provided and should be selected approximately.
+    enum:
+      - "100mAh"
+      - "200mAh"
+      - "500mAh"
+      - "1000mAh"
+      - "2000mAh"
+      - "3000mAh"
+
+  battery-profile:
+    type: int
+    description: |
+      The LSI contains a data file comprised of two battery profiles.
+      This register is used to select the battery profile to be used.
+      Register Number of the Parameter (0x1A) contains identity of the data file.
+      The Data file is loaded during final test depending on the part number ordered.
+      To decide which battery-profile should be used please refer to the LC709203F data sheet.
+    enum:
+      - 0x0
+      - 0x1
+
+  thermistor:
+    type: boolean
+    description: |
+      Specifies if the device is used with a thermistor or not.
+
+  thermistor-b-value:
+    type: int
+    description: |
+      Sets B-constant of the thermistor to be measured. Refer to
+      the specification sheet of the thermistor for the set value to used.
+      The default is set to 0x0D34 which is the initial value of the IC.
+      Note: This value will only be set if a thermistor is used.
+    default: 0x0D34
+
+  apt:
+    type: int
+    description: |
+      This is used to compensate for the delay of the thermistor
+      measurement caused by a capacitor across the thermistor.
+      The default value has been found to meet most of circuits
+      where a capacitor is not put. For details please refer to the
+      LC709203F data sheet.
+      Note: This value will only be set if a thermistor is used.
+    default: 0x1E
+
+  thermistor-mode:
+    type: int
+    description: |
+      This selects the Thermistor mode.
+      Thermistor mode (0x1): The LSI measures the attached thermistor and
+      loads the temperature into the Cell Temperature register.
+      I2C mode (0x0): the temperature is provided by the host processor.
+      The default is set to 0x1, because if a thermistor is used, the
+      thermistor mode should be selected.
+      Note: This value will only be necessary if a thermistor is used,
+      otherwise the initial value of the IC is 0x0 and setting is not necessary.
+    enum:
+      - 0x0
+      - 0x1
+    default: 0x1
