@@ -12,11 +12,12 @@ menuconfig I2C_DW
 config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	depends on I2C_DW
+	default 110 if I2C_RTS5912
 	default 32
 
 config I2C_DW_LPSS_DMA
 	bool "Use I2C integrated DMA for asynchronous transfer"
-	depends on I2C_DW
+	depends on (I2C_DW && !I2C_RTS5912)
 	select DMA
 	select DMA_INTEL_LPSS
 	help
@@ -28,3 +29,9 @@ config I2C_DW_RW_TIMEOUT_MS
 	int "Set the Read/Write timeout in milliseconds"
 	depends on I2C_DW
 	default 100
+
+config I2C_DW_EXTENDED_SUPPORT
+	bool "Extended DW features"
+	help
+	  This option enables support for the SCL/SDA timeout registers and some
+	  additional features of the DW I2C controller.

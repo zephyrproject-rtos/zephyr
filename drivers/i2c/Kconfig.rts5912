@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_RTS5912
+	bool "Realtek RTS5912 I2C support"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_I2C_ENABLED
+	select I2C_ALLOW_NO_STOP_TRANSACTIONS
+	select I2C_DW_EXTENDED_SUPPORT
+	help
+	  Enable the Realtek RTS5912 I2C driver
+
+config I2C_RTS5912_INIT_PRIORITY
+	int "RTS5912 Init priority"
+	depends on I2C_RTS5912
+	default 51
+	help
+	  I2C device driver initialization priority.
