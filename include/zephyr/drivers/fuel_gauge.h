@@ -240,8 +240,8 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev, fuel_gauge_pr
  * See fuel_gauge_get_buffer_property() for argument description
  */
 typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
-					       fuel_gauge_prop_t prop_type,
-					       void *dst, size_t dst_len);
+						fuel_gauge_prop_t prop_type, void *dst,
+						size_t dst_len);
 
 /**
  * @typedef fuel_gauge_battery_cutoff_t
@@ -392,8 +392,8 @@ __syscall int fuel_gauge_get_buffer_prop(const struct device *dev, fuel_gauge_pr
 					 void *dst, size_t dst_len);
 
 static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
-						   fuel_gauge_prop_t prop_type,
-						   void *dst, size_t dst_len)
+						    fuel_gauge_prop_t prop_type, void *dst,
+						    size_t dst_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
