@@ -299,7 +299,7 @@ static void test_broadcast_audio_create_inval(void)
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
 	struct bt_cap_initiator_broadcast_create_param create_param;
-	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_cap_broadcast_source *broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT + 1];
 	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG(
 		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
 		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_MEDIA);
@@ -323,7 +323,7 @@ static void test_broadcast_audio_create_inval(void)
 	create_param.encryption = false;
 
 	/* Test NULL parameters */
-	err = bt_cap_initiator_broadcast_audio_create(NULL, &broadcast_source);
+	err = bt_cap_initiator_broadcast_audio_create(NULL, &broadcast_sources[0]);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_broadcast_audio_create with NULL param did not fail\n");
 		return;
@@ -344,6 +344,38 @@ static void test_broadcast_audio_create_inval(void)
 		FAIL("bt_cap_initiator_broadcast_audio_create with invalid metadata did not "
 		     "fail\n");
 		return;
+	}
+	subgroup_param.codec_cfg = &broadcast_preset_16_2_1.codec_cfg;
+
+	/* Test allocating too many sources */
+	ARRAY_FOR_EACH(broadcast_sources, i) {
+		err = bt_cap_initiator_broadcast_audio_create(&create_param, &broadcast_sources[i]);
+		if (i < CONFIG_BT_BAP_BROADCAST_SRC_COUNT) {
+			if (err != 0) {
+				FAIL("[%zu]: bt_cap_initiator_broadcast_audio_create failed: %d\n",
+				     i, err);
+				return;
+			}
+		} else {
+			if (err != -ENOMEM) {
+				FAIL("bt_cap_initiator_broadcast_audio_create did not fail with "
+				     "-ENOMEM when allocating too many sources: %d\n",
+				     err);
+				return;
+			}
+		}
+	}
+
+	/* Cleanup the created broadcast sources */
+	ARRAY_FOR_EACH(broadcast_sources, i) {
+		if (i < CONFIG_BT_BAP_BROADCAST_SRC_COUNT) {
+			err = bt_cap_initiator_broadcast_audio_delete(broadcast_sources[i]);
+			if (err != 0) {
+				FAIL("[%zu]: bt_cap_initiator_broadcast_audio_delete failed: %d\n",
+				     i, err);
+				return;
+			}
+		}
 	}
 
 	/* Since we are just casting the CAP parameters to BAP parameters,

@@ -228,6 +228,7 @@ int bt_cap_initiator_broadcast_audio_create(
 	struct bt_bap_broadcast_source_stream_param
 		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_param bap_create_param = {0};
+	int err;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -243,6 +244,7 @@ int bt_cap_initiator_broadcast_audio_create(
 		return -EINVAL;
 	}
 
+	*broadcast_source = NULL;
 	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
 		if (broadcast_sources[i].bap_broadcast == NULL) {
 			*broadcast_source = &broadcast_sources[i];
@@ -250,11 +252,28 @@ int bt_cap_initiator_broadcast_audio_create(
 		}
 	}
 
+	if (*broadcast_source == NULL) {
+		LOG_DBG("Failed to allocate a new broadcast source");
+		return -ENOMEM;
+	}
+
 	cap_initiator_broadcast_to_bap_broadcast_param(param, &bap_create_param,
 						       bap_subgroup_params, bap_stream_params);
 
-	return bt_bap_broadcast_source_create(&bap_create_param,
-					      &(*broadcast_source)->bap_broadcast);
+	err = bt_bap_broadcast_source_create(&bap_create_param,
+					     &(*broadcast_source)->bap_broadcast);
+	if (err != 0) {
+		/* Return known errors */
+		if (err == -EINVAL || err == -ENOMEM) {
+			return err;
+		}
+
+		LOG_DBG("Unexpected error from bt_bap_broadcast_source_create: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 static struct bt_cap_broadcast_source *get_cap_broadcast_source_by_bap_broadcast_source(
