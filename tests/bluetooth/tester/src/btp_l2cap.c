@@ -372,8 +372,8 @@ static struct br_channel *get_free_br_channel(void)
 	return NULL;
 }
 
-static uint8_t br_connect(const struct btp_l2cap_connect_cmd *cp, struct btp_l2cap_connect_rp *rp,
-			  uint16_t *rsp_len)
+static uint8_t br_connect(const struct btp_l2cap_connect_cmd_common *cp, uint8_t mode,
+			  uint32_t options, struct btp_l2cap_connect_rp *rp, uint16_t *rsp_len)
 {
 	struct bt_conn *conn;
 	struct br_channel *br_chan = NULL;
@@ -391,6 +391,52 @@ static uint8_t br_connect(const struct btp_l2cap_connect_cmd *cp, struct btp_l2c
 	br_chan->br.chan.ops = &br_l2cap_ops;
 	br_chan->br.rx.mtu = sys_le16_to_cpu(cp->mtu);
 	rp->chan_id[0] = br_chan->chan_id;
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	switch (mode) {
+	case BTP_L2CAP_CONNECT_V2_MODE_RET:
+		br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+		br_chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_CONNECT_V2_MODE_FC:
+		br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+		br_chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_CONNECT_V2_MODE_ERET:
+		br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+		br_chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_CONNECT_V2_MODE_STREAM:
+		br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+		br_chan->br.rx.max_transmit = 0;
+		break;
+	case BTP_L2CAP_CONNECT_V2_MODE_BASIC:
+		br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+		br_chan->br.rx.max_transmit = 0;
+		break;
+	default:
+		goto fail;
+	}
+
+	if (options & BTP_L2CAP_CONNECT_V2_OPT_EXT_WIN_SIZE) {
+		br_chan->br.rx.extended_control = true;
+	} else {
+		br_chan->br.rx.extended_control = false;
+	}
+
+	if (options & BTP_L2CAP_CONNECT_V2_OPT_MODE_OPTIONAL) {
+		br_chan->br.rx.optional = true;
+	} else {
+		br_chan->br.rx.optional = false;
+	}
+
+	br_chan->br.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+	if (options & BTP_L2CAP_CONNECT_V2_OPT_NO_FCS) {
+		br_chan->br.rx.fcs = BT_L2CAP_BR_FCS_NO;
+	} else {
+		br_chan->br.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	err = bt_l2cap_chan_connect(conn, &br_chan->br.chan, sys_le16_to_cpu(cp->psm));
 	if (err < 0) {
@@ -411,17 +457,16 @@ fail:
 	return BTP_STATUS_FAILED;
 }
 #else
-static uint8_t br_connect(const struct btp_l2cap_connect_cmd *cp, struct btp_l2cap_connect_rp *rp,
-			  uint16_t *rsp_len)
+static uint8_t br_connect(const struct btp_l2cap_connect_cmd_common *cp, uint8_t mode,
+			  uint32_t options, struct btp_l2cap_connect_rp *rp, uint16_t *rsp_len)
 {
 	return BTP_STATUS_FAILED;
 }
 #endif /* CONFIG_BT_CLASSIC */
 
-static uint8_t connect(const void *cmd, uint16_t cmd_len,
-		       void *rsp, uint16_t *rsp_len)
+static uint8_t _connect(const struct btp_l2cap_connect_cmd_common *cp, uint8_t mode,
+			uint32_t options, void *rsp, uint16_t *rsp_len)
 {
-	const struct btp_l2cap_connect_cmd *cp = cmd;
 	struct btp_l2cap_connect_rp *rp = rsp;
 	struct bt_conn *conn;
 	struct channel *chan = NULL;
@@ -429,7 +474,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 	uint16_t mtu = sys_le16_to_cpu(cp->mtu);
 	uint16_t psm = sys_le16_to_cpu(cp->psm);
 	uint8_t i = 0;
-	bool ecfc = cp->options & BTP_L2CAP_CONNECT_OPT_ECFC;
+	bool ecfc = options & BTP_L2CAP_CONNECT_OPT_ECFC;
 	int err;
 
 	if (cp->num == 0 || cp->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
@@ -437,7 +482,11 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
-		return br_connect(cp, rp, rsp_len);
+		return br_connect(cp, mode, options, rp, rsp_len);
+	}
+
+	if (mode != BTP_L2CAP_CONNECT_V2_MODE_NONE) {
+		return BTP_STATUS_FAILED;
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -458,7 +507,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		rp->chan_id[i] = chan->chan_id;
 		allocated_channels[i] = &chan->le.chan;
 
-		chan->hold_credit = cp->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
+		chan->hold_credit = options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
 
 		bt_l2cap_chan_give_credits(&chan->le.chan, 1);
 	}
@@ -495,6 +544,21 @@ fail:
 		}
 	}
 	return BTP_STATUS_FAILED;
+}
+
+static uint8_t connect(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_connect_cmd *cp = cmd;
+
+	return _connect(&cp->common, BTP_L2CAP_CONNECT_V2_MODE_BASIC, (uint32_t)cp->options, rsp,
+			rsp_len);
+}
+
+static uint8_t connect_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_connect_v2_cmd *cp = cmd;
+
+	return _connect(&cp->common, cp->mode, cp->options, rsp, rsp_len);
 }
 
 #if defined(CONFIG_BT_CLASSIC)
@@ -987,6 +1051,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_L2CAP_CONNECT,
 		.expect_len = sizeof(struct btp_l2cap_connect_cmd),
 		.func = connect,
+	},
+	{
+		.opcode = BTP_L2CAP_CONNECT_V2,
+		.expect_len = sizeof(struct btp_l2cap_connect_v2_cmd),
+		.func = connect_v2,
 	},
 	{
 		.opcode = BTP_L2CAP_DISCONNECT,
