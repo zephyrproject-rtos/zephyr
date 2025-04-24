@@ -1,0 +1,6 @@
+board:
+  name: nucleo_u385rg
+  full_name: Nucleo U385RG
+  vendor: st
+  socs:
+    - name: stm32u385xx
