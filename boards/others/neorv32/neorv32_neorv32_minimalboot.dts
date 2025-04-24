@@ -8,6 +8,7 @@
 
 #include <neorv32.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NEORV32 MinimalBoot";
@@ -21,6 +22,10 @@
 		pwm-led0 = &pwm_led0;
 		pwm-led1 = &pwm_led1;
 		pwm-led2 = &pwm_led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		sw3 = &btn2;
+		sw4 = &btn3;
 	};
 
 	chosen {
@@ -52,6 +57,34 @@
 		led3: led3 {
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 			label = "LED_3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		btn0: btn0 {
+			label = "BTN0";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn1 {
+			label = "BTN1";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		btn2: btn2 {
+			label = "BTN2";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		btn3: btn3 {
+			label = "BTN3";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 
