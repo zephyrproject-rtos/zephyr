@@ -66,6 +66,28 @@
 			maximum-speed = "high-speed";
 		};
 	};
+
+	fstab {
+		compatible = "zephyr,fstab";
+
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+			automount;
+		};
+	};
+
+	mtp_store0 {
+		status = "okay";
+		compatible = "zephyr,mtp";
+		fstab-entry = <&lfs1>;
+	};
 };
 
 &zephyr_udc0 {
