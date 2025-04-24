@@ -781,7 +781,7 @@ ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd
