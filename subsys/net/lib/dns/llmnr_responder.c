@@ -117,7 +117,7 @@ static void create_ipv4_dst_addr(struct sockaddr_in *src_addr,
 #endif
 
 static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
-				      uint32_t mgmt_event, struct net_if *iface)
+				      uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)

@@ -12,7 +12,6 @@
 LOG_MODULE_REGISTER(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_if.h>
 #include "pmtu.h"

@@ -101,7 +101,7 @@ static void net_iface_init(struct net_if *iface)
 
 #ifdef CONFIG_NET_MGMT_EVENT
 static void hostname_changed(struct net_mgmt_event_callback *cb,
-			     uint32_t mgmt_event, struct net_if *iface)
+			     uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_HOSTNAME_CHANGED) {
 #ifdef CONFIG_NET_MGMT_EVENT_INFO

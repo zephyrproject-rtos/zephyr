@@ -71,7 +71,7 @@ static void quit(void)
 }
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	static bool dhcpv4_done;
 

@@ -474,7 +474,7 @@ static void tx_handler(void *p1, void *p2, void *p3)
 	}
 }
 
-static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				     struct net_if *iface)
 {
 	struct ppp_context *ctx;

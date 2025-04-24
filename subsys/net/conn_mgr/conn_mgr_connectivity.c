@@ -315,7 +315,7 @@ static void conn_mgr_conn_handle_iface_down(struct net_if *iface)
 }
 
 static struct net_mgmt_event_callback conn_mgr_conn_iface_cb;
-static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 					struct net_if *iface)
 {
 	if ((mgmt_event & CONN_MGR_CONN_IFACE_EVENTS_MASK) != mgmt_event) {
@@ -333,7 +333,7 @@ static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint
 }
 
 static struct net_mgmt_event_callback conn_mgr_conn_self_cb;
-static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				       struct net_if *iface)
 {
 	if ((mgmt_event & CONN_MGR_CONN_SELF_EVENTS_MASK) != mgmt_event) {

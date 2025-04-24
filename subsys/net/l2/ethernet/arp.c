@@ -569,7 +569,7 @@ static void notify_all_ipv4_addr(struct net_if *iface)
 }
 
 static void iface_event_handler(struct net_mgmt_event_callback *cb,
-				uint32_t mgmt_event, struct net_if *iface)
+				uint64_t mgmt_event, struct net_if *iface)
 {
 	ARG_UNUSED(cb);
 
@@ -586,7 +586,7 @@ static void iface_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void ipv4_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event, struct net_if *iface)
+			       uint64_t mgmt_event, struct net_if *iface)
 {
 	struct in_addr *ipaddr;
 
