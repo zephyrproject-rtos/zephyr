@@ -292,8 +292,8 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev, uin
 #endif /* !defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT */
 #endif /* !(defined(CONFIG_PINCTRL_NXP_IOCON)) */
 
-#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
-		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
+#if (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT) || \
+		(!defined(FSL_FEATURE_SOC_PORT_COUNT))
 
 #define GPIO_MCUX_INTERRUPT_DISABLED     0
 #define GPIO_MCUX_INTERRUPT_LOGIC_0      0x8
@@ -335,7 +335,7 @@ static uint32_t get_gpio_icr_irqc_value_from_flags(const struct device *dev, uin
 
 	return GPIO_ICR_IRQC(gpio_interrupt);
 }
-#endif /* (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) */
+#endif /* (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) */
 
 static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -361,12 +361,12 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		return -ENOTSUP;
 	}
 
-#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
-		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
+#if (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT) || \
+		(!defined(FSL_FEATURE_SOC_PORT_COUNT))
 	uint32_t icr = get_gpio_icr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	gpio_base->ICR[pin] = (gpio_base->ICR[pin] & ~GPIO_ICR_IRQC_MASK) | icr;
-#elif !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+#else
 	uint32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
@@ -389,20 +389,17 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	struct gpio_mcux_data *data = dev->data;
 	uint32_t int_status;
 
-#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
-		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
+#if (defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT) || \
+		(!defined(FSL_FEATURE_SOC_PORT_COUNT))
 	int_status = config->gpio_base->ISFR[0];
 
 	/* Clear the gpio interrupts */
 	config->gpio_base->ISFR[0] = int_status;
-#elif !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+#else
 	int_status = config->port_base->ISFR;
 
 	/* Clear the port interrupts */
 	config->port_base->ISFR = int_status;
-#else
-	int_status = 0U;
-	ARG_UNUSED(config);
 #endif /* !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) */
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
