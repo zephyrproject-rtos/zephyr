@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
 
 /* nPM1300 LED base address */
 #define NPM_LED_BASE 0x0AU

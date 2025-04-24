@@ -4,4 +4,4 @@
 
 zephyr_library()
 
-zephyr_library_sources(npm1300_charger.c)
+zephyr_library_sources(npm13xx_charger.c)

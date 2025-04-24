@@ -7,10 +7,10 @@
 
 #include <math.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/linear_range.h>
-#include <zephyr/drivers/sensor/npm1300_charger.h>
+#include <zephyr/drivers/sensor/npm13xx_charger.h>
 
 struct npm1300_charger_config {
 	const struct device *mfd;
