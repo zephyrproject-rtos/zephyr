@@ -57,6 +57,11 @@ enum hawkbit_event_type {
 	HAWKBIT_EVENT_END_RUN,
 	/** Event triggered before hawkBit does a reboot */
 	HAWKBIT_EVENT_BEFORE_REBOOT,
+	/**
+	 * Event triggered during initialisation when the current image is confirmed and the old
+	 * image is erased
+	 */
+	HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE,
 };
 
 struct hawkbit_event_callback;
