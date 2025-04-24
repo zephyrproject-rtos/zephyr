@@ -258,6 +258,8 @@ int sim7080_pdp_deactivate(void)
 		ret = -EIO;
 	}
 
+	k_work_cancel_delayable(&mdata.rssi_query_work);
+
 	LOG_INF("PDP context deactivated");
 	sim7080_change_state(SIM7080_STATE_IDLE);
 
