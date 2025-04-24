@@ -644,6 +644,25 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 		return;
 	}
 
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR) &&
+	    (evt->authentication > BT_HCI_NO_BONDING_MITM) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 6.0 | Vol 3, Part C, section 9.4.2.
+		 * A device in the non-bondable mode does not allow a bond to be created with a
+		 * peer device.
+		 *
+		 * If the local is SSP initiator and non-bondable mode, and the bonding is required
+		 * by peer device, reports the pairing failure and disconnects the ACL connection
+		 * with error `BT_HCI_ERR_AUTH_FAIL`.
+		 */
+		LOG_WRN("Bonding flag mismatch (initiator:false != responder:true)");
+		ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		bt_conn_unref(conn);
+		return;
+	}
+
 	conn->br.remote_io_capa = evt->capability;
 	conn->br.remote_auth = evt->authentication;
 	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
