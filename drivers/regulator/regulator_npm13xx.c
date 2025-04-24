@@ -10,8 +10,8 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/drivers/mfd/npm1300.h>
-#include <zephyr/dt-bindings/regulator/npm1300.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
 
