@@ -157,7 +157,7 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
-				     uint32_t mgmt_event, struct net_if *iface)
+				     uint64_t mgmt_event, struct net_if *iface)
 
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
@@ -958,7 +958,7 @@ static void probing(struct k_work *work)
 }
 
 static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				    uint64_t mgmt_event, struct net_if *iface)
 {
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	bool probe_started = false;
@@ -1110,7 +1110,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				    uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		/* Clear the failed probes counter so that we can start
@@ -1823,7 +1823,7 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	uint32_t flags = NET_EVENT_IF_UP;
+	uint64_t flags = NET_EVENT_IF_UP;
 	external_records = NULL;
 	external_records_count = 0;
 

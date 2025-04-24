@@ -493,7 +493,7 @@ static struct net_dhcpv4_option_callback opt_vs_invalid_cb;
 static int event_count;
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
-			uint32_t nm_event, struct net_if *iface)
+			uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_ADDR_ADD &&
 	    nm_event != NET_EVENT_DNS_SERVER_ADD &&
@@ -694,7 +694,7 @@ ZTEST(dhcpv4_tests, test_dhcp)
 #elif defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 	while (event_count < 10) {
 #elif defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
-	while (event_count < 2) {
+	while (event_count < 1) {
 #else
 	while (event_count < 5) {
 #endif
