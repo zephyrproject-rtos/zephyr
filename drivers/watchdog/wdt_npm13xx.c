@@ -10,8 +10,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/watchdog.h>
-#include <zephyr/drivers/mfd/npm1300.h>
-#include <zephyr/dt-bindings/gpio/nordic-npm1300-gpio.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
+#include <zephyr/dt-bindings/gpio/nordic-npm13xx-gpio.h>
 
 /* nPM1300 TIMER base address */
 #define TIME_BASE 0x07U

@@ -9,10 +9,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/sensor/npm1300_charger.h>
+#include <zephyr/drivers/sensor/npm13xx_charger.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/dt-bindings/regulator/npm1300.h>
-#include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/sys/printk.h>
 #include <getopt.h>
 
