@@ -140,6 +140,7 @@
 			compatible = "neorv32,gpio";
 			status = "disabled";
 			reg = <0xfffc0000 0x10000>;
+			interrupts = <8>;
 			syscon = <&sysinfo>;
 			gpio-controller;
 			ngpios = <32>;
