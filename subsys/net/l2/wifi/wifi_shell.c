@@ -3900,8 +3900,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"<id0> <mantissa0> <exponent0> <nominal_wake0>: 64-255\n"
 		"<id1> <mantissa1> <exponent1> <nominal_wake1>: 64-255\n"
 		"<idx> <mantissax> <exponentx> <nominal_wakex>: 64-255\n"
-		" The total number of '0, 1, ..., x' is session_num\n",
-		"[-i, --iface=<interface index>] : Interface index.\n"
+		" The total number of '0, 1, ..., x' is session_num\n"
+		"[-i, --iface=<interface index>] : Interface index.\n",
 		cmd_wifi_btwt_setup,
 		13, 2),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
