@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_NPM1300_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MFD_NPM1300_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_NPM13XX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MFD_NPM13XX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,4 +163,4 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_NPM1300_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_NPM13XX_H_ */
