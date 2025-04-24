@@ -1,0 +1,100 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <arm/armv7-a.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/microchip_sam_pmc.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Microchip SAMA7G5 family SoC";
+	compatible = "microchip,sama7g5";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0>;
+		};
+	};
+
+	clocks {
+		main_xtal: main_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+
+		slow_xtal: slow_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		clk32k: clock-controller@e001d050 {
+			compatible = "microchip,sama7g5-sckc", "microchip,sam9x60-sckc";
+			reg = <0xe001d050 0x4>;
+			clocks = <&slow_xtal>;
+			#clock-cells = <1>;
+		};
+
+		flx3: flexcom@e1824000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe1824000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe1824000 0x800>;
+			status = "disabled";
+
+			usart3: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		gic: interrupt-controller@e8c11000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0xe8c11000 0x1000>, <0xe8c12000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+		};
+
+		sram: memory@100000 {
+			compatible = "mmio-sram";
+			reg = <0x00100000 DT_SIZE_K(128)>;
+		};
+
+		pinctrl: pinctrl@e0014000 {
+			compatible = "microchip,sama7g5-pinctrl";
+			reg = <0xe0014000 0x800>;
+		};
+
+		pit64b0: timer@e1800000 {
+			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
+			reg = <0xe1800000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 70>, <&pmc PMC_TYPE_GCK 70>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		pmc: clock-controller@e0018000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xe0018000 0x200>;
+			#clock-cells = <2>;
+			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
+			clock-names = "td_slck", "md_slck", "main_xtal";
+		};
+	};
+};
