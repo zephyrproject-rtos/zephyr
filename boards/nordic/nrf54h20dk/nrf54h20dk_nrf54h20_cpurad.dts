@@ -28,6 +28,7 @@
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
+
 	aliases {
 		ipc-to-cpusys = &cpurad_cpusys_ipc;
 		resetinfo = &cpurad_resetinfo;
