@@ -76,6 +76,9 @@ Boards
   version 1.1.0 (July 2023). The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``)
   is recommended and it could be done without any change.
 
+* Espressif boards ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover`` shared almost identical features.
+  The differences are covered by the Kconfig options so both boards were merged into ``esp32_devkitc``.
+
 Device Drivers and Devicetree
 *****************************
 
