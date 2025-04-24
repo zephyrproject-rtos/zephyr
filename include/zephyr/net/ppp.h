@@ -571,11 +571,16 @@ void net_ppp_init(struct net_if *iface);
 #define NET_PPP_EVENT	(NET_PPP_BASE | NET_MGMT_EVENT_BIT)
 
 enum net_event_ppp_cmd {
-	NET_EVENT_PPP_CMD_CARRIER_ON = 1,
+	NET_EVENT_PPP_CMD_CARRIER_ON,
 	NET_EVENT_PPP_CMD_CARRIER_OFF,
 	NET_EVENT_PPP_CMD_PHASE_RUNNING,
 	NET_EVENT_PPP_CMD_PHASE_DEAD,
+
+	NET_EVENT_PPP_CMD_MAX
 };
+
+BUILD_ASSERT(NET_EVENT_PPP_CMD_MAX <= NET_MGMT_MAX_COMMANDS
+	     "Number of events in net_event_ppp_cmd exceeds the limit");
 
 struct net_if;
 
@@ -583,19 +588,19 @@ struct net_if;
 
 /** Event emitted when PPP carrier is on */
 #define NET_EVENT_PPP_CARRIER_ON					\
-	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)
+	(NET_PPP_EVENT | BIT64(NET_EVENT_PPP_CMD_CARRIER_ON))
 
 /** Event emitted when PPP carrier is off */
 #define NET_EVENT_PPP_CARRIER_OFF					\
-	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
+	(NET_PPP_EVENT | BIT64(NET_EVENT_PPP_CMD_CARRIER_OFF))
 
 /** Event emitted when PPP goes into running phase */
 #define NET_EVENT_PPP_PHASE_RUNNING					\
-	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
+	(NET_PPP_EVENT | BIT64(NET_EVENT_PPP_CMD_PHASE_RUNNING))
 
 /** Event emitted when PPP goes into dead phase */
 #define NET_EVENT_PPP_PHASE_DEAD					\
-	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
+	(NET_PPP_EVENT | BIT64(NET_EVENT_PPP_CMD_PHASE_DEAD))
 
 /**
  * @brief Raise CARRIER_ON event when PPP is connected.
