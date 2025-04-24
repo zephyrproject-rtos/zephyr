@@ -133,18 +133,36 @@ int mdm_sim7080_power_on(void);
 int mdm_sim7080_power_off(void);
 
 /**
- * @brief Starts the modem in network operation mode.
+ * @brief Activates the network operation mode of the modem.
+ *
+ * @return 0 on success. Otherwise <0 is returned.
+ * @note The modem needs to be booted for this function to work.
+ * 		 Concurrent use of network and gnss is not possible.
+ */
+int mdm_sim7080_start_network(void);
+
+/**
+ * @brief Stops the networking operation mode of the modem.
  *
  * @return 0 on success. Otherwise <0 is returned.
  */
-int mdm_sim7080_start_network(void);
+int mdm_sim7080_stop_network(void);
 
 /**
  * @brief Starts the modem in gnss operation mode.
  *
  * @return 0 on success. Otherwise <0 is returned.
+ * @note The modem needs to be booted for this function to work.
+ * 		 Concurrent use of network and gnss is not possible.
  */
 int mdm_sim7080_start_gnss(void);
+
+/**
+ * @brief Stops the modem gnss operation mode.
+ *
+ * @return 0 on success. Otherwise <0 is returned.
+ */
+int mdm_sim7080_stop_gnss(void);
 
 /**
  * @brief Query gnss position form the modem.
