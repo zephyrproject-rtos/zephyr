@@ -2198,7 +2198,7 @@ static void dhcpv6_timeout(struct k_work *work)
 }
 
 static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint32_t mgmt_event, struct net_if *iface)
+				       uint64_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 

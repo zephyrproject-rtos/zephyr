@@ -30,7 +30,7 @@ static uint8_t ntp_server[4];
 static struct net_mgmt_event_callback mgmt_cb;
 static struct net_dhcpv4_option_callback dhcp_cb;
 
-static void ipv4_event(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void ipv4_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 		       struct net_if *iface)
 {
 	if ((mgmt_event != NET_EVENT_IPV4_ADDR_ADD) ||
