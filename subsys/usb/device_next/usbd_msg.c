@@ -52,6 +52,18 @@ static inline void usbd_msg_pub(struct usbd_context *const ctx,
 	}
 }
 
+static void msg_cb_call(struct usbd_context *const ctx,
+			const struct usbd_msg *const msg)
+{
+	STRUCT_SECTION_FOREACH(usbd_msg_cb, cb) {
+		if (cb->uds_ctx == NULL || cb->uds_ctx != ctx) {
+			continue;
+		}
+
+		cb->cb(ctx, msg);
+	}
+}
+
 static void msg_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -78,33 +90,13 @@ static void msg_work_handler(struct k_work *work)
 
 	if (node != NULL) {
 		m_pkt = SYS_SLIST_CONTAINER(node, m_pkt, node);
-		m_pkt->ctx->msg_cb(m_pkt->ctx, &m_pkt->msg);
+		msg_cb_call(m_pkt->ctx, &m_pkt->msg);
 		k_mem_slab_free(&usbd_msg_slab, (void *)m_pkt);
 	}
 
 	if (!sys_slist_is_empty(&msg_list)) {
 		(void)k_work_schedule(dwork, K_NO_WAIT);
 	}
-}
-
-int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
-			 const usbd_msg_cb_t cb)
-{
-	int ret = 0;
-
-	usbd_device_lock(uds_ctx);
-
-	if (uds_ctx->msg_cb != NULL) {
-		ret = -EALREADY;
-		goto register_cb_exit;
-	}
-
-	uds_ctx->msg_cb = cb;
-
-register_cb_exit:
-	usbd_device_unlock(uds_ctx);
-
-	return ret;
 }
 
 void usbd_msg_pub_simple(struct usbd_context *const ctx,
@@ -115,9 +107,7 @@ void usbd_msg_pub_simple(struct usbd_context *const ctx,
 		.status = status,
 	};
 
-	if (ctx->msg_cb != NULL) {
-		usbd_msg_pub(ctx, msg);
-	}
+	usbd_msg_pub(ctx, msg);
 }
 
 void usbd_msg_pub_device(struct usbd_context *const ctx,
@@ -128,7 +118,5 @@ void usbd_msg_pub_device(struct usbd_context *const ctx,
 		.dev = dev,
 	};
 
-	if (ctx->msg_cb != NULL) {
-		usbd_msg_pub(ctx, msg);
-	}
+	usbd_msg_pub(ctx, msg);
 }

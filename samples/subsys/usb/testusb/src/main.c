@@ -15,7 +15,7 @@ int main(void)
 	struct usbd_context *sample_usbd;
 	int ret;
 
-	sample_usbd = sample_usbd_setup_device(NULL);
+	sample_usbd = sample_usbd_setup_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to setup USB device");
 		return -ENODEV;

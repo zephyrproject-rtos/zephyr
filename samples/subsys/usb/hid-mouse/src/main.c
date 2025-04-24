@@ -105,7 +105,7 @@ static int enable_usb_device_next(void)
 	struct usbd_context *sample_usbd;
 	int err;
 
-	sample_usbd = sample_usbd_init_device(NULL);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;

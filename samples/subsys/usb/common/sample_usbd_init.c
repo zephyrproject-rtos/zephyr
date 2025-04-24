@@ -94,7 +94,7 @@ static void sample_fix_code_triple(struct usbd_context *uds_ctx,
 	}
 }
 
-struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
+struct usbd_context *sample_usbd_setup_device(void)
 {
 	int err;
 
@@ -165,16 +165,6 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
 	usbd_self_powered(&sample_usbd, attributes & USB_SCD_SELF_POWERED);
 
-	if (msg_cb != NULL) {
-		/* doc device init-and-msg start */
-		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
-		if (err) {
-			LOG_ERR("Failed to register message callback");
-			return NULL;
-		}
-		/* doc device init-and-msg end */
-	}
-
 	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
 		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_FS, 0x0201);
 		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_HS, 0x0201);
@@ -189,11 +179,11 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	return &sample_usbd;
 }
 
-struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
+struct usbd_context *sample_usbd_init_device(void)
 {
 	int err;
 
-	if (sample_usbd_setup_device(msg_cb) == NULL) {
+	if (sample_usbd_setup_device() == NULL) {
 		return NULL;
 	}
 

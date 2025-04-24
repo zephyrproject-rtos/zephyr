@@ -174,16 +174,10 @@ enumerating the device. The application can disable the USB device using
 USB Message notifications
 =========================
 
-The application can register a callback using :c:func:`usbd_msg_register_cb` to
+The application can register a callback using :c:macro:`USBD_MSG_REGISTER_CB` to
 receive message notification from the USB device support subsystem. The
 messages are mostly about the common device state changes, and a few specific
 types from the USB CDC ACM implementation.
-
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
-   :language: c
-   :dedent:
-   :start-after: doc device init-and-msg start
-   :end-before: doc device init-and-msg end
 
 The helper function :c:func:`usbd_msg_type_string()` can be used to convert
 :c:enumerator:`usbd_msg_type` to a human readable form for logging.

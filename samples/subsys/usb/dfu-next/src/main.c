@@ -204,6 +204,8 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 	}
 }
 
+USBD_MSG_REGISTER_CB(&dfu_usbd, msg_cb);
+
 static void switch_to_dfu_mode(struct usbd_context *const ctx)
 {
 	int err;
@@ -254,12 +256,6 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 		return;
 	}
 
-	err = usbd_msg_register_cb(&dfu_usbd, msg_cb);
-	if (err) {
-		LOG_ERR("Failed to register message callback");
-		return;
-	}
-
 	err = usbd_enable(&dfu_usbd);
 	if (err) {
 		LOG_ERR("Failed to enable USB device support");
@@ -271,7 +267,7 @@ int main(void)
 	struct usbd_context *sample_usbd;
 	int ret;
 
-	sample_usbd = sample_usbd_init_device(msg_cb);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;
