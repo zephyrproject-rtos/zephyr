@@ -869,6 +869,17 @@ static int lsm6dso_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
+#ifdef CONFIG_LSM6DSO_TAP
+#define LSM6DSO_CONFIG_TAP(inst)					\
+	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
+	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
+	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define LSM6DSO_CONFIG_TAP(inst)
+#endif /* CONFIG_LSM6DSO_TAP */
+
 #ifdef CONFIG_LSM6DSO_TRIGGER
 #define LSM6DSO_CFG_IRQ(inst)						\
 	.trig_enabled = true,						\
@@ -892,7 +903,8 @@ static int lsm6dso_init(const struct device *dev)
 	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
+	LSM6DSO_CONFIG_TAP(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO_CFG_IRQ(inst)), ())
 
