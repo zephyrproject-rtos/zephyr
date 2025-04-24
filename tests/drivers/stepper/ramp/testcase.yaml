@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Andre Stefanov
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - ramp
+tests:
+  drivers.stepper.ramp:
+    platform_allow:
+      - qemu_x86_64/atom
+      - native_sim/native/64
