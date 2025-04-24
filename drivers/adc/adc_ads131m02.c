@@ -590,6 +590,7 @@ static int ads131m02_pm(const struct device *dev, uint16_t cmd)
 static int ads131m02_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+	int ret;
 	const struct ads131m02_config *cfg = dev->config;
 
 	switch (action) {
