@@ -864,6 +864,8 @@ int hawkbit_init(void)
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
 		}
+
+		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);
 	}
 	hawkbit_initialized = true;
 
