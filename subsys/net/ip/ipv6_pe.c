@@ -501,7 +501,7 @@ static void ipv6_pe_recheck_filters(bool is_denylist)
 
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 static void send_filter_event(struct in6_addr *addr, bool is_denylist,
-			      int event_type)
+			      uint64_t event_type)
 {
 	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
 		struct net_event_ipv6_pe_filter info;

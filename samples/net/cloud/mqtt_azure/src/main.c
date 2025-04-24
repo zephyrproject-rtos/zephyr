@@ -487,7 +487,7 @@ static void abort_mqtt_connection(void)
 }
 
 static void l4_event_handler(struct net_mgmt_event_callback *cb,
-			     uint32_t mgmt_event, struct net_if *iface)
+			     uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & L4_EVENT_MASK) != mgmt_event) {
 		return;

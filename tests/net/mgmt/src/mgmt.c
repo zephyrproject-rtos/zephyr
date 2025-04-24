@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 	MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
 
 /* Notifier infra */
-static uint32_t event2throw;
+static uint64_t event2throw;
 static uint32_t throw_times;
 static uint32_t throw_sleep;
 static bool with_info;
@@ -38,7 +38,7 @@ static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
 /* Receiver infra */
-static uint32_t rx_event;
+static uint64_t rx_event;
 static uint32_t rx_calls;
 static size_t info_length_in_test;
 static struct net_mgmt_event_callback rx_cb;
@@ -49,7 +49,7 @@ static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 
 static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
-static int test_mgmt_request(uint32_t mgmt_request,
+static int test_mgmt_request(uint64_t mgmt_request,
 			     struct net_if *iface, void *data, uint32_t len)
 {
 	uint32_t *test_data = data;
@@ -67,14 +67,14 @@ static int test_mgmt_request(uint32_t mgmt_request,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(TEST_MGMT_REQUEST, test_mgmt_request);
 
-static void test_mgmt_event_handler(uint32_t mgmt_event, struct net_if *iface, void *info,
+static void test_mgmt_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 				    size_t info_length, void *user_data)
 {
 	if (!with_static) {
 		return;
 	}
 
-	TC_PRINT("\t\tReceived static event 0x%08X\n", mgmt_event);
+	TC_PRINT("\t\tReceived static event 0x%" PRIx64 "\n", mgmt_event);
 
 	ARG_UNUSED(user_data);
 
@@ -144,7 +144,7 @@ static void thrower_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sem_take(&thrower_lock, K_FOREVER);
 
-		TC_PRINT("\tThrowing event 0x%08X %u times\n",
+		TC_PRINT("\tThrowing event 0x%" PRIx64 " %u times\n",
 			 event2throw, throw_times);
 
 		for (; throw_times; throw_times--) {
@@ -168,9 +168,9 @@ static void thrower_thread(void *p1, void *p2, void *p3)
 }
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
-			uint32_t nm_event, struct net_if *iface)
+			uint64_t nm_event, struct net_if *iface)
 {
-	TC_PRINT("\t\tReceived event 0x%08X\n", nm_event);
+	TC_PRINT("\t\tReceived event 0x%" PRIx64 "\n", nm_event);
 
 	if (with_info && cb->info) {
 		if (cb->info_length != info_length_in_test) {
@@ -208,14 +208,15 @@ static int sending_event(uint32_t times, bool receiver, bool info)
 	k_msleep(THREAD_SLEEP);
 
 	if (receiver) {
-		TC_PRINT("\tReceived 0x%08X %u times\n",
+		TC_PRINT("\tReceived 0x%" PRIx64 " %u times\n",
 			 rx_event, rx_calls);
 
 		zassert_equal(rx_event, event2throw, "rx_event check failed");
 		zassert_equal(rx_calls, times, "rx_calls check failed");
 
 		net_mgmt_del_event_callback(&rx_cb);
-		rx_event = rx_calls = 0U;
+		rx_event = 0ULL;
+		rx_calls = 0U;
 	}
 
 	return TC_PASS;
@@ -233,7 +234,7 @@ static int test_sending_event_info(uint32_t times, bool receiver)
 
 static int test_synchronous_event_listener(uint32_t times, bool on_iface)
 {
-	uint32_t event_mask;
+	uint64_t event_mask;
 	int ret;
 
 	TC_PRINT("- Synchronous event listener %s\n",
@@ -283,13 +284,14 @@ static int test_static_event_listener(uint32_t times, bool info)
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
 
-	TC_PRINT("\tReceived 0x%08X %u times\n",
+	TC_PRINT("\tReceived 0x%" PRIx64 " %u times\n",
 			rx_event, rx_calls);
 
 	zassert_equal(rx_event, event2throw, "rx_event check failed");
 	zassert_equal(rx_calls, times, "rx_calls check failed");
 
-	rx_event = rx_calls = 0U;
+	rx_event = 0ULL;
+	rx_calls = 0U;
 	with_static = false;
 
 	return TC_PASS;
@@ -297,12 +299,12 @@ static int test_static_event_listener(uint32_t times, bool info)
 
 static void initialize_event_tests(void)
 {
-	event2throw = 0U;
+	event2throw = 0ULL;
 	throw_times = 0U;
 	throw_sleep = 0;
 	with_info = false;
 
-	rx_event = 0U;
+	rx_event = 0ULL;
 	rx_calls = 0U;
 
 	k_sem_init(&thrower_lock, 0, UINT_MAX);
@@ -318,9 +320,9 @@ static void initialize_event_tests(void)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
-static int test_core_event(uint32_t event, bool (*func)(void))
+static int test_core_event(uint64_t event, bool (*func)(void))
 {
-	TC_PRINT("- Triggering core event: 0x%08X\n", event);
+	TC_PRINT("- Triggering core event: 0x%" PRIx64 "\n", event);
 
 	info_length_in_test = sizeof(struct in6_addr);
 	memcpy(info_data, &addr6, sizeof(addr6));
@@ -336,10 +338,11 @@ static int test_core_event(uint32_t event, bool (*func)(void))
 
 	zassert_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
 	zassert_equal(rx_event, event, "rx_event check failed, "
-		      "0x%08x vs 0x%08x", rx_event, event);
+		      "0x%" PRIx64 " vs 0x%" PRIx64, rx_event, event);
 
 	net_mgmt_del_event_callback(&rx_cb);
-	rx_event = rx_calls = 0U;
+	rx_event = 0ULL;
+	rx_calls = 0U;
 
 	return TC_PASS;
 }
@@ -426,7 +429,7 @@ ZTEST(mgmt_fn_test_suite, test_mgmt)
 static K_SEM_DEFINE(wait_for_event_processing, 0, 1);
 
 static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				   uint64_t mgmt_event, struct net_if *iface)
 {
 	static int cb_call_count;
 

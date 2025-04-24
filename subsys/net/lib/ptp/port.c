@@ -964,7 +964,7 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 }
 
 static void port_link_monitor(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	ARG_UNUSED(cb);

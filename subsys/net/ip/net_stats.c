@@ -252,7 +252,7 @@ void net_print_statistics(void)
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
+static int net_stats_get(uint64_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;

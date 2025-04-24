@@ -74,7 +74,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
-static int ieee802154_cancel_scan(uint32_t mgmt_request, struct net_if *iface,
+static int ieee802154_cancel_scan(uint64_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -94,7 +94,7 @@ static int ieee802154_cancel_scan(uint32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_CANCEL_SCAN,
 				  ieee802154_cancel_scan);
 
-static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
+static int ieee802154_scan(uint64_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
 	const struct ieee802154_phy_supported_channels *supported_channels;
@@ -437,7 +437,7 @@ out:
 	return NET_DROP;
 }
 
-static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
+static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 				void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -631,7 +631,7 @@ out:
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE,
 				  ieee802154_associate);
 
-static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
+static int ieee802154_disassociate(uint64_t mgmt_request, struct net_if *iface,
 				   void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -706,7 +706,7 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_DISASSOCIATE,
 				  ieee802154_disassociate);
 
-static int ieee802154_set_ack(uint32_t mgmt_request, struct net_if *iface,
+static int ieee802154_set_ack(uint64_t mgmt_request, struct net_if *iface,
 			      void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -733,7 +733,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_ACK,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_UNSET_ACK,
 				  ieee802154_set_ack);
 
-static int ieee802154_set_parameters(uint32_t mgmt_request,
+static int ieee802154_set_parameters(uint64_t mgmt_request,
 				     struct net_if *iface,
 				     void *data, size_t len)
 {
@@ -851,7 +851,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_TX_POWER,
 				  ieee802154_set_parameters);
 
-static int ieee802154_get_parameters(uint32_t mgmt_request,
+static int ieee802154_get_parameters(uint64_t mgmt_request,
 				     struct net_if *iface,
 				     void *data, size_t len)
 {
@@ -914,7 +914,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_TX_POWER,
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 
-static int ieee802154_set_security_settings(uint32_t mgmt_request,
+static int ieee802154_set_security_settings(uint64_t mgmt_request,
 					    struct net_if *iface,
 					    void *data, size_t len)
 {
@@ -953,7 +953,7 @@ out:
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS,
 				  ieee802154_set_security_settings);
 
-static int ieee802154_get_security_settings(uint32_t mgmt_request,
+static int ieee802154_get_security_settings(uint64_t mgmt_request,
 					    struct net_if *iface,
 					    void *data, size_t len)
 {

@@ -50,7 +50,7 @@ static bool expected_association_permitted_bit;
 #define EXPECTED_PAYLOAD_DATA EXPECTED_ENDDEVICE_EXT_ADDR_LE
 #define EXPECTED_PAYLOAD_LEN  8
 
-static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void scan_result_cb(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			   struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
