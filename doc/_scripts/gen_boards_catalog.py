@@ -262,17 +262,7 @@ def get_catalog(generate_hw_features=False):
         logger.info("Skipping generation of supported hardware features.")
 
     for board in boards.values():
-        # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
-        # containing folder. There are a few exceptions, like the "native" and "others" folders
-        # which we know are not actual vendors so treat them as such.
-        for folder in board.dir.parents:
-            if folder.name in ["native", "others"]:
-                vendor = "others"
-                break
-            elif vnd_lookup.vnd2vendor.get(folder.name):
-                vendor = folder.name
-                break
-
+        vendor = board.vendor or "others"
         socs = {soc.name for soc in board.socs}
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
