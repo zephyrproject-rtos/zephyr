@@ -3511,11 +3511,11 @@ Bouffalolab Platforms:
   maintainers:
     - nandojve
   files:
-    - boards/bouffalolab/
+    - boards/bflb/
     - drivers/*/*bflb*
-    - dts/riscv/bouffalolab/
+    - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
-    - soc/bouffalolab/
+    - soc/bflb/
   labels:
     - "platform: bouffalolab"
 
