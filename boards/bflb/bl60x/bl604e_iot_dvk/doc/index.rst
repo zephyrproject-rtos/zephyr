@@ -49,6 +49,8 @@ to USB Serial converter and port is used for both program and console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Samples
 =======
 
