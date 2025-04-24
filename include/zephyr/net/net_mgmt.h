@@ -76,6 +76,29 @@ struct net_if;
 
 /** @endcond */
 
+/** Central place the definition of the layer codes (7 bit value) */
+#define NET_MGMT_LAYER_CODE_UNKNOWN           0x00 /**< Unknown layer code, do not use */
+#define NET_MGMT_LAYER_CODE_IFACE             0x01 /**< Network interface layer code */
+#define NET_MGMT_LAYER_CODE_CONN              0x02 /**< Connectivity layer code */
+#define NET_MGMT_LAYER_CODE_IPV4              0x03 /**< IPv4 layer code */
+#define NET_MGMT_LAYER_CODE_IPV6              0x04 /**< IPv6 layer code */
+#define NET_MGMT_LAYER_CODE_L4                0x05 /**< L4 layer code */
+#define NET_MGMT_LAYER_CODE_COAP              0x06 /**< CoAP layer code */
+#define NET_MGMT_LAYER_CODE_STATS             0x07 /**< Statistics layer code */
+#define NET_MGMT_LAYER_CODE_HOSTAP            0x08 /**< Hostap (wpa_supplicant) layer code */
+#define NET_MGMT_LAYER_CODE_ETHERNET          0x09 /**< Ethernet layer code */
+#define NET_MGMT_LAYER_CODE_IEEE802514        0x0A /**< IEEE 802.15.4 layer code */
+#define NET_MGMT_LAYER_CODE_PPP               0x0B /**< PPP layer code */
+#define NET_MGMT_LAYER_CODE_VIRTUAL           0x0C /**< Virtual network interface layer code */
+#define NET_MGMT_LAYER_CODE_WIFI              0x0D /**< Wi-Fi layer code */
+
+/* Out of tree code can use the following userX layer codes */
+#define NET_MGMT_LAYER_CODE_USER3             0x7C /**< User layer code 3 */
+#define NET_MGMT_LAYER_CODE_USER2             0x7D /**< User layer code 2 */
+#define NET_MGMT_LAYER_CODE_USER1             0x7E /**< User layer code 1 */
+
+/* Reserved layer code for future use */
+#define NET_MGMT_LAYER_CODE_RESERVED          0x7F /**< Reserved layer code for future use */
 
 /**
  * @typedef net_mgmt_request_handler_t
