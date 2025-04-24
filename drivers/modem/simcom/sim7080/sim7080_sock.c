@@ -537,3 +537,86 @@ const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.getsockopt	= NULL,
 	.setsockopt	= NULL,
 };
+
+void sim7080_handle_sock_data_indication(int fd)
+{
+	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
+	if (!sock) {
+		LOG_INF("No socket with fd %d", fd);
+		return;
+	}
+
+	/* Modem does not tell packet size. Set dummy for receive. */
+	modem_socket_packet_size_update(&mdata.socket_config, sock, 1);
+
+	LOG_INF("Data available on socket: %d", fd);
+	modem_socket_data_ready(&mdata.socket_config, sock);
+}
+
+void sim7080_handle_sock_state(int fd, uint8_t state)
+{
+	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
+	if (!sock) {
+		LOG_INF("No socket with fd %d", fd);
+		return;
+	}
+
+	/* Only continue if socket was closed. */
+	if (state != 0) {
+		return;
+	}
+
+	LOG_INF("Socket close indication for socket: %d", fd);
+
+	sock->is_connected = false;
+}
+
+int sim7080_offload_socket(int family, int type, int proto)
+{
+	int ret;
+
+	ret = modem_socket_get(&mdata.socket_config, family, type, proto);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	errno = 0;
+	return ret;
+}
+
+int mdm_sim7080_start_network(void)
+{
+	int ret = -EALREADY;
+
+	if (sim7080_get_state() == SIM7080_STATE_NETWORKING) {
+		LOG_WRN("Network already active");
+		goto out;
+	} else if (sim7080_get_state() != SIM7080_STATE_IDLE) {
+		LOG_WRN("Can only activate networking from idle state");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = sim7080_pdp_activate();
+
+out:
+	return ret;
+}
+
+int mdm_sim7080_stop_network(void)
+{
+	int ret = -EINVAL;
+
+	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
+		LOG_WRN("Modem not in networking state");
+		goto out;
+	}
+
+	//TODO: close sockets
+
+	ret = sim7080_pdp_deactivate();
+
+out:
+	return ret;
+}

@@ -195,4 +195,10 @@ void sim7080_change_state(enum sim7080_state state);
 int sim7080_pdp_activate(void);
 int sim7080_pdp_deactivate(void);
 
+int sim7080_offload_socket(int family, int type, int proto);
+
+void sim7080_handle_sock_data_indication(int fd);
+
+void sim7080_handle_sock_state(int fd, uint8_t state);
+
 #endif /* SIMCOM_SIM7080_H */
