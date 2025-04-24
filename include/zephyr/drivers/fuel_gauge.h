@@ -1,6 +1,7 @@
 /*
  * Copyright 2022 Google LLC
  * Copyright 2023 Microsoft Corporation
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +101,12 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_DEVICE_NAME,
 	/** Chemistry (1 byte length + 4 bytes data) */
 	FUEL_GAUGE_DEVICE_CHEMISTRY,
+	/** Battery current direction (flags)*/
+	FUEL_GAUGE_CURRENT_DIRECTION,
+	/** Remaining state of charge alarm (percent, 0-100) */
+	FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
+	/** Low Cell Voltage Alarm (uV)*/
+	FUEL_GAUGE_LOW_VOLTAGE_ALARM,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -178,6 +185,12 @@ union fuel_gauge_prop_val {
 	uint16_t sbs_remaining_capacity_alarm;
 	/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
 	uint16_t sbs_remaining_time_alarm;
+	/** FUEL_GAUGE_CURRENT_DIRECTION */
+	uint16_t current_direction;
+	/** FUEL_GAUGE_STATE_OF_CHARGE_ALARM */
+	uint8_t state_of_charge_alarm;
+	/** FUEL_GAUGE_LOW_VOLTAGE_ALARM */
+	uint32_t low_voltage_alarm;
 };
 
 /**
