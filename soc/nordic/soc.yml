@@ -224,7 +224,6 @@ runners:
               - nrf52840
           - qualifiers:
               - nrf5340/cpunet
-          - qualifiers:
               - nrf5340/cpuapp
               - nrf5340/cpuapp/ns
           - qualifiers:
