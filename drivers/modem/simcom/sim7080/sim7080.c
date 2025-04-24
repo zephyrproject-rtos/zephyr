@@ -55,8 +55,6 @@ static inline uint8_t *modem_get_mac(const struct device *dev)
 	return data->mac_addr;
 }
 
-static int offload_socket(int family, int type, int proto);
-
 /* Setup the Modem NET Interface. */
 static void modem_net_iface_init(struct net_if *iface)
 {
@@ -69,7 +67,7 @@ static void modem_net_iface_init(struct net_if *iface)
 
 	socket_offload_dns_register(&offload_dns_ops);
 
-	net_if_socket_offload_set(iface, offload_socket);
+	net_if_socket_offload_set(iface, sim7080_offload_socket);
 }
 
 /**
@@ -117,20 +115,6 @@ static bool offload_is_supported(int family, int type, int proto)
 	return true;
 }
 
-static int offload_socket(int family, int type, int proto)
-{
-	int ret;
-
-	ret = modem_socket_get(&mdata.socket_config, family, type, proto);
-	if (ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-
-	errno = 0;
-	return ret;
-}
-
 /*
  * Process all messages received from the modem.
  */
@@ -166,132 +150,6 @@ MODEM_CMD_DEFINE(on_cmd_exterror)
 {
 	modem_cmd_handler_set_error(data, -EIO);
 	k_sem_give(&mdata.sem_response);
-	return 0;
-}
-
-/*
- * Handles pdp context urc.
- *
- * The urc has the form +APP PDP: <index>,<state>.
- * State can either be ACTIVE for activation or
- * DEACTIVE if disabled.
- */
-MODEM_CMD_DEFINE(on_urc_app_pdp)
-{
-	bool active = strcmp(argv[1], "ACTIVE") == 0;
-	if (active) {
-		mdata.status_flags |= SIM7080_STATUS_FLAG_PDP_ACTIVE;
-	} else {
-		mdata.status_flags &= ~SIM7080_STATUS_FLAG_PDP_ACTIVE;
-	}
-
-	LOG_INF("PDP context: %u", active);
-	k_sem_give(&mdata.pdp_sem);
-	return 0;
-}
-
-MODEM_CMD_DEFINE(on_urc_sms)
-{
-	LOG_INF("SMS: %s", argv[0]);
-	return 0;
-}
-
-/*
- * Handles socket data notification.
- *
- * The sim modem sends and unsolicited +CADATAIND: <cid>
- * if data can be read from a socket.
- */
-MODEM_CMD_DEFINE(on_urc_cadataind)
-{
-	struct modem_socket *sock;
-	int sock_fd;
-
-	sock_fd = atoi(argv[0]);
-
-	sock = modem_socket_from_fd(&mdata.socket_config, sock_fd);
-	if (!sock) {
-		return 0;
-	}
-
-	/* Modem does not tell packet size. Set dummy for receive. */
-	modem_socket_packet_size_update(&mdata.socket_config, sock, 1);
-
-	LOG_INF("Data available on socket: %d", sock_fd);
-	modem_socket_data_ready(&mdata.socket_config, sock);
-
-	return 0;
-}
-
-/*
- * Handles the castate response.
- *
- * +CASTATE: <cid>,<state>
- *
- * Cid is the connection id (socket fd) and
- * state can be:
- *  0 - Closed by remote server or error
- *  1 - Connected to remote server
- *  2 - Listening
- */
-MODEM_CMD_DEFINE(on_urc_castate)
-{
-	struct modem_socket *sock;
-	int sockfd, state;
-
-	sockfd = atoi(argv[0]);
-	state = atoi(argv[1]);
-
-	sock = modem_socket_from_fd(&mdata.socket_config, sockfd);
-	if (!sock) {
-		return 0;
-	}
-
-	/* Only continue if socket was closed. */
-	if (state != 0) {
-		return 0;
-	}
-
-	LOG_INF("Socket close indication for socket: %d", sockfd);
-
-	sock->is_connected = false;
-	LOG_INF("Socket closed: %d", sockfd);
-
-	return 0;
-}
-
-/**
- * Handles the ftpget urc.
- *
- * +FTPGET: <mode>,<error>
- *
- * Mode can be 1 for opening a session and
- * reporting that data is available or 2 for
- * reading data. This urc handler will only handle
- * mode 1 because 2 will not occur as urc.
- *
- * Error can be either:
- *  - 1 for data available/opened session.
- *  - 0 If transfer is finished.
- *  - >0 for some error.
- */
-MODEM_CMD_DEFINE(on_urc_ftpget)
-{
-	int error = atoi(argv[0]);
-
-	LOG_INF("+FTPGET: 1,%d", error);
-
-	/* Transfer finished. */
-	if (error == 0) {
-		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_FINISHED;
-	} else if (error == 1) {
-		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_CONNECTED;
-	} else {
-		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_ERROR;
-	}
-
-	k_sem_give(&mdata.sem_ftp);
-
 	return 0;
 }
 
@@ -395,6 +253,114 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
 	return len;
 }
 
+/*
+ * Handles pdp context urc.
+ *
+ * The urc has the form +APP PDP: <index>,<state>.
+ * State can either be ACTIVE for activation or
+ * DEACTIVE if disabled.
+ */
+MODEM_CMD_DEFINE(on_urc_app_pdp)
+{
+	bool active = strcmp(argv[1], "ACTIVE") == 0;
+	if (active) {
+		mdata.status_flags |= SIM7080_STATUS_FLAG_PDP_ACTIVE;
+	} else {
+		mdata.status_flags &= ~SIM7080_STATUS_FLAG_PDP_ACTIVE;
+	}
+
+	LOG_INF("PDP context: %u", active);
+	k_sem_give(&mdata.pdp_sem);
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_urc_pdp_deact)
+{
+	LOG_INF("PDP context deactivated by network");
+
+	mdata.status_flags &= ~SIM7080_STATUS_FLAG_PDP_ACTIVE;
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_urc_sms)
+{
+	LOG_INF("SMS: %s", argv[0]);
+	return 0;
+}
+
+/*
+ * Handles socket data notification.
+ *
+ * The sim modem sends and unsolicited +CADATAIND: <cid>
+ * if data can be read from a socket.
+ */
+MODEM_CMD_DEFINE(on_urc_cadataind)
+{
+	int sock_fd;
+
+	sock_fd = atoi(argv[0]);
+
+	sim7080_handle_sock_data_indication(sock_fd);
+	return 0;
+}
+
+/*
+ * Handles the castate response.
+ *
+ * +CASTATE: <cid>,<state>
+ *
+ * Cid is the connection id (socket fd) and
+ * state can be:
+ *  0 - Closed by remote server or error
+ *  1 - Connected to remote server
+ *  2 - Listening
+ */
+MODEM_CMD_DEFINE(on_urc_castate)
+{
+	int sockfd, state;
+
+	sockfd = atoi(argv[0]);
+	state = atoi(argv[1]);
+
+	sim7080_handle_sock_state(sockfd, state);
+	return 0;
+}
+
+/**
+ * Handles the ftpget urc.
+ *
+ * +FTPGET: <mode>,<error>
+ *
+ * Mode can be 1 for opening a session and
+ * reporting that data is available or 2 for
+ * reading data. This urc handler will only handle
+ * mode 1 because 2 will not occur as urc.
+ *
+ * Error can be either:
+ *  - 1 for data available/opened session.
+ *  - 0 If transfer is finished.
+ *  - >0 for some error.
+ */
+MODEM_CMD_DEFINE(on_urc_ftpget)
+{
+	int error = atoi(argv[0]);
+
+	LOG_INF("+FTPGET: 1,%d", error);
+
+	/* Transfer finished. */
+	if (error == 0) {
+		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_FINISHED;
+	} else if (error == 1) {
+		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_CONNECTED;
+	} else {
+		mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_ERROR;
+	}
+
+	k_sem_give(&mdata.sem_ftp);
+
+	return 0;
+}
+
 MODEM_CMD_DIRECT_DEFINE(on_urc_rdy)
 {
 	LOG_DBG("RDY received");
@@ -440,6 +406,7 @@ static const struct modem_cmd response_cmds[] = {
  */
 static const struct modem_cmd unsolicited_cmds[] = {
 	MODEM_CMD("+APP PDP: ", on_urc_app_pdp, 2U, ","),
+	MODEM_CMD("+PDP: DEACT", on_urc_pdp_deact, 0U, ""),
 	MODEM_CMD("SMS ", on_urc_sms, 1U, ""),
 	MODEM_CMD("+CADATAIND: ", on_urc_cadataind, 1U, ""),
 	MODEM_CMD("+CASTATE: ", on_urc_castate, 2U, ","),
@@ -675,42 +642,6 @@ error:
 	return ret;
 }
 
-int mdm_sim7080_start_network(void)
-{
-	int ret = -EALREADY;
-
-	if (sim7080_get_state() == SIM7080_STATE_NETWORKING) {
-		LOG_WRN("Network already active");
-		goto out;
-	} else if (sim7080_get_state() != SIM7080_STATE_IDLE) {
-		LOG_WRN("Can only activate networking from idle state");
-		ret = -EINVAL;
-		goto out;
-	}
-
-	ret = sim7080_pdp_activate();
-
-out:
-	return ret;
-}
-
-int mdm_sim7080_stop_network(void)
-{
-	int ret = -EINVAL;
-
-	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_WRN("Modem not in networking state");
-		goto out;
-	}
-
-	//TODO: close sockets
-
-	ret = sim7080_pdp_deactivate();
-
-out:
-	return ret;
-}
-
 int mdm_sim7080_power_on(void)
 {
 	return modem_boot(false);
@@ -891,4 +822,4 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  MDM_MAX_DATA_LENGTH);
 
 NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, offload_socket);
+			    AF_UNSPEC, offload_is_supported, sim7080_offload_socket);
