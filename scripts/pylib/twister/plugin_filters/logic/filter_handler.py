@@ -77,14 +77,26 @@ def get_filters(filter_dictionaries: list[dict], logger, filter_roots: list[str]
                     filter_obj = _get_class(file_path, root, logger)
 
                     if isinstance(filter_obj, FilterInterface):
-                        filter_obj.setup(*args, **kwargs)
+                        try:
+                            filter_obj.setup(*args, **kwargs)
 
-                        plugin_filters.append(filter_obj)
+                            plugin_filters.append(filter_obj)
 
-                        logger.info(f"Found filter instance in root { root }")
-                        root_found = True
+                            logger.info(f"Found filter instance in root { root }")
+                            root_found = True
 
-                        break
+                            break
+                        except TypeError as error:
+                            logger.warning(
+                                f"Filter { filter_obj } located in root { root } crashed with Type Error { error }. "
+                                "If the name of the given filter and its arguments correspond to the intended ones, "
+                                f"the issue might be caused by the root configuration ({ filter_roots }). "
+                                "The script will keep searching for the filter in lower roots. In order to avoid this warning, "
+                                f"please check if any of the roots contains a filter with the same path as { file_path }. "
+                                "If so, consider renaming your filter or giving its root a higher priority "
+                                "(the highest priority is given to the first element of the list linked to the plugin filter roots env variable, "
+                                "while the last one has the lowest. To increase the priority of your root, move it towards the start of the list.). "
+                            )
 
                 if not root_found:
                     logger.warning(f"Filter { file_path } could not be found in any of the examined roots ({ filter_roots })")
