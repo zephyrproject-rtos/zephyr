@@ -267,23 +267,53 @@ int mdm_sim7080_query_gnss(struct sim7080_gnss_data *data)
 
 int mdm_sim7080_start_gnss(void)
 {
-	int ret;
+	int ret = -EALREADY;
 
-	sim7080_change_state(SIM7080_STATE_INIT);
-	k_work_cancel_delayable(&mdata.rssi_query_work);
+	if (sim7080_get_state() == SIM7080_STATE_GNSS) {
+		LOG_WRN("Modem already in gnss state");
+		goto out;
+	} else if (sim7080_get_state() != SIM7080_STATE_IDLE) {
+		LOG_WRN("Can only activate gnss from idle state");
+		ret = -EINVAL;
+		goto out;
+	}
 
-	ret = mdm_sim7080_power_on();
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=1",
+			     &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to start modem!!");
-		return -1;
+		LOG_ERR("Failed to power on gnss: %d", ret);
+		goto out;
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSCOLD",
 			     &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		return -1;
+		LOG_ERR("Failed to start gnss: %d", ret);
+		goto out;
 	}
 
 	sim7080_change_state(SIM7080_STATE_GNSS);
-	return 0;
+out:
+	return ret;
+}
+
+int mdm_sim7080_stop_gnss(void)
+{
+	int ret = -EINVAL;
+
+	if (sim7080_get_state() != SIM7080_STATE_GNSS) {
+		LOG_WRN("Modem not in gnss state");
+		goto out;
+	}
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=0",
+			     &mdata.sem_response, K_SECONDS(2));
+	if (ret < 0) {
+		LOG_ERR("Failed to power on gnss: %d", ret);
+		goto out;
+	}
+
+	sim7080_change_state(SIM7080_STATE_IDLE);
+out:
+	return ret;
 }
