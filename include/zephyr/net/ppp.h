@@ -562,7 +562,7 @@ void net_ppp_init(struct net_if *iface);
 #define PPP_L2_CTX_TYPE	struct ppp_context
 
 #define NET_PPP_LAYER	NET_MGMT_LAYER_L2
-#define NET_PPP_CODE	0x209
+#define NET_PPP_CODE	NET_MGMT_LAYER_CODE_PPP
 #define NET_PPP_BASE	(NET_MGMT_IFACE_BIT |				\
 			 NET_MGMT_LAYER(NET_PPP_LAYER) |		\
 			 NET_MGMT_LAYER_CODE(NET_PPP_CODE))
