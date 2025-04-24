@@ -69,7 +69,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 }
 
 static void iface_up_handler(struct net_mgmt_event_callback *cb,
-			     uint32_t mgmt_event, struct net_if *iface)
+			     uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 		k_sem_give(&iface_up);

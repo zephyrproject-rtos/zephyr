@@ -209,7 +209,7 @@ static inline char *print_coordinator_address(char *buf, int buf_len)
 }
 
 static void scan_result_cb(struct net_mgmt_event_callback *cb,
-			   uint32_t mgmt_event, struct net_if *iface)
+			   uint64_t mgmt_event, struct net_if *iface)
 {
 	char buf[64];
 
@@ -224,7 +224,7 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 			       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	uint32_t scan_type;
+	uint64_t scan_type;
 	int ret = 0;
 
 	if (argc < 3) {
