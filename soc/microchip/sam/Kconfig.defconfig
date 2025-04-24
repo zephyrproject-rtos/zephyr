@@ -1,0 +1,13 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_MICROCHIP_SAM
+
+rsource "*/Kconfig.defconfig"
+
+config CLOCK_CONTROL
+	default y
+
+endif # SOC_FAMILY_MICROCHIP_SAM
