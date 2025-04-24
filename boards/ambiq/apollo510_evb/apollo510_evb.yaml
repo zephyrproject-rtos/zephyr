@@ -18,6 +18,7 @@ supported:
   - rtc
   - hwinfo
   - clock_control
+  - usbd
   - mspi
 testing:
   ignore_tags:
