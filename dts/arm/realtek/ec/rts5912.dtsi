@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -444,6 +445,158 @@
 				write-block-size = <4>;
 			};
 		};
+
+		i2c_0: i2c@4000d000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d000 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <182 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_1: i2c@4000d200 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d200 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <183 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_2: i2c@4000d400 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d400 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <184 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_3: i2c@4000d600 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d600 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <185 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_4: i2c@4000d800 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d800 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <186 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_5: i2c@4000da00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000da00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <187 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_6: i2c@4000dc00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000dc00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <188 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_7: i2c@4000de00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000de00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <189 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+
+	i2c_0_wrapper: i2c_0_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_0>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C0_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_1_wrapper: i2c_1_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_1>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C1_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_2_wrapper: i2c_2_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_2>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C2_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_3_wrapper: i2c_3_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_3>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C3_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_4_wrapper: i2c_4_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_4>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C4_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_5_wrapper: i2c_5_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_5>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C5_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_6_wrapper: i2c_6_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_6>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C6_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_7_wrapper: i2c_7_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_7>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C7_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
 	};
 
 	swj_port: swj-port {
