@@ -38,6 +38,8 @@
 
 #include <cmsis_core.h>
 
+#include "nrf53_cpunet_mgmt.h"
+
 #define PIN_XL1 0
 #define PIN_XL2 1
 
@@ -562,6 +564,9 @@ void soc_late_init_hook(void)
 	(void)err;
 #endif
 
+#ifdef CONFIG_SOC_NRF53_CPUNET_ENABLE
+	nrf53_cpunet_init();
+#endif
 }
 
 void arch_busy_wait(uint32_t time_us)

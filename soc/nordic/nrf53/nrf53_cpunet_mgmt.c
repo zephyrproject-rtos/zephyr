@@ -101,7 +101,7 @@ void nrf53_cpunet_enable(bool on)
 }
 
 #ifdef CONFIG_SOC_NRF53_CPUNET_ENABLE
-static int nrf53_cpunet_init(void)
+void nrf53_cpunet_init(void)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Retain nRF5340 Network MCU in Secure domain (bus
@@ -120,9 +120,5 @@ static int nrf53_cpunet_init(void)
 
 	nrf53_cpunet_enable(true);
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
-
-	return 0;
 }
-
-SYS_INIT(nrf53_cpunet_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_SOC_NRF53_CPUNET_ENABLE */
