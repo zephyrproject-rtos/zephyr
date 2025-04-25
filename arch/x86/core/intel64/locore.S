@@ -378,6 +378,10 @@ z_x86_switch:
 	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
 	jz __sh_stk_out
 
+	movq %gs:(__x86_tss64_t_exception_shstk_addr_OFFSET), %rax
+	testq $1, (%rax)
+	jnz __switching_from_exception
+
 	/* Create the shadow stack restore token by hand, as using
 	 * saveprevssp is cumbersome when some threads don't use shadow
 	 * stack. Note that as we return using iretq, we also need to add
@@ -409,6 +413,13 @@ z_x86_switch:
 	subq $24, %rcx
 	movq %rcx, _thread_offset_to_shstk_addr(%rsi)
 	jmp __sh_stk_out
+
+__switching_from_exception:
+	/* We are switching from an exception, IOW, aborting current thread.
+	 * The exception shadow stack needs to be marked as not busy so that it
+	 * can be used again in case of a new exception.
+	 */
+	clrssbsy (%rax)
 
 __sh_stk_out:
 #endif
