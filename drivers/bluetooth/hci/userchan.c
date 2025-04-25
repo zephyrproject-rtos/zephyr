@@ -267,29 +267,11 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 {
 	struct uc_data *uc = dev->data;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (uc->fd < 0) {
 		LOG_ERR("User channel not open");
 		return -EIO;
-	}
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	case BT_BUF_ISO_OUT:
-		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			net_buf_push_u8(buf, BT_HCI_H4_ISO);
-			break;
-		}
-		__fallthrough;
-	default:
-		LOG_ERR("Unknown buffer type");
-		return -EINVAL;
 	}
 
 	if (nsi_host_write(uc->fd, buf->data, buf->len) < 0) {

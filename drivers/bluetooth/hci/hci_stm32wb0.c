@@ -201,7 +201,7 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 
 	if (buf) {
 		/* Handle the received HCI data */
-		LOG_DBG("New event %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
+		LOG_DBG("New event %p len %u type %u", buf, buf->len, buf->data[0]);
 		hci->recv(dev, buf);
 	} else {
 		LOG_ERR("Buf is null");
@@ -371,12 +371,13 @@ static struct net_buf *get_rx(uint8_t *msg)
 static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 {
 	int ret = 0;
+	uint8_t type = net_buf_pull_u8(buf);
 	uint8_t *hci_buffer = buf->data;
 
 	ARG_UNUSED(dev);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT: {
+	switch (type) {
+	case BT_HCI_H4_ACL: {
 		uint16_t connection_handle;
 		uint16_t data_len;
 		uint8_t *pdu;
@@ -392,7 +393,7 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 		break;
 	}
 #if defined(CONFIG_BT_ISO)
-	case BT_BUF_ISO_OUT: {
+	case BT_HCI_H4_ISO: {
 		uint16_t connection_handle;
 		uint16_t iso_data_load_len;
 		uint8_t *iso_data_load;
@@ -409,7 +410,7 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 		break;
 	}
 #endif /* CONFIG_BT_ISO */
-	case BT_BUF_CMD:
+	case BT_HCI_H4_CMD:
 		process_command(hci_buffer, buf->len, buffer_out_mem, sizeof(buffer_out_mem));
 		send_event(buffer_out_mem, 0, 0);
 		break;

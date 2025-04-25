@@ -5210,8 +5210,7 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 /* A memory pool for vandor specific events for fatal error reporting purposes. */
-NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE,
-			  sizeof(struct bt_buf_data), NULL);
+NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
 
 /* The alias for convenience of Controller HCI implementation. Controller is build for
  * a particular architecture hence the alias will allow to avoid conditional compilation.
@@ -5244,8 +5243,7 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 		struct bt_hci_evt_le_meta_event *me;
 		struct bt_hci_evt_hdr *hdr;
 
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
+		net_buf_add_u8(buf, BT_HCI_H4_EVT);
 
 		hdr = net_buf_add(buf, sizeof(*hdr));
 		hdr->evt = BT_HCI_EVT_VENDOR;
