@@ -1045,6 +1045,16 @@ config HW_SHADOW_STACK
 	  stack. Indeed, threads need to manually attach a shadow stack to
 	  use this feature. See the documentation for more information.
 
+config HW_SHADOW_STACK_ALLOW_REUSE
+	bool "Allow reuse of the shadow stack"
+	depends on HW_SHADOW_STACK
+	default y if ZTEST
+	help
+	  This option allows the reuse of the shadow stack. This is meant to
+	  accommodate thread reuse, when the same thread is created again,
+	  such as done by the test suite. It is not meant to be used to share
+	  the shadow stack between threads.
+
 endmenu
 
 rsource "Kconfig.mem_domain"

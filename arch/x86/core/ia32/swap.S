@@ -28,6 +28,10 @@
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	GTEXT(arch_shadow_stack_reset)
+#endif
+
 	/* externs */
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_X86_USERSPACE)
 	GTEXT(z_x86_swap_update_page_tables)
@@ -484,3 +488,59 @@ SECTION_FUNC(PINNED_TEXT, z_x86_thread_entry_wrapper)
 	movl	$0, (%esp)
 	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */
+
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+	/*
+	 * C function prototype:
+	 *
+	 * void arch_shadow_stack_reset(k_thread *thread);
+	 */
+SECTION_FUNC(PINNED_TEXT, arch_shadow_stack_reset)
+	movl 0x4(%esp), %eax /* *thread on EAX */
+	pushl %ebx
+
+	/* As we are touching other thread shadow stack memory, SoC may
+	 * need to do some house keeping.
+	 */
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %eax
+	soc_prepare_shadow_stack_switch
+	popl %eax
+#endif
+
+	movl _thread_offset_to_shstk_base(%eax), %ecx
+	movl _thread_offset_to_shstk_size(%eax), %edx
+
+	/* Set "shstk[-2]", z_thread_entry/z_x86_thread_entry_wrapper */
+	subl $8, %edx
+	addl %edx, %ecx
+	movl %ecx, %edx /* Save "&stsk[-2]" */
+#ifdef CONFIG_X86_DEBUG_INFO
+	movl $z_x86_thread_entry_wrapper, %ebx
+#else
+	movl $z_thread_entry, %ebx
+#endif
+	wrssd %ebx, (%ecx)
+
+	/* Set "shstk[-3]", token high bits, 0 */
+	xorl %ebx, %ebx
+	wrssd %ebx, -4(%ecx)
+
+	/* Set "shstk[-4]", token low bits */
+	wrssd %edx, -8(%ecx)
+
+	/* Set thread->shstk_addr to point to the token on the stack */
+	subl $8, %ecx
+	movl %ecx, _thread_offset_to_shstk_addr(%eax)
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	movl	$_kernel, %eax
+	movl _kernel_offset_to_current(%eax), %ecx
+	pushl %ecx
+	soc_prepare_shadow_stack_switch
+	popl %ecx
+#endif
+
+	popl %ebx
+	ret
+#endif
