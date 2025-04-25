@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 static inline uint32_t murmur_32_scramble(uint32_t k)
 {
@@ -16,6 +18,14 @@ static inline uint32_t murmur_32_scramble(uint32_t k)
 	return k;
 }
 
+#define _LOOP(_GET) \
+	for (; n >= sizeof(uint32_t); n -= sizeof(uint32_t), str += sizeof(uint32_t)) { \
+		k =  _GET; \
+		h ^= murmur_32_scramble(k); \
+		h = (h << 13) | (h >> 19); \
+		h = h * 5 + 0xe6546b64; \
+	}
+
 uint32_t sys_hash32_murmur3(const char *str, size_t n)
 {
 	uint32_t k;
@@ -23,11 +33,10 @@ uint32_t sys_hash32_murmur3(const char *str, size_t n)
 	uint32_t h = 0;
 	const size_t len = n;
 
-	for (; n >= sizeof(uint32_t); n -= sizeof(uint32_t), str += sizeof(uint32_t)) {
-		k = *(const uint32_t *)str;
-		h ^= murmur_32_scramble(k);
-		h = (h << 13) | (h >> 19);
-		h = h * 5 + 0xe6546b64;
+	if (IS_ALIGNED(str, sizeof(uint32_t))) {
+		_LOOP(*(const uint32_t *)str);
+	} else {
+		_LOOP(UNALIGNED_GET((const uint32_t *)str));
 	}
 
 	for (k = 0; n != 0; --n, ++str) {
