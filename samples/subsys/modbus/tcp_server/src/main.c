@@ -285,7 +285,8 @@ int main(void)
 		return 0;
 	}
 
-	int enable = 1;
+	uint8_t enable = 1;
+
 	setsockopt(serv, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 
 	bind_addr.sin_family = AF_INET;
