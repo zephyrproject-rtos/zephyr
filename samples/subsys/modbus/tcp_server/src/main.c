@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Petr Vilím
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -283,6 +284,9 @@ int main(void)
 		LOG_ERR("error: socket: %d", errno);
 		return 0;
 	}
+
+	int enable = 1;
+	setsockopt(serv, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
