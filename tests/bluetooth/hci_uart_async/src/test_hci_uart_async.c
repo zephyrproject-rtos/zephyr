@@ -2,59 +2,79 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdint.h>
-
-#include <zephyr/kernel.h>
-#include <zephyr/kernel/thread.h>
-#include <zephyr/net_buf.h>
-
-#include <zephyr/logging/log.h>
-
-#include <zephyr/ztest.h>
-#include <zephyr/ztest_assert.h>
-#include <zephyr/ztest_test.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/drivers/uart/serial_test.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/kernel/thread.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(test, LOG_LEVEL_DBG);
 
-/* This is a mock UART. Using `serial_vnd_...` on this simulates
- * traffic from the external Host.
- */
-static const struct device *const zephyr_bt_c2h_uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_c2h_uart));
+/* Create a mock controller for the DUT to talk to and us to control. {{{ */
 
-/* The DUT is Sandwiched between the mock serial interface and a mock
- * controller. {{{
- */
-#define DT_DRV_COMPAT zephyr_bt_hci_test
-
-struct drv_data {
-	bt_hci_recv_t recv;
+struct mock_controller_data {
+	bt_hci_recv_t c2h_send;
 };
 
-static void serial_vnd_data_callback(const struct device *dev, void *user_data);
-static int drv_send(const struct device *dev, struct net_buf *buf);
-static int drv_open(const struct device *dev, bt_hci_recv_t recv);
-
+/* These are the callbacks for the mock Controller. */
+static int mock_drv_send(const struct device *dev, struct net_buf *buf);
+static int mock_drv_open(const struct device *dev, bt_hci_recv_t recv);
 static DEVICE_API(bt_hci, drv_api) = {
-	.open = drv_open,
-	.send = drv_send,
+	.open = mock_drv_open,
+	.send = mock_drv_send,
 };
 
-static int drv_init(const struct device *dev)
+#define TEST_DEVICE_INIT(inst)                                                                     \
+	static struct mock_controller_data mock_controller_##inst = {};                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &mock_controller_##inst, NULL, POST_KERNEL,        \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv_api)
+
+/* This instantiates and connects an instance of our mock Bluetooth Controller for each DT node that
+ * is compatible with `zephyr_bt_hci_test`.
+ *
+ * In this test, `../test.overlay` defines just a single `zephyr_bt_hci_test` device and chooses it
+ * as `DT_CHOSEN(zephyr_bt_hci)`, which is the chosen-node the DUT uses as to find the Bluetooth
+ * Controller to use.
+ */
+#define DT_DRV_COMPAT zephyr_bt_hci_mock_controller
+DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
+
+/* }}} */
+
+/* Setup the virtual UART. {{{ */
+
+/* This is the same UART device lookup as done by the DUT, giving us a reference to the same
+ * device. `../app.overlay` has selected this to be the mock UART, on which we can emulate UART
+ * activity using the `serial_vnd`-functions.
+ */
+static const struct device *const mock_uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_c2h_uart));
+
+static void uart_c2h_cb(const struct device *dev, void *user_data);
+static int virtual_uart_setup(void)
 {
-	serial_vnd_set_callback(zephyr_bt_c2h_uart, serial_vnd_data_callback, NULL);
+	/* Connect the "wires" of the virtual UART to our virtual UART transceiver. */
+	serial_vnd_set_callback(mock_uart, uart_c2h_cb, NULL);
 	return 0;
 }
 
-#define TEST_DEVICE_INIT(inst) \
-	static struct drv_data drv_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, drv_init, NULL, &drv_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv_api)
-
-DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
+SYS_INIT(virtual_uart_setup, APPLICATION, 0);
 
 /* }}} */
 
@@ -79,15 +99,25 @@ static int sys_init_spawn_hci_uart(void)
 SYS_INIT(sys_init_spawn_hci_uart, POST_KERNEL, 64);
 /* }}} */
 
+/* This is the same lookup for the Bluetooth Controller that the DUT uses. */
+#define BT_HCI_NODE DT_CHOSEN(zephyr_bt_hci)
+const struct device *const mock_controller = DEVICE_DT_GET(BT_HCI_NODE);
+
+BUILD_ASSERT(DT_NODE_HAS_COMPAT(BT_HCI_NODE, DT_DRV_COMPAT),
+	     "Bluetooth Controller DT node is not our mock");
+
 /* Mock controller callbacks. {{{ */
 
-static int drv_open(const struct device *dev, bt_hci_recv_t recv)
+static int mock_drv_open(const struct device *dev, bt_hci_recv_t recv)
 {
-	struct drv_data *drv = dev->data;
+	__ASSERT(dev == mock_controller, "Unknown mock Bluetooth Controller. The test framework "
+					 "only supports a single mock controller.");
 
-	LOG_DBG("drv_open");
+	struct mock_controller_data *drv = dev->data;
 
-	drv->recv = recv;
+	LOG_DBG("recv %p", recv);
+
+	drv->c2h_send = recv;
 
 	return 0;
 }
@@ -99,14 +129,18 @@ static int drv_open(const struct device *dev, bt_hci_recv_t recv)
  *  FIFO and simulate a controller's #bt_hci_driver::drv_send. The mocks
  *  should use #bt_recv to send c2h packets to the DUT.
  */
-K_FIFO_DEFINE(drv_send_fifo); /* elem T: net_buf */
-static int drv_send(const struct device *dev, struct net_buf *buf)
+K_FIFO_DEFINE(mock_ctlr_h2c); /* elem T: net_buf */
+static int mock_drv_send(const struct device *dev, struct net_buf *buf)
 {
+	__ASSERT(dev == mock_controller, "Unknown mock Bluetooth Controller. The test framework "
+					 "only supports a single mock controller.");
+
+	__ASSERT_NO_MSG(buf);
+
 	LOG_DBG("buf %p type %d len %u", buf, bt_buf_get_type(buf), buf->len);
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "buf");
 
-	__ASSERT_NO_MSG(buf);
-	k_fifo_put(&drv_send_fifo, buf);
+	k_fifo_put(&mock_ctlr_h2c, buf);
 	return 0;
 }
 
@@ -114,17 +148,35 @@ static int drv_send(const struct device *dev, struct net_buf *buf)
 
 /* Mock UART c2h TX handler. {{{ */
 
-static void serial_vnd_data_callback(const struct device *dev, void *user_data)
+K_SEM_DEFINE(uart_c2h_read_available, 0, 1);
+
+static void uart_c2h_read(uint8_t *data, uint32_t size, k_timeout_t timeout)
 {
-	uint32_t size = serial_vnd_out_data_size_get(dev);
-	uint8_t data[size];
+	uint32_t ret;
 
-	serial_vnd_read_out_data(dev, data, size);
-	LOG_HEXDUMP_DBG(data, size, "uart tx");
+	while (size > 0) {
+		int err;
 
-	/* If a test needs to look at the c2h UART traffic, it can be
-	 * captured here.
-	 */
+		err = k_sem_take(&uart_c2h_read_available, timeout);
+		__ASSERT(err == 0, "Serial read timeout %d", err);
+
+		ret = serial_vnd_read_out_data(mock_uart, data, size);
+		__ASSERT(ret <= size,
+			 "serial_vnd_read_out_data ret %u > size %u. Is this an unsigned negative "
+			 "errno (%d)?",
+			 ret, size, ret);
+
+		LOG_HEXDUMP_DBG(data, ret, "uart tx");
+
+		data += ret;
+		size -= ret;
+	}
+}
+
+static void uart_c2h_cb(const struct device *dev, void *user_data)
+{
+	LOG_DBG("uart tx available");
+	k_sem_give(&uart_c2h_read_available);
 }
 
 /* }}} */
@@ -179,7 +231,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 
 	/* Send commands, saturating the controller's command pipeline. */
 	for (uint16_t i = 0; i < HCI_NORMAL_CMD_BUF_COUNT; i++) {
-		int write_size = serial_vnd_queue_in_data(zephyr_bt_c2h_uart, h4_msg_cmd_dummy1,
+		int write_size = serial_vnd_queue_in_data(mock_uart, h4_msg_cmd_dummy1,
 							  sizeof(h4_msg_cmd_dummy1));
 		__ASSERT_NO_MSG(write_size == sizeof(h4_msg_cmd_dummy1));
 	}
@@ -199,9 +251,8 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	 * the special packets out-of-order in real-time.
 	 */
 	for (uint16_t i = 0; i < TEST_PARAM_HOST_COMPLETE_COUNT; i++) {
-		int write_size =
-			serial_vnd_queue_in_data(zephyr_bt_c2h_uart, h4_msg_cmd_host_num_complete,
-						 sizeof(h4_msg_cmd_host_num_complete));
+		int write_size = serial_vnd_queue_in_data(mock_uart, h4_msg_cmd_host_num_complete,
+							  sizeof(h4_msg_cmd_host_num_complete));
 		__ASSERT_NO_MSG(write_size == sizeof(h4_msg_cmd_host_num_complete));
 	}
 
@@ -213,7 +264,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	for (uint16_t i = 0; i < HCI_NORMAL_CMD_BUF_COUNT; i++) {
 		/* The mock controller processes a command. */
 		{
-			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
+			struct net_buf *buf = k_fifo_get(&mock_ctlr_h2c, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
 			zassert_equal(buf->len, sizeof(h4_msg_cmd_dummy1) - 1, "Wrong length");
@@ -225,14 +276,14 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 		/* The controller sends a HCI Command Complete response. */
 		{
 			const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-			struct drv_data *drv = dev->data;
+			struct mock_controller_data *drv = dev->data;
 			int err;
 			struct net_buf *buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
 
 			zassert_not_null(buf);
 			net_buf_add_mem(buf, hci_msg_rx_evt_cmd_complete,
 					sizeof(hci_msg_rx_evt_cmd_complete));
-			err = drv->recv(dev, buf);
+			err = drv->c2h_send(dev, buf);
 			zassert_equal(err, 0, "bt_recv failed");
 		}
 	}
@@ -241,7 +292,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	for (uint16_t i = 0; i < TEST_PARAM_HOST_COMPLETE_COUNT; i++) {
 		/* The mock controller processes a 'HCI Host Number of Completed Packets'. */
 		{
-			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
+			struct net_buf *buf = k_fifo_get(&mock_ctlr_h2c, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
 			zassert_equal(buf->len, sizeof(h4_msg_cmd_host_num_complete) - 1,
@@ -255,4 +306,93 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	}
 
 	LOG_DBG("All h2c packets received by controller.");
+}
+
+ZTEST(hci_uart, test_hw_error_is_generated_when_garbage_on_wire)
+{
+	/* When the H2C UART receives garbage, the H4 transport should generate a HW error.
+	 * Otherwise there is no way for the neither the Host nor Controller to know there has been
+	 * an error.
+	 */
+
+	static const uint8_t h4_reset[] = {0x01, 0x03, 0x0C, 0x00};
+	static const uint8_t h4_reset_complete[] = {
+		0x04,                    /* H4: opcode = EVT */
+		BT_HCI_EVT_CMD_COMPLETE, /* EVT: opcode */
+		0x04,                    /* EVT: len */
+		0x01,                    /* EVT: CMDC: ncmd = 1 */
+		/* EVT: CMDC: opcode */
+		0x0C,
+		0x00,
+		/* EVT: CMDC: Reset: Status */
+		0x00,
+	};
+
+	LOG_INF("Send some garbage to the H2C UART.");
+	{
+		static const uint8_t garbage[] = {
+			0xAB, /* H4: opcode = invalid! */
+		};
+		int write_size;
+
+		write_size = serial_vnd_queue_in_data(mock_uart, garbage, sizeof(garbage));
+		__ASSERT_NO_MSG(write_size == sizeof(garbage));
+	}
+
+	LOG_INF("Read the C2H serial and verify the DUT sent a HW error.");
+	{
+		static const uint8_t h4_hw_error[] = {
+			0x04, /* H4: opcode = EVT */
+			0x10, /* H4: EVT: opcode = BT_HCI_EVT_HARDWARE_ERROR */
+			0x01, /* H4: EVT: len = 1 */
+			0x00, /* H4: EVT: HW ERR: hardware_code = 0 */
+		};
+		uint8_t h4_hw_error_recv[sizeof(h4_hw_error)];
+
+		uart_c2h_read(h4_hw_error_recv, sizeof(h4_hw_error_recv), TIMEOUT_PRESUME_STUCK);
+		zassert_mem_equal(h4_hw_error_recv, h4_hw_error, sizeof(h4_hw_error), "Wrong data");
+	}
+
+	LOG_INF("Resynchronize H4 transport by sending the reset command before exiting this "
+		"test.");
+	{
+		int write_size;
+
+		write_size = serial_vnd_queue_in_data(mock_uart, h4_reset, sizeof(h4_reset));
+		__ASSERT_NO_MSG(write_size == sizeof(h4_reset));
+	}
+
+	LOG_INF("The mock controller receives the reset command.");
+	{
+		struct net_buf *buf;
+
+		buf = k_fifo_get(&mock_ctlr_h2c, TIMEOUT_PRESUME_STUCK);
+		zassert_not_null(buf);
+		zassert_equal(buf->len, sizeof(h4_reset) - 1, "Wrong length");
+		zassert_mem_equal(buf->data, &h4_reset[1], sizeof(h4_reset) - 2);
+		net_buf_unref(buf);
+	}
+
+	LOG_INF("The mock controller responds with a HCI Command Complete event.");
+	{
+		struct mock_controller_data *mock_controller_data = mock_controller->data;
+		struct net_buf *buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
+		int err;
+
+		zassert_not_null(buf);
+		net_buf_add_mem(buf, &h4_reset_complete[1], sizeof(h4_reset_complete) - 1);
+
+		err = mock_controller_data->c2h_send(mock_controller, buf);
+		zassert_equal(err, 0, "c2h_send failed %d", err);
+	}
+
+	LOG_INF("Removing the HCI Command Complete event from the UART.");
+	{
+		uint8_t h4_cmd_complete_recv[sizeof(h4_reset_complete)];
+
+		uart_c2h_read(h4_cmd_complete_recv, sizeof(h4_cmd_complete_recv),
+			      TIMEOUT_PRESUME_STUCK);
+		zassert_mem_equal(h4_cmd_complete_recv, h4_reset_complete,
+				  sizeof(h4_reset_complete), "Wrong data");
+	}
 }

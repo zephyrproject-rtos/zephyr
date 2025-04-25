@@ -2,32 +2,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/sys/time_units.h>
-#include <zephyr/toolchain/common.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-
-#include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/util.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-#include <zephyr/drivers/uart.h>
-
-#include <zephyr/usb/usb_device.h>
-
-#include <zephyr/net_buf.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/toolchain/common.h>
+#include <zephyr/usb/usb_device.h>
 
 LOG_MODULE_REGISTER(hci_uart_async, LOG_LEVEL_DBG);
 

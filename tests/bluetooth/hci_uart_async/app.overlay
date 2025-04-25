@@ -1,9 +1,9 @@
 / {
 	chosen {
-		zephyr,bt-c2h-uart = &test_uart;
+		zephyr,bt-c2h-uart = &virtual_uart;
 	};
 
-	test_uart: test_uart {
+	virtual_uart: virtual_uart {
 		compatible = "vnd,serial";
 		status = "okay";
 		buffer-size = <100>;
