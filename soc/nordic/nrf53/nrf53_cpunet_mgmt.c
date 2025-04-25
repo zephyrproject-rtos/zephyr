@@ -67,7 +67,7 @@ static void onoff_stop(struct onoff_manager *mgr, onoff_notify_fn notify)
 	notify(mgr, 0);
 }
 
-static int nrf53_cpunet_mgmt_init(void)
+int nrf53_cpunet_mgmt_init(void)
 {
 	static const struct onoff_transitions transitions = {
 		.start = onoff_start,
@@ -76,8 +76,6 @@ static int nrf53_cpunet_mgmt_init(void)
 
 	return onoff_manager_init(&cpunet_mgr, &transitions);
 }
-
-SYS_INIT(nrf53_cpunet_mgmt_init, PRE_KERNEL_1, 0);
 
 void nrf53_cpunet_enable(bool on)
 {

@@ -553,6 +553,13 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_SOC_DCDC_NRF53X_HV) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vregh))
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
+
+#if defined(CONFIG_SOC_NRF53_CPUNET_MGMT)
+	int err = nrf53_cpunet_mgmt_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
 }
 
 void soc_late_init_hook(void)
