@@ -28,4 +28,9 @@
  */
 void nrf53_cpunet_enable(bool on);
 
+/**
+ * @brief Configure the security setting of the network CPU and then enable it.
+ */
+void nrf53_cpunet_init(void);
+
 #endif /* NRF53_CPUNET_MGMT_H__ */
