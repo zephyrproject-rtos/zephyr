@@ -47,6 +47,7 @@ GEN_OFFSET_SYM(x86_tss64_t, ist7);
 GEN_OFFSET_SYM(x86_tss64_t, cpu);
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 GEN_OFFSET_SYM(x86_tss64_t, shstk_addr);
+GEN_OFFSET_SYM(x86_tss64_t, exception_shstk_addr);
 #endif
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(x86_tss64_t, psp);
