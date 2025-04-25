@@ -186,7 +186,7 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
 int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
 {
 	struct posix_cond *cv;
-	struct posix_condattr *attr = (struct posix_condattr *)attr;
+	struct posix_condattr *attr = (struct posix_condattr *)att;
 
 	*cvar = PTHREAD_COND_INITIALIZER;
 	cv = to_posix_cond(cvar);
