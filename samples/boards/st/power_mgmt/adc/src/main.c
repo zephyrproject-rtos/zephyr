@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define SLEEP_TIME_MS   2000
 
@@ -44,7 +45,19 @@ int main(void)
 			return 0;
 		}
 
+		if (pm_device_runtime_get(adc_channels[i].dev)) {
+			printk("Failed to get ADC controller device %s\n",
+				adc_channels[i].dev->name);
+			return 0;
+		}
+
 		err = adc_channel_setup_dt(&adc_channels[i]);
+
+		if (pm_device_runtime_put(adc_channels[i].dev)) {
+			printk("Failed to put ADC controller device %s\n",
+				adc_channels[i].dev->name);
+		}
+
 		if (err < 0) {
 			printk("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
@@ -64,10 +77,22 @@ int main(void)
 
 			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
 
+			if (pm_device_runtime_get(adc_channels[i].dev)) {
+				printk("Failed to get ADC controller device %s\n",
+					adc_channels[i].dev->name);
+				return 0;
+			}
+
 			err = adc_read_dt(&adc_channels[i], &sequence);
 			if (err < 0) {
 				printk("Could not read (%d)\n", err);
 				continue;
+			}
+
+			if (pm_device_runtime_put(adc_channels[i].dev)) {
+				printk("Failed to put ADC controller device %s\n",
+					adc_channels[i].dev->name);
+				return 0;
 			}
 
 			/*
