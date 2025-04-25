@@ -15,6 +15,7 @@
 
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/posix/sys/time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,12 @@ static inline int64_t ts_to_ns(const struct timespec *ts)
 static inline int64_t ts_to_ms(const struct timespec *ts)
 {
 	return ts->tv_sec * MSEC_PER_SEC + ts->tv_nsec / NSEC_PER_MSEC;
+}
+
+static inline void tv_to_ts(const struct timeval *tv, struct timespec *ts)
+{
+	ts->tv_sec = tv->tv_sec;
+	ts->tv_nsec = tv->tv_usec * NSEC_PER_USEC;
 }
 
 static inline bool tp_ge(const struct timespec *a, const struct timespec *b)

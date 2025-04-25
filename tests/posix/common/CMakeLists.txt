@@ -10,3 +10,4 @@ zephyr_include_directories(${ZEPHYR_BASE}/lib/posix)
 target_sources(app PRIVATE ${app_sources})
 
 target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/posix/options)
