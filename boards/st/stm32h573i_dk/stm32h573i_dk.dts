@@ -301,6 +301,7 @@
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioh 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	disk-name = "SD";
 	status = "okay";
 };
 
