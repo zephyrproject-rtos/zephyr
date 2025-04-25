@@ -19,6 +19,7 @@ supported:
   - hwinfo
   - clock_control
   - usbd
+  - pdm
   - mspi
 testing:
   ignore_tags:
