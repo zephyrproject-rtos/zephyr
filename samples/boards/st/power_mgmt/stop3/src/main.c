@@ -11,6 +11,7 @@
 #include <zephyr/sys/printk.h>
 #include <stm32u5xx_ll_pwr.h>
 #include <gpio/gpio_stm32.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define SLEEP_TIME_MS   2000
 
@@ -28,7 +29,9 @@ int main(void)
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 
 	printk("Device ready\n");
+	pm_device_runtime_get(led.port);
 	gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+	pm_device_runtime_put(led.port);
 
 	/* Enable the pull-up/pull-down feature globally.
 	 * User can decide to not use this feature to further reduce power consumption
@@ -39,7 +42,9 @@ int main(void)
 	LL_PWR_EnablePUPDConfig();
 
 	while (true) {
+		pm_device_runtime_get(led.port);
 		gpio_pin_set(led.port, led.pin, (int)led_is_on);
+		pm_device_runtime_put(led.port);
 		/* In STOP3, GPIOs are disabled. Only pull-up/pull-down can be enabled.
 		 * So we enable pull-up/pull-down based on LED status
 		 */
