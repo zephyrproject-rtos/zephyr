@@ -48,11 +48,6 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
 #if NRFX_FOREACH_PRESENT(PWM, PWM_NRFX_IS_FAST, (||), (0))
 #define PWM_NRFX_FAST_PRESENT 1
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast PWM PM actions can only be
- * called in a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #endif
 
 #if defined(PWM_NRFX_FAST_PRESENT) && CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL

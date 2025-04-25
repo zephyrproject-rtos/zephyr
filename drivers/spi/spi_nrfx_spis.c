@@ -28,14 +28,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #define NRFX_SPIS_IS_FAST(unused, prefix, id, _) SPIS_IS_FAST(prefix##id)
 
-#if NRFX_FOREACH_ENABLED(SPIS, NRFX_SPIS_IS_FAST, (+), (0), _)
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast SPIM PM actions can only be
- * called from a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
