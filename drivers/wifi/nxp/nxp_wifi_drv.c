@@ -288,7 +288,18 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		if (con_sta_info->is_11n_enabled) {
 			ap_sta_info.link_mode = WIFI_4;
 		} else {
-			ap_sta_info.link_mode = WIFI_3;
+			if (con_sta_info->bandmode == BAND_B) {
+				ap_sta_info.link_mode = WIFI_1;
+			} else {
+				uint32_t ap_channel = 0;
+
+				(void)wlan_get_uap_channel(&ap_channel);
+				if (ap_channel > 14) {
+					ap_sta_info.link_mode = WIFI_2;
+				} else {
+					ap_sta_info.link_mode = WIFI_3;
+				}
+			}
 		}
 #ifdef CONFIG_NXP_WIFI_11AC
 		if (con_sta_info->is_11ac_enabled) {
