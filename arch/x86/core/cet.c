@@ -25,6 +25,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #endif
 
 #ifdef CONFIG_HW_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+extern void arch_shadow_stack_reset(k_tid_t thread);
+#endif /* CONFIG_HW_SHADOW_STACK_ALLOW_REUSE */
+
 int arch_thread_hw_shadow_stack_attach(k_tid_t thread,
 				       arch_thread_hw_shadow_stack_t *stack,
 				       size_t stack_size)
@@ -37,6 +41,19 @@ int arch_thread_hw_shadow_stack_attach(k_tid_t thread,
 
 	/* Or if the thread already has a shadow stack. */
 	if (thread->arch.shstk_addr != NULL) {
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+		/* Allow reuse of the shadow stack if the base and size are the same */
+		if (thread->arch.shstk_base == stack &&
+		    thread->arch.shstk_size == stack_size) {
+			unsigned int key;
+
+			key = arch_irq_lock();
+			arch_shadow_stack_reset(thread);
+			arch_irq_unlock(key);
+
+			return 0;
+		}
+#endif
 		LOG_ERR("Shadow stack already set up for thread %p\n", thread);
 		return -EINVAL;
 	}
