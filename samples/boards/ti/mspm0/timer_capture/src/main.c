@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include "zephyr/drivers/pwm.h"
 #define DT_DRV_COMPAT ti_mspm0g1x0x_g3x0x_timer_pwm
+#define CAPTURE_CONTINUOUS 0
 
 uint32_t gperiod;
 uint32_t gwidth;
@@ -37,6 +38,7 @@ int main(void)
 	printk("\ntimclk %llu Hz\n", timclk_cycles);
 	k_msleep(1);
 
+#if CAPTURE_CONTINUOUS
 	ret = pwm_configure_capture(dev, 0,
 		 (PWM_CAPTURE_TYPE_BOTH | PWM_CAPTURE_MODE_CONTINUOUS),
 		 pwm_capture_cb_handler, NULL);
@@ -46,16 +48,37 @@ int main(void)
 	k_msleep(1);
 	ret |= pwm_enable_capture(dev, 0);
 	printf("capture enable %d\n", ret);
-
+#endif
 	while(1) {
-		k_msleep(500);
-		printk("{period:%u  pulse width: %u} in TIMCLK cycle\n",
-			gperiod,
-			gwidth);
-		printk("{period: %u Hz duty: %u \% }\n",
-			((uint32_t)timclk_cycles)/gperiod,
-			(gwidth * 100)/gperiod);
-	}
+		uint32_t period;
+		uint32_t width;
 
+		k_msleep(250);
+#if CAPTURE_CONTINUOUS
+		period = gperiod;
+		width = gwidth;
+#else
+		ret = pwm_capture_cycles(dev, 0,
+				 (PWM_CAPTURE_TYPE_BOTH | PWM_CAPTURE_MODE_SINGLE),
+				 &period, &width, Z_TIMEOUT_MS(500));
+
+		if (ret == -EBUSY) {
+			pwm_disable_capture(dev, 0);
+			continue;
+		}
+
+		if (ret) {
+			printf("capture cycle err %d\n", ret);
+			continue;
+		}
+#endif
+		printk("{period:%u  pulse width: %u} in TIMCLK cycle\n",
+			period,
+			width);
+		printk("{period: %u Hz duty: %u \% }\n",
+			((uint32_t)timclk_cycles)/period,
+			(width * 100)/period);
+
+	}
 	return 0;
 }

@@ -197,9 +197,9 @@
 
 &pwm4 {
 	status = "okay";
-	pinctrl-0 = <&timg4c0_pb2>;
+	pinctrl-0 = <&timg4c1_pb3>;
 	pinctrl-names = "default";
-	ti,cc-index = <0>;
+	ti,cc-index = <1>;
 	ti,clk-prescaler = <255>;
 	ti,clk-div = <1>;
 	ti,cc-mode = "PULSE_WIDTH";

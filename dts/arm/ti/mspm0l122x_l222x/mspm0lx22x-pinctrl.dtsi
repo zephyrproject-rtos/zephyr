@@ -124,6 +124,12 @@
 		bias-pull-down;
 	};
 
+	/omit-if-no-ref/ timg4c1_pb3: timg4c1_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		bias-pull-down;
+	};
+
 	/omit-if-no-ref/ timg4c0_pa5: timg4c0_pa5 {
 		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_7)>;
 	};
