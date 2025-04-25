@@ -265,6 +265,13 @@
 		};
 	};
 
+	pdm0_default: pdm0_default {
+		group0 {
+			pinmux = <PDM0_CLK_P50>,
+				 <PDM0_DATA_P51>;
+		};
+	};
+
 	mspi0_default: mspi0_default {
 		group0 {
 			pinmux = <MSPI0_0_P64>,

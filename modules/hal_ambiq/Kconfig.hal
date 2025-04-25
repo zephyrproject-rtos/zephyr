@@ -116,4 +116,9 @@ config AMBIQ_HAL_USE_USB
 	help
 	  Use the USB driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_PDM
+	bool
+	help
+	  Use the PDM driver from Ambiq HAL
+
 endif # AMBIQ_HAL

@@ -120,6 +120,12 @@
 	status = "okay";
 };
 
+&pdm0 {
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &gpio0_31 {
 	status = "okay";
 };
