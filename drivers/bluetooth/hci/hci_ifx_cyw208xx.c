@@ -257,32 +257,36 @@ static int cyw208xx_close(const struct device *dev)
 
 static int cyw208xx_send(const struct device *dev, struct net_buf *buf)
 {
+	uint8_t type;
+
 	ARG_UNUSED(dev);
 
 	int ret = 0;
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	type = net_buf_pull_u8(buf);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
+	LOG_DBG("buf %p type %u len %u", buf, type, buf->len);
+
+	switch (type) {
+	case BT_HCI_H4_ACL:
 		uint8_t *bt_msg = host_stack_get_acl_to_lower_buffer(BT_TRANSPORT_LE, buf->len);
 
 		memcpy(bt_msg, buf->data, buf->len);
 		ret = host_stack_send_acl_to_lower(BT_TRANSPORT_LE, bt_msg, buf->len);
 		break;
 
-	case BT_BUF_CMD:
+	case BT_HCI_H4_CMD:
 		ret = host_stack_send_cmd_to_lower(buf->data, buf->len);
 		break;
 
-	case BT_BUF_ISO_OUT:
+	case BT_HCI_H4_ISO:
 		ret = host_stack_send_iso_to_lower(buf->data, buf->len);
 		break;
 
 	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
+		LOG_ERR("Unknown type %u", type);
 		ret = EIO;
 		goto done;
 	}
@@ -376,7 +380,6 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
 			return;
 		}
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 		break;
 
 	case HCI_PACKET_TYPE_SCO:

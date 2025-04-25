@@ -237,25 +237,8 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 {
 	int err = 0;
-	uint8_t pkt_indicator;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		pkt_indicator = BT_HCI_H4_ACL;
-		break;
-	case BT_BUF_CMD:
-		pkt_indicator = BT_HCI_H4_CMD;
-		break;
-	case BT_BUF_ISO_OUT:
-		pkt_indicator = BT_HCI_H4_ISO;
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		goto done;
-	}
-	net_buf_push_u8(buf, pkt_indicator);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
@@ -270,7 +253,6 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 		err = -ETIMEDOUT;
 	}
 
-done:
 	net_buf_unref(buf);
 	k_sem_give(&hci_send_sem);
 
