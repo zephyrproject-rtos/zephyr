@@ -770,13 +770,9 @@ static int bind_default(struct net_context *context)
 			return 0;
 		}
 
-		if (iface == NULL) {
-			iface = net_if_get_default();
-		}
-
 		ll_addr.sll_family = AF_PACKET;
 		ll_addr.sll_protocol = htons(ETH_P_ALL);
-		ll_addr.sll_ifindex = net_if_get_by_iface(iface);
+		ll_addr.sll_ifindex = (iface == NULL) ? 0 : net_if_get_by_iface(iface);
 
 		return net_context_bind(context, (struct sockaddr *)&ll_addr,
 					sizeof(ll_addr));
@@ -867,11 +863,13 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 	/* If we already have connection handler, then it effectively
 	 * means that it's already bound to an interface/port, and we
 	 * don't support rebinding connection to new address/port in
-	 * the code below.
+	 * the code below. Doesn't apply for packet sockets.
 	 * TODO: Support rebinding.
 	 */
-	if (context->conn_handler) {
-		return -EISCONN;
+	if (addr->sa_family != AF_PACKET) {
+		if (context->conn_handler != NULL) {
+			return -EISCONN;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
@@ -1103,13 +1101,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 
 		iface = net_if_get_by_index(ll_addr->sll_ifindex);
-		if (!iface) {
-			NET_ERR("Cannot bind to interface index %d",
-				ll_addr->sll_ifindex);
-			return -EADDRNOTAVAIL;
-		}
 
-		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) && iface != NULL &&
 		    net_if_is_ip_offloaded(iface)) {
 			net_context_set_iface(context, iface);
 
@@ -1121,20 +1114,22 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		k_mutex_lock(&context->lock, K_FOREVER);
 
-		net_context_set_iface(context, iface);
-
 		net_sll_ptr(&context->local)->sll_family = AF_PACKET;
 		net_sll_ptr(&context->local)->sll_ifindex =
 			ll_addr->sll_ifindex;
 		net_sll_ptr(&context->local)->sll_protocol =
 			ll_addr->sll_protocol;
 
-		net_if_lock(iface);
-		net_sll_ptr(&context->local)->sll_addr =
-			net_if_get_link_addr(iface)->addr;
-		net_sll_ptr(&context->local)->sll_halen =
-			net_if_get_link_addr(iface)->len;
-		net_if_unlock(iface);
+		if (iface != NULL) {
+			net_context_set_iface(context, iface);
+
+			net_if_lock(iface);
+			net_sll_ptr(&context->local)->sll_addr =
+				net_if_get_link_addr(iface)->addr;
+			net_sll_ptr(&context->local)->sll_halen =
+				net_if_get_link_addr(iface)->len;
+			net_if_unlock(iface);
+		}
 
 		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
 			context, htons(net_context_get_proto(context)),
@@ -3147,9 +3142,11 @@ int net_context_recv(struct net_context *context,
 			addr.sll_halen =
 				net_sll_ptr(&context->local)->sll_halen;
 
-			memcpy(addr.sll_addr,
-			       net_sll_ptr(&context->local)->sll_addr,
-			       MIN(addr.sll_halen, sizeof(addr.sll_addr)));
+			if (net_sll_ptr(&context->local)->sll_addr != NULL) {
+				memcpy(addr.sll_addr,
+				       net_sll_ptr(&context->local)->sll_addr,
+				       MIN(addr.sll_halen, sizeof(addr.sll_addr)));
+			}
 
 			ret = recv_raw(context, cb, timeout,
 				       (struct sockaddr *)&addr, user_data);
