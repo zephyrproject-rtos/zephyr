@@ -551,6 +551,16 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_SOC_DCDC_NRF53X_HV) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vregh))
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
+}
+
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
+	int err = rtc_pretick_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
 
 }
 
@@ -558,8 +568,3 @@ void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-
-#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
-SYS_INIT(rtc_pretick_init, POST_KERNEL, 0);
-#endif
