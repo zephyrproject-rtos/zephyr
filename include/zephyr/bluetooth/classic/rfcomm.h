@@ -155,6 +155,72 @@ struct bt_rfcomm_server {
 	struct bt_rfcomm_server	*_next;
 };
 
+/** @brief RFCOMM RPN baud rate values */
+enum {
+	BT_RFCOMM_RPN_BAUD_RATE_2400 = 0x0,
+	BT_RFCOMM_RPN_BAUD_RATE_4800 = 0x1,
+	BT_RFCOMM_RPN_BAUD_RATE_7200 = 0x2,
+	BT_RFCOMM_RPN_BAUD_RATE_9600 = 0x3,
+	BT_RFCOMM_RPN_BAUD_RATE_19200 = 0x4,
+	BT_RFCOMM_RPN_BAUD_RATE_38400 = 0x5,
+	BT_RFCOMM_RPN_BAUD_RATE_57600 = 0x6,
+	BT_RFCOMM_RPN_BAUD_RATE_115200 = 0x7,
+	BT_RFCOMM_RPN_BAUD_RATE_230400 = 0x8
+};
+
+/** @brief RFCOMM RPN data bit values */
+enum {
+	BT_RFCOMM_RPN_DATA_BITS_5 = 0x0,
+	BT_RFCOMM_RPN_DATA_BITS_6 = 0x1,
+	BT_RFCOMM_RPN_DATA_BITS_7 = 0x2,
+	BT_RFCOMM_RPN_DATA_BITS_8 = 0x3
+};
+
+/** @brief RFCOMM RPN stop bit values */
+enum {
+	BT_RFCOMM_RPN_STOP_BITS_1 = 0,
+	BT_RFCOMM_RPN_STOP_BITS_1_5 = 1
+};
+
+/** @brief RFCOMM RPN parity bit values */
+enum {
+	BT_RFCOMM_RPN_PARITY_NONE = 0x0,
+	BT_RFCOMM_RPN_PARITY_ODD = 0x1,
+	BT_RFCOMM_RPN_PARITY_EVEN = 0x3,
+	BT_RFCOMM_RPN_PARITY_MARK = 0x5,
+	BT_RFCOMM_RPN_PARITY_SPACE = 0x7
+};
+
+/** @brief Combine data bits, stop bits and parity into a single line settings byte
+ *
+ *  @param data Data bits value (0-3)
+ *  @param stop Stop bits value (0-1)
+ *  @param parity Parity value (0-7)
+ *
+ *  @return Combined line settings byte
+ */
+#define BT_RFCOMM_SET_LINE_SETTINGS(data, stop, parity) ((data & 0x3) | \
+							 ((stop & 0x1) << 2) | \
+							 ((parity & 0x7) << 3))
+
+#define BT_RFCOMM_RPN_FLOW_NONE         0x00
+#define BT_RFCOMM_RPN_XON_CHAR          0x11
+#define BT_RFCOMM_RPN_XOFF_CHAR         0x13
+
+/* Set 1 to all the param mask except reserved */
+#define BT_RFCOMM_RPN_PARAM_MASK_ALL    0x3f7f
+
+/** @brief RFCOMM Remote Port Negotiation (RPN) structure */
+struct bt_rfcomm_rpn {
+	uint8_t  dlci;
+	uint8_t  baud_rate;
+	uint8_t  line_settings;
+	uint8_t  flow_control;
+	uint8_t  xon_char;
+	uint8_t  xoff_char;
+	uint16_t param_mask;
+} __packed;
+
 /** @brief Register RFCOMM server
  *
  *  Register RFCOMM server for a channel, each new connection is authorized
@@ -213,6 +279,16 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
  *  @return New buffer.
  */
 struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
+
+/**
+ * @brief Send Remote Port Negotiation command
+ *
+ * @param dlc Pointer to the RFCOMM DLC
+ * @param rpn Pointer to the RPN parameters to send
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn);
 
 #ifdef __cplusplus
 }
