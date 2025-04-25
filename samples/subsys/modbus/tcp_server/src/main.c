@@ -265,6 +265,7 @@ static int modbus_tcp_connection(int client)
 int main(void)
 {
 	int serv;
+	int enable;
 	struct sockaddr_in bind_addr;
 	static int counter;
 
@@ -285,7 +286,7 @@ int main(void)
 		return 0;
 	}
 
-	uint8_t enable = 1;
+	enable = 1;
 
 	setsockopt(serv, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 
