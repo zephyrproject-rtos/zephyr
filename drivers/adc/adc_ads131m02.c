@@ -734,7 +734,7 @@ static int ads131m02_init(const struct device *dev)
 	adc_context_unlock_unconditionally(&data->ctx);
 
 #if defined CONFIG_PM_DEVICE
-	ret = ads131m02_pm(dev, ADS131M02_STANDBY_CMD);
+	ret = ads131m02_pm_action(dev, PM_DEVICE_ACTION_SUSPEND);
 	if (ret != 0) {
 		return ret;
 	}
