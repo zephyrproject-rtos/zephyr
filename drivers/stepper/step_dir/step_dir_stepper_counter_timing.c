@@ -14,7 +14,7 @@ static void step_counter_top_interrupt(const struct device *dev, void *user_data
 	ARG_UNUSED(dev);
 	struct step_dir_stepper_common_data *data = user_data;
 
-	stepper_handle_timing_signal(data->dev);
+	stepper_handle_timing_signal(data->common_data.dev);
 }
 
 int step_counter_timing_source_update(const struct device *dev,

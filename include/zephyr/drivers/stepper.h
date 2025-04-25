@@ -77,18 +77,6 @@ enum stepper_direction {
 };
 
 /**
- * @brief Stepper Motor run mode options
- */
-enum stepper_run_mode {
-	/** Hold Mode */
-	STEPPER_RUN_MODE_HOLD = 0,
-	/** Position Mode*/
-	STEPPER_RUN_MODE_POSITION = 1,
-	/** Velocity Mode */
-	STEPPER_RUN_MODE_VELOCITY = 2,
-};
-
-/**
  * @brief Stepper Events
  */
 enum stepper_event {
