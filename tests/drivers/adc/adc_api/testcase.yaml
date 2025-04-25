@@ -27,6 +27,17 @@ tests:
     depends_on: adc
     platform_allow:
       - nucleo_wl55jc
+      - nucleo_l476rg
+  drivers.adc.hwtim_dma_st_stm32:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-hwtim-stm32.conf"
+      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
+    depends_on:
+      - adc
+      - dma
+    platform_allow:
+      - nucleo_wl55jc
+      - nucleo_l476rg
   drivers.adc.dma_st_stm32:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-stm32.conf"

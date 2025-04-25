@@ -15,6 +15,11 @@
 	dmas = <&dma1 1 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "dma";
 
+	timer = <&timers2>;
+	//adc-timer = <&timers2 1>;
+	timer-number = <2>;
+	trigger-name = "TRGO";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 
