@@ -258,10 +258,6 @@ DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0),
 		      &it8xxx2_kbd_data_0, &it8xxx2_kbd_cfg_0,
 		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
-	     IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
-	     "CONFIG_PM_DEVICE_RUNTIME must be enabled when using CONFIG_PM_DEVICE_SYSTEM_MANAGED");
-
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it8xxx2-kbd compatible node can be supported");
 BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 8), "invalid row-size");
