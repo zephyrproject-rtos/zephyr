@@ -2921,7 +2921,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 	}
 
-next_state:
 	len = pkt ? tcp_data_len(pkt) : 0;
 
 	switch (conn->state) {
@@ -3584,8 +3583,6 @@ out:
 
 			k_sem_give(&conn->connect_sem);
 		}
-
-		goto next_state;
 	}
 
 	if (conn->context) {
