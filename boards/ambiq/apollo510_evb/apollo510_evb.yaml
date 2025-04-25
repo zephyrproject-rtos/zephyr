@@ -12,6 +12,7 @@ supported:
   - watchdog
   - gpio
   - clock_control
+  - pdm
   - mspi
 testing:
   ignore_tags:
