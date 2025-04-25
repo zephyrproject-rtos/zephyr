@@ -38,6 +38,7 @@ _names = [
     'ezflashcli',
     'gd32isp',
     'hifive1',
+    'iar',
     'intel_adsp',
     'intel_cyclonev',
     'jlink',
