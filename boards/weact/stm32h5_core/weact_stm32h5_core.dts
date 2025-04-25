@@ -54,6 +54,7 @@
 	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioa 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	disk-name = "SD";
 	status = "okay";
 };
 

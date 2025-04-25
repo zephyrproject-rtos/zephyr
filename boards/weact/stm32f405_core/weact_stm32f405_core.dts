@@ -112,6 +112,7 @@
 		     &sdio_ck_pc12 &sdio_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioa 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	disk-name = "SD";
 };
 
 &rtc {

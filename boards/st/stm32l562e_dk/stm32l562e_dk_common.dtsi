@@ -314,7 +314,7 @@ zephyr_udc0: &usb {
 
 &sdmmc1 {
 	status = "okay";
-
+	disk-name = "SD";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10

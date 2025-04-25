@@ -255,6 +255,7 @@ zephyr_udc0: &usbotg_hs {
 			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &quadspi {

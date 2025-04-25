@@ -202,6 +202,7 @@
 	bus-width = <4>;
 	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
+	disk-name = "SD";
 };
 
 &spi5 {
