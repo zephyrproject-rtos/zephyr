@@ -358,14 +358,17 @@ static void mspm0_cc_isr(const struct device *dev)
 
 	status = DL_Timer_getPendingInterrupt(config->base);
 
-	/* Timer reached zero no pwm signal is detected */
-	if (status & DL_TIMERG_IIDX_ZERO) {
-		data->is_synced = false;
-		return;
-	}
+	switch(status) {
+	case DL_TIMER_IIDX_CC0_DN:
+	case DL_TIMER_IIDX_CC1_DN:
+		break;
 
-	if (!(status & DL_TIMER_IIDX_CC0_DN) &&
-	    !(status & DL_TIMER_IIDX_CC1_DN)) {
+	/* Timer reached zero no pwm signal is detected */
+	case DL_TIMERG_IIDX_ZERO:
+		data->is_synced = false;
+		__fallthrough;
+
+	default:
 		return;
 	}
 
