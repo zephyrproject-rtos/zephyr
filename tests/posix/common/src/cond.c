@@ -69,4 +69,20 @@ ZTEST(cond, test_pthread_condattr)
 	zassert_ok(pthread_condattr_destroy(&att));
 }
 
+/**
+ * @brief Test pthread_cond_init() with a pre-existing initialized attribute.
+ */
+ZTEST(cond, test_cond_init_existing_initialized_condattr)
+{
+	pthread_cond_t cond;
+	pthread_condattr_t att = {0};
+
+	zassert_ok(pthread_condattr_init(&att));
+	zassert_ok(pthread_cond_init(&cond, &att), "pthread_cond_init failed with valid attr");
+
+	/* Clean up */
+	zassert_ok(pthread_cond_destroy(&cond));
+	zassert_ok(pthread_condattr_destroy(&att));
+}
+
 ZTEST_SUITE(cond, NULL, NULL, NULL, NULL, NULL);
