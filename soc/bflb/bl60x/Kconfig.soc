@@ -4,7 +4,7 @@
 
 config SOC_SERIES_BL60X
 	bool
-	select SOC_FAMILY_BOUFFALOLAB_BFLB
+	select SOC_FAMILY_BFLB
 	help
 	  Enable support for BouffaloLab BL6xx MCU series
 

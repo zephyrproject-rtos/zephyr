@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_BOUFFALOLAB_BFLB
+config SOC_FAMILY_BFLB
 	bool
 
 config SOC_FAMILY
-	default "bouffalolab_bflb" if SOC_FAMILY_BOUFFALOLAB_BFLB
+	default "bflb" if SOC_FAMILY_BFLB
 
 rsource "*/Kconfig.soc"

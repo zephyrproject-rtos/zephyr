@@ -1,5 +1,5 @@
 family:
-- name: bouffalolab_bflb
+- name: bflb
   series:
   - name: bl60x
     socs:
