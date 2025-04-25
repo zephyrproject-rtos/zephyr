@@ -98,7 +98,17 @@ static int spi_test(void)
 
 	int ret;
 
+	if (pm_device_runtime_get(&spi_test_dev)) {
+		printk("Fast spi lookback device get failed\n");
+		return ret;
+	}
+
 	ret = spi_transceive_dt(&spi_test_dev, &tx, &rx);
+
+	if (pm_device_runtime_put(&spi_test_dev)) {
+		printk("Fast spi lookback device put failed\n");
+	}
+
 	if (ret) {
 		printk("SPI transceive failed: %d\n", ret);
 		return ret;
@@ -144,7 +154,19 @@ static int adc_test(void)
 			return 0;
 		}
 
+		if (pm_device_runtime_get(adc_channels[i].dev)) {
+			printk("Failed to get ADC controller device %s\n",
+				adc_channels[i].dev->name);
+			return 0;
+		}
+
 		err = adc_channel_setup_dt(&adc_channels[i]);
+
+		if (pm_device_runtime_put(adc_channels[i].dev)) {
+			printk("Failed to put ADC controller device %s\n",
+				adc_channels[i].dev->name);
+		}
+
 		if (err < 0) {
 			printk("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
@@ -161,7 +183,19 @@ static int adc_test(void)
 
 		(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
 
+		if (pm_device_runtime_get(adc_channels[i].dev)) {
+			printk("Failed to get ADC controller device %s\n",
+				adc_channels[i].dev->name);
+			return 0;
+		}
+
 		err = adc_read_dt(&adc_channels[i], &sequence);
+
+		if (pm_device_runtime_put(adc_channels[i].dev)) {
+			printk("Failed to put ADC controller device %s\n",
+				adc_channels[i].dev->name);
+		}
+
 		if (err < 0) {
 			printk("Could not read (%d)\n", err);
 			continue;
@@ -207,13 +241,17 @@ void print_buf(uint8_t *buffer)
 
 static void loop(void)
 {
+	pm_device_runtime_get(led.port);
 	gpio_pin_set_dt(&led, 1);
+	pm_device_runtime_put(led.port);
 	adc_test();
 	if (!IS_ENABLED(CONFIG_PM_S2RAM)) {
 		spi_test();
 	}
 	k_busy_wait(SLEEP_TIME_BUSY_MS*1000);
+	pm_device_runtime_get(led.port);
 	gpio_pin_set_dt(&led, 0);
+	pm_device_runtime_put(led.port);
 }
 
 int main(void)
@@ -230,7 +268,9 @@ int main(void)
 	printk("Device ready\n");
 
 	while (true) {
+		pm_device_runtime_get(led.port);
 		gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+		pm_device_runtime_put(led.port);
 		loop();
 		k_msleep(SLEEP_TIME_STOP0_MS);
 		printk("Exit Stop0\n");
@@ -245,7 +285,9 @@ int main(void)
 		print_buf(entropy_buffer);
 
 		loop();
+		pm_device_runtime_get(led.port);
 		gpio_pin_configure_dt(&led, GPIO_DISCONNECTED);
+		pm_device_runtime_put(led.port);
 		k_msleep(SLEEP_TIME_STANDBY_MS);
 		printk("Exit Standby\n");
 	}
