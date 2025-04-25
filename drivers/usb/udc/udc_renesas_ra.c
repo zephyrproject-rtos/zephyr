@@ -748,9 +748,11 @@ static const struct udc_api udc_renesas_ra_api = {
 	(DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs) ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS)
 
 #define USB_RENESAS_RA_SPEED_IDX(id)                                                               \
-	(DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs)                                                  \
-		 ? DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS)                             \
-		 : DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS))
+	COND_CODE_1(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED,                                  \
+		    (DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs)                                      \
+			? DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS)                      \
+			: DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS)),                    \
+		    (UDC_BUS_SPEED_FS))
 
 #define USB_RENESAS_RA_IRQ_CONNECT(idx, n)                                                         \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST_PARENT(n), idx, irq),                                    \
