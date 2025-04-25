@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <soc.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -168,7 +169,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		/* if tx buff is null, then sends NOP on the line. */
 		dummy_rx_tx_buffer = 0;
 #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
-		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
+		sys_cache_data_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
 #endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
