@@ -1024,6 +1024,45 @@ irq_exit_nested:
 	popq %rax
 	iretq
 
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+	/*
+	 * C function prototype:
+	 *
+	 * void arch_shadow_stack_reset(k_thread *thread);
+	 */
+.globl arch_shadow_stack_reset
+arch_shadow_stack_reset:
+	movq _thread_offset_to_shstk_base(%rdi), %rcx
+	movq _thread_offset_to_shstk_size(%rdi), %rdx
+
+	/* Set "shstk[-2]", CS */
+	subq $16, %rdx
+	addq %rdx, %rcx
+	movq $X86_KERNEL_CS, %rsi
+	wrssq %rsi, (%rcx)
+
+	/* Set "shstk[-3]", z_thread_entry */
+	movq $z_thread_entry, %rsi
+	wrssq %rsi, -8(%rcx)
+
+	/* Set "shstk[-4]", ssp, "&shstk[-1]" */
+	movq %rcx, %rsi
+	addq $8, %rsi
+	wrssq %rsi, -16(%rcx)
+
+	/* Set "shstk[-5]", token, "&shstk[-4] | 1" */
+	movq %rcx, %rsi
+	subq $16, %rsi
+	orq $1, %rsi
+	wrssq %rsi, -24(%rcx)
+
+	/* Set thread->shstk_addr to point to the token on the stack */
+	subq $24, %rcx
+	movq %rcx, _thread_offset_to_shstk_addr(%rdi)
+
+	ret
+#endif
+
 #define IRQ(nr) vector_ ## nr: endbr64; pushq $(nr - IV_IRQS); jmp irq
 
 IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
