@@ -29,10 +29,10 @@ extern "C" {
 
 /** @brief Send packet to the Bluetooth controller
  *
- * Send packet to the Bluetooth controller. Caller needs to
- * implement netbuf pool.
+ * Send packet to the Bluetooth controller. The buffers should be allocated using
+ * bt_buf_get_tx().
  *
- * @param buf netbuf packet to be send
+ * @param buf HCI packet to be sent.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
