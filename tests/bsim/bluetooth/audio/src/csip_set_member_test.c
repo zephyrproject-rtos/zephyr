@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include "bs_tracing.h"
 #include "bstests.h"
 #include "common.h"
 #ifdef CONFIG_BT_CSIP_SET_MEMBER
@@ -288,6 +289,46 @@ static void test_new_set_size_and_rank(void)
 	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
+static void test_register(void)
+{
+	for (size_t iteration = 1; iteration <= 5; iteration++) {
+		struct bt_csip_set_member_svc_inst
+			*svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
+		int err;
+
+		printk("Running iteration %zu\n", iteration);
+
+		ARRAY_FOR_EACH(svc_insts, i) {
+			err = bt_csip_set_member_register(&param, &svc_insts[i]);
+			if (err != 0) {
+				FAIL("[%zu]: Could not register CSIS (err %d)\n", i, err);
+				return;
+			}
+		}
+
+		err = bt_csip_set_member_register(&param, &svc_inst);
+		if (err == 0) {
+			FAIL("Registered more CSIS than expected\n");
+			return;
+		}
+
+		ARRAY_FOR_EACH(svc_insts, i) {
+			err = bt_csip_set_member_unregister(svc_insts[i]);
+			if (err != 0) {
+				FAIL("[%zu]: Could not unregister CSIS (err %d)\n", i, err);
+				return;
+			}
+			svc_insts[i] = NULL;
+		}
+	}
+
+	PASS("CSIP Set member register passed\n");
+	/* We can terminate the test immediately here as there is no peer devices we keep
+	 * communicating with.
+	 */
+	bs_trace_silent_exit(0);
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (size_t argn = 0; argn < argc; argn++) {
@@ -350,6 +391,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_set_size_and_rank,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_register",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_register,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,
