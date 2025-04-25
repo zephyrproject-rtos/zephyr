@@ -18,6 +18,7 @@ supported:
   - rtc
   - hwinfo
   - clock_control
+  - pdm
   - mspi
 testing:
   ignore_tags:
