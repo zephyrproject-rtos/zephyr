@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #define LOG_LEVEL CONFIG_COUNTER_LOG_LEVEL
 #define LOG_MODULE_NAME counter_timer

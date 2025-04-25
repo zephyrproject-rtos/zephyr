@@ -23,6 +23,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
