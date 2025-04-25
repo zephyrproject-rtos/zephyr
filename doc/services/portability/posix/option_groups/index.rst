@@ -678,6 +678,21 @@ Enable this option group with :kconfig:option:`CONFIG_XSI_REALTIME`.
 When this option group is enabled, the ``_XOPEN_REALTIME`` feature test macro will be defined to a
 value other than -1.
 
+.. _posix_option_group_xsi_single_process:
+
+XSI_SINGLE_PROCESS
+++++++++++++++++++
+
+Enable this option group with :kconfig:option:`CONFIG_XSI_SINGLE_PROCESS`.
+
+.. csv-table:: XSI_SINGLE_PROCESS
+   :header: API, Supported
+   :widths: 50,10
+
+    gethostid(),yes
+    gettimeofday(),yes
+    putenv(),yes
+
 .. _posix_option_group_xsi_system_logging:
 
 XSI_SYSTEM_LOGGING
