@@ -70,6 +70,25 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		case LL_APB1_GRP1_PERIPH_UART4:
 			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART4_CLKSOURCE);
 			break;
+		case LL_APB1_GRP1_PERIPH_I2C1:
+		case LL_APB1_GRP1_PERIPH_I2C2:
+			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+		break;
+	case STM32_CLOCK_BUS_APB6:
+		switch (pclken->enr) {
+		case LL_APB6_GRP1_PERIPH_I2C3:
+			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C3_CLKSOURCE);
+			break;
+		case LL_APB6_GRP1_PERIPH_I2C4:
+			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C4_CLKSOURCE);
+			break;
+		case LL_APB6_GRP1_PERIPH_I2C5:
+			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C5_CLKSOURCE);
+			break;
 		default:
 			return -ENOTSUP;
 		}
