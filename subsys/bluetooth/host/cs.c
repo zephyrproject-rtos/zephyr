@@ -618,6 +618,10 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 
 	cp->override_parameters_length = override_parameters_length;
 
+	struct bt_hci_cmd_hdr *hdr = (struct bt_hci_cmd_hdr *)buf->data;
+
+	hdr->param_len += override_parameters_length;
+
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
 }
 #endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
