@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/h7rs/stm32h7s7X8.dtsi>
-#include <st/h7/stm32h7s7l8hx-pinctrl.dtsi>
+#include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
