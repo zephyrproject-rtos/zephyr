@@ -894,6 +894,8 @@ static void test_recvfrom_common(int sock_type, int proto)
 		offset = sizeof(struct net_eth_hdr);
 	}
 
+	pkt_len -= offset;
+
 	ret = zsock_recvfrom(packet_sock_2, rx_buf, sizeof(rx_buf), 0,
 			     (struct sockaddr *)&ll_rx, &addrlen);
 	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
@@ -927,7 +929,7 @@ ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard)
 
 ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard)
 {
-	test_recvfrom_common(SOCK_RAW, ETH_P_ALL);
+	test_recvfrom_common(SOCK_DGRAM, ETH_P_ALL);
 }
 
 ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
