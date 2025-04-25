@@ -318,19 +318,6 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	default:
-		LOG_ERR("Unsupported type");
-		k_sem_give(&sem_busy);
-		return -EINVAL;
-	}
-
 	ret = bt_spi_get_header(SPI_WRITE, &size);
 	size = MIN(buf->len, size);
 

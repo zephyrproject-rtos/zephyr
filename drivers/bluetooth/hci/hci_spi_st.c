@@ -569,23 +569,6 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-#if defined(CONFIG_BT_ISO)
-	case BT_BUF_ISO_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ISO);
-		break;
-#endif /* CONFIG_BT_ISO */
-	default:
-		LOG_ERR("Unsupported type");
-		return -EINVAL;
-	}
-
 	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
 	data_ptr = buf->data;
