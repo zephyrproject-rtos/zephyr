@@ -60,6 +60,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		set_mode_standby(substate_id);
 		break;
+	case PM_STATE_SOFT_OFF:
+		DL_SYSCTL_setPowerPolicySHUTDOWN();
+		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		return;
