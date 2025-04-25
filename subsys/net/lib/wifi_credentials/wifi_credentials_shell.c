@@ -340,7 +340,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	struct net_if *iface = net_if_get_wifi_sta();
 
 	/* Load the enterprise credentials if needed */
 	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS ||
@@ -381,7 +381,7 @@ static int cmd_list_networks(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_auto_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	struct net_if *iface = net_if_get_wifi_sta();
 	int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT_STORED, iface, NULL, 0);
 
 	if (rc) {
