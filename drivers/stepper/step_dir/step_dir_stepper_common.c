@@ -109,17 +109,14 @@ static void stepper_work_event_handler(struct k_work *work)
 }
 #endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
 
-static void update_remaining_steps(struct step_dir_stepper_common_data *data)
+static void update_remaining_steps(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = data->dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
 
 	if (data->step_count > 0) {
 		data->step_count--;
 	} else if (data->step_count < 0) {
 		data->step_count++;
-	} else {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
-		config->timing_source->stop(data->dev);
 	}
 }
 
@@ -143,9 +140,12 @@ static void position_mode_task(const struct device *dev)
 
 	if (data->step_count) {
 		(void)step_dir_stepper_perform_step(dev);
+	} else {
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		config->timing_source->stop(data->dev);
 	}
 
-	update_remaining_steps(dev->data);
+	update_remaining_steps(dev);
 
 	if (config->timing_source->needs_reschedule(dev) && data->step_count != 0) {
 		(void)config->timing_source->start(dev);
