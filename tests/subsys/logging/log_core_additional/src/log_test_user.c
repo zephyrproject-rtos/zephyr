@@ -83,4 +83,12 @@ ZTEST_USER(test_log_core_additional, test_log_panic)
 	log_panic();
 }
 
+/* test LOG_PRINTK from user space */
+ZTEST_USER(test_log_core_additional, test_log_printk_from_user)
+{
+	LOG_PRINTK("test_printk");
+	while (log_process()) {
+	}
+}
+
 #endif /** CONFIG_USERSPACE **/
