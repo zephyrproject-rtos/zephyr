@@ -40,6 +40,43 @@ static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
 	return k_poll(events, ARRAY_SIZE(events), timeout);
 }
 
+static void zpacket_received_cb(struct net_context *ctx,
+				struct net_pkt *pkt,
+				union net_ip_header *ip_hdr,
+				union net_proto_header *proto_hdr,
+				int status,
+				void *user_data)
+{
+	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
+		user_data);
+
+	/* if pkt is NULL, EOF */
+	if (pkt == NULL) {
+		struct net_pkt *last_pkt = k_fifo_peek_tail(&ctx->recv_q);
+
+		if (last_pkt == NULL) {
+			/* If there're no packets in the queue, recv() may
+			 * be blocked waiting on it to become non-empty,
+			 * so cancel that wait.
+			 */
+			sock_set_eof(ctx);
+			k_fifo_cancel_wait(&ctx->recv_q);
+			NET_DBG("Marked socket %p as peer-closed", ctx);
+		} else {
+			net_pkt_set_eof(last_pkt, true);
+			NET_DBG("Set EOF flag on pkt %p", ctx);
+		}
+
+		return;
+	}
+
+	/* Normal packet */
+	net_pkt_set_eof(pkt, false);
+
+	k_fifo_put(&ctx->recv_q, pkt);
+}
+
+
 static int zpacket_socket(int family, int type, int proto)
 {
 	struct net_context *ctx;
@@ -73,46 +110,23 @@ static int zpacket_socket(int family, int type, int proto)
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
-	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
 
-	return fd;
-}
-
-static void zpacket_received_cb(struct net_context *ctx,
-				struct net_pkt *pkt,
-				union net_ip_header *ip_hdr,
-				union net_proto_header *proto_hdr,
-				int status,
-				void *user_data)
-{
-	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
-		user_data);
-
-	/* if pkt is NULL, EOF */
-	if (!pkt) {
-		struct net_pkt *last_pkt = k_fifo_peek_tail(&ctx->recv_q);
-
-		if (!last_pkt) {
-			/* If there're no packets in the queue, recv() may
-			 * be blocked waiting on it to become non-empty,
-			 * so cancel that wait.
-			 */
-			sock_set_eof(ctx);
-			k_fifo_cancel_wait(&ctx->recv_q);
-			NET_DBG("Marked socket %p as peer-closed", ctx);
-		} else {
-			net_pkt_set_eof(last_pkt, true);
-			NET_DBG("Set EOF flag on pkt %p", ctx);
-		}
-
-		return;
+	/* Register the callback so that the socket is able to receive packets
+	 * as soon as it's created.
+	 */
+	ret = net_context_recv(ctx, zpacket_received_cb, K_NO_WAIT,
+			       ctx->user_data);
+	if (ret < 0) {
+		net_context_put(ctx);
+		zvfs_free_fd(fd);
+		errno = -ret;
+		return -1;
 	}
 
-	/* Normal packet */
-	net_pkt_set_eof(pkt, false);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
 
-	k_fifo_put(&ctx->recv_q, pkt);
+	return fd;
 }
 
 static int zpacket_bind_ctx(struct net_context *ctx,
@@ -234,7 +248,6 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			   int flags, const struct sockaddr *dest_addr,
 			   socklen_t addrlen)
 {
-	const struct sockaddr_ll *ll_addr = (const struct sockaddr_ll *)dest_addr;
 	k_timeout_t timeout = K_FOREVER;
 	int status;
 
@@ -247,32 +260,6 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
-	}
-
-	/* If no interface was set on the context yet, use the one provided in
-	 * the destination address for default binding, unless 0 (any interface)
-	 * was set, in that case let the stack choose the default.
-	 */
-	if (net_context_get_iface(ctx) == NULL && ll_addr->sll_ifindex != 0) {
-		struct net_if *iface = net_if_get_by_index(ll_addr->sll_ifindex);
-
-		if (iface == NULL) {
-			errno = EDESTADDRREQ;
-			return -1;
-		}
-
-		net_context_set_iface(ctx, iface);
-	}
-
-	/* Register the callback before sending in order to receive the response
-	 * from the peer.
-	 */
-
-	status = net_context_recv(ctx, zpacket_received_cb, K_NO_WAIT,
-				  ctx->user_data);
-	if (status < 0) {
-		errno = -status;
-		return -1;
 	}
 
 	status = net_context_sendto(ctx, buf, len, dest_addr, addrlen,

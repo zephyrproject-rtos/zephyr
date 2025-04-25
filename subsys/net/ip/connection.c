@@ -699,13 +699,13 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 
 		/* Apply protocol-specific matching criteria... */
 
-		if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {
-			continue;
-		}
-
-		local = (struct sockaddr_ll *)&conn->local_addr;
-		if (local->sll_ifindex != net_if_get_by_iface(net_pkt_iface(pkt))) {
-			continue;
+		/* Unbound sockets should collect packets from all interfaces. */
+		if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0U) {
+			local = (struct sockaddr_ll *)&conn->local_addr;
+			if (local->sll_ifindex != 0 &&
+			    local->sll_ifindex != net_if_get_by_iface(net_pkt_iface(pkt))) {
+				continue;
+			}
 		}
 
 		conn_raw_socket_deliver(pkt, conn, false);
@@ -775,7 +775,7 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 
 		/* Apply protocol-specific matching criteria... */
 
-		if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
+		if (((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0U) &&
 		    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
 			continue; /* wrong local address */
 		}
