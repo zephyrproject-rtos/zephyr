@@ -57,6 +57,9 @@ Arm Cortex-M implementation variants.
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
 |                                 |   Privileged Execute Never [#f3]_ |        N        |   N     |   N    |    N      |    N   |    N    |     N      |   Y        |   Y        |
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| HW-assisted Control             |                                   |                 |         |        |           |        |         |            |            |            |
+| Flow integrity                  |   PACBTI                          |        N        |   N     |   N    |    N      |    N   |    N    |     N      |   N        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
 | HW-assisted null-pointer        |                                   |                 |         |        |           |        |         |            |            |            |
 | dereference detection           |                                   |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
@@ -424,6 +427,42 @@ MPU stack guards
   stack limit checking mechanism is used by default instead of the MPU-based stack overflow
   detection mechanism; users may override this setting by manually enabling :kconfig:option:`CONFIG_MPU_STACK_GUARD`
   in these scenarios.
+
+Pointer Authentication and Branch Target Identification (PACBTI)
+================================================================
+
+The Armv8.1-M Pointer Authentication and Branch Target Identification (PACBTI) extension is an
+optional extension for the Armv8.1-M architecture profile and consists of the implementation of the
+following control-flow integrity approaches:
+* Return address signing and authentication (PAC-RET) as a mitigation for Return Oriented Programming (ROP) style attack.
+* BTI instruction placement (BTI) as a mitigation for Jump Oriented Programming (JOP) style attacks.
+
+When hardware support is present (e.g., Cortex-M85) and compiler support is available, PACBTI can be
+enabled at build time in Zephyr by selecting one of the below configs:
+
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_STANDARD`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_NONE`
+
+The config options ensures that compiler flags enabling PACBTI instructions are added to the build,
+specifically:
+
+- ``-mbranch-protection=`` for GCC toolchains.
+
+**Limitations:**
+
+- Only builds targeting Armv8.1-M Mainline processors with PACBTI hardware support (e.g.,
+  Cortex-M85) are able to fully use this feature.
+- Zephyr’s integrated SDK currently includes GCC 12.2 which does not support PACBTI so external GCC
+  toolchains (14.2 or later) must be used for PACBTI support.
+  Refer [this](https://docs.zephyrproject.org/latest/develop/toolchains/index.html) on how to set up
+  toolchains.
+
+For more information about PACBTI, refer to the official [Arm documentation](https://developer.arm.com/documentation/109576/latest/).
 
 .. _arm_cortex_m_mpu_considerations:
 
