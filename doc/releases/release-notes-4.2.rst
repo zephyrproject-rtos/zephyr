@@ -175,7 +175,12 @@ New APIs and options
 
   * OpenThread
 
-    * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
+    * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to
+      ``modules/openthread/Kconfig``.
+    * OpenThread has been refactored into a standalone module, decoupled from Zephyr's networking
+      stack. Most old APIs have been deprecated and the new APIs are used by the Zephyr L2 layer to
+      maintain backward compatibility. For migration steps and details, see the
+      :ref:`migration guide <migration_4.2>`.
 
   * zperf
 
