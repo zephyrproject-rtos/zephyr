@@ -504,6 +504,13 @@
 			status = "disabled";
 		};
 
+		pdm0: pdm@PDM0_BASE_NAME {
+			compatible = "ambiq,pdm";
+			reg = <PDM0_REG_BASE PDM0_REG_SIZE>;
+			interrupts = <48 0>;
+			status = "disabled";
+		};
+
 		mspi0: mspi@MSPI0_BASE_NAME {
 			compatible = "ambiq,mspi-controller";
 			reg = <MSPI0_REG_BASE MSPI0_REG_SIZE>,
