@@ -19,7 +19,7 @@ static void user_function(void *p1, void *p2, void *p3)
 {
 	printf("Hello World from %s (%s)\n",
 	       k_is_user_context() ? "UserSpace!" : "privileged mode.",
-	       CONFIG_BOARD);
+	       CONFIG_BOARD_TARGET);
 	__ASSERT(k_is_user_context(), "User mode execution was expected");
 }
 
