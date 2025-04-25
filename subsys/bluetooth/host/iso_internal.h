@@ -21,9 +21,6 @@
 #include <zephyr/sys_clock.h>
 
 struct iso_data {
-	/* Extend the bt_buf user data */
-	struct bt_buf_data buf_data;
-
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
 

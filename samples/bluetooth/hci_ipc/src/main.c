@@ -225,30 +225,10 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 {
-	uint8_t pkt_indicator;
 	uint8_t retries = 0;
 	int ret;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "Controller buffer:");
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		pkt_indicator = HCI_IPC_ACL;
-		break;
-	case BT_BUF_EVT:
-		pkt_indicator = HCI_IPC_EVT;
-		break;
-	case BT_BUF_ISO_IN:
-		pkt_indicator = HCI_IPC_ISO;
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return;
-	}
-	net_buf_push_u8(buf, pkt_indicator);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
