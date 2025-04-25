@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_BOUFFALOLAB_BFLB
+config SOC_FAMILY_BFLB
 	select HAS_BFLB_HAL
 
-if SOC_FAMILY_BOUFFALOLAB_BFLB
+if SOC_FAMILY_BFLB
 
 rsource "*/Kconfig"
 
-endif # SOC_FAMILY_BOUFFALOLAB_BFLB
+endif # SOC_FAMILY_BFLB

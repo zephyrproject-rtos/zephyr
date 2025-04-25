@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_FAMILY_BOUFFALOLAB_BFLB)
+if(CONFIG_SOC_FAMILY_BFLB)
   zephyr_library_named(hal_bouffalolab)
 
   zephyr_library_compile_definitions(
@@ -52,4 +52,4 @@ if(CONFIG_SOC_FAMILY_BOUFFALOLAB_BFLB)
   zephyr_library_sources_ifdef(CONFIG_USE_BFLB_PWM   ${bflb_drv_src_dir}/${bflb_soc}_pwm.c)
   zephyr_library_sources_ifdef(CONFIG_USE_BFLB_SPI   ${bflb_drv_src_dir}/${bflb_soc}_spi.c)
   zephyr_library_sources_ifdef(CONFIG_USE_BFLB_UART  ${bflb_drv_src_dir}/${bflb_soc}_uart.c)
-endif() # SOC_FAMILY_BOUFFALOLAB_BFLB
+endif() # SOC_FAMILY_BFLB
