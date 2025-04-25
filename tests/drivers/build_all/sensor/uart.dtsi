@@ -38,3 +38,10 @@ test_uart_explorir_m: explorir-m {
 test_uart_fcx_mldx5: fcx-mldx5 {
 	compatible = "ap,fcx-mldx5";
 };
+
+modbus {
+	compatible = "zephyr,modbus-serial";
+	test_modbus_pzem004t: pzem004t {
+		compatible = "peacefair,pzem004t";
+	};
+};
