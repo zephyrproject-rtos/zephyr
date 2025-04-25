@@ -1,0 +1,17 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: BouffaloLab Efuse
+
+compatible: "bflb,efuse"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  size:
+    required: true
+    type: int
+    description: Size of efuse storage (bytes)
