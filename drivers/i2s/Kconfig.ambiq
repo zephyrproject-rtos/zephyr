@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_AMBIQ
+	bool "Ambiq I2S driver"
+	default y
+	depends on DT_HAS_AMBIQ_I2S_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_I2S
+	select PINCTRL
+	help
+	  Enable support for Ambiq I2S driver for Apollo 5 MCU.
+
+if I2S_AMBIQ
+
+config I2S_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in I2S driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+config I2S_AMBIQ_BUFFER_ALIGNMENT
+	int "Set the I2S DMA TCB buffer alignment"
+	default DCACHE_LINE_SIZE if DCACHE
+	help
+	  I2S buffer should be 32bytes aligned when placed in cachable region.
+
+config I2S_AMBIQ_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_AMBIQ_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_AMBIQ
