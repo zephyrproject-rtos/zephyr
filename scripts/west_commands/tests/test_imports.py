@@ -29,6 +29,7 @@ def test_runner_imports():
         'ezflashcli',
         'gd32isp',
         'hifive1',
+        'iar',
         'intel_adsp',
         'intel_cyclonev',
         'jlink',
