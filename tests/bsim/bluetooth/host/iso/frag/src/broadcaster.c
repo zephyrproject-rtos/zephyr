@@ -232,7 +232,7 @@ void entrypoint_broadcaster(void)
 
 void validate_no_iso_frag(struct net_buf *buf)
 {
-	struct bt_hci_iso_hdr *hci_hdr = (void *)buf->data;
+	struct bt_hci_iso_hdr *hci_hdr = (void *)(buf->data + 1);
 
 	uint16_t handle = sys_le16_to_cpu(hci_hdr->handle);
 	uint8_t flags = bt_iso_flags(handle);
@@ -247,7 +247,7 @@ int __wrap_bt_send(struct net_buf *buf)
 {
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "h->c");
 
-	if (bt_buf_get_type(buf) == BT_BUF_ISO_OUT) {
+	if (buf->data[0] == BT_HCI_H4_ISO) {
 		validate_no_iso_frag(buf);
 	}
 
