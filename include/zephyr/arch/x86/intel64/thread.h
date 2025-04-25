@@ -84,7 +84,10 @@ struct x86_tss64 {
 	 */
 
 	struct _cpu *cpu;
+#ifdef CONFIG_HW_SHADOW_STACK
 	uintptr_t *shstk_addr;
+	uintptr_t exception_shstk_addr;
+#endif
 
 #ifdef CONFIG_USERSPACE
 	/* Privilege mode stack pointer value when doing a system call */

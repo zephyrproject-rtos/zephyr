@@ -141,6 +141,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 #ifdef CONFIG_X86_CET_SHADOW_STACK
 	z_x86_setup_interrupt_ssp_table((uintptr_t)&issp_table[cpuboot->cpu_id]);
 	cpuboot->gs_base->shstk_addr = &issp_table[cpuboot->cpu_id].ist1;
+	cpuboot->gs_base->exception_shstk_addr = issp_table[cpuboot->cpu_id].ist7;
 #endif /* CONFIG_X86_CET_SHADOW_STACK */
 
 #endif /* CONFIG_X86_CET */
