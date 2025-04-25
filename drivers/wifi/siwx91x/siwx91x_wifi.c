@@ -719,16 +719,10 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 
 	switch (scan_type) {
 	case SL_WIFI_SCAN_TYPE_ACTIVE:
-		if (!dwell_time_active) {
-			dwell_time_active = SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME;
-		}
 		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
 						 dwell_time_active);
 		break;
 	case SL_WIFI_SCAN_TYPE_PASSIVE:
-		if (!dwell_time_passive) {
-			dwell_time_passive = SL_WIFI_DEFAULT_PASSIVE_CHANNEL_SCAN_TIME;
-		}
 		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
 						 dwell_time_passive);
 		break;
