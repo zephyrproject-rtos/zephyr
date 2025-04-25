@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_BOUFFALOLAB_BFLB
+if SOC_FAMILY_BFLB
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
 rsource "*/Kconfig.defconfig"
 
-endif # SOC_FAMILY_BOUFFALOLAB_BFLB
+endif # SOC_FAMILY_BFLB
