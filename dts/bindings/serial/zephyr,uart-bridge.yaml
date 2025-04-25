@@ -1,0 +1,23 @@
+# Copyright 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+title: UART bridge
+
+description: |
+  Bridges data between two serial devices, for example a USB CDC-ACM serial
+  port and an hardware UART.
+
+  The device node must specify exactly two peer phandles for the two serial
+  devices to be bridged together. Example configuration:
+
+  uart-bridge {
+           compatible = "zephyr,uart-bridge";
+           peers = <&cdc_acm_uart0 &uart1>;
+  };
+
+compatible: "zephyr,uart-bridge"
+
+properties:
+  peers:
+    type: phandles
+    description: Peer device nodes, must contain two phandles
