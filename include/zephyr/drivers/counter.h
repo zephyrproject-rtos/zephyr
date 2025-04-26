@@ -113,6 +113,35 @@ extern "C" {
 
 /**@} */
 
+/**
+ * @anchor COUNTER_CAPTURE_FLAGS
+ * @name Counter capture flags
+ *
+ * @brief Used by @ref counter_capture_callback_set.
+ * @{
+ */
+
+/**
+ * @brief Capture rising edge of an external input signal
+ */
+ #define COUNTER_CAPTURE_RISING_EDGE BIT(0)
+
+/**
+ * @brief Capture falling edge of an external input signal
+ */
+ #define COUNTER_CAPTURE_FALLING_EDGE BIT(1)
+
+/**
+ * @brief Capture both falling and rising edge of an external input signal
+ */
+ #define COUNTER_CAPTURE_BOTH_EDGES (COUNTER_CAPTURE_FALLING_EDGE | COUNTER_CAPTURE_RISING_EDGE)
+
+ /**@} */
+
+typedef void (*counter_capture_cb_t)(const struct device *dev, uint8_t chan_id,
+				     uint32_t flags, uint64_t ticks,
+				     void *user_data);
+
 /** @brief Alarm callback
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -232,6 +261,13 @@ typedef int (*counter_api_set_guard_period)(const struct device *dev,
 						uint32_t ticks,
 						uint32_t flags);
 typedef uint32_t (*counter_api_get_freq)(const struct device *dev);
+typedef int (*counter_api_capture_callback_set)(const struct device *dev,
+						uint8_t chan_id,
+						uint32_t flags,
+						counter_capture_cb_t cb,
+						void *user_data);
+typedef int (*counter_api_capture_enable)(const struct device *dev, uint8_t chan_id);
+typedef int (*counter_api_capture_disable)(const struct device *dev, uint8_t chan_id);
 
 __subsystem struct counter_driver_api {
 	counter_api_start start;
@@ -247,6 +283,11 @@ __subsystem struct counter_driver_api {
 	counter_api_get_guard_period get_guard_period;
 	counter_api_set_guard_period set_guard_period;
 	counter_api_get_freq get_freq;
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
+	counter_api_capture_callback_set capture_callback_set;
+	counter_api_capture_enable capture_enable;
+	counter_api_capture_disable capture_disable;
+#endif
 };
 
 /**
@@ -303,6 +344,92 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 
 	return api->get_freq ? api->get_freq(dev) : config->freq;
 }
+
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
+/**
+ * @brief Set callback function for a counter timestamp capture
+ *
+ * @param dev  Pointer to the device structure for the driver instance
+ * @param chan_id Channel ID
+ * @param flags Configuration flags (COUNTER_CAPTURE_*)
+ * @param cb Callback function reference
+ * @param user_data Argument passed to the callback function
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_capture_callback_set(const struct device *dev,
+					   uint8_t chan_id,
+					   uint32_t flags,
+					   counter_capture_cb_t cb,
+					   void *user_data);
+
+static inline int z_impl_counter_capture_callback_set(const struct device *dev,
+						      uint8_t chan_id,
+						      uint32_t flags,
+						      counter_capture_cb_t cb,
+						      void *user_data)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->capture_callback_set) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_callback_set(dev, chan_id, flags, cb, user_data);
+}
+
+/**
+ * @brief Enable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_capture_enable(const struct device *dev,
+				     uint8_t chan_id);
+
+static inline int z_impl_counter_capture_enable(const struct device *dev,
+						uint8_t chan_id)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->capture_enable) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_enable(dev, chan_id);
+}
+
+/**
+ * @brief Disable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_capture_disable(const struct device *dev,
+				      uint8_t chan_id);
+
+static inline int z_impl_counter_capture_disable(const struct device *dev,
+						 uint8_t chan_id)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->capture_disable) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_disable(dev, chan_id);
+}
+#endif
 
 /**
  * @brief Function to convert microseconds to ticks.
