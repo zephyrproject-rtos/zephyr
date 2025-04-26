@@ -108,9 +108,6 @@ struct spi_cdns_cfg {
 	uint32_t clock_frequency;
 	uint32_t ext_clock;
 	irq_config_func_t irq_config;
-#ifdef CONFIG_PINCTRL
-	const struct pinctrl_dev_config *pcfg;
-#endif
 	uint8_t fifo_width;
 	uint16_t rx_fifo_depth;
 	uint16_t tx_fifo_depth;
@@ -573,7 +570,6 @@ complete:
 			spi_cdns_cs_control(dev, false);
 		}
 		pm_device_busy_clear(dev);
-		pm_device_runtime_put(dev);
 	}
 #endif
 
@@ -642,7 +638,6 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
-	pm_device_runtime_get(dev);
 	pm_device_busy_set(dev);
 
 	spi_cdns_spi_enable(dev, false);
@@ -712,7 +707,6 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 			spi_cdns_cs_control(dev, false);
 		}
 		pm_device_busy_clear(dev);
-		pm_device_runtime_put(dev);
 	}
 
 #ifdef CONFIG_SPI_SLAVE
@@ -795,39 +789,6 @@ static int spi_cdns_release(const struct device *dev, const struct spi_config *c
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static int spi_cdns_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	const struct spi_cdns_cfg *cfg = dev->config;
-	int ret;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		/* TODO: Enable SPI Clock */
-#ifdef CONFIG_PINCTRL
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
-#endif
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* TODO: Disable SPI Clock */
-#ifdef CONFIG_PINCTRL
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
-		}
-#endif
-		break;
-	default:
-		ret = -ENOTSUP;
-	}
-
-	return ret;
-}
-#endif /* CONFIG_PM_DEVICE */
-
 /**
  * SPI driver API registered in Zephyr spi framework
  */
@@ -863,9 +824,8 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		.tx_fifo_depth = DT_INST_PROP(n, tx_fifo_depth),                                   \
 		.rx_fifo_depth = DT_INST_PROP(n, rx_fifo_depth),                                   \
 	};                                                                                         \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_cdns_init, spi_cdns_pm_action, &spi_cdns_data_##n,        \
-				  &spi_cdns_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
-				  &spi_cdns_api);                                                  \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_cdns_init, NULL, &spi_cdns_data_##n, &spi_cdns_cfg_##n,   \
+				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_cdns_api);           \
 	static void spi_cdns_irq_config_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_cdns_isr,               \
