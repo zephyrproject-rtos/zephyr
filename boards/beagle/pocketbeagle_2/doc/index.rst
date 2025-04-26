@@ -17,9 +17,11 @@ cluster with an Arm Cortex-M4F microcontroller, Imagination Technologies AXE-1-1
 graphics processor (from revision A1) and TI programmable real-time unit subsystem
 microcontroller cluster coprocessors.
 
-Zephyr is ported to run on the M4F core and the following listed hardware
-specifications are used:
+Zephyr is ported to run on the both A53 cores and/or M4F core.
 
+The following listed hardware specifications are used:
+
+- Dual ARM Cortex-A53 cores
 - Low-power ARM Cortex-M4F
 - Memory
 
@@ -51,11 +53,30 @@ allocates Zephyr 4kB of RAM (only for resource table: 0x9CC00000 to 0x9CC00400).
 Serial Port
 -----------
 
+A53 Cores
+^^^^^^^^^
+
+This board configuration uses single serial communication channel with the MAIN domain UART
+(MAIN_UART6, i.e. debug port).
+
+M4F Core
+^^^^^^^^
+
 This board configuration uses a single serial communication channel with the
 MCU domain UART (MCU_UART0, i.e. P2.05 as RX and P2.07 as TX).
 
 SD Card
 *******
+
+A53 Cores
+=========
+
+Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create bootable
+SD-card with the Zephyr image. Optionally, the Zephyr SD Card images can be downloaded from
+`bb-zephyr-images`_.
+
+M4F Core
+========
 
 Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create bootable
 SD-card with the Linux distro image. This will boot Linux on the A53 application
@@ -63,6 +84,35 @@ cores. These cores will then load the Zephyr binary on the M4 core using remotep
 
 Flashing
 ********
+
+A53 Core
+========
+
+The testing requires the binary to be copied to the BOOT partition in SD card.
+
+To test the A53 core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/am6232/a53
+   :zephyr-app: samples/hello_world
+   :goals: build
+
+We now copy this binary onto the SD card in the :file:`/boot/` directory and name it as
+:file:`zephyr.bin`.
+
+.. code-block:: console
+
+   # Mount the SD card at sdcard for example
+   sudo mount /dev/sdX sdcard
+   # copy the bin to the /boot/
+   sudo cp --remove-destination zephyr.bin sdcard/boot/zephyr.bin
+
+The SD card can now be used for booting.
+
+The binary will run and print Hello world to the debug port.
+
+M4F Core
+========
 
 The board supports remoteproc using the OpenAMP resource table.
 
@@ -95,6 +145,9 @@ The binary will run and print Hello world to the MCU_UART0 port.
 Debugging
 *********
 
+M4F Core
+========
+
 The board supports debugging M4 core from the A53 cores running Linux. Since the target needs
 superuser privilege, openocd needs to be launched separately for now:
 
@@ -119,3 +172,6 @@ References
 
 .. _BeagleBoard Imaging Utility:
    https://github.com/beagleboard/bb-imager-rs/releases
+
+.. _bb-zephyr-images:
+   https://github.com/beagleboard/bb-zephyr-images/releases
