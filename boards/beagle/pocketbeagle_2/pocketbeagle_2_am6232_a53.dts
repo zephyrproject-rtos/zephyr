@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/ti_am6232_a53.dtsi>
+#include "pocketbeagle_2_am6232_a53-pinctrl.dtsi"
+
+/ {
+	model = "BeagleBoard.org PocketBeagle 2";
+	compatible = "beagle,pocketbeagle_2_a53";
+
+	chosen {
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+		zephyr,sram = &ddr0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(512)>;
+	};
+};
+
+&uart6 {
+	pinctrl-0 = <&main_uart6_rx_default &main_uart6_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
