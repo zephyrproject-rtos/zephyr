@@ -37,12 +37,12 @@
 		compatible = "gpio-leds";
 
 		blue_led_1: led_1 {
-			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
 			label = "LD3";
 		};
 
 		red_led_2: led_2 {
-			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
 			label = "LD4";
 		};
 	};
