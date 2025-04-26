@@ -88,6 +88,14 @@
 			#pwm-cells = <3>;
 		};
 
+		gptmr: timer@fff10000 {
+			compatible = "neorv32,gptmr";
+			status = "disabled";
+			reg = <0xfff10000 0x10000>;
+			interrupts = <12>;
+			syscon = <&sysinfo>;
+		};
+
 		clint: clint@fff40000 {
 			compatible = "neorv32,clint", "sifive,clint0";
 			status = "disabled";
