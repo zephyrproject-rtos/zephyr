@@ -77,6 +77,7 @@
 			reg = <0x40010000 0x10>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&rcc CH32V00X_CLOCK_AFIO>;
 			status = "okay";
 
 			gpioa: gpio@40010800 {
