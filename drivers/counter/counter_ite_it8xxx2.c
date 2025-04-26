@@ -283,7 +283,7 @@ static int counter_it8xxx2_init(const struct device *dev)
 	uint8_t et8_ctrl = counter_it8xxx2_read8(dev, ET8CTRL);
 
 	LOG_DBG("max top value = 0x%08x", config->info.max_top_value);
-	LOG_DBG("frequency = %d", config->info.freq);
+	LOG_DBG("frequency = %llu", config->info.freq);
 	LOG_DBG("channels = %d", config->info.channels);
 
 	/* First time enable: enable and re-start timer -> disable timer */
