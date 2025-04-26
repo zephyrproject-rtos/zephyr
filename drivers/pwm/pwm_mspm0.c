@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(pwm_mspm0, CONFIG_PWM_LOG_LEVEL);
 
 #define MSPM0_TIMER_CC_COUNT		2
+#define MSPM0_TIMER_CC_MAX		4
 #define MSPM0_CC_INTR_BIT_OFFSET	4
 
 enum mspm0_capture_mode {
@@ -32,7 +33,8 @@ enum mspm0_capture_mode {
 struct pwm_mspm0_config {
 	GPTIMER_Regs *base;
 	const struct mspm0_clockSys *clock_subsys;
-	uint8_t	cc_idx;
+	uint8_t	cc_idx[MSPM0_TIMER_CC_MAX];
+	uint8_t cc_idx_cnt;
 	bool is_advanced;
 
 	struct gpio_dt_spec gpio;
@@ -45,7 +47,7 @@ struct pwm_mspm0_config {
 };
 
 struct pwm_mspm0_data {
-	uint32_t pulse_cycle;
+	uint32_t pulse_cycle[MSPM0_TIMER_CC_MAX];
 	uint32_t period;
 	struct k_mutex lock;
 
@@ -62,13 +64,20 @@ struct pwm_mspm0_data {
 static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 				struct pwm_mspm0_data *data)
 {
+	int i;
+	uint8_t ccdir_mask = 0;
+
 	if (config->is_advanced) {
 		DL_TimerA_PWMConfig pwmcfg = { 0 };
 
 		pwmcfg.period = data->period;
 		pwmcfg.pwmMode = data->out_mode;
-		if (config->cc_idx >= MSPM0_TIMER_CC_COUNT) {
-			pwmcfg.isTimerWithFourCC = true;
+
+		for (i = 0; i < config->cc_idx_cnt; i++) {
+			if (config->cc_idx[i] >= MSPM0_TIMER_CC_COUNT) {
+				pwmcfg.isTimerWithFourCC = true;
+				break;
+			}
 		}
 
 		DL_TimerA_initPWMMode(config->base, &pwmcfg);
@@ -80,12 +89,18 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 		DL_Timer_initPWMMode(config->base, &pwmcfg);
 	}
 
-	DL_Timer_setCaptureCompareValue(config->base,
-					data->pulse_cycle,
-					config->cc_idx);
-	DL_Timer_enableClock(config->base);
-	DL_Timer_setCCPDirection(config->base, 1 << config->cc_idx);
+	for (i = 0; i < config->cc_idx_cnt; i++) {
+		DL_Timer_setCaptureCompareValue(config->base,
+						data->pulse_cycle[i],
+						config->cc_idx[i]);
+	}
 
+	DL_Timer_enableClock(config->base);
+	for (i = 0; i < config->cc_idx_cnt; i++) {
+		ccdir_mask |= 1 << config->cc_idx[i];
+	}
+
+	DL_Timer_setCCPDirection(config->base, ccdir_mask);
 	DL_Timer_startCounter(config->base);
 }
 
@@ -96,7 +111,7 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	const struct pwm_mspm0_config *config = dev->config;
 	struct pwm_mspm0_data *data = dev->data;
 
-	if (channel != 0) {
+	if (channel >= MSPM0_TIMER_CC_MAX) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
@@ -108,10 +123,18 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	data->pulse_cycle = pulse_cycles;
+	data->pulse_cycle[channel] = pulse_cycles;
 	data->period = period_cycles;
 
-	mspm0_setup_pwm_out(config, data);
+	if (data->out_mode == DL_TIMER_PWM_MODE_CENTER_ALIGN) {
+		data->period = period_cycles >> 1;
+	}
+
+	DL_Timer_setLoadValue(config->base, data->period);
+	DL_Timer_setCaptureCompareValue(config->base,
+					data->pulse_cycle[channel],
+					config->cc_idx[channel]);
+
 	k_mutex_unlock(&data->lock);
 
 	return 0;
@@ -150,14 +173,14 @@ static void mspm0_setup_capture(const struct device *dev,
 {
 	if (data->cmode == CMODE_EDGE_TIME) {
 		DL_Timer_CaptureConfig cc_cfg = { 0 };
-		cc_cfg.inputChan = config->cc_idx;
+		cc_cfg.inputChan = config->cc_idx[0];
 		cc_cfg.period = data->period;
 		cc_cfg.edgeCaptMode = DL_TIMER_CAPTURE_EDGE_DETECTION_MODE_RISING;
 
 		DL_Timer_initCaptureMode(config->base, &cc_cfg);
 	} else {
 		DL_Timer_CaptureCombinedConfig cc_cfg = { 0 };
-		cc_cfg.inputChan = config->cc_idx; 
+		cc_cfg.inputChan = config->cc_idx[0];
 		cc_cfg.period = data->period;
 
 		DL_Timer_initCaptureCombinedMode(config->base, &cc_cfg);
@@ -188,13 +211,13 @@ static int mspm0_capture_configure(const struct device *dev,
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+		intr_mask = (0x1 << (!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET)) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = 0x1 << (config->cc_idx + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = 0x1 << (config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -237,13 +260,13 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+		intr_mask = (0x1 << (!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET)) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = 0x1 << (config->cc_idx + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = 0x1 << (config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -280,13 +303,13 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH: 
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = (0x1 << (!(config->cc_idx) + MSPM0_CC_INTR_BIT_OFFSET)) |
+		intr_mask = (0x1 << (!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET)) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = 0x1 << (config->cc_idx + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = 0x1 << (config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -375,14 +398,14 @@ static void mspm0_cc_isr(const struct device *dev)
 	if (data->flags & PWM_CAPTURE_TYPE_PERIOD) {
 		period = data->period - DL_Timer_getCaptureCompareValue(
 						config->base,
-						!(config->cc_idx));
+						!(config->cc_idx[0]));
 	}
 
 	if (data->flags & PWM_CAPTURE_TYPE_PULSE ||
 	    data->cmode == CMODE_EDGE_TIME) {
 		pulse = data->period - DL_Timer_getCaptureCompareValue(
 						config->base,
-						config->cc_idx);
+						config->cc_idx[0]);
 	}
 
 	DL_TimerG_setTimerCount(config->base, data->period);
@@ -422,9 +445,11 @@ static void mspm0_cc_isr(const struct device *dev)
 #define MSPM0_CAPTURE_MODE(mode)	DT_CAT(CMODE_, mode)
 #define MSPMO_CLK_DIV(div) 		DT_CAT(DL_TIMER_CLOCK_DIVIDE_, div)
 
+
+#define MSPM0_CC_IDX_ARRAY(node_id, prop, idx) DT_PROP_BY_IDX(node_id, prop, idx),
+
 #define MSPM0_PWM_DATA(n)	\
-	.out_mode = MSPM0_PWM_MODE(DT_STRING_TOKEN(DT_DRV_INST(n), ti_pwm_mode)),\
-	.pulse_cycle = DT_PROP(DT_DRV_INST(n), ti_pulse_cycle),	
+	.out_mode = MSPM0_PWM_MODE(DT_STRING_TOKEN(DT_DRV_INST(n), ti_pwm_mode)),
 
 #define MSPM0_CAPTURE_DATA(n)		\
 	IF_ENABLED(CONFIG_PWM_CAPTURE,	\
@@ -447,8 +472,12 @@ static void mspm0_cc_isr(const struct device *dev)
 		.clock_subsys = &mspm0_pwm_clockSys ## n,			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.gpio = GPIO_DT_SPEC_INST_GET_OR(n, ti_out_gpios, {0}),		\
-		.cc_idx = DT_PROP(DT_DRV_INST(n), ti_cc_index),			\
-		.is_advanced = DT_INST_NODE_HAS_PROP(n, ti_advanced),		\
+		.cc_idx = {							\
+			DT_INST_FOREACH_PROP_ELEM(n, ti_cc_index,		\
+						  MSPM0_CC_IDX_ARRAY)		\
+		},								\
+		.cc_idx_cnt = DT_INST_PROP_LEN(n, ti_cc_index),			\
+		.is_advanced = DT_INST_PROP_OR(n, ti_advanced, 0),		\
 		.is_capture = DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
 		.clk_config = {.clockSel = (DT_INST_CLOCKS_CELL(n, bus) &	\
 					    MSPM0_CLOCK_SEL_MASK),		\

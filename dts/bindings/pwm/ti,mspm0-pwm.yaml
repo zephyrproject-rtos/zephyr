@@ -44,7 +44,7 @@ properties:
       Indicate as General Purpose Timer Advance (TIMA).
 
   ti,cc-index:
-    type: int
+    type: array
     required: true
     description: |
       Capture input/Compare output index, should match with the pin function.
@@ -75,11 +75,6 @@ properties:
     enum:
       - "EDGE_TIME"
       - "PULSE_WIDTH"
-
-  ti,pulse-cycle:
-    type: int
-    description: |
-      Duty-cycle in TIMCLK cycle for PWM out at boot time.
 
   ti,period:
     type: int

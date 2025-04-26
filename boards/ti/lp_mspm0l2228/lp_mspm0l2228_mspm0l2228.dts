@@ -17,7 +17,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
-		pwm-led0 = &pwm_led;
+		pwm-led0 = &pwm_led0;
 		counter = &countera0;
 		capture = &pwm4;
 	};
@@ -43,12 +43,17 @@
 		};
 	};
 
-	pwmleds {
+	pwm_leds {
 		compatible = "pwm-leds";
 
-		pwm_led: pwm_led {
+		pwm_led0: pwm_led0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm0 1 PWM_MSEC(40) PWM_POLARITY_NORMAL>;
+		};
+
 	};
 
 	keys {
@@ -208,13 +213,12 @@
 
 &pwm0 {
 	status = "okay";
-	pinctrl-0 = <&timg0c0_pb0>;
+	pinctrl-0 = <&timg0c1_pa24>, <&timg0c0_pb0>;
 	pinctrl-names = "default";
-	ti,cc-index = <0>;
+	ti,cc-index = <0 1>;
 	ti,clk-prescaler = <255>;
 	ti,clk-div = <1>;
 	ti,pwm-mode = "EDGE_ALIGN";
-	ti,pulse-cycle = <500>;
 	ti,period = <1000>;
 };
 
