@@ -191,13 +191,17 @@ struct counter_top_cfg {
  */
 struct counter_config_info {
 	/**
+	 * Frequency of the source clock if synchronous events are counted.
+	 */
+#ifdef CONFIG_COUNTER_64BITS_FREQ
+	uint64_t freq;
+#else
+	uint32_t freq;
+#endif
+	/**
 	 * Maximal (default) top value on which counter is reset (cleared or reloaded).
 	 */
 	uint32_t max_top_value;
-	/**
-	 * Frequency of the source clock if synchronous events are counted.
-	 */
-	uint32_t freq;
 	/**
 	 * Flags (see @ref COUNTER_FLAGS).
 	 */
@@ -236,6 +240,7 @@ typedef int (*counter_api_set_guard_period)(const struct device *dev,
 						uint32_t ticks,
 						uint32_t flags);
 typedef uint32_t (*counter_api_get_freq)(const struct device *dev);
+typedef uint64_t (*counter_api_get_freq_64)(const struct device *dev);
 
 __subsystem struct counter_driver_api {
 	counter_api_start start;
@@ -253,6 +258,9 @@ __subsystem struct counter_driver_api {
 	counter_api_get_guard_period get_guard_period;
 	counter_api_set_guard_period set_guard_period;
 	counter_api_get_freq get_freq;
+#ifdef CONFIG_COUNTER_64BITS_FREQ
+	counter_api_get_freq_64 get_freq_64;
+#endif /* CONFIG_COUNTER_64BITS_FREQ */
 };
 
 /**
@@ -290,6 +298,35 @@ static inline uint8_t z_impl_counter_get_num_of_channels(const struct device *de
 	return config->channels;
 }
 
+__syscall uint32_t counter_get_frequency(const struct device *dev);
+
+#ifdef CONFIG_COUNTER_64BITS_FREQ
+/**
+ * @brief Function to get counter frequency.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ *
+ * @return Frequency of the counter in Hz, or zero if the counter does
+ * not have a fixed frequency, or UINT32_MAX if the counter frequency
+ * is higher or equal to UINT32_MAX, in which case it is recommended to
+ * use counter_get_frequency_64().
+ */
+static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
+{
+	const struct counter_config_info *config =
+			(const struct counter_config_info *)dev->config;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (api->get_freq) {
+		return api->get_freq(dev);
+	} else {
+		return config->freq > UINT32_MAX ? UINT32_MAX : (uint32_t)config->freq;
+	}
+}
+
+#else
+
 /**
  * @brief Function to get counter frequency.
  *
@@ -298,8 +335,6 @@ static inline uint8_t z_impl_counter_get_num_of_channels(const struct device *de
  * @return Frequency of the counter in Hz, or zero if the counter does
  * not have a fixed frequency.
  */
-__syscall uint32_t counter_get_frequency(const struct device *dev);
-
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config =
@@ -309,6 +344,44 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 
 	return api->get_freq ? api->get_freq(dev) : config->freq;
 }
+#endif
+
+/**
+ * @brief Function to get counter frequency in 64bits.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ *
+ * @return Frequency of the counter in Hz, or zero if the counter does
+ * not have a fixed frequency.
+ */
+__syscall uint64_t counter_get_frequency_64(const struct device *dev);
+
+static inline uint64_t z_impl_counter_get_frequency_64(const struct device *dev)
+{
+#ifdef CONFIG_COUNTER_64BITS_FREQ
+	const struct counter_config_info *config =
+			(const struct counter_config_info *)dev->config;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (api->get_freq_64) {
+		return api->get_freq_64(dev);
+	} else if (api->get_freq) {
+		return (uint64_t)api->get_freq(dev);
+	} else {
+		return config->freq;
+	}
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif
+}
+
+#ifdef CONFIG_COUNTER_64BITS_FREQ
+#define z_counter_get_frequency z_impl_counter_get_frequency_64
+#else
+#define z_counter_get_frequency z_impl_counter_get_frequency
+#endif
 
 /**
  * @brief Function to convert microseconds to ticks.
@@ -323,7 +396,7 @@ __syscall uint32_t counter_us_to_ticks(const struct device *dev, uint64_t us);
 static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev,
 					       uint64_t us)
 {
-	uint64_t ticks = (us * z_impl_counter_get_frequency(dev)) / USEC_PER_SEC;
+	uint64_t ticks = (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
@@ -341,7 +414,7 @@ __syscall uint64_t counter_ticks_to_us(const struct device *dev, uint32_t ticks)
 static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
 					       uint32_t ticks)
 {
-	return ((uint64_t)ticks * USEC_PER_SEC) / z_impl_counter_get_frequency(dev);
+	return ((uint64_t)ticks * USEC_PER_SEC) / z_counter_get_frequency(dev);
 }
 
 /**
@@ -356,7 +429,7 @@ __syscall uint32_t counter_ns_to_ticks(const struct device *dev, uint64_t ns);
 
 static inline uint32_t z_impl_counter_ns_to_ticks(const struct device *dev, uint64_t ns)
 {
-	uint64_t ticks = (ns * get_frequency(dev)) / NSEC_PER_SEC;
+	uint64_t ticks = (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
@@ -374,7 +447,7 @@ __syscall uint64_t counter_ticks_to_ns(const struct device *dev, uint32_t ticks)
 static inline uint64_t z_impl_counter_ticks_to_ns(const struct device *dev,
 					       uint32_t ticks)
 {
-	return ((uint64_t)ticks * NSEC_PER_SEC) / z_impl_counter_get_frequency(dev);
+	return ((uint64_t)ticks * NSEC_PER_SEC) / z_counter_get_frequency(dev);
 }
 
 /**
