@@ -46,6 +46,7 @@ zephyr_library_sources_ifdef(CONFIG_RENESAS_RZ_EXT_IRQ      intc_renesas_rz_ext_
 zephyr_library_sources_ifdef(CONFIG_NXP_IRQSTEER            intc_nxp_irqsteer.c)
 zephyr_library_sources_ifdef(CONFIG_INTC_MTK_ADSP           intc_mtk_adsp.c)
 zephyr_library_sources_ifdef(CONFIG_WCH_PFIC                intc_wch_pfic.c)
+zephyr_library_sources_ifdef(CONFIG_WCH_EXTI                intc_wch_exti.c)
 
 if(CONFIG_INTEL_VTD_ICTL)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
