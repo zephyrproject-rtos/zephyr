@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V003/20x/30x External Interrupt and Event Controller (EXTI)
+
+compatible: "wch,exti"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-lines:
+    type: int
+    required: true
+    description: Number of lines supported by the interrupt controller.
+
+  line-ranges:
+    type: array
+    required: true
+    description: |
+      Describes how the input lines are grouped into ranges. Each range
+      consists of a (starting line, number of lines) pair and map to
+      a single interrupt.
+
+      For example:
+             line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+                           <4 1>, <5 5>, <10 6>;
+
+      defines seven ranges where the first five contain one line, the
+      sixth starts with line 5 and contains five elements (5 to 9), and
+      the last starts with line 10 and contains six elements (10 to 15).
