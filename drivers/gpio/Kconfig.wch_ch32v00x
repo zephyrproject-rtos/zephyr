@@ -5,3 +5,12 @@ config GPIO_WCH_GPIO
 	bool "WCH CH32V00x GPIO driver"
 	depends on DT_HAS_WCH_GPIO_ENABLED
 	default y
+
+config GPIO_WCH_GPIO_INTERRUPTS
+	bool "Interrupt support"
+	depends on GPIO_WCH_GPIO
+	depends on DT_HAS_WCH_EXTI_ENABLED
+	default y
+	help
+	  Support triggering an interrupt on pin change. Uses approximately
+	  700 bytes of flash and 60 bytes of RAM.
