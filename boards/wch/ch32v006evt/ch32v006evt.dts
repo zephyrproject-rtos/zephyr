@@ -75,6 +75,10 @@
 	clocks = <&pll>;
 };
 
+&exti {
+	status = "okay";
+};
+
 &gpioc {
 	status = "okay";
 };
