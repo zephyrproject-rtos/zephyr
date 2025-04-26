@@ -45,6 +45,16 @@
 			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
 			label = "LD4";
 		};
+
+		green_led_3: led_3 {
+			gpios = <&mcp23017 14 GPIO_ACTIVE_HIGH>;
+			label = "LD7";
+		};
+
+		orange_led_4: led_4 {
+			gpios = <&mcp23017 15 GPIO_ACTIVE_HIGH>;
+			label = "LD6";
+		};
 	};
 
 	aliases {
@@ -98,6 +108,14 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_scl_pd12 &i2c1_sda_pe8>;
 	status = "okay";
+
+	mcp23017: pinctrl@21 {
+		compatible = "microchip,mcp23017";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
 };
 
 &i2c4 {
