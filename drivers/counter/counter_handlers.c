@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2026 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,3 +159,23 @@ static inline int z_vrfy_counter_set_guard_period(const struct device *dev,
 						flags);
 }
 #include <zephyr/syscalls/counter_set_guard_period_mrsh.c>
+
+#ifdef CONFIG_COUNTER_CAPTURE
+
+static inline int z_vrfy_counter_capture_enable(const struct device *dev,
+						uint8_t chan_id)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
+	return z_impl_counter_capture_enable((const struct device *)dev, chan_id);
+}
+#include <zephyr/syscalls/counter_capture_enable_mrsh.c>
+
+static inline int z_vrfy_counter_capture_disable(const struct device *dev,
+						 uint8_t chan_id)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
+	return z_impl_counter_capture_disable((const struct device *)dev, chan_id);
+}
+#include <zephyr/syscalls/counter_capture_disable_mrsh.c>
+
+#endif /* CONFIG_COUNTER_CAPTURE */

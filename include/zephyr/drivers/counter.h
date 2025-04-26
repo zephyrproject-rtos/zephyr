@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,11 @@
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup counter_interface_ext Device-specific Counter API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -112,6 +118,54 @@ extern "C" {
 #define COUNTER_GUARD_PERIOD_LATE_TO_SET BIT(0)
 
 /**@} */
+
+/**
+ * @anchor COUNTER_CAPTURE_FLAGS
+ * @name Counter capture flags
+ *
+ * @brief Used by @ref counter_capture_callback_set.
+ * @{
+ */
+
+/**
+ * @brief Capture rising edge of an external input signal
+ */
+#define COUNTER_CAPTURE_RISING_EDGE BIT(0)
+
+/**
+ * @brief Capture falling edge of an external input signal
+ */
+#define COUNTER_CAPTURE_FALLING_EDGE BIT(1)
+
+/**
+ * @brief Capture both falling and rising edge of an external input signal
+ */
+#define COUNTER_CAPTURE_BOTH_EDGES (COUNTER_CAPTURE_FALLING_EDGE | COUNTER_CAPTURE_RISING_EDGE)
+
+/**
+ * @brief Provides a type to hold Counter Capture configuration flags.
+ *
+ * The lower 8 bits are used for standard flags.
+ * The upper 24 bits are reserved for SoC specific flags.
+ *
+ * @see @ref COUNTER_CAPTURE_FLAGS.
+ */
+
+typedef uint32_t counter_capture_flags_t;
+
+/**@} */
+
+/** @brief Counter capture callback
+ *
+ * @param dev       Pointer to the device structure for the driver instance
+ * @param chan_id   Channel ID
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param ticks     Counter value that triggered the capture
+ * @param user_data User data
+ */
+typedef void (*counter_capture_cb_t)(const struct device *dev, uint8_t chan_id,
+				     counter_capture_flags_t flags, uint32_t ticks,
+				     void *user_data);
 
 /** @brief Alarm callback
  *
@@ -292,6 +346,18 @@ struct counter_top_cfg_64 {
 	uint32_t flags;
 };
 
+/** @brief Counter capture callback for 64 bits ticks
+ *
+ * @param dev       Pointer to the device structure for the driver instance
+ * @param chan_id   Channel ID
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param ticks     Counter value that triggered the capture in 64 bits
+ * @param user_data User data
+ */
+typedef void (*counter_capture_cb_64_t)(const struct device *dev, uint8_t chan_id,
+					counter_capture_flags_t flags, uint64_t ticks,
+					void *user_data);
+
 typedef int (*counter_api_start)(const struct device *dev);
 typedef int (*counter_api_stop)(const struct device *dev);
 typedef int (*counter_api_get_value)(const struct device *dev, uint32_t *ticks);
@@ -321,6 +387,56 @@ typedef uint64_t (*counter_api_get_top_value_64)(const struct device *dev);
 typedef int (*counter_api_set_top_value_64)(const struct device *dev,
 					    const struct counter_top_cfg_64 *cfg);
 
+/** @brief Set a callback for counter capture events.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param chan_id   Channel ID.
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS).
+ * @param cb        Callback function to be called on capture events.
+ * @param user_data User data passed to the callback function.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if capture is not supported on the specified channel.
+ */
+typedef int (*counter_api_capture_callback_set)(const struct device *dev, uint8_t chan_id,
+						counter_capture_flags_t flags,
+						counter_capture_cb_t cb, void *user_data);
+
+/** @brief Set a callback for counter capture events with 64-bit ticks.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param chan_id   Channel ID.
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS).
+ * @param cb        Callback function to be called on capture events.
+ * @param user_data User data passed to the callback function.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if capture is not supported on the specified channel.
+ */
+typedef int (*counter_api_capture_callback_set_64)(const struct device *dev, uint8_t chan_id,
+						   counter_capture_flags_t flags,
+						   counter_capture_cb_64_t cb, void *user_data);
+
+/** @brief Enable counter capture on a channel.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if capture is not supported on the specified channel.
+ */
+typedef int (*counter_api_capture_enable)(const struct device *dev, uint8_t chan_id);
+
+/** @brief Disable counter capture on a channel.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if capture is not supported on the specified channel.
+ */
+typedef int (*counter_api_capture_disable)(const struct device *dev, uint8_t chan_id);
+
 __subsystem struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
@@ -347,6 +463,14 @@ __subsystem struct counter_driver_api {
 	counter_api_get_top_value_64 get_top_value_64;
 	counter_api_set_top_value_64 set_top_value_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
+#ifdef CONFIG_COUNTER_CAPTURE
+	counter_api_capture_callback_set capture_callback_set;
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	counter_api_capture_callback_set_64 capture_callback_set_64;
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+	counter_api_capture_enable capture_enable;
+	counter_api_capture_disable capture_disable;
+#endif /* CONFIG_COUNTER_CAPTURE */
 };
 
 /**
@@ -1205,6 +1329,120 @@ static inline int z_impl_counter_set_value_64(const struct device *dev, uint64_t
 	return -ENOTSUP;
 #endif
 }
+
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
+/**
+ * @brief Set callback function for a counter timestamp capture
+ *
+ * @param dev  Pointer to the device structure for the driver instance
+ * @param chan_id Channel ID
+ * @param flags Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param cb Callback function reference
+ * @param user_data Argument passed to the callback function
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+static inline int counter_capture_callback_set(const struct device *dev, uint8_t chan_id,
+					       counter_capture_flags_t flags,
+					       counter_capture_cb_t cb, void *user_data)
+{
+	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+
+	if (api->capture_callback_set == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_callback_set(dev, chan_id, flags, cb, user_data);
+}
+
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
+/**
+ * @brief Set callback function for a counter timestamp capture for 64 bits ticks
+ *
+ * @param dev  Pointer to the device structure for the driver instance
+ * @param chan_id Channel ID
+ * @param flags Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param cb Callback function reference
+ * @param user_data Argument passed to the callback function
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+static inline int counter_capture_callback_set_64(const struct device *dev, uint8_t chan_id,
+						  counter_capture_flags_t flags,
+						  counter_capture_cb_64_t cb, void *user_data)
+{
+	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+
+	if (api->capture_callback_set_64 == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_callback_set_64(dev, chan_id, flags, cb, user_data);
+}
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+
+/**
+ * @brief Enable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_capture_enable(const struct device *dev, uint8_t chan_id);
+
+static inline int z_impl_counter_capture_enable(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+
+	if (api->capture_enable == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_enable(dev, chan_id);
+}
+
+/**
+ * @brief Disable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_capture_disable(const struct device *dev, uint8_t chan_id);
+
+static inline int z_impl_counter_capture_disable(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+
+	if (api->capture_disable == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_disable(dev, chan_id);
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 #ifdef __cplusplus
 }
