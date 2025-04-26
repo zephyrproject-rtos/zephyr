@@ -384,7 +384,7 @@
 #define MBEDTLS_PKCS1_V15
 #endif
 
-#if defined(CONFIG_MBEDTLS_PKCS1_V15)
+#if defined(CONFIG_MBEDTLS_PKCS1_V21)
 #define MBEDTLS_PKCS1_V21
 #endif
 
