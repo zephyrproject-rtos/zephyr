@@ -236,3 +236,13 @@ The ``-w`` option can be used like this to delay the startup of the jobs.
    Protocol:               TCP
    Session id:             0
    Total 2 sessions done
+
+Custom Data Upload
+******************
+
+zperf supports more advanced data upload profiling by setting a custom data
+source through :c:member:`zperf_upload_params.data_loader`. This enables the
+generation of custom packet contents instead of sending a constant packet
+consisting solely of the ``z`` character. An example use case would be
+determining the maximum throughput of uploading data from an external flash
+memory chip.
