@@ -1,0 +1,10 @@
+&i2c0 {
+	eeprom0: eeprom@54 {
+		reg = <0x54>;
+		size = <256>;
+		compatible = "zephyr,i2c-target-eeprom";
+		status = "okay";
+	};
+};
+
+target_eeprom: &eeprom0{};
