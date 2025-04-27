@@ -89,6 +89,10 @@
 	pinctrl-names = "default";
 };
 
+&counter0 {
+	status = "disabled";
+};
+
 &rtc0 {
 	status = "disabled";
 	clock = "XTAL";
