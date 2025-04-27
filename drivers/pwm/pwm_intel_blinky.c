@@ -27,6 +27,7 @@ struct bk_intel_config {
 	uint32_t reg_offset;
 	uint32_t clock_freq;
 	uint32_t max_pins;
+	uint32_t reg_upper_32; /* Stores higher 32 bits of 64 bit reg address */
 };
 
 struct bk_intel_runtime {
@@ -103,9 +104,13 @@ static int bk_intel_init(const struct device *dev)
 {
 	struct bk_intel_runtime *runtime = dev->data;
 	const struct bk_intel_config *config = dev->config;
+	uintptr_t physical_addr;
+
+	physical_addr = (config->reg_base.phys_addr & ~0xFFU)
+			| ((uintptr_t)config->reg_upper_32 << 32);
 
 	device_map(&runtime->reg_base,
-		   config->reg_base.phys_addr & ~0xFFU,
+		   physical_addr,
 		   config->reg_base.size,
 		   K_MEM_CACHE_NONE);
 
@@ -118,6 +123,7 @@ static int bk_intel_init(const struct device *dev)
 		.reg_offset = DT_INST_PROP(n, reg_offset),		       \
 		.max_pins = DT_INST_PROP(n, max_pins),			       \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),		       \
+		.reg_upper_32 = DT_INST_PROP(n, reg_upper32),		       \
 	};								       \
 									       \
 	static struct bk_intel_runtime bk_rt_##n;			       \
