@@ -166,8 +166,6 @@ static int i2c_mspm0_reset_peripheral_target(const struct device *dev){
 	DL_I2C_enablePower(config->base);
 	delay_cycles(POWER_STARTUP_DELAY);
 
-	DL_I2C_disableTargetWakeup(config->base);
-
 	/* Config clocks and analog filter */
 	DL_I2C_setClockConfig(config->base,
 			(DL_I2C_ClockConfig *)&config->gI2CClockConfig);
@@ -216,8 +214,6 @@ static int i2c_mspm0_reset_peripheral_controller(const struct device *dev){
 
 	DL_I2C_enablePower(config->base);
 	delay_cycles(POWER_STARTUP_DELAY);
-
-	DL_I2C_disableTargetWakeup(config->base);
 
 	/* Config clocks and analog filter */
 	DL_I2C_setClockConfig(config->base,
@@ -769,8 +765,6 @@ static int i2c_mspm0_init(const struct device *dev)
 	DL_I2C_enablePower(config->base);
 	delay_cycles(POWER_STARTUP_DELAY);
 
-	DL_I2C_disableTargetWakeup(config->base);
-
 	/* Init GPIO */
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -844,14 +838,14 @@ static int i2c_mspm0_pm_action(const struct device *dev, enum pm_device_action a
 		if (!data->is_target) {
 			DL_I2C_enableController(config->base);
 		} else {
-			DL_I2C_enableTarget(config->base);
+			DL_I2C_disableTargetWakeup(config->base);
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (!data->is_target) {
 			DL_I2C_disableController(config->base);
 		} else {
-			DL_I2C_disableTarget(config->base);
+			DL_I2C_enableTargetWakeup(config->base);
 		}
 		break;
 	default:
