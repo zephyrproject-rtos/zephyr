@@ -53,9 +53,10 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_ZPERF_MAX_PACKET_SIZE
 	int "Maximum packet size"
-	default 1024
+	default 1064
 	help
-	  Upper size limit for packets sent by zperf.
+	  Upper size limit for packets sent by zperf. Default allows for a 1kB
+	  payload with the 40 byte iperf UDP client header.
 
 config NET_ZPERF_SERVER
 	bool "zperf server support"
