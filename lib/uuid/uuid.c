@@ -79,7 +79,7 @@ int uuid_generate_v4(struct uuid *out)
 #endif
 
 #if defined(CONFIG_UUID_V5)
-int uuid_generate_v5(const struct uuid *namespace, const void *data, size_t data_size,
+int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out)
 {
 	if (out == NULL) {
@@ -114,7 +114,7 @@ int uuid_generate_v5(const struct uuid *namespace, const void *data, size_t data
 		ret = -EINVAL;
 		goto exit;
 	}
-	mbedtls_err = mbedtls_md_update(&ctx, namespace->val, UUID_SIZE);
+	mbedtls_err = mbedtls_md_update(&ctx, ns->val, UUID_SIZE);
 	if (mbedtls_err != 0) {
 		/* Might return MBEDTLS_ERR_MD_BAD_INPUT_DATA */
 		ret = -EINVAL;
