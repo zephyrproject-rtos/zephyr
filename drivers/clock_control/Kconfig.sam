@@ -11,6 +11,7 @@ config CLOCK_CONTROL_SAM
 config CLOCK_CONTROL_SAMA7G5
 	bool "Microchip SAMA7G5 Power Management Controller (PMC)"
 	default y
-	depends on DT_HAS_MICROCHIP_SAM_PMC_ENABLED
+	depends on DT_HAS_MICROCHIP_SAM_PMC_ENABLED || \
+		   DT_HAS_MICROCHIP_SAMA7G5_SCKC_ENABLED
 	help
 	  Enable driver for Microchip SAMA7G5 Power Management Controller (PMC).
