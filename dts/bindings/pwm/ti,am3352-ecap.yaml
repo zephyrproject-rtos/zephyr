@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Texas Instruments
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI SOC ECAP based PWM controller
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "ti,am3352-ecap"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: Optional peripheral frequency to use if the clock is absent
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

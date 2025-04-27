@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_TI_AM3352_ECAP
+	bool "TI ECAP based PWM controller"
+	default y
+	depends on DT_HAS_TI_AM3352_ECAP_ENABLED
+	help
+	  Enable ECAP controller for TI SoCs
