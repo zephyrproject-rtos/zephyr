@@ -118,6 +118,13 @@
 				regulator-boot-on;
 			};
 		};
+
+		charger: charger {
+			compatible = "x-powers,axp2101-charger";
+			charge-term-current-microamp = <25000>;
+			constant-charge-current-max-microamp = <1000000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+		};
 	};
 };
 
