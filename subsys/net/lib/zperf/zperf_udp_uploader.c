@@ -150,6 +150,8 @@ static int udp_upload(int sock, int port,
 		      const struct zperf_upload_params *param,
 		      struct zperf_results *results)
 {
+	size_t header_size =
+		sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_client_hdr_v1);
 	uint32_t duration_in_ms = param->duration_ms;
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
@@ -164,13 +166,11 @@ static int udp_upload(int sock, int port,
 	int ret;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		NET_WARN("Packet size too large! max size: %u",
-			 PACKET_SIZE_MAX);
+		NET_WARN("Packet size too large! max size: %u", PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	} else if (packet_size < sizeof(struct zperf_udp_datagram)) {
-		NET_WARN("Packet size set to the min size: %zu",
-			 sizeof(struct zperf_udp_datagram));
-		packet_size = sizeof(struct zperf_udp_datagram);
+		NET_WARN("Packet size set to the min size: %zu", header_size);
+		packet_size = header_size;
 	}
 
 	/* Start the loop */
