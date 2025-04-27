@@ -177,6 +177,11 @@ New APIs and options
 
     * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
 
+  * zperf
+
+    * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
+    * :c:member:`zperf_upload_params.data_loader`
+
 * Sensor
 
   * :c:func:`sensor_value_to_deci`
