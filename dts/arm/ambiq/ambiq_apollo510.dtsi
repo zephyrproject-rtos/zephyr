@@ -149,6 +149,14 @@
 			status = "okay";
 		};
 
+		rtc0: rtc@RTC_BASE_NAME {
+			compatible = "ambiq,rtc";
+			reg = <RTC_REG_BASE RTC_REG_SIZE>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		wdt0: watchdog@WDT_BASE_NAME {
 			compatible = "ambiq,watchdog";
 			reg = <WDT_REG_BASE WDT_REG_SIZE>;
