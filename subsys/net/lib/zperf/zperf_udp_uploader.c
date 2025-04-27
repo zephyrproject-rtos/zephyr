@@ -158,6 +158,7 @@ static int udp_upload(int sock, int port,
 	uint32_t packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
 	uint32_t packet_duration = k_us_to_ticks_ceil32(packet_duration_us);
 	uint32_t delay = packet_duration;
+	uint64_t data_offset = 0U;
 	uint32_t nb_packets = 0U;
 	uint64_t usecs64;
 	int64_t start_time, end_time;
@@ -183,6 +184,7 @@ static int udp_upload(int sock, int port,
 	print_period = k_ms_to_ticks_ceil32(MSEC_PER_SEC);
 	print_time = start_time + print_period;
 
+	/* Default data payload */
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
@@ -233,6 +235,17 @@ static int udp_upload(int sock, int port,
 			sizeof(*datagram) - sizeof(*hdr);
 		hdr->bandwidth = htonl(rate_in_kbps);
 		hdr->num_of_bytes = htonl(packet_size);
+
+		/* Load custom data payload if requested */
+		if (param->data_loader != NULL) {
+			ret = param->data_loader(param->data_loader_ctx, data_offset,
+				sample_packet + header_size, packet_size - header_size);
+			if (ret < 0) {
+				NET_ERR("Failed to load data for offset %llu", data_offset);
+				return ret;
+			}
+		}
+		data_offset += packet_size - header_size;
 
 		/* Send the packet */
 		ret = zsock_send(sock, sample_packet, packet_size, 0);
