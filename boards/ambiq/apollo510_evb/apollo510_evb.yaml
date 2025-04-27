@@ -11,6 +11,7 @@ supported:
   - uart
   - watchdog
   - gpio
+  - rtc
   - clock_control
   - mspi
 testing:

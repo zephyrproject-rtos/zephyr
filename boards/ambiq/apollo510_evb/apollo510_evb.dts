@@ -89,6 +89,11 @@
 	pinctrl-names = "default";
 };
 
+&rtc0 {
+	status = "disabled";
+	clock = "XTAL";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
