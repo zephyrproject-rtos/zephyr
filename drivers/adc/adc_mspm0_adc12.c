@@ -121,7 +121,7 @@ static int adc_mspm0_init(const struct device *dev)
 	DL_ADC12_setClockConfig((ADC12_Regs *)config->base,
 				(DL_ADC12_ClockConfig *)&config->ADCClockConfig);
 
-	DL_ADC12_setPowerDownMode((ADC12_Regs *)config->base, DL_ADC12_POWER_DOWN_MODE_MANUAL);
+	DL_ADC12_setPowerDownMode((ADC12_Regs *)config->base, DL_ADC12_POWER_DOWN_MODE_AUTO);
 
 	/* Reset the sample time configuration */
 	data->sampleTime0 = -1;
