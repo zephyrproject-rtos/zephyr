@@ -116,6 +116,10 @@
 	pinctrl-names = "default";
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &flash {
 	partitions {
 		compatible = "fixed-partitions";
