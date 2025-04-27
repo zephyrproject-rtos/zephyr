@@ -10,6 +10,7 @@ toolchain:
 supported:
   - uart
   - watchdog
+  - counter
   - gpio
   - rtc
   - clock_control
