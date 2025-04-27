@@ -15,6 +15,15 @@ menuconfig LORA
 
 if LORA
 
+choice LORA_MODULE_BACKEND
+	prompt "Low-level LoRa modem integration to use"
+
+config LORA_MODULE_BACKEND_LORAMAC_NODE
+	bool "loramac-node backend"
+	depends on ZEPHYR_LORAMAC_NODE_MODULE
+
+endchoice
+
 module = LORA
 module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
@@ -31,8 +40,7 @@ config LORA_INIT_PRIORITY
 	help
 	  System initialization priority for LoRa drivers.
 
-source "drivers/lora/Kconfig.sx12xx"
-
-source "drivers/lora/Kconfig.rylrxxx"
+rsource "Kconfig.sx12xx"
+rsource "Kconfig.rylrxxx"
 
 endif # LORA
