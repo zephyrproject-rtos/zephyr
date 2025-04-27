@@ -79,6 +79,14 @@ config HWINFO_NRF
 	help
 	  Enable Nordic NRF hwinfo driver.
 
+config HWINFO_MCUX_MCX_CMC
+	bool "NXP MCX CMC reset cause"
+	default y
+	depends on HAS_MCUX_MCX_CMC
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP kinetis mcux CMC hwinfo driver.
+
 config HWINFO_MCUX_RCM
 	bool "NXP kinetis reset cause"
 	default y
