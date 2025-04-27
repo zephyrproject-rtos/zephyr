@@ -36,6 +36,7 @@ enum zperf_status {
 } __packed;
 
 struct zperf_upload_params {
+	uint64_t unix_offset_us;
 	struct sockaddr peer_addr;
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
