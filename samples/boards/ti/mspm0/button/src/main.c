@@ -69,3 +69,17 @@ int main(void)
 
 	return 0;
 }
+
+#define BOR_WAIT_TIME	15
+static int ti_mspm0l2xxx_bor_init(void)
+{
+	DL_SYSCTL_setBORThreshold(DL_SYSCTL_BOR_THRESHOLD_LEVEL_0);
+	DL_SYSCTL_activateBORThreshold();
+	k_usleep(BOR_WAIT_TIME);
+
+	printk("BOR is set to %u\n", DL_SYSCTL_getBORThreshold());
+
+	return 0;
+}
+
+SYS_INIT(ti_mspm0l2xxx_bor_init, APPLICATION, 0);
