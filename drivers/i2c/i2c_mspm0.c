@@ -811,9 +811,11 @@ static int i2c_mspm0_init(const struct device *dev)
 		DL_I2C_disableController(config->base);
 	}
 
-	if (!IS_ENABLED(CONFIG_PM_DEVICE)) {
-		DL_I2C_enableController(config->base);
-	}
+#ifdef CONFIG_PM_DEVICE
+	pm_device_init_suspended(dev);
+#else
+	DL_I2C_enableController(config->base);
+#endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_enable(dev);
