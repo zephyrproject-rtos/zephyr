@@ -313,6 +313,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_cs_control(&data->ctx, true);
 
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
+
 #ifdef CONFIG_SPI_B_INTERRUPT
 	spi_bit_width_t spi_width =
 		(spi_bit_width_t)(SPI_WORD_SIZE_GET(data->ctx.config->operation) - 1);
