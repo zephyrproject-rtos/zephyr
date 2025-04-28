@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #define DEBUG_RX 0
 #endif
 
+#define NET_BUF_TIMEOUT K_MSEC(100)
+
 /* If the VLAN interface count is 0, then only priority tagged (tag 0)
  * Ethernet frames can be received. In this case we do not need to
  * allocate any memory for VLAN interfaces.
@@ -390,6 +392,35 @@ static void setup_link_address(struct vlan_context *ctx)
 				   ll_addr->type);
 }
 
+static int vlan_fill_header(struct net_pkt *pkt) {
+	struct net_buf *hdr_frag;
+	void *hdr_buf;
+	struct net_vlan_hdr hdr;
+	const size_t hdr_len = sizeof(struct net_vlan_hdr);
+
+	/* Check if previous layer reserved some space */
+	if (net_buf_headroom(pkt->frags) < hdr_len) {
+		/* TODO: Reserve meachnism */
+		const size_t reserve_len = 32;
+		hdr_frag = net_pkt_get_frag(pkt, reserve_len, NET_BUF_TIMEOUT);
+		if (!hdr_frag) {
+			return -ENOMEM;
+		}
+		net_pkt_frag_insert(pkt, hdr_frag);
+		net_buf_reserve(hdr_frag, reserve_len);
+	} else {
+		hdr_frag = pkt->frags;
+	}
+	hdr.tpid = htons(NET_ETH_PTYPE_VLAN);
+	hdr.tci = htons(net_pkt_vlan_tci(pkt));
+	hdr.type = htons(net_pkt_ll_proto_type(pkt));
+
+	hdr_buf = net_buf_push(hdr_frag, hdr_len);
+	memcpy(hdr_buf, &hdr, sizeof(struct net_vlan_hdr));
+
+	return 0;
+}
+
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -576,6 +607,7 @@ static int vlan_interface_stop(const struct device *dev)
 static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
+	int ret;
 
 	if (ctx->attached_to == NULL) {
 		return -ENOENT;
@@ -584,6 +616,16 @@ static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_set_vlan_tag(pkt, ctx->tag);
 	net_pkt_set_iface(pkt, ctx->attached_to);
 	set_priority(pkt);
+
+	ret = vlan_fill_header(pkt);
+	if (ret < 0) {
+		NET_DBG("Cannot fill VLAN header");
+		return ret;
+	}
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_VLAN);
+	/* Pull two bytes of due to vlan type also belonging to etherent header */
+	net_buf_pull(pkt->frags, 2);
 
 	if (DEBUG_TX) {
 		char str[sizeof("TX iface xx (tag xxxx)")];
@@ -595,7 +637,7 @@ static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_hexdump(pkt, str);
 	}
 
-	return net_send_data(pkt);
+	return net_if_l2(ctx->attached_to)->send(ctx->attached_to, pkt);
 }
 
 static enum net_verdict vlan_interface_recv(struct net_if *iface,
@@ -603,9 +645,12 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
 
+	/* Check if the tag matches. Otherwise drop the packet. */
 	if (net_pkt_vlan_tag(pkt) != ctx->tag) {
-		return NET_CONTINUE;
+		return NET_DROP;
 	}
+
+	/* Header has been already processed in net_core. */
 
 	if (DEBUG_RX) {
 		char str[sizeof("RX iface xx (tag xxxx)")];
@@ -617,7 +662,7 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 		net_pkt_hexdump(pkt, str);
 	}
 
-	return NET_OK;
+	return NET_CONTINUE;
 }
 
 int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
