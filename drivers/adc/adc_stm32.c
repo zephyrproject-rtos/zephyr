@@ -10,14 +10,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// driver should be usable with hardware timing, kernel timing or both
-// work with dma, did
-// passes tests
-// enable configuration automatically from devicetree, is it possible or just for drivers?
-// do checking that configuration make sense
-// check compatibility with other socs, wl ok, f4 ok, l4 ok!
-// have some way of locking the timer from other uses, unlikely
-
 #define DT_DRV_COMPAT st_stm32_adc
 
 #include <errno.h>
@@ -980,9 +972,6 @@ static void dma_callback(const struct device *dev, void *user_data,
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
-			//! is it a problem that timer will not be disabled, could be! Let's try adding it.
-			//! this could be a candidate for a test
-			//! check coverage
 			adc_context_disable_timer(&data->ctx);
 			adc_context_complete(&data->ctx, status);
 		}
@@ -1347,15 +1336,16 @@ static void adc_context_enable_timer(struct adc_context* ctx)
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct device* dev = data->dev;
 	const struct adc_stm32_cfg* config = dev->config;
-	uint32_t auto_reload_value; //! fails silently if too low
+	uint32_t auto_reload_value;
 
 	int r;
 	uint32_t tim_clk;
-	//! function is void, can't return with failure, could set a data variable or context status
+
+	/*!function is void, can't return with failure, could set a data variable or context status */
 	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
 
+	/*! check that it is not too big, prescaler could be changed */
 	auto_reload_value = ctx->options.interval_us* ( tim_clk / 1000000 );
-	//! check that it is not too big
 	
 	LL_TIM_SetAutoReload(config->adc_timer.timer, auto_reload_value);
 
@@ -1898,15 +1888,11 @@ static int adc_stm32_init(const struct device* dev)
 	LL_TIM_StructInit(&init);
 	LL_TIM_OC_StructInit(&oc_init);
 
-	//! might be able to get rid of this
-	init.Prescaler = 0; // if slow timer is needed this might have to change
+	/* Default settings */
+	init.Prescaler = 0;
 	init.CounterMode = LL_TIM_COUNTERMODE_UP;
-	// max depends if 16bit or 32 bit counter
-	init.Autoreload = tim_clk; //try to get 1Hz measurements 
-	// if there is a hardware trigger event during conversion then it is ignored
-
+	init.Autoreload = tim_clk;
 	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-	//! repetition counter
 
 	if (LL_TIM_Init(config->adc_timer.timer, &init) != SUCCESS) {
 		LOG_ERR("Could not initialize timer");
@@ -1919,6 +1905,7 @@ static int adc_stm32_init(const struct device* dev)
 		break;
 	case STM32_ADC_TRGO2:
 
+	/* there is also a low level function IS_TIM_TRGO2_INSTANCE(TIMx) */
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 		LL_TIM_SetTriggerOutput2(config->adc_timer.timer, LL_TIM_TRGO2_UPDATE);
 #else
@@ -1928,21 +1915,9 @@ static int adc_stm32_init(const struct device* dev)
 	default:
 		return -ENOTSUP;
 	}
-	
-	// IS_TIM_TRGO2_INSTANCE(TIMx)
-	//LL_TIM_EnableCounter(TIM2);
 
 	LL_ADC_REG_SetTriggerSource(adc, config->adc_timer.trigger_source);
 
-	// there is also an init type setup
-	// must be a reason it wasn't used before
-	// LL_ADC_Init (ADC_TypeDef * ADCx, const LL_ADC_InitTypeDef * pADC_InitStruct)
-	//LL_ADC_StructInit(&adc_init);
-	/*
-	LL_ADC_REG_InitTypeDef adc_reg_init;
-	LL_ADC_REG_StructInit(&adc_reg_init);
-	LL_ADC_REG_Init(,&adc_reg_init);
-	*/
 #endif /*CONFIG_ADC_STM32_TIMER*/
 
 	adc_context_unlock_unconditionally(&data->ctx);
