@@ -16,3 +16,42 @@ source "subsys/usb/device/class/hid/Kconfig"
 source "subsys/usb/device/class/audio/Kconfig"
 
 source "subsys/usb/device/class/dfu/Kconfig"
+
+menuconfig USB_DEVICE_PRINTER
+	bool "USB Printer Device Class Driver"
+	select USB_COMPOSITE_DEVICE
+	help
+	  USB Printer device class driver. Implements support for USB
+	  printer devices according to USB Printer Class v1.1 specification.
+
+if USB_DEVICE_PRINTER
+
+config USB_PRINTER_BULK_EP_MPS
+	int "Bulk Endpoint size"
+	default 64
+	range 8 64 if USB_DC_HAS_FS_SUPPORT
+	range 8 512 if USB_DC_HAS_HS_SUPPORT
+	help
+	  Bulk endpoint size for the USB printer class driver.
+
+config USB_PRINTER_DEVICE_NAME
+	string "USB printer device name"
+	default "USB_PRINTER"
+	help
+	  USB printer device name as used in device naming.
+
+config USB_PRINTER_LOG_LEVEL
+	int "USB printer class driver log level"
+	depends on LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for USB printer device class driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write LOG_ERR
+	  2 WARNING, write LOG_WRN in addition to previous level
+	  3 INFO, write LOG_INF in addition to previous levels
+	  4 DEBUG, write LOG_DBG in addition to previous levels
+
+endif # USB_DEVICE_PRINTER

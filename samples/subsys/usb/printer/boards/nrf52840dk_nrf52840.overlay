@@ -1,0 +1,20 @@
+/* Add USB support for nRF52840 DK */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_0";
+	};
+};
+
+&usbd {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+	maximum-speed = "full-speed";
+};

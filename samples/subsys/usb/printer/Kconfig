@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config USB_PRINTER_SAMPLE_DEVICE_ID
+	string "IEEE 1284 Device ID string"
+	default "MFG:Zephyr;MDL:USB-Printer;CMD:PJL,PCL;CLS:PRINTER;DES:Zephyr USB Printer Sample;VER:1.0;"
+	help
+	  IEEE 1284 Device ID string reported by the printer.
+
+config USB_PRINTER_SAMPLE_RING_BUF_SIZE
+	int "Size of receive ring buffer"
+	default 1024
+	range 256 4096
+	help
+	  Size of the ring buffer used for receiving print data.
+
+config USB_PRINTER_SAMPLE_PCL_SUPPORT
+	bool "Enable PCL command support"
+	default y
+	help
+	  Enable support for PCL printer commands.
+
+config USB_PRINTER_SAMPLE_PJL_SUPPORT
+	bool "Enable PJL job control"
+	default y
+	depends on USB_PRINTER_SAMPLE_PCL_SUPPORT
+	help
+	  Enable support for PJL job control commands.
+
+config USB_PRINTER_SAMPLE_TEST_PAGE
+	bool "Enable test page support"
+	default y
+	help
+	  Enable built-in test page generation.
+
+config USB_PRINTER_SAMPLE_SIMULATED_ERRORS
+	bool "Enable error simulation"
+	default y
+	help
+	  Enable simulated paper out errors for testing.
+
+config USB_PRINTER_SAMPLE_JOB_QUEUE_SIZE
+	int "Maximum number of queued print jobs"
+	default 5
+	range 1 20
+	help
+	  Maximum number of print jobs that can be queued.
+	  Each job requires memory for tracking status.
+
+config USB_PRINTER_SAMPLE_PJL_BUFFER_SIZE
+	int "Size of PJL response buffer"
+	default 256
+	range 128 1024
+	depends on USB_PRINTER_SAMPLE_PJL_SUPPORT
+	help
+	  Size of buffer used for PJL response generation.

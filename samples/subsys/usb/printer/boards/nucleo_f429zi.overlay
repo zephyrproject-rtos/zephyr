@@ -1,0 +1,18 @@
+/* Enable USB on STM32F429 Nucleo */
+
+/ {
+	chosen {
+		zephyr,console = &usart3;
+	};
+};
+
+&usb {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <8000000>;
+};

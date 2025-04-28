@@ -1,0 +1,10 @@
+/* Generated version header - do not edit */
+#ifndef USB_PRINTER_VERSION_H
+#define USB_PRINTER_VERSION_H
+
+#define USB_PRINTER_VERSION_MAJOR 1
+#define USB_PRINTER_VERSION_MINOR 0
+#define USB_PRINTER_VERSION_PATCH 0
+#define USB_PRINTER_VERSION_STRING "1.0.0"
+
+#endif /* USB_PRINTER_VERSION_H */

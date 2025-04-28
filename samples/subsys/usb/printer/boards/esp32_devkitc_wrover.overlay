@@ -1,0 +1,11 @@
+/* Enable USB on ESP32-WROVER */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
