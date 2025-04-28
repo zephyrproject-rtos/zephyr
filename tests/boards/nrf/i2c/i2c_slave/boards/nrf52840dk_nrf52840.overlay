@@ -39,22 +39,24 @@
 	};
 };
 
-&i2c0 {
+dut_twim: &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default_alt>;
 	pinctrl-1 = <&i2c0_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sensor: sensor@54 {
 		reg = <0x54>;
 	};
 };
 
 
-&i2c1 {
+dut_twis: &i2c1 {
 	compatible = "nordic,nrf-twis";
 	status = "okay";
 	pinctrl-0 = <&i2c1_default_alt>;
 	pinctrl-1 = <&i2c1_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
