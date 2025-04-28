@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_wdt
+#define DT_DRV_COMPAT nordic_npm13xx_wdt
 
 #include <errno.h>
 
@@ -13,49 +13,49 @@
 #include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/dt-bindings/gpio/nordic-npm13xx-gpio.h>
 
-/* nPM1300 TIMER base address */
+/* nPM13xx TIMER base address */
 #define TIME_BASE 0x07U
 
-/* nPM1300 timer register offsets */
+/* nPM13xx timer register offsets */
 #define TIME_OFFSET_START     0x00U
 #define TIME_OFFSET_STOP      0x01U
 #define TIME_OFFSET_WDOG_KICK 0x04U
 #define TIME_OFFSET_MODE      0x05U
 
-/* nPM1300 timer modes */
+/* nPM13xx timer modes */
 #define TIME_MODE_BOOT  0x00U
 #define TIME_MODE_WARN  0x01U
 #define TIME_MODE_RESET 0x02U
 #define TIME_MODE_GEN   0x03U
 
-struct wdt_npm1300_config {
+struct wdt_npm13xx_config {
 	const struct device *mfd;
 	struct gpio_dt_spec reset_gpios;
 };
 
-struct wdt_npm1300_data {
+struct wdt_npm13xx_data {
 	bool timeout_valid;
 };
 
-static int wdt_npm1300_setup(const struct device *dev, uint8_t options)
+static int wdt_npm13xx_setup(const struct device *dev, uint8_t options)
 {
-	const struct wdt_npm1300_config *config = dev->config;
-	struct wdt_npm1300_data *data = dev->data;
+	const struct wdt_npm13xx_config *config = dev->config;
+	struct wdt_npm13xx_data *data = dev->data;
 
 	if (!data->timeout_valid) {
 		return -EINVAL;
 	}
 
-	return mfd_npm1300_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_START, 1U);
+	return mfd_npm13xx_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_START, 1U);
 }
 
-static int wdt_npm1300_disable(const struct device *dev)
+static int wdt_npm13xx_disable(const struct device *dev)
 {
-	const struct wdt_npm1300_config *config = dev->config;
-	struct wdt_npm1300_data *data = dev->data;
+	const struct wdt_npm13xx_config *config = dev->config;
+	struct wdt_npm13xx_data *data = dev->data;
 	int ret;
 
-	ret = mfd_npm1300_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_STOP, 1U);
+	ret = mfd_npm13xx_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_STOP, 1U);
 	if (ret < 0) {
 		return ret;
 	}
@@ -65,11 +65,11 @@ static int wdt_npm1300_disable(const struct device *dev)
 	return 0;
 }
 
-static int wdt_npm1300_install_timeout(const struct device *dev,
+static int wdt_npm13xx_install_timeout(const struct device *dev,
 				       const struct wdt_timeout_cfg *timeout)
 {
-	const struct wdt_npm1300_config *config = dev->config;
-	struct wdt_npm1300_data *data = dev->data;
+	const struct wdt_npm13xx_config *config = dev->config;
+	struct wdt_npm13xx_data *data = dev->data;
 	uint8_t mode;
 	int ret;
 
@@ -81,7 +81,7 @@ static int wdt_npm1300_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = mfd_npm1300_set_timer(config->mfd, timeout->window.max);
+	ret = mfd_npm13xx_set_timer(config->mfd, timeout->window.max);
 	if (ret < 0) {
 		return ret;
 	}
@@ -103,7 +103,7 @@ static int wdt_npm1300_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = mfd_npm1300_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_MODE, mode);
+	ret = mfd_npm13xx_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_MODE, mode);
 	if (ret < 0) {
 		return ret;
 	}
@@ -113,27 +113,27 @@ static int wdt_npm1300_install_timeout(const struct device *dev,
 	return 0;
 }
 
-static int wdt_npm1300_feed(const struct device *dev, int channel_id)
+static int wdt_npm13xx_feed(const struct device *dev, int channel_id)
 {
-	const struct wdt_npm1300_config *config = dev->config;
+	const struct wdt_npm13xx_config *config = dev->config;
 
 	if (channel_id != 0) {
 		return -EINVAL;
 	}
 
-	return mfd_npm1300_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_WDOG_KICK, 1U);
+	return mfd_npm13xx_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_WDOG_KICK, 1U);
 }
 
-static DEVICE_API(wdt, wdt_npm1300_api) = {
-	.setup = wdt_npm1300_setup,
-	.disable = wdt_npm1300_disable,
-	.install_timeout = wdt_npm1300_install_timeout,
-	.feed = wdt_npm1300_feed,
+static DEVICE_API(wdt, wdt_npm13xx_api) = {
+	.setup = wdt_npm13xx_setup,
+	.disable = wdt_npm13xx_disable,
+	.install_timeout = wdt_npm13xx_install_timeout,
+	.feed = wdt_npm13xx_feed,
 };
 
-static int wdt_npm1300_init(const struct device *dev)
+static int wdt_npm13xx_init(const struct device *dev)
 {
-	const struct wdt_npm1300_config *config = dev->config;
+	const struct wdt_npm13xx_config *config = dev->config;
 	int ret;
 
 	if (!device_is_ready(config->mfd)) {
@@ -145,7 +145,7 @@ static int wdt_npm1300_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&config->reset_gpios, NPM1300_GPIO_WDT_RESET_ON);
+		ret = gpio_pin_configure_dt(&config->reset_gpios, NPM13XX_GPIO_WDT_RESET_ON);
 		if (ret != 0) {
 			return ret;
 		}
@@ -154,15 +154,15 @@ static int wdt_npm1300_init(const struct device *dev)
 	return 0;
 }
 
-#define WDT_NPM1300_DEFINE(n)                                                                      \
-	static struct wdt_npm1300_data data##n;                                                    \
+#define WDT_NPM13XX_DEFINE(n)                                                                      \
+	static struct wdt_npm13xx_data data##n;                                                    \
                                                                                                    \
-	static const struct wdt_npm1300_config config##n = {                                       \
+	static const struct wdt_npm13xx_config config##n = {                                       \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.reset_gpios = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &wdt_npm1300_init, NULL, &data##n, &config##n, POST_KERNEL,       \
-			      CONFIG_WDT_NPM1300_INIT_PRIORITY, &wdt_npm1300_api);
+	DEVICE_DT_INST_DEFINE(n, &wdt_npm13xx_init, NULL, &data##n, &config##n, POST_KERNEL,       \
+			      CONFIG_WDT_NPM13XX_INIT_PRIORITY, &wdt_npm13xx_api);
 
-DT_INST_FOREACH_STATUS_OKAY(WDT_NPM1300_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(WDT_NPM13XX_DEFINE)
