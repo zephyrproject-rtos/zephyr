@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -167,6 +168,17 @@
 			interrupts = <65 0>;
 			status = "disabled";
 			#io-channel-cells = <2>;
+		};
+
+		lpi2c0: i2c@4009a000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4009a000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&syscon MCUX_LPI2C0_CLK>;
+			status = "disabled";
 		};
 
 		lpuart0: lpuart@4009f000 {
