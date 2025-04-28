@@ -5341,52 +5341,55 @@ static void bt_l2cap_br_recv_seg_direct(struct bt_l2cap_br_chan *br_chan, struct
 
 	switch (sar) {
 	case BT_L2CAP_CONTROL_SAR_UNSEG:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_START:
 		if (sar == BT_L2CAP_CONTROL_SAR_START) {
 			br_chan->_sdu_len = net_buf_pull_le16(seg);
 		} else {
 			br_chan->_sdu_len = seg->len;
 		}
-		br_chan->_sdu_len_done = 0;
 
 		if (br_chan->_sdu_len > br_chan->rx.mtu) {
 			LOG_WRN("SDU exceeds MTU");
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-			return;
+			goto failed;
 		}
+
+		if (br_chan->_sdu_len < seg->len) {
+			LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len, seg->len);
+			goto failed;
+		}
+
+		br_chan->_sdu_len_done = seg->len;
 		break;
 	case BT_L2CAP_CONTROL_SAR_END:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_CONTI:
 		seg_offset = br_chan->_sdu_len_done;
 		sdu_remaining = br_chan->_sdu_len - br_chan->_sdu_len_done;
 
 		br_chan->_sdu_len_done += seg->len;
 
-		if (sar == BT_L2CAP_CONTROL_SAR_END) {
-			if (br_chan->_sdu_len_done < br_chan->_sdu_len) {
-				br_chan->_sdu_len = 0;
-				br_chan->_sdu_len_done = 0;
-				LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len_done,
-					br_chan->_sdu_len);
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-				return;
-			}
+		if (sdu_remaining < seg->len) {
+			LOG_WRN("L2CAP RX PDU total exceeds SDU");
+			goto failed;
+		}
+
+		if ((sar == BT_L2CAP_CONTROL_SAR_END) &&
+		    (br_chan->_sdu_len_done < br_chan->_sdu_len)) {
+			LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len_done,
+				br_chan->_sdu_len);
+			goto failed;
 		}
 		break;
 	}
 
-	if (sdu_remaining < seg->len) {
-		br_chan->_sdu_len = 0;
-		br_chan->_sdu_len_done = 0;
-		LOG_WRN("L2CAP RX PDU total exceeds SDU");
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-		return;
-	}
-
 	/* Tail call. */
 	br_chan->chan.ops->seg_recv(&br_chan->chan, br_chan->_sdu_len, seg_offset, &seg->b);
+
+	return;
+
+failed:
+	br_chan->_sdu_len = 0;
+	br_chan->_sdu_len_done = 0;
+	bt_l2cap_chan_disconnect(&br_chan->chan);
 }
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
