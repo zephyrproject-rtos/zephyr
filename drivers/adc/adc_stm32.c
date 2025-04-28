@@ -191,7 +191,7 @@ struct adc_stm32_data {
 
 #ifdef CONFIG_ADC_STM32_TIMER
 struct adc_stm32_timer {
-	TIM_TypeDef* timer;
+	TIM_TypeDef *timer;
 	int trigger_output;
 	int trigger_source;
 	const struct stm32_pclken *pclken;
@@ -228,10 +228,10 @@ struct adc_stm32_cfg {
  *
  * This function is ripped from the PWM driver; TODO handle code duplication.
  */
-static int counter_stm32_get_tim_clk(const struct stm32_pclken* pclken, uint32_t* tim_clk)
+static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 {
 	int r;
-	const struct device* clk;
+	const struct device *clk;
 	uint32_t bus_clk, apb_psc;
 
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -254,8 +254,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken* pclken, uint32_t
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = STM32_D2PPRE1;
-	}
-	else {
+	}else {
 		apb_psc = STM32_D2PPRE2;
 	}
 #else
@@ -300,20 +299,17 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken* pclken, uint32_t
 
 			LL_RCC_GetSystemClocksFreq(&clocks);
 			*tim_clk = clocks.HCLK_Frequency;
-		}
-		else {
+		}else {
 			*tim_clk = bus_clk * 2u;
 		}
-	}
-	else {
+	}else {
 		/* TIMPRE = 1 */
 		if (apb_psc <= 4u) {
 			LL_RCC_ClocksTypeDef clocks;
 
 			LL_RCC_GetSystemClocksFreq(&clocks);
 			*tim_clk = clocks.HCLK_Frequency;
-		}
-		else {
+		}else {
 			*tim_clk = bus_clk * 4u;
 		}
 	}
@@ -513,10 +509,10 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
-static void adc_stm32_start_conversion(const struct device* dev)
+static void adc_stm32_start_conversion(const struct device *dev)
 {
-	const struct adc_stm32_cfg* config = dev->config;
-	ADC_TypeDef* adc = config->base;
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
 
 	LOG_DBG("Starting conversion");
 
@@ -525,13 +521,13 @@ static void adc_stm32_start_conversion(const struct device* dev)
 	LL_ADC_REG_StartConversion(adc);
 #else
 #ifdef CONFIG_ADC_STM32_TIMER
-	struct adc_stm32_data* data = dev->data;
-	if (data->ctx.options.interval_us == 0) { 
+	struct adc_stm32_data *data = dev->data;
+
+	if (data->ctx.options.interval_us == 0) {
 #endif /* CONFIG_ADC_STM32_TIMER */
 		LL_ADC_REG_StartConversionSWStart(adc);
 #ifdef CONFIG_ADC_STM32_TIMER
-	}
-	else {
+	}else {
 		LL_ADC_REG_StartConversionExtTrig(adc, LL_ADC_REG_TRIG_EXT_RISING);
 	}
 #endif /* CONFIG_ADC_STM32_TIMER */
@@ -1230,7 +1226,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
-	const struct device* dev = data->dev;
+	const struct device *dev = data->dev;
 	const struct adc_stm32_cfg *config = dev->config;
 	__maybe_unused ADC_TypeDef *adc = config->base;
 
@@ -1239,8 +1235,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #ifdef CONFIG_ADC_STM32_TIMER
 	if (ctx->options.interval_us == 0) {
 		LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-	}
-	else{
+	}else {
 		LL_ADC_REG_SetTriggerSource(adc, config->adc_timer.trigger_source);
 		atomic_inc(&ctx->sampling_requested);
 	}
@@ -1330,13 +1325,13 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 }
 
 #ifdef CONFIG_ADC_STM32_TIMER
-static void adc_context_enable_timer(struct adc_context* ctx)
+static void adc_context_enable_timer(struct adc_context *ctx)
 {
-	struct adc_stm32_data* data =
+	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
-	const struct device* dev = data->dev;
-	const struct adc_stm32_cfg* config = dev->config;
-	uint32_t auto_reload_value;
+	const struct device *dev = data->dev;
+	const struct adc_stm32_cfg *config = dev->config;
+	uint32_t auto_relvoad_value;
 
 	int r;
 	uint32_t tim_clk;
@@ -1345,25 +1340,26 @@ static void adc_context_enable_timer(struct adc_context* ctx)
 	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
 
 	/*! check that it is not too big, prescaler could be changed */
-	auto_reload_value = ctx->options.interval_us* ( tim_clk / 1000000 );
-	
+	auto_reload_value = ctx->options.interval_us * (tim_clk / 1000000);
+
 	LL_TIM_SetAutoReload(config->adc_timer.timer, auto_reload_value);
 
 	atomic_inc(&data->ctx.sampling_requested);
 
-	LOG_DBG("enabling timer");
+	LOG_DBG("enabling timer\n");
 	LL_TIM_EnableCounter(config->adc_timer.timer);
 
 	adc_context_start_sampling(ctx);
 }
 
-static void adc_context_disable_timer(struct adc_context* ctx)
+static void adc_context_disable_timer(struct adc_context *ctx)
 {
-	struct adc_stm32_data* data =
+	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
-	const struct device* dev = data->dev;
-	const struct adc_stm32_cfg* config = dev->config;
-	LOG_DBG("disabling timer");
+	const struct device *dev = data->dev;
+	const struct adc_stm32_cfg *config = dev->config;
+
+	LOG_DBG("disabling timer\n");
 	LL_TIM_DisableCounter(config->adc_timer.timer);
 
 	atomic_dec(&ctx->sampling_requested);
@@ -1752,12 +1748,13 @@ static void adc_stm32_disable_analog_supply(void)
 }
 #endif
 
-static int adc_stm32_init(const struct device* dev)
+static int adc_stm32_init(const struct device *dev)
 {
-	struct adc_stm32_data* data = dev->data;
-	const struct adc_stm32_cfg* config = dev->config;
-	const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	__maybe_unused ADC_TypeDef* adc = config->base;
+	struct adc_stm32_data *data = dev->data;
+	const struct adc_stm32_cfg *config = dev->config;
+	const struct device * const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	__maybe_unused ADC_TypeDef *adc = config->base;
+
 	int err;
 
 	LOG_DBG("Initializing %s", dev->name);
@@ -1779,6 +1776,7 @@ static int adc_stm32_init(const struct device* dev)
 	}
 
 	uint32_t tim_clk;
+
 	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
 
 	if (r < 0) {
@@ -1857,8 +1855,7 @@ static int adc_stm32_init(const struct device* dev)
 	 /* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
 	if (adc == ADC3) {
 		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
-	}
-	else {
+	}else {
 		while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
 		}
 	}
@@ -2201,12 +2198,13 @@ static const struct stm32_pclken timer_pclken_##index[] =				\
 	STM32_DT_CLOCKS(DT_PHANDLE(DT_DRV_INST(index), timer));				\
 											\
 static const struct adc_stm32_timer adc_stm32_timer_##index = {				\
-	.timer = (TIM_TypeDef*)DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(index), timer)),	\
+	.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(index), timer)),	\
 	.trigger_output = TRIGGER_OUTPUT(DT_INST_STRING_TOKEN(index, trigger_name)),	\
-	.trigger_source = TRIGGER_SOURCE(DT_INST_PROP(index, timer_number),DT_INST_STRING_TOKEN(index, trigger_name)),\
+	.trigger_source = TRIGGER_SOURCE(DT_INST_PROP(index, timer_number),		\
+				DT_INST_STRING_TOKEN(index, trigger_name)),		\
 	.pclken = timer_pclken_##index,							\
 	.pclk_len = DT_NUM_CLOCKS(DT_PHANDLE(DT_DRV_INST(index), timer)),		\
-};											\
+};
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_TIMER_INIT)
 
@@ -2222,7 +2220,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_TIMER_INIT)
 /* we are adding a comma */
 #define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name) ADC_CONTEXT_INIT_TIMER(data, ctx_name),
 #else
-#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name) 
+#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name)
 #endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
 
 
@@ -2244,8 +2242,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	ADC_STM32_TIMER(index)						\
-	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
-	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
+	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),\
+	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\

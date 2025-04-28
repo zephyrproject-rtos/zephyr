@@ -16,21 +16,21 @@ properties:
       Hardware timer:
       Hardware timer.
 
-  #adc-timer:
+  # adc-timer:
   #  type: phandle-array
   #  description: |
   #    ADC Hardware timer:
   #    ADC Hardware timer.
 
   trigger-name:
-    type : string
-    description : |
+    type: string
+    description: |
       Abbreviation used to refer to the channel used for triggering:
       E.g. "TRGO" or "TRGO2"
 
   timer-number:
-    type : int
-    description : |
+    type: int
+    description: |
       Number associated with the timer peripheral:
       E.g. 2 for Timer2
 
