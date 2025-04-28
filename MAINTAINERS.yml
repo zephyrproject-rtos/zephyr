@@ -3906,6 +3906,8 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
+  files-exclude:
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
@@ -3948,10 +3950,13 @@ NXP Platforms (Robotics Products):
   maintainers:
     - bperseghetti
     - PetervdPerk-NXP
+  collaborators:
+    - manuargue
   files:
     - boards/nxp/vmu*/
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
