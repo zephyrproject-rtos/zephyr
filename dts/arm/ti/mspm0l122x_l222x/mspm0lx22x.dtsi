@@ -31,7 +31,8 @@
 			#size-cells = <1>;
 			cpu-power-states = <&run0 &run1 &run2
 					    &stop0 &stop1 &stop2
-					    &stdby0 &stdby1>;
+					    &stdby0 &stdby1
+					    &shutdown>;
 		};
 
 		power-states {
@@ -78,6 +79,12 @@
 				power-state-name = "standby";
 				substate-id = <2>;
 			};
+
+			shutdown: shutdown {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+			};
+
 		};
 	};
 
