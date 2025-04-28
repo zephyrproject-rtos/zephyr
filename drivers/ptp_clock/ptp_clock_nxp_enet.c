@@ -30,7 +30,7 @@ struct ptp_clock_nxp_enet_config {
 struct ptp_clock_nxp_enet_data {
 	ENET_Type *base;
 	double clock_ratio;
-	enet_handle_t enet_handle;
+	enet_handle_t *enet_handle;
 	struct k_mutex ptp_mutex;
 };
 
@@ -43,7 +43,7 @@ static int ptp_clock_nxp_enet_set(const struct device *dev,
 	enet_time.second = tm->second;
 	enet_time.nanosecond = tm->nanosecond;
 
-	ENET_Ptp1588SetTimer(data->base, &data->enet_handle, &enet_time);
+	ENET_Ptp1588SetTimer(data->base, data->enet_handle, &enet_time);
 
 	return 0;
 }
@@ -54,7 +54,7 @@ static int ptp_clock_nxp_enet_get(const struct device *dev,
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
 
-	ENET_Ptp1588GetTimer(data->base, &data->enet_handle, &enet_time);
+	ENET_Ptp1588GetTimer(data->base, data->enet_handle, &enet_time);
 
 	tm->second = enet_time.second;
 	tm->nanosecond = enet_time.nanosecond;
@@ -156,6 +156,11 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
+	struct nxp_enet_ptp_data *ptp_data;
+
+	__ASSERT(cb_data == NULL, "ptp data is NULL");
+
+	ptp_data = (struct nxp_enet_ptp_data *)cb_data;
 
 	if (event == NXP_ENET_MODULE_RESET) {
 		enet_ptp_config_t ptp_config;
@@ -174,15 +179,15 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		ptp_config.ptp1588ClockSrc_Hz = enet_ref_pll_rate;
 		data->clock_ratio = 1.0;
 
+		/* Share the mutex with mac driver */
+		ptp_data->ptp_mutex = &data->ptp_mutex;
+		/* Get enet handle from mac driver */
+		data->enet_handle = ptp_data->enet;
+
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
 				kENET_PtpChannelPulseHighonCompare, true);
-		ENET_Ptp1588Configure(data->base, &data->enet_handle,
+		ENET_Ptp1588Configure(data->base, data->enet_handle,
 				      &ptp_config);
-	}
-
-	if (cb_data != NULL) {
-		/* Share the mutex with mac driver */
-		*(uintptr_t *)cb_data = (uintptr_t)&data->ptp_mutex;
 	}
 }
 
@@ -220,7 +225,7 @@ static void ptp_clock_nxp_enet_isr(const struct device *dev)
 		}
 	}
 
-	ENET_TimeStampIRQHandler(data->base, &data->enet_handle);
+	ENET_TimeStampIRQHandler(data->base, data->enet_handle);
 
 	irq_unlock(irq_lock_key);
 }
