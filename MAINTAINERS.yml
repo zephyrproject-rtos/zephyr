@@ -3893,6 +3893,7 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
+    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
