@@ -18,7 +18,11 @@
 #include <hardware/flash.h>
 #include <hardware/regs/io_qspi.h>
 #include <hardware/regs/pads_qspi.h>
+#if PICO_RP2350
+#include <hardware/structs/qmi.h>
+#else
 #include <hardware/structs/ssi.h>
+#endif
 #include <hardware/structs/xip_ctrl.h>
 #include <hardware/resets.h>
 #include <pico/bootrom.h>
@@ -31,8 +35,6 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 #define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 #define ERASE_VALUE 0xff
 #define FLASH_SIZE KB(CONFIG_FLASH_SIZE)
-#define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
-#define SSI_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash_controller))
 
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
@@ -58,7 +60,6 @@ enum outover {
 	OUTOVER_HIGH
 };
 
-static ssi_hw_t *const ssi = (ssi_hw_t *)SSI_BASE_ADDRESS;
 static uint32_t boot2_copyout[BOOT2_SIZE_WORDS];
 static bool boot2_copyout_valid;
 static uint8_t flash_ram_buffer[PAGE_SIZE];
@@ -68,8 +69,13 @@ static void __no_inline_not_in_flash_func(flash_init_boot2_copyout)(void)
 	if (boot2_copyout_valid) {
 		return;
 	}
+#if PICO_RP2040
+	const volatile uint32_t *copy_from = (uint32_t *)XIP_BASE;
+#else
+	const volatile uint32_t *copy_from = (uint32_t *)BOOTRAM_BASE;
+#endif
 	for (int i = 0; i < BOOT2_SIZE_WORDS; ++i) {
-		boot2_copyout[i] = ((uint32_t *)FLASH_BASE)[i];
+		boot2_copyout[i] = copy_from[i];
 	}
 	__compiler_memory_barrier();
 	boot2_copyout_valid = true;
@@ -80,6 +86,45 @@ static void __no_inline_not_in_flash_func(flash_enable_xip_via_boot2)(void)
 	((void (*)(void))((uint32_t)boot2_copyout+1))();
 }
 
+#if PICO_RP2350
+typedef struct flash_rp2350_qmi_save_state {
+	uint32_t timing;
+	uint32_t rcmd;
+	uint32_t rfmt;
+} flash_rp2350_qmi_save_state_t;
+
+static void
+__no_inline_not_in_flash_func(flash_rp2350_save_qmi_cs1)(flash_rp2350_qmi_save_state_t *state)
+{
+	state->timing = qmi_hw->m[1].timing;
+	state->rcmd = qmi_hw->m[1].rcmd;
+	state->rfmt = qmi_hw->m[1].rfmt;
+}
+
+static void __no_inline_not_in_flash_func(flash_rp2350_restore_qmi_cs1)(
+	const flash_rp2350_qmi_save_state_t *state)
+{
+	if (flash_devinfo_get_cs_size(1) == FLASH_DEVINFO_SIZE_NONE) {
+		/* Case 1: The RP2350 ROM sets QMI to a clean (03h read) configuration
+		during flash_exit_xip(), even though when CS1 is not enabled via
+		FLASH_DEVINFO it does not issue an XIP exit sequence to CS1. In
+		this case, restore the original register config for CS1 as it is
+		still the correct config. */
+		qmi_hw->m[1].timing = state->timing;
+		qmi_hw->m[1].rcmd = state->rcmd;
+		qmi_hw->m[1].rfmt = state->rfmt;
+	} else {
+		/* Case 2: If RAM is attached to CS1, and the ROM has issued an XIP
+		exit sequence to it, then the ROM re-initialisation of the QMI
+		registers has actually not gone far enough. The old XIP write mode
+		is no longer valid when the QSPI RAM is returned to a serial
+		command state. Restore the default 02h serial write command config.
+			*/
+		qmi_hw->m[1].wfmt = QMI_M1_WFMT_RESET;
+		qmi_hw->m[1].wcmd = QMI_M1_WCMD_RESET;
+	}
+}
+#else
 void __no_inline_not_in_flash_func(flash_cs_force)(enum outover over)
 {
 	io_rw_32 *reg = (io_rw_32 *) (IO_QSPI_BASE + IO_QSPI_GPIO_QSPI_SS_CTRL_OFFSET);
@@ -87,6 +132,7 @@ void __no_inline_not_in_flash_func(flash_cs_force)(enum outover over)
 		| (over << IO_QSPI_GPIO_QSPI_SS_CTRL_OUTOVER_LSB);
 	(void) *reg;
 }
+#endif
 
 int __no_inline_not_in_flash_func(flash_was_aborted)()
 {
@@ -94,6 +140,41 @@ int __no_inline_not_in_flash_func(flash_was_aborted)()
 		   & IO_QSPI_GPIO_QSPI_SD1_CTRL_INOVER_BITS;
 }
 
+#if PICO_RP2350
+uint __no_inline_not_in_flash_func(flash_put_get)(uint cs, const uint8_t *tx, uint8_t *rx,
+						  size_t count)
+{
+	/* Assert chip select, and enable direct mode. Anything queued in TX FIFO will start now. */
+	uint32_t csr_toggle_mask = (QMI_DIRECT_CSR_ASSERT_CS0N_BITS << cs) | QMI_DIRECT_CSR_EN_BITS;
+
+	hw_xor_bits(&qmi_hw->direct_csr, csr_toggle_mask);
+
+	size_t tx_count = count;
+	size_t rx_count = count;
+	while (tx_count || rx_count) {
+		uint32_t status = qmi_hw->direct_csr;
+		if (tx_count && !(status & QMI_DIRECT_CSR_TXFULL_BITS)) {
+			qmi_hw->direct_tx = (uint32_t)(tx ? *tx++ : 0);
+			--tx_count;
+		}
+		if (rx_count && !(status & QMI_DIRECT_CSR_RXEMPTY_BITS)) {
+			uint8_t rxbyte = (uint8_t)qmi_hw->direct_rx;
+			if (rx) {
+				*rx++ = rxbyte;
+			}
+			--rx_count;
+		}
+	}
+
+	/* Wait for BUSY as there may be no RX data at all, e.g. for single-byte SPI commands */
+	while (qmi_hw->direct_csr & QMI_DIRECT_CSR_BUSY_BITS)
+		;
+
+	/* Disable direct-mode interface and deassert chip select */
+	hw_xor_bits(&qmi_hw->direct_csr, csr_toggle_mask);
+	return cs;
+}
+#else
 void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx, size_t count,
 						size_t rx_skip)
 {
@@ -110,12 +191,12 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 		rx_level = ssi_hw->rxflr;
 		did_something = false;
 		if (tx_count && tx_level + rx_level < max_in_flight) {
-			ssi->dr0 = (uint32_t) (tx ? *tx++ : 0);
+			ssi_hw->dr0 = (uint32_t)(tx ? *tx++ : 0);
 			--tx_count;
 			did_something = true;
 		}
 		if (rx_level) {
-			rxbyte = ssi->dr0;
+			rxbyte = ssi_hw->dr0;
 			did_something = true;
 			if (rx_skip) {
 				--rx_skip;
@@ -133,37 +214,92 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 	}
 	flash_cs_force(OUTOVER_HIGH);
 }
+#endif
 
+#if PICO_RP2350
+uint __no_inline_not_in_flash_func(flash_put_get_wrapper)(uint cs, uint8_t cmd, const uint8_t *tx,
+							  uint8_t *rx, size_t count)
+{
+	qmi_hw->direct_tx = cmd | QMI_DIRECT_TX_NOPUSH_BITS;
+	return flash_put_get(cs, tx, rx, count);
+}
+#else
 void __no_inline_not_in_flash_func(flash_put_get_wrapper)(uint8_t cmd, const uint8_t *tx,
 					uint8_t *rx, size_t count)
 {
 	flash_cs_force(OUTOVER_LOW);
-	ssi->dr0 = cmd;
+	ssi_hw->dr0 = cmd;
 	flash_put_get(tx, rx, count, 1);
 }
+#endif
+
+#if PICO_RP2350
+static ALWAYS_INLINE uint flash_wait_ready(uint cs)
+{
+	uint8_t status_reg;
+
+	do {
+		cs = flash_put_get_wrapper(cs, FLASHCMD_READ_STATUS, NULL, &status_reg, 1);
+	} while (status_reg & 0x1 && !flash_was_aborted());
+	return cs;
+}
+#else
+static ALWAYS_INLINE void flash_wait_ready()
+{
+	uint8_t status_reg;
+
+	do {
+		flash_put_get_wrapper(FLASHCMD_READ_STATUS, NULL, &status_reg, 1);
+	} while (status_reg & 0x1 && !flash_was_aborted());
+}
+#endif
+
+#if PICO_RP2350
+static ALWAYS_INLINE uint flash_enable_write(uint cs)
+{
+	qmi_hw->direct_tx = FLASHCMD_WRITE_ENABLE | QMI_DIRECT_TX_NOPUSH_BITS;
+	return flash_put_get(cs, NULL, NULL, 0);
+}
+#else
+static ALWAYS_INLINE void flash_enable_write()
+{
+	flash_put_get_wrapper(FLASHCMD_WRITE_ENABLE, NULL, NULL, 0);
+}
+#endif
 
 static ALWAYS_INLINE void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
 {
+#if PICO_RP2350
+	addr = __builtin_bswap32(addr & ((1u << 24) - 1));
+	addr |= cmd;
+	qmi_hw->direct_tx =
+		((addr << 16) >> 16) | QMI_DIRECT_TX_NOPUSH_BITS | QMI_DIRECT_TX_DWIDTH_BITS;
+	qmi_hw->direct_tx = (addr >> 16) | QMI_DIRECT_TX_NOPUSH_BITS | QMI_DIRECT_TX_DWIDTH_BITS;
+#else
 	flash_cs_force(OUTOVER_LOW);
 	addr |= cmd << 24;
 	for (int i = 0; i < 4; ++i) {
-		ssi->dr0 = addr >> 24;
+		ssi_hw->dr0 = addr >> 24;
 		addr <<= 8;
 	}
+#endif
 }
 
 void __no_inline_not_in_flash_func(flash_write_partial_internal)(uint32_t addr, const uint8_t *data,
 					size_t size)
 {
-	uint8_t status_reg;
-
-	flash_put_get_wrapper(FLASHCMD_WRITE_ENABLE, NULL, NULL, 0);
+#if PICO_RP2350
+	uint cs = (addr >> 24) & 0x1u;
+	cs = flash_enable_write(cs);
+	flash_put_cmd_addr(FLASHCMD_PAGE_PROGRAM, addr);
+	flash_put_get(cs, data, NULL, size);
+	(void)flash_wait_ready(cs);
+#else
+	flash_enable_write();
 	flash_put_cmd_addr(FLASHCMD_PAGE_PROGRAM, addr);
 	flash_put_get(data, NULL, size, 4);
-
-	do {
-		flash_put_get_wrapper(FLASHCMD_READ_STATUS, NULL, &status_reg, 1);
-	} while (status_reg & 0x1 && !flash_was_aborted());
+	flash_wait_ready();
+#endif
 }
 
 void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, const uint8_t *data,
@@ -177,6 +313,10 @@ void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, con
 						rom_func_lookup_inline(ROM_FUNC_FLASH_FLUSH_CACHE);
 
 	flash_init_boot2_copyout();
+#if PICO_RP2350
+	flash_rp2350_qmi_save_state_t qmi_save;
+	flash_rp2350_save_qmi_cs1(&qmi_save);
+#endif
 
 	__compiler_memory_barrier();
 
@@ -185,6 +325,9 @@ void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, con
 	flash_write_partial_internal(flash_offs, data, count);
 	flush_cache();
 	flash_enable_xip_via_boot2();
+#if PICO_RP2350
+	flash_rp2350_restore_qmi_cs1(&qmi_save);
+#endif
 }
 
 static bool is_valid_range(off_t offset, uint32_t size)
