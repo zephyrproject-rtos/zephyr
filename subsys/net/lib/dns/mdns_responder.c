@@ -423,7 +423,6 @@ static void send_sd_response(int sock,
 			     sa_family_t family,
 			     struct sockaddr *src_addr,
 			     size_t addrlen,
-			     struct dns_msg_t *dns_msg,
 			     struct net_buf *result)
 {
 	struct net_if *iface;
@@ -504,8 +503,7 @@ static void send_sd_response(int sock,
 		}
 	}
 
-	ret = dns_sd_query_extract(dns_msg->msg,
-		dns_msg->msg_size, &filter, label, size, &n);
+	ret = dns_sd_query_extract(result->data, result->len, &filter, label, size, &n);
 	if (ret < 0) {
 		NET_DBG("unable to extract query (%d)", ret);
 		return;
@@ -665,8 +663,7 @@ static int dns_read(int sock,
 				      result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(sock, family, src_addr, addrlen,
-					 &dns_msg, result);
+			send_sd_response(sock, family, src_addr, addrlen, result);
 		}
 
 	} while (--queries);
