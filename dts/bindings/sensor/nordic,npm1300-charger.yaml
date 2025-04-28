@@ -45,10 +45,10 @@ properties:
 
   vbus-limit-microamp:
     type: int
+    required: true
     description: |
       Vbus current limit in uA.
-      Available values are 100 mA, or between 500 mA and 1500 mA in 100 mA steps.
-      If omitted, the default value of 100 mA will be used.
+      Available range is 100 mA to 1500 mA in 100 mA steps.
 
   thermistor-ohms:
     type: int
