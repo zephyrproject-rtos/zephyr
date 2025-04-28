@@ -28,6 +28,10 @@ static ALWAYS_INLINE void pin_delay_asm(uint32_t delay)
 
 #include "swdp_ll_pin_nrf.h"
 
+#elif defined(CONFIG_SOC_FAMILY_STM32)
+
+#include "swdp_ll_pin_stm32.h"
+
 #else
 
 #define CPU_CLOCK CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
