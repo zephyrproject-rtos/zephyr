@@ -72,6 +72,53 @@ CPU's UART1 for A55 core.
 Programming and Debugging
 *******************************
 
+.. zephyr:board-supported-runners::
+
+There are multiple methods to program and debug Zephyr
+
+Option 1. Boot Zephyr by Using JLink Runner
+===========================================
+
+The default runner for the board is JLink, connect the EVK board's JTAG connector to
+the host computer using a J-Link debugger, power up the board and stop the board at
+U-Boot command line.
+
+Then use "west flash" or "west debug" command to load the zephyr.bin
+image from the host computer and start the Zephyr application on A55 core0.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx91_evk/mimx9131
+   :goals: flash
+
+Then the following log could be found on UART1 console:
+
+.. code-block:: console
+
+
+    *** Booting Zephyr OS build v4.1.0-3063-g2c7ef313ac38 ***
+    Hello World! imx91_evk/mimx9131
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx91_evk/mimx9131
+   :goals: debug
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
+
 U-Boot "go" command is used to load and kick Zephyr to Cortex-A55 Core.
 
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
