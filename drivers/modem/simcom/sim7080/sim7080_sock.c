@@ -44,7 +44,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
@@ -128,7 +128,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	/* Do some sanity checks. */
@@ -288,7 +288,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	if (!buf || max_len == 0) {
@@ -360,7 +360,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	if (sock->type == SOCK_DGRAM) {
@@ -442,7 +442,7 @@ static int offload_close(void *obj)
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	/* Make sure socket is allocated */
@@ -469,7 +469,7 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
-		return -EAGAIN;
+		return -EINVAL;
 	}
 
 	/* Only accept modem sockets. */
