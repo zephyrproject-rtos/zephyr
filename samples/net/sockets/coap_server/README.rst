@@ -17,8 +17,9 @@ service's name. A linker file is required, see ``sections-ram.ld`` for an exampl
 This demo assumes that the platform of choice has networking support,
 some adjustments to the configuration may be needed.
 
-The sample will listen for requests in the CoAP UDP port (5683) in the
-site-local IPv6 multicast address reserved for CoAP nodes.
+The sample will listen for requests on the default CoAP UDP port
+(5683 or 5684 for secure CoAP) in the site-local IPv6 multicast address reserved
+for CoAP nodes.
 
 The sample exports the following resources:
 
@@ -37,6 +38,16 @@ against coap-server.
 
 Building And Running
 ********************
+Build the CoAP server sample application like this:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/coap_server
+   :board: <board to use>
+   :goals: build
+   :compact:
+
+Use :zephyr_file:`overlay-dtls.conf <samples/net/sockets/coap_server/overlay-dtls.conf>`
+to build the sample with CoAP secure resources instead.
 
 This project has no output in case of success, the correct
 functionality can be verified by using some external tool such as tcpdump
