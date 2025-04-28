@@ -29,7 +29,6 @@ struct ptp_clock_nxp_enet_config {
 
 struct ptp_clock_nxp_enet_data {
 	ENET_Type *base;
-	double clock_ratio;
 	enet_handle_t *enet_handle;
 	struct k_mutex ptp_mutex;
 };
@@ -110,16 +109,11 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 		return 0;
 	}
 
-	ratio *= data->clock_ratio;
-
 	/* Limit possible ratio. */
 	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
 			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
 		return -EINVAL;
 	}
-
-	/* Save new ratio. */
-	data->clock_ratio = ratio;
 
 	if (ratio < 1.0) {
 		corr = hw_inc - 1;
@@ -177,7 +171,6 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		/* only for ERRATA_2579 */
 		ptp_config.channel = kENET_PtpTimerChannel3;
 		ptp_config.ptp1588ClockSrc_Hz = enet_ref_pll_rate;
-		data->clock_ratio = 1.0;
 
 		/* Share the mutex with mac driver */
 		ptp_data->ptp_mutex = &data->ptp_mutex;
