@@ -17,16 +17,16 @@
 	_CONCAT(COMP_NRF_COMP_REFSEL_, DT_INST_STRING_TOKEN(inst, refsel))
 
 #define SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
+	DT_INST_ENUM_HAS_VALUE(inst, refsel, aref)
 
 #define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst) \
 	_CONCAT(COMP_NRF_COMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
 
 #define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, SE)
+	DT_INST_ENUM_HAS_VALUE(inst, main_mode, se)
 
 #define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_DIFF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, DIFF)
+	DT_INST_ENUM_HAS_VALUE(inst, main_mode, diff)
 
 #define SHIM_NRF_COMP_DT_INST_TH_DOWN(inst) \
 	DT_INST_PROP(inst, th_down)
