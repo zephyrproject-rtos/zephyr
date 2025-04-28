@@ -322,48 +322,22 @@ static int net_conn_change_remote(struct net_conn *conn,
 	return 0;
 }
 
-int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
-		      const struct sockaddr *remote_addr,
-		      const struct sockaddr *local_addr,
-		      uint16_t remote_port,
-		      uint16_t local_port,
-		      struct net_context *context,
-		      net_conn_cb_t cb,
-		      void *user_data,
-		      struct net_conn_handle **handle)
+static int net_conn_change_local(struct net_conn *conn,
+				 const struct sockaddr *local_addr,
+				 uint16_t local_port)
 {
-	struct net_conn *conn;
-	uint8_t flags = 0U;
-	int ret;
+	NET_DBG("[%zu] connection handler %p changed local",
+		conn - conns, conn);
 
-	conn = conn_find_handler(context != NULL ? net_context_get_iface(context) : NULL,
-				 proto, family, remote_addr, local_addr,
-				 remote_port, local_port,
-				 context != NULL ?
-					net_context_is_reuseport_set(context) :
-					false);
-	if (conn) {
-		NET_ERR("Identical connection handler %p already found.", conn);
-		return -EADDRINUSE;
-	}
-
-	conn = conn_get_unused();
-	if (!conn) {
-		NET_ERR("Not enough connection contexts. "
-			"Consider increasing CONFIG_NET_MAX_CONN.");
-		return -ENOENT;
-	}
-
-	if (local_addr) {
+	if (local_addr != NULL) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    local_addr->sa_family == AF_INET6) {
 			memcpy(&conn->local_addr, local_addr,
 			       sizeof(struct sockaddr_in6));
 
 			if (!net_ipv6_is_addr_unspecified(
-				    &net_sin6(local_addr)->
-				    sin6_addr)) {
-				flags |= NET_CONN_LOCAL_ADDR_SPEC;
+					&net_sin6(local_addr)->sin6_addr)) {
+				conn->flags |= NET_CONN_LOCAL_ADDR_SPEC;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   local_addr->sa_family == AF_INET) {
@@ -371,7 +345,7 @@ int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 			       sizeof(struct sockaddr_in));
 
 			if (net_sin(local_addr)->sin_addr.s_addr) {
-				flags |= NET_CONN_LOCAL_ADDR_SPEC;
+				conn->flags |= NET_CONN_LOCAL_ADDR_SPEC;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 			   local_addr->sa_family == AF_CAN) {
@@ -383,10 +357,54 @@ int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 			       sizeof(struct sockaddr_ll));
 		} else {
 			NET_ERR("Local address family not set");
-			goto error;
+			return -EINVAL;
 		}
 
-		flags |= NET_CONN_LOCAL_ADDR_SET;
+		conn->flags |= NET_CONN_LOCAL_ADDR_SET;
+	} else {
+		conn->flags &= ~NET_CONN_LOCAL_ADDR_SPEC;
+		conn->flags &= ~NET_CONN_LOCAL_ADDR_SET;
+	}
+
+	if (local_port > 0U) {
+		conn->flags |= NET_CONN_LOCAL_PORT_SPEC;
+		net_sin(&conn->local_addr)->sin_port = htons(local_port);
+	} else {
+		conn->flags &= ~NET_CONN_LOCAL_PORT_SPEC;
+	}
+
+	return 0;
+}
+
+int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
+		      const struct sockaddr *remote_addr,
+		      const struct sockaddr *local_addr,
+		      uint16_t remote_port,
+		      uint16_t local_port,
+		      struct net_context *context,
+		      net_conn_cb_t cb,
+		      void *user_data,
+		      struct net_conn_handle **handle)
+{
+	struct net_conn *conn;
+	int ret;
+
+	conn = conn_find_handler(context != NULL ? net_context_get_iface(context) : NULL,
+				 proto, family, remote_addr, local_addr,
+				 remote_port, local_port,
+				 context != NULL ?
+					net_context_is_reuseport_set(context) :
+					false);
+	if (conn != NULL) {
+		NET_ERR("Identical connection handler %p already found.", conn);
+		return -EADDRINUSE;
+	}
+
+	conn = conn_get_unused();
+	if (conn == NULL) {
+		NET_ERR("Not enough connection contexts. "
+			"Consider increasing CONFIG_NET_MAX_CONN.");
+		return -ENOENT;
 	}
 
 	if (remote_addr && local_addr) {
@@ -396,25 +414,20 @@ int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 		}
 	}
 
-	if (local_port) {
-		flags |= NET_CONN_LOCAL_PORT_SPEC;
-		net_sin(&conn->local_addr)->sin_port = htons(local_port);
-	}
-
 	net_conn_change_callback(conn, cb, user_data);
 
-	conn->flags = flags;
 	conn->proto = proto;
 	conn->type = type;
 	conn->family = family;
 	conn->context = context;
 
-	/*
-	 * Since the net_conn_change_remote() updates the flags in connection,
-	 * must to be called after set the flags to connection.
-	 */
+	ret = net_conn_change_local(conn, local_addr, local_port);
+	if (ret < 0) {
+		goto error;
+	}
+
 	ret = net_conn_change_remote(conn, remote_addr, remote_port);
-	if (ret) {
+	if (ret < 0) {
 		goto error;
 	}
 
@@ -461,7 +474,9 @@ int net_conn_update(struct net_conn_handle *handle,
 		    net_conn_cb_t cb,
 		    void *user_data,
 		    const struct sockaddr *remote_addr,
-		    uint16_t remote_port)
+		    uint16_t remote_port,
+		    const struct sockaddr *local_addr,
+		    uint16_t local_port)
 {
 	struct net_conn *conn = (struct net_conn *)handle;
 	int ret;
@@ -475,6 +490,11 @@ int net_conn_update(struct net_conn_handle *handle,
 	}
 
 	net_conn_change_callback(conn, cb, user_data);
+
+	ret = net_conn_change_local(conn, local_addr, local_port);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = net_conn_change_remote(conn, remote_addr, remote_port);
 
