@@ -76,7 +76,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 		return -1;
 	}
 
-	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,%d,\"%s\",\"%s\",%d", 0, sock->id,
+	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,0,\"%s\",\"%s\",%d", sock->id,
 		       protocol, ip_str, dst_port);
 	if (ret < 0) {
 		LOG_ERR("Failed to build connect command. ID: %d, FD: %d", sock->id, sock->sock_fd);
