@@ -20,5 +20,6 @@ supported:
   - gpio
   - i2c
   - pwm
+  - spi
   - uart
 vendor: nxp
