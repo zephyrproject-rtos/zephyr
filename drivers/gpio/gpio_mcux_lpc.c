@@ -61,6 +61,45 @@ struct gpio_mcux_lpc_data {
 	sys_slist_t callbacks;
 };
 
+#ifdef CONFIG_PM_DEVICE
+static struct gpio_mux_registers_context_t{
+	/*GPIO Configuration Registers*/
+	uint8_t B[2][32];
+	uint32_t W[2][32];
+	uint32_t DIR[2];
+	uint32_t MASK[2];
+	uint32_t PIN[2];
+	uint32_t MPIN[2];
+	uint32_t SET[2];
+	uint32_t CLR[2];
+	uint32_t NOT[2];
+	uint32_t DIRSET[2];
+	uint32_t DIRCLR[2];
+	uint32_t DIRNOT[2];
+	uint32_t INTENA[2];
+	uint32_t INTENB[2];
+	uint32_t INTPOL[2];
+	uint32_t INTEDG[2];
+	uint32_t INTSTATA[2];
+	uint32_t INTSTATB[2];
+
+	/*PinCtrl Configuration Registers*/
+	uint32_t S_GPIO;                            
+    uint32_t FC0;                               
+    uint32_t FC1;                               
+    uint32_t FC2;                               
+    uint32_t FC3;                               
+	uint32_t FC14;                              
+	uint32_t FSEL;                              
+	uint32_t C_TIMER_IN;                        
+	uint32_t C_TIMER_OUT;                       
+	uint32_t SC_TIMER;                          
+	uint32_t GPIO_GRP0;                         
+	uint32_t GPIO_GRP1;                         
+}gpio_mux_registers_context;
+#endif /*CONFIG_PM_DEVICE*/
+
+
 static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
@@ -414,33 +453,152 @@ static int gpio_mcux_lpc_manage_cb(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
+static int gpio_mcux_lpc_init(const struct device *dev)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config;
+	GPIO_PortInit(config->gpio_base, config->port_no);
+	return 0;
+}
 
+#ifdef CONFIG_PM_DEVICE
+static void gpio_mcux_lpc_context_save(const struct device *dev)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	uint8_t *u8_src_ptr;
+	uint8_t *u8_dst_ptr;
+	uint16_t index;
+
+	/*GPIO Registers*/
+	u8_src_ptr = (uint8_t*)config->gpio_base->B;
+	u8_dst_ptr = (uint8_t*)&gpio_mux_registers_context.B[0][0];
+	for(index=0; index<sizeof(gpio_mux_registers_context.B); index++){
+		u8_dst_ptr[index] = u8_src_ptr[index];
+	}
+
+	u8_src_ptr = (uint8_t*)config->gpio_base->W;
+	u8_dst_ptr = (uint8_t*)&gpio_mux_registers_context.W[0][0];
+	for(index=0; index<(sizeof(gpio_mux_registers_context.W)/4); index++){
+		u8_dst_ptr[index] = u8_src_ptr[index];
+	}
+
+	gpio_mux_registers_context.DIR[0] = config->gpio_base->DIR[0];
+	gpio_mux_registers_context.DIR[1] = config->gpio_base->DIR[1];
+	gpio_mux_registers_context.MASK[0] = config->gpio_base->MASK[0];
+	gpio_mux_registers_context.MASK[1] = config->gpio_base->MASK[1];
+	gpio_mux_registers_context.PIN[0] = config->gpio_base->PIN[0];
+	gpio_mux_registers_context.PIN[1] = config->gpio_base->PIN[1];
+	gpio_mux_registers_context.MPIN[0] = config->gpio_base->MPIN[0];
+	gpio_mux_registers_context.MPIN[1] = config->gpio_base->MPIN[1];
+	gpio_mux_registers_context.SET[0] = config->gpio_base->SET[0];
+	gpio_mux_registers_context.SET[1] = config->gpio_base->SET[1];
+	gpio_mux_registers_context.CLR[0] = config->gpio_base->CLR[0];
+	gpio_mux_registers_context.CLR[1] = config->gpio_base->CLR[1];
+	gpio_mux_registers_context.NOT[0] = config->gpio_base->NOT[0];
+	gpio_mux_registers_context.NOT[1] = config->gpio_base->NOT[1];
+	gpio_mux_registers_context.DIRSET[0] = config->gpio_base->DIRSET[0];
+	gpio_mux_registers_context.DIRSET[1] = config->gpio_base->DIRSET[1];
+	gpio_mux_registers_context.DIRCLR[0] = config->gpio_base->DIRCLR[0];
+	gpio_mux_registers_context.DIRCLR[1] = config->gpio_base->DIRCLR[1];
+	gpio_mux_registers_context.DIRNOT[0] = config->gpio_base->DIRNOT[0];
+	gpio_mux_registers_context.DIRNOT[1] = config->gpio_base->DIRNOT[1];
+	gpio_mux_registers_context.INTENA[0] = config->gpio_base->INTENA[0];
+	gpio_mux_registers_context.INTENA[1] = config->gpio_base->INTENA[1];
+	gpio_mux_registers_context.INTENB[0] = config->gpio_base->INTENB[0];
+	gpio_mux_registers_context.INTENB[1] = config->gpio_base->INTENB[1];
+	gpio_mux_registers_context.INTPOL[0] = config->gpio_base->INTPOL[0];
+	gpio_mux_registers_context.INTPOL[1] = config->gpio_base->INTPOL[1];
+	gpio_mux_registers_context.INTEDG[0] = config->gpio_base->INTEDG[0];
+	gpio_mux_registers_context.INTEDG[1] = config->gpio_base->INTEDG[1];
+	gpio_mux_registers_context.INTSTATA[0] = config->gpio_base->INTSTATA[0];
+	gpio_mux_registers_context.INTSTATA[1] = config->gpio_base->INTSTATA[1];
+	gpio_mux_registers_context.INTSTATB[0] = config->gpio_base->INTSTATB[0];
+	gpio_mux_registers_context.INTSTATB[1] = config->gpio_base->INTSTATB[1];
+
+	/*IO MUX Registers*/
+	gpio_mux_registers_context.GPIO_GRP0 = config->pinmux_base->GPIO_GRP0;
+	gpio_mux_registers_context.GPIO_GRP1 = config->pinmux_base->GPIO_GRP1;
+}
+
+
+static void gpio_mcux_lpc_context_restore(const struct device *dev)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	uint8_t *u8_src_ptr;
+	uint8_t *u8_dst_ptr;
+	uint16_t index;
+
+	/*GPIO Registers*/
+	u8_src_ptr = (uint8_t*)&gpio_mux_registers_context.B[0][0];
+	u8_dst_ptr = (uint8_t*)config->gpio_base->B;
+	for(index=0; index<sizeof(gpio_mux_registers_context.B); index++){
+		u8_dst_ptr[index] = u8_src_ptr[index];
+	}
+
+	u8_src_ptr = (uint8_t*)&gpio_mux_registers_context.W[0][0];
+	u8_dst_ptr = (uint8_t*)config->gpio_base->W;
+	for(index=0; index<(sizeof(gpio_mux_registers_context.W)/4); index++){
+		u8_dst_ptr[index] = u8_src_ptr[index];
+	}
+
+	config->gpio_base->DIR[0] = gpio_mux_registers_context.DIR[0];
+	config->gpio_base->DIR[1] = gpio_mux_registers_context.DIR[1];
+	config->gpio_base->MASK[0] = gpio_mux_registers_context.MASK[0];
+	config->gpio_base->MASK[1] = gpio_mux_registers_context.MASK[1];
+	config->gpio_base->PIN[0] = gpio_mux_registers_context.PIN[0];
+	config->gpio_base->PIN[1] = gpio_mux_registers_context.PIN[1];
+	config->gpio_base->MPIN[0] = gpio_mux_registers_context.MPIN[0];
+	config->gpio_base->MPIN[1] = gpio_mux_registers_context.MPIN[1];
+	config->gpio_base->SET[0] = gpio_mux_registers_context.SET[0];
+	config->gpio_base->SET[1] = gpio_mux_registers_context.SET[1];
+	config->gpio_base->CLR[0] = gpio_mux_registers_context.CLR[0];
+	config->gpio_base->CLR[1] = gpio_mux_registers_context.CLR[1];
+	config->gpio_base->NOT[0] = gpio_mux_registers_context.NOT[0];
+	config->gpio_base->NOT[1] = gpio_mux_registers_context.NOT[1];
+	config->gpio_base->DIRSET[0] = gpio_mux_registers_context.DIRSET[0]; 
+	config->gpio_base->DIRSET[1] = gpio_mux_registers_context.DIRSET[1]; 
+	config->gpio_base->DIRCLR[0] = gpio_mux_registers_context.DIRCLR[0]; 
+	config->gpio_base->DIRCLR[1] = gpio_mux_registers_context.DIRCLR[1]; 
+	config->gpio_base->DIRNOT[0] = gpio_mux_registers_context.DIRNOT[0]; 
+	config->gpio_base->DIRNOT[1] = gpio_mux_registers_context.DIRNOT[1]; 
+	config->gpio_base->INTENA[0] = gpio_mux_registers_context.INTENA[0]; 
+	config->gpio_base->INTENA[1] = gpio_mux_registers_context.INTENA[1]; 
+	config->gpio_base->INTENB[0] = gpio_mux_registers_context.INTENB[0]; 
+	config->gpio_base->INTENB[1] = gpio_mux_registers_context.INTENB[1]; 
+	config->gpio_base->INTPOL[0] = gpio_mux_registers_context.INTPOL[0]; 
+	config->gpio_base->INTPOL[1] = gpio_mux_registers_context.INTPOL[1]; 
+	config->gpio_base->INTEDG[0] = gpio_mux_registers_context.INTEDG[0]; 
+	config->gpio_base->INTEDG[1] = gpio_mux_registers_context.INTEDG[1]; 
+	config->gpio_base->INTSTATA[0] = gpio_mux_registers_context.INTSTATA[0]; 
+	config->gpio_base->INTSTATA[1] = gpio_mux_registers_context.INTSTATA[1]; 
+	config->gpio_base->INTSTATB[0] = gpio_mux_registers_context.INTSTATB[0]; 
+	config->gpio_base->INTSTATB[1] = gpio_mux_registers_context.INTSTATB[1]; 
+
+	/*IO MUX Registers*/
+	config->pinmux_base->GPIO_GRP0 = gpio_mux_registers_context.GPIO_GRP0;
+	config->pinmux_base->GPIO_GRP1 = gpio_mux_registers_context.GPIO_GRP1;
+}
+
+
+static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
+{
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+		gpio_mcux_lpc_context_save(dev);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		GPIO_PortInit(config->gpio_base, config->port_no);
+		gpio_mcux_lpc_init(dev);
+		gpio_mcux_lpc_context_restore(dev);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 	return 0;
 }
-
-static int gpio_mcux_lpc_init(const struct device *dev)
-{
-	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
-	 * which is invoked by pm_device_driver_init().
-	 */
-	return pm_device_driver_init(dev, gpio_mcux_lpc_pm_action);
-}
+#endif /*CONFIG_PM_DEVICE*/
 
 static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 	.pin_configure = gpio_mcux_lpc_configure,
