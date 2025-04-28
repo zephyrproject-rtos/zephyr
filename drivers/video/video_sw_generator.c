@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
  * format. 60 fps is therefore chosen as a common value in practice.
  */
 #define MAX_FRAME_RATE          60
+#define MIN_FRAME_RATE          1
 
 struct sw_ctrls {
 	struct video_ctrl hflip;
@@ -389,13 +390,12 @@ static int video_sw_generator_set_frmival(const struct device *dev, struct video
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (frmival->denominator && frmival->numerator) {
-		data->frame_rate = MIN(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
-				       MAX_FRAME_RATE);
-	} else {
+	if (frmival->denominator == 0 || frmival->numerator == 0) {
 		return -EINVAL;
 	}
 
+	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
+				 MIN_FRAME_RATE, MAX_FRAME_RATE);
 	frmival->numerator = 1;
 	frmival->denominator = data->frame_rate;
 
