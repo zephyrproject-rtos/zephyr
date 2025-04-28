@@ -5767,17 +5767,15 @@ static void bt_l2cap_br_ret_fc_i_recv(struct bt_l2cap_br_chan *br_chan, struct n
 
 valid_frame:
 	switch (sar) {
-	case BT_L2CAP_CONTROL_SAR_UNSEG:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_START:
 		if (buf->len < 2) {
-			LOG_WRN("Invalid SDU length");
+			LOG_WRN("Too short data packet");
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return;
 		}
 		break;
+	case BT_L2CAP_CONTROL_SAR_UNSEG:
 	case BT_L2CAP_CONTROL_SAR_END:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_CONTI:
 		break;
 	}
