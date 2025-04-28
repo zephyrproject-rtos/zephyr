@@ -59,6 +59,8 @@
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U0X)
 #include <zephyr/dt-bindings/clock/stm32u0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+#include <zephyr/dt-bindings/clock/stm32u3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
@@ -175,6 +177,7 @@
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g4_pll_clock, okay)  || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay)  || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u0_pll_clock, okay)  || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u3_pll_clock, okay)  || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u5_pll_clock, okay)  || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay)  || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wba_pll_clock, okay) || \
