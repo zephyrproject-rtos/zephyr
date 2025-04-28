@@ -163,10 +163,10 @@ static struct btp_bap_broadcast_remote_source *remote_broadcaster_find_by_sink(
 	return NULL;
 }
 
-static void btp_send_bis_syced_ev(const bt_addr_le_t *address, uint32_t broadcast_id,
-				  uint8_t bis_id)
+static void btp_send_bis_synced_ev(const bt_addr_le_t *address, uint32_t broadcast_id,
+				   uint8_t bis_id)
 {
-	struct btp_bap_bis_syned_ev ev;
+	struct btp_bap_bis_synced_ev ev;
 
 	bt_addr_le_copy(&ev.address, address);
 	sys_put_le24(broadcast_id, ev.broadcast_id);
@@ -194,7 +194,7 @@ static void stream_started(struct bt_bap_stream *stream)
 	b_stream->bis_synced = true;
 	broadcaster = &remote_broadcast_sources[b_stream->source_id];
 
-	btp_send_bis_syced_ev(&broadcaster->address, broadcaster->broadcast_id, b_stream->bis_id);
+	btp_send_bis_synced_ev(&broadcaster->address, broadcaster->broadcast_id, b_stream->bis_id);
 }
 
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
