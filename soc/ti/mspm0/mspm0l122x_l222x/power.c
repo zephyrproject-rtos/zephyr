@@ -61,6 +61,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		set_mode_standby(substate_id);
 		break;
 	case PM_STATE_SOFT_OFF:
+		printk("Entering SHUTDOWN state\n");
 		DL_SYSCTL_setPowerPolicySHUTDOWN();
 		break;
 	default:
