@@ -954,7 +954,7 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
-	enum ethernet_hw_caps caps = 0;
+	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
