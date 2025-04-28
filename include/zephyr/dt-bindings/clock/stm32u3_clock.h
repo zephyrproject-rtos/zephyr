@@ -79,10 +79,6 @@
 #define DAC1SH_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 19, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 20, CCIPR2_REG)
 /** CCIPR3 devices */
-#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR3_REG)
-#define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 6, CCIPR3_REG)
-#define LPTIM34_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR3_REG)
-#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 10, CCIPR3_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
 
