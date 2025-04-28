@@ -254,7 +254,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = STM32_D2PPRE1;
-	}else {
+	} else {
 		apb_psc = STM32_D2PPRE2;
 	}
 #else
@@ -299,17 +299,17 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 
 			LL_RCC_GetSystemClocksFreq(&clocks);
 			*tim_clk = clocks.HCLK_Frequency;
-		}else {
+		} else {
 			*tim_clk = bus_clk * 2u;
 		}
-	}else {
+	} else {
 		/* TIMPRE = 1 */
 		if (apb_psc <= 4u) {
 			LL_RCC_ClocksTypeDef clocks;
 
 			LL_RCC_GetSystemClocksFreq(&clocks);
 			*tim_clk = clocks.HCLK_Frequency;
-		}else {
+		} else {
 			*tim_clk = bus_clk * 4u;
 		}
 	}
@@ -322,8 +322,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 	 */
 	if (apb_psc == 1u) {
 		*tim_clk = bus_clk;
-	}
-	else {
+	} else {
 		*tim_clk = bus_clk * 2u;
 	}
 #endif
@@ -527,7 +526,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 #endif /* CONFIG_ADC_STM32_TIMER */
 		LL_ADC_REG_StartConversionSWStart(adc);
 #ifdef CONFIG_ADC_STM32_TIMER
-	}else {
+	} else {
 		LL_ADC_REG_StartConversionExtTrig(adc, LL_ADC_REG_TRIG_EXT_RISING);
 	}
 #endif /* CONFIG_ADC_STM32_TIMER */
@@ -1235,7 +1234,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #ifdef CONFIG_ADC_STM32_TIMER
 	if (ctx->options.interval_us == 0) {
 		LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-	}else {
+	} else {
 		LL_ADC_REG_SetTriggerSource(adc, config->adc_timer.trigger_source);
 		atomic_inc(&ctx->sampling_requested);
 	}
@@ -1855,7 +1854,7 @@ static int adc_stm32_init(const struct device *dev)
 	 /* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
 	if (adc == ADC3) {
 		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
-	}else {
+	} else {
 		while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
 		}
 	}
