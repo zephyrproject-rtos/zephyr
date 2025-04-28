@@ -4028,6 +4028,7 @@ nRF Platforms:
     - dts/bindings/*/nordic,*
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
+    - tests/boards/nrf/
   labels:
     - "platform: nRF"
 
