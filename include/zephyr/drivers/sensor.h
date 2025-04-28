@@ -115,12 +115,31 @@ enum sensor_channel {
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
 
+	/** PM1.0 concentration (standard particle, CF=1), in µg/m³ */
+	SENSOR_CHAN_PM_1_0_CF,
+	/** PM2.5 concentration (standard particle, CF=1), in µg/m³ */
+	SENSOR_CHAN_PM_2_5_CF,
+	/** PM10 concentration (standard particle, CF=1), in µg/m³ */
+	SENSOR_CHAN_PM_10_CF,
 	/** 1.0 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_1_0,
 	/** 2.5 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_2_5,
 	/** 10 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_10,
+	/** Number of particles ≥ 0.3 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_0_3_COUNT,
+	/** Number of particles ≥ 0.5 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_0_5_COUNT,
+	/** Number of particles ≥ 1.0 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_1_0_COUNT,
+	/** Number of particles ≥ 2.5 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_2_5_COUNT,
+	/** Number of particles ≥ 5.0 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_5_COUNT,
+	/** Number of particles ≥ 10.0 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_10_COUNT,
+
 	/** Distance. From sensor to target, in meters */
 	SENSOR_CHAN_DISTANCE,
 
