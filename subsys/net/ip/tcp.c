@@ -2987,8 +2987,6 @@ next_state:
 				break;
 			}
 
-			keep_alive_timer_restart(conn);
-
 			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
 
 			/* Check if v4-mapping-to-v6 needs to be done for
@@ -3072,7 +3070,6 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 			tcp_ca_init(conn);
 			tcp_out(conn, ACK);
-			keep_alive_timer_restart(conn);
 
 			/* The connection semaphore is released *after*
 			 * we have changed the connection state. This way
@@ -3571,6 +3568,11 @@ out:
 	if (next) {
 		th = NULL;
 		conn_state(conn, next);
+
+		if (next == TCP_ESTABLISHED) {
+			keep_alive_timer_restart(conn);
+		}
+
 		next = 0;
 
 		if (connection_ok) {
