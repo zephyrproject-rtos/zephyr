@@ -771,7 +771,7 @@ static int bind_default(struct net_context *context)
 		}
 
 		ll_addr.sll_family = AF_PACKET;
-		ll_addr.sll_protocol = htons(ETH_P_ALL);
+		ll_addr.sll_protocol = htons(net_context_get_proto(context));
 		ll_addr.sll_ifindex = (iface == NULL) ? 0 : net_if_get_by_iface(iface);
 
 		return net_context_bind(context, (struct sockaddr *)&ll_addr,
@@ -3055,11 +3055,6 @@ static int recv_raw(struct net_context *context,
 
 	ARG_UNUSED(timeout);
 
-	ret = bind_default(context);
-	if (ret) {
-		return ret;
-	}
-
 	context->recv_cb = cb;
 
 	/* If the context already has a connection handler, it means it's
@@ -3134,6 +3129,11 @@ int net_context_recv(struct net_context *context,
 		    family == AF_PACKET) {
 			struct sockaddr_ll addr = { 0 };
 
+			ret = bind_default(context);
+			if (ret < 0) {
+				goto unlock;
+			}
+
 			addr.sll_family = AF_PACKET;
 			addr.sll_ifindex =
 				net_sll_ptr(&context->local)->sll_ifindex;
@@ -3155,6 +3155,11 @@ int net_context_recv(struct net_context *context,
 			struct sockaddr_can local_addr = {
 				.can_family = AF_CAN,
 			};
+
+			ret = bind_default(context);
+			if (ret < 0) {
+				goto unlock;
+			}
 
 			ret = recv_raw(context, cb, timeout,
 				       (struct sockaddr *)&local_addr,
