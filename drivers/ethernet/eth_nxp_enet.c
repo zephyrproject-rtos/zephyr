@@ -106,8 +106,7 @@ struct nxp_enet_mac_data {
 	struct k_mutex tx_frame_buf_mutex;
 	struct k_mutex rx_frame_buf_mutex;
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
-	struct k_sem ptp_ts_sem;
-	struct k_mutex *ptp_mutex; /* created in PTP driver */
+	struct nxp_enet_ptp_data ptp;
 #endif
 	uint8_t *tx_frame_buf;
 	uint8_t *rx_frame_buf;
@@ -165,15 +164,15 @@ static inline void ts_register_tx_event(const struct device *dev,
 
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
 		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt) && frameinfo->isTsAvail) {
-			k_mutex_lock(data->ptp_mutex, K_FOREVER);
+			k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
 			pkt->timestamp.nanosecond = frameinfo->timeStamp.nanosecond;
 			pkt->timestamp.second = frameinfo->timeStamp.second;
 
 			net_if_add_tx_timestamp(pkt);
-			k_sem_give(&data->ptp_ts_sem);
+			k_sem_give(&data->ptp.ptp_ts_sem);
 
-			k_mutex_unlock(data->ptp_mutex);
+			k_mutex_unlock(data->ptp.ptp_mutex);
 		}
 		net_pkt_unref(pkt);
 	}
@@ -184,7 +183,7 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 	struct nxp_enet_mac_data *data = dev->data;
 
 	net_pkt_ref(pkt);
-	k_sem_take(&data->ptp_ts_sem, K_FOREVER);
+	k_sem_take(&data->ptp.ptp_ts_sem, K_FOREVER);
 }
 #else
 #define eth_get_ptp_data(...) false
@@ -389,7 +388,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_mutex_lock(data->ptp_mutex, K_FOREVER);
+	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
 	/* Invalid value by default. */
 	pkt->timestamp.nanosecond = UINT32_MAX;
@@ -411,7 +410,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		pkt->timestamp.nanosecond = ts;
 		pkt->timestamp.second = ptp_time.second;
 	}
-	k_mutex_unlock(data->ptp_mutex);
+	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
@@ -709,7 +708,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_sem_init(&data->ptp_ts_sem, 0, 1);
+	k_sem_init(&data->ptp.ptp_ts_sem, 0, 1);
 #endif
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
@@ -781,8 +780,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_MODULE_RESET, NULL);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	data->ptp.enet = &data->enet_handle;
 	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
-				NXP_ENET_MODULE_RESET, &data->ptp_mutex);
+				NXP_ENET_MODULE_RESET, &data->ptp);
 	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
