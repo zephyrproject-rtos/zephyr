@@ -183,24 +183,11 @@ static struct vlan_context *get_vlan(struct net_if *iface,
 		goto out;
 	}
 
-	/* If the interface is the main Ethernet one, then we only need
-	 * to go through its attached virtual interfaces.
-	 */
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) ||
+	    net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		ctx = get_vlan_ctx(iface, vlan_tag, false);
 		goto out;
-
 	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
-		goto out;
-	}
-
-	/* If the interface is virtual, then it should be the VLAN one.
-	 * Just get the Ethernet interface it points to get the context.
-	 */
-	ctx = get_vlan_ctx(net_virtual_get_iface(iface), vlan_tag, false);
 
 out:
 	k_mutex_unlock(&lock);
@@ -423,26 +410,15 @@ static int vlan_fill_header(struct net_pkt *pkt) {
 
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	const struct ethernet_api *eth = net_if_get_device(iface)->api;
 	struct vlan_context *vlan;
 	int ret;
 
-	if (!eth) {
-		return -ENOENT;
-	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) &&
+	    net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
 		return -EINVAL;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
-		NET_DBG("Interface %d does not support VLAN",
-			net_if_get_by_iface(iface));
-		return -ENOTSUP;
-	}
-
-	if (!ctx->is_init) {
+	if (!iface->is_init) {
 		return -EPERM;
 	}
 
@@ -488,9 +464,12 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		 */
 		setup_link_address(vlan);
 
-		if (eth->vlan_setup) {
-			eth->vlan_setup(net_if_get_device(iface),
-					iface, vlan->tag, true);
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+			const struct ethernet_api *eth = net_if_get_device(iface)->api;
+			if ((eth->get_capabilities(net_if_get_device(iface)) & ETHERNET_HW_VLAN) &&
+			    eth->vlan_setup) {
+				eth->vlan_setup(net_if_get_device(iface), iface, vlan->tag, true);
+			}
 		}
 
 		ethernet_mgmt_raise_vlan_enabled_event(vlan->iface, vlan->tag);
@@ -533,9 +512,10 @@ int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 
 	vlan->tag = NET_VLAN_TAG_UNSPEC;
 
-	if (eth->vlan_setup) {
-		eth->vlan_setup(net_if_get_device(vlan->attached_to),
-				vlan->attached_to, tag, false);
+	if ((eth->get_capabilities(net_if_get_device(vlan->attached_to)) & ETHERNET_HW_VLAN) &&
+	    eth->vlan_setup) {
+		eth->vlan_setup(net_if_get_device(vlan->attached_to), vlan->attached_to, tag,
+				false);
 	}
 
 	ethernet_mgmt_raise_vlan_disabled_event(vlan->iface, tag);
@@ -706,7 +686,7 @@ static void vlan_iface_init(struct net_if *iface)
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
 	char name[MAX(MAX_VLAN_NAME_LEN, MAX_VIRT_NAME_LEN)];
 
-	if (ctx->init_done) {
+	if (iface->is_init) {
 		return;
 	}
 
@@ -721,7 +701,7 @@ static void vlan_iface_init(struct net_if *iface)
 
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
 
-	ctx->init_done = true;
+	iface->is_init = true;
 }
 
 #else /* CONFIG_NET_VLAN_COUNT > 0 */

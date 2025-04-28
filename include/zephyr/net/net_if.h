@@ -752,8 +752,11 @@ struct net_if {
 	 */
 	uint8_t pe_prefer_public : 1;
 
+	/** Is this interface already initialized */
+	bool is_init : 1;
+
 	/** Unused bit flags (ignore) */
-	uint8_t _unused : 6;
+	uint8_t _unused : 5;
 };
 
 /** @cond INTERNAL_HIDDEN */

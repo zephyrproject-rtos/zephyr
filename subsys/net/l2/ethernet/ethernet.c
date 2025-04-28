@@ -987,5 +987,5 @@ void ethernet_init(struct net_if *iface)
 
 	net_arp_init();
 
-	ctx->is_init = true;
+	iface->is_init = true;
 }
