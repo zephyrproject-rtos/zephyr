@@ -59,6 +59,8 @@
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U0X)
 #include <zephyr/dt-bindings/clock/stm32u0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+#include <zephyr/dt-bindings/clock/stm32u3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
@@ -434,7 +436,8 @@
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u3_msi_clock, okay)
 #define STM32_MSIS_ENABLED	1
 #define STM32_MSIS_RANGE	DT_PROP(DT_NODELABEL(clk_msis), msi_range)
 #define STM32_MSIS_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msis), msi_pll_mode)
@@ -444,7 +447,8 @@
 #define STM32_MSIS_PLL_MODE	0
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msik), st_stm32u5_msi_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msik), st_stm32u5_msi_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msik), st_stm32u3_msi_clock, okay)
 #define STM32_MSIK_ENABLED	1
 #define STM32_MSIK_RANGE	DT_PROP(DT_NODELABEL(clk_msik), msi_range)
 #define STM32_MSIK_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msik), msi_pll_mode)
