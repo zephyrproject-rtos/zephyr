@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,5 +16,11 @@ if(CONFIG_SOC_MIMX8ML8_M7)
   board_set_flasher_ifnset(jlink)
 
   board_runner_args(jlink "--device=MIMX8ML8_M7")
+  include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+endif()
+
+if(CONFIG_SOC_MIMX8ML8_A53)
+  board_runner_args(jlink "--device=MIMX8ML8_A53_0" "--no-reset" "--flash-sram")
+
   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 endif()

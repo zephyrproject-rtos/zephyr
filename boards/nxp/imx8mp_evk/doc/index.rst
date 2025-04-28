@@ -64,6 +64,50 @@ Programming and Debugging (A53)
 
 .. zephyr:board-supported-runners::
 
+There are multiple methods to program and debug Zephyr on the A53 core:
+
+Option 1. Boot Zephyr by Using JLink Runner
+===========================================
+
+The default runner for the board is JLink, connect the EVK board's JTAG connector to
+the host computer using a J-Link debugger, power up the board and stop the board at
+U-Boot command line.
+
+Then use "west flash" or "west debug" command to load the zephyr.bin
+image from the host computer and start the Zephyr application on A53 core0.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx8mp_evk/mimx8ml8/a53
+   :goals: flash
+
+Then the following log could be found on UART4 console:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.1.0-3063-g38519ca2c028 ***
+    Hello World! imx8mp_evk/mimx8ml8/a53
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx8mp_evk/mimx8ml8/a53
+   :goals: debug
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
+
 U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
 it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
 xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
@@ -75,21 +119,45 @@ v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Sof
 .. _Real-Time Edge Software:
    https://www.nxp.com/rtedge
 
-Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
-plug the SD card into the board. Power it up and stop the u-boot execution at
-prompt.
+Step 1: Download Zephyr Image into DDR Memory
+---------------------------------------------
 
-Use U-Boot to load and kick zephyr.bin to Cortex-A53 Core0:
-
-.. code-block:: console
-
-    fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; go 0xc0000000
-
-Or kick zephyr.bin to the other Cortex-A53 Core, for example Core2:
+Firstly need to download Zephyr binary image into DDR memory, it can use tftp:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; cpu 2 release 0xc0000000
+    tftp 0xc0000000 zephyr.bin
+
+Or copy the Zephyr image ``zephyr.bin`` SD card and plug the card into the board, for example
+if copy to the FAT partition of the SD card, use the following U-Boot command to load the image
+into DDR memory (assuming the SD card is dev 1, fat partition ID is 1, they could be changed
+based on actual setup):
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xc0000000 zephyr.bin;
+
+Step 2: Boot Zephyr
+-------------------
+
+Then use the following command to boot Zephyr on the core0:
+
+.. code-block:: console
+
+    dcache off; icache flush; go 0xc0000000;
+
+Or use "cpu" command to boot from secondary Core, for example Core1:
+
+.. code-block:: console
+
+    dcache flush; icache flush; cpu 1 release 0xc0000000
+
+Option 3. Boot Zephyr by Using Remoteproc under Linux
+=====================================================
+
+When running Linux on the A55 core, it can use the remoteproc framework to load and boot Zephyr,
+refer to Real-Time Edge user guide for more details. Pre-build images and user guide can be found
+at `Real-Time Edge Software`_.
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -98,28 +166,19 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: imx8mp_evk/mimx8ml8/a53
-   :goals: run
+   :goals: build
 
 This will build an image with the synchronization sample app, boot it and
 display the following console output:
 
 .. code-block:: console
 
-    *** Booting Zephyr OS build zephyr-v3.1.0-3575-g44dd713bd883  ***
-    thread_a: Hello World from cpu 0 on mimx8mp_evk_a53!
-    thread_b: Hello World from cpu 0 on mimx8mp_evk_a53!
-    thread_a: Hello World from cpu 0 on mimx8mp_evk_a53!
-    thread_b: Hello World from cpu 0 on mimx8mp_evk_a53!
-    thread_a: Hello World from cpu 0 on mimx8mp_evk_a53!
-
-Use Jailhouse hypervisor, after root cell linux is up:
-
-.. code-block:: console
-
-    #jailhouse enable imx8mp.cell
-    #jailhouse cell create imx8mp-zephyr.cell
-    #jailhouse cell load 1 zephyr.bin -a 0xc0000000
-    #jailhouse cell start 1
+    *** Booting Zephyr OS build v4.1.0-3063-g38519ca2c028 ***
+    thread_a: Hello World from cpu 0 on mimx8mp_evk!
+    thread_b: Hello World from cpu 0 on mimx8mp_evk!
+    thread_a: Hello World from cpu 0 on mimx8mp_evk!
+    thread_b: Hello World from cpu 0 on mimx8mp_evk!
+    thread_a: Hello World from cpu 0 on mimx8mp_evk!
 
 Programming and Debugging (M7)
 ******************************
