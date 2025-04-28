@@ -32,9 +32,18 @@ struct pms7003_config {
 };
 
 struct pms7003_data {
+	uint16_t pm_1_0_cf;
+	uint16_t pm_2_5_cf;
+	uint16_t pm_10_cf;
 	uint16_t pm_1_0;
 	uint16_t pm_2_5;
 	uint16_t pm_10;
+	uint16_t pm_0_3_count;
+	uint16_t pm_0_5_count;
+	uint16_t pm_1_0_count;
+	uint16_t pm_2_5_count;
+	uint16_t pm_5_0_count;
+	uint16_t pm_10_0_count;
 };
 
 /**
@@ -133,16 +142,32 @@ static int pms7003_sample_fetch(const struct device *dev,
 		return -ETIME;
 	}
 
-	drv_data->pm_1_0 =
-	    (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
-	drv_data->pm_2_5 =
-	    (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
-	drv_data->pm_10 =
-	    (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
+	drv_data->pm_1_0_cf = (pms7003_receive_buffer[2] << 8) + pms7003_receive_buffer[3];
+	drv_data->pm_2_5_cf = (pms7003_receive_buffer[4] << 8) + pms7003_receive_buffer[5];
+	drv_data->pm_10_cf = (pms7003_receive_buffer[6] << 8) + pms7003_receive_buffer[7];
+	drv_data->pm_1_0 = (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
+	drv_data->pm_2_5 = (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
+	drv_data->pm_10 = (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
+	drv_data->pm_0_3_count = (pms7003_receive_buffer[14] << 8) + pms7003_receive_buffer[15];
+	drv_data->pm_0_5_count = (pms7003_receive_buffer[16] << 8) + pms7003_receive_buffer[17];
+	drv_data->pm_1_0_count = (pms7003_receive_buffer[18] << 8) + pms7003_receive_buffer[19];
+	drv_data->pm_2_5_count = (pms7003_receive_buffer[20] << 8) + pms7003_receive_buffer[21];
+	drv_data->pm_5_0_count = (pms7003_receive_buffer[22] << 8) + pms7003_receive_buffer[23];
+	drv_data->pm_10_0_count = (pms7003_receive_buffer[24] << 8) + pms7003_receive_buffer[25];
 
+	LOG_DBG("pm1.0_cf = %d", drv_data->pm_1_0_cf);
+	LOG_DBG("pm2.5_cf = %d", drv_data->pm_2_5_cf);
+	LOG_DBG("pm10_cf = %d", drv_data->pm_10_cf);
 	LOG_DBG("pm1.0 = %d", drv_data->pm_1_0);
 	LOG_DBG("pm2.5 = %d", drv_data->pm_2_5);
 	LOG_DBG("pm10 = %d", drv_data->pm_10);
+	LOG_DBG("pm0.3_count = %d", drv_data->pm_0_3_count);
+	LOG_DBG("pm0.5_count = %d", drv_data->pm_0_5_count);
+	LOG_DBG("pm1.0_count = %d", drv_data->pm_1_0_count);
+	LOG_DBG("pm2.5_count = %d", drv_data->pm_2_5_count);
+	LOG_DBG("pm5.0_count = %d", drv_data->pm_5_0_count);
+	LOG_DBG("pm10_count = %d", drv_data->pm_10_0_count);
+
 	return 0;
 }
 
@@ -154,16 +179,32 @@ static int pms7003_channel_get(const struct device *dev,
 
 	if (chan == SENSOR_CHAN_PM_1_0) {
 		val->val1 = drv_data->pm_1_0;
-		val->val2 = 0;
 	} else if (chan == SENSOR_CHAN_PM_2_5) {
 		val->val1 = drv_data->pm_2_5;
-		val->val2 = 0;
 	} else if (chan == SENSOR_CHAN_PM_10) {
 		val->val1 = drv_data->pm_10;
-		val->val2 = 0;
+	} else if (chan == SENSOR_CHAN_PM_1_0_CF) {
+		val->val1 = drv_data->pm_1_0_cf;
+	} else if (chan == SENSOR_CHAN_PM_2_5_CF) {
+		val->val1 = drv_data->pm_2_5_cf;
+	} else if (chan == SENSOR_CHAN_PM_10_CF) {
+		val->val1 = drv_data->pm_10_cf;
+	} else if (chan == SENSOR_CHAN_PM_0_3_COUNT) {
+		val->val1 = drv_data->pm_0_3_count;
+	} else if (chan == SENSOR_CHAN_PM_0_5_COUNT) {
+		val->val1 = drv_data->pm_0_5_count;
+	} else if (chan == SENSOR_CHAN_PM_1_0_COUNT) {
+		val->val1 = drv_data->pm_1_0_count;
+	} else if (chan == SENSOR_CHAN_PM_2_5_COUNT) {
+		val->val1 = drv_data->pm_2_5_count;
+	} else if (chan == SENSOR_CHAN_PM_5_COUNT) {
+		val->val1 = drv_data->pm_5_0_count;
+	} else if (chan == SENSOR_CHAN_PM_10_COUNT) {
+		val->val1 = drv_data->pm_10_0_count;
 	} else {
 		return -ENOTSUP;
 	}
+	val->val2 = 0;
 	return 0;
 }
 
