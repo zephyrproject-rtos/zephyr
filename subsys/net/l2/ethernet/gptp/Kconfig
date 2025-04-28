@@ -211,4 +211,10 @@ config NET_GPTP_STATISTICS
 	  Enable this if you need to collect gPTP statistics. The statistics
 	  can be seen in net-shell if needed.
 
+config NET_GPTP_MONITOR_SYNC_STATUS
+	bool "Monitor real-time synchronization status"
+	help
+	  Monitor real-time synchronization status, like synchronization offset,
+	  frequency offset and so on. This will print continuous messages.
+
 endif # NET_GPTP
