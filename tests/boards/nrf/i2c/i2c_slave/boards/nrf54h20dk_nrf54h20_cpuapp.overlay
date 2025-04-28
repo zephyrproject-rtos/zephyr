@@ -39,13 +39,13 @@
 	};
 };
 
-&i2c130 {
+dut_twim: &i2c130 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c130_default_alt>;
 	pinctrl-1 = <&i2c130_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	memory-regions = <&cpuapp_dma_region>;
 	sensor: sensor@54 {
 		reg = <0x54>;
@@ -55,7 +55,6 @@
 &i2c131 {
 	compatible = "nordic,nrf-twis";
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c131_default_alt>;
 	pinctrl-1 = <&i2c131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
