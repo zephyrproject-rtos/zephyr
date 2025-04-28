@@ -3,7 +3,8 @@
 # Copyright (c) 2018-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52840DONGLE
+config BOARD_NRF52840DONGLE
+	select BOARD_EARLY_INIT_HOOK
 
 config BOARD_HAS_NRF5_BOOTLOADER
 	bool "Board has nRF5 bootloader"
@@ -11,5 +12,3 @@ config BOARD_HAS_NRF5_BOOTLOADER
 	help
 	  If selected, applications are linked so that they can be loaded by Nordic
 	  nRF5 bootloader.
-
-endif # BOARD_NRF52840DONGLE
