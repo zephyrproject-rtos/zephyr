@@ -209,15 +209,22 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	 * sent the notification in pm_system_resume().
 	 */
 	k_sched_lock();
-	pm_stats_start();
+
+	if (IS_ENABLED(CONFIG_PM_STATS)) {
+		pm_stats_start();
+	}
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
 	pm_state_set(z_cpus_pm_state[id]->state, z_cpus_pm_state[id]->substate_id);
-	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-	pm_stats_update(z_cpus_pm_state[id]->state);
+
+	if (IS_ENABLED(CONFIG_PM_STATS)) {
+		pm_stats_stop();
+		pm_stats_update(z_cpus_pm_state[id]->state);
+	}
+
 	pm_system_resume();
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
