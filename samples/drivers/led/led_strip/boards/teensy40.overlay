@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025, Hyundai Motors Group
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&lpspi4 {
+	status = "okay";
+
+	led_strip: ws2813@0 {
+		compatible = "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+
+		/* WS2813 */
+		chain-length = <60>; /* arbitrary; change at will */
+		spi-cpha;
+		spi-one-frame = <0xfc>; /* 11111100: 937.5 high and 312.5 ns low */
+		spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_RED
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};
