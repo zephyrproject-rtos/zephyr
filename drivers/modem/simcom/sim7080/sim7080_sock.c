@@ -381,16 +381,12 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		while (len > 0) {
 			ret = offload_sendto(obj, buf, len, flags, msg->msg_name, msg->msg_namelen);
 			if (ret < 0) {
-				if (ret == -EAGAIN) {
-					k_sleep(K_SECONDS(1));
-				} else {
-					return ret;
-				}
-			} else {
-				sent += ret;
-				buf += ret;
-				len -= ret;
+				return ret;
 			}
+
+			sent += ret;
+			buf += ret;
+			len -= ret;
 		}
 	}
 
