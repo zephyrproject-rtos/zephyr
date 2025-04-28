@@ -2191,7 +2191,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **
 
 	cig_rsp = (void *)rsp->data;
 
-	if (rsp->len < sizeof(cig_rsp) || cig_rsp->num_handles != param->num_cis) {
+	if (rsp->len < sizeof(*cig_rsp) || cig_rsp->num_handles != param->num_cis) {
 		LOG_WRN("Unexpected response to hci_le_set_cig_params");
 		err = -EIO;
 		net_buf_unref(rsp);
