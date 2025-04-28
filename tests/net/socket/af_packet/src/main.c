@@ -179,8 +179,7 @@ ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", NULL, NULL, &eth_fake_data2, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
 		    NET_ETH_MTU);
 
-static void setup_packet_socket(int *sock, struct net_if *iface, int type,
-				int proto)
+static void setup_packet_socket(int *sock, int type, int proto)
 {
 	struct timeval optval = {
 		.tv_usec = 100000,
@@ -212,7 +211,7 @@ static void bind_packet_socket(int sock, struct net_if *iface)
 static void prepare_packet_socket(int *sock, struct net_if *iface, int type,
 				  int proto)
 {
-	setup_packet_socket(sock, iface, type, proto);
+	setup_packet_socket(sock, type, proto);
 	bind_packet_socket(*sock, iface);
 }
 
@@ -657,7 +656,7 @@ static void test_sendto_common(int sock_type, int proto, bool do_bind,
 	uint16_t pkt_len;
 	int ret;
 
-	setup_packet_socket(&packet_sock_1, ud.second, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_1, sock_type, htons(proto));
 	if (do_bind) {
 		bind_packet_socket(packet_sock_1, ud.second);
 	}
@@ -717,7 +716,7 @@ static void test_sendmsg_common(int sock_type, int proto)
 	uint16_t pkt_len;
 	int ret;
 
-	setup_packet_socket(&packet_sock_1, ud.second, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_1, sock_type, htons(proto));
 	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 	prepare_test_packet(sock_type, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
@@ -810,11 +809,11 @@ static void test_recv_common(int sock_type, int proto, bool success)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sock */
-	setup_packet_socket(&packet_sock_2, ud.first, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_2, sock_type, htons(proto));
 	bind_packet_socket(packet_sock_2, ud.first);
 
 	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
@@ -877,11 +876,11 @@ static void test_recvfrom_common(int sock_type, int proto)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sock */
-	setup_packet_socket(&packet_sock_2, ud.first, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_2, sock_type, htons(proto));
 	bind_packet_socket(packet_sock_2, ud.first);
 
 	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
@@ -941,13 +940,13 @@ ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sockets */
-	setup_packet_socket(&packet_sock_2, ud.first, SOCK_RAW, htons(ETH_P_ALL));
+	setup_packet_socket(&packet_sock_2, SOCK_RAW, htons(ETH_P_ALL));
 	bind_packet_socket(packet_sock_2, ud.first);
-	setup_packet_socket(&packet_sock_3, ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
+	setup_packet_socket(&packet_sock_3, SOCK_DGRAM, htons(ETH_P_ALL));
 	bind_packet_socket(packet_sock_3, ud.first);
 	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 
