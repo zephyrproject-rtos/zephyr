@@ -50,21 +50,33 @@ static const float lis2dux12_odr_map[LIS2DUX12_DT_ODR_END] = {FOREACH_ODR_ENUM(G
 static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 {
 	const struct lis2dux12_config *cfg = dev->config;
+	int odr;
 
-	/* constrain loop to prevent erroneous power mode/odr combinations */
-	size_t i = (cfg->pm != LIS2DUX12_OPER_MODE_LOW_POWER) ? LIS2DUX12_DT_ODR_6Hz
-							      : LIS2DUX12_DT_ODR_1Hz_ULP;
-	size_t len = (cfg->pm != LIS2DUX12_OPER_MODE_LOW_POWER) ? LIS2DUX12_DT_ODR_END
-								: LIS2DUX12_DT_ODR_6Hz;
-
-	while (i < len) {
-		if (freq <= lis2dux12_odr_map[i]) {
-			return i;
+	for (odr = LIS2DUX12_DT_ODR_OFF; odr < LIS2DUX12_DT_ODR_END; odr++) {
+		if (freq <= lis2dux12_odr_map[odr]) {
+			break;
 		}
-		++i;
 	}
 
-	return -EINVAL;
+	if (unlikely(odr == LIS2DUX12_DT_ODR_END)) {
+		/* no valid odr found */
+		return -EINVAL;
+	}
+
+	if (unlikely(odr == LIS2DUX12_DT_ODR_OFF)) {
+		return LIS2DUX12_DT_ODR_OFF;
+	}
+
+	/* handle high performance mode */
+	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
+		if (odr < LIS2DUX12_DT_ODR_6Hz) {
+			odr = LIS2DUX12_DT_ODR_6Hz;
+		}
+
+		odr |= 0x10;
+	}
+
+	return odr;
 }
 
 static int lis2dux12_set_fs(const struct device *dev, int16_t fs)
