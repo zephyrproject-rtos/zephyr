@@ -260,6 +260,13 @@ struct http_request {
 	/** Length of the user supplied receive buffer */
 	size_t recv_buf_len;
 
+	/** Length of the unprocessed data left inside the user supplied receive
+	 *  buffer. In typical HTTP processing this should be 0, however in case
+	 *  of switching protocols, there may be some data left belonging to the
+	 *  new protocol.
+	 */
+	size_t data_len;
+
 	/** The URL for this request, for example: /index.html */
 	const char *url;
 
