@@ -368,27 +368,6 @@ drop:
 	return NET_DROP;
 }
 
-#if defined(CONFIG_NET_IPV6)
-static enum net_verdict ethernet_ip_recv(struct net_if *iface,
-					 uint16_t ptype,
-					 struct net_pkt *pkt)
-{
-	ARG_UNUSED(iface);
-
-	if (ptype == NET_ETH_PTYPE_IPV6) {
-		net_pkt_set_family(pkt, AF_INET6);
-	} else {
-		return NET_DROP;
-	}
-
-	return NET_CONTINUE;
-}
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV6)
-ETH_NET_L3_REGISTER(IPv6, NET_ETH_PTYPE_IPV6, ethernet_ip_recv);
-#endif /* CONFIG_NET_IPV6 */
-
 #if defined(CONFIG_NET_IPV4)
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {

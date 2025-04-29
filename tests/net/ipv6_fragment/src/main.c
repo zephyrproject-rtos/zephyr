@@ -2314,6 +2314,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	zassert_not_null(pkt1, "packet");
 
 	net_pkt_set_family(pkt1, AF_INET6);
+	net_pkt_set_ll_proto_type(pkt1, NET_ETH_PTYPE_IPV6);
 	net_pkt_set_ip_hdr_len(pkt1, sizeof(struct net_ipv6_hdr));
 	net_pkt_cursor_init(pkt1);
 
@@ -2354,6 +2355,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	zassert_not_null(pkt2, "packet");
 
 	net_pkt_set_family(pkt2, AF_INET6);
+	net_pkt_set_ll_proto_type(pkt2, NET_ETH_PTYPE_IPV6);
 	net_pkt_set_ip_hdr_len(pkt2, sizeof(struct net_ipv6_hdr));
 	net_pkt_cursor_init(pkt2);
 

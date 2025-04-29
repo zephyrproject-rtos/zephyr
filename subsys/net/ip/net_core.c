@@ -146,22 +146,7 @@ l3_process:
 
 	uint8_t family = net_pkt_family(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
-					  family == AF_UNSPEC || family == AF_PACKET)) {
-		/* IP version and header length. */
-		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
-
-		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt, net_pkt_is_loopback(pkt));
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt, net_pkt_is_loopback(pkt));
-		}
-
-		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
-		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
-		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
-		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 		return net_canbus_socket_input(pkt);
 	}
 

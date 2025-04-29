@@ -296,9 +296,9 @@ static void send_msg(const uint8_t *data, size_t len)
 	struct net_pkt *pkt;
 	int res;
 
-	pkt = net_pkt_alloc_with_buffer(iface1, NET_IPV6UDPH_LEN + len, AF_UNSPEC,
-					0, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface1, NET_IPV6UDPH_LEN + len, AF_INET6, 0, K_FOREVER);
 	zassert_not_null(pkt, "PKT is null");
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
 
 	res = net_pkt_write(pkt, ipv6_hdr_start, sizeof(ipv6_hdr_start));
 	zassert_equal(res, 0, "pkt write for header start failed");

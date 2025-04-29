@@ -1044,6 +1044,26 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 	return 0;
 }
 
+static enum net_verdict ipv6_recv(struct net_if *iface, uint16_t ptype, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	/* IP version and header length. */
+	uint8_t vtc = NET_IPV6_HDR(pkt)->vtc & 0xf0;
+
+	net_pkt_set_family(pkt, AF_INET6);
+	if (vtc == 0x60) {
+		return net_ipv6_input(pkt, net_pkt_is_loopback(pkt));
+	}
+
+	NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
+	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+	net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
+
+	return NET_CONTINUE;
+}
+
+NET_L3_REGISTER(NULL, IPv6, NET_ETH_PTYPE_IPV6, ipv6_recv);
+
 void net_ipv6_init(void)
 {
 	net_ipv6_nbr_init();
