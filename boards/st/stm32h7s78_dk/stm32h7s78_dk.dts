@@ -21,6 +21,13 @@
 		zephyr,sram = &sram0;
 	};
 
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_1 {
@@ -171,6 +178,33 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+};
+
+&xspi1 {
+	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
+		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
+		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1 &xspim_p1_io2_pp2
+		     &xspim_p1_io3_pp3 &xspim_p1_io4_pp4 &xspim_p1_io5_pp5
+		     &xspim_p1_io6_pp6 &xspim_p1_io7_pp7 &xspim_p1_io8_pp8
+		     &xspim_p1_io9_pp9 &xspim_p1_io10_pp10 &xspim_p1_io11_pp11
+		     &xspim_p1_io12_pp12 &xspim_p1_io13_pp13 &xspim_p1_io14_pp14
+		     &xspim_p1_io15_pp15>;
+
+	pinctrl-names = "default";
+	status = "okay";
+
+	memc: aps256xxn-obr@0 {
+		compatible = "st,stm32-xspi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		max-frequency = <DT_FREQ_M(200)>;
+		fixed-latency;
+		io-x16-mode;
+		read-latency = <4>;
+		write-latency = <1>;
+		burst-length = <0>;
+		status = "okay";
+	};
 };
 
 &die_temp {

@@ -15,4 +15,5 @@ supported:
   - adc
   - usb_device
   - usbd
+  - memc
 vendor: st
