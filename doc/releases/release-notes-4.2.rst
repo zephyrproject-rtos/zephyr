@@ -168,6 +168,8 @@ New APIs and options
   * Core
 
     * All packets are passed through l3 handlers.
+    * Add new ``loopback`` flag for packets which are directly passed back
+      with :c:func:`net_pkt_is_loopback` and :c:func:`net_pkt_set_loopback`.
 
   * IPv4
 

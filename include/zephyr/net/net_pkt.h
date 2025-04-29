@@ -244,6 +244,8 @@ struct net_pkt {
 	uint8_t tx_timestamping : 1; /** Timestamp transmitted packet */
 	uint8_t rx_timestamping : 1; /** Timestamp received packet */
 #endif
+	uint8_t loopback: 1; /** Set to 1 if this packet is a loopback packet */
+
 	/* bitfield byte alignment boundary */
 
 #if defined(CONFIG_NET_IP)
@@ -405,7 +407,7 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_L2_VIRTUAL)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -415,7 +417,7 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_L2_VIRTUAL)
 	pkt->orig_iface = iface;
 #else
 	ARG_UNUSED(pkt);
@@ -573,6 +575,16 @@ static inline void net_pkt_set_chksum_done(struct net_pkt *pkt,
 					   bool is_chksum_done)
 {
 	pkt->chksum_done = is_chksum_done;
+}
+
+static inline void net_pkt_set_loopback(struct net_pkt *pkt, bool loopback)
+{
+	pkt->loopback = loopback;
+}
+
+static inline bool net_pkt_is_loopback(struct net_pkt *pkt)
+{
+	return pkt->loopback;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
