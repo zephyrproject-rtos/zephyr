@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <stm32_ll_adc.h>
@@ -268,36 +269,6 @@ static int adc_stm32_dma_start(const struct device *dev,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
-#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
-/* Returns true if given buffer is in a non-cacheable SRAM region.
- * This is determined using the device tree, meaning the .nocache region won't work.
- * The entire buffer must be in a single region.
- * An example of how the SRAM region can be defined in the DTS:
- *	&sram4 {
- *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
- *	};
- */
-static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-#endif /* CONFIG_MEM_ATTR */
-
-	return buf_within_nocache;
-}
-#endif /* defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X) */
-
 static int check_buffer(const struct adc_sequence *sequence,
 			     uint8_t active_channels)
 {
@@ -315,13 +286,13 @@ static int check_buffer(const struct adc_sequence *sequence,
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ADC_STM32_DMA)
 	/* Buffer is forced to be in non-cacheable SRAM region to avoid cache maintenance */
-	if (!buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
-		LOG_ERR("Supplied buffer is not in a non-cacheable region according to DTS.");
+	if (!stm32_buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
+		LOG_ERR("Supplied buffer is not in a non-cacheable region.");
 		return -EINVAL;
 	}
-#endif
+#endif /* CONFIG_ADC_STM32_DMA */
 
 	return 0;
 }
