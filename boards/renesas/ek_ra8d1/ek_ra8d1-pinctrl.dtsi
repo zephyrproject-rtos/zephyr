@@ -270,4 +270,32 @@
 			psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, 2, 8)>;
 		};
 	};
+
+	ssie0_default: ssie0_default {
+		group1 {
+			/* SSIBCK SSILRCK SSITX SSIRX */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 4, 3)>,
+				<RA_PSEL(RA_PSEL_SSIE, 4, 4)>,
+				<RA_PSEL(RA_PSEL_SSIE, 4, 5)>,
+				<RA_PSEL(RA_PSEL_SSIE, 4, 6)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* AUDIO_CLOCK */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 7, 8)>;
+			input-enable;
+			drive-strength = "high";
+		};
+	};
+
+	ssie1_default: ssie1_default {
+		group1 {
+			/* SSIBCK SSILRCK SSIDATA */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 7, 2)>,
+				<RA_PSEL(RA_PSEL_SSIE, 7, 1)>,
+				<RA_PSEL(RA_PSEL_SSIE, 7, 0)>;
+			drive-strength = "high";
+		};
+	};
 };

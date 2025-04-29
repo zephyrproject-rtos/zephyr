@@ -212,4 +212,25 @@
 			psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, 2, 8)>;
 		};
 	};
+
+	ssie0_default: ssie0_default {
+		group1 {
+			/* SSI_BCK SSI_LRCK SSI_TX SSI_RX */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 1, 12)>,
+				<RA_PSEL(RA_PSEL_SSIE, 1, 13)>,
+				<RA_PSEL(RA_PSEL_SSIE, 4, 5)>,
+				<RA_PSEL(RA_PSEL_SSIE, 1, 14)>;
+			drive-strength = "high";
+		};
+	};
+
+	ssie1_default: ssie1_default {
+		group1 {
+			/* SSIBCK SSILRCK SSIDATA */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SSIE, 2, 5)>,
+				<RA_PSEL(RA_PSEL_SSIE, 2, 6)>;
+			drive-strength = "high";
+		};
+	};
 };
