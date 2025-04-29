@@ -891,7 +891,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -919,8 +919,9 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * Bluetooth workqueue, so canceling the timeout work should always
+	 * succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
@@ -1826,7 +1827,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -4493,7 +4494,7 @@ static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	/* Reset SMP timeout, like the spec says. */
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 
 	if (smp_auth_cb->passkey_display_keypress) {
 		smp_auth_cb->passkey_display_keypress(conn, type);
@@ -4670,8 +4671,9 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * Bluetooth workqueue, so canceling the timeout work should always
+	 * succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 

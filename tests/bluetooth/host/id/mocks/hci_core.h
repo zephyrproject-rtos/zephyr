@@ -12,8 +12,10 @@
 #define HCI_CORE_FFF_FAKES_LIST(FAKE)                                                              \
 	FAKE(bt_unpair)                                                                            \
 	FAKE(bt_hci_cmd_create)                                                                    \
-	FAKE(bt_hci_cmd_send_sync)
+	FAKE(bt_hci_cmd_send_sync)                                                                 \
+	FAKE(bt_work_schedule)
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_unpair, uint8_t, const bt_addr_le_t *);
 DECLARE_FAKE_VALUE_FUNC(struct net_buf *, bt_hci_cmd_create, uint16_t, uint8_t);
 DECLARE_FAKE_VALUE_FUNC(int, bt_hci_cmd_send_sync, uint16_t, struct net_buf *, struct net_buf **);
+DECLARE_FAKE_VALUE_FUNC(int, bt_work_schedule, struct k_work_delayable *, k_timeout_t);

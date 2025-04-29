@@ -320,6 +320,11 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 	(void)memset(conn, 0, offsetof(struct bt_conn, ref));
 
 #if defined(CONFIG_BT_CONN)
+	/* The deferred work must run on the Bluetooth workqueue: it performs
+	 * channel and profile teardown, and the non-blocking work
+	 * cancellations in those paths are only guaranteed to be effective
+	 * against work items running on the same workqueue.
+	 */
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CONN_TX)
@@ -1195,8 +1200,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 #endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
 
-			k_work_schedule(&conn->deferred_work,
-					CONN_UPDATE_TIMEOUT);
+			bt_work_schedule(&conn->deferred_work, CONN_UPDATE_TIMEOUT);
 		}
 #endif /* CONFIG_BT_CONN */
 
@@ -1229,7 +1233,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_reset_rx_state(conn);
 
 			LOG_DBG("trigger disconnect work");
-			k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
+			bt_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 
 			/* The last ref will be dropped during cleanup */
 			break;
@@ -1304,8 +1308,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE &&
 		    bt_dev.create_param.timeout != 0) {
-			k_work_schedule(&conn->deferred_work,
-					K_MSEC(10 * bt_dev.create_param.timeout));
+			bt_work_schedule(&conn->deferred_work,
+					 K_MSEC(10 * bt_dev.create_param.timeout));
 		}
 
 		break;
