@@ -442,6 +442,15 @@ enum bt_security_err bt_security_err_get(uint8_t hci_err);
 
 int bt_hci_recv(const struct device *dev, struct net_buf *buf);
 
+/* Submit work to the general purpose Bluetooth workqueue.
+ *
+ * This is used for the host's internal work items to avoid the shared system
+ * workqueue. The work runs in the RX thread context.
+ */
+int bt_work_submit(struct k_work *work);
+int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay);
+int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
+
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */
