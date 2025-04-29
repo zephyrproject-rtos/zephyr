@@ -103,6 +103,10 @@ Deprecated APIs and options
   deprecated, because support for anonymous authentication had been removed from the
   hawkBit server in version 0.8.0.
 
+* :kconfig:option:`NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE` Kconfig option has been
+   deprecated. All frames are now forwarded by default, and the option is no longer
+   needed.
+
 New APIs and options
 ====================
 
@@ -160,6 +164,10 @@ New APIs and options
   * :c:func:`display_clear`
 
 * Networking:
+
+  * Core
+
+    * All packets are passed through l3 handlers.
 
   * IPv4
 

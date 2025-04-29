@@ -68,7 +68,13 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
 {
 	int ret;
-	bool locally_routed = false;
+
+	/* If there is no data, then drop the packet. */
+	if (pkt->frags == NULL) {
+		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
+		net_stats_update_processing_error(net_pkt_iface(pkt));
+		return NET_DROP;
+	}
 
 	net_pkt_set_l2_processed(pkt, false);
 
@@ -78,34 +84,27 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return ret;
 	}
 
-	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
-	 * then do not pass it to L2 as the packet does not have link layer headers in it.
+	/* If the packet is routed back to us via loopback or is an IPv4/IPv6 reassembled
+	 * packet then it can be processed by the l3 directly.
 	 */
-	if (net_pkt_is_ip_reassembled(pkt)) {
-		locally_routed = true;
+	if (is_loopback || net_pkt_is_ip_reassembled(pkt)) {
+		goto l3_process;
 	}
 
-	/* If there is no data, then drop the packet. */
-	if (!pkt->frags) {
-		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
-		net_stats_update_processing_error(net_pkt_iface(pkt));
-
-		return NET_DROP;
-	}
-
-	if (!is_loopback && !locally_routed) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		if (ret != NET_CONTINUE) {
-			if (ret == NET_DROP) {
-				NET_DBG("Packet %p discarded by L2", pkt);
-				net_stats_update_processing_error(
-							net_pkt_iface(pkt));
-			}
-
-			return ret;
+	ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
+	if (ret != NET_CONTINUE) {
+		if (ret == NET_DROP) {
+			NET_DBG("Packet %p discarded by L2", pkt);
+			net_stats_update_processing_error(net_pkt_iface(pkt));
 		}
+
+		return ret;
 	}
 
+l3_process:
+	/* Start processing l3 handlers. By this point, the buffer of the
+	 * first frag should point to the beginning of the payload.
+	 */
 	net_pkt_set_l2_processed(pkt, true);
 
 	/* L2 has modified the buffer starting point, it is easier
@@ -121,6 +120,29 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		if (ret != NET_CONTINUE) {
 			return ret;
 		}
+	}
+
+	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
+		if (l3->ptype != net_pkt_ll_proto_type(pkt) ||
+		    (l3->l2 != NULL && l3->l2 != net_pkt_orig_iface(pkt)->if_dev->l2) ||
+		    l3->handler == NULL) {
+			continue;
+		}
+
+		NET_DBG("Calling L3 %s handler for type 0x%04x iface %d (%p)", l3->name,
+			net_pkt_ll_proto_type(pkt), net_if_get_by_iface(net_pkt_iface(pkt)),
+			net_pkt_iface(pkt));
+
+		ret = l3->handler(net_pkt_iface(pkt), net_pkt_ll_proto_type(pkt), pkt);
+		if (ret == NET_OK) {
+			return NET_OK;
+		} else if (ret == NET_DROP) {
+			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
+			net_stats_update_processing_error(net_pkt_iface(pkt));
+			return NET_DROP;
+		}
+
+		break;
 	}
 
 	uint8_t family = net_pkt_family(pkt);
@@ -144,7 +166,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return net_canbus_socket_input(pkt);
 	}
 
-	NET_DBG("Unknown protocol family packet (0x%x)", family);
+	NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", net_pkt_ll_proto_type(pkt),
+		net_if_get_by_iface(net_pkt_iface(pkt)), net_pkt_iface(pkt));
+	net_stats_update_processing_error(net_pkt_iface(pkt));
 	return NET_DROP;
 }
 
@@ -584,11 +608,8 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		net_pkt_set_orig_iface(pkt, iface);
-	}
-
 	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_orig_iface(pkt, iface);
 
 	if (!net_pkt_filter_recv_ok(pkt)) {
 		/* Silently drop the packet, but update the statistics in order

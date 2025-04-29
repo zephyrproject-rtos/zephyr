@@ -119,7 +119,7 @@ struct net_pkt {
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_L2_VIRTUAL)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 

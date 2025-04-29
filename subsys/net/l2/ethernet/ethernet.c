@@ -259,7 +259,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	enum net_verdict verdict = NET_CONTINUE;
 	bool is_vlan_pkt = false;
-	bool handled = false;
 	struct net_linkaddr *lladdr;
 	uint16_t type;
 	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
@@ -381,47 +380,10 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	body_len = net_pkt_get_len(pkt);
 
-	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
-		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
-		    l3->handler == NULL) {
-			continue;
-		}
-
-		NET_DBG("Calling L3 %s handler for type 0x%04x iface %d (%p)",
-			l3->name, type, net_if_get_by_iface(iface), iface);
-
-		verdict = l3->handler(iface, type, pkt);
-		if (verdict == NET_OK) {
-			/* the packet was consumed by the l3-handler */
-			goto out;
-		} else if (verdict == NET_DROP) {
-			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
-			goto drop;
-		}
-
-		/* The packet will be processed further by IP-stack
-		 * when NET_CONTINUE is returned
-		 */
-		handled = true;
-		break;
-	}
-
-	if (!handled) {
-		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
-			net_pkt_set_family(pkt, AF_UNSPEC);
-		} else {
-			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
-				net_if_get_by_iface(iface), iface);
-			eth_stats_update_unknown_protocol(iface);
-			return NET_DROP;
-		}
-	}
-
 	if (type != NET_ETH_PTYPE_EAPOL) {
 		ethernet_update_length(iface, pkt);
 	}
 
-out:
 	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
