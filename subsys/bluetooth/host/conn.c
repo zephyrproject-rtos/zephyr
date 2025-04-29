@@ -120,7 +120,7 @@ sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 
 static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 
-static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
+static struct bt_conn_tx conn_tx[CONFIG_BT_BUF_ACL_TX_COUNT];
 
 #if defined(CONFIG_BT_CLASSIC)
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
