@@ -541,7 +541,7 @@ static void send_sd_response(int sock,
 
 		/* Checks validity and then compare */
 		if (dns_sd_rec_match(record, &filter)) {
-			NET_DBG("matched query: %s.%s.%s.%s port: %u",
+			NET_INFO("matched query: %s.%s.%s.%s port: %u",
 				record->instance, record->service,
 				record->proto, record->domain,
 				ntohs(*(record->port)));
@@ -551,7 +551,7 @@ static void send_sd_response(int sock,
 				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
 						result->data, net_buf_max_len(result));
 				if (ret < 0) {
-					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
+					NET_ERR("dns_sd_handle_service_type_enum() failed (%d)",
 						ret);
 					continue;
 				}
@@ -559,7 +559,7 @@ static void send_sd_response(int sock,
 				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
 						result->data, net_buf_max_len(result));
 				if (ret < 0) {
-					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
+					NET_ERR("dns_sd_handle_ptr_query() failed (%d)", ret);
 					continue;
 				}
 			}
@@ -570,7 +570,7 @@ static void send_sd_response(int sock,
 			ret = zsock_sendto(sock, result->data, result->len, 0,
 					   (struct sockaddr *)&dst, dst_len);
 			if (ret < 0) {
-				NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
+				NET_ERR("Cannot send %s reply (%d)", "mDNS", ret);
 				continue;
 			} else {
 				net_stats_update_dns_sent(iface);
