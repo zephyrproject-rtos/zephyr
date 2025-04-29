@@ -54,7 +54,9 @@ enum bt_buf_type {
 
 /** Direction of HCI packets. Only used for mapping H:4 to BT_BUF_* values. */
 enum bt_buf_dir {
+	/** Packet from the controller to the host */
 	BT_BUF_IN,
+	/** Packet from the host to the controller */
 	BT_BUF_OUT,
 };
 
