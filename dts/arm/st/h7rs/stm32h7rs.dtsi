@@ -492,6 +492,28 @@
 			status = "disabled";
 		};
 
+		xspi1: spi@52005000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <105 0>;
+			clock-names = "xspix";
+			clocks = <&rcc STM32_CLOCK(AHB5, 5U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		xspi2: spi@5200a000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
+			interrupts = <106 0>;
+			clock-names = "xspix";
+			clocks = <&rcc STM32_CLOCK(AHB5, 12U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		iwdg: iwdg1: watchdog@58004800 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x58004800 0x400>;
