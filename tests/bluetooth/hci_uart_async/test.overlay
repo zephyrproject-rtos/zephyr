@@ -1,10 +1,10 @@
 / {
 	chosen {
-		zephyr,bt-hci = &bt_hci_test;
+		zephyr,bt-hci = &bt_hci_mock_controller;
 	};
 
-	bt_hci_test: bt_hci_test {
-		compatible = "zephyr,bt-hci-test";
+	bt_hci_mock_controller: bt_hci_mock_controller {
+		compatible = "zephyr,bt-hci-mock-controller";
 		status = "okay";
 	};
 };

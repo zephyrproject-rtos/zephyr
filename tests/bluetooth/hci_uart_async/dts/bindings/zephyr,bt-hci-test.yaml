@@ -1,6 +1,6 @@
-description: Bluetooth HCI for test purposes
+description: Bluetooth HCI mock controller
 
-compatible: "zephyr,bt-hci-test"
+compatible: "zephyr,bt-hci-mock-controller"
 
 include: bt-hci.yaml
 
