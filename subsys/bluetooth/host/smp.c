@@ -1002,7 +1002,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -2054,7 +2054,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -4749,7 +4749,7 @@ static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	/* Reset SMP timeout, like the spec says. */
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 
 	if (smp_auth_cb->passkey_display_keypress) {
 		smp_auth_cb->passkey_display_keypress(conn, type);

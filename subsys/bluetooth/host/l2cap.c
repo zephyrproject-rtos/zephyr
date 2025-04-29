@@ -532,7 +532,7 @@ static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
+	bt_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
 }
 
 static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
@@ -2813,7 +2813,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 	}
 
 	k_fifo_put(&chan->rx_queue, buf);
-	k_work_submit(&chan->rx_work);
+	bt_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 

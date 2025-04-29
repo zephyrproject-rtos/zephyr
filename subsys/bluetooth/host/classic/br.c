@@ -1259,8 +1259,8 @@ int bt_br_set_discoverable(bool enable, bool limited)
 		err = write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
 		if (!err && (limited == true)) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
-			k_work_reschedule(&bt_br_limited_discoverable_timeout,
-					  K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
+			bt_work_reschedule(&bt_br_limited_discoverable_timeout,
+					   K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
 		}
 		return err;
 	}

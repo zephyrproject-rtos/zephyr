@@ -1219,8 +1219,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 #endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
 
-			k_work_schedule(&conn->deferred_work,
-					CONN_UPDATE_TIMEOUT);
+			k_work_schedule(&conn->deferred_work, CONN_UPDATE_TIMEOUT);
 		}
 #endif /* CONFIG_BT_CONN */
 
@@ -1832,7 +1831,7 @@ static K_WORK_DEFINE(procedures_on_connect, auto_initiated_procedures);
 static void schedule_auto_initiated_procedures(struct bt_conn *conn)
 {
 	LOG_DBG("[%p] Scheduling auto-init procedures", conn);
-	k_work_submit(&procedures_on_connect);
+	bt_work_submit(&procedures_on_connect);
 }
 
 void bt_conn_connected(struct bt_conn *conn)

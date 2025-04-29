@@ -1321,7 +1321,7 @@ populate:
 static inline void sc_work_submit(k_timeout_t timeout)
 {
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
-	k_work_reschedule(&gatt_sc.work, timeout);
+	bt_work_reschedule(&gatt_sc.work, timeout);
 #endif
 }
 
@@ -1483,8 +1483,8 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 
 		atomic_set_bit(el->flags, flag);
 
-		k_work_reschedule(&gatt_delayed_store.work,
-				  K_MSEC(CONFIG_BT_SETTINGS_DELAYED_STORE_MS));
+		bt_work_reschedule(&gatt_delayed_store.work,
+				   K_MSEC(CONFIG_BT_SETTINGS_DELAYED_STORE_MS));
 	}
 }
 
@@ -1565,7 +1565,7 @@ void bt_gatt_init(void)
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_schedule(&db_hash.work, DB_HASH_TIMEOUT);
 	} else {
-		k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+		bt_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
@@ -1640,7 +1640,7 @@ static void db_changed(void)
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
 	} else {
-		k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+		bt_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
@@ -2511,8 +2511,8 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	/* Use `k_work_schedule` to keep the original deadline, instead of
 	 * re-setting the timeout whenever a new notification is appended.
 	 */
-	k_work_schedule(&nfy_mult_work,
-			K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
+	bt_work_schedule(&nfy_mult_work,
+			 K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
 
 	return 0;
 }

@@ -1318,8 +1318,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	if (ad_is_limited(ad, ad_len)) {
 		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
-		k_work_reschedule(&adv->lim_adv_timeout_work,
-				  K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
+		bt_work_reschedule(&adv->lim_adv_timeout_work,
+				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
 
 	return err;
