@@ -8,6 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_PNI_RM3100_REG_H_
 #define ZEPHYR_DRIVERS_SENSOR_PNI_RM3100_REG_H_
 
+/* Address value has a read bit */
+#define REG_READ_BIT BIT(7)
+
 /* RM3100 register addresses */
 #define RM3100_REG_CMM         0x01 /* Continuous measurement mode */
 #define RM3100_REG_CCX_MSB     0x04 /* Cycle Count X LSB */
