@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/dt-bindings/sensor/rm3100.h>
 #include "rm3100.h"
 
 uint8_t rm3100_encode_channel(enum sensor_channel chan)
@@ -33,11 +34,18 @@ int rm3100_encode(const struct device *dev,
 		  size_t num_channels,
 		  uint8_t *buf)
 {
+	const struct rm3100_data *data = dev->data;
 	struct rm3100_encoded_data *edata = (struct rm3100_encoded_data *)buf;
 	uint64_t cycles;
 	int err;
 
 	edata->header.channels = 0;
+
+	if (data->settings.odr == RM3100_DT_ODR_600) {
+		edata->header.cycle_count = RM3100_CYCLE_COUNT_HIGH_ODR;
+	} else {
+		edata->header.cycle_count = RM3100_CYCLE_COUNT_DEFAULT;
+	}
 
 	for (size_t i = 0; i < num_channels; i++) {
 		edata->header.channels |= rm3100_encode_channel(channels[i].chan_type);
@@ -105,9 +113,11 @@ static int rm3100_decoder_get_frame_count(const uint8_t *buffer,
 	return -1;
 }
 
-static int rm3100_convert_raw_to_q31(uint32_t raw_reading, q31_t *out, int8_t *shift)
+static int rm3100_convert_raw_to_q31(uint16_t cycle_count, uint32_t raw_reading,
+				     q31_t *out, int8_t *shift)
 {
 	int64_t value;
+	uint8_t divider;
 
 	raw_reading = sys_be24_to_cpu(raw_reading);
 	value = sign_extend(raw_reading, 23);
@@ -115,9 +125,18 @@ static int rm3100_convert_raw_to_q31(uint32_t raw_reading, q31_t *out, int8_t *s
 	/** Convert to Gauss, assuming 1 LSB = 75 uT, given default Cycle-Counting (200).
 	 * We can represent the largest sample (2^23 LSB) in Gauss with 11 bits.
 	 */
-	*shift = 11;
+	if (cycle_count == RM3100_CYCLE_COUNT_DEFAULT) {
+		*shift = 11;
+		divider = 75;
+	} else {
+		/** Otherwise, it's 1 LSB = 38 uT at Cycle-counting for 600 Hz ODR (100):
+		 * 12-bits max value.
+		 */
+		*shift = 12;
+		divider = 38;
+	}
 
-	int64_t micro_tesla_scaled = ((int64_t)value << (31 - *shift)) / 75;
+	int64_t micro_tesla_scaled = ((int64_t)value << (31 - *shift)) / divider;
 	int64_t gauss_scaled = (int64_t)micro_tesla_scaled / 100;
 
 	*out = gauss_scaled;
@@ -166,7 +185,8 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 			raw_reading = edata->magn.z;
 		}
 
-		rm3100_convert_raw_to_q31(raw_reading, &out->readings->value, &out->shift);
+		rm3100_convert_raw_to_q31(
+			edata->header.cycle_count, raw_reading, &out->readings->value, &out->shift);
 
 		*fit = 1;
 		return 1;
@@ -182,9 +202,12 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		rm3100_convert_raw_to_q31(edata->magn.x, &out->readings[0].x, &out->shift);
-		rm3100_convert_raw_to_q31(edata->magn.y, &out->readings[0].y, &out->shift);
-		rm3100_convert_raw_to_q31(edata->magn.z, &out->readings[0].z, &out->shift);
+		rm3100_convert_raw_to_q31(
+			edata->header.cycle_count, edata->magn.x, &out->readings[0].x, &out->shift);
+		rm3100_convert_raw_to_q31(
+			edata->header.cycle_count, edata->magn.y, &out->readings[0].y, &out->shift);
+		rm3100_convert_raw_to_q31(
+			edata->header.cycle_count, edata->magn.z, &out->readings[0].z, &out->shift);
 
 		*fit = 1;
 		return 1;
