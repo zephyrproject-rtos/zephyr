@@ -1,0 +1,7 @@
+/ {
+	cpu_freq: cpu-freq {
+		compatible = "zephyr,cpu-freq";
+		cfgdata = <75 1000000000>, <50 800000000>, <25 300000000>;
+		status = "okay";
+		};
+};

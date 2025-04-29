@@ -1,0 +1,4 @@
+tests:
+  drivers.cpu_freq:
+    tags:
+      - driver
