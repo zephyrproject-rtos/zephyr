@@ -1296,3 +1296,9 @@ test_i2c_icm45686: icm45686@b1 {
 	reg = <0xb1>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_rm3100: rm3100@b2 {
+	compatible = "pni,rm3100";
+	reg = <0xb2>;
+	int-gpios = <&test_gpio 0 0>;
+};
