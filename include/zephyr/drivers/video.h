@@ -1212,6 +1212,13 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  */
 
 /**
+ * @code{.unparsed}
+ * | RrrGggBb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB332 VIDEO_FOURCC('R', 'G', 'B', '1')
+
+/**
  * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
  * This 16-bit integer is then packed in big endian format over two bytes:
  *
@@ -1383,6 +1390,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_GRBG8:
 	case VIDEO_PIX_FMT_RGGB8:
 	case VIDEO_PIX_FMT_GREY:
+	case VIDEO_PIX_FMT_RGB332:
 		return 8;
 	case VIDEO_PIX_FMT_SBGGR10P:
 	case VIDEO_PIX_FMT_SGBRG10P:
