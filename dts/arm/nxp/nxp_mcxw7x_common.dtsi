@@ -367,6 +367,8 @@
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
 		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
 		status = "disabled";
 	};
 
