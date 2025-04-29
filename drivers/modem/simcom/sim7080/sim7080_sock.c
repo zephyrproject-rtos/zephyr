@@ -590,6 +590,10 @@ void sim7080_handle_sock_state(int fd, uint8_t state)
 	LOG_INF("Socket close indication for socket: %d", fd);
 
 	sock->is_connected = false;
+
+	/* Unblock potentially waiting socket */
+	modem_socket_packet_size_update(&mdata.socket_config, sock, 0);
+	modem_socket_data_ready(&mdata.socket_config, sock);
 }
 
 int sim7080_offload_socket(int family, int type, int proto)
