@@ -129,8 +129,10 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 783317a3072554acbac86cca2ff24928cbf98d30
-      path: modules/lib/cmsis_6
+      revision: 6dd50439a9b83398ff2ae1376eef0a2a0b95913b
+      path: modules/hal/cmsis_6
+      groups:
+        - hal
     - name: edtt
       revision: b9ca3c7030518f07b7937dacf970d37a47865a76
       path: tools/edtt
@@ -358,7 +360,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: e2288c13ee0abc16163186523897e7910b03dd31
+      revision: 64738996dca5f5e058e0a358b81033f4b792be27
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
