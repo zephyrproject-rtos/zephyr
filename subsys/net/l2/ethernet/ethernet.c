@@ -118,48 +118,6 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 #define print_vlan_ll_addrs(...)
 #endif /* CONFIG_NET_VLAN */
 
-static inline void ethernet_update_length(struct net_if *iface,
-					  struct net_pkt *pkt)
-{
-	uint16_t len;
-#ifdef CONFIG_NET_VLAN
-	const uint16_t min_len =
-		NET_ETH_MINIMAL_FRAME_SIZE - (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC
-						      ? sizeof(struct net_eth_vlan_hdr)
-						      : sizeof(struct net_eth_hdr));
-#else
-	const uint16_t min_len = NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr);
-#endif
-
-	/* Let's check IP payload's length. If it's smaller than 46 bytes,
-	 * i.e. smaller than minimal Ethernet frame size minus ethernet
-	 * header size,then Ethernet has padded so it fits in the minimal
-	 * frame size of 60 bytes. In that case, we need to get rid of it.
-	 */
-
-	if (net_pkt_family(pkt) == AF_INET) {
-		len = ntohs(NET_IPV4_HDR(pkt)->len);
-	} else if (net_pkt_family(pkt) == AF_INET6) {
-		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
-	} else {
-		return;
-	}
-
-	if (len < min_len) {
-		struct net_buf *frag;
-
-		for (frag = pkt->frags; frag; frag = frag->frags) {
-			if (frag->len < len) {
-				len -= frag->len;
-			} else {
-				frag->len = len;
-				len = 0U;
-			}
-		}
-	}
-}
-
-
 static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
 				     bool dst_broadcast, bool dst_eth_multicast)
 {
@@ -356,10 +314,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	net_buf_pull(pkt->frags, hdr_len);
 
 	body_len = net_pkt_get_len(pkt);
-
-	if (type != NET_ETH_PTYPE_EAPOL) {
-		ethernet_update_length(iface, pkt);
-	}
 
 	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
