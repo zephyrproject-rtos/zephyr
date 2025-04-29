@@ -20,6 +20,7 @@ struct rm3100_encoded_data {
 	struct {
 		uint64_t timestamp;
 		uint8_t channels : 3;
+		uint16_t cycle_count;
 	} header;
 	union {
 		uint8_t payload[RM3100_TOTAL_BYTES];
@@ -41,6 +42,9 @@ struct rm3100_data {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
 	} rtio;
+	struct {
+		uint8_t odr;
+	} settings;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_PNI_RM3100_H_ */
