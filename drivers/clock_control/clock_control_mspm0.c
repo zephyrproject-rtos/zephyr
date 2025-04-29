@@ -7,6 +7,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
@@ -246,8 +247,29 @@ static const struct clock_control_driver_api clock_mspm0_driver_api = {
 	.configure = clock_mspm0_configure
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), &clock_mspm0_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_mspm0_driver_api);
+#if CONFIG_PM_DEVICE
+static int mspm0_clocks_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_mspm0_init(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), mspm0_clocks_pm_action);
+DEVICE_DT_DEFINE(DT_NODELABEL(clkmux), &clock_mspm0_init, PM_DEVICE_DT_GET(DT_NODELABEL(clkmux)),
+		NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		&clock_mspm0_driver_api);
 
 #if MSPM0_HFXT_ENABLED
 static const struct mspm0_clk_cfg mspm0_cfg_hfclk = {
