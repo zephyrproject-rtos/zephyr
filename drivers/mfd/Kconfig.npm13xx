@@ -4,7 +4,7 @@
 config MFD_NPM13XX
 	bool "nPM13xx PMIC multi-function device driver"
 	default y
-	depends on DT_HAS_NORDIC_NPM1300_ENABLED
+	depends on DT_HAS_NORDIC_NPM1300_ENABLED || DT_HAS_NORDIC_NPM1304_ENABLED
 	select I2C
 	help
 	  Enable the Nordic nPM13xx PMIC multi-function device driver

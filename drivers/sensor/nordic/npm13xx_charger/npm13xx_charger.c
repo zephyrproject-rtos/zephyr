@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_charger
-
 #include <math.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/mfd/npm13xx.h>
@@ -16,7 +14,10 @@ struct npm13xx_charger_config {
 	const struct device *mfd;
 	int32_t term_microvolt;
 	int32_t term_warm_microvolt;
+	const struct linear_range term_volt_ranges[2U];
 	int32_t current_microamp;
+	const struct linear_range current_range;
+	const int32_t full_scale_discharge_factors[2U];
 	int32_t dischg_limit_microamp;
 	uint8_t dischg_limit_idx;
 	int32_t vbus_limit_microamp;
@@ -137,14 +138,22 @@ struct adc_results_t {
 #define DIETEMP_FACTOR_DIV   5000
 
 /* Linear range for charger terminal voltage */
-static const struct linear_range charger_volt_ranges[] = {
-	LINEAR_RANGE_INIT(3500000, 50000, 0U, 3U), LINEAR_RANGE_INIT(4000000, 50000, 4U, 13U)};
+#define NPM1300_CHARGER_VOLT_RANGES                                                                \
+	{LINEAR_RANGE_INIT(3500000, 50000, 0U, 3U), LINEAR_RANGE_INIT(4000000, 50000, 4U, 13U)}
+#define NPM1304_CHARGER_VOLT_RANGES                                                                \
+	{LINEAR_RANGE_INIT(3600000, 50000, 0U, 1U), LINEAR_RANGE_INIT(4000000, 50000, 2U, 15U)}
 
 /* Linear range for charger current */
-static const struct linear_range charger_current_range = LINEAR_RANGE_INIT(32000, 2000, 16U, 400U);
+#define NPM1300_CHARGER_CURRENT_RANGE LINEAR_RANGE_INIT(32000, 2000, 16U, 400U)
+#define NPM1304_CHARGER_CURRENT_RANGE LINEAR_RANGE_INIT(4000, 500, 8U, 200U)
+
+/* Full-scale factors for calculating current */
+#define NPM1300_FULL_SCALE_DISCHARGE_FACTORS {112, 100}
+#define NPM1304_FULL_SCALE_DISCHARGE_FACTORS {415, 400}
+static const int32_t full_scale_charge_factors[] = {125, 100};
 
 /* Allowed values for discharge limit */
-static const uint16_t discharge_limits[] = {84U, 415U};
+static const uint16_t npm1300_discharge_limits[] = {84U, 415U};
 
 /* Linear range for vbusin current limit */
 static const struct linear_range vbus_current_range = LINEAR_RANGE_INIT(100000, 100000, 1U, 15U);
@@ -193,41 +202,49 @@ static void calc_current(const struct npm13xx_charger_config *const config,
 	int32_t full_scale_ua;
 	int32_t current_ua;
 
-	/* Largest value of discharge limit and charge limit is 1A.
-	 * We can therefore guarantee that multiplying the uA by 1000 does not overflow.
-	 *    1000 * 1'000'000 uA < 2**31
-	 *             1000000000 < 2147483648
-	 */
 	switch (data->ibat_stat) {
 	case IBAT_STAT_DISCHARGE:
-		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.12 */
-		full_scale_ua = -(1000 * config->dischg_limit_microamp) / 893;
+	/* nPM1300: Largest discharge limit is 1A. Multiplying it by 112 will not overflow.
+	 *     112 * -1_000_000 > INT32_MIN
+	 *         -112_000_000 > -2_147_483_648
+	 * nPM1304: Discharge limit is 125mA. Multiplying it by 415 will not overflow.
+	 *       415 * -125_000 > INT32_MIN
+	 *          -51_875_000 > -2_147_483_648
+	 */
+		full_scale_ua = -config->dischg_limit_microamp *
+				config->full_scale_discharge_factors[0] /
+				config->full_scale_discharge_factors[1];
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_COOL:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_NORMAL:
-		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.25 */
-		full_scale_ua = (1000 * config->current_microamp) / 800;
+	/* nPM1300: Largest charge limit is 800mA. Multiplying it by 125 will not overflow.
+	 *     125 * 800_000 < INT32_MAX
+	 *       100_000_000 < 2_147_483_647
+	 * nPM1304: Largest charge limit is even lower - no overflow.
+	 */
+		full_scale_ua = config->current_microamp * full_scale_charge_factors[0] /
+				full_scale_charge_factors[1];
 		break;
 	default:
 		full_scale_ua = 0;
 		break;
 	}
 
-	/* Largest possible value for data->current is 1023
-	 * Limits for full_scale_ua are -1'119'820 and 1'000'000
-	 *    1023 * -1119820 > -2**31
-	 *        -1145575860 > -2147483648
-	 *     1023 * 1000000 < 2**31
-	 *         1023000000 < 2147483648
+	/* Largest possible value for data->current is 1023 (10-bit ADC)
+	 * Limits for full_scale_ua are -1_120_000 and 1_000_000
+	 *    1023 * -1_120_000 > INT32_MIN
+	 *       -1_145_760_000 > -2_147_483_648
+	 *     1023 * 1_000_000 < INT32_MAX
+	 *        1_023_000_000 < 2_147_483_647
 	 */
 	__ASSERT_NO_MSG(data->current <= 1023);
 	__ASSERT_NO_MSG(full_scale_ua <= 1000000);
-	__ASSERT_NO_MSG(full_scale_ua >= -1119820);
+	__ASSERT_NO_MSG(full_scale_ua >= -1120000);
 
-	current_ua = (data->current * full_scale_ua) / 1024;
+	current_ua = (data->current * full_scale_ua) / 1023;
 
 	(void)sensor_value_from_micro(valp, current_ua);
 }
@@ -324,9 +341,6 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	/* Read vbus status */
 	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
-	if (ret != 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -532,9 +546,9 @@ int npm13xx_charger_init(const struct device *dev)
 	}
 
 	/* Configure termination voltages */
-	ret = linear_range_group_get_win_index(charger_volt_ranges, ARRAY_SIZE(charger_volt_ranges),
-					       config->term_microvolt, config->term_microvolt,
-					       &idx);
+	ret = linear_range_group_get_win_index(
+		config->term_volt_ranges, ARRAY_SIZE(config->term_volt_ranges),
+		config->term_microvolt, config->term_microvolt, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
@@ -543,9 +557,9 @@ int npm13xx_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = linear_range_group_get_win_index(charger_volt_ranges, ARRAY_SIZE(charger_volt_ranges),
-					       config->term_warm_microvolt,
-					       config->term_warm_microvolt, &idx);
+	ret = linear_range_group_get_win_index(
+		config->term_volt_ranges, ARRAY_SIZE(config->term_volt_ranges),
+		config->term_warm_microvolt, config->term_warm_microvolt, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
@@ -556,22 +570,29 @@ int npm13xx_charger_init(const struct device *dev)
 	}
 
 	/* Set current, allow rounding down to closest value */
-	ret = linear_range_get_win_index(&charger_current_range,
-					 config->current_microamp - charger_current_range.step,
+	ret = linear_range_get_win_index(&config->current_range,
+					 config->current_microamp - config->current_range.step + 1,
 					 config->current_microamp, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
 
-	ret = mfd_npm13xx_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
-	if (ret != 0) {
-		return ret;
-	}
+	if (config->dischg_limit_idx == UINT8_MAX) {
+		/* Set only charge current MSB for nPM1304 */
+		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx);
+	} else {
+		/* Set charge current MSB and LSB and discharge limit for nPM1300 */
+		ret = mfd_npm13xx_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U,
+					     idx & 1U);
+		if (ret != 0) {
+			return ret;
+		}
 
-	/* Set discharge limit */
-	ret = mfd_npm13xx_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
-				     discharge_limits[config->dischg_limit_idx] / 2U,
-				     discharge_limits[config->dischg_limit_idx] & 1U);
+		ret = mfd_npm13xx_reg_write2(
+			config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
+			npm1300_discharge_limits[config->dischg_limit_idx] / 2U,
+			npm1300_discharge_limits[config->dischg_limit_idx] & 1U);
+	}
 	if (ret != 0) {
 		return ret;
 	}
@@ -666,19 +687,23 @@ static DEVICE_API(sensor, npm13xx_charger_battery_driver_api) = {
 	.attr_get = npm13xx_charger_attr_get,
 };
 
-#define NPM13XX_CHARGER_INIT(n)                                                                    \
-	BUILD_ASSERT(DT_INST_ENUM_IDX(n, dischg_limit_microamp) < ARRAY_SIZE(discharge_limits));   \
+#define NPM13XX_CHARGER_INIT(partno, n)                                                            \
+	BUILD_ASSERT(DT_INST_ENUM_IDX_OR(n, dischg_limit_microamp, 0) <                            \
+		     ARRAY_SIZE(npm1300_discharge_limits));                                        \
                                                                                                    \
-	static struct npm13xx_charger_data npm13xx_charger_data_##n;                               \
+	static struct npm13xx_charger_data charger_##partno##_data##n;                             \
                                                                                                    \
-	static const struct npm13xx_charger_config npm13xx_charger_config_##n = {                  \
+	static const struct npm13xx_charger_config charger_##partno##_config##n = {                \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                 \
 		.term_warm_microvolt =                                                             \
 			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \
+		.term_volt_ranges = partno##_CHARGER_VOLT_RANGES,                                  \
 		.current_microamp = DT_INST_PROP(n, current_microamp),                             \
+		.current_range = partno##_CHARGER_CURRENT_RANGE,                                   \
+		.full_scale_discharge_factors = partno##_FULL_SCALE_DISCHARGE_FACTORS,             \
 		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                   \
-		.dischg_limit_idx = DT_INST_ENUM_IDX(n, dischg_limit_microamp),                    \
+		.dischg_limit_idx = DT_INST_ENUM_IDX_OR(n, dischg_limit_microamp, UINT8_MAX),      \
 		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                       \
 		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                               \
 		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
@@ -696,9 +721,17 @@ static DEVICE_API(sensor, npm13xx_charger_battery_driver_api) = {
 				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}};  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm13xx_charger_init, NULL, &npm13xx_charger_data_##n,    \
-				     &npm13xx_charger_config_##n, POST_KERNEL,                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm13xx_charger_init, NULL, &charger_##partno##_data##n,  \
+				     &charger_##partno##_config##n, POST_KERNEL,                   \
 				     CONFIG_SENSOR_INIT_PRIORITY,                                  \
 				     &npm13xx_charger_battery_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(NPM13XX_CHARGER_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT           nordic_npm1300_charger
+#define NPM1300_CHARGER_INIT(n) NPM13XX_CHARGER_INIT(NPM1300, n)
+DT_INST_FOREACH_STATUS_OKAY(NPM1300_CHARGER_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT           nordic_npm1304_charger
+#define NPM1304_CHARGER_INIT(n) NPM13XX_CHARGER_INIT(NPM1304, n)
+DT_INST_FOREACH_STATUS_OKAY(NPM1304_CHARGER_INIT)
