@@ -325,7 +325,7 @@ config BT_CONN_FRAG_COUNT
 if BT_CONN
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers with a callback"
+	int "Maximum number of pending TX buffers with a callback [DEPRECATED]"
 	default BT_BUF_ACL_TX_COUNT
 	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help
