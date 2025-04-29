@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300
-
 #include <errno.h>
 
 #include <zephyr/drivers/i2c.h>
@@ -322,4 +320,10 @@ int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm13xx_init, NULL, &data_##inst, &config##inst,           \
 			      POST_KERNEL, CONFIG_MFD_NPM13XX_INIT_PRIORITY, NULL);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1300
+DT_INST_FOREACH_STATUS_OKAY(MFD_NPM13XX_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM13XX_DEFINE)

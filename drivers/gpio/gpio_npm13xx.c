@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_gpio
-
 #include <errno.h>
 
 #include <zephyr/drivers/gpio.h>
@@ -226,4 +224,10 @@ static int gpio_npm13xx_init(const struct device *dev)
 			      &gpio_npm13xx_config##n, POST_KERNEL,                                \
 			      CONFIG_GPIO_NPM13XX_INIT_PRIORITY, &gpio_npm13xx_api);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1300_gpio
+DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM13XX_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304_gpio
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM13XX_DEFINE)

@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_regulator
-
 #include <errno.h>
 #include <string.h>
 
@@ -644,9 +642,6 @@ int regulator_npm13xx_init(const struct device *dev)
 	}
 
 	ret = regulator_npm13xx_set_pin_ctrl(dev, &config->pwm_gpios, NPM13XX_GPIO_TYPE_PWM);
-	if (ret != 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -701,4 +696,10 @@ static DEVICE_API(regulator, api) = {
 	REGULATOR_NPM13XX_DEFINE_COND(inst, ldo1, NPM13XX_SOURCE_LDO1)                             \
 	REGULATOR_NPM13XX_DEFINE_COND(inst, ldo2, NPM13XX_SOURCE_LDO2)
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1300_regulator
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM13XX_DEFINE_ALL)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304_regulator
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM13XX_DEFINE_ALL)
