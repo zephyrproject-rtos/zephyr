@@ -1532,8 +1532,6 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 					stat.pending_length;
 	}
 
-	data->dma_tx.buffer_length = 0;
-
 	irq_unlock(key);
 }
 
