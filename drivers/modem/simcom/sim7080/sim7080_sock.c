@@ -107,6 +107,13 @@ error:
 	return -1;
 }
 
+MODEM_CMD_DEFINE(on_cmd_casend)
+{
+	mdata.tx_space_avail = strtoul(argv[0], NULL, 10);
+	LOG_DBG("Available tx space: %zu", mdata.tx_space_avail);
+	return 0;
+}
+
 /*
  * Send data over a given socket.
  *
@@ -123,7 +130,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char send_buf[sizeof("AT+CASEND=#,####")] = { 0 };
-	char ctrlz = 0x1A;
+	struct modem_cmd cmd[] = { MODEM_CMD("+CASEND: ", on_cmd_casend, 1U, "") };
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
@@ -143,14 +150,37 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		return -1;
 	}
 
-	/* Only send up to MTU bytes. */
-	if (len > MDM_MAX_DATA_LENGTH) {
-		len = MDM_MAX_DATA_LENGTH;
+	/* Query the available space in send buffer */
+	ret = snprintk(send_buf, sizeof(send_buf), "AT+CASEND=%d", sock->id);
+	if (ret < 0) {
+		LOG_ERR("Failed to build send query command");
+		errno = ENOMEM;
+		return -1;
 	}
 
-	ret = snprintk(send_buf, sizeof(send_buf), "AT+CASEND=%d,%ld", sock->id, (long)len);
+	mdata.tx_space_avail = 0;
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), send_buf,
+		&mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to build send command!!");
+		LOG_ERR("Failed to query available tx size: %d", ret);
+		errno = EIO;
+		return -1;
+	}
+
+	if (mdata.tx_space_avail == 0) {
+		LOG_WRN("No space left in tx buffer");
+		errno = ENOMEM;
+		return -1;
+	}
+
+	/* Only send up to available tx size bytes. */
+	if (len > mdata.tx_space_avail) {
+		len = mdata.tx_space_avail;
+	}
+
+	ret = snprintk(send_buf, sizeof(send_buf), "AT+CASEND=%d,%zu", sock->id, len);
+	if (ret < 0) {
+		LOG_ERR("Failed to build send command");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -164,7 +194,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U, send_buf, NULL,
 				    K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send CASEND!!");
+		LOG_ERR("Failed to send CASEND");
 		goto exit;
 	}
 
@@ -177,7 +207,6 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	/* Send data */
 	modem_cmd_send_data_nolock(&mctx.iface, buf, len);
-	modem_cmd_send_data_nolock(&mctx.iface, &ctrlz, 1);
 
 	/* Wait for the OK */
 	k_sem_reset(&mdata.sem_response);
