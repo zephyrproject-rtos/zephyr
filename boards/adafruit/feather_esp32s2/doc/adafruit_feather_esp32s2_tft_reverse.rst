@@ -16,7 +16,7 @@ Hardware
 - 320KB SRAM, 4MB flash + 2MB PSRAM
 - USB-C directly connected to the ESP32-S2 for USB
 - LiPo connector and built-in battery charging when powered via USB-C
-- LC709203 or MAX17048 fuel gauge for battery voltage and state-of-charge reporting
+- MAX17048 fuel gauge for battery voltage and state-of-charge reporting
 - Charging indicator LED, user LED, reset and boot buttons and has 2 additional buttons.
 - Built-in NeoPixel indicator RGB LED
 - 240x135 pixel IPS TFT color display with 1.14" diagonal and ST7789 chipset.
@@ -249,18 +249,14 @@ functioning correctly with Zephyr:
    :board: adafruit_feather_esp32s2_tft_reverse
    :goals: build flash
 
-Testing the Fuel Gauge (MAX17048)
-*********************************
+Testing the Fuel Gauge
+**********************
 
 There is a sample available to verify that the MAX17048 fuel gauge on the board are
 functioning correctly with Zephyr:
 
-.. note::
-   As of May 31, 2023 Adafruit changed the battery monitor chip from the now-discontinued LC709203
-   to the MAX17048.
-
 .. zephyr-app-commands::
-   :zephyr-app: samples/fuel_gauge/max17048/
+   :zephyr-app: samples/drivers/fuel_gauge
    :board: adafruit_feather_esp32s2_tft_reverse
    :goals: build flash
 
