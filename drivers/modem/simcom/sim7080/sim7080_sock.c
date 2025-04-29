@@ -474,10 +474,7 @@ static int offload_close(void *obj)
 		return 0;
 	}
 
-	/* Close the socket only if it is connected. */
-	if (sock->is_connected) {
-		socket_close(sock);
-	}
+	socket_close(sock);
 
 	return 0;
 }
