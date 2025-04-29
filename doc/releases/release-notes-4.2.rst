@@ -284,6 +284,10 @@ New APIs and options
     * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY`
     * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE`
 
+* UpdateHub
+
+  * :c:func:`updatehub_report_error`
+
 * Other
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
