@@ -24,7 +24,7 @@ MODEM_CMD_DEFINE(on_cmd_caopen)
 	int result = atoi(argv[1]);
 
 	LOG_INF("+CAOPEN: %d", result);
-	modem_cmd_handler_set_error(data, result);
+	mdata.socket_open_rc = result;
 	return 0;
 }
 
@@ -84,18 +84,17 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 		return -1;
 	}
 
+	mdata.socket_open_rc = 1;
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
 			     &mdata.sem_response, MDM_CONNECT_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret: %d", buf, ret);
-		socket_close(sock);
 		goto error;
 	}
 
-	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
-	if (ret != 0) {
-		LOG_ERR("Closing the socket!");
-		socket_close(sock);
+	if (mdata.socket_open_rc != 0) {
+		LOG_ERR("Failed to open the socket: %u", mdata.socket_open_rc);
+		ret = -ENOTCONN;
 		goto error;
 	}
 
