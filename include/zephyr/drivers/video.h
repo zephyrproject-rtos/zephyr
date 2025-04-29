@@ -1334,6 +1334,13 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 #define VIDEO_PIX_FMT_UYVY VIDEO_FOURCC('U', 'Y', 'V', 'Y')
 
 /**
+ * @code{.unparsed}
+ * | Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
+
+/**
  * The first byte is empty (X) for each pixel.
  *
  * @code{.unparsed}
@@ -1419,6 +1426,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_YUV24:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
