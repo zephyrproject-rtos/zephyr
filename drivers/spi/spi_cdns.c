@@ -218,33 +218,6 @@ static inline void spi_cdns_cs_control(const struct device *dev, bool on)
 	}
 }
 
-static void spi_cdns_config_clock_freq(const struct device *dev, uint32_t spi_freq)
-{
-	const struct spi_cdns_cfg *cfg = dev->config;
-	uint32_t ctrl_reg, baud_rate_div;
-	uint32_t clock_freq;
-
-	clock_freq = cfg->clock_frequency;
-
-	ctrl_reg = sys_read32(SPI_REG(dev, SPI_CONF));
-
-	/*
-	 * Set the clock frequency
-	 * first valid value is 0 (/2)
-	 */
-	baud_rate_div = SPI_MBRD_MIN;
-	while ((baud_rate_div < SPI_MBRD_MAX) && (clock_freq / (2 << baud_rate_div)) > spi_freq) {
-		baud_rate_div++;
-	}
-
-	ctrl_reg &= ~SPI_CONF_MBRD_MASK;
-	ctrl_reg |= baud_rate_div << SPI_CONF_MBRD_OFFSET;
-
-	LOG_DBG("%s: spi baud rate %uHz", dev->name, clock_freq / (2 << baud_rate_div));
-
-	sys_write32(ctrl_reg, SPI_REG(dev, SPI_CONF));
-}
-
 /**
  * @brief Send 1-entry to Tx-FIFO
  *
@@ -439,7 +412,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 {
 	const struct spi_cdns_cfg *dev_config = dev->config;
 	struct spi_cdns_data *data = dev->data;
-	uint32_t word_size, conf_val;
+	uint32_t word_size, conf_val, clock_freq, ext_clock_freq;
+	uint8_t baud_rate_div, ext_baud_rate_div;
 
 	if (spi_cdns_context_configured(dev, config)) {
 		/* Nothing to do */
@@ -473,7 +447,7 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 	data->ctx.config = config;
 	data->config = *config;
 
-	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE | SPI_CONF_MRCS;
+	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE;
 
 	/* Configure for Master or Slave */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
@@ -501,7 +475,38 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 	 * SPI clock is generated based on pclk or ext_clk, and the frequency closest
 	 * to the value obtained by dividing the two base clocks is selected.
 	 */
-	spi_cdns_config_clock_freq(dev, config->frequency);
+	clock_freq = dev_config->clock_frequency;
+	baud_rate_div = SPI_MBRD_MIN;
+	while ((baud_rate_div < SPI_MBRD_MAX) &&
+	       ((clock_freq / (2 << baud_rate_div)) > config->frequency)) {
+		baud_rate_div++;
+	}
+
+	if (dev_config->ext_clock) {
+		/* check if there is a closer frequency with ext_clock */
+		ext_clock_freq = dev_config->ext_clock;
+		ext_baud_rate_div = SPI_MBRD_MIN;
+		while ((ext_baud_rate_div < SPI_MBRD_MAX) &&
+		       ((ext_clock_freq / (2 << ext_baud_rate_div)) > config->frequency)) {
+			ext_baud_rate_div++;
+		}
+		if (config->frequency - (clock_freq / (2 << baud_rate_div)) >
+		    config->frequency - (ext_clock_freq / (2 << ext_baud_rate_div))) {
+			/* ext_clock is closer, so use it instead */
+			baud_rate_div = ext_baud_rate_div;
+			clock_freq = ext_clock_freq;
+			conf_val |= SPI_CONF_MRCS;
+		} else {
+			conf_val &= ~SPI_CONF_MRCS;
+		}
+	} else {
+		conf_val &= ~SPI_CONF_MRCS;
+	}
+
+	conf_val &= ~SPI_CONF_MBRD_MASK;
+	conf_val |= baud_rate_div << SPI_CONF_MBRD_OFFSET;
+
+	LOG_DBG("%s: spi baud rate %uHz", dev->name, clock_freq / (2 << baud_rate_div));
 
 	/* Set transfer word size */
 	conf_val &= ~(SPI_CONF_TWS_MASK);
@@ -803,12 +808,6 @@ static DEVICE_API(spi, spi_cdns_api) = {
 #endif /* CONFIG_SPI_RTIO */
 };
 
-/* Set clock-frequency-ext to pclk / 5 if there is no clock-frequency-ext */
-#define SPI_CLOCK_FREQUENCY_EXT(n)                                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency_ext), \
-		(DT_INST_PROP(n, clock_frequency_ext)),            \
-		(DT_INST_PROP(n, clock_frequency) / 5))
-
 #define SPI_CDNS_INIT(n)                                                                           \
 	static void spi_cdns_irq_config_##n(void);                                                 \
 	static struct spi_cdns_data spi_cdns_data_##n = {                                          \
@@ -819,7 +818,7 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config = spi_cdns_irq_config_##n,                                             \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
-		.ext_clock = SPI_CLOCK_FREQUENCY_EXT(n),                                           \
+		.ext_clock = DT_INST_PROP_OR(n, clock_frequency_ext, 0),                           \
 		.fifo_width = DT_INST_PROP(n, fifo_width),                                         \
 		.tx_fifo_depth = DT_INST_PROP(n, tx_fifo_depth),                                   \
 		.rx_fifo_depth = DT_INST_PROP(n, rx_fifo_depth),                                   \
