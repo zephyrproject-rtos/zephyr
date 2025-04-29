@@ -138,6 +138,7 @@ struct sim7080_data {
 	int current_sock_fd;
 	int current_sock_written;
 	size_t tx_space_avail;
+	uint8_t socket_open_rc;
 	/*
 	 * Network registration of the modem.
 	 */
