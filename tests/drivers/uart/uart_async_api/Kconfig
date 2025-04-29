@@ -23,3 +23,11 @@ endif # DCACHE
 config TEST_LONG_BUFFER_SIZE
 	int "Long buffer size"
 	default 1024
+
+config VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT
+	int "Above this UART baudrate value, var length buffer testing will be skipped"
+	default 230400
+
+config VAR_LENGTH_BUFFER_MAX_SIZE
+	int "Max size of uart buffer used for testing. Testing buffer sizes from 1 to this value."
+	default 10

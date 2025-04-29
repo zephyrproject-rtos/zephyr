@@ -1014,6 +1014,110 @@ ZTEST_USER(uart_async_long_buf, test_long_buffers)
 		      "RX_DISABLED timeout");
 }
 
+#define VAR_LENGTH_TX_BUF_SIZE 12
+#define VAR_LENGTH_RX_BUF_SIZE (VAR_LENGTH_TX_BUF_SIZE * 4)
+
+#if NOCACHE_MEM
+volatile static uint8_t __aligned(sizeof(void *))
+	var_length_rx_buf[VAR_LENGTH_RX_BUF_SIZE] __used __NOCACHE;
+volatile static uint8_t __aligned(sizeof(void *))
+	var_length_rx_buf_pool[VAR_LENGTH_RX_BUF_SIZE] __used __NOCACHE;
+#else
+volatile static ZTEST_BMEM
+	uint8_t __aligned(sizeof(void *)) var_length_rx_buf[VAR_LENGTH_RX_BUF_SIZE];
+volatile static ZTEST_BMEM
+	uint8_t __aligned(sizeof(void *)) var_length_rx_buf_pool[VAR_LENGTH_RX_BUF_SIZE];
+#endif /* NOCACHE_MEM */
+volatile static ZTEST_BMEM size_t var_length_buf_rx_idx;
+volatile static ZTEST_BMEM size_t var_length_buf_rx_pool_idx;
+volatile static ZTEST_BMEM size_t var_length_rx_buf_size;
+
+static void test_var_buf_length_callback(const struct device *dev, struct uart_event *evt,
+					 void *user_data)
+{
+	switch (evt->type) {
+	case UART_RX_RDY:
+		memcpy((void *)&var_length_rx_buf[var_length_buf_rx_idx],
+		       &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		var_length_buf_rx_idx += evt->data.rx.len;
+		break;
+	case UART_RX_DISABLED:
+		k_sem_give(&rx_disabled);
+		break;
+	case UART_RX_BUF_REQUEST:
+		uart_rx_buf_rsp(dev, (uint8_t *)&var_length_rx_buf_pool[var_length_buf_rx_pool_idx],
+				var_length_rx_buf_size);
+		var_length_buf_rx_pool_idx += var_length_rx_buf_size;
+		break;
+	default:
+		break;
+	}
+}
+
+static void *var_buf_length_setup(void)
+{
+	static int idx;
+
+	uart_async_test_init(idx++);
+
+	uart_callback_set(uart_dev, test_var_buf_length_callback, NULL);
+
+	return NULL;
+}
+
+static void test_uart_async_var_buf(size_t buf_len, size_t tx_len)
+{
+	int ret;
+	uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
+
+	for (size_t i = 0; i < VAR_LENGTH_TX_BUF_SIZE; ++i) {
+		tx_buffer[i] = tx_len;
+	}
+
+	var_length_buf_rx_idx = 0;
+	var_length_buf_rx_pool_idx = 0;
+	memset((void *)var_length_rx_buf, 0, VAR_LENGTH_RX_BUF_SIZE);
+	memset((void *)var_length_rx_buf_pool, 0, VAR_LENGTH_RX_BUF_SIZE);
+
+	var_length_rx_buf_size = buf_len;
+
+	ret = uart_rx_enable(uart_dev,
+			     (uint8_t *)&var_length_rx_buf_pool[var_length_buf_rx_pool_idx],
+			     buf_len, 2 * USEC_PER_MSEC);
+	zassert_true(ret == 0, "[buff=%d][tx=%d]Failed to enable RX: %d\n", buf_len, tx_len, ret);
+	var_length_buf_rx_pool_idx += buf_len;
+
+	ret = uart_tx(uart_dev, tx_buffer, tx_len, 100 * USEC_PER_MSEC);
+	zassert_true(ret == 0, "[buff=%d][tx=%d]Failed to TX: %d\n", buf_len, tx_len, ret);
+	k_msleep(10);
+
+	uart_rx_disable(uart_dev);
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(500)), 0,
+		      "[buff=%d][tx=%d]RX_DISABLED timeout\n", buf_len, tx_len);
+
+	zassert_equal(var_length_buf_rx_idx, tx_len,
+		      "[buff=%d][tx=%d]Wrong number of bytes received, got: %d, expected: %d\n",
+		      buf_len, tx_len, var_length_buf_rx_idx, tx_len);
+	zassert_equal(memcmp((void *)var_length_rx_buf, tx_buffer, tx_len), 0,
+		      "[buff=%d][tx=%d]Buffers not equal\n", buf_len, tx_len);
+}
+
+ZTEST_USER(uart_async_var_buf_length, test_var_buf_length)
+{
+	struct uart_config uart_cfg;
+
+	zassert_equal(uart_config_get(uart_dev, &uart_cfg), 0);
+	if (uart_cfg.baudrate > CONFIG_VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT) {
+		ztest_test_skip();
+	}
+
+	for (size_t buf_len = 1; buf_len < CONFIG_VAR_LENGTH_BUFFER_MAX_SIZE; ++buf_len) {
+		for (size_t tx_len = 1; tx_len < VAR_LENGTH_TX_BUF_SIZE; ++tx_len) {
+			test_uart_async_var_buf(buf_len, tx_len);
+		}
+	}
+}
+
 ZTEST_SUITE(uart_async_single_read, NULL, single_read_setup,
 		NULL, NULL, NULL);
 
@@ -1033,6 +1137,9 @@ ZTEST_SUITE(uart_async_chain_write, NULL, chained_write_setup,
 		NULL, NULL, NULL);
 
 ZTEST_SUITE(uart_async_long_buf, NULL, long_buffers_setup,
+		NULL, NULL, NULL);
+
+ZTEST_SUITE(uart_async_var_buf_length, NULL, var_buf_length_setup,
 		NULL, NULL, NULL);
 
 ZTEST_SUITE(uart_async_write_abort, NULL, write_abort_setup,
