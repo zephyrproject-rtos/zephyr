@@ -32,7 +32,16 @@ config MCTP_I2C_GPIO_CONTROLLER
 	depends on GPIO
 	help
 	  Build the MCTP I2C+GPIO controller binding to use MCTP over Zephyr's I2C RTIO
-	  interface and GPIO interrupts.
+	  interface and GPIO interrupts from targets to signal their request to write.
+
+config MCTP_I2C_GPIO_TARGET
+	bool "MCTP I2C+GPIO Target Binding"
+	depends on I2C
+	depends on GPIO
+	help
+	  Build the MCTP I2C+GPIO target binding to use MCTP over Zephyr's I2C target
+	  interface and GPIO to signal writes to the bus controller.
+
 
 module = MCTP
 module-str = MCTP
