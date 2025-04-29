@@ -181,29 +181,6 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
-/* Drop packet if it has broadcast destination MAC address but the IP
- * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
- */
-static inline
-enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
-						struct net_eth_hdr *hdr)
-{
-	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
-		return NET_OK;
-	}
-
-	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
-		return NET_DROP;
-	}
-
-	return NET_OK;
-}
-#endif
-
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
 				      bool is_joined)
@@ -391,22 +368,14 @@ drop:
 	return NET_DROP;
 }
 
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6)
 static enum net_verdict ethernet_ip_recv(struct net_if *iface,
 					 uint16_t ptype,
 					 struct net_pkt *pkt)
 {
 	ARG_UNUSED(iface);
 
-	if (ptype == NET_ETH_PTYPE_IP) {
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ethernet_check_ipv4_bcast_addr(pkt, hdr) == NET_DROP) {
-			return NET_DROP;
-		}
-
-		net_pkt_set_family(pkt, AF_INET);
-	} else if (ptype == NET_ETH_PTYPE_IPV6) {
+	if (ptype == NET_ETH_PTYPE_IPV6) {
 		net_pkt_set_family(pkt, AF_INET6);
 	} else {
 		return NET_DROP;
@@ -414,11 +383,7 @@ static enum net_verdict ethernet_ip_recv(struct net_if *iface,
 
 	return NET_CONTINUE;
 }
-#endif /* CONFIG_NET_IPV4 || CONFIG_NET_IPV6 */
-
-#ifdef CONFIG_NET_IPV4
-ETH_NET_L3_REGISTER(IPv4, NET_ETH_PTYPE_IP, ethernet_ip_recv);
-#endif
+#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV6)
 ETH_NET_L3_REGISTER(IPv6, NET_ETH_PTYPE_IPV6, ethernet_ip_recv);
