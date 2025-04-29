@@ -36,6 +36,9 @@ struct bt_conn *hf_conn;
 struct bt_hfp_hf *hfp_hf;
 struct bt_conn *hf_sco_conn;
 static struct bt_hfp_hf_call *hfp_hf_call[CONFIG_BT_HFP_HF_MAX_CALLS];
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static bool hf_auto_select_codec;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
 static void hf_add_a_call(struct bt_hfp_hf_call *call)
 {
@@ -217,6 +220,16 @@ static void hf_operator(struct bt_hfp_hf *hf, uint8_t mode, uint8_t format, char
 static void hf_codec_negotiate(struct bt_hfp_hf *hf, uint8_t id)
 {
 	bt_shell_print("codec negotiation: %d", id);
+	if (hf_auto_select_codec) {
+		int err;
+
+		err = bt_hfp_hf_select_codec(hfp_hf, id);
+		if (err) {
+			bt_shell_error("Failed to select codec id: %d", err);
+		} else {
+			bt_shell_print("codec auto selected: id %d", id);
+		}
+	}
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
@@ -469,6 +482,19 @@ static int cmd_select_codec(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	return err;
+}
+
+static int cmd_auto_select_codec(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+
+	hf_auto_select_codec = shell_strtobool(argv[1], 0, &err);
+	if (err != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
 }
 
 static int cmd_set_codecs(const struct shell *sh, size_t argc, char **argv)
@@ -925,6 +951,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 	SHELL_CMD_ARG(operator, NULL, HELP_NONE, cmd_operator, 1, 0),
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	SHELL_CMD_ARG(audio_connect, NULL, HELP_NONE, cmd_audio_connect, 1, 0),
+	SHELL_CMD_ARG(auto_select_codec, NULL, "<enable/disable>", cmd_auto_select_codec, 2, 0),
 	SHELL_CMD_ARG(select_codec, NULL, "Codec ID", cmd_select_codec, 2, 0),
 	SHELL_CMD_ARG(set_codecs, NULL, "Codec ID Map", cmd_set_codecs, 2, 0),
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
