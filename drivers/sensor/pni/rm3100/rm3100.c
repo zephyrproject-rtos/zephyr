@@ -20,6 +20,7 @@
 #include "rm3100_reg.h"
 #include "rm3100_bus.h"
 #include "rm3100_decoder.h"
+#include "rm3100_stream.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(RM3100, CONFIG_SENSOR_LOG_LEVEL);
@@ -118,6 +119,8 @@ static void rm3100_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 	if (!cfg->is_streaming) {
 		rm3100_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
+		rm3100_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -148,6 +151,14 @@ static int rm3100_init(const struct device *dev)
 		return -ENODEV;
 	}
 	LOG_DBG("RM3100 chip ID confirmed: 0x%02x", val);
+
+	if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
+		err = rm3100_stream_init(dev);
+		if (err < 0) {
+			LOG_ERR("Failed to set up stream config: %d", err);
+			return err;
+		}
+	}
 
 	uint16_t cycle_count[] = {
 		sys_be16_to_cpu(RM3100_CYCLE_COUNT_DEFAULT),
@@ -196,7 +207,9 @@ static int rm3100_init(const struct device *dev)
 	RTIO_DEFINE(rm3100_rtio_ctx_##inst, 8, 8);						   \
 	I2C_DT_IODEV_DEFINE(rm3100_bus_##inst, DT_DRV_INST(inst));				   \
 												   \
-	static const struct rm3100_config rm3100_cfg_##inst;					   \
+	static const struct rm3100_config rm3100_cfg_##inst = {					   \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
+	};											   \
 												   \
 	static struct rm3100_data rm3100_data_##inst = {					   \
 		.rtio = {									   \
