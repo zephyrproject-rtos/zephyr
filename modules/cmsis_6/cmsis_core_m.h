@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
- * Copyright (c) 2023 Arm Limited
+ * Copyright 2023,2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,8 @@
  * This header contains the interface to the ARM CMSIS Core headers.
  */
 
-#ifndef ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
-#define ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
+#ifndef ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_H_
+#define ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_H_
 
 #if defined(CONFIG_CMSIS_M_CHECK_DEVICE_DEFINES) && CONFIG_CMSIS_M_CHECK_DEVICE_DEFINES == 1U
 #define __CHECK_DEVICE_DEFINES 1U
@@ -68,4 +68,4 @@
 #error "__SAUREGION_PRESENT and CONFIG_CPU_HAS_ARM_SAU are not set to the same value"
 #endif
 
-#endif /* ZEPHYR_MODULES_CMSIS_CMSIS_M_H_ */
+#endif /* ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_H_ */

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
- * Copyright (c) 2023 Arm Limited
+ * Copyright 2023,2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,8 @@
  * ARM CMSIS Core headers.
  */
 
-#ifndef ZEPHYR_MODULES_CMSIS_CMSIS_M_DEFAULTS_H_
-#define ZEPHYR_MODULES_CMSIS_CMSIS_M_DEFAULTS_H_
+#ifndef ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_DEFAULTS_H_
+#define ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_DEFAULTS_H_
 
 #include <zephyr/arch/arm/cortex_m/nvic.h>
 
@@ -143,4 +143,4 @@ typedef enum {
 #error "Unknown Cortex-M device"
 #endif
 
-#endif /* ZEPHYR_MODULES_CMSIS_CMSIS_M_DEFAULTS_H_ */
+#endif /* ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_DEFAULTS_H_ */
