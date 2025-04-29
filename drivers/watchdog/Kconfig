@@ -39,7 +39,7 @@ config WDT_MULTISTAGE
 	  Enable multistage operation of watchdog timeouts.
 
 config WDT_COUNTER
-	bool "Counter based watchdog"
+        bool "Counter based watchdog"
 	default y
 	depends on DT_HAS_ZEPHYR_COUNTER_WATCHDOG_ENABLED
 	select COUNTER
