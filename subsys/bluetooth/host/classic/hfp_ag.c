@@ -375,7 +375,7 @@ static int hfp_ag_next_step(struct bt_hfp_ag *ag, bt_hfp_ag_tx_cb_t cb, void *us
 	} else {
 		sys_slist_append(&ag->tx_pending, &tx->node);
 		/* Always active tx work */
-		k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+		bt_work_reschedule(&ag->tx_work, K_NO_WAIT);
 	}
 	hfp_ag_unlock(ag);
 
@@ -439,7 +439,7 @@ static int hfp_ag_send_data(struct bt_hfp_ag *ag, bt_hfp_ag_tx_cb_t cb, void *us
 	hfp_ag_unlock(ag);
 
 	/* Always active tx work */
-	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+	bt_work_reschedule(&ag->tx_work, K_NO_WAIT);
 
 	return 0;
 
@@ -734,21 +734,21 @@ static void bt_hfp_ag_set_call_state(struct bt_hfp_ag_call *call, bt_hfp_call_st
 		free_call(call);
 		break;
 	case BT_HFP_CALL_OUTGOING:
-		k_work_reschedule(&call->deferred_work,
-				  K_SECONDS(CONFIG_BT_HFP_AG_OUTGOING_TIMEOUT));
+		bt_work_reschedule(&call->deferred_work,
+				   K_SECONDS(CONFIG_BT_HFP_AG_OUTGOING_TIMEOUT));
 		break;
 	case BT_HFP_CALL_INCOMING:
-		k_work_reschedule(&call->deferred_work,
-				  K_SECONDS(CONFIG_BT_HFP_AG_INCOMING_TIMEOUT));
+		bt_work_reschedule(&call->deferred_work,
+				   K_SECONDS(CONFIG_BT_HFP_AG_INCOMING_TIMEOUT));
 		break;
 	case BT_HFP_CALL_ALERTING:
 		if (!atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING_3WAY)) {
-			k_work_reschedule(&call->ringing_work, K_NO_WAIT);
+			bt_work_reschedule(&call->ringing_work, K_NO_WAIT);
 		} else {
 			k_work_cancel_delayable(&call->ringing_work);
 		}
-		k_work_reschedule(&call->deferred_work,
-				  K_SECONDS(CONFIG_BT_HFP_AG_ALERTING_TIMEOUT));
+		bt_work_reschedule(&call->deferred_work,
+				   K_SECONDS(CONFIG_BT_HFP_AG_ALERTING_TIMEOUT));
 		break;
 	case BT_HFP_CALL_ACTIVE:
 		k_work_cancel_delayable(&call->ringing_work);
@@ -847,6 +847,9 @@ static int hfp_ag_send(struct bt_hfp_ag *ag, struct bt_ag_tx *tx)
 
 static void bt_ag_notify_work(struct k_work *work);
 
+/* Keep TX context release on the system workqueue because Bluetooth workqueue
+ * handlers may block waiting for a context to become available.
+ */
 struct k_work ag_notify_work = Z_WORK_INITIALIZER(bt_ag_notify_work);
 
 static void bt_ag_notify_work(struct k_work *work)
@@ -908,7 +911,7 @@ static void bt_ag_tx_done_with_err(struct bt_hfp_ag *ag, struct bt_ag_tx *tx, in
 		LOG_WRN("tx ongoing flag is not set");
 	}
 	/* Due to the work is done, restart the tx work */
-	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+	bt_work_reschedule(&ag->tx_work, K_NO_WAIT);
 }
 
 static void bt_ag_tx_work(struct k_work *work)
@@ -1279,8 +1282,8 @@ static int bt_hfp_ag_cind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		} else {
 			err = -EINPROGRESS;
 			atomic_set_bit(ag->flags, BT_HGP_AG_ONGOING_CALLS);
-			k_work_reschedule(&ag->ongoing_call_work,
-					  K_MSEC(CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT));
+			bt_work_reschedule(&ag->ongoing_call_work,
+					   K_MSEC(CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT));
 		}
 	}
 
@@ -3726,7 +3729,7 @@ static void hfp_ag_postprocess_at_cmd(struct bt_hfp_ag *ag)
 	hfp_ag_unlock(ag);
 
 	/* Always active tx work */
-	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+	bt_work_reschedule(&ag->tx_work, K_NO_WAIT);
 }
 
 static int hfp_ag_at_cmd_ack(struct bt_hfp_ag *ag, int err)
@@ -3784,7 +3787,7 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	if (!atomic_test_and_set_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
 		LOG_DBG("First AT command ack will be replied later");
 		ag->ack_err = err;
-		k_work_submit(&ag->slc_work);
+		bt_work_submit(&ag->slc_work);
 		return;
 	}
 
@@ -3822,7 +3825,7 @@ static void hfp_ag_sent(struct bt_rfcomm_dlc *dlc, int err)
 	LOG_DBG("Completed pending tx %p", tx);
 
 	/* Restart the tx work */
-	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+	bt_work_reschedule(&ag->tx_work, K_NO_WAIT);
 
 	tx->err = err;
 	bt_ag_tx_notify(tx);
@@ -3966,8 +3969,8 @@ static void bt_ag_ringing_work_cb(struct bt_hfp_ag *ag, void *user_data)
 			return;
 		}
 
-		k_work_reschedule(&call->ringing_work,
-				  K_SECONDS(CONFIG_BT_HFP_AG_RING_NOTIFY_INTERVAL));
+		bt_work_reschedule(&call->ringing_work,
+				   K_SECONDS(CONFIG_BT_HFP_AG_RING_NOTIFY_INTERVAL));
 
 		err = hfp_ag_send_data(ag, NULL, NULL, "\r\nRING\r\n");
 		if (err) {
@@ -4112,7 +4115,7 @@ static uint8_t bt_hfp_ag_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	atomic_set_bit(ag->flags, BT_HFP_AG_RECORD_FOUND);
 failed:
 	atomic_set_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE);
-	k_work_submit(&ag->slc_work);
+	bt_work_submit(&ag->slc_work);
 
 	return BT_SDP_DISCOVER_UUID_STOP;
 }
