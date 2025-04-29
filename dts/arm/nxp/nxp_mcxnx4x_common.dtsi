@@ -826,6 +826,9 @@
 		reg = <0x111000 0x14>;
 		status = "disabled";
 		#nxp,reference-cells = <1>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 		regulator-min-microvolt = <1000000>;
