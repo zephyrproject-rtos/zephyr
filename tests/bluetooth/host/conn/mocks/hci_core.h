@@ -22,7 +22,8 @@
 	FAKE(bt_le_create_conn_cancel)                                                             \
 	FAKE(bt_le_create_conn_synced)                                                             \
 	FAKE(bt_lookup_id_addr)                                                                    \
-	FAKE(bt_le_set_phy)
+	FAKE(bt_le_set_phy)                                                                        \
+	FAKE(bt_work_submit)
 
 DECLARE_FAKE_VALUE_FUNC(struct net_buf *, bt_hci_cmd_alloc, k_timeout_t);
 DECLARE_FAKE_VALUE_FUNC(int, bt_hci_cmd_send_sync, uint16_t, struct net_buf *, struct net_buf **);
@@ -39,3 +40,4 @@ DECLARE_FAKE_VALUE_FUNC(int, bt_le_create_conn_synced, const struct bt_conn *,
 			const struct bt_le_ext_adv *, uint8_t);
 DECLARE_FAKE_VALUE_FUNC(const bt_addr_le_t *, bt_lookup_id_addr, uint8_t, const bt_addr_le_t *);
 DECLARE_FAKE_VALUE_FUNC(int, bt_le_set_phy, struct bt_conn *, uint8_t, uint8_t, uint8_t, uint8_t);
+DECLARE_FAKE_VALUE_FUNC(int, bt_work_submit, struct k_work *);
