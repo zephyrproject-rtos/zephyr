@@ -553,17 +553,8 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	/* This is activated late as it requires the network stack to be up
 	 * and running before syslog messages can be sent to network.
 	 */
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
-		const struct log_backend *backend = log_backend_net_get();
-
-		if (!log_backend_is_active(backend)) {
-			if (backend->api->init != NULL) {
-				backend->api->init(backend);
-			}
-
-			log_backend_activate(backend, NULL);
-		}
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
+		log_backend_net_start();
 	}
 
 	return ret;
