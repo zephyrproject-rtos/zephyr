@@ -79,8 +79,45 @@ void bt_tx_irq_raise(void);
 /* Stacks for the threads */
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
+/* General purpose Bluetooth workqueue. It processes incoming low priority HCI
+ * packets (high priority events are handled synchronously in the context of the
+ * bt_recv() caller) as well as the host's internal delayed and immediate work
+ * items, keeping them off the shared system workqueue.
+ */
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+
+int bt_work_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&bt_workq, work);
+}
+
+int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&bt_workq, work, delay);
+}
+
+int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_reschedule_for_queue(&bt_workq, work, delay);
+}
+
+static void bt_workq_start(void)
+{
+	static bool bt_workq_started;
+
+	if (bt_workq_started) {
+		return;
+	}
+
+	k_work_queue_init(&bt_workq);
+	k_work_queue_start(&bt_workq, rx_thread_stack, CONFIG_BT_RX_STACK_SIZE,
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
+	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
+
+	bt_workq_started = true;
+}
+
 static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
@@ -4001,11 +4038,26 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
+/* Whether bt_disable() is tearing down low-priority RX processing, meaning
+ * that RX packets must no longer be queued or dispatched. Not true in the
+ * failed-disable recovery states, where BT_DEV_READY gets restored.
+ */
+static bool rx_teardown_active(void)
+{
+	return atomic_test_bit(bt_dev.flags, BT_DEV_DISABLE) &&
+	       !atomic_test_bit(bt_dev.flags, BT_DEV_READY);
+}
+
 static void rx_queue_put(struct net_buf *buf)
 {
+	if (rx_teardown_active()) {
+		net_buf_unref(buf);
+		return;
+	}
+
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
+	const int err = bt_work_submit(&rx_work);
 
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
@@ -4160,6 +4212,15 @@ static void rx_work_handler(struct k_work *work)
 		return;
 	}
 
+	if (rx_teardown_active()) {
+		/* Drop the packet rather than dispatch it towards a transport
+		 * that is being torn down. No need to resubmit the work:
+		 * bt_disable() purges whatever remains on the queue.
+		 */
+		net_buf_unref(buf);
+		return;
+	}
+
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
 	switch (bt_buf_get_type(buf)) {
@@ -4188,7 +4249,7 @@ static void rx_work_handler(struct k_work *work)
 	 * we used a while() loop with a k_yield() statement.
 	 */
 	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
-		err = k_work_submit_to_queue(&bt_workq, &rx_work);
+		err = bt_work_submit(&rx_work);
 		if (err < 0) {
 			LOG_ERR("Could not submit rx_work: %d", err);
 		}
@@ -4234,6 +4295,11 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
+	/* Keep the queue alive across enable/disable cycles because delayable
+	 * host work may outlive an individual cycle.
+	 */
+	bt_workq_start();
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		err = bt_settings_init();
 		if (err) {
@@ -4259,13 +4325,6 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
 
-	/* RX thread */
-	k_work_queue_init(&bt_workq);
-	k_work_queue_start(&bt_workq, rx_thread_stack,
-			   CONFIG_BT_RX_STACK_SIZE,
-			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
-
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
 #else
@@ -4288,6 +4347,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 int bt_disable(void)
 {
+	struct net_buf *buf;
 	int err;
 
 #if !DT_HAS_CHOSEN(zephyr_bt_hci)
@@ -4328,6 +4388,28 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
+	/* Stop low-priority RX processing before closing the transport: new
+	 * packets are no longer queued (see rx_teardown_active()),
+	 * already-queued ones are discarded here, and an in-flight RX work
+	 * item is waited for while the transport is still open and able to
+	 * serve any HCI commands it may issue. The workqueue itself is kept
+	 * running, since delayable host work may remain scheduled across an
+	 * enable/disable cycle.
+	 */
+	buf = net_buf_slist_get(&bt_dev.rx_queue);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = net_buf_slist_get(&bt_dev.rx_queue);
+	}
+
+	if (k_current_get() == &bt_workq.thread) {
+		(void)k_work_cancel(&rx_work);
+	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_sync(&rx_work, &sync);
+	}
+
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 	err = bt_hci_close(bt_dev.hci);
 	if (err == -ENOSYS) {
@@ -4346,9 +4428,6 @@ int bt_disable(void)
 
 		return err;
 	}
-
-	/* Abort RX thread */
-	k_thread_abort(&bt_workq.thread);
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
