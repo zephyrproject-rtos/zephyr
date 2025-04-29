@@ -284,6 +284,13 @@ config WINSTREAM_CONSOLE
 
 	  See the WINSTREAM Kconfig help for more information.
 
+config TCCVCP_CONSOLE
+	bool "Use TCCVCP console"
+	depends on SERIAL && SERIAL_HAS_DRIVER && UART_TCCVCP
+	select CONSOLE_HAS_DRIVER
+	help
+	  Use tccvcp as a console.
+
 if WINSTREAM_CONSOLE
 
 config WINSTREAM_CONSOLE_STATIC
