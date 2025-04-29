@@ -37,3 +37,9 @@ zephyr_library_sources_ifdef(CONFIG_HWINFO_SILABS_S2   hwinfo_silabs_series2.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SMARTBOND   hwinfo_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_STM32       hwinfo_stm32.c)
 # zephyr-keep-sorted-stop
+
+if (CONFIG_HWINFO_LITEX)
+  message(WARNING "
+    Warning: CONFIG_HWINFO_LITEX does not return a unique device id. It is shared
+    across all devices with the same bitstream.")
+endif()

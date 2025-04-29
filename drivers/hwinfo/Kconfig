@@ -191,7 +191,9 @@ config HWINFO_LITEX
 	depends on DT_HAS_LITEX_DNA0_ENABLED
 	select HWINFO_HAS_DRIVER
 	help
-	  Enable LiteX hwinfo driver
+	  Enable LiteX hwinfo driver. It does not return a unique device id. It is shared
+	  across all devices with the same bitstream. See litex/soc/cores/identifier.py in the
+	  LiteX repository for more information.
 
 config HWINFO_PSOC6
 	bool "Cypress PSOC 6 unique device ID"
