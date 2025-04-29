@@ -861,7 +861,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 				LOG_ERR("Poll error on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLHUP) {
-				LOG_ERR("Poll hup on %d", sock_fds[i].fd);
+				LOG_DBG("Poll hup on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLNVAL) {
 				LOG_ERR("Poll invalid on %d", sock_fds[i].fd);
