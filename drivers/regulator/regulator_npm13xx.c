@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_regulator
-
 #include <errno.h>
 #include <string.h>
 
@@ -689,9 +687,6 @@ int regulator_npm13xx_init(const struct device *dev)
 	}
 
 	ret = regulator_npm13xx_set_pin_ctrl(dev, &config->pwm_gpios, NPM13XX_GPIO_TYPE_PWM);
-	if (ret != 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -712,13 +707,13 @@ static DEVICE_API(regulator, api) = {
 		      !!(DT_PROP_BY_IDX(node_id, prop, 1) & GPIO_ACTIVE_LOW)}),                    \
 		    ({NPM13XX_GPIO_UNUSED, false}))
 
-#define REGULATOR_NPM13XX_DEFINE(node_id, id, _source)                                             \
+#define REGULATOR_NPM13XX_DEFINE(partno, node_id, id, _source)                                     \
 	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, enable_gpio_config, 2) == 2);                         \
 	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, retention_gpio_config, 2) == 2);                      \
 	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, pwm_gpio_config, 2) == 2);                            \
-	static struct regulator_npm13xx_data data_##id;                                            \
+	static struct regulator_npm13xx_data regulator_##partno##_data_##id;                       \
                                                                                                    \
-	static const struct regulator_npm13xx_config config_##id = {                               \
+	static const struct regulator_npm13xx_config regulator_##partno##_config_##id = {          \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
 		.source = _source,                                                                 \
@@ -730,30 +725,39 @@ static DEVICE_API(regulator, api) = {
 		.active_discharge = DT_PROP(node_id, active_discharge),                            \
 		.ldo_disable_workaround = DT_PROP(node_id, nordic_anomaly38_disable_workaround)};  \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, regulator_npm13xx_init, NULL, &data_##id, &config_##id,          \
-			 POST_KERNEL, CONFIG_REGULATOR_NPM13XX_INIT_PRIORITY, &api);
+	DEVICE_DT_DEFINE(node_id, regulator_npm13xx_init, NULL, &regulator_##partno##_data_##id,   \
+			 &regulator_##partno##_config_##id, POST_KERNEL,                           \
+			 CONFIG_REGULATOR_NPM13XX_INIT_PRIORITY, &api);
 
-#define REGULATOR_NPM13XX_DEFINE_COND(inst, child, source)                                         \
-	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
-		    (REGULATOR_NPM13XX_DEFINE(DT_INST_CHILD(inst, child), child##inst, source)),   \
+#define REGULATOR_NPM13XX_DEFINE_COND(partno, n, child, source)                                    \
+	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, child)),                                       \
+		    (REGULATOR_NPM13XX_DEFINE(partno, DT_INST_CHILD(n, child), child##n, source)), \
 		    ())
 
-#define REGULATOR_NPM13XX_DEFINE_ALL(inst)                                                         \
-	static const struct regulator_npm13xx_pconfig config_##inst = {                            \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.dvs_state_pins = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 0, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 1, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 2, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 3, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 4, {0})}};     \
+#define REGULATOR_NPM13XX_DEFINE_ALL(partno, n)                                                    \
+	static const struct regulator_npm13xx_pconfig regulator_##partno##_config##n = {           \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
+		.dvs_state_pins = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 0, {0}),          \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 1, {0}),          \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 2, {0}),          \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 3, {0}),          \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 4, {0})}};        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_npm13xx_common_init, NULL, NULL, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_NPM13XX_COMMON_INIT_PRIORITY,          \
+	DEVICE_DT_INST_DEFINE(n, regulator_npm13xx_common_init, NULL, NULL,                        \
+			      &regulator_##partno##_config##n, POST_KERNEL,                        \
+			      CONFIG_REGULATOR_NPM13XX_COMMON_INIT_PRIORITY,                       \
 			      &parent_api);                                                        \
                                                                                                    \
-	REGULATOR_NPM13XX_DEFINE_COND(inst, buck1, NPM13XX_SOURCE_BUCK1)                           \
-	REGULATOR_NPM13XX_DEFINE_COND(inst, buck2, NPM13XX_SOURCE_BUCK2)                           \
-	REGULATOR_NPM13XX_DEFINE_COND(inst, ldo1, NPM13XX_SOURCE_LDO1)                             \
-	REGULATOR_NPM13XX_DEFINE_COND(inst, ldo2, NPM13XX_SOURCE_LDO2)
+	REGULATOR_NPM13XX_DEFINE_COND(partno, n, buck1, NPM13XX_SOURCE_BUCK1)                      \
+	REGULATOR_NPM13XX_DEFINE_COND(partno, n, buck2, NPM13XX_SOURCE_BUCK2)                      \
+	REGULATOR_NPM13XX_DEFINE_COND(partno, n, ldo1, NPM13XX_SOURCE_LDO1)                        \
+	REGULATOR_NPM13XX_DEFINE_COND(partno, n, ldo2, NPM13XX_SOURCE_LDO2)
 
-DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM13XX_DEFINE_ALL)
+#define DT_DRV_COMPAT nordic_npm1300_regulator
+#define REGULATOR_NPM1300_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(npm1300, n)
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1300_DEFINE_ALL)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304_regulator
+#define REGULATOR_NPM1304_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(npm1304, n)
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1304_DEFINE_ALL)
