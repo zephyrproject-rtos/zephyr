@@ -5274,6 +5274,15 @@ West:
   labels:
     - "area: Storage"
 
+"West project: lora-basics-modem":
+  status: maintained
+  maintainers:
+    - JordanYates
+  files:
+    - modules/lora-basics-modem/
+  labels:
+    - "area: LoRa"
+
 "West project: loramac-node":
   status: maintained
   maintainers:
