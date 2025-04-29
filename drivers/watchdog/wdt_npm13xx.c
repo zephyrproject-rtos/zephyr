@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm13xx_wdt
-
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -165,4 +163,10 @@ static int wdt_npm13xx_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &wdt_npm13xx_init, NULL, &data##n, &config##n, POST_KERNEL,       \
 			      CONFIG_WDT_NPM13XX_INIT_PRIORITY, &wdt_npm13xx_api);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1300_wdt
+DT_INST_FOREACH_STATUS_OKAY(WDT_NPM13XX_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304_wdt
 DT_INST_FOREACH_STATUS_OKAY(WDT_NPM13XX_DEFINE)

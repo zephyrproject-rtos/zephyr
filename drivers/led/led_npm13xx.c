@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_led
-
 #include <errno.h>
 
 #include <zephyr/device.h>
@@ -97,4 +95,10 @@ static int led_npm13xx_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &led_npm13xx_init, NULL, NULL, &led_npm13xx_config##n,            \
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &led_npm13xx_api);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1300_led
+DT_INST_FOREACH_STATUS_OKAY(LED_NPM13XX_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nordic_npm1304_led
 DT_INST_FOREACH_STATUS_OKAY(LED_NPM13XX_DEFINE)
