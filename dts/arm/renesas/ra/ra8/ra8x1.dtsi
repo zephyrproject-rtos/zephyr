@@ -914,6 +914,30 @@
 				status = "disabled";
 			};
 		};
+
+		i2s0: ssie@4025d000 {
+			compatible = "renesas,ra-i2s-ssie";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			reg = <0x4025d000 0x28>;
+			clocks = <&pclkb MSTPC 8>;
+			clock-names = "pclk";
+			full-duplex;
+			status = "disabled";
+		};
+
+		i2s1: ssie@4025d100 {
+			compatible = "renesas,ra-i2s-ssie";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			reg = <0x4025d100 0x28>;
+			clocks = <&pclkb MSTPC 7>;
+			clock-names = "pclk";
+			status = "disabled";
+		};
+
 	};
 
 	usbfs_phy: usbfs-phy {
