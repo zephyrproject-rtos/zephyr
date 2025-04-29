@@ -53,6 +53,7 @@ struct pwm_mspm0_data {
 
 	DL_TIMER_PWM_MODE out_mode;
 #ifdef CONFIG_PWM_CAPTURE
+	uint32_t last_sample;
 	enum mspm0_capture_mode cmode;
 	pwm_capture_callback_handler_t callback;
 	pwm_flags_t flags;
@@ -223,7 +224,7 @@ static int mspm0_capture_configure(const struct device *dev,
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* If interrupt is enabled --> channel is on-going */
-	if (DL_Timer_getEnabledInterruptStatus(config->base, intr_mask)) {
+	if (DL_Timer_getEnabledInterrupts(config->base, intr_mask)) {
 		LOG_ERR("Channel %d is busy", channel);
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
@@ -272,7 +273,7 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* If interrupt is enabled --> channel is on-going */
-	if (DL_Timer_getEnabledInterruptStatus(config->base, intr_mask)) {
+	if (DL_Timer_getEnabledInterrupts(config->base, intr_mask)) {
 		LOG_ERR("Channel %d is busy", channel);
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
@@ -376,6 +377,8 @@ static void mspm0_cc_isr(const struct device *dev)
 	const struct pwm_mspm0_config *config = dev->config;
 	struct pwm_mspm0_data *data = dev->data;
 	uint32_t status;
+	uint32_t cc1 = 0;
+	uint32_t cc0 = 0;
 	uint32_t period = 0;
 	uint32_t pulse = 0;
 
@@ -396,25 +399,24 @@ static void mspm0_cc_isr(const struct device *dev)
 	}
 
 	if (data->flags & PWM_CAPTURE_TYPE_PERIOD) {
-		period = data->period - DL_Timer_getCaptureCompareValue(
+		cc1 =  DL_Timer_getCaptureCompareValue(
 						config->base,
 						!(config->cc_idx[0]));
 	}
 
-	if (data->flags & PWM_CAPTURE_TYPE_PULSE ||
-	    data->cmode == CMODE_EDGE_TIME) {
-		pulse = data->period - DL_Timer_getCaptureCompareValue(
-						config->base,
-						config->cc_idx[0]);
-	}
-
-	DL_TimerG_setTimerCount(config->base, data->period);
-
 	/* ignore the unsynced counter value for pwm mode */
 	if (data->is_synced == false &&
 	    data->cmode != CMODE_EDGE_TIME) {
+		data->last_sample = cc1;
 		data->is_synced = true;
 		return;
+	}
+
+	if (data->flags & PWM_CAPTURE_TYPE_PULSE ||
+	    data->cmode == CMODE_EDGE_TIME) {
+		cc0 = DL_Timer_getCaptureCompareValue(
+						config->base,
+						config->cc_idx[0]);
 	}
 
 	if (!(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
@@ -422,9 +424,13 @@ static void mspm0_cc_isr(const struct device *dev)
 		data->is_synced = false;
 	}
 
-	if (data->callback) {
+	period = ((data->last_sample - cc1 + data->period) % data->period);
+	pulse = ((data->last_sample - cc0 + data->period) % data->period);
+	if (data->callback && period) {
 		data->callback(dev, 0, period, pulse, 0, data->user_data);
 	}
+
+	data->last_sample = cc1;
 }
 
 #define MSP_CC_IRQ_REGISTER(n)							\
