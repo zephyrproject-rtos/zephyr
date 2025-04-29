@@ -59,7 +59,7 @@
 	keys {
 		compatible = "gpio-keys";
 		btn0: btn_0 {
-			gpios = <&gpiob 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiob 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP | GPIO_INT_WAKEUP)>;
 			label = "Switch 3";
 			zephyr,code = <INPUT_KEY_0>;
 		};
