@@ -14,4 +14,5 @@ supported:
   - usbd
   - display
   - counter
+  - i2s
 vendor: renesas
