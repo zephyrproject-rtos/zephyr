@@ -72,6 +72,7 @@ tests:
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_l152re
       - nucleo_wl55jc
@@ -134,6 +135,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
