@@ -383,6 +383,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	struct k_sem sync_sem;
 	uint8_t status;
 	int err;
+	bool send_synchronous = false;
 
 	if (!buf) {
 		buf = bt_hci_cmd_create(opcode, 0);
@@ -414,8 +415,24 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	/* Since the commands are now processed in the syswq, we cannot suspend
 	 * and wait. We have to send the command from the current context.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
-		/* drain the command queue until we get to send the command of interest. */
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	/* even though this CONFIG_BT_RECV_WORKQ_BT is enabled, sometimes stuff is still
+	 * being executed from the system worker queue:
+	 * as an example: conn.c (perform_auto_initiated_procedures)
+	 * This is a big bandage around the fact that tx and rx workers can deadlock
+	 * where the rx_worker, which executes on the system_worker_q schedules work for tx_worker
+	 * and then waits on a semaphore to signal tx completion.
+	 * However, the tx_worker also executes on the system_worker_q, which is never started
+	 * until after timeout of the semaphore, thereby creating its own deadlock
+	 */
+	send_synchronous = (k_current_get() == k_work_queue_thread_get(&bt_workq))
+		|| (k_current_get() == k_work_queue_thread_get(&k_sys_work_q));
+#elif defined(CONFIG_BT_RECV_WORKQ_SYS)
+	send_synchronous = k_current_get() == k_work_queue_thread_get(&k_sys_work_q);
+#endif
+	if (send_synchronous) {
+		/* process the command queue until we get to send the command of interest. */
+
 		struct net_buf *cmd = NULL;
 
 		do {
