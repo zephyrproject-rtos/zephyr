@@ -4,7 +4,7 @@
 config GPIO_NPM13XX
 	bool "nPM13xx GPIO driver"
 	default y
-	depends on DT_HAS_NORDIC_NPM1300_GPIO_ENABLED
+	depends on DT_HAS_NORDIC_NPM1300_GPIO_ENABLED || DT_HAS_NORDIC_NPM1304_GPIO_ENABLED
 	select I2C
 	select MFD
 	help
