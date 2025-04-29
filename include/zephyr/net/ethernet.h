@@ -751,6 +751,13 @@ struct net_eth_vlan_hdr {
 	uint16_t type;
 } __packed;
 
+/* Vlan header */
+struct net_vlan_hdr {
+	uint16_t tpid; /* tag protocol id */
+	uint16_t tci; /* tag control info */
+	uint16_t type; /* Next protocol type */
+};
+
 /** @endcond */
 
 /**
