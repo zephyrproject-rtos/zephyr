@@ -61,15 +61,13 @@ if PM
 # For PM mode 3 we change this config to get better accuracy
 # when using the iKHz RTC clock as system clock.
 config SYS_CLOCK_TICKS_PER_SEC
-	default 1000
-	depends on $(dt_nodelabel_enabled,standby)
+	default 1000 if "$(dt_nodelabel_enabled,standby)"
 
 # Enable PM_DEVICE by default if STANDBY mode is enabled
 # as we use the TURN_OFF and TURN_ON actions to recover
 # from Standby mode (PM Mode 3)
 config PM_DEVICE
-	default y
-	depends on "$(dt_nodelabel_enabled,standby)"
+	default y if "$(dt_nodelabel_enabled,standby)"
 
 # Enable PM_POLICY_DEVICE_CONSTRAINTS by default when doing PM_DEVICE.
 # This will allow support of device power states.
@@ -79,8 +77,7 @@ config PM_POLICY_DEVICE_CONSTRAINTS
 # Enable the counter if STANDBY mode is enabled
 # RTC counter is the wakeup source from STANDBY mode
 config COUNTER
-	default y
-	depends on "$(dt_nodelabel_enabled,standby)"
+	default y if "$(dt_nodelabel_enabled,standby)"
 
 config MCUX_OS_TIMER_PM_POWERED_OFF
 	default y
