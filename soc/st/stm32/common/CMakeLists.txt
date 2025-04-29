@@ -33,3 +33,5 @@ SoC Power Management (CONFIG_PM) enabled but the DBGMCU is still enabled \
 (CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP). The SoC will use more power than expected \
 in STOP modes due to internal oscillators that remain active.")
 endif()
+
+zephyr_sources_ifdef(CONFIG_DCACHE stm32_cache.c)
