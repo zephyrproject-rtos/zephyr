@@ -12,6 +12,9 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/work.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/byteorder.h>
+
+#include <zephyr/dt-bindings/sensor/rm3100.h>
 
 #include "rm3100.h"
 #include "rm3100_reg.h"
@@ -130,6 +133,7 @@ static DEVICE_API(sensor, rm3100_driver_api) = {
 
 static int rm3100_init(const struct device *dev)
 {
+	struct rm3100_data *data = dev->data;
 	uint8_t val;
 	int err;
 
@@ -144,6 +148,36 @@ static int rm3100_init(const struct device *dev)
 		return -ENODEV;
 	}
 	LOG_DBG("RM3100 chip ID confirmed: 0x%02x", val);
+
+	uint16_t cycle_count[] = {
+		sys_be16_to_cpu(RM3100_CYCLE_COUNT_DEFAULT),
+		sys_be16_to_cpu(RM3100_CYCLE_COUNT_DEFAULT),
+		sys_be16_to_cpu(RM3100_CYCLE_COUNT_DEFAULT)
+	};
+
+	/** Setting ODR requires adjusting Cycle-count should it be 600-HZ ODR,
+	 * because at default cycle-count, the max ODR is 440 Hz, which will
+	 * override our setting.
+	 */
+	if (data->settings.odr ==  RM3100_DT_ODR_600) {
+		cycle_count[0] = sys_be16_to_cpu(RM3100_CYCLE_COUNT_HIGH_ODR);
+		cycle_count[1] = sys_be16_to_cpu(RM3100_CYCLE_COUNT_HIGH_ODR);
+		cycle_count[2] = sys_be16_to_cpu(RM3100_CYCLE_COUNT_HIGH_ODR);
+	}
+	 err = rm3100_bus_write(dev, RM3100_REG_CCX_MSB,
+				(uint8_t *)cycle_count, sizeof(cycle_count));
+	if (err < 0) {
+		LOG_ERR("Failed to set cycle count: %d", err);
+		return err;
+	}
+
+	val = data->settings.odr;
+
+	err = rm3100_bus_write(dev, RM3100_REG_TMRC, &val, 1);
+	if (err < 0) {
+		LOG_ERR("Failed to set ODR: %d", err);
+		return err;
+	}
 
 	/** Enable Continuous measurement on all axis */
 	val = RM3100_CMM_ALL_AXIS;
@@ -168,6 +202,9 @@ static int rm3100_init(const struct device *dev)
 		.rtio = {									   \
 			.iodev = &rm3100_bus_##inst,						   \
 			.ctx = &rm3100_rtio_ctx_##inst,						   \
+		},										   \
+		.settings = {									   \
+			.odr = DT_INST_PROP(inst, odr),						   \
 		},										   \
 	};											   \
 												   \
