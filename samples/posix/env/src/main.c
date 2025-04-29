@@ -45,6 +45,7 @@ static void *entry(void *arg)
 	setenv("BUILD_VERSION", VERSION_BUILD, 1);
 	setenv("ALERT", "", 1);
 
+	sleep(1);
 	env();
 
 	while (true) {
