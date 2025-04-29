@@ -106,6 +106,8 @@ static int gpio_mspm0_port_clear_bits_raw(const struct device *port, uint32_t ma
 static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_mspm0_config *config = port->config;
+	DL_GPIO_WAKEUP wakeup = DL_GPIO_WAKEUP_DISABLE;
+
 	/* determine pull up resistor value based on flags */
 	DL_GPIO_RESISTOR resPull;
 
@@ -116,9 +118,22 @@ static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, g
 	} else {
 		resPull = DL_GPIO_RESISTOR_NONE;
 	}
+
+	if (flags & GPIO_INT_WAKEUP) {
+		if (flags & GPIO_ACTIVE_HIGH) {
+			wakeup = DL_GPIO_WAKEUP_ON_1;
+		}
+		else if (flags & GPIO_ACTIVE_LOW) {
+			wakeup = DL_GPIO_WAKEUP_ON_0;
+		}
+	}
+
 	/* Config pin based on flags */
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT)) {
 	case GPIO_INPUT:
+		if (wakeup != DL_GPIO_WAKEUP_DISABLE) {
+			DL_GPIO_enableFastWakePins(config->base, BIT(pin));
+		}
 		DL_GPIO_initDigitalInputFeatures(config->pincm_lut[pin], DL_GPIO_INVERSION_DISABLE,
 						 resPull, DL_GPIO_HYSTERESIS_DISABLE,
 						 DL_GPIO_WAKEUP_DISABLE);
