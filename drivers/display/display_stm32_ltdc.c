@@ -419,7 +419,7 @@ static int stm32_ltdc_init(const struct device *dev)
 
 #if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
 	data->frame_buffer = shared_multi_heap_aligned_alloc(
-			CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE,
+			CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE,
 			32,
 			CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
 
