@@ -395,8 +395,9 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
 	 * The fixed signal channel is only removed when disconnected and the
-	 * disconnected handler is always called from the workqueue itself so
-	 * canceling from there should always succeed.
+	 * disconnected handler is always called from the Bluetooth workqueue,
+	 * which the RTX work also runs on, so canceling from there should
+	 * always succeed.
 	 */
 	k_work_init_delayable(&le_chan->rtx_work, l2cap_rtx_timeout);
 
@@ -540,7 +541,7 @@ static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
+	bt_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
 }
 
 static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
@@ -1372,6 +1373,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	} else {
 		k_work_cancel_delayable(&le_chan->rtx_work);
 	}
+
+	/* Make sure the RX work is not left queued with a reference to a
+	 * channel object that may be freed or re-used after this call.
+	 */
+	(void)k_work_cancel(&le_chan->rx_work);
 
 	/* Remove buffers on the SDU RX queue */
 	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
@@ -2830,7 +2836,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 	}
 
 	k_fifo_put(&chan->rx_queue, buf);
-	k_work_submit(&chan->rx_work);
+	bt_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -2928,8 +2934,9 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Cancel RTX work on signal channel.
-	 * Disconnected callback is always called from system workqueue
-	 * so this should always succeed.
+	 * Disconnected callback is always called from the Bluetooth
+	 * workqueue, which the RTX work also runs on, so this should
+	 * always succeed.
 	 */
 	(void)k_work_cancel_delayable(&le_chan->rtx_work);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */

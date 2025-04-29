@@ -447,7 +447,7 @@ K_WORK_DEFINE(store_id_work, do_store_id);
 
 int bt_settings_store_id(void)
 {
-	k_work_submit(&store_id_work);
+	bt_work_submit(&store_id_work);
 
 	return 0;
 }
@@ -473,7 +473,7 @@ K_WORK_DEFINE(store_irk_work, do_store_irk);
 int bt_settings_store_irk(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
-	k_work_submit(&store_irk_work);
+	bt_work_submit(&store_irk_work);
 #endif /* defined(CONFIG_BT_PRIVACY) */
 	return 0;
 }
