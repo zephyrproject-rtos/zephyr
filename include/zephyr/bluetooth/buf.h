@@ -36,8 +36,8 @@ extern "C" {
 
 /** Possible types of buffers passed around the Bluetooth stack in a form of bitmask. */
 enum bt_buf_type {
-	/** Invalid value, used for error checking */
-	BT_BUF_TYPE_INVALID = 0,
+	/** Unknown/invalid packet type, used for error checking */
+	BT_BUF_TYPE_NONE = 0,
 	/** HCI command */
 	BT_BUF_CMD = BIT(0),
 	/** HCI event */
@@ -102,7 +102,7 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 	case BT_HCI_H4_ISO:
 		return dir == BT_BUF_OUT ? BT_BUF_ISO_OUT : BT_BUF_ISO_IN;
 	default:
-		return BT_BUF_TYPE_INVALID;
+		return BT_BUF_TYPE_NONE;
 	}
 }
 
