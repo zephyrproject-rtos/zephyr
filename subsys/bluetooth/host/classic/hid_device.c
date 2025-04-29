@@ -400,7 +400,7 @@ static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 	if (hid->role == BT_HID_ROLE_ACCEPTOR) {
 		/* Wait for INTR channel connection from remote */
 		LOG_DBG("wait for INTR connection");
-		k_work_schedule(&hid->intr_timeout, HID_INTR_CONN_TIMEOUT);
+		bt_work_schedule(&hid->intr_timeout, HID_INTR_CONN_TIMEOUT);
 		return;
 	}
 
@@ -911,14 +911,14 @@ static void virtual_cable_unplug_tx_cb(struct bt_conn *conn, void *user_data, in
 	/* VC unplug is a one-way teardown of the HID connection: disconnect
 	 * regardless of the send result. If the PDU failed to reach the
 	 * controller the host may not see the unplug, but the local link must
-	 * still be torn down. Defer the disconnect to the system workqueue
+	 * still be torn down. Defer the disconnect to the Bluetooth workqueue
 	 * because this callback runs in the TX context.
 	 */
 	if (err != 0) {
 		LOG_WRN("VCU control message send failed (%d)", err);
 	}
 
-	k_work_submit(&hid->vcu_disconnect);
+	bt_work_submit(&hid->vcu_disconnect);
 }
 
 int bt_hid_device_virtual_cable_unplug(struct bt_hid_device *hid)
