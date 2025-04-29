@@ -35,63 +35,7 @@ For more information about the MCX-N236 SoC and FRDM-MCXN236 board, see:
 Supported Features
 ==================
 
-The FRDM-MCXN236 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| I3C       | on-chip    | i3c                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| VREF      | on-chip    | regulator                           |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| USBHS     | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| LPCMP     | on-chip    | sensor(comparator)                  |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| FLEXIO    | on-chip    | flexio                              |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
-|           |            | :ref:`lcd_par_s035`                 |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| MRT       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Targets available
-==================
-
-The default configuration file
-:zephyr_file:`boards/nxp/frdm_mcxn236/frdm_mcxn236_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -121,6 +65,8 @@ Flexcomm 4 is configured as UART for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -210,6 +156,9 @@ Troubleshooting
 
 .. include:: ../../common/segger-ecc-systemview.rst
    :start-after: segger-ecc-systemview
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MCX-N236 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n23x-highly-integrated-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N23X

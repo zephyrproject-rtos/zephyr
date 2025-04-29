@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+/ {
+	buttons {
+		compatible = "gpio-keys";
+
+		key0: key0 {
+			label = "User Key 0";
+			gpios = <&pico_header 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key1: key1 {
+			label = "User Key 1";
+			gpios = <&pico_header 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		sw0 = &key0;
+	};
+};

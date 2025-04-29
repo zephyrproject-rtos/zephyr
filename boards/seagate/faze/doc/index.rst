@@ -1,7 +1,4 @@
-.. _faze:
-
-Seagate FireCuda Gaming SSD (FaZe) board
-########################################
+.. zephyr:board:: faze
 
 Overview
 ********
@@ -13,10 +10,6 @@ the latter is dedicated to the LED effects. The two chips are connected together
 through I2C and GPIOs.
 
 This Zephyr port is running on the NXP LPC11U67 MCU.
-
-.. image:: firecuda-gaming-ssd.jpg
-   :align: center
-   :alt: Seagate FireCuda Gaming SSD
 
 Hardware
 ********
@@ -44,28 +37,7 @@ More information can be found here:
 Supported Features
 ==================
 
-All the hardware features available on the FaZe board are supported in Zephyr.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c master/slave controller         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port interrupt               |
-+-----------+------------+-------------------------------------+
-| EEPROM    | on-chip    | eeprom                              |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -96,6 +68,8 @@ The IOCON controller can be used to configure the LPC11U67 pins.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

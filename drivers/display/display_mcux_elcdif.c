@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 /* Define the heap size. 512 bytes of padding are included for kernel heap structures */
 K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
-static const uint32_t supported_fmts = PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888;
+static const uint32_t supported_fmts =
+	PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -223,16 +224,26 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
+	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
 	const struct mcux_elcdif_config *config = dev->config;
+	if (config->backlight_gpio.port) {
+		return gpio_pin_set_dt(&config->backlight_gpio, 1);
+	}
+	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
 
-	return gpio_pin_set_dt(&config->backlight_gpio, 1);
+	return -ENOSYS;
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
+	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
 	const struct mcux_elcdif_config *config = dev->config;
+	if (config->backlight_gpio.port) {
+		return gpio_pin_set_dt(&config->backlight_gpio, 0);
+	}
+	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
 
-	return gpio_pin_set_dt(&config->backlight_gpio, 0);
+	return -ENOSYS;
 }
 
 static int mcux_elcdif_set_pixel_format(const struct device *dev,
@@ -327,10 +338,14 @@ static int mcux_elcdif_init(const struct device *dev)
 		return err;
 	}
 
-	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
-	if (err) {
-		return err;
+	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+	if (config->backlight_gpio.port) {
+		err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err) {
+			return err;
+		}
 	}
+	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
 	k_sem_init(&dev_data->sem, 0, 1);
 #ifdef CONFIG_MCUX_ELCDIF_PXP
@@ -397,9 +412,9 @@ static DEVICE_API(display, mcux_elcdif_api) = {
 					DT_INST_ENUM_IDX(id, data_bus_width)),                     \
 			},                                                                         \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),                      \
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(id, backlight_gpios, {0}),              \
 		IF_ENABLED(CONFIG_MCUX_ELCDIF_PXP,                                                 \
-			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};               \
+			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};                \
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {                                   \
 		.next_idx = 0,                                                                     \
 		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \

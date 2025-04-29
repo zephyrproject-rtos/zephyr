@@ -160,48 +160,42 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
       In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
-      application from the Microsoft Store. The required commands differ on PowerShell.
+      application from the Microsoft Store. Instructions are provided for a ``cmd.exe`` or
+      PowerShell command prompts.
 
-      These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
-      you can install dependencies from their respective websites and ensure
-      the command line tools are on your :envvar:`PATH` :ref:`environment
-      variable <env_vars>`.
+      These instructions rely on Windows' official package manager, `winget`_.
+      If using winget isn't an option, you can install dependencies from their
+      respective websites and ensure the command line tools are on your
+      :envvar:`PATH` :ref:`environment variable <env_vars>`.
 
       |p|
 
       .. _install_dependencies_windows:
 
-      #. `Install chocolatey`_.
+      #. In modern Windows versions, winget is already pre-installed by default.
+         You can verify that this is the case by typing ``winget`` in a terminal
+         window. If that fails, you can then `install winget`_.
 
-      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
-         :guilabel:`Run as Administrator`.
+      #. Open a Command Prompt (``cmd.exe``) or PowerShell terminal window.
+         To do so, press the Windows key, type ``cmd.exe`` or PowerShell and
+         click on the result.
 
-      #. Disable global confirmation to avoid having to confirm the
-         installation of individual programs:
-
-         .. code-block:: bat
-
-            choco feature enable -n allowGlobalConfirmation
-
-      #. Use ``choco`` to install the required dependencies:
+      #. Use ``winget`` to install the required dependencies:
 
          .. code-block:: bat
 
-            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python311 git dtc-msys2 wget 7zip strawberryperl
-
-         .. warning::
-
-            As of November 2024, Python 3.13 is not recommended for Zephyr development on Windows,
-            as some required Python dependencies may be difficult to install.
+            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf python Git.Git oss-winget.dtc wget 7zip.7zip
 
       #. Close the terminal window.
 
-.. _Chocolatey: https://chocolatey.org/
-.. _Install chocolatey: https://chocolatey.org/install
+      .. note::
+
+         You may need to add the 7zip installation folder to your ``PATH``.
+
+
+.. _winget: https://learn.microsoft.com/en-us/windows/package-manager/
+.. _install winget: https://aka.ms/getwinget
 
 .. _get_the_code:
 .. _clone-zephyr:
@@ -333,20 +327,33 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
    .. group-tab:: Windows
 
-      #. Open a ``cmd.exe`` terminal window **as a regular user**
+      #. Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**
 
       #. Create a new virtual environment:
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%
-            python -m venv zephyrproject\.venv
+            .. code-tab:: bat
+
+               cd %HOMEPATH%
+               python -m venv zephyrproject\.venv
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH
+               python -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
 
-         .. code-block:: bat
+         .. tabs::
 
-            zephyrproject\.venv\Scripts\activate.bat
+            .. code-tab:: bat
+
+               zephyrproject\.venv\Scripts\activate.bat
+
+            .. code-tab:: powershell
+
+               zephyrproject\.venv\Scripts\Activate.ps1
 
          Once activated your shell will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
@@ -434,10 +441,17 @@ that are used to emulate, flash and debug Zephyr applications.
 
       Install the Zephyr SDK using the ``west sdk install``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            cd %HOMEPATH%\zephyrproject\zephyr
-            west sdk install
+            .. code-tab:: bat
+
+               cd %HOMEPATH%\zephyrproject\zephyr
+               west sdk install
+
+            .. code-tab:: powershell
+
+               cd $Env:HOMEPATH\zephyrproject\zephyr
+               west sdk install
 
       .. tip::
 
@@ -485,10 +499,17 @@ Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, c
 
    .. group-tab:: Windows
 
-      .. code-block:: bat
+      .. tabs::
 
-         cd %HOMEPATH%\zephyrproject\zephyr
-         west build -p always -b <your-board-name> samples\basic\blinky
+         .. code-tab:: bat
+
+            cd %HOMEPATH%\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
+
+         .. code-tab:: powershell
+
+            cd $Env:HOMEPATH\zephyrproject\zephyr
+            west build -p always -b <your-board-name> samples\basic\blinky
 
 The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use
@@ -502,7 +523,7 @@ another sample.
    When building for such boards it is necessary to specify the SoC or CPU
    cluster for which the sample must be built.
    For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
-   the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
+   the :zephyr:board:`nrf5340dk` the board must be provided as:
    ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
    details.
 

@@ -14,8 +14,6 @@
 
 LOG_MODULE_REGISTER(pinctrl_ite_it8xxx2, LOG_LEVEL_ERR);
 
-#define GPIO_IT8XXX2_REG_BASE \
-	((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
 #define GPIO_GROUP_MEMBERS  8
 
 struct pinctrl_it8xxx2_gpio {
@@ -291,7 +289,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#if defined(CONFIG_SOC_IT8XXX2_REG_SET_V1) || defined(CONFIG_SOC_SERIES_IT51XXX)
 	uint8_t pin_mask = BIT(pins->pin);
 	volatile uint8_t *reg_gctrl = ksi_kso->reg_gctrl;
 
@@ -356,14 +354,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 static int pinctrl_it8xxx2_init(const struct device *dev)
 {
-	struct gpio_it8xxx2_regs *const gpio_base = GPIO_IT8XXX2_REG_BASE;
+	struct gpio_ite_ec_regs *const gpio_base = GPIO_ITE_EC_REGS_BASE;
 
 	/*
 	 * The default value of LPCRSTEN is bit2:1 = 10b(GPD2) in GCR.
 	 * If LPC reset is enabled on GPB7, we have to clear bit2:1
 	 * to 00b.
 	 */
-	gpio_base->GPIO_GCR &= ~IT8XXX2_GPIO_LPCRSTEN;
+	gpio_base->GPIO_GCR &= ~ITE_EC_GPIO_LPCRSTEN;
 
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
 #if defined(CONFIG_I2C_ITE_ENHANCE) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c5))

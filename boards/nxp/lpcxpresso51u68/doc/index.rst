@@ -31,30 +31,7 @@ More information can be found here:
 Supported Features
 ==================
 
-The lpcxpresso51u68 support the following features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c master/slave controller         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | SPI master                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware is not yet supported on Zephyr.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -89,6 +66,8 @@ The IOCON controller can be used to configure the LPC51U68 pins.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -155,6 +134,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS build zephyr-v2.6.0-934-g4c438c0c7d13 *****
    Hello World! lpcxpresso51u68
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _LPC51U68 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/high-performance-power-efficient-and-cost-sensitive-arm-cortex-m0-plus-mcus:LPC51U68

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2019 Linaro Limited
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,3 +129,5 @@
 &uart1 {
 	status = "okay";
 };
+
+#include "mps2-pinctrl.dtsi"

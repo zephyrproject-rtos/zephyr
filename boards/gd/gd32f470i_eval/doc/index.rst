@@ -42,44 +42,7 @@ For more information about the GD32F470 SoC and GD32F470I-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC`
-     - :dtcompatible:`gd,gd32-dac`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`gd,gd32-i2c`
-   * - EEPROM
-     - :kconfig:option:`CONFIG_EEPROM`
-     - :dtcompatible:`atmel,at24`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`gd,gd32-spi`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -89,6 +52,8 @@ is USART0 with TX connected at PA9 and RX at PA10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot and serial jumpers
 as follows:

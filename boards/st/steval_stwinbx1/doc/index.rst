@@ -31,6 +31,8 @@ NFC or USB protocols to a host application running on a smartphone/PC to impleme
 (see `Sensing`_ section for the complete lists of available
 sensors on board)
 
+.. zephyr:board-supported-hw::
+
 Hardware
 ********
 
@@ -254,7 +256,9 @@ There are two possible options for Zephyr console output:
 Console default settings are 115200 8N1.
 
 Programming and Debugging
--------------------------
+*************************
+
+.. zephyr:board-supported-runners::
 
 There are two alternative methods of flashing ST Sensortile.box Pro board:
 
@@ -295,7 +299,7 @@ It is recommended to use the latest version of `STM32CubeProgrammer`_
 
 
 Flash an Application to STEVAL-STWINBX1
-------------------------------------------
+---------------------------------------
 
 There are two ways to enter DFU mode:
 

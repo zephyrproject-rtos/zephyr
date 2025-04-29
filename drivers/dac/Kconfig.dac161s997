@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Vitrolife A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DAC161S997
+	bool "TI DAC161S997 DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_TI_DAC161S997_ENABLED
+	help
+	  Enable the driver for the TI DAC161S997.

@@ -344,7 +344,11 @@ static void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
 
 	LOG_DBG("Get descriptors for %s", dev->name);
 
-	return (speed == USBD_SPEED_HS) ? config->hs_descs : config->fs_descs;
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
+		return config->hs_descs;
+	}
+
+	return config->fs_descs;
 }
 
 
@@ -382,7 +386,8 @@ static uint8_t usbd_midi_get_bulk_in(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *cfg = dev->config;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return cfg->desc->if1_1_in_ep_hs.bEndpointAddress;
 	}
 
@@ -395,7 +400,8 @@ static uint8_t usbd_midi_get_bulk_out(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *cfg = dev->config;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return cfg->desc->if1_1_out_ep_hs.bEndpointAddress;
 	}
 

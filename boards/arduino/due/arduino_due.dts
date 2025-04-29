@@ -4,6 +4,7 @@
 
 #include <atmel/sam3x.dtsi>
 #include "arduino_due-pinctrl.dtsi"
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "Arduino Due with an Atmel SAM3X8E SoC";
@@ -55,6 +56,13 @@
 
 	pinctrl-0 = <&twi1_default>;
 	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&pioa 28 GPIO_ACTIVE_LOW>;
 };
 
 &uart {

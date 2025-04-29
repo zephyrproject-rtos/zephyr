@@ -6,105 +6,7 @@
 
 menu "System Monitoring Options"
 
-menuconfig THREAD_ANALYZER
-	bool "Thread analyzer"
-	depends on !ARCH_POSIX
-	select INIT_STACKS
-	select THREAD_MONITOR
-	select THREAD_STACK_INFO
-	select THREAD_RUNTIME_STATS
-	help
-	  Enable thread analyzer functionality and all the required modules.
-	  This module may be used to debug thread configuration issues, e.g.
-	  stack size configuration to find stack overflow or to find stacks
-	  which may be optimized.
-
-if THREAD_ANALYZER
-module = THREAD_ANALYZER
-module-str = thread analyzer
-source "subsys/logging/Kconfig.template.log_config"
-
-choice
-	prompt "Thread analysis print mode"
-	default THREAD_ANALYZER_USE_PRINTK
-
-config THREAD_ANALYZER_USE_LOG
-	bool "Use logger output"
-	select LOG
-	help
-	  Use logger output to print thread information.
-
-config THREAD_ANALYZER_USE_PRINTK
-	bool "Use printk function"
-	help
-	  Use kernel printk function to print thread information.
-
-endchoice
-
-config THREAD_ANALYZER_ISR_STACK_USAGE
-	bool "Analyze interrupt stacks usage"
-	default y
-
-config THREAD_ANALYZER_PRIV_STACK_USAGE
-	bool "Analyze privileged stacks usage"
-	depends on USERSPACE
-	depends on ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
-	help
-	  Print privileged stack usage for user threads.
-
-config THREAD_ANALYZER_RUN_UNLOCKED
-	bool "Run analysis with interrupts unlocked"
-	default y
-	help
-	  The thread analysis takes quite a long time.
-	  Every thread it finds is analyzed word by word to find any that
-	  does not match the magic number.
-	  Normally while thread are analyzed the k_thread_foreach function
-	  is used.
-	  While this is a safe run from the thread list perspective it may lock
-	  the interrupts for a long time - long enough to disconnect when
-	  Bluetooth communication is used.
-	  Setting this flag will force thread analyzer to use
-	  the k_thread_foreach_unlocked function.
-	  This will allow the interrupts to be processed while the thread is
-	  analyzed.
-	  For the limitation of such configuration see the k_thread_foreach
-	  documentation.
-
-config THREAD_ANALYZER_AUTO
-	bool "Run periodic thread analysis in a thread"
-	help
-	  Run the thread analyzer automatically, without the need to add
-	  any code to the application.
-	  Thread analysis would be called periodically.
-
-if THREAD_ANALYZER_AUTO
-
-config THREAD_ANALYZER_AUTO_SEPARATE_CORES
-	bool "Run thread analyzer separately on each core"
-	default y if KERNEL_COHERENCE
-	depends on SCHED_CPU_MASK
-	help
-	  Run the thread analyzer auto thread on each core and report
-	  cores separately. This feature is needed for platforms running
-	  on cache-incoherent architectures.
-
-config THREAD_ANALYZER_AUTO_INTERVAL
-	int "Thread analysis interval"
-	default 60
-	range 5 3600
-	help
-	  The time in seconds to call thread analyzer periodic printing function.
-
-config THREAD_ANALYZER_AUTO_STACK_SIZE
-	int "Stack size for the periodic thread analysis thread"
-	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
-	default 1024
-
-endif # THREAD_ANALYZER_AUTO
-
-endif # THREAD_ANALYZER
-
+source "subsys/debug/thread_analyzer/Kconfig"
 
 endmenu
 
@@ -431,3 +333,31 @@ config CS_TRACE_DEFMT
 	help
 	  Module is decoding data which is formatted using Coresight
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
+
+config CPU_LOAD
+	select TRACING
+	depends on CPU_CORTEX_M || RISCV
+	depends on !SMP
+	bool "CPU load measurement"
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
+
+config CPU_LOAD_USE_COUNTER
+	bool "Use counter"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
+	default y
+	select COUNTER
+	help
+	  Use counter for tracking CPU idle time.
+
+config CPU_LOAD_LOG_PERIODICALLY
+	int "Report period (in milliseconds)"
+	depends on LOG
+	default 0
+	help
+	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
+
+module = CPU_LOAD
+module-str = cpu_load
+source "subsys/logging/Kconfig.template.log_config"

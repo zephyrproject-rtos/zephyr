@@ -10,6 +10,7 @@
 			psels = <NRF_PSEL(I2S_MCK, 0, 12)>;
 			nordic,drive-mode = <NRF_DRIVE_H0H1>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(I2S_SCK_M, 0, 14)>,
 				<NRF_PSEL(I2S_LRCK_M, 0, 16)>,
@@ -34,6 +35,7 @@
 			psels = <NRF_PSEL(UART_TX, 1, 5)>,
 				<NRF_PSEL(UART_RTS, 1, 7)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(UART_RX, 1, 4)>,
 				<NRF_PSEL(UART_CTS, 1, 6)>;
@@ -56,6 +58,7 @@
 			psels = <NRF_PSEL(UART_TX, 1, 9)>,
 				<NRF_PSEL(UART_RTS, 1, 11)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(UART_RX, 1, 8)>,
 				<NRF_PSEL(UART_CTS, 1, 10)>;
@@ -114,6 +117,7 @@
 			 */
 			nordic,drive-mode = <NRF_DRIVE_H0H1>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(SPIM_MISO, 0, 10)>;
 		};

@@ -74,75 +74,51 @@ Detailed Hardware features for the EK-RA8D1 MCU can be found at `EK-RA8D1 - User
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr for EK-RA8D1 board:
+.. zephyr:board-supported-hw::
 
-+--------------+------------+-----------------------------------+
-| Interface    | Controller | Driver/Component                  |
-+==============+============+===================================+
-| GPIO         | on-chip    | gpio                              |
-+--------------+------------+-----------------------------------+
-| MPU          | on-chip    | arch/arm                          |
-+--------------+------------+-----------------------------------+
-| NVIC         | on-chip    | arch/arm                          |
-+--------------+------------+-----------------------------------+
-| UART         | on-chip    | serial                            |
-+--------------+------------+-----------------------------------+
-| CLOCK        | on-chip    | clock control                     |
-+--------------+------------+-----------------------------------+
-| ENTROPY      | on-chip    | entropy                           |
-+--------------+------------+-----------------------------------+
-| SPI          | on-chip    | spi                               |
-+--------------+------------+-----------------------------------+
-| FLASH        | on-chip    | flash                             |
-+--------------+------------+-----------------------------------+
-| PWM          | on-chip    | pwm                               |
-+--------------+------------+-----------------------------------+
-| COUNTER      | on-chip    | counter                           |
-+--------------+------------+-----------------------------------+
-| CAN          | on-chip    | canfd                             |
-+--------------+------------+-----------------------------------+
-| I2C          | on-chip    | i2c                               |
-+--------------+------------+-----------------------------------+
-| USBHS        | on-chip    | udc                               |
-+--------------+------------+-----------------------------------+
-| USBFS        | on-chip    | udc                               |
-+--------------+------------+-----------------------------------+
-| DISPLAY      | on-chip    | LCDIF; MIPI-DSI. Tested with      |
-|              |            | :ref:`rtkmipilcdb00000be` shields |
-+--------------+------------+-----------------------------------+
-| ETHERNET     | on-chip    | ethernet                          |
-+--------------+------------+-----------------------------------+
-| ADC          | on-chip    | adc                               |
-+--------------+------------+-----------------------------------+
-| SDHC         | on-chip    | sdhc                              |
-+--------------+------------+-----------------------------------+
-| DAC          | on-chip    | dac                               |
-+--------------+------------+-----------------------------------+
+.. note::
 
-**Note:**
+   - For using Ethernet on RA8D1 board please set switch SW1 as following configuration:
 
-- For using Ethernet on RA8D1 board please set switch SW1 as following configuration:
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |      OFF    |      OFF     |     OFF    |     ON     |      OFF   |      OFF    |     OFF   |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
-| SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
-|     OFF     |      OFF    |      OFF     |     OFF    |     ON     |      OFF   |      OFF    |     OFF   |
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+   - For using SDHC channel 1 on RA8D1 board please set switch SW1 as following configuration:
 
-- For using SDHC channel 1 on RA8D1 board please set switch SW1 as following configuration:
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |      OFF    |      OFF     |     OFF    |     OFF    |      OFF   |      OFF    |     OFF   |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
-| SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
-|     OFF     |      OFF    |      OFF     |     OFF    |     OFF    |      OFF   |      OFF    |     OFF   |
-+-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+   - For using MIPI Graphics Expansion Port (J58) on RA8D1 board please set switch SW1 as following configuration:
 
-**CAUTION:** Do not enable SW1-4 and SW1-5 together
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      OFF     |     OFF    |     OFF    |     ON     |     ON      |    OFF    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
-Other hardware features are currently not supported by the port.
+   - For using the Parallel Graphics Expansion Port (J57) with the Graphics Expansion Board supplied as part of the kit,
+     please set switch SW1 as following configuration:
+
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      OFF     |     OFF    |     OFF    |     ON     |     ON      |    OFF    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
+.. warning::
+
+   Do not enable SW1-4 and SW1-5 together
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra8d1`` board configuration can be
 built, flashed, and debugged in the usual way. See

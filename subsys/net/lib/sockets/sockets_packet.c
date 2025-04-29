@@ -51,11 +51,7 @@ static int zpacket_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	if (proto == 0) {
-		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
-		}
-	} else {
+	if (proto != 0) {
 		/* For example in Linux, the protocol parameter can be given
 		 * as htons(ETH_P_ALL) to receive all the network packets.
 		 * So convert the proto field back to host byte order so that
@@ -148,7 +144,7 @@ static void zpacket_set_eth_pkttype(struct net_if *iface,
 				    struct sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
-	if (lladdr == NULL || lladdr->addr == NULL) {
+	if (lladdr == NULL || lladdr->len == 0) {
 		return;
 	}
 
@@ -187,7 +183,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, pkt->lladdr_src.addr,
 		       MIN(sizeof(addr.sll_addr), pkt->lladdr_src.len));
 
-		addr.sll_protocol = net_pkt_ll_proto_type(pkt);
+		addr.sll_protocol = htons(net_pkt_ll_proto_type(pkt));
 
 		if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
 			addr.sll_hatype = ARPHRD_ETHER;
@@ -216,12 +212,12 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, hdr->src.addr,
 		       sizeof(struct net_eth_addr));
 
-		addr.sll_protocol = ntohs(hdr->type);
+		addr.sll_protocol = hdr->type;
 		addr.sll_hatype = ARPHRD_ETHER;
 
-		dst_addr.addr = hdr->dst.addr;
-		dst_addr.len = sizeof(struct net_eth_addr);
-		dst_addr.type = NET_LINK_ETHERNET;
+		(void)net_linkaddr_create(&dst_addr, hdr->dst.addr,
+					  sizeof(struct net_eth_addr),
+					  NET_LINK_ETHERNET);
 
 		zpacket_set_eth_pkttype(iface, &addr, &dst_addr);
 		net_pkt_cursor_restore(pkt, &cur);
@@ -238,6 +234,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			   int flags, const struct sockaddr *dest_addr,
 			   socklen_t addrlen)
 {
+	const struct sockaddr_ll *ll_addr = (const struct sockaddr_ll *)dest_addr;
 	k_timeout_t timeout = K_FOREVER;
 	int status;
 
@@ -250,6 +247,21 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
+	}
+
+	/* If no interface was set on the context yet, use the one provided in
+	 * the destination address for default binding, unless 0 (any interface)
+	 * was set, in that case let the stack choose the default.
+	 */
+	if (net_context_get_iface(ctx) == NULL && ll_addr->sll_ifindex != 0) {
+		struct net_if *iface = net_if_get_by_index(ll_addr->sll_ifindex);
+
+		if (iface == NULL) {
+			errno = EDESTADDRREQ;
+			return -1;
+		}
+
+		net_context_set_iface(ctx, iface);
 	}
 
 	/* Register the callback before sending in order to receive the response
@@ -490,13 +502,13 @@ static bool packet_is_supported(int family, int type, int proto)
 	switch (type) {
 	case SOCK_RAW:
 		proto = ntohs(proto);
-		return proto == ETH_P_ALL
+		return proto == 0
+		  || proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
-		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
+		  || proto == ETH_P_IEEE802154;
 
 	case SOCK_DGRAM:
-		return proto > 0;
+		return true;
 
 	default:
 		return false;

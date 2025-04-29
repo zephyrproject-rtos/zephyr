@@ -3,9 +3,6 @@ common:
   tags:
     - net
     - dhcpv4
-  platform_exclude:
-    - native_posix/native/64
-    - native_posix
 tests:
   net.dhcpv4_client:
     extra_configs:
@@ -20,3 +17,6 @@ tests:
     extra_configs:
       - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y
       - CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC=y
+  net.dhcpv4_client.ignored_options:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED=y

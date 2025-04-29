@@ -102,7 +102,7 @@ static int drv_open(const struct device *dev, bt_hci_recv_t recv)
 K_FIFO_DEFINE(drv_send_fifo); /* elem T: net_buf */
 static int drv_send(const struct device *dev, struct net_buf *buf)
 {
-	LOG_DBG("buf %p type %d len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %d len %u", buf, buf->data[0], buf->len);
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "buf");
 
 	__ASSERT_NO_MSG(buf);
@@ -216,9 +216,8 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
-			zassert_equal(buf->len, sizeof(h4_msg_cmd_dummy1) - 1, "Wrong length");
-			zassert_mem_equal(buf->data, &h4_msg_cmd_dummy1[1],
-					  sizeof(h4_msg_cmd_dummy1) - 1);
+			zassert_equal(buf->len, sizeof(h4_msg_cmd_dummy1), "Wrong length");
+			zassert_mem_equal(buf->data, h4_msg_cmd_dummy1, sizeof(h4_msg_cmd_dummy1));
 			net_buf_unref(buf);
 		}
 
@@ -244,10 +243,10 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
-			zassert_equal(buf->len, sizeof(h4_msg_cmd_host_num_complete) - 1,
+			zassert_equal(buf->len, sizeof(h4_msg_cmd_host_num_complete),
 				      "Wrong length");
-			zassert_mem_equal(buf->data, &h4_msg_cmd_host_num_complete[1],
-					  sizeof(h4_msg_cmd_dummy1) - 2);
+			zassert_mem_equal(buf->data, h4_msg_cmd_host_num_complete,
+					  sizeof(h4_msg_cmd_dummy1) - 1);
 			net_buf_unref(buf);
 		}
 

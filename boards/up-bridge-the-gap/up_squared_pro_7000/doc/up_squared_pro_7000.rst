@@ -1,9 +1,4 @@
-:orphan:
-
-.. _up_squared_pro_7000_board:
-
-UP Squared Pro 7000
-###################
+.. zephyr:board:: up_squared_pro_7000
 
 Overview
 ********
@@ -29,6 +24,8 @@ Refer to the `UP Squared Pro 7000`_ website for more information.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use the following procedures for booting an image for an UP Squared Pro 7000 board.
 

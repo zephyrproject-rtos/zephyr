@@ -70,9 +70,9 @@ static int akm09918c_decoder_decode(const uint8_t *buffer, struct sensor_chan_sp
 		out->header.reading_count = 1;
 		out->shift = AKM09918C_SHIFT;
 
-		akm09918c_convert_raw_to_q31(edata->readings[0], &out->readings[0].x);
-		akm09918c_convert_raw_to_q31(edata->readings[1], &out->readings[0].y);
-		akm09918c_convert_raw_to_q31(edata->readings[2], &out->readings[0].z);
+		akm09918c_convert_raw_to_q31(edata->reading.data[0], &out->readings[0].x);
+		akm09918c_convert_raw_to_q31(edata->reading.data[1], &out->readings[0].y);
+		akm09918c_convert_raw_to_q31(edata->reading.data[2], &out->readings[0].z);
 		*fit = 1;
 
 		return 1;

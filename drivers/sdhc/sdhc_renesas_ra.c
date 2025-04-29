@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -591,24 +591,20 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.get_host_props = sdhc_ra_get_host_props,
 };
 
-#define _ELC_EVENT_SDMMC_ACCS(channel)    ELC_EVENT_SDHIMMC##channel##_ACCS
-#define _ELC_EVENT_SDMMC_CARD(channel)    ELC_EVENT_SDHIMMC##channel##_CARD
-#define _ELC_EVENT_SDMMC_DMA_REQ(channel) ELC_EVENT_SDHIMMC##channel##_DMA_REQ
-
-#define ELC_EVENT_SDMMC_ACCS(channel)    _ELC_EVENT_SDMMC_ACCS(channel)
-#define ELC_EVENT_SDMMC_CARD(channel)    _ELC_EVENT_SDMMC_CARD(channel)
-#define ELC_EVENT_SDMMC_DMA_REQ(channel) _ELC_EVENT_SDMMC_DMA_REQ(channel)
+#define EVENT_SDMMC_ACCS(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _ACCS))
+#define EVENT_SDMMC_CARD(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _CARD))
+#define EVENT_SDMMC_DMA_REQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _DMA_REQ))
 
 #define RA_SDMMC_IRQ_CONFIG_INIT(index)                                                            \
 	do {                                                                                       \
 		ARG_UNUSED(dev);                                                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, accs, irq)] =                              \
-			ELC_EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel));                        \
+			EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, card, irq)] =                              \
-			ELC_EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                        \
+			EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
-			ELC_EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                     \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \

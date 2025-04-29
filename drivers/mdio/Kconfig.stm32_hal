@@ -5,8 +5,8 @@
 config MDIO_ST_STM32_HAL
 	bool "STM32 MDIO controller driver"
 	default y
-	depends on ETH_STM32_HAL_API_V2
 	depends on DT_HAS_ST_STM32_MDIO_ENABLED
+	depends on ETH_STM32_HAL
 	select PINCTRL
 	help
 	  Enable STM32 MDIO support.

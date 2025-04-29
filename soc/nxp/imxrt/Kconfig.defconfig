@@ -13,10 +13,6 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config ADC_MCUX_12B1MSPS_SAR
-	default y if HAS_MCUX_12B1MSPS_SAR
-	depends on ADC
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 7500000
 	depends on LOG_BACKEND_SWO
@@ -38,10 +34,6 @@ config CORTEX_M_SYSTICK
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMXRT11XX && PM
-
-# Don't allow SOC to sleep after tests complete when PM is enabled
-config ZTEST_NO_YIELD
-	default y if (ZTEST && PM)
 
 if SOC_SERIES_IMXRT10XX && PM
 

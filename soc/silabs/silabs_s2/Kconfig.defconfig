@@ -5,17 +5,19 @@ rsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_SILABS_S2
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768
 
-config SYS_CLOCK_TICKS_PER_SEC
-	default 1024 if SILABS_SLEEPTIMER_TIMER || GECKO_BURTC_TIMER
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 128 if !TICKLESS_KERNEL && (SILABS_SLEEPTIMER_TIMER || GECKO_BURTC_TIMER)
+	default 32768 if SILABS_SLEEPTIMER_TIMER
+	default 1024 if GECKO_BURTC_TIMER
 
-config SILABS_SLEEPTIMER_TIMER
+configdefault SILABS_SLEEPTIMER_TIMER
 	default y
 
-config CORTEX_M_SYSTICK
+configdefault CORTEX_M_SYSTICK
 	default n if SILABS_SLEEPTIMER_TIMER || GECKO_BURTC_TIMER
 
 # silabs_s2 uses simplicity_sdk hal library, which already have by default a zero latency
@@ -25,10 +27,10 @@ config CORTEX_M_SYSTICK
 # if you use an IRQ with a priority of 0 or 1, irq_lock() and irq_unlock() have no effect
 # over this IRQ.
 
-config ZERO_LATENCY_IRQS
+configdefault ZERO_LATENCY_IRQS
 	default y
 
-config ZERO_LATENCY_LEVELS
+configdefault ZERO_LATENCY_LEVELS
 	default 2
 
 endif

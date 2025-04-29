@@ -40,28 +40,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr mimx8mq_evk board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/imx8mq_evk/imx8mq_evk_mimx8mq6_m4_defconfig`.
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -90,6 +69,8 @@ the remaining are not used/tested.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The MIMX8MQ EVK board doesn't have QSPI flash for the M4 and it needs
 to be started by the A53 core. The A53 core is responsible to load the M4 binary
@@ -198,8 +179,8 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS build zephyr-v2.6.99-30942-g6ee70bd22058 *****
    Hello World! imx8mq_evk
 
-References
-==========
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-applications-processor:MCIMX8M-EVK

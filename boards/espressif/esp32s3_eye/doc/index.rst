@@ -17,6 +17,11 @@ ESP32-S3-WROOM-1 module, camera, SD card slot, digital microphone, USB port, and
 and the sub board (ESP32-S3-EYE-SUB) that contains an LCD display.
 The main board and sub board are connected through pin headers.
 
+Supported Features
+------------------
+
+.. zephyr:board-supported-hw::
+
 Block Diagram
 -------------
 
@@ -129,6 +134,8 @@ below to retrieve those files.
 
 Building & Flashing
 *******************
+
+.. zephyr:board-supported-runners::
 
 Simple boot
 -----------

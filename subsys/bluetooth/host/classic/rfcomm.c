@@ -730,6 +730,38 @@ static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 	return rfcomm_send(session, buf);
 }
 
+int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn)
+{
+	struct bt_rfcomm_session *session;
+
+	if (!dlc || !rpn) {
+		return -EINVAL;
+	}
+
+	/* Validate baud rate */
+	if (rpn->baud_rate > BT_RFCOMM_RPN_BAUD_RATE_230400) {
+		LOG_ERR("Invalid baud rate: %u", rpn->baud_rate);
+		return -EINVAL;
+	}
+
+	session = dlc->session;
+	if (!session) {
+		return -ENOTCONN;
+	}
+
+	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	LOG_DBG("dlc %p", dlc);
+
+	/* Set DLCI in the RPN command */
+	rpn->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, 1);
+
+	/* Send the RPN command */
+	return rfcomm_send_rpn(session, BT_RFCOMM_MSG_CMD_CR, rpn);
+}
+
 static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr,
 			    uint8_t *pattern, uint8_t len)
 {
@@ -1545,7 +1577,7 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len < (hdr_len + msg_len + sizeof(fcs))) {
-		LOG_ERR("Too small RFCOMM information (%d < %d)", buf->len,
+		LOG_ERR("Too small RFCOMM information (%u < %zu)", buf->len,
 			hdr_len + msg_len + sizeof(fcs));
 		return 0;
 	}

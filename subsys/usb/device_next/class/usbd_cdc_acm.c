@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    512, sizeof(struct udc_buf_info), NULL);
+		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
 #define CDC_ACM_DEFAULT_INT_EP_MPS	16
@@ -171,7 +171,8 @@ static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 	const struct cdc_acm_uart_config *cfg = dev->config;
 	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_int_ep.bEndpointAddress;
 	}
 
@@ -185,7 +186,8 @@ static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 	const struct cdc_acm_uart_config *cfg = dev->config;
 	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_hs_in_ep.bEndpointAddress;
 	}
 
@@ -199,7 +201,8 @@ static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 	const struct cdc_acm_uart_config *cfg = dev->config;
 	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_hs_out_ep.bEndpointAddress;
 	}
 
@@ -210,7 +213,8 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
 	}
 
@@ -350,7 +354,7 @@ static void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct cdc_acm_uart_config *cfg = dev->config;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return cfg->hs_desc;
 	}
 
@@ -506,7 +510,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
 
-	if (cfg->if_desc_data != NULL) {
+	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
 			LOG_ERR("Failed to add interface string descriptor");
 		} else {

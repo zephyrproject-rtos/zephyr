@@ -13,7 +13,7 @@ import sys
 from twisterlib.error import TwisterRuntimeError
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class SizeCalculator:
     alloc_sections = [
@@ -154,17 +154,6 @@ class SizeCalculator:
         """
         return self.used_rom
 
-    def unrecognized_sections(self):
-        """Get a list of sections inside the binary that weren't recognized
-
-        @return list of unrecognized section names
-        """
-        slist = []
-        for v in self.sections:
-            if not v["recognized"]:
-                slist.append(v["name"])
-        return slist
-
     def get_available_ram(self) -> int:
         """Get the total available RAM.
 
@@ -251,7 +240,6 @@ class SizeCalculator:
 
             # Add section to memory use totals (for both non-XIP and XIP scenarios)
             # Unrecognized section names are not included in the calculations.
-            recognized = True
 
             # If build.log file exists, check errors (unrecognized sections
             # in ELF file).
@@ -262,8 +250,6 @@ class SizeCalculator:
                     continue
                 else:
                     stype = "unknown"
-                    if name not in self.extra_sections:
-                        recognized = False
             else:
                 if name in SizeCalculator.alloc_sections:
                     self.used_ram += size
@@ -279,12 +265,10 @@ class SizeCalculator:
                     stype = "ro"
                 else:
                     stype = "unknown"
-                    if name not in self.extra_sections:
-                        recognized = False
 
             self.sections.append({"name": name, "load_addr": load_addr,
                                   "size": size, "virt_addr": virt_addr,
-                                  "type": stype, "recognized": recognized})
+                                  "type": stype})
 
     def _analyze_elf_file(self) -> None:
         self._check_elf_file()

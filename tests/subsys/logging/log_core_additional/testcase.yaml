@@ -14,3 +14,11 @@ tests:
     extra_args: CONF_FILE=log_thread.conf
     integration_platforms:
       - native_sim
+  logging.log_user:
+    tags: logging
+    filter: CONFIG_USERSPACE
+    extra_args:
+      - CONF_FILE=log_user.conf
+      - USERSPACE_TEST=1
+    integration_platforms:
+      - qemu_x86

@@ -38,6 +38,7 @@ tests:
   drivers.i2c.target_api.single_role:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - mcxw72_evk/mcxw727c/cpu0
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -59,5 +60,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - max32690evkit/max32690/m4

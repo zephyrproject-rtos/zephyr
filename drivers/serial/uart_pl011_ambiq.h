@@ -13,9 +13,7 @@
 #include <zephyr/pm/policy.h>
 
 #include "uart_pl011_registers.h"
-#include <am_mcu_apollo.h>
-
-#define PWRCTRL_MAX_WAIT_US 5
+#include <soc.h>
 
 static inline void pl011_ambiq_enable_clk(const struct device *dev)
 {
@@ -39,6 +37,16 @@ static inline int pl011_ambiq_clk_set(const struct device *dev, uint32_t clk)
 	case 24000000:
 		clksel = PL011_CR_AMBIQ_CLKSEL_24MHZ;
 		break;
+#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
+	case 48000000:
+		clksel = PL011_CR_AMBIQ_CLKSEL_48MHZ;
+		break;
+#if !defined(CONFIG_SOC_SERIES_APOLLO4X)
+	case AM_HAL_UART_PLLCLK_FREQ:
+		clksel = PL011_CR_AMBIQ_CLKSEL_PLL;
+		break;
+#endif
+#endif
 	default:
 		return -EINVAL;
 	}
@@ -160,48 +168,18 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 }
 #endif /* CONFIG_PM_DEVICE */
 
-/* Problem: writes to power configure register takes some time to take effective.
- * Solution: Check device's power status to ensure that register has taken effective.
- * Note: busy wait is not allowed to use here due to UART is initiated before timer starts.
- */
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-#define DEVPWRSTATUS_OFFSET 0x10
-#define HCPA_MASK           0x4
 #define AMBIQ_UART_DEFINE(n)                                                                       \
 	PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);                                         \
 	static int pwr_on_ambiq_uart_##n(void)                                                     \
 	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		uint32_t pwr_status_addr = addr + DEVPWRSTATUS_OFFSET;                             \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		while (!(sys_read32(pwr_status_addr) & HCPA_MASK)) {                               \
-		};                                                                                 \
-		return 0;                                                                          \
+		uint32_t module = (DT_INST_REG_ADDR(n) - UART0_BASE) / (UART1_BASE - UART0_BASE);  \
+		am_hal_pwrctrl_periph_e eUARTPowerModule =                                         \
+			((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_UART0 + module));         \
+		return am_hal_pwrctrl_periph_enable(eUARTPowerModule);                             \
 	}                                                                                          \
 	static inline int clk_enable_ambiq_uart_##n(const struct device *dev, uint32_t clk)        \
 	{                                                                                          \
 		return clk_enable_ambiq_uart(dev, clk);                                            \
 	}
-#else
-#define DEVPWRSTATUS_OFFSET 0x4
-#define AMBIQ_UART_DEFINE(n)                                                                       \
-	PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);                                         \
-	static int pwr_on_ambiq_uart_##n(void)                                                     \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		uint32_t pwr_status_addr = addr + DEVPWRSTATUS_OFFSET;                             \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		while ((sys_read32(pwr_status_addr) & DT_INST_PHA(n, ambiq_pwrcfg, mask)) !=       \
-		       DT_INST_PHA(n, ambiq_pwrcfg, mask)) {                                       \
-		};                                                                                 \
-		return 0;                                                                          \
-	}                                                                                          \
-	static inline int clk_enable_ambiq_uart_##n(const struct device *dev, uint32_t clk)        \
-	{                                                                                          \
-		return clk_enable_ambiq_uart(dev, clk);                                            \
-	}
-#endif
 
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_PL011_AMBIQ_H_ */

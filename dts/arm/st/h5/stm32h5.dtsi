@@ -538,15 +538,20 @@
 			status = "disabled";
 		};
 
-		mac: ethernet@40028000 {
-			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
+		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
-			interrupts = <106 0>;
-			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
-			clocks = <&rcc STM32_CLOCK(AHB1, 19U)>,
-				 <&rcc STM32_CLOCK(AHB1, 20U)>,
-				 <&rcc STM32_CLOCK(AHB1, 21U)>;
-			status = "disabled";
+			compatible = "st,stm32-ethernet-controller";
+			clock-names = "stm-eth";
+			clocks = <&rcc STM32_CLOCK(AHB1, 19)>;
+
+			mac: ethernet {
+				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
+				interrupts = <106 0>;
+				clock-names = "mac-clk-tx", "mac-clk-rx";
+				clocks = <&rcc STM32_CLOCK(AHB1, 20)>,
+					 <&rcc STM32_CLOCK(AHB1, 21)>;
+				status = "disabled";
+			};
 
 			mdio: mdio {
 				compatible = "st,stm32-mdio";
@@ -635,6 +640,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <2048>;
+			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB2, 24U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;

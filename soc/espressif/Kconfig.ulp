@@ -1,0 +1,87 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Ultra Low Power (ULP) Coprocessor"
+
+config ULP_COPROC_ENABLED
+	bool "Ultra Low Power (ULP) Coprocessor"
+	default y if SOC_ESP32C6_LPCORE
+	select SOC_LATE_INIT_HOOK if SOC_ESP32C6_HPCORE
+	help
+	  Enable this feature if you plan to use the ULP Coprocessor.
+	  Once this option is enabled, further ULP co-processor configuration will appear in the menu.
+
+choice ULP_COPROC_TYPE
+	prompt "ULP Coprocessor type"
+	depends on ULP_COPROC_ENABLED
+	default ULP_COPROC_TYPE_LP_CORE if SOC_SERIES_ESP32C6
+	help
+	  Choose the ULP Coprocessor type: ULP FSM (Finite State Machine) or ULP RISC-V.
+
+config ULP_COPROC_TYPE_FSM
+	bool "ULP FSM (Finite State Machine)"
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+
+config ULP_COPROC_TYPE_RISCV
+	bool "ULP RISC-V"
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+
+config ULP_COPROC_TYPE_LP_CORE
+	bool "LP core RISC-V"
+	depends on SOC_SERIES_ESP32C6
+endchoice
+
+menu "ULP RISC-V Settings"
+	depends on ULP_COPROC_TYPE_RISCV
+
+config ULP_RISCV_INTERRUPT_ENABLE
+	bool "ULP RISC-V interrupts"
+	help
+	  Turn on this setting to enabled interrupts on the ULP RISC-V core.
+
+endmenu
+
+menu "ULP Debugging Options"
+
+config ULP_PANIC_OUTPUT_ENABLE
+	bool "Panic handler outputs to LP UART"
+	depends on ULP_COPROC_TYPE_LP_CORE
+	help
+	  Set this option to enable panic handler functionality. If this option is
+	  enabled then the LP Core will output a panic dump over LP UART,
+	  similar to what the main core does. Output depends on LP UART already being
+	  initialized and configured.
+	  Disabling this option will reduce the LP core binary size by not
+	  linking in panic handler functionality.
+
+config ULP_HP_UART_CONSOLE_PRINT
+	bool "Route lp_core_printf to the console HP-UART"
+	depends on ULP_COPROC_TYPE_LP_CORE
+	help
+	  Set this option to route lp_core_printf to the console HP-UART.
+	  This allows you to easily view print outputs from the LP core, without
+	  having to connect to the LP-UART. This option comes with the following
+	  limitations:
+
+	  1. There is no mutual exclusion between the HP-Core and the LP-Core accessing
+	  the HP-UART, which means that if both cores are logging heavily the output
+	  strings might get mangled together.
+	  2. The HP-UART can only work while the HP-Core is running, which means that
+	  if the HP-Core is in deep sleep, the LP-Core will not be able to print to the
+	  console HP-UART.
+
+	  Due to these limitations it is only recommended to use this option for easy debugging.
+	  For more serious use-cases you should use the LP-UART.
+
+config ULP_NORESET_UNDER_DEBUG
+	bool "Avoid resetting LP core when debugger is attached"
+	depends on ULP_COPROC_TYPE_LP_CORE
+	default y
+	help
+	  Enable this feature to avoid resetting LP core in sleep mode when debugger is attached,
+	  otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed.
+	  This is a workaround until it will be fixed in HW.
+
+endmenu
+
+endmenu  # Ultra Low Power (ULP) Coprocessor

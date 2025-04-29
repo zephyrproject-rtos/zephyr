@@ -1,5 +1,6 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # Copyright 2023-2025 NXP
+# Copyright 2025 Ezurio LLC
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,8 +17,14 @@ config REMOTE_BOARD
 	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
+	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
 	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
+	default "nrf54l09pdk/nrf54l09/cpuflpr" if $(BOARD) = "nrf54l09pdk"
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
+	default "nrf54l20pdk/nrf54l20/cpuflpr" if $(BOARD) = "nrf54l20pdk"
+	default "ophelia4ev/cpuflpr" if $(BOARD) = "ophelia4ev"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
-	default "esp32_devkitc_wroom/esp32/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32_devkitc_wroom/esp32/procpu"
+	default "esp32_devkitc/esp32/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32_devkitc/esp32/procpu"
 	default "esp32s3_devkitm/esp32s3/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32s3_devkitm/esp32s3/procpu"
+	default "bl54l15_dvk/nrf54l15/cpuflpr" if "$(BOARD)${BOARD_QUALIFIERS}" = "bl54l15_dvk/nrf54l15/cpuapp"
+	default "bl54l15u_dvk/nrf54l15/cpuflpr" if $(BOARD) = "bl54l15u_dvk"

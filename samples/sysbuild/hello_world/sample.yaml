@@ -48,8 +48,10 @@ tests:
   sample.sysbuild.hello_world.nrf54l15dk_nrf54l15_cpuflpr:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args:
 
       - SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf
@@ -71,3 +73,19 @@ tests:
     extra_args:
       - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr_xip.conf
       - hello_world_SNIPPET=nordic-flpr-xip
+  sample.sysbuild.hello_world.bl54l15_dvk_nrf54l15_cpuflpr:
+    platform_allow:
+      - bl54l15_dvk/nrf54l15/cpuapp
+    integration_platforms:
+      - bl54l15_dvk/nrf54l15/cpuapp
+    extra_args:
+      - SB_CONF_FILE=sysbuild/bl54l15_dvk_nrf54l15_cpuflpr.conf
+      - hello_world_SNIPPET=nordic-flpr
+  sample.sysbuild.hello_world.bl54l15u_dvk_nrf54l15_cpuflpr:
+    platform_allow:
+      - bl54l15u_dvk/nrf54l15/cpuapp
+    integration_platforms:
+      - bl54l15u_dvk/nrf54l15/cpuapp
+    extra_args:
+      - SB_CONF_FILE=sysbuild/bl54l15u_dvk_nrf54l15_cpuflpr.conf
+      - hello_world_SNIPPET=nordic-flpr

@@ -28,31 +28,7 @@ For more information about the CY8C624ABZI-S2D44 MCU SoC and CY8CKIT-062S2-AI bo
 Supported Features
 ==================
 
-The ``cy8ckit_062s2_ai/cy8c624abzi_s2d44`` board target supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | GPIO                  |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-| WATCHDOG  | on-chip    | watchdog              |
-+-----------+------------+-----------------------+
-
-
-The default configuration can be found in the defconfig and dts files:
-
-  - :zephyr_file:`boards/infineon/cy8ckit_062s2_ai/cy8ckit_062s2_ai_defconfig`
-  - :zephyr_file:`boards/infineon/cy8ckit_062s2_ai/cy8ckit_062s2_ai.dts`
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -86,6 +62,8 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The CY8CKIT-062S2-AI board includes an onboard programmer/debugger (`KitProg3`_)
 to provide debugging, flash programming, and serial communication over USB.

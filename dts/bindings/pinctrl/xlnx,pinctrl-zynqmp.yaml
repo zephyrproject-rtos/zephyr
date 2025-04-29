@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Xilinx ZynqMP SoC pinctrl node. It allows configuration of pin assignments
-  for the supported peripherals.
+  Xilinx ZynqMP SoC Pin Controller
+
+  It allows configuration of pin assignments for the supported peripherals.
 
   See Zynq UltraScale+ Devices Register Reference (UG1087) for details regarding
   valid pin assignments

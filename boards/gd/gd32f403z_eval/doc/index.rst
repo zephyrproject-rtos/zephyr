@@ -43,27 +43,7 @@ For more information about the GD32F403 SoC and GD32F403Z-Eval board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| EXTI      | on-chip    | EXTI interrupt        |
-|           |            | controller            |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | PWM                   |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling   |
-+-----------+------------+-----------------------+
-| ADC       | on-chip    | ADC                   |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -73,6 +53,8 @@ is UART0 at PIN-9 and PIN-10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before program your board make sure to configure boot setting and serial port.
 The default serial port is USART0.  This port uses header JP-5/6 to route

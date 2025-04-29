@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * SDA = P1.8 and P1.9
+ * SCL = P1.10 and P1.11
+ */
+
+/ {
+	aliases {
+		i2c-controller = &i2c21;
+		i2c-controller-target = &i2c22;
+	};
+};
+
+&pinctrl {
+	i2c21_default: i2c21_default {
+		group1 {
+			psels = <NRF_PSEL(TWIS_SDA, 1, 8)>,
+				<NRF_PSEL(TWIS_SCL, 1, 10)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c21_sleep: i2c21_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIS_SDA, 1, 8)>,
+				<NRF_PSEL(TWIS_SCL, 1, 10)>;
+			low-power-enable;
+		};
+	};
+
+	i2c22_default: i2c22_default {
+		group1 {
+			psels = <NRF_PSEL(TWIS_SDA, 1, 9)>,
+				<NRF_PSEL(TWIS_SCL, 1, 11)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c22_sleep: i2c22_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIS_SDA, 1, 9)>,
+				<NRF_PSEL(TWIS_SCL, 1, 11)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c21 {
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+	zephyr,concat-buf-size = <256>;
+	status = "okay";
+};
+
+&i2c22 {
+	compatible = "nordic,nrf-twis";
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};

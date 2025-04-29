@@ -325,9 +325,10 @@ for some low-latency use-cases. Specifically:
   potentially make a scheduling decision.
 
 Zephyr supports so-called 'direct' interrupts, which are installed via
-:c:macro:`IRQ_DIRECT_CONNECT`. These direct interrupts have some special
-implementation requirements and a reduced feature set; see the definition
-of :c:macro:`IRQ_DIRECT_CONNECT` for details.
+:c:macro:`IRQ_DIRECT_CONNECT` and whose handlers are declared using
+:c:macro:`ISR_DIRECT_DECLARE`. These direct interrupts have some special
+implementation requirements and a reduced feature set; see the definitions
+of :c:macro:`IRQ_DIRECT_CONNECT` and :c:macro:`ISR_DIRECT_DECLARE` for details.
 
 The following code demonstrates a direct ISR:
 
@@ -335,7 +336,6 @@ The following code demonstrates a direct ISR:
 
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-    /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)

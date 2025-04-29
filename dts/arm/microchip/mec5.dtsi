@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -19,6 +20,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			clock-frequency = <96000000>;
 		};
 	};
 
@@ -202,7 +204,7 @@
 			interrupts = <41 1>;
 			status = "disabled";
 		};
-		wdog: watchdog@40000400 {
+		watchdog0: watchdog@40000400 {
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
 			status = "disabled";
@@ -311,7 +313,7 @@
 			status = "disabled";
 		};
 		bbram: bb-ram@4000a800 {
-			reg = <0x4000a800 0x100>;
+			reg = <0x4000a800 0x80>;
 			reg-names = "memory";
 			status = "disabled";
 		};

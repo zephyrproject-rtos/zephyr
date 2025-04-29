@@ -1,0 +1,13 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+family:
+- name: openhwgroup_cva6
+  series:
+  - name: cv64a6
+    socs:
+    - name: cv64a6_imafdc
+    - name: cv64a6_imac
+  - name: cv32a6
+    socs:
+    - name: cv32a6
+vendor: OpenHW Group

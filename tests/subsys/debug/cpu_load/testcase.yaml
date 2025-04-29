@@ -1,0 +1,28 @@
+common:
+  tags: cpu_load
+  arch_allow:
+    - arm
+    - riscv
+  filter: CONFIG_CPU_LOAD
+tests:
+  debug.cpu_load:
+    integration_platforms:
+      - mps2/an385
+  debug.cpu_load.counter:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_CPU_LOAD_USE_COUNTER=y
+  debug.cpu_load.periodic_report:
+    integration_platforms:
+      - mps2/an385
+    extra_configs:
+      - CONFIG_CPU_LOAD_LOG_PERIODICALLY=50
+      - CONFIG_LOG=y
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_MODE_IMMEDIATE=y

@@ -13,11 +13,20 @@ config BT_CLASSIC
 	select BT_CENTRAL
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
+	select CRC
 	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth BR/EDR support
 
 if BT_CLASSIC
+config BT_LIMITED_DISCOVERABLE_DURATION
+	int "Maximum duration that a device is in limited discoverable mode in seconds"
+	default 60
+	range 31 60
+	help
+	  This option sets the maximum duration that a device is in limited discoverable mode in
+	  seconds.
+
 config BT_BR_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
@@ -34,6 +43,85 @@ config BT_MAX_SCO_CONN
 	help
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
+
+config BT_L2CAP_RET
+	bool "Bluetooth L2CAP retransmission mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP retransmission mode
+
+config BT_L2CAP_FC
+	bool "Bluetooth L2CAP flow control mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP flow control mode
+
+config BT_L2CAP_ENH_RET
+	bool "Bluetooth L2CAP enhance retransmission [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP enhance retransmission
+
+config BT_L2CAP_STREAM
+	bool "Bluetooth L2CAP streaming mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP streaming mode
+
+config BT_L2CAP_RET_FC
+	def_bool BT_L2CAP_RET || BT_L2CAP_FC || BT_L2CAP_ENH_RET || BT_L2CAP_STREAM
+
+if BT_L2CAP_RET_FC
+config BT_L2CAP_FCS
+	bool "Bluetooth L2CAP FCS Option [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_L2CAP_STREAM || BT_L2CAP_ENH_RET
+	help
+	  This option enables Bluetooth L2CAP FCS Option
+
+config BT_L2CAP_EXT_WIN_SIZE
+	bool "Bluetooth L2CAP Extended window size Option [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_L2CAP_STREAM || BT_L2CAP_ENH_RET
+	help
+	  This option enables Bluetooth L2CAP Extended window size Option
+
+config BT_L2CAP_MPS
+	int "Bluetooth L2CAP MPS for retransmission and Flow control"
+	default 48
+	range 48 BT_L2CAP_TX_MTU
+	help
+	  Bluetooth L2CAP MPS for retransmission and Flow control
+
+config BT_L2CAP_MAX_WINDOW_SIZE
+	int "Maximum Windows Size of Retransmission and Flow Control"
+	default 1
+	range 1 32
+	help
+	  Maximum Windows Size of Retransmission and Flow Control.
+	  The minimum (and default) number is 1.
+
+config BT_L2CAP_BR_RET_TIMEOUT
+	int "Retransmission timeout (milliseconds)"
+	default 2000
+	range 1000 2000
+	help
+	  The Retransmission timeout shall be three times the value of flush timeout,
+	  subject to a minimum of 1000 milliseconds and maximum of 2000 milliseconds.
+
+config BT_L2CAP_BR_MONITOR_TIMEOUT
+	int "Monitor timeout (milliseconds)"
+	default 12000 if BT_L2CAP_ENH_RET
+	default BT_L2CAP_BR_RET_TIMEOUT
+	range BT_L2CAP_BR_RET_TIMEOUT 12000
+	help
+	  If a flush timeout exists on the link for Enhanced Retransmission mode and
+	  both sides of the link are configured to the same flush timeout value then the
+	  monitor timeout shall be set to a value at least as large as the Retransmission
+	  timeout otherwise the value of the Monitor timeout shall be six times the value
+	  of flush timeout, subject to a minimum of the retransmission timeout value and
+	  a maximum of 12000 milliseconds.
+endif # BT_L2CAP_RET_FC
 
 config BT_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
@@ -86,7 +174,144 @@ config BT_HFP_AG
 	help
 	  This option enables Bluetooth AG support
 
+if BT_HFP_HF
+config BT_HFP_HF_CLI
+	bool "CLI presentation capability for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables CLI presentation capability for HFP HF
+
+config BT_HFP_HF_VOLUME
+	bool "Remote audio volume control for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Remote audio volume control for HFP HF
+
+config BT_HFP_HF_CODEC_NEG
+	bool "Codec Negotiation for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP HF
+
+config BT_HFP_HF_ECNR
+	bool "EC and/or NR function for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables EC and/or NR function for HFP HF
+
+if BT_HFP_HF_CODEC_NEG
+config BT_HFP_HF_CODEC_MSBC
+	bool "Support Codec mSBC for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP HF
+
+config BT_HFP_HF_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP HF
+endif # BT_HFP_HF_CODEC_NEG
+
+config BT_HFP_HF_3WAY_CALL
+	bool "Three-way calling for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Three-way calling for HFP HF
+
+config BT_HFP_HF_ECS
+	bool "Enhanced Call Status for HFP HF [EXPERIMENTAL]"
+	default y if BT_HFP_HF_3WAY_CALL
+	help
+	  This option enables Enhanced Call Status for HFP HF
+
+config BT_HFP_HF_ECC
+	bool "Enhanced Call Control for HFP HF [EXPERIMENTAL]"
+	default y if BT_HFP_HF_3WAY_CALL
+	help
+	  This option enables Enhanced Call Control for HFP HF
+
+config BT_HFP_HF_MAX_CALLS
+	int "Maximum supported calls for HFP HF [EXPERIMENTAL]"
+	default 2 if BT_HFP_HF_3WAY_CALL
+	default 1
+	range 1 2
+	help
+	  This option sets maximum supported calls for HFP HF
+
+config BT_HFP_HF_VOICE_RECG
+	bool "Voice recognition activation for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Voice recognition activation for HFP HF
+
+config BT_HFP_HF_ENH_VOICE_RECG
+	bool "Enhanced Voice Recognition Status for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_VOICE_RECG
+	help
+	  This option enables Enhanced Voice Recognition Status for HFP HF
+
+config BT_HFP_HF_VOICE_RECG_TEXT
+	bool "Voice Recognition Text for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_ENH_VOICE_RECG
+	help
+	  This option enables Voice Recognition Text for HFP HF
+
+config BT_HFP_HF_HF_INDICATORS
+	bool "HF Indicators for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables HF Indicators for HFP HF
+
+config BT_HFP_HF_HF_INDICATOR_ENH_SAFETY
+	bool "HF Indicator Enhanced Safety for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_HF_INDICATORS
+	help
+	  This option enables HF Indicator Enhanced Safety for HFP HF
+
+config BT_HFP_HF_HF_INDICATOR_BATTERY
+	bool "HF Indicator Battery level for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_HF_INDICATORS
+	help
+	  This option enables HF Indicator Battery level for HFP HF
+
+endif # BT_HFP_HF
+
 if BT_HFP_AG
+config BT_HFP_AG_EXT_ERR
+	bool "Extended Error Result Codes for HFP AG [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Extended Error Result Codes for HFP AG
+
+config BT_HFP_AG_CODEC_NEG
+	bool "Codec Negotiation for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP AG
+
+config BT_HFP_AG_ECNR
+	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables EC and/or NR function for HFP AG
+
+config BT_HFP_AG_3WAY_CALL
+	bool "Three-way calling for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Three-way calling for HFP AG
+
+config BT_HFP_AG_MAX_CALLS
+	int "Maximum supported calls for HFP AG [EXPERIMENTAL]"
+	default 2 if BT_HFP_AG_3WAY_CALL
+	default 1
+	range 1 2
+	help
+	  This option sets maximum supported calls for HFP AG
+
+config BT_HFP_AG_ECS
+	bool "Enhanced call status for HFP AG [EXPERIMENTAL]"
+	default y if BT_HFP_AG_3WAY_CALL
+	help
+	  This option enables Enhanced call status for HFP AG
+
+config BT_HFP_AG_ECC
+	bool "Enhanced call control for HFP AG [EXPERIMENTAL]"
+	default y if BT_HFP_AG_3WAY_CALL
+	help
+	  This option enables Enhanced call control for HFP AG
+
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
@@ -147,6 +372,53 @@ config BT_HFP_AG_RING_NOTIFY_INTERVAL
 	help
 	  Ring notification interval if the call is in alert state.
 	  The unit is seconds.
+
+config BT_HFP_AG_VOICE_RECG
+	bool "Voice recognition activation for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Voice recognition activation for HFP AG
+
+config BT_HFP_AG_ENH_VOICE_RECG
+	bool "Enhanced Voice Recognition Status for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_VOICE_RECG
+	help
+	  This option enables Enhanced Voice Recognition Status for HFP AG
+
+config BT_HFP_AG_VOICE_RECG_TEXT
+	bool "Voice Recognition Text for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_ENH_VOICE_RECG
+	help
+	  This option enables Voice Recognition Text for HFP AG
+
+config BT_HFP_AG_VOICE_TAG
+	bool "Attach a phone number for a voice tag for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_VOICE_RECG
+	help
+	  This option enables Attach a phone number for a voice tag for HFP AG
+
+config BT_HFP_AG_HF_INDICATORS
+	bool "HF Indicators for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables HF Indicators for HFP AG
+
+config BT_HFP_AG_HF_INDICATOR_ENH_SAFETY
+	bool "HF Indicator Enhanced Safety for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_HF_INDICATORS
+	help
+	  This option enables HF Indicator Enhanced Safety for HFP AG
+
+config BT_HFP_AG_HF_INDICATOR_BATTERY
+	bool "HF Indicator Battery level for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_HF_INDICATORS
+	help
+	  This option enables HF Indicator Battery level for HFP AG
+
+config BT_HFP_AG_REJECT_CALL
+	bool "Ability to reject a call for HFP AG [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables ability to reject a call for HFP AG
+
 endif # BT_HFP_AG
 
 config BT_AVDTP

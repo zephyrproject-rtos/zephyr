@@ -101,6 +101,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blues	Blues Wireless
@@ -303,6 +304,7 @@ hynitron	Hynitron
 hyundai	Hyundai Technology
 hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
+iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
@@ -358,6 +360,7 @@ kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
 kvaser	Kvaser
 kvg	Kverneland Group
+kws	KWS Computersysteme Gmbh
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
@@ -380,6 +383,7 @@ linksys	Belkin International, Inc. (Linksys)
 linutronix	Linutronix GmbH
 linux	Linux-specific binding
 linx	Linx Technologies
+liteon	LiteOn OptoElectronics
 litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
@@ -389,7 +393,6 @@ lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
-ltr	LiteOn OptoElectronics
 luatos	LuatOS Team
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
@@ -452,6 +455,7 @@ myir	MYIR Tech Limited
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
+neorv32	NEORV32 RISC-V Processor
 netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
@@ -486,6 +490,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openhwgroup	OpenHW Group
 openisa	open-isa.org
 openrisc	OpenRISC.io
 openthread	OpenThread.io
@@ -513,6 +518,7 @@ phicomm	PHICOMM Co., Ltd.
 phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
+pimoroni	Pimoroni Ltd.
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
 pixart	PixArt Imaging Inc.
@@ -576,6 +582,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
@@ -774,7 +781,7 @@ ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <soc.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/devicetree.h>
@@ -109,7 +110,13 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#if NRF_TIMER_HAS_SHUTDOWN
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+#else
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+#endif
+
 #ifdef COUNTER_ANY_FAST
 	struct counter_nrfx_data *data = dev->data;
 
@@ -148,6 +155,14 @@ static uint32_t read(const struct device *dev)
 static int get_value(const struct device *dev, uint32_t *ticks)
 {
 	*ticks = read(dev);
+	return 0;
+}
+
+static int reset(const struct device *dev)
+{
+	const struct counter_nrfx_config *config = dev->config;
+
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
 	return 0;
 }
 
@@ -445,6 +460,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,
+	.reset = reset,
 	.set_alarm = set_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,

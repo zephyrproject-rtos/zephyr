@@ -1,7 +1,4 @@
-.. _nrf51dk_nrf51822:
-
-nRF51 DK
-########
+.. zephyr:board:: nrf51dk
 
 Overview
 ********
@@ -22,12 +19,6 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf51dk_nrf51822.jpg
-     :align: center
-     :alt: nRF51 DK
-
-     nRF51 DK (Credit: Nordic Semiconductor)
-
 More information about the board can be found at the
 `nRF51 DK website`_. The `nRF51 Development Kit User Guide`_
 contains the processor's information and the datasheet.
@@ -43,38 +34,8 @@ is 16 MHz.
 Supported Features
 ==================
 
-The nrf51dk/nrf51822 board configuration supports the following nRF51
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF51 DK website`_ and `nRF51 Development Kit User Guide`_
 for a complete list of nRF51 Development Kit board hardware features.
 
@@ -100,6 +61,8 @@ Push buttons
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

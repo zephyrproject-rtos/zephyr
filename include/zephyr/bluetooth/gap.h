@@ -11,8 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
-#include <zephyr/sys/util_macro.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -740,7 +740,7 @@ extern "C" {
  */
 
 /** LE PHY types */
-enum {
+enum bt_gap_le_phy {
 	/** Convenience macro for when no PHY is set. */
 	BT_GAP_LE_PHY_NONE                    = 0,
 	/** LE 1M PHY */
@@ -760,7 +760,7 @@ enum {
 };
 
 /** Advertising PDU types */
-enum {
+enum bt_gap_adv_type {
 	/** Scannable and connectable advertising. */
 	BT_GAP_ADV_TYPE_ADV_IND               = 0x00,
 	/** Directed connectable advertising. */
@@ -776,7 +776,7 @@ enum {
 };
 
 /** Advertising PDU properties */
-enum {
+enum bt_gap_adv_prop {
 	/** Connectable advertising. */
 	BT_GAP_ADV_PROP_CONNECTABLE           = BIT(0),
 	/** Scannable advertising. */
@@ -818,6 +818,8 @@ enum {
 /** Maximum data time */
 #define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
 
+/** Minimum advertising set number */
+#define BT_GAP_SID_MIN                          0x00
 /** Maximum advertising set number */
 #define BT_GAP_SID_MAX                          0x0F
 /** Maximum number of consecutive periodic advertisement events that can be
@@ -1054,7 +1056,7 @@ enum {
 	(BT_GAP_US_TO_CONN_EVENT_LEN((_event_len) * USEC_PER_MSEC))
 
 /** Constant Tone Extension (CTE) types */
-enum {
+enum bt_gap_cte {
 	/** Angle of Arrival */
 	BT_GAP_CTE_AOA = 0x00,
 	/** Angle of Departure with 1 us slots */
@@ -1066,7 +1068,7 @@ enum {
 };
 
 /** @brief Peripheral sleep clock accuracy (SCA) in ppm (parts per million) */
-enum {
+enum bt_gap_sca {
 	BT_GAP_SCA_UNKNOWN = 0,   /**< Unknown */
 	BT_GAP_SCA_251_500 = 0,   /**< 251 ppm to 500 ppm */
 	BT_GAP_SCA_151_250 = 1,   /**< 151 ppm to 250 ppm */

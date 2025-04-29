@@ -4,14 +4,14 @@ common:
     - drivers
     - wifi
 tests:
-  nrf_wifi.bustest.nrf7002:
+  boards.nrf_wifi.bustest.nrf7002:
     sysbuild: true
     build_only: true
     integration_platforms:
       - nrf7002dk/nrf5340/cpuapp
     platform_allow: nrf7002dk/nrf5340/cpuapp
 
-  nrf_wifi.bustest.nrf7002ek:
+  boards.nrf.nrf_wifi.bustest.nrf7002ek:
     sysbuild: true
     build_only: true
     extra_args: SHIELD=nrf7002ek

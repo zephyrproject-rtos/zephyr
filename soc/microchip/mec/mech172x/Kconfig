@@ -11,12 +11,8 @@ config SOC_SERIES_MECH172X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_MEC5_HAL
-	select HAS_PM
 	select SOC_PREP_HOOK
 
 if SOC_SERIES_MECH172X
-
-config RTOS_TIMER
-	bool "MECH172x RTOS Timer(32KHz) as kernel timer"
 
 endif # SOC_SERIES_MECH172X

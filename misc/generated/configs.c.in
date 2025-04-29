@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /* file is auto-generated, do not modify ! */
 
 #include <zephyr/toolchain.h>

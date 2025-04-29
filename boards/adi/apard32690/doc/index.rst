@@ -87,32 +87,7 @@ Hardware
 Supported Features
 ==================
 
-Below interfaces are supported by Zephyr on APARD32690.
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| SYSTICK   | on-chip    | systick                            |
-+-----------+------------+------------------------------------+
-| CLOCK     | on-chip    | clock and reset control            |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | gpio                               |
-+-----------+------------+------------------------------------+
-| UART      | on-chip    | serial                             |
-+-----------+------------+------------------------------------+
-| SPI       | on-chip    | spi                                |
-+-----------+------------+------------------------------------+
-| ADIN1110  | spi        | ADIN1110 10BASE-T1L mac/phy        |
-+-----------+------------+------------------------------------+
-| TRNG      | on-chip    | entropy                            |
-+-----------+------------+------------------------------------+
-| Timer     | on-chip    | counter                            |
-+-----------+------------+------------------------------------+
-| W1        | on-chip    | one wire master                    |
-+-----------+------------+------------------------------------+
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -181,6 +156,8 @@ Connections and IOs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

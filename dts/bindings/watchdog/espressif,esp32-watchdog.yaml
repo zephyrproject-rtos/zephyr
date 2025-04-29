@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    ESP32 watchdog. ESP32 contains 3x Watchdog timers, 2x Main System Watchdog
+    ESP32 watchdog.
+
+    ESP32 contains 3x Watchdog timers, 2x Main System Watchdog
     Timer (MWDT), 1x RTC Watchdog Timer (RWDT). RWDT is not supported yet.
 
 compatible: "espressif,esp32-watchdog"

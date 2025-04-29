@@ -5,4 +5,4 @@ common:
     - native_sim
   harness: ctest
 tests:
-  sbom.spdx: {}
+  buildsystem.sbom.spdx: {}

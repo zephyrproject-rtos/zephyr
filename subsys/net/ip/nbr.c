@@ -122,7 +122,8 @@ int net_nbr_link(struct net_nbr *nbr, struct net_if *iface,
 	net_neighbor_lladdr[avail].ref++;
 	nbr->idx = avail;
 
-	net_linkaddr_set(&net_neighbor_lladdr[avail].lladdr, lladdr->addr,
+	net_linkaddr_set(&net_neighbor_lladdr[avail].lladdr,
+			 (uint8_t *)lladdr->addr,
 			 lladdr->len);
 	net_neighbor_lladdr[avail].lladdr.len = lladdr->len;
 	net_neighbor_lladdr[avail].lladdr.type = lladdr->type;
@@ -176,7 +177,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
 	return NULL;
 }
 
-struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx)
+struct net_linkaddr *net_nbr_get_lladdr(uint8_t idx)
 {
 	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		   "idx %d >= max %d", idx,
@@ -191,10 +192,10 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 
 	for (i = 0; i < table->nbr_count; i++) {
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
-		struct net_linkaddr lladdr = {
-			.addr = net_neighbor_lladdr[i].lladdr.addr,
-			.len = net_neighbor_lladdr[i].lladdr.len
-		};
+		struct net_linkaddr lladdr;
+
+		(void)net_linkaddr_set(&lladdr, net_neighbor_lladdr[i].lladdr.addr,
+				       net_neighbor_lladdr[i].lladdr.len);
 
 		net_nbr_unlink(nbr, &lladdr);
 	}

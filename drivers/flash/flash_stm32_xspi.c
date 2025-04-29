@@ -190,7 +190,9 @@ static XSPI_RegularCmdTypeDef xspi_prepare_cmd(const uint8_t transfer_mode,
 		.DQSMode = (transfer_rate == XSPI_DTR_TRANSFER)
 				? HAL_XSPI_DQS_ENABLE
 				: HAL_XSPI_DQS_DISABLE,
+#ifdef XSPI_CCR_SIOO
 		.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD,
+#endif /* XSPI_CCR_SIOO */
 	};
 
 	switch (transfer_mode) {
@@ -773,7 +775,9 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 		.DataLength = HAL_XSPI_DATA_NONE,
 		.DummyCycles = 0U,
 		.DQSMode = HAL_XSPI_DQS_DISABLE,
+#ifdef XSPI_CCR_SIOO
 		.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD,
+#endif /* XSPI_CCR_SIOO */
 	};
 
 	/* Reset enable in SPI mode and STR transfer mode */
@@ -1021,7 +1025,9 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		.DataMode = HAL_XSPI_DATA_NONE,
 		.DummyCycles = 0U,
 		.DQSMode = HAL_XSPI_DQS_DISABLE,
+#ifdef XSPI_CCR_SIOO
 		.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD,
+#endif /* XSPI_CCR_SIOO */
 	};
 
 	if (stm32_xspi_mem_ready(dev,
@@ -2121,11 +2127,13 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	} else {
 
 	}
+#if defined(XSPI_DCR1_DLYBYP)
 #if STM32_XSPI_DLYB_BYPASSED
 	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_BYPASS;
 #else
 	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
 #endif /* STM32_XSPI_DLYB_BYPASSED */
+#endif /* XSPI_DCR1_DLYBYP */
 
 
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
@@ -2405,7 +2413,7 @@ static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
 	.pclken = pclken,
 	.pclk_len = DT_NUM_CLOCKS(STM32_XSPI_NODE),
 	.irq_config = flash_stm32_xspi_irq_config_func,
-	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.flash_size = DT_INST_REG_SIZE(0),
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */

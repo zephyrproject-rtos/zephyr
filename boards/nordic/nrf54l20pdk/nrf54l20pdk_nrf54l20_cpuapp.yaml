@@ -14,7 +14,9 @@ flash: 449
 supported:
   - adc
   - counter
+  - dmic
   - gpio
   - i2c
   - pwm
+  - spi
   - watchdog

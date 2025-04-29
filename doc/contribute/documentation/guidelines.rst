@@ -883,6 +883,21 @@ Application build commands
 
       If set, additional arguments to the flash invocation.
 
+   .. rst:directive:option:: debug-args
+      :type: string
+
+      If set, additional arguments to the debug invocation.
+
+   .. rst:directive:option:: debugserver-args
+      :type: string
+
+      If set, additional arguments to the debugserver invocation.
+
+   .. rst:directive:option:: attach-args
+      :type: string
+
+      If set, additional arguments to the attach invocation.
+
    .. rst:directive:option:: snippets
       :type: string
 
@@ -942,7 +957,26 @@ very file can be done using the :rst:role:`zephyr_file` role.
 
       Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
 
-You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
+   You can reference specific lines or line ranges in a file by appending :samp:`#L{line_number}` or
+   :samp:`#L{start_line}-L{end_line}` to the file path::
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   Will render as:
+
+      See :zephyr_file:`doc/contribute/documentation/guidelines.rst#L3` for the main heading of
+      this document.
+
+   The role automatically verifies that the referenced file exists in the Zephyr tree and will
+   generate a warning during documentation build if the file is not found.
+
+   .. note::
+
+      Use the line references sparingly as keeping them accurate over time can be challenging as the
+      content of the linked file is subject to change.
+
+   You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
 
 .. rst:role:: zephyr_raw
 
@@ -964,6 +998,7 @@ You may use the :rst:role:`zephyr_raw` role instead if you want to reference the
 
          Check out :module_file:`hal_stm32:CMakeLists.txt` for more information.
 
+   Similar to :rst:role:`zephyr_file`, you can reference specific lines or line ranges in a file.
 
 Cross-referencing GitHub issues and pull requests
 =================================================
@@ -1245,6 +1280,21 @@ Boards
       This directive requires that the documentation is built with hardware features generation enabled
       (``zephyr_generate_hw_features`` config option set to ``True``). If disabled, a warning message
       will be shown instead of the hardware features tables.
+
+.. rst:directive:: .. zephyr:board-supported-runners::
+
+   This directive is used to show the supported runners for the board documented in the current
+   page, including which runner is the default for flashing and debugging.
+
+   The directive must be used in a document that also contains a :rst:dir:`zephyr:board` directive,
+   as it relies on the board information to generate the table.
+
+   .. note::
+
+      Similar to :rst:dir:`zephyr:board-supported-hw`, this directive requires hardware features
+      generation to be enabled (``zephyr_generate_hw_features`` config option set to ``True``) to
+      produce a complete table. If disabled, a warning message will be shown instead of the runners
+      tables.
 
 References
 **********

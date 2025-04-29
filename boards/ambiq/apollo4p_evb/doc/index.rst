@@ -22,35 +22,12 @@ For more information about the Apollo4 Plus SoC and Apollo4P EVB board:
 Supported Features
 ==================
 
-The Apollo4P EVB board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| STIMER    | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C(M)    | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_defconfig`
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 =========================
+
+.. zephyr:board-supported-runners::
 
 Flashing an application
 -----------------------

@@ -166,6 +166,8 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pg12>;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 };
 
 &mdio {
@@ -173,10 +175,9 @@
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 	};
 };
 

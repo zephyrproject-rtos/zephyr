@@ -22,38 +22,7 @@ For more information about the PSOC 63 BLE MCU SoC and CY8CPROTO-063-BLE board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | GPIO                  |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| SPI       | on-chip    | SPI                   |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-| I2C       | on-chip    | I2C                   |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | PWM                   |
-+-----------+------------+-----------------------+
-| Counter   | on-chip    | Counter               |
-+-----------+------------+-----------------------+
-| Bluetooth | on-chip    | Bluetooth             |
-+-----------+------------+-----------------------+
-
-
-The default configuration can be found in the Kconfig
-
-:zephyr_file:`boards/infineon/cy8cproto_063_ble/cy8cproto_063_ble_defconfig`
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -88,6 +57,8 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The CY8CPROTO-063-BLE includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 

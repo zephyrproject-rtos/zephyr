@@ -662,40 +662,8 @@ static uint8_t mcp_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_mcp_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_MCP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_MCP_DISCOVER);
-	tester_set_bit(rp->data, BTP_MCP_TRACK_DURATION_READ);
-	tester_set_bit(rp->data, BTP_MCP_TRACK_POSITION_READ);
-	tester_set_bit(rp->data, BTP_MCP_TRACK_POSITION_SET);
-	tester_set_bit(rp->data, BTP_MCP_PLAYBACK_SPEED_READ);
-	tester_set_bit(rp->data, BTP_MCP_PLAYBACK_SPEED_SET);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_MCP_SEEKING_SPEED_READ);
-	tester_set_bit(rp->data, BTP_MCP_ICON_OBJ_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_NEXT_TRACK_OBJ_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_NEXT_TRACK_OBJ_ID_SET);
-	tester_set_bit(rp->data, BTP_MCP_PARENT_GROUP_OBJ_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_CURRENT_GROUP_OBJ_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_CURRENT_GROUP_OBJ_ID_SET);
-
-	/* octet 2 */
-	tester_set_bit(rp->data, BTP_MCP_PLAYING_ORDER_READ);
-	tester_set_bit(rp->data, BTP_MCP_PLAYING_ORDER_SET);
-	tester_set_bit(rp->data, BTP_MCP_PLAYING_ORDERS_SUPPORTED_READ);
-	tester_set_bit(rp->data, BTP_MCP_MEDIA_STATE_READ);
-	tester_set_bit(rp->data, BTP_MCP_OPCODES_SUPPORTED_READ);
-	tester_set_bit(rp->data, BTP_MCP_CONTENT_CONTROL_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_SEGMENTS_OBJ_ID_READ);
-
-	/* octet 3 */
-	tester_set_bit(rp->data, BTP_MCP_CURRENT_TRACK_OBJ_ID_READ);
-	tester_set_bit(rp->data, BTP_MCP_CURRENT_TRACK_OBJ_ID_SET);
-	tester_set_bit(rp->data, BTP_MCP_CMD_SEND);
-	tester_set_bit(rp->data, BTP_MCP_CMD_SEARCH);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MCP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -1462,15 +1430,8 @@ static uint8_t mcs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_mcs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_MCS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_MCS_CMD_SEND);
-	tester_set_bit(rp->data, BTP_MCS_CURRENT_TRACK_OBJ_ID_GET);
-	tester_set_bit(rp->data, BTP_MCS_NEXT_TRACK_OBJ_ID_GET);
-	tester_set_bit(rp->data, BTP_MCS_INACTIVE_STATE_SET);
-	tester_set_bit(rp->data, BTP_MCS_PARENT_GROUP_SET);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_GMCS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

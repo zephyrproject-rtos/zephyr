@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 NXP
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M7)
 #include <fsl_flexspi_nor_boot.h>
 #endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
@@ -127,7 +127,7 @@ usb_phy_config_struct_t usbPhyConfig = {
 };
 #endif
 
-#ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M7)
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
 #ifdef CONFIG_XIP
 	.start = CONFIG_FLASH_BASE_ADDRESS,
@@ -408,13 +408,13 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 #endif
 
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
+#if CONFIG_ETH_NXP_ENET
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR4 &= ~IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR4 |= IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U);
@@ -442,7 +442,7 @@ __weak void clock_init(void)
 	 */
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET1G_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR5 |= IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U);
@@ -455,7 +455,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	/* 24MHz PTP clock */
 	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -463,8 +463,8 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	/* Configure lpspi using Osc48MDiv2 */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
@@ -494,7 +494,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#ifdef CONFIG_MCUX_ACMP
+#if defined(CONFIG_COMPARATOR_MCUX_ACMP) || defined(CONFIG_SENSOR_MCUX_ACMP)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))
 	/* Configure ACMP1 using Osc48MDiv2*/
 	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxOscRc48MDiv2;

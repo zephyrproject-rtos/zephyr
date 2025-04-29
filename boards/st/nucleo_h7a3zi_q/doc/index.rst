@@ -78,37 +78,7 @@ Nucleo H7A3ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h7a3zi_q board configuration supports the following hardware
-features:
-
-+-------------+------------+------------------------------------+
-| Interface   | Controller | Driver/Component                   |
-+=============+============+====================================+
-| NVIC        | on-chip    | nested vector interrupt controller |
-+-------------+------------+------------------------------------+
-| UART        | on-chip    | serial port                        |
-+-------------+------------+------------------------------------+
-| PINMUX      | on-chip    | pinmux                             |
-+-------------+------------+------------------------------------+
-| GPIO        | on-chip    | gpio                               |
-+-------------+------------+------------------------------------+
-| PWM         | on-chip    | pwm                                |
-+-------------+------------+------------------------------------+
-| ADC         | on-chip    | adc                                |
-+-------------+------------+------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                        |
-+-------------+------------+------------------------------------+
-| USB OTG HS  | on-chip    | USB device                         |
-+-------------+------------+------------------------------------+
-| RNG         | on-chip    | True Random number generator       |
-+-------------+------------+------------------------------------+
-
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_h7a3zi_q/nucleo_h7a3zi_q_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
@@ -140,6 +110,8 @@ assigned to USART3. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo H7A3ZI-Q board includes an ST-LINK/V3E embedded debug tool interface.
 

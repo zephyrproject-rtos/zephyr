@@ -6,8 +6,8 @@
 
 &spi0 {
 	status = "okay";
-	port_sel = <0>;
-	chip_select = <0>;
+	port-sel = <0>;
+	chip-select = <0>;
 	lines = <4>;
 
 	pinctrl-0 = < &shd_cs0_n_gpio055

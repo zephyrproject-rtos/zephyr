@@ -46,12 +46,7 @@ Hardware
 Supported Features
 ==================
 
-- Discrete LEDs (red and green)
-- Buttons (User and Reset)
-- Sensors (Accelerometer, Light, Temperature and Humidity, Pressure and Hall-Effect sensors)
-- Beeper
-- Radio (Bluetooth, IEEE 802.15.4)
-- SOC peripherals (ADC, Clock, Flash, GPIO, I2C, MPU, NVIC, PWM, Radio, RTC, SPI, USB, WDT)
+.. zephyr:board-supported-hw::
 
 Future Feature Support
 ======================
@@ -80,6 +75,8 @@ Digital Inputs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``croxel_cx1825/nrf52840`` board configuration
 can be built and flashed in the usual way (see :ref:`build_an_application`

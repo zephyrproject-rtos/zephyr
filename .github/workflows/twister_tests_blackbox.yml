@@ -15,66 +15,51 @@ on:
     - 'scripts/tests/twister_blackbox/**'
     - '.github/workflows/twister_tests_blackbox.yml'
 
+permissions:
+  contents: read
+
 jobs:
   twister-tests:
     name: Twister Black Box Tests
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-22.04]
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.27.4
-
     steps:
-    - name: Apply Container Owner Mismatch Workaround
-      run: |
-        # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
-        #        match the container user UID because of the way GitHub
-        #        Actions runner is implemented. Remove this workaround when
-        #        GitHub comes up with a fundamental fix for this problem.
-        git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
     - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Environment Setup
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-        west init -l . || true
-        # we do not depend on any hals, tools or bootloader, save some time and space...
-        west config manifest.group-filter -- -hal,-tools,-bootloader,-babblesim
-        west config manifest.project-filter -- -nrf_hw_models
-        west config --global update.narrow true
-        west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
-        west forall -c 'git reset --hard HEAD'
-
-        echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        path: zephyr
+        fetch-depth: 0
 
     - name: Set Up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: Go Into Venv
-      shell: bash
+    - name: install-packages
+      working-directory: zephyr
       run: |
-        python3 -m pip install --user virtualenv
-        python3 -m venv env
-        source env/bin/activate
-        echo "$(which python)"
+        pip install -r scripts/requirements-actions.txt --require-hashes
+        sudo apt-get update -y
+        sudo apt-get install -y lcov
 
-    - name: Install Packages
-      run: |
-        python3 -m pip install -U -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
+    - name: Setup Zephyr project
+      uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+      with:
+        app-path: zephyr
+        toolchains: all
 
     - name: Run Pytest For Twister Black Box Tests
+      working-directory: zephyr
       shell: bash
       env:
         ZEPHYR_BASE: ./
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       run: |
+        export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
         echo "Run twister tests"
         source zephyr-env.sh
-        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox
+        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/

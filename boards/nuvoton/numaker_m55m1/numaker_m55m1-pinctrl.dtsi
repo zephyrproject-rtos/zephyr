@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl/m55m1h2l-pinctrl.h"
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <PB12MFP_UART0_RXD>,
+				 <PB13MFP_UART0_TXD>;
+		};
+	};
+
+	/* TX/RX/RTS/CTS/RST --> D1/D0/A2/A3/D2 --> PB3/PB2/PB8/PB9/PC9 */
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <PB9MFP_UART1_nCTS>,
+				 <PB8MFP_UART1_nRTS>,
+				 <PB2MFP_UART1_RXD>,
+				 <PB3MFP_UART1_TXD>,
+				 <PC9MFP_GPIO>;
+		};
+	};
+
+	/* EMAC multi-function pins for MDIO, TX, REFCLK, RX pins */
+	emac_default: emac_default {
+		group0 {
+			pinmux = <PE8MFP_EMAC0_RMII_MDC>,
+				 <PE9MFP_EMAC0_RMII_MDIO>,
+				 <PC8MFP_EMAC0_RMII_REFCLK>,
+				 <PC7MFP_EMAC0_RMII_RXD0>,
+				 <PC6MFP_EMAC0_RMII_RXD1>,
+				 <PA7MFP_EMAC0_RMII_CRSDV>,
+				 <PA6MFP_EMAC0_RMII_RXERR>;
+		};
+		group1 {
+			pinmux = <PE10MFP_EMAC0_RMII_TXD0>,
+				 <PE11MFP_EMAC0_RMII_TXD1>,
+				 <PE12MFP_EMAC0_RMII_TXEN>;
+				 slew-rate = "fast";
+		};
+	};
+};

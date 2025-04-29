@@ -18,29 +18,12 @@ development board see the `Clicker RA4M1 website`_.
 Supported Features
 ==================
 
-The Zephyr Mikroe Clicker RA4M1 configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/mikroe/clicker_ra4m1/mikroe_clicker_ra4m1_defconfig`.
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building & Flashing
 ===================

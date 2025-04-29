@@ -1,0 +1,29 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/mcx/MCXA166VLQ-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <LPUART2_RXD_P2_3>,
+				<LPUART2_TXD_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart3: pinmux_lpuart3 {
+		group0 {
+			pinmux = <LPUART3_RXD_P4_2>,
+				<LPUART3_TXD_P4_5>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};

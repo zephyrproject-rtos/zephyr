@@ -21,6 +21,9 @@
 #include <hal/cam_ll.h>
 
 #include <zephyr/logging/log.h>
+
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
@@ -325,18 +328,34 @@ static int video_esp32_dequeue(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
-static int video_esp32_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int video_esp32_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
-	const struct video_esp32_config *cfg = dev->config;
+	struct video_esp32_data *data = dev->data;
+	struct video_buffer *vbuf = NULL;
 
-	return video_set_ctrl(cfg->source_dev, cid, value);
-}
+	if (cancel) {
+		if (data->is_streaming) {
+			video_esp32_set_stream(dev, false);
+		}
+		if (data->active_vbuf) {
+			k_fifo_put(&data->fifo_out, data->active_vbuf);
+			data->active_vbuf = NULL;
+		}
+		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
+			k_fifo_put(&data->fifo_out, vbuf);
+#ifdef CONFIG_POLL
+			if (data->signal_out) {
+				k_poll_signal_raise(data->signal_out, VIDEO_BUF_ABORTED);
+			}
+#endif
+		}
+	} else {
+		while (!k_fifo_is_empty(&data->fifo_in)) {
+			k_sleep(K_MSEC(1));
+		}
+	}
 
-static int video_esp32_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_ctrl(cfg->source_dev, cid, value);
+	return 0;
 }
 
 #ifdef CONFIG_POLL
@@ -401,9 +420,7 @@ static DEVICE_API(video, esp32_driver_api) = {
 	/* optional callbacks */
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
-	.flush = NULL,
-	.set_ctrl = video_esp32_set_ctrl,
-	.get_ctrl = video_esp32_get_ctrl,
+	.flush = video_esp32_flush,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif
@@ -411,9 +428,11 @@ static DEVICE_API(video, esp32_driver_api) = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))
+
 static const struct video_esp32_config esp32_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.source_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, source)),
+	.source_dev = SOURCE_DEV(0),
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(0, rx),
 	.rx_dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 	.data_width = DT_INST_PROP_OR(0, data_width, 8),
@@ -432,6 +451,8 @@ static struct video_esp32_data esp32_data = {0};
 
 DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
+
+VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
 
 static int video_esp32_cam_init_master_clock(void)
 {

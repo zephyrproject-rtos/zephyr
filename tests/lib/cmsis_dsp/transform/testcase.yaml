@@ -7,7 +7,13 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     tags: cmsis-dsp
-    skip: true
+    platform_allow:
+      - mps2/an521/cpu0
+      - native_sim/native
+      - mps2/an385
+      - qemu_cortex_r5/zynqmp_rpu
+    integration_platforms:
+      - native_sim/native
   libraries.cmsis_dsp.transform.cq15:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX

@@ -7,8 +7,17 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 
 #include <cmsis_core.h>
+#include "soc.h"
+
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	sys_write32(CRL_APB_RESET_CTRL_SRST_MASK, CRL_APB_RESET_CTRL);
+}
 
 void soc_reset_hook(void)
 {
@@ -19,4 +28,11 @@ void soc_reset_hook(void)
 
 	sctlr &= ~SCTLR_V_Msk;
 	__set_SCTLR(sctlr);
+}
+
+void soc_early_init_hook(void)
+{
+	/* Enable caches */
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 }

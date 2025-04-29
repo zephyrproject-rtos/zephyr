@@ -202,7 +202,9 @@ void dma_nxp_sdma_callback(sdma_handle_t *handle, void *userData, bool TransferD
 		break;
 	}
 
+	/* prepare next BD for transfer */
 	bd = &chan_data->bd_pool[bdIndex];
+	bd->count = xfer_size;
 	bd->status |= (uint8_t)kSDMA_BDStatusDone;
 
 	SDMA_StartChannelSoftware(dev_cfg->base, chan_data->index);
@@ -266,6 +268,7 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 			       struct dma_config *config)
 {
+	const struct sdma_dev_cfg *dev_cfg = dev->config;
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
 	struct dma_block_config *block_cfg;
@@ -291,6 +294,14 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	if (ret < 0) {
 		LOG_ERR("%s: failed to set peripheral type", __func__);
 		return ret;
+	}
+
+	if (chan_data->peripheral == kSDMA_PeripheralMultiFifoPDM) {
+		unsigned int n_fifos = 4; /* TODO: make this configurable */
+
+		SDMA_SetMultiFifoConfig(&chan_data->transfer_cfg, n_fifos, 0);
+		SDMA_EnableSwDone(dev_cfg->base, &chan_data->transfer_cfg, 0,
+				  chan_data->peripheral);
 	}
 
 	dma_nxp_sdma_setup_bd(dev, channel, config);
@@ -421,6 +432,7 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
+	dev_data->chan[chan_id].capacity = 0;
 
 	return true;
 }

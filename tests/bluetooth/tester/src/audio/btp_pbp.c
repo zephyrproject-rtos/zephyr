@@ -10,10 +10,13 @@
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pbp.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #define LOG_MODULE_NAME bttester_pbp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+#include "btp_bap_broadcast.h"
 
 #define PBP_EXT_ADV_METADATA_LEN_MAX 128
 
@@ -42,7 +45,7 @@ static bool scan_get_data(struct bt_data *data, void *user_data)
 	uint32_t broadcast_id;
 	uint8_t *metadata;
 	struct bt_uuid_16 adv_uuid;
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev = user_data;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev = user_data;
 
 	switch (data->type) {
 	case BT_DATA_BROADCAST_NAME:
@@ -86,7 +89,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 	net_buf_simple_clone(ad, &ad_copy);
 	bt_data_parse(&ad_copy, scan_get_broadcast_name_len, &broadcast_name_len);
 
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev_ptr;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev_ptr;
 
 	tester_rsp_buffer_lock();
 	tester_rsp_buffer_allocate(sizeof(*ev_ptr) + broadcast_name_len, (uint8_t **)&ev_ptr);
@@ -102,7 +105,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 
 	if (sys_get_le24(ev_ptr->broadcast_id) != BT_BAP_INVALID_BROADCAST_ID &&
 	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0) {
-		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANOUNCEMENT_FOUND,
+		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
 			     ev_ptr, sizeof(*ev_ptr) + broadcast_name_len);
 	}
 
@@ -119,13 +122,8 @@ static uint8_t pbp_read_supported_commands(const void *cmd, uint16_t cmd_len, vo
 {
 	struct btp_pbp_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_PBP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_PBP_SET_PUBLIC_BROADCAST_ANNOUNCEMENT);
-	tester_set_bit(rp->data, BTP_PBP_SET_BROADCAST_NAME);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_START);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_STOP);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PBP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -165,12 +163,29 @@ static int pbp_broadcast_source_adv_setup(void)
 	ext_ad[2].data_len = pba_buf.len;
 	ext_ad[2].data = pba_buf.data;
 
-	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, ext_ad,
-					     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings);
-	if (err) {
-		LOG_ERR("Could not set up extended advertisement: %d", err);
-		return -EINVAL;
+	struct btp_bap_broadcast_local_source *source;
+
+	source = btp_bap_broadcast_local_source_from_src_id_get(0);
+
+	if (source->ext_adv == NULL) {
+		err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, ext_ad,
+						     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings,
+						     &source->ext_adv);
+		if (err != 0) {
+			LOG_ERR("Could not set up extended advertisement: %d", err);
+			return -EINVAL;
+		}
+	} else {
+		err = bt_le_ext_adv_set_data(source->ext_adv, ext_ad, ARRAY_SIZE(ext_ad), NULL, 0);
+
+		if (err != 0) {
+			LOG_ERR("Could not set extended advertisement data: %d", err);
+			return -EINVAL;
+		}
 	}
+
+	source->broadcast_id = broadcast_id;
+	source->allocated = true;
 
 	return 0;
 }

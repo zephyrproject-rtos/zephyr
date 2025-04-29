@@ -177,6 +177,14 @@ static int entropy_stm32_resume(void)
 
 	res = clock_control_on(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+#if defined(CONFIG_SOC_STM32WB09XX)
+	/**
+	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
+	 * CLKDIV is 256 after reset which makes the RNG runs VERY slow.
+	 * Configure CLKDIV=1 to ensure RNG runs at an acceptable speed.
+	 */
+	LL_RNG_SetSamplingClockEnableDivider(rng, 0);
+#endif
 	LL_RNG_Enable(rng);
 	ll_rng_enable_it(rng);
 
@@ -224,10 +232,17 @@ static void configure_rng(void)
 		LL_RNG_SetHealthConfig(rng, desired_htcr);
 #endif /* health_test_config */
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+		LL_RNG_ResetConditioningResetBit(rng);
+		/* Wait for conditioning reset process to be completed */
+		while (LL_RNG_IsResetConditioningBitSet(rng) == 1) {
+		}
+#else
 		LL_RNG_DisableCondReset(rng);
 		/* Wait for conditioning reset process to be completed */
 		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
 		}
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 	}
 #endif /* STM32_CONDRST_SUPPORT */
 
@@ -277,13 +292,23 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	uint32_t count_timeout = 0;
 
-	LL_RNG_EnableCondReset(rng);
-	LL_RNG_DisableCondReset(rng);
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+		LL_RNG_SetConditioningResetBit(rng);
+		LL_RNG_ResetConditioningResetBit(rng);
+#else
+		LL_RNG_EnableCondReset(rng);
+		LL_RNG_DisableCondReset(rng);
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
+
 	/* When reset process is done cond reset bit is read 0
 	 * This typically takes: 2 AHB clock cycles + 2 RNG clock cycles.
 	 */
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+	while (LL_RNG_IsResetConditioningBitSet(rng) ||
+#else
 	while (LL_RNG_IsEnabledCondReset(rng) ||
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 		ll_rng_is_active_seis(rng) ||
 		ll_rng_is_active_secs(rng)) {
 		count_timeout++;

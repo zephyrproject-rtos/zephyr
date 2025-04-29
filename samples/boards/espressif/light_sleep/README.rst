@@ -32,7 +32,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/espressif/light_sleep
-   :board: esp32_devkitc_wroom/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
    :compact:
 

@@ -252,7 +252,7 @@ static int sys_clock_driver_init(void)
 	volatile uint32_t *mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(0);
 	uint32_t mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(0, bit);
 
-	*cfg->mclk |= cfg->mclk_mask;
+	*mclk |= mclk_mask;
 
 #ifdef MCLK
 	OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;

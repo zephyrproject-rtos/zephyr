@@ -39,28 +39,7 @@ can be found in these documents:
 Supported Features
 ==================
 
-The Zephyr steval_fcu001v1 board configuration supports the following hardware features:
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| UART      | on-chip    | serial port-polling;               |
-|           |            | serial port-interrupt              |
-+-----------+------------+------------------------------------+
-| PINMUX    | on-chip    | pinmux                             |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | gpio                               |
-+-----------+------------+------------------------------------+
-| PWM       | on-chip    | pwm                                |
-+-----------+------------+------------------------------------+
-| I2C       | on-chip    | i2c                                |
-+-----------+------------+------------------------------------+
-
-
-The default configuration can be found in
-:zephyr_file:`boards/st/steval_fcu001v1/steval_fcu001v1_defconfig`
+.. zephyr:board-supported-hw::
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -94,6 +73,8 @@ The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``steval_fcu001v1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

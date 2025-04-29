@@ -11,6 +11,9 @@ if SOC_FAMILY_STM32
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
+config CACHE_STM32
+	default y if EXTERNAL_CACHE
+
 config CLOCK_CONTROL
 	default y
 
@@ -62,10 +65,6 @@ endchoice
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
-
-config PHY_INIT_PRIORITY
-	default 81
-	depends on NET_L2_ETHERNET && ETH_DRIVER
 
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION

@@ -9,11 +9,12 @@ menuconfig ETH_STM32_HAL
 	default y
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
-	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
+	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
 	select HWINFO
-	select ETH_DSA_SUPPORT
+	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
-	select MDIO if SOC_SERIES_STM32H5X || SOC_SERIES_STM32H7X
+	select MDIO if DT_HAS_ST_STM32_MDIO_ENABLED
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -26,7 +27,8 @@ choice ETH_STM32_HAL_API_VERSION
 
 config ETH_STM32_HAL_API_V2
 	bool "Use official STM32Cube HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32N6X
+	select USE_STM32_HAL_ETH_EX if SOC_SERIES_STM32N6X
 	help
 	  Use the official STM32Cube HAL driver instead of the legacy one.
 
@@ -44,6 +46,14 @@ config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	default 1500
 	help
 	  RX thread stack size
+
+config ETH_STM32_HAL_RX_THREAD_PREEMPTIVE
+	bool "STM32 Ethernet RX Thread pre-emptive [EXPERIMENTAL]"
+	default y if NET_TC_THREAD_PREEMPTIVE
+	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
 
 config ETH_STM32_HAL_RX_THREAD_PRIO
 	int "STM32 Ethernet RX Thread Priority"
@@ -64,31 +74,6 @@ config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 	  When this option is activated, the buffers for DMA transfer are
 	  moved from SRAM to the DTCM (Data Tightly Coupled Memory).
 
-config ETH_STM32_HAL_PHY_ADDRESS
-	int "Phy address"
-	default 0
-	help
-	  The phy address to use.
-
-config ETH_STM32_HAL_MII
-	bool "Use MII interface"
-	help
-	  Use the MII physical interface instead of RMII.
-
-config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
-	int "Carrier check timeout period (ms)"
-	default 500
-	range 100 30000
-	help
-	  Set the RX idle timeout period in milliseconds after which the
-	  PHY's carrier status is re-evaluated.
-
-config ETH_STM32_AUTO_NEGOTIATION_ENABLE
-	bool "Autonegotiation mode"
-	default y
-	help
-	  Enable this if using autonegotiation
-
 config ETH_STM32_HW_CHECKSUM
 	bool "Use TX and RX hardware checksum"
 	depends on !SOC_SERIES_STM32H5X
@@ -97,35 +82,20 @@ config ETH_STM32_HW_CHECKSUM
 	  performances.
 	  See reference manual for more information on this feature.
 
-if !ETH_STM32_AUTO_NEGOTIATION_ENABLE
-
-config ETH_STM32_SPEED_10M
-	bool "Set speed to 10 Mbps when autonegotiation is disabled"
-	help
-	  Set this if using 10 Mbps and when autonegotiation is disabled, otherwise speed
-	  is 100 Mbps
-
-config ETH_STM32_MODE_HALFDUPLEX
-	bool "Half duplex mode"
-	help
-	  Set this if using half duplex when autonegotiation is disabled otherwise
-	  duplex mode is full duplex
-
-endif # !ETH_STM32_AUTO_NEGOTIATION_ENABLE
-
-if SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
-
-config PTP_CLOCK_STM32_HAL
+menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
 	default y
 	depends on PTP_CLOCK || NET_L2_PTP
+	depends on ETH_STM32_HAL_API_V2
+	depends on SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
 	help
 	  Enable STM32 PTP clock support.
+
+if PTP_CLOCK_STM32_HAL
 
 config ETH_STM32_HAL_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"
 	default 50000000
-	depends on PTP_CLOCK_STM32_HAL
 	help
 	  Set the frequency in Hz sourced to the PTP timer.
 	  If the value is set properly, the timer will be accurate.
@@ -133,27 +103,24 @@ config ETH_STM32_HAL_PTP_CLOCK_SRC_HZ
 config ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT
 	int "Lower bound of clock frequency adjustment (in percent)"
 	default 90
-	depends on PTP_CLOCK_STM32_HAL
 	help
 	  Specifies lower bound of PTP clock rate adjustment.
 
 config ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT
 	int "Upper bound of clock frequency adjustment (in percent)"
 	default 110
-	depends on PTP_CLOCK_STM32_HAL
 	help
 	  Specifies upper bound of PTP clock rate adjustment.
 
 config ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO
 	int
 	default 85
-	depends on PTP_CLOCK_STM32_HAL
 	help
 	  STM32 PTP Clock initialization priority level. There is
 	  a dependency from the network stack that this device
 	  initializes before network stack (NET_INIT_PRIO).
 
-endif # SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
+endif # PTP_CLOCK_STM32_HAL
 
 config ETH_STM32_MULTICAST_FILTER
 	bool "Multicast hash filter support"

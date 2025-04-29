@@ -1,11 +1,35 @@
 # FRDM_RW612 board
 
-# Copyright 2024 NXP
+# Copyright 2024-25 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_FRDM_RW612
 
 config NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+if LVGL
+
+# Enable DMA for LCDIC
+config MIPI_DBI_NXP_LCDIC_DMA
+	default y if MIPI_DBI
+
+# Increase descriptor count. LVGL will allocate a 30KB buffer,
+# and the SPI driver sets up RX and TX side. Since LPC DMA has
+# 1KB limit per descriptor, we need 60
+config DMA_MCUX_LPC_NUMBER_OF_DESCRIPTORS
+	default 60
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+endif # LVGL
+
+if COUNTER_MCUX_LPC_RTC_1HZ
+
+config XTAL32K
+	default y
+
+endif # COUNTER_MCUX_LPC_RTC_1HZ
 
 endif # BOARD_FRDM_RW612

@@ -22,6 +22,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -51,9 +52,7 @@
  * destination array).  That's exactly the case we're testing, so turn
  * it off.
  */
-#if defined(__GNUC__) && __GNUC__ >= 8
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_TRUNCATION)
 
 ZTEST_SUITE(libc_common, NULL, NULL, NULL, NULL, NULL);
 
@@ -66,17 +65,17 @@ volatile long long_max = LONG_MAX;
 volatile long long_one = 1L;
 
 /**
- *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
+ * @defgroup libc_api C Library APIs
  * @ingroup all_tests
  * @{
  *
  */
-
+/**
+ * @brief Test c library limits
+ */
 ZTEST(libc_common, test_limits)
 {
-
 	zassert_true((long_max + long_one == LONG_MIN));
 }
 
@@ -85,13 +84,15 @@ static ssize_t foobar(void)
 	return -1;
 }
 
+/**
+ * @brief Test C library ssize_t
+ */
 ZTEST(libc_common, test_ssize_t)
 {
 	zassert_true(foobar() < 0);
 }
 
 /**
- *
  * @brief Test boolean types and values library
  *
  */
@@ -111,7 +112,6 @@ volatile long long_variable;
 volatile size_t size_of_long_variable = sizeof(long_variable);
 
 /**
- *
  * @brief Test standard type definitions library
  *
  */
@@ -133,7 +133,6 @@ volatile uint8_t unsigned_byte = 0xff;
 volatile uint32_t unsigned_int = 0xffffff00;
 
 /**
- *
  * @brief Test integer types library
  *
  */
@@ -158,7 +157,6 @@ ZTEST(libc_common, test_stdint)
 }
 
 /**
- *
  * @brief Test time_t to make sure it is at least 64 bits
  *
  */
@@ -180,7 +178,6 @@ ZTEST(libc_common, test_time_t)
 char buffer[BUFSIZE];
 
 /**
- *
  * @brief Test string memset
  *
  */
@@ -200,7 +197,6 @@ ZTEST(libc_common, test_memset)
 }
 
 /**
- *
  * @brief Test string length function
  *
  * @see strlen(), strnlen().
@@ -217,7 +213,6 @@ ZTEST(libc_common, test_strlen)
 }
 
 /**
- *
  * @brief Test string compare function
  *
  * @see strcmp(), strncasecmp().
@@ -650,14 +645,9 @@ ZTEST(libc_common, test_str_operate)
 
 	zassert_true(strncat(ncat, str1, 2), "strncat failed");
 	zassert_not_null(strncat(str1, str3, 2), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
 	zassert_not_null(strncat(str1, str3, 1), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic pop
-#endif
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
 	zassert_str_equal(ncat, "ddeeaa", "strncat failed");
 
 	zassert_is_null(strrchr(ncat, 'z'),
@@ -675,7 +665,7 @@ ZTEST(libc_common, test_str_operate)
  *
  * @brief test strtol function
  *
- * @detail   in 32bit system:
+ * @details   in 32bit system:
  *	when base is 10, [-2147483648..2147483647]
  *		   in 64bit system:
  *	when base is 10,
@@ -1336,3 +1326,6 @@ ZTEST(libc_common, test_exit)
 	zassert_equal(a, 0, "exit failed");
 #endif
 }
+/**
+ * @}
+ */

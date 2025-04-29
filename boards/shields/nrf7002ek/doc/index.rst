@@ -44,7 +44,7 @@ Usage
 The shield can be used in any application by setting ``--shield nrf7002ek`` when invoking ``west build``.
 
 SR Co-existence
-###############
+***************
 
 The nRF7002 EK supports SR co-existence provided the host board supports it. The SR co-existence
 pins are connected to the host board's GPIO pins. The interface is selected by setting
@@ -56,7 +56,7 @@ Two Kconfig options are available to enable SR co-existence:
 - :kconfig:option:`CONFIG_NRF70_SR_COEX_RF_SWITCH`: Control SR side RF switch.
 
 Shield Variants
-###############
+***************
 
 The nRF7002 EK is available in four variants:
 

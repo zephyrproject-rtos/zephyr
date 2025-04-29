@@ -75,6 +75,8 @@ int net_hostname_set(char *host, size_t len);
 #else
 static inline int net_hostname_set(char *host, size_t len)
 {
+	ARG_UNUSED(host);
+	ARG_UNUSED(len);
 	return -ENOTSUP;
 }
 #endif

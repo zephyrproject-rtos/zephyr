@@ -64,37 +64,37 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access Controller     |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
+USB
+===
 
+The USB pin assignments on the STM32N657XX microcontroller are immutable. This means that the specific
+pins designated for USB functionality are fixed and cannot be changed or reassigned to other functions,
+ensuring consistent and reliable USB communication.
 
-Other hardware features are not yet supported on this Zephyr port.
+USB PIN (IOs)
+=============
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32n6570_dk/stm32n6570_dk_defconfig`
-
++------------------+--------------------------------------+
+| Name             | Description                          |
++==================+======================================+
+| OTG1_HSDM        | USB OTG1 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG1_HSDP        | USB OTG1 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG1_ID          | USB OTG1 ID Pin                      |
++------------------+--------------------------------------+
+| OTG1_TXRTUNE     | USB OTG1 Transmit Retune             |
++------------------+--------------------------------------+
+| OTG2_HSDM        | USB OTG2 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG2_HSDP        | USB OTG2 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG2_ID          | USB OTG2 ID Pin                      |
++------------------+--------------------------------------+
+| OTG2_TXRTUNE     | USB OTG2 Transmit Retune             |
++------------------+--------------------------------------+
 
 Connections and IOs
 ===================
@@ -117,6 +117,12 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SDMMC2_CK : PC2
+- SDMMC2_CMD : PC3
+- SDMMC2_D0 : PC4
+- SDMMC2_D1 : PC5
+- SDMMC2_D2 : PC0
+- SDMMC2_D3 : PE4
 - SPI5_SCK : PE15
 - SPI5_MOSI : PG2
 - SPI5_MISO : PH8
@@ -125,6 +131,37 @@ Default Zephyr Peripheral Mapping:
 - USART_1_RX : PE6
 - USART_2_TX : PD5
 - USART_2_RX : PF6
+- XSPI1_NCS1 : PO0
+- XSPI1_DQS0 : PO2
+- XSPI1_DQS1 : PO3
+- XSPI1_CLK : PO4
+- XSPI1_IO0 : PP0
+- XSPI1_IO1 : PP1
+- XSPI1_IO2 : PP2
+- XSPI1_IO3 : PP3
+- XSPI1_IO4 : PP4
+- XSPI1_IO5 : PP5
+- XSPI1_IO6 : PP6
+- XSPI1_IO7 : PP7
+- XSPI1_IO8 : PP8
+- XSPI1_IO9 : PP9
+- XSPI1_IO10 : PP10
+- XSPI1_IO11 : PP11
+- XSPI1_IO12 : PP12
+- XSPI1_IO13 : PP13
+- XSPI1_IO14 : PP14
+- XSPI1_IO15 : PP15
+- XSPI2_NCS1 : PN1
+- XSPI2_DQS0 : PN0
+- XSPI2_CLK : PN6
+- XSPI2_IO0 : PN2
+- XSPI2_IO1 : PN3
+- XSPI2_IO2 : PN4
+- XSPI2_IO3 : PN5
+- XSPI2_IO4 : PN8
+- XSPI2_IO5 : PN9
+- XSPI2_IO6 : PN10
+- XSPI2_IO7 : PN11
 
 System Clock
 ------------
@@ -141,6 +178,8 @@ USART1. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
@@ -197,12 +236,6 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-         .. code-block:: console
-
-            $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 

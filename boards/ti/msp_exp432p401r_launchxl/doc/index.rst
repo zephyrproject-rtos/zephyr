@@ -24,29 +24,19 @@ MSP-EXP432P401R LaunchXL User's Guide.
 Supported Features
 ==================
 
+.. zephyr:board-supported-hw::
+
 * The on-board 32-kHz crystal allows for lower LPM3 sleep currents and a higher-precision clock source than the
   default internal 32-kHz REFOCLK. Therefore, the presence of the crystal allows the full range of low-power
   modes to be used.
 * The on-board 48-MHz crystal allows the device to run at its maximum operating speed for MCLK and HSMCLK.
 
-The MSP-EXP432P401R LaunchXL development board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port           |
-+-----------+------------+-----------------------+
-
-More details about the supported peripherals are available in MSP432P4XX TRM
-Other hardware features are not currently supported by the Zephyr kernel.
+More details about the supported peripherals are available in MSP432P4XX TRM.
 
 Building and Flashing
 *********************
+
+.. zephyr:board-supported-runners::
 
 Prerequisites:
 ==============

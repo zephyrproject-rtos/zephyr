@@ -5,20 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PHY_LOG_LEVEL);
-
 #include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/net/phy.h>
-#include <zephyr/net/mii.h>
-#include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/mdio.h>
+#include <zephyr/net/mii.h>
+#include <zephyr/net/phy.h>
+#include <zephyr/sys/util.h>
+#include "phy_adin2111_priv.h"
+
+LOG_MODULE_REGISTER(phy_adin, CONFIG_PHY_LOG_LEVEL);
 
 /* PHYs out of reset check retry delay */
 #define ADIN2111_PHY_AWAIT_DELAY_POLL_US			15U
@@ -353,7 +353,7 @@ static int phy_adin2111_cfg_link(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	if (!!(adv_speeds & LINK_FULL_10BASE_T)) {
+	if (!!(adv_speeds & LINK_FULL_10BASE)) {
 		return 0;
 	}
 
@@ -449,7 +449,7 @@ static int phy_adin2111_init(const struct device *dev)
 
 	data->dev = dev;
 	data->state.is_up = false;
-	data->state.speed = LINK_FULL_10BASE_T;
+	data->state.speed = LINK_FULL_10BASE;
 
 	/*
 	 * For adin1100 and further mii stuff,

@@ -33,10 +33,14 @@ tests:
     platform_allow: same54_xpro
   drivers.adc.sam.afec.build:
     platform_allow: sam_e70_xplained/same70q21
+  drivers.adc.silabs.build:
+    platform_allow: xg29_rb4412a
   drivers.adc.stm32.build:
     platform_allow: disco_l475_iot1
   drivers.adc.xec.build:
     platform_allow: mec15xxevb_assy6853
+  drivers.adc.realtek.rts5912.build:
+    platform_allow: rts5912_evb
   drivers.adc.test.build:
     platform_allow: qemu_cortex_m3
   drivers.adc.linker_generator.build:

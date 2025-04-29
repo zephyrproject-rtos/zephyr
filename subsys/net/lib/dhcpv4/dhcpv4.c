@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/hostname.h>
 #include "net_private.h"
 
 #include <zephyr/net/udp.h>
@@ -1053,6 +1054,64 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			break;
 		}
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
+		case DHCPV4_OPTIONS_BROADCAST: {
+			struct in_addr bcast;
+
+			/* Broadcast address option may present 1 address */
+			if (length != 4) {
+				NET_ERR("options_broadcast, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, bcast.s4_addr, 4)) {
+				NET_ERR("options_broadcast, short packet");
+				return false;
+			}
+
+			NET_DBG("options_broadcast: %s (ignored)",
+				net_sprint_ipv4_addr(&bcast));
+			break;
+		}
+		case DHCPV4_OPTIONS_HOST_NAME: {
+			char hostname[NET_HOSTNAME_SIZE] = { 0 };
+
+			if (length < 1) {
+				NET_ERR("options_host_name, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, hostname, MIN(length,
+							    sizeof(hostname) - 1))) {
+				NET_ERR("options_host_name, short packet");
+				return false;
+			}
+
+			NET_DBG("options_host_name: %s (ignored%s)", hostname,
+				(length > sizeof(hostname) - 1) ? " and truncated" : "");
+			break;
+		}
+		case DHCPV4_OPTIONS_DOMAIN_NAME: {
+			char domain_name[NET_HOSTNAME_SIZE] = { 0 };
+
+			if (length < 1) {
+				NET_ERR("options_domain_name, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, domain_name, MIN(length,
+							       sizeof(domain_name) - 1))) {
+				NET_ERR("options_domain_name, short packet");
+				return false;
+			}
+
+			NET_DBG("options_domain_name: %s (ignored%s)", domain_name,
+				(length > sizeof(domain_name) - 1) ? " and truncated" : "");
+			break;
+		}
+#endif /* CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED */
+
 #if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
@@ -1555,6 +1614,11 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	sys_snode_t *node = NULL;
 
+	if (mgmt_event != NET_EVENT_IF_UP &&
+	    mgmt_event != NET_EVENT_IF_DOWN) {
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
@@ -1602,6 +1666,16 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	sys_snode_t *node = NULL;
 	struct in_addr *addr;
 
+	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
+	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
+		return;
+	}
+
+	if (cb->info_length != sizeof(struct in_addr)) {
+		return;
+	}
+
+	addr = (struct in_addr *)cb->info;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -1614,17 +1688,6 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 	if (node == NULL) {
 		goto out;
 	}
-
-	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
-	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
-		goto out;
-	}
-
-	if (cb->info_length != sizeof(struct in_addr)) {
-		goto out;
-	}
-
-	addr = (struct in_addr *)cb->info;
 
 	if (!net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip, addr)) {
 		goto out;

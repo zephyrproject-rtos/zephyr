@@ -41,47 +41,15 @@ For more information about the LPC55S28 SoC and LPCXPresso55S28 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s28 board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s28 board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WWDT      | on-chip    | windowed watchdog timer             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
+.. note::
 
-Other hardware features are not currently enabled.
-
-The default configuration file
-:zephyr_file:`boards/nxp/lpcxpresso55s28/lpcxpresso55s28_defconfig`
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
+   already supported, which can also be re-used on this board.
 
 Connections and IOs
 ===================
@@ -133,15 +101,25 @@ configured as USART for the console and the remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This
-board is configured by default to use the LPC-Link2 CMSIS-DAP Onboard
-Debug Probe.
+LinkServer is the default runner for this board.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
+in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
+:ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+Refer to the detailed overview about :ref:`application_debugging` for additional
+information.
+
+The integrated MCU-Link hardware can also be used as a J-Link probe with a
+firmware update, as described in :ref:`mcu-link-jlink-onboard-debug-probe`.
+The :ref:`jlink-debug-host-tools` should be available in this case.
 
 Configuring a Console
 =====================
@@ -189,6 +167,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS zephyr-v2.4.0 *****
    Hello World! lpcxpresso55s28
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _LPC55S28 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc552x-s2x-mainstream-arm-cortex-m33-based-microcontroller-family:LPC552x-S2x

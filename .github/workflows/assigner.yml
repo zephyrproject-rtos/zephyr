@@ -15,23 +15,36 @@ on:
     types:
     - labeled
 
+permissions:
+  contents: read
+
 jobs:
   assignment:
     name: Pull Request Assignment
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write # to add assignees to pull requests
+      issues: write        # to add assignees to issues
 
     steps:
-    - name: Install Python dependencies
-      run: |
-        pip install -U PyGithub>=1.55 west
-
     - name: Check out source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Set up Python
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
 
     - name: Run assignment script
       env:
-        GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         FLAGS="-v"
         FLAGS+=" -o ${{ github.event.repository.owner.login }}"

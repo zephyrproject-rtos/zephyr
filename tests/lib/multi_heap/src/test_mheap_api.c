@@ -10,11 +10,13 @@
 #include <zephyr/sys/multi_heap.h>
 #include "test_mheap.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define MALLOC_IN_THREAD_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define INCREMENTAL_FILL_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE + \
+				     (BLK_NUM_MAX * sizeof(void *) * 2))
 #define OVERFLOW_SIZE    SIZE_MAX
 
 #define NMEMB   8
-#define SIZE    16
+#define SIZE    (K_HEAP_MEM_POOL_SIZE / NMEMB / 2)
 #define BOUNDS  (NMEMB * SIZE)
 
 #define N_MULTI_HEAPS 4
@@ -24,48 +26,17 @@ static struct sys_multi_heap multi_heap;
 static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
 static struct sys_heap mheaps[N_MULTI_HEAPS];
 
-K_SEM_DEFINE(thread_sem, 0, 1);
-K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-struct k_thread tdata;
+K_SEM_DEFINE(malloc_in_thread_sem, 0, 1);
+K_THREAD_STACK_DEFINE(malloc_in_thread_tstack, MALLOC_IN_THREAD_STACK_SIZE);
+struct k_thread malloc_in_thread_tdata;
 
-static void tIsr_malloc_and_free(void *data)
-{
-	ARG_UNUSED(data);
-	void *ptr;
+K_THREAD_STACK_DEFINE(malloc_free_tstack, INCREMENTAL_FILL_STACK_SIZE);
+struct k_thread malloc_free_tdata;
 
-	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN);
-	zassert_not_null(ptr, "bytes allocation failed from system pool");
-	k_free(ptr);
-}
+K_THREAD_STACK_DEFINE(realloc_tstack, INCREMENTAL_FILL_STACK_SIZE);
+struct k_thread realloc_tdata;
 
-static void thread_entry(void *p1, void *p2, void *p3)
-{
-	void *ptr;
-
-	k_current_get()->resource_pool = NULL;
-
-	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN);
-	zassert_is_null(ptr, "bytes allocation failed from system pool");
-
-	k_sem_give(&thread_sem);
-}
-
-/*test cases*/
-
-/**
- * @brief Test to demonstrate k_malloc() and k_free() API usage
- *
- * @ingroup kernel_heap_tests
- *
- * @details The test allocates 4 blocks from heap memory pool
- * using k_malloc() API. It also tries to allocate a block of size
- * 64 bytes which fails as all the memory is allocated up. It then
- * validates k_free() API by freeing up all the blocks which were
- * allocated from the heap memory.
- *
- * @see k_malloc()
- */
-ZTEST(mheap_api, test_mheap_malloc_free)
+static void malloc_free_handler(void *p1, void *p2, void *p3)
 {
 	void *block[2 * BLK_NUM_MAX], *block_fail;
 	int nb;
@@ -101,7 +72,29 @@ ZTEST(mheap_api, test_mheap_malloc_free)
 	zassert_is_null(block_fail, NULL);
 }
 
-ZTEST(mheap_api, test_mheap_realloc)
+static void tIsr_malloc_and_free(void *data)
+{
+	ARG_UNUSED(data);
+	void *ptr;
+
+	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN);
+	zassert_not_null(ptr, "bytes allocation failed from system pool");
+	k_free(ptr);
+}
+
+static void malloc_in_thread_handler(void *p1, void *p2, void *p3)
+{
+	void *ptr;
+
+	k_current_get()->resource_pool = NULL;
+
+	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN);
+	zassert_is_null(ptr, "bytes allocation failed from system pool");
+
+	k_sem_give(&malloc_in_thread_sem);
+}
+
+static void realloc_handler(void *p1, void *p2, void *p3)
 {
 	void *block1, *block2;
 	size_t nb;
@@ -122,6 +115,18 @@ ZTEST(mheap_api, test_mheap_realloc)
 		block1 = k_realloc(block1, nb * BLK_SIZE_MIN);
 		if (block1 == NULL) {
 			block1 = last_block1;
+			break;
+		}
+	}
+
+	/* For boards whose subsystems use the heap and leave holes, deplete
+	 * remaining memory using k_malloc
+	 */
+	void *holes[BLK_NUM_MAX * 2];
+
+	for (int i = 0; i < (BLK_NUM_MAX * 2); i++) {
+		holes[i] = k_malloc(BLK_SIZE_MIN);
+		if (holes[i] == NULL) {
 			break;
 		}
 	}
@@ -160,12 +165,67 @@ ZTEST(mheap_api, test_mheap_realloc)
 	/* Free block1 with k_realloc() this time */
 	block1 = k_realloc(block1, 0);
 	zassert_is_null(block1);
+
+	/* Free holes */
+	for (int i = 0; i < (BLK_NUM_MAX * 2); i++) {
+		if (holes[i] == NULL) {
+			break;
+		}
+		k_free(holes[i]);
+	}
+}
+
+/*test cases*/
+
+/**
+ * @brief Test to demonstrate k_malloc() and k_free() API usage
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test allocates 4 blocks from heap memory pool
+ * using k_malloc() API. It also tries to allocate a block of size
+ * 64 bytes which fails as all the memory is allocated up. It then
+ * validates k_free() API by freeing up all the blocks which were
+ * allocated from the heap memory.
+ *
+ * @see k_malloc()
+ */
+ZTEST(mheap_api, test_mheap_malloc_free)
+{
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
+	k_tid_t tid = k_thread_create(&malloc_free_tdata, malloc_free_tstack,
+				 INCREMENTAL_FILL_STACK_SIZE,
+				 malloc_free_handler,
+				 NULL, NULL, NULL,
+				 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+
+
+
+ZTEST(mheap_api, test_mheap_realloc)
+{
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
+	k_tid_t tid = k_thread_create(&realloc_tdata, realloc_tstack,
+				 INCREMENTAL_FILL_STACK_SIZE,
+				 realloc_handler,
+				 NULL, NULL, NULL,
+				 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
 }
 
 /**
  * @brief Test to demonstrate k_calloc() API functionality.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test validates k_calloc() API. When requesting a
  * huge size of space or a space larger than heap memory,
@@ -239,7 +299,7 @@ ZTEST(mheap_api, test_k_aligned_alloc)
  * a block of memory smaller than the pool and will fail when alloc
  * a block of memory larger than the pool.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
  */
@@ -256,7 +316,7 @@ ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
 	zassert_not_null(ptr, "bytes allocation failed from system pool");
 	k_free(ptr);
 
-	zassert_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
+	zassert_is_null((char *)z_thread_malloc(K_HEAP_MEM_POOL_SIZE * 2),
 						"overflow check failed");
 }
 
@@ -268,7 +328,7 @@ ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
  * memory because in this situation, the kernel will assign the heap memory
  * as resource pool.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see z_thread_malloc(), k_free()
  */
@@ -287,7 +347,7 @@ ZTEST(mheap_api, test_malloc_in_isr)
  *
  * @details When a thread's resource pool is not assigned, alloc memory will fail.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see z_thread_malloc()
  */
@@ -297,11 +357,12 @@ ZTEST(mheap_api, test_malloc_in_thread)
 		return;
 	}
 
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			      thread_entry, NULL, NULL, NULL,
-			      0, 0, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&malloc_in_thread_tdata, malloc_in_thread_tstack,
+				 MALLOC_IN_THREAD_STACK_SIZE, malloc_in_thread_handler,
+				 NULL, NULL, NULL,
+				 0, 0, K_NO_WAIT);
 
-	k_sem_take(&thread_sem, K_FOREVER);
+	k_sem_take(&malloc_in_thread_sem, K_FOREVER);
 
 	k_thread_abort(tid);
 }

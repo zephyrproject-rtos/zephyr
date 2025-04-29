@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,25 @@
 	pinmux_pwm0: pinmux_pwm0 {
 		group0 {
 			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_lcdic: pinmux_lcdic {
+		group0 {
+			pinmux = <IO_MUX_LCD_SPI_IO44
+				IO_MUX_LCD_SPI_IO45
+				IO_MUX_LCD_SPI_IO46
+				IO_MUX_LCD_SPI_IO47
+				IO_MUX_LCD_SPI_IO48
+				IO_MUX_LCD_SPI_IO49>;
+			slew-rate = "ultra";
+		};
+	};
+
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2S>;
 			slew-rate = "normal";
 		};
 	};

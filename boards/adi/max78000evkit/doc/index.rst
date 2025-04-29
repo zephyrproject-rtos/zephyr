@@ -11,10 +11,6 @@ to SPI bridge provides rapid access to onboard memory, allowing large networks o
 
 The Zephyr port is running on the MAX78000 MCU.
 
-.. image:: img/max78000evkit_img1.webp
-   :align: center
-   :alt: MAX78000 EVKIT
-
 Hardware
 ********
 
@@ -59,43 +55,7 @@ Hardware
 Supported Features
 ==================
 
-The ``max78000evkit/max78000/m4`` board target supports the following interfaces:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma controller                      |
-+-----------+------------+-------------------------------------+
-| Watchdog  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| Flash     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| Timer     | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | real time clock                     |
-+-----------+------------+-------------------------------------+
-| Timer     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| W1        | on-chip    | one wire master                     |
-+--------------------------------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -274,6 +234,8 @@ Connections and IOs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

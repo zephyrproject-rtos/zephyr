@@ -29,4 +29,11 @@ config KERNEL_SHELL_REBOOT_DELAY
 
 rsource "thread/Kconfig"
 
+config KERNEL_SHELL_PANIC_CMD
+	bool "Add a panic command"
+	help
+	  Whether a fatal error handler is installed or not, it may come in
+	  handy to have a way to generate a kernel panic as if something had
+	  crashed, but reliably through the shell.
+
 endif # KERNEL_SHELL

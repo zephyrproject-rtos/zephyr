@@ -38,8 +38,13 @@ Execute_AC_6_I 24_1_1
 Execute_AC_6_I 24_2_1
 Execute_AC_6_I 32_1_1
 Execute_AC_6_I 32_2_1
-# Execute_AC_6_I 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-# Execute_AC_6_I 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
+# bap_stream_rx.c:66): ISO receive lost
+# https://github.com/zephyrproject-rtos/zephyr/issues/84303
+# Execute_AC_6_I 441_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_6_I 441_2_1
 Execute_AC_6_I 48_1_1
 Execute_AC_6_I 48_2_1
 Execute_AC_6_I 48_3_1

@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -53,12 +54,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <stm32_ll_system.h>
 #endif
 
-#ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
-#include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
-
 
 /* Here are some redefinitions of ADC versions for better readability */
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -281,7 +277,7 @@ static int adc_stm32_dma_start(const struct device *dev,
  *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
  *	};
  */
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
 {
 	bool buf_within_nocache = false;
 
@@ -293,8 +289,10 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+#endif /* CONFIG_MEM_ATTR */
 
 	return buf_within_nocache;
 }
@@ -1080,10 +1078,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct device *dev = data->dev;
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = config->base;
-
-	/* Remove warning for some series */
-	ARG_UNUSED(adc);
+	__maybe_unused ADC_TypeDef *adc = config->base;
 
 	data->repeat_buffer = data->buffer;
 
@@ -1154,7 +1149,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct adc_stm32_cfg *config = data->dev->config;
-	ADC_TypeDef *adc = config->base;
+	__maybe_unused ADC_TypeDef *adc = config->base;
 
 	ARG_UNUSED(status);
 
@@ -1165,8 +1160,6 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Reset channel preselection register */
 	LL_ADC_SetChannelPreselection(adc, 0);
-#else
-	ARG_UNUSED(adc);
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
 }
 
@@ -1237,7 +1230,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
-	struct adc_stm32_data *data = dev->data;
+	__maybe_unused struct adc_stm32_data *data = dev->data;
 
 	int acq_time_index;
 
@@ -1255,7 +1248,6 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	switch (config->num_sampling_time_common_channels) {
 	case 0:
 #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
-		ARG_UNUSED(data);
 		LL_ADC_SetChannelSamplingTime(adc,
 					      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 					      (uint32_t)acq_time_index);
@@ -1491,10 +1483,8 @@ static int adc_stm32_set_clock(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	ADC_TypeDef *adc = config->base;
+	__maybe_unused ADC_TypeDef *adc = config->base;
 	int ret = 0;
-
-	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
 
 	if (clock_control_on(clk,
 		(clock_control_subsys_t) &config->pclken[0]) != 0) {
@@ -1560,10 +1550,8 @@ static int adc_stm32_init(const struct device *dev)
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	ADC_TypeDef *adc = config->base;
+	__maybe_unused ADC_TypeDef *adc = config->base;
 	int err;
-
-	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
 
 	LOG_DBG("Initializing %s", dev->name);
 

@@ -3,15 +3,35 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_ZPERF
-	bool "zperf shell utility"
+	bool "zperf library"
 	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_UDP
-	select NET_SOCKETS_SERVICE
 	select NET_SOCKETS
 	help
-	  This option enables zperf shell utility, which allows to generate
-	  network traffic and evaluate network bandwidth.
+	  This option enables zperf library, which allows to generate
+	  network traffic and evaluate network bandwidth in conjunction
+	  with other devices running zperf or a desktop running the
+	  iperf2 utility.
 
 if NET_ZPERF
+
+config NET_ZPERF_LEGACY_HEADER_COMPAT
+	bool "Legacy iperf UDP header format"
+	help
+	  iperf 2.0.10 (2017) updated the UDP header format in a
+	  backwards incompatible manner that cannot be automatically
+	  detected. This option reverts the header format for use with
+	  iperf version 2.0.9 and earlier.
+
+config ZPERF_SESSION_PER_THREAD
+	bool "Run each session in a separate thread"
+	select EVENTS
+	help
+	  Each session is started in its own thread. This means
+	  that the system will use more memory because multiple
+	  stack frames are needed, so this is not enabled by default.
+	  User is also able to set each thread priority separately and
+	  the ZPERF_WORK_Q_THREAD_PRIORITY is a default value if thread
+	  priority is not set when starting the session.
 
 config ZPERF_WORK_Q_THREAD_PRIORITY
 	int "zperf work queue thread priority"
@@ -37,8 +57,15 @@ config NET_ZPERF_MAX_PACKET_SIZE
 	help
 	  Upper size limit for packets sent by zperf.
 
+config NET_ZPERF_SERVER
+	bool "zperf server support"
+	select NET_SOCKETS_SERVICE
+	help
+	  Support running a zperf server for testing downloads from the application
+
 config NET_ZPERF_MAX_SESSIONS
 	int "Maximum number of zperf sessions"
+	depends on NET_ZPERF_SERVER
 	default 4
 	help
 	  Upper size limit for connections handled by zperf.

@@ -6,6 +6,5 @@ project(mdns_responder)
 
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/service.c)
-target_sources_ifdef(CONFIG_NET_VLAN app PRIVATE src/vlan.c)
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)

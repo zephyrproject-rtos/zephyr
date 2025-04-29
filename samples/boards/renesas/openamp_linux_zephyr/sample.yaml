@@ -1,0 +1,14 @@
+sample:
+  description: Enable message exchange between two cores, with the application core running Linux
+   and the real-time core running Zephyr, using the OpenAMP library.
+  name: OpenAMP Linux Zephyr RPMsg
+tests:
+  sample.boards.renesas.openamp_linux_zephyr:
+    build_only: true
+    platform_allow:
+      - rzg3s_smarc/r9a08g045s33gbg/cm33
+    integration_platforms:
+      - rzg3s_smarc/r9a08g045s33gbg/cm33
+    tags:
+      - mbox
+      - openamp

@@ -249,6 +249,32 @@
 				height = <1280>;
 				pixel-format = <0>;
 			};
+
+			test_st7701: st7701@5 {
+				compatible = "sitronix,st7701";
+				reg = <0x5>;
+				height = <800>;
+				width = <480>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <0>;
+				pvgamctrl = [00 10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+				nvgamctrl = [00 10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					hsync-active = <1>;
+					vsync-active = <0>;
+					de-active = <0>;
+					pixelclk-active = <0>;
+					hback-porch = <40>;
+					hsync-len = <32>;
+					hfront-porch = <8>;
+					vback-porch = <6>;
+					vsync-len = <8>;
+					vfront-porch = <9>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -360,6 +386,15 @@
 				segment-remap;
 				com-invdir;
 				prechargep = <0x22>;
+			};
+			test_st7567: st7567@2 {
+				compatible = "sitronix,st7567";
+				reg = <0x2>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
 			};
 		};
 	};

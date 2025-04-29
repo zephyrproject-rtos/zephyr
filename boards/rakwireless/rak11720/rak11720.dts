@@ -105,42 +105,48 @@
 	status = "okay";
 };
 
-&i2c2 {
-	compatible = "ambiq,i2c";
-	pinctrl-0 = <&i2c2_default>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
+&iom2 {
+	i2c2: i2c {
+		compatible = "ambiq,i2c";
+		pinctrl-0 = <&i2c2_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
+	};
 };
 
-&spi0 {
-	compatible = "ambiq,spi";
-	pinctrl-0 = <&spi0_default>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
-	clock-frequency = <DT_FREQ_M(1)>;
-	status = "okay";
+&iom0 {
+	spi0: spi {
+		compatible = "ambiq,spi";
+		pinctrl-0 = <&spi0_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+	};
 };
 
-&spi1 {
-	compatible = "ambiq,spi";
-	status = "okay";
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-names = "default";
-	clock-frequency = <DT_FREQ_M(1)>;
-	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+&iom1 {
+	spi1: spi {
+		compatible = "ambiq,spi";
+		status = "okay";
+		pinctrl-0 = <&spi1_default>;
+		pinctrl-names = "default";
+		clock-frequency = <DT_FREQ_M(1)>;
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 
-	lora: lora@0 {
-		compatible = "semtech,sx1262";
-		reg = <0>;
-		reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
-		busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
-		dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
-		antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
-		dio2-tx-enable;
-		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
-		tcxo-power-startup-delay-ms = <5>;
-		spi-max-frequency = <DT_FREQ_M(1)>;
+		lora: lora@0 {
+			compatible = "semtech,sx1262";
+			reg = <0>;
+			reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
+			busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
+			dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
+			antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			dio2-tx-enable;
+			dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+			tcxo-power-startup-delay-ms = <5>;
+			spi-max-frequency = <DT_FREQ_M(1)>;
+		};
 	};
 };
 

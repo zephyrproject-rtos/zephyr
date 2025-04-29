@@ -218,6 +218,35 @@ typedef uint8_t (*lorawan_battery_level_cb_t)(void);
 typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
 
 /**
+ * @brief Defines the link check answer handler function signature.
+ *
+ * @param demod_margin The demodulation margin in db.
+ * @param nb_gateways The number of gateways the device is connected to.
+ */
+typedef void (*lorawan_link_check_ans_cb_t)(uint8_t demod_margin, uint8_t nb_gateways);
+
+/**
+ * @brief Defines the user's descriptor callback handler function signature.
+ *
+ * The use of this callback is optional. When Fragmented Data Block Transport
+ * is enabled, the application will be notified with the descriptor field present on
+ * the FragSessionSetupReq command.
+ *
+ * @param descriptor Descriptor value given on the FragSessionSetupReq command.
+ *
+ * The meaning of Descriptor is application dependent. When doing a FUOTA
+ * with a binary image, it may represent the version of the firmware
+ * transported.
+ *
+ * @return 0 if successful. This represents, in the case that the descriptor is the firmware
+ * version, that the end-device is able to receive binary firmware. Otherwise, a negative error code
+ * (errno.h) indicating the reason for failure. Any negative error code will result in setting
+ * the Wrong Descriptor status bit mask when sending FragSessionSetupAns to the Network Server.
+ *
+ */
+typedef int (*transport_descriptor_cb)(uint32_t descriptor);
+
+/**
  * @brief Register a battery level callback function.
  *
  * Provide the LoRaWAN stack with a function to be called whenever a battery
@@ -245,6 +274,14 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
  * @param cb Pointer to datarate update callback
  */
 void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb);
+
+/**
+ * @brief Register a callback to be called when getting answer
+ * a to check link request.
+ *
+ * @param cb Pointer to link check ans callback
+ */
+void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb);
 
 /**
  * @brief Join the LoRaWAN network
@@ -405,6 +442,18 @@ int lorawan_request_device_time(bool force_request);
  */
 int lorawan_device_time_get(uint32_t *gps_time);
 
+/**
+ * @brief Request for link check according to LinkCheckReq MAC cmd
+ *
+ * Append MAC LinkCheckReq command. It will be processed on next send
+ * message or force sending empty message to request time immediately.
+ *
+ * @param force_request Immediately send an empty message to execute the request
+ *
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_request_link_check(bool force_request);
+
 #ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
 
 /**
@@ -438,6 +487,17 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+
+/**
+ * @brief Register a handle descriptor callback function.
+ *
+ * Provide to the fragmentation transport service a function to be called
+ * whenever a FragSessionSetupReq is received and Descriptor field should be
+ * handled.
+ *
+ * @param transport_descriptor_cb Callback for notification.
+ */
+void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb cb);
 
 /**
  * @brief Run Fragmented Data Block Transport service

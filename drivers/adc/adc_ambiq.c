@@ -16,13 +16,11 @@
 #include "adc_context.h"
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ambiq, CONFIG_ADC_LOG_LEVEL);
 
-typedef int (*ambiq_adc_pwr_func_t)(void);
-#define PWRCTRL_MAX_WAIT_US   5
 /* Number of slots available. */
 #define AMBIQ_ADC_SLOT_NUMBER AM_HAL_ADC_MAX_SLOTS
 
@@ -32,7 +30,6 @@ struct adc_ambiq_config {
 	uint8_t num_channels;
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pin_cfg;
-	ambiq_adc_pwr_func_t pwr_func;
 };
 
 struct adc_ambiq_data {
@@ -290,7 +287,7 @@ static int adc_ambiq_init(const struct device *dev)
 	}
 
 	/* power on ADC*/
-	ret = cfg->pwr_func();
+	ret = am_hal_adc_power_control(data->adcHandle, AM_HAL_SYSCTRL_WAKE, false);
 
 	/* Set up the ADC configuration parameters. These settings are reasonable
 	 *  for accurate measurements at a low sample rate.
@@ -404,14 +401,6 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 #define ADC_AMBIQ_INIT(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	ADC_AMBIQ_DRIVER_API(n);                                                                   \
-	static int pwr_on_ambiq_adc_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static void adc_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_ambiq_isr,              \
@@ -429,7 +418,6 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.num_channels = DT_PROP(DT_DRV_INST(n), channel_count),                            \
 		.irq_config_func = adc_irq_config_func_##n,                                        \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
-		.pwr_func = pwr_on_ambiq_adc_##n,                                                  \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                          \
 	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,   \

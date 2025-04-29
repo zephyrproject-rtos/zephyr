@@ -38,41 +38,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| MPU       | on-chip    | memory protection unit             |
-+-----------+------------+------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| SYSTICK   | on-chip    | systick                            |
-+-----------+------------+------------------------------------+
-| SYSRTC    | on-chip    | counter, timer                     |
-+-----------+------------+------------------------------------+
-| MSC       | on-chip    | flash memory                       |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | gpio                               |
-+-----------+------------+------------------------------------+
-| EUSART    | on-chip    | serial, spi                        |
-+-----------+------------+------------------------------------+
-| USART     | on-chip    | serial, spi                        |
-+-----------+------------+------------------------------------+
-| LDMA      | on-chip    | dma                                |
-+-----------+------------+------------------------------------+
-| SE        | on-chip    | entropy                            |
-+-----------+------------+------------------------------------+
-| WDOG      | on-chip    | watchdog                           |
-+-----------+------------+------------------------------------+
-| I2C       | on-chip    | i2c                                |
-+-----------+------------+------------------------------------+
-| RADIO     | on-chip    | bluetooth                          |
-+-----------+------------+------------------------------------+
-| ACMP      | on-chip    | comparator                         |
-+-----------+------------+------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -127,6 +93,8 @@ USART0 is connected to the board controller and is used for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware

@@ -30,7 +30,6 @@ except ImportError:
     print("Install tabulate python module with pip to use --device-testing option.")
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class DUT:
@@ -383,6 +382,9 @@ class HardwareMap:
                 logger.warning(f"Unsupported device ({d.manufacturer}): {d}")
 
     def save(self, hwm_file):
+        # list of board ids with boot-serial sequence
+        boot_ids = []
+
         # use existing map
         self.detected = natsorted(self.detected, key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
@@ -391,10 +393,13 @@ class HardwareMap:
                 if hwm:
                     hwm.sort(key=lambda x: x.get('id', ''))
 
-                    # disconnect everything
+                    # disconnect everything except boards with boot-serial sequence
                     for h in hwm:
-                        h['connected'] = False
-                        h['serial'] = None
+                        if h['product'] != 'BOOT-SERIAL' :
+                            h['connected'] = False
+                            h['serial'] = None
+                        else :
+                            boot_ids.append(h['id'])
 
                     for _detected in self.detected:
                         for h in hwm:
@@ -418,6 +423,11 @@ class HardwareMap:
                     hwm = hwm + new
                 else:
                     hwm = new
+
+            #remove duplicated devices with unknown platform names before saving the file
+            for h in hwm :
+                if h['id'] in boot_ids and h['platform'] == 'unknown':
+                    hwm.remove(h)
 
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)

@@ -332,8 +332,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 /**
  * @brief Dynamically allocate a thread stack.
  *
- * Relevant stack creation flags include:
- * - @ref K_USER allocate a userspace thread (requires `CONFIG_USERSPACE=y`)
+ * Dynamically allocate a thread stack either from a pool of thread stacks of
+ * size @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap.
+ * Order is determined by the @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and
+ * @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL} options. Thread stacks from the
+ * pool are of maximum size @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
+ *
+ * @note When no longer required, thread stacks allocated with
+ * `k_thread_stack_alloc()` must be freed with @ref k_thread_stack_free to
+ * avoid leaking memory.
  *
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
@@ -341,7 +348,10 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * @retval the allocated thread stack on success.
  * @retval NULL on failure.
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * Relevant stack creation flags include:
+ * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
+ *
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
 
@@ -355,7 +365,7 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
  * @retval -EINVAL if @p stack is invalid.
  * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall int k_thread_stack_free(k_thread_stack_t *stack);
 
@@ -373,7 +383,7 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * Stack objects passed to this function must be originally defined with
+ * Stack objects passed to this function may be statically allocated with
  * either of these macros in order to be portable:
  *
  * - K_THREAD_STACK_DEFINE() - For stacks that may support either user or
@@ -381,6 +391,9 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * - K_KERNEL_STACK_DEFINE() - For stacks that may support supervisor
  *   threads only. These stacks use less memory if CONFIG_USERSPACE is
  *   enabled.
+ *
+ * Alternatively, the stack may be dynamically allocated using
+ * @ref k_thread_stack_alloc.
  *
  * The stack_size parameter has constraints. It must either be:
  *
@@ -545,9 +558,10 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  *
  * @param timeout Desired duration of sleep.
  *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * millisecond.
+ * @return Zero if the requested time has elapsed or the time left to
+ * sleep rounded up to the nearest millisecond (e.g. if the thread was
+ * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
+ * the case where the remaining time is unrepresentable in an int32_t.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -1483,6 +1497,19 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
 	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MAX(t, 0)))
 
 /**
+ * @brief Generates an absolute/uptime timeout value from seconds
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in seconds.  That is, the
+ * timeout will expire immediately after the system uptime reaches the
+ * specified tick count.
+ *
+ * @param t Second uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_SEC(t) K_TIMEOUT_ABS_TICKS(k_sec_to_ticks_ceil64(t))
+
+/**
  * @brief Generates an absolute/uptime timeout value from milliseconds
  *
  * This macro generates a timeout delay that represents an expiration
@@ -1590,6 +1617,7 @@ struct k_timer {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
+	.period = {}, \
 	.status = 0, \
 	.user_data = 0, \
 	}
@@ -2341,7 +2369,8 @@ struct k_event {
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.events = 0 \
+	.events = 0, \
+	.lock = {}, \
 	}
 
 /**
@@ -4588,6 +4617,7 @@ struct k_msgq {
 #define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.lock = {}, \
 	.msg_size = q_msg_size, \
 	.max_msgs = q_max_msgs, \
 	.buffer_start = q_buffer, \
@@ -4596,6 +4626,7 @@ struct k_msgq {
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
+	.flags = 0, \
 	}
 
 /**
@@ -5770,6 +5801,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
 /**
  * @defgroup heap_apis Heap APIs
+ * @brief Memory allocation from the Heap
  * @ingroup kernel_apis
  * @{
  */
@@ -5927,6 +5959,8 @@ enum _poll_states_bits {
 
 /**
  * @defgroup poll_apis Async polling APIs
+ * @brief An API to wait concurrently for any one of multiple conditions to be
+ *        fulfilled
  * @ingroup kernel_apis
  * @{
  */

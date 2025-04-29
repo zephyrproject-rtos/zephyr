@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+ * Copyright (c) 2022-2025 Grant Ramsay <grant.ramsay@hotmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,18 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &spi2 {
@@ -87,5 +99,9 @@
 };
 
 &esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

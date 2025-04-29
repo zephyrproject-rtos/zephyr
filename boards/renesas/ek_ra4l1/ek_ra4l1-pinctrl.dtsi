@@ -25,7 +25,15 @@
 	adc0_default: adc0_default {
 		group1 {
 			/* input */
-			psels = <RA_PSEL(RA_PSEL_ADC, 0, 2)>;
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 3)>;
+			renesas,analog-enable;
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 4)>;
 			renesas,analog-enable;
 		};
 	};

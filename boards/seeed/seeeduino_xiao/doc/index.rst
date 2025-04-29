@@ -18,41 +18,7 @@ Hardware
 Supported Features
 ==================
 
-The seeeduino_xiao board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| DMA       | on-chip    | Direct memory access                     |
-+-----------+------------+------------------------------------------+
-| DAC       | on-chip    | Digital to analogue converter            |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| HWINFO    | on-chip    | Hardware info                            |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
-+-----------+------------+------------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed/seeeduino_xiao/seeeduino_xiao_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -103,6 +69,8 @@ the XIAO, the DAC is available on pin 0.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The XIAO ships the BOSSA compatible UF2 bootloader.  The bootloader can be
 entered by shorting the RST and GND pads twice.

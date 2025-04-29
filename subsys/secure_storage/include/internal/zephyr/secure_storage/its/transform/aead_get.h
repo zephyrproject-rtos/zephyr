@@ -9,7 +9,7 @@
  * The functions declared in this header allow customization
  * of the AEAD implementation of the ITS transform module.
  * They are not meant to be called directly other than by the AEAD ITS transform module.
- * This header may be included when providing a custom implementation of one
+ * This header file may and must be included when providing a custom implementation of one
  * or more of these functions (@kconfig{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_*_CUSTOM}).
  */
 #include <zephyr/secure_storage/its/common.h>
@@ -24,7 +24,7 @@ void secure_storage_its_transform_aead_get_scheme(psa_key_type_t *key_type, psa_
 
 /** @brief Returns the encryption key to use for an ITS entry's AEAD operations.
  *
- * @param[in]  uid The UID of the ITS entry for whom the returned key is used.
+ * @param[in]  uid The UID of the ITS entry for which the key is used.
  * @param[out] key The encryption key.
  *
  * @return `PSA_SUCCESS` on success, anything else on failure.

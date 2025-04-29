@@ -43,29 +43,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr b_g474e_dpow1 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| UCPD      | on-chip    | ucpd                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/b_g474e_dpow1/b_g474e_dpow1_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -97,6 +75,8 @@ For more details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

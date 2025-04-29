@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32U0 Main PLL node binding:
+  STM32U0 Main PLL.
 
   Takes one of clk_hse, clk_hsi or clk_msi as input clock, with
   an input frequency from 2.66 to 16 MHz. PLLM factor is used to set the input

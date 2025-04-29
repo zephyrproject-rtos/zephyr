@@ -23,6 +23,7 @@
 
 	soc-id {
 		device-id = <0x62>;
+		revision-reg = <0x00017FFC 4>;
 	};
 };
 

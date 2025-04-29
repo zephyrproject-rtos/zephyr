@@ -20,13 +20,13 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
-#define MONITOR_L2_MASK (_NET_EVENT_IF_BASE)
-#define MONITOR_L3_IPV4_MASK (_NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L4_MASK (_NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L2_MASK (NET_EVENT_IF_BASE)
+#define MONITOR_L3_IPV4_MASK (NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L3_IPV6_MASK (NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L4_MASK (NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#define MONITOR_L2_ETHERNET_MASK (_NET_ETHERNET_BASE)
+#define MONITOR_L2_ETHERNET_MASK (NET_ETHERNET_BASE)
 static struct net_mgmt_event_callback l2_ethernet_cb;
 #endif
 
@@ -481,6 +481,22 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc = "Capture";
 		*desc2 = "stopped";
 		break;
+	case NET_EVENT_VPN_PEER_ADD:
+		*desc = "VPN peer";
+		*desc2 = "add";
+		break;
+	case NET_EVENT_VPN_PEER_DEL:
+		*desc = "VPN peer";
+		*desc2 = "del";
+		break;
+	case NET_EVENT_VPN_CONNECTED:
+		*desc = "VPN";
+		*desc2 = "connected";
+		break;
+	case NET_EVENT_VPN_DISCONNECTED:
+		*desc = "VPN";
+		*desc2 = "disconnected";
+		break;
 	}
 
 	return info;
@@ -491,7 +507,7 @@ static char *get_l4_desc(struct event_msg *msg,
  */
 static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 {
-	char extra_info[NET_IPV6_ADDR_LEN];
+	char extra_info[NET_IPV6_ADDR_LEN + sizeof("id 0123456789 ")];
 	struct event_msg msg;
 
 	ARG_UNUSED(p2);
@@ -535,15 +551,15 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		if (layer == NET_MGMT_LAYER_L2) {
 			layer_str = "L2";
 			info = get_l2_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L3) {
 			layer_str = "L3";
 			info = get_l3_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		} else if (layer == NET_MGMT_LAYER_L4) {
 			layer_str = "L4";
 			info = get_l4_desc(&msg, &desc, &desc2,
-					   extra_info, NET_IPV6_ADDR_LEN);
+					   extra_info, sizeof(extra_info));
 		}
 
 		if (desc == unknown_event_str) {

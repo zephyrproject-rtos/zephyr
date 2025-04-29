@@ -10,29 +10,41 @@ on:
     branches:
       - v*-branch
 
+permissions:
+  contents: read
+
 jobs:
   backport:
     name: Backport Issue Check
     concurrency:
       group: backport-issue-check-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      issues: read # to check if associated issue exists for backport
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install Python dependencies
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
         run: |
-          pip install -U pygithub
+          pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Run backport issue checker
         env:
-          GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/release/list_backports.py \
-            -o ${{ github.event.repository.owner.login }} \
-            -r ${{ github.event.repository.name }} \
-            -b ${{ github.event.pull_request.base.ref }} \
-            -p ${{ github.event.pull_request.number }}
+          -o ${{ github.event.repository.owner.login }} \
+          -r ${{ github.event.repository.name }} \
+          -b ${{ github.event.pull_request.base.ref }} \
+          -p ${{ github.event.pull_request.number }}

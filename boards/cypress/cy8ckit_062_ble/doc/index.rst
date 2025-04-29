@@ -1,7 +1,4 @@
-.. _cy8ckit_062_ble:
-
-INFINEON PSOC 63 BLE Pioneer Kit
-################################
+.. zephyr:board:: cy8ckit_062_ble
 
 Overview
 ********
@@ -29,10 +26,6 @@ enabling you to emulate a BLE host on your computer.
 
 The Cortex-M0+ is a primary core on the board's SoC. It starts first and
 enables the CM4 core.
-
-.. image:: img/cy8ckit-062-ble.jpg
-     :align: center
-     :alt: CY8CKIT_062_BLE
 
 1. Battery charging indicator (LED6)
 2. USB PD output voltage availability indicator (LED7)
@@ -146,6 +139,8 @@ To get the OpenOCD package, it is required that you
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The CY8CKIT-062-BLE includes an onboard programmer/debugger (KitProg2) with
 mass storage programming to provide debugging, flash programming, and serial

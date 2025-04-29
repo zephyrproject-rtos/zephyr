@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,55 +63,80 @@ extern char __ram_text_reloc_start[];
 extern char __ram_text_reloc_size[];
 #endif
 
+#if defined(CONFIG_SRAM_VECTOR_TABLE)
+extern char _sram_vector_start[];
+extern char _sram_vector_size[];
+#endif
+
 static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
-		{
+	{
 		/* GCOV code coverage accounting area. Needs User permissions
 		 * to function
 		 */
 		.start = (uint32_t)&__gcov_bss_start,
 		.size = (uint32_t)&__gcov_bss_size,
 		.attr = K_MEM_PARTITION_P_RW_U_RW,
-		},
+	},
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 #if defined(CONFIG_NOCACHE_MEMORY)
-		{
+	{
 		/* Special non-cacheable RAM area */
 		.start = (uint32_t)&_nocache_ram_start,
 		.size = (uint32_t)&_nocache_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
-		},
+	},
 #endif /* CONFIG_NOCACHE_MEMORY */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
-		{
+	{
 		/* Special RAM area for program text */
 		.start = (uint32_t)&__ramfunc_start,
 		.size = (uint32_t)&__ramfunc_size,
+#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
+		.attr = K_MEM_PARTITION_P_R_U_RX,
+#else
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
-		},
+#endif
+	},
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
-		{
+	{
 		/* RAM area for relocated text */
 		.start = (uint32_t)&__ram_text_reloc_start,
 		.size = (uint32_t)&__ram_text_reloc_size,
+#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
+		.attr = K_MEM_PARTITION_P_R_U_RX,
+#else
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
-		},
+#endif
+	},
 #endif /* CONFIG_CODE_DATA_RELOCATION_SRAM */
+#if defined(CONFIG_SRAM_VECTOR_TABLE)
+	{
+		/* Vector table in SRAM */
+		.start = (uint32_t)&_sram_vector_start,
+		.size = (uint32_t)&_sram_vector_size,
+#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
+		.attr = K_MEM_PARTITION_P_R_U_RX,
+#else
+		.attr = K_MEM_PARTITION_P_RO_U_RO,
+#endif
+	},
+#endif /* CONFIG_SRAM_VECTOR_TABLE */
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
-		/* Main stack MPU guard to detect overflow.
-		 * Note:
-		 * FPU_SHARING and USERSPACE are not supported features
-		 * under CONFIG_MULTITHREADING=n, so the MPU guard (if
-		 * exists) is reserved aside of CONFIG_MAIN_STACK_SIZE
-		 * and there is no requirement for larger guard area (FP
-		 * context is not stacked).
-		 */
-		{
-			.start = (uint32_t)z_main_stack,
-			.size = (uint32_t)MPU_GUARD_ALIGN_AND_SIZE,
-			.attr = K_MEM_PARTITION_P_RO_U_NA,
-		},
+	/* Main stack MPU guard to detect overflow.
+	 * Note:
+	 * FPU_SHARING and USERSPACE are not supported features
+	 * under CONFIG_MULTITHREADING=n, so the MPU guard (if
+	 * exists) is reserved aside of CONFIG_MAIN_STACK_SIZE
+	 * and there is no requirement for larger guard area (FP
+	 * context is not stacked).
+	 */
+	{
+		.start = (uint32_t)z_main_stack,
+		.size = (uint32_t)MPU_GUARD_ALIGN_AND_SIZE,
+		.attr = K_MEM_PARTITION_P_RO_U_NA,
+	},
 #endif /* !CONFIG_MULTITHREADING && CONFIG_MPU_STACK_GUARD */
 };
 

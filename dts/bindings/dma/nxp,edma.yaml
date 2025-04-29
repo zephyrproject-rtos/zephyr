@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP enhanced Direct Memory Access (eDMA) node
+description: NXP enhanced Direct Memory Access (eDMA)
 
 compatible: "nxp,edma"
 

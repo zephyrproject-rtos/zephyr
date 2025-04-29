@@ -49,37 +49,7 @@ The board can be flashed by using STLinkV2 with the following connections.
 Supported Features
 ==================
 
-The MINI-M4 for STM32 board configuration supports the following hardware
-features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CRYP      | on-chip    | crypto               |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | PWM                  |
-+-----------+------------+----------------------+
-| USB       | on-chip    | USB                  |
-+-----------+------------+----------------------+
-
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in
-:zephyr_file:`boards/mikroe/mini_m4_for_stm32/mikroe_mini_m4_for_stm32_defconfig`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -88,6 +58,8 @@ The Zephyr console output is assigned to USART2. Default settings are 115200 8N1
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``mikroe_mini_m4_for_stm32`` board configuration can
 be built and flashed in the usual way (see :ref:`build_an_application` and

@@ -56,6 +56,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/adc/Kconfig.b91"
 
+source "drivers/adc/Kconfig.it51xxx"
+
 source "drivers/adc/Kconfig.it8xxx2"
 
 source "drivers/adc/Kconfig.mcux"
@@ -134,10 +136,18 @@ source "drivers/adc/Kconfig.ambiq"
 
 source "drivers/adc/Kconfig.renesas_ra"
 
+source "drivers/adc/Kconfig.renesas_rz"
+
 source "drivers/adc/Kconfig.max32"
 
 source "drivers/adc/Kconfig.ad4114"
 
 source "drivers/adc/Kconfig.ad7124"
+
+source "drivers/adc/Kconfig.ad405x"
+
+source "drivers/adc/Kconfig.ad4130"
+
+source "drivers/adc/Kconfig.rts5912"
 
 endif # ADC

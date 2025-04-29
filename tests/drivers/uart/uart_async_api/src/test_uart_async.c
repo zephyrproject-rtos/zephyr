@@ -82,16 +82,23 @@ static void uart_async_test_init(int idx)
 	k_sem_reset(&rx_buf_released);
 	k_sem_reset(&rx_disabled);
 
-#ifdef CONFIG_UART_WIDE_DATA
-	const struct uart_config uart_cfg = {
-		.baudrate = 115200,
-		.parity = UART_CFG_PARITY_NONE,
-		.stop_bits = UART_CFG_STOP_BITS_1,
-		.data_bits = UART_CFG_DATA_BITS_9,
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
+	struct uart_config uart_cfg;
+
+	zassert_equal(uart_config_get(uart_dev, &uart_cfg), 0);
+
+	if (IS_ENABLED(CONFIG_COVERAGE)) {
+		/* When coverage is used then performance is degraded - avoid using
+		 * higher baudrates.
+		 */
+		uart_cfg.baudrate = MIN(uart_cfg.baudrate, 115200);
+	} else if (IS_ENABLED(CONFIG_UART_WIDE_DATA)) {
+		uart_cfg.baudrate = 115200;
+		uart_cfg.parity = UART_CFG_PARITY_NONE;
+		uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
+		uart_cfg.data_bits = UART_CFG_DATA_BITS_9;
+		uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 	};
-	__ASSERT_NO_MSG(uart_configure(uart_dev, &uart_cfg) == 0);
-#endif
+	zassert_equal(uart_configure(uart_dev, &uart_cfg), 0);
 
 	if (!initialized) {
 		initialized = true;
@@ -407,7 +414,7 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 #if NOCACHE_MEM
 	static __aligned(32) uint8_t tx_buf[10] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t tx_buf[10];
+	 __aligned(32) uint8_t tx_buf[10];
 #endif /* NOCACHE_MEM */
 	int iter = 6;
 	uint32_t rx_timeout_ms = 50;
@@ -489,7 +496,7 @@ ZTEST_USER(uart_async_double_buf, test_double_buffer)
 #if NOCACHE_MEM
 	static __aligned(32) uint8_t tx_buf[4] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t tx_buf[4];
+	 __aligned(32) uint8_t tx_buf[4];
 #endif /* NOCACHE_MEM */
 
 	zassert_equal(uart_rx_enable(uart_dev, double_buffer[0], sizeof(double_buffer[0]),
@@ -503,9 +510,11 @@ ZTEST_USER(uart_async_double_buf, test_double_buffer)
 			      "TX_DONE timeout");
 		zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0,
 			      "RX_RDY timeout");
-		zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
-			      0,
-			      "Buffers not equal");
+		if (read_ptr) {
+			zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
+					0,
+					"Buffers not equal");
+		}
 	}
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
@@ -596,8 +605,8 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	static __aligned(32) uint8_t rx_buf[100] __used __NOCACHE;
 	static __aligned(32) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t rx_buf[100];
-	static __aligned(32) uint8_t tx_buf[100];
+	 __aligned(32) uint8_t rx_buf[100];
+	 __aligned(32) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 
 	memset(rx_buf, 0, sizeof(rx_buf));
@@ -701,7 +710,7 @@ ZTEST_USER(uart_async_write_abort, test_write_abort)
 #if NOCACHE_MEM
 	static __aligned(32) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t tx_buf[100];
+	 __aligned(32) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 
 	memset(test_rx_buf, 0, sizeof(test_rx_buf));
@@ -778,8 +787,8 @@ ZTEST_USER(uart_async_timeout, test_forever_timeout)
 	static __aligned(32) uint8_t rx_buf[100] __used __NOCACHE;
 	static __aligned(32) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t rx_buf[100];
-	static __aligned(32) uint8_t tx_buf[100];
+	 __aligned(32) uint8_t rx_buf[100];
+	 __aligned(32) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 
 	memset(rx_buf, 0, sizeof(rx_buf));
@@ -870,7 +879,7 @@ ZTEST_USER(uart_async_chain_write, test_chained_write)
 #if NOCACHE_MEM
 	static __aligned(32) uint8_t rx_buf[20] __used __NOCACHE;
 #else
-	static __aligned(32) uint8_t rx_buf[20];
+	 __aligned(32) uint8_t rx_buf[20];
 #endif /* NOCACHE_MEM */
 
 	memset(rx_buf, 0, sizeof(rx_buf));

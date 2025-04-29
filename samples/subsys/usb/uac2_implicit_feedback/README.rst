@@ -12,6 +12,10 @@ This sample demonstrates how to implement USB asynchronous bidirectional audio
 with implicit feedback. The host adjusts number of stereo samples sent for
 headphones playback based on the number of mono microphone samples received.
 
+.. warning::
+   Microsoft Windows USB Audio 2.0 driver available since Windows 10,
+   release 1703 does not support implicit feedback.
+
 Requirements
 ************
 
@@ -19,7 +23,7 @@ Target must be able to measure I2S block start (i.e. first sample from output
 buffer gets out) relative to USB SOF. The relative offset must be reported with
 single sample accuracy.
 
-This sample has been tested on :ref:`nrf5340dk_nrf5340`. While for actual audio
+This sample has been tested on :zephyr:board:`nrf5340dk`. While for actual audio
 experience it is necessary to connect external I2S ADC and I2S DAC, simple echo
 can be accomplished by shorting I2S data output with I2S data input.
 

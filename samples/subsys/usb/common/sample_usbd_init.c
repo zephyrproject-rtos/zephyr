@@ -36,7 +36,8 @@ USBD_DEVICE_DEFINE(sample_usbd,
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, CONFIG_SAMPLE_USBD_MANUFACTURER);
 USBD_DESC_PRODUCT_DEFINE(sample_product, CONFIG_SAMPLE_USBD_PRODUCT);
-USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn);
+IF_ENABLED(CONFIG_HWINFO, (USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn)));
+
 /* doc string instantiation end */
 
 USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "FS Configuration");
@@ -116,14 +117,17 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 		return NULL;
 	}
 
-	err = usbd_add_descriptor(&sample_usbd, &sample_sn);
+	IF_ENABLED(CONFIG_HWINFO, (
+		err = usbd_add_descriptor(&sample_usbd, &sample_sn);
+	))
 	if (err) {
 		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
 		return NULL;
 	}
 	/* doc add string descriptor end */
 
-	if (usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&sample_usbd, USBD_SPEED_HS,
 					     &sample_hs_config);
 		if (err) {
@@ -159,6 +163,7 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	/* doc functions register end */
 
 	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
+	usbd_self_powered(&sample_usbd, attributes & USB_SCD_SELF_POWERED);
 
 	if (msg_cb != NULL) {
 		/* doc device init-and-msg start */

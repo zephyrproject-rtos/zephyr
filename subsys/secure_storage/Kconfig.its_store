@@ -14,7 +14,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 	depends on FLASH_HAS_DRIVER_ENABLED \
 	 && $(dt_path_enabled,$(DT_ITS_PARTITION)) \
 	 && $(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions)
-	select ZMS
+	depends on ZMS
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
 	  It needs a `secure_storage_its_partition` devicetree chosen property that points
@@ -31,9 +31,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
 	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
 	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
-	imply FLASH_MAP
-	imply NVS
-	select SETTINGS
+	depends on SETTINGS
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
 	bool "No ITS store module implementation"
@@ -62,8 +60,25 @@ endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 
 if SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 
+config SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
+	bool "Custom naming scheme for the stored settings"
+	help
+	  This allows to use custom names for the settings that the implementation uses
+	  instead of the default naming scheme.
+	  When enabling this, implement the secure_storage_its_store_settings_get_name()
+	  function declared in <zephyr/secure_storage/its/store/settings_get.h>
+	  and set CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN appropriately.
+	  The header file is made available when this Kconfig option is enabled.
+
 config SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX
 	string "Subtree in which to store the settings, with a trailing slash. Can be empty."
 	default "its/"
+	depends on !SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
+
+config SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN
+	int "Maximum setting name length"
+	range 2 64
+	default 22 if !SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
+	default 0
 
 endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS

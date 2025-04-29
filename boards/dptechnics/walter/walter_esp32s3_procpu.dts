@@ -49,6 +49,7 @@
 		status = "okay";
 		compatible = "sqn,gm02s";
 		mdm-reset-gpios = <&gpio1 13 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		mdm-wake-gpios = <&gpio1 14 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
 	};
 };
 
@@ -118,5 +119,9 @@
 };
 
 &esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

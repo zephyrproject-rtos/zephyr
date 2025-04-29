@@ -1159,9 +1159,9 @@ static void state_collect(const struct shell *sh)
 			receive_state_change(sh, SHELL_RECEIVE_DEFAULT);
 			break;
 		}
-	}
 
-	z_transport_buffer_flush(sh);
+		z_transport_buffer_flush(sh);
+	}
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)

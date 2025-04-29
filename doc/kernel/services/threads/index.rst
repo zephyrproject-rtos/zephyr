@@ -189,8 +189,12 @@ require their regions to be of some power of two in size, and aligned to its
 own size.
 
 Because of this, portable code can't simply pass an arbitrary character buffer
-to :c:func:`k_thread_create`. Special macros exist to instantiate stacks,
-prefixed with ``K_KERNEL_STACK`` and ``K_THREAD_STACK``.
+to :c:func:`k_thread_create`. Special macros exist to instantiate stacks
+statically, prefixed with ``K_KERNEL_STACK`` and ``K_THREAD_STACK``.
+
+Additionally, stacks may be instantiated dynamically using
+:c:func:`k_thread_stack_alloc` and subsequently freed with
+:c:func:`k_thread_stack_free`.
 
 Kernel-only Stacks
 ==================
@@ -411,8 +415,9 @@ Spawning a Thread
 A thread is spawned by defining its stack area and its thread control block,
 and then calling :c:func:`k_thread_create`.
 
-The stack area must be defined using :c:macro:`K_THREAD_STACK_DEFINE` or
-:c:macro:`K_KERNEL_STACK_DEFINE` to ensure it is properly set up in memory.
+The stack area may be statically allocated using
+:c:macro:`K_THREAD_STACK_DEFINE` or :c:macro:`K_KERNEL_STACK_DEFINE` to ensure
+it is properly set up in memory.
 
 The size parameter for the stack must be one of three values:
 
@@ -425,6 +430,9 @@ The size parameter for the stack must be one of three values:
 - For a stack object defined with the ``K_KERNEL_STACK`` family of
   macros, the return value of :c:macro:`K_KERNEL_STACK_SIZEOF()` for that
   object.
+
+Alternatively, the stack area may be dynamically allocated using
+:c:func:`k_thread_stack_alloc` and freed using :c:func:`k_thread_stack_free`.
 
 The thread spawning function returns its thread id, which can be used
 to reference the thread.
@@ -469,6 +477,25 @@ The following code has the same effect as the code segment above.
    :c:type:`k_timeout_t` value, so :c:macro:`K_NO_WAIT` means to start the
    thread immediately. The corresponding parameter to :c:macro:`K_THREAD_DEFINE`
    is a duration in integral milliseconds, so the equivalent argument is 0.
+
+The following code dynamically allocates a thread stack, waits until the thread
+has joined, and then frees the dynamically allocated thread stack.
+
+.. code-block:: c
+
+    extern void my_entry_point(void *, void *, void *);
+
+    k_tid_t my_tid;
+    void *my_stack_area;
+
+    my_stack_area = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE);
+    my_tid = k_thread_create(&my_thread_data, my_stack_area,
+                              CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+                              my_entry_point,
+                              NULL, NULL, NULL,
+                              MY_PRIORITY, 0, K_NO_WAIT);
+    k_thread_join(my_tid, K_FOREVER);
+    k_thread_stack_free(my_stack_area);
 
 User Mode Constraints
 ---------------------

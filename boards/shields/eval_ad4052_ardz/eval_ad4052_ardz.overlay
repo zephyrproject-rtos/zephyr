@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	adc4052_eval_ad4052_ardz: adc4052@0 {
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		gp1-gpios = <&arduino_header 14 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		gp0-gpios = <&arduino_header 15 (GPIO_PULL_DOWN)>;
+		conversion-gpios = <&arduino_header 12 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+		status = "okay";
+		compatible = "adi,ad405x-adc";
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <16>;
+			zephyr,vref-mv = <2500>;
+		};
+	};
+};

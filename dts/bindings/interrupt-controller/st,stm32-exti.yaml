@@ -1,4 +1,4 @@
-description: STMicroelectronics STM32 family External Interrupt Controller
+description: STM32 External Interrupt Controller
 
 compatible: "st,stm32-exti"
 

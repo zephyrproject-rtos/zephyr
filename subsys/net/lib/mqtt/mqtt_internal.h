@@ -54,6 +54,36 @@ extern "C" {
 #define MQTT_PKT_TYPE_PINGREQ     0xC0
 #define MQTT_PKT_TYPE_PINGRSP     0xD0
 #define MQTT_PKT_TYPE_DISCONNECT  0xE0
+#define MQTT_PKT_TYPE_AUTH        0xF0
+
+/**@brief MQTT Property Types. */
+#define MQTT_PROP_PAYLOAD_FORMAT_INDICATOR          0x01
+#define MQTT_PROP_MESSAGE_EXPIRY_INTERVAL           0x02
+#define MQTT_PROP_CONTENT_TYPE                      0x03
+#define MQTT_PROP_RESPONSE_TOPIC                    0x08
+#define MQTT_PROP_CORRELATION_DATA                  0x09
+#define MQTT_PROP_SUBSCRIPTION_IDENTIFIER           0x0B
+#define MQTT_PROP_SESSION_EXPIRY_INTERVAL           0x11
+#define MQTT_PROP_ASSIGNED_CLIENT_IDENTIFIER        0x12
+#define MQTT_PROP_SERVER_KEEP_ALIVE                 0x13
+#define MQTT_PROP_AUTHENTICATION_METHOD             0x15
+#define MQTT_PROP_AUTHENTICATION_DATA               0x16
+#define MQTT_PROP_REQUEST_PROBLEM_INFORMATION       0x17
+#define MQTT_PROP_WILL_DELAY_INTERVAL               0x18
+#define MQTT_PROP_REQUEST_RESPONSE_INFORMATION      0x19
+#define MQTT_PROP_RESPONSE_INFORMATION              0x1A
+#define MQTT_PROP_SERVER_REFERENCE                  0x1C
+#define MQTT_PROP_REASON_STRING                     0x1F
+#define MQTT_PROP_RECEIVE_MAXIMUM                   0x21
+#define MQTT_PROP_TOPIC_ALIAS_MAXIMUM               0x22
+#define MQTT_PROP_TOPIC_ALIAS                       0x23
+#define MQTT_PROP_MAXIMUM_QOS                       0x24
+#define MQTT_PROP_RETAIN_AVAILABLE                  0x25
+#define MQTT_PROP_USER_PROPERTY                     0x26
+#define MQTT_PROP_MAXIMUM_PACKET_SIZE               0x27
+#define MQTT_PROP_WILDCARD_SUBSCRIPTION_AVAILABLE   0x28
+#define MQTT_PROP_SUBSCRIPTION_IDENTIFIER_AVAILABLE 0x29
+#define MQTT_PROP_SHARED_SUBSCRIPTION_AVAILABLE     0x2A
 
 /**@brief Masks for MQTT header flags. */
 #define MQTT_HEADER_DUP_MASK     0x08
@@ -76,7 +106,7 @@ extern "C" {
 #define GET_UT8STR_BUFFER_SIZE(STR) (sizeof(uint16_t) + (STR)->size)
 
 /**@brief Computes total size needed to pack a binary stream. */
-#define GET_BINSTR_BUFFER_SIZE(STR) ((STR)->len)
+#define GET_BINSTR_BUFFER_SIZE(STR) (sizeof(uint16_t) + (STR)->len)
 
 /**@brief Sets MQTT Client's state with one indicated in 'STATE'. */
 #define MQTT_SET_STATE(CLIENT, STATE) ((CLIENT)->internal.state |= (STATE))
@@ -147,6 +177,12 @@ enum mqtt_state {
 	MQTT_STATE_CONNECTED            = 0x00000004,
 };
 
+static inline int mqtt_is_version_5_0(const struct mqtt_client *client)
+{
+	return (IS_ENABLED(CONFIG_MQTT_VERSION_5_0) &&
+		client->protocol_version == MQTT_VERSION_5_0);
+}
+
 /**@brief Notify application about MQTT event.
  *
  * @param[in] client Identifies the client for which event occurred.
@@ -161,6 +197,16 @@ void event_notify(struct mqtt_client *client, const struct mqtt_evt *evt);
  * @return 0 if the procedure is successful, an error code otherwise.
  */
 int mqtt_handle_rx(struct mqtt_client *client);
+
+/**@brief Disconnect MQTT client.
+ *
+ * @param[in] client Identifies the client which disconnects.
+ * @param[in] result Disconnect reason.
+ * @param[in] notify Whether to notify the app or not.
+
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+void mqtt_client_disconnect(struct mqtt_client *client, int result, bool notify);
 
 /**@brief Constructs/encodes Connect packet.
  *
@@ -189,7 +235,9 @@ int connect_request_encode(const struct mqtt_client *client,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf);
+int publish_encode(const struct mqtt_client *client,
+		   const struct mqtt_publish_param *param,
+		   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Ack packet.
  *
@@ -201,7 +249,8 @@ int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf);
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_ack_encode(const struct mqtt_puback_param *param,
+int publish_ack_encode(const struct mqtt_client *client,
+		       const struct mqtt_puback_param *param,
 		       struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Receive packet.
@@ -214,7 +263,8 @@ int publish_ack_encode(const struct mqtt_puback_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_receive_encode(const struct mqtt_pubrec_param *param,
+int publish_receive_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrec_param *param,
 			   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Release packet.
@@ -227,7 +277,8 @@ int publish_receive_encode(const struct mqtt_pubrec_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_release_encode(const struct mqtt_pubrel_param *param,
+int publish_release_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrel_param *param,
 			   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Complete packet.
@@ -240,7 +291,8 @@ int publish_release_encode(const struct mqtt_pubrel_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_complete_encode(const struct mqtt_pubcomp_param *param,
+int publish_complete_encode(const struct mqtt_client *client,
+			    const struct mqtt_pubcomp_param *param,
 			    struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Disconnect packet.
@@ -252,7 +304,9 @@ int publish_complete_encode(const struct mqtt_pubcomp_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int disconnect_encode(struct buf_ctx *buf);
+int disconnect_encode(const struct mqtt_client *client,
+		      const struct mqtt_disconnect_param *param,
+		      struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Subscribe packet.
  *
@@ -264,7 +318,8 @@ int disconnect_encode(struct buf_ctx *buf);
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int subscribe_encode(const struct mqtt_subscription_list *param,
+int subscribe_encode(const struct mqtt_client *client,
+		     const struct mqtt_subscription_list *param,
 		     struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Unsubscribe packet.
@@ -277,7 +332,8 @@ int subscribe_encode(const struct mqtt_subscription_list *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int unsubscribe_encode(const struct mqtt_subscription_list *param,
+int unsubscribe_encode(const struct mqtt_client *client,
+		       const struct mqtt_subscription_list *param,
 		       struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Ping Request packet.
@@ -290,6 +346,20 @@ int unsubscribe_encode(const struct mqtt_subscription_list *param,
  * @return 0 if the procedure is successful, an error code otherwise.
  */
 int ping_request_encode(struct buf_ctx *buf);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**@brief Constructs/encodes Authenticate packet.
+ *
+ * @param[in] param Authenticate message parameters.
+ * @param[inout] buf_ctx Pointer to the buffer context structure,
+ *                       containing buffer for the encoded message.
+ *                       As output points to the beginning and end of
+ *                       the frame.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int auth_encode(const struct mqtt_auth_param *param, struct buf_ctx *buf);
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 
 /**@brief Decode MQTT Packet Type and Length in the MQTT fixed header.
  *
@@ -317,6 +387,7 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 
 /**@brief Decode MQTT Publish packet.
  *
+ * @param[inout] MQTT client for which packet is decoded.
  * @param[in] flags Byte containing message type and flags.
  * @param[in] var_length Length of the variable part of the message.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
@@ -325,73 +396,143 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_decode(uint8_t flags, uint32_t var_length, struct buf_ctx *buf,
+int publish_decode(struct mqtt_client *client, uint8_t flags,
+		   uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param);
 
 /**@brief Decode MQTT Publish Ack packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Ack parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_ack_decode(struct buf_ctx *buf, struct mqtt_puback_param *param);
+int publish_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		       struct mqtt_puback_param *param);
 
 /**@brief Decode MQTT Publish Receive packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Receive parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_receive_decode(struct buf_ctx *buf,
+int publish_receive_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_pubrec_param *param);
 
 /**@brief Decode MQTT Publish Release packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Release parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_release_decode(struct buf_ctx *buf,
+int publish_release_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_pubrel_param *param);
 
 /**@brief Decode MQTT Publish Complete packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Complete parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_complete_decode(struct buf_ctx *buf,
+int publish_complete_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			    struct mqtt_pubcomp_param *param);
 
 /**@brief Decode MQTT Subscribe packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Subscribe parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int subscribe_ack_decode(struct buf_ctx *buf,
+int subscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			 struct mqtt_suback_param *param);
 
 /**@brief Decode MQTT Unsubscribe packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Unsubscribe parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int unsubscribe_ack_decode(struct buf_ctx *buf,
+int unsubscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_unsuback_param *param);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**@brief Decode MQTT Disconnect packet.
+ *
+ * @param[in] MQTT client for which packet is decoded.
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] param Pointer to buffer for decoded Disconnect parameters.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int disconnect_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		      struct mqtt_disconnect_param *param);
+
+/**@brief Decode MQTT Auth packet.
+ *
+ * @param[in] MQTT client for which packet is decoded.
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] param Pointer to buffer for decoded Auth parameters.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int auth_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		struct mqtt_auth_param *param);
+
+/**@brief Set MQTT 5.0 disconnect reason.
+ *
+ * Packet parser can use this function to set a custom disconnect reason code,
+ * if not set, the client will use the default mapping between errno values and
+ * reason codes.
+ *
+ * @param[inout] MQTT client.
+ * @param[in] reason MQTT 5.0 disconnect reason code.
+ */
+static inline void set_disconnect_reason(struct mqtt_client *client,
+					 enum mqtt_disconnect_reason_code reason)
+{
+	client->internal.disconnect_reason = reason;
+}
+#else
+static inline void set_disconnect_reason(struct mqtt_client *client,
+					 enum mqtt_disconnect_reason_code reason)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(reason);
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+/**
+ * @brief Unpacks variable length integer from the buffer from the offset
+ *        requested.
+ *
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] val Memory where the value is to be unpacked.
+ *
+ * @retval Number of bytes parsed if the procedure is successful.
+ * @retval -EINVAL if the length decoding would use more that 4 bytes.
+ * @retval -EAGAIN if the buffer would be exceeded during the read.
+ */
+int unpack_variable_int(struct buf_ctx *buf, uint32_t *val);
 
 #ifdef __cplusplus
 }

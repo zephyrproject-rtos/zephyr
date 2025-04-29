@@ -2,10 +2,7 @@ common:
   tags:
     - net
     - zperf
-  # TODO: Does not work properly with native_posix, need more TLC
   platform_exclude:
-    - native_posix
-    - native_posix/native/64
     - sam_e70_xplained/same70q21
   min_ram: 64
 sample:
@@ -15,6 +12,11 @@ tests:
   sample.net.zperf:
     harness: net
     platform_allow: qemu_x86
+  sample.net.zperf_no_server:
+    harness: net
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_NET_ZPERF_SERVER=n
   sample.net.zperf_st:
     harness: console
     harness_config:
@@ -33,6 +35,11 @@ tests:
     harness: net
     extra_configs:
       - CONFIG_NET_SHELL=n
+    platform_allow: qemu_x86
+  sample.net.zperf_concurrent_upload:
+    harness: net
+    extra_configs:
+      - CONFIG_ZPERF_SESSION_PER_THREAD=y
     platform_allow: qemu_x86
   sample.net.zperf.netusb_ecm:
     harness: net

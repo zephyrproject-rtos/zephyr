@@ -26,6 +26,9 @@ on:
     - '.github/workflows/twister_tests.yml'
     - 'scripts/schemas/twister/'
 
+permissions:
+  contents: read
+
 jobs:
   twister-tests:
     name: Twister Unit Tests
@@ -33,25 +36,22 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: cache-pip-linux
-      if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}
-    - name: install-packages
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
       run: |
-        pip install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
     - name: Run pytest for twisterlib
       env:
         ZEPHYR_BASE: ./

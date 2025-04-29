@@ -15,39 +15,13 @@ It's available in two versions supporting two different frequency ranges and fea
 
 Some of the ESP32 I/O pins are accessible on the board's pin headers.
 
-Functional Description
-**********************
+Hardware
+********
 
-The following table below describes the key components, interfaces, and controls
-of the Lilygo TTGO LoRa32 board.
+Supported Features
+==================
 
-.. _SX127x: https://www.semtech.com/products/wireless-rf/lora-connect/sx1276#documentation
-.. _ESP32-PICO-D4: https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
-.. _SSD1306: https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
-
-+------------------+-------------------------------------------------------------------------+
-| Key Component    | Description                                                             |
-+==================+=========================================================================+
-| ESP32-PICO-D4    | This `ESP32-PICO-D4`_ module provides complete Wi-Fi and Bluetooth      |
-|                  | functionalities and integrates a 4-MB SPI flash.                        |
-+------------------+-------------------------------------------------------------------------+
-| Diagnostic LED   | One user LED connected to the GPIO pin.                                 |
-+------------------+-------------------------------------------------------------------------+
-| USB Port         | USB interface. Power supply for the board as well as the                |
-|                  | serial communication interface between a computer and the board.        |
-|                  | Micro-USB type connector.                                               |
-+------------------+-------------------------------------------------------------------------+
-| Power Switch     | Sliding power switch.                                                   |
-+------------------+-------------------------------------------------------------------------+
-| OLED display     | Built-in OLED display \(`SSD1306`_, 0.96", 128x64 px\) controlled       |
-|                  | by I2C interface                                                        |
-+------------------+-------------------------------------------------------------------------+
-| SX1276/SX1278    | LoRa radio frontend chip, connected via SPI.                            |
-|                  | Use SX1276 for 433MHz and SX1276 for 868/915/923MHz.                    |
-+------------------+-------------------------------------------------------------------------+
-| TF card slot     | TF card slot wired to the SDHC interface of the MCU.                    |
-+------------------+-------------------------------------------------------------------------+
-
+.. zephyr:board-supported-hw::
 
 Start Application Development
 *****************************
@@ -61,7 +35,7 @@ System requirements
 Prerequisites
 =============
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+Espressif HAL requires WiFi and Bluetooth binary blobs in order to work. Run the command
 below to retrieve those files.
 
 .. code-block:: console
@@ -75,10 +49,12 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 
-The board could be loaded using the single binary image, without 2nd stage bootloader.
+The board could be loaded using a single binary image, without 2nd stage bootloader.
 It is the default option when building the application without additional configuration.
 
 .. note::
@@ -108,7 +84,7 @@ There are two options to be used when building an application:
 Sysbuild
 ========
 
-The sysbuild makes possible to build and flash all necessary images needed to
+The sysbuild makes it possible to build and flash all necessary images needed to
 bootstrap the board with the ESP32-PICO-D4 SoC.
 
 To build the sample application using sysbuild use the command:
@@ -193,7 +169,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! ttgo_lora32
+   Hello World! ttgo_lora32/esp32/procpu
 
 Code samples
 ============
@@ -218,3 +194,5 @@ Related Documents
 - `ESP32-PICO-D4 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 - `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 - `ESP32 Hardware Reference <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html>`_
+- `SX127x Datasheet <https://www.semtech.com/products/wireless-rf/lora-connect/sx1276#documentation>`_
+- `SSD1306 Datasheet <https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf>`_ (PDF)

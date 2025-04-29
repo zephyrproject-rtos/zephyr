@@ -40,7 +40,8 @@ __no_optimization void func_3(uint32_t *addr)
 	defined(CONFIG_BOARD_QEMU_XTENSA) || \
 	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ISH) || \
-	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
+	defined(CONFIG_SOC_FAMILY_INTEL_ADSP) || \
+	defined(CONFIG_SOC_FAMILY_OPENHWGROUP_CVA6)
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.
 	 * Needed on ADSP as well, since null pointer derefence doesn't

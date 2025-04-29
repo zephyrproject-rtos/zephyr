@@ -17,23 +17,8 @@ Hardware
 
 Supported Features
 ==================
-The BLE Nano v2 board configuration supports the following hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller |      Driver/Component                |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vectored interrupt controller |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | serial port                          |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | gpio                                 |
-+-----------+------------+--------------------------------------+
-| FLASH     | on-chip    | flash                                |
-+-----------+------------+--------------------------------------+
-| RADIO     | on-chip    | Bluetooth                            |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | i2c                                  |
-+-----------+------------+--------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ====================
@@ -56,6 +41,8 @@ It also regulates 5V from USB to 3.3V via the onboard LDO to power Nano v2.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``nrf52_blenano2`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

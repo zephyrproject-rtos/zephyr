@@ -19,20 +19,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| GIC          | on-chip    | generic interrupt    |
-|              |            | controller           |
-+--------------+------------+----------------------+
-| TTC          | on-chip    | system timer         |
-+--------------+------------+----------------------+
-| UART         | on-chip    | serial port          |
-+--------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -67,6 +54,8 @@ The following platform features are unsupported:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Currently the best way to run this sample is by loading it through remoteproc
 from the APU, running Linux, to the RPU, assuming the target board has a compatible

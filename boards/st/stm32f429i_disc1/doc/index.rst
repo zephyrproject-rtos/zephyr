@@ -68,38 +68,7 @@ More information about STM32F429ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f429i_disc1 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| OTG_HS    | on-chip    | usbotg_hs                           |
-+-----------+------------+-------------------------------------+
-| LTDC      | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f429i_disc1/stm32f429i_disc1_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -152,6 +121,8 @@ and host OTG operation, but only device mode has been tested with Zephyr at this
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The STM32F429I-DISC1 Discovery kit includes a ST-LINK/V2-B embedded debug tool interface.
 Applications for the ``stm32f429i_disc1`` board configuration can be built

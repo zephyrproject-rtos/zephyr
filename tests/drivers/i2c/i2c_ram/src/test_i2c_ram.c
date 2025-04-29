@@ -35,6 +35,10 @@ uint8_t rx_data[7];
 
 const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 
+#ifdef CONFIG_I2C_RTIO
+static void i2c_ram_rtio_before(void);
+#endif
+
 /* Address from datasheet is 0b1010xxxr where x bits are additional
  * memory address bits and r is the r/w i2c bit.
  *
@@ -74,6 +78,10 @@ static void i2c_ram_before(void *f)
 	rx_cmd[1] = (addr) & 0xFF;
 	addr += ARRAY_SIZE(tx_data) - TX_DATA_OFFSET;
 	memset(rx_data, 0, ARRAY_SIZE(rx_data));
+
+#ifdef CONFIG_I2C_RTIO
+	i2c_ram_rtio_before();
+#endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	pm_device_runtime_get(i2c_dev);
@@ -178,6 +186,26 @@ ZTEST(i2c_ram, test_ram_transfer_cb)
 I2C_IODEV_DEFINE(i2c_iodev, I2C_DEV_NODE, RAM_ADDR);
 RTIO_DEFINE(i2c_rtio, 2, 2);
 
+static void i2c_ram_rtio_before(void)
+{
+	struct rtio_cqe *cqe;
+
+	while ((cqe = rtio_cqe_consume(&i2c_rtio))) {
+		rtio_cqe_release(&i2c_rtio, cqe);
+	}
+}
+
+static void check_completion(struct rtio_cqe *cqe, const char *msg)
+{
+	int32_t result;
+
+	result = cqe->result;
+	rtio_cqe_release(&i2c_rtio, cqe);
+	if (result) {
+		zassert_ok(result, msg);
+	}
+}
+
 ZTEST(i2c_ram, test_ram_rtio)
 {
 	struct rtio_sqe *wr_sqe, *rd_sqe;
@@ -190,8 +218,7 @@ ZTEST(i2c_ram, test_ram_rtio)
 	zassert_ok(rtio_submit(&i2c_rtio, 1), "submit should succeed");
 
 	wr_cqe = rtio_cqe_consume(&i2c_rtio);
-	zassert_ok(wr_cqe->result, "i2c write should succeed");
-	rtio_cqe_release(&i2c_rtio, wr_cqe);
+	check_completion(wr_cqe, "i2c write should succeed");
 
 	/* Write the address and read the data back */
 	msgs[0].len = ARRAY_SIZE(rx_cmd);
@@ -209,13 +236,56 @@ ZTEST(i2c_ram, test_ram_rtio)
 	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
 
 	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	check_completion(wr_cqe, "i2c write should succeed");
 	rd_cqe = rtio_cqe_consume(&i2c_rtio);
-	zassert_ok(wr_cqe->result, "i2c write should succeed");
-	zassert_ok(rd_cqe->result, "i2c read should succeed");
-	rtio_cqe_release(&i2c_rtio, wr_cqe);
-	rtio_cqe_release(&i2c_rtio, rd_cqe);
+	check_completion(rd_cqe, "i2c read should succeed");
 
 	zassert_equal(memcmp(&tx_data[TX_DATA_OFFSET], &rx_data[0], ARRAY_SIZE(rx_data)), 0,
+		      "Written and Read data should match");
+}
+
+ZTEST(i2c_ram, test_ram_rtio_write_with_transaction)
+{
+	/** Many drivers and API rely on two write OPs in a single transaction
+	 * to write register addr + register data in a single go.
+	 * Hence why is validated in a separate test-case.
+	 */
+	struct rtio_sqe *wraddr_sqe, *wrdata_sqe, *wr_sqe, *rd_sqe;
+	struct rtio_cqe *wr_cqe, *rd_cqe;
+
+	uint8_t reg_data[] = {'h', 'e', 'l', 'l', 'o'};
+
+	TC_PRINT("submitting write from thread %p addr %x\n", k_current_get(), addr);
+	wraddr_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wraddr_sqe, &i2c_iodev, 0, (uint8_t *)&addr, sizeof(addr), NULL);
+	wraddr_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	wrdata_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wrdata_sqe, &i2c_iodev, 0, reg_data, ARRAY_SIZE(reg_data), NULL);
+	wrdata_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+
+	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
+
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	check_completion(wr_cqe, "i2c write should succeed");
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	check_completion(wr_cqe, "i2c write should succeed");
+
+	/** Now read the register address to confirm the write was performed */
+	wr_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rd_sqe = rtio_sqe_acquire(&i2c_rtio);
+	rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, (uint8_t *)&addr, sizeof(addr), NULL);
+	rtio_sqe_prep_read(rd_sqe, &i2c_iodev, 0, rx_data, ARRAY_SIZE(reg_data), NULL);
+	wr_sqe->flags |= RTIO_SQE_TRANSACTION;
+	rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
+
+	wr_cqe = rtio_cqe_consume(&i2c_rtio);
+	check_completion(wr_cqe, "i2c write should succeed");
+	rd_cqe = rtio_cqe_consume(&i2c_rtio);
+	check_completion(rd_cqe, "i2c read should succeed");
+
+	zassert_equal(memcmp(&reg_data[0], &rx_data[0], ARRAY_SIZE(reg_data)), 0,
 		      "Written and Read data should match");
 }
 
@@ -247,8 +317,7 @@ void ram_rtio_isr(struct k_timer *tid)
 		wr_cqe = rtio_cqe_consume(&i2c_rtio);
 		if (wr_cqe) {
 			TC_PRINT("timer checking write result, submitting read\n");
-			zassert_ok(wr_cqe->result, "i2c write should succeed");
-			rtio_cqe_release(&i2c_rtio, wr_cqe);
+			check_completion(wr_cqe, "i2c write should succeed");
 
 			/* Write the address and read the data back */
 			msgs[0].len = ARRAY_SIZE(rx_cmd);
@@ -273,8 +342,7 @@ void ram_rtio_isr(struct k_timer *tid)
 		wr_cqe = rtio_cqe_consume(&i2c_rtio);
 		if (wr_cqe) {
 			TC_PRINT("read command complete\n");
-			zassert_ok(wr_cqe->result, "i2c read command should succeed");
-			rtio_cqe_release(&i2c_rtio, wr_cqe);
+			check_completion(wr_cqe, "i2c read command should succeed");
 			isr_state += 1;
 		}
 		break;
@@ -282,8 +350,7 @@ void ram_rtio_isr(struct k_timer *tid)
 		rd_cqe = rtio_cqe_consume(&i2c_rtio);
 		if (rd_cqe) {
 			TC_PRINT("read data complete\n");
-			zassert_ok(rd_cqe->result, "i2c read data should succeed");
-			rtio_cqe_release(&i2c_rtio, rd_cqe);
+			check_completion(rd_cqe, "i2c read data should succeed");
 			isr_state += 1;
 			k_sem_give(&ram_rtio_isr_sem);
 			k_timer_stop(tid);

@@ -42,30 +42,7 @@ More information can be found here:
 Supported Features
 ==================
 
-The lpcxpresso11U68 supports the following features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c master/slave controller         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port interrupt               |
-+-----------+------------+-------------------------------------+
-| EEPROM    | on-chip    | eeprom                              |
-+-----------+------------+-------------------------------------+
-
-Other hardware is not yet supported on Zephyr.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -93,6 +70,8 @@ The IOCON controller can be used to configure the LPC11U68 pins.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -139,6 +118,9 @@ References
 - `LPC11U6X Reference Manual`_
 - `LPCXPRESSO11U68 Website`_
 - `LPCXPRESSO11U68 Schematics`_
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _LPC11UXX SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc1100-cortex-m0-plus-m0/scalable-entry-level-32-bit-microcontroller-mcu-based-on-arm-cortex-m0-plus-and-cortex-m0-cores:LPC11U00

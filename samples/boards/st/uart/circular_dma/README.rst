@@ -1,8 +1,8 @@
-.. zephyr:code-sample:: uart
+.. zephyr:code-sample:: uart-circular-dma
    :name: UART circular mode
    :relevant-api: uart_interface
 
-   Read data from the console and echo it back using a circular dma configuration.
+   Read data from the console and echo it back using a circular DMA configuration.
 
 Overview
 ********

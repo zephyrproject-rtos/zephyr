@@ -8,6 +8,7 @@
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 SynchronicIT BV
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,12 +44,8 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
  * address-family-specific variants being of differing sizes. Let's not
  * mess with code (which looks correct), just silence the compiler.
  */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overread"
-#endif
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ARRAY_BOUNDS);
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERREAD);
 
 extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
@@ -110,6 +107,7 @@ static size_t external_records_count;
 
 #ifndef CONFIG_NET_TEST
 static int setup_dst_addr(int sock, sa_family_t family,
+			  struct sockaddr *src, socklen_t src_len,
 			  struct sockaddr *dst, socklen_t *dst_len);
 #endif /* CONFIG_NET_TEST */
 
@@ -194,25 +192,36 @@ static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 }
 
 int setup_dst_addr(int sock, sa_family_t family,
+		   struct sockaddr *src, socklen_t src_len,
 		   struct sockaddr *dst, socklen_t *dst_len)
 {
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		create_ipv4_addr(net_sin(dst));
-		*dst_len = sizeof(struct sockaddr_in);
+		if ((src != NULL) && (net_sin(src)->sin_port != htons(MDNS_LISTEN_PORT))) {
+			memcpy(dst, src, src_len);
+			*dst_len = src_len;
+		} else {
+			create_ipv4_addr(net_sin(dst));
+			*dst_len = sizeof(struct sockaddr_in);
 
-		ret = set_ttl_hop_limit(sock, IPPROTO_IP, IP_MULTICAST_TTL, 255);
-		if (ret < 0) {
-			NET_DBG("Cannot set %s multicast %s (%d)", "IPv4", "TTL", ret);
+			ret = set_ttl_hop_limit(sock, IPPROTO_IP, IP_MULTICAST_TTL, 255);
+			if (ret < 0) {
+				NET_DBG("Cannot set %s multicast %s (%d)", "IPv4", "TTL", ret);
+			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		create_ipv6_addr(net_sin6(dst));
-		*dst_len = sizeof(struct sockaddr_in6);
+		if ((src != NULL) && (net_sin6(src)->sin6_port != htons(MDNS_LISTEN_PORT))) {
+			memcpy(dst, src, src_len);
+			*dst_len = src_len;
+		} else {
+			create_ipv6_addr(net_sin6(dst));
+			*dst_len = sizeof(struct sockaddr_in6);
 
-		ret = set_ttl_hop_limit(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, 255);
-		if (ret < 0) {
-			NET_DBG("Cannot set %s multicast %s (%d)", "IPv6", "hoplimit", ret);
+			ret = set_ttl_hop_limit(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, 255);
+			if (ret < 0) {
+				NET_DBG("Cannot set %s multicast %s (%d)", "IPv6", "hoplimit", ret);
+			}
 		}
 	} else {
 		return -EPFNOSUPPORT;
@@ -228,7 +237,6 @@ static int get_socket(sa_family_t family)
 	ret = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ret < 0) {
 		ret = -errno;
-		NET_DBG("Cannot get socket (%d)", ret);
 	}
 
 	return ret;
@@ -346,7 +354,7 @@ static int send_response(int sock,
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
 		    (struct sockaddr_in6), (struct sockaddr_in)) dst;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, src_addr, addrlen, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
@@ -456,7 +464,7 @@ static void send_sd_response(int sock,
 	label[2] = proto_buf;
 	label[3] = domain_buf;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, src_addr, addrlen, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return;
@@ -608,12 +616,15 @@ static int dns_read(int sock,
 
 	queries = ret;
 
-	NET_DBG("Received %d %s from %s", queries,
+	NET_DBG("Received %d %s from %s:%u", queries,
 		queries > 1 ? "queries" : "query",
 		net_sprint_addr(family,
 				family == AF_INET ?
 				(const void *)&net_sin(src_addr)->sin_addr :
-				(const void *)&net_sin6(src_addr)->sin6_addr));
+				(const void *)&net_sin6(src_addr)->sin6_addr),
+				ntohs(family == AF_INET ?
+				net_sin(src_addr)->sin_port :
+				net_sin6(src_addr)->sin6_port));
 
 	do {
 		enum dns_rr_type qtype;
@@ -1332,9 +1343,9 @@ static int init_listener(void)
 
 		v6 = get_socket(AF_INET6);
 		if (v6 < 0) {
-			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
 				"IPv6", MAX_IPV6_IFACE_COUNT,
-				"IPv6", CONFIG_NET_MAX_CONTEXTS);
+				"IPv6", CONFIG_NET_MAX_CONTEXTS, v6);
 			continue;
 		}
 
@@ -1352,7 +1363,8 @@ static int init_listener(void)
 				ifindex, ret);
 		} else {
 			memset(&if_req, 0, sizeof(if_req));
-			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name) - 1);
+			memcpy(if_req.ifr_name, name,
+			       MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
 
 			ret = zsock_setsockopt(v6, SOL_SOCKET, SO_BINDTODEVICE,
 					       &if_req, sizeof(if_req));
@@ -1428,9 +1440,9 @@ static int init_listener(void)
 
 		v4 = get_socket(AF_INET);
 		if (v4 < 0) {
-			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
 				"IPv4", MAX_IPV4_IFACE_COUNT,
-				"IPv4", CONFIG_NET_MAX_CONTEXTS);
+				"IPv4", CONFIG_NET_MAX_CONTEXTS, v4);
 			continue;
 		}
 
@@ -1448,7 +1460,8 @@ static int init_listener(void)
 				ifindex, ret);
 		} else {
 			memset(&if_req, 0, sizeof(if_req));
-			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name) - 1);
+			memcpy(if_req.ifr_name, name,
+			       MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
 
 			ret = zsock_setsockopt(v4, SOL_SOCKET, SO_BINDTODEVICE,
 					       &if_req, sizeof(if_req));
@@ -1525,7 +1538,7 @@ static int send_unsolicited_response(struct net_if *iface,
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
 		    (struct sockaddr_in6), (struct sockaddr_in)) dst;
 
-	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	ret = setup_dst_addr(sock, family, NULL, 0, (struct sockaddr *)&dst, &dst_len);
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;

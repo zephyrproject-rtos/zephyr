@@ -21,37 +21,7 @@ It is based on a standard XIAO 14 pin pinout.
 Supported Features
 ==================
 
-The Zephyr ``xiao_esp32c6`` board target supports the following hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| USB-JTAG   | on-chip    | hardware interface                  |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| SPI DMA    | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| GDMA       | on-chip    | dma                                 |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| USB-CDC    | on-chip    | serial                              |
-+------------+------------+-------------------------------------+
-| Wi-Fi      | on-chip    |                                     |
-+------------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 The board uses a standard XIAO pinout, the default pin mapping is the following:
 
@@ -80,6 +50,8 @@ below to retrieve those files.
 
 Building & Flashing
 *******************
+
+.. zephyr:board-supported-runners::
 
 Simple boot
 ===========
@@ -122,12 +94,12 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c6
+   :board: xiao_esp32c6/esp32c6/hpcore
    :goals: build
    :west-args: --sysbuild
    :compact:
 
-By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
+By default, the ESP32-C6 sysbuild creates bootloader (MCUboot) and application
 images. But it can be configured to create other kind of images.
 
 Build directory structure created by sysbuild is different from traditional
@@ -171,7 +143,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c6
+   :board: xiao_esp32c6/esp32c6/hpcore
    :goals: build
 
 The usual ``flash`` target will work with the ``xiao_esp32c6`` board
@@ -180,7 +152,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c6
+   :board: xiao_esp32c6/esp32c6/hpcore
    :goals: flash
 
 Since the Zephyr console is by default on the ``usb_serial`` device, we use
@@ -196,7 +168,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! xiao_esp32c6/esp32c6
+   Hello World! xiao_esp32c6/esp32c6/hpcore
 
 Debugging
 *********
@@ -213,7 +185,7 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c6
+   :board: xiao_esp32c6/esp32c6/hpcore
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -221,7 +193,7 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c6
+   :board: xiao_esp32c6/esp32c6/hpcore
    :goals: debug
 
 References

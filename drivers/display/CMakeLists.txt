@@ -20,6 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_SSD1306		ssd1306.c)
 zephyr_library_sources_ifdef(CONFIG_SSD1327		ssd1327.c)
 zephyr_library_sources_ifdef(CONFIG_SSD16XX		ssd16xx.c)
 zephyr_library_sources_ifdef(CONFIG_SSD1322		ssd1322.c)
+zephyr_library_sources_ifdef(CONFIG_ST7567		display_st7567.c)
 zephyr_library_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
 zephyr_library_sources_ifdef(CONFIG_ST7735R		display_st7735r.c)
 zephyr_library_sources_ifdef(CONFIG_ST7796S		display_st7796s.c)
@@ -33,6 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_DISPLAY_RENESAS_LCDC display_renesas_lcdc.c)
 zephyr_library_sources_ifdef(CONFIG_NT35510		display_nt35510.c)
 zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_GLCDC		display_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9806E_DSI		display_ili9806e_dsi.c)
+zephyr_library_sources_ifdef(CONFIG_ST7701 display_st7701.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c

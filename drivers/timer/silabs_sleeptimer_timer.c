@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 
 /* Maximum time interval between timer interrupts (in hw_cycles) */
 #define MAX_TIMEOUT_CYC (UINT32_MAX >> 1)
-#define MIN_DELAY_CYC   (4U)
 
 #define DT_RTC DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_stimer)
 
@@ -31,7 +30,7 @@ LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 /* With CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, this global variable holds the clock frequency,
  * and must be written by the driver at init.
  */
-extern int z_clock_hw_cycles_per_sec;
+extern unsigned int z_clock_hw_cycles_per_sec;
 
 /* Global timer state */
 struct sleeptimer_timer_data {
@@ -73,16 +72,15 @@ static void sleeptimer_clock_set_timeout(int32_t ticks, struct sleeptimer_timer_
 	k_spinlock_key_t key = k_spin_lock(&timer->lock);
 
 	uint32_t curr = sl_sleeptimer_get_tick_count();
-	uint32_t prev = atomic_get(&timer->last_count);
-	uint32_t pending = curr - prev;
+	uint32_t pending = curr % timer->cyc_per_tick;
 	uint32_t next = ticks * timer->cyc_per_tick;
 
 	/* Next timeout is N ticks in the future, minus the current progress
-	 * towards the timeout. If we are behind, set the timeout to the first
-	 * possible upcoming tick.
+	 * into the tick if using multiple cycles per tick. The HAL API must
+	 * be called with a timeout of at least one cycle.
 	 */
-	while (next < (pending + MIN_DELAY_CYC)) {
-		next += timer->cyc_per_tick;
+	if (next == 0) {
+		next = timer->cyc_per_tick;
 	}
 	next -= pending;
 
@@ -136,17 +134,11 @@ static int sleeptimer_init(void)
 
 	timer->cyc_per_tick = z_clock_hw_cycles_per_sec / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
-	__ASSERT(timer->cyc_per_tick >= MIN_DELAY_CYC,
-		 "A tick of %u cycles is too short to be scheduled "
-		 "(min is %u). Config: SYS_CLOCK_TICKS_PER_SEC is "
-		 "%d and timer frequency is %u",
-		 timer->cyc_per_tick, MIN_DELAY_CYC, CONFIG_SYS_CLOCK_TICKS_PER_SEC,
-		 z_clock_hw_cycles_per_sec);
-
 	timer->max_timeout_ticks = MAX_TIMEOUT_CYC / timer->cyc_per_tick;
 	timer->initialized = true;
 
-	atomic_set(&timer->last_count, sl_sleeptimer_get_tick_count());
+	atomic_set(&timer->last_count,
+		   ROUND_DOWN(sl_sleeptimer_get_tick_count(), timer->cyc_per_tick));
 
 	/* Start the timer and announce 1 kernel tick */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

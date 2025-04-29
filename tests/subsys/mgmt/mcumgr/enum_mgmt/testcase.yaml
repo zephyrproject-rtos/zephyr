@@ -13,17 +13,17 @@ common:
     - mcumgr
     - enum_mgmt
 tests:
-  enum.mgmt:
+  mgmt.mcumgr.enum.mgmt:
     build_only: false
-  enum.mgmt.shell:
+  mgmt.mcumgr.enum.mgmt.shell:
     extra_configs:
       - CONFIG_SHELL=y
       - CONFIG_SHELL_BACKEND_DUMMY=y
       - CONFIG_MCUMGR_GRP_SHELL=y
-  enum.mgmt.os:
+  mgmt.mcumgr.enum.mgmt.os:
     extra_configs:
       - CONFIG_MCUMGR_GRP_OS=y
-  enum.mgmt.shell.os:
+  mgmt.mcumgr.enum.mgmt.shell.os:
     extra_configs:
       - CONFIG_SHELL=y
       - CONFIG_SHELL_BACKEND_DUMMY=y

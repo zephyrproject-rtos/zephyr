@@ -9,14 +9,17 @@ description: |
   VPR is a RISC-V CPU implementation. VPR instances are exposed to other CPUs as
   peripherals.
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   execution-memory:
     type: phandle
-    required: true
     description: |
-      Memory area from which the VPR core will execute.
+      Memory area from which the VPR code will execute.
+      If not specified, the VPR coprocessor will not be launched automatically
+      by the nordic_vpr_launcher driver when the node is enabled. In such case,
+      the launching is supposed to be done explicitly by the user code, in some
+      custom way presumably.
 
   source-memory:
     type: phandle

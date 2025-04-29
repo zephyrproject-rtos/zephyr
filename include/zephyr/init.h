@@ -41,50 +41,13 @@ extern "C" {
  * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
  *   SMP.
  *
- * Initialization priority can take a value in the range of 0 to 99.
+ * Initialization priority can take a value in the range of 0 to 999.
  *
  * @note The same infrastructure is used by devices.
  * @{
  */
 
 struct device;
-
-/**
- * @brief Initialization function for init entries.
- *
- * Init entries support both the system initialization and the device
- * APIs. Each API has its own init function signature; hence, we have a
- * union to cover both.
- */
-union init_function {
-	/**
-	 * System initialization function.
-	 *
-	 * @retval 0 On success
-	 * @retval -errno If init fails.
-	 */
-	int (*sys)(void);
-	/**
-	 * Device initialization function.
-	 *
-	 * @param dev Device instance.
-	 *
-	 * @retval 0 On success
-	 * @retval -errno If device initialization fails.
-	 */
-	int (*dev)(const struct device *dev);
-#ifdef CONFIG_DEVICE_MUTABLE
-	/**
-	 * Device initialization function (rw).
-	 *
-	 * @param dev Device instance.
-	 *
-	 * @retval 0 On success
-	 * @retval -errno If device initialization fails.
-	 */
-	int (*dev_rw)(struct device *dev);
-#endif
-};
 
 /**
  * @brief Structure to store initialization entry information.
@@ -101,18 +64,16 @@ union init_function {
  * @endinternal
  */
 struct init_entry {
-	/** Initialization function. */
-	union init_function init_fn;
+	/**
+	 * If the init function belongs to a SYS_INIT, this field stored the
+	 * initialization function, otherwise it is set to NULL.
+	 */
+	int (*init_fn)(void);
 	/**
 	 * If the init entry belongs to a device, this fields stores a
 	 * reference to it, otherwise it is set to NULL.
 	 */
-	union {
-		const struct device *dev;
-#ifdef CONFIG_DEVICE_MUTABLE
-		struct device *dev_rw;
-#endif
-	};
+	const struct device *dev;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -147,42 +108,9 @@ struct init_entry {
  * linker scripts to sort them according to the specified
  * level/priority/sub-priority.
  */
-#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                           \
-	__attribute__((__section__(                                           \
-		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
-
-
-/* Designated initializers where added to C in C99. There were added to
- * C++ 20 years later in a much more restricted form. C99 allows many
- * variations: out of order, mix of designated and not, overlap,
- * override,... but C++ allows none of these. See differences detailed
- * in the P0329R0.pdf C++ proposal.
- * Note __STDC_VERSION__ is undefined when compiling C++.
- */
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
-
-/* Anonymous unions require C11. Some pre-C11 gcc versions have early
- * support for anonymous unions but they require these braces when
- * combined with C99 designated initializers, see longer discussion in
- * #69411.
- * These braces are compatible with any C version but not with C++20.
- */
-#  define Z_INIT_SYS_INIT_DEV_NULL  { .dev = NULL }
-
-#else
-
-/* When using -std=c++20 or higher, g++ (v12.2.0) reject braces for
- * initializing anonymous unions because it is technically a mix of
- * designated and not designated initializers which is not allowed in
- * C++. Interestingly, the _same_ g++ version does accept the braces above
- * when using -std=c++17 or lower!
- * The tests/lib/cpp/cxx/ added by commit 3d9c428d57bf invoke the C++
- * compiler with a range of different `-std=...` parameters without needing
- * any manual configuration.
- */
-#  define Z_INIT_SYS_INIT_DEV_NULL    .dev = NULL
-
-#endif
+#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                                                \
+	__attribute__((__section__(                                                                \
+		".z_init_" #level "_P_" STRINGIFY(prio) "_SUB_" STRINGIFY(sub_prio)"_")))
 
 /** @endcond */
 
@@ -238,8 +166,7 @@ struct init_entry {
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
-		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
-			Z_INIT_SYS_INIT_DEV_NULL}
+		Z_INIT_ENTRY_NAME(name) = {.init_fn = (init_fn_), .dev = NULL}            \
 
 /** @} */
 

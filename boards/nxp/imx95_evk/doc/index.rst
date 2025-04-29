@@ -73,46 +73,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | tpm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-
-The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
-the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v4    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | tpm                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 System Clock
 ------------
@@ -141,9 +102,18 @@ SPI
 The EVK board need to be reworked to solder R1217/R1218/R1219/R1220 with 0R resistances.
 SPI1 on J35 is enabled for M7.
 
+Ethernet
+--------
+
+NETC driver supports to manage the Physical Station Interface (PSI).
+The first ENET1 port could be enabled for M7 by west build option
+``-DEXTRA_DTC_OVERLAY_FILE=enetc_psi0.overlay``.
+
 
 Programming and Debugging (A55)
 *******************************
+
+.. zephyr:board-supported-runners::
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -293,11 +263,8 @@ while, for the ``imx95_evk/mimx9596/m7/ddr`` board, you should get the following
 .. _MCUX SDK release:
    https://mcuxpresso.nxp.com/
 
-References
-==========
-
-More information can refer to NXP official website:
-`NXP website`_.
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _NXP website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-95-applications-processor-family-high-performance-safety-enabled-platform-with-eiq-neutron-npu:iMX95

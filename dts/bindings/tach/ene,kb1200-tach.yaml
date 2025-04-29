@@ -1,7 +1,7 @@
 # Copyright (c) 2024 ENE Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ENE, KB1200-Tachometer node
+description: ENE KB1200 Tachometer
 
 compatible: "ene,kb1200-tach"
 

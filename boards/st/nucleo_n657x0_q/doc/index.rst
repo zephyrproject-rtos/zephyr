@@ -60,37 +60,37 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access Controller     |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
+USB
+===
 
+The USB pin assignments on the STM32N657XX microcontroller are immutable. This means that the specific
+pins designated for USB functionality are fixed and cannot be changed or reassigned to other functions,
+ensuring consistent and reliable USB communication.
 
-Other hardware features are not yet supported on this Zephyr port.
+USB PIN (IOs)
+=============
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_n657x0_q/nucleo_n657x0_q_defconfig`
-
++------------------+--------------------------------------+
+| Name             | Description                          |
++==================+======================================+
+| OTG1_HSDM        | USB OTG1 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG1_HSDP        | USB OTG1 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG1_ID          | USB OTG1 ID Pin                      |
++------------------+--------------------------------------+
+| OTG1_TXRTUNE     | USB OTG1 Transmit Retune             |
++------------------+--------------------------------------+
+| OTG2_HSDM        | USB OTG2 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG2_HSDP        | USB OTG2 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG2_ID          | USB OTG2 ID Pin                      |
++------------------+--------------------------------------+
+| OTG2_TXRTUNE     | USB OTG2 Transmit Retune             |
++------------------+--------------------------------------+
 
 Connections and IOs
 ===================
@@ -121,6 +121,17 @@ Default Zephyr Peripheral Mapping:
 - USART_1_RX : PE6
 - USART_3_TX : PD8
 - USART_3_RX : PD9
+- XSPI2_NCS1 : PN1
+- XSPI2_DQS0 : PN0
+- XSPI2_CLK : PN6
+- XSPI2_IO0 : PN2
+- XSPI2_IO1 : PN3
+- XSPI2_IO2 : PN4
+- XSPI2_IO3 : PN5
+- XSPI2_IO4 : PN8
+- XSPI2_IO5 : PN9
+- XSPI2_IO6 : PN10
+- XSPI2_IO7 : PN11
 
 System Clock
 ------------
@@ -137,6 +148,8 @@ USART1. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 NUCLEO-N657X0-Q board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
@@ -183,7 +196,7 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             :board: nucleo_n657x0_q
             :goals: build flash
 
-.. note::
+         .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
             * BOOT0: 0
@@ -194,12 +207,6 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 
@@ -216,10 +223,10 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
          Build and load an application using ``nucleo_n657x0_q/stm32n657xx/sb`` target (you
          can also use the shortened form: ``nucleo_n657x0_q//sb``)
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: nucleo_n657x0_q
-   :goals: build flash
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q
+            :goals: build flash
 
 
 Run a serial host program to connect to your board:

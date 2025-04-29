@@ -1,0 +1,20 @@
+# STMicroelectronics STM32MP13 MPU series
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32MP13X
+
+rsource "Kconfig.defconfig.stm32mp13_a7"
+
+config CACHE_MANAGEMENT
+	default y
+
+DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
+DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)
+
+# For STM32MP13, override the default value defined in STM32 Kconfig
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(DT_STM32_CPU_CLOCK_FREQ) if $(dt_nodelabel_enabled,cpusw)
+
+endif # SOC_SERIES_STM32MP13X

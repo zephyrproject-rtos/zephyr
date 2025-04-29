@@ -4,4 +4,4 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
-zephyr_library_sources_ifdef(CONFIG_DRV8424 drv8424.c)
+zephyr_library_sources_ifdef(CONFIG_DRV84XX drv84xx.c)

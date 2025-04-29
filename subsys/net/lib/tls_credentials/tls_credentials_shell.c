@@ -40,12 +40,12 @@ static const struct cred_type_string type_strings[] = {
 	{"CA_CERT",		TLS_CREDENTIAL_CA_CERTIFICATE},
 	{"CA",			TLS_CREDENTIAL_CA_CERTIFICATE},
 
-	{"SERVER_CERT",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
-	{"CLIENT_CERT",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
-	{"SELF_CERT",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
-	{"SELF",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
-	{"CLIENT",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
-	{"SERV",		TLS_CREDENTIAL_SERVER_CERTIFICATE},
+	{"SERVER_CERT",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
+	{"CLIENT_CERT",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
+	{"SELF_CERT",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
+	{"SELF",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
+	{"CLIENT",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
+	{"SERV",		TLS_CREDENTIAL_PUBLIC_CERTIFICATE},
 
 	{"PRIVATE_KEY",		TLS_CREDENTIAL_PRIVATE_KEY},
 	{"PK",			TLS_CREDENTIAL_PRIVATE_KEY},
@@ -564,8 +564,8 @@ static int tls_cred_cmd_del(const struct shell *sh, size_t argc, char *argv[])
 	ref_slot = cred->buf != NULL ? find_ref_slot(cred->buf) : -1;
 	if (ref_slot >= 0) {
 		/* This was a credential we copied to heap. Clear and free it. */
-		memset((void *)cred_buf, 0, cred->len);
-		k_free((void *)cred_buf);
+		memset(&cred_refs[ref_slot], 0, cred->len);
+		k_free((void *)cred_refs[ref_slot]);
 		cred->buf = NULL;
 
 		/* Clear the reference slot so it can be used again. */

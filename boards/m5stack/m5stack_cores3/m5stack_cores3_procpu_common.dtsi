@@ -31,6 +31,7 @@
 		watchdog0 = &wdt0;
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
+		led0 = &axp2101_led;
 	};
 
 	lvgl_pointer {
@@ -77,6 +78,94 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	axp2101@34 {
+		compatible = "x-powers,axp2101";
+		reg = <0x34>;
+		status = "okay";
+
+		regulator: regulator {
+			compatible = "x-powers,axp2101-regulator";
+			status = "okay";
+
+			/*
+			 * Typically, no initialization is performed since non-volatile
+			 * values are used.
+			 * If you remove the commenting, initialization will be performed
+			 * with the default value.
+			 */
+
+			vdd_3v3: DCDC1 {
+				regulator-min-microvolt  = <3000000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt  = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+				status = "okay";
+			};
+
+			vcc_3v3: DCDC3 {
+				regulator-min-microvolt  = <3100000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt  = <3500000>;
+				regulator-boot-on;
+				regulator-always-on;
+				status = "okay";
+			};
+
+			vdd_1v8: ALDO1 {
+				regulator-min-microvolt  = <1700000>;
+				/* regulator-init-microvolt = <1800000>; */
+				regulator-max-microvolt  = <1900000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			vdda_3v3: ALDO2 {
+				regulator-min-microvolt  = <3100000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt  = <3500000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			vdd_3v3_sd: ALDO4 {
+				regulator-min-microvolt  = <3100000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt  = <3500000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			dvdd: BLDO2 {
+				regulator-min-microvolt = <3100000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt = <3500000>;
+				status = "okay";
+			};
+
+			vcc_bl: DLDO1 {
+				regulator-min-microvolt = <2500000>;
+				/* regulator-init-microvolt = <3300000>; */
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+		};
+
+		charger: charger {
+			compatible = "x-powers,axp2101-charger";
+			constant-charge-current-max-microamp = <200000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			charge-term-current-microamp = <125000>;
+		};
+
+		axp2101_led: led {
+			compatible = "x-powers,axp2101-led";
+			status = "okay";
+			x-powers,mode = "by-reg";
+		};
+	};
 
 	bm8563_rtc: bm8563@51 {
 		compatible = "nxp,pcf8563";
@@ -154,5 +243,9 @@
 };
 
 &esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

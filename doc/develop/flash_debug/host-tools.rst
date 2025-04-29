@@ -13,6 +13,7 @@ file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
 .. _atmel_sam_ba_bootloader:
+.. _runner_bossac:
 
 SAM Boot Assistant (SAM-BA)
 ***************************
@@ -185,8 +186,8 @@ As a quick reference, see these three board documentation pages:
 
   - :zephyr:board:`sam4e_xpro` (ROM bootloader)
   - :zephyr:board:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
-  - :ref:`arduino_nano_33_iot` (Arduino bootloader)
-  - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
+  - :zephyr:board:`arduino_nano_33_iot` (Arduino bootloader)
+  - :zephyr:board:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
 Enabling BOSSAC on Windows Native [Experimental]
 ------------------------------------------------
@@ -207,6 +208,7 @@ Windows PATH. A specific bossac executable can be used by passing the
 
 
 .. _linkserver-debug-host-tools:
+.. _runner_linkserver:
 
 LinkServer Debug  Host Tools
 ****************************
@@ -282,6 +284,7 @@ LinkServer west runner   ``--probe`` option to pass the probe index.
    will need to add a breakpoint at ``main`` or the reset handler manually.
 
 .. _jlink-debug-host-tools:
+.. _runner_jlink:
 
 J-Link Debug Host Tools
 ***********************
@@ -312,6 +315,7 @@ required.
 Note that the J-Link GDB server does not yet support Zephyr RTOS-awareness.
 
 .. _openocd-debug-host-tools:
+.. _runner_openocd:
 
 OpenOCD Debug Host Tools
 ************************
@@ -339,6 +343,7 @@ Check if your SoC is listed in `OpenOCD Supported Devices`_.
    - Add ``C:\Program Files\OpenOCD\bin`` to 'PATH' environment variable
 
 .. _pyocd-debug-host-tools:
+.. _runner_pyocd:
 
 pyOCD Debug Host Tools
 **********************
@@ -358,6 +363,7 @@ These debug host tools are compatible with the following debug probes:
 Check if your SoC is listed in `pyOCD Supported Devices`_.
 
 .. _lauterbach-trace32-debug-host-tools:
+.. _runner_trace32:
 
 Lauterbach TRACE32 Debug Host Tools
 ***********************************
@@ -409,6 +415,7 @@ To enable Zephyr RTOS awareness follow the steps described in
 `Lauterbach TRACE32 Zephyr OS Awareness Manual`_.
 
 .. _nxp-s32-debug-host-tools:
+.. _runner_nxp_s32dbg:
 
 NXP S32 Debug Probe Host Tools
 ******************************
@@ -471,6 +478,8 @@ afterwards detach the debug session:
 
    west debug --tool-opt='--batch'
 
+.. _runner_probe_rs:
+
 probe-rs Debug Host Tools
 *************************
 
@@ -482,7 +491,29 @@ Check `probe-rs Installation`_ for more setup details.
 
 Check if your SoC is listed in `probe-rs Supported Devices`_.
 
+.. _runner_rfp:
+
+Renesas Flash Programmer (RFP) Host Tools
+*****************************************
+
+Renesas provides `Renesas Flash Programmer`_ as an official programming tool for Renesas boards
+using the Renesas standard boot firmware. It is available as a GUI and CLI.
+
+For boards configured with the ``rfp`` west runner, the RFP CLI can be easily used to flash Zephyr.
+
+Supported west commands:
+
+1. flash
+
+Once downloaded, if ``rfp-cli`` is not placed somewhere in your system PATH, you can pass the location
+to ``rfp-cli`` when flashing:
+
+.. code-block:: console
+
+   west flash --rfp-cli ~/Downloads/RFP_CLI_Linux_V31800_x64/linux-x64/rfp-cli
+
 .. _stm32cubeprog-flash-host-tools:
+.. _runner_stm32cubeprogrammer:
 
 STM32CubeProgrammer Flash Host Tools
 ************************************
@@ -571,6 +602,9 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
 
 .. _NXP S32 Design Studio for S32 Platform:
    https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM
+
+.. _Renesas Flash Programmer:
+   https://www.renesas.com/en/software-tool/renesas-flash-programmer-programming-gui
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG

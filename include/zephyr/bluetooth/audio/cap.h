@@ -542,7 +542,12 @@ struct bt_cap_initiator_broadcast_create_param {
  * @param[in]  param             Parameters to start the audio streams.
  * @param[out] broadcast_source  Pointer to the broadcast source created.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 Success
+ * @retval -EINVAL @p param is invalid or @p broadcast_source is NULL
+ * @retval -ENOMEM Could not allocate more broadcast sources, subgroups or ISO streams, or the
+ *         provided codec configuration data is too large when merging the BIS and subgroup
+ *         configuration data.
+ * @retval -ENOEXEC The broadcast source failed to be created for other reasons
  */
 int bt_cap_initiator_broadcast_audio_create(
 	const struct bt_cap_initiator_broadcast_create_param *param,
@@ -974,7 +979,7 @@ struct bt_cap_commander_broadcast_reception_start_param {
 int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
-/** Parameters for stopping broadcast reception  */
+/** Member parameters for stopping broadcast reception  */
 struct bt_cap_commander_broadcast_reception_stop_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -986,6 +991,7 @@ struct bt_cap_commander_broadcast_reception_stop_member_param {
 	size_t num_subgroups;
 };
 
+/** Parameters for stopping broadcast reception */
 struct bt_cap_commander_broadcast_reception_stop_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;
@@ -1008,7 +1014,7 @@ struct bt_cap_commander_broadcast_reception_stop_param {
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
 
-/** Parameters for distributing broadcast code */
+/** Member parameters for distributing broadcast code */
 struct bt_cap_commander_distribute_broadcast_code_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -1017,6 +1023,7 @@ struct bt_cap_commander_distribute_broadcast_code_member_param {
 	uint8_t src_id;
 };
 
+/** Parameters for distributing broadcast code */
 struct bt_cap_commander_distribute_broadcast_code_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;

@@ -21,51 +21,7 @@ Information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The boards support the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| Arm GIC   | on-chip    | interrupt_controller                |
-+-----------+------------+-------------------------------------+
-| Arm Timer | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-| LINFlexD  | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| MRU       | on-chip    | mbox                                |
-+-----------+------------+-------------------------------------+
-| NETC      | on-chip    | ethernet                            |
-|           |            |                                     |
-|           |            | mdio                                |
-+-----------+------------+-------------------------------------+
-| SIUL2     | on-chip    | pinctrl                             |
-|           |            |                                     |
-|           |            | gpio                                |
-|           |            |                                     |
-|           |            | external interrupt controller       |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| SWT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| CANEXCEL  | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| SAR_ADC   | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| LPI2C     | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| EDMA      | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| DSPI      | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| eMIOS     | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| QSPI      | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -183,6 +139,8 @@ port A1. This board configuration selects it as the default flash controller.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``s32z2xxdc2`` boards can be built in the usual way as
 documented in :ref:`build_an_application`.
 
@@ -242,13 +200,11 @@ the terminal:
 
    Hello World! s32z2xxdc2
 
-To debug with Lauterbach TRACE32 softare run instead:
+To debug with Lauterbach TRACE32 software run instead:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build debug -r trace32
-   :compact:
+.. code-block:: console
+
+   west debug -r trace32
 
 Flashing
 ========
@@ -261,7 +217,8 @@ SRAM and run.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build flash -r trace32
+   :goals: build flash
+   :flash-args: -r trace32
    :compact:
 
 .. note::
@@ -273,11 +230,9 @@ SRAM and run.
 To imitate a similar behavior using NXP S32 Debug Probe runner, you can run the
 ``debug`` command with GDB in batch mode:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: s32z2xxdc2/s32z270/rtu0
-   :goals: build debug --tool-opt='--batch'
-   :compact:
+.. code-block:: console
+
+   west debug --tool-opt='--batch'
 
 RTU and Core Configuration
 ==========================
@@ -334,10 +289,13 @@ line:
 
 .. code-block:: console
 
-   west debug --startup-args elfFile=<elf_path> rtu=<rtu_id> core=<core_id> lockstep=<yes/no>
+   west debug -r trace32 --startup-args elfFile=<elf_path> rtu=<rtu_id> core=<core_id> lockstep=<yes/no>
 
 Where ``<elf_path>`` is the path to the Zephyr application ELF in the output
 directory.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 References
 **********

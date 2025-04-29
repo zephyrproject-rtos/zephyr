@@ -34,6 +34,13 @@ features FTDI FT2232H chip - an advanced multi-interface USB bridge.
 This chip enables to use JTAG for direct debugging of ESP32 through the
 USB interface without a separate JTAG debugger.
 
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
 
 Functionality Overview
 ======================
@@ -424,6 +431,8 @@ below to retrieve those files.
 
 Building & Flashing
 *******************
+
+.. zephyr:board-supported-runners::
 
 Simple boot
 ===========

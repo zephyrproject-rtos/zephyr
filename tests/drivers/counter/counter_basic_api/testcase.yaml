@@ -14,7 +14,6 @@ tests:
     depends_on: counter
     platform_allow:
       - nrf52840dk/nrf52840
-      - nrf52_bsim
     timeout: 400
     extra_configs:
       - CONFIG_ZERO_LATENCY_IRQS=y
@@ -27,7 +26,7 @@ tests:
     depends_on: counter
     platform_allow:
       - nucleo_f429zi
-      - nucleo_wba52cg
+      - nucleo_wba55cg
       - google_dragonclaw
     timeout: 600
     extra_configs:

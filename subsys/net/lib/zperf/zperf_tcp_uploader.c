@@ -15,10 +15,13 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/net/zperf.h>
 
 #include "zperf_internal.h"
+#include "zperf_session.h"
 
 static char sample_packet[PACKET_SIZE_MAX];
 
+#if !defined(CONFIG_ZPERF_SESSION_PER_THREAD)
 static struct zperf_async_upload_context tcp_async_upload_ctx;
+#endif /* !CONFIG_ZPERF_SESSION_PER_THREAD */
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
@@ -105,6 +108,7 @@ static int tcp_upload(int sock,
 				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 	results->nb_packets_errors = nb_errors;
+	results->total_len = (uint64_t)nb_packets * packet_size;
 
 	if (alloc_errors > 0) {
 		NET_WARN("There was %u network buffer allocation "
@@ -148,9 +152,36 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 
 static void tcp_upload_async_work(struct k_work *work)
 {
-	struct zperf_async_upload_context *upload_ctx =
-		CONTAINER_OF(work, struct zperf_async_upload_context, work);
-	struct zperf_results result = { 0 };
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct session *ses;
+	struct zperf_async_upload_context *upload_ctx;
+	struct zperf_results *result;
+
+	ses = CONTAINER_OF(work, struct session, async_upload_ctx.work);
+	upload_ctx = &ses->async_upload_ctx;
+
+	if (ses->wait_for_start) {
+		NET_INFO("[%d] %s waiting for start", ses->id, "TCP");
+
+		/* Wait for the start event to be set */
+		k_event_wait(ses->zperf->start_event, START_EVENT, true, K_FOREVER);
+
+		NET_INFO("[%d] %s starting", ses->id, "TCP");
+	}
+
+	NET_DBG("[%d] thread %p priority %d name %s", ses->id, k_current_get(),
+		k_thread_priority_get(k_current_get()),
+		k_thread_name_get(k_current_get()));
+
+	result = &ses->result;
+
+	ses->in_progress = true;
+#else
+	struct zperf_async_upload_context *upload_ctx = &tcp_async_upload_ctx;
+	struct zperf_results result_storage = { 0 };
+	struct zperf_results *result = &result_storage;
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	int ret;
 	struct zperf_upload_params param = upload_ctx->param;
 	int sock;
@@ -197,15 +228,15 @@ static void tcp_upload_async_work(struct k_work *work)
 			upload_ctx->callback(ZPERF_SESSION_PERIODIC_RESULT, &periodic_result,
 					     upload_ctx->user_data);
 
-			result.nb_packets_sent += periodic_result.nb_packets_sent;
-			result.client_time_in_us += periodic_result.client_time_in_us;
-			result.nb_packets_errors += periodic_result.nb_packets_errors;
+			result->nb_packets_sent += periodic_result.nb_packets_sent;
+			result->client_time_in_us += periodic_result.client_time_in_us;
+			result->nb_packets_errors += periodic_result.nb_packets_errors;
 		}
 
-		result.packet_size = periodic_result.packet_size;
+		result->packet_size = periodic_result.packet_size;
 
 	} else {
-		ret = tcp_upload(sock, param.duration_ms, param.packet_size, &result);
+		ret = tcp_upload(sock, param.duration_ms, param.packet_size, result);
 		if (ret < 0) {
 			upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 					     upload_ctx->user_data);
@@ -213,7 +244,7 @@ static void tcp_upload_async_work(struct k_work *work)
 		}
 	}
 
-	upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
+	upload_ctx->callback(ZPERF_SESSION_FINISHED, result,
 			     upload_ctx->user_data);
 cleanup:
 	zsock_close(sock);
@@ -226,6 +257,54 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct k_work_q *queue;
+	struct zperf_work *zperf;
+	struct session *ses;
+	k_tid_t tid;
+
+	ses = get_free_session(&param->peer_addr, SESSION_TCP);
+	if (ses == NULL) {
+		NET_ERR("Cannot get a session!");
+		return -ENOENT;
+	}
+
+	if (k_work_is_pending(&ses->async_upload_ctx.work)) {
+		NET_ERR("[%d] upload already in progress", ses->id);
+		return -EBUSY;
+	}
+
+	memcpy(&ses->async_upload_ctx.param, param, sizeof(*param));
+
+	ses->proto = SESSION_TCP;
+	ses->async_upload_ctx.callback = callback;
+	ses->async_upload_ctx.user_data = user_data;
+
+	zperf = get_queue(SESSION_TCP, ses->id);
+
+	queue = zperf->queue;
+	if (queue == NULL) {
+		NET_ERR("Cannot get a work queue!");
+		return -ENOENT;
+	}
+
+	tid = k_work_queue_thread_get(queue);
+	k_thread_priority_set(tid, ses->async_upload_ctx.param.options.thread_priority);
+
+	k_work_init(&ses->async_upload_ctx.work, tcp_upload_async_work);
+
+	ses->start_time = k_uptime_ticks();
+	ses->zperf = zperf;
+	ses->wait_for_start = param->options.wait_for_start;
+
+	zperf_async_work_submit(SESSION_TCP, ses->id, &ses->async_upload_ctx.work);
+
+	NET_DBG("[%d] thread %p priority %d name %s", ses->id, k_current_get(),
+		k_thread_priority_get(k_current_get()),
+		k_thread_name_get(k_current_get()));
+
+#else /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
 	if (k_work_is_pending(&tcp_async_upload_ctx.work)) {
 		return -EBUSY;
 	}
@@ -234,12 +313,16 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 	tcp_async_upload_ctx.callback = callback;
 	tcp_async_upload_ctx.user_data = user_data;
 
-	zperf_async_work_submit(&tcp_async_upload_ctx.work);
+	zperf_async_work_submit(SESSION_TCP, -1, &tcp_async_upload_ctx.work);
+
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 	return 0;
 }
 
 void zperf_tcp_uploader_init(void)
 {
+#if !defined(CONFIG_ZPERF_SESSION_PER_THREAD)
 	k_work_init(&tcp_async_upload_ctx.work, tcp_upload_async_work);
+#endif /* !CONFIG_ZPERF_SESSION_PER_THREAD */
 }

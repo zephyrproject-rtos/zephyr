@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "arduino_uno_r4_wifi-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+/ {
+	model = "Arduino Uno R4 WiFi";
+
+	leds {
+		compatible = "gpio-leds";
+		led: led {
+			gpios = <&arduino_header ARDUINO_HEADER_R3_D13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led: pwm_led {
+			pwms = <&arduino_pwm ARDUINO_HEADER_R3_D13 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
+
+	aliases {
+		led0 = &led;
+		pwm-led0 = &pwm_led;
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &ioport0 14 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &ioport0 0 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &ioport0 1 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &ioport0 2 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &ioport1 1 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &ioport1 0 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &ioport3 1 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &ioport3 2 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &ioport1 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &ioport1 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &ioport1 6 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &ioport1 7 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &ioport1 11 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &ioport1 12 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &ioport3 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &ioport3 3 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &ioport1 3 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &ioport4 11 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &ioport4 10 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &ioport1 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &ioport1 1 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &ioport1 0 0>;
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <ARDUINO_HEADER_R3_A0 &adc0 9>,        /* P009 = CH09 */
+				 <ARDUINO_HEADER_R3_A1 &adc0 0>,        /* P000 = CH00 */
+				 <ARDUINO_HEADER_R3_A2 &adc0 1>,        /* P001 = CH01 */
+				 <ARDUINO_HEADER_R3_A3 &adc0 2>,        /* P002 = CH02 */
+				 <ARDUINO_HEADER_R3_A4 &adc0 21>,       /* P101 = CH21 */
+				 <ARDUINO_HEADER_R3_A5 &adc0 22>;       /* P100 = CH22 */
+	};
+
+	arduino_pwm: connector-pwm {
+		compatible = "arduino-header-pwm";
+		#pwm-cells = <3>;
+		pwm-map = <ARDUINO_HEADER_R3_D2 0 0 &pwm1 1 0 0>,       /* P104 = GPT1_B */
+			  <ARDUINO_HEADER_R3_D3 0 0 &pwm1 0 0 0>,       /* P105 = GPT1_A */
+			  <ARDUINO_HEADER_R3_D4 0 0 &pwm0 1 0 0>,       /* P106 = GPT0 B */
+			  <ARDUINO_HEADER_R3_D5 0 0 &pwm0 0 0 0>,       /* P107 = GPT0_A */
+			  <ARDUINO_HEADER_R3_D6 0 0 &pwm3 0 0 0>,       /* P111 = GPT3_A */
+			  <ARDUINO_HEADER_R3_D7 0 0 &pwm3 1 0 0>,       /* P112 = GPT3_B */
+			  <ARDUINO_HEADER_R3_D8 0 0 &pwm7 0 0 0>,       /* P304 = GPT7_A */
+			  <ARDUINO_HEADER_R3_D9 0 0 &pwm7 1 0 0>,       /* P303 = GPT7_B */
+			  <ARDUINO_HEADER_R3_D10 0 0 &pwm2 0 0 0>,      /* P103 = GPT2_A */
+			  <ARDUINO_HEADER_R3_D11 0 0 &pwm6 0 0 0>,      /* P411 = GPT6_A */
+			  <ARDUINO_HEADER_R3_D12 0 0 &pwm6 1 0 0>,      /* P410 = GPT6_B */
+			  <ARDUINO_HEADER_R3_D13 0 0 &pwm2 1 0 0>;      /* P102 = GPT2_B */
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <14 1>, <15 1>, <16 1>, <17 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+qwiic_i2c: &iic0 {};
+arduino_i2c: &iic1 {};
+arduino_spi: &spi0 {};

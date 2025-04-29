@@ -35,6 +35,12 @@ static int get_bit_and_reset(const struct device *dev, int mask)
 	DRV_STATUS(dev) &= ~mask;
 #else
 	DRV_STATUS(dev) = mask;
+
+	if (IS_ENABLED(CONFIG_BBRAM_NPCX_STATUS_REG_WRITE_WORKAROUND)) {
+		uint8_t __unused read_unused;
+
+		read_unused = DRV_STATUS(dev);
+	}
 #endif
 
 	return result;
@@ -71,7 +77,6 @@ static int bbram_npcx_read(const struct device *dev, size_t offset, size_t size,
 	if (size < 1 || offset + size > config->size || bbram_npcx_check_invalid(dev)) {
 		return -EINVAL;
 	}
-
 
 	bytecpy(data, ((uint8_t *)config->base_addr + offset), size);
 	return 0;

@@ -31,6 +31,8 @@ on a smartphone/PC to implement applications such as:
 (see `Motion and environmental sensors`_ section for the complete lists of available
 sensors on board)
 
+.. zephyr:board-supported-hw::
+
 Hardware
 ********
 
@@ -246,6 +248,8 @@ Console default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are two alternative methods of flashing ST Sensortile.box Pro board:
 

@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-TWD node
+description: Nuvoton, NPCX-TWD
 
 compatible: "nuvoton,npcx-watchdog"
 

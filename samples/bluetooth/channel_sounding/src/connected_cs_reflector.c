@@ -89,32 +89,54 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	connection = NULL;
 }
 
-static void remote_capabilities_cb(struct bt_conn *conn, struct bt_conn_le_cs_capabilities *params)
+static void remote_capabilities_cb(struct bt_conn *conn,
+				   uint8_t status,
+				   struct bt_conn_le_cs_capabilities *params)
 {
 	ARG_UNUSED(params);
-	printk("CS capability exchange completed.\n");
-	k_sem_give(&sem_remote_capabilities_obtained);
-}
 
-static void config_created_cb(struct bt_conn *conn, struct bt_conn_le_cs_config *config)
-{
-	printk("CS config creation complete. ID: %d\n", config->id);
-	k_sem_give(&sem_config_created);
-}
-
-static void security_enabled_cb(struct bt_conn *conn)
-{
-	printk("CS security enabled.\n");
-	k_sem_give(&sem_cs_security_enabled);
-}
-
-static void procedure_enabled_cb(struct bt_conn *conn,
-				 struct bt_conn_le_cs_procedure_enable_complete *params)
-{
-	if (params->state == 1) {
-		printk("CS procedures enabled.\n");
+	if (status == BT_HCI_ERR_SUCCESS) {
+		printk("CS capability exchange completed.\n");
+		k_sem_give(&sem_remote_capabilities_obtained);
 	} else {
-		printk("CS procedures disabled.\n");
+		printk("CS capability exchange failed. (HCI status 0x%02x)\n", status);
+	}
+}
+
+static void config_create_cb(struct bt_conn *conn,
+			     uint8_t status,
+			     struct bt_conn_le_cs_config *config)
+{
+	if (status == BT_HCI_ERR_SUCCESS) {
+		printk("CS config creation complete. ID: %d\n", config->id);
+		k_sem_give(&sem_config_created);
+	} else {
+		printk("CS config creation failed. (HCI status 0x%02x)\n", status);
+	}
+}
+
+static void security_enable_cb(struct bt_conn *conn, uint8_t status)
+{
+	if (status == BT_HCI_ERR_SUCCESS) {
+		printk("CS security enabled.\n");
+		k_sem_give(&sem_cs_security_enabled);
+	} else {
+		printk("CS security enable failed. (HCI status 0x%02x)\n", status);
+	}
+}
+
+static void procedure_enable_cb(struct bt_conn *conn,
+				uint8_t status,
+				struct bt_conn_le_cs_procedure_enable_complete *params)
+{
+	if (status == BT_HCI_ERR_SUCCESS) {
+		if (params->state == 1) {
+			printk("CS procedures enabled.\n");
+		} else {
+			printk("CS procedures disabled.\n");
+		}
+	} else {
+		printk("CS procedures enable failed. (HCI status 0x%02x)\n", status);
 	}
 }
 
@@ -160,10 +182,10 @@ static void write_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_p
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected_cb,
 	.disconnected = disconnected_cb,
-	.le_cs_remote_capabilities_available = remote_capabilities_cb,
-	.le_cs_config_created = config_created_cb,
-	.le_cs_security_enabled = security_enabled_cb,
-	.le_cs_procedure_enabled = procedure_enabled_cb,
+	.le_cs_read_remote_capabilities_complete = remote_capabilities_cb,
+	.le_cs_config_complete = config_create_cb,
+	.le_cs_security_enable_complete = security_enable_cb,
+	.le_cs_procedure_enable_complete = procedure_enable_cb,
 	.le_cs_subevent_data_available = subevent_result_cb,
 };
 

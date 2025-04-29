@@ -8,6 +8,9 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
+/delete-node/ &eth;
+/delete-node/ &mdio;
+
 / {
 	soc {
 		sram0: memory@1ffe0000 {
@@ -61,12 +64,10 @@
 		};
 
 		adc@4005c000 {
-			channel-count = <13>;
 			channel-available-mask = <0x1f00ff>;
 		};
 
 		adc@4005c200 {
-			channel-count = <9>;
 			channel-available-mask = <0x700e7>;
 		};
 

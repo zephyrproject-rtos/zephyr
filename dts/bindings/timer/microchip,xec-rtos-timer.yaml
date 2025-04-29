@@ -18,3 +18,9 @@ properties:
     type: array
     required: true
     description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+  clock-frequency:
+    type: int
+    required: true
+    const: 32768
+    description: RTOS timer runs at fixed 32 KHz.

@@ -66,6 +66,12 @@ static const uint8_t test_response_error_data[8] = {
 	0xbf, 0x62, 0x72, 0x63, 0x19, 0x01, 0x00, 0xff
 };
 
+/*
+ * TODO: The contents of these structs are not used, which is why clang complains.
+ * The test should be updated to use these values. See discussion in
+ * https://github.com/zephyrproject-rtos/zephyr/pull/87592.
+ */
+TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 static const uint8_t test_response_read_data_start[5] = {
 	0xbf, 0x63, 0x76, 0x61, 0x6c
 };
@@ -73,6 +79,7 @@ static const uint8_t test_response_read_data_start[5] = {
 static const uint8_t test_response_read_data_end[1] = {
 	0xff
 };
+TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 
 static void cleanup_test(void *p)
 {

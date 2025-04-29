@@ -48,8 +48,11 @@ struct bt_br_discovery_priv {
 	/** Page scan repetition mode */
 	uint8_t pscan_rep_mode;
 	/** Resolving remote name*/
-	bool resolving;
+	uint8_t resolve_state;
 };
+
+/** Maximum size of Extended Inquiry Response */
+#define BT_BR_EIR_SIZE_MAX 240
 
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
@@ -66,7 +69,7 @@ struct bt_br_discovery_result {
 	uint8_t cod[3];
 
 	/** Extended Inquiry Response */
-	uint8_t eir[240];
+	uint8_t eir[BT_BR_EIR_SIZE_MAX];
 };
 
 /** BR/EDR discovery parameters */
@@ -175,12 +178,17 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  * to devices making general inquiry. To enable this state it's mandatory
  * to first be in connectable state.
  *
+ * If the device enters limited discoverable mode, the controller will leave from discoverable
+ * mode after the duration of @kconfig{BT_LIMITED_DISCOVERABLE_DURATION} seconds in the limited
+ * discoverable mode.
+ *
  * @param enable Value allowing/disallowing controller to become discoverable.
+ * @param limited Value allowing/disallowing controller to enter limited discoverable mode.
  *
  * @return Negative if fail set to requested state or requested state has been
  *         already set. Zero if done successfully.
  */
-int bt_br_set_discoverable(bool enable);
+int bt_br_set_discoverable(bool enable, bool limited);
 
 /**
  * @brief Enable/disable set controller in connectable state.
@@ -195,6 +203,38 @@ int bt_br_set_discoverable(bool enable);
  *         already set. Zero if done successfully.
  */
 int bt_br_set_connectable(bool enable);
+
+/** @brief Check if a Bluetooth classic device address is bonded.
+ *
+ *  @param addr Bluetooth classic device address.
+ *
+ *  @return true if @p addr is bonded
+ */
+bool bt_br_bond_exists(const bt_addr_t *addr);
+
+/**
+ * @brief Clear classic pairing information .
+ *
+ * @param addr  Remote address, NULL or BT_ADDR_ANY to clear all remote devices.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_br_unpair(const bt_addr_t *addr);
+
+/** Information about a bond with a remote device. */
+struct bt_br_bond_info {
+	/** Address of the remote device. */
+	bt_addr_t addr;
+};
+
+/**
+ * @brief Iterate through all existing bonds of Classic.
+ *
+ * @param func       Function to call for each bond.
+ * @param user_data  Data to pass to the callback function.
+ */
+void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *user_data),
+			void *user_data);
 
 /**
  * @}

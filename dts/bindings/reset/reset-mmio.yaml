@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic MMIO Reset driver for devices with a single memory mapped reset bit
+  required to take them out of reset.
+
+compatible: "reset-mmio"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+  num-resets:
+    type: int
+    required: true
+    description: |
+      Number of resets controlled by the register.
+      Can be in the range [1, 31].
+  active-low:
+    description: Reset is active in low state.
+    type: boolean

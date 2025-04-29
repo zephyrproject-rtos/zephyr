@@ -18,3 +18,5 @@ supported:
   - pwm
   - spi
   - uart
+  - usbd
+  - watchdog

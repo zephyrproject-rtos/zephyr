@@ -215,12 +215,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
-config SRAM_VECTOR_TABLE
-	bool "Place the vector table in SRAM instead of flash"
-	help
-	  The option specifies that the vector table should be placed at the
-	  start of SRAM instead of the start of flash.
-
 config HAS_SRAM_OFFSET
 	bool
 	help
@@ -620,6 +614,13 @@ config MISRA_SANE
 	  disallows some otherwise-permitted features of the C
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
+
+config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
+	bool
+	default y
+	help
+	  Hidden symbol to state if the toolchain can handle vla in
+	  statements.
 
 endmenu
 

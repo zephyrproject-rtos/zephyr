@@ -45,6 +45,10 @@ struct zperf_upload_params {
 		uint8_t tos;
 		int tcp_nodelay;
 		int priority;
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		int thread_priority;
+		bool wait_for_start;
+#endif
 		uint32_t report_interval_ms;
 	} options;
 };

@@ -4,12 +4,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys_clock.h>
+
+#include "keys.h"
 
 #define RPA_TIMEOUT_MS(_rpa_timeout) (_rpa_timeout * MSEC_PER_SEC)
 
 static inline bool bt_id_rpa_is_new(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
+	/* TODO: To get bt_dev we should include "hci_core.h" but that gives redefinitions
+	 * Should we have an API to get the rpa_update value?
+	 */
 	uint32_t remaining_ms = k_ticks_to_ms_floor32(
 		k_work_delayable_remaining_get(&bt_dev.rpa_update));
 	/* RPA is considered new if there is less than half a second since the
@@ -43,5 +56,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv);
 int bt_id_set_private_addr(uint8_t id);
 
 void bt_id_pending_keys_update(void);
+
+void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag);
 
 void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv);

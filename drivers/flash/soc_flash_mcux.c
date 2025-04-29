@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
-#elif defined(CONFIG_SOC_MCXA156)
+#elif defined(CONFIG_SOC_SERIES_MCXA)
 #include "fsl_romapi.h"
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
@@ -137,6 +137,11 @@ static void clear_flash_caches(void)
 	volatile uint32_t *const lpcac_ctrl = (volatile uint32_t *)0x40000824;
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
+}
+#elif CONFIG_SOC_SERIES_MCXA
+static void clear_flash_caches(void)
+{
+	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
 }
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES

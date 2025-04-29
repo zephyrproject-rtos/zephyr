@@ -14,7 +14,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-#include <stm32_ll_icache.h>
+#include <zephyr/cache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
@@ -103,14 +103,14 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
  * STM32H5X: accesses to flash RO region must be done with caching disabled.
  */
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Disable();
+	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* Calculate VREF+ using VREFINT bandgap voltage and calibration data */
 	vref = (cfg->cal_mv * ((*cfg->cal_addr) >> cfg->cal_shift)) / data->raw;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	return sensor_value_from_milli(val, vref);

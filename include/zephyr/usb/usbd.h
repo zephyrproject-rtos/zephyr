@@ -37,6 +37,12 @@ extern "C" {
  * @{
  */
 
+/* 1 if USB device stack is compiled with High-Speed support */
+#define USBD_SUPPORTS_HIGH_SPEED IS_EQ(CONFIG_USBD_MAX_SPEED, 1)
+
+/* Maximum bulk max packet size the stack supports */
+#define USBD_MAX_BULK_MPS COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (512), (64))
+
 /*
  * The USB Unicode bString is encoded in UTF16LE, which means it takes up
  * twice the amount of bytes than the same string encoded in ASCII7.
@@ -254,6 +260,8 @@ struct usbd_status {
 	unsigned int suspended : 1;
 	/** USB remote wake-up feature is enabled */
 	unsigned int rwup : 1;
+	/** USB device is self-powered */
+	unsigned int self_powered : 1;
 	/** USB device speed */
 	enum usbd_speed speed : 2;
 };
@@ -631,6 +639,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param d_name   String descriptor node identifier.
  */
 #define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name)					\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_HWINFO), "HWINFO not enabled");		\
 	static struct usbd_desc_node d_name = {					\
 		.str = {							\
 			.utype = USBD_DUT_STRING_SERIAL_NUMBER,			\
@@ -1065,6 +1074,17 @@ bool usbd_is_suspended(struct usbd_context *uds_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbd_wakeup_request(struct usbd_context *uds_ctx);
+
+/**
+ * @brief Set the self-powered status of the USB device
+ *
+ * The status is used in the Self Powered field of the Get Status request
+ * response to indicate whether the device is currently self-powered.
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ * @param[in] status Sets self-powered status if true, clears it otherwise
+ */
+void usbd_self_powered(struct usbd_context *uds_ctx, const bool status);
 
 /**
  * @brief Get actual device speed

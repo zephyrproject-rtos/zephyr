@@ -8,6 +8,7 @@
 #include <kernel_arch_data.h>
 #include <x86_mmu.h>
 #include <zephyr/init.h>
+#include <ksched.h>
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
@@ -37,4 +38,17 @@ int arch_smp_init(void)
 void arch_sched_broadcast_ipi(void)
 {
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (unsigned int i = 0; i < num_cpus; i++) {
+		if ((cpu_bitmap & BIT(i)) == 0) {
+			continue;
+		}
+
+		z_loapic_ipi(i, LOAPIC_ICR_IPI_SPECIFIC, CONFIG_SCHED_IPI_VECTOR);
+	}
 }

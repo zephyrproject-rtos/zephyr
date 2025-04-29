@@ -15,6 +15,26 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_dac: dac@dac0dac0 {
+			compatible = "vnd,dac";
+			reg = <0xdac0dac0 0x1000>;
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		test_dac_leds {
+			compatible = "dac-leds";
+			test_dac_led0: test_dac_led_0 {
+				dac-dev = <&test_dac>;
+				channel = <0>;
+				resolution = <16>;
+				voltage-min-brightness-mv = <123>;
+				voltage-max-brightness-mv = <1234>;
+				voltage-max-dac-mv = <3456>;
+				output-buffer;
+			};
+		};
+
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
 			gpio-controller;
@@ -123,6 +143,30 @@
 			is31fl3733@10 {
 				compatible = "issi,is31fl3733";
 				reg = <0x10>;
+			};
+
+			axp192@11 {
+				compatible = "x-powers,axp192";
+				reg = <0x11>;
+				status = "okay";
+
+				pwr_led {
+					compatible = "x-powers,axp192-led";
+					status = "okay";
+					x-powers,mode = "by-reg";
+				};
+			};
+
+			axp2101@12 {
+				compatible = "x-powers,axp2101";
+				reg = <0x12>;
+				status = "okay";
+
+				pwr_led {
+					compatible = "x-powers,axp2101-led";
+					status = "okay";
+					x-powers,mode = "by-reg";
+				};
 			};
 		};
 	};

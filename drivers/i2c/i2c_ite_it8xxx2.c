@@ -21,7 +21,7 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
-
+#include "i2c_bitbang.h"
 #include "i2c-priv.h"
 
 /* Start smbus session from idle state */
@@ -74,6 +74,7 @@ struct i2c_it8xxx2_data {
 	struct i2c_msg *active_msg;
 	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
+	struct i2c_bitbang bitbang;
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 	struct i2c_msg *msgs_list;
 	/* Read or write byte counts. */
@@ -1186,10 +1187,40 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
+static void i2c_it8xxx2_set_scl(void *io_context, int state)
+{
+	const struct i2c_it8xxx2_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl_gpios, state);
+}
+
+static void i2c_it8xxx2_set_sda(void *io_context, int state)
+{
+	const struct i2c_it8xxx2_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda_gpios, state);
+}
+
+static int i2c_it8xxx2_get_sda(void *io_context)
+{
+	const struct i2c_it8xxx2_config *config = io_context;
+	int ret = gpio_pin_get_dt(&config->sda_gpios);
+
+	/* Default high as that would be a NACK */
+	return ret != 0;
+}
+
+static const struct i2c_bitbang_io i2c_it8xxx2_bitbang_io = {
+	.set_scl = i2c_it8xxx2_set_scl,
+	.set_sda = i2c_it8xxx2_set_sda,
+	.get_sda = i2c_it8xxx2_get_sda,
+};
+
 static int i2c_it8xxx2_recover_bus(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
-	int i, status;
+	struct i2c_it8xxx2_data *data = dev->data;
+	int status, ret;
 
 	/* Output type selection */
 	gpio_flags_t flags = GPIO_OUTPUT | (config->push_pull_recovery ? 0 : GPIO_OPEN_DRAIN);
@@ -1198,42 +1229,12 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 	/* Set SDA of I2C as GPIO pin */
 	gpio_pin_configure_dt(&config->sda_gpios, flags);
 
-	/*
-	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c
-	 * is mainly to ensure that gpio has enough time to go from
-	 * low to high or high to low.
-	 */
-	/* Pull SCL and SDA pin to high */
-	gpio_pin_set_dt(&config->scl_gpios, 1);
-	gpio_pin_set_dt(&config->sda_gpios, 1);
-	k_msleep(1);
+	i2c_bitbang_init(&data->bitbang, &i2c_it8xxx2_bitbang_io, (void *)config);
 
-	/* Start condition */
-	gpio_pin_set_dt(&config->sda_gpios, 0);
-	k_msleep(1);
-	gpio_pin_set_dt(&config->scl_gpios, 0);
-	k_msleep(1);
-
-	/* 9 cycles of SCL with SDA held high */
-	for (i = 0; i < 9; i++) {
-		/* SDA */
-		gpio_pin_set_dt(&config->sda_gpios, 1);
-		/* SCL */
-		gpio_pin_set_dt(&config->scl_gpios, 1);
-		k_msleep(1);
-		/* SCL */
-		gpio_pin_set_dt(&config->scl_gpios, 0);
-		k_msleep(1);
+	ret = i2c_bitbang_recover_bus(&data->bitbang);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to recover bus (err %d)", dev->name, ret);
 	}
-	/* SDA */
-	gpio_pin_set_dt(&config->sda_gpios, 0);
-	k_msleep(1);
-
-	/* Stop condition */
-	gpio_pin_set_dt(&config->scl_gpios, 1);
-	k_msleep(1);
-	gpio_pin_set_dt(&config->sda_gpios, 1);
-	k_msleep(1);
 
 	/* Set GPIO back to I2C alternate function of SCL */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);

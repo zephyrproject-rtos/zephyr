@@ -235,13 +235,36 @@
 				 "gpin0", "gpin1";
 		};
 
-		gpio0: gpio@40028000 {
+		gpio0_map: gpio@40028000 {
 			compatible = "raspberrypi,pico-gpio";
 			reg = <0x40028000 DT_SIZE_K(4)>;
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-			gpio-controller;
+
+			gpio-map-mask = <0xffffffe0 0xffffffc0>;
+			gpio-map-pass-thru = <0x1f 0x3f>;
+			gpio-map = <0x00 0x0 &gpio0 0x0 0x0
+				    0x20 0x0 &gpio0_hi 0x0 0x0>;
 			#gpio-cells = <2>;
-			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio-port@0 {
+				compatible = "raspberrypi,pico-gpio-port";
+				reg = <0x0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+			};
+
+			gpio0_hi: gpio-port@1 {
+				compatible = "raspberrypi,pico-gpio-port";
+				reg = <0x1>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+			};
 		};
 
 		uart0: uart@40070000 {
@@ -390,9 +413,9 @@
 			#dma-cells = <3>;
 		};
 
-		usbd: usbd@50100000 {
+		usbd: usbd@50110000 {
 			compatible = "raspberrypi,pico-usbd";
-			reg = <0x50100000 0x10000>;
+			reg = <0x50110000 0x10000>;
 			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_USB>;
 			interrupts = <14 RPI_PICO_DEFAULT_IRQ_PRIORITY>;

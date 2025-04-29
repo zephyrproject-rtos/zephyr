@@ -98,7 +98,7 @@ enable extended battery life, small coin-cell batteries, and energy harvesting.
     trimmed RC (±1%)
   - 2x PLL for system clock, USB, SAI, ADC
 
-More information about STM32WB55RG can be found here:
+More information about STM32WB5MMG can be found here:
 
 - `STM32WB5MM-DK on www.st.com`_
 - `STM32WB5MMG datasheet`_
@@ -106,22 +106,7 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MM-DK board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mm_dk/stm32wb5mm_dk_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================
@@ -132,8 +117,7 @@ These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``.
 
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the ``hal_stm32`` repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
 
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not
 compatible anymore for a use in Zephyr and only "HCI Only" versions should be
@@ -181,6 +165,8 @@ and the second to PC13. They have the aliases sw0 and sw1 respectively.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the module.
 
@@ -244,9 +230,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
-
-.. _modules/hal/stm32/lib/stm32wb/hci/README:
-   https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
 
 .. _Hello_World:
    https://docs.zephyrproject.org/latest/samples/hello_world/README.html

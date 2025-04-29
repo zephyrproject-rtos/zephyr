@@ -14,4 +14,5 @@ supported:
   - uart
   - i2c
   - watchdog
+  - usb_device
 vendor: st

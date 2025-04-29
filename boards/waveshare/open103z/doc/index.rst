@@ -16,32 +16,12 @@ The Waveshare Open103Z provides the following hardware components:
 Supported Features
 ==================
 
-The Waveshare Open103Z configuration supports the following hardware features:
-
-+-----------+------------+--------------------------------------+
-| Interface | Controller |      Driver/Component                |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vectored interrupt controller |
-+-----------+------------+--------------------------------------+
-| ADC       | on-chip    | adc                                  |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | serial port                          |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | gpio                                 |
-+-----------+------------+--------------------------------------+
-| FLASH     | on-chip    | flash                                |
-+-----------+------------+--------------------------------------+
-| SPI       | on-chip    | spi                                  |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | i2c                                  |
-+-----------+------------+--------------------------------------+
-| CAN       | on-chip    | can (disabled by default)            |
-+-----------+------------+--------------------------------------+
-| USB       | on-chip    | usb                                  |
-+-----------+------------+--------------------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``waveshare_open103z`` board configuration can be built and
 flashed in the usual way.

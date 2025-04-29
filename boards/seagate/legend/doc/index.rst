@@ -1,7 +1,4 @@
-.. _legend:
-
-Legend
-######
+.. zephyr:board:: legend
 
 Overview
 ********
@@ -52,31 +49,7 @@ Hardware
 Supported Features
 ==================
 
-All the hardware features available on the Legend boards are supported by
-Zephyr.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c master/slave controller         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| SPI flash | on-chip    | spi_nor                             |
-+-----------+------------+-------------------------------------+
-| LED strip | on-chip    | ws2812                              |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -111,6 +84,8 @@ Connections and IOs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

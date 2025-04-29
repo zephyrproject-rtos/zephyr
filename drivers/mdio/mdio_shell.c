@@ -15,46 +15,37 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_mdio)
-#define DT_DRV_COMPAT atmel_sam_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_mdio)
-#define DT_DRV_COMPAT espressif_esp32_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_netc_emdio)
-#define DT_DRV_COMPAT nxp_imx_netc_emdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_netc_emdio)
-#define DT_DRV_COMPAT nxp_s32_netc_emdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_gmac_mdio)
-#define DT_DRV_COMPAT nxp_s32_gmac_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(adi_adin2111_mdio)
-#define DT_DRV_COMPAT adi_adin2111_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(smsc_lan91c111_mdio)
-#define DT_DRV_COMPAT smsc_lan91c111_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_mdio_gpio)
-#define DT_DRV_COMPAT zephyr_mdio_gpio
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_enet_mdio)
-#define DT_DRV_COMPAT nxp_enet_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(infineon_xmc4xxx_mdio)
-#define DT_DRV_COMPAT infineon_xmc4xxx_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_enet_qos_mdio)
-#define DT_DRV_COMPAT nxp_enet_qos_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(litex_liteeth_mdio)
-#define DT_DRV_COMPAT litex_liteeth_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
-#define DT_DRV_COMPAT st_stm32_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(snps_dwcxgmac_mdio)
-#define DT_DRV_COMPAT snps_dwcxgmac_mdio
-#elif DT_HAS_COMPAT_STATUS_OKAY(sensry_sy1xx_mdio)
-#define DT_DRV_COMPAT sensry_sy1xx_mdio
-#else
-#error "No known devicetree compatible match for MDIO shell"
-#endif
+static bool device_is_mdio(const struct device *dev)
+{
+	return DEVICE_API_IS(mdio, dev);
+}
 
-#define MDIO_NODE_ID DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_mdio);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
+static int parse_device_arg(const struct shell *sh, char **argv, const struct device **dev)
+{
+	*dev = shell_device_get_binding(argv[1]);
+	if (!*dev) {
+		shell_error(sh, "device %s not found", argv[1]);
+		return -ENODEV;
+	}
+	return 0;
+}
 
 /*
  * Scan the entire 5-bit address space of the MDIO bus
  *
- * scan [<reg_addr>]
+ * scan <device> [<reg_addr>]
  */
 static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 {
@@ -62,16 +53,15 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 	int cnt;
 	uint16_t data;
 	uint16_t reg_addr;
+	int ret;
 
-	dev = DEVICE_DT_GET(MDIO_NODE_ID);
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
-
-		return -ENODEV;
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (argc >= 2) {
-		reg_addr = strtol(argv[1], NULL, 16);
+		reg_addr = strtol(argv[2], NULL, 16);
 	} else {
 		reg_addr = 0;
 	}
@@ -99,24 +89,23 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* mdio write <port_addr> <reg_addr> <data> */
+/* mdio write <device> <port_addr> <reg_addr> <data> */
 static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint16_t data;
 	uint16_t reg_addr;
 	uint16_t port_addr;
+	int ret;
 
-	dev = DEVICE_DT_GET(MDIO_NODE_ID);
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
-
-		return -ENODEV;
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	port_addr = strtol(argv[1], NULL, 16);
-	reg_addr = strtol(argv[2], NULL, 16);
-	data = strtol(argv[3], NULL, 16);
+	port_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
+	data = strtol(argv[4], NULL, 16);
 
 	mdio_bus_enable(dev);
 
@@ -132,23 +121,22 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* mdio read <port_addr> <reg_addr> */
+/* mdio read <device> <port_addr> <reg_addr> */
 static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint16_t data;
 	uint16_t reg_addr;
 	uint16_t port_addr;
+	int ret;
 
-	dev = DEVICE_DT_GET(MDIO_NODE_ID);
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
-
-		return -ENODEV;
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	port_addr = strtol(argv[1], NULL, 16);
-	reg_addr = strtol(argv[2], NULL, 16);
+	port_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
 
 	mdio_bus_enable(dev);
 
@@ -166,7 +154,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* mdio write_c45 <port_addr> <dev_addr> <reg_addr> <value> */
+/* mdio write_c45 <device> <port_addr> <dev_addr> <reg_addr> <value> */
 static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -174,18 +162,17 @@ static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 	uint16_t reg_addr;
 	uint8_t dev_addr;
 	uint8_t port_addr;
+	int ret;
 
-	dev = DEVICE_DT_GET(MDIO_NODE_ID);
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
-
-		return -ENODEV;
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	port_addr = strtol(argv[1], NULL, 16);
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
-	data = strtol(argv[4], NULL, 16);
+	port_addr = strtol(argv[2], NULL, 16);
+	dev_addr = strtol(argv[3], NULL, 16);
+	reg_addr = strtol(argv[4], NULL, 16);
+	data = strtol(argv[5], NULL, 16);
 
 	mdio_bus_enable(dev);
 
@@ -201,7 +188,7 @@ static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* mdio read_c45 <port_addr> <dev_addr> <reg_addr> */
+/* mdio read_c45 <device> <port_addr> <dev_addr> <reg_addr> */
 static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -209,17 +196,16 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 	uint16_t reg_addr;
 	uint8_t dev_addr;
 	uint8_t port_addr;
+	int ret;
 
-	dev = DEVICE_DT_GET(MDIO_NODE_ID);
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
-
-		return -ENODEV;
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	port_addr = strtol(argv[1], NULL, 16);
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
+	port_addr = strtol(argv[2], NULL, 16);
+	dev_addr = strtol(argv[3], NULL, 16);
+	reg_addr = strtol(argv[4], NULL, 16);
 
 	mdio_bus_enable(dev);
 
@@ -238,23 +224,23 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
-	SHELL_CMD_ARG(scan, NULL,
-		"Scan MDIO bus for devices: scan [<reg_addr>]",
-		cmd_mdio_scan, 0, 1),
-	SHELL_CMD_ARG(read, NULL,
-		"Read from MDIO device: read <phy_addr> <reg_addr>",
-		cmd_mdio_read, 3, 0),
-	SHELL_CMD_ARG(write, NULL,
-		"Write to MDIO device: write <phy_addr> <reg_addr> <value>",
-		cmd_mdio_write, 4, 0),
-	SHELL_CMD_ARG(read_c45, NULL,
+	SHELL_CMD_ARG(scan, &dsub_device_name,
+		"Scan MDIO bus for devices: scan <device> [<reg_addr>]",
+		cmd_mdio_scan, 1, 1),
+	SHELL_CMD_ARG(read, &dsub_device_name,
+		"Read from MDIO device: read <device> <phy_addr> <reg_addr>",
+		cmd_mdio_read, 4, 0),
+	SHELL_CMD_ARG(write, &dsub_device_name,
+		"Write to MDIO device: write <device> <phy_addr> <reg_addr> <value>",
+		cmd_mdio_write, 5, 0),
+	SHELL_CMD_ARG(read_c45, &dsub_device_name,
 		"Read from MDIO Clause 45 device: "
-		"read_c45 <port_addr> <dev_addr> <reg_addr>",
-		cmd_mdio_read_c45, 4, 0),
-	SHELL_CMD_ARG(write_c45, NULL,
+		"read_c45 <device> <port_addr> <dev_addr> <reg_addr>",
+		cmd_mdio_read_c45, 5, 0),
+	SHELL_CMD_ARG(write_c45, &dsub_device_name,
 		"Write to MDIO Clause 45 device: "
-		"write_c45 <port_addr> <dev_addr> <reg_addr> <value>",
-		cmd_mdio_write_45, 5, 0),
+		"write_c45 <device> <port_addr> <dev_addr> <reg_addr> <value>",
+		cmd_mdio_write_45, 6, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 

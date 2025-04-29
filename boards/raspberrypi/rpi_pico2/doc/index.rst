@@ -30,51 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The ``rpi_pico2/rp2350a/m33`` board target supports the following
-hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - Clock controller
-     - :kconfig:option:`CONFIG_CLOCK_CONTROL`
-     - :dtcompatible:`raspberrypi,pico-clock-controller`
-   * - Counter
-     - :kconfig:option:`CONFIG_COUNTER`
-     - :dtcompatible:`raspberrypi,pico-timer`
-   * - DMA
-     - :kconfig:option:`CONFIG_DMA`
-     - :dtcompatible:`raspberrypi,pico-dma`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -83,6 +39,8 @@ The default pin mapping is unchanged from the Pico 1 (see :ref:`rpi_pico_pin_map
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 As with the Pico 1, the SWD interface can be used to program and debug the
 device, e.g. using OpenOCD with the `Raspberry Pi Debug Probe <https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html>`_ .

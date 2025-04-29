@@ -7,46 +7,57 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-
-#include <zephyr/bluetooth/att.h>
-#include <zephyr/kernel.h>
-#include <string.h>
+#include "sys/types.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/iterable_sections.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/sys/check.h>
+#include <string.h>
 
-#include <zephyr/settings/settings.h>
-
-#if defined(CONFIG_BT_GATT_CACHING)
-#include "psa/crypto.h"
-#endif /* CONFIG_BT_GATT_CACHING */
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include "common/bt_str.h"
+#if defined(CONFIG_BT_GATT_CACHING)
+#include <psa/crypto.h>
+#include <psa/crypto_struct.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
+#endif /* CONFIG_BT_GATT_CACHING */
 
-#include "hci_core.h"
-#include "conn_internal.h"
-#include "keys.h"
-#include "l2cap_internal.h"
 #include "att_internal.h"
-#include "smp.h"
-#include "settings.h"
+#include "conn_internal.h"
+#include "common/bt_str.h"
 #include "gatt_internal.h"
+#include "hci_core.h"
+#include "keys.h"
 #include "long_wq.h"
+#include "l2cap_internal.h"
+#include "settings.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_gatt);
 
 #define SC_TIMEOUT	K_MSEC(10)
@@ -384,7 +395,7 @@ static int bt_gatt_clear_sc(uint8_t id, const bt_addr_le_t *addr)
 
 static void sc_clear(struct bt_conn *conn)
 {
-	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		int err;
 
 		err = bt_gatt_clear_sc(conn->id, &conn->le.dst);
@@ -466,8 +477,7 @@ static void sc_save(uint8_t id, bt_addr_le_t *peer, uint16_t start, uint16_t end
 	modified = update_range(&cfg->data.start, &cfg->data.end, start, end);
 
 done:
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    modified && bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && modified && bt_le_bond_exists(cfg->id, &cfg->peer)) {
 		sc_store(cfg);
 	}
 }
@@ -487,9 +497,8 @@ static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 	return sizeof(value);
 }
 
-static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
-							    sc_ccc_cfg_write,
-							    NULL);
+static struct bt_gatt_ccc_managed_user_data sc_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(NULL, sc_ccc_cfg_write, NULL);
 
 /* Do not shuffle the values in this enum, they are used as bit offsets when
  * saving the CF flags to NVS (i.e. NVS persists between FW upgrades).
@@ -720,7 +729,7 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 		LOG_ERR("Unable to import the key for AES CMAC %d", ret);
 		return -EIO;
 	}
-	state->operation = psa_mac_operation_init();
+	memset(&state->operation, 0, sizeof(state->operation));
 
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
@@ -1030,7 +1039,7 @@ static void remove_cf_cfg(struct bt_conn *conn)
 	 * trusted relationship the characteristic value shall be set to the
 	 * default value at each connection.
 	 */
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		clear_cf_cfg(cfg);
 	} else {
 		/* Update address in case it has changed */
@@ -1119,7 +1128,7 @@ struct addr_match {
 static uint8_t convert_to_id_on_match(const struct bt_gatt_attr *attr,
 				      uint16_t handle, void *user_data)
 {
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct addr_match *match = user_data;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -1148,7 +1157,7 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 		.private_addr = private_addr,
 		.id_addr      = id_addr
 	};
-	bool is_bonded = bt_addr_le_is_bonded(conn->id, &conn->le.dst);
+	bool is_bonded = bt_le_bond_exists(conn->id, &conn->le.dst);
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, convert_to_id_on_match, &user_data);
 
@@ -1448,7 +1457,7 @@ static struct ds_peer *gatt_delayed_store_alloc(uint8_t id,
 static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
 				       enum delayed_store_flags flag)
 {
-	bool bonded = bt_addr_le_is_bonded(id, peer_addr);
+	bool bonded = bt_le_bond_exists(id, peer_addr);
 	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
 
 	if (bonded) {
@@ -1483,7 +1492,7 @@ static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
 {
 	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
 
-	if (bt_addr_le_is_bonded(id, peer_addr)) {
+	if (bt_le_bond_exists(id, peer_addr)) {
 		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) ||
 		    (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) && el &&
 		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC))) {
@@ -1645,7 +1654,7 @@ static void db_changed(void)
 #endif
 }
 
-static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
+static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	ccc->value = 0;
 
@@ -1671,7 +1680,7 @@ static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
 			}
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS) && store &&
-			    bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
+			    bt_le_bond_exists(cfg->id, &cfg->peer)) {
 				bt_gatt_store_ccc(cfg->id, &cfg->peer);
 			}
 
@@ -2128,7 +2137,7 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 }
 
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
-					    struct _bt_gatt_ccc *ccc)
+					    struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
@@ -2150,7 +2159,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	struct _bt_gatt_ccc *ccc = attr->user_data;
+	struct bt_gatt_ccc_managed_user_data *ccc = attr->user_data;
 	const struct bt_gatt_ccc_cfg *cfg;
 	uint16_t value;
 
@@ -2167,7 +2176,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 }
 
 static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
-			     struct _bt_gatt_ccc *ccc)
+			     struct bt_gatt_ccc_managed_user_data *ccc)
 {
 	int i;
 	uint16_t value = 0x0000;
@@ -2201,7 +2210,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct _bt_gatt_ccc *ccc = attr->user_data;
+	struct bt_gatt_ccc_managed_user_data *ccc = attr->user_data;
 	struct bt_gatt_ccc_cfg *cfg;
 	bool value_changed;
 	uint16_t value;
@@ -2733,7 +2742,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			 void *user_data)
 {
 	struct notify_data *data = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	size_t i;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -3322,7 +3331,7 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct conn_data *data = user_data;
 	struct bt_conn *conn = data->conn;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	size_t i;
 	uint8_t err;
 
@@ -3384,7 +3393,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			       void *user_data)
 {
 	struct bt_conn *conn = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	bool value_used;
 	size_t i;
 
@@ -3424,7 +3433,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			}
 		} else {
 			/* Clear value if not paired */
-			if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 				if (ccc == &sc_ccc) {
 					sc_clear(conn);
 				}
@@ -3472,7 +3481,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			LOG_ERR("Read method not set");
 			return false;
 		}
-		/* The charactestic properties is the first byte of the attribute value */
+		/* The characterstic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
 			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
@@ -3740,9 +3749,8 @@ static void remove_subscriptions(struct bt_conn *conn)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
 		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
 
-		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst) ||
-		    (atomic_test_bit(params->flags,
-				     BT_GATT_SUBSCRIBE_FLAG_VOLATILE))) {
+		if (!bt_le_bond_exists(conn->id, &conn->le.dst) ||
+		    (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE))) {
 			/* Remove subscription */
 			params->value = 0U;
 			gatt_sub_remove(conn, sub, prev, params);
@@ -5675,7 +5683,7 @@ static void add_subscriptions(struct bt_conn *conn)
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *params;
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		return;
 	}
 
@@ -5726,7 +5734,7 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 #define CCC_STORE_MAX 0
 #endif /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
 
-static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
+static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct bt_gatt_ccc_managed_user_data *ccc,
 					    const bt_addr_le_t *addr,
 					    uint8_t id)
 {
@@ -5751,7 +5759,7 @@ struct ccc_load {
 	size_t count;
 };
 
-static void ccc_clear(struct _bt_gatt_ccc *ccc,
+static void ccc_clear(struct bt_gatt_ccc_managed_user_data *ccc,
 		      const bt_addr_le_t *addr,
 		      uint8_t id)
 {
@@ -5770,7 +5778,7 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 			void *user_data)
 {
 	struct ccc_load *load = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -5890,6 +5898,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
+#ifdef CONFIG_BT_SETTINGS
 static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 		      void *cb_arg)
 {
@@ -5902,6 +5911,7 @@ static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 }
 
 BT_SETTINGS_DEFINE(ccc, "ccc", ccc_set_cb, NULL);
+#endif /* CONFIG_BT_SETTINGS */
 
 static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 			  void *cb_arg, void *param)
@@ -5933,7 +5943,7 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 	/* Load CCC settings from backend if bonded */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	    bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		char key[BT_SETTINGS_KEY_MAX];
 
 		if (conn->id) {
@@ -6107,7 +6117,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 			void *user_data)
 {
 	struct ccc_save *save = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -6390,7 +6400,7 @@ static uint8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
 				     uint16_t handle, void *user_data)
 {
 	const struct addr_with_id *addr_with_id = user_data;
-	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_managed_user_data *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -6521,7 +6531,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 	/* Make sure to clear the CCC entry when using lazy loading */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	    bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		struct addr_with_id addr_with_id = {
 			.addr = &conn->le.dst,
 			.id = conn->id,

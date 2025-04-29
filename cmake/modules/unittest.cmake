@@ -12,8 +12,8 @@ include(hwm_v2)
 include(configuration_files)
 
 include(kconfig)
-include(arch_v2)
-include(soc_v2)
+include(arch)
+include(soc)
 
 find_package(TargetTools)
 
@@ -43,8 +43,6 @@ set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
-
-find_package(Deprecated COMPONENTS SOURCES)
 
 if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)

@@ -132,47 +132,13 @@ provides the following hardware capabilities:
 More information about STM32WB55RG can be found here:
 
 - `STM32WB55RG on www.st.com`_
-- `STM32WB5RG datasheet`_
-- `STM32WB5RG reference manual`_
+- `STM32WB55RG datasheet`_
+- `STM32WB55RG reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr nucleo_wb55rg board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb55rg/nucleo_wb55rg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================
@@ -180,10 +146,11 @@ Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
-Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
+
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README <https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README>`__
-in the hal_stm32 repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
+
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
 anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
 side.
@@ -233,6 +200,8 @@ Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool interface.
 
@@ -306,10 +275,10 @@ You can debug an application in the usual way.  Here is an example for the
 .. _STM32WB55RG on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32wb55rg.html
 
-.. _STM32WB5RG datasheet:
+.. _STM32WB55RG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb55rg.pdf
 
-.. _STM32WB5RG reference manual:
+.. _STM32WB55RG reference manual:
    https://www.st.com/resource/en/reference_manual/dm00318631.pdf
 
 .. _STM32CubeProgrammer:

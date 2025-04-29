@@ -11,11 +11,13 @@
 #include <zephyr/drivers/gpio.h>
 
 struct current_sense_amplifier_dt_spec {
-	const struct adc_dt_spec port;
+	struct adc_dt_spec port;
+	struct gpio_dt_spec power_gpio;
 	uint32_t sense_milli_ohms;
 	uint16_t sense_gain_mult;
 	uint16_t sense_gain_div;
-	struct gpio_dt_spec power_gpio;
+	uint16_t noise_threshold;
+	bool enable_calibration;
 };
 
 /**
@@ -31,10 +33,12 @@ struct current_sense_amplifier_dt_spec {
 #define CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(node_id)                                               \
 	{                                                                                          \
 		.port = ADC_DT_SPEC_GET(node_id),                                                  \
+		.power_gpio = GPIO_DT_SPEC_GET_OR(node_id, power_gpios, {0}),                      \
 		.sense_milli_ohms = DT_PROP(node_id, sense_resistor_milli_ohms),                   \
 		.sense_gain_mult = DT_PROP(node_id, sense_gain_mult),                              \
 		.sense_gain_div = DT_PROP(node_id, sense_gain_div),                                \
-		.power_gpio = GPIO_DT_SPEC_GET_OR(node_id, power_gpios, {0}),                      \
+		.noise_threshold = DT_PROP(node_id, zephyr_noise_threshold),                       \
+		.enable_calibration = DT_PROP_OR(node_id, enable_calibration, false),              \
 	}
 
 /**

@@ -104,7 +104,7 @@ child-binding:
         default: 1500
         description: |
           The pullup resistor value. The default value is 1500 ohms.
-      ambiq,iom-nce-module:
+      ambiq,nce-src:
         type: int
         default: 0
         description: |
@@ -154,24 +154,18 @@ child-binding:
             42,    DC_RESX : DC module RESX
           If the pin is not a CE, this descriptor will be ignored.
           Default value 0, which is the reset value.
-      ambiq,iom-mspi:
+      ambiq,nce-pol:
         type: int
         default: 0
         description: |
-          Indicates the module which uses specific CE pin, 1 if CE is IOM, 0 if MSPI.
-          Default value 0, which is the reset value.
-          If the pin is not a CE, this descriptor will be ignored.
-      ambiq,iom-num:
+          Polarity select for NCE
+          LOW = 0x0 - Polarity is active low
+          HIGH = 0x1 - Polarity is active high
+      ambiq,sdif-cdwp:
         type: int
         default: 0
         description: |
-          Indicates the instance which uses specific CE pin.
-          IOM number (0-7) or MSPI (0-2).
-          Default value 0, which is the reset value.
-          If the pin is not a CE, this descriptor will be ignored.
-      ambiq,interrupt-direction:
-        type: int
-        default: 0
-        description: |
-          Indicates the pininterrupt direction.
-          Default value 0, which is the reset value.
+          Configure SD Card Detection and Write Protection pin
+          0x0 - Not SDIF pin
+          0x1 - SDIFCD
+          0x2 - SDIFWP

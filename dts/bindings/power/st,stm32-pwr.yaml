@@ -62,6 +62,6 @@ child-binding:
       description: |
         Specifies the GPIOs, if any, that are associated with the wake-up pin.
 
-        For example, for GPIO B2 associated with wakeup source 1 on wake-up
-        pin 1 on STM32U5 SoCs:
-        wkup-gpios = <&gpiob 2 STM32_PWR_WKUP_PIN_SRC_1>, <...>;
+        For example, for GPIO PB2 associated with wakeup source 1 on wake-up
+        event 1 on STM32U5 SoCs:
+        wkup-gpios = <&gpiob 2 STM32_PWR_WKUP_EVT_SRC_1>, <...>;

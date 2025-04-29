@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT current_sense_amplifier
 
+#include <stdlib.h>
+
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/current_sense_amplifier.h>
 #include <zephyr/drivers/gpio.h>
@@ -51,6 +53,10 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 
 	if (chan != SENSOR_CHAN_CURRENT) {
 		return -ENOTSUP;
+	}
+
+	if (abs(raw_val) < config->noise_threshold) {
+		return sensor_value_from_micro(val, 0);
 	}
 
 	ret = adc_raw_to_millivolts_dt(&config->port, &raw_val);
@@ -152,7 +158,7 @@ static int current_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
-	data->sequence.calibrate = true;
+	data->sequence.calibrate = config->enable_calibration;
 
 	return 0;
 }

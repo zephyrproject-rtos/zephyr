@@ -37,7 +37,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "host/hci_core.h"
 #include "common/bt_str.h"
 
 #include "audio_internal.h"
@@ -1223,7 +1222,7 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (!bt_le_bond_exists(info.id, info.le.dst)) {
 		return;
 	}
 
@@ -1554,12 +1553,12 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SNK_PAC)) {
 			return snk_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	case BT_AUDIO_DIR_SOURCE:
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SRC_PAC)) {
 			return src_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	}
 
 	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;

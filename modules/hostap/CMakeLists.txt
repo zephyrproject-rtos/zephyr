@@ -249,6 +249,11 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
   ${WIFI_NM_HOSTAPD_BASE}/eap_register.c
   ${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_cmds.c
   ${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_zephyr.c
+
+  # Zephyr specific files (glue code)
+  src/hapd_main.c
+  src/hapd_api.c
+  src/hapd_events.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP

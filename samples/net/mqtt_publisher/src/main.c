@@ -53,8 +53,13 @@ static APP_BMEM struct sockaddr socks5_proxy;
 
 static APP_BMEM struct pollfd fds[1];
 static APP_BMEM int nfds;
-
 static APP_BMEM bool connected;
+
+/* Whether to include full topic in the publish message, or alias only (MQTT 5). */
+static APP_BMEM bool include_topic;
+static APP_BMEM bool aliases_enabled;
+
+#define APP_TOPIC_ALIAS 1
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 
@@ -155,6 +160,18 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 		connected = true;
 		LOG_INF("MQTT client connected!");
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+		if (evt->param.connack.prop.rx.has_topic_alias_maximum &&
+		    evt->param.connack.prop.topic_alias_maximum > 0) {
+			LOG_INF("Topic aliases allowed by the broker, max %u.",
+				evt->param.connack.prop.topic_alias_maximum);
+
+			aliases_enabled = true;
+		} else {
+			LOG_INF("Topic aliases disallowed by the broker.");
+		}
+#endif
+
 		break;
 
 	case MQTT_EVT_DISCONNECT:
@@ -242,18 +259,31 @@ static char *get_mqtt_topic(void)
 
 static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 {
-	struct mqtt_publish_param param;
+	struct mqtt_publish_param param = { 0 };
+
+	/* Always true for MQTT 3.1.1.
+	 * True only on first publish message for MQTT 5.0 if broker allows aliases.
+	 */
+	if (include_topic) {
+		param.message.topic.topic.utf8 = (uint8_t *)get_mqtt_topic();
+		param.message.topic.topic.size =
+			strlen(param.message.topic.topic.utf8);
+	}
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (uint8_t *)get_mqtt_topic();
-	param.message.topic.topic.size =
-			strlen(param.message.topic.topic.utf8);
 	param.message.payload.data = get_mqtt_payload(qos);
 	param.message.payload.len =
 			strlen(param.message.payload.data);
 	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (aliases_enabled) {
+		param.prop.topic_alias = APP_TOPIC_ALIAS;
+		include_topic = false;
+	}
+#endif
 
 	return mqtt_publish(client, &param);
 }
@@ -308,7 +338,11 @@ static void client_init(struct mqtt_client *client)
 	client->client_id.size = strlen(MQTT_CLIENTID);
 	client->password = NULL;
 	client->user_name = NULL;
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	client->protocol_version = MQTT_VERSION_5_0;
+#else
 	client->protocol_version = MQTT_VERSION_3_1_1;
+#endif
 
 	/* MQTT buffers configuration */
 	client->rx_buf = rx_buffer;
@@ -435,6 +469,9 @@ static int publisher(void)
 {
 	int i, rc, r = 0;
 
+	include_topic = true;
+	aliases_enabled = false;
+
 	LOG_INF("attempting to connect: ");
 	rc = try_to_connect(&client_ctx);
 	PRINT_RESULT("try_to_connect", rc);
@@ -475,7 +512,7 @@ static int publisher(void)
 		r = 0;
 	}
 
-	rc = mqtt_disconnect(&client_ctx);
+	rc = mqtt_disconnect(&client_ctx, NULL);
 	PRINT_RESULT("mqtt_disconnect", rc);
 
 	LOG_INF("Bye!");

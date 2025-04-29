@@ -426,6 +426,8 @@ static int sreq_get_status(struct usbd_context *const uds_ctx,
 
 		response = uds_ctx->status.rwup ?
 			   USB_GET_STATUS_REMOTE_WAKEUP : 0;
+		response |= uds_ctx->status.self_powered ?
+			    USB_GET_STATUS_SELF_POWERED : 0;
 		break;
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
 		response = usbd_ep_is_halted(uds_ctx, ep) ? BIT(0) : 0;
@@ -470,9 +472,11 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 
 	/*
 	 * If the other-speed-configuration-descriptor is requested and the
-	 * controller does not support high speed, respond with an error.
+	 * controller (or stack) does not support high speed, respond with
+	 * an error.
 	 */
-	if (other_cfg && usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+	if (other_cfg && !(USBD_SUPPORTS_HIGH_SPEED &&
+	    (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS))) {
 		errno = -ENOTSUP;
 		return 0;
 	}
@@ -689,7 +693,8 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 	 * If the Device Qualifier descriptor is requested and the controller
 	 * does not support high speed, respond with an error.
 	 */
-	if (usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+	if (!USBD_SUPPORTS_HIGH_SPEED ||
+	    usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
 		errno = -ENOTSUP;
 		return 0;
 	}

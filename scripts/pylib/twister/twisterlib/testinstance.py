@@ -36,7 +36,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
+
 
 class TestInstance:
     """Class representing the execution of a particular TestSuite on a platform
@@ -152,7 +152,7 @@ class TestInstance:
             with open(run_id_file) as fp:
                 run_id = fp.read()
         else:
-            hash_object = hashlib.md5(self.name.encode())
+            hash_object = hashlib.md5(self.name.encode(), usedforsecurity=False)
             random_str = f"{random.getrandbits(64)}".encode()
             hash_object.update(random_str)
             run_id = hash_object.hexdigest()
@@ -222,6 +222,7 @@ class TestInstance:
             'console',
             'ztest',
             'pytest',
+            'power',
             'test',
             'gtest',
             'robot',
@@ -313,7 +314,7 @@ class TestInstance:
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness in ['pytest', 'shell']:
+        if self.testsuite.harness in ['pytest', 'shell', 'power']:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )

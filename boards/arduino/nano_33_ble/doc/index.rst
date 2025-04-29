@@ -1,7 +1,4 @@
-.. _arduino_nano_33_ble:
-
-Arduino Nano 33 BLE (Sense)
-#################################
+.. zephyr:board:: arduino_nano_33_ble
 
 Overview
 ********
@@ -11,58 +8,13 @@ nRF52840 ARM Cortex-M4F CPU. Arduino sells 2 variants of the board, the
 plain `BLE`_ type and the `BLE Sense`_ type. The "Sense" variant is distinguished by
 the inclusion of more sensors, but otherwise both variants are the same.
 
-.. image:: img/arduino_nano_33_ble_sense.jpg
-     :align: center
-     :alt: Arduino Nano 33 BLE (Sense variant)
-
-The Sense variant of the board
-
 Hardware
 ********
 
 Supported Features
 ==================
 
-The package is configured to support the following hardware:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C0      | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| I2C1      | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-Notably, this includes the PDM (microphone) interface.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -76,6 +28,8 @@ as ``pull-up-gpios``.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 This board requires the Arduino variant of bossac. You will not
 be able to flash with the bossac included with the zephyr-sdk, or

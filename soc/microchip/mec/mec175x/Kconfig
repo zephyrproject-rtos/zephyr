@@ -11,12 +11,8 @@ config SOC_SERIES_MEC175X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_MEC5_HAL
-	select HAS_PM
 	select SOC_PREP_HOOK
 
 if SOC_SERIES_MEC175X
-
-config RTOS_TIMER
-	bool "MEC175x RTOS Timer(32KHz) as kernel timer"
 
 endif # SOC_SERIES_MEC175X

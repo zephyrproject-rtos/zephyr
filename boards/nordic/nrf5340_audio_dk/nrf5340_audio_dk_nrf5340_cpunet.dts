@@ -58,7 +58,6 @@ arduino_spi: &spi0 {
 };
 
 &flash1 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -68,14 +67,17 @@ arduino_spi: &spi0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x12000>;
 		};
+
 		slot1_partition: partition@1e000 {
 			label = "image-1";
 			reg = <0x0001E000 0x12000>;
 		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;
@@ -84,5 +86,5 @@ arduino_spi: &spi0 {
 };
 
 /* Include default shared RAM configuration file */
-#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"

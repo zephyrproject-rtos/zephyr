@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
+#include <zephyr/test_toolchain.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>
@@ -192,20 +193,16 @@ __no_optimization void blow_up_stack(void)
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_PRAGMAS)
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_INFINITE_RECURSION)
 
 __no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_PRAGMAS)
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_INFINITE_RECURSION)
 
 void blow_up_stack(void)
 {
@@ -303,7 +300,7 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  * should match. Check for stack sentinel feature by overflowing the
  * thread's stack and check for the exception.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_fatal_tests
  */
 ZTEST(fatal_exception, test_fatal)
 {

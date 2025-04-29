@@ -5,20 +5,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/bluetooth/hci.h>
-
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 #include <psa/crypto.h>
+#include <psa/crypto_struct.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
 
 #include "long_wq.h"
 #include "ecc.h"
 #include "hci_core.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_ecc);
 
 static uint8_t pub_key[BT_PUB_KEY_LEN];
@@ -265,7 +277,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
 		if (cb == new_cb) {
-			LOG_WRN("Callback already registered");
+			LOG_DBG("Callback already registered");
 			return -EALREADY;
 		}
 	}

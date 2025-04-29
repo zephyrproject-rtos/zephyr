@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/tmp114.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
@@ -26,8 +27,10 @@ LOG_MODULE_REGISTER(TMP114, CONFIG_SENSOR_LOG_LEVEL);
 
 #define TMP114_DEVICE_ID	0x1114
 
-#define TMP114_ALERT_DATA_READY  BIT(0)
-#define TMP114_AVG_MASK          BIT(7)
+#define TMP114_ALERT_DATA_READY BIT(0)
+#define TMP114_CFGR_AVG		BIT(7)
+#define TMP114_AVG		BIT(7)
+#define TMP114_CFGR_CONV	(BIT(0) | BIT(1) | BIT(2))
 
 struct tmp114_data {
 	uint16_t sample;
@@ -36,15 +39,15 @@ struct tmp114_data {
 
 struct tmp114_dev_config {
 	struct i2c_dt_spec bus;
+	uint16_t odr;
+	bool oversampling;
 };
 
-static int tmp114_reg_read(const struct device *dev, uint8_t reg,
-			   uint16_t *val)
+static int tmp114_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2)
-	    < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -53,13 +56,35 @@ static int tmp114_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int tmp114_reg_write(const struct device *dev, uint8_t reg,
-			    uint16_t val)
+static int tmp114_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
 
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
+}
+
+static int tmp114_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
+{
+	uint16_t config = 0;
+	int result;
+
+	result = tmp114_reg_read(dev, TMP114_REG_CFGR, &config);
+
+	if (result < 0) {
+		return result;
+	}
+
+	config &= ~mask;
+	config |= conf;
+
+	result = tmp114_reg_write(dev, TMP114_REG_CFGR, config);
+
+	if (result < 0) {
+		return result;
+	}
+
+	return 0;
 }
 
 static inline int tmp114_device_id_check(const struct device *dev, uint16_t *id)
@@ -116,8 +141,7 @@ static int tmp114_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tmp114_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int tmp114_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp114_data *drv_data = dev->data;
@@ -165,13 +189,38 @@ static int tmp114_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int tmp114_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int tmp114_odr_value(const struct sensor_value *frequency, uint16_t *config_value)
 {
-	int16_t value;
-	int rc;
+	const uint32_t freq_micro = sensor_value_to_micro(frequency);
+
+	if (freq_micro <= 500000) {
+		*config_value = TMP114_DT_ODR_2000_MS; /* 2 s */
+	} else if (freq_micro <= 1000000) {
+		*config_value = TMP114_DT_ODR_1000_MS; /* 1 s */
+	} else if (freq_micro <= 2000000) {
+		*config_value = TMP114_DT_ODR_500_MS; /* 500 ms */
+	} else if (freq_micro <= 4000000) {
+		*config_value = TMP114_DT_ODR_250_MS; /* 250 ms */
+	} else if (freq_micro <= 8000000) {
+		*config_value = TMP114_DT_ODR_125_MS; /* 125 ms */
+	} else if (freq_micro <= 16000000) {
+		*config_value = TMP114_DT_ODR_62_5_MS; /* 62.5 ms */
+	} else if (freq_micro <= 32000000) {
+		*config_value = TMP114_DT_ODR_31_25_MS; /* 32.25 ms */
+	} else if (freq_micro <= 156250000) {
+		*config_value = TMP114_DT_ODR_6_4_MS; /* 6.4 ms */
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int tmp114_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
+{
+	uint16_t value = 0;
+	int rc = 0;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -182,16 +231,20 @@ static int tmp114_attr_set(const struct device *dev,
 		/* Enable the AVG in tmp114. The chip will do 8 avg of 8 samples
 		 * to get a more accurate value.
 		 */
-		rc = tmp114_reg_read(dev, TMP114_REG_CFGR, &value);
+
+		if (val->val1) {
+			value = TMP114_AVG;
+		}
+
+		return tmp114_write_config(dev, TMP114_CFGR_AVG, value);
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		/* Set the output data rate tmp114. */
+		rc = tmp114_odr_value(val, &value);
 		if (rc < 0) {
 			return rc;
 		}
-		value = value & ~TMP114_AVG_MASK;
-		if (val->val1) {
-			value |= TMP114_AVG_MASK;
-		}
 
-		return tmp114_reg_write(dev, TMP114_REG_CFGR, value);
+		return tmp114_write_config(dev, TMP114_CFGR_CONV, value);
 	default:
 		return -ENOTSUP;
 	}
@@ -210,6 +263,7 @@ static int tmp114_init(const struct device *dev)
 	const struct tmp114_dev_config *cfg = dev->config;
 	int rc;
 	uint16_t id;
+	struct sensor_value val;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
@@ -224,13 +278,28 @@ static int tmp114_init(const struct device *dev)
 	LOG_INF("Got device ID: %x", id);
 	drv_data->id = id;
 
+	rc = tmp114_write_config(dev, TMP114_CFGR_CONV, cfg->odr);
+	if (rc < 0) {
+		return rc;
+	}
+
+	val.val1 = cfg->oversampling ? 1 : 0;
+	val.val2 = 0;
+
+	rc = tmp114_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_OVERSAMPLING, &val);
+	if (rc < 0) {
+		return rc;
+	}
+
 	return 0;
 }
 
 #define DEFINE_TMP114(_num) \
 	static struct tmp114_data tmp114_data_##_num; \
 	static const struct tmp114_dev_config tmp114_config_##_num = { \
-		.bus = I2C_DT_SPEC_INST_GET(_num) \
+		.bus = I2C_DT_SPEC_INST_GET(_num), \
+		.odr = DT_INST_PROP(_num, odr), \
+		.oversampling = DT_INST_PROP(_num, oversampling), \
 	}; \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, \
 		&tmp114_data_##_num, &tmp114_config_##_num, POST_KERNEL, \

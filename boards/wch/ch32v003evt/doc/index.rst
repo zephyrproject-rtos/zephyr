@@ -22,25 +22,7 @@ external crystal and runs at 48 MHz.
 Supported Features
 ==================
 
-The ``ch32v003evt`` board target supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| PINCTRL   | on-chip    | pinctrl              |
-+-----------+------------+----------------------+
-| TIMER     | on-chip    | timer                |
-+-----------+------------+----------------------+
-| UART      | on-chip    | uart                 |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -52,6 +34,8 @@ LED
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ch32v003evt`` board target can be built and flashed
 in the usual way (see :ref:`build_an_application` and :ref:`application_run`

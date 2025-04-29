@@ -5,18 +5,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
-
-#include "common/hci_common_internal.h"
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "buf_view.h"
-#include "hci_core.h"
+#include "common/hci_common_internal.h"
 #include "conn_internal.h"
+#include "hci_core.h"
 #include "iso_internal.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
 /* Events have a length field of 1 byte. This size fits all events.
@@ -54,11 +64,11 @@ static void iso_rx_freed_cb(void)
  * the HCI transport to fill buffers in parallel with `bt_recv`
  * consuming them.
  */
-NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, sizeof(struct bt_buf_data), NULL);
+NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, 0, NULL);
 
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
-			  sizeof(struct bt_buf_data), NULL);
+			  0, NULL);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static void acl_in_pool_destroy(struct net_buf *buf)
@@ -77,8 +87,8 @@ NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_
 		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct acl_data),
 		    acl_in_pool_destroy);
 
-NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE,
-			  sizeof(struct bt_buf_data), evt_pool_destroy);
+NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE, 0,
+			  evt_pool_destroy);
 #else
 static void hci_rx_pool_destroy(struct net_buf *buf)
 {
@@ -115,10 +125,8 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 #else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 #endif
-
 	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, type);
+		net_buf_add_u8(buf, bt_buf_type_to_h4(type));
 	}
 
 	return buf;
@@ -159,8 +167,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 	}
 
 	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
+		net_buf_add_u8(buf, BT_HCI_H4_EVT);
 	}
 
 	return buf;

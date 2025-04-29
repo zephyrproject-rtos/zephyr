@@ -300,6 +300,7 @@ static int ubx_m8_ubx_cfg_prt_set(const struct device *dev, uint32_t target_baud
 
 	ubx_cfg_prt_set_payload_default(&payload);
 	payload.baudrate = target_baudrate;
+	payload.out_proto_mask = UBX_CFG_PRT_OUT_PROTO_NMEA;
 
 	ret = ubx_m8_modem_ubx_script_init(dev, &payload, UBX_CFG_PRT_SET_PAYLOAD_SZ,
 					    UBX_CLASS_CFG, UBX_CFG_PRT);

@@ -44,10 +44,11 @@ int main(void)
 	LOG_INF("System started");
 
 	const struct zbus_channel *chan;
+	struct zbus_observer_node obs_node;
 
 	while (1) {
 		LOG_INF("Activating filter");
-		zbus_chan_add_obs(&raw_data_chan, &filter_lis, K_MSEC(200));
+		zbus_chan_add_obs(&raw_data_chan, &filter_lis, &obs_node, K_MSEC(200));
 
 		zbus_sub_wait(&state_change_sub, &chan, K_FOREVER);
 
@@ -55,7 +56,7 @@ int main(void)
 		zbus_chan_rm_obs(&raw_data_chan, &filter_lis, K_MSEC(200));
 
 		LOG_INF("Bypass filter");
-		zbus_chan_add_obs(&raw_data_chan, &consumer_sub, K_MSEC(200));
+		zbus_chan_add_obs(&raw_data_chan, &consumer_sub, &obs_node, K_MSEC(200));
 
 		zbus_sub_wait(&state_change_sub, &chan, K_FOREVER);
 

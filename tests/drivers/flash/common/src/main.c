@@ -14,6 +14,8 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
+#elif defined(CONFIG_FLASH_MSPI_NOR)
+#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
 #else
 #define TEST_AREA	storage_partition
 #endif
@@ -460,8 +462,8 @@ ZTEST(flash_driver, test_flash_copy)
 
 	/* copy with overlapping ranges should fail */
 	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
-			      page_info.start_offset + 32, page_info.size - 32, buf, sizeof(buf),
-			      -EINVAL);
+			      page_info.start_offset + (page_info.size / 4),
+			      page_info.size - (page_info.size / 4), buf, sizeof(buf), -EINVAL);
 }
 
 ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);

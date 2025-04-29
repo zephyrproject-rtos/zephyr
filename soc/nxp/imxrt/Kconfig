@@ -171,6 +171,10 @@ config PM_MCUX_DCDC
 config PM_MCUX_PMU
 	bool "MCUX power management unit driver"
 
+config ADJUST_DCDC
+	default y
+	bool "Adjust internal DCDC output"
+
 config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
 

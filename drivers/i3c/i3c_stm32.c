@@ -473,15 +473,16 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 						1000000000ull) -
 				   1;
 			*sclh_i2c = DIV_ROUND_UP(i3c_clock, i2c_bus_freq) - *scll_od - 2;
+			if (*sclh_i2c <
+				  (DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock,
+							    1000000000ull) - 1)
+			   ) {
+				LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
+					"current I3C clock frequency for FM I2C bus");
+				return -EINVAL;
+			}
 		}
 
-		if (*sclh_i2c <
-		    DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock, 1000000000ull) - 1) {
-			LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at current I3C "
-				"clock "
-				"frequency for FM I2C bus");
-			return -EINVAL;
-		}
 	} else {
 		if (config->drv_cfg.dev_list.num_i2c > 0) {
 			enum i3c_bus_mode mode = i3c_bus_mode(&config->drv_cfg.dev_list);
@@ -1563,7 +1564,7 @@ static int i3c_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_I3C_USE_IBI
 	LL_I3C_EnableHJAck(i3c);
-	hj_pm_lock = true;
+	data->hj_pm_lock = true;
 	(void)pm_device_runtime_get(dev);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 #endif
@@ -1902,6 +1903,7 @@ static void i3c_stm32_error_isr(void *arg)
 int i3c_stm32_ibi_hj_response(const struct device *dev, bool ack)
 {
 	const struct i3c_stm32_config *config = dev->config;
+	struct i3c_stm32_data *data = dev->data;
 	I3C_TypeDef *i3c = config->i3c;
 
 	if (ack) {
@@ -1909,16 +1911,16 @@ int i3c_stm32_ibi_hj_response(const struct device *dev, bool ack)
 		 * This prevents pm_device_runtime from being called multiple times
 		 * with redunant calls
 		 */
-		if (!hj_pm_lock) {
-			hj_pm_lock = true;
+		if (!data->hj_pm_lock) {
+			data->hj_pm_lock = true;
 			(void)pm_device_runtime_get(dev);
 			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		}
 		LL_I3C_EnableHJAck(i3c);
 	} else {
 		LL_I3C_DisableHJAck(i3c);
-		if (hj_pm_lock) {
-			hj_pm_lock = false;
+		if (data->hj_pm_lock) {
+			data->hj_pm_lock = false;
 			(void)pm_device_runtime_put(dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		}

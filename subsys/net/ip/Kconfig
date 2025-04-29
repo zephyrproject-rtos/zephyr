@@ -268,6 +268,11 @@ config NET_SHELL_PKT_ALLOC_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DEBUG_NET_PKT_ALLOC
 
+config NET_SHELL_PKT_FILTER_SUPPORTED
+	bool "Network packet filter related configuration"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_PKT_FILTER
+
 config NET_SHELL_PMTU_SUPPORTED
 	bool "PMTU config"
 	default y
@@ -661,6 +666,12 @@ config NET_MAX_CONN
 	help
 	  The value depends on your network needs. The value
 	  should include both UDP and TCP connections.
+
+config NET_CONN_PACKET_CLONE_TIMEOUT
+	int "Timeout value in milliseconds for cloning a packet"
+	default 100
+	help
+	  Maximum wait time when cloning a packet for a network connection.
 
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"

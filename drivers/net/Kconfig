@@ -249,6 +249,7 @@ menuconfig NET_NATIVE_OFFLOADED_SOCKETS
 	depends on ARCH_POSIX
 	depends on NATIVE_LIBRARY
 	depends on NET_SOCKETS_OFFLOAD
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Offloaded sockets for Native Simulator utilize host BSD sockets API (like socket(),
 	  connect(), send(), recvfrom(), etc.) in order to provide networking capability.

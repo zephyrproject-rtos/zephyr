@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Linaro Limited.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control/arm_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
@@ -64,6 +66,7 @@ struct uart_cmsdk_apb {
 struct uart_cmsdk_apb_config {
 	volatile struct uart_cmsdk_apb *uart;
 	uint32_t sys_clk_freq;
+	const struct pinctrl_dev_config *pctrl;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif
@@ -124,6 +127,14 @@ static void baudrate_set(const struct device *dev)
 static int uart_cmsdk_apb_init(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config * const dev_cfg = dev->config;
+	int ret = pinctrl_apply_state(dev_cfg->pctrl, PINCTRL_STATE_DEFAULT);
+
+	/* some pins are not available externally so,
+	 * ignore if there is no entry for them
+	 */
+	if (ret != -ENOENT) {
+		return ret;
+	}
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
@@ -401,9 +412,7 @@ static void uart_cmsdk_apb_irq_err_disable(const struct device *dev)
  */
 static int uart_cmsdk_apb_irq_is_pending(const struct device *dev)
 {
-	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
-
-	return (dev_cfg->uart->intstatus & (UART_RX_IN | UART_TX_IN));
+	return uart_cmsdk_apb_irq_rx_ready(dev) || uart_cmsdk_apb_irq_tx_ready(dev);
 }
 
 /**
@@ -480,10 +489,11 @@ static DEVICE_API(uart, uart_cmsdk_apb_driver_api) = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev);
 #endif
-
+PINCTRL_DT_INST_DEFINE(0);
 static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_0 = {
 	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(0),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
+	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_0,
 #endif
@@ -545,10 +555,11 @@ static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev);
 #endif
-
+PINCTRL_DT_INST_DEFINE(1);
 static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_1 = {
 	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(1),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
+	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(1),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_1,
 #endif
@@ -610,10 +621,11 @@ static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev);
 #endif
-
+PINCTRL_DT_INST_DEFINE(2);
 static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_2 = {
 	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(2),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(2, clocks, clock_frequency),
+	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(2),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_2,
 #endif
@@ -675,10 +687,11 @@ static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev);
 #endif
-
+PINCTRL_DT_INST_DEFINE(3);
 static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_3 = {
 	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(3),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(3, clocks, clock_frequency),
+	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(3),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_3,
 #endif
@@ -736,14 +749,14 @@ static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(3)) */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(4))
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev);
 #endif
-
+PINCTRL_DT_INST_DEFINE(4);
 static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_4 = {
 	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(4),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(4, clocks, clock_frequency),
+	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(4),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_4,
 #endif

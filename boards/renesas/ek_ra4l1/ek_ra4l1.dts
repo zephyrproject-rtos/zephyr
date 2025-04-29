@@ -63,6 +63,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt;
 	};
 
 	transceiver0: can-phy0 {
@@ -140,6 +141,12 @@
 	pinctrl-names = "default";
 };
 
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &port_irq6 {
 	interrupts = <14 12>;
 	status = "okay";
@@ -179,4 +186,8 @@
 		rx-max-filters = <16>;
 		status = "okay";
 	};
+};
+
+&wdt {
+	status = "okay";
 };

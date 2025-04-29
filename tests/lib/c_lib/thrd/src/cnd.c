@@ -71,7 +71,7 @@ static int test_cnd_thread_fn(void *arg)
 	struct libc_cnd_fixture *const fixture = arg;
 
 	if (fixture->do_timedwait) {
-		zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
+		zassume_ok(clock_gettime(CLOCK_REALTIME, &time_point));
 		timespec_add_ms(&time_point, WAIT_TIME_MS);
 		res = cnd_timedwait(&fixture->cond, &fixture->mutex, &time_point);
 	} else {

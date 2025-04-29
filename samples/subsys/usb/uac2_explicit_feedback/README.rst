@@ -15,6 +15,12 @@ The device running this sample presents itself to the host as a Full-Speed
 Asynchronous USB Audio 2 class device supporting 48 kHz 16-bit 2-channel
 (stereo) playback.
 
+.. warning::
+   Microsoft Windows USB Audio 2.0 driver available since Windows 10,
+   release 1703 expects Full-Speed explicit feedback endpoint wMaxPacketSize to
+   be equal 4, which violates the USB 2.0 Specification.
+   See https://aka.ms/AArvnax for Windows Feedback Hub report.
+
 Explicit Feedback
 *****************
 
@@ -42,11 +48,11 @@ is not available, the DPPI and TIMER peripherals on nRF5340 can be configured to
 provide relative timing information between I2S FRAMESTART and USB SOF.
 
 This sample in both modes (direct sample counting and indirect I2S buffer output
-to USB SOF offset) has been tested on :ref:`nrf5340dk_nrf5340`.
+to USB SOF offset) has been tested on :zephyr:board:`nrf5340dk`.
 
 The sample defaults to indirect feedback calculation because direct sample
 counting requires external connection between I2S LRCLK output pin to GPIOTE
-input pin (hardcoded to P1.09) on :ref:`nrf5340dk_nrf5340`. In the indirect mode
+input pin (hardcoded to P1.09) on :zephyr:board:`nrf5340dk`. In the indirect mode
 no extra connections are necessary and the sample can even be used without any
 I2S device connected where I2S signals can be checked e.g. on logic analyzer.
 

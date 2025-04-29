@@ -8,8 +8,8 @@ zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_
   transform/aead.c
   transform/aead_get.c
 )
-if (NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
-  if (CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH)
+if(NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
+  if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH)
     message(WARNING "
       The PSA ITS encryption key provider in use generates keys by hashing the device ID
       retrieved through the HW info API. This is not necessarily secure as the device ID may be
@@ -30,7 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
   store/settings.c
 )
-if (CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE)
+if(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE)
   message(ERROR "
     The secure storage ITS module is enabled but has no implementation.
     (CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE)

@@ -22,6 +22,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -43,7 +44,6 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + HTTP_SERVER_MAX_CLIENTS)
 
 struct http_server_ctx {
-	int num_clients;
 	int listen_fds; /* max value of 1 + MAX_SERVICES */
 
 	/* First pollfd is eventfd that can be used to stop the server,
@@ -227,7 +227,8 @@ int http_server_init(struct http_server_ctx *ctx)
 			*svc->port = ntohs(addr.addr4->sin_port);
 		}
 
-		if (zsock_listen(fd, HTTP_SERVER_MAX_CLIENTS) < 0) {
+		svc->data->num_clients = 0;
+		if (zsock_listen(fd, svc->backlog) < 0) {
 			LOG_ERR("listen: %d", errno);
 			failed++;
 			zsock_close(fd);
@@ -251,7 +252,6 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	ctx->listen_fds = count;
-	ctx->num_clients = 0;
 
 	return 0;
 }
@@ -355,8 +355,14 @@ void http_server_release_client(struct http_client_ctx *client)
 	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
 	client_release_resources(client);
 
-	server_ctx.num_clients--;
+	client->service->data->num_clients--;
 
+	for (i = 0; i < server_ctx.listen_fds; i++) {
+		if (server_ctx.fds[i].fd == *client->service->fd) {
+			server_ctx.fds[i].events = ZSOCK_POLLIN;
+			break;
+		}
+	}
 	for (i = server_ctx.listen_fds; i < ARRAY_SIZE(server_ctx.fds); i++) {
 		if (server_ctx.fds[i].fd == client->fd) {
 			server_ctx.fds[i].fd = INVALID_SOCK;
@@ -612,15 +618,20 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 			/* First check if we have something to accept */
 			if (i < ctx->listen_fds) {
+				service = lookup_service(ctx->fds[i].fd);
+				__ASSERT(NULL != service, "fd not associated with a service");
+
+				if (service->data->num_clients >= service->concurrent) {
+					ctx->fds[i].events = 0;
+					continue;
+				}
+
 				new_socket = accept_new_client(ctx->fds[i].fd);
 				if (new_socket < 0) {
 					ret = -errno;
 					LOG_DBG("accept: %d", ret);
 					continue;
 				}
-
-				service = lookup_service(ctx->fds[i].fd);
-				__ASSERT(NULL != service, "fd not associated with a service");
 
 				found_slot = false;
 
@@ -633,7 +644,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 					ctx->fds[j].events = ZSOCK_POLLIN;
 					ctx->fds[j].revents = 0;
 
-					ctx->num_clients++;
+					service->data->num_clients++;
 
 					LOG_DBG("Init client #%d", j - ctx->listen_fds);
 
@@ -762,7 +773,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
-				*path_len = strlen(resource->resource);
+				*path_len = path_len_without_query(path);
 				return resource->detail;
 			}
 		}
@@ -785,26 +796,65 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 	return NULL;
 }
 
-int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped)
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
+			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
 	struct fs_dirent dirent;
 	size_t len;
 	int ret;
 
+	len = strlen(fname);
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		*chosen_compression = HTTP_NONE;
+		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
+			snprintk(fname + len, fname_size - len, ".br");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_BR;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
+			snprintk(fname + len, fname_size - len, ".gz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_GZIP;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
+			snprintk(fname + len, fname_size - len, ".zst");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_ZSTD;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
+			snprintk(fname + len, fname_size - len, ".lzw");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_COMPRESS;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
+			snprintk(fname + len, fname_size - len, ".zz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_DEFLATE;
+				goto return_filename;
+			}
+		}
+	}
 	ret = fs_stat(fname, &dirent);
-	if (ret < 0) {
-		len = strlen(fname);
-		snprintk(fname + len, fname_size - len, ".gz");
-		ret = fs_stat(fname, &dirent);
-		*gzipped = (ret == 0);
+	if (ret != 0) {
+		return -ENOENT;
 	}
 
-	if (ret == 0) {
-		*file_size = dirent.size;
-		return ret;
-	}
-
-	return -ENOENT;
+return_filename:
+	*file_size = dirent.size;
+	return ret;
 }
 
 void http_server_get_content_type_from_extension(char *url, char *content_type,

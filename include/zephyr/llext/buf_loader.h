@@ -39,15 +39,8 @@ struct llext_buf_loader {
 int llext_buf_read(struct llext_loader *ldr, void *buf, size_t len);
 int llext_buf_seek(struct llext_loader *ldr, size_t pos);
 void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
-/** @endcond */
 
-/**
- * @brief Initializer for an llext_buf_loader structure
- *
- * @param _buf Buffer containing the ELF binary
- * @param _buf_len Buffer length in bytes
- */
-#define LLEXT_BUF_LOADER(_buf, _buf_len)                                                           \
+#define Z_LLEXT_BUF_LOADER(_buf, _buf_len, _storage)                                               \
 	{                                                                                          \
 		.loader =                                                                          \
 			{                                                                          \
@@ -56,11 +49,72 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 				.seek = llext_buf_seek,                                            \
 				.peek = llext_buf_peek,                                            \
 				.finalize = NULL,                                                  \
+				.storage = _storage,                                               \
 			},                                                                         \
 		.buf = (_buf),                                                                     \
 		.len = (_buf_len),                                                                 \
 		.pos = 0,                                                                          \
 	}
+/** @endcond */
+
+/**
+ * @brief Initializer for an llext_buf_loader structure
+ *
+ * The storage type for the provided buffer depends on the value of the
+ * @kconfig{CONFIG_LLEXT_STORAGE_WRITABLE} option: if it is defined, the
+ * buffer is assumed to be writable; otherwise it is assumed to be persistent.
+ *
+ * Consider using one of the alternative macros instead.
+ *
+ * @see LLEXT_TEMPORARY_BUF_LOADER
+ * @see LLEXT_PERSISTENT_BUF_LOADER
+ * @see LLEXT_WRITABLE_BUF_LOADER
+ *
+ * @param _buf Buffer containing the ELF binary
+ * @param _buf_len Buffer length in bytes
+ */
+#define LLEXT_BUF_LOADER(_buf, _buf_len) \
+	Z_LLEXT_BUF_LOADER(_buf, _buf_len,                                                         \
+			   IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE) ?                             \
+				LLEXT_STORAGE_WRITABLE : LLEXT_STORAGE_PERSISTENT)
+
+/* @brief Initialize an llext_buf_loader structure for a temporary buffer
+ *
+ * ELF data from the specified buffer can only be used during llext_load().
+ * The LLEXT subsystem will copy all necessary data to internal buffers at load
+ * time.
+ *
+ * @param _buf Buffer containing the ELF binary
+ * @param _buf_len Buffer length in bytes
+ */
+#define LLEXT_TEMPORARY_BUF_LOADER(_buf, _buf_len) \
+	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_TEMPORARY)
+
+/**
+ * @brief Initialize an llext_buf_loader structure for a persistent, read-only buffer
+ *
+ * ELF data from the specified buffer is guaranteed to be accessible for as
+ * long as the extension is loaded. The LLEXT subsystem may directly access the
+ * ELF data, as long as no modification is required during loading.
+ *
+ * @param _buf Buffer containing the ELF binary
+ * @param _buf_len Buffer length in bytes
+ */
+#define LLEXT_PERSISTENT_BUF_LOADER(_buf, _buf_len) \
+	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_PERSISTENT)
+
+/**
+ * @brief Initialize an llext_buf_loader structure for a persistent, writable buffer
+ *
+ * ELF data from the specified buffer is guaranteed to be accessible for as
+ * long as the extension is loaded. The LLEXT subsystem may directly access and
+ * modify the ELF data.
+ *
+ * @param _buf Buffer containing the ELF binary
+ * @param _buf_len Buffer length in bytes
+ */
+#define LLEXT_WRITABLE_BUF_LOADER(_buf, _buf_len) \
+	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_WRITABLE)
 
 /**
  * @}

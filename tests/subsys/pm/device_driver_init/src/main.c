@@ -70,4 +70,59 @@ ZTEST(device_driver_init, test_device_driver_init)
 #endif
 }
 
+struct pm_transition_test_dev_data {
+	enum pm_device_state state_turn_on;
+	enum pm_device_state state_resume;
+	bool state_other;
+};
+
+static int pm_transition_test_dev_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct pm_transition_test_dev_data *data = dev->data;
+
+	/* Preserve the observed internal state when actions ran */
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		pm_device_state_get(dev, &data->state_turn_on);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		pm_device_state_get(dev, &data->state_resume);
+		break;
+	default:
+		data->state_other = true;
+	}
+	return 0;
+}
+
+static int pm_transition_test_dev_init(const struct device *dev)
+{
+	struct pm_transition_test_dev_data *data = dev->data;
+
+	data->state_turn_on = UINT8_MAX;
+	data->state_resume = UINT8_MAX;
+	data->state_other = false;
+
+	return pm_device_driver_init(dev, pm_transition_test_dev_pm_action);
+}
+
+static struct pm_transition_test_dev_data dev_data;
+PM_DEVICE_DEFINE(pm_transition_test_dev_pm, pm_transition_test_dev_pm_action);
+DEVICE_DEFINE(pm_transition_test_dev, "test_dev", pm_transition_test_dev_init,
+	PM_DEVICE_GET(pm_transition_test_dev_pm), &dev_data, NULL,
+	POST_KERNEL, 0, NULL);
+
+ZTEST(device_driver_init, test_device_driver_init_pm_state)
+{
+#ifdef CONFIG_PM_DEVICE
+	zassert_equal(PM_DEVICE_STATE_OFF, dev_data.state_turn_on);
+	zassert_equal(PM_DEVICE_STATE_SUSPENDED, dev_data.state_resume);
+	zassert_false(dev_data.state_other);
+#else
+	/* pm_device_state_get always returns PM_DEVICE_STATE_ACTIVE */
+	zassert_equal(PM_DEVICE_STATE_ACTIVE, dev_data.state_turn_on);
+	zassert_equal(PM_DEVICE_STATE_ACTIVE, dev_data.state_resume);
+	zassert_false(dev_data.state_other);
+#endif /* CONFIG_PM */
+}
+
 ZTEST_SUITE(device_driver_init, NULL, NULL, NULL, NULL, NULL);

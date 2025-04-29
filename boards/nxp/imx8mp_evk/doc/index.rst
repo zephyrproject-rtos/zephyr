@@ -42,48 +42,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr mimx8mp_evk_a53 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v3    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RDC       | on-chip    | Resource Domain Controller          |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet port                       |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO ports                          |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | I2C bus                             |
-+-----------+------------+-------------------------------------+
-
-The Zephyr mimx8mp_evk_m7 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -102,6 +61,8 @@ CPU's UART4.
 
 Programming and Debugging (A53)
 *******************************
+
+.. zephyr:board-supported-runners::
 
 U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
 it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
@@ -323,8 +284,8 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v2.7.99-1310-g2801bf644a91  ***
    Hello World! imx8mp_evk
 
-References
-==========
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-plus-applications-processor:8MPLUSLPD4-EVK

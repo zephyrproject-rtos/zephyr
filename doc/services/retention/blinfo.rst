@@ -15,7 +15,7 @@ Devicetree setup
 To use the bootloader information subsystem, a retention area needs to be
 created which has a retained data section as its parent, generally non-init RAM
 is used for this purpose. See the following example (examples in this guide are
-based on the :ref:`nrf52840dk_nrf52840` board and memory layout):
+based on the :zephyr:board:`nrf52840dk` board and memory layout):
 
 .. code-block:: devicetree
 

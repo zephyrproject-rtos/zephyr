@@ -273,8 +273,12 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         if self._use_elf:
             # Use elf file if instructed to do so.
             dl_file = self.cfg.elf_file
-        elif self.cfg.bin_file is not None and self._download_address is not None:
-            # Use bin file if a binary is available and --download-address provided
+        elif (self.cfg.bin_file is not None and
+               (self._download_address is not None or
+                  (str(self._port).startswith("usb") and self._download_modifiers is not None))):
+            # Use bin file if a binary is available and
+            # --download-address provided
+            # or flashing by dfu (port=usb and download-modifier used)
             dl_file = self.cfg.bin_file
         elif self.cfg.hex_file is not None:
             # Neither --use-elf nor --download-address are present:

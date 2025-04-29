@@ -238,6 +238,8 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 };
 
 &mdio {
@@ -245,10 +247,9 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0x00>;
-		status = "okay";
 		microchip,interface-type = "rmii-25MHz";
 	};
 };

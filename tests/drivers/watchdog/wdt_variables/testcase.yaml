@@ -1,0 +1,31 @@
+common:
+  timeout: 10
+  tags:
+    - drivers
+    - watchdog
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Test completed successfully"
+
+tests:
+  drivers.watchdog.wdt_variables.default:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+
+  drivers.watchdog.wdt_variables.54h_flpr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuflpr
+    extra_args:
+      - vpr_launcher_SNIPPET=nordic-log-stm
+      - vpr_launcher_CONFIG_BOOT_BANNER=n
+      - SNIPPET=nordic-log-stm

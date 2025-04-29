@@ -1,13 +1,45 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags:
+    - drivers
+    - stepper
+    - api
 tests:
-  drivers.stepper.stepper_api:
-    tags:
-      - drivers
-      - stepper
-      - api
+  drivers.stepper.stepper_api.adi_tmc2209:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
-      - nucleo_g071rb
-      - nucleo_f767zi
-      - qemu_x86_64
+      - native_sim/native/64
+  drivers.stepper.stepper_api.allegro_a4979:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - native_sim/native/64
+  drivers.stepper.stepper_api.ti_drv84xx:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_COUNTER=y
+      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - native_sim/native/64
+  drivers.stepper.stepper_api.zephyr_gpio_stepper:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_zephyr_gpio_stepper.overlay"
+      - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64_zephyr_gpio_stepper.overlay"
+    extra_configs:
+      - CONFIG_GPIO=y
+    platform_allow:
+      - native_sim/native/64
+      - qemu_x86_64/atom

@@ -41,7 +41,7 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 config IEEE802154_NRF5_UICR_EUI64_ENABLE
 	bool "Support usage of EUI64 value stored in UICR registers"
 	depends on !IEEE802154_VENDOR_OUI_ENABLE
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 	help
 	  This option enables setting custom vendor EUI64 value
 	  stored in User information configuration registers (UICR).
@@ -55,6 +55,7 @@ config IEEE802154_NRF5_UICR_EUI64_REG
 	int "UICR base register for the EUI64 value"
 	range 0 30 if SOC_SERIES_NRF52X
 	range 0 190 if SOC_SERIES_NRF53X
+	range 0 318 if SOC_SERIES_NRF54LX
 	default 0
 	help
 	  Base of the two consecutive registers from the UICR customer

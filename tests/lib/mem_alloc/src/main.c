@@ -16,29 +16,26 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#if defined(__GNUC__)
-/*
- * Don't complain about ridiculous alloc size requests
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
-#endif
-
 #define _BSD_SOURCE
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
 #include <stdint.h>
+
+/*
+ * Don't complain about ridiculous alloc size requests
+ */
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ALLOC_SIZE_LARGER_THAN)
 
 #define TOO_BIG PTRDIFF_MAX
 
 /**
  *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
- * @ingroup all_tests
+ * @ingroup libc_api
  * @{
  *
  */
@@ -352,10 +349,6 @@ ZTEST(c_lib_dynamic_memalloc, test_memalloc_all)
 }
 
 /**
- * @}
- */
-
-/**
  *
  * @brief Test dynamic memory allocation upto maximum size
  * Negative test case
@@ -376,5 +369,9 @@ ZTEST(c_lib_dynamic_memalloc, test_memalloc_max)
 	_test_memalloc_max();
 }
 #endif
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(c_lib_dynamic_memalloc, NULL, NULL, NULL, NULL, NULL);

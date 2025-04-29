@@ -47,38 +47,17 @@ LS1046A RDB boards supports the following features:
 Supported Features
 ==================
 
-NXP LS1046A RDB board default configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| GIC-400   | on-chip    | GICv2 interrupt controller           |
-+-----------+------------+--------------------------------------+
-| ARM TIMER | on-chip    | System Clock                         |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | NS16550 compatible serial port       |
-+-----------+------------+--------------------------------------+
+.. note::
 
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in the defconfig file for NON-SMP:
-
-    :zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_defconfig`
-
-Or for SMP running on all four CPU Cores:
-
-	:zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_smp_4cores_defconfig`
-
-Or for SMP running on 2 CPU Cores (Core2 and Core3):
-
-	:zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_smp_defconfig`
-
-There are two serial port on the board: uart1 and uart2, Zephyr is using
-uart2 as serial console.
+   There are two serial ports on the board: uart1 and uart2. Zephyr is using
+   uart2 as serial console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use the following configuration to run basic Zephyr applications and
 kernel tests on LS1046A RDB board. For example, with the :zephyr:code-sample:`synchronization` sample:
@@ -203,6 +182,9 @@ Debugging
 
 LS1046A RDB board includes one JTAG connector on board, connect it to
 CodeWarrior TAP for debugging.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 References
 ==========

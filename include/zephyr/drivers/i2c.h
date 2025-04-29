@@ -668,7 +668,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm, data, config, level, prio, api,	\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm, data,	\
+			config,	level, prio, api,			\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
@@ -720,6 +721,25 @@ static inline int z_impl_i2c_configure(const struct device *dev,
 		(const struct i2c_driver_api *)dev->api;
 
 	return api->configure(dev, dev_config);
+}
+
+/**
+ * @brief Configure operation of a host controller.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_configure(spec->bus, dev_config);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param dev_config Bit-packed 32-bit value to the device runtime configuration
+ * for the I2C controller.
+ *
+ * @return a value from i2c_configure()
+ */
+static inline int i2c_configure_dt(const struct i2c_dt_spec *spec,
+						uint32_t dev_config)
+{
+	return i2c_configure(spec->bus, dev_config);
 }
 
 /**
@@ -1077,6 +1097,21 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param i2c_iodev I2C iodev defined with I2C_DT_IODEV_DEFINE
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_iodev(const struct rtio_iodev *i2c_iodev)
+{
+	struct i2c_dt_spec *spec = (struct i2c_dt_spec *)i2c_iodev->data;
+
+	return i2c_is_ready_dt(spec);
+}
+
+/**
  * @brief Copy the i2c_msgs into a set of RTIO requests
  *
  * @param r RTIO context
@@ -1091,6 +1126,35 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
 			       struct rtio_iodev *iodev,
 			       const struct i2c_msg *msgs,
 			       uint8_t num_msgs);
+
+/**
+ * @brief Copy the register address and data to a SQE
+ *
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param reg_addr target register address
+ * @param data data to be written
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t reg_addr, uint8_t data);
+
+/**
+ * @brief acquire and configure a i2c burst read transmission
+ *
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param start_addr target register address
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t start_addr, void *buf, size_t num_bytes);
 
 #endif /* CONFIG_I2C_RTIO */
 

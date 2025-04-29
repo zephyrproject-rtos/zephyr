@@ -193,6 +193,11 @@ static inline void copy_hdr(struct h4_data *h4)
 
 static void reset_rx(struct h4_data *h4)
 {
+	if (h4->rx.buf) {
+		net_buf_unref(h4->rx.buf);
+		h4->rx.buf = NULL;
+	}
+
 	h4->rx.type = BT_HCI_H4_NONE;
 	h4->rx.remaining = 0U;
 	h4->rx.have_hdr = false;
@@ -343,12 +348,6 @@ static inline void read_payload(const struct device *dev)
 	buf = h4->rx.buf;
 	h4->rx.buf = NULL;
 
-	if (h4->rx.type == BT_HCI_H4_EVT) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	} else {
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
-	}
-
 	reset_rx(h4);
 
 	LOG_DBG("Putting buf %p to rx fifo", buf);
@@ -406,33 +405,6 @@ static inline void process_tx(const struct device *dev)
 		}
 	}
 
-	if (!h4->tx.type) {
-		switch (bt_buf_get_type(h4->tx.buf)) {
-		case BT_BUF_ACL_OUT:
-			h4->tx.type = BT_HCI_H4_ACL;
-			break;
-		case BT_BUF_CMD:
-			h4->tx.type = BT_HCI_H4_CMD;
-			break;
-		case BT_BUF_ISO_OUT:
-			if (IS_ENABLED(CONFIG_BT_ISO)) {
-				h4->tx.type = BT_HCI_H4_ISO;
-				break;
-			}
-			__fallthrough;
-		default:
-			LOG_ERR("Unknown buffer type");
-			goto done;
-		}
-
-		bytes = uart_fifo_fill(cfg->uart, &h4->tx.type, 1);
-		if (bytes != 1) {
-			LOG_WRN("Unable to send H:4 type");
-			h4->tx.type = BT_HCI_H4_NONE;
-			return;
-		}
-	}
-
 	bytes = uart_fifo_fill(cfg->uart, h4->tx.buf->data, h4->tx.buf->len);
 	if (unlikely(bytes < 0)) {
 		LOG_ERR("Unable to write to UART (err %d)", bytes);
@@ -444,7 +416,6 @@ static inline void process_tx(const struct device *dev)
 		return;
 	}
 
-done:
 	h4->tx.type = BT_HCI_H4_NONE;
 	net_buf_unref(h4->tx.buf);
 	h4->tx.buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT);
@@ -494,7 +465,7 @@ static int h4_send(const struct device *dev, struct net_buf *buf)
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	k_fifo_put(&h4->tx.fifo, buf);
 	uart_irq_tx_enable(cfg->uart);
@@ -545,6 +516,35 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+int __weak bt_hci_transport_teardown(const struct device *dev)
+{
+	return 0;
+}
+
+static int h4_close(const struct device *dev)
+{
+	const struct h4_config *cfg = dev->config;
+	struct h4_data *h4 = dev->data;
+	int err;
+
+	LOG_DBG("");
+
+	uart_irq_rx_disable(cfg->uart);
+	uart_irq_tx_disable(cfg->uart);
+
+	err = bt_hci_transport_teardown(cfg->uart);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Abort RX thread */
+	k_thread_abort(cfg->rx_thread);
+
+	h4->recv = NULL;
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_HCI_SETUP)
 static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
@@ -567,6 +567,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 static DEVICE_API(bt_hci, h4_driver_api) = {
 	.open = h4_open,
 	.send = h4_send,
+	.close = h4_close,
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup = h4_setup,
 #endif

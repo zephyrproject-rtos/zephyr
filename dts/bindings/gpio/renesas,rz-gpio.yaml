@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Reneses RZ  GPIO controller node.
+  Renesas RZ GPIO controller.
   Sample of usage:
     gpio-consumer{
           out-gpio = <&gpio8 2 (GPIO_PULL_UP);

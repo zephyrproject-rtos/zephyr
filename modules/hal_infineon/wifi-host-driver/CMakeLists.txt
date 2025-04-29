@@ -198,12 +198,12 @@ if(CONFIG_CYW4373_STERLING_LWB5PLUS AND NOT CONFIG_AIROC_WIFI_CUSTOM)
     set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0-mfgtest.clm_blob)
     zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0-mfgtest_clm_blob.c)
   else()
-    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0.clm_blob)
+    set(cyw43xx_clm_bin    ${hal_blobs_dir}/clm/COMPONENT_4373/4373A0.clm_blob)
     zephyr_library_sources(${hal_wifi_dir_resources}/clm/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/4373A0_clm_blob.c)
   endif()
 
   # nvram
-  zephyr_include_directories_ifdef(${hal_wifi_dir_resources}/nvram/COMPONENT_4373/COMPONENT_STERLING-LWB5plus)
+  zephyr_include_directories(${hal_wifi_dir_resources}/nvram/COMPONENT_4373/COMPONENT_STERLING-LWB5plus)
 endif()
 
 # generate FW inc_blob from fw_bin

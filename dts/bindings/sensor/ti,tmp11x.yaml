@@ -1,0 +1,40 @@
+# Copyright (c) 2019 Centaur Analytics, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TMP11X temperature sensor
+
+compatible: "ti,tmp11x"
+
+bus: tmp11x
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  odr:
+    type: int
+    default: 0x200
+    enum: [0, 0x80, 0x100, 0x180, 0x200, 0x280, 0x300, 0x380]
+    description: |
+      Specify the default temperature output data rate in milliseconds (ms).
+      Default is power-up configuration.
+
+      - 0     # TMP11X_DT_ODR_15_5_MS
+      - 0x80  # TMP11X_DT_ODR_125_MS
+      - 0x100 # TMP11X_DT_ODR_250_MS
+      - 0x180 # TMP11X_DT_ODR_500_MS
+      - 0x200 # TMP11X_DT_ODR_1000_MS
+      - 0x280 # TMP11X_DT_ODR_4000_MS
+      - 0x300 # TMP11X_DT_ODR_8000_MS
+      - 0x380 # TMP11X_DT_ODR_16000_MS
+  oversampling:
+    type: int
+    default: 0x20
+    enum: [0, 0x20, 0x40, 0x60]
+    description: |
+      Set number of sample to averaging in one readout.
+      Default is power-up configuration (8 samples).
+
+      - 0    # TMP11X_DT_OVERSAMPLING_1
+      - 0x20 # TMP11X_DT_OVERSAMPLING_8
+      - 0x40 # TMP11X_DT_OVERSAMPLING_32
+      - 0x60 # TMP11X_DT_OVERSAMPLING_64

@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        ST STM32N6 ADC
+        STM32N6 ADC
+
         This compatible stands for STM32N6 ADC.
 
 compatible: "st,stm32n6-adc"

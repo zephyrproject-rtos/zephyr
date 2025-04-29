@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cadence SDHC Controller node
+description: Cadence SDHC Controller
 
 compatible: "cdns,sdhc"
 

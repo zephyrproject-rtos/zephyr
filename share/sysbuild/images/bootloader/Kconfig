@@ -126,7 +126,28 @@ config MCUBOOT_MODE_FIRMWARE_UPDATER
 	  mechanism defined for entering the slot1_partition which is a dedicated firmware updater
 	  application used to update the slot0_partition application.
 
+config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
+	bool "Single app RAM load mode"
+	help
+	  MCUboot can load the image to RAM from an arbitrary location. In this mode,
+	  MCUboot will copy the image to RAM and begin execution from there. The image
+	  must be linked to execute from RAM, the address that it is copied to is
+	  specified using the load-addr argument when running imgtool.
+	  Note that while not used directly, a slot0_partition must be defined in the
+	  DT, as it is used to get information about size of the image to be loaded.
+	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is
+	  not possible to swap back to older version of the application. In fact, none
+	  of the swap operations are supported in this mode.
+
 endchoice
+
+config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
+	bool "Firmware updater retention boot mode entrance"
+	depends on MCUBOOT_MODE_FIRMWARE_UPDATER
+	help
+	  Will enable retained memory, retention and the boot mode module in MCUboot and the main
+	  application so that it can be used to force booting the firmware loader application
+	  image. This needs the ``zephyr,boot-mode`` chosen node to be correctly configured.
 
 config SIGNATURE_TYPE
 	string

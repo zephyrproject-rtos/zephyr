@@ -1,0 +1,8 @@
+# BeagleBoard.org PocketBeagle 2
+#
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_POCKETBEAGLE_2
+	select SOC_AM6232_M4 if BOARD_POCKETBEAGLE_2_AM6232_M4
