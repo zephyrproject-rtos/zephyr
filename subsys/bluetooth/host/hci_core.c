@@ -92,6 +92,26 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_ZTEST), "Missing DT chosen property for HCI");
 #define BT_HCI_QUIRKS 0
 #endif
 
+/* These checks are added to warn if the number of ACL or ISO packets in Controller is not equal to
+ * the number of bt_conn_tx contexts allocated by Host. The inequality of these two values can lead
+ * to inefficient resources usage either on Host's or Controller's side.
+ */
+#define CHECK_NUM_OF_ACL_PKTS(_num) \
+	do { \
+		if (CONFIG_BT_BUF_ACL_TX_COUNT != (_num)) { \
+			LOG_WRN("Num of Controller's ACL packets != ACL bt_conn_tx contexts" \
+				" (%u != %u)", (_num), CONFIG_BT_BUF_ACL_TX_COUNT); \
+		} \
+	} while (0)
+
+#define CHECK_NUM_OF_ISO_PKTS(_num) \
+	do { \
+		if (CONFIG_BT_ISO_TX_BUF_COUNT != (_num)) { \
+			LOG_WRN("Num of Controller's ISO packets != ISO bt_conn_tx contexts" \
+				"(%u != %u)", (_num), CONFIG_BT_ISO_TX_BUF_COUNT); \
+		} \
+	} while (0)
+
 void bt_tx_irq_raise(void);
 
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
@@ -3145,6 +3165,8 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 
 	LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.acl_mtu);
 
+	CHECK_NUM_OF_ACL_PKTS(rp->le_max_num);
+
 	k_sem_init(&bt_dev.le.acl_pkts, rp->le_max_num, rp->le_max_num);
 #endif /* CONFIG_BT_CONN */
 }
@@ -3164,6 +3186,8 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 		LOG_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num, bt_dev.le.acl_mtu);
 
 		k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
+
+		CHECK_NUM_OF_ACL_PKTS(rp->acl_max_num);
 	}
 #endif /* CONFIG_BT_CONN */
 
@@ -3180,6 +3204,8 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 
 	k_sem_init(&bt_dev.le.iso_pkts, rp->iso_max_num, rp->iso_max_num);
 	bt_dev.le.iso_limit = rp->iso_max_num;
+
+	CHECK_NUM_OF_ISO_PKTS(rp->iso_max_num);
 #endif /* CONFIG_BT_ISO */
 }
 
