@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2025 Embeint Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+
+config LORA_BASICS_MODEM_ASYNC_RX_MAX_PAYLOAD
+	int "Maximum size payload that can be received by async RX"
+	default 256
+	help
+	  A buffer of this size is allocated on the system workqueue stack when
+	  running the async RX handler.
+
+endif
