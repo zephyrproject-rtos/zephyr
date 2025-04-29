@@ -73,5 +73,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	DL_SYSCTL_setPowerPolicyRUN0SLEEP0();
 	irq_unlock(0);
 }
