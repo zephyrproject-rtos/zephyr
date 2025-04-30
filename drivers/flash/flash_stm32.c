@@ -13,6 +13,9 @@
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/cache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/init.h>
@@ -360,7 +363,20 @@ static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	cache_instr_disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	cache_instr_enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	return 0;
 }
