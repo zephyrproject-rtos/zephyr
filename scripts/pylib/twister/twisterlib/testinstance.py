@@ -365,7 +365,10 @@ class TestInstance:
                     if self.platform.arch == cond_config[1]:
                         new_config_list.append(cond_config[2])
                 elif cond_config[0] == "platform" and len(cond_config) == 3:
-                    if self.platform.name == cond_config[1]:
+                    if cond_config[1] in self.platform.aliases:
+                        new_config_list.append(cond_config[2])
+                elif cond_config[0] == "simulation" and len(cond_config) == 3:
+                    if self.platform.simulation == cond_config[1]:
                         new_config_list.append(cond_config[2])
                 else:
                     new_config_list.append(config)

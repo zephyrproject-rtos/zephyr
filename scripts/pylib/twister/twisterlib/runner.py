@@ -1708,7 +1708,7 @@ class ProjectBuilder(FilterBuilder):
                 if self.instance.platform.arch == cond_args[1]:
                     args.append(cond_args[2])
             elif cond_args[0] == "platform" and len(cond_args) == 3:
-                if self.instance.platform.name == cond_args[1]:
+                if cond_args[1] in self.instance.platform.aliases:
                     args.append(cond_args[2])
             elif cond_args[0] == "simulation" and len(cond_args) == 3:
                 if self.instance.platform.simulation == cond_args[1]:
@@ -1718,13 +1718,63 @@ class ProjectBuilder(FilterBuilder):
                     logger.warning(f"Unexpected extra_args: {va}")
                 args.append(va)
 
+        extra_conf_files = []
+        for va in self.testsuite.extra_conf_files.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    extra_conf_files.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if cond_args[1] in self.instance.platform.aliases:
+                    extra_conf_files.append(cond_args[2])
+            elif cond_args[0] == "simulation" and len(cond_args) == 3:
+                if self.instance.platform.simulation == cond_args[1]:
+                    extra_conf_files.append(cond_args[2])
+            else:
+                if cond_args[0] in ["arch", "platform", "simulation"]:
+                    logger.warning(f"Unexpected extra_args: {va}")
+                extra_conf_files.append(va)
+
+        extra_overlay_confs = []
+        for va in self.testsuite.extra_overlay_confs.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    extra_overlay_confs.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if cond_args[1] in self.instance.platform.aliases:
+                    extra_overlay_confs.append(cond_args[2])
+            elif cond_args[0] == "simulation" and len(cond_args) == 3:
+                if self.instance.platform.simulation == cond_args[1]:
+                    extra_overlay_confs.append(cond_args[2])
+            else:
+                if cond_args[0] in ["arch", "platform", "simulation"]:
+                    logger.warning(f"Unexpected extra_args: {va}")
+                extra_overlay_confs.append(va)
+
+        extra_dtc_overlay_files = []
+        for va in self.testsuite.extra_dtc_overlay_files.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    extra_dtc_overlay_files.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if cond_args[1] in self.instance.platform.aliases:
+                    extra_dtc_overlay_files.append(cond_args[2])
+            elif cond_args[0] == "simulation" and len(cond_args) == 3:
+                if self.instance.platform.simulation == cond_args[1]:
+                    extra_dtc_overlay_files.append(cond_args[2])
+            else:
+                if cond_args[0] in ["arch", "platform", "simulation"]:
+                    logger.warning(f"Unexpected extra_args: {va}")
+                extra_dtc_overlay_files.append(va)
 
         args = self.cmake_assemble_args(
             args,
             self.instance.handler,
-            self.testsuite.extra_conf_files,
-            self.testsuite.extra_overlay_confs,
-            self.testsuite.extra_dtc_overlay_files,
+            extra_conf_files,
+            extra_overlay_confs,
+            extra_dtc_overlay_files,
             self.options.extra_args, # CMake extra args
             self.instance.build_dir,
         )
