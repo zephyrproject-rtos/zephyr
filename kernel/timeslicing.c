@@ -62,7 +62,7 @@ int z_time_slice_size(struct k_thread *thread)
 	return 0;
 }
 
-static void slice_timeout(struct _timeout *timeout)
+static void slice_timeout_handler(struct _timeout *timeout)
 {
 	struct timeslice_data *ts;
 	unsigned int cpu;
@@ -87,7 +87,7 @@ void z_reset_time_slice(unsigned int cpu, struct k_thread *thread)
 	z_abort_timeout(&slice_data[cpu].timeout);
 	slice_data[cpu].expired = false;
 	if (slice_size != 0) {
-		z_add_timeout(&slice_data[cpu].timeout, slice_timeout,
+		z_add_timeout(&slice_data[cpu].timeout, slice_timeout_handler,
 			      K_TICKS(slice_size - 1));
 	}
 }
