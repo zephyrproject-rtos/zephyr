@@ -71,7 +71,7 @@ def _handle_json_string_filter(filter_args, _logger: Logger=None):
 
 def _handle_json_path_filter(filter_args, _logger: Logger):
     if not os.path.exists(filter_args):
-        _logger.error(f"Provided path { filter_args } doesn't exist. Halting twister process...")
+        _logger.error(f"Provided path { filter_args } doesn't exist in the system or in the current working directory { os.getcwd() }. Halting twister process...")
         sys.exit(1)
 
     if not os.path.isfile(filter_args):
@@ -89,7 +89,7 @@ def _handle_json_path_filter(filter_args, _logger: Logger):
 def _handle_json_filter(filter_args, logger: Logger, handle_method):
     if callable(handle_method):
         try:
-            return handle_method(filter_args)
+            return handle_method(filter_args, logger)
         except (json.JSONDecodeError, TypeError, ValueError) as e:
             logger.error(f"JSON parser crashed with error { e } when trying to parse { filter_args }. Halting twister process...")
             sys.exit(1)

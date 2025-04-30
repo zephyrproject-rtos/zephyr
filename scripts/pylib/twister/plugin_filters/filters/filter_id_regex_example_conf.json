@@ -2,13 +2,13 @@
     {
         "filter_file_path":"filter_id_regex",
         "kwargs": { 
-            "id_filter": ".*static"
+            "regex_pattern": ".*static"
         }
     },
     {
-        "filter_file_path":"filter_id_regex",
+        "filter_file_path":"filter_id_regox",
         "kwargs": { 
-            "id_filter": ".*stacks"
+            "regex_pattern": ".*stacks"
         }
     }
 ]
