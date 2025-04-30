@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/reset/numaker_m55m1x_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
@@ -393,6 +394,19 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		eadc0: eadc@40241000 {
+			compatible = "nuvoton,numaker-adc";
+			reg = <0x40241000 0x280>;
+			interrupts = <126 0>;
+			resets = <&rst NUMAKER_SYS_EADC0RST>;
+			clocks = <&pcc NUMAKER_EADC0_MODULE
+				  NUMAKER_CLK_EADCSEL_EADC0SEL_PCLK0
+				  NUMAKER_CLK_EADCDIV_EADC0DIV(10)>;
+			channels = <28>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 };
