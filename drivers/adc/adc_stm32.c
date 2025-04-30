@@ -5,6 +5,7 @@
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Marius Scholtz, RIC Electronics
  * Copyright (c) 2023 Hein Wessels, Nobleo Technology
+ * Copyright (c) 2025 John Bason Mitchell
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,13 +37,19 @@
 #include <stm32_ll_dma.h>
 #endif
 
+#ifdef CONFIG_ADC_STM32_TIMER
+#include <stm32_ll_tim.h>
+#include <stm32_ll_rcc.h>
+/* needed for checking some of the clock rates in duplicated code */
+#else
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#endif /*CONFIG_ADC_STM32_TIMER*/
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(adc_stm32);
+LOG_MODULE_REGISTER(adc_stm32, LOG_LEVEL);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/dt-bindings/adc/stm32_adc.h>
@@ -178,6 +185,16 @@ struct adc_stm32_data {
 #endif
 };
 
+#ifdef CONFIG_ADC_STM32_TIMER
+struct adc_stm32_timer {
+	TIM_TypeDef *timer;
+	int trigger_output;
+	int trigger_source;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
+};
+#endif /* CONFIG_ADC_STM32_TIMER */
+
 struct adc_stm32_cfg {
 	ADC_TypeDef *base;
 	void (*irq_cfg_func)(void);
@@ -185,6 +202,9 @@ struct adc_stm32_cfg {
 	size_t pclk_len;
 	uint32_t clk_prescaler;
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_ADC_STM32_TIMER
+	const struct adc_stm32_timer adc_timer;
+#endif /* CONFIG_ADC_STM32_TIMER */
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
@@ -192,6 +212,120 @@ struct adc_stm32_cfg {
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
+
+#ifdef CONFIG_ADC_STM32_TIMER
+/**
+ * Obtain timer clock speed.
+ *
+ * @param pclken  Timer clock control subsystem.
+ * @param tim_clk Where computed timer clock will be stored.
+ *
+ * @return 0 on success, error code otherwise.
+ *
+ * This function is ripped from the PWM driver; TODO handle code duplication.
+ */
+static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
+{
+	int r;
+	const struct device *clk;
+	uint32_t bus_clk, apb_psc;
+
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
+
+	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
+		&bus_clk);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_DBG("Bus clock %d\n", bus_clk);
+
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* Timers are clocked by SYSCLK on STM32WB0 */
+	apb_psc = 1;
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
+		apb_psc = STM32_D2PPRE1;
+	} else {
+		apb_psc = STM32_D2PPRE2;
+	}
+#else
+	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
+#else
+		apb_psc = STM32_APB1_PRESCALER;
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+	}
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f0_rcc)
+	else {
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
+#else
+		apb_psc = STM32_APB2_PRESCALER;
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+	}
+#endif /* ! st_stm32f0_rcc */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	LOG_DBG("apb_psc %d\n", apb_psc);
+
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
+	defined(RCC_CFGR_TIMPRE)
+	/*
+	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
+	 * bit to control the clock frequency of all the timers connected to
+	 * APB1 and APB2 domains.
+	 *
+	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
+	 * equals to HCLK. This threshold value depends on TIMPRE setting
+	 * (2 if TIMPRE=0, 4 if TIMPRE=1). Above threshold, timer clock is set
+	 * to a multiple of the APB domain clock PCLK{1,2} (2 if TIMPRE=0, 4 if
+	 * TIMPRE=1).
+	 */
+
+	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
+		/* TIMPRE = 0 */
+		if (apb_psc <= 2u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 2u;
+		}
+	} else {
+		/* TIMPRE = 1 */
+		if (apb_psc <= 4u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 4u;
+		}
+	}
+#else
+	/*
+	 * If the APB prescaler equals 1, the timer clock frequencies
+	 * are set to the same frequency as that of the APB domain.
+	 * Otherwise, they are set to twice (×2) the frequency of the
+	 * APB domain.
+	 */
+	if (apb_psc == 1u) {
+		*tim_clk = bus_clk;
+	} else {
+		*tim_clk = bus_clk * 2u;
+	}
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_ADC_STM32_TIMER */
 
 #ifdef CONFIG_ADC_STM32_DMA
 static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
@@ -383,8 +517,20 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_REG_StartConversion(adc);
 #else
-	LL_ADC_REG_StartConversionSWStart(adc);
+#ifdef CONFIG_ADC_STM32_TIMER
+	struct adc_stm32_data *data = dev->data;
+
+	if (data->ctx.options.interval_us == 0) {
+#endif /* CONFIG_ADC_STM32_TIMER */
+		LL_ADC_REG_StartConversionSWStart(adc);
+#ifdef CONFIG_ADC_STM32_TIMER
+	} else {
+		LL_ADC_REG_StartConversionExtTrig(adc, LL_ADC_REG_TRIG_EXT_RISING);
+	}
+#endif /* CONFIG_ADC_STM32_TIMER */
 #endif
+
+
 }
 
 /*
@@ -819,6 +965,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+			adc_context_disable_timer(&data->ctx);
 			adc_context_complete(&data->ctx, status);
 		}
 	}
@@ -1082,6 +1229,17 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	data->repeat_buffer = data->buffer;
 
+#ifdef CONFIG_ADC_STM32_TIMER
+	if (ctx->options.interval_us == 0) {
+		LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
+	} else {
+		LL_ADC_REG_SetTriggerSource(adc, config->adc_timer.trigger_source);
+		atomic_inc(&ctx->sampling_requested);
+	}
+#endif /* CONFIG_ADC_STM32_TIMER */
+
+
+
 #ifdef CONFIG_ADC_STM32_DMA
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	/* Make sure DMA bit of ADC register CR2 is set to 0 before starting a DMA transfer */
@@ -1162,6 +1320,48 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	LL_ADC_SetChannelPreselection(adc, 0);
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
 }
+
+#ifdef CONFIG_ADC_STM32_TIMER
+static void adc_context_enable_timer(struct adc_context *ctx)
+{
+	struct adc_stm32_data *data =
+		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+	const struct device *dev = data->dev;
+	const struct adc_stm32_cfg *config = dev->config;
+	uint32_t auto_relvoad_value;
+
+	int r;
+	uint32_t tim_clk;
+
+	/*!function is void, can't return with failure, could set a data variable or context status */
+	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
+
+	/*! check that it is not too big, prescaler could be changed */
+	auto_reload_value = ctx->options.interval_us * (tim_clk / 1000000);
+
+	LL_TIM_SetAutoReload(config->adc_timer.timer, auto_reload_value);
+
+	atomic_inc(&data->ctx.sampling_requested);
+
+	LOG_DBG("enabling timer\n");
+	LL_TIM_EnableCounter(config->adc_timer.timer);
+
+	adc_context_start_sampling(ctx);
+}
+
+static void adc_context_disable_timer(struct adc_context *ctx)
+{
+	struct adc_stm32_data *data =
+		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+	const struct device *dev = data->dev;
+	const struct adc_stm32_cfg *config = dev->config;
+
+	LOG_DBG("disabling timer\n");
+	LL_TIM_DisableCounter(config->adc_timer.timer);
+
+	atomic_dec(&ctx->sampling_requested);
+}
+#endif /* CONFIG_ADC_STM32_TIMER */
 
 static int adc_stm32_read(const struct device *dev,
 			  const struct adc_sequence *sequence)
@@ -1549,8 +1749,9 @@ static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device * const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	__maybe_unused ADC_TypeDef *adc = config->base;
+
 	int err;
 
 	LOG_DBG("Initializing %s", dev->name);
@@ -1559,6 +1760,26 @@ static int adc_stm32_init(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_ADC_STM32_TIMER
+	/* initialize clock and check its speed  */
+	int r;
+
+	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+		(clock_control_subsys_t)config->adc_timer.pclken);
+	if (r < 0) {
+		LOG_ERR("Could not initialize clock (%d)", r);
+		return r;
+	}
+
+	uint32_t tim_clk;
+
+	r = counter_stm32_get_tim_clk(config->adc_timer.pclken, &tim_clk);
+
+	if (r < 0) {
+		return r;
+	}
+#endif /* CONFIG_ADC_STM32_TIMER */
 
 	data->dev = dev;
 
@@ -1592,7 +1813,7 @@ static int adc_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_ADC_STM32_DMA
 	if ((data->dma.dma_dev != NULL) &&
-	    !device_is_ready(data->dma.dma_dev)) {
+		!device_is_ready(data->dma.dma_dev)) {
 		LOG_ERR("%s device not ready", data->dma.dma_dev->name);
 		return -ENODEV;
 	}
@@ -1628,7 +1849,7 @@ static int adc_stm32_init(const struct device *dev)
 	 * Some series have a dedicated status bit, others relie on a delay
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(STM32H72X_ADC)
-	/* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
+	 /* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
 	if (adc == ADC3) {
 		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 	} else {
@@ -1653,6 +1874,45 @@ static int adc_stm32_init(const struct device *dev)
 	adc_stm32_calibrate(dev);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
+
+#ifdef CONFIG_ADC_STM32_TIMER
+	LL_TIM_InitTypeDef init;
+	LL_TIM_OC_InitTypeDef oc_init;
+
+	LL_TIM_StructInit(&init);
+	LL_TIM_OC_StructInit(&oc_init);
+
+	/* Default settings */
+	init.Prescaler = 0;
+	init.CounterMode = LL_TIM_COUNTERMODE_UP;
+	init.Autoreload = tim_clk;
+	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+
+	if (LL_TIM_Init(config->adc_timer.timer, &init) != SUCCESS) {
+		LOG_ERR("Could not initialize timer");
+		return -EIO;
+	}
+
+	switch (config->adc_timer.trigger_output) {
+	case  STM32_ADC_TRGO:
+		LL_TIM_SetTriggerOutput(config->adc_timer.timer, LL_TIM_TRGO_UPDATE);
+		break;
+	case STM32_ADC_TRGO2:
+
+	/* there is also a low level function IS_TIM_TRGO2_INSTANCE(TIMx) */
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+		LL_TIM_SetTriggerOutput2(config->adc_timer.timer, LL_TIM_TRGO2_UPDATE);
+#else
+		LOG_ERR("Cannot set trigger output TRGO2, did you mean TRGO?\n");
+#endif
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	LL_ADC_REG_SetTriggerSource(adc, config->adc_timer.trigger_source);
+
+#endif /*CONFIG_ADC_STM32_TIMER*/
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -1922,6 +2182,45 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 			(ADC_DMA_CHANNEL_INIT(id, src, dest)),				\
 			(/* Required for other adc instances without dma */))
 
+#ifdef CONFIG_ADC_STM32_TIMER
+/* concatenation from the back like UTIL_CAT does not give valid tokens */
+#define TRIGGER_SOURCE_PRIMITIVE(number, channel) LL_ADC_REG_TRIG_EXT_TIM ## number ## _ ## channel
+#define TRIGGER_SOURCE(number, channel) TRIGGER_SOURCE_PRIMITIVE(number, channel)
+
+#define TRIGGER_OUTPUT_PRIMITIVE(channel) STM32_ADC_ ## channel
+#define TRIGGER_OUTPUT(channel) TRIGGER_OUTPUT_PRIMITIVE(channel)
+
+#define ADC_STM32_TIMER_INIT(index)							\
+static const struct stm32_pclken timer_pclken_##index[] =				\
+	STM32_DT_CLOCKS(DT_PHANDLE(DT_DRV_INST(index), timer));				\
+											\
+static const struct adc_stm32_timer adc_stm32_timer_##index = {				\
+	.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(index), timer)),	\
+	.trigger_output = TRIGGER_OUTPUT(DT_INST_STRING_TOKEN(index, trigger_name)),	\
+	.trigger_source = TRIGGER_SOURCE(DT_INST_PROP(index, timer_number),		\
+				DT_INST_STRING_TOKEN(index, trigger_name)),		\
+	.pclken = timer_pclken_##index,							\
+	.pclk_len = DT_NUM_CLOCKS(DT_PHANDLE(DT_DRV_INST(index), timer)),		\
+};
+
+DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_TIMER_INIT)
+
+#define ADC_STM32_TIMER(index) .adc_timer = adc_stm32_timer_##index,
+
+#else
+
+#define ADC_STM32_TIMER(index)
+
+#endif /* CONFIG_ADC_STM32_TIMER*/
+
+#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
+/* we are adding a comma */
+#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name) ADC_CONTEXT_INIT_TIMER(data, ctx_name),
+#else
+#define ADC_STM32_CONTEXT_INIT_TIMER(data, ctx_name)
+#endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
+
+
 #define ADC_STM32_INIT(index)						\
 									\
 ADC_STM32_CHECK_DT_CLOCK(index);					\
@@ -1931,6 +2230,7 @@ PINCTRL_DT_INST_DEFINE(index);						\
 static const struct stm32_pclken pclken_##index[] =			\
 				 STM32_DT_INST_CLOCKS(index);		\
 									\
+									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
 	ADC_STM32_IRQ_FUNC(index)					\
@@ -1938,8 +2238,9 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
-	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
+	ADC_STM32_TIMER(index)						\
+	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),\
+	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
@@ -1948,7 +2249,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 };									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
-	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
+	ADC_STM32_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx)	\
 	ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),		\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 	ADC_DMA_CHANNEL(index, PERIPHERAL, MEMORY)			\
