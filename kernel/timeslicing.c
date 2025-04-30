@@ -99,7 +99,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 }
 #endif
 
-/* Called out of each timer interrupt */
+/* Called out of each timer and IPI interrupt */
 void z_time_slice(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
