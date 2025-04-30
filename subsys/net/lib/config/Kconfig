@@ -257,5 +257,14 @@ config NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL
 	  If the SNTP request fails, then this is the interval to wait
 	  before trying again.
 
+config NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
+	bool "Use connection manager to start and stop SNTP client"
+	default y
+	depends on NET_CONNECTION_MANAGER
+	help
+	  If this option is set, then the connection manager is used to
+	  start and stop the SNTP server. This way an SNTP request is
+	  also sent everytime when the network connection is established.
+
 endif # NET_CONFIG_SNTP_INIT_RESYNC
 endif # NET_CONFIG_CLOCK_SNTP_INIT
