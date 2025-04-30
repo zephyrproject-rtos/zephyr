@@ -1411,6 +1411,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y14P:
 		return 14;
 	case VIDEO_PIX_FMT_RGB565:
+	case VIDEO_PIX_FMT_RGB565X:
 	case VIDEO_PIX_FMT_YUYV:
 	case VIDEO_PIX_FMT_YVYU:
 	case VIDEO_PIX_FMT_UYVY:
