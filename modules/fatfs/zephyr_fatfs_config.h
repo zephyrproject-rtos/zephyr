@@ -113,6 +113,7 @@
 	DT_FOREACH_STATUS_OKAY(zephyr_flash_disk, _FF_DISK_NAME) \
 	DT_FOREACH_STATUS_OKAY(zephyr_ram_disk, _FF_DISK_NAME) \
 	DT_FOREACH_STATUS_OKAY(zephyr_sdmmc_disk, _FF_DISK_NAME) \
+	DT_FOREACH_STATUS_OKAY(zephyr_mmc_disk, _FF_DISK_NAME) \
 	DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)
 
 #undef FF_VOLUMES
