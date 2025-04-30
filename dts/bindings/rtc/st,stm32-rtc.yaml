@@ -14,6 +14,24 @@ properties:
   reg:
     required: true
 
+  sync-prescaler:
+    type: int
+    description: |
+      RTC synchronous prescaler value. Optional, defaulting to set values
+      depending on source clock.
+
+  async-prescaler:
+    type: int
+    description: |
+      RTC asynchronous prescaler value. Optional, defaulting to set values
+      depending on source clock.
+
+  hse-prescaler:
+    type: int
+    description: |
+      RTC HSE prescaler value. Optional, defaulting to set values
+      when HSE is selected as the source clock.
+
   calib-out-freq:
     type: int
     description: |
