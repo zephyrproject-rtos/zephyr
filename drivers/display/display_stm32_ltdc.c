@@ -264,11 +264,23 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
+	int err;
+
+	if (!display_dev && !config->bl_ctrl_gpio.port) {
+		return -ENOSYS;
+	}
+
+	/* Turn on backlight (if its GPIO is defined in device tree) */
+	if (config->bl_ctrl_gpio.port) {
+		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
-	if (display_dev == NULL) {
-		LOG_ERR("There is no panel controller to forward blanking_off call to");
-		return -ENOSYS;
+	if (!display_dev) {
+		return 0;
 	}
 
 	if (!device_is_ready(display_dev)) {
@@ -283,11 +295,23 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
+	int err;
+
+	if (!display_dev && !config->bl_ctrl_gpio.port) {
+		return -ENOSYS;
+	}
+
+	/* Turn off backlight (if its GPIO is defined in device tree) */
+	if (config->bl_ctrl_gpio.port) {
+		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, 0);
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
-	if (display_dev == NULL) {
-		LOG_ERR("There is no panel controller to forward blanking_on call to");
-		return -ENOSYS;
+	if (!display_dev) {
+		return 0;
 	}
 
 	if (!device_is_ready(display_dev)) {
@@ -326,7 +350,7 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Configure and set display backlight control GPIO */
 	if (config->bl_ctrl_gpio.port) {
-		err = gpio_pin_configure_dt(&config->bl_ctrl_gpio, GPIO_OUTPUT_ACTIVE);
+		err = gpio_pin_configure_dt(&config->bl_ctrl_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
 			LOG_ERR("Configuration of display backlight control GPIO failed");
 			return err;
