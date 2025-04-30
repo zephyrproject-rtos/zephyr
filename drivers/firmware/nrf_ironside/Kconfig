@@ -1,10 +1,16 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config NRF_IRONSIDE
+	bool
+	depends on SOC_NRF54H20_IRON
+	help
+	  This is selected by drivers interacting with Nordic IRONside firmware.
+
 config NRF_IRONSIDE_CALL
 	bool
 	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
-	depends on SOC_NRF54H20_IRON
+	select NRF_IRONSIDE
 	select EVENTS
 	select MBOX
 	help
