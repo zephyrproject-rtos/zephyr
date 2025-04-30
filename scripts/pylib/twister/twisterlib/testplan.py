@@ -35,7 +35,7 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
-from plugin_filters.plugin_filters_api import plugin_filter_get_filters, plugin_filter_handle_suite
+from plugin_filters.plugin_filters_api import plugin_filter_get_filters, plugin_filter_handle_suite, plugin_filter_teardown_filters
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -584,12 +584,14 @@ class TestPlan:
 
                         if plugin_filters:
                             plugin_filter_handle_suite(suite, plugin_filters)
-                        else:
-                            logger.info("Skipping plugin filter filtering...")
 
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")
                     self.load_errors += 1
+
+        if plugin_filters:
+            plugin_filter_teardown_filters(plugin_filters)
+
         return len(self.testsuites)
 
     def __str__(self):

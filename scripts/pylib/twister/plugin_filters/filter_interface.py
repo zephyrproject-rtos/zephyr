@@ -1,17 +1,27 @@
-from abc import ABC, abstractmethod
-
-
-class FilterInterface(ABC):
+class FilterInterface():
     def setup(self, *args, **kwargs):
-        pass
+        """
+        Initialises the Filter object. The arguments and keyword arguments given in the command
+        will be passed to the Filters by this method.
+        """
 
-    @abstractmethod
     def exclude(self, suite) -> bool:
         """
-        Examines a given Test Suite and decides if it should be run or not.
-        Returns True if the suite has to be excluded, False if it's supposed to be executed.
+        Examines a given Test Suite and decides if it must be excluded from the test plan.
+
+        Returns:
+            bool: True, if the suite should be skipped
         """
-        pass
+
+    def include(self, suite) -> bool:
+        """
+        Examines a given Test Suite and decides if it must be included in the test plan.
+
+        Returns:
+            bool: True, if the suite should not be skipped
+        """
 
     def teardown(self):
-        pass
+        """
+        Simple hook to execute some code after the filter has been used
+        """

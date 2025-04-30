@@ -54,6 +54,18 @@ def _get_class(file_name, file_path, logger, class_name='Filter'):
     return None
 
 
+def _get_filter_instances(file_path, filter_roots: list[str], logger):
+    filter_instances = []
+
+    for root in filter_roots:
+        filter_obj = _get_class(file_path, root, logger)
+
+        if isinstance(filter_obj, FilterInterface):
+            filter_instances.append((filter_obj, root))
+
+    return filter_instances
+
+
 def get_filters(filter_dictionaries: list[dict], logger, filter_roots: list[str] = None):
     plugin_filters: list[FilterInterface] = []
     filter_roots = filter_roots if filter_roots is not None else _get_root_list()
@@ -62,53 +74,51 @@ def get_filters(filter_dictionaries: list[dict], logger, filter_roots: list[str]
         return plugin_filters
 
     for plugin_filter in filter_dictionaries:
-        if isinstance(plugin_filter, dict):
-            file_path = plugin_filter.get('filter_file_path', None)
+        if (
+            isinstance(plugin_filter, dict) and
+            (file_path := plugin_filter.get('filter_file_path', None))
+        ):
             args = plugin_filter.get('args', [])
             kwargs = plugin_filter.get('kwargs', {})
 
-            if file_path:
+            logger.info(f"Initialising filter: { file_path }")
 
-                logger.info(f"Initialising filter: { file_path }")
+            root_found = False
 
-                root_found = False
+            for filter_instance, filter_root in _get_filter_instances(file_path, filter_roots, logger):
+                try:
+                    filter_instance.setup(*args, **kwargs)
 
-                for root in filter_roots:
-                    filter_obj = _get_class(file_path, root, logger)
+                    plugin_filters.append(filter_instance)
 
-                    if isinstance(filter_obj, FilterInterface):
-                        try:
-                            filter_obj.setup(*args, **kwargs)
+                    logger.info(f"Found filter instance in root { filter_root }")
+                    root_found = True
 
-                            plugin_filters.append(filter_obj)
+                    break
+                except TypeError as error:
+                    logger.warning(
+                        f"Filter { filter_instance } located in root { filter_root } crashed with Type Error { error }. "
+                        "If the name of the given filter and its arguments correspond to the intended ones, "
+                        f"the issue might be caused by the root configuration ({ filter_roots }). "
+                        "The script will keep searching for the filter in lower roots. In order to avoid this warning, "
+                        f"please check if any of the roots contains a filter with the same path as { file_path }. "
+                        "If so, consider renaming your filter or giving its root a higher priority "
+                        "(the highest priority is given to the first element of the list linked to the plugin filter roots env variable, "
+                        "while the last one has the lowest. To increase the priority of your root, move it towards the start of the list.). "
+                    )
 
-                            logger.info(f"Found filter instance in root { root }")
-                            root_found = True
+            if not root_found:
+                logger.warning(f"Filter { file_path } could not be found in any of the examined roots ({ filter_roots })")
 
-                            break
-                        except TypeError as error:
-                            logger.warning(
-                                f"Filter { filter_obj } located in root { root } crashed with Type Error { error }. "
-                                "If the name of the given filter and its arguments correspond to the intended ones, "
-                                f"the issue might be caused by the root configuration ({ filter_roots }). "
-                                "The script will keep searching for the filter in lower roots. In order to avoid this warning, "
-                                f"please check if any of the roots contains a filter with the same path as { file_path }. "
-                                "If so, consider renaming your filter or giving its root a higher priority "
-                                "(the highest priority is given to the first element of the list linked to the plugin filter roots env variable, "
-                                "while the last one has the lowest. To increase the priority of your root, move it towards the start of the list.). "
-                            )
-
-                if not root_found:
-                    logger.warning(f"Filter { file_path } could not be found in any of the examined roots ({ filter_roots })")
+    # Reverse the filter list, so that the last filter to be executed will be the one that was input first
+    plugin_filters.reverse()
 
     return plugin_filters
 
 
 def handle_suite(suite, plugin_filters: list[FilterInterface]):
-    suite.skip = True
-
     for filter_obj in plugin_filters:
-        if not filter_obj.exclude(suite):
+        if filter_obj.exclude(suite):
+            suite.skip = True
+        if filter_obj.include(suite):
             suite.skip = False
-
-        filter_obj.teardown()
