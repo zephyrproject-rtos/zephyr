@@ -7,6 +7,8 @@ common:
 tests:
   sample.filesystem.fat_fs:
     depends_on: sdhc
+    platform_exclude:
+      - mm_feather
     harness: console
     harness_config:
       fixture: fixture_sdhc
