@@ -94,7 +94,7 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			data->front_buf = data->pend_buf;
 
 			LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR = (uint32_t)data->front_buf;
-			__HAL_LTDC_RELOAD_CONFIG(&data->hltdc);
+			__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
 
 			k_sem_give(&data->sem);
 		}
