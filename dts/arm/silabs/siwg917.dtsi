@@ -305,7 +305,7 @@
 			status = "disabled";
 		};
 
-		sysrtc0: sysrtc@24048c00 {
+		sysrtc0: stimer0: sysrtc@24048c00 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x24048c00 0x78>;
 			interrupts = <22 0>;
