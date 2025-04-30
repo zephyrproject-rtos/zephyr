@@ -171,6 +171,12 @@
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 &edma0 {
