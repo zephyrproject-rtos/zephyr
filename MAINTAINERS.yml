@@ -4025,11 +4025,16 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
+    - drivers/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
     - dts/*/nordic/
     - dts/bindings/*/nordic,*
+    - include/zephyr/drivers/*/*nrf*.h
+    - include/zephyr/drivers/*/*nrf*/
+    - include/zephyr/dt-bindings/*/nordic*.h
+    - include/zephyr/dt-bindings/*/nrf*.h
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
     - tests/boards/nrf/
