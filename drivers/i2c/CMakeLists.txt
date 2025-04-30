@@ -48,8 +48,18 @@ zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_MSS	i2c_mchp_mss.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX		i2c_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX_FLEXCOMM	i2c_mcux_flexcomm.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NIOS2		i2c_nios2.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_controller.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_port.c)
+
+zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_DMA_DRIVEN
+	i2c_npcx_controller.c
+	i2c_npcx_controller_dma.c
+	i2c_npcx_port.c
+	)
+zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_FIFO_DRIVEN
+	i2c_npcx_controller.c
+	i2c_npcx_controller_fifo.c
+	i2c_npcx_port.c
+	)
+
 zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIS	i2c_nrfx_twis.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NXP_II2C	i2c_nxp_ii2c.c)
