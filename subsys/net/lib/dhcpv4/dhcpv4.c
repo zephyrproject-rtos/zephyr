@@ -1201,7 +1201,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			log_backend_net_set_ip((struct sockaddr *)&log_server);
 
 			if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART) &&
-			    !IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
+			    !IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS) &&
+			    !IS_ENABLED(CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER)) {
 				log_backend_net_start();
 			}
 
