@@ -1377,7 +1377,8 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
     board_catalog = get_catalog(
         generate_hw_features=(
             app.builder.format == "html" and app.config.zephyr_generate_hw_features
-        )
+        ),
+        hw_features_vendor_filter=app.config.zephyr_hw_features_vendor_filter,
     )
     app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
     app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
@@ -1388,6 +1389,7 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
     app.add_config_value("zephyr_generate_hw_features", False, "env")
+    app.add_config_value("zephyr_hw_features_vendor_filter", [], "env", types=[list[str]])
 
     app.add_domain(ZephyrDomain)
 
