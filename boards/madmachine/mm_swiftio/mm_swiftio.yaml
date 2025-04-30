@@ -16,4 +16,3 @@ flash: 8192
 supported:
   - counter
   - sdhc
-vendor: nxp
