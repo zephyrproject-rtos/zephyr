@@ -245,7 +245,7 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 {
 	uint32_t unsigned_value;
 	int32_t signed_value;
-	bool is_hires = FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1;
+	bool is_hires = FIELD_GET(FIFO_HEADER_20, pkt[0]) == 1;
 	int offset = 1 + (axis_offset * 2);
 
 	const uint32_t scale[2][2] = {
@@ -265,6 +265,19 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 		offset = 17 + axis_offset;
 		unsigned_value = (unsigned_value << 4) | FIELD_GET(mask, pkt[offset]);
 		signed_value = unsigned_value | (0 - (unsigned_value & BIT(19)));
+
+		/*
+		 * By default, INTF_CONFIG0 is set to 0x30 and thus FIFO_HOLD_LAST_DATA_EN is set to
+		 * 0. For 20-bit FIFO packets, -524288 indicates invalid data.
+		 *
+		 * At the time of writing, INTF_CONFIG0 is not configured explicitly.
+		 *
+		 * TODO: Enable/disable this check based on FIFO_HOLD_LAST_DATA_EN if INTF_CONFIG0
+		 * is configured explicitly.
+		 */
+		if (signed_value == -524288) {
+			return -ENODATA;
+		}
 	} else {
 		signed_value = unsigned_value | (0 - (unsigned_value & BIT(16)));
 	}
