@@ -73,7 +73,6 @@ void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
-bool thread_is_sliceable(struct k_thread *thread);
 
 static inline void z_reschedule_unlocked(void)
 {
