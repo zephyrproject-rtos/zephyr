@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
- * Copyright (c) 2025 Philipp Steiner <philipp.steiner@gmail.com>
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
