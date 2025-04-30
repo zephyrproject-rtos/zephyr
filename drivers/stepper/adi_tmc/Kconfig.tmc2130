@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC2130
+	bool "Activate trinamic tmc2209 stepper driver"
+	depends on DT_HAS_ADI_TMC2130_ENABLED
+	select STEP_DIR_STEPPER
+	select STEPPER_ADI_TMC_SPI
+	default y
+	help
+	  Stepper driver for TMC2130, using the step-dir interface with spi configuration.
