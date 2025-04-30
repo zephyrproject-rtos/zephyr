@@ -546,7 +546,8 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT) &&
+	    !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER)) {
 		net_init_clock_via_sntp();
 	}
 
