@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-#
 # Copyright (c) 2025 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 SIMULATION_ID="cap_broadcast_inval"
