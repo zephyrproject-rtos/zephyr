@@ -1296,3 +1296,47 @@ test_i2c_icm45686: icm45686@b1 {
 	reg = <0xb1>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_lsm6dsv32x: lsm6dsv32x@b2 {
+	compatible = "st,lsm6dsv32x";
+	reg = <0xb2>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV32X_DT_FS_8G>;
+	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+};
+
+// test_i2c_icm42370p: icm42370p@b3 {
+// 	compatible = "invensense,icm42370p";
+// 	reg = <0xb3>;
+// 	accel-hz = <800>;
+// 	accel-fs = <16>;
+// 	int-gpios = <&test_gpio 0 0>;
+// };
+
+// test_i2c_icm42670s: icm42670s@b4 {
+// 	compatible = "invensense,icm42670s";
+// 	reg = <0xb4>;
+// 	accel-hz = <800>;
+// 	accel-fs = <16>;
+// 	gyro-hz = <800>;
+// 	gyro-fs = <2000>;
+// 	int-gpios = <&test_gpio 0 0>;
+// };
+
+// test_i2c_icm42688: icm42688@b5 {
+// 	compatible = "invensense,icm42688";
+// 	reg = <0xb5>;
+// 	int-gpios = <&test_gpio 0 0>;
+// };
+
+test_i2c_ds3231: ds3231@b7 {
+	compatible = "maxim,ds3231-mfd";
+	reg = <0xb7>;
+
+	test_i2c_ds3231_sensor: ds3231_sensor {
+			compatible = "maxim,ds3231-sensor";
+	};
+};
