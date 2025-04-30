@@ -36,7 +36,7 @@ static inline int slice_time(struct k_thread *thread)
 	return ret;
 }
 
-bool thread_is_sliceable(struct k_thread *thread)
+static bool thread_is_sliceable(struct k_thread *thread)
 {
 	bool ret = thread_is_preemptible(thread)
 		&& slice_time(thread) != 0
@@ -99,7 +99,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 }
 #endif
 
-/* Called out of each timer interrupt */
+/* Called out of each timer and IPI interrupt */
 void z_time_slice(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
