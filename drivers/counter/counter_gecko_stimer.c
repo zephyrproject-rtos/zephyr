@@ -15,24 +15,16 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <em_cmu.h>
 #include <sl_atomic.h>
 #include <sl_sleeptimer.h>
 #include <sli_sleeptimer_hal.h>
 
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
-#if SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_RTCC
-#define STIMER_IRQ_HANDLER RTCC_IRQHandler
-#define STIMER_MAX_VALUE _RTCC_CNT_MASK
-#elif SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_SYSRTC
-#define STIMER_IRQ_HANDLER SYSRTC_APP_IRQHandler
-#define STIMER_MAX_VALUE _SYSRTC_CNT_MASK
-#else
-#error "Unsupported sleep timer peripheral"
-#endif
+#define DT_RTC DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_stimer)
 
 #define STIMER_ALARM_NUM 2
+#define STIMER_MAX_VALUE 0xFFFFFFFFUL
 
 struct counter_gecko_config {
 	struct counter_config_info info;
@@ -251,15 +243,19 @@ static uint32_t counter_gecko_get_pending_int(const struct device *dev)
 
 static int counter_gecko_init(const struct device *dev)
 {
+#ifndef CONFIG_SILABS_SLEEPTIMER_TIMER
 	const struct counter_gecko_config *const dev_cfg =
 		(const struct counter_gecko_config *const)(dev)->config;
+#endif
 	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
+
+	/* Avoid reconfiguring of IRQs */
+#ifndef CONFIG_SILABS_SLEEPTIMER_TIMER
+	dev_cfg->irq_config();
+#endif
 
 	sl_sleeptimer_init();
 	dev_data->top_data.ticks = STIMER_MAX_VALUE;
-
-	/* Configure & enable module interrupts */
-	dev_cfg->irq_config();
 
 	LOG_INF("Device %s initialized", (dev)->name);
 
@@ -281,8 +277,12 @@ BUILD_ASSERT((DT_INST_PROP(0, prescaler) > 0U) && (DT_INST_PROP(0, prescaler) <=
 
 static void counter_gecko_0_irq_config(void)
 {
-	IRQ_DIRECT_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), STIMER_IRQ_HANDLER, 0);
+#ifndef CONFIG_SILABS_SLEEPTIMER_TIMER
+	IRQ_DIRECT_CONNECT(DT_IRQ(DT_RTC, irq), DT_IRQ(DT_RTC, priority),
+			   CONCAT(DT_STRING_UPPER_TOKEN_BY_IDX(DT_RTC, interrupt_names, 0),
+			   _IRQHandler), 0);
 	irq_enable(DT_INST_IRQN(0));
+#endif
 }
 
 static const struct counter_gecko_config counter_gecko_0_config = {
@@ -299,4 +299,4 @@ static const struct counter_gecko_config counter_gecko_0_config = {
 static struct counter_gecko_data counter_gecko_0_data;
 
 DEVICE_DT_INST_DEFINE(0, counter_gecko_init, NULL, &counter_gecko_0_data, &counter_gecko_0_config,
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_gecko_driver_api);
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_gecko_driver_api);
