@@ -1349,18 +1349,15 @@ static inline float sensor_value_to_float(const struct sensor_value *val)
  */
 static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 {
-	if (inp < INT32_MIN || inp > INT32_MAX) {
+	if (inp < (double)INT32_MIN || inp > (double)INT32_MAX) {
 		return -ERANGE;
 	}
 
-	double val2 = (inp - (int32_t)inp) * 1000000.0;
+	int32_t val1 = (int32_t)inp;
+	int32_t val2 = (int32_t)((inp - (double)val1) * 1000000.0);
 
-	if (val2 < INT32_MIN || val2 > INT32_MAX) {
-		return -ERANGE;
-	}
-
-	val->val1 = (int32_t)inp;
-	val->val2 = (int32_t)val2;
+	val->val1 = val1;
+	val->val2 = val2;
 
 	return 0;
 }
@@ -1374,14 +1371,15 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
  */
 static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 {
-	float val2 = (inp - (int32_t)inp) * 1000000.0f;
-
-	if (val2 < INT32_MIN || val2 > (float)(INT32_MAX - 1)) {
+	if (inp < (float)INT32_MIN || inp >= (float)INT32_MAX) {
 		return -ERANGE;
 	}
 
-	val->val1 = (int32_t)inp;
-	val->val2 = (int32_t)val2;
+	int32_t val1 = (int32_t)inp;
+	int32_t val2 = (int32_t)((inp - (float)val1) * 1000000.0f);
+
+	val->val1 = val1;
+	val->val2 = val2;
 
 	return 0;
 }
