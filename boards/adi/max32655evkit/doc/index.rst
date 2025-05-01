@@ -161,14 +161,6 @@ An experimental board configuration for the secondary RISC-V core can be found
 in
 :zephyr_file:`boards/adi/max32655evkit/max32655evkit_max32655_rv32_defconfig`.
 
-It can boot Zephyr and print "hello world" to a RAM console, but it currently
-has significant limitations:
-
-- **Kernel timer**: The zero-riscy core doesn't implement a machine timer and we
-  have not yet implemented a Zephyr driver for a system-level timer peripheral
-  on this SoC, therefore kernel functions that take a :c:type:`k_timeout_t`
-  argument, such as :c:func:`k_sleep` are not expected to work.
-
 The primary Arm core uses Kconfig options,
 :kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` and
 :kconfig:option:`CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS`, to enable and
