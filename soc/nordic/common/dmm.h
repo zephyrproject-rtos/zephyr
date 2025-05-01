@@ -163,14 +163,6 @@ int dmm_buffer_in_prepare(void *region, void *user_buffer, size_t user_length, v
  */
 int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, void *buffer_in);
 
-/**
- * @brief Initialize DMM.
- *
- * @retval 0 If succeeded.
- * @retval -errno Negative errno code on failure.
- */
-int dmm_init(void);
-
 /** @endcond */
 
 #else
@@ -207,11 +199,6 @@ static ALWAYS_INLINE int dmm_buffer_in_release(void *region, void *user_buffer, 
 	ARG_UNUSED(user_buffer);
 	ARG_UNUSED(user_length);
 	ARG_UNUSED(buffer_in);
-	return 0;
-}
-
-static ALWAYS_INLINE int dmm_init(void)
-{
 	return 0;
 }
 
