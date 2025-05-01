@@ -84,7 +84,7 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_HIGHRES
+#ifdef CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_RTCC
