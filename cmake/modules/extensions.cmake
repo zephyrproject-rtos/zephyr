@@ -2596,6 +2596,10 @@ endfunction()
 # 'set_compiler_property' is a function that sets the property for the C and
 # C++ property targets used for toolchain abstraction.
 #
+# Usage:
+#    set_compiler_property([APPEND] PROPERTY <name> <value>...)
+#    set_compiler_property([APPEND] PROPERTY <name> CHOICE <name>...)
+#
 # This function is similar in nature to the CMake set_property function, but
 # with the extension that it will set the property on both the compile and
 # compiler-cpp targets.
@@ -2603,18 +2607,33 @@ endfunction()
 # APPEND: Flag indicated that the property should be appended to the existing
 #         value list for the property.
 # PROPERTY: Name of property with the value(s) following immediately after
-#           property name
+#           property name, or choices.
+# CHOICE: List of choice property options. Each property option must have a corresponding Kconfig
+#         choice item, for example `CHOICE foo bar` will map to choice entries FOO and BAR, and
+#         depending on the choice selection then PROPERTY name will map the value of the
+#         corresponding property. For example, CONFIG_FOO=y will thus map the `foo` property.
 function(set_compiler_property)
   set(options APPEND)
-  set(multi_args  PROPERTY)
+  set(multi_args  PROPERTY CHOICE)
   cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
   if(COMPILER_PROPERTY_APPEND)
    set(APPEND "APPEND")
    set(APPEND-CPP "APPEND")
   endif()
 
-  set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
-  set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  if(COMPILER_PROPERTY_CHOICE)
+    foreach(choice ${COMPILER_PROPERTY_CHOICE})
+      string(TOUPPER "${choice}" kconf_setting)
+      if(CONFIG_${kconf_setting})
+        get_property(value TARGET compiler PROPERTY ${choice})
+        set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY} ${value})
+        set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY} ${value})
+      endif()
+    endforeach()
+  else()
+    set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+    set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  endif()
 endfunction()
 
 # 'check_set_compiler_property' is a function that check the provided compiler

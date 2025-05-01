@@ -17,6 +17,13 @@ set_compiler_property(PROPERTY speed_optimizations -O2)
 set_compiler_property(PROPERTY size_optimizations  -Os)
 set_compiler_property(PROPERTY optimization_fast   -O3)
 
+set_compiler_property(PROPERTY optimization
+                      CHOICE no_optimizations
+		             debug_optimizations
+			     speed_optimizations
+			     size_optimizations
+)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################

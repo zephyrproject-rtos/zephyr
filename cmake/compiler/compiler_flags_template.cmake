@@ -25,6 +25,9 @@ set_compiler_property(PROPERTY size_optimizations_aggressive)
 
 set_compiler_property(PROPERTY optimization_fast)
 
+# This property is intended to contain the current build system optimization selection.
+set_compiler_property(PROPERTY optimization)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
@@ -135,9 +138,6 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)
 
-# GCC compiler flags for imacros. The specific header must be appended by user.
-set_property(TARGET asm PROPERTY imacros)
-
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
 
@@ -151,8 +151,6 @@ set_compiler_property(PROPERTY no_global_merge)
 
 # Compiler flag for warning about shadow variables
 set_compiler_property(PROPERTY warning_shadow_variables)
-# Compiler flag for disabling warning about array bounds
-set_compiler_property(PROPERTY warning_no_array_bounds)
 
 # Compiler flags to avoid recognizing built-in functions
 set_compiler_property(PROPERTY no_builtin)
@@ -164,8 +162,3 @@ set_compiler_property(PROPERTY specs)
 
 # Compiler flag for defining preinclude files.
 set_compiler_property(PROPERTY include_file)
-
-# Compiler flag for trustzone
-set_compiler_property(PROPERTY cmse)
-
-set_property(TARGET asm PROPERTY cmse)

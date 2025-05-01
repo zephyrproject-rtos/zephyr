@@ -29,6 +29,13 @@ set_compiler_property(PROPERTY speed_optimizations -O2)
 set_compiler_property(PROPERTY size_optimizations  -Os)
 set_compiler_property(PROPERTY size_optimizations_aggressive -Oz)
 set_compiler_property(PROPERTY optimization_fast -Ofast)
+set_compiler_property(PROPERTY optimization
+                      CHOICE no_optimizations
+		             debug_optimizations
+			     speed_optimizations
+			     size_optimizations
+			     size_optimizations_aggressive
+)
 
 check_set_compiler_property(PROPERTY optimization_lto -flto=auto)
 check_set_compiler_property(PROPERTY prohibit_lto -fno-lto)

@@ -196,42 +196,6 @@ elseif(CONFIG_STACK_CANARIES_EXPLICIT)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
 endif()
 
-# @Intent: Obtain compiler optimizations flags and store in variables
-# @details:
-#   Kconfig.zephyr "Optimization level" is a kconfig choice, ensuring
-#   only *one* of CONFIG_{NO,DEBUG,SPEED,SIZE}_OPTIMIZATIONS is set.
-#   Refer to Kconfig.zephyr for selection logic and description of these choices.
-#   toolchain_cc_optimize_*() macros must provide the mapping from these kconfigs
-#   to compiler flags. Each macro will store the flags in a CMake variable, whose
-#   name is passed as argument (somewhat like by reference).
-#
-#   If the user wants to tweak the optimizations, there are two ways:
-#    1) Using EXTRA_CFLAGS which is applied regardless of kconfig choice, or
-#    2) Rely on override support being implemented by your toolchain_cc_optimize_*()
-#
-get_property(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_optimization)
-get_property(OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
-get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
-get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
-get_property(OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
-
-# From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
-# Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
-if(CONFIG_NO_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
-elseif(CONFIG_DEBUG_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
-elseif(CONFIG_SPEED_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
-elseif(CONFIG_SIZE_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
-elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
-else()
-  message(FATAL_ERROR
-    "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
-endif()
-
 if(NOT CONFIG_ARCH_IS_SET)
   message(WARNING "\
 None of the CONFIG_<arch> (e.g. CONFIG_X86) symbols are set. \
@@ -239,9 +203,10 @@ Select one of them from the SOC_SERIES_* symbol or, lacking that, from the \
 SOC_* symbol.")
 endif()
 
-# Apply the final optimization flag(s)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
+# Apply the default optimization flag(s)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,optimization>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,optimization>>)
+
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
