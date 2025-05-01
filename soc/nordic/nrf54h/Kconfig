@@ -8,6 +8,7 @@ config SOC_SERIES_NRF54HX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select SOC_EARLY_INIT_HOOK if ARM
+	select SOC_LATE_INIT_HOOK if SOC_NRF54H20_CPURAD_ENABLE
 	select NRF_PLATFORM_HALTIUM
 
 config SOC_NRF54H20_CPUAPP_COMMON
@@ -65,6 +66,16 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select HAS_NORDIC_RAM_CTRL
 	select HAS_PM
 	select HAS_POWEROFF
+
+config SOC_NRF54H20_CPURAD_ENABLE
+	bool "Boot the nRF54H20 Radio core"
+	default y if NRF_802154_SER_HOST
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CPUCONF_SERVICE
+	help
+	  This will at application boot time enable clock to the
+	  Radiocore, and also power will be requested to the Radiocore
+	  subsystem. The Radiocore will then start executing instructions.
 
 config SOC_NRF54H20_CPURAD
 	select SOC_NRF54H20_CPURAD_COMMON
