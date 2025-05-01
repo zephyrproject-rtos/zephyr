@@ -205,32 +205,6 @@ void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks);
 void pm_policy_event_unregister(struct pm_policy_event *evt);
 
 /**
- * @brief Increase power state locks.
- *
- * Set power state locks in all power states that disable power in the given
- * device.
- *
- * @param dev Device reference.
- *
- * @see pm_policy_device_power_lock_put()
- * @see pm_policy_state_lock_get()
- */
-void pm_policy_device_power_lock_get(const struct device *dev);
-
-/**
- * @brief Decrease power state locks.
- *
- * Remove power state locks in all power states that disable power in the given
- * device.
- *
- * @param dev Device reference.
- *
- * @see pm_policy_device_power_lock_get()
- * @see pm_policy_state_lock_put()
- */
-void pm_policy_device_power_lock_put(const struct device *dev);
-
-/**
  * @brief Check if a state will disable a device
  *
  * This function allows client code to check if a state will disable a device.
@@ -295,6 +269,42 @@ static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
 	ARG_UNUSED(evt);
 }
 
+static inline int64_t pm_policy_next_event_ticks(void)
+{
+	return -1;
+}
+
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS) || defined(__DOXYGEN__)
+/**
+ * @brief Increase power state locks.
+ *
+ * Set power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_put()
+ * @see pm_policy_state_lock_get()
+ */
+void pm_policy_device_power_lock_get(const struct device *dev);
+
+/**
+ * @brief Decrease power state locks.
+ *
+ * Remove power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_get()
+ * @see pm_policy_state_lock_put()
+ */
+void pm_policy_device_power_lock_put(const struct device *dev);
+
+#else
+
 static inline void pm_policy_device_power_lock_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -304,13 +314,7 @@ static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
-
-static inline int64_t pm_policy_next_event_ticks(void)
-{
-	return -1;
-}
-
-#endif /* CONFIG_PM */
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 #if defined(CONFIG_PM) || defined(CONFIG_PM_POLICY_LATENCY_STANDALONE) || defined(__DOXYGEN__)
 /**
