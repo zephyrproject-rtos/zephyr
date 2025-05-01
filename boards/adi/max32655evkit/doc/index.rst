@@ -169,14 +169,6 @@ has significant limitations:
   on this SoC, therefore kernel functions that take a :c:type:`k_timeout_t`
   argument, such as :c:func:`k_sleep` are not expected to work.
 
-- **Interrupts**: The zero-riscy core only allows enabling/disabling interrupts
-  globally and assumes there is an interrupt controller outside of the core. We
-  have not yet implemented support for a system-level interrupt controller,
-  therefore kernel interrupt services are not expected to work.
-
-- **Peripheral drivers**: Without interrupts, the existing UART, GPIO, and
-  other peripheral drivers won't work.
-
 The primary Arm core uses Kconfig options,
 :kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` and
 :kconfig:option:`CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS`, to enable and
