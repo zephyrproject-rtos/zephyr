@@ -28,3 +28,17 @@ properties:
       - "rmii"
       - "gmii"
       - "rgmii"
+
+  microchip,rgmii-rx-clk-delay:
+    type: int
+    default: 5
+    description: |
+      Used to configure the RX clock delay for RGMII interface. The value can be
+      0 to 7. Refer to the datasheet for more details on the delay settings.
+
+  microchip,rgmii-tx-clk-delay:
+    type: int
+    default: 5
+    description: |
+      Used to configure the TX clock delay for RGMII interface. The value can be
+      0 to 7. Refer to the datasheet for more details on the delay settings.

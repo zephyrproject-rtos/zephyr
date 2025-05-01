@@ -85,6 +85,8 @@ struct mc_vsc8541_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum vsc8541_interface microchip_interface_type;
+	uint8_t rgmii_rx_clk_delay;
+	uint8_t rgmii_tx_clk_delay;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -150,9 +152,9 @@ static int phy_mc_vsc8541_verify_phy_id(const struct device *dev)
  */
 static int phy_mc_vsc8541_reset(const struct device *dev)
 {
+	const struct mc_vsc8541_config *cfg = dev->config;
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	const struct mc_vsc8541_config *cfg = dev->config;
 
 	if (!cfg->reset_gpio.port) {
 		LOG_WRN("missing reset port definition");
@@ -227,12 +229,11 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 	}
 
 	/* configure the RGMII clk delay */
-	/* this is highly hardware dependent and may vary between pcb designs */
 	reg = 0x0;
 	/* RX_CLK delay */
-	reg |= (0x5 << 4);
+	reg |= (cfg->rgmii_rx_clk_delay << 4);
 	/* TX_CLK delay */
-	reg |= (0x5 << 0);
+	reg |= (cfg->rgmii_tx_clk_delay << 0);
 	ret = phy_mc_vsc8541_write(dev, PHY_REG_PAGE2_RGMII_CONTROL, reg);
 	if (ret) {
 		return ret;
@@ -440,7 +441,6 @@ void phy_mc_vsc8541_link_monitor(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
 	struct mc_vsc8541_data *data = dev->data;
-	const struct mc_vsc8541_config *cfg = dev->config;
 
 	struct phy_link_state new_state;
 
@@ -565,6 +565,8 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
 		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
+		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
+		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                       \
