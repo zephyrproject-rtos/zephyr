@@ -48,7 +48,8 @@ def to_num(number):
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
-    def __init__(self, cfg, pre_init=None, reset_halt_cmd=DEFAULT_OPENOCD_RESET_HALT_CMD,
+    def __init__(self, cfg, pre_init=None, flash_pre_init=None,
+                 reset_halt_cmd=DEFAULT_OPENOCD_RESET_HALT_CMD,
                  pre_load=None, erase_cmd=None, load_cmd=None, verify_cmd=None,
                  post_verify=None, do_verify=False, do_verify_only=False, do_erase=False,
                  tui=None, config=None, serial=None, use_elf=None,
@@ -96,6 +97,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
         self.elf_name = Path(cfg.elf_file).as_posix() if cfg.elf_file else None
+        self.flash_pre_init = flash_pre_init or []
         self.pre_init = pre_init or []
         self.reset_halt_cmd = reset_halt_cmd
         self.pre_load = pre_load or []
@@ -146,6 +148,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-pre-init', action='append',
                             help='''Command to run before calling init;
                             may be given multiple times''')
+        parser.add_argument('--flash-cmd-pre-init', action='append',
+                            help='''Command to run before calling init when performing a flash;
+                            may be given multiple times;
+                            When set, existing --cmd-pre-init will be ignored when flashing''')
         parser.add_argument('--cmd-reset-halt', default=DEFAULT_OPENOCD_RESET_HALT_CMD,
                             help=f'''Command to run for resetting and halting the target,
                             defaults to "{DEFAULT_OPENOCD_RESET_HALT_CMD}"''')
@@ -204,7 +210,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         return OpenOcdBinaryRunner(
             cfg,
-            pre_init=args.cmd_pre_init, reset_halt_cmd=args.cmd_reset_halt,
+            pre_init=args.cmd_pre_init, flash_pre_init=args.flash_cmd_pre_init,
+            reset_halt_cmd=args.cmd_reset_halt,
             pre_load=args.cmd_pre_load, erase_cmd=args.cmd_erase, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
@@ -286,9 +293,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         pre_init_cmd = []
         pre_load_cmd = []
         post_verify_cmd = []
-        for i in self.pre_init:
-            pre_init_cmd.append("-c")
-            pre_init_cmd.append(i)
+        if self.flash_pre_init:
+            for i in self.flash_pre_init:
+                pre_init_cmd.append("-c")
+                pre_init_cmd.append(i)
+        else:
+            for i in self.pre_init:
+                pre_init_cmd.append("-c")
+                pre_init_cmd.append(i)
 
         for i in self.pre_load:
             pre_load_cmd.append("-c")
