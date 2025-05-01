@@ -4,16 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+
 /delete-node/ &cpu0;
 
 / {
-    #address-cells = <1>;
-    #size-cells = <1>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	soc {
 		compatible = "simple-bus";
 
 		interrupt-parent = <&intc>;
+
 		intc: intc@e5070000 {
 			#address-cells = <1>;
 			compatible = "adi,max32-rv32-intc";
@@ -76,8 +79,11 @@
 	interrupts = <10 0>;
 };
 
-&timer3 {
+rv32_sys_timer: &timer3 {
+	compatible = "adi,max32-rv32-sys-timer";
 	interrupts = <11 0>;
+	prescaler = <1>;
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_ISO>;
 };
 
 &rtc_counter {
