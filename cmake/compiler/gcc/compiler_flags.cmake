@@ -12,13 +12,22 @@ list(APPEND CXX_EXCLUDED_OPTIONS
 #####################################################
 # This section covers flags related to optimization #
 #####################################################
+# Old property names now deprecated.
 set_compiler_property(PROPERTY no_optimization -O0)
 set_compiler_property(PROPERTY optimization_debug -O0)
-# Very old gcc releases does not support -Og, so let's check and update setting if supported.
-check_set_compiler_property(PROPERTY optimization_debug -Og)
 set_compiler_property(PROPERTY optimization_speed -O2)
-set_compiler_property(PROPERTY optimization_size  -Os)
+set_compiler_property(PROPERTY optimization_size -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
+set_compiler_property(PROPERTY optimization_fast -Ofast)
+
+# New optimization property names corresponds to the similar Kconfig settings.
+set_compiler_property(PROPERTY no_optimizations -O0)
+set_compiler_property(PROPERTY debug_optimizations -O0)
+# Very old gcc releases does not support -Og, so let's check and update setting if supported.
+check_set_compiler_property(PROPERTY debug_optimizations -Og)
+set_compiler_property(PROPERTY speed_optimizations -O2)
+set_compiler_property(PROPERTY size_optimizations  -Os)
+set_compiler_property(PROPERTY size_optimizations_aggressive -Oz)
 set_compiler_property(PROPERTY optimization_fast -Ofast)
 
 check_set_compiler_property(PROPERTY optimization_lto -flto=auto)
