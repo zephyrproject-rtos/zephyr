@@ -443,6 +443,30 @@ void pm_device_children_action_run(const struct device *dev,
 		enum pm_device_action action,
 		pm_device_action_failed_cb_t failure_cb);
 
+/**
+ * @brief Turn on all children of power domain
+ *
+ * This function runs pm_device_action_run() for all power domain children
+ * of a device with the action PM_DEVICE_ACTION_TURN_ON.
+ *
+ * @note Called by PM_DEVICE_RUNTIME after power domain has been resumed.
+ *
+ * @param dev Power domain device
+ */
+void pm_device_domain_children_turn_on(const struct device *dev);
+
+/**
+ * @brief Turn off all children of power domain
+ *
+ * This function runs pm_device_action_run() for all power domain children
+ * of a device with the action PM_DEVICE_ACTION_TURN_OFF.
+ *
+ * @note Called by PM_DEVICE_RUNTIME before power domain will be suspended.
+ *
+ * @param dev Power domain device
+ */
+void pm_device_domain_children_turn_off(const struct device *dev);
+
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
  * @brief Obtain the power state of a device.
