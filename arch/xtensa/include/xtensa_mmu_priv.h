@@ -365,6 +365,29 @@ static inline void xtensa_tlb_autorefill_invalidate(void)
 }
 
 /**
+ * @brief Invalidate all autorefill DTLB entries.
+ *
+ * This should be used carefully since all refill entries in the data
+ * TLBs are affected. The current stack page will be repopulated by
+ * this code as it returns.
+ */
+static inline void xtensa_dtlb_autorefill_invalidate(void)
+{
+	uint8_t way, i, entries;
+
+	entries = BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+
+			xtensa_dtlb_entry_invalidate(entry);
+		}
+	}
+	__asm__ volatile("isync");
+}
+
+/**
  * @brief Set the page tables.
  *
  * The page tables is set writing ptevaddr address.
