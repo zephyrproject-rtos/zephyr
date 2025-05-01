@@ -295,3 +295,10 @@ int dmm_init(void)
 
 	return 0;
 }
+
+/*
+ * dmm_init relies on kheap, initialized in PRE_KERNEL_1 at
+ * CONFIG_KERNEL_INIT_PRIORITY_OBJECTS. To enable early device use of
+ * dmm, we initialize immediately after kheap.
+ */
+SYS_INIT(dmm_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
