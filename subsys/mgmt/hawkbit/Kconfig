@@ -70,6 +70,22 @@ config HAWKBIT_SET_SETTINGS_RUNTIME
 	help
 	  Enable to set hawkbit settings at runtime.
 
+config HAWKBIT_USE_DOMAIN_NAME
+	bool "Use server_domain for domain name instead of server_addr"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Enable to use the server_domain field for TLS and HTTP. If enabled,
+	  server_addr can accept an already resolved IP address, and the domain name
+	  can be provided via server_domain.
+
+config HAWKBIT_DOMAIN_NAME_MAX_LEN
+	int "The buffer size for storing the domain name string"
+	default DNS_RESOLVER_MAX_QUERY_LEN if DNS_RESOLVER
+	default 255
+	depends on HAWKBIT_USE_DOMAIN_NAME
+	help
+	  The size for the internal buffer used to hold the domain name string.
+
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY
