@@ -1,0 +1,47 @@
+common:
+  platform_key:
+    - arch
+  tags:
+    - kernel
+    - benchmark
+  # Native platforms excluded as they are not relevant: These benchmarks run some kernel primitives
+  # in a loop during a predefined time counting how many times they execute. But in the POSIX arch,
+  # time does not pass while the CPU executes. So the benchmark just appears as if hung.
+  arch_exclude:
+    - posix
+  # some slow qemu_* excluded
+  platform_exclude:
+    - qemu_malta/qemu_malta
+    - qemu_malta/qemu_malta/be
+    - qemu_nios2
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  timeout: 300
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      # Collect at least 3 measurements for each benchmark:
+      - "(.*) Time Interval ending (.*)"
+      - "(.*) Total number of ctx switches: (.*)"
+      - "(.*) Time Interval ending (.*)"
+      - "(.*) Total number of ctx switches: (.*)"
+      - "(.*) Time Interval ending (.*)"
+      - "(.*) Total number of ctx switches: (.*)"
+
+tests:
+  benchmark.timeslicing.auto_reset:
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_AUTO_RESET=y
+
+  benchmark.timeslicing.no_auto_reset:
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_AUTO_RESET=n
+
+  benchmark.no_timeslicing:
+    extra_configs:
+      - CONFIG_TIMESLICING=n
