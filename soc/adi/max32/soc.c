@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
@@ -37,6 +38,17 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
+#define RV32_CPU DT_NODELABEL(cpu1)
+#define DO_RV32_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(RV32_CPU, default))
+
+#if CONFIG_MAX32_SECONDARY_RV32 && DO_RV32_DEBUG_PINCTRL
+
+PINCTRL_DT_DEFINE(RV32_CPU);
+
+static const struct pinctrl_dev_config *rv32_pcfg = PINCTRL_DT_DEV_CONFIG_GET(RV32_CPU);
+
+#endif
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -58,6 +70,9 @@ void soc_early_init_hook(void)
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
 #ifdef CONFIG_MAX32_SECONDARY_RV32
+#if DO_RV32_DEBUG_PINCTRL
+	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
+#endif
 	MXC_FCR->urvbootaddr = CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS;
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
