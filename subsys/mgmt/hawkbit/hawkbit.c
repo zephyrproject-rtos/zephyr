@@ -803,7 +803,8 @@ int hawkbit_set_custom_data_cb(hawkbit_config_device_data_cb_handler_t cb)
 	return -ENOTSUP;
 }
 
-int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer, const size_t buffer_size)
+int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
+				const size_t buffer_size)
 {
 	struct hawkbit_cfg cfg = {
 		.mode = "merge",
@@ -1328,8 +1329,7 @@ static void s_probe(void *o)
 
 	LOG_INF("Polling target data from hawkBit");
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s", HAWKBIT_JSON_URL, CONFIG_BOARD,
-		 s->device_id);
+	snprintk(url_buffer, sizeof(url_buffer), "%s/%s", HAWKBIT_JSON_URL, s->device_id);
 
 	if (!send_request(&s->hb_context, HAWKBIT_PROBE, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_PROBE");
@@ -1519,9 +1519,8 @@ static void s_report(void *o)
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
 	char url_buffer[URL_BUFFER_SIZE] = {0};
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s/%d/%s", HAWKBIT_JSON_URL,
-		 CONFIG_BOARD, s->device_id, "deploymentBase", s->hb_context.json_action_id,
-		 "feedback");
+	snprintk(url_buffer, sizeof(url_buffer), "%s/%s/%s/%d/%s", HAWKBIT_JSON_URL,
+		 s->device_id, "deploymentBase", s->hb_context.json_action_id, "feedback");
 
 	LOG_INF("Reporting deployment feedback %s (%s) for action %d",
 		feedback.status.result.finished, feedback.status.execution,
