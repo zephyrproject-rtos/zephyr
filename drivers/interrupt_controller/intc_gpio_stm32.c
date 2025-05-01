@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2019-23 Linaro Limited
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +10,6 @@
 /**
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  */
-
-#define EXTI_NODE DT_INST(0, st_stm32_exti)
 
 #include <zephyr/device.h>
 #include <soc.h>
@@ -22,10 +21,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For STM32L0 series */
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 
 #include "stm32_hsem.h"
+#include "intc_exti_stm32_priv.h"
 
 /** @brief EXTI lines range mapped to a single interrupt line */
 struct stm32_exti_range {
@@ -35,7 +36,11 @@ struct stm32_exti_range {
 	uint8_t len;
 };
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+#define EXTI_NUM_LINES_TOTAL	DT_PROP(DT_NODELABEL(exti), num_lines)
+#define NUM_EXTI_LINES			DT_PROP(DT_NODELABEL(exti), num_gpio_lines)
+
+BUILD_ASSERT(EXTI_NUM_LINES_TOTAL >= NUM_EXTI_LINES,
+	"The total number of EXTI lines must be greater or equal than the number of GPIO lines");
 
 static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
 
@@ -46,10 +51,12 @@ struct __exti_cb {
 };
 
 /* EXTI driver data */
-struct stm32_exti_data {
+struct stm32_intc_gpio_data {
 	/* per-line callbacks */
 	struct __exti_cb cb[NUM_EXTI_LINES];
 };
+
+static struct stm32_intc_gpio_data intc_gpio_data;
 
 /**
  * @returns the LL_<PPP>_EXTI_LINE_xxx define that corresponds to specified @p linenum
@@ -71,48 +78,6 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 }
 
 /**
- * @brief Checks interrupt pending bit for specified EXTI line
- *
- * @param line EXTI line number
- */
-static inline int stm32_exti_is_pending(stm32_gpio_irq_line_t line)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	return (LL_EXTI_IsActiveRisingFlag_0_31(line) ||
-		LL_EXTI_IsActiveFallingFlag_0_31(line));
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	return LL_C2_EXTI_IsActiveFlag_0_31(line);
-#else
-	return LL_EXTI_IsActiveFlag_0_31(line);
-#endif
-}
-
-/**
- * @brief Clears interrupt pending bit for specified EXTI line
- *
- * @param line EXTI line number
- */
-static inline void stm32_exti_clear_pending(stm32_gpio_irq_line_t line)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	LL_EXTI_ClearRisingFlag_0_31(line);
-	LL_EXTI_ClearFallingFlag_0_31(line);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_ClearFlag_0_31(line);
-#else
-	LL_EXTI_ClearFlag_0_31(line);
-#endif
-}
-
-/**
- * @returns the LL_EXTI_LINE_n define for EXTI line number @p linenum
- */
-static inline stm32_gpio_irq_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
-{
-	return BIT(linenum);
-}
-
-/**
  * @returns EXTI line number for LL_EXTI_LINE_n define
  */
 static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line)
@@ -127,10 +92,9 @@ static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line)
  *
  * @param exti_range Pointer to a exti_range structure
  */
-static void stm32_exti_isr(const void *exti_range)
+static void stm32_intc_gpio_isr(const void *exti_range)
 {
-	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
+	struct stm32_intc_gpio_data *data = &intc_gpio_data;
 	const struct stm32_exti_range *range = exti_range;
 	stm32_gpio_irq_line_t line;
 	uint32_t line_num;
@@ -138,12 +102,11 @@ static void stm32_exti_isr(const void *exti_range)
 	/* see which bits are set */
 	for (uint8_t i = 0; i <= range->len; i++) {
 		line_num = range->start + i;
-		line = linenum_to_ll_exti_line(line_num);
 
 		/* check if interrupt is pending */
 		if (stm32_exti_is_pending(line_num)) {
 			/* clear pending interrupt */
-			stm32_exti_clear_pending(line);
+			stm32_exti_clear_pending(line_num);
 
 			/* run callback only if one is registered */
 			if (!data->cb[line_num].cb) {
@@ -151,42 +114,10 @@ static void stm32_exti_isr(const void *exti_range)
 			}
 
 			/* `line` can be passed as-is because LL_EXTI_LINE_n is (1 << n) */
+			line = exti_linenum_to_ll_exti_line(line_num);
 			data->cb[line_num].cb(line, data->cb[line_num].data);
 		}
 	}
-}
-
-/** Enables the peripheral clock required to access EXTI registers */
-static int stm32_exti_enable_registers(void)
-{
-	/* Initialize to 0 for series where there is nothing to do. */
-	int ret = 0;
-#if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SBS
-#else
-		.bus = STM32_CLOCK_BUS_APB2,
-		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-	};
-
-	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
-#endif
-	return ret;
 }
 
 static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
@@ -211,28 +142,21 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 			     DT_IRQ_BY_IDX(node_id, idx, irq));			\
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
 		DT_IRQ_BY_IDX(node_id, idx, priority),				\
-		stm32_exti_isr, &line_range_##idx, 0);
+		stm32_intc_gpio_isr, &line_range_##idx, 0);
 
 /**
  * @brief Initializes the EXTI GPIO interrupt controller driver
  */
-static int stm32_exti_init(const struct device *dev)
+static int stm32_exti_gpio_intc_init(void)
 {
-	ARG_UNUSED(dev);
-
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
 			     interrupt_names,
 			     STM32_EXTI_INIT_LINE_RANGE);
 
-	return stm32_exti_enable_registers();
+	return 0;
 }
 
-static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-		 NULL,
-		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
+SYS_INIT(stm32_exti_gpio_intc_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
 
 /**
  * @brief EXTI GPIO interrupt controller API implementation
@@ -252,7 +176,7 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 stm32_gpio_irq_line_t stm32_gpio_intc_get_pin_irq_line(uint32_t port, gpio_pin_t pin)
 {
 	ARG_UNUSED(port);
-	return linenum_to_ll_exti_line(pin);
+	return exti_linenum_to_ll_exti_line(pin);
 }
 
 void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
@@ -267,11 +191,7 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 	__ASSERT_NO_MSG(irqnum != 0xFF);
 
 	/* Enable requested line interrupt */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(line);
-#else
-	LL_EXTI_EnableIT_0_31(line);
-#endif
+	EXTI_ENABLE_IT(0_31, line);
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
@@ -279,11 +199,7 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 
 void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_DisableIT_0_31(line);
-#else
-	LL_EXTI_DisableIT_0_31(line);
-#endif
+	EXTI_DISABLE_IT(0_31, line);
 }
 
 void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)
@@ -292,20 +208,20 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 
 	switch (trg) {
 	case STM32_GPIO_IRQ_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(line);
-		LL_EXTI_DisableFallingTrig_0_31(line);
+		EXTI_DISABLE_RISING_TRIG(0_31, line);
+		EXTI_DISABLE_FALLING_TRIG(0_31, line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(line);
-		LL_EXTI_DisableFallingTrig_0_31(line);
+		EXTI_ENABLE_RISING_TRIG(0_31, line);
+		EXTI_DISABLE_FALLING_TRIG(0_31, line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(line);
-		LL_EXTI_DisableRisingTrig_0_31(line);
+		EXTI_ENABLE_FALLING_TRIG(0_31, line);
+		EXTI_DISABLE_RISING_TRIG(0_31, line);
 		break;
 	case STM32_GPIO_IRQ_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(line);
-		LL_EXTI_EnableFallingTrig_0_31(line);
+		EXTI_ENABLE_RISING_TRIG(0_31, line);
+		EXTI_ENABLE_FALLING_TRIG(0_31, line);
 		break;
 	default:
 		__ASSERT_NO_MSG(0);
@@ -316,8 +232,7 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 
 int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *user)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
+	struct stm32_intc_gpio_data *data = &intc_gpio_data;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
 
 	if ((data->cb[line_num].cb == cb) && (data->cb[line_num].data == user)) {
@@ -337,8 +252,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_
 
 void stm32_gpio_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
+	struct stm32_intc_gpio_data *data = &intc_gpio_data;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
 
 	data->cb[line_num].cb = NULL;
