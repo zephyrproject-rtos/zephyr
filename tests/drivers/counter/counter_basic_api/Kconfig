@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
+	bool "tests the nxp_lpc_rtc_highres compatible driver"
+	default y if COUNTER_MCUX_LPC_RTC_HIGHRES
+	help
+	  tests the nxp_lpc_rtc_highres compatible driver
+
+source "Kconfig.zephyr"
