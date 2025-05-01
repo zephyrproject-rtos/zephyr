@@ -24,6 +24,11 @@
 	};
 };
 
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
+	pinctrl-names = "default";
+};
+
 &led1 {
 	status = "okay";
 };
