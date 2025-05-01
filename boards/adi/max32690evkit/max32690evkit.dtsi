@@ -16,11 +16,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
+	soc {
 		/*
 		 * Concatenate SRAM0 through SRAM7 for the M4
 		 */
@@ -67,18 +63,29 @@
 	status = "okay";
 };
 
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
-	pinctrl-names = "default";
-};
-
-&dma0 {
-	status = "okay";
-};
-
-&w1 {
-	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
 	pinctrl-names = "default";
 };
 
@@ -86,10 +93,38 @@
 	status = "okay";
 };
 
-&can0 {
-	status = "okay";
-	pinctrl-0 = <&can0b_tx_p2_23 &can0b_rx_p2_22>;
-	pinctrl-names = "default";
-	bitrate = <500000>;
-	sample-point = <800>;
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		m4_partition: partition@0 {
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_M(1)>;
+		};
+
+		storage_partition: partition@100000 {
+			label = "storage";
+			reg = <0x100000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rv32_partition: rv32_partition@0 {
+			label = "image-rv32";
+			reg = <0x0 DT_SIZE_K(192)>;
+		};
+
+		rv32_storage_partition: rv32_partition@30000 {
+			label = "rv32-storage";
+			reg = <0x30000 DT_SIZE_K(64)>;
+		};
+	};
 };
