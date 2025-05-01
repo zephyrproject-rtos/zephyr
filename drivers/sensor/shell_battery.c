@@ -88,35 +88,35 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Temp:  %.1d.%02d C\n", temp.val1,
-		      temp.val2 / 10000);
-	shell_fprintf(sh, SHELL_NORMAL, "V: %5d.%02d V\n", volt.val1,
-		      volt.val2 / 10000);
-	shell_fprintf(sh, SHELL_NORMAL, "V-desired: %d.%02d V\n",
-		      v_desired.val1, v_desired.val2 / 10000);
-	shell_fprintf(sh, SHELL_NORMAL, "I:    %d mA", current.val1);
+	shell_print(sh, "Temp:  %.1d.%02d C",
+		    temp.val1, temp.val2 / 10000);
+	shell_print(sh, "V: %5d.%02d V",
+		    volt.val1, volt.val2 / 10000);
+	shell_print(sh, "V-desired: %d.%02d V",
+		    v_desired.val1, v_desired.val2 / 10000);
+	shell_fprintf_normal(sh, "I:    %d mA", current.val1);
 	if (current.val1 > 0) {
-		shell_fprintf(sh, SHELL_NORMAL, " (CHG)");
+		shell_fprintf_normal(sh, " (CHG)");
 	} else if (current.val1 < 0) {
-		shell_fprintf(sh, SHELL_NORMAL, " (DISCHG)");
+		shell_fprintf_normal(sh, " (DISCHG)");
 	}
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
-	shell_fprintf(sh, SHELL_NORMAL, "I-desired: %5d mA\n",
-		      i_desired.val1);
+	shell_fprintf_normal(sh, "\n");
+	shell_print(sh, "I-desired: %5d mA",
+		    i_desired.val1);
 	allowed = i_desired.val1 && v_desired.val2 && charge.val1 < 100;
-	shell_fprintf(sh, SHELL_NORMAL, "Charging: %sAllowed\n",
-		      allowed ? "" : "Not ");
-	shell_fprintf(sh, SHELL_NORMAL, "Charge: %d %%\n", charge.val1);
-	shell_fprintf(sh, SHELL_NORMAL, "V-design: %d.%02d V\n",
-		      v_design.val1, v_design.val2 / 10000);
-	shell_fprintf(sh, SHELL_NORMAL, "Remaining: %d mA\n",
-		      charge_remain.val1);
-	shell_fprintf(sh, SHELL_NORMAL, "Cap-full: %d mA\n", cap.val1);
-	shell_fprintf(sh, SHELL_NORMAL, "Design: %d mA\n", nom_cap.val1);
-	shell_fprintf(sh, SHELL_NORMAL, "Time full: %dh:%02d\n",
-		      full.val1 / 60, full.val1 % 60);
-	shell_fprintf(sh, SHELL_NORMAL, "Time empty: %dh:%02d\n",
-		      empty.val1 / 60, empty.val1 % 60);
+	shell_print(sh, "Charging: %sAllowed",
+		    allowed ? "" : "Not ");
+	shell_print(sh, "Charge: %d %%", charge.val1);
+	shell_print(sh, "V-design: %d.%02d V",
+		    v_design.val1, v_design.val2 / 10000);
+	shell_print(sh, "Remaining: %d mA",
+		    charge_remain.val1);
+	shell_print(sh, "Cap-full: %d mA", cap.val1);
+	shell_print(sh, "Design: %d mA", nom_cap.val1);
+	shell_print(sh, "Time full: %dh:%02d",
+		    full.val1 / 60, full.val1 % 60);
+	shell_print(sh, "Time empty: %dh:%02d",
+		    empty.val1 / 60, empty.val1 % 60);
 
 	return 0;
 }
