@@ -21,6 +21,10 @@
 	};
 };
 
+&rv32_sys_timer {
+	status = "okay";
+};
+
 &clk_iso {
 	status = "okay";
 };
