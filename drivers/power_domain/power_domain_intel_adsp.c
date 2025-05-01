@@ -63,19 +63,9 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pd_intel_adsp_set_power_enable(reg_bits, true);
-
-		if (ret == 0) {
-			pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
-		}
-
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
 		ret = pd_intel_adsp_set_power_enable(reg_bits, false);
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	default:
 		return -ENOTSUP;
