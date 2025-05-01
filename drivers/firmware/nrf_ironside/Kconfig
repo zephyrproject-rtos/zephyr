@@ -20,3 +20,15 @@ config NRF_IRONSIDE_CALL_INIT_PRIORITY
 	  but higher than the priority of any feature that selects NRF_IRONSIDE_CALL.
 
 endif # NRF_IRONSIDE_CALL
+
+menu "Nordic IRONside services"
+	depends on SOC_NRF54H20_IRON
+
+config NRF_IRONSIDE_CPUCONF_SERVICE
+	bool "IRONside CPUCONF service"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to boot local domain cores.
+
+endmenu
