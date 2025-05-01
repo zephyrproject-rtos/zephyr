@@ -226,6 +226,13 @@ config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE
 	default 4096
 
+config XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+	bool "Flush all auto-refill data TLBs when swapping page tables"
+	depends on USERSPACE
+	help
+	  This flushes (invalidates) all auto-refill data TLBs when page
+	  tables are swapped.
+
 endif # XTENSA_MMU
 
 endif # CPU_HAS_MMU
