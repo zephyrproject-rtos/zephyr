@@ -1415,7 +1415,7 @@ class DT:
             prop._add_marker(_MarkerType.LABEL, tok.val)
             self._next_token()
 
-    def _node_phandle(self, node):
+    def _node_phandle(self, node, src_prop):
         # Returns the phandle for Node 'node', creating a new phandle if the
         # node has no phandle, and fixing up the value for existing
         # self-referential phandles (which get set to b'\0\0\0\0' initially).
@@ -1435,6 +1435,8 @@ class DT:
                 phandle_i += 1
             self.phandle2node[phandle_i] = node
 
+            phandle_prop.filename = src_prop.filename
+            phandle_prop.lineno = src_prop.lineno
             phandle_prop.value = phandle_i.to_bytes(4, "big")
             node.props["phandle"] = phandle_prop
 
@@ -1878,7 +1880,7 @@ class DT:
                         if marker_type is _MarkerType.PATH:
                             res += ref_node.path.encode("utf-8") + b'\0'
                         else:  # marker_type is PHANDLE
-                            res += self._node_phandle(ref_node)
+                            res += self._node_phandle(ref_node, prop)
                             # Skip over the dummy phandle placeholder
                             pos += 4
 
