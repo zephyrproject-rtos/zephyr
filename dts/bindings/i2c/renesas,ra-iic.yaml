@@ -18,6 +18,15 @@ properties:
   interrupts:
     required: true
 
+  interrupt-names:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      - "rxi": receive data full
+      - "txi": transmit data empty
+      - "tei": transmit end
+      - "eri": transfer error or event occurrence
+
   rise-time-ns:
     type: int
     default: 120
