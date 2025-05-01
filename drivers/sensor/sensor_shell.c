@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
 	"<device_name> <on/off> <trigger_name>"
 
-static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
+static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
 	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
 	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
@@ -113,7 +113,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ALL] = "all",
 };
 
-static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
+static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_SAMPLING_FREQUENCY] = "sampling_frequency",
 	[SENSOR_ATTR_LOWER_THRESH] = "lower_thresh",
 	[SENSOR_ATTR_UPPER_THRESH] = "upper_thresh",
@@ -243,7 +243,7 @@ static enum dynamic_command_context current_cmd_ctx = NONE;
 /* Mutex for accessing shared RTIO/IODEV data structures */
 K_MUTEX_DEFINE(cmd_get_mutex);
 
-/* Crate a single common config for one-shot reading */
+/* Create a single common config for one-shot reading */
 static struct sensor_chan_spec iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
 static struct sensor_read_config iodev_sensor_shell_read_config = {
 	.sensor = NULL,
@@ -257,7 +257,7 @@ RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_sh
 /* Create the RTIO context to service the reading */
 RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
 
-static int parse_named_int(const char *name, const char *heystack[], size_t count)
+static int parse_named_int(const char *name, const char *const heystack[], size_t count)
 {
 	char *endptr;
 	int i;
