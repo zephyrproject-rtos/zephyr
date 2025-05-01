@@ -945,15 +945,15 @@ class DT:
         Returns a DTS representation of the devicetree. Called automatically if
         the DT instance is print()ed.
         """
-        s = "/dts-v1/;\n\n"
+        s = "/dts-v1/;\n"
 
         if self.memreserves:
+            s += "\n"
             for labels, address, offset in self.memreserves:
                 # List the labels in a consistent order to help with testing
                 for label in labels:
                     s += f"{label}: "
                 s += f"/memreserve/ {address:#018x} {offset:#018x};\n"
-            s += "\n"
 
         return s + str(self.root)
 
