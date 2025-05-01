@@ -48,10 +48,8 @@ static int pd_gpio_pm_action(const struct device *dev,
 		LOG_INF("%s is now ON", dev->name);
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
 		LOG_INF("%s is now OFF", dev->name);
