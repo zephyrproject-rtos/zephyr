@@ -6,7 +6,9 @@
 
 /dts-v1/;
 
-#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-m4.dtsi>
+#include "max32690evkit.dtsi"
+
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
@@ -20,34 +22,10 @@
 	chosen {
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
-		zephyr,sram = &sram0;
+		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
 		zephyr,display = &st7735;
 		zephyr,canbus = &can0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		red_led: led_0 {
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-			label = "LED0";
-		};
-
-		green_led: led_1 {
-			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
-			label = "LED1";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		pb0: pb0 {
-			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW2";
-			zephyr,code = <INPUT_KEY_0>;
-		};
 	};
 
 	aliases {
@@ -126,14 +104,6 @@
 	};
 };
 
-&clk_ipo {
-	status = "okay";
-};
-
-&clk_ibro {
-	status = "okay";
-};
-
 &gpio0 {
 	status = "okay";
 };
@@ -161,20 +131,6 @@
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
-	status = "okay";
-};
-
-&trng {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
-	pinctrl-names = "default";
-};
-
-&dma0 {
 	status = "okay";
 };
 
