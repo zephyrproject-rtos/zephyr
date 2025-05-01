@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <adi/max32/max32655.dtsi>
+#include <adi/max32/max32655-m4.dtsi>
 #include <adi/max32/max32655-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -20,7 +20,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
-		zephyr,flash-partition = &code_partition;
+		zephyr,code-partition = &code_partition;
 	};
 
 	reserved-memory {
