@@ -727,8 +727,16 @@ static void test_valid_function_without_alarm(const struct device *dev)
 		ticks_expected = counter_us_to_ticks(dev, wait_for_us);
 	}
 
+#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_HIGHRES
+	/* For NXP LPC RTC, the clock source is an internal
+	 * oscillator with greater inaccuracy.
+	 * Set 30% or 2 ticks tolerance, whichever is greater
+	 */
+	ticks_tol = (ticks_expected / 10) * 3;
+#else
 	/* Set 10% or 2 ticks tolerance, whichever is greater */
 	ticks_tol = ticks_expected / 10;
+#endif
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
 	if (!counter_is_counting_up(dev)) {
