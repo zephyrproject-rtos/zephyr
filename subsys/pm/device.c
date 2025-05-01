@@ -207,6 +207,54 @@ void pm_device_children_action_run(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+static void pm_device_domain_children_turn_onoff(const struct device *dev, bool on)
+{
+	struct pm_device_base *pm_base = dev->pm_base;
+	const struct device *child;
+	const enum pm_device_action action = on
+					   ? PM_DEVICE_ACTION_TURN_ON
+					   : PM_DEVICE_ACTION_TURN_OFF;
+	const char *const action_str = on
+				     ? "turned on"
+				     : "turned off";
+
+	for (uint16_t i = 0; i < pm_base->domain_children_size; i++) {
+		child = pm_base->domain_children[i];
+
+		if (child == NULL) {
+			continue;
+		}
+
+		if (pm_device_action_run(child, action) == 0) {
+			continue;
+		}
+
+		LOG_ERR("%s could not be %s", child->name, action_str);
+	}
+}
+
+void pm_device_domain_children_turn_on(const struct device *dev)
+{
+	pm_device_domain_children_turn_onoff(dev, true);
+}
+
+void pm_device_domain_children_turn_off(const struct device *dev)
+{
+	pm_device_domain_children_turn_onoff(dev, false);
+}
+#else
+void pm_device_domain_children_turn_on(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+void pm_device_domain_children_turn_off(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
 {
