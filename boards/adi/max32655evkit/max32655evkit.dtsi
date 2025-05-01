@@ -1,36 +1,29 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
-#include <adi/max32/max32655.dtsi>
 #include <adi/max32/max32655-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
+	soc {
 		/*
-		 * Concatenate SRAM0(32KB), SRAM1(32KB) and SRAM2(48KB) for the M4
+		 * Concatenate SRAM0(32KB), SRAM1(32KB) and  for the M4
 		 */
 		m4_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(112)>;
+			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
 		/*
-		 * Use SRAM3(16KB) for the RV32
+		 * Use SRAM2(48KB) + SRAM3(16KB) for the RV32
 		 */
-		rv32_sram: memory@2001c000 {
+		rv32_sram: memory@20010000 {
 			compatible = "mmio-sram";
-			reg = <0x2001c000 DT_SIZE_K(16)>;
+			reg = <0x20010000 DT_SIZE_K(64)>;
 		};
 	};
 
@@ -89,36 +82,6 @@
 	parity = "none";
 };
 
-&spi0_mosi_p0_5 {
-	power-source = <MAX32_VSEL_VDDIOH>;
-};
-
-&spi0_miso_p0_6 {
-	power-source = <MAX32_VSEL_VDDIOH>;
-};
-
-&spi0_sck_p0_7 {
-	power-source = <MAX32_VSEL_VDDIOH>;
-};
-
-&spi0 {
-	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
-
-	spi0_cs0_flash: w25q128@0 {
-		compatible = "jedec,spi-nor";
-		status = "disabled";
-		/* 134217728 bits = 16 Mbytes */
-		size = <0x8000000>;
-		reg = <0>;
-		spi-max-frequency = <10000000>;
-		jedec-id = [ef 40 18];
-		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
-		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-	};
-};
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -132,7 +95,7 @@
 
 		storage_partition: partition@58000 {
 			label = "storage-m4";
-			reg = <0x50000 DT_SIZE_K(32)>;
+			reg = <0x58000 DT_SIZE_K(32)>;
 		};
 
 		rv32_partition: partition@60000 {
