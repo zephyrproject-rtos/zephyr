@@ -4,7 +4,7 @@ set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 
-if(CONFIG_POSIX_API)
+if(CONFIG_POSIX_SYSTEM_HEADERS)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
