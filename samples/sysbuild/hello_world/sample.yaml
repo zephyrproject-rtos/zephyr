@@ -73,5 +73,7 @@ tests:
   sample.sysbuild.hello_world.max32_rv32:
     platform_allow:
       - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
     integration_platforms:
       - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
