@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <adi/max32/max32655-m4.dtsi>
 #include "max32655evkit.dtsi"
 
 / {
@@ -18,6 +19,7 @@
 		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &m4_partition;
+		zephyr,rv32-flash = &flash0;
 		zephyr,code-rv32-partition = &rv32_partition;
 	};
 };
@@ -43,7 +45,12 @@
 };
 
 &uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
 	status = "okay";
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
 };
 
 &clk_ipo {
@@ -91,12 +98,6 @@
 	status = "okay";
 };
 
-&spi0 {
-	status = "okay";
-	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
-	pinctrl-names = "default";
-};
-
 &w1 {
 	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
 	pinctrl-names = "default";
@@ -119,7 +120,23 @@
 };
 
 &spi0 {
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 	status = "okay";
+
+	spi0_cs0_flash: w25q128@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		/* 134217728 bits = 16 Mbytes */
+		size = <0x8000000>;
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		jedec-id = [ef 40 18];
+		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+	};
 };
 
 &spi0_cs0_flash {
