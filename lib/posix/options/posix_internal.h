@@ -66,6 +66,20 @@ struct posix_thread {
 	uint8_t qid;
 };
 
+struct posix_condattr {
+	/* leaves room for CLOCK_REALTIME (1, default) and CLOCK_MONOTONIC (4) */
+	unsigned int clock: 3;
+	bool initialized: 1;
+#ifdef _POSIX_THREAD_PROCESS_SHARED
+	unsigned int pshared: 1;
+#endif
+};
+
+struct posix_cond {
+	struct k_condvar condvar;
+	struct posix_condattr attr;
+};
+
 typedef struct pthread_key_obj {
 	/* List of pthread_key_data objects that contain thread
 	 * specific data for the key

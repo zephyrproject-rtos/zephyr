@@ -7,7 +7,7 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <wch/qingke-v2.dtsi>
+#include <wch/qingke-v2a.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
@@ -64,6 +64,12 @@
 		pwr: pwr@40007000 {
 			compatible = "wch,pwr";
 			reg = <0x40007000 0x10>;
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "wch,iwdg";
+			reg = <0x40003000 0x10>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@40010000 {

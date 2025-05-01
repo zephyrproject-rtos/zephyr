@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) 2021-2025 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <dt-bindings/pinctrl/bl60x-pinctrl.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "sifive,e24", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafcb";
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			ictrl: interrupt-controller {
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		clic: clic@2000000 {
+			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+
+			interrupt-controller;
+			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;
+			interrupt-names = "msip", /* Machine Software Interrupt */
+					  "mtip", /* Machine Timer interrupt    */
+					  "meip", /* Machine External Interrupt */
+					  "csip"; /* CLIC Software Interrupt    */
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&ictrl 7>;
+		};
+
+		pinctrl: pin-controller@40000000 {
+			compatible = "bflb,pinctrl";
+			reg = <0x40000000 0x1000>;
+			ranges = <0x40000000 0x40000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			glb: gpio@40000000 {
+				compatible = "bflb,gpio";
+				reg = <0x40000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <1 0>;
+				interrupt-parent = <&ictrl>;
+			};
+		};
+
+		uart0: uart@4000a000 {
+			compatible = "bflb,uart";
+			reg = <0x4000a000 0x100>;
+			peripheral-id = <0>;
+			interrupts = <29 0>;
+			interrupt-parent = <&ictrl>;
+			status = "disabled";
+		};
+
+		uart1: uart@4000a100 {
+			compatible = "bflb,uart";
+			reg = <0x4000a100 0x100>;
+			peripheral-id = <1>;
+			interrupts = <30 0>;
+			interrupt-parent = <&ictrl>;
+			status = "disabled";
+		};
+
+		spi0: spi@4000a200 {
+			compatible = "bflb,spi";
+			reg = <0x4000a200 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			peripheral-id = <0>;
+			interrupts = <27 0>;
+			interrupt-parent = <&ictrl>;
+		};
+
+		spi1: spi@4000b000 {
+			compatible = "bflb,qspi";
+			reg = <0x4000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			peripheral-id = <0>;
+			interrupts = <23 0>;
+			interrupt-parent = <&ictrl>;
+		};
+
+		retram: memory@40010000 {
+			compatible = "mmio-sram";
+			reg = <0x40010000 DT_SIZE_K(4)>;
+		};
+
+		itcm: itcm@22010000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x22010000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: dtcm@42014000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x42014000 DT_SIZE_K(48)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0: memory@42020000 {
+			compatible = "mmio-sram";
+			reg = <0x42020000 DT_SIZE_K(64)>;
+		};
+
+		sram1: memory@42030000 {
+			compatible = "mmio-sram";
+			reg = <0x42030000 DT_SIZE_K(112)>;
+		};
+	};
+};

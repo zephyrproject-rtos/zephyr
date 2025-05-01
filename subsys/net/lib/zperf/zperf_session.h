@@ -21,23 +21,21 @@
 /* Type definition */
 enum state {
 	STATE_NULL, /* Session has not yet started */
+	STATE_STARTING, /* Session is starting */
 	STATE_ONGOING, /* 1st packet has been received, last packet not yet */
 	STATE_LAST_PACKET_RECEIVED, /* Last packet has been received */
 	STATE_COMPLETED /* Session completed, stats pkt can be sent if needed */
 };
 
-enum session_proto {
-	SESSION_UDP = 0,
-	SESSION_TCP = 1,
-	SESSION_PROTO_END
-};
-
 struct session {
+	int id;
+
 	/* Tuple for UDP */
 	uint16_t port;
 	struct net_addr ip;
 
 	enum state state;
+	enum session_proto proto;
 
 	/* Stat data */
 	uint32_t counter;
@@ -52,13 +50,28 @@ struct session {
 
 	/* Stats packet*/
 	struct zperf_server_hdr stat;
+
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+	struct zperf_results result;
+	struct zperf_async_upload_context async_upload_ctx;
+	struct zperf_work *zperf;
+	bool in_progress; /* is this session finished or not */
+	bool wait_for_start; /* wait until the user starts the sessions */
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 };
+
+typedef void (*session_cb_t)(struct session *ses, enum session_proto proto,
+			     void *user_data);
 
 struct session *get_session(const struct sockaddr *addr,
 			    enum session_proto proto);
+struct session *get_free_session(const struct sockaddr *addr,
+				 enum session_proto proto);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);
 /* Reset all sessions for a given protocol. */
 void zperf_session_reset(enum session_proto proto);
+void zperf_session_foreach(enum session_proto proto, session_cb_t cb,
+			   void *user_data);
 
 #endif /* __ZPERF_SESSION_H */

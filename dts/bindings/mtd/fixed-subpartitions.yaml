@@ -1,0 +1,89 @@
+description: |
+  Fixed subpartitions of a flash (or other nonvolatile storage) memory.
+
+  Here is an example:
+
+    &flash0 {
+            partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    slot0_partition: partition@10000 {
+                            compatible = "fixed-subpartitions";
+                            label = "image-0";
+                            reg = <0x00010000 0x70000>;
+                            ranges = <0x0 0x10000 0x70000>;
+                            #address-cells = <1>;
+                            #size-cells = <1>;
+
+                            slot0_s_partition: partition@0 {
+                                    label = "image-0-secure";
+                                    reg = <0x00000000 0x40000>;
+                            };
+
+                            slot0_ns_partition: partition@40000 {
+                                    label = "image-0-nonsecure";
+                                    reg = <0x00040000 0x30000>;
+                            };
+                    };
+            };
+    };
+
+compatible: "fixed-subpartitions"
+
+properties:
+  label:
+    type: string
+    description: |
+      Human readable string describing the flash partition.
+  read-only:
+    type: boolean
+    description: set this property if the partition is read-only
+  reg:
+    type: array
+    description: |
+      This should be in the format <OFFSET SIZE>, where OFFSET
+      is the offset of the flash partition relative to the base
+      address of the parent memory, and SIZE is the size of
+      the partition in bytes.
+    required: true
+  "#address-cells":
+    type: int
+    description: |
+      Number of cells required to represent a child node's
+      reg property address. This must be large enough to
+      represent the start offset of each partition.
+  "#size-cells":
+    type: int
+    description: |
+      Number of cells required to represent a child node's
+      reg property address. This must be large enough to
+      represent the size of each partition in bytes.
+
+child-binding:
+  description: |
+    Each child node of the fixed-partitions node represents
+    an individual flash partition. These should usually
+    look like this:
+
+      partition_nodelabel: partition@START_OFFSET {
+              label = "human-readable-name";
+              reg = <0xSTART_OFFSET 0xSIZE>;
+      };
+  properties:
+    label:
+      type: string
+      description: |
+        Human readable string describing the flash partition.
+    read-only:
+      type: boolean
+      description: set this property if the partition is read-only
+    reg:
+      type: array
+      description: |
+        This should be in the format <OFFSET SIZE>, where OFFSET
+        is the offset of the flash partition relative to the base
+        address of the parent memory, and SIZE is the size of
+        the partition in bytes.
+      required: true

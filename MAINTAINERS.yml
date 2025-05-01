@@ -955,8 +955,6 @@ Devicetree:
     - include/zephyr/dt-bindings/dt-util.h
     - dts/binding-template.yaml
     - dts/bindings/base/
-  files-exclude:
-    - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
@@ -1442,6 +1440,7 @@ Release Notes:
     - decsny
     - lmajewski
     - pdgendt
+    - clamattia
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1699,10 +1698,11 @@ Release Notes:
     - drivers.memc
 
 "Drivers: MDIO":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
-    - maass-hamburg
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
@@ -3504,10 +3504,23 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+Bouffalolab Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/bflb/
+    - drivers/*/*bflb*
+    - dts/riscv/bflb/
+    - dts/bindings/*/bflb,*
+    - soc/bflb/
+  labels:
+    - "platform: bouffalolab"
+
 Broadcom Platforms:
   status: odd fixes
   files:
-    - dts/arm/broadcom/
+    - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
 
@@ -4013,6 +4026,7 @@ nRF Platforms:
     - dts/bindings/*/nordic,*
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
+    - tests/boards/nrf/
   labels:
     - "platform: nRF"
 
@@ -4225,8 +4239,7 @@ Espressif Platforms:
     - drivers/*/*esp32*.c
     - boards/espressif/
     - soc/espressif/
-    - dts/xtensa/espressif/
-    - dts/riscv/espressif/
+    - dts/*/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
@@ -4934,6 +4947,15 @@ West:
     - modules/Kconfig.atmel
   labels:
     - "platform: Microchip SAM"
+
+"West project: hal_bouffalolab":
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - modules/hal_bouffalolab/
+  labels:
+    - "platform: Bouffalo Lab"
 
 "West project: hal_cypress":
   status: maintained

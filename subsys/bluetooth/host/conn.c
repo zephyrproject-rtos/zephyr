@@ -471,7 +471,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 	net_buf_unref(buf);
 
-	if (conn->rx->len > acl_total_len) {
+	if ((conn->type != BT_CONN_TYPE_BR) && (conn->rx->len > acl_total_len)) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
@@ -484,7 +484,11 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf, true);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+		bt_br_acl_recv(conn, buf, true);
+	} else {
+		bt_l2cap_recv(conn, buf, true);
+	}
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
@@ -551,7 +555,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	return bt_send(buf);
 }
@@ -609,7 +613,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 	return bt_send(buf);
 }

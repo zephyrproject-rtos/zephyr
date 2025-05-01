@@ -26,6 +26,15 @@ signals externally on the EVK.  These are the HW changes required to run this te
         - Short SYNC J1-pin13 (SAI1_RX_FS/P3_19)   to J3-pin13 (SAI0_TX_FS/P2_7)
         - Short Data J1-pin15 (SAI1_RXD0/P3_21)    to J3-pin7  (SAI0_TXD0/P2_2)
 
+MCX-N9XX-EVK:
+This board uses CONFIG_I2S_TEST_SEPARATE_DEVICES=n and connects TX and RX blocks in one
+SAI peripheral by shorting signals externally on the EVK.  These are the HW changes
+required to run this test:
+	- Populate JP16 and JP20
+	- Short BCLK JP20-pin3 (SAI1_RX_BCLK/P3_18) to JP20-pin1  (SAI1_TX_BCLK/P3_16)
+	- SHort SYNC JP16-pin3 (SAI1_RX_FS  /P3_19) to JP16-pin1  (SAI1_TX_FS  /P3_17)
+        - Short Data J20-pin14 (SAI1_RXD0   /P2_9)  to JP20-pin13 (SAI1_TXD0   /P2_8)
+
 MIMXRT1060-EVK[B/C]:
 This board uses a single SAI and connects the TX and RX signals by shorting externally on the EVK.
 These are the HW changes required to run this test on MIMXRT1060-EVK[B/C]:

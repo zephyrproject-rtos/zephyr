@@ -35,11 +35,11 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Connectivity Events */
-#define _NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
-#define _NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(0x207)
-#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE | \
+#define NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
+#define NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(NET_MGMT_LAYER_CODE_CONN)
+#define NET_MGMT_CONN_BASE			(NET_MGMT_CONN_LAYER | NET_MGMT_CONN_CODE | \
 						 NET_MGMT_EVENT_BIT)
-#define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
+#define NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | NET_MGMT_CONN_BASE)
 
 enum net_event_conn_cmd {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
@@ -52,13 +52,13 @@ enum net_event_conn_cmd {
  * @brief net_mgmt event raised when a connection attempt times out
  */
 #define NET_EVENT_CONN_IF_TIMEOUT					\
-	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
 
 /**
  * @brief net_mgmt event raised when a non-recoverable connectivity error occurs on an iface
  */
 #define NET_EVENT_CONN_IF_FATAL_ERROR					\
-	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
 
 
 /**

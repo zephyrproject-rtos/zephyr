@@ -31,7 +31,7 @@ Requirements
 ************
 
 This example should be able to run on any commonly available
-:zephyr:board:`esp32_devkitc_wroom` development board without any extra hardware if
+:zephyr:board:`esp32_devkitc` development board without any extra hardware if
 only ``Timer`` is used as wakeup source.
 
 However, when ``EXT1`` is also enabled, GPIO2 and GPIO4 should be pulled-down
@@ -51,7 +51,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/espressif/deep_sleep
-   :board: esp32_devkitc_wroom/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
    :compact:
 

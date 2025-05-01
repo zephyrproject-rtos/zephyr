@@ -349,8 +349,13 @@ static uint8_t rp_cc_validate_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	/* Note: SDU intervals are 20 bits; Mask away RFU bits */
 	c_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.c_sdu_interval) & 0x0FFFFF;
 	p_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.p_sdu_interval) & 0x0FFFFF;
-	if (c_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN ||
-	    p_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN) {
+	/*
+	 * Some in-the-wild devices use SDU interval of 0 when BN == 0; This is not allowed by
+	 * BT Core Spec v6.0, but is not specifically mentioned in v5.4 and earlier. To allow
+	 * connecting a CIS to these devices, relax the check on SDU interval
+	 */
+	if ((pdu->llctrl.cis_req.c_bn > 0 && c_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN) ||
+	    (pdu->llctrl.cis_req.p_bn > 0 && p_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN)) {
 		return BT_HCI_ERR_INVALID_LL_PARAM;
 	}
 

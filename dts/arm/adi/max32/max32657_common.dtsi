@@ -1,0 +1,151 @@
+/*
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flc0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	clocks {
+		clk_ipo: clk_ipo {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			status = "disabled";
+		};
+
+		clk_inro: clk_inro {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = < DT_FREQ_K(8) >;
+			status = "disabled";
+		};
+
+		clk_ibro: clk_ibro {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = < 7372800 >;
+			status = "disabled";
+		};
+
+		clk_ertco: clk_ertco {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = < 32768 >;
+			status = "disabled";
+		};
+
+		clk_erfo: clk_erfo {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(32)>;
+	};
+
+	sram1: memory@8000 {
+		compatible = "mmio-sram";
+		reg = <0x8000 DT_SIZE_K(32)>;
+	};
+
+	sram2: memory@10000 {
+		compatible = "mmio-sram";
+		reg = <0x10000 DT_SIZE_K(64)>;
+	};
+
+	sram3: memory@20000 {
+		compatible = "mmio-sram";
+		reg = <0x20000 DT_SIZE_K(64)>;
+	};
+
+	sram4: memory@30000 {
+		compatible = "mmio-sram";
+		reg = <0x30000 DT_SIZE_K(64)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	gcr: clock-controller@0 {
+		reg = <0x0 0x400>;
+		compatible = "adi,max32-gcr";
+		#clock-cells = <2>;
+		clocks = <&clk_ipo>;
+		sysclk-prescaler = <1>;
+		status = "okay";
+	};
+
+	pinctrl: pin-controller@8000 {
+		compatible = "adi,max32-pinctrl";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8000 0x1000>;
+
+		gpio0: gpio@8000 {
+			reg = <0x8000 0x1000>;
+			compatible = "adi,max32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 0>;
+			interrupts = <14 0>;
+			status = "disabled";
+		};
+	};
+
+	uart0: serial@42000 {
+		compatible = "adi,max32-uart";
+		reg = <0x42000 0x1000>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
+		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+		interrupts = <11 0>;
+		status = "disabled";
+	};
+
+	trng: trng@4d000 {
+		compatible = "adi,max32-trng";
+		reg = <0x4d000 0x1000>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
+		status = "disabled";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

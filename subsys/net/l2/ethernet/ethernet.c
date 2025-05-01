@@ -489,8 +489,9 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 	return false;
 }
 
-static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
-						   struct net_pkt *pkt)
+static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
+				       struct net_pkt *pkt,
+				       struct net_pkt **out)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
@@ -503,34 +504,19 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	}
 
 	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
-		return pkt;
+		return NET_ARP_COMPLETE;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
-		struct net_pkt *arp_pkt;
-
-		arp_pkt = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL);
-		if (!arp_pkt) {
-			return NULL;
-		}
-
-		if (pkt != arp_pkt) {
-			NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
-				arp_pkt, pkt, net_if_get_by_iface(iface), iface);
-			net_pkt_unref(pkt);
-			return arp_pkt;
-		}
-
-		NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
-			pkt, net_if_get_by_iface(iface), iface);
+		return net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
 	}
 
-	return pkt;
+	return NET_ARP_COMPLETE;
 }
 #else
 #define ethernet_ipv4_dst_is_broadcast_or_mcast(...) false
 #define ethernet_fill_in_dst_on_ipv4_mcast(...) false
-#define ethernet_ll_prepare_on_ipv4(...) NULL
+#define ethernet_ll_prepare_on_ipv4(...) NET_ARP_COMPLETE
 #endif /* CONFIG_NET_IPV4 */
 
 #ifdef CONFIG_NET_IPV6
@@ -725,18 +711,33 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET &&
 	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		if (!net_pkt_ipv4_acd(pkt)) {
-			struct net_pkt *tmp;
+			struct net_pkt *arp;
 
-			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
-			if (tmp == NULL) {
-				ret = -ENOMEM;
-				goto error;
-			} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
+			ret = ethernet_ll_prepare_on_ipv4(iface, pkt, &arp);
+			if (ret == NET_ARP_COMPLETE) {
+				/* ARP resolution complete, packet ready to send */
+				NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
+					pkt, net_if_get_by_iface(iface), iface);
+			} else if (ret == NET_ARP_PKT_REPLACED) {
 				/* Original pkt got queued and is replaced
 				 * by an ARP request packet.
 				 */
-				pkt = tmp;
+				NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
+					arp, pkt, net_if_get_by_iface(iface), iface);
+				net_pkt_unref(pkt);
+				pkt = arp;
 				ptype = htons(net_pkt_ll_proto_type(pkt));
+			} else if (ret == NET_ARP_PKT_QUEUED) {
+				/* Original pkt got queued, pending resolution
+				 * of an ongoing ARP request.
+				 */
+				NET_DBG("Pending ARP request, pkt %p queued", pkt);
+				net_pkt_unref(pkt);
+				ret = 0;
+				goto error;
+			} else {
+				__ASSERT_NO_MSG(ret < 0);
+				goto error;
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
@@ -1088,6 +1089,11 @@ void ethernet_init(struct net_if *iface)
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
+
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+	/* DSA port may need to handle flags */
+	dsa_eth_init(iface);
+#endif
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 	ctx->iface = iface;

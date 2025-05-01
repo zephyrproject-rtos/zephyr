@@ -142,7 +142,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 67b88309c327d207e87bb7af6e37c704cd9d5b9d
+      revision: 8f33130dc5fe33ce14eb1cf29364bfc39dc82020
       path: modules/hal/adi
       groups:
         - hal
@@ -161,8 +161,13 @@ manifest:
       path: modules/hal/atmel
       groups:
         - hal
+    - name: hal_bouffalolab
+      path: modules/hal/bouffalolab
+      revision: c6c44b879503d990dfba643c212b606cee414faa
+      groups:
+        - hal
     - name: hal_espressif
-      revision: dbc28ad4c1bdcdb25e79ca225cb5528a75d8dc91
+      revision: e794f935ff732f4e03f2e007d1e342f881ef0d4a
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -178,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 9df9d40571b25171cb752459c6dd96bd83ec8570
+      revision: 6890899e0db2cbcd3a562b41b7e9e0a2a9040ed0
       path: modules/hal/infineon
       groups:
         - hal
@@ -203,7 +208,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6b11d190e0092aafec81489d0e7045a3bcf80c60
+      revision: 601e1e538abaf9f5985e28531b3b6a2a07e38d2a
       path: modules/hal/nxp
       groups:
         - hal
@@ -233,12 +238,12 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: 05fd4533730a9aea845261c5d24ed9832a6f0b6e
+      revision: 9f81b4427e955885398805b7bca0da3a8cd9109c
       path: modules/hal/st
       groups:
         - hal
     - name: hal_stm32
-      revision: f467d8e039216b4f5f9b55dd8a1ffa8582fc516d
+      revision: fcd37242dcaa19a05b014a378c592e257083fe72
       path: modules/hal/stm32
       groups:
         - hal
@@ -274,7 +279,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: fb6452c246b441434172235b2070259945ca9d44
+      revision: 8412f4b23b6267ee6035d25515a23aaf243f6ad7
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -303,7 +308,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 20f98e0a975c24864872e0df5701eb1082e9c957
+      revision: 81315483fcbdf1f1524c2b34a1fd4de6c77cd0f4
       path: bootloader/mcuboot
       groups:
         - bootloader

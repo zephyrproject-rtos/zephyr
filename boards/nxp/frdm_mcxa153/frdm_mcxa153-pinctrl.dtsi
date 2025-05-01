@@ -16,6 +16,24 @@
 		};
 	};
 
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A0_P2_0>,
+				<ADC0_A1_P2_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN0_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
+
 	pinmux_lpuart0: pinmux_lpuart0 {
 		group0 {
 			pinmux = <LPUART0_RXD_P0_2>,

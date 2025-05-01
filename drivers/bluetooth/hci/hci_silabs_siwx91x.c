@@ -36,22 +36,8 @@ static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 {
 	struct hci_data *hci = dev->data;
 	int sc = -EOVERFLOW;
-	uint8_t packet_type = BT_HCI_H4_NONE;
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		packet_type = BT_HCI_H4_ACL;
-		break;
-	case BT_BUF_CMD:
-		packet_type = BT_HCI_H4_CMD;
-		break;
-	default:
-		sc = -EINVAL;
-		break;
-	}
-
-	if ((packet_type != BT_HCI_H4_NONE) && (buf->len < sizeof(hci->rsi_data_packet.data))) {
-		net_buf_push_u8(buf, packet_type);
+	if (buf->len < sizeof(hci->rsi_data_packet.data)) {
 		memcpy(&hci->rsi_data_packet, buf->data, buf->len);
 		sc = rsi_bt_driver_send_cmd(RSI_BLE_REQ_HCI_RAW, &hci->rsi_data_packet, NULL);
 		/* TODO SILABS ZEPHYR Convert to errno. A common function from rsi/sl_status should

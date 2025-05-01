@@ -106,6 +106,12 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* Architectures
+
+  * :kconfig:option:`ARCH_HAS_VECTOR_TABLE_RELOCATION`
+  * :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` moved from ``zephyr/Kconfig.zephyr`` to
+    ``zephyr/arch/Kconfig`` and added dependencies to it.
+
 * Kernel
 
  * :c:macro:`K_TIMEOUT_ABS_SEC`
@@ -171,6 +177,11 @@ New APIs and options
 
     * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
 
+  * zperf
+
+    * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
+    * :c:member:`zperf_upload_params.data_loader`
+
 * Sensor
 
   * :c:func:`sensor_value_to_deci`
@@ -201,6 +212,14 @@ New APIs and options
   * :c:func:`video_api_ctrl_t`
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
+
+* PCIe
+
+   * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
+
+* Other
+
+  * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
 
 New Boards
 **********

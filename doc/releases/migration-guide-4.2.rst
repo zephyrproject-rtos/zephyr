@@ -53,7 +53,7 @@ Boards
 * The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
   :dtcompatible:`zephyr,native-sim-cpu`.
 
-* Zephyr now supports version 1.11.2 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
+* Zephyr now supports version 1.11.3 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
   implementations need to be updated to this version to be compatible with Zephyr v4.2.0.
 
 * The :zephyr:board:`neorv32` now targets NEORV32 processor (SoC) templates via board variants. The
@@ -76,8 +76,18 @@ Boards
   version 1.1.0 (July 2023). The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``)
   is recommended and it could be done without any change.
 
+* Espressif boards ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover`` shared almost identical features.
+  The differences are covered by the Kconfig options so both boards were merged into ``esp32_devkitc``.
+
 Device Drivers and Devicetree
 *****************************
+
+Devicetree
+==========
+
+* Many of the vendor-specific and arch-specific files that were in dts/common have been moved
+  to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
+  a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
 
 DAI
 ===
@@ -142,6 +152,24 @@ Ethernet
 * NuMaker Ethernet driver ``eth_numaker.c`` now supports ``gen_random_mac``,
   and the EMAC data flash feature has been removed (:github:`87953`).
 
+* The enum ``ETHERNET_DSA_MASTER_PORT`` and ``ETHERNET_DSA_SLAVE_PORT`` in
+  :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
+  to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
+
+* Enums for the Ethernet speed have been renamed to be more indepedent of the used medium.
+  ``LINK_HALF_10BASE_T``, ``LINK_FULL_10BASE_T``, ``LINK_HALF_100BASE_T``, ``LINK_FULL_100BASE_T``,
+  ``LINK_HALF_1000BASE_T``, ``LINK_FULL_1000BASE_T``, ``LINK_FULL_2500BASE_T`` and
+  ``LINK_FULL_5000BASE_T`` have been renamed to :c:enumerator:`LINK_HALF_10BASE`,
+  :c:enumerator:`LINK_FULL_10BASE`, :c:enumerator:`LINK_HALF_100BASE`,
+  :c:enumerator:`LINK_FULL_100BASE`, :c:enumerator:`LINK_HALF_1000BASE`,
+  :c:enumerator:`LINK_FULL_1000BASE`, :c:enumerator:`LINK_FULL_2500BASE` and
+  :c:enumerator:`LINK_FULL_5000BASE`.
+  ``ETHERNET_LINK_10BASE_T``, ``ETHERNET_LINK_100BASE_T``, ``ETHERNET_LINK_1000BASE_T``,
+  ``ETHERNET_LINK_2500BASE_T`` and ``ETHERNET_LINK_5000BASE_T`` have been renamed to
+  :c:enumerator:`ETHERNET_LINK_10BASE`, :c:enumerator:`ETHERNET_LINK_100BASE`,
+  :c:enumerator:`ETHERNET_LINK_1000BASE`, :c:enumerator:`ETHERNET_LINK_2500BASE` and
+  :c:enumerator:`ETHERNET_LINK_5000BASE` respectively (:github:`87194`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -162,6 +190,9 @@ GPIO
   :dtcompatible:`raspberrypi,rpi-gpio-port`, and :dtcompatible:`raspberrypi,rpi-gpio` is
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
+* ``arduino-nano-header-r3`` is renamed to :dtcompatible:`arduino-nano-header`.
+  Because the R3 comes from the Arduino UNO R3, which has changed the connector from
+  the former version, and is unrelated to the Arduino Nano.
 
 I2S
 ===
@@ -224,6 +255,17 @@ Stepper
 * Refactored the ``stepper_enable(const struct device * dev, bool enable)`` function to
   :c:func:`stepper_enable` & :c:func:`stepper_disable`.
 
+Misc
+====
+
+* Moved file ``drivers/memc/memc_nxp_flexram.h`` to
+  :zephyr_file:`include/zephyr/drivers/misc/flexram/nxp_flexram.h` so that the
+  file can be included using ``<zephyr/drivers/misc/flexram/nxp_flexram.h>``.
+  Modification to CMakeList.txt to use include this driver is no longer
+  required.
+* All memc_flexram_* namespaced things including kconfigs and C API
+  have been changed to just flexram_*.
+
 Bluetooth
 *********
 
@@ -232,6 +274,14 @@ Bluetooth Audio
 
 * ``CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE`` has been renamed to
   :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE``. (:github:`86763``)
+
+Bluetooth HCI
+=============
+
+* The buffer types passing through the HCI driver interface are now indicated as H:4 encoded prefix
+  bytes as part of the buffer payload itself. The bt_buf_set_type() and bt_buf_get_type() functions
+  have been deprecated, but are still usable, with the exception that they can only be
+  called once per buffer.
 
 Bluetooth Host
 ==============
@@ -310,6 +360,19 @@ SPI
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 
+xSPI
+====
+
+* On STM32 devices, external memories device tree descriptions for size and address are now split
+  in two separate properties to comply with specification recommendations.
+
+  For instance, following external flash description ``reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits /``
+  is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
+
+  Note that the property gives the actual size of the memory device in bits.
+  Previous mapping address information is now described in xspi node at SoC dtsi level.
+
+
 Other subsystems
 ****************
 
@@ -325,3 +388,9 @@ Modules
 
 Architectures
 *************
+
+* Moved :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` from ``zephyr/Kconfig.zephyr`` to
+  ``zephyr/arch/Kconfig`` and added dependency to :kconfig:option:`CONFIG_XIP`,
+  :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
+  :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
+  of vector table in RAM.

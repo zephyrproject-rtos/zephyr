@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
-#ifdef CONFIG_NET_DSA
+#ifdef CONFIG_NET_DSA_DEPRECATED
 #include <zephyr/net/dsa.h>
 #endif
 
@@ -252,7 +252,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #endif
 	enum ethernet_hw_caps caps;
 
-	caps = ETHERNET_LINK_10BASE_T |
+	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
@@ -260,18 +260,18 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
-#if defined(CONFIG_NET_DSA)
-		ETHERNET_DSA_MASTER_PORT |
+#if defined(CONFIG_NET_DSA_DEPRECATED)
+		ETHERNET_DSA_CONDUIT_PORT |
 #endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (config->phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		caps |= ETHERNET_LINK_1000BASE_T;
+		caps |= ETHERNET_LINK_1000BASE;
 	}
 
 	return caps;
@@ -415,7 +415,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	iface = dsa_net_recv(iface, &pkt);
 #endif
 	if (net_recv_data(iface, pkt) < 0) {
@@ -459,14 +459,14 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
+				     LINK_HALF_100BASE | LINK_FULL_100BASE;
 	int ret;
 	struct phy_link_state state;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
 	}
 
 	/* Configure the PHY */
@@ -525,10 +525,6 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		ENET_SetMII(data->base, speed, duplex);
 	}
 
-	if (!data->iface) {
-		return;
-	}
-
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
 	if (!state->is_up) {
@@ -544,8 +540,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
-	const struct device *phy_dev = config->phy_dev;
-	struct phy_link_state state;
 
 	net_if_set_link_addr(iface, data->mac_addr,
 			     sizeof(data->mac_addr),
@@ -555,42 +549,18 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 		data->iface = iface;
 	}
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
 #endif
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
-	/* In case the phy driver doesn't report a state change due to link being up
-	 * before calling phy_configure, we should check the state ourself, and then do a
-	 * pseudo-callback
-	 */
-	phy_get_link_state(phy_dev, &state);
-
-	nxp_enet_phy_cb(phy_dev, &state, (void *)dev);
+	phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
 
 	config->irq_config_func();
 
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
-}
-
-static int nxp_enet_phy_init(const struct device *dev)
-{
-	const struct nxp_enet_mac_config *config = dev->config;
-	int ret = 0;
-
-	ret = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
-	if (ret) {
-		return ret;
-	}
-
-	ret = phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
-	if (ret) {
-		return ret;
-	}
-
-	return ret;
 }
 
 void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
@@ -818,7 +788,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	ENET_ActiveRead(data->base);
 
-	err = nxp_enet_phy_init(dev);
+	err = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
 	if (err) {
 		return err;
 	}
@@ -876,11 +846,11 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #define ETH_NXP_ENET_PM_DEVICE_GET(n) NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
-#ifdef CONFIG_NET_DSA
+#ifdef CONFIG_NET_DSA_DEPRECATED
 #define NXP_ENET_SEND_FUNC dsa_tx
 #else
 #define NXP_ENET_SEND_FUNC eth_nxp_enet_tx
-#endif /* CONFIG_NET_DSA */
+#endif /* CONFIG_NET_DSA_DEPRECATED */
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,

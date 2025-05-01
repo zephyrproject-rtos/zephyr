@@ -18,6 +18,11 @@ static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
 #endif
 
+BUILD_ASSERT(
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||
+	(sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) != 1),
+	"SNTP server has to be configured, unless DHCPv4 is used to set it");
+
 static int sntp_init_helper(struct sntp_time *tm)
 {
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
@@ -30,6 +35,10 @@ static int sntp_init_helper(struct sntp_time *tm)
 		sntp_addr.sin_addr.s_addr = iface->config.dhcpv4.ntp_addr.s_addr;
 		return sntp_simple_addr((struct sockaddr *)&sntp_addr, sizeof(sntp_addr),
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
+	}
+	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
+		/* Empty address, skip using SNTP via Kconfig defaults */
+		return -EINVAL;
 	}
 	LOG_INF("SNTP address not set by DHCPv4, using Kconfig defaults");
 #endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
@@ -54,8 +63,10 @@ int net_init_clock_via_sntp(void)
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	k_work_reschedule(&sntp_resync_work_handle,
-			  K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
+	k_work_reschedule(
+		&sntp_resync_work_handle,
+		(res < 0) ? K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
+			  : K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
 #endif
 	return res;
 }

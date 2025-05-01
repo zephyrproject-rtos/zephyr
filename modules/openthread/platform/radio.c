@@ -1172,7 +1172,7 @@ otError otPlatRadioClearSrcMatchShortEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;
@@ -1191,7 +1191,7 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;

@@ -101,6 +101,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blues	Blues Wireless
@@ -581,6 +582,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
@@ -779,7 +781,7 @@ ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

@@ -757,7 +757,7 @@ static int ambiq_sdio_card_interrupt_disable(const struct device *dev, int sourc
 	return 0;
 }
 
-static const struct sdhc_driver_api ambiq_sdio_api = {
+static DEVICE_API(sdhc, ambiq_sdio_api) = {
 	.reset = ambiq_sdio_reset,
 	.request = ambiq_sdio_request,
 	.set_io = ambiq_sdio_set_io,

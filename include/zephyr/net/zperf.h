@@ -35,7 +35,24 @@ enum zperf_status {
 	ZPERF_SESSION_ERROR
 } __packed;
 
+/**
+ * @brief Zperf callback function to load custom data for upload
+ *
+ * @param user_ctx User context for data load
+ * @param offset Current offset of custom data
+ * @param data Pointer to load data into
+ * @param len Length of data to load in bytes
+ *
+ * @retval 0 On successful data load
+ * @retval -errno Data load failed, terminate data upload
+ */
+typedef int (*zperf_data_load_custom)(void *user_ctx, uint64_t offset,
+				      uint8_t *data, uint32_t len);
+
 struct zperf_upload_params {
+	uint64_t unix_offset_us;
+	zperf_data_load_custom data_loader;
+	void *data_loader_ctx;
 	struct sockaddr peer_addr;
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
@@ -45,6 +62,10 @@ struct zperf_upload_params {
 		uint8_t tos;
 		int tcp_nodelay;
 		int priority;
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		int thread_priority;
+		bool wait_for_start;
+#endif
 		uint32_t report_interval_ms;
 	} options;
 };

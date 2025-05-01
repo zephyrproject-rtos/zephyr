@@ -202,6 +202,7 @@
 	bus-width = <4>;
 	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
+	disk-name = "SD";
 };
 
 &spi5 {
@@ -249,9 +250,10 @@ zephyr_udc0: &usbotg_hs1 {
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	memc: aps256xxn_obr: memory@90000000 {
+	memc: aps256xxn_obr: memory@0 {
 		compatible = "st,stm32-xspi-psram";
-		reg = <0x90000000 DT_SIZE_M(32)>; /* 256 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
 		fixed-latency;
 		io-x16-mode;
 		read-latency = <4>;
@@ -272,9 +274,10 @@ zephyr_udc0: &usbotg_hs1 {
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	mx66uw1g45g: ospi-nor-flash@70000000 {
+	mx66uw1g45g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0x70000000 DT_SIZE_M(128)>; /* 1 Gbits */
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1Gbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;

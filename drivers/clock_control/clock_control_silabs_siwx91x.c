@@ -13,6 +13,7 @@
 #include "rsi_rom_ulpss_clk.h"
 #include "rsi_rom_clks.h"
 #include "rsi_sysrtc.h"
+#include "rsi_pll.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
@@ -77,6 +78,10 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		 */
 		rsi_sysrtc_clk_set(RSI_SYSRTC_CLK_32kHz_Xtal, 0);
 		break;
+	case SIWX91X_CLK_GSPI:
+		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
+		RSI_CLK_GspiClkConfig(M4CLK, GSPI_INTF_PLL_CLK);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -140,6 +145,9 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		return 0;
 	case SIWX91X_CLK_WATCHDOG:
 		*rate = LF_FSM_CLOCK_FREQUENCY;
+		return 0;
+	case SIWX91X_CLK_GSPI:
+		*rate = RSI_CLK_GetBaseClock(M4_GSPI);
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
