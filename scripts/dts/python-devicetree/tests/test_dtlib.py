@@ -30,7 +30,9 @@ def uncomment(dts):
     '''Trim added comments from a DT string.'''
 
     # remove node comments, including leading empty line
+    # but keep the one before the root node
     dts = re.sub(r'\n\n[ \t]*/\*.*?\*/\n', '\n', dts, flags=re.DOTALL)
+    dts = re.sub(r'\n/ {\n', r'\n\n/ {\n', dts)
 
     # remove property comments
     dts = re.sub(r'[ \t]*/\*.*?\*/\n', '\n', dts)
