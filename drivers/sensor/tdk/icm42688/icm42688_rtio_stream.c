@@ -118,6 +118,7 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 		.int_status = drv_data->int_status,
 		.gyro_odr = drv_data->cfg.gyro_odr,
 		.accel_odr = drv_data->cfg.accel_odr,
+		.rtc_freq = drv_data->cfg.rtc_freq,
 	};
 	uint32_t buf_avail = buf_len;
 
