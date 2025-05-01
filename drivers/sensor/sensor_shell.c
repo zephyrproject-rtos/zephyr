@@ -601,19 +601,19 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char *argv[])
+static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 	int rc;
 
 	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
-		shell_error(shell_ptr, "Sensor device unknown (%s)", argv[1]);
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;
 	}
 
 	if (!device_is_sensor(dev)) {
-		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
 		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
@@ -626,31 +626,31 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 		struct sensor_value value = {0};
 
 		if (channel < 0) {
-			shell_error(shell_ptr, "Channel '%s' unknown", argv[i]);
+			shell_error(sh, "Channel '%s' unknown", argv[i]);
 			return -EINVAL;
 		}
 		if (attr < 0) {
-			shell_error(shell_ptr, "Attribute '%s' unknown", argv[i + 1]);
+			shell_error(sh, "Attribute '%s' unknown", argv[i + 1]);
 			return -EINVAL;
 		}
 		if (parse_sensor_value(argv[i + 2], &value)) {
-			shell_error(shell_ptr, "Sensor value '%s' invalid", argv[i + 2]);
+			shell_error(sh, "Sensor value '%s' invalid", argv[i + 2]);
 			return -EINVAL;
 		}
 
 		rc = sensor_attr_set(dev, channel, attr, &value);
 		if (rc) {
-			shell_error(shell_ptr, "Failed to set channel(%s) attribute(%s): %d",
+			shell_error(sh, "Failed to set channel(%s) attribute(%s): %d",
 				    sensor_channel_name[channel], sensor_attribute_name[attr], rc);
 			continue;
 		}
-		shell_info(shell_ptr, "%s channel=%s, attr=%s set to value=%s", dev->name,
+		shell_info(sh, "%s channel=%s, attr=%s set to value=%s", dev->name,
 			   sensor_channel_name[channel], sensor_attribute_name[attr], argv[i + 2]);
 	}
 	return 0;
 }
 
-static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const struct device *dev,
+static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct device *dev,
 					const char *channel_name, const char *attr_name,
 					bool print_missing_attribute)
 {
@@ -662,11 +662,11 @@ static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const str
 	int rc;
 
 	if (channel < 0) {
-		shell_error(shell_ptr, "Channel '%s' unknown", channel_name);
+		shell_error(sh, "Channel '%s' unknown", channel_name);
 		return;
 	}
 	if (attr < 0) {
-		shell_error(shell_ptr, "Attribute '%s' unknown", attr_name);
+		shell_error(sh, "Attribute '%s' unknown", attr_name);
 		return;
 	}
 
@@ -676,35 +676,35 @@ static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const str
 		if (rc == -EINVAL && !print_missing_attribute) {
 			return;
 		}
-		shell_error(shell_ptr, "Failed to get channel(%s) attribute(%s): %d",
+		shell_error(sh, "Failed to get channel(%s) attribute(%s): %d",
 			    sensor_channel_name[channel], sensor_attribute_name[attr], rc);
 		return;
 	}
 
-	shell_info(shell_ptr, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
+	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
 		   sensor_channel_name[channel], sensor_attribute_name[attr],
 		   sensor_value_to_double(&value));
 }
 
-static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char *argv[])
+static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
 	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
-		shell_error(shell_ptr, "Sensor device unknown (%s)", argv[1]);
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;
 	}
 
 	if (!device_is_sensor(dev)) {
-		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
 		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
 	if (argc > 2) {
 		for (size_t i = 2; i < argc; i += 2) {
-			cmd_sensor_attr_get_handler(shell_ptr, dev, argv[i], argv[i + 1],
+			cmd_sensor_attr_get_handler(sh, dev, argv[i], argv[i + 1],
 						    /*print_missing_attribute=*/true);
 		}
 	} else {
@@ -712,7 +712,7 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 		     ++channel_idx) {
 			for (size_t attr_idx = 0; attr_idx < ARRAY_SIZE(sensor_attribute_name);
 			     ++attr_idx) {
-				cmd_sensor_attr_get_handler(shell_ptr, dev,
+				cmd_sensor_attr_get_handler(sh, dev,
 							    sensor_channel_name[channel_idx],
 							    sensor_attribute_name[attr_idx],
 							    /*print_missing_attribute=*/false);
