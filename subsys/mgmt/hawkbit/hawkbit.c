@@ -78,7 +78,7 @@ static bool hawkbit_initialized;
 static struct hawkbit_config {
 	int32_t action_id;
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	char server_addr[DNS_MAX_NAME_SIZE + 1];
+	char server_addr[CONFIG_DNS_RESOLVER_MAX_QUERY_LEN + 1];
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
