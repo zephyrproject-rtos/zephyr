@@ -57,7 +57,7 @@
 
 LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
-#ifdef CONFIG_REBOOT
+#if defined(CONFIG_REBOOT) && defined(CONFIG_MULTITHREADING)
 static void os_mgmt_reset_work_handler(struct k_work *work);
 
 K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
@@ -354,12 +354,14 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 /**
  * Command handler: os reset
  */
+#ifdef CONFIG_MULTITHREADING
 static void os_mgmt_reset_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
 	sys_reboot(SYS_REBOOT_WARM);
 }
+#endif
 
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
@@ -398,8 +400,12 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	}
 #endif
 
+#ifdef CONFIG_MULTITHREADING
 	/* Reboot the system from the system workqueue thread. */
 	k_work_schedule(&os_mgmt_reset_work, K_MSEC(CONFIG_MCUMGR_GRP_OS_RESET_MS));
+#else
+	sys_reboot(SYS_REBOOT_WARM);
+#endif
 
 	return 0;
 }
