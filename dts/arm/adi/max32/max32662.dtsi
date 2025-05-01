@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <adi/max32/max32xxx-m4.dtsi>
 #include <zephyr/dt-bindings/dma/max32662_dma.h>
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_K(256)>;
-};
-
-&sram0 {
-	reg = <0x20000000 DT_SIZE_K(16)>;
 };
 
 /delete-node/ &clk_iso;
@@ -42,6 +38,11 @@
 /* MAX32662 extra peripherals. */
 / {
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(16)>;
+		};
+
 		sram1: memory@20004000 {
 			compatible = "mmio-sram";
 			reg = <0x20004000 DT_SIZE_K(16)>;
