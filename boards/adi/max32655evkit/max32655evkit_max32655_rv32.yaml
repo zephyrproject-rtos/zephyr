@@ -5,5 +5,9 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+supported:
+  - gpio
+  - serial
+  - flash
 ram: 16
 flash: 256
