@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_PM_DEVICE_H_
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -147,10 +148,15 @@ struct pm_device_base {
 	/** Device usage count */
 	uint32_t usage;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
-#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-	/** Power Domain it belongs */
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
 	const struct device *domain;
-#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+	const struct device **domain_children;
+	uint16_t domain_children_size;
+#elif defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	const struct device *domain;
+	const struct device *const *domain_children;
+	uint16_t domain_children_size;
+#endif
 };
 
 /**
@@ -205,13 +211,57 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
-#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-#define	Z_PM_DEVICE_POWER_DOMAIN_INIT(_node_id)			\
-	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(_node_id,	\
-				   power_domains)),
+/**
+ * Get the name of device PM resources.
+ *
+ * @param dev_id Device id.
+ */
+#define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
+
+#define Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id) \
+	_CONCAT(dev_id, _domain_children)
+
+#define Z_PM_DEVICE_DOMAIN_DYNAMIC_NUM CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
+
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DEV_ID(dev_id)					\
+	static const struct device *Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id)			\
+	[Z_PM_DEVICE_DOMAIN_DYNAMIC_NUM];
+
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DT(node_id, dev_id)					\
+	static const struct device *Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id)			\
+	[DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(node_id) + Z_PM_DEVICE_DOMAIN_DYNAMIC_NUM] = {	\
+		DT_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(node_id, DEVICE_DT_GET, (,))		\
+	};
 #else
-#define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
-#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DEV_ID(dev_id) \
+	static const struct device *const Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id)[0];
+
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DT(node_id, dev_id)					\
+	static const struct device *const Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id)[] = {	\
+		DT_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(node_id, DEVICE_DT_GET, (,))		\
+	};
+#endif
+
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN(node_id, dev_id)					\
+	COND_CODE_1(										\
+		DT_NODE_EXISTS(node_id),							\
+		(Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DT(node_id, dev_id)),			\
+		(Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN_DEV_ID(dev_id))				\
+	)
+#else
+#define Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN(dev_id, node_id)
+#endif
+
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+#define Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id, dev_id)						\
+	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, power_domains)),			\
+	.domain_children = Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id),				\
+	.domain_children_size = ARRAY_SIZE(Z_PM_DEVICE_DOMAIN_CHILDREN_NAME(dev_id)),
+#else
+#define Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id, dev_id)
+#endif
 
 /**
  * @brief Utility macro to initialize #pm_device_base flags
@@ -235,17 +285,17 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
  * it may not be defined on all devices.
  *
- * @param obj Name of the #pm_device_base structure being initialized.
+ * @param dev_id Device id.
  * @param node_id Devicetree node for the initialized device (can be invalid).
  * @param pm_action_cb Device PM control callback function.
  * @param _flags Additional flags passed to the structure.
  */
-#define Z_PM_DEVICE_BASE_INIT(obj, node_id, pm_action_cb, _flags)	     \
+#define Z_PM_DEVICE_BASE_INIT(dev_id, node_id, pm_action_cb, _flags)	     \
 	{								     \
 		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id) | (_flags)), \
 		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.action_cb = pm_action_cb,				     \
-		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id, dev_id)		     \
 	}
 
 /**
@@ -254,23 +304,16 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
  * it may not be defined on all devices.
  *
- * @param obj Name of the #pm_device_base structure being initialized.
+ * @param dev_id Device id.
  * @param node_id Devicetree node for the initialized device (can be invalid).
  * @param pm_action_cb Device PM control callback function.
  */
-#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb, isr_safe)			\
-	{									\
-		.base = Z_PM_DEVICE_BASE_INIT(obj, node_id, pm_action_cb,	\
-				isr_safe ? BIT(PM_DEVICE_FLAG_ISR_SAFE) : 0),	\
-		COND_CODE_1(isr_safe, (), (Z_PM_DEVICE_RUNTIME_INIT(obj)))	\
+#define Z_PM_DEVICE_INIT(dev_id, node_id, pm_action_cb, isr_safe)				\
+	{											\
+		.base = Z_PM_DEVICE_BASE_INIT(dev_id, node_id, pm_action_cb,			\
+				isr_safe ? BIT(PM_DEVICE_FLAG_ISR_SAFE) : 0),			\
+		COND_CODE_1(isr_safe, (), (Z_PM_DEVICE_RUNTIME_INIT(Z_PM_DEVICE_NAME(dev_id))))	\
 	}
-
-/**
- * Get the name of device PM resources.
- *
- * @param dev_id Device id.
- */
-#define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
 
 #ifdef CONFIG_PM
 /**
@@ -301,10 +344,10 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb, isr_safe)		\
 	Z_PM_DEVICE_DEFINE_SLOT(dev_id);					\
+	Z_PM_DEVICE_DEFINE_DOMAIN_CHILDREN(node_id, dev_id);			\
 	static struct COND_CODE_1(isr_safe, (pm_device_isr), (pm_device))	\
 		Z_PM_DEVICE_NAME(dev_id) =					\
-		Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
-				 pm_action_cb, isr_safe)
+		Z_PM_DEVICE_INIT(dev_id, node_id, pm_action_cb, isr_safe)
 
 /**
  * Get a reference to the device PM resources.

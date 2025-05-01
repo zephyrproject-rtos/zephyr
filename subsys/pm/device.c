@@ -96,114 +96,116 @@ int pm_device_action_run(const struct device *dev,
 	return 0;
 }
 
-static int power_domain_add_or_remove(const struct device *dev,
-				      const struct device *domain,
-				      bool add)
-{
-#if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
-	device_handle_t *rv = domain->deps;
-	device_handle_t dev_handle = -1;
-	size_t i = 0, region = 0;
-
-	/*
-	 * Supported devices are stored as device handle and not
-	 * device pointers. So, it is necessary to find what is
-	 * the handle associated to the given device.
-	 */
-	STRUCT_SECTION_FOREACH(device, iter_dev) {
-		if (iter_dev == dev) {
-			dev_handle = i + 1;
-			break;
-		}
-
-		i++;
-	}
-
-	/*
-	 * The last part is to find an available slot in the
-	 * supported section of handles array and replace it
-	 * with the device handle.
-	 */
-	while (region != 2) {
-		if (*rv == Z_DEVICE_DEPS_SEP) {
-			region++;
-		}
-		rv++;
-	}
-
-	i = 0;
-	while (rv[i] != Z_DEVICE_DEPS_ENDS) {
-		if (add == false) {
-			if (rv[i] == dev_handle) {
-				dev->pm_base->domain = NULL;
-				rv[i] = DEVICE_HANDLE_NULL;
-				return 0;
-			}
-		} else {
-			if (rv[i] == DEVICE_HANDLE_NULL) {
-				dev->pm_base->domain = domain;
-				rv[i] = dev_handle;
-				return 0;
-			}
-		}
-		++i;
-	}
-
-	return add ? -ENOSPC : -ENOENT;
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(domain);
-	ARG_UNUSED(add);
-
-	return -ENOSYS;
-#endif
-}
-
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
 int pm_device_power_domain_remove(const struct device *dev,
 				  const struct device *domain)
 {
-	return power_domain_add_or_remove(dev, domain, false);
+	uint16_t i;
+
+	if (dev->pm_base == NULL || domain->pm_base == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (dev->pm_base->domain != domain) {
+		return -ENOENT;
+	}
+
+	for (i = 0; i < domain->pm_base->domain_children_size; i++) {
+		if (domain->pm_base->domain_children[i] == dev) {
+			domain->pm_base->domain_children[i] = NULL;
+			break;
+		}
+	}
+
+	dev->pm_base->domain = NULL;
+	return 0;
 }
 
 int pm_device_power_domain_add(const struct device *dev,
 			       const struct device *domain)
 {
-	return power_domain_add_or_remove(dev, domain, true);
-}
+	uint16_t i;
 
-#ifdef CONFIG_DEVICE_DEPS
-struct pm_visitor_context {
-	pm_device_action_failed_cb_t failure_cb;
-	enum pm_device_action action;
-};
+	if (dev->pm_base == NULL || domain->pm_base == NULL) {
+		return -ENOTSUP;
+	}
 
-static int pm_device_children_visitor(const struct device *dev, void *context)
-{
-	struct pm_visitor_context *visitor_context = context;
-	int rc;
+	if (dev->pm_base->domain != NULL) {
+		return -EALREADY;
+	}
 
-	rc = pm_device_action_run(dev, visitor_context->action);
-	if ((visitor_context->failure_cb != NULL) && (rc < 0)) {
-		/* Stop the iteration if the callback requests it */
-		if (!visitor_context->failure_cb(dev, rc)) {
-			return rc;
+	for (i = 0; i < domain->pm_base->domain_children_size; i++) {
+		if (domain->pm_base->domain_children[i] == NULL) {
+			domain->pm_base->domain_children[i] = dev;
+			break;
 		}
 	}
+
+	if (i == domain->pm_base->domain_children_size) {
+		return -ENOMEM;
+	}
+
+	dev->pm_base->domain = domain;
 	return 0;
 }
 
+#else
+
+int pm_device_power_domain_remove(const struct device *dev,
+				  const struct device *domain)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
+	return -ENOSYS;
+}
+
+int pm_device_power_domain_add(const struct device *dev,
+			       const struct device *domain)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
+	return -ENOSYS;
+}
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC */
+
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
 void pm_device_children_action_run(const struct device *dev,
 				   enum pm_device_action action,
 				   pm_device_action_failed_cb_t failure_cb)
 {
-	struct pm_visitor_context visitor_context = {
-		.failure_cb = failure_cb,
-		.action = action
-	};
+	struct pm_device_base *domain_pm_base;
+	const struct device *const *domain_children;
+	uint16_t domain_children_size;
+	const struct device *domain_child;
+	int ret;
 
-	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
+	domain_pm_base = dev->pm_base;
+
+	if (domain_pm_base == NULL) {
+		return;
+	}
+
+	domain_children = domain_pm_base->domain_children;
+	domain_children_size = domain_pm_base->domain_children_size;
+
+	for (uint16_t i = 0; i < domain_children_size; i++) {
+		domain_child = domain_children[i];
+
+		if (domain_child == NULL) {
+			continue;
+		}
+
+		ret = pm_device_action_run(domain_child, action);
+		if (ret == 0 || failure_cb == NULL) {
+			continue;
+		}
+
+		if (!failure_cb(domain_child, ret)) {
+			return;
+		}
+	}
 }
-#endif
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
