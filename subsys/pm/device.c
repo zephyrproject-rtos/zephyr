@@ -216,6 +216,28 @@ void pm_device_children_action_run(const struct device *dev,
 }
 #endif
 
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+void pm_device_domain_children_turn_on(const struct device *dev)
+{
+	(void)pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
+}
+
+void pm_device_domain_children_turn_off(const struct device *dev)
+{
+	(void)pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
+}
+#else
+void pm_device_domain_children_turn_on(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+void pm_device_domain_children_turn_off(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
 {
