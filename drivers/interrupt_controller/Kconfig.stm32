@@ -5,12 +5,12 @@
 
 if SOC_FAMILY_STM32
 
-config EXTI_STM32
-	bool "External Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
+config GPIO_INTC_STM32
+	bool "GPIO Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
 	default y
 	depends on DT_HAS_ST_STM32_EXTI_ENABLED
 	help
-	  Enable EXTI driver for STM32 line of MCUs
+	  Enable GPIO interrupt controller driver for STM32 family of MCUs
 
 config GPIO_INTC_STM32WB0
 	bool "GPIO Interrupt Controller Driver for STM32WB0 series"
