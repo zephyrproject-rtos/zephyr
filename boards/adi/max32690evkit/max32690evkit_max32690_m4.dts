@@ -24,6 +24,8 @@
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
+		zephyr,rv32-flash = &flash1;
+		zephyr,code-rv32-partition = &rv32_partition;
 		zephyr,display = &st7735;
 		zephyr,canbus = &can0;
 	};
@@ -88,6 +90,10 @@
 	};
 };
 
+&dma0 {
+	status = "okay";
+};
+
 &hpb {
 	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_rwds_p1_14 &hyp_d0_p1_12 &hyp_d1_p1_15
 		     &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
@@ -102,26 +108,6 @@
 		config-regs = <1>;
 		config-reg-vals = <2>;
 	};
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpio3 {
-	status = "okay";
-};
-
-&gpio4 {
-	status = "okay";
 };
 
 &uart2 {
@@ -161,4 +147,6 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 	pinctrl-0 = <&can0b_tx_p2_23 &can0b_rx_p2_22>;
 	pinctrl-names = "default";
+	bitrate = <500000>;
+	sample-point = <800>;
 };
