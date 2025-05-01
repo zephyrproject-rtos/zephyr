@@ -70,15 +70,15 @@ choice MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_CHOICE
 	  Select what will serve as thread name in "taskstat" response.
 	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
-		bool "Thread name"
-		depends on THREAD_NAME
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+	bool "Thread name"
+	depends on THREAD_NAME
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME
-		bool "Thread index"
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+	bool "Thread index"
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
-		bool "Thread priority"
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	bool "Thread priority"
 
 endchoice
 
