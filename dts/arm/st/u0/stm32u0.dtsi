@@ -64,7 +64,7 @@
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32-msi-clock";
-			msi-range = <4>; /* 4MHz (reset value) */
+			msi-range = <6>; /* 4MHz (reset value) */
 			status = "disabled";
 		};
 
