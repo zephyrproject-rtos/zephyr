@@ -1001,9 +1001,7 @@ static void autohandler(struct k_work *work)
 	case UPDATEHUB_UNCONFIRMED_IMAGE:
 		LOG_ERR("Image is unconfirmed. Rebooting to revert back to previous"
 			"confirmed image.");
-		if (report(UPDATEHUB_STATE_ERROR) < 0) {
-			LOG_ERR("Failed to report rollback error to server");
-		}
+		updatehub_report_error();
 		LOG_PANIC();
 		updatehub_reboot();
 		break;
@@ -1049,5 +1047,10 @@ void z_impl_updatehub_autohandler(void)
 
 int z_impl_updatehub_report_error(void)
 {
-	return report(UPDATEHUB_STATE_ERROR);
+	int ret = report(UPDATEHUB_STATE_ERROR);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to report rollback error to server");
+	}
+	return ret;
 }
