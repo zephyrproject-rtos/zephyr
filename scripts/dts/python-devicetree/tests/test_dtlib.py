@@ -530,7 +530,9 @@ def test_property_offset_labels():
 /dts-v1/;
 
 / {
-	a = l01: l02: < l03: &node l04: l05: 0x2 l06: l07: l08: >, [ l09: 03 l10: l11: 04 l12: l13: l14: ], "A";
+	a = l01: l02: < l03: &node l04: l05: 0x2 l06: l07: l08: >,
+	    [ l09: 03 l10: l11: 04 l12: l13: l14: ],
+	    "A";
 	b = < 0x0 l23: l24: >;
 	node: node {
 		phandle = < 0x1 >;
@@ -610,8 +612,11 @@ def test_node_path_references():
 
 / {
 	a = &label;
-	b = [ 01 ], &label;
-	c = [ 01 ], &label, < 0x2 >;
+	b = [ 01 ],
+	    &label;
+	c = [ 01 ],
+	    &label,
+	    < 0x2 >;
 	d = &{/abc};
 	label: abc {
 		e = &label;
@@ -867,7 +872,12 @@ def test_mixed_assign():
 /dts-v1/;
 
 / {
-	x = [ FF FF ], &abc, < 0xff &abc 0xff &abc >, &abc, [ FF FF ], "abc";
+	x = [ FF FF ],
+	    &abc,
+	    < 0xff &abc 0xff &abc >,
+	    &abc,
+	    [ FF FF ],
+	    "abc";
 	abc: abc {
 		phandle = < 0x1 >;
 	};
@@ -1180,7 +1190,8 @@ def test_omit_if_no_ref():
 /dts-v1/;
 
 / {
-	x = < &{/referenced} >, &referenced2;
+	x = < &{/referenced} >,
+	    &referenced2;
 	referenced {
 		phandle = < 0x1 >;
 	};
@@ -1775,7 +1786,7 @@ def test_prop_type_casting():
         "strings",
         "expected property 'strings' on / in .* to be assigned with " +
         re.escape("'strings = \"string\";', ")+
-        re.escape("not 'strings = \"foo\", \"bar\", \"baz\";'"))
+        "not 'strings = \"foo\",\\s*\"bar\",\\s*\"baz\";'")
     verify_to_string_error_matches(
         "invalid_string",
         re.escape(r"value of property 'invalid_string' (b'\xff\x00') on / ") +
@@ -2076,7 +2087,9 @@ def test_duplicate_labels():
 
 / {
 	label: foo {
-		x = &{/foo}, &label, < &label >;
+		x = &{/foo},
+		    &label,
+		    < &label >;
 		phandle = < 0x1 >;
 	};
 };
@@ -2175,7 +2188,8 @@ def test_names():
 /dts-v1/;
 
 / {
-	aA0,._+*#?- = &_, &{/aA0,._+@-};
+	aA0,._+*#?- = &_,
+	              &{/aA0,._+@-};
 	+ = [ 00 ];
 	* = [ 02 ];
 	- = [ 01 ];
@@ -2232,7 +2246,9 @@ def test_dense_input():
 / {
 	l1: l2: foo {
 		l3: l4: bar {
-			l5: x = l6: [ l7: 01 l8: 02 l9: ], [ 03 ], "a";
+			l5: x = l6: [ l7: 01 l8: 02 l9: ],
+			        [ 03 ],
+			        "a";
 		};
 	};
 };
