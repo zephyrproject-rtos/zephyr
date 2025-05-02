@@ -547,64 +547,69 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
+	if (error) {
+		goto release;
+	}
 
-	if (error == 0 && !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		error = request_clock(dev);
+		if (error) {
+			goto release;
+		}
 	}
 
-	if (error == 0) {
-		dev_data->busy = true;
+	dev_data->busy = true;
 
-		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-			error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
-						      dev_config->wake_pin);
-			if (error == -ETIMEDOUT) {
-				LOG_WRN("Waiting for WAKE acknowledgment timed out");
-				/* If timeout occurs, try to perform the transfer
-				 * anyway, just in case the slave device was unable
-				 * to signal that it was already awaken and prepared
-				 * for the transfer.
-				 */
-			}
-		}
-
-		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
-		if (NRF_SPIM_IS_320MHZ_SPIM(reg)) {
-			nrfy_spim_enable(reg);
-		}
-		spi_context_cs_control(&dev_data->ctx, true);
-
-		transfer_next_chunk(dev);
-
-		error = spi_context_wait_for_completion(&dev_data->ctx);
+	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
+		error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
+						dev_config->wake_pin);
 		if (error == -ETIMEDOUT) {
-			/* Set the chunk length to 0 so that event_handler()
-			 * knows that the transaction timed out and is to be
-			 * aborted.
+			LOG_WRN("Waiting for WAKE acknowledgment timed out");
+			/* If timeout occurs, try to perform the transfer
+			 * anyway, just in case the slave device was unable
+			 * to signal that it was already awaken and prepared
+			 * for the transfer.
 			 */
-			dev_data->chunk_len = 0;
-			/* Abort the current transfer by deinitializing
-			 * the nrfx driver.
-			 */
-			nrfx_spim_uninit(&dev_config->spim);
-			dev_data->initialized = false;
-
-			/* Make sure the transaction is finished (it may be
-			 * already finished if it actually did complete before
-			 * the nrfx driver was deinitialized).
-			 */
-			finish_transaction(dev, -ETIMEDOUT);
-
-			/* Clean up the driver state. */
-			k_sem_reset(&dev_data->ctx.sync);
-#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-			anomaly_58_workaround_clear(dev_data);
-#endif
-		} else if (error) {
-			finalize_spi_transaction(dev, true);
 		}
 	}
 
+	spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
+	if (NRF_SPIM_IS_320MHZ_SPIM(reg)) {
+		nrfy_spim_enable(reg);
+	}
+	spi_context_cs_control(&dev_data->ctx, true);
+
+	transfer_next_chunk(dev);
+
+	error = spi_context_wait_for_completion(&dev_data->ctx);
+	if (error == -ETIMEDOUT) {
+		/* Set the chunk length to 0 so that event_handler()
+		 * knows that the transaction timed out and is to be
+		 * aborted.
+		 */
+		dev_data->chunk_len = 0;
+		/* Abort the current transfer by deinitializing
+		 * the nrfx driver.
+		 */
+		nrfx_spim_uninit(&dev_config->spim);
+		dev_data->initialized = false;
+
+		/* Make sure the transaction is finished (it may be
+		 * already finished if it actually did complete before
+		 * the nrfx driver was deinitialized).
+		 */
+		finish_transaction(dev, -ETIMEDOUT);
+
+		/* Clean up the driver state. */
+		k_sem_reset(&dev_data->ctx.sync);
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+		anomaly_58_workaround_clear(dev_data);
+#endif
+	} else if (error) {
+		finalize_spi_transaction(dev, true);
+	}
+
+release:
 	spi_context_release(&dev_data->ctx, error);
 	if (error || !asynchronous) {
 		pm_device_runtime_put(dev);
