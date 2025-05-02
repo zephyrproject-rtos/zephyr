@@ -51,7 +51,7 @@ static void set_mode_standby(uint8_t state)
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
-	case PM_STATE_ACTIVE:
+	case PM_STATE_RUNTIME_IDLE:
 		set_mode_run(substate_id);
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:

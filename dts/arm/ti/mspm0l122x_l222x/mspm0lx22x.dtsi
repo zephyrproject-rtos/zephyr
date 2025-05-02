@@ -38,51 +38,69 @@
 		power-states {
 			run0: runsleep0 {
 				compatible = "zephyr,power-state";
-				power-state-name = "active";
+				power-state-name = "runtime-idle";
 				substate-id = <1>;
+				exit-latency-us = <2>; /* 1.5us */
+				min-residency-us = <5000>;
 			};
 			run1: runsleep1 {
 				compatible = "zephyr,power-state";
-				power-state-name = "active";
+				power-state-name = "runtime-idle";
 				substate-id = <2>;
+				exit-latency-us = <3>; /* 2.1us */
+				min-residency-us = <5000>;
 			};
 			run2: runsleep2 {
 				compatible = "zephyr,power-state";
-				power-state-name = "active";
+				power-state-name = "runtime-idle";
 				substate-id = <3>;
+				exit-latency-us = <3>; /* 2.5us */
+				min-residency-us = <5000>;
 			};
 
 			stop0: stop0 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
+				exit-latency-us = <13>; /* 12.5us */
+				min-residency-us = <7500>;
 			};
 			stop1: stop1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
+				exit-latency-us = <15>; /* 14.6us */
+				min-residency-us = <7500>;
 			};
 			stop2: stop2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
+				exit-latency-us = <14>; /* 13.5us */
+				min-residency-us = <7500>;
 			};
 
 			stdby0: standby0 {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				substate-id = <1>;
+				exit-latency-us = <16>; /* 15.7us */
+				min-residency-us = <10000>;
 			};
 
 			stdby1: standby1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				substate-id = <2>;
+				exit-latency-us = <16>; /* 15.7us */
+				min-residency-us = <10000>;
 			};
 
 			shutdown: shutdown {
 				compatible = "zephyr,power-state";
 				power-state-name = "soft-off";
+				exit-latency-us = <322>; /* 322us */
+				min-residency-us = <100000>;
 			};
 
 		};
