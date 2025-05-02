@@ -20,4 +20,3 @@ supported:
 testing:
   ignore_tags:
     - bluetooth
-vendor: nxp

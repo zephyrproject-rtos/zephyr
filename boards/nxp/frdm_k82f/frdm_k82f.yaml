@@ -22,4 +22,3 @@ supported:
   - spi
   - usb_device
   - watchdog
-vendor: nxp

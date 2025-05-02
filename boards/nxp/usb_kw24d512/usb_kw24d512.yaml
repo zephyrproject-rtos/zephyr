@@ -11,4 +11,3 @@ supported:
   - flash
   - usb_device
   - watchdog
-vendor: nxp

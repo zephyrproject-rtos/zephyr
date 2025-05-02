@@ -14,4 +14,3 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
-vendor: nxp

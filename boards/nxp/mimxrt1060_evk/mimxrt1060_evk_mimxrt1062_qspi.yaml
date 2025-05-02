@@ -33,4 +33,3 @@ supported:
   - usb_device
   - usbd
   - watchdog
-vendor: nxp

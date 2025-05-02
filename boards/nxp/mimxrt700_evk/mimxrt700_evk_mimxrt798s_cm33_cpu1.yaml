@@ -18,4 +18,3 @@ supported:
   - gpio
   - uart
   - adc
-vendor: nxp

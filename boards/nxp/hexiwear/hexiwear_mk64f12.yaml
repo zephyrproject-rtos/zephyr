@@ -13,4 +13,3 @@ supported:
   - i2c
   - pwm
   - watchdog
-vendor: nxp

@@ -22,4 +22,3 @@ supported:
   - pwm
   - usb_device
   - usbd
-vendor: nxp

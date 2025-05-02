@@ -28,4 +28,3 @@ supported:
   - sdhc
   - usb_device
   - watchdog
-vendor: nxp

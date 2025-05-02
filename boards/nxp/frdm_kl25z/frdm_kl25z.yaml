@@ -18,4 +18,3 @@ supported:
   - flash
   - i2c
   - usb_device
-vendor: nxp

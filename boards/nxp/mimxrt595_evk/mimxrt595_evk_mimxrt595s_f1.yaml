@@ -7,4 +7,3 @@ toolchain:
 testing:
   only_tags:
     - kernel
-vendor: nxp

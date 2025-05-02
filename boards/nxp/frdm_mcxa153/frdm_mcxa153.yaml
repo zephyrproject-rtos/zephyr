@@ -20,4 +20,3 @@ supported:
   - gpio
   - pwm
   - uart
-vendor: nxp

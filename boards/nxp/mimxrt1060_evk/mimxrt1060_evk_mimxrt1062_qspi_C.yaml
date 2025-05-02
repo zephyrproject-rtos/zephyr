@@ -30,4 +30,3 @@ supported:
   - spi
   - usbd
   - watchdog
-vendor: nxp

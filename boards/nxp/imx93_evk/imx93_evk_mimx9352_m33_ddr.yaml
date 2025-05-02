@@ -13,4 +13,3 @@ flash: 0
 supported:
   - gpio
   - uart
-vendor: nxp
