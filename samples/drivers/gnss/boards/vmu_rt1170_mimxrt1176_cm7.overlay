@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		gnss = &lpuart3;
+		gnss = &gnss;
 	};
 };
 
@@ -14,7 +14,7 @@
 	status = "okay";
 	current-speed = <115200>;
 
-	u_blox_m8: u-blox,m8 {
+	gnss: gnss {
 		status = "okay";
 		compatible = "u-blox,m8";
 		uart-baudrate = <115200>;
