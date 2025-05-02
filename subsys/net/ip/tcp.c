@@ -3316,7 +3316,7 @@ next_state:
 
 		break;
 	case TCP_CLOSE_WAIT:
-		tcp_out(conn, FIN);
+		tcp_out(conn, FIN | ACK);
 		conn_seq(conn, + 1);
 		next = TCP_LAST_ACK;
 		tcp_setup_last_ack_timer(conn);
