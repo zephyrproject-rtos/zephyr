@@ -60,7 +60,7 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: d4f9036a88e53080bf2b186afa5289f9c77a0f73
+      revision: pull/96/head
       path: modules/lang/rust
       remote: upstream
       groups:
