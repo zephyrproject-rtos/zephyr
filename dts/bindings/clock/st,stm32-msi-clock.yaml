@@ -19,7 +19,7 @@ properties:
       - 1 # range 1 around 200 kHz
       - 2 # range 2 around 400 kHz
       - 3 # range 3 around 800 kHz
-      - 4 # range 4 around 1M Hz
+      - 4 # range 4 around 1 MHz
       - 5 # range 5 around 2 MHz
       - 6 # range 6 around 4 MHz (reset value)
       - 7 # range 7 around 8 MHz
