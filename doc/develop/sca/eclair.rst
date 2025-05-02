@@ -135,11 +135,15 @@ default ecd file. Following additional reports and report formats can be generat
 
 * Summary report in ODT format.
 
+* Summary report in HTML format.
+
 * Detailed reports in txt format.
 
 * Detailed report in DOC format.
 
 * Detailed report in ODT format.
+
+* Detailed report in HTML format.
 
 Related CMake options:
 
@@ -149,9 +153,11 @@ Related CMake options:
 * ``ECLAIR_SUMMARY_TXT``
 * ``ECLAIR_SUMMARY_DOC``
 * ``ECLAIR_SUMMARY_ODT``
+* ``ECLAIR_SUMMARY_HTML``
 * ``ECLAIR_FULL_TXT``
 * ``ECLAIR_FULL_DOC``
 * ``ECLAIR_FULL_ODT``
+* ``ECLAIR_FULL_HTML``
 
 Detail level of full reports
 ============================
