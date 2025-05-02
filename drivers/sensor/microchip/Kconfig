@@ -1,9 +1,11 @@
 # Copyright (c) 2024 Analog Devices, Inc.
+# Copyright (c) 2025 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/microchip/mchp_tach_xec/Kconfig"
 source "drivers/sensor/microchip/mcp9600/Kconfig"
 source "drivers/sensor/microchip/mcp970x/Kconfig"
+source "drivers/sensor/microchip/mtch9010/Kconfig"
 source "drivers/sensor/microchip/tcn75a/Kconfig"
 # zephyr-keep-sorted-stop
