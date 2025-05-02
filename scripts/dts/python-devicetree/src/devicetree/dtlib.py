@@ -207,7 +207,8 @@ class Node:
         s += f"{self.name} {{\n"
 
         for prop in self.props.values():
-            s += "\t" + str(prop) + "\n"
+            prop_str = textwrap.indent(str(prop), "\t")
+            s += prop_str + "\n"
 
         for child in self.nodes.values():
             s += textwrap.indent(child.__str__(), "\t") + "\n"
@@ -588,6 +589,7 @@ class Property:
             return s + ";"
 
         s += " ="
+        newline = "\n" + " " * len(s)
 
         for i, (pos, marker_type, ref) in enumerate(self._markers):
             if i < len(self._markers) - 1:
@@ -602,11 +604,11 @@ class Property:
                 # end - 1 to strip off the null terminator
                 s += f' "{_decode_and_escape(self.value[pos:end - 1])}"'
                 if end != len(self.value):
-                    s += ","
+                    s += f",{newline}"
             elif marker_type is _MarkerType.PATH:
                 s += " &" + ref
                 if end != len(self.value):
-                    s += ","
+                    s += f",{newline}"
             else:
                 # <> or []
 
@@ -638,7 +640,7 @@ class Property:
 
                     s += _N_BYTES_TO_END_STR[elm_size]
                     if pos != len(self.value):
-                        s += ","
+                        s += f",{newline}"
 
         return s + ";"
 
