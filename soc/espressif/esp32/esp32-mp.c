@@ -22,6 +22,7 @@
 #ifdef CONFIG_SMP
 
 #include <ipi.h>
+#include <ksched.h>
 
 #ifndef CONFIG_SOC_ESP32_PROCPU
 static struct k_spinlock loglock;
