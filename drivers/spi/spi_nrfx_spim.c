@@ -160,7 +160,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 		nrfy_spim_disable(reg);
 	}
 
-	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (!pm_device_runtime_is_enabled(dev)) {
 		release_clock(dev);
 	}
 }
@@ -551,7 +551,7 @@ static int transceive(const struct device *dev,
 		goto release;
 	}
 
-	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (!pm_device_runtime_is_enabled(dev)) {
 		error = request_clock(dev);
 		if (error) {
 			goto release;
@@ -680,7 +680,7 @@ static int spim_resume(const struct device *dev)
 	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
 #endif
 
-	return IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) ? request_clock(dev) : 0;
+	return pm_device_runtime_is_enabled(dev) ? request_clock(dev) : 0;
 }
 
 static void spim_suspend(const struct device *dev)
@@ -693,7 +693,7 @@ static void spim_suspend(const struct device *dev)
 		dev_data->initialized = false;
 	}
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (pm_device_runtime_is_enabled(dev)) {
 		release_clock(dev);
 	}
 
