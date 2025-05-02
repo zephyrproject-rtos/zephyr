@@ -8,3 +8,56 @@
 &standby {
 	status = "okay";
 };
+
+/* Disable unused nodes on power_mode3_domain */
+&dma0 {
+	status = "disabled";
+};
+
+&flexcomm1 {
+	status = "disabled";
+};
+
+&hci {
+	status = "disabled";
+};
+
+&hdlc_rcp_if {
+	status = "disabled";
+};
+
+&lcdic {
+	status = "disabled";
+};
+
+&imu {
+	status = "disabled";
+};
+
+&sctimer {
+	status = "disabled";
+};
+
+&trng {
+	status = "disabled";
+};
+
+&usb_otg {
+	status = "disabled";
+};
+
+&enet_mac {
+	status = "disabled";
+};
+
+&enet_mdio {
+	status = "disabled";
+};
+
+&dac0 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
