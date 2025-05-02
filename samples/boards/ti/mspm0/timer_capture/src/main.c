@@ -75,9 +75,10 @@ int main(void)
 		printk("{period:%u  pulse width: %u} in TIMCLK cycle\n",
 			period,
 			width);
-		printk("{period: %u Hz duty: %u \% }\n",
-			((uint32_t)timclk_cycles)/period,
-			(width * 100)/period);
+		printk("{period: %f Hz duty: %f \% }\n",
+			((float)timclk_cycles)/(float)period,
+			(float)(width * 100)/(float)period);
+
 
 	}
 	return 0;
