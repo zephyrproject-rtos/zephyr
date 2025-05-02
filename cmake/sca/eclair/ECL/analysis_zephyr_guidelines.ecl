@@ -7,7 +7,7 @@
 # they may be adapted of course.
 -eval_file=zephyr_common_config.ecl
 
--doc_begin="Selection of guidelines from
+-doc_begin="Main rules from
 https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html"
 -enable=MC3R1.D1.1
 -enable=MC3R1.D2.1
