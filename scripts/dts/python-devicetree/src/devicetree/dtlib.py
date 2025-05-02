@@ -207,7 +207,7 @@ class Node:
             # a relative path cannot be established (on Windows with files
             # in different drives, for example).
             try:
-                return os.path.relpath(filename, start=os.getcwd())
+                return os.path.relpath(filename, start=self.dt._base_dir)
             except ValueError:
                 return filename
 
@@ -787,7 +787,7 @@ class DT:
     #
 
     def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
-                 force: bool = False):
+                 force: bool = False, base_dir: Optional[str] = None):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
@@ -804,6 +804,11 @@ class DT:
         force:
           Try not to raise DTError even if the input tree has errors.
           For experimental use; results not guaranteed.
+
+        base_dir:
+          Path to the directory that is to be used as the reference for
+          the generated relative paths in comments. When not provided, the
+          current working directory is used.
         """
         # Remember to update __deepcopy__() if you change this.
 
@@ -817,6 +822,7 @@ class DT:
         self.filename = filename
 
         self._force = force
+        self._base_dir = base_dir or os.getcwd()
 
         if filename is not None:
             self._parse_file(filename, include_path)
@@ -974,7 +980,7 @@ class DT:
         """
 
         # We need a new DT, obviously. Make a new, empty one.
-        ret = DT(None, (), self._force)
+        ret = DT(None, (), self._force, self._base_dir)
 
         # Now allocate new Node objects for every node in self, to use
         # in the new DT. Set their parents to None for now and leave
