@@ -313,12 +313,6 @@ properties:
       Optional feature flag - Reject broadcast frames. When set, frames
       addressed to the all-ones broadcast address will be rejected.
 
-  promiscuous-mode:
-    type: boolean
-    description: |
-      Optional feature flag - Enable promiscuous mode. When set, all valid
-      frames will be accepted.
-
   discard-non-vlan:
     type: boolean
     description: Optional feature flag - Discard non-VLAN frames. When set,
