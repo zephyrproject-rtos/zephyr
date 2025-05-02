@@ -11,6 +11,7 @@ option(ECLAIR_RULESET_STU_HEAVY "Selection of complex STU project coding guideli
 option(ECLAIR_RULESET_WP "All whole program project coding guidelines ('system' in MISRA's
                          parlance)." OFF)
 option(ECLAIR_RULESET_STD_LIB "Project coding guidelines about the C Standard Library" OFF)
+option(ECLAIR_RULESET_ZEPHYR_GUIDELINES "Zephyr project Coding Guidelines" OFF)
 option(ECLAIR_RULESET_USER "User defined ruleset" OFF)
 
 option(ECLAIR_METRICS_TAB "Metrics in a spreadsheet format" OFF)
@@ -40,6 +41,7 @@ set(ECLAIR_RULESETS
     ECLAIR_RULESET_STU_HEAVY
     ECLAIR_RULESET_WP
     ECLAIR_RULESET_STD_LIB
+    ECLAIR_RULESET_ZEPHYR_GUIDELINES
     ECLAIR_RULESET_USER
 )
 

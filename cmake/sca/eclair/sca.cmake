@@ -61,6 +61,8 @@ elseif(ECLAIR_RULESET_WP)
   set(ECLAIR_RULESET WP)
 elseif(ECLAIR_RULESET_STD_LIB)
   set(ECLAIR_RULESET std_lib)
+elseif(ECLAIR_RULESET_ZEPHYR_GUIDELINES)
+  set(ECLAIR_RULESET zephyr_guidelines)
 endif()
 
 # ECLAIR report
