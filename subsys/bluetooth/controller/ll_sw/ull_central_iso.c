@@ -231,7 +231,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 		 * handle the throughput. For unframed these must be divisible, if they're not,
 		 * framed mode must be forced.
 		 */
-		iso_interval_us = cig->c_sdu_interval;
+		iso_interval_us = (cig->c_sdu_interval / ISO_INT_UNIT_US) * ISO_INT_UNIT_US;
 
 		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
 			/* ISO_Interval is below minimum (5 ms) */
