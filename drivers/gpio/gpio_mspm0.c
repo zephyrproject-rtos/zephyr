@@ -120,7 +120,7 @@ static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, g
 	}
 
 	if (flags & GPIO_INT_WAKEUP) {
-		if (flags & GPIO_ACTIVE_HIGH) {
+		if (!(flags & GPIO_ACTIVE_HIGH)) {
 			wakeup = DL_GPIO_WAKEUP_ON_1;
 		}
 		else if (flags & GPIO_ACTIVE_LOW) {
@@ -136,7 +136,7 @@ static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, g
 		}
 		DL_GPIO_initDigitalInputFeatures(config->pincm_lut[pin], DL_GPIO_INVERSION_DISABLE,
 						 resPull, DL_GPIO_HYSTERESIS_DISABLE,
-						 DL_GPIO_WAKEUP_DISABLE);
+						 wakeup);
 		break;
 	case GPIO_OUTPUT:
 		DL_GPIO_initDigitalOutputFeatures(config->pincm_lut[pin], DL_GPIO_INVERSION_DISABLE,
