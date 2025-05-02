@@ -15,6 +15,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 		uint16_t manufacturer;
 		uint16_t partnum;
 		uint8_t version;
+		uint32_t traceid;
+		uint16_t user_partnum;
+		uint8_t user_var;
 	};
 
 	struct mspm0_device_id info = {0};
@@ -22,6 +25,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	info.manufacturer = DL_FactoryRegion_getManufacturerCode();
 	info.partnum = DL_FactoryRegion_getPartNumber();
 	info.version = DL_FactoryRegion_getVersion();
+	info.traceid = DL_FactoryRegion_getTraceID();
+	info.user_partnum = DL_FactoryRegion_getUserIDPart();
+	info.user_var = DL_FactoryRegion_getUserIDVariant();
 
 	if (length > sizeof(info)) {
 		length = sizeof(info);
