@@ -202,7 +202,7 @@ class Node:
         Returns a DTS representation of the node. Called automatically if the
         node is print()ed.
         """
-        rel_filename = os.path.relpath(self.filename, start=os.getcwd())
+        rel_filename = os.path.relpath(self.filename, start=self.dt._base_dir)
         s = f"\n/* node '{self.path}' defined in {rel_filename}:{self.lineno} */\n"
         s += "".join(label + ": " for label in self.labels)
 
@@ -214,7 +214,7 @@ class Node:
             prop_str = textwrap.indent(str(prop), "\t")
             lines.extend(prop_str.splitlines(True))
 
-            rel_filename = os.path.relpath(prop.filename, start=os.getcwd())
+            rel_filename = os.path.relpath(prop.filename, start=self.dt._base_dir)
             comment = f"/* in {rel_filename}:{prop.lineno} */"
             comments[len(lines)-1] = comment
 
@@ -778,7 +778,7 @@ class DT:
     #
 
     def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
-                 force: bool = False):
+                 force: bool = False, base_dir: Optional[str] = None):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
@@ -795,6 +795,11 @@ class DT:
         force:
           Try not to raise DTError even if the input tree has errors.
           For experimental use; results not guaranteed.
+
+        base_dir:
+          Path to the directory that is to be used as the reference for
+          the generated relative paths in comments. When not provided, the
+          current working directory is used.
         """
         # Remember to update __deepcopy__() if you change this.
 
@@ -808,6 +813,7 @@ class DT:
         self.filename = filename
 
         self._force = force
+        self._base_dir = base_dir or os.getcwd()
 
         if filename is not None:
             self._parse_file(filename, include_path)
@@ -965,7 +971,7 @@ class DT:
         """
 
         # We need a new DT, obviously. Make a new, empty one.
-        ret = DT(None, (), self._force)
+        ret = DT(None, (), self._force, self._base_dir)
 
         # Now allocate new Node objects for every node in self, to use
         # in the new DT. Set their parents to None for now and leave

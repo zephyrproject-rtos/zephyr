@@ -1982,6 +1982,7 @@ class EDT:
     def __init__(self,
                  dts: Optional[str],
                  bindings_dirs: list[str],
+                 workspace_dir: Optional[str] = None,
                  warn_reg_unit_address_mismatch: bool = True,
                  default_prop_types: bool = True,
                  support_fixed_partitions_on_any_bus: bool = True,
@@ -1997,6 +1998,10 @@ class EDT:
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
+
+        workspace_dir:
+          Path to the root of the Zephyr workspace. This is used as a base
+          directory for relative paths in the generated devicetree comments.
 
         warn_reg_unit_address_mismatch (default: True):
           If True, a warning is logged if a node has a 'reg' property where
@@ -2066,7 +2071,7 @@ class EDT:
 
         if dts is not None:
             try:
-                self._dt = DT(dts)
+                self._dt = DT(dts, base_dir=workspace_dir)
             except DTError as e:
                 raise EDTError(e) from e
             self._finish_init()
