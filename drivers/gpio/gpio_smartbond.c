@@ -430,9 +430,9 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 		return 0;								\
 	}										\
 											\
-	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);					\
+	PM_DEVICE_DT_INST_DEFINE(id, gpio_smartbond_pm_action);				\
 	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id,				\
-			      PM_DEVICE_GET(id),					\
+			      PM_DEVICE_DT_INST_GET(id),				\
 			      &gpio_smartbond_data_##id,				\
 			      &gpio_smartbond_config_##id,				\
 			      PRE_KERNEL_1,						\
