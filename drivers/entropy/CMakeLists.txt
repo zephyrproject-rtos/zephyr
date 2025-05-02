@@ -16,6 +16,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE entropy_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_BRCM_IPROC_RNG200   entropy_iproc_rng200.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI              entropy_bt_hci.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_CC13XX_CC26XX_RNG   entropy_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ESP32_RNG           entropy_esp32.c)
