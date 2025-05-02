@@ -202,7 +202,9 @@ static inline void trigger_irq(int irq)
 	z_mips_enter_irq(irq);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_VIM)
+#elif defined(CONFIG_CPU_CORTEX_R5)
+
+#if defined(CONFIG_VIM)
 
 extern void z_vim_arm_enter_irq(int);
 
@@ -210,6 +212,17 @@ static inline void trigger_irq(int irq)
 {
 	z_vim_arm_enter_irq(irq);
 }
+
+#elif defined(CONFIG_TMS570_VIM)
+
+extern void z_tms570_vim_arm_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_tms570_vim_arm_enter_irq(irq);
+}
+
+#endif
 
 #else
 /* So far, Nios II does not support this */
