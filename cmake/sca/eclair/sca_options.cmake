@@ -32,3 +32,28 @@ cmake_dependent_option(ECLAIR_FULL_TXT_ALL_AREAS "Show all areas in a full text 
                        OFF "ECLAIR_FULL_TXT" OFF)
 cmake_dependent_option(ECLAIR_FULL_TXT_FIRST_AREA "Show only the first area in a full text report"
                        ON "ECLAIR_FULL_TXT" OFF)
+
+# Ensure that exactly one ECLAIR_RULESET is selected
+set(ECLAIR_RULESETS
+    ECLAIR_RULESET_FIRST_ANALYSIS
+    ECLAIR_RULESET_STU
+    ECLAIR_RULESET_STU_HEAVY
+    ECLAIR_RULESET_WP
+    ECLAIR_RULESET_STD_LIB
+    ECLAIR_RULESET_USER
+)
+
+set(selected_rulesets "")
+foreach(ruleset ${ECLAIR_RULESETS})
+  if(${ruleset})
+    list(APPEND selected_rulesets ${ruleset})
+  endif()
+endforeach()
+
+list(LENGTH selected_rulesets selected_count)
+if(selected_count EQUAL 0)
+  message(FATAL_ERROR "No ECLAIR_RULESET is selected. Please select exactly one.")
+elseif(selected_count GREATER 1)
+  message(FATAL_ERROR "Only one ECLAIR_RULESET can be selected at a time.
+                       Selected: ${selected_rulesets}")
+endif()
