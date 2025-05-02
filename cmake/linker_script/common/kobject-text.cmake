@@ -24,25 +24,4 @@ if(CONFIG_USERSPACE)
     EXPR
     "(@_kobject_text_area_end@ - @_kobject_text_area_start@)"
     )
-
-  if(CONFIG_DYNAMIC_OBJECTS)
-    zephyr_linker_section_configure(
-      SECTION
-      _kobject_text_area
-      SYMBOLS
-      z_object_gperf_find
-      z_object_gperf_wordlist_foreach
-      PASS NOT LINKER_ZEPHYR_FINAL
-      )
-  else()
-    zephyr_linker_section_configure(
-      SECTION
-      _kobject_text_area
-      SYMBOLS
-      k_object_find
-      k_object_wordlist_foreach
-      PASS NOT LINKER_ZEPHYR_FINAL
-      )
-  endif()
-
 endif()
