@@ -224,24 +224,24 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
 	if (config->backlight_gpio.port) {
 		return gpio_pin_set_dt(&config->backlight_gpio, 1);
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	return -ENOSYS;
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
 	if (config->backlight_gpio.port) {
 		return gpio_pin_set_dt(&config->backlight_gpio, 0);
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	return -ENOSYS;
 }
@@ -338,14 +338,14 @@ static int mcux_elcdif_init(const struct device *dev)
 		return err;
 	}
 
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	if (config->backlight_gpio.port) {
 		err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err) {
 			return err;
 		}
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	k_sem_init(&dev_data->sem, 0, 1);
 #ifdef CONFIG_MCUX_ELCDIF_PXP
