@@ -1,0 +1,129 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: MTCH9010 Liquid Detector
+
+description: |
+  Microchip MTCH9010 liquid leak detector
+
+  - Detects liquid leaks using capacitance or conductance
+  - Interrupt driven or UART output
+
+  - For more information:
+  - https://www.microchip.com/en-us/product/mtch9010
+
+compatible: "microchip,mtch9010"
+
+include: [sensor-device.yaml, uart-device.yaml]
+
+properties:
+  mtch9010-operating-mode:
+    type: string
+    required: true
+    description: |
+      This sets the mode (capacitive or conductive) the MTCH9010 detects moisture in.
+    enum:
+      - "capacitive"
+      - "conductive"
+
+  mtch9010-sleep-period:
+    type: int
+    description: |
+      This value sets the amount of time (in seconds) that the
+      MTCH9010 sleeps for before checking for liquids.
+      Leave undefined or at 0 to sleep until wake.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+
+  mtch9010-uart-config-enable:
+    type: boolean
+    description: |
+      If set, the MTCH9010 is configured over the UART Interface.
+      This can be disabled if the MTCH9010 is configured through it's
+      I/O or a start-up configuration was previously defined.
+
+  mtch9010-extended-output-enable:
+    type: boolean
+    description: |
+      If set, the output format of the MTCH9010 can be changed.
+      If not set, the MTCH9010 uses the default formatting.
+
+  mtch9010-extended-output-format:
+    type: string
+    description: |
+      Configure the output data formatting of the MTCH9010.
+      Options are: "delta" / "current" /
+      "both delta and current" / "mplab data visualizer"
+    enum:
+      - "delta"
+      - "current"
+      - "both delta and current"
+      - "mplab data visualizer"
+
+  mtch9010-reference-value:
+    type: int
+    description: |
+      Set the reference "dry" value.
+      If not defined, the POR value of the sensor is used.
+      KConfig can be used to setup averaging of this value.
+
+  mtch9010-detect-value:
+    type: int
+    required: true
+    description: |
+      Set the detection threshold value.
+
+  mtch9010-output-gpios:
+    type: phandle-array
+    description: Output Status Line for the MTCH9010
+
+  mtch9010-system-lock-gpios:
+    type: phandle-array
+    description: |
+      System lock I/O for the MTCH9010
+      Can be left NULL if SYSTEM LOCK is not used.
+
+  mtch9010-mode-gpios:
+    type: phandle-array
+    description: |
+      Mode select I/O for the MTCH9010
+      Can be left NULL if configured with UART or connected externally.
+
+  mtch9010-reset-gpios:
+    type: phandle-array
+    description: |
+      Reset I/O for MTCH9010
+      Pull this pin LOW to reset the MTCH9010.
+
+  mtch9010-wake-gpios:
+    type: phandle-array
+    description: |
+      Wake I/O for the MTCH9010
+      Not used if a sleep period is defined.
+
+  mtch9010-uart-en-gpios:
+    type: phandle-array
+    description: |
+      UART enable line for the MTCH9010
+      Can be left NULL if the UART EN pin is connected externally.
+
+  mtch9010-cfg-en-gpios:
+    type: phandle-array
+    description: |
+      Enhanced configuration enable for the MTCH9010
+      Can be left NULL if configured with UART or connected externally.
+
+  mtch9010-heartbeat-gpios:
+    type: phandle-array
+    description: |
+      Heartbeat output of MTCH9010
+      Can be left NULL if unused.
