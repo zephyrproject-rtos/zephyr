@@ -28,12 +28,14 @@
 #define CONN_LATENCY  0
 #define CONN_TIMEOUT  MIN(MAX((CONN_INTERVAL * 125 * \
 			       MAX(CONFIG_BT_MAX_CONN, 6) / 1000), 10), 3200)
+#define CONN_UPDATE_COUNT 1U
 
 static void start_scan(void);
 
 static struct bt_conn *conn_connecting;
 static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
+static uint8_t volatile conn_param_count;
 static bool volatile is_disconnecting;
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -217,6 +219,15 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 
 	printk("LE conn param updated: %s int 0x%04x lat %d to %d\n",
 	       addr, interval, latency, timeout);
+
+#if defined(CONFIG_TEST_BSIM_BT_CONN_PARAM)
+	if ((interval >= CONFIG_BT_PERIPHERAL_PREF_MIN_INT) &&
+	    (interval <= CONFIG_BT_PERIPHERAL_PREF_MAX_INT) &&
+	    (latency == CONFIG_BT_PERIPHERAL_PREF_LATENCY) &&
+	    (timeout == CONFIG_BT_PERIPHERAL_PREF_TIMEOUT)) {
+		conn_param_count++;
+	}
+#endif /* CONFIG_TEST_BSIM_BT_CONN_PARAM */
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -293,7 +304,7 @@ static void remote_info(struct bt_conn *conn, void *data)
 	printk("Get remote info %s...\n", addr);
 	err = bt_conn_get_remote_info(conn, &remote_info);
 	if (err) {
-		printk("Failed remote info %s.\n", addr);
+		printk("Failed remote info %s (%d).\n", addr, err);
 		return;
 	}
 	printk("success.\n");
@@ -302,6 +313,26 @@ static void remote_info(struct bt_conn *conn, void *data)
 
 	(*actual_count)++;
 }
+
+#if defined(CONFIG_TEST_BSIM_BT_CONN_PARAM)
+static void conn_update(struct bt_conn *conn, void *data)
+{
+	struct bt_le_conn_param update_params = {
+		.interval_min = CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+		.interval_max = CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
+		.latency = CONFIG_BT_PERIPHERAL_PREF_LATENCY,
+		.timeout = CONFIG_BT_PERIPHERAL_PREF_TIMEOUT,
+	};
+	int err;
+
+	printk("Updating connection parameter\n");
+	err = bt_conn_le_param_update(conn, &update_params);
+	if (err) {
+		printk("Parameter update failed (err %d)\n", err);
+		return;
+	}
+}
+#endif /* CONFIG_TEST_BSIM_BT_CONN_PARAM */
 
 static void disconnect(struct bt_conn *conn, void *data)
 {
@@ -321,6 +352,7 @@ static void disconnect(struct bt_conn *conn, void *data)
 
 int init_central(uint8_t max_conn, uint8_t iterations)
 {
+	uint8_t conn_update_count = CONN_UPDATE_COUNT;
 	int err;
 
 	conn_count_max = max_conn;
@@ -355,6 +387,26 @@ int init_central(uint8_t max_conn, uint8_t iterations)
 
 			continue;
 		}
+
+		/* Lets wait for Peripheral initiated connection parameter to
+		 * complete
+		 */
+		while (IS_ENABLED(CONFIG_TEST_BSIM_BT_CONN_PARAM) &&
+		       conn_param_count < CONFIG_BT_MAX_CONN) {
+			k_sleep(K_MSEC(10));
+		}
+
+		/* Initiate connection update from Central */
+		if (IS_ENABLED(CONFIG_TEST_BSIM_BT_CONN_PARAM) &&
+		    conn_update_count) {
+			conn_update_count--;
+
+			printk("Connection Update  all...\n");
+			bt_conn_foreach(BT_CONN_TYPE_LE, conn_update, NULL);
+			continue;
+		}
+		conn_update_count = CONN_UPDATE_COUNT;
+		conn_param_count = 0U;
 
 		/* Lets wait sufficiently to ensure a stable connection
 		 * before starting to disconnect for next iteration.
