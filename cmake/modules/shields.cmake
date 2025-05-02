@@ -93,6 +93,8 @@ if(DEFINED SHIELD)
       ${SHIELD_DIR_${s}}
       )
 
+    include(${SHIELD_DIR_${s}}/pre_dt_shield.cmake OPTIONAL)
+
     # Search for shield/shield.conf file
     if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
       list(APPEND
