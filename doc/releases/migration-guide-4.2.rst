@@ -490,6 +490,16 @@ xSPI
   Note that the property gives the actual size of the memory device in bits.
   Previous mapping address information is now described in xspi node at SoC dtsi level.
 
+Video
+=====
+
+* 8 bit RAW Bayer formats BGGR8 / GBRG8 / GRBG8 / RGGB8 have been renamed by adding
+  a S prefix in front:
+
+  ``VIDEO_PIX_FMT_BGGR8`` becomes ``VIDEO_PIX_FMT_SBGGR8``
+  ``VIDEO_PIX_FMT_GBRG8`` becomes ``VIDEO_PIX_FMT_SGBRG8``
+  ``VIDEO_PIX_FMT_GRBG8`` becomes ``VIDEO_PIX_FMT_SGRBG8``
+  ``VIDEO_PIX_FMT_RGGB8`` becomes ``VIDEO_PIX_FMT_SRGGB8``
 
 Other subsystems
 ****************
