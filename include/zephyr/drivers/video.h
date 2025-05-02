@@ -883,7 +883,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * | Gggggggg | Rrrrrrrr | Gggggggg | Rrrrrrrr | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_BGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
+#define VIDEO_PIX_FMT_SBGGR8 VIDEO_FOURCC('B', 'A', '8', '1')
 
 /**
  * @code{.unparsed}
@@ -892,7 +892,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * | Rrrrrrrr | Gggggggg | Rrrrrrrr | Gggggggg | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_GBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
+#define VIDEO_PIX_FMT_SGBRG8 VIDEO_FOURCC('G', 'B', 'R', 'G')
 
 /**
  * @code{.unparsed}
@@ -901,7 +901,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * | Bbbbbbbb | Gggggggg | Bbbbbbbb | Gggggggg | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_GRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
+#define VIDEO_PIX_FMT_SGRBG8 VIDEO_FOURCC('G', 'R', 'B', 'G')
 
 /**
  * @code{.unparsed}
@@ -910,7 +910,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * | Gggggggg | Bbbbbbbb | Gggggggg | Bbbbbbbb | ...
  * @endcode
  */
-#define VIDEO_PIX_FMT_RGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
+#define VIDEO_PIX_FMT_SRGGB8 VIDEO_FOURCC('R', 'G', 'G', 'B')
 
 /**
  * @code{.unparsed}
@@ -1371,10 +1371,10 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {
 	switch (pixfmt) {
-	case VIDEO_PIX_FMT_BGGR8:
-	case VIDEO_PIX_FMT_GBRG8:
-	case VIDEO_PIX_FMT_GRBG8:
-	case VIDEO_PIX_FMT_RGGB8:
+	case VIDEO_PIX_FMT_SBGGR8:
+	case VIDEO_PIX_FMT_SGBRG8:
+	case VIDEO_PIX_FMT_SGRBG8:
+	case VIDEO_PIX_FMT_SRGGB8:
 	case VIDEO_PIX_FMT_GREY:
 		return 8;
 	case VIDEO_PIX_FMT_SBGGR10P:
