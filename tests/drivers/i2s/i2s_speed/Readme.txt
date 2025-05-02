@@ -38,7 +38,8 @@ required to run this test:
 MIMXRT1060-EVK[B/C]:
 This board uses a single SAI and connects the TX and RX signals by shorting externally on the EVK.
 These are the HW changes required to run this test on MIMXRT1060-EVK[B/C]:
-- Remove jumper J99
+- EVKC: Remove jumper J99
+- EVKB: Remove jumper J41
 - Short BCLK J23-pin5  (SAI1_RX_BCLK  / GPIO_AD_B1_11) to J23-pin23 (SAI1_TX_BCLK  / GPIO_AD_B1_14)
 - Short SYNC J23-pin9  (SAI1_RX_SYNC  / GPIO_AD_B1_10) to J23-pin16 (SAI1_TX_SYNC  / GPIO_AD_B1_15)
 - Short Data J23-pin11 (SAI1_RX_DATA0 / GPIO_AD_B1_12) to J23-pin17 (SAI1_TX_DATA0 / GPIO_AD_B1_13)
