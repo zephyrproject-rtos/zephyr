@@ -131,7 +131,7 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		data->period = period_cycles >> 1;
 	}
 
-	DL_Timer_setLoadValue(config->base, data->period);
+	DL_Timer_setTimerCount(config->base, data->period);
 	DL_Timer_setCaptureCompareValue(config->base,
 					data->pulse_cycle[channel],
 					config->cc_idx[channel]);
@@ -168,6 +168,42 @@ static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
+#define MSPM0_CTRCTL_CAC_CCCTL_ACOND(x) (x << 10)
+
+static void mspm0_set_combined_mode(const struct pwm_mspm0_config *config,
+				    struct pwm_mspm0_data *data)
+{
+	DL_Timer_setLoadValue(config->base, data->period);
+	DL_Timer_setCaptureCompareInput(config->base, 0,
+			((config->cc_idx[0] & 0x1) ? 		\
+			  DL_TIMER_CC_IN_SEL_CCPX : DL_TIMER_CC_IN_SEL_CCP0),
+			config->cc_idx[0]);
+
+	DL_Timer_setCaptureCompareInput(config->base, 0,
+				GPTIMER_IFCTL_01_ISEL_CCPX_INPUT_PAIR,
+				(config->cc_idx[0] ^ 1));
+
+	DL_Timer_setCaptureCompareCtl(config->base,
+				DL_TIMER_CC_MODE_CAPTURE,
+				(DL_TIMER_CC_CCOND_TRIG_FALL),
+				config->cc_idx[0]);
+
+	DL_Timer_setCaptureCompareCtl(config->base,
+				DL_TIMER_CC_MODE_CAPTURE,
+				(DL_TIMER_CC_CCOND_TRIG_RISE),
+				(config->cc_idx[0] ^ 1));
+
+	DL_Timer_setCCPDirection(config->base, DL_TIMER_CC0_INPUT);
+
+	DL_Timer_setCounterControl(config->base,
+				   DL_TIMER_CZC_CCCTL0_ZCOND,
+				   (MSPM0_CTRCTL_CAC_CCCTL_ACOND(config->cc_idx[0])),
+				   DL_TIMER_CLC_CCCTL0_LCOND);
+
+	DL_Timer_setCounterRepeatMode(config->base, DL_TIMER_REPEAT_MODE_ENABLED);
+	DL_Timer_setCounterMode(config->base, DL_TIMER_COUNT_MODE_DOWN);
+}
+
 static void mspm0_setup_capture(const struct device *dev,
 				const struct pwm_mspm0_config *config,
 				struct pwm_mspm0_data *data)
@@ -180,11 +216,7 @@ static void mspm0_setup_capture(const struct device *dev,
 
 		DL_Timer_initCaptureMode(config->base, &cc_cfg);
 	} else {
-		DL_Timer_CaptureCombinedConfig cc_cfg = { 0 };
-		cc_cfg.inputChan = config->cc_idx[0];
-		cc_cfg.period = data->period;
-
-		DL_Timer_initCaptureCombinedMode(config->base, &cc_cfg);
+		mspm0_set_combined_mode(config, data);
 	}
 
 	DL_Timer_enableClock(config->base);
@@ -279,8 +311,9 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 		return -EBUSY;
 	}
 
-	DL_TimerG_setTimerCount(config->base, data->period);
+	DL_Timer_setTimerCount(config->base, data->period);
 	DL_Timer_startCounter(config->base);
+	DL_Timer_clearInterruptStatus(config->base, intr_mask);
 	DL_Timer_enableInterrupt(config->base, intr_mask);
 
 	k_mutex_unlock(&data->lock);
@@ -391,7 +424,11 @@ static void mspm0_cc_isr(const struct device *dev)
 
 	/* Timer reached zero no pwm signal is detected */
 	case DL_TIMERG_IIDX_ZERO:
-		data->is_synced = false;
+		if (data->callback &&
+		    !(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
+			data->callback(dev, 0, 0, 0, -ERANGE, data->user_data);
+			DL_Timer_stopCounter(config->base);
+		}
 		__fallthrough;
 
 	default:
@@ -401,7 +438,7 @@ static void mspm0_cc_isr(const struct device *dev)
 	if (data->flags & PWM_CAPTURE_TYPE_PERIOD) {
 		cc1 =  DL_Timer_getCaptureCompareValue(
 						config->base,
-						!(config->cc_idx[0]));
+						config->cc_idx[0] ^ 0x1);
 	}
 
 	/* ignore the unsynced counter value for pwm mode */
@@ -424,8 +461,9 @@ static void mspm0_cc_isr(const struct device *dev)
 		data->is_synced = false;
 	}
 
-	period = ((data->last_sample - cc1 + data->period) % data->period);
-	pulse = ((data->last_sample - cc0 + data->period) % data->period);
+
+	period = ((data->last_sample - cc1 + UINT16_MAX) % UINT16_MAX);
+	pulse = ((data->last_sample - cc0 + UINT16_MAX) % UINT16_MAX);
 	if (data->callback && period) {
 		data->callback(dev, 0, period, pulse, 0, data->user_data);
 	}

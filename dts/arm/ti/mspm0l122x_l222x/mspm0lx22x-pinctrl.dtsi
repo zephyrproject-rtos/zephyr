@@ -157,4 +157,10 @@
 	/omit-if-no-ref/ tima0c0_pa8: tima0c0_pa8{
 		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_5)>;
 	};
+
+	/omit-if-no-ref/ timg12c1_pa25: timg12c1_pa25 {
+		pinmux = <MSP_PINMUX(69, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		bias-pull-down;
+	};
 };

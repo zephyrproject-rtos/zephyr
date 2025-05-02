@@ -379,6 +379,20 @@
 				status = "disabled";
 			};
 		};
+
+		gpt12: timg@40870000 {
+			compatible = "ti,mspm0g1x0x_g3x0x-timer";
+			reg = <0x40870000 0x2000>;
+			status = "disabled";
+
+			pwm12: pwm12 {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <2 0>;
+				status = "disabled";
+				#pwm-cells = <0x3>;
+			};
+		};
 	};
 };
 
