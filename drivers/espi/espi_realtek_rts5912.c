@@ -32,7 +32,221 @@ struct espi_rts5912_config {
 struct espi_rts5912_data {
 	sys_slist_t callbacks;
 	uint32_t config_data;
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	struct k_sem flash_lock;
+	uint8_t *maf_ptr;
+#endif
 };
+
+/*
+ * =========================================================================
+ * ESPI flash channel
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+
+#define MAX_FLASH_TIMEOUT 1000UL
+#define MAF_BUFFER_SIZE   512UL
+
+enum {
+	MAF_TR_READ = 0,
+	MAF_TR_WRITE = 1,
+	MAF_TR_ERASE = 2,
+};
+
+static int espi_rts5912_flash_read(const struct device *dev, struct espi_flash_packet *pckt)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	int ret;
+	uint32_t ctrl;
+
+	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
+		LOG_ERR("Flash channel is disabled");
+		return -EIO;
+	}
+
+	if (pckt->len > MAF_BUFFER_SIZE) {
+		LOG_ERR("Invalid size request");
+		return -EINVAL;
+	}
+
+	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
+		LOG_ERR("Channel still busy");
+		return -EBUSY;
+	}
+
+	ctrl = (MAF_TR_READ << ESPI_EMCTRL_MDSEL_Pos) | ESPI_EMCTRL_START;
+
+	espi_reg->EMADR = pckt->flash_addr;
+	espi_reg->EMTRLEN = pckt->len;
+	espi_reg->EMCTRL = ctrl;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	for (int i = 0; i < pckt->len; i++) {
+		pckt->buf[i] = espi_data->maf_ptr[i];
+	}
+
+	return 0;
+}
+
+static int espi_rts5912_flash_write(const struct device *dev, struct espi_flash_packet *pckt)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	int ret;
+	uint32_t ctrl;
+
+	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
+		LOG_ERR("Flash channel is disabled");
+		return -EIO;
+	}
+
+	if (pckt->len > MAF_BUFFER_SIZE) {
+		LOG_ERR("Packet length is too big");
+		return -EINVAL;
+	}
+
+	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
+		LOG_ERR("Channel still busy");
+		return -EBUSY;
+	}
+
+	for (int i = 0; i < pckt->len; i++) {
+		espi_data->maf_ptr[i] = pckt->buf[i];
+	}
+
+	ctrl = (MAF_TR_WRITE << ESPI_EMCTRL_MDSEL_Pos) | ESPI_EMCTRL_START;
+
+	espi_reg->EMADR = pckt->flash_addr;
+	espi_reg->EMTRLEN = pckt->len;
+	espi_reg->EMCTRL = ctrl;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static int espi_rts5912_flash_erase(const struct device *dev, struct espi_flash_packet *pckt)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	int ret;
+	uint32_t ctrl;
+
+	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
+		LOG_ERR("Flash channel is disabled");
+		return -EIO;
+	}
+
+	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
+		LOG_ERR("Channel still busy");
+		return -EBUSY;
+	}
+
+	ctrl = (MAF_TR_ERASE << ESPI_EMCTRL_MDSEL_Pos) | ESPI_EMCTRL_START;
+
+	espi_reg->EMADR = pckt->flash_addr;
+	espi_reg->EMTRLEN = pckt->len;
+	espi_reg->EMCTRL = ctrl;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static void espi_maf_tr_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	uint32_t status = espi_reg->EFSTS;
+
+	if (status & ESPI_EFSTS_MAFTXDN) {
+		k_sem_give(&espi_data->flash_lock);
+		espi_reg->EFSTS = ESPI_EFSTS_MAFTXDN;
+	}
+}
+
+static void espi_flash_chg_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_FLASH,
+				 .evt_data = 0};
+
+	uint32_t status = espi_reg->EFSTS;
+	uint32_t config = espi_reg->EFCONF;
+
+	if (status & ESPI_EFSTS_CHENCHG) {
+		evt.evt_data = (config & ESPI_EFCONF_CHEN) ? 1 : 0;
+		espi_send_callbacks(&espi_data->callbacks, dev, evt);
+
+		espi_reg->EFSTS = ESPI_EFSTS_CHENCHG;
+	}
+}
+
+static uint8_t flash_channel_buffer[MAF_BUFFER_SIZE] __aligned(4);
+
+static int espi_flash_ch_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	espi_data->maf_ptr = flash_channel_buffer;
+	if (espi_data->maf_ptr == NULL) {
+		LOG_ERR("Failed to allocate MAF buffer");
+		return -ENOMEM;
+	}
+
+	espi_reg->EMBUF = (uint32_t)espi_data->maf_ptr;
+	espi_reg->EMINTEN = ESPI_EMINTEN_CHENCHG | ESPI_EMINTEN_TRDONEEN;
+
+	k_sem_init(&espi_data->flash_lock, 0, 1);
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq));
+
+	/* MAF Tr */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, priority), espi_maf_tr_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq));
+
+	/* Chg */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, priority), espi_flash_chg_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq));
+
+	return 0;
+}
+
+#endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
 /*
  * =========================================================================
@@ -138,6 +352,11 @@ static DEVICE_API(espi, espi_rts5912_driver_api) = {
 	.config = espi_rts5912_configure,
 	.get_channel_status = espi_rts5912_channel_ready,
 	.manage_callback = espi_rts5912_manage_callback,
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	.flash_read = espi_rts5912_flash_read,
+	.flash_write = espi_rts5912_flash_write,
+	.flash_erase = espi_rts5912_flash_erase,
+#endif
 };
 
 static void espi_rst_isr(const struct device *dev)
@@ -220,6 +439,16 @@ static int espi_rts5912_init(const struct device *dev)
 
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
+
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	/* Setup eSPI flash channel */
+	rc = espi_flash_ch_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI flash channel setup failed");
+		goto exit;
+	}
+#endif
+
 exit:
 	return rc;
 }
