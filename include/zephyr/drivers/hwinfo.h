@@ -67,6 +67,8 @@ extern "C" {
 #define RESET_USER				BIT(13)
 /** Temperature reset */
 #define RESET_TEMPERATURE			BIT(14)
+/** Bootloader reset (entry / exit) */
+#define RESET_BOOTLOADER			BIT(15)
 /**
  * @}
  */
