@@ -17,6 +17,8 @@
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #include "espi_utils.h"
+#include "reg/reg_acpi.h"
+#include "reg/reg_emi.h"
 #include "reg/reg_espi.h"
 #include "reg/reg_port80.h"
 
@@ -26,6 +28,14 @@ struct espi_rts5912_config {
 	volatile struct espi_reg *const espi_reg;
 	uint32_t espislv_clk_grp;
 	uint32_t espislv_clk_idx;
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+	volatile struct acpi_reg *const promt0_reg;
+	uint32_t promt0_clk_grp;
+	uint32_t promt0_clk_idx;
+	volatile struct emi_reg *const emi0_reg;
+	uint32_t emi0_clk_grp;
+	uint32_t emi0_clk_idx;
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	volatile struct port80_reg *const port80_reg;
 	uint32_t port80_clk_grp;
@@ -50,6 +60,88 @@ struct espi_rts5912_data {
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI Peripheral EC Host Command (Promt0)
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+
+#define ESPI_RTK_PERIPHERAL_HOST_CMD_PARAM_SIZE 256
+
+static uint8_t ec_host_cmd_sram[ESPI_RTK_PERIPHERAL_HOST_CMD_PARAM_SIZE] __aligned(256);
+
+static void espi_setup_host_cmd_shm(const struct espi_rts5912_config *const espi_config)
+{
+	volatile struct emi_reg *const emi0_reg = espi_config->emi0_reg;
+
+	emi0_reg->SAR = (uint32_t)&ec_host_cmd_sram[0];
+}
+
+static void promt0_ibf_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	volatile struct acpi_reg *const promt0_reg = espi_config->promt0_reg;
+	struct espi_rts5912_data *data = dev->data;
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = ESPI_PERIPHERAL_EC_HOST_CMD,
+				 .evt_data = ESPI_PERIPHERAL_NODATA};
+
+	promt0_reg->STS |= ACPI_STS_STS0;
+	evt.evt_data = (uint8_t)promt0_reg->IB;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
+static int espi_promt0_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct rts5912_sccon_subsys sccon;
+	volatile struct acpi_reg *const promt0_reg = espi_config->promt0_reg;
+	int rc;
+
+	if (!device_is_ready(espi_config->clk_dev)) {
+		LOG_ERR("Promt0 clock not ready");
+		return -ENODEV;
+	}
+
+	sccon.clk_grp = espi_config->promt0_clk_grp;
+	sccon.clk_idx = espi_config->promt0_clk_idx;
+
+	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
+	if (rc != 0) {
+		LOG_ERR("Promt0 clock control on failed");
+		return rc;
+	}
+
+	promt0_reg->STS = 0;
+
+	if (promt0_reg->STS & ACPI_STS_IBF) {
+		rc = promt0_reg->IB;
+	}
+
+	if (promt0_reg->STS & ACPI_STS_IBF) {
+		promt0_reg->IB |= ACPI_IB_IBCLR;
+	}
+
+	promt0_reg->PTADDR =
+		CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM | (0x04 << ACPI_PTADDR_OFFSET_Pos);
+	promt0_reg->VWCTRL1 = ACPI_VWCTRL1_ACTEN;
+	promt0_reg->INTEN = ACPI_INTEN_IBFINTEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq));
+
+	/* IBF */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, priority), promt0_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq));
+
+	return 0;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 
 /*
  * =========================================================================
@@ -1635,6 +1727,16 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
 
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+	rc = espi_promt0_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI Promt0 setup failed");
+		goto exit;
+	}
+
+	espi_setup_host_cmd_shm(espi_config);
+#endif
+
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	/* Setup Port80 */
 	rc = espi_peri_ch_port80_setup(dev);
@@ -1679,6 +1781,15 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, espi_target),
 	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_grp),
 	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_idx),
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+	.promt0_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, promt0),
+	.promt0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), promt0, clk_grp),
+	.promt0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), promt0, clk_idx),
+
+	.emi0_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, emi0),
+	.emi0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_grp),
+	.emi0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_idx),
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	.port80_reg = (volatile struct port80_reg *const)DT_INST_REG_ADDR_BY_NAME(0, port80),
 	.port80_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), port80, clk_grp),
