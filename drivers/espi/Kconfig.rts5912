@@ -10,6 +10,9 @@ config ESPI_RTS5912
 
 if ESPI_RTS5912
 
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default y
+
 config ESPI_PERIPHERAL_HOST_IO
 	default y
 
