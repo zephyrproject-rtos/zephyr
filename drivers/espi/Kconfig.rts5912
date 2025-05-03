@@ -8,3 +8,10 @@ config ESPI_RTS5912
 	select KERNEL_MEM_POOL
 	help
 	  Enable the Realtek RTS5912 eSPI driver.
+
+if ESPI_RTS5912
+
+	config ESPI_FLASH_CHANNEL
+		default y
+
+endif
