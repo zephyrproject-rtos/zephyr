@@ -140,13 +140,43 @@ ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
 
 	(void)stepper_move_to(fixture->dev, pos);
 
-	/* timeout is set with 20% tolerance */
-	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
-			      K_MSEC(pos * 120));
+	POLL_AND_CHECK_SIGNAL(
+		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+		K_MSEC(pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
 
 	(void)stepper_get_actual_position(fixture->dev, &pos);
 	zassert_equal(pos, 10u, "Target position should be %d but is %d", 10u, pos);
 	zassert_equal(user_data_received, fixture->dev, "User data not received");
+}
+
+ZTEST_F(stepper, test_move_by_positive_step_count)
+{
+	int32_t steps = 20;
+
+	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
+	(void)stepper_move_by(fixture->dev, steps);
+
+	POLL_AND_CHECK_SIGNAL(
+		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+		K_MSEC(steps * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
+	(void)stepper_get_actual_position(fixture->dev, &steps);
+	zassert_equal(steps, 20u, "Target position should be %d but is %d", 20u, steps);
+}
+
+ZTEST_F(stepper, test_move_by_negative_step_count)
+{
+	int32_t steps = -20;
+
+	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
+	(void)stepper_move_by(fixture->dev, steps);
+
+	POLL_AND_CHECK_SIGNAL(
+		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+		K_MSEC(-steps * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
+	(void)stepper_get_actual_position(fixture->dev, &steps);
+	zassert_equal(steps, -20u, "Target position should be %d but is %d", -20u, steps);
 }
 
 ZTEST_F(stepper, test_stop)
