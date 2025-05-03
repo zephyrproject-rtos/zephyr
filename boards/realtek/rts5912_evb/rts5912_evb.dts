@@ -71,3 +71,12 @@
 	pinctrl-names = "default";
 	pulses-per-round = <2>;
 };
+
+&espi0 {
+	status = "okay";
+	pinctrl-0 = < &espi_alert_gpio003 &espi_cs_gpio004
+				&espi_io3_gpio005 &espi_io2_gpio006
+				&espi_io1_gpio007 &espi_io0_gpio008
+				&espi_clk_gpio009 &espi_reset_gpio020>;
+	pinctrl-names = "default";
+};
