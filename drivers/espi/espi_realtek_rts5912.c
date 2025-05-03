@@ -41,6 +41,11 @@ struct espi_rts5912_config {
 	uint32_t emi0_clk_grp;
 	uint32_t emi0_clk_idx;
 #endif
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	volatile struct emi_reg *const emi1_reg;
+	uint32_t emi1_clk_grp;
+	uint32_t emi1_clk_idx;
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	volatile struct port80_reg *const port80_reg;
 	uint32_t port80_clk_grp;
@@ -65,6 +70,26 @@ struct espi_rts5912_data {
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI Peripheral Shared Memory Region
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+#define ESPI_RTK_PERIPHERAL_ACPI_SHD_MEM_SIZE 256
+
+static uint8_t acpi_shd_mem_sram[ESPI_RTK_PERIPHERAL_ACPI_SHD_MEM_SIZE] __aligned(256);
+
+static void espi_setup_acpi_shm(const struct espi_rts5912_config *const espi_config)
+{
+	volatile struct emi_reg *const emi1_reg = espi_config->emi1_reg;
+
+	emi1_reg->SAR = (uint32_t)&acpi_shd_mem_sram[0];
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
 
 /*
  * =========================================================================
@@ -1858,6 +1883,10 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
 
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	espi_setup_acpi_shm(espi_config);
+#endif
+
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 	/* Setup ACPI */
 	rc = espi_acpi_setup(dev);
@@ -1934,6 +1963,11 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.emi0_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, emi0),
 	.emi0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_grp),
 	.emi0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_idx),
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	.emi1_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, emi1),
+	.emi1_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi1, clk_grp),
+	.emi1_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi1, clk_idx),
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	.port80_reg = (volatile struct port80_reg *const)DT_INST_REG_ADDR_BY_NAME(0, port80),
