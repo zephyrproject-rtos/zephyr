@@ -10,18 +10,18 @@ static k_timeout_t stepper_movement_delay(const struct device *dev)
 {
 	const struct step_dir_stepper_common_data *data = dev->data;
 
-	if (data->microstep_interval_ns == 0) {
+	if (data->common_data.delay_in_ns == 0) {
 		return K_FOREVER;
 	}
 
-	return K_NSEC(data->microstep_interval_ns);
+	return K_NSEC(data->common_data.delay_in_ns);
 }
 
 static void stepper_work_step_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct step_dir_stepper_common_data *data =
-		CONTAINER_OF(dwork, struct step_dir_stepper_common_data, stepper_dwork);
+	struct stepper_common_data *data =
+		CONTAINER_OF(dwork, struct stepper_common_data, stepper_dwork);
 
 	stepper_handle_timing_signal(data->dev);
 }
@@ -30,7 +30,7 @@ int step_work_timing_source_init(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	k_work_init_delayable(&data->stepper_dwork, stepper_work_step_handler);
+	k_work_init_delayable(&data->common_data.stepper_dwork, stepper_work_step_handler);
 
 	return 0;
 }
@@ -46,14 +46,14 @@ int step_work_timing_source_start(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	return k_work_reschedule(&data->stepper_dwork, stepper_movement_delay(dev));
+	return k_work_reschedule(&data->common_data.stepper_dwork, stepper_movement_delay(dev));
 }
 
 int step_work_timing_source_stop(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	return k_work_cancel_delayable(&data->stepper_dwork);
+	return k_work_cancel_delayable(&data->common_data.stepper_dwork);
 }
 
 bool step_work_timing_source_needs_reschedule(const struct device *dev)
@@ -66,7 +66,7 @@ bool step_work_timing_source_is_running(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	return k_work_delayable_is_pending(&data->stepper_dwork);
+	return k_work_delayable_is_pending(&data->common_data.stepper_dwork);
 }
 
 const struct stepper_timing_source_api step_work_timing_source_api = {

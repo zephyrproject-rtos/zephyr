@@ -19,6 +19,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/counter.h>
 
+#include "../stepper_common.h"
 #include "step_dir_stepper_timing_source.h"
 
 /**
@@ -67,17 +68,7 @@ struct step_dir_stepper_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct step_dir_stepper_common_data {
-	const struct device *dev;
-	struct k_spinlock lock;
-	enum stepper_direction direction;
-	enum stepper_run_mode run_mode;
-	int32_t actual_position;
-	uint64_t microstep_interval_ns;
-	int32_t step_count;
-	stepper_event_callback_t callback;
-	void *event_cb_user_data;
-
-	struct k_work_delayable stepper_dwork;
+	struct stepper_common_data common_data;
 
 #ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
 	struct counter_top_cfg counter_top_cfg;
@@ -99,7 +90,7 @@ struct step_dir_stepper_common_data {
  */
 #define STEP_DIR_STEPPER_DT_COMMON_DATA_INIT(node_id)                                              \
 	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.common_data.dev = DEVICE_DT_GET(node_id),                                         \
 	}
 
 /**
