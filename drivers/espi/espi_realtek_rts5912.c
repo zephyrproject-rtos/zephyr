@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #include "reg/reg_acpi.h"
 #include "reg/reg_emi.h"
 #include "reg/reg_espi.h"
+#include "reg/reg_kbc.h"
 #include "reg/reg_port80.h"
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "support only one espi compatible node");
@@ -28,6 +29,11 @@ struct espi_rts5912_config {
 	volatile struct espi_reg *const espi_reg;
 	uint32_t espislv_clk_grp;
 	uint32_t espislv_clk_idx;
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+	volatile struct kbc_reg *const kbc_reg;
+	uint32_t kbc_clk_grp;
+	uint32_t kbc_clk_idx;
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 	volatile struct acpi_reg *const acpi_reg;
 	uint32_t acpi_clk_grp;
@@ -58,6 +64,10 @@ struct espi_rts5912_config {
 struct espi_rts5912_data {
 	sys_slist_t callbacks;
 	uint32_t config_data;
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+	int kbc_int_en;
+	int kbc_pre_irq1;
+#endif
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	struct k_sem oob_rx_lock;
 	struct k_sem oob_tx_lock;
@@ -70,6 +80,222 @@ struct espi_rts5912_data {
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI Peripheral KBC
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+
+static int espi_send_vw_event(uint8_t index, uint8_t data, const struct device *dev);
+
+static void kbc_ibf_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+	struct espi_evt_data_kbc *kbc_evt = (struct espi_evt_data_kbc *)&evt.evt_data;
+
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	kbc_evt->type = kbc_reg->STS & KBC_STS_CMDSEL ? 1 : 0;
+
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = kbc_reg->IB;
+
+	/* KBC Input Buffer Full event */
+	kbc_evt->evt = HOST_KBC_EVT_IBF;
+	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+}
+
+static void kbc_obe_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+	struct espi_evt_data_kbc *kbc_evt = (struct espi_evt_data_kbc *)&evt.evt_data;
+
+	if (espi_data->kbc_pre_irq1 == 1 && !espi_send_vw_event(0x0, 0x01, dev)) {
+		espi_data->kbc_pre_irq1 = 0;
+	}
+
+	if (kbc_reg->STS & KBC_STS_OBF) {
+		kbc_reg->OB |= KBC_OB_OBCLR;
+	}
+
+	/* Notify application that host already read out data. */
+	kbc_evt->type = 0;
+	kbc_evt->data = 0;
+	kbc_evt->evt = HOST_KBC_EVT_OBE;
+	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+}
+
+static int espi_kbc_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *const espi_data = dev->data;
+	struct rts5912_sccon_subsys sccon;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+	int rc;
+
+	if (!device_is_ready(espi_config->clk_dev)) {
+		LOG_ERR("KBC clock not ready");
+		return -ENODEV;
+	}
+
+	espi_data->kbc_int_en = 1;
+	espi_data->kbc_pre_irq1 = 0;
+
+	sccon.clk_grp = espi_config->kbc_clk_grp;
+	sccon.clk_idx = espi_config->kbc_clk_idx;
+
+	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
+	if (rc != 0) {
+		LOG_ERR("KBC clock control on failed");
+		return rc;
+	}
+
+	kbc_reg->VWCTRL1 = (0x01 << KBC_VWCTRL1_IRQNUM_Pos) | KBC_VWCTRL1_ACTEN;
+	kbc_reg->INTEN = KBC_INTEN_IBFINTEN | KBC_INTEN_OBFINTEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq));
+
+	/* IBF */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, priority), kbc_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq));
+
+	/* OBE */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, priority), kbc_obe_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq));
+
+	return 0;
+}
+
+static int lpc_request_read_8042(const struct device *dev, enum lpc_peripheral_opcode op,
+				 uint32_t *data)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+
+	switch (op) {
+	case E8042_OBF_HAS_CHAR:
+		*data = (kbc_reg->STS & KBC_STS_OBF) ? 1 : 0;
+		break;
+	case E8042_IBF_HAS_CHAR:
+		*data = (kbc_reg->STS & KBC_STS_IBF) ? 1 : 0;
+		break;
+	case E8042_READ_KB_STS:
+		*data = kbc_reg->STS;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int espi_send_vw_event(uint8_t index, uint8_t data, const struct device *dev);
+
+static void espi_send_vw_event_with_kbdata(uint8_t index, uint8_t data, uint32_t kbc_data,
+					   const struct device *dev);
+
+static uint8_t kbc_write(uint8_t data, const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	const struct espi_rts5912_data *const espi_data = dev->data;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+	uint32_t exData = (uint32_t)data;
+
+	if (espi_data->kbc_pre_irq1 == 1) {
+		/* Gen IRQ1-Level High to VW ch */
+		espi_send_vw_event(0x0, 0x01, dev);
+	}
+
+	if (espi_data->kbc_int_en) {
+		/* Gen IRQ1-Level High to VW ch */
+		espi_send_vw_event_with_kbdata(0x0, 0x81, exData, dev);
+	} else {
+		kbc_reg->OB = exData;
+	}
+
+	return 0;
+}
+
+static int lpc_request_write_8042(const struct device *dev, enum lpc_peripheral_opcode op,
+				  uint32_t *data)
+{
+	struct espi_rts5912_data *const espi_data = dev->data;
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+
+	switch (op) {
+	case E8042_WRITE_KB_CHAR:
+		kbc_write(*data & 0xff, dev);
+		break;
+	case E8042_WRITE_MB_CHAR:
+		kbc_write(*data & 0xff, dev);
+		break;
+	case E8042_RESUME_IRQ:
+		espi_data->kbc_int_en = 1;
+		break;
+	case E8042_PAUSE_IRQ:
+		espi_data->kbc_int_en = 0;
+		break;
+	case E8042_CLEAR_OBF:
+		kbc_reg->OB |= KBC_OB_OBCLR;
+		break;
+	case E8042_SET_FLAG:
+		/* FW shouldn't modify these flags directly */
+		*data &= ~(KBC_STS_OBF | KBC_STS_IBF | KBC_STS_STS2);
+		kbc_reg->STS |= *data & 0xff;
+		break;
+	case E8042_CLEAR_FLAG:
+		/* FW shouldn't modify these flags directly */
+		*data |= KBC_STS_OBF | KBC_STS_IBF | KBC_STS_STS2;
+		kbc_reg->STS &= ~(*data & 0xff);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#else /* CONFIG_ESPI_PERIPHERAL_8042_KBC */
+
+static int lpc_request_read_8042(const struct device *dev, enum lpc_peripheral_opcode op,
+				 uint32_t *data)
+{
+	return -ENOTSUP;
+}
+
+static int lpc_request_write_8042(const struct device *dev, enum lpc_peripheral_opcode op,
+				  uint32_t *data)
+{
+	return -ENOTSUP;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_8042_KBC */
 
 /*
  * =========================================================================
@@ -1238,6 +1464,81 @@ static void espi_vw_ch_setup(const struct device *dev)
 	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx61, irq));
 }
 
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+
+#define ESPI_VW_EVENT_IDLE_TIMEOUT_US     1024UL
+#define ESPI_VW_EVENT_COMPLETE_TIMEOUT_US 10000UL
+
+static int espi_send_vw_event(uint8_t index, uint8_t data, const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	uint32_t i;
+
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	if ((espi_reg->EVCFG & ESPI_EVCFG_CHEN) == 0 || (espi_reg->EVCFG & ESPI_EVCFG_CHRDY) == 0) {
+		return -EBUSY;
+	}
+
+	/* Wait for TX FIFO to not be full before writing, with timeout */
+	if (!WAIT_FOR(!(espi_reg->EVSTS & ESPI_EVSTS_TXFULL), ESPI_VW_EVENT_IDLE_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		return -EBUSY;
+	}
+
+	i = 0x0000FFFF & ((uint32_t)index << 8 | (uint32_t)data);
+	espi_reg->EVTXDAT = i;
+
+	/* Wait for TX FIFO to not be full after writing, with shorter timeout */
+	if (!WAIT_FOR(!(espi_reg->EVSTS & ESPI_EVSTS_TXFULL), ESPI_VW_EVENT_COMPLETE_TIMEOUT_US,
+		      NULL)) {
+		return -EBUSY;
+	}
+
+	espi_reg->EVSTS |= ESPI_EVSTS_TXDONE;
+
+	return 0;
+}
+
+static void espi_send_vw_event_with_kbdata(uint8_t index, uint8_t data, uint32_t kbc_data,
+					   const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *const espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
+	uint32_t i;
+
+	if ((espi_reg->EVCFG & ESPI_EVCFG_CHEN) == 0 || (espi_reg->EVCFG & ESPI_EVCFG_CHRDY) == 0) {
+		return;
+	}
+
+	/* Wait for TX FIFO to not be full before writing, with timeout */
+	if (!WAIT_FOR(!(espi_reg->EVSTS & ESPI_EVSTS_TXFULL), ESPI_VW_EVENT_COMPLETE_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		return;
+	}
+
+	__disable_irq();
+	kbc_reg->OB = kbc_data;
+	i = 0x0000FFFF & ((uint32_t)index << 8 | (uint32_t)data);
+	espi_reg->EVTXDAT = i;
+
+	/* Wait for TX FIFO to not be full after writing, in IRQ disabled state */
+	if (!WAIT_FOR(!(espi_reg->EVSTS & ESPI_EVSTS_TXFULL), ESPI_VW_EVENT_COMPLETE_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		espi_data->kbc_pre_irq1 = 1;
+		__enable_irq();
+		return;
+	}
+
+	espi_data->kbc_pre_irq1 = 1;
+	espi_reg->EVSTS |= ESPI_EVSTS_TXDONE;
+	__enable_irq();
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_8042_KBC */
+
 #endif /* CONFIG_ESPI_VWIRE_CHANNEL */
 
 /*
@@ -1883,6 +2184,15 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
 
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+	/* Setup KBC */
+	rc = espi_kbc_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI KBC setup failed");
+		goto exit;
+	}
+#endif
+
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 	espi_setup_acpi_shm(espi_config);
 #endif
@@ -1950,6 +2260,11 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, espi_target),
 	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_grp),
 	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_idx),
+#ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
+	.kbc_reg = (volatile struct kbc_reg *const)DT_INST_REG_ADDR_BY_NAME(0, kbc),
+	.kbc_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), kbc, clk_grp),
+	.kbc_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), kbc, clk_idx),
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 	.acpi_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, acpi),
 	.acpi_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), acpi, clk_grp),
