@@ -28,6 +28,11 @@ struct espi_rts5912_config {
 	volatile struct espi_reg *const espi_reg;
 	uint32_t espislv_clk_grp;
 	uint32_t espislv_clk_idx;
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
+	volatile struct acpi_reg *const acpi_reg;
+	uint32_t acpi_clk_grp;
+	uint32_t acpi_clk_idx;
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	volatile struct acpi_reg *const promt0_reg;
 	uint32_t promt0_clk_grp;
@@ -60,6 +65,132 @@ struct espi_rts5912_data {
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI Peripheral Host IO (ACPI)
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
+
+static void acpi_ibf_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	struct espi_event evt = {ESPI_BUS_PERIPHERAL_NOTIFICATION, ESPI_PERIPHERAL_HOST_IO,
+				 ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_acpi *acpi_evt = (struct espi_evt_data_acpi *)&evt.evt_data;
+	volatile struct acpi_reg *const acpi_reg = espi_config->acpi_reg;
+
+	/* Host put data on input buffer of ACPI EC0 channel */
+	if (acpi_reg->STS & ACPI_STS_IBF) {
+		/*
+		 * Indicates if the host sent a command or data.
+		 * 0 = data
+		 * 1 = Command.
+		 */
+		acpi_evt->type = acpi_reg->STS & ACPI_STS_CMDSEL ? 1 : 0;
+		acpi_evt->data = (uint8_t)acpi_reg->IB;
+	}
+	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+}
+
+static int espi_acpi_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct rts5912_sccon_subsys sccon;
+	volatile struct acpi_reg *const acpi_reg = espi_config->acpi_reg;
+	int rc;
+
+	if (!device_is_ready(espi_config->clk_dev)) {
+		LOG_ERR("ACPI clock not ready");
+		return -ENODEV;
+	}
+
+	sccon.clk_grp = espi_config->acpi_clk_grp;
+	sccon.clk_idx = espi_config->acpi_clk_idx;
+	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
+	if (rc != 0) {
+		LOG_ERR("ACPI clock control on failed");
+		return rc;
+	}
+
+	acpi_reg->VWCTRL1 = (0x00UL << ACPI_VWCTRL1_IRQNUM_Pos) | ACPI_VWCTRL1_ACTEN;
+	acpi_reg->INTEN = ACPI_INTEN_IBFINTEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq));
+
+	/* IBF */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, priority), acpi_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq));
+
+	return 0;
+}
+
+static int lpc_request_read_acpi(const struct espi_rts5912_config *const espi_config,
+				 enum lpc_peripheral_opcode op, uint32_t *data)
+{
+	volatile struct acpi_reg *const acpi_reg = espi_config->acpi_reg;
+
+	switch (op) {
+	case EACPI_OBF_HAS_CHAR:
+		*data = acpi_reg->STS & ACPI_STS_OBF ? 1 : 0;
+		break;
+	case EACPI_IBF_HAS_CHAR:
+		*data = acpi_reg->STS & ACPI_STS_IBF ? 1 : 0;
+		break;
+	case EACPI_READ_STS:
+		*data = acpi_reg->STS;
+		break;
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	case EACPI_GET_SHARED_MEMORY:
+		*data = (uint32_t)acpi_shd_mem_sram;
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int lpc_request_write_acpi(const struct espi_rts5912_config *const espi_config,
+				  enum lpc_peripheral_opcode op, uint32_t *data)
+{
+	volatile struct acpi_reg *const acpi_reg = espi_config->acpi_reg;
+
+	switch (op) {
+	case EACPI_WRITE_CHAR:
+		acpi_reg->OB = *data & 0xff;
+		break;
+	case EACPI_WRITE_STS:
+		acpi_reg->STS = *data & 0xff;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#else /* CONFIG_ESPI_PERIPHERAL_HOST_IO */
+
+static int lpc_request_read_acpi(const struct espi_rts5912_config *const espi_config,
+				 enum lpc_peripheral_opcode op, uint32_t *data)
+{
+	return -ENOTSUP;
+}
+
+static int lpc_request_write_acpi(const struct espi_rts5912_config *const espi_config,
+				  enum lpc_peripheral_opcode op, uint32_t *data)
+{
+	return -ENOTSUP;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO */
 
 /*
  * =========================================================================
@@ -1727,6 +1858,15 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
 
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
+	/* Setup ACPI */
+	rc = espi_acpi_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI ACPI setup failed");
+		goto exit;
+	}
+#endif
+
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	rc = espi_promt0_setup(dev);
 	if (rc != 0) {
@@ -1781,6 +1921,11 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, espi_target),
 	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_grp),
 	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_idx),
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
+	.acpi_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, acpi),
+	.acpi_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), acpi, clk_grp),
+	.acpi_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), acpi, clk_idx),
+#endif
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	.promt0_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, promt0),
 	.promt0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), promt0, clk_grp),
