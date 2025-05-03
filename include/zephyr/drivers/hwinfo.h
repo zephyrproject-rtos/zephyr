@@ -69,6 +69,8 @@ extern "C" {
 #define RESET_TEMPERATURE			BIT(14)
 /** Bootloader reset (entry / exit) */
 #define RESET_BOOTLOADER			BIT(15)
+/** Flash ECC reset */
+#define RESET_FLASH				BIT(16)
 /**
  * @}
  */
