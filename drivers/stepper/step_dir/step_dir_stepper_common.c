@@ -145,11 +145,11 @@ static void position_mode_task(const struct device *dev)
 		(void)step_dir_stepper_perform_step(dev);
 	}
 
-	update_remaining_steps(dev->data);
-
 	if (config->timing_source->needs_reschedule(dev) && data->step_count != 0) {
 		(void)config->timing_source->start(dev);
 	}
+
+	update_remaining_steps(dev->data);
 }
 
 static void velocity_mode_task(const struct device *dev)
