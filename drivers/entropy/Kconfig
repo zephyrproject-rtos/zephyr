@@ -45,6 +45,7 @@ source "drivers/entropy/Kconfig.siwx91x"
 source "drivers/entropy/Kconfig.smartbond"
 source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.sy1xx"
+source "drivers/entropy/Kconfig.virtio"
 # zephyr-keep-sorted-stop
 
 config ENTROPY_HAS_DRIVER
