@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #include "espi_utils.h"
 #include "reg/reg_espi.h"
+#include "reg/reg_port80.h"
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "support only one espi compatible node");
 
@@ -25,6 +26,11 @@ struct espi_rts5912_config {
 	volatile struct espi_reg *const espi_reg;
 	uint32_t espislv_clk_grp;
 	uint32_t espislv_clk_idx;
+#ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
+	volatile struct port80_reg *const port80_reg;
+	uint32_t port80_clk_grp;
+	uint32_t port80_clk_idx;
+#endif
 	const struct device *clk_dev;
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -44,6 +50,62 @@ struct espi_rts5912_data {
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI Peripheral Debug Port 80
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
+
+static void espi_port80_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	struct espi_event evt = {ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 ESPI_PERIPHERAL_INDEX_0 << 16 | ESPI_PERIPHERAL_DEBUG_PORT80,
+				 ESPI_PERIPHERAL_NODATA};
+	volatile struct port80_reg *const port80_reg = espi_config->port80_reg;
+
+	evt.evt_data = port80_reg->DATA;
+	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+}
+
+static int espi_peri_ch_port80_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct rts5912_sccon_subsys sccon;
+	volatile struct port80_reg *const port80_reg = espi_config->port80_reg;
+	int rc;
+
+	if (!device_is_ready(espi_config->clk_dev)) {
+		return -ENODEV;
+	}
+
+	sccon.clk_grp = espi_config->port80_clk_grp;
+	sccon.clk_idx = espi_config->port80_clk_idx;
+
+	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
+	if (rc != 0) {
+		return rc;
+	}
+
+	port80_reg->ADDR = 0x80UL;
+	port80_reg->CFG = PORT80_CFG_CLRFLG | PORT80_CFG_THREEN;
+	port80_reg->INTEN = PORT80_INTEN_THREINTEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq));
+
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, priority), espi_port80_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq));
+
+	return 0;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80 */
 
 /*
  * =========================================================================
@@ -1573,6 +1635,15 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
 
+#ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
+	/* Setup Port80 */
+	rc = espi_peri_ch_port80_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI Port80 setup failed");
+		goto exit;
+	}
+#endif
+
 #ifdef CONFIG_ESPI_VWIRE_CHANNEL
 	/* Setup eSPI virtual-wire channel */
 	espi_vw_ch_setup(dev);
@@ -1608,6 +1679,11 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, espi_target),
 	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_grp),
 	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_target, clk_idx),
+#ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
+	.port80_reg = (volatile struct port80_reg *const)DT_INST_REG_ADDR_BY_NAME(0, port80),
+	.port80_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), port80, clk_grp),
+	.port80_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), port80, clk_idx),
+#endif
 	.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
