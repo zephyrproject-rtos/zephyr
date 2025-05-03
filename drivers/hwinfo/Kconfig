@@ -297,4 +297,11 @@ config HWINFO_RENESAS_RA
 	help
 	  Enable RENESAS RA hwinfo driver
 
+config HWINFO_MSPM0
+	bool "TI MSPM0 hwinfo"
+	default y
+	depends on SOC_FAMILY_TI_MSPM0
+	help
+	  Enable TI MSPM0 hwinfo driver
+
 endif
