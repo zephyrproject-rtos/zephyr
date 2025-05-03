@@ -32,11 +32,233 @@ struct espi_rts5912_config {
 struct espi_rts5912_data {
 	sys_slist_t callbacks;
 	uint32_t config_data;
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	struct k_sem oob_rx_lock;
+	struct k_sem oob_tx_lock;
+	uint8_t *oob_tx_ptr;
+	uint8_t *oob_rx_ptr;
+	bool oob_tx_busy;
+#endif
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	struct k_sem flash_lock;
 	uint8_t *maf_ptr;
 #endif
 };
+
+/*
+ * =========================================================================
+ * ESPI OOB channel
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+
+#define MAX_OOB_TIMEOUT 200UL /* ms */
+#define OOB_BUFFER_SIZE 256UL
+
+static int espi_rts5912_send_oob(const struct device *dev, struct espi_oob_packet *pckt)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	int ret;
+
+	if (!(espi_reg->EOCFG & ESPI_EOCFG_CHRDY)) {
+		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		return -EIO;
+	}
+
+	if (espi_data->oob_tx_busy) {
+		LOG_ERR("%s: OOB channel is busy", __func__);
+		return -EIO;
+	}
+
+	if (pckt->len > OOB_BUFFER_SIZE) {
+		LOG_ERR("%s: OOB Tx have no insufficient space", __func__);
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < pckt->len; i++) {
+		espi_data->oob_tx_ptr[i] = pckt->buf[i];
+	}
+
+	espi_reg->EOTXLEN = pckt->len - 1;
+	espi_reg->EOTXCTRL = ESPI_EOTXCTRL_TXSTR;
+
+	espi_data->oob_tx_busy = true;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&espi_data->oob_tx_lock, K_MSEC(MAX_OOB_TIMEOUT));
+	if (ret == -EAGAIN) {
+		return -ETIMEDOUT;
+	}
+
+	espi_data->oob_tx_busy = false;
+
+	return 0;
+}
+
+static int espi_rts5912_receive_oob(const struct device *dev, struct espi_oob_packet *pckt)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	uint32_t rx_len;
+
+	if (!(espi_reg->EOCFG & ESPI_EOCFG_CHRDY)) {
+		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		return -EIO;
+	}
+
+	if (espi_reg->EOSTS & ESPI_EOSTS_RXPND) {
+		LOG_ERR("OOB Receive Pending");
+		return -EIO;
+	}
+
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	/* Wait until ISR or timeout */
+	int ret = k_sem_take(&espi_data->oob_rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
+
+	if (ret == -EAGAIN) {
+		LOG_ERR("OOB Rx Timeout");
+		return -ETIMEDOUT;
+	}
+#endif
+
+	/* Check if buffer passed to driver can fit the received buffer */
+	rx_len = espi_reg->EORXLEN;
+
+	if (rx_len > pckt->len) {
+		LOG_ERR("space rcvd %d vs %d", rx_len, pckt->len);
+		return -EIO;
+	}
+
+	pckt->len = rx_len;
+
+	for (int i = 0; i < rx_len; i++) {
+		pckt->buf[i] = espi_data->oob_rx_ptr[i];
+	}
+
+	return 0;
+}
+
+static void espi_oob_tx_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	uint32_t status = espi_reg->EOSTS;
+
+	if (status & ESPI_EOSTS_TXDONE) {
+		k_sem_give(&espi_data->oob_tx_lock);
+		espi_reg->EOSTS = ESPI_EOSTS_TXDONE;
+	}
+}
+
+static void espi_oob_rx_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	uint32_t status = espi_reg->EOSTS;
+
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_event evt = {
+		.evt_type = ESPI_BUS_EVENT_OOB_RECEIVED, .evt_details = 0, .evt_data = 0};
+#endif
+
+	if (status & ESPI_EOSTS_RXDONE) {
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+		k_sem_give(&espi_data->oob_rx_lock);
+#else
+		k_busy_wait(250);
+		evt.evt_details = espi_reg->EORXLEN;
+		espi_send_callbacks(&espi_data->callbacks, dev, evt);
+#endif
+		espi_reg->EOSTS = ESPI_EOSTS_RXDONE;
+	}
+}
+
+static void espi_oob_chg_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_OOB,
+				 .evt_data = 0};
+
+	uint32_t status = espi_reg->EOSTS;
+	uint32_t config = espi_reg->EOCFG;
+
+	if (status & ESPI_EOSTS_CFGENCHG) {
+		evt.evt_data = config & ESPI_EVCFG_CHEN ? 1 : 0;
+		espi_send_callbacks(&espi_data->callbacks, dev, evt);
+		espi_reg->EOSTS = ESPI_EOSTS_CFGENCHG;
+	}
+}
+
+static uint8_t oob_tx_buffer[OOB_BUFFER_SIZE] __aligned(4);
+static uint8_t oob_rx_buffer[OOB_BUFFER_SIZE] __aligned(4);
+
+static int espi_oob_ch_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *espi_data = dev->data;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	espi_data->oob_tx_busy = false;
+
+	espi_data->oob_tx_ptr = oob_tx_buffer;
+	if (espi_data->oob_tx_ptr == NULL) {
+		LOG_ERR("Failed to allocate OOB Tx buffer");
+		return -ENOMEM;
+	}
+
+	espi_data->oob_rx_ptr = oob_rx_buffer;
+	if (espi_data->oob_tx_ptr == NULL) {
+		LOG_ERR("Failed to allocate OOB Rx buffer");
+		return -ENOMEM;
+	}
+
+	espi_reg->EOTXBUF = (uint32_t)espi_data->oob_tx_ptr;
+	espi_reg->EORXBUF = (uint32_t)espi_data->oob_rx_ptr;
+
+	espi_reg->EOTXINTEN = ESPI_EOTXINTEN_TXEN;
+	espi_reg->EORXINTEN = (ESPI_EORXINTEN_RXEN | ESPI_EORXINTEN_CHENCHG);
+
+	k_sem_init(&espi_data->oob_tx_lock, 0, 1);
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	k_sem_init(&espi_data->oob_rx_lock, 0, 1);
+#endif
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq));
+
+	/* Tx */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, priority), espi_oob_tx_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq));
+
+	/* Rx */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, priority), espi_oob_rx_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq));
+
+	/* Chg */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, priority), espi_oob_chg_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq));
+
+	return 0;
+}
+
+#endif /* CONFIG_ESPI_OOB_CHANNEL */
 
 /*
  * =========================================================================
@@ -352,6 +574,10 @@ static DEVICE_API(espi, espi_rts5912_driver_api) = {
 	.config = espi_rts5912_configure,
 	.get_channel_status = espi_rts5912_channel_ready,
 	.manage_callback = espi_rts5912_manage_callback,
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	.send_oob = espi_rts5912_send_oob,
+	.receive_oob = espi_rts5912_receive_oob,
+#endif
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	.flash_read = espi_rts5912_flash_read,
 	.flash_write = espi_rts5912_flash_write,
@@ -439,6 +665,15 @@ static int espi_rts5912_init(const struct device *dev)
 
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
+
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	/* Setup eSPI OOB channel */
+	rc = espi_oob_ch_setup(dev);
+	if (rc != 0) {
+		LOG_ERR("eSPI OOB channel setup failed");
+		goto exit;
+	}
+#endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	/* Setup eSPI flash channel */
