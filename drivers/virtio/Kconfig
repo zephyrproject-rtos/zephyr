@@ -15,6 +15,13 @@ config VIRTIO_PCI
 	help
 	  Enable options for VIRTIO over PCI
 
+config VIRTIO_MMIO
+	bool "support for VIRTIO over MMIO"
+	default y
+	depends on DT_HAS_VIRTIO_MMIO_ENABLED
+	help
+	  Enable options for VIRTIO over MMIO
+
 endif # VIRTIO
 
 module = VIRTIO
