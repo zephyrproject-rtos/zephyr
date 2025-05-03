@@ -7,3 +7,10 @@ config ESPI_RTS5912
 	depends on DT_HAS_REALTEK_RTS5912_ESPI_ENABLED
 	help
 	  Enable the Realtek RTS5912 eSPI driver.
+
+if ESPI_RTS5912
+
+config ESPI_FLASH_CHANNEL
+	default y
+
+endif
