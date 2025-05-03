@@ -527,6 +527,143 @@ static int espi_promt0_setup(const struct device *dev)
 
 /*
  * =========================================================================
+ * ESPI Peripheral Channel Read/Write API
+ * =========================================================================
+ */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_CHANNEL
+
+static void espi_periph_ch_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	struct espi_rts5912_data *data = dev->data;
+
+	struct espi_event evt = {.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				 .evt_details = ESPI_CHANNEL_PERIPHERAL,
+				 .evt_data = 0};
+
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	uint32_t status = espi_reg->EPSTS;
+	uint32_t config = espi_reg->EPCFG;
+
+	if (status & ESPI_EPSTS_CLRSTS) {
+		evt.evt_data = config & ESPI_EPCFG_CHEN ? 1 : 0;
+		espi_send_callbacks(&data->callbacks, dev, evt);
+
+		espi_reg->EPSTS = ESPI_EPSTS_CLRSTS;
+	}
+}
+
+static int lpc_request_read_custom(const struct espi_rts5912_config *const espi_config,
+				   enum lpc_peripheral_opcode op, uint32_t *data)
+{
+#ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
+	switch (op) {
+	case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY:
+		*data = (uint32_t)ec_host_cmd_sram;
+		break;
+	case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE:
+		*data = ESPI_RTK_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int espi_rts5912_read_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+					 uint32_t *data)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+
+	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
+		return lpc_request_read_8042(dev, op, data);
+	} else if (op >= EACPI_START_OPCODE && op <= EACPI_MAX_OPCODE) {
+		return lpc_request_read_acpi(espi_config, op, data);
+	} else if (op >= ECUSTOM_START_OPCODE && op <= ECUSTOM_MAX_OPCODE) {
+		return lpc_request_read_custom(espi_config, op, data);
+	} else {
+		return -ENOTSUP;
+	}
+}
+
+static int lpc_request_write_custom(const struct espi_rts5912_config *const espi_config,
+				    enum lpc_peripheral_opcode op, uint32_t *data)
+{
+#ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
+	volatile struct acpi_reg *const promt0_reg = espi_config->promt0_reg;
+
+	switch (op) {
+	case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
+		if (*data == 0) {
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq)));
+
+		} else {
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq)));
+		}
+		break;
+	case ECUSTOM_HOST_CMD_SEND_RESULT:
+		promt0_reg->STS &= ~ACPI_STS_STS0;
+		promt0_reg->OB = *data & 0xff;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int espi_rts5912_write_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+					  uint32_t *data)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+
+	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
+		return lpc_request_write_8042(dev, op, data);
+	} else if (op >= EACPI_START_OPCODE && op <= EACPI_MAX_OPCODE) {
+		return lpc_request_write_acpi(espi_config, op, data);
+	} else if (op >= ECUSTOM_START_OPCODE && op <= ECUSTOM_MAX_OPCODE) {
+		return lpc_request_write_custom(espi_config, op, data);
+	} else {
+		return -ENOTSUP;
+	}
+}
+
+static void espi_periph_ch_setup(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	espi_reg->EPINTEN = ESPI_EPINTEN_CFGCHGEN | ESPI_EPINTEN_MEMWREN | ESPI_EPINTEN_MEMRDEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq));
+
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, priority), espi_periph_ch_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq));
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_CHANNEL */
+
+/*
+ * =========================================================================
  * ESPI Peripheral Debug Port 80
  * =========================================================================
  */
@@ -2075,6 +2212,10 @@ static DEVICE_API(espi, espi_rts5912_driver_api) = {
 	.config = espi_rts5912_configure,
 	.get_channel_status = espi_rts5912_channel_ready,
 	.manage_callback = espi_rts5912_manage_callback,
+#ifdef CONFIG_ESPI_PERIPHERAL_CHANNEL
+	.read_lpc_request = espi_rts5912_read_lpc_request,
+	.write_lpc_request = espi_rts5912_write_lpc_request,
+#endif
 #ifdef CONFIG_ESPI_VWIRE_CHANNEL
 	.send_vwire = espi_rts5912_send_vwire,
 	.receive_vwire = espi_rts5912_receive_vwire,
@@ -2223,6 +2364,11 @@ static int espi_rts5912_init(const struct device *dev)
 		LOG_ERR("eSPI Port80 setup failed");
 		goto exit;
 	}
+#endif
+
+#ifdef CONFIG_ESPI_PERIPHERAL_CHANNEL
+	/* Setup eSPI peripheral channel */
+	espi_periph_ch_setup(dev);
 #endif
 
 #ifdef CONFIG_ESPI_VWIRE_CHANNEL
