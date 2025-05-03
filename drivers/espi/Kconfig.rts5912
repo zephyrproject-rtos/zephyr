@@ -10,6 +10,9 @@ config ESPI_RTS5912
 
 if ESPI_RTS5912
 
+config ESPI_OOB_CHANNEL
+	default y
+
 config ESPI_FLASH_CHANNEL
 	default y
 
