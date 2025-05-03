@@ -23,3 +23,6 @@ CONFIG_INPUT=y
 
 # Enable ADC
 CONFIG_ADC=y
+
+# Enable ESPI
+CONFIG_ESPI=y
