@@ -88,7 +88,7 @@ static int entropy_virtio_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = virtio_init_virtqueues(cfg->vdev, entropy_virtio_enum_queues_cb, (void *)dev);
+	ret = virtio_init_virtqueues(cfg->vdev, 1, entropy_virtio_enum_queues_cb, (void *)dev);
 	if (ret) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
