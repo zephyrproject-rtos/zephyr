@@ -14,6 +14,7 @@ description: |
             compatible = "adi,tmc51xx";
             reg = <0>;
             spi-max-frequency = <DT_FREQ_M(8)>; /* Maximum SPI bus frequency */
+            diag0-gpios = <&gpio0 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* Diag0 pin */
 
             #address-cells = <1>;
             #size-cells = <0>;
@@ -106,3 +107,11 @@ properties:
 
       Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[51xx] * ( fCLK[Hz]/2 / 2^23 )
             where v[51xx] is the value written to the TMC51XX.
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Diagnostics output DIAG0 pin. This pin enables interrupt-based
+      rampstat handling, allowing the driver to respond to motor events
+      like position reached or stall detection without polling.
+      Should be configured as push-pull output (active high).
