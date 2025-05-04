@@ -1296,3 +1296,12 @@ test_i2c_icm45686: icm45686@b1 {
 	reg = <0xb1>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ina260: ina260@b2 {
+	compatible = "ti,ina260";
+	reg = <0xb2>;
+	average = <64>;
+	v-conv-time = <1100>;
+	i-conv-time = <1100>;
+	mode = "CONT_BOTH";
+};
