@@ -626,6 +626,10 @@ static void eth_nxp_enet_isr(const struct device *dev)
 		nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT, NULL);
 	}
 
+	if ((eir & kENET_TsAvailInterrupt) || (eir & kENET_TsTimerInterrupt)) {
+		ENET_TimeStampIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
+	}
+
 	irq_unlock(irq_lock_key);
 }
 
