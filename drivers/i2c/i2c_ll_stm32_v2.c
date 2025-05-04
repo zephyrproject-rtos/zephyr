@@ -229,32 +229,6 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	}
 }
 
-static void i2c_stm32_master_mode_end(const struct device *dev)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	i2c_stm32_disable_transfer_interrupts(dev);
-
-	if (LL_I2C_IsEnabledReloadMode(i2c)) {
-		LL_I2C_DisableReloadMode(i2c);
-	}
-
-#if defined(CONFIG_I2C_TARGET)
-	data->master_active = false;
-	if (!data->slave_attached && !data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#else
-	if (!data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#endif
-
-	k_sem_give(&data->device_sync_sem);
-}
-
 #if defined(CONFIG_I2C_TARGET)
 static void i2c_stm32_slave_event(const struct device *dev)
 {
@@ -651,8 +625,72 @@ int i2c_stm32_error(const struct device *dev)
 
 	return 0;
 end:
-	i2c_stm32_master_mode_end(dev);
+	i2c_stm32_disable_transfer_interrupts(dev);
+	/* Wakeup thread */
+	k_sem_give(&data->device_sync_sem);
 	return -EIO;
+}
+
+static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *msg)
+{
+	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
+	int ret;
+
+	/* Wait for IRQ to complete or timeout
+	 * Timeout scales with one millisecond for each byte to
+	 * transfer so that slave can do some clock stretching
+	 */
+	ret = k_sem_take(&data->device_sync_sem, K_MSEC(msg->len + 10U));
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	/* Stop DMA and invalidate cache if needed */
+	dma_finish(dev, msg);
+#endif
+
+	/* Check for transfer errors or timeout */
+	if (data->current.is_nack || data->current.is_arlo || (ret != 0)) {
+
+		if (data->current.is_arlo) {
+			LOG_DBG("ARLO");
+		}
+
+		if (data->current.is_nack) {
+			LOG_DBG("NACK");
+		}
+
+		if (data->current.is_err) {
+			LOG_DBG("ERR %d", data->current.is_err);
+		}
+
+		if (ret != 0) {
+			LOG_DBG("TIMEOUT");
+		}
+		ret = -EIO;
+	}
+
+#if defined(CONFIG_I2C_TARGET)
+	if (!keep_enabled || (ret != 0)) {
+		data->master_active = false;
+	}
+	/* Don't disable I2C if a slave is attached */
+	if (data->slave_attached) {
+		keep_enabled = true;
+	}
+#endif
+
+	/* Don't disable I2C if SMBus Alert is active */
+	if (data->smbalert_active) {
+		keep_enabled = true;
+	}
+
+	/* If I2C no longer need to be enabled or on error */
+	if (!keep_enabled || (ret != 0)) {
+		LL_I2C_Disable(cfg->i2c);
+	}
+
+	return ret;
 }
 
 static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
@@ -661,7 +699,6 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
-	bool is_timeout = false;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -776,61 +813,8 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Enable interrupts */
 	LL_I2C_WriteReg(regs, CR1, cr1);
 
-	/* Wait for IRQ to complete or timeout
-	 * Timeout scales with one millisecond for each byte to
-	 * transfer so that slave can do some clock stretching
-	 */
-	if (k_sem_take(&data->device_sync_sem, K_MSEC(msg->len + 10U)) != 0U) {
-		is_timeout = true;
-	}
-
-#ifdef CONFIG_I2C_STM32_V2_DMA
-	/* Stop DMA and invalidate cache if needed */
-	dma_finish(dev, msg);
-#endif
-	/* Check for transfer errors or timeout */
-	if (data->current.is_nack || data->current.is_arlo || is_timeout) {
-		LL_I2C_Disable(regs);
-		goto error;
-	}
-
-	if ((msg->flags & I2C_MSG_STOP) != 0U) {
-		/* Disable I2C if this was the last message and SMBus alert is not active */
-#if defined(CONFIG_I2C_TARGET)
-		data->master_active = false;
-		if (!data->slave_attached && !data->smbalert_active) {
-			LL_I2C_Disable(regs);
-		}
-#else
-		if (!data->smbalert_active) {
-			LL_I2C_Disable(regs);
-		}
-#endif
-	}
-
-	return 0;
-
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("ARLO");
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("NACK");
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("ERR %d", data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("TIMEOUT");
-	}
-
-	return -EIO;
+	/* Wait for transfer to finish */
+	return stm32_i2c_irq_msg_finish(dev, msg);
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
