@@ -31,6 +31,12 @@ endchoice
 config REGULATOR
 	default y
 
+config INPUT
+	default y if LVGL
+
+config I2C_STM32_V2_TIMING
+	default y if INPUT
+
 endif # DISPLAY
 
 endif # BOARD_STM32H573I_DK
