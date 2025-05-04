@@ -132,6 +132,16 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_SOC_CH32L103)
+	if(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 72*1000*1000) {
+		FLASH->ACTLR = 2;
+	} else if(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 40*1000*1000) {
+		FLASH->ACTLR = 1;
+	} else {
+		FLASH->ACTLR = 0;
+	}
+#endif
+
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
 		RCC->CFGR0 = (RCC->CFGR0 & ~RCC_SW) | RCC_SW_HSI;
 	} else if (IS_ENABLED(WCH_RCC_SRC_IS_HSE)) {
