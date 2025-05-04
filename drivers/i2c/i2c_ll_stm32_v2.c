@@ -209,53 +209,6 @@ static void dma_finish(const struct device *dev, struct i2c_msg *msg)
 
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
-static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
-			    uint8_t *next_msg_flags, uint16_t slave,
-			    uint32_t transfer)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	if (LL_I2C_IsEnabledReloadMode(i2c)) {
-		LL_I2C_SetTransferSize(i2c, msg->len);
-	} else {
-		if (I2C_ADDR_10_BITS & data->dev_config) {
-			LL_I2C_SetMasterAddressingMode(i2c,
-					LL_I2C_ADDRESSING_MODE_10BIT);
-			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave);
-		} else {
-			LL_I2C_SetMasterAddressingMode(i2c,
-				LL_I2C_ADDRESSING_MODE_7BIT);
-			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave << 1);
-		}
-
-		if (!(msg->flags & I2C_MSG_STOP) && next_msg_flags &&
-		    !(*next_msg_flags & I2C_MSG_RESTART)) {
-			LL_I2C_EnableReloadMode(i2c);
-		} else {
-			LL_I2C_DisableReloadMode(i2c);
-		}
-		LL_I2C_DisableAutoEndMode(i2c);
-		LL_I2C_SetTransferRequest(i2c, transfer);
-		LL_I2C_SetTransferSize(i2c, msg->len);
-
-#if defined(CONFIG_I2C_TARGET)
-		data->master_active = true;
-#endif
-
-#ifdef CONFIG_I2C_STM32_V2_DMA
-		if (msg->len) {
-			dma_xfer_start(dev, msg);
-		}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
-
-		LL_I2C_Enable(i2c);
-
-		LL_I2C_GenerateStartCondition(i2c);
-	}
-}
-
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
@@ -829,15 +782,9 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	}
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-	if ((data->current.msg->flags & I2C_MSG_READ) != 0) {
-		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
-		LL_I2C_DisableDMAReq_RX(regs);
-	} else {
-		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
-		LL_I2C_DisableDMAReq_TX(regs);
-	}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
-
+	/* Stop DMA and invalidate cache if needed */
+	dma_finish(dev, msg);
+#endif
 	/* Check for transfer errors or timeout */
 	if (data->current.is_nack || data->current.is_arlo || is_timeout) {
 		LL_I2C_Disable(regs);
@@ -857,14 +804,6 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 		}
 #endif
 	}
-#if defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
-	    ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ)) {
-		LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
-			msg->buf, msg->len);
-		sys_cache_data_invd_range(msg->buf, msg->len);
-	}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	return 0;
 
@@ -927,6 +866,46 @@ error:
 		LL_I2C_DisableReloadMode(i2c);
 	}
 	return -EIO;
+}
+
+static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
+			    uint8_t *next_msg_flags, uint16_t slave,
+			    uint32_t transfer)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (LL_I2C_IsEnabledReloadMode(i2c)) {
+		LL_I2C_SetTransferSize(i2c, msg->len);
+	} else {
+		if (I2C_ADDR_10_BITS & data->dev_config) {
+			LL_I2C_SetMasterAddressingMode(i2c,
+					LL_I2C_ADDRESSING_MODE_10BIT);
+			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave);
+		} else {
+			LL_I2C_SetMasterAddressingMode(i2c,
+				LL_I2C_ADDRESSING_MODE_7BIT);
+			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave << 1);
+		}
+
+		if (!(msg->flags & I2C_MSG_STOP) && next_msg_flags &&
+		    !(*next_msg_flags & I2C_MSG_RESTART)) {
+			LL_I2C_EnableReloadMode(i2c);
+		} else {
+			LL_I2C_DisableReloadMode(i2c);
+		}
+		LL_I2C_DisableAutoEndMode(i2c);
+		LL_I2C_SetTransferRequest(i2c, transfer);
+		LL_I2C_SetTransferSize(i2c, msg->len);
+
+#if defined(CONFIG_I2C_TARGET)
+		data->master_active = true;
+#endif
+		LL_I2C_Enable(i2c);
+
+		LL_I2C_GenerateStartCondition(i2c);
+	}
 }
 
 static inline int msg_done(const struct device *dev,
