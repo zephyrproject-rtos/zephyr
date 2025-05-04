@@ -1462,7 +1462,8 @@ class Identity(ComplianceTest):
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
-            detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
+            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
+                                       body,
                                        re.IGNORECASE)
 
             failures = []
