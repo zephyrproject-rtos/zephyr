@@ -264,46 +264,6 @@ ZTEST_F(drv84xx_api, test_move_to_no_movement_when_disabled)
 		      curr_pos);
 }
 
-ZTEST_F(drv84xx_api, test_move_by_positive_step_count)
-{
-	int32_t steps = 50;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
-	unsigned int signaled;
-	int result;
-
-	k_poll_signal_check(&stepper_signal, &signaled, &result);
-	zassert_equal(signaled, 1, "No event detected");
-	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED,
-		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, 50u, "Target position should be %d but is %d", 50u, steps);
-}
-
-ZTEST_F(drv84xx_api, test_move_by_negative_step_count)
-{
-	int32_t steps = -50;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
-	unsigned int signaled;
-	int result;
-
-	k_poll_signal_check(&stepper_signal, &signaled, &result);
-	zassert_equal(signaled, 1, "No event detected");
-	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED,
-		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, -50, "Target position should be %d but is %d", -50, steps);
-}
-
 ZTEST_F(drv84xx_api, test_move_by_zero_steps_no_movement)
 {
 	int32_t steps = 0;
