@@ -27,6 +27,18 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
 
@@ -274,6 +286,24 @@
 		};
 
 		pll1: pll: pll {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll2: pll2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll3: pll3 {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll4: pll4 {
 			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
 			status = "disabled";
