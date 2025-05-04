@@ -30,9 +30,7 @@ struct tmc50xx_config {
 struct tmc50xx_stepper_data {
 	struct k_work_delayable stallguard_dwork;
 	/* Work item to run the callback in a thread context. */
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	struct k_work_delayable rampstat_callback_dwork;
-#endif
 	/* device pointer required to access config in k_work */
 	const struct device *stepper;
 	stepper_event_callback_t callback;
@@ -177,7 +175,6 @@ static void stallguard_work_handler(struct k_work *work)
 	}
 }
 
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 
 static void execute_callback(const struct device *dev, const enum stepper_event event)
 {
@@ -296,8 +293,6 @@ static void rampstat_work_handler(struct k_work *work)
 		rampstat_work_reschedule(&stepper_data->rampstat_callback_dwork);
 	}
 }
-
-#endif
 
 static int tmc50xx_stepper_enable(const struct device *dev)
 {
@@ -486,11 +481,9 @@ static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	if (data->callback) {
 		rampstat_work_reschedule(&data->rampstat_callback_dwork);
 	}
-#endif
 	return 0;
 }
 
@@ -546,11 +539,9 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	if (data->callback) {
 		rampstat_work_reschedule(&data->rampstat_callback_dwork);
 	}
-#endif
 	return 0;
 }
 
@@ -695,10 +686,8 @@ static int tmc50xx_stepper_init(const struct device *dev)
 	}
 #endif
 
-#if CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL
 	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
 	rampstat_work_reschedule(&data->rampstat_callback_dwork);
-#endif
 	err = tmc50xx_stepper_set_micro_step_res(dev, stepper_config->default_micro_step_res);
 	if (err != 0) {
 		return -EIO;
