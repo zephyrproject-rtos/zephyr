@@ -12,8 +12,14 @@ else()
   set(QEMU_MACH virt,secure=on,gic-version=3)
 endif()
 
+if(CONFIG_ENTROPY_VIRTIO)
+  set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-device,bus=virtio-mmio-bus.0)
+endif()
+
 set(QEMU_FLAGS_${ARCH}
+  -global virtio-mmio.force-legacy=false
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  ${QEMU_VIRTIO_ENTROPY_FLAGS}
   -nographic
   -machine ${QEMU_MACH}
   )
