@@ -14,6 +14,10 @@
 
 /* Extended resolution is not supported on TMP1075 */
 #define TMP1075_DATA_NORMAL_SHIFT 4
+#define TMP1075_DATA_FRAC_SHIFT   4
+#define TMP1075_DATA_FRAC_MASK    0x00F0
+#define TMP1075_DATA_INTE_SHIFT   8
+#define TMP1075_DATA_INTE_MASK    0xFF00
 #define uCELSIUS_IN_CELSIUS       1000000
 
 #define TMP1075_REG_TEMPERATURE 0x00
