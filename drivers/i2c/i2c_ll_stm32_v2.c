@@ -632,11 +632,15 @@ int i2c_stm32_error(const struct device *dev)
 		data->current.is_arlo = 1U;
 		goto end;
 	}
-
+	/*
+	 * Don't end a transaction on bus error in master mode
+	 * as errata sheet says that spurious false detections
+	 * of BERR can happened which shall be ignored
+	 * If a real Bus Error occurs, transaction will time out
+	 */
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
 		data->current.is_err = 1U;
-		goto end;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
