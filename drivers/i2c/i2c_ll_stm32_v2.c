@@ -243,31 +243,6 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	}
 }
 
-static void i2c_stm32_master_mode_end(const struct device *dev)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	i2c_stm32_disable_transfer_interrupts(dev);
-
-	if (LL_I2C_IsEnabledReloadMode(i2c)) {
-		LL_I2C_DisableReloadMode(i2c);
-	}
-
-#if defined(CONFIG_I2C_TARGET)
-	data->master_active = false;
-	if (!data->slave_attached && !data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#else
-	if (!data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#endif
-	k_sem_give(&data->device_sync_sem);
-}
-
 #if defined(CONFIG_I2C_TARGET)
 static void i2c_stm32_slave_event(const struct device *dev)
 {
@@ -663,7 +638,9 @@ int i2c_stm32_error(const struct device *dev)
 
 	return 0;
 end:
-	i2c_stm32_master_mode_end(dev);
+	i2c_stm32_disable_transfer_interrupts(dev);
+	/* Wakeup thread */
+	k_sem_give(&data->device_sync_sem);
 	return -EIO;
 }
 
