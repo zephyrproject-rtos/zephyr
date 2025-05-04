@@ -1,0 +1,12 @@
+identifier: ch32l103evt
+name: WCH CH32L103C8T6-R0-1v2
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 64
+flash: 20
+supported:
+  - gpio
+  - dma

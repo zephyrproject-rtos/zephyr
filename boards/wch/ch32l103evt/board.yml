@@ -1,0 +1,6 @@
+board:
+  name: ch32l103evt
+  full_name: WCH CH32L103C8T6-R0-1v2
+  vendor: wch
+  socs:
+    - name: ch32l103
