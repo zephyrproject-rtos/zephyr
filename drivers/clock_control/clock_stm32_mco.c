@@ -49,6 +49,11 @@ static int stm32_mco_init(const struct device *dev)
 		STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
 			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
 
+#if defined(MCOX_ON)
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		     MCOX_ON);
+#endif
+
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
 	sys_clear_bits(
