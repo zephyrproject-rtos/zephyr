@@ -43,7 +43,8 @@ __subsystem struct virtio_driver_api {
 	bool (*read_driver_feature_bit)(const struct device *dev, int bit);
 	int (*write_driver_feature_bit)(const struct device *dev, int bit, bool value);
 	int (*commit_feature_bits)(const struct device *dev);
-	int (*init_virtqueues)(const struct device *dev, virtio_enumerate_queues cb, void *opaque);
+	int (*init_virtqueues)(const struct device *dev, uint16_t num_queues,
+			       virtio_enumerate_queues cb, void *opaque);
 	void (*finalize_init)(const struct device *dev);
 };
 
@@ -147,16 +148,18 @@ static inline int virtio_commit_feature_bits(const struct device *dev)
  * Initializes virtqueues
  *
  * @param dev virtio device it operates on
+ * @param num_queues number of queues to initialize
  * @param cb callback called for each available virtqueue
  * @param opaque pointer to user provided data that will be passed to the callback
  * @return 0 on success or negative error code on failure
  */
 static inline int virtio_init_virtqueues(
-	const struct device *dev, virtio_enumerate_queues cb, void *opaque)
+	const struct device *dev, uint16_t num_queues,
+	virtio_enumerate_queues cb, void *opaque)
 {
 	const struct virtio_driver_api *api = dev->api;
 
-	return api->init_virtqueues(dev, cb, opaque);
+	return api->init_virtqueues(dev, num_queues, cb, opaque);
 }
 
 /**

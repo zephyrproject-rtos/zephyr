@@ -323,10 +323,15 @@ static int virtio_pci_set_virtqueue(
 }
 
 static int virtio_pci_set_virtqueues(
-	const struct device *dev, virtio_enumerate_queues cb, void *opaque)
+	const struct device *dev, uint16_t num_queues, virtio_enumerate_queues cb, void *opaque)
 {
 	struct virtio_pci_data *data = dev->data;
 	uint16_t queue_count = sys_le16_to_cpu(data->common_cfg->num_queues);
+
+	if (num_queues > queue_count) {
+		LOG_ERR("too many queues are requested");
+		return -EINVAL;
+	}
 
 	data->virtqueues = k_malloc(queue_count * sizeof(struct virtq));
 	if (!data->virtqueues) {
@@ -608,9 +613,10 @@ void *virtio_pci_get_device_specific_config(const struct device *dev)
 	return data->device_specific_cfg;
 }
 
-int virtio_pci_init_virtqueues(const struct device *dev, virtio_enumerate_queues cb, void *opaque)
+int virtio_pci_init_virtqueues(const struct device *dev, uint16_t num_queues,
+			       virtio_enumerate_queues cb, void *opaque)
 {
-	int ret = virtio_pci_set_virtqueues(dev, cb, opaque);
+	int ret = virtio_pci_set_virtqueues(dev, num_queues, cb, opaque);
 
 	if (ret != 0) {
 		return ret;
