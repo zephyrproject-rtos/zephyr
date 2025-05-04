@@ -275,17 +275,6 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	}
 }
 
-static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	LL_I2C_EnableIT_STOP(i2c);
-	LL_I2C_EnableIT_NACK(i2c);
-	LL_I2C_EnableIT_TC(i2c);
-	LL_I2C_EnableIT_ERR(i2c);
-}
-
 static void i2c_stm32_master_mode_end(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -413,7 +402,10 @@ static void i2c_stm32_slave_event(const struct device *dev)
 			}
 		}
 
-		i2c_stm32_enable_transfer_interrupts(dev);
+		LL_I2C_EnableIT_STOP(i2c);
+		LL_I2C_EnableIT_NACK(i2c);
+		LL_I2C_EnableIT_TC(i2c);
+		LL_I2C_EnableIT_ERR(i2c);
 	}
 }
 
@@ -708,137 +700,6 @@ end:
 	return -EIO;
 }
 
-static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
-			       uint8_t *next_msg_flags, uint16_t slave)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	bool is_timeout = false;
-
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
-	data->current.is_write = 1U;
-	data->current.is_nack = 0U;
-	data->current.is_err = 0U;
-	data->current.msg = msg;
-
-#if defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
-		LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
-			msg->len);
-		sys_cache_data_flush_range((void *)msg->buf, msg->len);
-	}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
-
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
-
-	i2c_stm32_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
-
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		i2c_stm32_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
-	}
-#ifdef CONFIG_I2C_STM32_V2_DMA
-	dma_finish(dev, msg);
-#endif
-
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
-		goto error;
-	}
-
-	return 0;
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("%s: NACK", __func__);
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("%s: TIMEOUT", __func__);
-	}
-
-	return -EIO;
-}
-
-static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
-			      uint8_t *next_msg_flags, uint16_t slave)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	bool is_timeout = false;
-
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
-	data->current.is_write = 0U;
-	data->current.is_arlo = 0U;
-	data->current.is_err = 0U;
-	data->current.is_nack = 0U;
-	data->current.msg = msg;
-
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
-
-	i2c_stm32_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_RX(i2c);
-
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		i2c_stm32_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
-	}
-#ifdef CONFIG_I2C_STM32_V2_DMA
-	dma_finish(dev, msg);
-#endif
-
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
-		goto error;
-	}
-
-	return 0;
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("%s: NACK", __func__);
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("%s: TIMEOUT", __func__);
-	}
-
-	return -EIO;
-}
-
 static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -961,11 +822,9 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Enable interrupts */
 	LL_I2C_WriteReg(regs, CR1, cr1);
 
-	/* Wait for IRQ to complete or timeout
-	 * Timeout scales with one millisecond for each byte to
-	 * transfer so that slave can do some clock stretching
-	 */
-	if (k_sem_take(&data->device_sync_sem, K_MSEC(msg->len + 10U)) != 0U) {
+	/* Wait for IRQ to complete or timeout */
+	if (k_sem_take(&data->device_sync_sem,
+		K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0U) {
 		is_timeout = true;
 	}
 
