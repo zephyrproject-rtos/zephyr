@@ -1,0 +1,24 @@
+# Copyright (c) 2025 ST Microelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_ST_MIPID02
+	bool "ST Microelectronics MIPID02 CSI to DVP bridge"
+	select I2C
+	depends on DT_HAS_ST_MIPID02_ENABLED
+	default y
+	help
+	  Enable driver for ST MIPID02 CSI to DVP bridge.
+	  The ST MIPID02 is a dual lane CSI-2 deserializer allowing
+	  to output up to 200MHz 12-bit parallel.
+
+if VIDEO_ST_MIPID02
+
+config VIDEO_ST_MIPID02_CAPS_HEAP_SIZE
+	int "Size of a heap reserved to handle caps"
+	default 512
+	help
+	  Heap size reserved in order to handle caps. This could be
+	  reduced or increased depending on the amount of formats
+	  supported by the ST_MIPID02 source device.
+
+endif # VIDEO_ST_MIPID02

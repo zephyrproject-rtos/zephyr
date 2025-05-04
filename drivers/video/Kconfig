@@ -90,4 +90,6 @@ source "drivers/video/Kconfig.emul_rx"
 
 source "drivers/video/Kconfig.imx335"
 
+source "drivers/video/Kconfig.st_mipid02"
+
 endif # VIDEO
