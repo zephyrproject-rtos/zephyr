@@ -24,3 +24,11 @@ tests:
       - driver
       - entropy
       - psa-crypto
+  drivers.entropy.virtio:
+    filter: CONFIG_ENTROPY_VIRTIO
+    extra_args:
+      - EXTRA_CONF_FILE=./virtio.conf
+    tags:
+      - driver
+      - entropy
+      - virtio
