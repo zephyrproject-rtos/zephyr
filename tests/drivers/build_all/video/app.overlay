@@ -64,6 +64,13 @@
 				compatible = "galaxycore,gc2145";
 				reg = <0x5>;
 				reset-gpios = <&test_gpio 0 0>;
+
+				port {
+					gc2145_ep_out: endpoint {
+						data-lanes = <1 2>;
+						remote-endpoint-label = "mipid02_0";
+					};
+				};
 			};
 
 			test_i2c_video_emul_imager: video_emul_imager@6 {
@@ -77,6 +84,36 @@
 				};
 			};
 
+			test_i2c_mipid02: bridge@7 {
+				compatible = "st,mipid02";
+				reg = <0x7>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+
+						mipid02_0: endpoint {
+							data-lanes = <1 2>;
+							remote-endpoint-label = "gc2145_ep_out";
+						};
+					};
+
+					port@2 {
+						reg = <2>;
+
+						mipid02_2: endpoint {
+							hsync-active = <0>;
+							vsync-active = <0>;
+							pclk-sample = <0>;
+							remote-endpoint-label = "mipid02_2_ep_out";
+						};
+					};
+				};
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
