@@ -297,6 +297,9 @@ Bluetooth Audio
 * ``bt_csip_set_member_get_sirk`` has been removed. Use :c:func:`bt_csip_set_member_get_info` to get
   the SIRK (and other information). (:github:`86996`)
 
+* ``BT_AUDIO_CONTEXT_TYPE_PROHIBITED`` has been renamed to
+  :c:enumerator:`BT_AUDIO_CONTEXT_TYPE_NONE`. (:github:`89506`)
+
 Bluetooth HCI
 =============
 
