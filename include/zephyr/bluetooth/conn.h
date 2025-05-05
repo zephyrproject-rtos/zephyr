@@ -1660,6 +1660,11 @@ struct bt_conn_cb {
 	 *        callback. Instead use the connected callback of the
 	 *        advertising set.
 	 *
+	 *  @note This callback will run on the same, non-preemptible, work-queue thread
+	 *        that processes incoming low priority HCI packets and invokes GATT callbacks
+	 *        such as @ref bt_gatt_attr.read and @ref bt_gatt_attr.write.
+	 *        Blocking operations are therefore discouraged.
+	 *
 	 *  @param conn New connection object.
 	 *  @param err HCI error. Zero for success, non-zero otherwise.
 	 *
