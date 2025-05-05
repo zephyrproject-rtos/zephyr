@@ -1511,8 +1511,8 @@ void bt_conn_unref(struct bt_conn *conn)
 	conn_handle = conn->handle;
 
 	old = atomic_dec(&conn->ref);
-	/* Prevent from accessing connection object */
-	deallocated = (atomic_get(&old) == 1);
+	/* Whether we removed the last reference. */
+	deallocated = (old == 1);
 	IF_ENABLED(CONFIG_BT_CONN_TX,
 		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
 			     "tx_complete_work is pending when conn is deallocated")));
