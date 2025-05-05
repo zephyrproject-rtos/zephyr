@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/ti_am6234_a53.dtsi>
+#include "sk-am62_am6234_a53-pinctrl.dts"
+/ {
+	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
+	compatible = "ti,am62x_a53_sk";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ddr0;
+	};
+
+	cpus {
+
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+	};
+
+	ddr0: memory@82000000 {
+		/* Note: This board actually has 2GB DRAM available */
+		reg = <0x82000000 DT_SIZE_M(1)>;
+	};
+};
+
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
