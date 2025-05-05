@@ -188,6 +188,10 @@
 				0x400a0100 0x1c			/* KBC */
 				0x400B1600 0xd0>;		/* MBX */
 
+			reg-names = "espi_slave", "port80", "acpi", "promt0", "promt1", "promt2",
+					"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+					"emi6", "emi7", "kbc", "mbx";
+
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
 				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
 				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,

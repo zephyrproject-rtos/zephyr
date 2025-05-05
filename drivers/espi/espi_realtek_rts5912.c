@@ -174,16 +174,16 @@ static int espi_kbc_setup(const struct device *dev)
 	kbc_reg->INTEN = KBC_INTEN_IBFINTEN | KBC_INTEN_OBFINTEN;
 
 	/* IBF */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_ibf, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_ibf, priority), kbc_ibf_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_ibf, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, priority), kbc_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq));
 
 	/* OBE */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_obe, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_obe, priority), kbc_obe_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_obe, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, priority), kbc_obe_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq));
 
 	return 0;
 }
@@ -372,16 +372,16 @@ static int espi_acpi_setup(const struct device *dev)
 	acpi_reg->INTEN = ACPI_INTEN_IBFINTEN | ACPI_INTEN_OBFINTEN;
 
 	/* IBF */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_ibf, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_ibf, priority), acpi_ibf_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_ibf, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, priority), acpi_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq));
 
 	/* OBE */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_obe, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_obe, priority), acpi_obe_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_obe, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, priority), acpi_obe_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, irq));
 
 	return 0;
 }
@@ -522,16 +522,16 @@ static int espi_promt0_setup(const struct device *dev)
 	promt0_reg->INTEN = ACPI_INTEN_IBFINTEN;
 
 	/* IBF */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_ibf, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_ibf, priority), promt0_ibf_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_ibf, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, priority), promt0_ibf_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq));
 
 	/* OBE */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_obe, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_obe, priority), promt0_obe_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_obe, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_obe, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_obe, priority), promt0_obe_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_obe, irq));
 
 	return 0;
 }
@@ -614,20 +614,20 @@ static int lpc_request_write_custom(const struct espi_rts5912_config *const espi
 	switch (op) {
 	case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 		if (*data == 0) {
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_ibf, irq)));
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_obe, irq)));
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_ibf, irq)));
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), port80, irq)));
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_ibf, irq)));
-			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_obe, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq)));
+			NVIC_DisableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq)));
 
 		} else {
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), promt0_ibf, irq)));
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_obe, irq)));
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), acpi_ibf, irq)));
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), port80, irq)));
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_ibf, irq)));
-			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_NODELABEL(espi0), kbc_obe, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq)));
+			NVIC_EnableIRQ((DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq)));
 		}
 		break;
 	case ECUSTOM_HOST_CMD_SEND_RESULT:
@@ -667,10 +667,10 @@ static void espi_periph_ch_setup(const struct device *dev)
 
 	espi_reg->EPINTEN = ESPI_EPINTEN_CFGCHGEN | ESPI_EPINTEN_MEMWREN | ESPI_EPINTEN_MEMRDEN;
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), periph_ch, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), periph_ch, priority), espi_periph_ch_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), periph_ch, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, priority), espi_periph_ch_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq));
 }
 
 #endif /* CONFIG_ESPI_PERIPHERAL_CHANNEL */
@@ -719,10 +719,10 @@ static int espi_peri_ch_port80_setup(const struct device *dev)
 	port80_reg->CFG = PORT80_CFG_CLRFLG | PORT80_CFG_THREEN;
 	port80_reg->INTEN = PORT80_INTEN_THREINTEN;
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), port80, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), port80, priority), espi_port80_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), port80, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, priority), espi_port80_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq));
 
 	return 0;
 }
@@ -1175,7 +1175,7 @@ static int vw_signal_set_valid(const struct device *dev, enum espi_vwire_signal 
 
 static void vw_ch_isr_wa_cb(struct k_work *work)
 {
-	espi_vw_ch_isr(DEVICE_DT_GET(DT_NODELABEL(espi0)));
+	espi_vw_ch_isr(DEVICE_DT_GET(DT_DRV_INST(0)));
 }
 static K_WORK_DELAYABLE_DEFINE(vw_ch_isr_wa, vw_ch_isr_wa_cb);
 
@@ -1542,65 +1542,65 @@ static void espi_vw_ch_setup(const struct device *dev)
 
 	espi_reg->EVRXINTEN = (ESPI_EVRXINTEN_CFGCHGEN | ESPI_EVRXINTEN_RXCHGEN);
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_ch, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_ch, priority), espi_vw_ch_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_ch, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, priority), espi_vw_ch_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx2, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx2, priority), espi_vw_idx2_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx2, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx2, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx2, priority), espi_vw_idx2_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx2, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx3, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx3, priority), espi_vw_idx3_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx3, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx3, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx3, priority), espi_vw_idx3_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx3, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx7, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx7, priority), espi_vw_idx7_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx7, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx7, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx7, priority), espi_vw_idx7_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx7, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx41, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx41, priority), espi_vw_idx41_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx41, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx41, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx41, priority), espi_vw_idx41_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx41, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx42, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx42, priority), espi_vw_idx42_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx42, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx42, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx42, priority), espi_vw_idx42_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx42, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx43, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx43, priority), espi_vw_idx43_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx43, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx43, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx43, priority), espi_vw_idx43_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx43, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx44, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx44, priority), espi_vw_idx44_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx44, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx44, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx44, priority), espi_vw_idx44_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx44, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx47, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx47, priority), espi_vw_idx47_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx47, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx47, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx47, priority), espi_vw_idx47_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx47, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx4a, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx4a, priority), espi_vw_idx4a_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx4a, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx4a, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx4a, priority), espi_vw_idx4a_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx4a, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx51, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx51, priority), espi_vw_idx51_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx51, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx51, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx51, priority), espi_vw_idx51_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx51, irq));
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx61, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx61, priority), espi_vw_idx61_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), vw_idx61, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx61, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx61, priority), espi_vw_idx61_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx61, irq));
 }
 
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
@@ -1885,22 +1885,22 @@ static int espi_oob_ch_setup(const struct device *dev)
 #endif
 
 	/* Tx */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_tx, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_tx, priority), espi_oob_tx_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_tx, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, priority), espi_oob_tx_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq));
 
 	/* Rx */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_rx, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_rx, priority), espi_oob_rx_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_rx, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, priority), espi_oob_rx_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq));
 
 	/* Chg */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_chg, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_chg, priority), espi_oob_chg_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), oob_chg, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, priority), espi_oob_chg_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq));
 
 	return 0;
 }
@@ -2096,16 +2096,16 @@ static int espi_flash_ch_setup(const struct device *dev)
 	k_sem_init(&espi_data->flash_lock, 0, 1);
 
 	/* MAF Tr */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), maf_tr, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), maf_tr, priority), espi_maf_tr_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), maf_tr, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, priority), espi_maf_tr_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq));
 
 	/* Chg */
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), flash_chg, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), flash_chg, priority), espi_flash_chg_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), flash_chg, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, priority), espi_flash_chg_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq));
 
 	return 0;
 }
@@ -2290,10 +2290,10 @@ static void espi_bus_reset_setup(const struct device *dev)
 		espi_reg->ERSTCFG = ESPI_ERSTCFG_RSTMONEN | ESPI_ERSTCFG_RSTINTEN;
 	}
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), bus_rst, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(espi0), bus_rst, priority), espi_rst_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), bus_rst, irq));
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, irq),
+		    DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, priority), espi_rst_isr,
+		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
+	irq_enable(DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, irq));
 }
 
 static int espi_rts5912_init(const struct device *dev)
@@ -2405,38 +2405,38 @@ PINCTRL_DT_INST_DEFINE(0);
 static struct espi_rts5912_data espi_rts5912_data_0;
 
 static const struct espi_rts5912_config espi_rts5912_config = {
-	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 0),
-	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), espi_slave, clk_grp),
-	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), espi_slave, clk_idx),
+	.espi_reg = (volatile struct espi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, espi_slave),
+	.espislv_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_slave, clk_grp),
+	.espislv_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), espi_slave, clk_idx),
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
-	.kbc_reg = (volatile struct kbc_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 15),
-	.kbc_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), kbc, clk_grp),
-	.kbc_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), kbc, clk_idx),
+	.kbc_reg = (volatile struct kbc_reg *const)DT_INST_REG_ADDR_BY_NAME(0, kbc),
+	.kbc_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), kbc, clk_grp),
+	.kbc_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), kbc, clk_idx),
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
-	.acpi_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 2),
-	.acpi_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), acpi, clk_grp),
-	.acpi_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), acpi, clk_idx),
+	.acpi_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, acpi),
+	.acpi_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), acpi, clk_grp),
+	.acpi_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), acpi, clk_idx),
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
-	.promt0_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 3),
-	.promt0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), promt0, clk_grp),
-	.promt0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), promt0, clk_idx),
+	.promt0_reg = (volatile struct acpi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, promt0),
+	.promt0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), promt0, clk_grp),
+	.promt0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), promt0, clk_idx),
 
-	.emi0_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 7),
-	.emi0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), emi0, clk_grp),
-	.emi0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), emi0, clk_idx),
+	.emi0_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, emi0),
+	.emi0_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_grp),
+	.emi0_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi0, clk_idx),
 
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-	.emi1_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 8),
-	.emi1_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), emi1, clk_grp),
-	.emi1_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), emi1, clk_idx),
+	.emi1_reg = (volatile struct emi_reg *const)DT_INST_REG_ADDR_BY_NAME(0, emi1),
+	.emi1_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi1, clk_grp),
+	.emi1_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), emi1, clk_idx),
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
-	.port80_reg = (volatile struct port80_reg *const)DT_INST_REG_ADDR_BY_IDX(0, 1),
-	.port80_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), port80, clk_grp),
-	.port80_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(espi0), port80, clk_idx),
+	.port80_reg = (volatile struct port80_reg *const)DT_INST_REG_ADDR_BY_NAME(0, port80),
+	.port80_clk_grp = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), port80, clk_grp),
+	.port80_clk_idx = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(0), port80, clk_idx),
 #endif
 	.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
