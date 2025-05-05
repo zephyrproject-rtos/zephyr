@@ -301,8 +301,8 @@ enum bt_audio_codec_cfg_frame_dur {
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_context {
-	/** Prohibited */
-	BT_AUDIO_CONTEXT_TYPE_PROHIBITED = 0,
+	/** No context type */
+	BT_AUDIO_CONTEXT_TYPE_NONE = 0,
 	/**
 	 * Identifies audio where the use case context does not match any other defined value,
 	 * or where the context is unknown or cannot be determined.
@@ -2099,8 +2099,8 @@ int bt_audio_codec_cap_meta_set_vendor(struct bt_audio_codec_cap *codec_cap,
 static inline char *bt_audio_context_bit_to_str(enum bt_audio_context context)
 {
 	switch (context) {
-	case BT_AUDIO_CONTEXT_TYPE_PROHIBITED:
-		return "Prohibited";
+	case BT_AUDIO_CONTEXT_TYPE_NONE:
+		return "None";
 	case BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED:
 		return "Unspecified";
 	case BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL:
