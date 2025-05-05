@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device_runtime.h>
 #include <stdio.h>
 
 static double high_temp;
@@ -71,6 +72,12 @@ int main(void)
 	}
 
 	printf("Temperature device is %p, name is %s\n", dev, dev->name);
+
+	ret = pm_device_runtime_get(dev);
+	if (ret != 0) {
+		printf("Failed to resume Temperature device: %d\n", ret);
+		return 0;
+	}
 
 	/* First, fetch a sensor sample to use for sensor thresholds */
 	ret = read_temperature(dev, &value);
