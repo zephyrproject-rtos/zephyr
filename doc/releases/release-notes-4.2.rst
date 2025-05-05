@@ -257,6 +257,10 @@ New Boards
 
    * :zephyr:board:`versalnet_rpu` (``versalnet_rpu``)
 
+* Aesc Silicon
+
+   * :zephyr:board:`elemrv` (``elemrv``)
+
 * aithinker
 
    * :zephyr:board:`ai_wb2_12f` (``ai_wb2_12f``)
