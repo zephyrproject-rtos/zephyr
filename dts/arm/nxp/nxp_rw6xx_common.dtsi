@@ -238,6 +238,7 @@
 		interrupt-names = "usb_otg";
 		num-bidir-endpoints = <8>;
 		power-domains = <&power_mode3_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 

@@ -20,6 +20,11 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if CONFIG_PM && CONFIG_UDC_NXP_EHCI && DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay)
+#error "UDC EHCI CURRENTLY DOES NOT SUPPORT STANDBY MODE"
+#endif
+
+
 /* Active mode */
 #define POWER_MODE0		0
 /* Idle mode */
