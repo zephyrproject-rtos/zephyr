@@ -56,6 +56,59 @@ struct fw_resource_table {
 #endif
 } METAL_PACKED_END;
 
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define vdev_offset	offsetof(struct fw_resource_table, vdev),
+#else
+	#define vdev_offset
+#endif
+
+#if defined(CONFIG_RAM_CONSOLE)
+	#define cm_trace_offset	offsetof(struct fw_resource_table, cm_trace),
+#else
+	#define cm_trace_offset
+#endif
+
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define vdev_entry							\
+	.vdev = {								\
+		RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,	\
+		VRING_COUNT, {0, 0},						\
+	},									\
+	.vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT,				\
+		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,			\
+		   VRING0_ID, 0},						\
+	.vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT,				\
+		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,			\
+		   VRING1_ID, 0},
+#else
+	#define vdev_entry
+#endif
+
+#if defined(CONFIG_RAM_CONSOLE)
+	#define cm_trace_entry							\
+		.cm_trace = {							\
+			RSC_TRACE,						\
+			(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,\
+			"Zephyr_log",						\
+		},
+#else
+	#define cm_trace_entry
+#endif
+
+#define RESOURCE_TABLE_INIT			\
+{						\
+	.hdr = {				\
+		.ver = 1,			\
+		.num = RSC_TABLE_NUM_ENTRY,	\
+	},					\
+	.offset = {				\
+		vdev_offset			\
+		cm_trace_offset			\
+	},					\
+	vdev_entry				\
+	cm_trace_entry				\
+}
+
 void rsc_table_get(struct fw_resource_table **table_ptr, int *length);
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
