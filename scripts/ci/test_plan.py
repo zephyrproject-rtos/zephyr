@@ -248,7 +248,7 @@ class Filters:
         # Look for boards in monitored repositories
         lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None, 'soc_roots':roots,
                                         'board_dir': None})
-        known_boards = list_boards.find_v2_boards(lb_args).values()
+        known_boards = list_boards.find_v2_boards(lb_args)
 
         for changed in changed_boards:
             for board in known_boards:
