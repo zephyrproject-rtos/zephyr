@@ -21,31 +21,6 @@ static const struct device *devc;
 static int testing_domain_on_notitication;
 static int testing_domain_off_notitication;
 
-static int domain_pm_action(const struct device *dev,
-	enum pm_device_action action)
-{
-	int rc = 0;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		/* Switch power on */
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
-		__fallthrough;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
-	default:
-		rc = -ENOTSUP;
-	}
-
-	return rc;
-
-}
-
 static int deva_pm_action(const struct device *dev,
 		     enum pm_device_action pm_action)
 {
@@ -89,11 +64,6 @@ static int devb_pm_action(const struct device *dev,
 
 	return ret;
 }
-
-
-PM_DEVICE_DT_DEFINE(TEST_DOMAIN, domain_pm_action);
-DEVICE_DT_DEFINE(TEST_DOMAIN, NULL, PM_DEVICE_DT_GET(TEST_DOMAIN),
-		 NULL, NULL, POST_KERNEL, 10, NULL);
 
 PM_DEVICE_DT_DEFINE(TEST_DEVA, deva_pm_action);
 DEVICE_DT_DEFINE(TEST_DEVA, NULL, PM_DEVICE_DT_GET(TEST_DEVA),
@@ -224,10 +194,6 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 
 #define TEST_DOMAIN_BALANCED DT_NODELABEL(test_domain_balanced)
 #define TEST_DEV_BALANCED DT_NODELABEL(test_dev_balanced)
-
-PM_DEVICE_DT_DEFINE(TEST_DOMAIN_BALANCED, domain_pm_action);
-DEVICE_DT_DEFINE(TEST_DOMAIN_BALANCED, NULL, PM_DEVICE_DT_GET(TEST_DOMAIN_BALANCED),
-		 NULL, NULL, POST_KERNEL, 10, NULL);
 
 PM_DEVICE_DT_DEFINE(TEST_DEV_BALANCED, deva_pm_action);
 DEVICE_DT_DEFINE(TEST_DEV_BALANCED, NULL, PM_DEVICE_DT_GET(TEST_DEV_BALANCED),
