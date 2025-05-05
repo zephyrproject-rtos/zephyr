@@ -1,8 +1,12 @@
 common:
-  filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
   build_only: true
   tags:
     - drivers
     - virtio
 tests:
-  drivers.virtio_pci.build: {}
+  drivers.virtio_pci.build:
+    extra_configs:
+      - CONFIG_PCIE=y
+    filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
+  drivers.virtio_mmio.build:
+    filter: CONFIG_DT_HAS_VIRTIO_MMIO_ENABLED
