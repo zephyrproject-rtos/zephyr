@@ -22,5 +22,6 @@
 };
 
 &m2_wifi_sdio {
-	/* TODO: Unsupported; Fix pinctrl */
+	/* Use dat3 detection method */
+	detect-dat3;
 };
