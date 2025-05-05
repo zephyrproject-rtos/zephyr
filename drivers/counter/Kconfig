@@ -120,4 +120,6 @@ source "drivers/counter/Kconfig.cc23x0_rtc"
 
 source "drivers/counter/Kconfig.cc23x0_lgpt"
 
+source "drivers/counter/Kconfig.ti_am3352_eqep"
+
 endif # COUNTER

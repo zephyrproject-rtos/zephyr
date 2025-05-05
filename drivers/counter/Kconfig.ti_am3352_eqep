@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Texas Instruments
+
+
+config COUNTER_TI_AM3352_EQEP
+	bool "Whether to enable TI EQEP counter driver"
+	default y
+	depends on DT_HAS_TI_AM3352_EQEP_ENABLED
+	select PINCTRL
+	help
+	  Enables the TI EQEP counter driver.

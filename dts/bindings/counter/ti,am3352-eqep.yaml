@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Texas Instruments
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI SOC EQEP based counter
+
+include: [base.yaml, pinctrl-device.yaml]
+
+compatible: "ti,am3352-eqep"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: Optional peripheral frequency to use if the clock is absent
