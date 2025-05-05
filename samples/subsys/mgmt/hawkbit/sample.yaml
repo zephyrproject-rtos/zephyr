@@ -17,10 +17,6 @@ tests:
   sample.net.hawkbit.manual:
     extra_configs:
       - CONFIG_HAWKBIT_MANUAL=y
-  sample.net.hawkbit.shell:
-    extra_configs:
-      - CONFIG_SHELL=y
-      - CONFIG_HAWKBIT_SHELL=y
   sample.net.hawkbit.ddi.target:
     extra_configs:
       - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
