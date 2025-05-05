@@ -13,3 +13,7 @@ properties:
     type: boolean
     description: |
       Enable data flash programming configuration
+
+  erase-value-undefined:
+    type: boolean
+    description: Areas of flash that are in an erased state will read back undefined values.

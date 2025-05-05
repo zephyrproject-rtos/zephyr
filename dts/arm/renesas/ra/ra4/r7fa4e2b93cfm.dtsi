@@ -57,6 +57,7 @@
 				write-block-size = <4>;
 				erase-block-size = <64>;
 				programming-enable;
+				erase-value-undefined;
 			};
 		};
 
