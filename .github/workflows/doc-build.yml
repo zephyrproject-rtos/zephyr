@@ -32,7 +32,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
+      uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
       id: check-doc-files
       with:
         files: |
@@ -101,7 +101,7 @@ jobs:
         git log --graph --oneline HEAD...${PR_HEAD}
 
     - name: Set up Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: 3.12
         cache: pip
@@ -203,7 +203,7 @@ jobs:
         path: zephyr
 
     - name: Set up Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: 3.12
         cache: pip

@@ -98,7 +98,7 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-common-files
         with:
           files: |
@@ -117,7 +117,7 @@ jobs:
             modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-bluetooth-files
         with:
           files: |
@@ -127,7 +127,7 @@ jobs:
             tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-networking-files
         with:
           files: |
@@ -140,7 +140,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@823fcebdb31bb35fdf2229d9f769b400309430d0 # v46.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-uart-files
         with:
           files: |
@@ -193,7 +193,7 @@ jobs:
             junit.html
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
+        uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984 # v2.19.0
         with:
           check_name: Bsim Test Results
           files: "junit.xml"
