@@ -21,12 +21,12 @@ tests:
       - CONFIG_HAWKBIT_SHELL=y
   sample.net.hawkbit.ddi.target:
     extra_configs:
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
       - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
-      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
-  sample.net.hawkbit.ddi.gateway:
+  sample.net.hawkbit.ddi.no_security:
     extra_configs:
-      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=y
-      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
+      - CONFIG_HAWKBIT_DDI_NO_SECURITY=y
   sample.net.hawkbit.tls:
     extra_configs:
       - CONFIG_HAWKBIT_USE_TLS=y
