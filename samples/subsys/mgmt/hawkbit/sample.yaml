@@ -12,6 +12,8 @@ sample:
   name: hawkbit
 tests:
   sample.net.hawkbit.default: {}
+  sample.net.hawkbit.sysbuild:
+    sysbuild: true
   sample.net.hawkbit.manual:
     extra_configs:
       - CONFIG_HAWKBIT_MANUAL=y
