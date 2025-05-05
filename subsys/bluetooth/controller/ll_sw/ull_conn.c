@@ -781,6 +781,7 @@ int ull_conn_reset(void)
 	(void)ull_central_reset();
 #endif /* CONFIG_BT_CENTRAL */
 
+	/* Stop any active ticker related to connection roles */
 	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
 		disable(handle);
 	}
@@ -1667,6 +1668,14 @@ static int init_reset(void)
 	mem_init(conn_pool, sizeof(struct ll_conn),
 		 sizeof(conn_pool) / sizeof(struct ll_conn), &conn_free);
 
+	/* Invalidate connection handles, refer to ll_connected_get() */
+	for (uint16_t handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
+		struct ll_conn *conn;
+
+		conn = ll_conn_get(handle);
+		conn->lll.handle = LLL_HANDLE_INVALID;
+	}
+
 	/* Initialize tx pool. */
 	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONN_DATA_BUFFERS,
 		 &mem_conn_tx.free);
@@ -1836,7 +1845,6 @@ static inline void disable(uint16_t handle)
 					conn, &conn->lll);
 	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
-	conn->lll.handle = LLL_HANDLE_INVALID;
 	conn->lll.link_tx_free = NULL;
 }
 
