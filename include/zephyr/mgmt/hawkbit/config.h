@@ -45,6 +45,7 @@ struct hawkbit_runtime_config {
  * @param config Configuration settings to set.
  * @retval 0 on success.
  * @retval -EAGAIN if probe is currently running.
+ * @retval -EINVAL if config parameters are invalid.
  */
 int hawkbit_set_config(struct hawkbit_runtime_config *config);
 
@@ -61,6 +62,7 @@ struct hawkbit_runtime_config hawkbit_get_config(void);
  * @param addr_str Server address to set.
  * @retval 0 on success.
  * @retval -EAGAIN if probe is currently running.
+ * @retval -EINVAL if config parameters are invalid.
  */
 static inline int hawkbit_set_server_addr(char *addr_str)
 {

@@ -780,6 +780,12 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 {
 	if (k_sem_take(&probe_sem, HAWKBIT_SET_SERVER_TIMEOUT) == 0) {
 		if (config->server_addr != NULL) {
+			if (strnlen(config->server_addr, sizeof(hb_cfg.server_addr)) ==
+			    sizeof(hb_cfg.server_addr)) {
+				LOG_ERR("%s too long: %s", "hawkbit/server_addr",
+					config->server_addr);
+				return -EINVAL;
+			}
 			strncpy(hb_cfg.server_addr, config->server_addr,
 				sizeof(hb_cfg.server_addr));
 			LOG_DBG("configured %s: %s", "hawkbit/server_addr", hb_cfg.server_addr);
