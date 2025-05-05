@@ -338,9 +338,18 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
+/* After initialization of the logger, this function avoids
+ * the logger subsys to enable it.
+ */
+static int backend_ready(const struct log_backend *const backend)
+{
+	return log_backend_is_active(backend) ? 0 : -EAGAIN;
+}
+
 const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
+	.is_ready = backend_ready,
 	.process = process,
 	.format_set = format_set,
 };
