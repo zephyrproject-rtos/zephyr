@@ -19,7 +19,8 @@ under :zephyr_file:`boards/shields`:
    boards/shields/<shield>
    ├── <shield>.overlay
    ├── Kconfig.shield
-   └── Kconfig.defconfig
+   ├── Kconfig.defconfig
+   └── pre_dt_shield.cmake
 
 These files provides shield configuration as follows:
 
@@ -36,6 +37,9 @@ These files provides shield configuration as follows:
   is made to be consistent with the :ref:`default_board_configuration`. Hence,
   shield configuration should be done by keeping in mind that features
   activation is application responsibility.
+
+* **pre_dt_shield.cmake**: This optional file can be used to pass additional
+  arguments to the devicetree compiler ``dtc``.
 
 Besides, in order to avoid name conflicts with devices that may be defined at
 board level, it is advised, specifically for shields devicetree descriptions,
