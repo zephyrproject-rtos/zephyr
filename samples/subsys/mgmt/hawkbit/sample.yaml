@@ -4,9 +4,12 @@ common:
   tags: net
   depends_on: netif
   build_only: true
-  platform_allow: frdm_k64f
+  platform_allow:
+    - frdm_k64f
+    - stm32h573i_dk
   integration_platforms:
     - frdm_k64f
+    - stm32h573i_dk
 sample:
   description: hawkBit Firmware Over-the-Air (FOTA)
   name: hawkbit
