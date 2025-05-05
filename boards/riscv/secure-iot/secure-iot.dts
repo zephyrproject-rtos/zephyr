@@ -30,12 +30,12 @@ chosen {
 	clock_frequency = <40000000>;
 	scl_frequency = <100000>;
 };
-&i2c1 {
-	status = "ok";
-	base = <0x44100>;
-	clock_frequency = <40000000>;
-	scl_frequency = <100000>;
-};
+// &i2c1 {
+// 	status = "ok";
+// 	base = <0x44100>;
+// 	clock_frequency = <40000000>;
+// 	scl_frequency = <100000>;
+// };
 &spi0 {
 		status = "okay";
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
@@ -85,6 +85,15 @@ chosen {
 		  pixset = [55];
         };
 };
+
+// &spi2 {
+// 	status = "okay";
+// 	sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
+// 	comm_configure = <0x01 0x00 0x03 0x08>;
+// 	clock-frequency = <10000000>;
+// 	cs-gpios = <&gpio0 10 0>;
+
+// };
 
 &gpio0 {
 	status = "okay";
