@@ -47,3 +47,25 @@ config OPENAMP_COPY_RSC_TABLE
 
 	  This is not needed if the remote loads this firmware and has control
 	  over the placement of the .resource_table section such as remoteproc.
+
+config OPENAMP_VENDOR_RSC_TABLE_ENTRY
+	bool "Vendor specific resource entry"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Enable vendor-specific features supported by remote processor.
+
+config OPENAMP_VENDOR_RSC_TYPE
+	int "Vendor specific type of the resource entry"
+	default 128
+	range 128 512
+	depends on OPENAMP_VENDOR_RSC_TABLE_ENTRY
+	help
+	  Length, in words, of the vendor specific resource supported by remote processor.
+
+config OPENAMP_VENDOR_RSC_TABLE_FILE
+	string "Source file containing vendor-specific resource table"
+	default "resource_table.c"
+	depends on OPENAMP_VENDOR_RSC_TABLE_ENTRY
+	help
+	  Name of a source file containing vendor-specific
+	  resource table.
