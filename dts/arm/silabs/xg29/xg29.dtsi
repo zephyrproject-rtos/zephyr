@@ -151,6 +151,13 @@
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
 			 */
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
 		};
 
 		power-states {
@@ -259,7 +266,7 @@
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x4000>;
-			interrupts = <55 1>;
+			interrupts = <55 2>;
 			interrupt-names = "msc";
 			#address-cells = <1>;
 			#size-cells = <1>;

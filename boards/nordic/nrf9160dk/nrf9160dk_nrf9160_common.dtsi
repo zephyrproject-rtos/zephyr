@@ -18,18 +18,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 2 0>;
 			label = "Green LED 1";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 3 0>;
 			label = "Green LED 2";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 4 0>;
 			label = "Green LED 3";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 5 0>;
 			label = "Green LED 4";
@@ -38,6 +42,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -52,21 +57,25 @@
 		 * the usual "4 buttons per DK board" convention.
 		 */
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Switch 1";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Switch 2";
@@ -217,4 +226,4 @@ arduino_spi: &spi3 {
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf91xx_partition.dtsi>
+#include <nordic/nrf91xx_partition.dtsi>

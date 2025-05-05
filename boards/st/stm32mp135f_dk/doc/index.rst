@@ -108,6 +108,8 @@ Memory mapping
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Prerequisite
 ============
 

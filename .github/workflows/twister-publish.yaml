@@ -19,7 +19,7 @@ jobs:
     env:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       # Needed for elasticearch and upload script
       - name: Checkout

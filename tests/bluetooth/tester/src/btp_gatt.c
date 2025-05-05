@@ -6,28 +6,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/net_buf.h>
-
-#include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_gatt
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <sys/types.h>
 
 #include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_gatt
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define MAX_BUFFER_SIZE 2048
 #define MAX_UUID_LEN 16
@@ -222,48 +227,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_gatt_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_GATT_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_GATT_ADD_SERVICE);
-	tester_set_bit(rp->data, BTP_GATT_ADD_CHARACTERISTIC);
-	tester_set_bit(rp->data, BTP_GATT_ADD_DESCRIPTOR);
-	tester_set_bit(rp->data, BTP_GATT_ADD_INCLUDED_SERVICE);
-	tester_set_bit(rp->data, BTP_GATT_SET_VALUE);
-	tester_set_bit(rp->data, BTP_GATT_START_SERVER);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_GATT_SET_ENC_KEY_SIZE);
-	tester_set_bit(rp->data, BTP_GATT_EXCHANGE_MTU);
-	tester_set_bit(rp->data, BTP_GATT_DISC_ALL_PRIM);
-	tester_set_bit(rp->data, BTP_GATT_DISC_PRIM_UUID);
-	tester_set_bit(rp->data, BTP_GATT_FIND_INCLUDED);
-	tester_set_bit(rp->data, BTP_GATT_DISC_ALL_CHRC);
-	tester_set_bit(rp->data, BTP_GATT_DISC_CHRC_UUID);
-
-	/* octet 2 */
-	tester_set_bit(rp->data, BTP_GATT_DISC_ALL_DESC);
-	tester_set_bit(rp->data, BTP_GATT_READ);
-	tester_set_bit(rp->data, BTP_GATT_READ_LONG);
-	tester_set_bit(rp->data, BTP_GATT_READ_MULTIPLE);
-	tester_set_bit(rp->data, BTP_GATT_WRITE_WITHOUT_RSP);
-	tester_set_bit(rp->data, BTP_GATT_SIGNED_WRITE_WITHOUT_RSP);
-	tester_set_bit(rp->data, BTP_GATT_WRITE);
-
-	/* octet 3 */
-	tester_set_bit(rp->data, BTP_GATT_WRITE_LONG);
-	tester_set_bit(rp->data, BTP_GATT_CFG_NOTIFY);
-	tester_set_bit(rp->data, BTP_GATT_CFG_INDICATE);
-	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTES);
-	tester_set_bit(rp->data, BTP_GATT_GET_ATTRIBUTE_VALUE);
-	tester_set_bit(rp->data, BTP_GATT_CHANGE_DB);
-	tester_set_bit(rp->data, BTP_GATT_EATT_CONNECT);
-
-	/* octet 4 */
-	tester_set_bit(rp->data, BTP_GATT_READ_MULTIPLE_VAR);
-	tester_set_bit(rp->data, BTP_GATT_NOTIFY_MULTIPLE);
-
-
-	*rsp_len = sizeof(*rp) + 5;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_GATT, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -2103,7 +2068,7 @@ static uint8_t config_subscription_ind(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 static void notify_cb(struct bt_conn *conn, void *user_data)
 {
-	LOG_DBG("Nofication sent");
+	LOG_DBG("Notification sent");
 }
 
 static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,

@@ -6,12 +6,29 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -21,36 +38,29 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/direction.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/bluetooth/att.h>
-
+#include "addr_internal.h"
+#include "adv.h"
+#include "att_internal.h"
+#include "buf_view.h"
+#include "classic/conn_br_internal.h"
+#include "classic/sco_internal.h"
+#include "classic/ssp.h"
 #include "common/assert.h"
 #include "common/bt_str.h"
-
-#include "buf_view.h"
-#include "addr_internal.h"
+#include "conn_internal.h"
+#include "direction_internal.h"
 #include "hci_core.h"
 #include "id.h"
-#include "adv.h"
-#include "scan.h"
-#include "conn_internal.h"
-#include "l2cap_internal.h"
-#include "keys.h"
-#include "smp.h"
-#include "classic/ssp.h"
-#include "att_internal.h"
 #include "iso_internal.h"
-#include "direction_internal.h"
-#include "classic/sco_internal.h"
-#include "classic/conn_br_internal.h"
+#include "keys.h"
+#include "l2cap_internal.h"
+#include "scan.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
 
 K_FIFO_DEFINE(free_tx);
@@ -461,7 +471,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 	net_buf_unref(buf);
 
-	if (conn->rx->len > acl_total_len) {
+	if ((conn->type != BT_CONN_TYPE_BR) && (conn->rx->len > acl_total_len)) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
@@ -474,7 +484,11 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf, true);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+		bt_br_acl_recv(conn, buf, true);
+	} else {
+		bt_l2cap_recv(conn, buf, true);
+	}
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
@@ -541,7 +555,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	return bt_send(buf);
 }
@@ -599,7 +613,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 	return bt_send(buf);
 }
@@ -1883,6 +1897,9 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 #if defined(CONFIG_BT_CLASSIC)
 		else if (conn->type == BT_CONN_TYPE_BR) {
 			return bt_hci_connect_br_cancel(conn);
+		} else if (conn->type == BT_CONN_TYPE_SCO) {
+			/* There is no HCI cmd to cancel SCO connecting from spec */
+			return -EPROTONOSUPPORT;
 		}
 #endif /* CONFIG_BT_CLASSIC */
 		else {

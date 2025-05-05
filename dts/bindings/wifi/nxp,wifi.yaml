@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    NXP Wifi Module
+    NXP Wi-Fi Module
 
 compatible: "nxp,wifi"
 
-include: [sd-device.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml]

@@ -13,13 +13,8 @@ allows to evaluate network bandwidth.
 Features
 *********
 
-- Compatible with iPerf_2.0.5. Note that in newer iPerf versions,
-  an error message like this is printed and the server reported statistics
-  are missing.
-
-.. code-block:: console
-
-   LAST PACKET NOT RECEIVED!!!
+- Compatible with iPerf v2.0.10 and newer. For older versions, enable
+  :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
 
 - Client or server mode allowed without need to modify the source code.
 
@@ -50,7 +45,7 @@ sample does not fit into target platform RAM, reduce the following configs:
 Requirements
 ************
 
-- iPerf 2.0.5 installed on the host machine
+- iPerf 2.0.10 or newer installed on the host machine
 - Supported board
 
 Depending on the network technology chosen, extra steps may be required

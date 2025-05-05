@@ -12,6 +12,11 @@ properties:
   reg:
     required: true
 
+  size:
+    type: int
+    required: true
+    description: Flash Memory size in bits
+
   fixed-latency:
     type: boolean
     description: |

@@ -64,7 +64,16 @@ COAP_RESOURCE_DEFINE(resource_3, service_B, {
 });
 
 static const uint16_t service_C_port = 5959;
+#ifdef CONFIG_NET_SOCKETS_ENABLE_DTLS
+static const sec_tag_t sec_tag_list[] = { 1 };
+
+COAPS_SERVICE_DEFINE(service_C, "192.168.1.1", &service_C_port, 0, sec_tag_list,
+		     sizeof(sec_tag_list));
+
+#else
+
 COAP_SERVICE_DEFINE(service_C, "192.168.1.1", &service_C_port, 0);
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static const char * const resource_4_path[] = { "res4", "*", NULL };
 COAP_RESOURCE_DEFINE(resource_4, service_C, {
@@ -77,14 +86,26 @@ ZTEST(coap_service, test_COAP_SERVICE_DEFINE)
 	zassert_ok(strcmp(service_A.host, "a.service.com"));
 	zassert_equal(service_A.port, &service_A_port);
 	zassert_equal(*service_A.port, 4242);
+	zassert_equal(service_A.sec_tag_list, NULL);
+	zassert_equal(service_A.sec_tag_list_size, 0);
 
 	zassert_ok(strcmp(service_B.host, "b.service.com"));
 	zassert_equal(service_B.port, &service_B_port);
 	zassert_equal(*service_B.port, 0);
+	zassert_equal(service_B.sec_tag_list, NULL);
+	zassert_equal(service_B.sec_tag_list_size, 0);
 
 	zassert_ok(strcmp(service_C.host, "192.168.1.1"));
 	zassert_equal(service_C.port, &service_C_port);
 	zassert_equal(*service_C.port, 5959);
+
+#ifdef CONFIG_NET_SOCKETS_ENABLE_DTLS
+	zassert_equal(service_C.sec_tag_list, sec_tag_list);
+	zassert_equal(service_C.sec_tag_list_size, sizeof(sec_tag_list));
+#else
+	zassert_equal(service_C.sec_tag_list, NULL);
+	zassert_equal(service_C.sec_tag_list_size, 0);
+#endif
 }
 
 ZTEST(coap_service, test_COAP_SERVICE_COUNT)

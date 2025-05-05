@@ -1,0 +1,23 @@
+identifier: xiao_esp32c6/esp32c6/hpcore
+name: XIAO ESP32C6 HP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - spi
+  - entropy
+  - i2c
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
+testing:
+  ignore_tags:
+    - bluetooth
+    - tracing
+vendor: seeed

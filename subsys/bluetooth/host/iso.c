@@ -616,8 +616,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 	struct net_buf *buf = net_buf_alloc(&iso_rx_pool, timeout);
 
 	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_ISO_IN);
+		net_buf_add_u8(buf, BT_HCI_H4_ISO);
 	}
 
 	return buf;
@@ -2192,7 +2191,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **
 
 	cig_rsp = (void *)rsp->data;
 
-	if (rsp->len < sizeof(cig_rsp) || cig_rsp->num_handles != param->num_cis) {
+	if (rsp->len < sizeof(*cig_rsp) || cig_rsp->num_handles != param->num_cis) {
 		LOG_WRN("Unexpected response to hci_le_set_cig_params");
 		err = -EIO;
 		net_buf_unref(rsp);

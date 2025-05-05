@@ -12,36 +12,46 @@
  */
 
 #include <errno.h>
-#include <zephyr/autoconf.h>
-#include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/gap.h>
-#include <zephyr/types.h>
-#include <ctype.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/ead.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/shell/shell_types.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/kernel.h>
-
-#include <zephyr/settings/settings.h>
-
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/classic/rfcomm.h>
-#include <zephyr/bluetooth/classic/sdp.h>
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/ead.h>
-
-#include <zephyr/shell/shell.h>
-#include "common/bt_shell_private.h"
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
 
 #include "audio/shell/audio.h"
+#include "common/bt_shell_private.h"
+#if defined(CONFIG_BT_LL_SW_SPLIT)
 #include "controller/ll_sw/shell/ll.h"
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 #include "host/shell/bt.h"
 #include "mesh/shell/hci.h"
 

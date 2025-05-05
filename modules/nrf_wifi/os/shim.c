@@ -575,9 +575,30 @@ static void *zep_shim_llist_node_alloc(void)
 	return llist_node;
 }
 
+static void *zep_shim_ctrl_llist_node_alloc(void)
+{
+	struct zep_shim_llist_node *llist_node = NULL;
+
+	llist_node = zep_shim_mem_zalloc(sizeof(*llist_node));
+
+	if (!llist_node) {
+		LOG_ERR("%s: Unable to allocate memory for linked list node", __func__);
+		return NULL;
+	}
+
+	sys_dnode_init(&llist_node->head);
+
+	return llist_node;
+}
+
 static void zep_shim_llist_node_free(void *llist_node)
 {
 	zep_shim_data_mem_free(llist_node);
+}
+
+static void zep_shim_ctrl_llist_node_free(void *llist_node)
+{
+	zep_shim_mem_free(llist_node);
 }
 
 static void *zep_shim_llist_node_data_get(void *llist_node)
@@ -1071,7 +1092,9 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.log_err = zep_shim_pr_err,
 
 	.llist_node_alloc = zep_shim_llist_node_alloc,
+	.ctrl_llist_node_alloc = zep_shim_ctrl_llist_node_alloc,
 	.llist_node_free = zep_shim_llist_node_free,
+	.ctrl_llist_node_free = zep_shim_ctrl_llist_node_free,
 	.llist_node_data_get = zep_shim_llist_node_data_get,
 	.llist_node_data_set = zep_shim_llist_node_data_set,
 

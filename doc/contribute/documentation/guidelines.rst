@@ -883,6 +883,21 @@ Application build commands
 
       If set, additional arguments to the flash invocation.
 
+   .. rst:directive:option:: debug-args
+      :type: string
+
+      If set, additional arguments to the debug invocation.
+
+   .. rst:directive:option:: debugserver-args
+      :type: string
+
+      If set, additional arguments to the debugserver invocation.
+
+   .. rst:directive:option:: attach-args
+      :type: string
+
+      If set, additional arguments to the attach invocation.
+
    .. rst:directive:option:: snippets
       :type: string
 

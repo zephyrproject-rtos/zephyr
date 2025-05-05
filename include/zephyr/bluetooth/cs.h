@@ -22,6 +22,8 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -601,6 +603,12 @@ int bt_le_cs_set_default_settings(struct bt_conn *conn,
  * This command is used to read the per-channel mode-0 Frequency Actuation Error
  * table of the remote Controller.
  *
+ * If the remote controller supports a Frequency Actuation Error of zero relative
+ * to its mode-0 transmissions in the reflector role
+ * (see @ref bt_conn_le_cs_capabilities::cs_without_fae_supported), calling this
+ * function is not needed and the read remote FAE table complete event will be
+ * generated with an error code.
+ *
  * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
  *
  * @param conn   Connection Object.
@@ -868,6 +876,11 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  *
  *  This command is used to write a cached copy of the per-channel mode-0
  *  Frequency Actuation Error table of the remote device in the local Controller.
+ *
+ *  If the remote controller supports a Frequency Actuation Error of zero relative
+ *  to its mode-0 transmissions in the reflector role
+ *  (see @ref bt_conn_le_cs_capabilities::cs_without_fae_supported), calling this
+ *  function is not needed. An error code will be returned.
  *
  * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
  *

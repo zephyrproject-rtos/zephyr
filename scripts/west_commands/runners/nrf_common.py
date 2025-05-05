@@ -79,8 +79,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 erase_pages=False, reset=True, tool_opt=None, force=False,
-                 recover=False):
+                 erase_mode=None, ext_erase_mode=None, reset=True,
+                 tool_opt=None, force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
@@ -89,7 +89,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.pinreset = pinreset
         self.dev_id = dev_id
         self.erase = bool(erase)
-        self.erase_pages = bool(erase_pages)
+        self.erase_mode = erase_mode
+        self.ext_erase_mode = ext_erase_mode
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
@@ -139,9 +140,14 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
-        parser.add_argument('--erase-pages', required=False,
-                            action='store_true', dest='erase_pages',
-                            help='erase pages to be used by the firmware')
+        parser.add_argument('--erase-mode', required=False,
+                            choices=['none', 'ranges', 'all'],
+                            help='Select the type of erase operation for the '
+                                 'internal non-volatile memory')
+        parser.add_argument('--ext-erase-mode', required=False,
+                            choices=['none', 'ranges', 'all'],
+                            help='Select the type of erase operation for the '
+                                 'external non-volatile memory')
 
         parser.set_defaults(reset=True)
 
@@ -341,6 +347,18 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         return None
 
+    def _get_erase_mode(self, mode):
+        if not mode:
+            return None
+        elif mode == "none":
+            return "ERASE_NONE"
+        elif mode == "ranges":
+            return "ERASE_RANGES_TOUCHED_BY_FIRMWARE"
+        elif mode == "all":
+            return "ERASE_ALL"
+        else:
+            raise RuntimeError(f"Invalid erase mode: {mode}")
+
     def program_hex(self):
         # Get the command use to actually program self.hex_.
         self.logger.info(f'Flashing file: {self.hex_}')
@@ -421,12 +439,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         else:
             if self.erase:
                 erase_arg = 'ERASE_ALL'
-            elif self.family == 'nrf54l' and not self.erase_pages:
-                erase_arg = 'ERASE_NONE'
+            elif self.family == 'nrf54l':
+                erase_arg = self._get_erase_mode(self.erase_mode) or 'ERASE_NONE'
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
-
-        self.logger.debug(f'Erase type: {erase_arg}')
 
         xip_ranges = {
             'nrf52': (0x12000000, 0x19FFFFFF),
@@ -437,8 +453,20 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
                 # Default to pages for the external memory
-                ext_mem_erase_opt = erase_arg if erase_arg == 'ERASE_ALL' else \
-                                    'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
+                ext_mem_erase_opt = self._get_erase_mode(self.ext_erase_mode) or \
+                        (erase_arg if erase_arg == 'ERASE_ALL' else \
+                                    'ERASE_RANGES_TOUCHED_BY_FIRMWARE')
+
+        if not ext_mem_erase_opt and self.ext_erase_mode:
+            self.logger.warning('Option --ext-erase-mode ignored, no parts of the '
+                                'image refer to external memory')
+
+        self.logger.debug(f'Erase modes: chip:{erase_arg} ext_mem:'
+                          f'{ext_mem_erase_opt}')
+
+        # Temp hack while waiting for NRF54H20_IRON support for Network in nrfutil
+        if self.build_conf.get('CONFIG_SOC_NRF54H20_IRON') and core == "Network":
+            core = "Application"
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
@@ -531,14 +559,18 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             raise RuntimeError('Options --softreset and --pinreset are mutually '
                                'exclusive.')
 
-        if self.erase and self.erase_pages:
-            raise RuntimeError('Options --erase and --erase-pages are mutually '
+        if self.erase and self.erase_mode:
+            raise RuntimeError('Options --erase and --erase-mode are mutually '
+                               'exclusive.')
+
+        if self.erase and self.ext_erase_mode:
+            raise RuntimeError('Options --erase and --ext-erase-mode are mutually '
                                'exclusive.')
 
         self.ensure_family()
 
-        if self.family != 'nrf54l' and self.erase_pages:
-            raise RuntimeError('Option --erase-pages can only be used with the '
+        if self.family != 'nrf54l' and self.erase_mode:
+            raise RuntimeError('Option --erase-mode can only be used with the '
                                'nRF54L family.')
 
         self.ensure_output('hex')

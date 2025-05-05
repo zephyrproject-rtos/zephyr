@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ #include <zephyr/dt-bindings/gpio/renesas-rza2m-gpio.h>
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpiog 2 0>;
+		in-gpios = <&gpiog 0 0>;
+		status = "okay";
+	};
+};

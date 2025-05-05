@@ -18,11 +18,17 @@
  * @{
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/net_buf.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +36,8 @@ extern "C" {
 
 /** Possible types of buffers passed around the Bluetooth stack in a form of bitmask. */
 enum bt_buf_type {
+	/** Unknown/invalid packet type, used for error checking */
+	BT_BUF_TYPE_NONE = 0,
 	/** HCI command */
 	BT_BUF_CMD = BIT(0),
 	/** HCI event */
@@ -42,14 +50,61 @@ enum bt_buf_type {
 	BT_BUF_ISO_OUT = BIT(4),
 	/** Incoming ISO data */
 	BT_BUF_ISO_IN = BIT(5),
-	/** H:4 data */
-	BT_BUF_H4 = BIT(6),
 };
 
-/** @brief This is a base type for bt_buf user data. */
-struct bt_buf_data {
-	uint8_t type;
+/** Direction of HCI packets. Only used for mapping H:4 to BT_BUF_* values. */
+enum bt_buf_dir {
+	/** Packet from the controller to the host */
+	BT_BUF_IN,
+	/** Packet from the host to the controller */
+	BT_BUF_OUT,
 };
+
+/** Convert from bt_buf_type to H:4 type.
+ *
+ *  @param type The bt_buf_type to convert
+ *  @return The H:4 type
+ */
+static inline uint8_t bt_buf_type_to_h4(enum bt_buf_type type)
+{
+	switch (type) {
+	case BT_BUF_CMD:
+		return BT_HCI_H4_CMD;
+	case BT_BUF_ACL_IN:
+	case BT_BUF_ACL_OUT:
+		return BT_HCI_H4_ACL;
+	case BT_BUF_ISO_IN:
+	case BT_BUF_ISO_OUT:
+		return BT_HCI_H4_ISO;
+	case BT_BUF_EVT:
+		return BT_HCI_H4_EVT;
+	default:
+		__ASSERT_NO_MSG(false);
+		return 0;
+	}
+}
+
+/** Convert from H:4 type to bt_buf_type.
+ *
+ *  @param h4_type The H:4 type to convert
+ *  @param dir     The direction of the packet
+ *  @return The bt_buf_type
+ */
+static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_dir dir)
+{
+	switch (h4_type) {
+	case BT_HCI_H4_CMD:
+		return BT_BUF_CMD;
+	case BT_HCI_H4_ACL:
+		return dir == BT_BUF_OUT ? BT_BUF_ACL_OUT : BT_BUF_ACL_IN;
+	case BT_HCI_H4_EVT:
+		return BT_BUF_EVT;
+	case BT_HCI_H4_ISO:
+		return dir == BT_BUF_OUT ? BT_BUF_ISO_OUT : BT_BUF_ISO_IN;
+	default:
+		return BT_BUF_TYPE_NONE;
+	}
+}
 
 /* Headroom reserved in buffers, primarily for HCI transport encoding purposes */
 #define BT_BUF_RESERVE 1
@@ -132,8 +187,7 @@ BUILD_ASSERT(CONFIG_BT_BUF_EVT_RX_COUNT > CONFIG_BT_BUF_ACL_TX_COUNT,
 
 /** Allocate a buffer for incoming data
  *
- *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called.
+ *  This will set the buffer type so it doesn't need to be explicitly encoded into the buffer.
  *
  *  @param type    Type of buffer. Only BT_BUF_EVT, BT_BUF_ACL_IN and BT_BUF_ISO_IN
  *                 are allowed.
@@ -166,14 +220,12 @@ void bt_buf_rx_freed_cb_set(bt_buf_rx_freed_cb_t cb);
 
 /** Allocate a buffer for outgoing data
  *
- *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called.
+ *  This will set the buffer type so it doesn't need to be explicitly encoded into the buffer.
  *
- *  @param type    Type of buffer. Only BT_BUF_CMD, BT_BUF_ACL_OUT or
- *                 BT_BUF_H4, when operating on H:4 mode, are allowed.
+ *  @param type    Type of buffer. BT_BUF_CMD or BT_BUF_ACL_OUT.
  *  @param timeout Non-negative waiting period to obtain a buffer or one of the
  *                 special values K_NO_WAIT and K_FOREVER.
- *  @param data    Initial data to append to buffer.
+ *  @param data    Initial data to append to buffer. This is optional and can be NULL.
  *  @param size    Initial data size.
  *  @return A new buffer.
  */
@@ -182,8 +234,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 
 /** Allocate a buffer for an HCI Event
  *
- *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called.
+ *  This will set the buffer type so it doesn't need to be explicitly encoded into the buffer.
  *
  *  @param evt          HCI event code
  *  @param discardable  Whether the driver considers the event discardable.
@@ -193,26 +244,33 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
  */
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeout);
 
-/** Set the buffer type
+/** Set the buffer type. The type is encoded as an H:4 byte prefix as part of
+ *  the payload itself.
  *
  *  @param buf   Bluetooth buffer
  *  @param type  The BT_* type to set the buffer to
  */
-static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
+static inline void __deprecated bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
 {
-	((struct bt_buf_data *)net_buf_user_data(buf))->type = type;
+	__ASSERT_NO_MSG(net_buf_headroom(buf) >= 1);
+	net_buf_push_u8(buf, bt_buf_type_to_h4(type));
 }
 
-/** Get the buffer type
+
+/** Get the buffer type. This pulls the H:4 byte prefix from the payload, which means
+ *  that the call can be done only once per buffer.
  *
  *  @param buf   Bluetooth buffer
  *
  *  @return The BT_* type to of the buffer
  */
-static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
+static inline enum bt_buf_type __deprecated bt_buf_get_type(struct net_buf *buf)
 {
-	return (enum bt_buf_type)((struct bt_buf_data *)net_buf_user_data(buf))
-		->type;
+	/* We have to assume the direction since the H:4 type doesn't tell us
+	 * if the buffer is incoming or outgoing. The common use case of this API is for outgoing
+	 * buffers, so we assume that.
+	 */
+	return bt_buf_type_from_h4(net_buf_pull_u8(buf), BT_BUF_OUT);
 }
 
 /**

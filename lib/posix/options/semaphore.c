@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
@@ -159,31 +161,12 @@ int sem_post(sem_t *semaphore)
  */
 int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 {
-	int32_t timeout;
-	struct timespec current;
-	int64_t current_ms, abstime_ms;
-
-	__ASSERT(abstime, "abstime pointer NULL");
-
-	if ((abstime->tv_sec < 0) || (abstime->tv_nsec >= NSEC_PER_SEC)) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (clock_gettime(CLOCK_REALTIME, &current) < 0) {
-		return -1;
-	}
-
-	abstime_ms = (int64_t)_ts_to_ms(abstime);
-	current_ms = (int64_t)_ts_to_ms(&current);
-
-	if (abstime_ms <= current_ms) {
-		timeout = 0;
-	} else {
-		timeout = (int32_t)(abstime_ms - current_ms);
-	}
-
-	if (k_sem_take(semaphore, K_MSEC(timeout))) {
+	if (k_sem_take(semaphore, K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)))) {
 		errno = ETIMEDOUT;
 		return -1;
 	}

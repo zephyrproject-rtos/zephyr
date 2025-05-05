@@ -2838,6 +2838,18 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = sys_le16_to_cpu(opt_ret_fc->tx_windows_size);
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->tx.max_window = br_chan->rx.max_window;
+		}
 	}
 
 	if (!accept) {
@@ -3251,6 +3263,18 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->tx.max_window = br_chan->rx.max_window;
+		}
 	}
 
 	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
@@ -3975,6 +3999,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		br_chan->tx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->tx.max_window = opt_ret_fc->tx_windows_size;
 		br_chan->tx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
+
+		if ((opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_RET) ||
+		    (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_FC)) {
+			/*
+			 * Bluetooth Core specification Version 6.0 | Vol 3, Part A, section 5.4.
+			 *
+			 * In Retransmission mode and Flow Control mode this parameter should be
+			 * negotiated to reflect the buffer sizes allocated for the connection on
+			 * both sides.
+			 */
+			br_chan->rx.max_window = br_chan->tx.max_window;
+		}
 	}
 
 	if (!accept) {
@@ -4356,9 +4392,10 @@ send_rsp:
 	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-	if (BR_CHAN(chan)->tx.fcs == BT_L2CAP_BR_FCS_16BIT) {
-		/* If peer enables FCS, local also needs to enable it. */
+	if (BR_CHAN(chan)->tx.fcs != BR_CHAN(chan)->rx.fcs) {
+		/* If FCS flag is not consistent of both sides, FCS should be used as default. */
 		BR_CHAN(chan)->rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	}
 
 	if (BR_CHAN(chan)->tx.extended_control) {
@@ -4685,6 +4722,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
+		br_chan->ident = ident;
 		k_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
@@ -4818,12 +4856,13 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 	struct bt_l2cap_sig_hdr *hdr;
+	uint8_t ident = 0;
 	uint16_t len;
 
 	while (buf->len > 0) {
 		if (buf->len < sizeof(*hdr)) {
 			LOG_ERR("Too small L2CAP signaling PDU");
-			return 0;
+			goto reject;
 		}
 
 		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
@@ -4833,7 +4872,7 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 		if (buf->len < len) {
 			LOG_ERR("L2CAP length is short (%u < %u)", buf->len, len);
-			return 0;
+			goto reject;
 		}
 
 		if (!hdr->ident) {
@@ -4842,7 +4881,19 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			continue;
 		}
 
+		if (ident == 0) {
+			LOG_DBG("Save identifier of the first request in the L2CAP packet.");
+			ident = hdr->ident;
+		}
+
 		l2cap_br_sig_handle(l2cap, hdr, buf);
+	}
+
+	return 0;
+
+reject:
+	if (ident != 0) {
+		l2cap_br_send_reject(chan->conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 	}
 
 	return 0;
@@ -5290,52 +5341,55 @@ static void bt_l2cap_br_recv_seg_direct(struct bt_l2cap_br_chan *br_chan, struct
 
 	switch (sar) {
 	case BT_L2CAP_CONTROL_SAR_UNSEG:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_START:
 		if (sar == BT_L2CAP_CONTROL_SAR_START) {
 			br_chan->_sdu_len = net_buf_pull_le16(seg);
 		} else {
 			br_chan->_sdu_len = seg->len;
 		}
-		br_chan->_sdu_len_done = 0;
 
 		if (br_chan->_sdu_len > br_chan->rx.mtu) {
 			LOG_WRN("SDU exceeds MTU");
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-			return;
+			goto failed;
 		}
+
+		if (br_chan->_sdu_len < seg->len) {
+			LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len, seg->len);
+			goto failed;
+		}
+
+		br_chan->_sdu_len_done = seg->len;
 		break;
 	case BT_L2CAP_CONTROL_SAR_END:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_CONTI:
 		seg_offset = br_chan->_sdu_len_done;
 		sdu_remaining = br_chan->_sdu_len - br_chan->_sdu_len_done;
 
 		br_chan->_sdu_len_done += seg->len;
 
-		if (sar == BT_L2CAP_CONTROL_SAR_END) {
-			if (br_chan->_sdu_len_done < br_chan->_sdu_len) {
-				br_chan->_sdu_len = 0;
-				br_chan->_sdu_len_done = 0;
-				LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len_done,
-					br_chan->_sdu_len);
-				bt_l2cap_chan_disconnect(&br_chan->chan);
-				return;
-			}
+		if (sdu_remaining < seg->len) {
+			LOG_WRN("L2CAP RX PDU total exceeds SDU");
+			goto failed;
+		}
+
+		if ((sar == BT_L2CAP_CONTROL_SAR_END) &&
+		    (br_chan->_sdu_len_done < br_chan->_sdu_len)) {
+			LOG_WRN("Short data packet %u < %u", br_chan->_sdu_len_done,
+				br_chan->_sdu_len);
+			goto failed;
 		}
 		break;
 	}
 
-	if (sdu_remaining < seg->len) {
-		br_chan->_sdu_len = 0;
-		br_chan->_sdu_len_done = 0;
-		LOG_WRN("L2CAP RX PDU total exceeds SDU");
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-		return;
-	}
-
 	/* Tail call. */
 	br_chan->chan.ops->seg_recv(&br_chan->chan, br_chan->_sdu_len, seg_offset, &seg->b);
+
+	return;
+
+failed:
+	br_chan->_sdu_len = 0;
+	br_chan->_sdu_len_done = 0;
+	bt_l2cap_chan_disconnect(&br_chan->chan);
 }
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 

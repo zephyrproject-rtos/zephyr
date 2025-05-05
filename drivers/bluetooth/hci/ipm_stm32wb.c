@@ -361,22 +361,19 @@ static int bt_ipm_send(const struct device *dev, struct net_buf *buf)
 
 	k_sem_take(&ipm_busy, K_FOREVER);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	switch (buf->data[0]) {
+	case BT_HCI_H4_ACL:
+		LOG_DBG("ACL: buf %p type %u len %u", buf, buf->data[0], buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		memcpy((void *)
-		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
+		memcpy((void *)&((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
 		       buf->data, buf->len);
 		TL_BLE_SendAclData(NULL, 0);
 		break;
-	case BT_BUF_CMD:
-		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		ble_cmd_buff->cmdserial.type = BT_HCI_H4_CMD;
+	case BT_HCI_H4_CMD:
+		LOG_DBG("CMD: buf %p type %u len %u", buf, buf->data[0], buf->len);
+		ble_cmd_buff->cmdserial.type = net_buf_pull_u8(buf);
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
-		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
-		       buf->len);
+		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data, buf->len);
 		TL_BLE_SendCmd(NULL, 0);
 		break;
 	default:

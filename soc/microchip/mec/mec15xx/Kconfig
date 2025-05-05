@@ -16,9 +16,6 @@ config SOC_MEC1501_HSZ
 
 if SOC_SERIES_MEC15XX
 
-config RTOS_TIMER
-	bool "MEC1501 RTOS timer"
-
 config SOC_MEC1501_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1

@@ -24,7 +24,7 @@
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
-#include <zephyr/dt-bindings/sensor/tmp116.h>
+#include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
 
 /****************************************
@@ -478,11 +478,11 @@ test_i2c_tmp112: tmp112@46 {
 	reg = <0x46>;
 };
 
-test_i2c_tmp116: tmp116@47 {
-	compatible = "ti,tmp116";
+test_i2c_tmp11x: tmp11x@47 {
+	compatible = "ti,tmp11x";
 	reg = <0x47>;
-	odr = <TMP116_DT_ODR_125_MS>;
-	oversampling = <TMP116_DT_OVERSAMPLING_32>;
+	odr = <TMP11X_DT_ODR_125_MS>;
+	oversampling = <TMP11X_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -1010,7 +1010,7 @@ test_i2c_lis2dux12: lis2dux12@8a {
 	int2-gpios = <&test_gpio 0 0>;
 	range = <LIS2DUX12_DT_FS_16G>;
 	odr = <LIS2DUX12_DT_ODR_100Hz>;
-	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
 	status = "okay";
 };
 
@@ -1227,7 +1227,7 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 	int2-gpios = <&test_gpio 0 0>;
 	range = <LIS2DUX12_DT_FS_16G>;
 	odr = <LIS2DUX12_DT_ODR_100Hz>;
-	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
 	status = "okay";
 };
 
@@ -1275,4 +1275,24 @@ test_i2c_ms5837_30ba: ms5837@ae {
 	compatible = "meas,ms5837-30ba";
 	reg = <0xae>;
 	status = "okay";
+};
+
+test_i2c_icp201xx: icp201xx@af {
+	compatible = "invensense,icp201xx";
+	reg = <0xaf>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
+
+test_i2c_paj7620: paj7620@b0 {
+	compatible = "pixart,paj7620";
+	reg = <0xb0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm45686: icm45686@b1 {
+	compatible = "invensense,icm45686";
+	reg = <0xb1>;
+	int-gpios = <&test_gpio 0 0>;
 };

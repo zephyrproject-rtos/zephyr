@@ -1090,7 +1090,7 @@ unlock:
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	nrf_wifi_util_subcmds,
+	nrf70_util,
 	SHELL_CMD_ARG(he_ltf,
 		      NULL,
 		      "0 - 1x HE LTF\n"
@@ -1202,10 +1202,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 
-SHELL_CMD_REGISTER(wifi_util,
-		   &nrf_wifi_util_subcmds,
-		   "nRF Wi-Fi utility shell commands",
-		   NULL);
+SHELL_SUBCMD_ADD((nrf70), util, &nrf70_util, "nRF70 utility commands\n", NULL, 0, 0);
 
 
 static int nrf_wifi_util_init(void)

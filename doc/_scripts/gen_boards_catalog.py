@@ -163,7 +163,7 @@ def gather_board_build_info(twister_out_dir):
                 revision = board_info.get('revision', '')
 
                 board_target = board_name
-                if revision is not None:
+                if revision != '':
                     board_target = f"{board_target}@{revision}"
                 if qualifier:
                     board_target = f"{board_target}/{qualifier}"
@@ -262,17 +262,7 @@ def get_catalog(generate_hw_features=False):
         logger.info("Skipping generation of supported hardware features.")
 
     for board in boards.values():
-        # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
-        # containing folder. There are a few exceptions, like the "native" and "others" folders
-        # which we know are not actual vendors so treat them as such.
-        for folder in board.dir.parents:
-            if folder.name in ["native", "others"]:
-                vendor = "others"
-                break
-            elif vnd_lookup.vnd2vendor.get(folder.name):
-                vendor = folder.name
-                break
-
+        vendor = board.vendor or "others"
         socs = {soc.name for soc in board.socs}
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
@@ -304,6 +294,7 @@ def get_catalog(generate_hw_features=False):
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
+                    title = node.title
                     filename = node.filename
                     lineno = node.lineno
                     locations = set()
@@ -328,6 +319,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "title": title,
                         "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],
@@ -361,10 +353,15 @@ def get_catalog(generate_hw_features=False):
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
         board_catalog[board.name] = {
             "name": board.name,
             "full_name": full_name,
-            "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
+            "doc_page": doc_page_path,
             "vendor": vendor,
             "archs": list(archs),
             "socs": list(socs),

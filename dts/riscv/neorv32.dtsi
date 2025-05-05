@@ -8,6 +8,7 @@
 
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -77,6 +78,14 @@
 			compatible = "neorv32,bootrom", "mmio-sram";
 			status = "disabled";
 			reg = <0xffe00000 0x10000>;
+		};
+
+		pwm: pwm@fff00000 {
+			compatible = "neorv32,pwm";
+			status = "disabled";
+			reg = <0xfff00000 0x10000>;
+			syscon = <&sysinfo>;
+			#pwm-cells = <3>;
 		};
 
 		clint: clint@fff40000 {

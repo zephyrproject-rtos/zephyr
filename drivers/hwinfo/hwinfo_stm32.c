@@ -8,12 +8,27 @@
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-#include <stm32_ll_icache.h>
+#include <zephyr/cache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
+
+#if defined(CONFIG_SOC_SERIES_STM32MP13X)
+
+/* No ll_utils for the stm32mp13x series, instead use the HAL functions */
+#define STM32_UID_WORD_0 HAL_GetUIDw2()
+#define STM32_UID_WORD_1 HAL_GetUIDw1()
+#define STM32_UID_WORD_2 HAL_GetUIDw0()
+
+#else
+
+#define STM32_UID_WORD_0 LL_GetUID_Word2()
+#define STM32_UID_WORD_1 LL_GetUID_Word1()
+#define STM32_UID_WORD_2 LL_GetUID_Word0()
+
+#endif /* CONFIG_SOC_SERIES_STM32MP13X */
 
 struct stm32_uid {
 	uint32_t id[3];
@@ -24,15 +39,15 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	struct stm32_uid dev_id;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Disable();
+	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	dev_id.id[0] = sys_cpu_to_be32(LL_GetUID_Word2());
-	dev_id.id[1] = sys_cpu_to_be32(LL_GetUID_Word1());
-	dev_id.id[2] = sys_cpu_to_be32(LL_GetUID_Word0());
+	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_2);
+	dev_id.id[1] = sys_cpu_to_be32(STM32_UID_WORD_1);
+	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_0);
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	if (length > sizeof(dev_id.id)) {
@@ -146,6 +161,10 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (LL_PWR_MCU_IsActiveFlag_SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	if (LL_PWR_MPU_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
 	if (LL_PWR_IsActiveFlag_C1SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
@@ -173,6 +192,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_STOP_SB();
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_PWR_ClearFlag_MCU();
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	LL_PWR_ClearFlag_MPU();
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_PWR_ClearFlag_C1STOP_C1STB();
 #elif defined(CONFIG_SOC_SERIES_STM32U0X) && defined(PWR_FLAG_SB)

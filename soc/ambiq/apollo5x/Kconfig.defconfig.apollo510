@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+
+if SOC_APOLLO510
+
+config NUM_IRQS
+    default 134
+
+endif # SOC_APOLLO510

@@ -28,6 +28,10 @@ void arm_direct_isr_handler_1(const void *args)
 	test_flag = 2;
 }
 
+/**
+ * @brief Test the ARM Dynamic Direct Interrupts functionality.
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 {
 	int post_flag = 0;
@@ -81,6 +85,3 @@ ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 	post_flag = test_flag;
 	zassert_true(post_flag == 2, "Test flag not set by ISR1\n");
 }
-/**
- * @}
- */

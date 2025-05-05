@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <adi/max32/max32690.dtsi>
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
@@ -95,6 +96,30 @@
 		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 	};
+
+	sdram1: sdram1@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		status = "disabled";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+	};
+};
+
+&hpb {
+	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_rwds_p1_14 &hyp_d0_p1_12 &hyp_d1_p1_15
+				 &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+				 &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+	pinctrl-names = "default";
+	enable-emcc;
+
+	mem@0 {
+		reg = <0>;
+		base-address = <0x60000000>;
+		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+		config-regs =     <1>;
+		config-reg-vals = <2>;
+	};
 };
 
 &clk_ipo {
@@ -165,5 +190,9 @@
 };
 
 &rtc_counter {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
 	status = "okay";
 };

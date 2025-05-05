@@ -63,6 +63,11 @@ extern char __ram_text_reloc_start[];
 extern char __ram_text_reloc_size[];
 #endif
 
+#if defined(CONFIG_SRAM_VECTOR_TABLE)
+extern char _sram_vector_start[];
+extern char _sram_vector_size[];
+#endif
+
 static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 	{
@@ -106,6 +111,18 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #endif
 	},
 #endif /* CONFIG_CODE_DATA_RELOCATION_SRAM */
+#if defined(CONFIG_SRAM_VECTOR_TABLE)
+	{
+		/* Vector table in SRAM */
+		.start = (uint32_t)&_sram_vector_start,
+		.size = (uint32_t)&_sram_vector_size,
+#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
+		.attr = K_MEM_PARTITION_P_R_U_RX,
+#else
+		.attr = K_MEM_PARTITION_P_RO_U_RO,
+#endif
+	},
+#endif /* CONFIG_SRAM_VECTOR_TABLE */
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
 	/* Main stack MPU guard to detect overflow.
 	 * Note:

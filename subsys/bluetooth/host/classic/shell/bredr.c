@@ -37,7 +37,7 @@
 static struct bt_conn *pairing_conn;
 #endif /* CONFIG_BT_CONN */
 
-#define DATA_BREDR_MTU 48
+#define DATA_BREDR_MTU 200
 
 NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_BREDR_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -311,11 +311,27 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 	return net_buf_alloc(&data_rx_pool, K_NO_WAIT);
 }
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+static void seg_recv(struct bt_l2cap_chan *chan, size_t sdu_len, off_t seg_offset,
+		     struct net_buf_simple *seg)
+{
+	bt_shell_print("Incoming data channel %p SDU len %u offset %lu len %u", chan, sdu_len,
+		       seg_offset, seg->len);
+
+	if (seg->len) {
+		bt_shell_hexdump(seg->data, seg->len);
+	}
+}
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf = l2cap_alloc_buf,
 	.recv = l2cap_recv,
 	.connected = l2cap_connected,
 	.disconnected = l2cap_disconnected,
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	.seg_recv = seg_recv,
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
 };
 
 #define BT_L2CAP_BR_SERVER_OPT_RET           BIT(0)

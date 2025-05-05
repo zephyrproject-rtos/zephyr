@@ -286,39 +286,20 @@ function(group_to_string)
 
   get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
   if(${type} STREQUAL REGION)
-    get_property(name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(address GLOBAL PROPERTY ${STRING_OBJECT}_ADDRESS)
-    get_property(size GLOBAL PROPERTY ${STRING_OBJECT}_SIZE)
-
     get_property(empty GLOBAL PROPERTY ${STRING_OBJECT}_EMPTY)
     if(empty)
       return()
     endif()
-
-  else()
-    get_property(else_name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(else_symbol GLOBAL PROPERTY ${STRING_OBJECT}_SYMBOL)
-    string(TOLOWER ${else_name} else_name)
-
-    get_objects(LIST sections OBJECT ${STRING_OBJECT} TYPE SECTION)
-    list(GET sections 0 section)
-    get_property(first_section_name GLOBAL PROPERTY ${section}_NAME)
-
   endif()
 
-  if(${type} STREQUAL GROUP)
-    get_property(group_name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(group_address GLOBAL PROPERTY ${STRING_OBJECT}_ADDRESS)
-    get_property(group_vma GLOBAL PROPERTY ${STRING_OBJECT}_VMA)
-    get_property(group_lma GLOBAL PROPERTY ${STRING_OBJECT}_LMA)
-  endif()
-
+  #_SECTIONS_FIXED need a place at address statement:
   get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS_FIXED)
   foreach(section ${sections})
     to_string(OBJECT ${section} STRING ${STRING_STRING})
     get_property(name       GLOBAL PROPERTY ${section}_NAME)
     get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
-    set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place at address mem:${address} { block ${name_clean} };\n")
+    get_property(section_address GLOBAL PROPERTY ${section}_ADDRESS)
+    set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place at address mem:${section_address} { block ${name_clean} };\n")
   endforeach()
 
   get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_GROUPS)

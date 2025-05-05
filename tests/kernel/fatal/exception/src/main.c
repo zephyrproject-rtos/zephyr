@@ -114,6 +114,8 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");
+#elif defined(CONFIG_RX)
+	__asm__ volatile ("brk");
 #elif defined(CONFIG_RISCV)
 	/* In riscv architecture, use an undefined
 	 * instruction to trigger illegal instruction on RISCV.
@@ -300,7 +302,7 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  * should match. Check for stack sentinel feature by overflowing the
  * thread's stack and check for the exception.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_fatal_tests
  */
 ZTEST(fatal_exception, test_fatal)
 {

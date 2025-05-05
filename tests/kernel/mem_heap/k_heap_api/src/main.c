@@ -7,9 +7,9 @@
 #include <zephyr/ztest.h>
 
 /**
- * @brief k heap api tests
+ * @brief Kernel Heap API Tests
  *
- * @defgroup k_heap api Tests
+ * @defgroup k_heap_api_tests Kernel Heap Tests
  *
  * @ingroup all_tests
  * @{

@@ -93,10 +93,10 @@ static void netc_eth_iface_init(struct net_if *iface)
 		LOG_ERR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
-	phy_link_callback_set(cfg->phy_dev, &netc_eth_phylink_callback, (void *)dev);
-
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(iface);
+
+	phy_link_callback_set(cfg->phy_dev, &netc_eth_phylink_callback, (void *)dev);
 }
 
 static int netc_eth_init(const struct device *dev)

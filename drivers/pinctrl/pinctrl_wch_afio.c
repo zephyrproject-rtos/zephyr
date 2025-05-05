@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT wch_afio
+
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/ch32v003-pinctrl.h>
 
@@ -27,10 +30,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
 		uint32_t pcfr1 = AFIO->PCFR1;
 		uint8_t cfg = 0;
-
-		if (remap != 0) {
-			RCC->APB2PCENR |= RCC_AFIOEN;
-		}
 
 		if (pins->output_high || pins->output_low) {
 			cfg |= (pins->slew_rate + 1);
@@ -77,3 +76,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	return 0;
 }
+
+static int pinctrl_clock_init(void)
+{
+	const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+	uint8_t clock_id = DT_INST_CLOCKS_CELL(0, id);
+
+	return clock_control_on(clock_dev, (clock_control_subsys_t *)(uintptr_t)clock_id);
+}
+
+SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);

@@ -5,6 +5,7 @@ tests:
       - xtensa
       - posix
       - sparc
+      - rx
     tags:
       - kernel
       - userspace

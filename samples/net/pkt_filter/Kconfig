@@ -1,0 +1,7 @@
+# Private config options for pkt_filter sample app
+
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

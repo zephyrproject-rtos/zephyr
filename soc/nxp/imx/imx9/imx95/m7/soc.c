@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/firmware/scmi/clk.h>
+#include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
 #include <zephyr/drivers/firmware/scmi/power.h>
 #include <zephyr/dt-bindings/clock/imx95_clock.h>
 #include <zephyr/dt-bindings/power/imx95_power.h>
@@ -28,6 +29,11 @@ void soc_late_init_hook(void)
 
 static int soc_init(void)
 {
+	int ret = 0;
+#if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
+	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+#endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
 #if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
 	struct scmi_protocol *proto = clk_dev->data;
@@ -35,7 +41,6 @@ static int soc_init(void)
 	struct scmi_power_state_config pwr_cfg = {0};
 	uint32_t power_state = POWER_DOMAIN_STATE_OFF;
 	uint64_t enetref_clk = 250000000; /* 250 MHz*/
-	int ret;
 
 	/* Power up NETCMIX */
 	pwr_cfg.domain_id = IMX95_PD_NETC;
@@ -69,7 +74,18 @@ static int soc_init(void)
 		return ret;
 	}
 #endif
-	return 0;
+
+#if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
+	cpu_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
+
+	ret = scmi_cpu_sleep_mode_set(&cpu_cfg);
+	if (ret) {
+		return ret;
+	}
+#endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
+	return ret;
 }
 
 /*

@@ -100,7 +100,7 @@ static int api_configure(const struct device *dev, uint32_t dev_cfg)
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return ((ret > 0) ? 0 : -EIO);
 }
 
 #ifdef CONFIG_I2C_TARGET
@@ -532,11 +532,19 @@ static int i2c_max32_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 			ret = data->err;
 		} else {
 			if (data->flags & I2C_MSG_STOP) {
-				/* Wait for busy flag to be cleared */
-				while (i2c->status & ADI_MAX32_I2C_STATUS_MASTER_BUSY) {
+				/* 0 length transactions are needed for I2C SCANs */
+				if ((req->tx_len == req->rx_len) && (req->tx_len == 0)) {
+					MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK,
+							   ADI_MAX32_I2C_INT_FL1_MASK);
+				} else {
+					/* Wait for busy flag to be cleared for clock stetching
+					 * use-cases
+					 */
+					while (i2c->status & ADI_MAX32_I2C_STATUS_MASTER_BUSY) {
+					}
+					MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK,
+							   ADI_MAX32_I2C_INT_FL1_MASK);
 				}
-				MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK,
-						   ADI_MAX32_I2C_INT_FL1_MASK);
 			}
 		}
 		if (ret) {
@@ -754,6 +762,12 @@ static void i2c_max32_isr_controller(const struct device *dev, mxc_i2c_regs_t *i
 		} else if (readb < req->rx_len) {
 			MXC_I2C_EnableInt(
 				i2c, ADI_MAX32_I2C_INT_EN0_RX_THD | ADI_MAX32_I2C_INT_EN0_DONE, 0);
+		}
+		/* 0-length transactions are needed for I2C scans.
+		 * In these cases, just give up the semaphore.
+		 */
+		else if ((req->tx_len == req->rx_len) && (req->tx_len == 0)) {
+			k_sem_give(&data->xfer);
 		}
 	}
 

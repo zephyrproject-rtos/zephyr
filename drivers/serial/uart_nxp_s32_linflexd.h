@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@ struct uart_nxp_s32_config {
 	LINFLEXD_Type *base;
 	const struct pinctrl_dev_config *pincfg;
 	Linflexd_Uart_Ip_UserConfigType hw_cfg;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

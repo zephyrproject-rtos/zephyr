@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/adxl367.h>
+
+/ {
+	aliases {
+		accel0 = &adxl367_eval_adxl367_ardz;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	adxl367_eval_adxl367_ardz: adxl367@0 {
+		compatible = "adi,adxl367";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		int1-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+		fifo-mode = <ADXL367_FIFO_MODE_STREAM>;
+		status = "okay";
+	};
+};

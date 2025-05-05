@@ -55,7 +55,7 @@ ZTEST(cond, test_pthread_condattr)
 	zassert_ok(pthread_condattr_init(&att));
 
 	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_getclock failed");
-	zassert_equal(clock_id, CLOCK_MONOTONIC, "clock attribute not set correctly");
+	zassert_equal(clock_id, CLOCK_REALTIME, "clock attribute not set correctly");
 
 	zassert_ok(pthread_condattr_setclock(&att, CLOCK_REALTIME),
 		   "pthread_condattr_setclock failed");
@@ -66,6 +66,22 @@ ZTEST(cond, test_pthread_condattr)
 	zassert_equal(pthread_condattr_setclock(&att, 42), -EINVAL,
 		      "pthread_condattr_setclock did not return EINVAL");
 
+	zassert_ok(pthread_condattr_destroy(&att));
+}
+
+/**
+ * @brief Test pthread_cond_init() with a pre-existing initialized attribute.
+ */
+ZTEST(cond, test_cond_init_existing_initialized_condattr)
+{
+	pthread_cond_t cond;
+	pthread_condattr_t att = {0};
+
+	zassert_ok(pthread_condattr_init(&att));
+	zassert_ok(pthread_cond_init(&cond, &att), "pthread_cond_init failed with valid attr");
+
+	/* Clean up */
+	zassert_ok(pthread_cond_destroy(&cond));
 	zassert_ok(pthread_condattr_destroy(&att));
 }
 

@@ -161,13 +161,8 @@ static uint8_t micp_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_micp_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_MICP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_MICP_CTLR_DISCOVER);
-	tester_set_bit(rp->data, BTP_MICP_CTLR_MUTE_READ);
-	tester_set_bit(rp->data, BTP_MICP_CTLR_MUTE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -274,14 +269,8 @@ static uint8_t mics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_mics_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_MICS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE_DISABLE);
-	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE_READ);
-	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE);
-	tester_set_bit(rp->data, BTP_MICS_DEV_UNMUTE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

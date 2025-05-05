@@ -1,0 +1,15 @@
+description: Renesas RZ/A2M OS timer
+
+compatible: "renesas,rza2m-ostm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

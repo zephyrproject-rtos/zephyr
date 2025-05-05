@@ -1,0 +1,14 @@
+identifier: max32657evkit/max32657
+name: max32657evkit-max32657
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - serial
+  - gpio
+  - trng
+ram: 256
+flash: 960

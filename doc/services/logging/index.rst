@@ -758,8 +758,8 @@ Please refer to the :zephyr:code-sample:`logging-dictionary` sample to learn mor
 the log parser.
 
 
-Recommendations
-***************
+Recommendations and limitations
+*******************************
 
 The are following recommendations:
 
@@ -771,13 +771,18 @@ The are following recommendations:
   format specifier and it points to a constant string.
 * It is recommended to cast pointer to ``char *`` when it is used with ``%s``
   format specifier and it points to a transient string.
-* It is recommended to cast character pointer to non character pointer
+* It is required to cast a character pointer to non character pointer
   (e.g., ``void *``) when it is used with ``%p`` format specifier.
 
 .. code-block:: c
 
    LOG_WRN("%s", str);
    LOG_WRN("%p", (void *)str);
+
+There are following limitations:
+
+* Logging does not support string format specifier with width (e.g., ``%.*s`` or ``%8s``). That
+  is because format string content is not used to build a log message, only argument types.
 
 Benchmark
 *********

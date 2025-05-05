@@ -56,7 +56,7 @@ More information about STM32F401RE can be found here:
 Supported Features
 ==================
 
-.. zephyr:board-supported-hw:
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

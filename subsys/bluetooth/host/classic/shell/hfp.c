@@ -39,9 +39,9 @@ static struct bt_hfp_hf_call *hfp_hf_call[CONFIG_BT_HFP_HF_MAX_CALLS];
 
 static void hf_add_a_call(struct bt_hfp_hf_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_hf_call); index++) {
-		if (!hfp_hf_call[index]) {
-			hfp_hf_call[index] = call;
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (!hfp_hf_call[i]) {
+			hfp_hf_call[i] = call;
 			return;
 		}
 	}
@@ -49,10 +49,19 @@ static void hf_add_a_call(struct bt_hfp_hf_call *call)
 
 static void hf_remove_a_call(struct bt_hfp_hf_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_hf_call); index++) {
-		if (call == hfp_hf_call[index]) {
-			hfp_hf_call[index] = NULL;
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (call == hfp_hf_call[i]) {
+			hfp_hf_call[i] = NULL;
 			return;
+		}
+	}
+}
+
+static void hf_remove_calls(void)
+{
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (hfp_hf_call[i] != NULL) {
+			hfp_hf_call[i] = NULL;
 		}
 	}
 }
@@ -68,19 +77,32 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 {
 	hf_conn = NULL;
 	hfp_hf = NULL;
+	hf_remove_calls();
 	bt_shell_print("HF disconnected");
 }
 
 static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 {
-	bt_shell_print("HF SCO connected");
-	hf_sco_conn = sco_conn;
+	bt_shell_print("HF SCO connected %p", sco_conn);
+
+	if (hf_sco_conn != NULL) {
+		bt_shell_warn("HF SCO conn %p exists", hf_sco_conn);
+		return;
+	}
+
+	hf_sco_conn = bt_conn_ref(sco_conn);
 }
 
 static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	bt_shell_print("HF SCO disconnected");
-	hf_sco_conn = NULL;
+	bt_shell_print("HF SCO disconnected %p (reason %u)", sco_conn, reason);
+
+	if (hf_sco_conn == sco_conn) {
+		bt_conn_unref(hf_sco_conn);
+		hf_sco_conn = NULL;
+	} else {
+		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hf_sco_conn, sco_conn);
+	}
 }
 
 void hf_service(struct bt_hfp_hf *hf, uint32_t value)
@@ -964,9 +986,9 @@ static struct bt_hfp_ag_call *hfp_ag_call[CONFIG_BT_HFP_AG_MAX_CALLS];
 
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_ag_call); index++) {
-		if (!hfp_ag_call[index]) {
-			hfp_ag_call[index] = call;
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (!hfp_ag_call[i]) {
+			hfp_ag_call[i] = call;
 			return;
 		}
 	}
@@ -974,10 +996,19 @@ static void ag_add_a_call(struct bt_hfp_ag_call *call)
 
 static void ag_remove_a_call(struct bt_hfp_ag_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_ag_call); index++) {
-		if (call == hfp_ag_call[index]) {
-			hfp_ag_call[index] = NULL;
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (call == hfp_ag_call[i]) {
+			hfp_ag_call[i] = NULL;
 			return;
+		}
+	}
+}
+
+static void ag_remove_calls(void)
+{
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (hfp_ag_call[i] != NULL) {
+			hfp_ag_call[i] = NULL;
 		}
 	}
 }
@@ -988,24 +1019,37 @@ static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 		bt_shell_warn("The conn %p is not aligned with ACL conn %p", conn, default_conn);
 	}
 	hfp_ag = ag;
-	bt_shell_print("ag connected");
+	bt_shell_print("AG connected");
 }
 
 static void ag_disconnected(struct bt_hfp_ag *ag)
 {
-	bt_shell_print("ag disconnected");
+	ag_remove_calls();
+	bt_shell_print("AG disconnected");
 }
 
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 {
-	bt_shell_print("ag sco connected");
-	hfp_ag_sco_conn = sco_conn;
+	bt_shell_print("AG SCO connected %p", sco_conn);
+
+	if (hfp_ag_sco_conn != NULL) {
+		bt_shell_warn("AG SCO conn %p exists", hfp_ag_sco_conn);
+		return;
+	}
+
+	hfp_ag_sco_conn = bt_conn_ref(sco_conn);
 }
 
-static void ag_sco_disconnected(struct bt_hfp_ag *ag)
+static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	bt_shell_print("ag sco disconnected");
-	hfp_ag_sco_conn = NULL;
+	bt_shell_print("AG SCO disconnected %p (reason %u)", sco_conn, reason);
+
+	if (hfp_ag_sco_conn == sco_conn) {
+		bt_conn_unref(hfp_ag_sco_conn);
+		hfp_ag_sco_conn = NULL;
+	} else {
+		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hfp_ag_sco_conn, sco_conn);
+	}
 }
 
 static int ag_memory_dial(struct bt_hfp_ag *ag, const char *location, char **number)
@@ -1016,7 +1060,7 @@ static int ag_memory_dial(struct bt_hfp_ag *ag, const char *location, char **num
 		return -ENOTSUP;
 	}
 
-	bt_shell_print("ag memory dial");
+	bt_shell_print("AG memory dial");
 
 	*number = phone;
 
@@ -1027,7 +1071,7 @@ static int ag_number_call(struct bt_hfp_ag *ag, const char *number)
 {
 	static char *phone = "123456789";
 
-	bt_shell_print("ag number call");
+	bt_shell_print("AG number call");
 
 	if (strcmp(number, phone)) {
 		return -ENOTSUP;
@@ -1038,71 +1082,71 @@ static int ag_number_call(struct bt_hfp_ag *ag, const char *number)
 
 static void ag_outgoing(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
-	bt_shell_print("ag outgoing call %p, number %s", call, number);
+	bt_shell_print("AG outgoing call %p, number %s", call, number);
 	ag_add_a_call(call);
 }
 
 static void ag_incoming(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
-	bt_shell_print("ag incoming call %p, number %s", call, number);
+	bt_shell_print("AG incoming call %p, number %s", call, number);
 	ag_add_a_call(call);
 }
 
 static void ag_incoming_held(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag incoming call %p is held", call);
+	bt_shell_print("AG incoming call %p is held", call);
 }
 
 static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
 {
-	bt_shell_print("ag call %p start ringing mode %d", call, in_band);
+	bt_shell_print("AG call %p start ringing mode %d", call, in_band);
 }
 
 static void ag_accept(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p accept", call);
+	bt_shell_print("AG call %p accept", call);
 }
 
 static void ag_held(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p held", call);
+	bt_shell_print("AG call %p held", call);
 }
 
 static void ag_retrieve(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p retrieved", call);
+	bt_shell_print("AG call %p retrieved", call);
 }
 
 static void ag_reject(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p reject", call);
+	bt_shell_print("AG call %p reject", call);
 	ag_remove_a_call(call);
 }
 
 static void ag_terminate(struct bt_hfp_ag_call *call)
 {
-	bt_shell_print("ag call %p terminate", call);
+	bt_shell_print("AG call %p terminate", call);
 	ag_remove_a_call(call);
 }
 
 static void ag_codec(struct bt_hfp_ag *ag, uint32_t ids)
 {
-	bt_shell_print("ag received codec id bit map %x", ids);
+	bt_shell_print("AG received codec id bit map %x", ids);
 }
 
 void ag_vgm(struct bt_hfp_ag *ag, uint8_t gain)
 {
-	bt_shell_print("ag received vgm %d", gain);
+	bt_shell_print("AG received vgm %d", gain);
 }
 
 void ag_vgs(struct bt_hfp_ag *ag, uint8_t gain)
 {
-	bt_shell_print("ag received vgs %d", gain);
+	bt_shell_print("AG received vgs %d", gain);
 }
 
 void ag_codec_negotiate(struct bt_hfp_ag *ag, int err)
 {
-	bt_shell_print("ag codec negotiation result %d", err);
+	bt_shell_print("AG codec negotiation result %d", err);
 }
 
 void ag_audio_connect_req(struct bt_hfp_ag *ag)

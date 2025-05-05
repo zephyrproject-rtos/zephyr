@@ -173,6 +173,7 @@ zephyr_udc0: &usbotg_fs {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &mac {

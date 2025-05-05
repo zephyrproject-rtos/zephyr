@@ -83,7 +83,7 @@ static void bounce_once(int id, bool trylock)
 		}
 
 		k_spin_unlock(&bounce_lock, key);
-		k_busy_wait(100);
+		k_busy_wait(1);
 	}
 
 	if (!locked && bounce_done) {
@@ -99,7 +99,7 @@ static void bounce_once(int id, bool trylock)
 
 	for (i = 0; i < 5; i++) {
 		zassert_true(bounce_owner == id, "Locked data changed");
-		k_busy_wait(1);
+		k_busy_wait(5);
 	}
 
 	/* Release the lock */

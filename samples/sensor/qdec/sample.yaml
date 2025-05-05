@@ -27,16 +27,6 @@ tests:
         - "Quadrature decoder sensor test"
         - "Position = (.*) degrees"
 
-  sample.sensor.st_qdec_sensor:
-    platform_allow: nucleo_f401re
-    harness_config:
-      fixture: fixture_mech_encoder
-      type: multi_line
-      ordered: true
-      regex:
-        - "Quadrature decoder sensor test"
-        - "Position = (.*) degrees"
-
   sample.sensor.nrf_qdec_sensor:
     platform_allow:
       - nrf52840dk/nrf52840

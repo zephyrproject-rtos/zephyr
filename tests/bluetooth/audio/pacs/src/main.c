@@ -7,7 +7,7 @@
  */
 
 #include <errno.h>
-#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/att.h>

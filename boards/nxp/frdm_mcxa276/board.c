@@ -123,19 +123,88 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART0, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART0);
-	RESET_PeripheralReset(kLPUART0_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART0_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART1, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART1);
-	RESET_PeripheralReset(kLPUART1_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART1_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART2, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART2);
-	RESET_PeripheralReset(kLPUART2_RST_SHIFT_RSTn);
+	RESET_ReleasePeripheralReset(kLPUART2_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart3))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART3, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART3);
+	RESET_ReleasePeripheralReset(kLPUART3_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart4))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART4, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART4);
+	RESET_ReleasePeripheralReset(kLPUART4_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
+	RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
+#endif
+
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER2, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER2);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER3, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER3);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER4, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER4);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
+
+/*
+ * Clock Select Decides what input source the lptmr will clock from
+ *
+ * 0 <- Reserved
+ * 1 <- 16K FRO
+ * 2 <- Reserved
+ * 3 <- Combination of clocks configured in MRCC_LPTMR0_CLKSEL[MUX] field
+ */
+#if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPTMR0);
+	CLOCK_SetClockDiv(kCLOCK_DivLPTMR0, 1u);
+#endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
+
 #endif
 
 	/* Set SystemCoreClock variable. */

@@ -111,10 +111,10 @@ struct bt_hfp_ag_cb {
 	 *  If this callback is provided it will be called whenever the
 	 *  SCO/eSCO connection gets disconnected.
 	 *
-	 *  @param ag HFP AG object.
-	 *  @param sco_conn SCO/eSCO Connection object.
+	 *  @param conn SCO/eSCO Connection object.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
-	void (*sco_disconnected)(struct bt_hfp_ag *ag);
+	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
 
 	/** HF memory dialing request Callback
 	 *

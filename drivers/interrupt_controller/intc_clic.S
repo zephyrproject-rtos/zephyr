@@ -11,6 +11,29 @@
 #include <zephyr/arch/cpu.h>
 #include "intc_clic.h"
 
+#ifdef CONFIG_64BIT
+	/* register-wide load/store based on ld/sd (XLEN = 64) */
+
+	.macro lr, rd, mem
+	ld \rd, \mem
+	.endm
+
+	.macro sr, rs, mem
+	sd \rs, \mem
+	.endm
+
+#else
+	/* register-wide load/store based on lw/sw (XLEN = 32) */
+
+	.macro lr, rd, mem
+	lw \rd, \mem
+	.endm
+
+	.macro sr, rs, mem
+	sw \rs, \mem
+	.endm
+
+#endif
 
 GTEXT(__soc_handle_irq)
 /*
@@ -36,7 +59,7 @@ GTEXT(sys_trace_isr_exit)
  */
 SECTION_FUNC(exception.other, __soc_handle_all_irqs)
 	addi sp, sp, -16
-	sw ra, 0(sp)
+	sr ra, 0(sp)
 
 	/* Read and clear mnxti to get highest current interrupt and enable interrupts. Will return
 	 * original interrupt if no others appear. */
@@ -58,10 +81,10 @@ irq_loop:
 	add t0, t0, a0
 
 	/* Load argument in a0 register */
-	lw a0, 0(t0)
+	lr a0, 0(t0)
 
 	/* Load ISR function address in register t1 */
-	lw t1, RV_REGSIZE(t0)
+	lr t1, RV_REGSIZE(t0)
 
 	/* Call ISR function */
 	jalr ra, t1, 0
@@ -75,6 +98,6 @@ irq_loop:
 	bnez a0, irq_loop
 
 irq_done:
-	lw ra, 0(sp)
+	lr ra, 0(sp)
 	addi sp, sp, 16
 	ret

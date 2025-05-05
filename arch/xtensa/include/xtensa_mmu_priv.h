@@ -14,6 +14,7 @@
 #include <xtensa/config/core-isa.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/arch/xtensa/arch.h>
 
 /**
  * @defgroup xtensa_mmu_internal_apis Xtensa Memory Management Unit (MMU) Internal APIs
@@ -509,18 +510,22 @@ static inline void xtensa_dtlb_vaddr_invalidate(void *vaddr)
 
 /**
  * @brief Tell hardware to use a page table very first time after boot.
- *
- * @param l1_page Pointer to the page table to be used.
  */
-void xtensa_init_paging(uint32_t *l1_page);
+void xtensa_mmu_init_paging(void);
 
 /**
  * @brief Switch to a new page table.
  *
- * @param asid The ASID of the memory domain associated with the incoming page table.
- * @param l1_page Page table to be switched to.
+ * @param domain Architecture-specific memory domain data.
  */
-void xtensa_set_paging(uint32_t asid, uint32_t *l1_page);
+void xtensa_mmu_set_paging(struct arch_mem_domain *domain);
+
+/**
+ * @brief Computer the necessary register values when changing page tables.
+ *
+ * @param domain Architecture-specific memory domain data.
+ */
+void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain);
 
 /**
  * @}

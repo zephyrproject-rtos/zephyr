@@ -1,0 +1,82 @@
+# Copyright (c) 2018, Linaro Limited
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+title: Group of DAC-controlled LEDs.
+
+description: |
+  Each LED is defined in a child node of the dac-leds node.
+
+  Here is an example which defines an LED in the node /leds:
+
+  / {
+          leds {
+                  compatible = "dac-leds";
+                  led_0 {
+                          dac-dev = <&dac1>;
+                          channel = <0>;
+                          resolution = <12>;
+                  };
+                  led_1 {
+                          dac-dev = <&dac1>;
+                          channel = <1>;
+                          resolution = <12>;
+                          voltage-min-brightness-mv = <1400>;
+                          voltage-max-brightness-mv = <2700>;
+                          voltage-max-dac-mv = <3300>;
+                          output-buffer;
+                  };
+          };
+  };
+
+  Above:
+
+  - led_0 uses dac1 channel 0 with 12 bit resolution.
+  - led_1 uses dac1 channel 1 with 12 bit resolution and setup to supply an LED directly.
+
+compatible: "dac-leds"
+
+child-binding:
+  description: DAC LED child node
+  properties:
+    dac-dev:
+      type: phandle
+      required: true
+      description: |
+        Property containing phandle to DAC e.g. &dac.
+
+    channel:
+      type: int
+      required: true
+      description: |
+        The DAC channel.
+
+    resolution:
+      type: int
+      required: true
+      description: |
+        The DAC resolution to use.
+
+    voltage-min-brightness-mv:
+      type: int
+      description: |
+        Voltage at brightness 0%.
+        If not specified the minimum DAC output voltage is used.
+
+    voltage-max-brightness-mv:
+      type: int
+      description: |
+        Voltage at brightness 100%.
+        If not specified the maximum DAC output voltage is used.
+
+    voltage-max-dac-mv:
+      type: int
+      description: |
+        The DAC maximum output voltage.
+        Required if voltage-min-brightness-mv or voltage-max-brightness-mv is set.
+
+    output-buffer:
+      type: boolean
+      description: |
+        Enable the output buffer of the DAC.
+        This is required if it is used to drive an LED directly.

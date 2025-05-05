@@ -128,6 +128,29 @@ config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
 endif # CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
+config CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+	bool "HFINT clock calibration"
+	depends on SOC_NRF54L05 || SOC_NRF54L10 || SOC_NRF54L15
+	depends on DT_HAS_NORDIC_NRF_HFXO_ENABLED
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select EXPERIMENTAL
+	help
+	  Enables calibration of HFINT clock on every start of HFXO clock.
+
+if CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+
+config CLOCK_CONTROL_NRF_HFINT_CALIBRATION_PERIOD
+	int "HFINT clock calibration period in milliseconds"
+	default 60000
+	help
+	  Periodically, HFINT clock calibration is performed.
+	  This includes requesting HFXO clock and starting actual calibration.
+	  Once the calibration is finished, the HFXO clock is released.
+	  Set to 0 to disable periodic calibration - in such case calibration
+	  will be done only when HFXO is started by the application itself.
+
+endif # CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+
 choice CLOCK_CONTROL_NRF_ACCURACY_PPM
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF_K32SRC_500PPM if CLOCK_CONTROL_NRF_K32SRC_RC && SOC_COMPATIBLE_NRF52X

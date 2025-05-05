@@ -75,10 +75,14 @@ static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 }
 
 static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
-				     uint8_t x, uint8_t y)
+				     uint8_t x, uint8_t y, bool vtiled)
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return glyph_ptr[(x * fptr->height + y) / 8];
+		if (vtiled) {
+			return glyph_ptr[x * (fptr->height / 8U) + y];
+		} else {
+			return glyph_ptr[(x * fptr->height + y) / 8];
+		}
 	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
 		return glyph_ptr[y * (fptr->width) + x];
 	}
@@ -140,10 +144,11 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 				 * So, we process assume that nothing is drawn above.
 				 */
 				byte = 0;
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
+				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
 			} else {
-				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8);
+				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
+				next_byte =
+					get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8, true);
 			}
 
 			if (font_is_msbfirst) {
@@ -246,7 +251,7 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 				continue;
 			}
 
-			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y);
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y, false);
 			if (font_is_msbfirst) {
 				byte = byte_reverse(byte);
 			}

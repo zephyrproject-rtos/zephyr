@@ -101,6 +101,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blues	Blues Wireless
@@ -303,6 +304,7 @@ hynitron	Hynitron
 hyundai	Hyundai Technology
 hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
+iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
@@ -358,6 +360,7 @@ kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
 kvaser	Kvaser
 kvg	Kverneland Group
+kws	KWS Computersysteme Gmbh
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
@@ -487,6 +490,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openhwgroup	OpenHW Group
 openisa	open-isa.org
 openrisc	OpenRISC.io
 openthread	OpenThread.io
@@ -578,6 +582,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
@@ -774,9 +779,10 @@ yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
+zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

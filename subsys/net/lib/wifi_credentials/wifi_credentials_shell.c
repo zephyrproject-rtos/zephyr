@@ -54,8 +54,7 @@ static const char client_key2_test[] = {
 	'\0'};
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface)
 {
 	struct wifi_enterprise_creds_params params = {0};
@@ -80,7 +79,7 @@ static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
 static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 {
@@ -359,7 +358,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argc != 2) {
-		shell_print(sh, "Usage: wifi_cred delete \"network name\"");
+		shell_print(sh, "Usage: wifi cred delete \"network name\"");
 		return -EINVAL;
 	}
 

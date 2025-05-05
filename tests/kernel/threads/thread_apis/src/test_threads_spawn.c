@@ -129,7 +129,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_forever)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Validate behavior of multiple calls to k_thread_start()
+ * @brief Validate behavior of multiple calls to k_thread_start
  *
  * @details Call k_thread_start() on an already terminated thread
  *

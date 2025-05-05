@@ -19,7 +19,7 @@
 
 #if defined CONFIG_SOC_AM6442_M4
 #define MCU_PADCFG_BASE (0x4080000)
-#elif defined CONFIG_SOC_AM6234_M4
+#elif defined CONFIG_SOC_AM6234_M4 | defined CONFIG_SOC_AM6232_M4
 #define WKUP_PADCFG_BASE (0x4080000)
 #endif
 
@@ -27,7 +27,7 @@ static const uintptr_t ctrl_partitions[] = {
 #if defined CONFIG_SOC_AM6442_M4
 	CTRL_PARTITION(MCU_PADCFG_BASE, 0),
 	CTRL_PARTITION(MCU_PADCFG_BASE, 1),
-#elif defined CONFIG_SOC_AM6234_M4
+#elif defined CONFIG_SOC_AM6234_M4 | defined CONFIG_SOC_AM6232_M4
 	CTRL_PARTITION(WKUP_PADCFG_BASE, 0),
 	CTRL_PARTITION(WKUP_PADCFG_BASE, 1),
 #endif

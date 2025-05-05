@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP S32 LINFlexD
@@ -19,3 +19,21 @@ properties:
 
   pinctrl-names:
     required: true
+
+  clocks:
+    required: true
+
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Defaults to standard baudrate of 115200 if not specified.
+    default: 115200
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8

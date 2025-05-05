@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <zephyr/linker/section_tags.h>
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 #include <zephyr/kernel.h>
 #include <zephyr/console/console.h>
 #include <zephyr/cache.h>
@@ -16,7 +16,7 @@ K_SEM_DEFINE(dtcm_magic, 0, 1);
 __dtcm_bss_section uint8_t var;
 int cnt;
 
-void flexram_magic_addr_isr_cb(enum memc_flexram_interrupt_cause cause,
+void flexram_magic_addr_isr_cb(enum flexram_interrupt_cause cause,
 						void *data)
 {
 	ARG_UNUSED(data);
@@ -29,7 +29,7 @@ void flexram_magic_addr_isr_cb(enum memc_flexram_interrupt_cause cause,
 
 int main(void)
 {
-	memc_flexram_register_callback(flexram_magic_addr_isr_cb, NULL);
+	flexram_register_callback(flexram_magic_addr_isr_cb, NULL);
 
 	console_init();
 
@@ -38,7 +38,7 @@ int main(void)
 
 	uint32_t dtcm_addr = (uint32_t)&var;
 
-	memc_flexram_set_dtcm_magic_addr(dtcm_addr);
+	flexram_set_dtcm_magic_addr(dtcm_addr);
 
 	uint8_t tmp;
 

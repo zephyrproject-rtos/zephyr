@@ -80,6 +80,68 @@
 #include <stdint.h>
 #include <zephyr/toolchain.h>
 
+/* Stack needs to aligned on 16-bytes as mentioned on Xtensa ISA.
+ * So we pad _xtensa_irq_bsa_t to achieve that. The followings
+ * are see how much space is taken depending on features enabled.
+ */
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+# define _BSA_PADDING_FPU		(sizeof(uintptr_t) * 18U)
+#else
+# define _BSA_PADDING_FPU		(0)
+#endif
+
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+# define _BSA_PADDING_HIFI		(XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN)
+#else
+# define _BSA_PADDING_HIFI		(0)
+#endif
+
+#if XCHAL_HAVE_THREADPTR
+# define _BSA_PADDING_THREADPTR		(sizeof(uintptr_t))
+#else
+# define _BSA_PADDING_THREADPTR		(0)
+#endif
+
+#if XCHAL_HAVE_S32C1I
+# define _BSA_PADDING_S32C1I		(sizeof(uintptr_t))
+#else
+# define _BSA_PADDING_S32C1I		(0)
+#endif
+
+#if XCHAL_HAVE_LOOPS
+# define _BSA_PADDING_LOOPS		(sizeof(uintptr_t) * 3U)
+#else
+# define _BSA_PADDING_LOOPS		(0)
+#endif
+
+/* Must have fields regardless of features. */
+#define _BSA_PADDING_COMMON		(sizeof(uintptr_t) * 12U)
+
+/* Raw size by adding up all the above. */
+#define _BSA_PADDING_BASE_SIZE		\
+	(_BSA_PADDING_FPU + \
+	 _BSA_PADDING_HIFI + \
+	 _BSA_PADDING_THREADPTR + \
+	 _BSA_PADDING_S32C1I + \
+	 _BSA_PADDING_LOOPS + \
+	 _BSA_PADDING_COMMON)
+
+/* Each stack frame always has a pointer to BSA so we add
+ * that (+4) to the BSA size before padding the BSA to have
+ * size aligned on 16 bytes. Each group of high registers to
+ * be saved (totally 3 groups) consists of 4 registers which
+ * are 16 bytes already. So each type of stack frame
+ * (A[3, 7, 11, 15]) do not need any further padding as long
+ * as the BSA struct is of correct size.
+ */
+#define _BSA_PADDING_PADDED_SIZE	\
+	((((_BSA_PADDING_BASE_SIZE + 4) + 15) / 16 * 16) - 4)
+
+/* How many extra bytes needed. */
+#define _BSA_PADDING_NEEDED		\
+	(_BSA_PADDING_PADDED_SIZE - _BSA_PADDING_BASE_SIZE)
+
 /**
  * Base Save Area (BSA) during interrupt.
  *
@@ -147,6 +209,8 @@ struct xtensa_irq_base_save_area {
 	uintptr_t a2;
 	uintptr_t a3;
 
+	uintptr_t padding[_BSA_PADDING_NEEDED / sizeof(uintptr_t)];
+
 	uintptr_t caller_a0;
 	uintptr_t caller_a1;
 	uintptr_t caller_a2;
@@ -154,6 +218,16 @@ struct xtensa_irq_base_save_area {
 };
 
 typedef struct xtensa_irq_base_save_area _xtensa_irq_bsa_t;
+
+#undef _BSA_PADDING_NEEDED
+#undef _BSA_PADDING_PADDED_SIZE
+#undef _BSA_PADDING_BASE_SIZE
+#undef _BSA_PADDING_COMMON
+#undef _BSA_PADDING_LOOPS
+#undef _BSA_PADDING_S32C1I
+#undef _BSA_PADDING_THREADPTR
+#undef _BSA_PADDING_HIFI
+#undef _BSA_PADDING_FPU
 
 /**
  * Raw interrupt stack frame.

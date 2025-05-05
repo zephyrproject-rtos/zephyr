@@ -9,8 +9,10 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
@@ -37,6 +39,8 @@ extern "C" {
 #if defined(CONFIG_BT_HCI_ERR_TO_STR)
 const char *bt_hci_err_to_str(uint8_t hci_err);
 #else
+#include <zephyr/toolchain.h>
+
 static inline const char *bt_hci_err_to_str(uint8_t hci_err)
 {
 	ARG_UNUSED(hci_err);

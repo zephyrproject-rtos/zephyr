@@ -262,7 +262,7 @@ static int explorir_m_calibrate(const struct device *dev, struct sensor_value *v
 	struct explorir_m_data *data = dev->data;
 	struct sensor_value original;
 	struct sensor_value tmp;
-	int restore_rc;
+	int restore_rc = 0;
 	int rc;
 
 	/* Prevent sensor interaction while using calibration filter value */

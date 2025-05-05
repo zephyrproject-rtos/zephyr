@@ -186,11 +186,12 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 					break;
 				}
 			}
-#ifdef CONFIG_POLL
-			z_handle_obj_poll_events(&pipe->poll_events,
-						 K_POLL_STATE_PIPE_DATA_AVAILABLE);
-#endif /* CONFIG_POLL */
 		}
+
+#ifdef CONFIG_POLL
+		need_resched |= z_handle_obj_poll_events(&pipe->poll_events,
+							 K_POLL_STATE_PIPE_DATA_AVAILABLE);
+#endif /* CONFIG_POLL */
 
 		written += ring_buf_put(&pipe->buf, &data[written], len - written);
 		if (likely(written == len)) {

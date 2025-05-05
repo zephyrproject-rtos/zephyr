@@ -30,11 +30,11 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* CoAP events */
-#define _NET_COAP_LAYER		NET_MGMT_LAYER_L4
-#define _NET_COAP_CODE		0x1c0
-#define _NET_COAP_IF_BASE	(NET_MGMT_EVENT_BIT |			\
-				 NET_MGMT_LAYER(_NET_COAP_LAYER) |	\
-				 NET_MGMT_LAYER_CODE(_NET_COAP_CODE))
+#define NET_COAP_LAYER		NET_MGMT_LAYER_L4
+#define NET_COAP_CODE		NET_MGMT_LAYER_CODE_COAP
+#define NET_COAP_IF_BASE	(NET_MGMT_EVENT_BIT |			\
+				 NET_MGMT_LAYER(NET_COAP_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(NET_COAP_CODE))
 
 struct coap_service;
 struct coap_resource;
@@ -55,25 +55,25 @@ enum net_event_coap_cmd {
  * @brief coap_mgmt event raised when a service has started
  */
 #define NET_EVENT_COAP_SERVICE_STARTED			\
-	(_NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STARTED)
+	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STARTED)
 
 /**
  * @brief coap_mgmt event raised when a service has stopped
  */
 #define NET_EVENT_COAP_SERVICE_STOPPED			\
-	(_NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STOPPED)
+	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_SERVICE_STOPPED)
 
 /**
  * @brief coap_mgmt event raised when an observer has been added to a resource
  */
 #define NET_EVENT_COAP_OBSERVER_ADDED			\
-	(_NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_ADDED)
+	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_ADDED)
 
 /**
  * @brief coap_mgmt event raised when an observer has been removed from a resource
  */
 #define NET_EVENT_COAP_OBSERVER_REMOVED			\
-	(_NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_REMOVED)
+	(NET_COAP_IF_BASE | NET_EVENT_COAP_CMD_OBSERVER_REMOVED)
 
 /**
  * @brief CoAP Service event structure.

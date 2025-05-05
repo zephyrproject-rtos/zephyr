@@ -40,7 +40,7 @@ build this sample app using:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/grow_r502a
-   :board: esp32_devkitc_wroom/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
 
 Sample Output

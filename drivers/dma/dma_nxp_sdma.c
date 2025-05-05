@@ -432,6 +432,7 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
+	dev_data->chan[chan_id].capacity = 0;
 
 	return true;
 }
@@ -487,7 +488,7 @@ static int dma_nxp_sdma_init(const struct device *dev)
 			    dma_nxp_sdma_isr, DEVICE_DT_INST_GET(inst), 0);	\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}								\
-	DEVICE_DT_INST_DEFINE(inst, &dma_nxp_sdma_init, NULL,		\
+	DEVICE_DT_INST_DEFINE(inst, dma_nxp_sdma_init, NULL,		\
 			      &sdma_data_##inst, &sdma_cfg_##inst,	\
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
 			      &sdma_api);				\

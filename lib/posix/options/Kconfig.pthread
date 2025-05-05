@@ -15,6 +15,9 @@ menuconfig POSIX_THREADS
 
 if POSIX_THREADS
 
+config HEAP_MEM_POOL_ADD_SIZE_POSIX_THREADS
+	def_int 256
+
 config POSIX_THREAD_THREADS_MAX
 	int "Maximum number of POSIX threads"
 	default 5

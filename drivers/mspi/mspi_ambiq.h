@@ -7,7 +7,7 @@
 #ifndef MSPI_AMBIQ_H_
 #define MSPI_AMBIQ_H_
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]

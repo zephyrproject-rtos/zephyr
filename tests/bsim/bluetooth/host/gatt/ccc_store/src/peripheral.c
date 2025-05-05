@@ -41,6 +41,8 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb peripheral_cb;
 
+static bool notif_write_allowed;
+
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
@@ -52,10 +54,24 @@ static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	SET_FLAG(ccc_cfg_changed_flag);
 }
 
+static ssize_t ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value)
+{
+	if (notif_write_allowed) {
+		LOG_INF("CCC Write Request accepted.");
+		return sizeof(value);
+	} else {
+		LOG_INF("CCC Write Request rejected.");
+		notif_write_allowed = true;
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+}
+
 BT_GATT_SERVICE_DEFINE(dummy_svc, BT_GATT_PRIMARY_SERVICE(&dummy_service),
 		       BT_GATT_CHARACTERISTIC(&notify_characteristic_uuid.uuid, BT_GATT_CHRC_NOTIFY,
 					      BT_GATT_PERM_NONE, NULL, NULL, NULL),
-		       BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
+		       BT_GATT_CCC_WITH_WRITE_CB(ccc_cfg_changed, ccc_cfg_write_cb,
+						 BT_GATT_PERM_READ | BT_GATT_PERM_WRITE)
+);
 
 static void create_adv(struct bt_le_ext_adv **adv)
 {

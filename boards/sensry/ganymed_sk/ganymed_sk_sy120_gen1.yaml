@@ -1,0 +1,15 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ganymed_sk/sy120_gen1
+vendor: sensry
+name: Ganymed family starter kit board with SY120_GEN1 chip equipped
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - i2c

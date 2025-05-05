@@ -9,10 +9,10 @@
 #include <zephyr/dt-bindings/dt-util.h>
 
 /* Operating Mode */
-#define LIS2DUX12_OPER_MODE_POWER_DOWN      0
-#define LIS2DUX12_OPER_MODE_LOW_POWER       1
-#define LIS2DUX12_OPER_MODE_HIGH_RESOLUTION 2
-#define LIS2DUX12_OPER_MODE_HIGH_FREQUENCY  3
+#define LIS2DUX12_OPER_MODE_POWER_DOWN        0
+#define LIS2DUX12_OPER_MODE_LOW_POWER         1
+#define LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE  2
+#define LIS2DUX12_OPER_MODE_SINGLE_SHOT       3
 
 /* Data rate */
 #define LIS2DUX12_DT_ODR_OFF      0

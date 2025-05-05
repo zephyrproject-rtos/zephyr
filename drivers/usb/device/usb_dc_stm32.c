@@ -67,9 +67,11 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+#endif
 
 #define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
 			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
@@ -91,12 +93,16 @@ static const struct gpio_dt_spec ulpi_reset =
  */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
 	defined(USB_OTG_HS_EMB_PHY)
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
-#define HIGH_SPEED             USB_OTG_SPEED_HIGH
+#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
 #endif
 
-#define FULL_SPEED             USB_OTG_SPEED_FULL
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define USB_DC_STM32_FULL_SPEED             PCD_SPEED_FULL
+#else
+#define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -335,6 +341,14 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 	 * with LL_PWR_EnableVDDUSB function (higher case)
 	 */
 	LL_PWR_EnableVDDUSB();
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	/* Enable Vdd USB voltage monitoring */
+	LL_PWR_EnableVddUSBMonitoring();
+	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
+		/* Wait for VDD33USB ready */
+	}
+	/* Enable VDDUSB */
+	LL_PWR_EnableVddUSB();
 #endif
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
@@ -413,12 +427,14 @@ static int usb_dc_stm32_clock_enable(void)
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
-#else
+#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 
 #if USB_OTG_HS_EMB_PHYC
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #endif
 #endif /* USB_OTG_HS_ULPI_PHY */
 
@@ -443,10 +459,11 @@ static int usb_dc_stm32_clock_disable(void)
 static int usb_dc_stm32_init(void)
 {
 	HAL_StatusTypeDef status;
-	int ret;
 	unsigned int i;
 
-	usb_dc_stm32_state.pcd.Init.speed = DT_INST_STRING_UPPER_TOKEN(0, maximum_speed);
+	usb_dc_stm32_state.pcd.Init.speed =
+			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
+
 #if defined(USB) || defined(USB_DRD_FS)
 #ifdef USB
 	usb_dc_stm32_state.pcd.Instance = USB;
@@ -458,11 +475,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-#endif
+	usb_dc_stm32_state.pcd.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE_ADDRESS;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 #if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
@@ -505,12 +518,14 @@ static int usb_dc_stm32_init(void)
 	}
 #endif
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LOG_DBG("Pinctrl signals configuration");
-	ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
+	int ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", ret);
 		return ret;
 	}
+#endif
 
 	LOG_DBG("HAL_PCD_Init");
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);

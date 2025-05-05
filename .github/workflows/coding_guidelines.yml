@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   compliance_job:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code

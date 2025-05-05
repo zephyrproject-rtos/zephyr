@@ -5,6 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+
 void bt_le_adv_resume(void);
 
 struct bt_le_ext_adv *bt_le_adv_lookup_legacy(void);

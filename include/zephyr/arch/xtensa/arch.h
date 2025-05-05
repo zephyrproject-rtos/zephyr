@@ -66,12 +66,22 @@ struct arch_mem_domain {
 	uint32_t *ptables;
 	uint8_t asid;
 	bool dirty;
+
+	/* Following are used to program registers when changing page tables. */
+	uint32_t reg_asid;
+	uint32_t reg_ptevaddr;
+	uint32_t reg_ptepin_as;
+	uint32_t reg_ptepin_at;
+	uint32_t reg_vecpin_as;
+	uint32_t reg_vecpin_at;
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	struct xtensa_mpu_map mpu_map;
 #endif
 	sys_snode_t node;
 };
+
+typedef struct arch_mem_domain arch_mem_domain_t;
 
 /**
  * @brief Generate hardware exception.

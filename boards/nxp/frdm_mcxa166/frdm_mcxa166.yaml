@@ -15,4 +15,9 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - uart
+  - flash
+  - watchdog
+  - counter
+  - dma
 vendor: nxp

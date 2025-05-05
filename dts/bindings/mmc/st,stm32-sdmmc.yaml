@@ -7,6 +7,7 @@ include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 properties:
   disk-name:
     type: string
+    required: true
     description: |
       Disk name.
 

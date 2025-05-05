@@ -63,9 +63,9 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 	printk("HFP AG SCO connected!\n");
 }
 
-static void ag_sco_disconnected(struct bt_hfp_ag *ag)
+static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	printk("HFP AG SCO disconnected!\n");
+	printk("HFP AG SCO disconnected %u!\n", reason);
 }
 
 static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
@@ -236,7 +236,7 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 
 	for (i = 0; i < count; i++) {
 		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
-		printk("Device[%d]: %s, rssi %d, cod 0x%X%X%X", i, addr, results[i].rssi,
+		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);

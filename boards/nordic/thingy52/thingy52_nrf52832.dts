@@ -37,26 +37,27 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		/* Lightwell RGB */
 		led0: led_0 {
 			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
-			//vin-supply = <&vdd_pwr>;
 		};
+
 		led1: led_1 {
 			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
-			//vin-supply = <&vdd_pwr>;
 		};
+
 		led2: led_2 {
 			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
-			//vin-supply = <&vdd_pwr>;
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -113,6 +114,10 @@
 	status = "okay";
 };
 
+&nfct {
+	status = "okay";
+};
+
 &gpiote {
 	status = "okay";
 };
@@ -134,10 +139,10 @@
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
@@ -177,10 +182,10 @@
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
@@ -198,14 +203,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;

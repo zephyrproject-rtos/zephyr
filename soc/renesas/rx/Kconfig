@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RENESAS_RX
+	select BUILD_OUTPUT_MOT
+
+if SOC_FAMILY_RENESAS_RX
+
+config RENESAS_NONE_USED_PORT_INIT
+	bool "Initialize unused ports"
+	default y
+	help
+	  Initialize the unsed pins of RX MCU followed by in the "Handling of
+	  Unused Pins" section of PORT chapter of RX MCU of User's manual.
+	  Note: please MUST set "BSP_PACKAGE_PINS" definition to your device
+	  of pin type in r_bsp_config.h.
+	  Otherwise, the port may output without intention.
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_RENESAS_RX

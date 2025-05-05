@@ -181,6 +181,7 @@ arduino_serial: &usart6 {};
 		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &quadspi {

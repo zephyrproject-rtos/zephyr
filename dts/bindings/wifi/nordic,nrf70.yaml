@@ -22,3 +22,10 @@ properties:
     description: |
       GPIO of the RF Switch to control SR RF output to either SR Antenna
       or shared Antenna with Wi-Fi
+
+  iovdd-power-up-delay-ms:
+    type: int
+    default: 1
+    description: |
+      Duration to wait after enabling IOVDD before attempting communications.
+      Default value of 1 comes from the nRF7002 DK/EK switch (TCK106AG): ~600us

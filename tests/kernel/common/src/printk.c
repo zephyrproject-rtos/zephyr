@@ -181,8 +181,14 @@ static int ram_console_out(int character)
 	pos = (pos + 1) % BUF_SZ;
 	return _old_char_out(character);
 }
+
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_printk_tests Printk
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_printk_tests
  * @{
  */
 
@@ -253,9 +259,9 @@ ZTEST(printk, test_printk)
 	zassert_str_equal(pk_console, expected, "snprintk failed");
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}
  */
+extern void *common_setup(void);
+ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);

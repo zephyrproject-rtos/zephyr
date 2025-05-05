@@ -142,6 +142,10 @@ void set_regs_with_known_pattern(void *p1, void *p2, void *p3)
 			 "udf #90\n");
 }
 
+/**
+ * @brief Test to verify code fault handling in ISR execution context
+ * @ingroup kernel_fatal_tests
+ */
 ZTEST(arm_interrupt, test_arm_esf_collection)
 {
 	int test_validation_rv;
@@ -222,6 +226,10 @@ void arm_isr_handler(const void *args)
 	}
 }
 
+/**
+ * @brief Test ARM Interrupt handling
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_interrupt, test_arm_interrupt)
 {
 	/* Determine an NVIC IRQ line that is not currently in use. */
@@ -390,6 +398,10 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
 }
 #include <zephyr/syscalls/test_arm_user_interrupt_syscall_mrsh.c>
 
+/**
+ * @brief Test ARM Interrupt handling in user mode
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
 	/* Test thread executing in user mode */
@@ -434,6 +446,11 @@ ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
+
+/**
+ * @brief Test ARM Null Pointer Exception handling
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION);
@@ -454,7 +471,3 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 	zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
 }
 #pragma GCC pop_options
-
-/**
- * @}
- */

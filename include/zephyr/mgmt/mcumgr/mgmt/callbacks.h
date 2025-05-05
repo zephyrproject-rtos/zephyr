@@ -156,6 +156,9 @@ enum fs_mgmt_group_events {
 	/** Callback when a file has been accessed, data is fs_mgmt_file_access(). */
 	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 0),
 
+	/** Callback when a file upload/download is finished, data is fs_mgmt_file_access(). */
+	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS_DONE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 1),
+
 	/** Used to enable all fs_mgmt_group events. */
 	MGMT_EVT_OP_FS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_FS),
 };

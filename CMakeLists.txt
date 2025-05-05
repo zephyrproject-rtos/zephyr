@@ -193,7 +193,7 @@ elseif(CONFIG_STACK_CANARIES_ALL)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
 elseif(CONFIG_STACK_CANARIES_EXPLICIT)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
-  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explitic>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables
@@ -342,6 +342,18 @@ endif()
 if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
   # @Intent: Set compiler specific flag to disable printf-related optimizations
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
+endif()
+
+if(CONFIG_UBSAN)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined>>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined>)
+  if(CONFIG_UBSAN_LIBRARY)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_library>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_library>)
+  elseif(CONFIG_UBSAN_TRAP)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_trap>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_trap>)
+  endif()
 endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
@@ -1835,6 +1847,28 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     ${KERNEL_UF2_NAME}
   )
   set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
+endif()
+
+if(CONFIG_BUILD_OUTPUT_MOT)
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(srec IN_LIST elfconvert_formats)
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              ${GAP_FILL}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_MOT_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      )
+    list(APPEND
+      post_build_byproducts
+      ${KERNEL_MOT_NAME}
+      )
+    set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  endif()
 endif()
 
 set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")

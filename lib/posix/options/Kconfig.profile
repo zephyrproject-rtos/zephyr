@@ -11,7 +11,6 @@ config POSIX_API
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
 	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
-	imply POSIX_MESSAGE_PASSING # mq_open(), etc
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	help
 	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,

@@ -161,11 +161,11 @@ enum sensor_channel {
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_GAUGE_VOLTAGE,
-	/** Average current, in amps **/
+	/** Average current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_AVG_CURRENT,
-	/** Standby current, in amps **/
+	/** Standby current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_STDBY_CURRENT,
-	/** Max load current, in amps **/
+	/** Max load current, in amps (negative=discharging) **/
 	SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT,
 	/** Gauge temperature  **/
 	SENSOR_CHAN_GAUGE_TEMP,
@@ -1467,6 +1467,28 @@ struct sensor_info {
  */
 #define SENSOR_DEVICE_DT_INST_DEFINE(inst, ...)				\
 	SENSOR_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Helper function for converting struct sensor_value to integer deci units.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline int64_t sensor_value_to_deci(const struct sensor_value *val)
+{
+	return ((int64_t)val->val1 * 10) + val->val2 / 100000;
+}
+
+/**
+ * @brief Helper function for converting struct sensor_value to integer centi units.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline int64_t sensor_value_to_centi(const struct sensor_value *val)
+{
+	return ((int64_t)val->val1 * 100) + val->val2 / 10000;
+}
 
 /**
  * @brief Helper function for converting struct sensor_value to integer milli units.

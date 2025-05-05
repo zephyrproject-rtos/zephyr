@@ -86,5 +86,4 @@
 			low-power-enable;
 		};
 	};
-
 };

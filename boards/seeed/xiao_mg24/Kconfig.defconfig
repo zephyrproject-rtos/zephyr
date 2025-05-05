@@ -1,0 +1,37 @@
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
+# Copyright (c) 2025 Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XIAO_MG24
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+# Used to enable RF switch and selection
+config GPIO_HOGS
+	default y
+
+config FPU
+	default y
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif # BOARD_XIAO_MG24

@@ -44,10 +44,12 @@ void z_prep_c(void)
 	 */
 	sys_cache_data_flush_and_invd_all();
 
+#if !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	/* Our cache top stash location might have junk in it from a
 	 * pre-boot environment.  Must be zero or valid!
 	 */
 	XTENSA_WSR(ZSR_FLUSH_STR, 0);
+#endif
 #endif
 
 	cpu0->nested = 0;

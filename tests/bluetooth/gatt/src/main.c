@@ -39,6 +39,11 @@ static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t valu
 	nfy_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
+static ssize_t test1_ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value)
+{
+	return sizeof(value);
+}
+
 static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -506,4 +511,26 @@ ZTEST(test_gatt, test_bt_gatt_err_to_str)
 	for (uint16_t i = 0; i <= UINT8_MAX; i++) {
 		zassert_not_null(bt_gatt_err_to_str(-i), ": %d", i);
 	}
+}
+
+ZTEST(test_gatt, test_gatt_ccc_write_cb)
+{
+	struct bt_gatt_attr test_write_cb_attrs[] = {
+		/* Vendor Primary Service Declaration */
+		BT_GATT_PRIMARY_SERVICE(&test1_uuid),
+
+		BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid,
+				       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
+				       NULL, NULL, &nfy_enabled),
+		BT_GATT_CCC_WITH_WRITE_CB(test1_ccc_cfg_changed,
+			test1_ccc_cfg_write_cb,
+			BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT),
+	};
+
+	struct bt_gatt_service test_write_cb_svc = BT_GATT_SERVICE(test_write_cb_attrs);
+
+	zassert_false(bt_gatt_service_register(&test_write_cb_svc),
+		     "Test service registration failed");
+	zassert_false(bt_gatt_service_unregister(&test_write_cb_svc),
+		     "Test service1 unregister failed");
 }

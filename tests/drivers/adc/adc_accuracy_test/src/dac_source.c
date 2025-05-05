@@ -18,7 +18,7 @@ extern const struct adc_dt_spec *get_adc_channel(void);
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DT_PROP(DT_PATH(zephyr_user), dac_channel_id),
 	.resolution = DT_PROP(DT_PATH(zephyr_user), dac_resolution),
-	.buffered = true
+	.buffered = !IS_ENABLED(CONFIG_DAC_BUFFER_NOT_SUPPORTED),
 };
 
 static const struct device *init_dac(void)

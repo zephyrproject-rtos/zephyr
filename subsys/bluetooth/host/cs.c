@@ -5,16 +5,28 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/sys/byteorder.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/cs.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "conn_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_cs);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
@@ -605,6 +617,10 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 	}
 
 	cp->override_parameters_length = override_parameters_length;
+
+	struct bt_hci_cmd_hdr *hdr = (struct bt_hci_cmd_hdr *)buf->data;
+
+	hdr->param_len += override_parameters_length;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
 }

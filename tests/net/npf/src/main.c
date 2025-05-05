@@ -75,6 +75,32 @@ static struct net_pkt *build_test_pkt(int type, int size, struct net_if *iface)
 	return pkt;
 }
 
+static struct net_pkt *build_vlan_test_pkt(int type, int size, struct net_if *iface)
+{
+	struct net_pkt *pkt;
+	struct net_eth_vlan_hdr eth_hdr;
+	int ret;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, size, AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "");
+
+	eth_hdr.src = ETH_SRC_ADDR;
+	eth_hdr.dst = ETH_DST_ADDR;
+	eth_hdr.type = htons(type);
+	eth_hdr.vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
+
+	ret = net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr));
+	zassert_equal(ret, 0, "");
+
+	zassert_true(size >= sizeof(eth_hdr), "");
+	zassert_true((size - sizeof(eth_hdr)) <= sizeof(dummy_data), "");
+	ret = net_pkt_write(pkt, dummy_data, size - sizeof(eth_hdr));
+	zassert_equal(ret, 0, "");
+
+	DBG("pkt %p: iface %p size %d type 0x%04x\n", pkt, iface, size, type);
+	return pkt;
+}
+
 static struct net_pkt *build_test_ip_pkt(void *src, void *dst,
 	   sa_family_t family, struct net_if *iface)
 {
@@ -481,6 +507,47 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	zassert_true(npf_remove_all_ipv6_recv_rules(), "");
 	net_pkt_unref(pkt_v6);
 	net_pkt_unref(pkt_v4);
+}
+
+static NPF_ETH_VLAN_TYPE_MATCH(vlan_ip_packet, NET_ETH_PTYPE_IP);
+static NPF_RULE(vlan_small_ip_pkt, NET_OK, vlan_ip_packet, maxsize_200);
+
+static void test_npf_example_vlan_common(void)
+{
+	struct net_pkt *pkt;
+
+	/* test small IP packet */
+	pkt = build_vlan_test_pkt(NET_ETH_PTYPE_IP, 100, NULL);
+	zassert_true(net_pkt_filter_recv_ok(pkt), "");
+	net_pkt_unref(pkt);
+
+	/* test "big" IP packet */
+	pkt = build_vlan_test_pkt(NET_ETH_PTYPE_IP, 300, NULL);
+	zassert_false(net_pkt_filter_recv_ok(pkt), "");
+	net_pkt_unref(pkt);
+
+	/* test "small" non-IP packet */
+	pkt = build_vlan_test_pkt(NET_ETH_PTYPE_ARP, 100, NULL);
+	zassert_false(net_pkt_filter_recv_ok(pkt), "");
+	net_pkt_unref(pkt);
+
+	/* test "big" non-IP packet */
+	pkt = build_vlan_test_pkt(NET_ETH_PTYPE_ARP, 300, NULL);
+	zassert_false(net_pkt_filter_recv_ok(pkt), "");
+	net_pkt_unref(pkt);
+}
+
+ZTEST(net_pkt_filter_test_suite, test_npf_vlan_filtering)
+{
+	/* install filter rules */
+	npf_insert_recv_rule(&npf_default_drop);
+	npf_insert_recv_rule(&vlan_small_ip_pkt);
+
+	test_npf_example_vlan_common();
+
+	/* remove filter rules */
+	zassert_true(npf_remove_recv_rule(&npf_default_drop), "");
+	zassert_true(npf_remove_recv_rule(&vlan_small_ip_pkt), "");
 }
 
 ZTEST_SUITE(net_pkt_filter_test_suite, NULL, test_npf_iface, NULL, NULL, NULL);

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_ITE_IT51XXX_KBD
+	bool "ITE keyboard scanning driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_KBD_ENABLED
+	select INPUT_KBD_MATRIX
+	select PINCTRL
+	help
+	  This option enables the ITE keyboard scan driver.

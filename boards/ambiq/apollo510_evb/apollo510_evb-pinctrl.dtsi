@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <apollo510/ambiq-apollo510-pinmux.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P30>;
+		};
+		group2 {
+			pinmux = <UART0RX_P55>;
+			input-enable;
+		};
+	};
+	swo_default: swo_default {
+		group0 {
+			pinmux = <SWO_P28>;
+		};
+	};
+};

@@ -8,24 +8,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/drivers/uart_pipe.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/drivers/uart.h>
-
-#include <zephyr/logging/log_backend.h>
-#include <zephyr/logging/log_output.h>
-#include <zephyr/logging/log_ctrl.h>
-#include <zephyr/logging/log.h>
-
-#include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "monitor.h"
 

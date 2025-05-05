@@ -36,15 +36,6 @@ Building the application for mimxrt1170_evk_cm7
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for mimxrt1170_evkb_cm7
-================================================
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/drivers/mbox_data/
-   :board: mimxrt1170_evkb_cm7
-   :goals: debug
-   :west-args: --sysbuild
-
 Building the application for lpcxpresso55s69_cpu1
 =================================================
 

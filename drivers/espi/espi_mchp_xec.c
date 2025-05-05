@@ -19,9 +19,9 @@
 #define ESPI_XEC_VWIRE_ACK_DELAY    10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
- * 10 ms expressed in multiples of 100us
+ * 1 ms expressed in multiples of 1us
  */
-#define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
+#define ESPI_XEC_VWIRE_SEND_TIMEOUT 1000ul
 
 #define VW_MAX_GIRQS                2ul
 
@@ -461,10 +461,15 @@ static int espi_xec_send_vwire(const struct device *dev,
 		/* Ensure eSPI virtual wire packet is transmitted
 		 * There is no interrupt, so need to poll register
 		 */
-		uint8_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
+		uint16_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
 
 		while (reg->SRC_CHG && rd_cnt--) {
-			k_busy_wait(100);
+			k_busy_wait(1);
+		}
+
+		if (rd_cnt == 0) {
+			LOG_ERR("VW %d send timeout", signal);
+			return -ETIMEDOUT;
 		}
 	}
 

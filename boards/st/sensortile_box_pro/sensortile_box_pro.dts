@@ -320,6 +320,7 @@ zephyr_udc0: &usbotg_fs {
 	pwr-gpios = <&gpioh 10 GPIO_ACTIVE_LOW>;
 	bus-width = <4>;
 	clk-div = <4>;
+	disk-name = "SD";
 };
 
 &flash0 {

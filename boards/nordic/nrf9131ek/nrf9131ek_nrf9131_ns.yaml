@@ -12,3 +12,5 @@ supported:
   - pwm
   - watchdog
   - netif:modem
+vendor: nordic
+sysbuild: true

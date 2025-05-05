@@ -42,6 +42,8 @@ source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"
 
+source "drivers/counter/Kconfig.ite_it8xxx2"
+
 source "drivers/counter/Kconfig.stm32_rtc"
 
 source "drivers/counter/Kconfig.stm32_timer"
@@ -105,5 +107,9 @@ source "drivers/counter/Kconfig.nxp_mrt"
 source "drivers/counter/Kconfig.renesas_ra"
 
 source "drivers/counter/Kconfig.renesas_rz"
+
+source "drivers/counter/Kconfig.rts5912_slwtmr"
+
+source "drivers/counter/Kconfig.rts5912"
 
 endif # COUNTER

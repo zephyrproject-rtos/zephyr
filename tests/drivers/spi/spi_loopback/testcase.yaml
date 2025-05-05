@@ -30,6 +30,7 @@ tests:
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_RTIO_FALLBACK_MSGS=5
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -71,6 +72,7 @@ tests:
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_l152re
       - nucleo_wl55jc
@@ -79,6 +81,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_g474re
   drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
@@ -132,10 +135,12 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - stm32h573i_dk
   drivers.spi.gd32_spi_interrupt.loopback:
@@ -279,7 +284,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
   drivers.spi.max32_spi_rtio.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-max32-spi-rtio.conf"
+      - EXTRA_CONF_FILE="overlay-max32-spi-rtio.conf"
     filter: CONFIG_SOC_FAMILY_MAX32
     platform_allow:
       - apard32690/max32690/m4
@@ -304,3 +309,7 @@ tests:
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=y
       - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_siwx91x.loopback:
+    filter: CONFIG_SOC_FAMILY_SILABS_SIWX91X
+    platform_allow:
+      - siwx917_rb4338a

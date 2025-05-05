@@ -4,7 +4,7 @@
 family:
 - name: ch32v
   series:
-  - name: qingke-v2
+  - name: qingke-v2a
     socs:
     - name: ch32v003
   - name: qingke-v4c

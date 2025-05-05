@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/libc-hooks.h>
 
 #define TEST_MESSAGE "test msg"
 
@@ -32,6 +33,18 @@ ZTEST_BMEM uint32_t source_id;
 /* used when log_msg create in user space */
 ZTEST_BMEM uint8_t domain, level;
 ZTEST_DMEM uint32_t msg_data = 0x1234;
+
+/* Memory domain for tests with threads in user space (ZTEST_USER) */
+#if CONFIG_USERSPACE
+static struct k_mem_domain mem_domain;
+static struct k_mem_partition *mem_parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+	&z_libc_partition,
+#endif
+	&ztest_mem_partition,
+	&k_log_partition
+};
+#endif
 
 static uint8_t buf;
 static int char_out(uint8_t *data, size_t length, void *ctx)
@@ -570,6 +583,12 @@ static void *test_log_core_additional_setup(void)
 {
 #ifdef CONFIG_LOG_PROCESS_THREAD
 	k_thread_foreach(promote_log_thread, NULL);
+#endif
+
+#if CONFIG_USERSPACE
+	/* Set memory domain for threads in user space */
+	k_mem_domain_init(&mem_domain, ARRAY_SIZE(mem_parts), mem_parts);
+	k_mem_domain_add_thread(&mem_domain, k_current_get());
 #endif
 	return NULL;
 }

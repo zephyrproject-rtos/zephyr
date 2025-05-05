@@ -150,7 +150,6 @@ static void send_hw_error(void)
 
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
-	net_buf_add_u8(buf, BT_HCI_H4_EVT);
 	net_buf_add_mem(buf, hci_evt_hw_err, sizeof(hci_evt_hw_err));
 
 	/* Inject the message into the c2h queue. */
@@ -181,7 +180,8 @@ static void recover_sync_by_reset_pattern(void)
 	}
 
 	LOG_DBG("Pattern found");
-	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, h4_cmd_reset, sizeof(h4_cmd_reset));
+	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER,
+				      &h4_cmd_reset[1], sizeof(h4_cmd_reset) - 1);
 	LOG_DBG("Fowarding reset");
 
 	err = bt_send(h2c_cmd_reset);
@@ -219,7 +219,7 @@ static void h2c_h4_transport(void)
 		LOG_DBG("h2c: h4_type %d", h4_type);
 
 		/* Allocate buf. */
-		buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, &h4_type, sizeof(h4_type));
+		buf = bt_buf_get_tx(bt_buf_type_from_h4(h4_type, BT_BUF_OUT), K_FOREVER, NULL, 0);
 		LOG_DBG("h2c: buf %p", buf);
 
 		if (!buf) {

@@ -15,6 +15,13 @@ extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;
 extern uint32_t _vector_table_pointer;
 
+
+/**
+ * @brief Test the ARM Software Vector Relay functionality.
+ *
+ * This test verifies the correctness of the ARM software vector relay mechanism.
+ * @ingroup kernel_arch_interrupt_tests
+ */
 ZTEST(arm_sw_vector_relay, test_arm_sw_vector_relay)
 {
 	uint32_t vector_relay_table_addr = (uint32_t)&__vector_relay_table;
@@ -61,6 +68,3 @@ ZTEST(arm_sw_vector_relay, test_arm_sw_vector_relay)
 		     _vector_table_pointer, _vector_start);
 #endif
 }
-/**
- * @}
- */

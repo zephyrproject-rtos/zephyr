@@ -3,6 +3,7 @@
 # Copyright (c) 2021 Linaro Limited
 # Copyright (c) 2023 PSICONTROL nv
 # Copyright (c) 2023 STMicroelectronics
+# Copyright (c) 2025 Charles Dias
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32U5X
@@ -40,9 +41,14 @@ config SOC_STM32U5A9XX
 	bool
 	select SOC_SERIES_STM32U5X
 
+config SOC_STM32U5G9XX
+	bool
+	select SOC_SERIES_STM32U5X
+
 config SOC
 	default "stm32u5a5xx" if SOC_STM32U5A5XX
 	default "stm32u5a9xx" if SOC_STM32U5A9XX
+	default "stm32u5g9xx" if SOC_STM32U5G9XX
 	default "stm32u545xx" if SOC_STM32U545XX
 	default "stm32u575xx" if SOC_STM32U575XX
 	default "stm32u585xx" if SOC_STM32U585XX

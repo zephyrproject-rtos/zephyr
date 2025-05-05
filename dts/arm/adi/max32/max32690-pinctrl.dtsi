@@ -347,7 +347,7 @@
 			};
 
 			/omit-if-no-ref/ hyp_d0_p1_12: hyp_d0_p1_12 {
-				pinmux = <MAX32_PINMUX(1, 12, AF2)>;
+				pinmux = <MAX32_PINMUX(1, 12, AF3)>;
 			};
 
 			/omit-if-no-ref/ tmr3a_ioa_p1_13: tmr3a_ioa_p1_13 {

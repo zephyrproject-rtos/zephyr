@@ -3968,6 +3968,8 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	LOG_DBG("conn %p", conn);
 
 	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_hf_pool), "Index is out of bounds");
+
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl) {
 		LOG_ERR("HF connection (%p) is established", conn);

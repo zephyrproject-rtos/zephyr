@@ -331,8 +331,8 @@ static bool is_eapol(struct net_pkt *pkt)
 
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {
-	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T);
+	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
+			ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE);
 
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -358,6 +358,7 @@ int nrf_wifi_if_send(const struct device *dev,
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct rpu_host_stats *host_stats = NULL;
 	void *nbuf = NULL;
+	bool locked = false;
 
 	if (!dev || !pkt) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -371,24 +372,27 @@ int nrf_wifi_if_send(const struct device *dev,
 		goto out;
 	}
 
+	/* Allocate packet before locking mutex (blocks until allocation success) */
+	nbuf = net_pkt_to_nbuf(pkt);
+
 	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
+		goto drop;
 	}
+	locked = true;
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		goto unlock;
+		goto drop;
 	}
 
 	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
 	host_stats = &sys_dev_ctx->host_stats;
-	nbuf = net_pkt_to_nbuf(pkt);
-	if (!nbuf) {
-		LOG_DBG("Failed to allocate net_pkt");
-		host_stats->total_tx_drop_pkts++;
-		goto out;
+
+	if (nbuf == NULL) {
+		LOG_ERR("%s: allocation failed", __func__);
+		goto drop;
 	}
 
 #ifdef CONFIG_NRF70_RAW_DATA_TX
@@ -415,10 +419,16 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 	goto unlock;
 drop:
-	host_stats->total_tx_drop_pkts++;
-	nrf_wifi_osal_nbuf_free(nbuf);
+	if (host_stats != NULL) {
+		host_stats->total_tx_drop_pkts++;
+	}
+	if (nbuf != NULL) {
+		nrf_wifi_osal_nbuf_free(nbuf);
+	}
 unlock:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	if (locked) {
+		k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	}
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);

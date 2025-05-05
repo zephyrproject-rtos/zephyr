@@ -21,12 +21,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1559,7 +1563,7 @@ enum bt_conn_le_cs_procedure_enable_state {
 	BT_CONN_LE_CS_PROCEDURES_ENABLED = BT_HCI_OP_LE_CS_PROCEDURES_ENABLED,
 };
 
-/** CS Test Tone Antennna Config Selection.
+/** CS Test Tone Antenna Config Selection.
  *
  *  These enum values are indices in the following table, where N_AP is the maximum
  *  number of antenna paths (in the range [1, 4]).

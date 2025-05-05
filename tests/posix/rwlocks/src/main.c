@@ -11,6 +11,7 @@
 #include <zephyr/ztest.h>
 
 #define N_THR 3
+BUILD_ASSERT(N_THR <= CONFIG_DYNAMIC_THREAD_POOL_SIZE, "Insufficient number of dynamic threads");
 
 LOG_MODULE_REGISTER(posix_rwlock_test);
 
@@ -85,8 +86,9 @@ ZTEST(posix_rw_locks, test_rw_lock)
 	usleep(USEC_PER_MSEC);
 	LOG_DBG("Parent thread acquiring WR lock again");
 
-	time.tv_sec = 2;
-	time.tv_nsec = 0;
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &time));
+	time.tv_sec += 2;
+
 	ret = pthread_rwlock_timedwrlock(&rwlock, &time);
 	if (ret) {
 		zassert_ok(pthread_rwlock_wrlock(&rwlock), "Failed to acquire write lock");
@@ -144,14 +146,4 @@ ZTEST(posix_rw_locks, test_pthread_rwlockattr_setpshared)
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_SHARED);
 }
 
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(posix_rw_locks, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_rw_locks, NULL, NULL, NULL, NULL, NULL);

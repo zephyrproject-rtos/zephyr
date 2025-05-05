@@ -6,8 +6,12 @@ menuconfig ICM45686
 	bool "ICM45686 High-precision 6-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM45686_ENABLED
-	select SPI
-	select SPI_RTIO
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
 	help
 	  Enable driver for ICM45686 High-precision 6-axis motion
 	  tracking device.
@@ -58,8 +62,10 @@ config ICM45686_THREAD_STACK_SIZE
 
 config ICM45686_STREAM
 	bool "Streaming mode"
-	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on GPIO || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
 	help
 	  Enable streaming of sensor data.
 

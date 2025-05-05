@@ -12,6 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/adxl362.h>
 
 #define ADXL362_SLAVE_ID    1
 
@@ -84,10 +85,10 @@
 #define ADXL362_FIFO_CTL_FIFO_MODE(x)       (((x) & 0x3) << 0)
 
 /* ADXL362_FIFO_CTL_FIFO_MODE(x) options */
-#define ADXL362_FIFO_DISABLE              0
-#define ADXL362_FIFO_OLDEST_SAVED         1
-#define ADXL362_FIFO_STREAM               2
-#define ADXL362_FIFO_TRIGGERED            3
+#define ADXL362_FIFO_DISABLE              ADXL362_FIFO_MODE_DISABLED
+#define ADXL362_FIFO_OLDEST_SAVED         ADXL362_FIFO_MODE_OLDEST_SAVED
+#define ADXL362_FIFO_STREAM               ADXL362_FIFO_MODE_STREAM
+#define ADXL362_FIFO_TRIGGERED            ADXL362_FIFO_MODE_TRIGGERED
 
 /* ADXL362_REG_INTMAP1 */
 #define ADXL362_INTMAP1_INT_LOW             (1 << 7)
@@ -188,6 +189,8 @@ struct adxl362_config {
 	uint8_t int2_config;
 #endif
 	uint8_t power_ctl;
+	uint8_t fifo_mode;
+	uint16_t water_mark_lvl;
 };
 
 struct adxl362_data {

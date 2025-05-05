@@ -41,12 +41,70 @@ struct sockaddr_in *zperf_get_sin(void)
 	return &in4_addr_my;
 }
 
-#define ZPERF_WORK_Q_THREAD_PRIORITY                                                               \
-	CLAMP(CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, K_HIGHEST_APPLICATION_THREAD_PRIO,              \
+#define ZPERF_WORK_Q_THREAD_PRIORITY					\
+	CLAMP(CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY,			\
+	      K_HIGHEST_APPLICATION_THREAD_PRIO,			\
 	      K_LOWEST_APPLICATION_THREAD_PRIO)
-K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 
+#if defined(CONFIG_ZPERF_SESSION_PER_THREAD)
+static K_EVENT_DEFINE(start_event);
+
+#define CREATE_WORK_Q(i, _)					       \
+	static struct k_work_q zperf_work_q_##i;		       \
+	static K_KERNEL_STACK_DEFINE(zperf_work_q_stack_##i,	       \
+				     CONFIG_ZPERF_WORK_Q_STACK_SIZE)
+
+/* Both UDP and TCP can have separate sessions so multiply by 2 */
+#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_TCP)
+#define MAX_SESSION_COUNT UTIL_X2(CONFIG_NET_ZPERF_MAX_SESSIONS)
+#define SESSION_INDEX CONFIG_NET_ZPERF_MAX_SESSIONS
+#else
+#define MAX_SESSION_COUNT CONFIG_NET_ZPERF_MAX_SESSIONS
+#define SESSION_INDEX 0
+#endif
+
+LISTIFY(MAX_SESSION_COUNT, CREATE_WORK_Q, (;), _);
+
+#define SET_WORK_Q(i, _)			 \
+	[i] = {					 \
+		.queue = &zperf_work_q_##i,	 \
+		.stack = zperf_work_q_stack_##i, \
+		.stack_size = K_THREAD_STACK_SIZEOF(zperf_work_q_stack_##i), \
+	}
+
+static struct zperf_work zperf_work_q[] = {
+	LISTIFY(MAX_SESSION_COUNT, SET_WORK_Q, (,), _)
+};
+
+struct zperf_work *get_queue(enum session_proto proto, int session_id)
+{
+	if (session_id < 0 || session_id >= CONFIG_NET_ZPERF_MAX_SESSIONS) {
+		return NULL;
+	}
+
+	if (proto < 0 || proto >= SESSION_PROTO_END) {
+		return NULL;
+	}
+
+	NET_DBG("%s using queue %d for session %d\n",
+		proto == SESSION_UDP ? "UDP" : "TCP",
+		proto * SESSION_INDEX + session_id,
+		session_id);
+
+
+	return &zperf_work_q[proto * SESSION_INDEX + session_id];
+}
+
+void start_jobs(void)
+{
+	k_event_set(&start_event, START_EVENT);
+}
+#else /* CONFIG_ZPERF_SESSION_PER_THREAD */
+
+K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 static struct k_work_q zperf_work_q;
+
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
 {
@@ -220,24 +278,66 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 			  (rate_in_kbps * 1024U));
 }
 
-void zperf_async_work_submit(struct k_work *work)
+void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
 {
+#if defined(CONFIG_ZPERF_SESSION_PER_THREAD)
+	k_work_submit_to_queue(zperf_work_q[proto * SESSION_INDEX + session_id].queue, work);
+#else
+	ARG_UNUSED(proto);
+	ARG_UNUSED(session_id);
+
 	k_work_submit_to_queue(&zperf_work_q, work);
+#endif
 }
 
 static int zperf_init(void)
 {
+#if defined(CONFIG_ZPERF_SESSION_PER_THREAD)
+
+	ARRAY_FOR_EACH(zperf_work_q, i) {
+		struct k_work_queue_config cfg = {
+			.no_yield = false,
+		};
+
+		zperf_work_q[i].start_event = &start_event;
+
+#define MAX_NAME_LEN sizeof("zperf_work_q[xxx]")
+		char name[MAX_NAME_LEN];
+
+		snprintk(name, sizeof(name), "zperf_work_q[%d]", i);
+		cfg.name = name;
+
+		k_work_queue_init(zperf_work_q[i].queue);
+
+		k_work_queue_start(zperf_work_q[i].queue,
+				   zperf_work_q[i].stack,
+				   zperf_work_q[i].stack_size,
+				   ZPERF_WORK_Q_THREAD_PRIORITY,
+				   &cfg);
+	}
+
+#else /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
-			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack), ZPERF_WORK_Q_THREAD_PRIORITY,
+			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
+			   ZPERF_WORK_Q_THREAD_PRIORITY,
 			   NULL);
 	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
 
-	zperf_udp_uploader_init();
-	zperf_tcp_uploader_init();
+#endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
-	zperf_session_init();
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		zperf_udp_uploader_init();
+	}
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		zperf_tcp_uploader_init();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||
+	    IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD)) {
+		zperf_session_init();
+	}
 
 	if (IS_ENABLED(CONFIG_NET_SHELL)) {
 		zperf_shell_init();

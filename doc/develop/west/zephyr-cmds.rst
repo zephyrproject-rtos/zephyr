@@ -40,6 +40,7 @@ It currently supports the following shells:
 - bash
 - zsh
 - fish
+- powershell (board qualifiers only)
 
 Additional instructions are available in the command's help::
 

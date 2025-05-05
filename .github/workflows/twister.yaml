@@ -310,7 +310,7 @@ jobs:
     name: "Publish Unit Tests Results"
     needs:
       - twister-build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       checks: write # to create the check run entry with Twister test results
     # the build-and-test job might be skipped, we don't need to run this job then

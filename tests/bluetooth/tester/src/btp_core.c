@@ -7,26 +7,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/atomic.h>
-#include <zephyr/types.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
-
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/net_buf.h>
-
-#include <hci_core.h>
-
 #include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_core
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "btp/btp.h"
+#include "hci_core.h"
+
+#define LOG_MODULE_NAME bttester_core
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
 
@@ -35,12 +34,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_core_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(rp->data, BTP_CORE_REGISTER_SERVICE);
-	tester_set_bit(rp->data, BTP_CORE_UNREGISTER_SERVICE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CORE, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

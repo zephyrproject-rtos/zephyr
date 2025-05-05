@@ -561,12 +561,12 @@ void net_ppp_init(struct net_if *iface);
 
 #define PPP_L2_CTX_TYPE	struct ppp_context
 
-#define _NET_PPP_LAYER	NET_MGMT_LAYER_L2
-#define _NET_PPP_CODE	0x209
-#define _NET_PPP_BASE	(NET_MGMT_IFACE_BIT |				\
-			 NET_MGMT_LAYER(_NET_PPP_LAYER) |		\
-			 NET_MGMT_LAYER_CODE(_NET_PPP_CODE))
-#define _NET_PPP_EVENT	(_NET_PPP_BASE | NET_MGMT_EVENT_BIT)
+#define NET_PPP_LAYER	NET_MGMT_LAYER_L2
+#define NET_PPP_CODE	NET_MGMT_LAYER_CODE_PPP
+#define NET_PPP_BASE	(NET_MGMT_IFACE_BIT |				\
+			 NET_MGMT_LAYER(NET_PPP_LAYER) |		\
+			 NET_MGMT_LAYER_CODE(NET_PPP_CODE))
+#define NET_PPP_EVENT	(NET_PPP_BASE | NET_MGMT_EVENT_BIT)
 
 enum net_event_ppp_cmd {
 	NET_EVENT_PPP_CMD_CARRIER_ON = 1,
@@ -581,19 +581,19 @@ struct net_if;
 
 /** Event emitted when PPP carrier is on */
 #define NET_EVENT_PPP_CARRIER_ON					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)
+	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)
 
 /** Event emitted when PPP carrier is off */
 #define NET_EVENT_PPP_CARRIER_OFF					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
+	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
 
 /** Event emitted when PPP goes into running phase */
 #define NET_EVENT_PPP_PHASE_RUNNING					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
+	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
 
 /** Event emitted when PPP goes into dead phase */
 #define NET_EVENT_PPP_PHASE_DEAD					\
-	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
+	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
 
 /**
  * @brief Raise CARRIER_ON event when PPP is connected.
