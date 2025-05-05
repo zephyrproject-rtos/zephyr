@@ -72,3 +72,18 @@ child-binding:
       description: |
         Pin mux selection. See the SOC level pinctrl header
         for a defined list of these options.
+
+    slew-rate:
+      type: int
+      enum:
+        - 0 # 2pf
+        - 1 # 4pf
+        - 2 # 8pf
+        - 3 # 16pf
+      default: 0
+      description: |
+        Selects the output drive strength. Choices represent approximate capacitive load.
+        - 0.. 2pf, Weakest drive (lowest current)
+        - 1.. 4pf, Low drive
+        - 2.. 8pf, Medium drive
+        - 3.. 16pf, Strongest drive
