@@ -1701,10 +1701,8 @@ struct bt_conn_cb {
 	 *
 	 * Use this to e.g. re-start connectable advertising or scanning.
 	 *
-	 * Treat this callback as an ISR, as it originates from
-	 * @ref bt_conn_unref which is used by the BT stack. Making
-	 * Bluetooth API calls in this context is error-prone and strongly
-	 * discouraged.
+	 * This callback runs on the system-worqueue thread,
+	 * the usual precautions apply.
 	 */
 	void (*recycled)(void);
 
