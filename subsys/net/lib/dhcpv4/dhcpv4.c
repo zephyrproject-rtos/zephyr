@@ -1205,9 +1205,10 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			log_server.sin_family = AF_INET;
 			log_backend_net_set_ip((struct sockaddr *)&log_server);
 
-#ifdef CONFIG_LOG_BACKEND_NET_AUTOSTART
-			log_backend_net_start();
-#endif
+			if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART) &&
+			    !IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
+				log_backend_net_start();
+			}
 
 			NET_DBG("options_log_server: %s", net_sprint_ipv4_addr(&log_server));
 
