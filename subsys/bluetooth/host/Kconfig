@@ -184,9 +184,6 @@ config BT_HOST_CRYPTO
 config BT_HOST_CRYPTO_PRNG
 	bool "Use PSA crypto API library for random number generation"
 	default y
-	select PSA_WANT_ALG_SHA_256
-	select PSA_WANT_KEY_TYPE_HMAC
-	select PSA_WANT_ALG_HMAC
 	depends on BT_HOST_CRYPTO
 	help
 	  When selected, will use PSA Crypto API library for random number generation.
