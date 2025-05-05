@@ -120,11 +120,10 @@ static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, g
 	}
 
 	if (flags & GPIO_INT_WAKEUP) {
-		if (!(flags & GPIO_ACTIVE_HIGH)) {
-			wakeup = DL_GPIO_WAKEUP_ON_1;
-		}
-		else if (flags & GPIO_ACTIVE_LOW) {
+		if (flags & GPIO_ACTIVE_LOW) {
 			wakeup = DL_GPIO_WAKEUP_ON_0;
+		} else {
+			wakeup = DL_GPIO_WAKEUP_ON_1;
 		}
 	}
 
