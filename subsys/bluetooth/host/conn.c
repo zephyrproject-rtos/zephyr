@@ -1545,13 +1545,14 @@ void bt_conn_unref(struct bt_conn *conn)
 	conn_handle = conn->handle;
 
 	old = atomic_dec(&conn->ref);
-	/* Prevent from accessing connection object */
-	conn = NULL;
-	deallocated = (atomic_get(&old) == 1);
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
+
+	/* Prevent from accessing connection object */
+	conn = NULL;
+	deallocated = ((old - 1) == 0);
 
 	/* Slot has been freed and can be taken. No guarantees are made on requests
 	 * to claim connection object as only the first claim will be served.
