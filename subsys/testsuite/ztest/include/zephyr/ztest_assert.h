@@ -191,6 +191,10 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	_zassert_base(cond, default_msg, msg, ##__VA_ARGS__)
 
 #define zassert(cond, default_msg, ...)                                                            \
+	IF_ENABLED(__VA_OPT__(1), (                                                                \
+		if (0) {                                                                           \
+			printf(__VA_ARGS__);                                                       \
+		}))                                                                                \
 	_zassert_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
 
 /**
@@ -229,6 +233,10 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	_zassume_base(cond, default_msg, msg, ##__VA_ARGS__)
 
 #define zassume(cond, default_msg, ...)                                                            \
+	IF_ENABLED(__VA_OPT__(1), (                                                                \
+		if (0) {                                                                           \
+			printf(__VA_ARGS__);                                                       \
+		}))                                                                                \
 	_zassume_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
 
 /**
