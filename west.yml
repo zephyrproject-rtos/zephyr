@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9b99067e29a1b44b53192c2c797db330f5703462
+      revision: e6cbdba3d49e4972f96b25dd509a8bc6e1d52336
       groups:
         - hal
     - name: hal_rpi_pico
