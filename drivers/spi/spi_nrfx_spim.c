@@ -43,17 +43,18 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL) && \
-	(defined(CONFIG_HAS_HW_NRF_SPIM120) || \
-	 defined(CONFIG_HAS_HW_NRF_SPIM121))
-#define SPIM_REQUESTS_CLOCK(idx) UTIL_OR(IS_EQ(idx, 120), \
-					 IS_EQ(idx, 121))
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL)
+#define SPIM_REQUESTS_CLOCK(node) \
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(DT_CLOCKS_CTLR(node)), nordic_nrf_hsfll_global)
+#define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
+#if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
 #define USE_CLOCK_REQUESTS 1
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast SPIM PM actions can only be
  * called from a thread context.
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
+#endif
 #else
 #define SPIM_REQUESTS_CLOCK(idx) 0
 #endif
