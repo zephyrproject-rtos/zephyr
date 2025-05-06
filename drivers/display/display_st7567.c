@@ -338,7 +338,7 @@ static int st7567_reset(const struct device *dev)
 static int st7567_clear(const struct device *dev)
 {
 	const struct st7567_config *config = dev->config;
-	int ret;
+	int ret = 0;
 	uint8_t buf = 0;
 
 	uint8_t cmd_buf[] = {
