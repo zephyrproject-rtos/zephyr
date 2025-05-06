@@ -455,7 +455,7 @@ static void cmd_rt_ratio_found(char *argv, int offset)
 {
 	NSI_ARG_UNUSED(argv);
 	NSI_ARG_UNUSED(offset);
-	if ((args.rt_ratio <= 0)) {
+	if (args.rt_ratio <= 0) {
 		nsi_print_error_and_exit("The ratio needs to be > 0. "
 					  "Please use --help for more info\n");
 	}
