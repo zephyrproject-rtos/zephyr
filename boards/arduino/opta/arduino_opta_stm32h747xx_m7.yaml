@@ -10,6 +10,7 @@ flash: 768
 supported:
   - gpio
   - netif:eth
+  - qspi
 testing:
   ignore_tags:
     - mpu
