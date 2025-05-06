@@ -22,7 +22,7 @@ static void *cobs_test_setup(void)
 {
 	struct cobs_tests_fixture *fixture = malloc(sizeof(struct cobs_tests_fixture));
 
-	zassume_not_null(fixture, NULL);
+	zassume_not_null(fixture);
 
 	fixture->test_data = net_buf_alloc(&test_pool, K_NO_WAIT);
 	fixture->encoded = net_buf_alloc(&test_pool, K_NO_WAIT);
