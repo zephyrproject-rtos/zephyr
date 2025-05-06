@@ -130,7 +130,7 @@ void *testalloc(void *arg, size_t bytes)
 		size_t expect = ROUND_UP(bytes + hdr, 8) - hdr;
 
 		zassert_equal(blksz, expect,
-			      "wrong size block returned bytes = %ld ret = %ld",
+			      "wrong size block returned bytes = %zu ret = %zu",
 			      bytes, blksz);
 	}
 
@@ -441,7 +441,7 @@ ZTEST(lib_heap, test_heap_listeners)
 
 	zassert_equal(listener_heap_id,
 		      HEAP_ID_FROM_POINTER(&listener_heap),
-		      "Heap ID mismatched: 0x%lx != %p", listener_heap_id,
+		      "Heap ID mismatched: %p != %p", (void *)listener_heap_id,
 		      &listener_heap);
 	zassert_equal(listener_mem, mem,
 		      "Heap allocated pointer mismatched: %p != %p",
@@ -450,7 +450,7 @@ ZTEST(lib_heap, test_heap_listeners)
 	sys_heap_free(&listener_heap, mem);
 	zassert_equal(listener_heap_id,
 		      HEAP_ID_FROM_POINTER(&listener_heap),
-		      "Heap ID mismatched: 0x%lx != %p", listener_heap_id,
+		      "Heap ID mismatched: %p != %p", (void *)listener_heap_id,
 		      &listener_heap);
 	zassert_equal(listener_mem, mem,
 		      "Heap allocated pointer mismatched: %p != %p",
@@ -461,7 +461,7 @@ ZTEST(lib_heap, test_heap_listeners)
 
 	zassert_equal(listener_heap_id,
 		      HEAP_ID_FROM_POINTER(&listener_heap),
-		      "Heap ID mismatched: 0x%lx != %p", listener_heap_id,
+		      "Heap ID mismatched: %p != %p", (void *)listener_heap_id,
 		      &listener_heap);
 	zassert_equal(listener_mem, mem,
 		      "Heap allocated pointer mismatched: %p != %p",
@@ -470,7 +470,7 @@ ZTEST(lib_heap, test_heap_listeners)
 	sys_heap_free(&listener_heap, mem);
 	zassert_equal(listener_heap_id,
 		      HEAP_ID_FROM_POINTER(&listener_heap),
-		      "Heap ID mismatched: 0x%lx != %p", listener_heap_id,
+		      "Heap ID mismatched: %p != %p", (void *)listener_heap_id,
 		      &listener_heap);
 	zassert_equal(listener_mem, mem,
 		      "Heap allocated pointer mismatched: %p != %p",
