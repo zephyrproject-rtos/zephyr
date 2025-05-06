@@ -38,7 +38,7 @@
  * direct register access to the set and clear registers.
  */
 
-LOG_MODULE_DECLARE(fpga_ice40);
+LOG_MODULE_DECLARE(fpga_ice40, CONFIG_FPGA_LOG_LEVEL);
 
 struct fpga_ice40_config_bitbang {
 	struct gpio_dt_spec clk;
