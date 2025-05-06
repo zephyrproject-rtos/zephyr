@@ -1385,10 +1385,10 @@ static int gc2145_init(const struct device *dev)
 	gc2145_soft_reset(dev);
 	gc2145_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
 
-	/* set default/init format QVGA RGB565 */
+	/* set default/init format VGA RGB565 */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = RESOLUTION_QVGA_W;
-	fmt.height = RESOLUTION_QVGA_H;
+	fmt.width = RESOLUTION_VGA_W;
+	fmt.height = RESOLUTION_VGA_H;
 
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
