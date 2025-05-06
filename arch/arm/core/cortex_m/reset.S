@@ -68,6 +68,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
+    /* Start clearing bits 0,1,2 of SCU_REGS_SCU_IP0CLK_REGS_GLOBAL_RESET_BYTE_ADDRESS register to pull BKs out of reset  */
+    ldr r0, =0x80800010      /* Load the address of the reset control register */
+    ldr r1, [r0]             /* Read current value */
+    bic r1, r1, #0x7         /* Clear bits 0, 1, and 2 (reset bits) */
+    str r1, [r0]             /* Write back to release reset */
+    /* Reset completed*/
+
 #if defined(CONFIG_DEBUG_THREAD_INFO)
     /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
     movs.n r0, #0
