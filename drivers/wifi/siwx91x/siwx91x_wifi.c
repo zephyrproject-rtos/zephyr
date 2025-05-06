@@ -271,10 +271,10 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_off(sidev->iface);
 	}
-
-	siwx91x_on_join_ipv4(sidev);
-	siwx91x_on_join_ipv6(sidev);
-
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
+		siwx91x_on_join_ipv4(sidev);
+		siwx91x_on_join_ipv6(sidev);
+	}
 	return 0;
 }
 
