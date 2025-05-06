@@ -11,7 +11,7 @@
 / {
 	soc {
 		compatible = "silabs,efr32bg29b230f1024cm40", "silabs,efr32bg29", "silabs,xg29",
-			     "silabs,efr32", "simple-bus";
+			     "silabs,efr32", "simple-bus", "silabs-hp-pa", "silabs-lp-pa";
 	};
 };
 
