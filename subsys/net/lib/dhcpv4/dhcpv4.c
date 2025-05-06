@@ -978,6 +978,13 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			goto end;
 		}
 
+		if (type == DHCPV4_OPTIONS_PAD) {
+			/* Pad option has a fixed 1-byte length and should be
+			 * ignored.
+			 */
+			continue;
+		}
+
 		if (net_pkt_read_u8(pkt, &length)) {
 			NET_ERR("option parsing, bad length");
 			return false;
