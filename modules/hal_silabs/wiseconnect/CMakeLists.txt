@@ -110,6 +110,18 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
+if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
+  zephyr_compile_definitions_ifdef(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT
+    SLI_SI91X_INTERNAL_SNTP_CLIENT
+  )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT
+    ${WISECONNECT_DIR}/components/service/sntp/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/inc/sntp
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT
+    ${WISECONNECT_DIR}/components/service/sntp/si91x/sl_sntp.c
+  )
+endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_BLE

@@ -71,6 +71,15 @@ config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
 	  would be buffered when the STA is in Power Save (PS) mode.
 	  This helps manage buffer usage and ensures efficient packet handling.
 
+config WIFI_SILABS_SIWX91X_SNTP_CLIENT
+	bool "Offloaded implementation of SNTP client"
+	help
+	  Enable this option to allow to use the SNTP (Simple Network Time
+	  protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_sntp.h in Silabs HAL for more
+	  information about the API.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
