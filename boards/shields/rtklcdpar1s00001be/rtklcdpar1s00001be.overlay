@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &zephyr_lcdif;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_rtklcdpar1s00001be>;
+	};
+};
+
+&iic1 {
+	status = "okay";
+
+	ft5336_rtklcdpar1s00001be: ft5336-rtklcdpar1s00001be@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&renesas_parallel_graphics_connector 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&zephyr_lcdif {
+	status = "okay";
+	width = <1024>;
+	height = <600>;
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	backlight-gpios = <&renesas_parallel_graphics_connector 1 GPIO_ACTIVE_HIGH>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <1>;
+		hback-porch = <140>;
+		vsync-len = <1>;
+		vback-porch = <20>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+		hfront-porch = <179>;
+		vfront-porch = <403>;
+	};
+};
