@@ -2538,7 +2538,7 @@ def test_filename_and_lineno():
             f.write('''/* a new node */
 / {
 	node1: test-node1 {
-		prop1A = "value1A";
+		prop1A = "short value 1A";
 	};
 };
 ''')
@@ -2551,17 +2551,17 @@ def test_filename_and_lineno():
 
 / {
 	node2: test-node2 {
-		prop2A = "value2A";
-		prop2B = "value2B";
+		prop2A = "value 2A";
+		prop2B = "multi", "line", "value", "2B";
 	};
 };
 
 &node1 {
-	prop1B = "value1B";
+	prop1B = "longer value 1B";
 };
 ''')
 
-        dt = dtlib.DT(main_file, include_path=[tmpdir])
+        dt = dtlib.DT(main_file, include_path=[tmpdir], base_dir=tmpdir)
 
         test_node2 = dt.get_node('/test-node2')
         prop2A = test_node2.props['prop2A']
@@ -2584,3 +2584,27 @@ def test_filename_and_lineno():
         assert prop1A.lineno == 4
         assert os.path.samefile(prop1B.filename, main_file)
         assert prop1B.lineno == 13
+
+        # Test contents and alignment of the generated file comments
+        assert str(dt) == '''
+/dts-v1/;
+
+/* node '/' defined in included.dtsi:2 */
+/ {
+
+	/* node '/test-node1' defined in included.dtsi:3 */
+	node1: test-node1 {
+		prop1A = "short value 1A";  /* in included.dtsi:4 */
+		prop1B = "longer value 1B"; /* in test_with_include.dts:13 */
+	};
+
+	/* node '/test-node2' defined in test_with_include.dts:6 */
+	node2: test-node2 {
+		prop2A = "value 2A"; /* in test_with_include.dts:7 */
+		prop2B = "multi",
+		         "line",
+		         "value",
+		         "2B";       /* in test_with_include.dts:8 */
+	};
+};
+'''[1:-1]
