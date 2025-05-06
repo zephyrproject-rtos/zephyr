@@ -2039,7 +2039,7 @@ ZTEST(lib_json_test, test_large_descriptor)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, large_descr,
 				     ARRAY_SIZE(large_descr), &ls);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_false(ret & ((int64_t)1 << 2), "Field int2 erroneously decoded");
 	zassert_false(ret & ((int64_t)1 << 35), "Field int35 erroneously decoded");
 	zassert_true(ret & ((int64_t)1 << 1), "Field int1 not decoded");
@@ -2084,7 +2084,7 @@ ZTEST(lib_json_test, test_json_array_alignment)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, outer_descr,
 				     ARRAY_SIZE(outer_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
@@ -2107,7 +2107,7 @@ ZTEST(lib_json_test, test_json_array_alignment_bool)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, alignment_bool_descr,
 				     ARRAY_SIZE(alignment_bool_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].bool1, true, "Element 0 bool1 not decoded correctly");

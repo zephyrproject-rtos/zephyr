@@ -66,7 +66,7 @@ static void drop(const struct mpsc_pbuf_buffer *buffer, const union mpsc_pbuf_ge
 			drop_cnt, packet->hdr.len, exp_dropped_len[drop_cnt]);
 	zassert_equal(packet->hdr.data, exp_dropped_data[drop_cnt],
 			"(%d) Got:%08x, Expected: %08x",
-			drop_cnt, packet->hdr.data, exp_dropped_data[drop_cnt]);
+			drop_cnt, packet->hdr.data, (uint32_t)exp_dropped_data[drop_cnt]);
 	for (int i = 0; i < exp_dropped_len[drop_cnt] - 1; i++) {
 		int err = memcmp(packet->data, &exp_dropped_data[drop_cnt],
 				 sizeof(uint32_t));
@@ -722,7 +722,7 @@ void overwrite(bool pow2)
 	init(&buffer, 32 - !pow2, true);
 	uint32_t packet_cnt = saturate_buffer_uneven(&buffer, fill_len);
 
-	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 
 	exp_dropped_data[0] = 0;
 	exp_dropped_len[0] = fill_len;
@@ -898,8 +898,8 @@ static uintptr_t current_rd_idx;
 static void validate_packet(struct test_data_var *packet)
 {
 	zassert_equal((uintptr_t)packet->hdr.data, current_rd_idx,
-			"Got %d, expected: %d",
-			(uintptr_t)packet->hdr.data, current_rd_idx);
+			"Got %x, expected: %x",
+			(uint32_t)packet->hdr.data, (uint32_t)current_rd_idx);
 	current_rd_idx++;
 }
 
@@ -1083,9 +1083,9 @@ static void check_packet(struct mpsc_pbuf_buffer *buffer, char exp_c)
 	const union mpsc_pbuf_generic *claimed;
 
 	claimed = mpsc_pbuf_claim(buffer);
-	zassert_true(claimed, NULL);
+	zassert_true(claimed);
 	claimed_item.item = *claimed;
-	zassert_equal(claimed_item.data.data, exp_c, NULL);
+	zassert_equal(claimed_item.data.data, exp_c);
 
 	mpsc_pbuf_free(buffer, claimed);
 }
@@ -1129,13 +1129,13 @@ ZTEST(log_buffer, test_put_while_claim)
 
 	item.data.data = 'e';
 	mpsc_pbuf_put_word(&buffer, item.item);
-	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 	/* Expect buffer = {e, b, c, d} */
 
 	claimed = mpsc_pbuf_claim(&buffer);
-	zassert_true(claimed, NULL);
+	zassert_true(claimed);
 	claimed_item.item = *claimed;
-	zassert_equal(claimed_item.data.data, (uint32_t)'b', NULL);
+	zassert_equal(claimed_item.data.data, (uint32_t)'b');
 
 	/* Expect buffer = {e, B, c, d}. Adding new will drop 'c'. */
 	exp_dropped_data[exp_drop_cnt] = (int)'c';
@@ -1144,7 +1144,7 @@ ZTEST(log_buffer, test_put_while_claim)
 
 	item.data.data = 'f';
 	mpsc_pbuf_put_word(&buffer, item.item);
-	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 	/* Expect buffer = {e, B, f, d}, Adding new will drop 'd'. */
 
 	exp_dropped_data[exp_drop_cnt] = (int)'d';
@@ -1152,7 +1152,7 @@ ZTEST(log_buffer, test_put_while_claim)
 	exp_drop_cnt++;
 	item.data.data = 'g';
 	mpsc_pbuf_put_word(&buffer, item.item);
-	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 	/* Expect buffer = {e, B, f, g} */
 
 	mpsc_pbuf_free(&buffer, claimed);
@@ -1168,7 +1168,7 @@ ZTEST(log_buffer, test_put_while_claim)
 	/* Expect buffer = {-, -, -, -} */
 
 	claimed = mpsc_pbuf_claim(&buffer);
-	zassert_equal(claimed, NULL, NULL);
+	zassert_equal(claimed, NULL);
 }
 
 static void check_usage(struct mpsc_pbuf_buffer *buffer,
@@ -1180,7 +1180,7 @@ static void check_usage(struct mpsc_pbuf_buffer *buffer,
 
 	mpsc_pbuf_get_utilization(buffer, &size, &usage);
 	zassert_equal(size / sizeof(int), buffer->size - 1, "%d: got:%d, exp:%d",
-			line, size / sizeof(int), buffer->size - 1);
+			line, (uint32_t)(size / sizeof(int)), buffer->size - 1);
 	zassert_equal(usage, now, "%d: got:%d, exp:%d", line, usage, now);
 
 	err = mpsc_pbuf_get_max_utilization(buffer, &usage);
