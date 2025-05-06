@@ -222,6 +222,13 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
 
+* Sub-systems
+
+  * Debug
+
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY`
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE`
+
 * Other
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
