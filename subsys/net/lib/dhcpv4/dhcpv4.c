@@ -1680,8 +1680,11 @@ const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type)
 		"inform"
 	};
 
-	__ASSERT_NO_MSG(msg_type >= 1 && msg_type <= sizeof(name));
-	return name[msg_type - 1];
+	if (msg_type >= 1 && msg_type <= sizeof(name)) {
+		return name[msg_type - 1];
+	}
+
+	return "invalid";
 }
 
 static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
