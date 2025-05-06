@@ -111,7 +111,7 @@ int bmi08x_acc_trigger_mode_init(const struct device *dev)
 #endif
 
 #if BMI08X_ACCEL_ANY_INST_HAS_DATA_SYNC
-	if (config->data_sync != 0) {
+	if (cfg->data_sync != 0) {
 		/* set accel ints */
 		ret = bmi08x_accel_byte_write(dev, BMI08X_REG_ACCEL_INT1_MAP, cfg->int1_map);
 		if (ret < 0) {
