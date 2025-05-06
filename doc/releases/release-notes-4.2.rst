@@ -247,9 +247,38 @@ New Boards
 
    * :zephyr:board:`versalnet_rpu` (``versalnet_rpu``)
 
+* aithinker
+
+   * :zephyr:board:`ai_wb2_12f` (``ai_wb2_12f``)
+
+* Ambiq Micro, Inc.
+
+   * :zephyr:board:`apollo510_evb` (``apollo510_evb``)
+
+* Analog Devices, Inc.
+
+   * :zephyr:board:`max32657evkit` (``max32657evkit``)
+
+* BeagleBoard.org Foundation
+
+   * :zephyr:board:`pocketbeagle_2` (``pocketbeagle_2``)
+
 * Blues Wireless
 
    * :zephyr:board:`cygnet` (``cygnet``)
+
+* Bouffalo Lab (Nanjing) Co., Ltd.
+
+   * :zephyr:board:`bl604e_iot_dvk` (``bl604e_iot_dvk``)
+
+* Espressif Systems
+
+   * :zephyr:board:`esp32_devkitc` (``esp32_devkitc``)
+
+* Ezurio
+
+   * :zephyr:board:`bl54l15_dvk` (``bl54l15_dvk``)
+   * :zephyr:board:`bl54l15u_dvk` (``bl54l15u_dvk``)
 
 * FANKE Technology Co., Ltd.
 
@@ -279,14 +308,20 @@ New Boards
    * :zephyr:board:`ttgo_toiplus` (``ttgo_toiplus``)
    * :zephyr:board:`twatch_s3` (``twatch_s3``)
 
+* Microchip Technology Inc.
+
+   * :zephyr:board:`mec_assy6941` (``mec_assy6941``)
+
 * Nuvoton Technology Corporation
 
    * :zephyr:board:`numaker_m55m1` (``numaker_m55m1``)
 
 * NXP Semiconductors
 
+   * :zephyr:board:`frdm_mcxa153` (``frdm_mcxa153``)
    * :zephyr:board:`frdm_mcxa166` (``frdm_mcxa166``)
    * :zephyr:board:`frdm_mcxa276` (``frdm_mcxa276``)
+   * :zephyr:board:`mcx_n9xx_evk` (``mcx_n9xx_evk``)
 
 * Octavo Systems LLC
 
@@ -301,10 +336,17 @@ New Boards
 
    * :zephyr:board:`pico_plus2` (``pico_plus2``)
 
+* QEMU
+
+   * :zephyr:board:`qemu_rx` (``qemu_rx``)
+
 * Renesas Electronics Corporation
 
+   * :zephyr:board:`rsk_rx130` (``rsk_rx130``)
+   * :zephyr:board:`rza2m_evk` (``rza2m_evk``)
    * :zephyr:board:`rza3ul_smarc` (``rza3ul_smarc``)
    * :zephyr:board:`rzg2l_smarc` (``rzg2l_smarc``)
+   * :zephyr:board:`rzg2lc_smarc` (``rzg2lc_smarc``)
    * :zephyr:board:`rzn2l_rsk` (``rzn2l_rsk``)
    * :zephyr:board:`rzt2l_rsk` (``rzt2l_rsk``)
    * :zephyr:board:`rzt2m_rsk` (``rzt2m_rsk``)
@@ -319,6 +361,10 @@ New Boards
 
    * :zephyr:board:`ganymed_sk` (``ganymed_sk``)
 
+* Shanghai Ruiside Electronic Technology Co., Ltd.
+
+   * :zephyr:board:`art_pi2` (``art_pi2``)
+
 * Silicon Laboratories
 
    * :zephyr:board:`slwrb4180b` (``slwrb4180b``)
@@ -326,12 +372,18 @@ New Boards
 * STMicroelectronics
 
    * :zephyr:board:`nucleo_f439zi` (``nucleo_f439zi``)
+   * :zephyr:board:`nucleo_wba65ri` (``nucleo_wba65ri``)
    * :zephyr:board:`stm32h757i_eval` (``stm32h757i_eval``)
    * :zephyr:board:`stm32mp135f_dk` (``stm32mp135f_dk``)
+   * :zephyr:board:`stm32u5g9j_dk2` (``stm32u5g9j_dk2``)
 
 * Texas Instruments
 
    * :zephyr:board:`sk_am64` (``sk_am64``)
+
+* Variscite Ltd.
+
+   * :zephyr:board:`imx8mp_var_som` (``imx8mp_var_som``)
 
 * WinChipHead
 
@@ -358,6 +410,8 @@ New Drivers
    * :dtcompatible:`adi,ad4050-adc`
    * :dtcompatible:`adi,ad4052-adc`
    * :dtcompatible:`adi,ad4130-adc`
+   * :dtcompatible:`ite,it51xxx-adc`
+   * :dtcompatible:`realtek,rts5912-adc`
    * :dtcompatible:`renesas,rz-adc`
 
 * Audio
@@ -367,11 +421,17 @@ New Drivers
 * Charger
 
    * :dtcompatible:`ti,bq25713`
+   * :dtcompatible:`x-powers,axp2101-charger`
 
 * Clock control
 
    * :dtcompatible:`ite,it51xxx-ecpm`
    * :dtcompatible:`nordic,nrfs-audiopll`
+   * :dtcompatible:`renesas,rx-cgc-pclk`
+   * :dtcompatible:`renesas,rx-cgc-pclk-block`
+   * :dtcompatible:`renesas,rx-cgc-pll`
+   * :dtcompatible:`renesas,rx-cgc-root-clock`
+   * :dtcompatible:`renesas,rza2m-cpg`
    * :dtcompatible:`st,stm32mp13-cpu-clock-mux`
    * :dtcompatible:`st,stm32mp13-pll-clock`
    * :dtcompatible:`wch,ch32v20x_30x-pll-clock`
@@ -384,11 +444,16 @@ New Drivers
 * Counter
 
    * :dtcompatible:`ite,it8xxx2-counter`
+   * :dtcompatible:`neorv32,gptmr`
+   * :dtcompatible:`realtek,rts5912-timer`
+   * :dtcompatible:`wch,gptm`
    * :dtcompatible:`zephyr,native-sim-counter`
 
 * CPU
 
    * :dtcompatible:`intel,bartlett-lake`
+   * :dtcompatible:`openhwgroup,cva6`
+   * :dtcompatible:`renesas,rx`
    * :dtcompatible:`wch,qingke-v4c`
    * :dtcompatible:`zephyr,native-sim-cpu`
 
@@ -402,8 +467,11 @@ New Drivers
 
 * Display
 
+   * :dtcompatible:`sinowealth,sh1122`
+   * :dtcompatible:`sitronix,st75256`
    * :dtcompatible:`sitronix,st7567`
    * :dtcompatible:`sitronix,st7701`
+   * :dtcompatible:`solomon,ssd1320`
 
 * :abbr:`DMA (Direct Memory Access)`
 
@@ -418,8 +486,14 @@ New Drivers
    * :dtcompatible:`ti,dp83867`
    * :dtcompatible:`xlnx,axi-ethernet-1.00.a`
 
+* Firmware
+
+   * :dtcompatible:`nordic,ironside-call`
+   * :dtcompatible:`nxp,scmi-cpu`
+
 * Flash controller
 
+   * :dtcompatible:`renesas,rx-flash`
    * :dtcompatible:`silabs,series2-flash-controller`
 
 * File system
@@ -431,30 +505,51 @@ New Drivers
    * :dtcompatible:`adi,max14915-gpio`
    * :dtcompatible:`adi,max14917-gpio`
    * :dtcompatible:`adi,max22199-gpio`
+   * :dtcompatible:`bflb,gpio`
+   * :dtcompatible:`espressif,esp32-lpgpio`
    * :dtcompatible:`ite,it51xxx-gpio`
    * :dtcompatible:`nxp,lcd-pmod`
    * :dtcompatible:`raspberrypi,pico-gpio-port`
    * :dtcompatible:`renesas,ra-parallel-graphics-header`
+   * :dtcompatible:`renesas,rx-gpio`
+   * :dtcompatible:`renesas,rza2m-gpio`
+   * :dtcompatible:`renesas,rza2m-gpio-int`
 
 * :abbr:`I2C (Inter-Integrated Circuit)`
 
    * :dtcompatible:`cdns,i2c`
+   * :dtcompatible:`ite,it51xxx-i2c`
    * :dtcompatible:`litex,litei2c`
    * :dtcompatible:`renesas,ra-i2c-sci-b`
    * :dtcompatible:`renesas,rz-riic`
    * :dtcompatible:`sensry,sy1xx-i2c`
+   * :dtcompatible:`wch,i2c`
+
+* :abbr:`I3C (Improved Inter-Integrated Circuit)`
+
+   * :dtcompatible:`ite,it51xxx-i3cm`
+   * :dtcompatible:`ite,it51xxx-i3cs`
 
 * Input
 
+   * :dtcompatible:`ite,it51xxx-kbd`
    * :dtcompatible:`realtek,rts5912-kbd`
    * :dtcompatible:`st,stm32-tsc`
    * :dtcompatible:`tsc-keys`
+   * :dtcompatible:`vishay,vs1838b`
 
 * Interrupt controller
 
    * :dtcompatible:`ite,it51xxx-intc`
    * :dtcompatible:`ite,it51xxx-wuc`
    * :dtcompatible:`ite,it51xxx-wuc-map`
+   * :dtcompatible:`renesas,rx-icu`
+
+* :abbr:`LED (Light Emitting Diode)`
+
+   * :dtcompatible:`dac-leds`
+   * :dtcompatible:`x-powers,axp192-led`
+   * :dtcompatible:`x-powers,axp2101-led`
 
 * Mailbox
 
@@ -467,6 +562,7 @@ New Drivers
 
 * Memory controller
 
+   * :dtcompatible:`adi,max32-hpb`
    * :dtcompatible:`realtek,rts5912-bbram`
    * :dtcompatible:`st,stm32-xspi-psram`
 
@@ -476,10 +572,15 @@ New Drivers
    * :dtcompatible:`ambiq,iom`
    * :dtcompatible:`x-powers,axp2101`
 
+* :abbr:`MIPI DBI (Mobile Industry Processor Interface Display Bus Interface)`
+
+   * :dtcompatible:`nxp,mipi-dbi-dcnano-lcdif`
+
 * Miscellaneous
 
    * :dtcompatible:`nordic,nrf-mpc`
    * :dtcompatible:`renesas,ra-ulpt`
+   * :dtcompatible:`renesas,rx-sci`
    * :dtcompatible:`renesas,rz-sci`
 
 * Multi-bit SPI
@@ -488,7 +589,11 @@ New Drivers
 
 * :abbr:`MTD (Memory Technology Device)`
 
+   * :dtcompatible:`fixed-subpartitions`
    * :dtcompatible:`jedec,mspi-nor`
+   * :dtcompatible:`renesas,ra-nv-code-flash`
+   * :dtcompatible:`renesas,ra-nv-data-flash`
+   * :dtcompatible:`renesas,rx-nv-flash`
 
 * Networking
 
@@ -496,19 +601,31 @@ New Drivers
 
 * Pin control
 
+   * :dtcompatible:`ambiq,apollo5-pinctrl`
    * :dtcompatible:`arm,mps2-pinctrl`
    * :dtcompatible:`arm,mps3-pinctrl`
    * :dtcompatible:`arm,v2m_beetle-pinctrl`
+   * :dtcompatible:`bflb,pinctrl`
+   * :dtcompatible:`renesas,rx-pinctrl`
+   * :dtcompatible:`renesas,rx-pinmux`
    * :dtcompatible:`renesas,rza-pinctrl`
+   * :dtcompatible:`renesas,rza2m-pinctrl`
    * :dtcompatible:`renesas,rzn-pinctrl`
    * :dtcompatible:`renesas,rzt-pinctrl`
    * :dtcompatible:`renesas,rzv-pinctrl`
    * :dtcompatible:`wch,20x_30x-afio`
 
+* Power management
+
+   * :dtcompatible:`realtek,rts5912-ulpm`
+
 * :abbr:`PWM (Pulse Width Modulation)`
 
    * :dtcompatible:`arduino-header-pwm`
+   * :dtcompatible:`neorv32,pwm`
+   * :dtcompatible:`realtek,rts5912-pwm`
    * :dtcompatible:`silabs,siwx91x-pwm`
+   * :dtcompatible:`wch,gptm-pwm`
 
 * Regulator
 
@@ -528,9 +645,10 @@ New Drivers
    * :dtcompatible:`nxp,pcf2123`
    * :dtcompatible:`realtek,rts5912-rtc`
 
-* SDHC
+* :abbr:`SDHC (Secure Digital Host Controller)`
 
    * :dtcompatible:`ambiq,sdio`
+   * :dtcompatible:`xlnx,versal-8.9a`
 
 * Sensors
 
@@ -542,34 +660,57 @@ New Drivers
    * :dtcompatible:`meas,ms5837-02ba`
    * :dtcompatible:`meas,ms5837-30ba`
    * :dtcompatible:`pixart,paa3905`
+   * :dtcompatible:`pixart,paj7620`
    * :dtcompatible:`pixart,pat9136`
    * :dtcompatible:`st,lsm6dsv32x`
    * :dtcompatible:`vishay,veml6031`
 
 * Serial controller
 
+   * :dtcompatible:`bflb,uart`
+   * :dtcompatible:`espressif,esp32-lpuart`
    * :dtcompatible:`ite,it51xxx-uart`
+   * :dtcompatible:`renesas,rx-uart-sci`
+   * :dtcompatible:`renesas,rx-uart-sci-qemu`
    * :dtcompatible:`renesas,rz-sci-uart`
+   * :dtcompatible:`renesas,rza2m-scif-uart`
    * :dtcompatible:`zephyr,native-pty-uart`
 
 * :abbr:`SPI (Serial Peripheral Interface)`
 
    * :dtcompatible:`cdns,spi`
+   * :dtcompatible:`silabs,gspi`
+   * :dtcompatible:`ti,cc23x0-spi`
+
+* Stepper
+
+   * :dtcompatible:`adi,tmc51xx`
+
+* Tachometer
+
+   * :dtcompatible:`ite,it51xxx-tach`
+   * :dtcompatible:`realtek,rts5912-tach`
 
 * Timer
 
    * :dtcompatible:`ite,it51xxx-timer`
    * :dtcompatible:`renesas,ra-ulpt-timer`
+   * :dtcompatible:`renesas,rx-timer-cmt`
+   * :dtcompatible:`renesas,rx-timer-cmt-start-control`
+   * :dtcompatible:`renesas,rza2m-ostm`
 
 * USB
 
    * :dtcompatible:`adi,max32-usbhs`
+   * :dtcompatible:`st,stm32n6-otghs`
 
 * Watchdog
 
+   * :dtcompatible:`ite,it51xxx-watchdog`
    * :dtcompatible:`realtek,rts5912-watchdog`
    * :dtcompatible:`renesas,ra-wdt`
    * :dtcompatible:`silabs,siwx91x-wdt`
+   * :dtcompatible:`wch,iwdg`
 
 New Samples
 ***********
@@ -582,12 +723,16 @@ New Samples
 * :zephyr:code-sample:`debug-ulp`
 * :zephyr:code-sample:`echo-ulp`
 * :zephyr:code-sample:`fatfs-fstab`
+* :zephyr:code-sample:`net-pkt-filter`
+* :zephyr:code-sample:`paj7620_gesture`
 * :zephyr:code-sample:`pressure_interrupt`
 * :zephyr:code-sample:`pressure_polling`
 * :zephyr:code-sample:`renesas_comparator`
 * :zephyr:code-sample:`rz-openamp-linux-zephyr`
 * :zephyr:code-sample:`spis-wakeup`
 * :zephyr:code-sample:`stepper`
+* :zephyr:code-sample:`uart_async`
+* :zephyr:code-sample:`uuid`
 * :zephyr:code-sample:`veml6031`
 
 Other notable changes
