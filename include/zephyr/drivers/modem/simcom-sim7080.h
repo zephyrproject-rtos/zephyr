@@ -193,6 +193,11 @@ const char *mdm_sim7080_get_revision(void);
 const char *mdm_sim7080_get_imei(void);
 
 /**
+ * Get the sim7080 iccid number.
+ */
+const char *mdm_sim7080_get_iccid(void);
+
+/**
  * Read sms from sim module.
  *
  * @param buffer Buffer structure for sms.
