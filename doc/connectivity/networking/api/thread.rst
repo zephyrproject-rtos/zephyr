@@ -64,4 +64,69 @@ Zephyr's OpenThread L2 platform adaptation layer glues the external OpenThread
 stack together with Zephyr's IEEE 802.15.4 protocol agnostic driver API. This
 API is of interest to OpenThread L2 **subsystem contributors** only.
 
+OpenThread Platform API
+=======================
+
+The OpenThread platform API is defined by the OpenThread stack and implemented in Zephyr as an
+OpenThread module. Applications can use this implementation directly, or access it through the
+OpenThread L2 adaptation layer.
+
+Using the OpenThread L2 Adaptation Layer API
+--------------------------------------------
+
+To use the OpenThread platform API via the OpenThread L2 adaptation layer, enable both the
+:kconfig:option:`CONFIG_NET_L2_OPENTHREAD` and :kconfig:option:`CONFIG_NETWORKING` Kconfig options
+by setting them to ``y``. The adaptation layer will use the OpenThread radio API implementation
+found in :file:`modules/openthread/platform/radio.c`. In this setup, the OpenThread stack is
+initialized and managed by the adaptation layer.
+
+Using the OpenThread Platform API Directly
+------------------------------------------
+
+You can also use the OpenThread platform API directly, bypassing the OpenThread L2 adaptation
+layer. However, this approach requires you to provide your own implementation of the OpenThread
+radio API that is compatible with your specific radio driver.
+
+To use the OpenThread platform API directly, set the :kconfig:option:`CONFIG_OPENTHREAD` Kconfig
+option to ``y``, and do **not** set :kconfig:option:`CONFIG_NET_L2_OPENTHREAD`. In this case, you
+must implement the following functions from the `OpenThread radio API
+<https://openthread.io/reference/group/radio-config>`_ using your own radio driver:
+
+* ``otPlatRadioGetPromiscuous``
+* ``otPlatRadioGetCcaEnergyDetectThreshold``
+* ``otPlatRadioGetTransmitPower``
+* ``otPlatRadioGetIeeeEui64``
+* ``otPlatRadioSetPromiscuous``
+* ``otPlatRadioGetCaps``
+* ``otPlatRadioGetTransmitBuffer``
+* ``otPlatRadioSetPanId``
+* ``otPlatRadioEnable``
+* ``otPlatRadioDisable``
+* ``otPlatRadioReceive``
+* ``otPlatRadioGetRssi``
+* ``otPlatRadioGetReceiveSensitivity``
+* ``otPlatRadioEnergyScan``
+* ``otPlatRadioSetExtendedAddress``
+* ``otPlatRadioSetShortAddress``
+* ``otPlatRadioAddSrcMatchExtEntry``
+* ``otPlatRadioTransmit``
+* ``otPlatRadioClearSrcMatchShortEntries``
+* ``otPlatRadioClearSrcMatchExtEntries``
+* ``otPlatRadioEnableSrcMatch``
+* ``otPlatRadioAddSrcMatchShortEntry``
+* ``otPlatRadioClearSrcMatchShortEntry``
+* ``otPlatRadioClearSrcMatchExtEntry``
+
+Additionally, you must implement the following functions from the OpenThread radio API (see
+:zephyr_file:`include/zephyr/net/openthread.h`) to handle radio initialization and event processing:
+
+* :c:func:`platformRadioInit`
+* :c:func:`platformRadioProcess`
+
+To initialize the OpenThread stack in this approach, either call the :c:func:`ot_platform_init`
+function in your application, or enable the :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT` Kconfig
+option to automatically initialize OpenThread during system startup. You can set the
+initialization priority using the :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT_PRIORITY` Kconfig
+option.
+
 .. doxygengroup:: openthread
