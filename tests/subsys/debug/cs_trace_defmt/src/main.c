@@ -13,9 +13,9 @@ static uint8_t cb_cnt;
 
 static void callback(uint32_t id, const uint8_t *data, size_t len)
 {
-	zassert_equal(exp_id[cb_cnt], id, NULL);
-	zassert_equal(len, exp_len[cb_cnt], NULL);
-	zassert_equal(memcmp(data, exp_data[cb_cnt], len), 0, NULL);
+	zassert_equal(exp_id[cb_cnt], id);
+	zassert_equal(len, exp_len[cb_cnt]);
+	zassert_equal(memcmp(data, exp_data[cb_cnt], len), 0);
 	cb_cnt++;
 }
 
