@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Thiyagarajan Pandiyan <psvthiyagarajan@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		distance0 = &hc_sr04;
+	};
+
+	hc_sr04: hc_sr04 {
+		compatible = "hc-sr04";
+		trigger-gpios = <&gpio1 0x9 0x0>;
+		echo-gpios = <&gpio1 0xa 0x0>;
+	};
+};

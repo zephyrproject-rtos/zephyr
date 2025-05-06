@@ -1,0 +1,15 @@
+sample:
+  name: Distance measurement sample
+common:
+  tags: sensor
+  harness: console
+tests:
+  sample.sensor.distance_measure:
+    tags:
+      - samples
+      - sensor
+  sample.sensor.distance_measure.hc-sr04:
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
+    depends_on:
+      - hc-sr04
