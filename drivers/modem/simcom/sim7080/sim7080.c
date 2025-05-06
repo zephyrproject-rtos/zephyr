@@ -132,6 +132,25 @@ static void modem_rx(void *p1, void *p2, void *p3)
 	}
 }
 
+int mdm_sim7080_set_gpio(int gpio, int level)
+{
+	int ret;
+	char buf[sizeof("AT+SGPIO=#,#,#,#")];
+
+	ret = snprintk(buf, sizeof(buf), "AT+SGPIO=0,%u,1,%u", gpio, !!level);
+	if (ret < 0) {
+		return -1;
+	}
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, buf, &mdata.sem_response,
+			K_SECONDS(5));
+	if (ret < 0) {
+		return -1;
+	}
+
+	return ret;
+}
+
 MODEM_CMD_DEFINE(on_cmd_ok)
 {
 	modem_cmd_handler_set_error(data, 0);

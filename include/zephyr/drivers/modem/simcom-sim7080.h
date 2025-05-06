@@ -215,6 +215,17 @@ int mdm_sim7080_read_sms(struct sim7080_sms_buffer *buffer);
 int mdm_sim7080_delete_sms(uint16_t index);
 
 /**
+ * Set the level of one of the module's GPIO pins
+ *
+ * @param gpio GPIO pin number
+ * @param level New logical level of the GPIO
+ * @return 0 on success. Otherwise -1 is returned.
+ *
+ * @note The GPIO will be configured as output implicitly.
+ */
+int mdm_sim7080_set_gpio(int gpio, int level);
+
+/**
  * Start a ftp get session.
  *
  * @param server The ftp servers address.
