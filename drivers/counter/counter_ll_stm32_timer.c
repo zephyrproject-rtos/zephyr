@@ -155,6 +155,14 @@ static int counter_stm32_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int counter_stm32_reset(const struct device *dev)
+{
+	const struct counter_stm32_config *config = dev->config;
+
+	LL_TIM_SetCounter(config->timer, 0);
+	return 0;
+}
+
 static uint32_t counter_stm32_ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
@@ -577,6 +585,7 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
 	.start = counter_stm32_start,
 	.stop = counter_stm32_stop,
 	.get_value = counter_stm32_get_value,
+	.reset = counter_stm32_reset,
 	.set_alarm = counter_stm32_set_alarm,
 	.cancel_alarm = counter_stm32_cancel_alarm,
 	.set_top_value = counter_stm32_set_top_value,
