@@ -18,10 +18,11 @@
  * Principle of operation:
  *
  * The embedded OS threads are run as a set of native Linux pthreads.
- * The embedded OS only sees one of this thread executing at a time.
+ * The embedded OS only sees one of this threads executing at a time.
  *
- * The hosted OS shall call nct_init() to initialize the state of an
- * instance of this module, and nct_clean_up() once it desires to destroy it.
+ * The hosted OS (or its integration into the native simulator) shall call
+ * nct_init() to initialize the state of an instance of this module, and
+ * nct_clean_up() once it desires to destroy it.
  *
  * For SOCs with several micro-controllers (AMP) one instance of this module
  * would be instantiated per simulated uC and embedded OS.
@@ -38,8 +39,7 @@
  *
  * Internal design:
  *
- * Which thread is running is controlled using {cond|mtx}_threads and
- * currently_allowed_thread.
+ * Which thread is running is controlled using its own semaphore.
  *
  * The main part of the execution of each thread will occur in a fully
  * synchronous and deterministic manner, and only when commanded by
@@ -62,11 +62,14 @@
 
 /* For pthread_setname_np() */
 #define _GNU_SOURCE
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <errno.h>
+#include "nsi_utils.h"
 #include "nct_if.h"
 #include "nsi_internal.h"
 #include "nsi_safe_call.h"
@@ -81,152 +84,129 @@
 #define ERPREFIX   PREFIX"error on "
 #define NO_MEM_ERR PREFIX"Can't allocate memory\n"
 
-#define NCT_ENABLE_CANCEL 0 /* See Note.c1 */
+#define NCT_ENABLE_CANCEL 1
 #define NCT_ALLOC_CHUNK_SIZE 64 /* In how big chunks we grow the thread table */
 #define NCT_REUSE_ABORTED_ENTRIES 0
 /* For the Zephyr OS, tests/kernel/threads/scheduling/schedule_api fails when setting
  * NCT_REUSE_ABORTED_ENTRIES => don't set it by now
  */
 
-struct te_status_t;
+struct nct_status_t;
 
 struct threads_table_el {
 	/* Pointer to the overall status of the threading emulator instance */
-	struct te_status_t *ts_status;
-	struct threads_table_el *next; /* Pointer to the next element of the table */
-	int thread_idx; /* Index of this element in the threads_table*/
+	struct nct_status_t *nct_status;
+	struct threads_table_el *next;	/* Pointer to the next element of the table */
+	sem_t sema;			/* Semaphore to hold this thread until allowed */
+	pthread_t thread;		/* Actual pthread_t as returned by the native kernel */
+
+	int thread_idx;			/* Index of this element in the threads_table*/
+	int thead_cnt;			/* For debugging: Unique, consecutive, thread number */
 
 	enum {NOTUSED = 0, USED, ABORTING, ABORTED, FAILED} state;
-	bool running;     /* Is this the currently running thread */
-	pthread_t thread; /* Actual pthread_t as returned by the native kernel */
-	int thead_cnt; /* For debugging: Unique, consecutive, thread number */
+	bool running;	/* (For debugging purposes) Is this the currently running thread */
 
 	/*
-	 * Pointer to data from the hosted OS architecture
+	 * Pointer to data from the hosted OS architecture.
 	 * What that is, if anything, is up to that the hosted OS
 	 */
 	void *payload;
 };
 
-struct te_status_t {
-	struct threads_table_el *threads_table; /* Pointer to the threads table */
-	int thread_create_count; /* (For debugging) Thread creation counter */
-	int threads_table_size; /* Size of threads_table */
+struct nct_status_t {
+	struct threads_table_el *threads_table;	/* Pointer to the threads table */
+	int thread_create_count;		/* (For debugging) Thread creation counter */
+	int threads_table_size;			/* Size of threads_table */
 	/* Pointer to the hosted OS function to be called when a thread is started */
 	void (*fptr)(void *payload);
-	/*
-	 * Conditional variable to block/awake all threads during swaps.
-	 * (we only need 1 mutex and 1 cond variable for all threads)
-	 */
-	pthread_cond_t cond_threads;
-	/* Mutex for the conditional variable cond_threads */
-	pthread_mutex_t mtx_threads;
-	/* Token which tells which thread is allowed to run now */
+
+	/* Index of the thread which is currently allowed to run now */
 	int currently_allowed_thread;
+
 	bool terminate; /* Are we terminating the program == cleaning up */
+	bool all_threads_released; /* During termination, have we released all hosted threads */
 };
 
-static void nct_exit_and_cleanup(struct te_status_t *this);
-static struct threads_table_el *ttable_get_element(struct te_status_t *this, int index);
-
-/**
- * Helper function, run by a thread which is being aborted
- */
-static void abort_tail(struct te_status_t *this, int this_th_nbr)
-{
-	struct threads_table_el *tt_el = ttable_get_element(this, this_th_nbr);
-
-	NCT_DEBUG("Thread [%i] %i: %s: Aborting (exiting) (rel mut)\n",
-		tt_el->thead_cnt,
-		this_th_nbr,
-		__func__);
-
-	tt_el->running = false;
-	tt_el->state = ABORTED;
-	nct_exit_and_cleanup(this);
-}
-
-/**
- * Helper function to block this thread until it is allowed again
- *
- * Note that we go out of this function (the while loop below)
- * with the mutex locked by this particular thread.
- * In normal circumstances, the mutex is only unlocked internally in
- * pthread_cond_wait() while waiting for cond_threads to be signaled
- */
-static void nct_wait_until_allowed(struct te_status_t *this, int this_th_nbr)
-{
-	struct threads_table_el *tt_el = ttable_get_element(this, this_th_nbr);
-
-	tt_el->running = false;
-
-	NCT_DEBUG("Thread [%i] %i: %s: Waiting to be allowed to run (rel mut)\n",
-		tt_el->thead_cnt,
-		this_th_nbr,
-		__func__);
-
-	while (this_th_nbr != this->currently_allowed_thread) {
-		pthread_cond_wait(&this->cond_threads, &this->mtx_threads);
-
-		if (tt_el->state == ABORTING) {
-			abort_tail(this, this_th_nbr);
-		}
-	}
-
-	tt_el->running = true;
-
-	NCT_DEBUG("Thread [%i] %i: %s(): I'm allowed to run! (hav mut)\n",
-		tt_el->thead_cnt,
-		this_th_nbr,
-		__func__);
-}
-
-/**
- * Helper function to let the thread <next_allowed_th> run
- *
- * Note: nct_let_run() can only be called with the mutex locked
- */
-static void nct_let_run(struct te_status_t *this, int next_allowed_th)
-{
-#if NCT_DEBUG_PRINTS
-	struct threads_table_el *tt_el = ttable_get_element(this, next_allowed_th);
-
-	NCT_DEBUG("%s: We let thread [%i] %i run\n",
-		__func__,
-		tt_el->thead_cnt,
-		next_allowed_th);
-#endif
-
-	this->currently_allowed_thread = next_allowed_th;
-
-	/*
-	 * We let all threads know one is able to run now (it may even be us
-	 * again if fancied)
-	 * Note that as we hold the mutex, they are going to be blocked until
-	 * we reach our own nct_wait_until_allowed() while loop or abort_tail()
-	 * mutex release
-	 */
-	NSI_SAFE_CALL(pthread_cond_broadcast(&this->cond_threads));
-}
+static struct threads_table_el *ttable_get_element(struct nct_status_t *this, int index);
 
 /**
  * Helper function, run by a thread which is being ended
  */
-static void nct_exit_and_cleanup(struct te_status_t *this)
+static void nct_exit_this_thread(void)
 {
-	/*
-	 * Release the mutex so the next allowed thread can run
-	 */
-	NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_threads));
-
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
-
 	pthread_exit(NULL);
 }
 
+/*
+ * Wait for the semaphore, retrying if we are interrupted by a signal
+ */
+NSI_INLINE int nct_sem_rewait(sem_t *semaphore)
+{
+	int ret;
+
+	while ((ret = sem_wait(semaphore)) == EINTR) {
+		/* Restart wait if we were interrupted */
+	}
+	return ret;
+}
+
 /**
- * Let the ready thread run and block this managed thread until it is allowed again
+ * Helper function, run by a thread which is being aborted
+ */
+static void abort_tail(struct threads_table_el *tt_el)
+{
+	NCT_DEBUG("Thread [%i] %i: %s: Aborting (exiting) (rel mut)\n",
+		  tt_el->thead_cnt, tt_el->thread_idx, __func__);
+
+	tt_el->running = false;
+	tt_el->state = ABORTED;
+	nct_exit_this_thread();
+}
+
+/**
+ * Helper function to block this thread until it is allowed to run again
+ * (either when the hosted OS swaps to it, or aborts it)
+ */
+static void nct_wait_until_allowed(struct threads_table_el *tt_el, int this_th_nbr)
+{
+	tt_el->running = false;
+
+	NCT_DEBUG("Thread [%i] %i: %s: Waiting to be allowed to run\n",
+		  tt_el->thead_cnt, this_th_nbr, __func__);
+
+	NSI_SAFE_CALL(nct_sem_rewait(&tt_el->sema));
+
+	if (tt_el->nct_status->terminate) {
+		nct_exit_this_thread();
+	}
+
+	if (tt_el->state == ABORTING) {
+		abort_tail(tt_el);
+	}
+
+	tt_el->running = true;
+
+	NCT_DEBUG("Thread [%i] %i: %s(): I'm allowed to run!\n",
+		  tt_el->thead_cnt, this_th_nbr, __func__);
+}
+
+/**
+ * Helper function to let the thread <next_allowed_th> run
+ */
+static void nct_let_run(struct nct_status_t *this, int next_allowed_th)
+{
+	struct threads_table_el *tt_el = ttable_get_element(this, next_allowed_th);
+
+	NCT_DEBUG("%s: We let thread [%i] %i run\n", __func__, tt_el->thead_cnt, next_allowed_th);
+
+	this->currently_allowed_thread = next_allowed_th;
+	NSI_SAFE_CALL(sem_post(&tt_el->sema));
+}
+
+/**
+ * Let the <next_allowed_thread_nbr> run and block this managed thread until it is allowed again
  *
  * The hosted OS shall call this when it has decided to swap in/out two of its threads,
  * from the thread that is being swapped out.
@@ -242,126 +222,70 @@ static void nct_exit_and_cleanup(struct te_status_t *this)
  */
 void nct_swap_threads(void *this_arg, int next_allowed_thread_nbr)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	int this_th_nbr = this->currently_allowed_thread;
+	struct threads_table_el *tt_el = ttable_get_element(this, this_th_nbr);
 
 	nct_let_run(this, next_allowed_thread_nbr);
 
 	if (this_th_nbr == -1) { /* This is the first time a thread was swapped in */
-		NCT_DEBUG("%s: called from an unmanaged thread, terminating it\n",
-				__func__);
-		nct_exit_and_cleanup(this);
+		NCT_DEBUG("%s: called from an unmanaged thread, terminating it\n", __func__);
+		nct_exit_this_thread();
 	}
 
-	struct threads_table_el *tt_el = ttable_get_element(this, this_th_nbr);
-
-	if (tt_el->state == ABORTING) {
+	if (tt_el->state == ABORTING) { /* We had set ourself as aborted => let's exit now */
 		NCT_DEBUG("Thread [%i] %i: %s: Aborting curr.\n",
-			tt_el->thead_cnt,
-			this_th_nbr,
-			__func__);
-		abort_tail(this, this_th_nbr);
+			  tt_el->thead_cnt, this_th_nbr, __func__);
+		abort_tail(tt_el);
 	} else {
-		nct_wait_until_allowed(this, this_th_nbr);
+		nct_wait_until_allowed(tt_el, this_th_nbr);
 	}
 }
 
 /**
- * Let the very first hosted thread run, and exit this thread.
+ * Let the very first hosted thread run, and exit the calling thread.
  *
- * The hosted OS shall call this when it has decided to swap in into another
+ * The hosted OS shall call this when it has decided to swap into another
  * thread, and wants to terminate the currently executing thread, which is not
  * a thread managed by the thread emulator.
  *
  * This function allows to emulate a hosted OS doing its first swapping into one
- * of its hosted threads from the init thread, abandoning/terminating the init
+ * of its hosted threads from the init thread, abandoning/terminating that init
  * thread.
  */
 void nct_first_thread_start(void *this_arg, int next_allowed_thread_nbr)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 
 	nct_let_run(this, next_allowed_thread_nbr);
-	NCT_DEBUG("%s: Init thread dying now (rel mut)\n",
-		__func__);
-	nct_exit_and_cleanup(this);
-}
-
-/**
- * Handler called when any thread is cancelled or exits
- */
-static void nct_cleanup_handler(void *arg)
-{
-	struct threads_table_el *element = (struct threads_table_el *)arg;
-	struct te_status_t *this = element->ts_status;
-
-	/*
-	 * If we are not terminating, this is just an aborted thread,
-	 * and the mutex was already released
-	 * Otherwise, release the mutex so other threads which may be
-	 * caught waiting for it could terminate
-	 */
-
-	if (!this->terminate) {
-		return;
-	}
-
-	NCT_DEBUG("Thread %i: %s: Canceling (rel mut)\n",
-		element->thread_idx,
-		__func__);
-
-
-	NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_threads));
-
-	/* We detach ourselves so nobody needs to join to us */
-	pthread_detach(pthread_self());
+	NCT_DEBUG("%s: Init thread dying now (rel mut)\n", __func__);
+	nct_exit_this_thread();
 }
 
 /**
  * Helper function to start a hosted thread as a POSIX thread:
- *  It will block the pthread until the embedded OS devices to "swap in"
- *  this thread.
+ *  It will block this new pthread until the embedded OS decides to "swap it in".
  */
 static void *nct_thread_starter(void *arg_el)
 {
 	struct threads_table_el *tt_el = (struct threads_table_el *)arg_el;
-	struct te_status_t *this = tt_el->ts_status;
+	const struct nct_status_t *this = tt_el->nct_status;
 
 	int thread_idx = tt_el->thread_idx;
 
-	NCT_DEBUG("Thread [%i] %i: %s: Starting\n",
-		tt_el->thead_cnt,
-		thread_idx,
-		__func__);
-
-	/*
-	 * We block until all other running threads reach the while loop
-	 * in nct_wait_until_allowed() and they release the mutex
-	 */
-	NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_threads));
+	NCT_DEBUG("Thread [%i] %i: %s: Starting\n", tt_el->thead_cnt, thread_idx, __func__);
 
 	/*
 	 * The program may have been finished before this thread ever got to run
 	 */
 	/* LCOV_EXCL_START */ /* See Note1 */
 	if (!this->threads_table || this->terminate) {
-		nct_cleanup_handler(arg_el);
-		pthread_exit(NULL);
+		nct_exit_this_thread();
 	}
 	/* LCOV_EXCL_STOP */
 
-	pthread_cleanup_push(nct_cleanup_handler, arg_el);
-
-	NCT_DEBUG("Thread [%i] %i: %s: After start mutex (hav mut)\n",
-		tt_el->thead_cnt,
-		thread_idx,
-		__func__);
-
-	/*
-	 * The thread would try to execute immediately, so we block it
-	 * until allowed
-	 */
-	nct_wait_until_allowed(this, thread_idx);
+	/* Let's wait until the thread is swapped in */
+	nct_wait_until_allowed(tt_el, thread_idx);
 
 	this->fptr(tt_el->payload);
 
@@ -378,13 +302,30 @@ static void *nct_thread_starter(void *arg_el)
 	tt_el->running = false;
 	tt_el->state = FAILED;
 
-	pthread_cleanup_pop(1);
+	nct_exit_this_thread();
 
 	return NULL;
 	/* LCOV_EXCL_STOP */
 }
 
-static struct threads_table_el *ttable_get_element(struct te_status_t *this, int index)
+/*
+ * Helper function to link the elements in a chunk to each other and initialize (to 0)
+ * their thread semaphores
+ */
+static void ttable_init_elements(struct threads_table_el *chunk, int size)
+{
+	for (int i = 0; i < size - 1; i++) {
+		chunk[i].next = &chunk[i+1];
+		NSI_SAFE_CALL(sem_init(&chunk[i].sema, 0, 0));
+	}
+	chunk[size - 1].next = NULL;
+	NSI_SAFE_CALL(sem_init(&chunk[size - 1].sema, 0, 0));
+}
+
+/*
+ * Get a given element in the threads table
+ */
+static struct threads_table_el *ttable_get_element(struct nct_status_t *this, int index)
 {
 	struct threads_table_el *threads_table = this->threads_table;
 
@@ -403,7 +344,7 @@ static struct threads_table_el *ttable_get_element(struct te_status_t *this, int
 /**
  * Return the first free entry index in the threads table
  */
-static int ttable_get_empty_slot(struct te_status_t *this)
+static int ttable_get_empty_slot(struct nct_status_t *this)
 {
 	struct threads_table_el *tt_el = this->threads_table;
 
@@ -417,7 +358,7 @@ static int ttable_get_empty_slot(struct te_status_t *this)
 
 	/*
 	 * else, we run out of table without finding an index
-	 * => we expand the table
+	 * => we expand the table:
 	 */
 
 	struct threads_table_el *new_chunk;
@@ -433,33 +374,29 @@ static int ttable_get_empty_slot(struct te_status_t *this)
 
 	this->threads_table_size += NCT_ALLOC_CHUNK_SIZE;
 
-	/* Link all new elements together */
-	for (int i = 0 ; i < NCT_ALLOC_CHUNK_SIZE - 1; i++) {
-		new_chunk[i].next = &new_chunk[i+1];
-	}
-	new_chunk[NCT_ALLOC_CHUNK_SIZE - 1].next = NULL;
+	ttable_init_elements(new_chunk, NCT_ALLOC_CHUNK_SIZE);
 
 	/* The first newly created entry is good, we return it */
 	return this->threads_table_size - NCT_ALLOC_CHUNK_SIZE;
 }
 
 /**
- * Create a new pthread for the new hosted OS thread.
+ * Create a new pthread for a new hosted OS thread and initialize its NCT status
  *
  * Returns a unique integer thread identifier/index, which should be used
- * to refer to this thread for future calls to the thread emulator.
+ * to refer to this thread in future calls to the thread emulator.
  *
- * It takes as parameter a pointer which will be passed to
+ * It takes as parameter a pointer which will be passed to the
  * function registered in nct_init when the thread is swapped in.
  *
  * Note that the thread is created but not swapped in.
  * The new thread execution will be held until nct_swap_threads()
- * (or nct_first_thread_start()) is called with this newly created
+ * (or nct_first_thread_start()) is called enabling this newly created
  * thread number.
  */
 int nct_new_thread(void *this_arg, void *payload)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el;
 	int t_slot;
 
@@ -470,7 +407,7 @@ int nct_new_thread(void *this_arg, void *payload)
 	tt_el->running = false;
 	tt_el->thead_cnt = this->thread_create_count++;
 	tt_el->payload = payload;
-	tt_el->ts_status = this;
+	tt_el->nct_status = this;
 	tt_el->thread_idx = t_slot;
 
 	NSI_SAFE_CALL(pthread_create(&tt_el->thread,
@@ -479,10 +416,7 @@ int nct_new_thread(void *this_arg, void *payload)
 				  (void *)tt_el));
 
 	NCT_DEBUG("%s created thread [%i] %i [%lu]\n",
-		__func__,
-		tt_el->thead_cnt,
-		t_slot,
-		tt_el->thread);
+		  __func__, tt_el->thead_cnt, t_slot, tt_el->thread);
 
 	return t_slot;
 }
@@ -495,12 +429,12 @@ int nct_new_thread(void *this_arg, void *payload)
  * threading emulator when interacting with this particular instance.
  *
  * The input fptr is a pointer to the hosted OS function
- * to be called each time a thread which is created on its request
+ * to be called the first time a thread which is created on its request
  * with nct_new_thread() is swapped in (from that thread context)
  */
 void *nct_init(void (*fptr)(void *))
 {
-	struct te_status_t *this;
+	struct nct_status_t *this;
 
 	/*
 	 * Note: This (and the calloc below) won't be free'd by this code
@@ -509,7 +443,7 @@ void *nct_init(void (*fptr)(void *))
 	 * If you got here due to valgrind's leak report, please use the
 	 * provided valgrind suppression file valgrind.supp
 	 */
-	this = calloc(1, sizeof(struct te_status_t));
+	this = calloc(1, sizeof(struct nct_status_t));
 	if (this == NULL) { /* LCOV_EXCL_BR_LINE */
 		nsi_print_error_and_exit(NO_MEM_ERR); /* LCOV_EXCL_LINE */
 	}
@@ -518,29 +452,21 @@ void *nct_init(void (*fptr)(void *))
 	this->thread_create_count = 0;
 	this->currently_allowed_thread = -1;
 
-	NSI_SAFE_CALL(pthread_cond_init(&this->cond_threads, NULL));
-	NSI_SAFE_CALL(pthread_mutex_init(&this->mtx_threads, NULL));
-
-	this->threads_table = calloc(NCT_ALLOC_CHUNK_SIZE,
-				sizeof(struct threads_table_el));
+	this->threads_table = calloc(NCT_ALLOC_CHUNK_SIZE, sizeof(struct threads_table_el));
 	if (this->threads_table == NULL) { /* LCOV_EXCL_BR_LINE */
 		nsi_print_error_and_exit(NO_MEM_ERR); /* LCOV_EXCL_LINE */
 	}
 
 	this->threads_table_size = NCT_ALLOC_CHUNK_SIZE;
 
-	for (int i = 0 ; i < NCT_ALLOC_CHUNK_SIZE - 1; i++) {
-		this->threads_table[i].next = &this->threads_table[i+1];
-	}
-	this->threads_table[NCT_ALLOC_CHUNK_SIZE - 1].next = NULL;
-
-	NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_threads));
+	ttable_init_elements(this->threads_table, NCT_ALLOC_CHUNK_SIZE);
 
 	return (void *)this;
 }
 
 /**
- * Free any allocated memory by the threading emulator and clean up.
+ * Free allocated memory by the threading emulator and clean up ordering all managed
+ * threads to abort.
  * Note that this function cannot be called from a SW thread
  * (the CPU is assumed halted. Otherwise we would cancel ourselves)
  *
@@ -549,12 +475,14 @@ void *nct_init(void (*fptr)(void *))
  * a join without detaching them, but that could lead to locks in some
  * convoluted cases; as a call to this function can come due to a hosted OS
  * assert or other error termination, we better do not assume things are working fine.
+ * This also means we do not clean all memory used by this NCT instance, as those
+ * threads need to access it still.
  * => we prefer the supposed memory leak report from valgrind, and ensure we
  * will not hang.
  */
 void nct_clean_up(void *this_arg)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 
 	if (!this || !this->threads_table) { /* LCOV_EXCL_BR_LINE */
 		return; /* LCOV_EXCL_LINE */
@@ -562,32 +490,31 @@ void nct_clean_up(void *this_arg)
 
 	this->terminate = true;
 
-#if (NCT_ENABLE_CANCEL)
+#if NCT_ENABLE_CANCEL
+	if (this->all_threads_released) {
+		return;
+	}
+	this->all_threads_released = true;
+
 	struct threads_table_el *tt_el = this->threads_table;
 
 	for (int i = 0; i < this->threads_table_size; i++, tt_el = tt_el->next) {
 		if (tt_el->state != USED) {
 			continue;
 		}
-
-		/* LCOV_EXCL_START */
-		if (pthread_cancel(tt_el->thread)) {
-			nsi_print_warning(
-				PREFIX"cleanup: could not stop thread %i\n",
-				i);
-		}
-		/* LCOV_EXCL_STOP */
+		NSI_SAFE_CALL(sem_post(&tt_el->sema));
 	}
 #endif
+
 	/*
 	 * This is the cleanup we do not do:
+	 * for all threads
+	 *   sem_destroy(&tt_el->sema);
 	 *
 	 * free(this->threads_table);
 	 *   Including all chunks
 	 * this->threads_table = NULL;
 	 *
-	 * (void)pthread_cond_destroy(&this->cond_threads);
-	 * (void)pthread_mutex_destroy(&this->mtx_threads);
 	 *
 	 * free(this);
 	 */
@@ -599,40 +526,30 @@ void nct_clean_up(void *this_arg)
  * being terminated some time later:
  *   If the thread is marking itself as aborting, as soon as it is swapped out
  *   by the hosted (embedded) OS
- *   If it is marking another thread, at some non-specific time in the future
+ *   If it is marking another thread, at some non-specific time soon in the future
  *   (But note that no embedded part of the aborted thread will execute anymore)
  *
  * *  thread_idx : The thread identifier as provided during creation (return from nct_new_thread())
  */
 void nct_abort_thread(void *this_arg, int thread_idx)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
 
 	if (thread_idx == this->currently_allowed_thread) {
-		NCT_DEBUG("Thread [%i] %i: %s Marked myself "
-			"as aborting\n",
-			tt_el->thead_cnt,
-			thread_idx,
-			__func__);
+		NCT_DEBUG("Thread [%i] %i: %s Marked myself as aborting\n",
+			  tt_el->thead_cnt, thread_idx, __func__);
+		tt_el->state = ABORTING;
 	} else {
 		if (tt_el->state != USED) { /* LCOV_EXCL_BR_LINE */
 			/* The thread may have been already aborted before */
 			return; /* LCOV_EXCL_LINE */
 		}
 
-		NCT_DEBUG("Aborting not scheduled thread [%i] %i\n",
-			tt_el->thead_cnt,
-			thread_idx);
+		NCT_DEBUG("Aborting not scheduled thread [%i] %i\n", tt_el->thead_cnt, thread_idx);
+		tt_el->state = ABORTING;
+		NSI_SAFE_CALL(sem_post(&tt_el->sema));
 	}
-	tt_el->state = ABORTING;
-	/*
-	 * Note: the native thread will linger in RAM until it catches the
-	 * mutex or awakes on the condition.
-	 * Note that even if we would pthread_cancel() the thread here, that
-	 * would be the case, but with a pthread_cancel() the mutex state would
-	 * be uncontrolled
-	 */
 }
 
 /*
@@ -643,7 +560,7 @@ void nct_abort_thread(void *this_arg, int thread_idx)
  */
 int nct_get_unique_thread_id(void *this_arg, int thread_idx)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
 
 	return tt_el->thead_cnt;
@@ -651,7 +568,7 @@ int nct_get_unique_thread_id(void *this_arg, int thread_idx)
 
 int nct_thread_name_set(void *this_arg, int thread_idx, const char *str)
 {
-	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
 
 	return pthread_setname_np(tt_el->thread, str);
@@ -698,17 +615,4 @@ int nct_thread_name_set(void *this_arg, int thread_idx, const char *str)
  * Some other code will never or only very rarely trigger and is therefore
  * excluded with LCOV_EXCL_LINE
  *
- *
- * Notes about (memory) cleanup:
- *
- * Note.c1:
- *
- * In some very rare cases in very loaded machines, a race in the glibc pthread_cancel()
- * seems to be triggered.
- * In this, the cancelled thread cleanup overtakes the pthread_cancel() code, and frees the
- * pthread structure before pthread_cancel() has finished, resulting in a dereference into already
- * free'd memory, and therefore a segfault.
- * Calling pthread_cancel() during cleanup is not required beyond preventing a valgrind
- * memory leak report (all threads will be canceled immediately on exit).
- * Therefore we do not do this, to avoid this very rare crashes.
  */

@@ -114,8 +114,6 @@ static void print_invalid_opt_error(char *argv)
  */
 void nsi_handle_cmd_line(int argc, char *argv[])
 {
-	int i;
-
 	nsi_add_testargs_option();
 
 	s_argv = argv;
@@ -130,9 +128,9 @@ void nsi_handle_cmd_line(int argc, char *argv[])
 		}
 	}
 
-	for (i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 
-		if ((nsi_cmd_is_option(argv[i], "testargs", 0))) {
+		if (nsi_cmd_is_option(argv[i], "testargs", 0)) {
 			test_argc = argc - i - 1;
 			test_argv = &argv[i+1];
 			break;
