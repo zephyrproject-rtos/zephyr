@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
 		zephyr,display = &ltdc;
+		zephyr,touch = &display_ctp;
 	};
 
 	psram: memory@90000000 {
@@ -202,6 +203,14 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	status = "okay";
+
+	display_ctp: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		status = "okay";
+	};
 };
 
 &xspi1 {
