@@ -2163,6 +2163,7 @@ Release Notes:
     - loicpoulain
     - josuah
     - ngphibang
+    - avolmat-st
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
