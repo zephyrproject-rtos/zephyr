@@ -9,6 +9,7 @@
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
 
+static uint32_t reset_cause;
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct mspm0_device_id {
@@ -39,8 +40,14 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	uint32_t reason = DL_SYSCTL_getResetCause();
+	uint32_t reason;
 
+	if (reset_cause != 0) {
+		*cause = reset_cause;
+		return 0;
+	}
+
+	reason = DL_SYSCTL_getResetCause();
 	switch (reason) {
 	case DL_SYSCTL_RESET_CAUSE_POR_HW_FAILURE:
 		*cause = RESET_POR;
@@ -95,6 +102,15 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	default:
 		break;
 	}
+
+	reset_cause = *cause;
+
+	return 0;
+}
+
+int z_impl_hwinfo_clear_reset_cause(void)
+{
+	reset_cause = 0;
 
 	return 0;
 }
