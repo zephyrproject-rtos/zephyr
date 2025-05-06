@@ -42,8 +42,6 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_XSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
-#define STM32_XSPI_DLYB_BYPASSED DT_PROP(STM32_XSPI_NODE, dlyb_bypass)
-
 #define STM32_XSPI_USE_DMA DT_NODE_HAS_PROP(STM32_XSPI_NODE, dmas)
 
 #if STM32_XSPI_USE_DMA
@@ -2149,17 +2147,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	if (dev_cfg->data_rate == XSPI_DTR_TRANSFER) {
 		dev_data->hxspi.Init.MemoryType = HAL_XSPI_MEMTYPE_MACRONIX;
 		dev_data->hxspi.Init.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE;
-	} else {
-
 	}
-#if defined(XSPI_DCR1_DLYBYP)
-#if STM32_XSPI_DLYB_BYPASSED
-	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_BYPASS;
-#else
-	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
-#endif /* STM32_XSPI_DLYB_BYPASSED */
-#endif /* XSPI_DCR1_DLYBYP */
-
 
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
 		LOG_ERR("XSPI Init failed");
@@ -2482,6 +2470,11 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 					: HAL_XSPI_CSSEL_NCS2),
 #endif
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
+#if defined(XSPI_DCR1_DLYBYP)
+			.DelayBlockBypass = (DT_PROP(STM32_XSPI_NODE, dlyb_bypass)
+					? HAL_XSPI_DELAY_BLOCK_BYPASS
+					: HAL_XSPI_DELAY_BLOCK_ON),
+#endif /* XSPI_DCR1_DLYBYP */
 #if defined(XSPI_DCR3_MAXTRAN)
 			.MaxTran = 0,
 #endif /* XSPI_DCR3_MAXTRAN */
