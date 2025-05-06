@@ -25,53 +25,53 @@ void test_fs_mount_flags(void)
 	mp->flags |= FS_MOUNT_FLAG_NO_FORMAT;
 	ret = fs_mount(mp);
 	TC_PRINT("Mount unformatted with FS_MOUNT_FLAG_NO_FORMAT set\n");
-	zassert_false(ret == 0, "Expected failure", ret);
+	zassert_false(ret == 0, "Expected failure got %d", ret);
 
 	/* Test FS_MOUNT_FLAG_READ_ONLY on non-formatted volume*/
 	mp->flags = FS_MOUNT_FLAG_READ_ONLY;
 	ret = fs_mount(mp);
 	TC_PRINT("Mount unformatted with FS_MOUNT_FLAG_READ_ONLY set\n");
-	zassert_false(ret == 0, "Expected failure", ret);
+	zassert_false(ret == 0, "Expected failure got %d", ret);
 
 	/* Format volume and add some files/dirs to check read-only flag */
 	mp->flags = 0;
 	ret = fs_mount(mp);
 	TC_PRINT("Mount again to format volume\n");
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 	TC_PRINT("Create some file\n");
 	ret = fs_open(&fs, "/sml/some", FS_O_CREATE);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 	fs_close(&fs);
 	TC_PRINT("Create other directory\n");
 	ret = fs_mkdir("/sml/other");
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 
 	ret = fs_unmount(mp);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 
 	/* Check fs operation on volume mounted with FS_MOUNT_FLAG_READ_ONLY */
 	mp->flags = FS_MOUNT_FLAG_READ_ONLY;
 	TC_PRINT("Mount as read-only\n");
 	ret = fs_mount(mp);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 
 	/* Attempt creating new file */
 	ret = fs_open(&fs, "/sml/nosome", FS_O_CREATE);
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_mkdir("/sml/another");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_rename("/sml/some", "/sml/nosome");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_unlink("/sml/some");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_open(&fs, "/sml/other", FS_O_CREATE);
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_open(&fs, "/sml/some", FS_O_RDWR);
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_open(&fs, "/sml/some", FS_O_READ);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 	fs_close(&fs);
 
 	ret = fs_unmount(mp);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 }

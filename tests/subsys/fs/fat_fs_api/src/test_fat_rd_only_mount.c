@@ -20,8 +20,7 @@ static void test_prepare(void)
 
 	fs_file_t_init(&fs);
 	zassert_equal(fs_mount(&fatfs_mnt), 0);
-	zassert_equal(fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_CREATE),
-		      0, NULL);
+	zassert_equal(fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_CREATE), 0);
 	zassert_equal(fs_close(&fs), 0);
 	zassert_equal(fs_unmount(&fatfs_mnt), 0);
 }
@@ -41,21 +40,21 @@ static void test_ops_on_rd(void)
 	fatfs_mnt.flags = FS_MOUNT_FLAG_READ_ONLY;
 	TC_PRINT("Mount as read-only\n");
 	ret = fs_mount(&fatfs_mnt);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 
 	/* Attempt creating new file */
 	ret = fs_open(&fs, FATFS_MNTP"/nosome", FS_O_CREATE);
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_mkdir(FATFS_MNTP"/another");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_rename(FATFS_MNTP"/testfile.txt", FATFS_MNTP"/bestfile.txt");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_unlink(FATFS_MNTP"/testfile.txt");
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_RDWR);
-	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
+	zassert_equal(ret, -EROFS, "Expected EROFS got %d", ret);
 	ret = fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_READ);
-	zassert_equal(ret, 0, "Expected success", ret);
+	zassert_equal(ret, 0, "Expected success got %d", ret);
 	fs_close(&fs);
 }
 
