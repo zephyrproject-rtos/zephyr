@@ -530,6 +530,9 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			total_received += received;
 			offset += received;
 
+			/* Initialize the data length with the received data length. */
+			req->internal.response.data_len = offset;
+
 			processed = http_parser_execute(
 				&req->internal.parser, &req->internal.parser_settings,
 				req->internal.response.recv_buf, offset);
@@ -547,7 +550,10 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 				goto error;
 			}
 
-			req->internal.response.data_len += processed;
+			/* Update the response data length with the actually
+			 * processed bytes.
+			 */
+			req->internal.response.data_len = processed;
 			offset -= processed;
 
 			if (offset >= req->internal.response.recv_buf_len) {
