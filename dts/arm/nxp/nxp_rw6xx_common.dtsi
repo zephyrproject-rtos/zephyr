@@ -50,8 +50,8 @@
 			suspend: suspend {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <500>;
-				exit-latency-us = <120>;
+				min-residency-us = <600>;
+				exit-latency-us = <0>;
 				deep-sleep-config = <0x180000>,
 							<0x0>,
 							<0x4>,
@@ -63,8 +63,8 @@
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
 				power-state-name = "standby";
 				/* TODO: Revisit latency numbers */
-				min-residency-us = <5000>;
-				exit-latency-us = <1000>;
+				min-residency-us = <6000>;
+				exit-latency-us = <0>;
 				deep-sleep-config = <0x180000>,
 							<0x0>,
 							<0x4>,
