@@ -464,6 +464,12 @@ static void mspm0_cc_isr(const struct device *dev)
 
 	period = ((data->last_sample - cc1 + UINT16_MAX) % UINT16_MAX);
 	pulse = ((data->last_sample - cc0 + UINT16_MAX) % UINT16_MAX);
+
+	/* fixme: random intermittent cc0 is greater than cc1 due to capture block error */
+	if (pulse > period) {
+		pulse -= period;
+	}
+
 	if (data->callback && period) {
 		data->callback(dev, 0, period, pulse, 0, data->user_data);
 	}
