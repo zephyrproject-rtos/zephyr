@@ -178,41 +178,41 @@ ZTEST(integration, test_basic)
 	struct action_msg start = {true};
 	struct net_log_msg *lm = (struct net_log_msg *)zbus_chan_const_msg(&net_log_chan);
 
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
 
 	k_msleep(200);
 
-	zassert_equal(count_callback, 1, NULL);
-	zassert_equal(count_core, 1, NULL);
-	zassert_equal(count_net, 1, NULL);
-	zassert_equal(count_peripheral, 1, NULL);
-	zassert_equal(count_net_log, 1, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
+	zassert_equal(count_callback, 1);
+	zassert_equal(count_core, 1);
+	zassert_equal(count_net, 1);
+	zassert_equal(count_peripheral, 1);
+	zassert_equal(count_net_log, 1);
+	zassert_equal(count_net, lm->count_net);
 
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
-
-	k_msleep(200);
-
-	zassert_equal(count_callback, 2, NULL);
-	zassert_equal(count_core, 2, NULL);
-	zassert_equal(count_net, 2, NULL);
-	zassert_equal(count_peripheral, 2, NULL);
-	zassert_equal(count_net_log, 2, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
-
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
 
 	k_msleep(200);
 
-	zassert_equal(count_callback, 3, NULL);
-	zassert_equal(count_core, 3, NULL);
-	zassert_equal(count_net, 3, NULL);
-	zassert_equal(count_peripheral, 3, NULL);
-	zassert_equal(count_net_log, 3, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
+	zassert_equal(count_callback, 2);
+	zassert_equal(count_core, 2);
+	zassert_equal(count_net, 2);
+	zassert_equal(count_peripheral, 2);
+	zassert_equal(count_net_log, 2);
+	zassert_equal(count_net, lm->count_net);
+
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
+
+	k_msleep(200);
+
+	zassert_equal(count_callback, 3);
+	zassert_equal(count_core, 3);
+	zassert_equal(count_net, 3);
+	zassert_equal(count_peripheral, 3);
+	zassert_equal(count_net_log, 3);
+	zassert_equal(count_net, lm->count_net);
 
 	zassert_equal(pkt.total, 6, "result was %d", pkt.total);
-	zassert_equal(pkt.total, lm->pkt_total, NULL);
+	zassert_equal(pkt.total, lm->pkt_total);
 }
 
 ZTEST(integration, test_channel_set_enable)
@@ -220,60 +220,60 @@ ZTEST(integration, test_channel_set_enable)
 	struct action_msg start = {true};
 	const struct net_log_msg *lm = zbus_chan_const_msg(&net_log_chan);
 
-	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false), NULL);
-	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false), NULL);
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false));
+	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false));
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
 
 	k_msleep(200);
 
-	zassert_equal(count_callback, 0, NULL);
-	zassert_equal(count_core, 0, NULL);
-	zassert_equal(count_peripheral, 0, NULL);
-	zassert_equal(count_net, 0, NULL);
-	zassert_equal(count_net_log, 0, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
+	zassert_equal(count_callback, 0);
+	zassert_equal(count_core, 0);
+	zassert_equal(count_peripheral, 0);
+	zassert_equal(count_net, 0);
+	zassert_equal(count_net_log, 0);
+	zassert_equal(count_net, lm->count_net);
 
-	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false), NULL);
-	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true), NULL);
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
-
-	k_msleep(200);
-
-	zassert_equal(count_callback, 0, NULL);
-	zassert_equal(count_core, 1, NULL);
-	zassert_equal(count_net, 1, NULL);
-	zassert_equal(count_peripheral, 1, NULL);
-	zassert_equal(count_net_log, 1, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
-
-	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true), NULL);
-	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false), NULL);
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_obs_set_enable(&critical_lis, false));
+	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true));
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
 
 	k_msleep(200);
 
-	zassert_equal(count_callback, 1, NULL);
-	zassert_equal(count_core, 1, NULL);
-	zassert_equal(count_net, 1, NULL);
-	zassert_equal(count_peripheral, 1, NULL);
-	zassert_equal(count_net_log, 1, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
+	zassert_equal(count_callback, 0);
+	zassert_equal(count_core, 1);
+	zassert_equal(count_net, 1);
+	zassert_equal(count_peripheral, 1);
+	zassert_equal(count_net_log, 1);
+	zassert_equal(count_net, lm->count_net);
 
-	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true), NULL);
-	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true), NULL);
-	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true));
+	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, false));
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
 
 	k_msleep(200);
 
-	zassert_equal(count_callback, 2, NULL);
-	zassert_equal(count_core, 2, NULL);
-	zassert_equal(count_peripheral, 2, NULL);
-	zassert_equal(count_net, 2, NULL);
-	zassert_equal(count_net_log, 2, NULL);
-	zassert_equal(count_net, lm->count_net, NULL);
+	zassert_equal(count_callback, 1);
+	zassert_equal(count_core, 1);
+	zassert_equal(count_net, 1);
+	zassert_equal(count_peripheral, 1);
+	zassert_equal(count_net_log, 1);
+	zassert_equal(count_net, lm->count_net);
+
+	zassert_equal(0, zbus_obs_set_enable(&critical_lis, true));
+	zassert_equal(0, zbus_obs_set_enable(&peripheral_sub, true));
+	zassert_equal(0, zbus_chan_pub(&start_measurement_chan, &start, K_MSEC(200)));
+
+	k_msleep(200);
+
+	zassert_equal(count_callback, 2);
+	zassert_equal(count_core, 2);
+	zassert_equal(count_peripheral, 2);
+	zassert_equal(count_net, 2);
+	zassert_equal(count_net_log, 2);
+	zassert_equal(count_net, lm->count_net);
 
 	zassert_equal(pkt.total, 4, "result was %d", pkt.total);
-	zassert_equal(pkt.total, lm->pkt_total, NULL);
+	zassert_equal(pkt.total, lm->pkt_total);
 }
 
 static void greedy_thread_entry(void *p1, void *p2, void *p3)
@@ -282,7 +282,7 @@ static void greedy_thread_entry(void *p1, void *p2, void *p3)
 
 	zassert_equal(err, 0, "Could not claim the channel");
 	k_msleep(2000);
-	zassert_equal(0, zbus_chan_finish(&busy_chan), NULL);
+	zassert_equal(0, zbus_chan_finish(&busy_chan));
 }
 
 K_THREAD_STACK_DEFINE(greedy_thread_stack_area, 1024);
@@ -329,8 +329,8 @@ ZTEST(integration, test_event_dispatcher_queue_timeout)
 	struct action_msg sent = {.status = true};
 	struct action_msg read = {.status = true};
 
-	zassert_equal(0, zbus_obs_set_enable(&core_sub, false), NULL);
-	zassert_equal(0, zbus_obs_set_enable(&net_sub, false), NULL);
+	zassert_equal(0, zbus_obs_set_enable(&core_sub, false));
+	zassert_equal(0, zbus_obs_set_enable(&net_sub, false));
 	int err = zbus_chan_pub(&start_measurement_chan, &sent, K_MSEC(100));
 
 	zassert_equal(err, 0, "Could not pub the channel");
@@ -347,8 +347,8 @@ ZTEST(integration, test_event_dispatcher_queue_timeout)
 		      "Read status must be false. The notification was not sent, but "
 		      "the channel actually changed");
 	k_msleep(500);
-	zassert_equal(count_callback, 3, NULL);
-	zassert_equal(count_peripheral, 2, NULL);
+	zassert_equal(count_callback, 3);
+	zassert_equal(count_peripheral, 2);
 }
 
 ZTEST_SUITE(integration, NULL, NULL, context_reset, NULL, NULL);

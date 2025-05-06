@@ -115,9 +115,9 @@ void mkfs_custom_config(struct ext2_cfg *cfg)
 			sbuf.f_bsize, sbuf.f_frsize, sbuf.f_blocks, sbuf.f_bfree);
 
 	zassert_equal(sbuf.f_bsize, cfg->block_size,
-			"Wrong block size %lu (expected %zu)", sbuf.f_bsize, cfg->block_size);
+			"Wrong block size %lu (expected %u)", sbuf.f_bsize, cfg->block_size);
 	zassert_equal(sbuf.f_frsize, cfg->block_size,
-			"Wrong frag size %lu (expected %zu)", sbuf.f_frsize, cfg->block_size);
+			"Wrong frag size %lu (expected %u)", sbuf.f_frsize, cfg->block_size);
 	zassert_equal(sbuf.f_blocks, partition_size / cfg->block_size,
 			"Wrong block count %lu (expected %zu)",
 			sbuf.f_blocks, partition_size / cfg->block_size);

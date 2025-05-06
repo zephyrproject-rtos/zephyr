@@ -187,15 +187,15 @@ static void thread4(void *arg)
 	/* Nothing will trigger FLAG1 to this thread, so the following should timeout */
 	flags = osThreadFlagsWait(FLAG1, osFlagsWaitAny, 0);
 	zassert_equal(flags, osFlagsErrorTimeout,
-		      "ThreadFlagsWait unexpected found 0x%x flags were set");
+		      "ThreadFlagsWait unexpected found 0x%x flags were set", flags);
 
 	flags = osThreadFlagsWait(FLAG1, osFlagsWaitAll, TIMEOUT_TICKS / 10);
 	zassert_equal(flags, osFlagsErrorTimeout,
-		      "ThreadFlagsWait unexpected found 0x%x flags were set");
+		      "ThreadFlagsWait unexpected found 0x%x flags were set", flags);
 
 	flags = osThreadFlagsWait(FLAG1, osFlagsWaitAny | osFlagsNoClear, 0);
 	zassert_equal(flags, osFlagsErrorTimeout,
-		      "ThreadFlagsWait unexpected found 0x%x flags were set");
+		      "ThreadFlagsWait unexpected found 0x%x flags were set", flags);
 
 	/* Nothing will trigger FLAG1 to this thread, so it should remain blocked here */
 	m_thread_4_is_blocked = true;

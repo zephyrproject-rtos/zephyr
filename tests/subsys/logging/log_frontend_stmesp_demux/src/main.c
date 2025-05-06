@@ -45,8 +45,9 @@ static void claim_packet(uint16_t exp_m_idx, uint64_t exp_ts, uint16_t exp_len, 
 	}
 
 	zassert_equal(packet.generic_packet->type, LOG_FRONTEND_STMESP_DEMUX_TYPE_LOG);
-	zassert_equal(exp_ts, packet.log->timestamp, "%d: Unexpected ts %llu/%x (exp:%llu/%x)",
-		      line, packet.log->timestamp, packet.log->timestamp, exp_ts, exp_ts);
+	zassert_equal(exp_ts, packet.log->timestamp, "%d: Unexpected ts %llu/%llx (exp:%llu/%llx)",
+		      line, (uint64_t)packet.log->timestamp, (uint64_t)packet.log->timestamp,
+		      exp_ts, exp_ts);
 	zassert_equal(exp_m_idx, ids[packet.log->hdr.major], "%d: Unexpected major:%d (exp:%d)",
 		      line, packet.log->hdr.major, exp_m_idx);
 	zassert_equal(exp_len, packet.log->hdr.total_len, "%d: Unexpected len:%d (exp:%d)", line,
@@ -70,8 +71,9 @@ static void claim_trace_point(uint16_t exp_m_idx, uint16_t exp_id, uint64_t exp_
 
 	zassert_equal(packet.generic_packet->type, LOG_FRONTEND_STMESP_DEMUX_TYPE_TRACE_POINT);
 	zassert_equal(exp_ts, packet.trace_point->timestamp,
-		      "%d: Unexpected ts %llu/%x (exp:%llu/%x)", line,
-		      packet.trace_point->timestamp, packet.trace_point->timestamp, exp_ts, exp_ts);
+		      "%d: Unexpected ts %llu/%llx (exp:%llu/%llx)", line,
+		      (uint64_t)packet.trace_point->timestamp,
+		      (uint64_t)packet.trace_point->timestamp, exp_ts, exp_ts);
 	zassert_equal(exp_id, packet.trace_point->id, "%d: Unexpected id:%d (exp:%d)", line,
 		      packet.trace_point->id, exp_id);
 	zassert_equal(exp_m_idx, ids[packet.trace_point->major],
@@ -97,8 +99,10 @@ static void claim_hw_event(uint8_t exp_evt, uint64_t exp_ts, int line)
 	union log_frontend_stmesp_demux_packet packet = log_frontend_stmesp_demux_claim();
 
 	zassert_equal(packet.generic_packet->type, LOG_FRONTEND_STMESP_DEMUX_TYPE_HW_EVENT);
-	zassert_equal(exp_ts, packet.hw_event->timestamp, "%d: Unexpected ts %llu/%x (exp:%llu/%x)",
-		      line, packet.hw_event->timestamp, packet.hw_event->timestamp, exp_ts, exp_ts);
+	zassert_equal(exp_ts, packet.hw_event->timestamp,
+		      "%d: Unexpected ts %llu/%llx (exp:%llu/%llx)",
+		      line, (uint64_t)packet.hw_event->timestamp,
+		      (uint64_t)packet.hw_event->timestamp, exp_ts, exp_ts);
 	zassert_equal(exp_evt, packet.hw_event->evt, "%d: Unexpected id:%d (exp:%d)", line,
 		      packet.hw_event->evt, exp_evt);
 
@@ -204,7 +208,7 @@ static void demux_init(void)
 	int err;
 
 	err = log_frontend_stmesp_demux_init(&config);
-	zassert_equal(err, 0, NULL);
+	zassert_equal(err, 0);
 }
 
 ZTEST(log_frontend_stmesp_demux_test, test_init)
@@ -216,11 +220,11 @@ ZTEST(log_frontend_stmesp_demux_test, test_init)
 	int err;
 
 	err = log_frontend_stmesp_demux_init(&config);
-	zassert_equal(err, -EINVAL, NULL);
+	zassert_equal(err, -EINVAL);
 
 	config.m_ids_cnt = 8;
 	err = log_frontend_stmesp_demux_init(&config);
-	zassert_equal(err, 0, NULL);
+	zassert_equal(err, 0);
 }
 
 ZTEST(log_frontend_stmesp_demux_test, test_basic)
@@ -245,7 +249,7 @@ ZTEST(log_frontend_stmesp_demux_test, test_basic)
 
 	DEMUX_EMPTY();
 
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 }
 
 ZTEST(log_frontend_stmesp_demux_test, test_overwrite)
@@ -260,13 +264,13 @@ ZTEST(log_frontend_stmesp_demux_test, test_overwrite)
 	for (i = 0; i < (CONFIG_LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE / total_wlen); i++) {
 		write_packet(M_ID0, 1, ts + i, len, i);
 	}
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 
 	write_packet(M_ID0, 1, ts + i, len, i);
 
 	uint32_t dropped = log_frontend_stmesp_demux_get_dropped();
 
-	zassert_true(dropped >= 1, NULL);
+	zassert_true(dropped >= 1);
 
 	for (i = dropped; i < (CONFIG_LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE / total_wlen) + 1;
 	     i++) {
@@ -339,17 +343,17 @@ ZTEST(log_frontend_stmesp_demux_test, test_drop_too_many_active)
 	PACKET_START(&m_id1, &c_id0, hdr.raw, ts + 2, 0);
 	packet_data(NULL, NULL, data, 1);
 
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 	/* Starting forth packet results in dropping. */
 	PACKET_START(&m_id1, &c_id1, hdr.raw, ts + 3, -ENOMEM);
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 1, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 1);
 
 	/* Complete first packet. */
 	packet_data(&m_id0, &c_id0, &data[1], 3);
 	packet_end(NULL, NULL);
 
 	PACKET_START(&m_id1, &c_id1, hdr.raw, ts + 3, 0);
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 }
 
 ZTEST(log_frontend_stmesp_demux_test, test_max_utilization)
@@ -359,20 +363,20 @@ ZTEST(log_frontend_stmesp_demux_test, test_max_utilization)
 
 	if (!IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION)) {
 		utilization = log_frontend_stmesp_demux_max_utilization();
-		zassert_equal(utilization, -ENOTSUP, NULL);
+		zassert_equal(utilization, -ENOTSUP);
 		return;
 	}
 
 	demux_init();
 	utilization = log_frontend_stmesp_demux_max_utilization();
-	zassert_equal(utilization, 0, NULL);
+	zassert_equal(utilization, 0);
 
 	write_packet(M_ID0, 0, 1, len, 1);
 	utilization = log_frontend_stmesp_demux_max_utilization();
 
 	int exp_utilization = TOTAL_LEN(len);
 
-	zassert_equal(utilization, exp_utilization, NULL);
+	zassert_equal(utilization, exp_utilization);
 }
 
 ZTEST(log_frontend_stmesp_demux_test, test_trace_point)
@@ -465,7 +469,7 @@ ZTEST(log_frontend_stmesp_demux_test, test_reset)
 	packet_end(NULL, NULL);
 
 	log_frontend_stmesp_demux_reset();
-	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 2, NULL);
+	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 2);
 
 	CLAIM_PACKET(M_ID1, ts + 2, len, 1);
 	DEMUX_EMPTY();

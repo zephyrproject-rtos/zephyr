@@ -103,7 +103,7 @@ ZTEST(test_log_cache, test_log_cache_basic)
 	};
 
 	err = log_cache_init(&cache, &config);
-	zassert_equal(err, 0, NULL);
+	zassert_equal(err, 0);
 
 	/* Try to find id0, cache is empty */
 	cache_get(&cache, id0.raw, &buf, false, __LINE__);
