@@ -56,4 +56,20 @@ config UDC_AMBIQ_PIO_MODE
 	  Select this option when cache coherency handling is to be avoided.
 endchoice
 
+config UDC_AMBIQ_DEB_ENABLE
+	hex "EP Double Buffer Enable"
+	default 0x0000
+	depends on SOC_SERIES_APOLLO5X
+	help
+	  Double Endpoint Buffer acceleration (DEB) is doubles an EP's FIFO size so
+	  that USB transfer could continue to happen while waiting for DMA/CPU to
+	  load/unload data from the EP FIFO. This hex value is a bitmap of endpoints
+	  for DEB to be enabled. BIT0-4 represents OUT_EP 1-5, while BIT16-20
+	  represents IN_EP 1-5. Take note that this feature is limited by total EP
+	  FIFO size. Proper calculation should be done before enabling DEB such that
+	  the total usage of FIFO for all endpoint doesn't exceed the FIFO available
+	  on SoC. The list of Soc with its FIFO size is listed below. The FIFO size
+	  here includes 128 bytes required by control endpoints.
+	  - Apollo510: (4096 Bytes FIFO)
+
 endif # UDC_AMBIQ
