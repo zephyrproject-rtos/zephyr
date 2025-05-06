@@ -152,6 +152,10 @@ static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, g
 		DL_GPIO_enableOutput(config->base, BIT(pin));
 		break;
 	case GPIO_DISCONNECTED:
+		if (wakeup != DL_GPIO_WAKEUP_DISABLE) {
+			DL_GPIO_disableWakeUp(config->pincm_lut[pin]);
+		}
+
 		DL_GPIO_disableOutput(config->base, BIT(pin));
 		break;
 	default:
