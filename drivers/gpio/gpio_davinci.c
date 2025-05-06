@@ -33,7 +33,8 @@ LOG_MODULE_REGISTER(gpio_davinci, CONFIG_GPIO_LOG_LEVEL);
 #define GPIO_DAVINCI_DIR_RESET_VAL	(0xFFFFFFFF)
 
 struct gpio_davinci_regs {
-	uint32_t dir;
+	uint32_t UNUSED[4];		/* 0x00-0x0C */
+	uint32_t dir;			/* 0x10 */
 	uint32_t out_data;
 	uint32_t set_data;
 	uint32_t clr_data;
