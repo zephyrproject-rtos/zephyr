@@ -723,6 +723,18 @@ const char *mdm_sim7080_get_imei(void)
 	return mdata.mdm_imei;
 }
 
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+const char *mdm_sim7080_get_iccid(void)
+{
+	return mdata.mdm_iccid;
+}
+#else
+const char *mdm_sim7080_get_iccid(void)
+{
+	return NULL;
+}
+#endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
+
 /*
  * Initializes modem handlers and context.
  * After successful init this function calls
