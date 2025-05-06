@@ -285,11 +285,12 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	if (settings_name_steq(name, "server_addr", &next) && !next) {
-		if (len != sizeof(hb_cfg.server_addr)) {
+		rc = read_cb(cb_arg, &hb_cfg.server_addr, MIN(len, sizeof(hb_cfg.server_addr)));
+		if (strnlen(hb_cfg.server_addr, sizeof(hb_cfg.server_addr)) ==
+		    sizeof(hb_cfg.server_addr)) {
+			memset(hb_cfg.server_addr, 0, sizeof(hb_cfg.server_addr));
 			return -EINVAL;
 		}
-
-		rc = read_cb(cb_arg, &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
 		LOG_DBG("<%s> = %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		if (rc >= 0) {
 			return 0;
@@ -358,7 +359,7 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 	LOG_DBG("export hawkbit settings");
 	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
+	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, strlen(hb_cfg.server_addr) + 1);
 	uint16_t hawkbit_port = atoi(hb_cfg.server_port);
 	(void)cb("hawkbit/server_port", &hawkbit_port, sizeof(hawkbit_port));
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
