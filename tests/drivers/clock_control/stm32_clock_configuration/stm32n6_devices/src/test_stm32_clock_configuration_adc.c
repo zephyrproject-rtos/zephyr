@@ -48,38 +48,38 @@ ZTEST(stm32n6_devices_clocks, test_adc_clk_config)
 		switch (pclken[1].bus) {
 		case STM32_SRC_HCLK1:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_HCLK,
-					"Expected ADC1 src: HCLK1 (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_HCLK, dev_actual_clk_src);
+					"Expected ADC1 src: HCLK1 (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_HCLK, dev_actual_clk_src);
 			break;
 		case STM32_SRC_CKPER:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_CLKP,
-					"Expected ADC1 src: CKPER (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_CLKP, dev_actual_clk_src);
+					"Expected ADC1 src: CKPER (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_CLKP, dev_actual_clk_src);
 			break;
 		case STM32_SRC_IC7:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_IC7,
-					"Expected ADC1 src: IC7 (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_IC7, dev_actual_clk_src);
+					"Expected ADC1 src: IC7 (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_IC7, dev_actual_clk_src);
 			break;
 		case STM32_SRC_IC8:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_IC8,
-					"Expected ADC1 src: IC8 (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_IC8, dev_actual_clk_src);
+					"Expected ADC1 src: IC8 (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_IC8, dev_actual_clk_src);
 			break;
 		case STM32_SRC_MSI:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_MSI,
-					"Expected ADC1 src: MSI (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_MSI, dev_actual_clk_src);
+					"Expected ADC1 src: MSI (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_MSI, dev_actual_clk_src);
 			break;
 		case STM32_SRC_HSI_DIV:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_HSI,
-					"Expected ADC1 src: HSI_DIV (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_HSI, dev_actual_clk_src);
+					"Expected ADC1 src: HSI_DIV (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_HSI, dev_actual_clk_src);
 			break;
 		case STM32_SRC_TIMG:
 			zassert_equal(dev_actual_clk_src, RCC_ADCCLKSOURCE_TIMG,
-					"Expected ADC1 src: TIMG (0x%lx). Actual ADC1 src: 0x%x",
-					RCC_ADCCLKSOURCE_TIMG, dev_actual_clk_src);
+					"Expected ADC1 src: TIMG (0x%x). Actual ADC1 src: 0x%x",
+					(uint32_t)RCC_ADCCLKSOURCE_TIMG, dev_actual_clk_src);
 			break;
 		default:
 			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);

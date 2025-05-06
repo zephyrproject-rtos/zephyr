@@ -389,7 +389,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			"Unexpected distance between reported alarm value(%u) "
 			"and actual counter value (%u), top:%d (processing "
 			"time limit (%d us) might be exceeded?",
-			counter, now, top, processing_limit_us);
+			counter, now, top, (int)processing_limit_us);
 
 	if (user_data) {
 		zassert_true(&cntr_alarm_cfg == user_data,

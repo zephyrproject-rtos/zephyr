@@ -234,18 +234,15 @@ err_exit:
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_add_remove)
 {
-	zassert_equal(test_callback_add_remove(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_add_remove(), TC_PASS);
 }
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_self_remove)
 {
-	zassert_equal(test_callback_self_remove(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_self_remove(), TC_PASS);
 }
 
 ZTEST(gpio_port_cb_mgmt, test_gpio_callback_enable_disable)
 {
-	zassert_equal(test_callback_enable_disable(), TC_PASS,
-		     NULL);
+	zassert_equal(test_callback_enable_disable(), TC_PASS);
 }

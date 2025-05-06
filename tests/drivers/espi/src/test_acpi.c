@@ -21,11 +21,10 @@ ZTEST(espi, test_acpi_shared_memory)
 	zassert_ok(espi_config(espi_dev, &cfg));
 
 	host_shm = emul_espi_host_get_acpi_shm(espi_dev);
-	zassert_not_equal(host_shm, 0, NULL);
+	zassert_not_equal(host_shm, 0);
 
 	zassert_ok(espi_read_lpc_request(espi_dev, EACPI_GET_SHARED_MEMORY,
-					 (uint32_t *)&peripheral_shm),
-		   NULL);
+					 (uint32_t *)&peripheral_shm));
 
 	zassert_equal(host_shm, peripheral_shm);
 }

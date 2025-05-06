@@ -47,7 +47,7 @@ ZTEST(bbram, test_read_write)
 	/* Set and verify content. */
 	zassert_ok(bbram_write(dev, 0, BBRAM_SIZE, expected));
 	zassert_ok(bbram_read(dev, 0, BBRAM_SIZE, buffer));
-	zassert_mem_equal(buffer, expected, BBRAM_SIZE, NULL);
+	zassert_mem_equal(buffer, expected, BBRAM_SIZE);
 }
 
 ZTEST(bbram, test_set_invalid)

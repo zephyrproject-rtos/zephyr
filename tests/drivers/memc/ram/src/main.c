@@ -28,7 +28,7 @@ static void test_ram_rw(uint32_t *mem, size_t size)
 
 	/* check that memory contains written range */
 	for (size_t i = 0U; i < size / sizeof(uint32_t); i++) {
-		zassert_equal(mem[i], i, "Unexpected content on byte %ld", i);
+		zassert_equal(mem[i], i, "Unexpected content on byte %zd", i);
 	}
 }
 
