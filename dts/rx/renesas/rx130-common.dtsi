@@ -811,6 +811,18 @@
 			status = "disabled";
 		};
 
+		adc: adc@89000 {
+			compatible = "renesas,rx-adc";
+			interrupts= <102 1>;
+			interrupt-names = "s12adi0";
+			reg = <0x00089000 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xffff00ff>;
+			vref-mv = <3300>;
+			channel-count = <24>;
+			status = "disabled";
+		};
+
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
 			reg = <0xFFFFFF80 0x0F>;
