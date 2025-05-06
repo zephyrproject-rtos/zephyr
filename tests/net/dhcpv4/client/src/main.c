@@ -234,6 +234,9 @@ struct dhcp_msg {
 	uint8_t type;
 };
 
+static uint32_t offer_xid;
+static uint32_t request_xid;
+
 static struct k_sem test_lock;
 
 #define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
@@ -309,6 +312,8 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	net_pkt_cursor_init(pkt);
 
 	net_ipv4_finalize(pkt, IPPROTO_UDP);
+
+	offer_xid = xid;
 
 	return pkt;
 
@@ -394,6 +399,10 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 
 			if (net_pkt_read_u8(pkt, &msg->type)) {
 				return 0;
+			}
+
+			if (msg->type == NET_DHCPV4_MSG_TYPE_REQUEST) {
+				request_xid = msg->xid;
 			}
 
 			return 1;
@@ -691,6 +700,10 @@ ZTEST(dhcpv4_tests, test_dhcp)
 			zassert_true(false, "Timeout while waiting");
 		}
 	}
+
+	/* Verify that Request xid matched Offer xid. */
+	zassert_equal(offer_xid, request_xid, "Offer/Request xid mismatch, "
+		      "Offer 0x%08x, Request 0x%08x", offer_xid, request_xid);
 }
 
 /**test case main entry */
