@@ -21,7 +21,6 @@
 #include <zephyr/mgmt/hawkbit/hawkbit.h>
 #include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/mgmt/hawkbit/event.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
@@ -75,10 +74,18 @@ static bool hawkbit_initialized;
 
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
+#ifdef CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#define SERVER_ADDR_LEN CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#elif defined(CONFIG_NET_IPV6)
+#define SERVER_ADDR_LEN INET6_ADDRSTRLEN
+#else
+#define SERVER_ADDR_LEN INET_ADDRSTRLEN
+#endif
+
 static struct hawkbit_config {
 	int32_t action_id;
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	char server_addr[CONFIG_DNS_RESOLVER_MAX_QUERY_LEN + 1];
+	char server_addr[SERVER_ADDR_LEN + 1];
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
