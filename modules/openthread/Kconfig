@@ -17,6 +17,22 @@ config OPENTHREAD
 
 if OPENTHREAD
 
+config OPENTHREAD_SYS_INIT
+	bool "Initialize OpenThread stack during system initialization"
+	default y
+	depends on !NET_L2_OPENTHREAD
+	help
+	  This option initializes the OpenThread automatically by calling the openthread_init()
+	  function during system initialization.
+
+config OPENTHREAD_SYS_INIT_PRIORITY
+	int "OpenThread system initialization priority"
+	default 40
+	depends on OPENTHREAD_SYS_INIT
+	help
+	  This option sets the priority of the OpenThread system initialization.
+
+
 choice OPENTHREAD_IMPLEMENTATION
 	prompt "OpenThread origin selection"
 	help

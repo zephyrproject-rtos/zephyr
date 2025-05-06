@@ -482,3 +482,7 @@ void openthread_mutex_unlock(void)
 {
 	(void)k_mutex_unlock(&openthread_lock);
 }
+
+#ifdef CONFIG_OPENTHREAD_SYS_INIT
+SYS_INIT(openthread_init, POST_KERNEL, CONFIG_OPENTHREAD_SYS_INIT_PRIORITY);
+#endif /* CONFIG_OPENTHREAD_SYS_INIT */
