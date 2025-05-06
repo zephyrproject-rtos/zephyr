@@ -617,6 +617,13 @@ Audio
 Other subsystems
 ****************
 
+hawkBit
+=======
+
+* When :kconfig:option:`CONFIG_HAWKBIT_CUSTOM_DEVICE_ID` is enabled, device_id will no longer
+  be prepended with :kconfig:option:`CONFIG_BOARD`. It is the user's responsibility to write a
+  callback that prepends the board name if needed.
+
 Modules
 *******
 
