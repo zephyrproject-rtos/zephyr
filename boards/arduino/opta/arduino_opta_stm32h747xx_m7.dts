@@ -122,3 +122,34 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0x00>;
 	};
 };
+
+&quadspi {
+	pinctrl-0 = < &quadspi_bk1_io0_pd11
+		      &quadspi_bk1_io1_pd12
+		      &quadspi_bk1_io2_pe2
+		      &quadspi_bk1_io3_pd13
+		      &quadspi_bk1_ncs_pg6
+		      &quadspi_clk_pb2 >;
+	pinctrl-names = "default";
+	status = "okay";
+
+	at25sf128a: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = < 0x90000000 DT_SIZE_M(16) >; /* 128 MBits */
+		qspi-max-frequency = <DT_FREQ_M(70)>;
+		status = "okay";
+		spi-bus-width = <2>;
+		st,read-id-dummy-cycles = <16>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = < 1 >;
+			#size-cells = < 1 >;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg=< 0x0 DT_SIZE_K(15872) >;
+			};
+		};
+	};
+};
