@@ -185,21 +185,21 @@ ZTEST(nrf_rtc_timer, test_get_ticks)
 	/* Relative 1ms from now timeout converted to RTC */
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_true((ticks >= exp_ticks) && (ticks <= (exp_ticks + 1)),
-		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
+		     "Unexpected result %d (expected: %d)", ticks, (int)exp_ticks);
 
 	/* Absolute timeout 1ms in the past */
 	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() - K_MSEC(1).ticks));
 	exp_ticks = z_nrf_rtc_timer_read() - K_MSEC(1).ticks;
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_true((ticks >= exp_ticks - 1) && (ticks <= exp_ticks),
-		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
+		     "Unexpected result %d (expected: %d)", ticks, (int)exp_ticks);
 
 	/* Absolute timeout 10ms in the future */
 	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() + K_MSEC(10).ticks));
 	exp_ticks = z_nrf_rtc_timer_read() + K_MSEC(10).ticks;
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_true((ticks >= exp_ticks - 1) && (ticks <= exp_ticks),
-		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
+		     "Unexpected result %d (expected: %d)", ticks, (int)exp_ticks);
 
 	/* too far in the future */
 	t = Z_TIMEOUT_TICKS(sys_clock_tick_get() + 0x01000001);
