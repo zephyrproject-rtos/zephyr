@@ -59,9 +59,9 @@ static void verify_bytes_of_area(uint8_t *data, int cmp_x, int cmp_y, size_t wid
 	zassert_ok(err, "display_read failed");
 
 	if (is_vtiled || is_htiled) {
-		zassert_mem_equal(data, disp_buffer, width * height / 8, NULL);
+		zassert_mem_equal(data, disp_buffer, width * height / 8);
 	} else {
-		zassert_mem_equal(data, disp_buffer, width * height * bpp, NULL);
+		zassert_mem_equal(data, disp_buffer, width * height * bpp);
 	}
 }
 
@@ -205,11 +205,11 @@ ZTEST(display_read_write, test_write_to_buffer_tail)
 	if (is_vtiled || is_htiled) {
 		zassert_mem_equal(data,
 				  disp_buffer + (display_width * display_height / 8 - buf_size),
-				  buf_size, NULL);
+				  buf_size);
 	} else {
 		zassert_mem_equal(data,
 				  disp_buffer + (display_width * display_height * bpp - buf_size),
-				  buf_size, NULL);
+				  buf_size);
 	}
 
 	/* check remaining region still black */
@@ -261,11 +261,11 @@ ZTEST(display_read_write, test_read_does_not_clear_existing_buffer)
 	if (is_vtiled || is_htiled) {
 		zassert_mem_equal(data,
 				  disp_buffer + (display_width * display_height / 8 - buf_size),
-				  buf_size, NULL);
+				  buf_size);
 	} else {
 		zassert_mem_equal(data,
 				  disp_buffer + (display_width * display_height * bpp - buf_size),
-				  buf_size, NULL);
+				  buf_size);
 	}
 
 	/* checking if the content written before reading is kept */
