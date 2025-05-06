@@ -17,7 +17,7 @@ ZTEST(semihost, test_file_ops)
 
 	/* Open in write mode */
 	fd = semihost_open(test_file, SEMIHOST_OPEN_WB);
-	zassert_true(fd > 0, "Bad handle (%d)", fd);
+	zassert_true(fd > 0, "Bad handle (%ld)", fd);
 	zassert_equal(semihost_flen(fd), 0, "File not empty");
 
 	/* Write some data */
@@ -35,12 +35,12 @@ ZTEST(semihost, test_file_ops)
 
 	/* Open the same file again for reading */
 	fd = semihost_open(test_file, SEMIHOST_OPEN_RB);
-	zassert_true(fd > 0, "Bad handle (%d)", fd);
+	zassert_true(fd > 0, "Bad handle (%ld)", fd);
 	zassert_equal(semihost_flen(fd), 2 * sizeof(w_buffer), "Data not preserved");
 
 	/* Check reading data */
 	read = semihost_read(fd, r_buffer, sizeof(r_buffer));
-	zassert_equal(read, sizeof(r_buffer), "Read failed %d", read);
+	zassert_equal(read, sizeof(r_buffer), "Read failed %ld", read);
 	zassert_mem_equal(r_buffer, w_buffer, sizeof(r_buffer), "Data not read");
 	read = semihost_read(fd, r_buffer, sizeof(r_buffer));
 	zassert_equal(read, sizeof(r_buffer), "Read failed");
@@ -63,7 +63,7 @@ ZTEST(semihost, test_file_ops)
 
 	/* Opening again in write mode should erase the file */
 	fd = semihost_open(test_file, SEMIHOST_OPEN_WB);
-	zassert_true(fd > 0, "Bad handle (%d)", fd);
+	zassert_true(fd > 0, "Bad handle (%ld)", fd);
 	zassert_equal(semihost_flen(fd), 0, "File not empty");
 	zassert_equal(semihost_close(fd), 0, "Close failed");
 }
