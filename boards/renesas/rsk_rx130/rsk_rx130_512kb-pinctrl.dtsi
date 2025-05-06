@@ -33,4 +33,12 @@
 			psels = <RX_PSEL(RX_PSEL_P2nPFS_MTIOC1A, 2, 0)>; /* P20 MTIOC1A JA2-PIN22*/
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			/* input */
+			psels = <RX_PSEL(RX_PSEL_ADC, 4, 1)>;
+			renesas,analog-enable;
+		};
+	};
 };
