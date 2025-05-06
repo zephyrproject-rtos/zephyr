@@ -2921,7 +2921,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 	}
 
-next_state:
 	len = pkt ? tcp_data_len(pkt) : 0;
 
 	switch (conn->state) {
@@ -3091,8 +3090,6 @@ next_state:
 	case TCP_ESTABLISHED:
 		/* full-close */
 		if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
-			bool acked = false;
-
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
 				if (verdict == NET_OK) {
@@ -3106,25 +3103,16 @@ next_state:
 			conn_ack(conn, + len + 1);
 			keep_alive_timer_stop(conn);
 
-			if (FL(&fl, &, ACK)) {
-				acked = true;
+			if (FL(&fl, &, ACK) && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
+				uint32_t len_acked = th_ack(th) - conn->seq;
 
-				if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-					uint32_t len_acked = th_ack(th) - conn->seq;
-
-					conn_seq(conn, + len_acked);
-				}
+				conn_seq(conn, len_acked);
 			}
 
-			if (acked) {
-				tcp_out(conn, FIN | ACK);
-				conn_seq(conn, + 1);
-				tcp_setup_last_ack_timer(conn);
-				next = TCP_LAST_ACK;
-			} else {
-				tcp_out(conn, ACK);
-				next = TCP_CLOSE_WAIT;
-			}
+			tcp_out(conn, FIN | ACK);
+			conn_seq(conn, 1);
+			tcp_setup_last_ack_timer(conn);
+			next = TCP_LAST_ACK;
 
 			break;
 		}
@@ -3316,10 +3304,7 @@ next_state:
 
 		break;
 	case TCP_CLOSE_WAIT:
-		tcp_out(conn, FIN | ACK);
-		conn_seq(conn, + 1);
-		next = TCP_LAST_ACK;
-		tcp_setup_last_ack_timer(conn);
+		/* Half-close is not supported, so do nothing here */
 		break;
 	case TCP_LAST_ACK:
 		if (th && FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
@@ -3586,8 +3571,6 @@ out:
 
 			k_sem_give(&conn->connect_sem);
 		}
-
-		goto next_state;
 	}
 
 	if (conn->context) {
