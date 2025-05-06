@@ -63,7 +63,14 @@ static inline int display_setup(const struct device *const display_dev, const ui
 		return ret;
 	}
 
-	return display_blanking_off(display_dev);
+	/* Turn off blanking if driver supports it */
+	ret = display_blanking_off(display_dev);
+	if (ret == -ENOSYS) {
+		LOG_DBG("Display blanking off not available");
+		ret = 0;
+	}
+
+	return ret;
 }
 
 static inline void video_display_frame(const struct device *const display_dev,
