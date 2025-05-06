@@ -1,7 +1,8 @@
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <zephyr/init.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -76,3 +77,21 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	DL_SYSCTL_setPowerPolicyRUN0SLEEP0();
 	irq_unlock(0);
 }
+
+static int ti_mspm0l2xxx_pm_init(void)
+{
+	int ret;
+	uint32_t rst_cause;
+	ret = hwinfo_get_reset_cause(&rst_cause);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (RESET_LOW_POWER_WAKE == rst_cause)
+	{
+		DL_SYSCTL_releaseShutdownIO();
+	}
+
+	return 0;
+}
+SYS_INIT(ti_mspm0l2xxx_pm_init, POST_KERNEL, 0);
