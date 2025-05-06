@@ -200,7 +200,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Erase failed at dev abosolute offset index %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
 
 	rc = flash_fill(flash_dev, 0xaa, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash device fill fail");
@@ -223,7 +223,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Flatten/Erase failed at dev absolute offset %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
 }
 
 ZTEST(flash_map, test_flash_area_copy)
