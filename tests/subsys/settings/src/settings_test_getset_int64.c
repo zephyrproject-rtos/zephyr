@@ -28,8 +28,7 @@ ZTEST(settings_config, test_config_getset_int64)
 	zassert_equal(rc, sizeof(int64_t), "the key value should been available");
 	zassert_true(test_get_called == 1, "the GET handler wasn't called");
 	memcpy(&new_val64, tmp, sizeof(int64_t));
-	zassert_equal(new_val64, 0x8012345678901234,
-		      "unexpected value fetched %d", tmp);
+	zassert_equal(new_val64, 0x8012345678901234, "unexpected value fetched %lld", new_val64);
 	ctest_clear_call_state();
 
 	new_val64 = 1;
@@ -46,7 +45,6 @@ ZTEST(settings_config, test_config_getset_int64)
 	zassert_equal(rc, sizeof(int64_t), "the key value should been available");
 	zassert_true(test_get_called == 1, "the GET handler wasn't called");
 	memcpy(&new_val64, tmp, sizeof(int64_t));
-	zassert_equal(new_val64, 1,
-		      "unexpected value fetched %d", tmp);
+	zassert_equal(new_val64, 1, "unexpected value fetched %lld", new_val64);
 	ctest_clear_call_state();
 }

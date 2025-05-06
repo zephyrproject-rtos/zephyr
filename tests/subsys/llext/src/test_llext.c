@@ -521,7 +521,7 @@ ZTEST(llext, test_find_section)
 
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
-		      symbol_ptr, section_ptr, section_ofs);
+		      (void *)symbol_ptr, (void *)section_ptr, section_ofs);
 
 	llext_unload(&ext);
 }

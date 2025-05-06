@@ -61,7 +61,7 @@ static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 	ret = fs_stat(file_path, &entry);
 	zassert_equal(ret, 0, "File stat failed (ret=%d)", ret);
 	zassert_equal(entry.size, bytes_to_write,
-			"Wrong file size %d (expected %d)", entry.size,
+			"Wrong file size %d (expected %d)", (uint32_t)entry.size,
 			bytes_to_write);
 
 	fs_file_t_init(&file);
@@ -96,7 +96,7 @@ static void truncate_file(const char *file_path, uint32_t new_size)
 	ret = fs_stat(file_path, &entry);
 	zassert_equal(ret, 0, "File stat failed (ret=%d)", ret);
 	zassert_equal(entry.size, new_size,
-			"Wrong file size %d (expected %d)", entry.size, new_size);
+			"Wrong file size %d (expected %d)", (uint32_t)entry.size, new_size);
 
 	ret = fs_seek(&file, 0, FS_SEEK_SET);
 	zassert_equal(ret, 0, "File seek failed (ret=%d)", ret);
