@@ -579,6 +579,36 @@ static int init_apollo5x(const struct udc_ambiq_data *priv)
 }
 #endif
 
+#if CONFIG_UDC_AMBIQ_DEB_ENABLE
+static void init_double_buffers(const struct udc_ambiq_data *priv)
+{
+	uint8_t idx;
+	uint32_t mask;
+
+	idx = 1;
+	mask = CONFIG_UDC_AMBIQ_DEB_ENABLE & 0xFFFF;
+	while (mask) {
+		if (mask & 0x1) {
+			am_hal_usb_enable_ep_double_buffer(priv->usb_handle, idx,
+							   AM_HAL_USB_OUT_DIR, true);
+		}
+		idx++;
+		mask >>= 1;
+	}
+
+	idx = 1;
+	mask = (CONFIG_UDC_AMBIQ_DEB_ENABLE >> 16) & 0xFFFF;
+	while (mask) {
+		if (mask & 0x1) {
+			am_hal_usb_enable_ep_double_buffer(priv->usb_handle, idx, AM_HAL_USB_IN_DIR,
+							   true);
+		}
+		idx++;
+		mask >>= 1;
+	}
+}
+#endif
+
 static int udc_ambiq_init(const struct device *dev)
 {
 	struct udc_ambiq_data *priv = udc_get_private(dev);
@@ -611,6 +641,10 @@ static int udc_ambiq_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+#endif
+
+#if CONFIG_UDC_AMBIQ_DEB_ENABLE
+	init_double_buffers(priv);
 #endif
 
 	/* Set USB Speed */
