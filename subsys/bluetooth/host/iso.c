@@ -63,7 +63,7 @@ static void iso_rx_buf_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_RX_MTU), sizeof(struct iso_data),
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_RX_MTU), sizeof(struct bt_conn_rx),
 			  iso_rx_buf_destroy);
 
 static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
