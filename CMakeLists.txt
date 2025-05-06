@@ -410,6 +410,10 @@ zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
 
 zephyr_link_libraries_ifdef(CONFIG_LINKER_USE_RELAX PROPERTY relax)
 
+zephyr_link_libraries_ifndef(CONFIG_LINKER_ERROR_RWX_SEGMENTS PROPERTY no_error_rwx_segments)
+
+zephyr_link_libraries_ifdef(CONFIG_LINKER_ERROR_RWX_SEGMENTS PROPERTY error_rwx_segments)
+
 # Sort the common symbols and each input section by alignment
 # in descending order to minimize padding between these symbols.
 zephyr_link_libraries_ifdef(CONFIG_LINKER_SORT_BY_ALIGNMENT PROPERTY sort_alignment)

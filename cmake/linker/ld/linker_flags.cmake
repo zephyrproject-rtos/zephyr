@@ -49,6 +49,12 @@ check_set_linker_property(TARGET linker PROPERTY sort_alignment
                           ${LINKERFLAGPREFIX},--sort-section=alignment
 )
 
+check_set_linker_property(TARGET linker PROPERTY no_error_rwx_segments
+  ${LINKERFLAGPREFIX},--no-warn-rwx-segments ${LINKERFLAGPREFIX},--no-error-rwx-segments)
+
+check_set_linker_property(TARGET linker PROPERTY error_rwx_segments
+  ${LINKERFLAGPREFIX},--warn-rwx-segments ${LINKERFLAGPREFIX},--error-rwx-segments)
+
 # Some linker flags might not be purely ld specific, but a combination of
 # linker and compiler, such as:
 # --coverage for clang
