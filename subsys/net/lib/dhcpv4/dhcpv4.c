@@ -544,8 +544,6 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	struct net_pkt *pkt = NULL;
 	uint32_t timeout = UINT32_MAX;
 
-	iface->config.dhcpv4.xid++;
-
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
