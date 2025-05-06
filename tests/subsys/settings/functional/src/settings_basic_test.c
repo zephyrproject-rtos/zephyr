@@ -412,7 +412,7 @@ int direct_loader(
 	zassert_is_null(key, "Unexpected key: %s", key);
 
 
-	zassert_not_null(cb_arg, NULL);
+	zassert_not_null(cb_arg);
 	rc = read_cb(cb_arg, &val, sizeof(val));
 	zassert_equal(sizeof(val), rc);
 
@@ -512,7 +512,7 @@ static int filtered_loader(
 		}
 	}
 	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
-	zassert_is_null(next, NULL);
+	zassert_is_null(next);
 	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
 	zassert_true(len <= sizeof(buf));
 
