@@ -27,7 +27,10 @@ int main(void)
 		}
 	}
 
-	if (display_blanking_off(display) != 0) {
+	err = display_blanking_off(display);
+	if (err == -ENOSYS) {
+		printk("Display blanking off not available");
+	} else if (err) {
 		printk("Failed to turn off display blanking\n");
 		return 0;
 	}
