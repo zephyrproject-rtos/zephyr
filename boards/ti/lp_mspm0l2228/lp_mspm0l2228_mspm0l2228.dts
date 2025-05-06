@@ -17,6 +17,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		sw2 = &btn2;
 		pwm-led0 = &pwm_led0;
 		counter = &countera0;
 		capture = &pwm12;
@@ -64,9 +65,14 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 		btn1: btn_1 {
-			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN | GPIO_INT_WAKEUP)>;
 			label = "Switch 2";
 			zephyr,code = <INPUT_KEY_1>;
+		};
+		btn2: btn_2 {
+			gpios = <&gpioa 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP | GPIO_INT_WAKEUP)>;
+			label = "Switch 3";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 };
