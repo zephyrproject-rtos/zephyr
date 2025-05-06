@@ -38,19 +38,19 @@ ZTEST(stm32_sysclck_config, test_sysclk_src)
 #if STM32_SYSCLK_SRC_PLL
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src,
 			"Expected sysclk src: PLL (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSE
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
 			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
 			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif STM32_SYSCLK_SRC_MSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src,
 			"Expected sysclk src: MSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
+			(int)RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
 #else
 	/* Case not expected */
 	zassert_true((STM32_SYSCLK_SRC_PLL ||
@@ -69,21 +69,21 @@ ZTEST(stm32_sysclck_config, test_pll_src)
 #if STM32_PLL_SRC_HSE
 	zassert_equal(RCC_PLLSOURCE_HSE, pll_src,
 			"Expected PLL src: HSE (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSE, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSE, pll_src);
 #elif STM32_PLL_SRC_HSI
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	zassert_equal(RCC_PLLSOURCE_HSI_DIV2, pll_src,
 			"Expected PLL src: HSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSI_DIV2, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSI_DIV2, pll_src);
 #else
 	zassert_equal(RCC_PLLSOURCE_HSI, pll_src,
 			"Expected PLL src: HSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_HSI, pll_src);
+			(uint32_t)RCC_PLLSOURCE_HSI, pll_src);
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 #elif STM32_PLL_SRC_MSI
 	zassert_equal(RCC_PLLSOURCE_MSI, pll_src,
 			"Expected PLL src: MSI (%d). Actual PLL src: %d",
-			RCC_PLLSOURCE_MSI, pll_src);
+			(uint32_t)RCC_PLLSOURCE_MSI, pll_src);
 #else /* --> RCC_PLLSOURCE_NONE */
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X) || \

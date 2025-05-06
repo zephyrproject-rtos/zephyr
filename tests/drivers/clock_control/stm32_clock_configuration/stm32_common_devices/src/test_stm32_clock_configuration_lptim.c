@@ -50,12 +50,12 @@ ZTEST(stm32_common_devices_clocks, test_lptim_clk_config)
 
 		if (pclken[1].bus == STM32_SRC_LSE) {
 			zassert_equal(dev_actual_clk_src, RCC_LPTIM1CLKSOURCE_LSE,
-					"Expected LPTIM1 src: LSE (0x%lx). Actual LPTIM1 src: 0x%x",
-					RCC_LPTIM1CLKSOURCE_LSE, dev_actual_clk_src);
+					"Expected LPTIM1 src: LSE (0x%x). Actual LPTIM1 src: 0x%x",
+					(uint32_t)RCC_LPTIM1CLKSOURCE_LSE, dev_actual_clk_src);
 		} else if (pclken[1].bus == STM32_SRC_LSI) {
 			zassert_equal(dev_actual_clk_src, RCC_LPTIM1CLKSOURCE_LSI,
-					"Expected LPTIM1 src: LSI (0x%lx). Actual LPTIM1 src: 0x%x",
-					RCC_LPTIM1CLKSOURCE_LSI, dev_actual_clk_src);
+					"Expected LPTIM1 src: LSI (0x%x). Actual LPTIM1 src: 0x%x",
+					(uint32_t)RCC_LPTIM1CLKSOURCE_LSI, dev_actual_clk_src);
 		} else {
 			zassert_true(0, "Unexpected domain clk (%d)", dev_actual_clk_src);
 		}

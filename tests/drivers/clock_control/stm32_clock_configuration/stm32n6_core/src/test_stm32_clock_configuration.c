@@ -24,19 +24,19 @@ ZTEST(stm32n6_clock_core_config, test_cpuclk_src)
 #if IS_ENABLED(STM32_CPUCLK_SRC_HSI)
 	zassert_equal(RCC_CPUCLKSOURCE_STATUS_HSI, cpu_clk_src,
 		      "Expected sysclk src: HSI (0x%x). Actual: 0x%x",
-		      RCC_CPUCLKSOURCE_STATUS_HSI, cpu_clk_src);
+		      (uint32_t)RCC_CPUCLKSOURCE_STATUS_HSI, cpu_clk_src);
 #elif IS_ENABLED(STM32_CPUCLK_SRC_MSI)
 	zassert_equal(RCC_CPUCLKSOURCE_STATUS_MSI, cpu_clk_src,
 		      "Expected sysclk src: MSI (0x%x). Actual: 0x%x",
-		      RCC_CPUCLKSOURCE_STATUS_MSI, cpu_clk_src);
+		      (uint32_t)RCC_CPUCLKSOURCE_STATUS_MSI, cpu_clk_src);
 #elif IS_ENABLED(STM32_CPUCLK_SRC_HSE)
 	zassert_equal(RCC_CPUCLKSOURCE_STATUS_HSE, cpu_clk_src,
 		      "Expected sysclk src: HSE (0x%x). Actual: 0x%x",
-		      RCC_CPUCLKSOURCE_STATUS_HSE, cpu_clk_src);
+		      (uint32_t)RCC_CPUCLKSOURCE_STATUS_HSE, cpu_clk_src);
 #elif IS_ENABLED(STM32_CPUCLK_SRC_IC1)
 	zassert_equal(RCC_CPUCLKSOURCE_STATUS_IC1, cpu_clk_src,
 		      "Expected cpuclk src: IC1 (0x%x). Actual: 0x%x",
-		      RCC_CPUCLKSOURCE_STATUS_IC1, cpu_clk_src);
+		      (uint32_t)RCC_CPUCLKSOURCE_STATUS_IC1, cpu_clk_src);
 #else
 	/* Case not expected */
 	zassert_true(IS_ENABLED(STM32_CPUCLK_SRC_HSI) ||
@@ -54,19 +54,19 @@ ZTEST(stm32n6_clock_core_config, test_sysclk_src)
 #if IS_ENABLED(STM32_SYSCLK_SRC_HSI)
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
 			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif IS_ENABLED(STM32_SYSCLK_SRC_MSI)
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src,
 			"Expected sysclk src: MSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src);
 #elif IS_ENABLED(STM32_SYSCLK_SRC_HSE)
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
 			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif IS_ENABLED(STM32_SYSCLK_SRC_IC2)
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_IC2_IC6_IC11, sys_clk_src,
 			"Expected sysclk src: IC2 (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_IC2_IC6_IC11, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_IC2_IC6_IC11, sys_clk_src);
 #else
 	/* Case not expected */
 	zassert_true(IS_ENABLED(STM32_SYSCLK_SRC_HSI) ||
@@ -142,42 +142,42 @@ ZTEST(stm32n6_clock_core_config, test_perclk_config)
 	case STM32_SRC_HSI:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_HSI,
 			"Expected PERCK src: HSI (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_HSI, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_HSI, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_MSI:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_MSI,
 			"Expected PERCK src: MSI (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_MSI, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_MSI, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_HSE:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_HSE,
 			"Expected PERCK src: HSE (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_HSE, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_HSE, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_IC19:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_IC19,
 			"Expected PERCK src: IC19 (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_IC19, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_IC19, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_IC5:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_IC5,
 			"Expected PERCK src: IC5 (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_IC5, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_IC5, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_IC10:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_IC10,
 			"Expected PERCK src: IC10 (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_IC10, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_IC10, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_IC15:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_IC15,
 			"Expected PERCK src: IC15 (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_IC15, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_IC15, perclk_actual_domain_clk);
 		break;
 	case STM32_SRC_IC20:
 		zassert_equal(perclk_actual_domain_clk, RCC_CLKPCLKSOURCE_IC20,
 			"Expected PERCK src: IC20 (0x%x). Actual: 0x%x",
-			RCC_CLKPCLKSOURCE_IC20, perclk_actual_domain_clk);
+			(uint32_t)RCC_CLKPCLKSOURCE_IC20, perclk_actual_domain_clk);
 		break;
 	default:
 		zassert_true(0, "Unexpected PERCK domain_clk src (0x%x)",

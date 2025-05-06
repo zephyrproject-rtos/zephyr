@@ -216,8 +216,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE, &voltage));
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT, &current));
 
-	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d", voltage, expected_uV);
-	zassert_equal(current.current, expected_uA, "Got %d instead of %d", current, expected_uA);
+	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d",
+			voltage.voltage, expected_uV);
+	zassert_equal(current.current, expected_uA, "Got %d instead of %d",
+			current.current, expected_uA);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_neg_1a)
@@ -233,8 +235,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_neg_1a)
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE, &voltage));
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT, &current));
 
-	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d", voltage, expected_uV);
-	zassert_equal(current.current, expected_uA, "Got %d instead of %d", current, expected_uA);
+	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d",
+			voltage.voltage, expected_uV);
+	zassert_equal(current.current, expected_uA, "Got %d instead of %d",
+			current.current, expected_uA);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_get_single_prop)
