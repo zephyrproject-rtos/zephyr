@@ -484,7 +484,7 @@ ZTEST_USER(canfd, test_invalid_sample_point)
 	int err;
 
 	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, 1000);
-	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0%% accepted (err %d)", err);
 }
 
 /**
