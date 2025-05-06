@@ -131,7 +131,7 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		data->period = period_cycles >> 1;
 	}
 
-	DL_Timer_setTimerCount(config->base, data->period);
+	DL_Timer_setLoadValue(config->base, data->period);
 	DL_Timer_setCaptureCompareValue(config->base,
 					data->pulse_cycle[channel],
 					config->cc_idx[channel]);
