@@ -556,6 +556,10 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 {
 	int64_t delay;
 
+	if (ptp_clk.timestamp.t1 == 0 || ptp_clk.timestamp.t2 == 0) {
+		return;
+	}
+
 	ptp_clk.timestamp.t3 = egress;
 	ptp_clk.timestamp.t4 = ingress;
 
