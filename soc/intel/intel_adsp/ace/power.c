@@ -82,17 +82,17 @@ void power_down(bool disable_lpsram, bool disable_hpsram, bool response_to_ipc);
  */
 extern void platform_context_restore(void);
 
-/*
+/**
  * @brief pointer to a persistent storage space, to be set by platform code
  */
 uint8_t *global_imr_ram_storage;
 
-/*8
- * @biref a d3 restore boot entry point
+/**
+ * @brief a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
 
-/*
+/**
  * @brief re-enables IDC interrupt for all cores after exiting D3 state
  *
  * Called once from core 0
@@ -101,8 +101,8 @@ extern void soc_mp_on_d3_exit(void);
 
 #else
 
-/*
- * @biref FW entry point called by ROM during normal boot flow
+/**
+ * @brief FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
 
