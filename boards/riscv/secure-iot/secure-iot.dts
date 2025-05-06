@@ -30,12 +30,12 @@ chosen {
 	clock_frequency = <40000000>;
 	scl_frequency = <100000>;
 };
-&i2c1 {
-	status = "ok";
-	base = <0x44100>;
-	clock_frequency = <40000000>;
-	scl_frequency = <100000>;
-};
+// &i2c1 {
+// 	status = "ok";
+// 	base = <0x44100>;
+// 	clock_frequency = <40000000>;
+// 	scl_frequency = <100000>;
+// };
 &spi0 {
 		status = "okay";
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
@@ -86,6 +86,15 @@ chosen {
         };
 };
 
+// &spi2 {
+// 	status = "okay";
+// 	sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
+// 	comm_configure = <0x01 0x00 0x03 0x08>;
+// 	clock-frequency = <10000000>;
+// 	cs-gpios = <&gpio0 10 0>;
+
+// };
+
 &gpio0 {
 	status = "okay";
 };
@@ -101,44 +110,4 @@ chosen {
 
 	status = "okay";
 	base = <0xc000000>;
-};
-
-&pwm0 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm1 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm2 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm3 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm4 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm5 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm6 {
-	status = "okay";
-	db_configure = <0 4 5000>;
-};
-
-&pwm7 {
-	status = "okay";
-	db_configure = <0 4 5000>;
 };

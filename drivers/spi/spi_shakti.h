@@ -61,14 +61,14 @@ extern "C" {
 
 #define SSPI_BASE_OFFSET 0x100
 
-#define COMMCTRL    0x00
-#define CLKCTRL     0x04
-#define TXREG       0x08
-#define RXREG       0x0C
-#define INTR_EN     0x10
-#define FIFOSTS     0x14
-#define COMMSTS     0x18
-#define INQUAL      0x1C
+// #define COMMCTRL    0x00
+// #define CLKCTRL     0x04
+// #define TXREG       0x08
+// #define RXREG       0x0C
+// #define INTR_EN     0x10
+// #define FIFOSTS     0x14
+// #define COMMSTS     0x18
+// #define INQUAL      0x1C
 
 //SSPIx Clock Control Register
 #define SPI_CLK_POLARITY(x)   (x<<0)
@@ -84,10 +84,10 @@ extern "C" {
 #define SPI_COMM_MODE(x)       (x<<4)
 #define SPI_TOTAL_BITS_TX(x)   (x<<6)
 #define SPI_TOTAL_BITS_RX(x)   (x<<14)
-#define SPI_OUT_EN_SCLK        (1<<22)
-#define SPI_OUT_EN_NCS         (1<<23)
-#define SPI_OUT_EN_MISO        (1<<24)
-#define SPI_OUT_EN_MOSI        (1<<25)
+#define SPI_OUT_EN_SCLK(x)        (x<<22)
+#define SPI_OUT_EN_NCS(x)        (x<<23)
+#define SPI_OUT_EN_MISO(x)        (x<<24)
+#define SPI_OUT_EN_MOSI(x)        (x<<25)
 
 //SSPIx Communication Status Register
 #define SPI_BUSY             (1<<0)
@@ -175,6 +175,9 @@ extern "C" {
 #define INV_POLANDPHA   0b0000000000000000      // polarity and phase is 0      
 #define HALFDUPLEX      0b0000100000000000      // if mode bit is 1 then spi is halfduplex      
 #define FULLDUPLEX      0b0000000000000000      // if mode bit is 0 then spi is fullduplex
+
+#define MODE_SEL        1<<19                   // if mode bit is 0 then spi is fullduplex
+#define SIMPLEX_TX      0<<18      // if mode bit is 0 then spi is fullduplex
 
 /**
  * The below code defines a union type named "Data" that can hold a 32-bit integer, a 16-bit integer,
