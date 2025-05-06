@@ -8,10 +8,11 @@ zephyr_library_sources(
   platform.c
   )
 
-zephyr_library_sources_ifndef(CONFIG_HDLC_RCP_IF
-  radio.c
-  spi.c
-  )
+if(NOT CONFIG_HDLC_RCP_IF)
+  # Radio platform implementation dedicated for L2 Platform adaptation layer
+  zephyr_library_sources_ifdef(CONFIG_NET_L2_OPENTHREAD radio.c)
+  zephyr_library_sources(spi.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_HDLC_RCP_IF
   radio_spinel.cpp
