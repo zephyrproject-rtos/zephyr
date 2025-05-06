@@ -82,6 +82,7 @@ static int ti_mspm0l2xxx_pm_init(void)
 {
 	int ret;
 	uint32_t rst_cause;
+
 	ret = hwinfo_get_reset_cause(&rst_cause);
 	if (ret != 0) {
 		return ret;
