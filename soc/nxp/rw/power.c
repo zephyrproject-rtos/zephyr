@@ -12,6 +12,7 @@
 		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
 #include <zephyr/drivers/gpio/gpio_mcux_lpc.h>
 #endif
+#include <zephyr/drivers/timer/system_timer.h>
 
 #include "fsl_power.h"
 
@@ -197,6 +198,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_MPU */
 
 		POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+
+		sys_clock_set_timeout(0, true);
+
 		if (POWER_EnterPowerMode(POWER_MODE3, &slp_cfg)) {
 #ifdef CONFIG_MPU
 			/* Restore MPU as is lost after PM3 exit*/
