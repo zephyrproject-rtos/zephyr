@@ -154,6 +154,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 	if (deactivate_cs) {
 		spi_context_cs_control(&dev_data->ctx, false);
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
 	}
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -163,8 +164,6 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		release_clock(dev);
 	}
-
-	pm_device_runtime_put_async(dev, K_NO_WAIT);
 }
 
 static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
@@ -402,7 +401,7 @@ static void finish_transaction(const struct device *dev, int error)
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
-	finalize_spi_transaction(dev, true);
+	finalize_spi_transaction(dev, (dev_data->ctx.config->operation & SPI_HOLD_ON_CS) > 0);
 }
 
 static void transfer_next_chunk(const struct device *dev)
@@ -661,11 +660,16 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 static int spim_resume(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 	/* nrfx_spim_init() will be called at configuration before
 	 * the next transfer.
 	 */
+
+	if (spi_context_cs_get_all(&dev_data->ctx)) {
+		return -EAGAIN;
+	}
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
@@ -687,6 +691,8 @@ static void spim_suspend(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		release_clock(dev);
 	}
+
+	spi_context_cs_put_all(&dev_data->ctx);
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
