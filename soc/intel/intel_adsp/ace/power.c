@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
@@ -342,6 +343,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
 		} else {
+			/* When all secondary cores are turned off, power gating for the primary
+			 * core will be re-enabled.
+			 */
+			pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 			power_gate_entry(cpu);
 		}
 		break;
