@@ -24,6 +24,10 @@ int main(void)
 	if (RESET_LOW_POWER_WAKE == rst_cause)
 	{
 		printk("Woke from SHUTDOWN\n");
+		ret = gpio_pin_configure_dt(&button, GPIO_DISCONNECTED | GPIO_INT_WAKEUP);
+		if (ret != 0) {
+			printk("Unable to disable wakeup: %d\n", ret);
+		}
 		k_msleep(SLEEP_TIME_MS);
 	}
 
