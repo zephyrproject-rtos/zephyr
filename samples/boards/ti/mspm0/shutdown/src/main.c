@@ -10,28 +10,16 @@ static bool main_init = false;
 #define SLEEP_TIME_MS   1000
 #define SW1_NODE	DT_ALIAS(sw1)
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW1_NODE, gpios, {0});
-static uint32_t rst_cause;
-
-static int ti_mspm0l2xxx_pm_init(void)
-{
-	int ret;
-	ret = hwinfo_get_reset_cause(&rst_cause);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (RESET_LOW_POWER_WAKE == rst_cause)
-	{
-		DL_SYSCTL_releaseShutdownIO();
-	}
-
-	return 0;
-}
-SYS_INIT(ti_mspm0l2xxx_pm_init, POST_KERNEL, 0);
 
 int main(void)
 {
 	int ret;
+	uint32_t rst_cause;
+
+	ret = hwinfo_get_reset_cause(&rst_cause);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (RESET_LOW_POWER_WAKE == rst_cause)
 	{
