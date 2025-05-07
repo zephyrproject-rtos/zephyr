@@ -429,12 +429,12 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 	uint32_t *bsa = *(const int **)stack;
 
-	if (bsa - (const uint32_t *)stack > 4) {
-		num_laddr_regs = 8;
+	if (bsa - (const uint32_t *)stack > 12) {
+		num_laddr_regs = 16;
 	} else if (bsa - (const uint32_t *)stack > 8) {
 		num_laddr_regs = 12;
-	} else if (bsa - (const uint32_t *)stack > 12) {
-		num_laddr_regs = 16;
+	} else if (bsa - (const uint32_t *)stack > 4) {
+		num_laddr_regs = 8;
 	} else {
 		num_laddr_regs = 4;
 	}
@@ -519,12 +519,12 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 	_xtensa_irq_bsa_t *bsa = (void *)*(const int **)stack;
 
-	if ((uint32_t *)bsa - (const uint32_t *)stack > 4) {
-		num_laddr_regs = 8;
+	if ((uint32_t *)bsa - (const uint32_t *)stack > 12) {
+		num_laddr_regs = 16;
 	} else if ((uint32_t *)bsa - (const uint32_t *)stack > 8) {
 		num_laddr_regs = 12;
-	} else if ((uint32_t *)bsa - (const uint32_t *)stack > 12) {
-		num_laddr_regs = 16;
+	} else if ((uint32_t *)bsa - (const uint32_t *)stack > 4) {
+		num_laddr_regs = 8;
 	} else {
 		num_laddr_regs = 4;
 	}
