@@ -4189,6 +4189,7 @@ STM32 Platforms:
     - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
+    - etienne-lms
   files:
     - boards/st/
     - drivers/*/*stm32*.c
