@@ -256,6 +256,8 @@ typedef void (* ISR)(const void *);
         if not self.__swt:
             return
 
+        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
+            fp.write("const ")
         fp.write("struct _isr_table_entry __sw_isr_table _sw_isr_table[%d] = {\n"
                 % self.__nv)
 
