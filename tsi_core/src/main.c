@@ -37,9 +37,9 @@ int main(void)
 	printf("                  |||   |||\n");
 	printf("                        |\n");
   
-  LOG_INF("Test Platform: %s", CONFIG_BOARD_TARGET);
-	LOG_WRN("Testing on FPGA");
-	printk("TSI Logging enabled & printk is functional\n");
-
-	return 0;
+        LOG_INF("Logging Info: Test Platform: %s", CONFIG_BOARD_TARGET);
+	LOG_WRN("Logging Warning : Testing on FPGA");
+	printk(" From printk: TSI Logging enabled & printk is functional\n");
+	/* By this point, SCU Global Reset register was exercised has pulled A53 & M85 out of reset */
+	printk(" SCU Global Reset exercised successfully.\n");
 }
