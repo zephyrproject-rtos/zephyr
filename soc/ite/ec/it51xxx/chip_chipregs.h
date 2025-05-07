@@ -189,9 +189,6 @@ struct gpio_it51xxx_regs {
 /* 0x00: General Control */
 #define IT51XXX_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
 #define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
-#define IT51XXX_GPIO_GCR_ESPI_RST_D2      0x2
-#define IT51XXX_GPIO_GCR_ESPI_RST_POS     1
-#define IT51XXX_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT51XXX_GPIO_GCR_ESPI_RST_POS)
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
