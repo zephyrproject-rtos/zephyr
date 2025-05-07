@@ -87,7 +87,7 @@ void _enter_irq(uint32_t ipending)
 #endif
 
 	while (ipending) {
-		struct _isr_table_entry *ite;
+		const struct _isr_table_entry *ite;
 
 #ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_enter();
