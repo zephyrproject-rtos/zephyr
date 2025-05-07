@@ -38,7 +38,7 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
-#define RV32_CPU DT_NODELABEL(cpu1)
+#define RV32_CPU              DT_NODELABEL(cpu1)
 #define DO_RV32_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(RV32_CPU, default))
 
 #if CONFIG_MAX32_SECONDARY_RV32 && DO_RV32_DEBUG_PINCTRL
@@ -73,7 +73,8 @@ void soc_early_init_hook(void)
 #if DO_RV32_DEBUG_PINCTRL
 	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
 #endif
-	MXC_FCR->urvbootaddr = CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS;
+	MXC_FCR->urvbootaddr =
+		CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS + CONFIG_MAX32_SECONDARY_RV32_BOOT_OFFSET;
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */
