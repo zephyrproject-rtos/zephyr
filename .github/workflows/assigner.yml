@@ -22,6 +22,11 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+
     - name: Install Python dependencies
       run: |
         sudo pip3 install -U setuptools wheel pip
