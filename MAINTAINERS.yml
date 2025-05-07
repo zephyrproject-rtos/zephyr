@@ -3782,7 +3782,7 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Drivers:
+NXP Platform Drivers:
   status: maintained
   maintainers:
     - dleach02
@@ -3823,7 +3823,7 @@ NXP Drivers:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Wireless:
+NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
@@ -3839,7 +3839,7 @@ NXP Wireless:
   labels:
     - "platform: NXP Drivers"
 
-NXP MCUX USB:
+NXP Platform MCUX USB:
   status: maintained
   maintainers:
     - mmahadevan108
