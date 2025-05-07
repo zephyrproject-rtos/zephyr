@@ -237,7 +237,7 @@ struct _thread_arch {
 
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	long *shstk_addr;
 	long *shstk_base;
 	size_t shstk_size;

@@ -17,7 +17,7 @@
 #define _kernel_offset_to_fpu_owner \
 	(___kernel_t_cpus_OFFSET + ___cpu_t_arch_OFFSET + ___cpu_arch_t_fpu_owner_OFFSET)
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 #define _kernel_offset_to_shstk_addr \
 	(___kernel_t_cpus_OFFSET + ___cpu_t_arch_OFFSET + ___cpu_arch_t_shstk_addr_OFFSET)
 
@@ -41,7 +41,7 @@
 #define _thread_offset_to_preempFloatReg \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempFloatReg_OFFSET)
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 #define _thread_offset_to_shstk_addr \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_shstk_addr_OFFSET)
 
