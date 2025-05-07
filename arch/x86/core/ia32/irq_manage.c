@@ -24,11 +24,6 @@
 #include <zephyr/arch/x86/ia32/segmentation.h>
 #include <kernel_arch_data.h>
 
-#ifdef CONFIG_HW_SHADOW_STACK
-X86_IRQ_SHADOW_STACK_DEFINE(z_x86_irq_shadow_stack,
-			    CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);
-#endif
-
 #define TOKEN_OFFSET 4
 
 extern void z_SpuriousIntHandler(void *handler);
@@ -54,8 +49,10 @@ void arch_isr_direct_footer_swap(unsigned int key)
 #ifdef CONFIG_HW_SHADOW_STACK
 void z_x86_set_irq_shadow_stack(void)
 {
-	size_t stack_size = CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE;
-	arch_thread_hw_shadow_stack_t *stack = z_x86_irq_shadow_stack;
+	size_t stack_size = sizeof(__z_interrupt_stacks_shstk_arr);
+	arch_thread_hw_shadow_stack_t *stack;
+
+	stack = (arch_thread_hw_shadow_stack_t *)__z_interrupt_stacks_shstk_arr;
 
 	_kernel.cpus[0].arch.shstk_addr = stack +
 		(stack_size - TOKEN_OFFSET * sizeof(*stack)) / sizeof(*stack);
