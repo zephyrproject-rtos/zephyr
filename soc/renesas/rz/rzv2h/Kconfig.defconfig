@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RZV2H
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_RZV2H
