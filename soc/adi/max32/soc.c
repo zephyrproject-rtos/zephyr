@@ -19,6 +19,19 @@
 
 #ifdef CONFIG_MAX32_SECONDARY_RV32
 #include <fcr_regs.h>
+
+#define RV32_FLASH                                                    \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_rv32_flash),                     \
+				(DT_CHOSEN(zephyr_rv32_flash)),                       \
+				(DT_CHOSEN(zephyr_flash)))
+
+#define RV32_BASE_ADDR DT_REG_ADDR(RV32_FLASH)
+
+#define RV32_OFFSET                                                   \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_code_rv32_partition),            \
+				(DT_REG_ADDR(DT_CHOSEN(zephyr_code_rv32_partition))), \
+				(0))
+
 #endif
 
 #if defined(CONFIG_MAX32_STANDBY_DELAY) && (CONFIG_MAX32_STANDBY_DELAY > 0)
@@ -38,7 +51,7 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
-#define RV32_CPU DT_NODELABEL(cpu1)
+#define RV32_CPU              DT_NODELABEL(cpu1)
 #define DO_RV32_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(RV32_CPU, default))
 
 #if CONFIG_MAX32_SECONDARY_RV32 && DO_RV32_DEBUG_PINCTRL
@@ -73,7 +86,8 @@ void soc_early_init_hook(void)
 #if DO_RV32_DEBUG_PINCTRL
 	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
 #endif
-	MXC_FCR->urvbootaddr = CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS;
+
+	MXC_FCR->urvbootaddr = RV32_BASE_ADDR + RV32_OFFSET;
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */
