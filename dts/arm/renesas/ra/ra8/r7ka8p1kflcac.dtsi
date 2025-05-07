@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra8/r7ka8p1xf.dtsi>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	soc {
+		flash-controller@4013c000 {
+			flash0: flash@2000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x2000000 DT_SIZE_M(1)>;
+			};
+		};
+
+		sdram: sdram-controller@40002000 {
+			compatible = "renesas,ra-sdram";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0xFFF>;
+			status = "disabled";
+		};
+
+		lcdif: display-controller@40342000 {
+			compatible = "renesas,ra-glcdc";
+			reg = <0x40342000 0x1454>;
+			clocks = <&lcdclk MSTPC 4>;
+			status = "disabled";
+		};
+
+		mipi_dsi: dsihost@40346000 {
+			compatible = "renesas,ra-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40346000 0x2000>;
+			clocks = <&lcdclk MSTPC 10>;
+			status = "disabled";
+		};
+	};
+};
