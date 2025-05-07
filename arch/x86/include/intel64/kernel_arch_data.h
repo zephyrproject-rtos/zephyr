@@ -44,7 +44,6 @@ struct x86_interrupt_ssp_table {
 };
 
 extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef CONFIG_X86_KPTI
@@ -91,6 +90,9 @@ extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 			(uintptr_t)name + size * (i + 1) - 1 *					\
 			sizeof(arch_thread_hw_shadow_stack_t)
 
+#define X86_EXCEPTION_SHADOW_STACK_SIZE \
+	K_THREAD_HW_SHADOW_STACK_SIZE(CONFIG_X86_EXCEPTION_STACK_SIZE)
+
 #define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
 	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)			\
 	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
@@ -100,23 +102,23 @@ extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 		}
 
 #define X86_INTERRUPT_SHADOW_STACK_DEFINE(n)							\
-	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_irq_shadow_stack##n,					\
-				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);			\
 	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_nmi_shadow_stack##n,					\
-				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE);			\
+				     X86_EXCEPTION_SHADOW_STACK_SIZE);				\
 	X86_IRQ_SHADOW_STACK_DEFINE(z_x86_exception_shadow_stack##n,				\
-				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE)
+				     X86_EXCEPTION_SHADOW_STACK_SIZE)
 
-#define SHSTK_LAST_ENTRY (CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE *				\
+#define SHSTK_LAST_ENTRY (X86_EXCEPTION_SHADOW_STACK_SIZE *					\
 			  CONFIG_ISR_DEPTH / sizeof(arch_thread_hw_shadow_stack_t) - 1)
+
+#define IRQ_SHSTK_LAST_ENTRY sizeof(__z_interrupt_stacks_shstk_arr[0]) /			\
+	sizeof(arch_thread_hw_shadow_stack_t) - 1
 
 #define X86_INTERRUPT_SSP_TABLE_INIT(n, _)							\
 	{											\
-		.ist1 = (uintptr_t)&z_x86_irq_shadow_stack##n[SHSTK_LAST_ENTRY],		\
+		.ist1 = (uintptr_t)&__z_interrupt_stacks_shstk_arr[n][IRQ_SHSTK_LAST_ENTRY],	\
 		.ist6 = (uintptr_t)&z_x86_nmi_shadow_stack##n[SHSTK_LAST_ENTRY],		\
 		.ist7 = (uintptr_t)&z_x86_exception_shadow_stack##n[SHSTK_LAST_ENTRY],	\
 	}
-
 
 #define STACK_ARRAY_IDX(n, _) n
 
