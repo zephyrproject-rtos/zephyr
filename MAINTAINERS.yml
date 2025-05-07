@@ -1865,7 +1865,8 @@ Release Notes:
 "Drivers: Regulators":
   status: maintained
   maintainers:
-    - gmarull
+    - nordic-auko
+    - seov-nordic
   collaborators:
     - danieldegrasse
     - aasinclair
