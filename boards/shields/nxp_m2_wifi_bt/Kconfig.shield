@@ -6,3 +6,6 @@ config SHIELD_NXP_M2_1XK_WIFI_BT
 
 config SHIELD_NXP_M2_2EL_WIFI_BT
 	def_bool $(shields_list_contains,nxp_m2_2el_wifi_bt)
+
+config SHIELD_NXP_M2_2LL_WIFI_BT
+	def_bool $(shields_list_contains,nxp_m2_2ll_wifi_bt)
