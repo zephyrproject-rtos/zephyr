@@ -65,7 +65,7 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 		btn1: btn_1 {
-			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN | GPIO_INT_WAKEUP)>;
+			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			label = "Switch 2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
