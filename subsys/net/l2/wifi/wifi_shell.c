@@ -1870,46 +1870,33 @@ static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[]
 	struct net_if *iface = net_if_get_wifi_sap();
 	struct wifi_twt_params params = {0};
 	int idx = 1;
-	int err = 0;
+	long value;
+	int ret = 0;
 
 	context.sh = sh;
 
-	params.btwt.btwt_sta_wait = (uint8_t)shell_strtol(argv[idx++], 10, &err);
-	params.btwt.btwt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &err);
-	params.btwt.btwt_li = (uint8_t)shell_strtol(argv[idx++], 10, &err);
-	params.btwt.btwt_count = (uint8_t)shell_strtol(argv[idx++], 10, &err);
+	params.btwt.sub_id = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.nominal_wake = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.max_sta_support = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
 
-	if(err)
-	{
-		PR_ERROR("Parse btwt parameters (err %d)\n", err);
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 0xFFFF)) {
 		return -EINVAL;
 	}
+	params.btwt.twt_mantissa = (uint16_t)value;
 
-	if(params.btwt.btwt_count < 2 || params.btwt.btwt_count > 5)
-	{
-		PR_ERROR("Invalid broadcast twt count. Count rang: 2-5.\n");
+	params.btwt.twt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
 		return -EINVAL;
 	}
+	params.btwt.twt_exponent = (uint8_t)value;
 
-	if(argc != 5 + params.btwt.btwt_count * 4)
-	{
-		PR_ERROR("Invalid number of broadcast parameters.\n");
+	params.btwt.sp_gap = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (ret) {
+		PR_ERROR("Invalid argument (ret %d)\n", ret);
 		return -EINVAL;
 	}
-
-	for(int i = 0; i < params.btwt.btwt_count; i++)
-	{
-		params.btwt.btwt_set_cfg[i].btwt_id 		= (uint8_t)shell_strtol(argv[idx++], 10, &err);
-		params.btwt.btwt_set_cfg[i].btwt_mantissa 	= (uint16_t)shell_strtol(argv[idx++], 10, &err);
-		params.btwt.btwt_set_cfg[i].btwt_exponent 	= (uint8_t)shell_strtol(argv[idx++], 10, &err);
-		params.btwt.btwt_set_cfg[i].btwt_nominal_wake = (uint8_t)shell_strtol(argv[idx++], 10, &err);
-		if(err)
-		{
-			PR_ERROR("Parse btwt parameters (err %d)\n", err);
-			return -EINVAL;
-		}
-	}
-
 
 	if (net_mgmt(NET_REQUEST_WIFI_BTWT, iface, &params, sizeof(params))) {
 		PR_WARNING("Failed reason : %s\n",
@@ -3798,13 +3785,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(
 		btwt_setup, NULL,
 		" Start a BTWT flow:\n"
-		"<sta_wait> <offset> <twtli> <session_num>: 2 - 5 \n"
-		"<id0> <mantissa0> <exponent0> <nominal_wake0>: 64-255 \n"
-		"<id1> <mantissa1> <exponent1> <nominal_wake1>: 64-255 \n"
-		"<idx> <mantissax> <exponentx> <nominal_wakex>: 64-255 \n"
-		" The total number of '0, 1, ..., x' is session_num\n",
+		"<sub_id: Broadcast TWT AP config> <nominal_wake: 64-255> <max_sta_support>"
+		"<twt_mantissa:0-sizeof(UINT16)> <twt_offset> <twt_exponent: 0-31> <sp_gap>.\n",
 		cmd_wifi_btwt_setup,
-		13, 0),
+		8, 0),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
