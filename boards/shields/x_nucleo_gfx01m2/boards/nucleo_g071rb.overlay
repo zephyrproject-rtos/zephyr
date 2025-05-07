@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Christian Rask
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&st_morpho_lcd_spi {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
+		<&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
+	dma-names = "tx", "rx";
+};
+
+&st_morpho_flash_spi {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pc2 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
+	dmas = <&dmamux1 2 19 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
+		<&dmamux1 3 18 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&spi1_miso_pa6 {
+	slew-rate = "very-high-speed";
+};
+
+&spi1_mosi_pa7 {
+	slew-rate = "very-high-speed";
+};
+
+&spi2_miso_pc2 {
+	slew-rate = "very-high-speed";
+};
+
+&spi2_mosi_pc3 {
+	slew-rate = "very-high-speed";
+};
