@@ -417,16 +417,22 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
 				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = (DT_INST_PROP(0, pixelclk_active) ?
-						DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING),
-				.HSPolarity = (DT_INST_PROP(0, hsync_active) ?
-						DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW),
-				.VSPolarity = (DT_INST_PROP(0, vsync_active) ?
-						DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW),
+				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							  pclk_sample, 0) ?
+							  DCMI_PCKPOLARITY_RISING :
+							  DCMI_PCKPOLARITY_FALLING,
+				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							 hsync_active, 0) ?
+							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
+				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							 vsync_active, 0) ?
+							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
 				.CaptureRate = STM32_DCMI_GET_CAPTURE_RATE(
-							DT_INST_PROP(0, capture_rate)),
+							DT_PROP_OR(DT_DRV_INST(inst), capture_rate,
+								   1)),
 				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_INST_PROP(0, bus_width)),
+							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+								   bus_width, 8)),
 				.JPEGMode = DCMI_JPEG_DISABLE,
 				.ByteSelectMode = DCMI_BSM_ALL,
 				.ByteSelectStart = DCMI_OEBS_ODD,
@@ -436,7 +442,7 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	},
 };
 
-#define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, sensor))
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.pclken = {
