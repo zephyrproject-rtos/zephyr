@@ -17,6 +17,26 @@ extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 
 typedef uintptr_t arch_thread_hw_shadow_stack_t;
 
+#define ARCH_THREAD_HW_SHADOW_STACK_SIZE(size_) \
+	MAX(ROUND_UP((CONFIG_HW_SHADOW_STACK_PERCENTAGE_SIZE * (size_) / 100), \
+		      CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT), \
+	    CONFIG_HW_SHADOW_STACK_MIN_SIZE)
+
+#define ARCH_THREAD_HW_SHADOW_STACK_DECLARE(sym, size) \
+	extern arch_thread_hw_shadow_stack_t sym[size / sizeof(arch_thread_hw_shadow_stack_t)]
+
+#define ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, size) \
+	extern arch_thread_hw_shadow_stack_t \
+		sym[nmemb][size / sizeof(arch_thread_hw_shadow_stack_t)]
+
+#define ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(name, nmemb, size) \
+	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack.arr_ ##name) \
+	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT) \
+	name[MAX(nmemb, 1)][size / sizeof(arch_thread_hw_shadow_stack_t)] = \
+		{ \
+			[0][0] = nmemb, \
+		}
+
 #ifdef CONFIG_X86_64
 #define ARCH_THREAD_HW_SHADOW_STACK_DEFINE(name, size) \
 	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack) \
@@ -30,7 +50,8 @@ typedef uintptr_t arch_thread_hw_shadow_stack_t;
 		   (uintptr_t)z_thread_entry, \
 		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 2] = \
 		   (uintptr_t)X86_KERNEL_CS }
-#else
+
+#else /* CONFIG_X86_64 */
 
 #ifdef CONFIG_X86_DEBUG_INFO
 extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
@@ -50,7 +71,6 @@ extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 2] = \
 		   (uintptr_t)___x86_entry_point, \
 		}
-
 #endif /* CONFIG_X86_64 */
 
 int arch_thread_hw_shadow_stack_attach(struct k_thread *thread,

@@ -14,6 +14,9 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/kernel/mm.h>
+#ifdef CONFIG_HW_SHADOW_STACK
+#include <x86_shstk.h>
+#endif
 
 /*
  * Definitions/macros for enabling paging
@@ -823,7 +826,7 @@ irq:
 #ifdef CONFIG_HW_SHADOW_STACK
 	pushq %rsi
 	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rsi
-	subq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rsi)
+	subq $X86_CET_IRQ_SHADOW_SUBSTACK_SIZE, (%rsi)
 	popq %rsi
 #endif
 	cmpl $CONFIG_ISR_DEPTH, ___cpu_t_nested_OFFSET(%rsi)
@@ -981,7 +984,7 @@ irq_dispatch:
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 #ifdef CONFIG_HW_SHADOW_STACK
 	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rax
-	addq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rax)
+	addq $X86_CET_IRQ_SHADOW_SUBSTACK_SIZE, (%rax)
 #endif
 	decl ___cpu_t_nested_OFFSET(%rsi)
 	jnz irq_exit_nested
