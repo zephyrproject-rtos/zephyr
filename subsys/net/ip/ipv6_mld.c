@@ -213,7 +213,7 @@ drop:
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
 	if (maddr && net_if_ipv6_maddr_is_joined(maddr)) {
@@ -235,11 +235,16 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		return -ENETDOWN;
 	}
 
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
 	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
 	if (ret < 0) {
 		return ret;
 	}
 
+out:
 	net_if_ipv6_maddr_join(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, true);
@@ -254,7 +259,7 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
 	if (!maddr) {
@@ -269,11 +274,16 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 		return 0;
 	}
 
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
 	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE);
 	if (ret < 0) {
 		return ret;
 	}
 
+out:
 	net_if_mcast_monitor(iface, &maddr->address, false);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_LEAVE, iface,
