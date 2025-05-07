@@ -506,6 +506,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		lll->ptc = 0U;
 	}
 	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
+	lll->max_sdu = PDU_BIG_INFO_MAX_SDU_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
