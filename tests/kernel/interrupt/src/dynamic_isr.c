@@ -20,7 +20,11 @@ static void dyn_isr(const void *arg)
 }
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
-extern struct _isr_table_entry _sw_isr_table[];
+extern
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
+struct _isr_table_entry _sw_isr_table[];
 
 #if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
 #define IRQ_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
