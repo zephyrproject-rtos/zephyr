@@ -240,10 +240,6 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
-
 	port {
 		dcmi_ep_in: endpoint {
 			remote-endpoint-label = "gc2145_ep_out";
