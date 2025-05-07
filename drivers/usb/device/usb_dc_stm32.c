@@ -506,12 +506,11 @@ static int usb_dc_stm32_init(void)
 			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
 	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
 	usb_dc_stm32_state.pcd.Init.phy_itface = usb_dc_stm32_get_physel();
-#if defined(USB) || defined(USB_DRD_FS)
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
+#if defined(USB) || defined(USB_DRD_FS)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
@@ -772,7 +771,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+	if (ep_idx >= USB_NUM_BIDIR_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
