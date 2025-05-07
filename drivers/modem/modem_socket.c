@@ -173,10 +173,10 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	cfg->sockets[i].family = family;
 	cfg->sockets[i].type = type;
 	cfg->sockets[i].ip_proto = proto;
-	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id) :
-		(cfg->base_socket_id + cfg->sockets_len);
+	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id)
+					      : (cfg->base_socket_id + cfg->sockets_len);
 	zvfs_finalize_typed_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
-			    (const struct fd_op_vtable *)cfg->vtable, ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)cfg->vtable, ZVFS_MODE_IFSOCK);
 
 	k_sem_give(&cfg->sem_lock);
 	return cfg->sockets[i].sock_fd;
@@ -342,6 +342,10 @@ int modem_socket_poll_prepare(struct modem_socket_config *cfg, struct modem_sock
 			      struct zsock_pollfd *pfd, struct k_poll_event **pev,
 			      struct k_poll_event *pev_end)
 {
+	printk("poll_prepare on socket %d: requested events: 0x%x\n", sock->id, pfd->events);
+
+	bool event_handled = false;
+
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
 			errno = ENOMEM;
@@ -351,19 +355,16 @@ int modem_socket_poll_prepare(struct modem_socket_config *cfg, struct modem_sock
 		k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 				  &sock->sig_data_ready);
 		(*pev)++;
+		event_handled = true;
 	}
-
 	if (pfd->events & ZSOCK_POLLOUT) {
-		if (*pev == pev_end) {
-			errno = ENOMEM;
-			return -1;
-		}
-		/* Not Implemented */
-		errno = ENOTSUP;
-		return -1;
+		printk("POLLOUT requested but not implemented\n");
+		/*
+		 *	You can implement this later when needed
+		 *	For now, just ignore it
+		 */
 	}
-
-	return 0;
+	return event_handled ? 0 : -ENOTSUP;
 }
 
 int modem_socket_poll_update(struct modem_socket *sock, struct zsock_pollfd *pfd,
@@ -459,14 +460,13 @@ bool modem_socket_id_is_assigned(const struct modem_socket_config *cfg,
 {
 	/* Verify socket is assigned to a valid value */
 	if ((cfg->base_socket_id <= sock->id) &&
-		(sock->id < (cfg->base_socket_id + cfg->sockets_len))) {
+	    (sock->id < (cfg->base_socket_id + cfg->sockets_len))) {
 		return true;
 	}
 	return false;
 }
 
-int modem_socket_id_assign(const struct modem_socket_config *cfg,
-			   struct modem_socket *sock, int id)
+int modem_socket_id_assign(const struct modem_socket_config *cfg, struct modem_socket *sock, int id)
 {
 	/* Verify dynamically assigning id is disabled */
 	if (cfg->assign_id) {
