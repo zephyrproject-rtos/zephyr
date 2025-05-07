@@ -15,11 +15,13 @@
 #include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,cortex-m-idle-timer = &rtc;
 	};
 
 	cpus {
@@ -29,7 +31,26 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m3";
+			cpu-power-states = <&stop0 &stop1>;
 			reg = <0>;
+		};
+
+		power-states {
+			stop0: stop0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000000>;
+				exit-latency-us = <400>;
+			};
+
+			stop1: stop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <1000000>;
+				exit-latency-us = <600>;
+			};
 		};
 	};
 
@@ -359,6 +380,22 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 0U)>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			status = "disabled";
+		};
+	};
+
+	pwr: power@40007000 {
+		compatible = "st,stm32-pwr";
+		reg = <0x40007000 0x400>; /* PWR register bank */
+		status = "disabled";
+
+		wkup-pins-nb = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		wkup-pin@1 {
+			reg = <0x1>;
+			wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 		};
 	};
 
