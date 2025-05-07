@@ -7,9 +7,9 @@
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-#ifdef CONFIG_DCACHE
+#ifdef CONFIG_CACHE_MANAGEMENT
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_CACHE_MANAGEMENT */
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
@@ -17,13 +17,23 @@
 
 #include "soc.h"
 
-extern void ambiq_power_init(void);
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+#define SCRATCH0_OEM_RCV_RETRY_MAGIC 0xA86
+
 void soc_early_init_hook(void)
 {
 	/* Enable Loop and branch info cache */
 	SCB->CCR |= SCB_CCR_LOB_Msk;
 	__DSB();
 	__ISB();
+
+	if ((MCUCTRL->SCRATCH0 >> 20) == SCRATCH0_OEM_RCV_RETRY_MAGIC) {
+		/*
+		 * Clear the scratch register
+		 */
+		MCUCTRL->SCRATCH0 = 0x00;
+	}
 
 	/* Internal timer15 for SPOT manager */
 	IRQ_CONNECT(82, 0, hal_internal_timer_isr, 0, 0);
@@ -34,15 +44,18 @@ void soc_early_init_hook(void)
 	/* Enable SIMOBUCK for the apollo5 Family */
 	am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
 
+	/*
+	 * Set default temperature for spotmgr to room temperature
+	 */
+	am_hal_pwrctrl_temp_thresh_t dummy;
+
+	am_hal_pwrctrl_temp_update(25.0f, &dummy);
+
 	/* Enable Icache*/
 	sys_cache_instr_enable();
 
 	/* Enable Dcache */
 	sys_cache_data_enable();
-
-#ifdef CONFIG_PM
-	ambiq_power_init();
-#endif
 
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Select HFRC 48MHz for the TPIU clock source */
@@ -55,6 +68,10 @@ void soc_early_init_hook(void)
 bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
 	bool buf_within_nocache = false;
+
+	if (buf == 0 || len_bytes == 0) {
+		return buf_within_nocache;
+	}
 
 #if CONFIG_NOCACHE_MEMORY
 	/* Check if buffer is in nocache region defined by the linker */

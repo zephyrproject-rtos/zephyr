@@ -15,7 +15,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/gpio/gpio_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 typedef void (*ambiq_gpio_cfg_func_t)(void);
 

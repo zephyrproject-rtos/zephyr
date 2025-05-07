@@ -20,7 +20,7 @@
 #include <zephyr/spinlock.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #define COUNTER_MAX UINT32_MAX
 
@@ -36,6 +36,9 @@
 #if defined(CONFIG_SOC_SERIES_APOLLO5X)
 #define COMPARE_INTERRUPT AM_HAL_STIMER_INT_COMPAREA
 #else
+/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
+ * Set up a backup comparator to handle this case
+ */
 #define COMPARE_INTERRUPT (AM_HAL_STIMER_INT_COMPAREA | AM_HAL_STIMER_INT_COMPAREB)
 #endif
 
@@ -212,6 +215,7 @@ static int stimer_init(void)
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |
 			     AM_HAL_STIMER_CFG_COMPARE_B_ENABLE);
 #elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+	/* No need for backup comparator any more */
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
 #endif

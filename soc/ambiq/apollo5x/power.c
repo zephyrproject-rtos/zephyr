@@ -12,9 +12,6 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/init.h>
 
-/* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
-
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
@@ -67,24 +64,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	__enable_irq();
 	irq_unlock(0);
-}
-
-void ambiq_power_init(void)
-{
-	am_hal_pwrctrl_mcu_memory_config_t McuMemCfg = {
-		.eROMMode = AM_HAL_PWRCTRL_ROM_AUTO,
-		.eDTCMCfg = AM_HAL_PWRCTRL_ITCM256K_DTCM512K,
-		.eRetainDTCM = AM_HAL_PWRCTRL_MEMRETCFG_TCMPWDSLP_RETAIN,
-		.eNVMCfg = AM_HAL_PWRCTRL_NVM0_AND_NVM1,
-		.bKeepNVMOnInDeepSleep = false};
-
-	am_hal_pwrctrl_sram_memcfg_t SRAMMemCfg = {.eSRAMCfg = AM_HAL_PWRCTRL_SRAM_3M,
-						   .eActiveWithMCU = AM_HAL_PWRCTRL_SRAM_NONE,
-						   .eActiveWithGFX = AM_HAL_PWRCTRL_SRAM_NONE,
-						   .eActiveWithDISP = AM_HAL_PWRCTRL_SRAM_NONE,
-						   .eSRAMRetain = AM_HAL_PWRCTRL_SRAM_3M};
-
-	am_hal_pwrctrl_mcu_memory_config(&McuMemCfg);
-
-	am_hal_pwrctrl_sram_config(&SRAMMemCfg);
 }
