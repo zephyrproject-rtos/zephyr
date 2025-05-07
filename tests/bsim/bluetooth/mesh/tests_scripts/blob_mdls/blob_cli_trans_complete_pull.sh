@@ -9,9 +9,3 @@ RunTest blob_success_pull blob_cli_trans_complete \
 	blob_srv_trans_complete blob_srv_trans_complete \
 	blob_srv_trans_complete blob_srv_trans_complete \
 	-- -argstest use-pull-mode=1
-
-overlay=overlay_psa_conf
-RunTest blob_success_pull_psa blob_cli_trans_complete \
-	blob_srv_trans_complete blob_srv_trans_complete \
-	blob_srv_trans_complete blob_srv_trans_complete \
-	-- -argstest use-pull-mode=1

@@ -194,14 +194,9 @@ extern const struct bt_mesh_comp comp;
  * with a 100ms interval.
  */
 static struct bt_mesh_test_gatt gatt_param = {
-#if defined(CONFIG_BT_EXT_ADV)
 	/* (total transmit duration) / (transmit interval) */
 	.transmits = 1500 / 100,
 	.interval = 100,
-#else
-	.transmits = 2000 / 1000,
-	.interval = 1000,
-#endif
 	.service = MESH_SERVICE_PROVISIONING,
 };
 

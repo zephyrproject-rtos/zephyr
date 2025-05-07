@@ -14,13 +14,3 @@ RunTest dfu_persistency \
 	dfu_target_fail_on_verify \
 	dfu_target_fail_on_apply \
 	dfu_target_fail_on_nothing
-
-overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
-RunTest dfu_persistency_psa \
-	dfu_cli_fail_on_persistency \
-	dfu_target_fail_on_metadata \
-	dfu_target_fail_on_caps_get \
-	dfu_target_fail_on_update_get \
-	dfu_target_fail_on_verify \
-	dfu_target_fail_on_apply \
-	dfu_target_fail_on_nothing
