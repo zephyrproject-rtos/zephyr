@@ -515,14 +515,6 @@ config X86_CET_SHADOW_STACK_ALIGNMENT
 	help
 	  This option sets the alignment of the Shadow Stack.
 
-config X86_CET_IRQ_SHADOW_STACK_SIZE
-	int "IRQ Shadow Stack size"
-	default 4096
-	depends on HW_SHADOW_STACK
-	help
-	  This option sets the size of the shadow stack used for interrupt
-	  and exception handling.
-
 config X86_CET_VERIFY_KERNEL_SHADOW_STACK
 	bool "Verify kernel shadow stack"
 	depends on HW_SHADOW_STACK
