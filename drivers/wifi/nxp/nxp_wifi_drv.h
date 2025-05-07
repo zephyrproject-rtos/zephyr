@@ -23,7 +23,6 @@
 #include "wlan_bt_fw.h"
 #include "wlan.h"
 #include "wm_net.h"
-#include "mlan_api.h"
 #if defined(CONFIG_NXP_WIFI_SHELL)
 #include "wifi_shell.h"
 #endif
