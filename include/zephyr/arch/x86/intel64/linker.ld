@@ -200,6 +200,16 @@ SECTION_PROLOGUE(.x86shadowstack,,)
 
     MMU_PAGE_ALIGN
 
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+    MMU_PAGE_ALIGN
+
+    *(.x86shadowstack.arr*)
+
+    MMU_PAGE_ALIGN
+
     __x86shadowstack_end = .;
 
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
