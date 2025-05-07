@@ -429,11 +429,11 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 	uint32_t *bsa = *(int **)stack;
 
-	if ((int *)bsa - stack > 4) {
+	if (bsa - (uint32_t *)stack > 4) {
 		num_laddr_regs = 8;
-	} else if ((int *)bsa - stack > 8) {
+	} else if (bsa - (uint32_t *)stack > 8) {
 		num_laddr_regs = 12;
-	} else if ((int *)bsa - stack > 12) {
+	} else if (bsa - (uint32_t *)stack > 12) {
 		num_laddr_regs = 16;
 	} else {
 		num_laddr_regs = 4;
@@ -445,8 +445,7 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 		if (reg->regno == SOC_GDB_REGNO_A1) {
 			/* A1 is calculated */
-			reg->val = POINTER_TO_UINT(
-					((char *)bsa) + BASE_SAVE_AREA_SIZE);
+			reg->val = POINTER_TO_UINT(((char *)bsa) + sizeof(_xtensa_irq_bsa_t));
 			reg->seqno = ctx->seqno;
 		} else {
 			reg->val = bsa[reg->stack_offset / 4];
@@ -520,11 +519,11 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)stack;
 
-	if ((int *)bsa - stack > 4) {
+	if ((uint32_t *)bsa - (uint32_t *)stack > 4) {
 		num_laddr_regs = 8;
-	} else if ((int *)bsa - stack > 8) {
+	} else if ((uint32_t *)bsa - (uint32_t *)stack > 8) {
 		num_laddr_regs = 12;
-	} else if ((int *)bsa - stack > 12) {
+	} else if ((uint32_t *)bsa - (uint32_t *)stack > 12) {
 		num_laddr_regs = 16;
 	} else {
 		num_laddr_regs = 4;
@@ -547,7 +546,7 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 			/* Shouldn't be changing stack pointer */
 			continue;
 		} else {
-			bsa[reg->stack_offset / 4] = reg->val;
+			((uint32_t *)bsa)[reg->stack_offset / 4] = reg->val;
 		}
 	}
 
@@ -559,7 +558,7 @@ static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 			continue;
 		} else if (reg->stack_offset != 0) {
 			/* For those registers stashed in stack */
-			bsa[reg->stack_offset / 4] = reg->val;
+			((uint32_t *)bsa)[reg->stack_offset / 4] = reg->val;
 		} else if (gdb_xtensa_is_special_reg(reg)) {
 			/*
 			 * Currently not writing back any special
