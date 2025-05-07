@@ -23,6 +23,7 @@
 		mcuboot-button0 = &button0;
 		sensor0 = &light;
 		sensor1 = &humidity;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -284,4 +285,8 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&wdt0 {
+	status = "okay";
 };

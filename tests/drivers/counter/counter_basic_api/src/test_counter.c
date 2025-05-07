@@ -132,6 +132,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_ITE_IT8XXX2
 	DEVS_FOR_DT_COMPAT(ite_it8xxx2_counter)
 #endif
+#ifdef CONFIG_COUNTER_NEORV32_GPTMR
+	DEVS_FOR_DT_COMPAT(neorv32_gptmr)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -731,16 +734,16 @@ static void test_valid_function_without_alarm(const struct device *dev)
 	ticks_tol = ticks_expected / 10;
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
-	if (!counter_is_counting_up(dev)) {
-		ticks_expected = counter_get_top_value(dev) - ticks_expected;
-	}
-
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: counter failed to start", dev->name);
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
-	ticks_expected += tick_current;
+	if (counter_is_counting_up(dev)) {
+		ticks_expected += tick_current;
+	} else {
+		ticks_expected = tick_current - ticks_expected;
+	}
 
 	k_busy_wait(wait_for_us);
 

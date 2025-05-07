@@ -134,11 +134,22 @@ static void mcux_flexcomm_poll_out(const struct device *dev,
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 
-	/* Wait until space is available in TX FIFO */
-	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
+	/* Wait until space is available in TX FIFO, as per API description:
+	 * This routine checks if the transmitter is full.
+	 * When the transmitter is not full, it writes a character to the data register.
+	 * It waits and blocks the calling thread otherwise.
+	 */
+	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoNotFullFlag)) {
 	}
 
 	USART_WriteByte(config->base, c);
+
+	/* Wait for the transfer to complete, as per API description:
+	 * This function is a blocking call. It blocks the calling thread until the character
+	 * is sent.
+	 */
+	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
+	}
 }
 
 static int mcux_flexcomm_err_check(const struct device *dev)

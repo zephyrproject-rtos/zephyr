@@ -522,6 +522,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio_samples/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
+    - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
     - doc/connectivity/bluetooth/shell/audio/
@@ -3508,6 +3509,7 @@ Bouffalolab Platforms:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
     - boards/bflb/
     - drivers/*/*bflb*
@@ -3893,6 +3895,7 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
+    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
@@ -3905,6 +3908,8 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
+  files-exclude:
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
@@ -3947,10 +3952,13 @@ NXP Platforms (Robotics Products):
   maintainers:
     - bperseghetti
     - PetervdPerk-NXP
+  collaborators:
+    - manuargue
   files:
     - boards/nxp/vmu*/
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
@@ -4019,11 +4027,16 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
+    - drivers/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
     - dts/*/nordic/
     - dts/bindings/*/nordic,*
+    - include/zephyr/drivers/*/*nrf*.h
+    - include/zephyr/drivers/*/*nrf*/
+    - include/zephyr/dt-bindings/*/nordic*.h
+    - include/zephyr/dt-bindings/*/nrf*.h
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
     - tests/boards/nrf/
@@ -4952,6 +4965,7 @@ West:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
     - modules/hal_bouffalolab/
   labels:

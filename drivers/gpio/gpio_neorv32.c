@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 
@@ -21,17 +22,19 @@ LOG_MODULE_REGISTER(gpio_neorv32, CONFIG_GPIO_LOG_LEVEL);
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* Register offsets */
-#define NEORV32_GPIO_PORT_IN  0x00
-#define NEORV32_GPIO_PORT_OUT 0x04
-
-/* Maximum number of GPIOs supported */
-#define MAX_GPIOS 32
+#define NEORV32_GPIO_PORT_IN      0x00
+#define NEORV32_GPIO_PORT_OUT     0x04
+#define NEORV32_GPIO_IRQ_TYPE     0x10
+#define NEORV32_GPIO_IRQ_POLARITY 0x14
+#define NEORV32_GPIO_IRQ_ENABLE   0x18
+#define NEORV32_GPIO_IRQ_PENDING  0x1c
 
 struct neorv32_gpio_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	const struct device *syscon;
 	mm_reg_t base;
+	void (*irq_config_func)(void);
 };
 
 struct neorv32_gpio_data {
@@ -39,28 +42,29 @@ struct neorv32_gpio_data {
 	struct gpio_driver_data common;
 	/* Shadow register for output */
 	uint32_t output;
+	struct k_spinlock lock;
+	sys_slist_t callbacks;
 };
 
-static inline uint32_t neorv32_gpio_read(const struct device *dev)
+static inline uint32_t neorv32_gpio_read(const struct device *dev, uint16_t reg)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 
-	return sys_read32(config->base + NEORV32_GPIO_PORT_IN);
+	return sys_read32(config->base + reg);
 }
 
-static inline void neorv32_gpio_write(const struct device *dev, uint32_t val)
+static inline void neorv32_gpio_write(const struct device *dev, uint16_t reg, uint32_t val)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 
-	sys_write32(val, config->base + NEORV32_GPIO_PORT_OUT);
+	sys_write32(val, config->base + reg);
 }
 
-static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
-				      gpio_flags_t flags)
+static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	if (!(BIT(pin) & config->common.port_pin_mask)) {
 		return -EINVAL;
@@ -75,7 +79,7 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
-		key = irq_lock();
+		key = k_spin_lock(&data->lock);
 
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			data->output |= BIT(pin);
@@ -83,91 +87,156 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 			data->output &= ~BIT(pin);
 		}
 
-		neorv32_gpio_write(dev, data->output);
-		irq_unlock(key);
+		neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+		k_spin_unlock(&data->lock, key);
 	}
 
 	return 0;
 }
 
-static int neorv32_gpio_port_get_raw(const struct device *dev,
-				      gpio_port_value_t *value)
+static int neorv32_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
-	*value = neorv32_gpio_read(dev);
+	*value = neorv32_gpio_read(dev, NEORV32_GPIO_PORT_IN);
 	return 0;
 }
 
-static int neorv32_gpio_port_set_masked_raw(const struct device *dev,
-					     gpio_port_pins_t mask,
-					     gpio_port_value_t value)
+static int neorv32_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					    gpio_port_value_t value)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output = (data->output & ~mask) | (mask & value);
-	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
-static int neorv32_gpio_port_set_bits_raw(const struct device *dev,
-					   gpio_port_pins_t pins)
+static int neorv32_gpio_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output |= pins;
-	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
-static int neorv32_gpio_port_clear_bits_raw(const struct device *dev,
-					     gpio_port_pins_t pins)
+static int neorv32_gpio_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output &= ~pins;
-	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
-static int neorv32_gpio_port_toggle_bits(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int neorv32_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->output ^= pins;
-	neorv32_gpio_write(dev, data->output);
-	irq_unlock(key);
+	neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
-static int neorv32_gpio_manage_callback(const struct device *dev,
-					struct gpio_callback *cb,
+static int neorv32_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	const struct neorv32_gpio_config *config = dev->config;
+	struct neorv32_gpio_data *data = dev->data;
+	const uint32_t mask = BIT(pin);
+	k_spinlock_key_t key;
+	uint32_t polarity;
+	uint32_t enable;
+	uint32_t type;
+	int err = 0;
+
+	if (!(mask & config->common.port_pin_mask)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->lock);
+
+	type = neorv32_gpio_read(dev, NEORV32_GPIO_IRQ_TYPE);
+	polarity = neorv32_gpio_read(dev, NEORV32_GPIO_IRQ_POLARITY);
+	enable = neorv32_gpio_read(dev, NEORV32_GPIO_IRQ_ENABLE);
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		enable &= ~mask;
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_ENABLE, enable);
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_PENDING, ~mask);
+	} else {
+		enable |= mask;
+
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			type &= ~mask;
+		} else if (mode == GPIO_INT_MODE_EDGE) {
+			type |= mask;
+		} else {
+			LOG_ERR("unsupported interrupt mode 0x%02x", mode);
+			err = -ENOTSUP;
+			goto unlock;
+		}
+
+		if (trig == GPIO_INT_TRIG_LOW) {
+			polarity &= ~mask;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			polarity |= mask;
+		} else {
+			LOG_ERR("unsupported interrupt trig 0x%02x", trig);
+			err = -ENOTSUP;
+			goto unlock;
+		}
+
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_TYPE, type);
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_POLARITY, polarity);
+
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_PENDING, ~mask);
+		neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_ENABLE, enable);
+	}
+
+unlock:
+	k_spin_unlock(&data->lock, key);
+
+	return err;
+}
+
+static int neorv32_gpio_manage_callback(const struct device *dev, struct gpio_callback *cb,
 					bool set)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(set);
+	struct neorv32_gpio_data *data = dev->data;
 
-	return -ENOTSUP;
+	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
 static uint32_t neorv32_gpio_get_pending_int(const struct device *dev)
 {
-	return 0;
+	return neorv32_gpio_read(dev, NEORV32_GPIO_IRQ_PENDING);
+}
+
+static void neorv32_gpio_isr(const struct device *dev)
+{
+	struct neorv32_gpio_data *data = dev->data;
+	uint32_t pending;
+
+	pending = neorv32_gpio_read(dev, NEORV32_GPIO_IRQ_PENDING);
+	neorv32_gpio_write(dev, NEORV32_GPIO_IRQ_PENDING, ~(pending));
+
+	gpio_fire_callbacks(&data->callbacks, dev, pending);
 }
 
 static int neorv32_gpio_init(const struct device *dev)
@@ -193,7 +262,9 @@ static int neorv32_gpio_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	neorv32_gpio_write(dev, data->output);
+	neorv32_gpio_write(dev, NEORV32_GPIO_PORT_OUT, data->output);
+
+	config->irq_config_func();
 
 	return 0;
 }
@@ -205,11 +276,19 @@ static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 	.port_set_bits_raw = neorv32_gpio_port_set_bits_raw,
 	.port_clear_bits_raw = neorv32_gpio_port_clear_bits_raw,
 	.port_toggle_bits = neorv32_gpio_port_toggle_bits,
+	.pin_interrupt_configure = neorv32_gpio_pin_interrupt_configure,
 	.manage_callback = neorv32_gpio_manage_callback,
 	.get_pending_int = neorv32_gpio_get_pending_int,
 };
 
 #define NEORV32_GPIO_INIT(n)						\
+	static void neorv32_gpio_config_func_##n(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
+			    neorv32_gpio_isr, DEVICE_DT_INST_GET(n), 0);\
+		irq_enable(DT_INST_IRQN(n));				\
+	}								\
+									\
 	static struct neorv32_gpio_data neorv32_gpio_##n##_data = {	\
 		.output = 0,						\
 	};								\
@@ -220,6 +299,7 @@ static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 		},							\
 		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),	\
 		.base = DT_INST_REG_ADDR(n),				\
+		.irq_config_func = neorv32_gpio_config_func_##n,	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\

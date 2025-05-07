@@ -20,8 +20,10 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #ifdef CONFIG_MMU_PAGE_SIZE
 #define LLEXT_PAGE_SIZE CONFIG_MMU_PAGE_SIZE
+#elif CONFIG_ARC_MPU_VER == 2
+#define LLEXT_PAGE_SIZE 2048
 #else
-/* Arm's MPU wants a 32 byte minimum mpu region */
+/* Arm and non-v2 ARC MPUs want a 32 byte minimum MPU region */
 #define LLEXT_PAGE_SIZE 32
 #endif
 
@@ -77,7 +79,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	 * program-accessible data (not to string tables, for example).
 	 */
 	if (region->sh_flags & SHF_ALLOC) {
-		if (IS_ENABLED(CONFIG_ARM_MPU)) {
+		if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
 			/* On ARM with an MPU, regions must be sized and
 			 * aligned to the same power of two (larger than 32).
 			 */

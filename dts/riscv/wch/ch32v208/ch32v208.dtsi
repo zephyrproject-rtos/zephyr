@@ -76,6 +76,7 @@
 			reg = <0x40010000 16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_AFIO>;
 
 			gpioa: gpio@40010800 {
 				compatible = "wch,gpio";

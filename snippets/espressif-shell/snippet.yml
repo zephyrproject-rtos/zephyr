@@ -1,3 +1,0 @@
-name: shell-full
-append:
-  EXTRA_CONF_FILE: esp-shell.conf

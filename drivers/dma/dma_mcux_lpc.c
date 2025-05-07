@@ -56,6 +56,8 @@ struct dma_otrig {
 };
 
 struct dma_mcux_lpc_dma_data {
+	struct dma_context ctx;
+
 	struct channel_data *channel_data;
 	struct dma_otrig *otrig_array;
 	int8_t *channel_index;
@@ -401,6 +403,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	switch (config->channel_direction) {
 	case MEMORY_TO_MEMORY:
+	case HOST_TO_MEMORY:
+	case MEMORY_TO_HOST:
 		is_periph = false;
 		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
 			src_inc = block_config->source_gather_interval / width;
@@ -825,10 +829,29 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+static int dma_mcux_lpc_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+{
+	switch (type) {
+	case DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT:
+	case DMA_ATTR_BUFFER_SIZE_ALIGNMENT:
+	case DMA_ATTR_COPY_ALIGNMENT:
+		*value = 4;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int dma_mcux_lpc_init(const struct device *dev)
 {
 	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *data = dev->data;
+
+	data->ctx.magic = DMA_MAGIC;
+	data->ctx.dma_channels = config->num_of_channels;
 
 	/* Indicate that the Otrig Muxes are not connected */
 	for (int i = 0; i < config->num_of_otrigs; i++) {
@@ -860,6 +883,7 @@ static DEVICE_API(dma, dma_mcux_lpc_api) = {
 	.stop = dma_mcux_lpc_stop,
 	.reload = dma_mcux_lpc_reload,
 	.get_status = dma_mcux_lpc_get_status,
+	.get_attribute = dma_mcux_lpc_get_attribute
 };
 
 #define DMA_MCUX_LPC_CONFIG_FUNC(n)					\
@@ -914,7 +938,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &dma_mcux_lpc_init,				\
+			    dma_mcux_lpc_init,				\
 			    NULL,					\
 			    &dma_data_##n, &dma_##n##_config,		\
 			    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\

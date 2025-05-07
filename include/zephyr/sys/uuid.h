@@ -67,7 +67,7 @@ int uuid_generate_v4(struct uuid *out);
  * @details This function computes a deterministic UUID starting from a namespace UUID and binary
  * data.
  *
- * @param namespace A pointer to an UUID to be used as namespace.
+ * @param ns A pointer to an UUID to be used as namespace.
  * @param data A pointer to the data that will be hashed to produce the UUID.
  * @param data_size The size of the data buffer.
  * @param out The UUID where the result will be written.
@@ -77,7 +77,7 @@ int uuid_generate_v4(struct uuid *out);
  * @retval -ENOMEM Memory allocation failed
  * @retval -ENOTSUP mbedTLS returned an unrecognized error
  */
-int uuid_generate_v5(const struct uuid *namespace, const void *data, size_t data_size,
+int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out);
 
 /**

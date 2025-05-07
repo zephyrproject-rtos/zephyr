@@ -21,9 +21,8 @@ struct tmc51xx_data {
 	struct k_sem sem;
 	struct k_work_delayable stallguard_dwork;
 	/* Work item to run the callback in a thread context. */
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
 	struct k_work_delayable rampstat_callback_dwork;
-#endif
+	struct gpio_callback diag0_cb;
 	/* device pointer required to access config in k_work */
 	const struct device *stepper;
 	stepper_event_callback_t callback;
@@ -42,9 +41,14 @@ struct tmc51xx_config {
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN
 	const struct tmc_ramp_generator_data default_ramp_config;
 #endif
+	struct gpio_dt_spec diag0_gpio;
 };
 
 static int read_actual_position(const struct device *dev, int32_t *position);
+static void rampstat_work_handler(struct k_work *work);
+static void tmc51xx_diag0_gpio_callback_handler(const struct device *port, struct gpio_callback *cb,
+						gpio_port_pins_t pins);
+static int rampstat_read_clear(const struct device *dev, uint32_t *rampstat_value);
 
 static int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
@@ -90,23 +94,67 @@ static int tmc51xx_stepper_set_event_callback(const struct device *dev,
 					      stepper_event_callback_t callback, void *user_data)
 {
 	struct tmc51xx_data *data = dev->data;
+	const struct tmc51xx_config *config = dev->config;
+	int err;
 
 	data->callback = callback;
 	data->event_cb_user_data = user_data;
+
+	/* Configure DIAG0 GPIO interrupt pin */
+	if (config->diag0_gpio.port) {
+		LOG_INF("Configuring DIAG0 GPIO interrupt pin");
+		if (!gpio_is_ready_dt(&config->diag0_gpio)) {
+			LOG_ERR("DIAG0 interrupt GPIO not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->diag0_gpio, GPIO_INPUT);
+		if (err < 0) {
+			LOG_ERR("Could not configure DIAG0 GPIO (%d)", err);
+			return err;
+		}
+		k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
+
+		err = gpio_pin_interrupt_configure_dt(&config->diag0_gpio, GPIO_INT_EDGE_RISING);
+		if (err) {
+			LOG_ERR("failed to configure DIAG0 interrupt (err %d)", err);
+			return -EIO;
+		}
+
+		/* Initialize and add GPIO callback */
+		gpio_init_callback(&data->diag0_cb, tmc51xx_diag0_gpio_callback_handler,
+				   BIT(config->diag0_gpio.pin));
+
+		err = gpio_add_callback(config->diag0_gpio.port, &data->diag0_cb);
+		if (err < 0) {
+			LOG_ERR("Could not add DIAG0 pin GPIO callback (%d)", err);
+			return -EIO;
+		}
+
+		/* Clear any pending interrupts */
+		uint32_t rampstat_value;
+
+		err = rampstat_read_clear(dev, &rampstat_value);
+		if (err != 0) {
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
 static int read_vactual(const struct device *dev, int32_t *actual_velocity)
 {
 	int err;
+	uint32_t raw_value;
 
-	err = tmc51xx_read(dev, TMC51XX_VACTUAL, actual_velocity);
+	err = tmc51xx_read(dev, TMC51XX_VACTUAL, &raw_value);
 	if (err) {
 		LOG_ERR("Failed to read VACTUAL register");
 		return err;
 	}
 
-	*actual_velocity = sign_extend(*actual_velocity, TMC_RAMP_VACTUAL_SHIFT);
+	*actual_velocity = sign_extend(raw_value, TMC_RAMP_VACTUAL_SHIFT);
 	if (*actual_velocity) {
 		LOG_DBG("actual velocity: %d", *actual_velocity);
 	}
@@ -165,13 +213,10 @@ static void stallguard_work_handler(struct k_work *work)
 	}
 	if (err == -EIO) {
 		LOG_ERR("Failed to enable stallguard because of I/O error");
-		return;
 	}
 }
 
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
-
-static void execute_callback(const struct device *dev, const enum stepper_event event)
+static void stepper_trigger_callback(const struct device *dev, const enum stepper_event event)
 {
 	struct tmc51xx_data *data = dev->data;
 
@@ -198,17 +243,11 @@ static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 	const uint8_t sg_result = FIELD_GET(TMC5XXX_DRV_STATUS_SG_RESULT_MASK, drv_status);
 	const bool sg_status = FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status);
 
-	LOG_DBG("%s position: %d | sg result: %3d status: %d",
-		dev->name, position, sg_result, sg_status);
+	LOG_DBG("%s position: %d | sg result: %3d status: %d", dev->name, position, sg_result,
+		sg_status);
 }
 
-#endif
-
-static void rampstat_work_reschedule(struct k_work_delayable *rampstat_callback_dwork)
-{
-	k_work_reschedule(rampstat_callback_dwork,
-		K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
-}
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_STALLGUARD_LOG */
 
 static int rampstat_read_clear(const struct device *dev, uint32_t *rampstat_value)
 {
@@ -228,14 +267,14 @@ static void rampstat_work_handler(struct k_work *work)
 	struct tmc51xx_data *stepper_data =
 		CONTAINER_OF(dwork, struct tmc51xx_data, rampstat_callback_dwork);
 	const struct device *dev = stepper_data->stepper;
+	const struct tmc51xx_config *config = dev->config;
 
-	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(dev);
 
 	uint32_t drv_status;
 	int err;
 
-	err = tmc51xx_read(dev, TMC51XX_DRVSTATUS,
-			   &drv_status);
+	err = tmc51xx_read(dev, TMC51XX_DRVSTATUS, &drv_status);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read DRVSTATUS register", dev->name);
 		return;
@@ -245,9 +284,7 @@ static void rampstat_work_handler(struct k_work *work)
 #endif
 	if (FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status) == 1U) {
 		LOG_INF("%s: Stall detected", dev->name);
-		err = tmc51xx_write(dev,
-				    TMC51XX_RAMPMODE,
-				    TMC5XXX_RAMPMODE_HOLD_MODE);
+		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_HOLD_MODE);
 		if (err != 0) {
 			LOG_ERR("%s: Failed to stop motor", dev->name);
 			return;
@@ -266,39 +303,52 @@ static void rampstat_work_handler(struct k_work *work)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", dev->name);
-			execute_callback(dev,
-					 STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+			stepper_trigger_callback(dev, STEPPER_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", dev->name);
-			execute_callback(dev,
-					 STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+			stepper_trigger_callback(dev, STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", dev->name);
-			execute_callback(dev, STEPPER_EVENT_STEPS_COMPLETED);
+			stepper_trigger_callback(dev, STEPPER_EVENT_STEPS_COMPLETED);
 			break;
 
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", dev->name);
 			stallguard_enable(dev, false);
-			execute_callback(dev, STEPPER_EVENT_STALL_DETECTED);
+			stepper_trigger_callback(dev, STEPPER_EVENT_STALL_DETECTED);
 			break;
 		default:
 			LOG_ERR("Illegal ramp stat bit field");
 			break;
 		}
 	} else {
-		rampstat_work_reschedule(&stepper_data->rampstat_callback_dwork);
+		/* Only reschedule polling if DIAG0 interrupt is not configured */
+		if (!config->diag0_gpio.port) {
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+			k_work_reschedule(
+				&stepper_data->rampstat_callback_dwork,
+				K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
+		}
 	}
 }
 
-#endif
+static void tmc51xx_diag0_gpio_callback_handler(const struct device *port, struct gpio_callback *cb,
+						gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	struct tmc51xx_data *stepper_data = CONTAINER_OF(cb, struct tmc51xx_data, diag0_cb);
+
+	k_work_reschedule(&stepper_data->rampstat_callback_dwork, K_NO_WAIT);
+}
 
 static int tmc51xx_stepper_enable(const struct device *dev)
 {
@@ -417,8 +467,7 @@ static int tmc51xx_stepper_set_reference_position(const struct device *dev, cons
 {
 	int err;
 
-	err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-			    TMC5XXX_RAMPMODE_HOLD_MODE);
+	err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_HOLD_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -434,11 +483,14 @@ static int tmc51xx_stepper_set_reference_position(const struct device *dev, cons
 static int read_actual_position(const struct device *dev, int32_t *position)
 {
 	int err;
+	uint32_t raw_value;
 
-	err = tmc51xx_read(dev, TMC51XX_XACTUAL, position);
+	err = tmc51xx_read(dev, TMC51XX_XACTUAL, &raw_value);
 	if (err != 0) {
 		return -EIO;
 	}
+
+	*position = sign_extend(raw_value, TMC_RAMP_XACTUAL_SHIFT);
 	return 0;
 }
 
@@ -465,8 +517,7 @@ static int tmc51xx_stepper_move_to(const struct device *dev, const int32_t micro
 		stallguard_enable(dev, false);
 	}
 
-	err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-			    TMC5XXX_RAMPMODE_POSITIONING_MODE);
+	err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_POSITIONING_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -479,11 +530,13 @@ static int tmc51xx_stepper_move_to(const struct device *dev, const int32_t micro
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
-	if (data->callback) {
-		rampstat_work_reschedule(&data->rampstat_callback_dwork);
+	if (data->callback && !config->diag0_gpio.port) {
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+		k_work_reschedule(
+			&data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
 	}
-#endif
 	return 0;
 }
 
@@ -519,16 +572,14 @@ static int tmc51xx_stepper_run(const struct device *dev, const enum stepper_dire
 
 	switch (direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-				    TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
+		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
 		}
 		break;
 
 	case STEPPER_DIRECTION_NEGATIVE:
-		err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-				    TMC5XXX_RAMPMODE_NEGATIVE_VELOCITY_MODE);
+		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_NEGATIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -539,11 +590,13 @@ static int tmc51xx_stepper_run(const struct device *dev, const enum stepper_dire
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
-	if (data->callback) {
-		rampstat_work_reschedule(&data->rampstat_callback_dwork);
+	if (data->callback && !config->diag0_gpio.port) {
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+		k_work_reschedule(
+			&data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
 	}
-#endif
 	return 0;
 }
 
@@ -587,8 +640,7 @@ int tmc51xx_stepper_set_ramp(const struct device *dev,
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc51xx_write(dev, TMC51XX_TZEROWAIT,
-			    ramp_data->tzerowait);
+	err = tmc51xx_write(dev, TMC51XX_TZEROWAIT, ramp_data->tzerowait);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -653,25 +705,23 @@ static int tmc51xx_init(const struct device *dev)
 	if (config->is_sg_enabled) {
 		k_work_init_delayable(&data->stallguard_dwork, stallguard_work_handler);
 
-		err = tmc51xx_write(dev,
-				    TMC51XX_SWMODE, BIT(10));
+		err = tmc51xx_write(dev, TMC51XX_SWMODE, BIT(10));
 		if (err != 0) {
 			return -EIO;
 		}
 
 		LOG_DBG("Setting stall guard to %d with delay %d ms", config->sg_threshold,
 			config->sg_velocity_check_interval_ms);
-		if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE,
-			      TMC5XXX_SG_MAX_VALUE)) {
+		if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE, TMC5XXX_SG_MAX_VALUE)) {
 			LOG_ERR("Stallguard threshold out of range");
 			return -EINVAL;
 		}
 
 		int32_t stall_guard_threshold = (int32_t)config->sg_threshold;
 
-		err = tmc51xx_write(
-			dev, TMC51XX_COOLCONF,
-			stall_guard_threshold << TMC5XXX_COOLCONF_SG2_THRESHOLD_VALUE_SHIFT);
+		err = tmc51xx_write(dev, TMC51XX_COOLCONF,
+				    stall_guard_threshold
+					    << TMC5XXX_COOLCONF_SG2_THRESHOLD_VALUE_SHIFT);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -685,12 +735,10 @@ static int tmc51xx_init(const struct device *dev)
 	}
 #endif
 
-#if CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
 	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
 	uint32_t rampstat_value;
-
 	(void)rampstat_read_clear(dev, &rampstat_value);
-#endif
+
 	err = tmc51xx_stepper_set_micro_step_res(dev, config->default_micro_step_res);
 	if (err != 0) {
 		return -EIO;
@@ -722,23 +770,28 @@ static DEVICE_API(stepper, tmc51xx_api) = {
 		     "stallguard threshold velocity must be a positive value"), ());		\
 	IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN, (CHECK_RAMP_DT_DATA(inst)));		\
 	static const struct tmc51xx_config tmc51xx_config_##inst = {				\
-		.gconf = (									\
-		(DT_INST_PROP(inst, en_pwm_mode) << TMC51XX_GCONF_EN_PWM_MODE_SHIFT) |		\
-		(DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT) |		\
-		(DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT)),		\
-		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8)), 0),	\
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency),				\
-		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),			\
-		.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),			\
-		.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),	\
-		.sg_velocity_check_interval_ms = DT_INST_PROP(inst,				\
-						stallguard_velocity_check_interval_ms),		\
-		.is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),			\
-		IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN,					\
-		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC51XX(inst)))};			\
-	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,			\
-			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
+		.gconf = ((DT_INST_PROP(inst, en_pwm_mode) << TMC51XX_GCONF_EN_PWM_MODE_SHIFT) |   \
+			  (DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT) |       \
+			  (DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT) |    \
+			  (DT_INST_NODE_HAS_PROP(inst, diag0_gpios)                                \
+				   ? BIT(TMC51XX_GCONF_DIAG0_INT_PUSHPULL_SHIFT)                   \
+				   : 0)),                                                          \
+		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |               \
+					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
+					    0),                                                    \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
+		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
+		.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),                         \
+		.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),        \
+		.sg_velocity_check_interval_ms =                                                   \
+			DT_INST_PROP(inst, stallguard_velocity_check_interval_ms),                 \
+		.is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),                         \
+		IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN,					   \
+		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC51XX(inst))),                      \
+			    .diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})};       \
+	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,                      \
+			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      &tmc51xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMC51XX_DEFINE)

@@ -380,7 +380,7 @@ static DEVICE_API(dma, dma_rpi_pico_driver_api) = {
 		.channels = dma_rpi_pico##inst##_channels,                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &dma_rpi_pico_init, NULL, &dma_rpi_pico##inst##_data,          \
+	DEVICE_DT_INST_DEFINE(inst, dma_rpi_pico_init, NULL, &dma_rpi_pico##inst##_data,           \
 			      &dma_rpi_pico##inst##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY, \
 			      &dma_rpi_pico_driver_api);
 

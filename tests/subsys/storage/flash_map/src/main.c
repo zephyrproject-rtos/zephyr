@@ -256,4 +256,24 @@ ZTEST(flash_map, test_flash_area_copy)
 	zassert_mem_equal(src_buf, dst_buf, sizeof(src_buf), "Data mismatch after copy");
 }
 
+ZTEST(flash_map, test_parameter_overflows)
+{
+	const struct flash_area *fa;
+	uint8_t dst_buf[FLASH_AREA_COPY_SIZE];
+	int rc;
+
+	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	/* -1 cast to size_t gives us max size_t value, added to offset of 1,
+	 * it will overflow to 0.
+	 */
+	rc = flash_area_read(fa, 1, dst_buf, (size_t)(-1));
+	zassert_equal(rc, -EINVAL, "1: Overflow should have been detected");
+	/* Here we have offset 1 below size of area, with added max size_t
+	 * it upper bound of read range should overflow to:
+	 * (max(size_t) + fa->fa_size - 1) mod (max(size_t)) == fa->fa_size - 2
+	 */
+	rc = flash_area_read(fa, fa->fa_size - 1, dst_buf, (size_t)(-1));
+	zassert_equal(rc, -EINVAL, "2: Overflow should have been detected");
+}
+
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);

@@ -37,10 +37,10 @@
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
 
-#define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
 #define CAP_AC_MAX_STREAM       2
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define CONTEXT                 (BT_AUDIO_CONTEXT_TYPE_MEDIA)
+#define BROADCAST_STREAM_CNT    MIN(CAP_AC_MAX_STREAM, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 struct cap_initiator_ac_param {
 	char *name;
@@ -51,7 +51,7 @@ struct cap_initiator_ac_param {
 static const struct named_lc3_preset *named_preset;
 
 extern enum bst_result_t bst_result;
-static struct audio_test_stream broadcast_source_streams[BROADCAST_STREMT_CNT];
+static struct audio_test_stream broadcast_source_streams[BROADCAST_STREAM_CNT];
 static struct bt_cap_stream *broadcast_streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_bap_lc3_preset broadcast_preset_16_2_1 =
 	BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT);
@@ -673,7 +673,8 @@ static void test_main_cap_initiator_broadcast(void)
 	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Wait for other devices to have received the data they wanted */
-	backchannel_sync_wait_any();
+	printk("Waiting for broadcast stop signal");
+	backchannel_sync_wait_all();
 
 	test_broadcast_audio_tx_sync();
 
@@ -885,7 +886,7 @@ static void test_cap_initiator_ac_12(void)
 	test_cap_initiator_ac(&param);
 }
 
-#if BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM
+#if BROADCAST_STREAM_CNT >= CAP_AC_MAX_STREAM
 static void test_cap_initiator_ac_13(void)
 {
 	const struct cap_initiator_ac_param param = {
@@ -897,7 +898,7 @@ static void test_cap_initiator_ac_13(void)
 
 	test_cap_initiator_ac(&param);
 }
-#endif /* BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM */
+#endif /* BROADCAST_STREAM_CNT >= CAP_AC_MAX_STREAM */
 
 static void test_cap_initiator_ac_14(void)
 {
@@ -966,7 +967,7 @@ static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 		.test_main_f = test_cap_initiator_ac_12,
 		.test_args_f = test_args,
 	},
-#if BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM
+#if BROADCAST_STREAM_CNT >= CAP_AC_MAX_STREAM
 	{
 		.test_id = "cap_initiator_ac_13",
 		.test_pre_init_f = test_init,
@@ -974,7 +975,7 @@ static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 		.test_main_f = test_cap_initiator_ac_13,
 		.test_args_f = test_args,
 	},
-#endif /* BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM */
+#endif /* BROADCAST_STREAM_CNT >= CAP_AC_MAX_STREAM */
 	{
 		.test_id = "cap_initiator_ac_14",
 		.test_pre_init_f = test_init,

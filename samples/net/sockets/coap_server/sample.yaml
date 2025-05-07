@@ -12,6 +12,16 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  sample.net.sockets.coaps_server:
+    harness: net
+    extra_args: EXTRA_CONF_FILE="overlay-dtls.conf"
+    tags:
+      - net
+      - socket
+      - tls
+    platform_allow:
+      - native_sim
+      - qemu_x86
   sample.net.sockets.coap_server.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4

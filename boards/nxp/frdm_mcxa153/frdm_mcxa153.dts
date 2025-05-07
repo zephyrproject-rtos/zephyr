@@ -56,16 +56,20 @@
 
 		user_button_2: button_2 {
 			label = "User SW2";
-			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		user_button_3: button_3 {
 			label = "User SW3";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+};
+
+&edma0 {
+	status = "okay";
 };
 
 &flash {

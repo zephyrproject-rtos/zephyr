@@ -5,6 +5,9 @@ compatible: "neorv32,gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
+  interrupts:
+    required: true
+
   reg:
     required: true
 

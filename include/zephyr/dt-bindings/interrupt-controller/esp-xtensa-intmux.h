@@ -84,4 +84,4 @@
 
 #define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_XTENSA_INTMUX_H_ */

@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_WDOG_CMSDK_APB wdt_cmsdk_apb.c)
 
 zephyr_library_sources_ifdef(CONFIG_WDT_CC32XX wdt_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_CC13XX_CC26XX wdt_cc13xx_cc26xx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_CC23X0 wdt_cc23x0.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ESP32 wdt_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_XT_ESP32 xt_wdt_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_GECKO wdt_gecko.c)

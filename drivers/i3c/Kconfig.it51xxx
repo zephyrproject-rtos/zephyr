@@ -1,0 +1,111 @@
+# Copyright (c) 2025 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+module = I3C_IT51XXX
+module-str = i3c-it51xxx
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3CM_IT51XXX
+	bool "it51xxx i3cm driver"
+	depends on DT_HAS_ITE_IT51XXX_I3CM_ENABLED
+	select PINCTRL
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	default y
+	help
+	  Enable it51xxx i3c controller driver.
+
+if I3CM_IT51XXX
+
+config I3CM_IT51XXX_TRANSFER_TIMEOUT_MS
+	int "Set the transfer timeout in milliseconds"
+	default 1000
+
+config I3CM_IT51XXX_DLM_SIZE
+	int "it51xxx i3cm dlm data size"
+	depends on I3CM_IT51XXX
+	default 256
+	help
+	  Set i3cm data-local-memory(DLM) size.
+
+endif # I3CM_IT51XXX
+
+config I3CS_IT51XXX
+	bool "it51xxx i3cs driver"
+	depends on DT_HAS_ITE_IT51XXX_I3CS_ENABLED
+	select PINCTRL
+	select I3C_TARGET_BUFFER_MODE
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	default y
+	help
+	  Enable it51xxx i3c target driver.
+
+if I3CS_IT51XXX
+
+config I3CS_IT51XXX_IBI_TIMEOUT_MS
+	int "Set the IBI timeout in milliseconds"
+	default 1000
+
+choice
+	bool "choose i3cs tx fifo size"
+	default I3CS_TX_FIFO_16_BYTE
+
+config I3CS_TX_FIFO_16_BYTE
+	bool "16"
+
+config I3CS_TX_FIFO_32_BYTE
+	bool "32"
+
+config I3CS_TX_FIFO_64_BYTE
+	bool "64"
+
+config I3CS_TX_FIFO_128_BYTE
+	bool "128"
+
+config I3CS_TX_FIFO_4096_BYTE
+	bool "4096"
+endchoice
+
+config I3CS_IT51XXX_TX_FIFO_SIZE
+	int "it51xxx i3cs tx fifo size"
+	default 16 if I3CS_TX_FIFO_16_BYTE
+	default 32 if I3CS_TX_FIFO_32_BYTE
+	default 64 if I3CS_TX_FIFO_64_BYTE
+	default 128 if I3CS_TX_FIFO_128_BYTE
+	default 4096 if I3CS_TX_FIFO_4096_BYTE
+	default 16
+	help
+	  Set i3cs tx fifo size size.
+
+choice
+	bool "choose i3cs rx fifo size"
+	default I3CS_RX_FIFO_16_BYTE
+
+config I3CS_RX_FIFO_16_BYTE
+	bool "16"
+
+config I3CS_RX_FIFO_32_BYTE
+	bool "32"
+
+config I3CS_RX_FIFO_64_BYTE
+	bool "64"
+
+config I3CS_RX_FIFO_128_BYTE
+	bool "128"
+
+config I3CS_RX_FIFO_4096_BYTE
+	bool "4096"
+endchoice
+
+config I3CS_IT51XXX_RX_FIFO_SIZE
+	int "it51xxx i3cs rx fifo size"
+	default 16 if I3CS_RX_FIFO_16_BYTE
+	default 32 if I3CS_RX_FIFO_32_BYTE
+	default 64 if I3CS_RX_FIFO_64_BYTE
+	default 128 if I3CS_RX_FIFO_128_BYTE
+	default 4096 if I3CS_RX_FIFO_4096_BYTE
+	default 16
+	help
+	  Set i3cs rx fifo size size.
+
+endif # I3CS_IT51XXX

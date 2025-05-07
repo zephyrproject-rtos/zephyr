@@ -26,24 +26,24 @@
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <100000>;
+				min-residency-us = <100000000>;
 			};
 
 			suspend_to_ram: suspend_to_ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
-				min-residency-us = <250000>;
+				min-residency-us = <250000000>;
 			};
 		};
 	};
 
-	flash0: flash@20000400 {
-		reg = <0x20000400 0x4FC00>;
+	flash0: flash@2000B400 {
+		reg = <0x2000B400 0x40000>;
 	};
 
 	sram0: memory@20050000 {
 		compatible = "mmio-sram";
-		reg = <0x20050000 0x8000>;
+		reg = <0x20050000 0x10000>;
 	};
 
 	clocks {
