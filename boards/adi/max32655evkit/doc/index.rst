@@ -162,11 +162,11 @@ in
 :zephyr_file:`boards/adi/max32655evkit/max32655evkit_max32655_rv32_defconfig`.
 
 The primary Arm core uses Kconfig options,
-:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` and
-:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS`, to enable and
-configure the boot address for the secondary RISC-V core. The devicetree chosen
-node, ``zephyr,code-rv32-partition``, specifies the default value for the boot
-address.
+:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` to enable and the secondary
+RISC-V core. The devicetree chosen nodes, ``zephyr,rv32-flash`` and
+``zephyr,code-rv32-partition``, specify the values for the bootaddress and
+offset, respectively. If ``zephyr,rv32-flash`` is not set, the standard
+``zephyr,flash`` value is used as the base address.
 
 :zephyr:code-sample:`sysbuild_hello_world` supports building the Arm and RISC-V
 images:
