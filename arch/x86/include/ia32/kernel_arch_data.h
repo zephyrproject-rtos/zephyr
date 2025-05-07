@@ -74,14 +74,14 @@ extern void z_x86_tls_update_gdt(struct k_thread *thread);
 
 #endif /* _ASMLANGUAGE */
 
-#define X86_IRQ_SHADOW_STACK_DEFINE(name, size)						\
-	z_x86_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)				\
-	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)				\
-	name[size / sizeof(z_x86_shadow_stack_t)] =					\
-		{ [size / sizeof(z_x86_shadow_stack_t) - 4] =				\
-			(uintptr_t)name + size - 2 * sizeof(z_x86_shadow_stack_t),	\
-		  [size / sizeof(z_x86_shadow_stack_t) - 3] = 0,			\
-		  [size / sizeof(z_x86_shadow_stack_t) - 2] = 0,			\
+#define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
+	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)			\
+	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
+	name[size / sizeof(arch_thread_hw_shadow_stack_t)] =					\
+		{ [size / sizeof(arch_thread_hw_shadow_stack_t) - 4] =				\
+			(uintptr_t)name + size - 2 * sizeof(arch_thread_hw_shadow_stack_t),	\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 3] = 0,			\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 2] = 0,			\
 		}
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_DATA_H_ */

@@ -24,10 +24,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define TOKEN_OFFSET 4
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
-int z_x86_thread_attach_shadow_stack(k_tid_t thread,
-				     z_x86_shadow_stack_t *stack,
-				     size_t stack_size)
+#ifdef CONFIG_HW_SHADOW_STACK
+int arch_thread_hw_shadow_stack_attach(k_tid_t thread,
+				       arch_thread_hw_shadow_stack_t *stack,
+				       size_t stack_size)
 {
 	/* Can't attach to NULL */
 	if (stack == NULL) {

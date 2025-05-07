@@ -48,7 +48,7 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 GEN_OFFSET_SYM(_thread_arch_t, shstk_addr);
 GEN_OFFSET_SYM(_thread_arch_t, shstk_size);
 GEN_OFFSET_SYM(_thread_arch_t, shstk_base);
