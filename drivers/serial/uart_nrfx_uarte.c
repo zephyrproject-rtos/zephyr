@@ -2506,6 +2506,18 @@ static int uarte_instance_init(const struct device *dev,
 			     : UART_CFG_FLOW_CTRL_NONE,			       \
 	}
 
+/* Macro determines if PM actions are interrupt safe. They are in case of
+ * asynchronous API (except for instance in fast power domain) and non-asynchronous
+ * API if RX is disabled. Macro must resolve to a literal 1 or 0.
+ */
+#define UARTE_PM_ISR_SAFE(idx)						       \
+	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),		       \
+		    (0),						       \
+		    (COND_CODE_1(CONFIG_UART_##idx##_ASYNC,		       \
+				 (PM_DEVICE_ISR_SAFE),			       \
+				 (COND_CODE_1(UARTE_PROP(idx, disable_rx),     \
+					      (PM_DEVICE_ISR_SAFE), (0))))))   \
+
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(UARTE(idx));		       \
 	UARTE_INT_DRIVEN(idx);						       \
@@ -2578,8 +2590,7 @@ static int uarte_instance_init(const struct device *dev,
 	}								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
-			    COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),\
-				    (0), (PM_DEVICE_ISR_SAFE)));	       \
+			    UARTE_PM_ISR_SAFE(idx));			       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
