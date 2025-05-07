@@ -18,8 +18,8 @@
 	status = "okay";
 	lora: radio@0 {
 		status = "okay";
-		tx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
-		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;  /* FE_CTRL2 */
 		power-amplifier-output = "rfo-hp";
 		rfo-hp-max-power = <22>;
 	};
