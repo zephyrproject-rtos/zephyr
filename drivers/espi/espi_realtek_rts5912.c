@@ -173,6 +173,9 @@ static int espi_kbc_setup(const struct device *dev)
 	kbc_reg->VWCTRL1 = (0x01 << KBC_VWCTRL1_IRQNUM_Pos) | KBC_VWCTRL1_ACTEN;
 	kbc_reg->INTEN = KBC_INTEN_IBFINTEN | KBC_INTEN_OBFINTEN;
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_obe, irq));
+
 	/* IBF */
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), kbc_ibf, priority), kbc_ibf_isr,
@@ -371,6 +374,9 @@ static int espi_acpi_setup(const struct device *dev)
 	acpi_reg->VWCTRL1 = (0x00ul << ACPI_VWCTRL1_IRQNUM_Pos) | ACPI_VWCTRL1_ACTEN;
 	acpi_reg->INTEN = ACPI_INTEN_IBFINTEN | ACPI_INTEN_OBFINTEN;
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_obe, irq));
+
 	/* IBF */
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), acpi_ibf, priority), acpi_ibf_isr,
@@ -521,6 +527,9 @@ static int espi_promt0_setup(const struct device *dev)
 	promt0_reg->VWCTRL1 = ACPI_VWCTRL1_ACTEN;
 	promt0_reg->INTEN = ACPI_INTEN_IBFINTEN;
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_obe, irq));
+
 	/* IBF */
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), promt0_ibf, priority), promt0_ibf_isr,
@@ -667,6 +676,8 @@ static void espi_periph_ch_setup(const struct device *dev)
 
 	espi_reg->EPINTEN = ESPI_EPINTEN_CFGCHGEN | ESPI_EPINTEN_MEMWREN | ESPI_EPINTEN_MEMRDEN;
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_NODELABEL(espi0), periph_ch, irq));
+
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), periph_ch, priority), espi_periph_ch_isr,
 		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
@@ -718,6 +729,8 @@ static int espi_peri_ch_port80_setup(const struct device *dev)
 	port80_reg->ADDR = 0x80ul;
 	port80_reg->CFG = PORT80_CFG_CLRFLG | PORT80_CFG_THREEN;
 	port80_reg->INTEN = PORT80_INTEN_THREINTEN;
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), port80, priority), espi_port80_isr,
@@ -1542,6 +1555,19 @@ static void espi_vw_ch_setup(const struct device *dev)
 
 	espi_reg->EVRXINTEN = (ESPI_EVRXINTEN_CFGCHGEN | ESPI_EVRXINTEN_RXCHGEN);
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx2, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx3, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx7, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx41, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx42, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx43, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx44, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx47, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx4a, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx51, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_idx61, irq));
+
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), vw_ch, priority), espi_vw_ch_isr,
 		    DEVICE_DT_GET(DT_DRV_INST(0)), 0);
@@ -1884,6 +1910,10 @@ static int espi_oob_ch_setup(const struct device *dev)
 	k_sem_init(&espi_data->oob_rx_lock, 0, 1);
 #endif
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_rx, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_chg, irq));
+
 	/* Tx */
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), oob_tx, priority), espi_oob_tx_isr,
@@ -2095,6 +2125,9 @@ static int espi_flash_ch_setup(const struct device *dev)
 
 	k_sem_init(&espi_data->flash_lock, 0, 1);
 
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq));
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), flash_chg, irq));
+
 	/* MAF Tr */
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), maf_tr, priority), espi_maf_tr_isr,
@@ -2289,6 +2322,8 @@ static void espi_bus_reset_setup(const struct device *dev)
 		/* low to high */
 		espi_reg->ERSTCFG = ESPI_ERSTCFG_RSTMONEN | ESPI_ERSTCFG_RSTINTEN;
 	}
+
+	NVIC_ClearPendingIRQ(DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, irq),
 		    DT_IRQ_BY_NAME(DT_DRV_INST(0), bus_rst, priority), espi_rst_isr,
