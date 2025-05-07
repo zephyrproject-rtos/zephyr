@@ -151,7 +151,7 @@ SECTION_FUNC(PINNED_TEXT, _interrupt_enter)
 
 	pushl	%ebp			/* Save stack pointer */
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	movl _kernel_offset_to_current(%ecx), %ebp
 	cmpl $0, _thread_offset_to_shstk_addr(%ebp)
 	jz __sh_stk_verify
@@ -293,7 +293,7 @@ alreadyOnIntStack:
 	 * a switch to the new thread.
 	 */
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	movl _kernel_offset_to_current(%ecx), %edi
 	cmpl $0, _thread_offset_to_shstk_addr(%edi)
 	jz __sh_stk_out_reschedule
@@ -363,7 +363,7 @@ noReschedule:
 	 * interrupted thread's stack and restore volatile registers
 	 */
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	movl _kernel_offset_to_current(%ecx), %ebp
 	cmpl $0, _thread_offset_to_shstk_addr(%ebp)
 	jz __sh_stk_out_no_reschedule

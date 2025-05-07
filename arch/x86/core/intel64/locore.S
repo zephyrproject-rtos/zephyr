@@ -374,7 +374,7 @@ z_x86_switch:
 	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
 	jz __sh_stk_verify
 
@@ -473,7 +473,7 @@ __resume:
 	wrmsr
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	movq _thread_offset_to_shstk_addr(%rdi), %r10
 	testq %r10, %r10
 	jz __sh_stk_disable
@@ -820,7 +820,7 @@ irq:
 
 	incl ___cpu_t_nested_OFFSET(%rsi)
 	subq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	pushq %rsi
 	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rsi
 	subq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rsi)
@@ -894,7 +894,7 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq %rax, _thread_offset_to_ss(%rsi)
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
 	jz __sh_stk_verify_irq
 
@@ -979,7 +979,7 @@ irq_dispatch:
 
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rax
 	addq $CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE, (%rax)
 #endif
@@ -992,7 +992,7 @@ irq_dispatch:
 	call z_get_next_switch_handle
 	movq %rax, %rdi
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	/* __resume will change to next thread shadow stack (if any), so
 	 * we need to mark IRQ shadow stack as free (not busy).
 	 */

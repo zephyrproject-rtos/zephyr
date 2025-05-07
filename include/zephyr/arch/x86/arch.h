@@ -31,6 +31,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/arch/x86/mmustructs.h>
 #include <zephyr/arch/x86/thread_stack.h>
+#include <zephyr/arch/x86/cet.h>
 #include <zephyr/linker/sections.h>
 
 #ifdef __cplusplus

@@ -470,7 +470,7 @@ SECTIONS
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 SECTION_PROLOGUE(.x86shadowstack,,)
 {
 	MMU_PAGE_ALIGN

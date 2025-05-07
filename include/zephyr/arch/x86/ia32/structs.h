@@ -25,13 +25,13 @@ struct _cpu_arch {
 
 	struct k_thread *fpu_owner;
 #endif
-#if defined(CONFIG_X86_CET_SHADOW_STACK)
+#if defined(CONFIG_HW_SHADOW_STACK)
 	long *shstk_addr; /* Latest top of shadow stack */
 	long *shstk_base; /* Base of shadow stack */
 	size_t shstk_size;
 #endif
 #if defined(__cplusplus) && !defined(CONFIG_FPU_SHARING) && \
-		!defined(CONFIG_X86_CET_SHADOW_STACK)
+		!defined(CONFIG_HW_SHADOW_STACK)
 	/* Ensure this struct does not have a size of 0 which is not allowed in C++. */
 	uint8_t dummy;
 #endif

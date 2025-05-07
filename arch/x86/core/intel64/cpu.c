@@ -43,7 +43,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_CPU_BOOT_INIT, (,)),
 };
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 #define _CPU_IDX(n, _) n
 FOR_EACH(X86_INTERRUPT_SHADOW_STACK_DEFINE, (;),
 	 LISTIFY(CONFIG_MP_MAX_NUM_CPUS, _CPU_IDX, (,)));
@@ -138,11 +138,11 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 #ifdef CONFIG_X86_CET_IBT
 	z_x86_ibt_enable();
 #endif /* CONFIG_X86_CET_IBT */
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	z_x86_setup_interrupt_ssp_table((uintptr_t)&issp_table[cpuboot->cpu_id]);
 	cpuboot->gs_base->shstk_addr = &issp_table[cpuboot->cpu_id].ist1;
 	cpuboot->gs_base->exception_shstk_addr = issp_table[cpuboot->cpu_id].ist7;
-#endif /* CONFIG_X86_CET_SHADOW_STACK */
+#endif /* CONFIG_HW_SHADOW_STACK */
 
 #endif /* CONFIG_X86_CET */
 
