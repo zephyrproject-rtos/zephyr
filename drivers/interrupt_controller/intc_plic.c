@@ -93,7 +93,7 @@ struct plic_config {
 	uint32_t nr_irqs;
 	uint32_t irq;
 	riscv_plic_irq_config_func_t irq_config_func;
-	struct _isr_table_entry *isr_table;
+	const struct _isr_table_entry *isr_table;
 	const uint32_t *const hart_context;
 };
 
@@ -490,7 +490,7 @@ static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);

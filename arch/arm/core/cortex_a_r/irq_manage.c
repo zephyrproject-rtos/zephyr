@@ -132,7 +132,7 @@ static inline void z_arm_irq_dynamic_direct_isr_dispatch(void)
 	uint32_t irq = __get_IPSR() - 16;
 
 	if (irq < IRQ_TABLE_SIZE) {
-		struct _isr_table_entry *isr_entry = &_sw_isr_table[irq];
+		const struct _isr_table_entry *isr_entry = &_sw_isr_table[irq];
 
 		isr_entry->isr(isr_entry->arg);
 	}

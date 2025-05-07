@@ -170,7 +170,7 @@ void rtc_nrf_isr(void);
 
 #define IRQ_VECTOR_TABLE_SIZE (MAX(POWER_CLOCK_IRQ_NUM, MAX(TIMER_IRQ_NUM, _ISR_OFFSET + 2)) + 1)
 
-vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #if (POWER_CLOCK_IRQ_NUM != -1)
 	[POWER_CLOCK_IRQ_NUM] = nrfx_power_clock_irq_handler,
 #endif
@@ -186,7 +186,7 @@ vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
  * the custom vector table to handle the timer "tick" interrupts.
  */
 extern void rtc_isr(void);
-vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2, 0, rtc_isr};
+const vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2, 0, rtc_isr};
 
 /* clang-format off */
 #elif (defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) ||               \
@@ -199,7 +199,7 @@ vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2, 0, rtc_isr};
  * the timer "tick" interrupts.
  */
 extern void mcux_lpc_ostick_isr(void);
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_lpc_ostick_isr};
 #elif (defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)) &&            \
@@ -213,7 +213,7 @@ extern void mcux_imx_gpt_isr(void);
 #if defined(CONFIG_SOC_MIMXRT1011)
 /* clang-format off */
 /* RT1011 GPT timer interrupt is at offset 30 */
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_imx_gpt_isr
 };
@@ -221,7 +221,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 #elif defined(CONFIG_SOC_SERIES_IMXRT10XX)
 /* clang-format off */
 /* RT10xx GPT timer interrupt is at offset 100 */
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -231,7 +231,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 /* clang-format on */
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 /* RT11xx GPT timer interrupt is at offset 119 */
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -242,7 +242,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 #error "GPT timer enabled, but no known SOC selected. ISR table needs rework"
 #endif
 #else
-vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2};
+const vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2};
 #endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 /**
