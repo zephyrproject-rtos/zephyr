@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2025 Christian Rask
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	chosen {
+		zephyr,display = &ili9341;
+	};
+
+	aliases {
+		sw0 = &joy_sel;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		joy_sel: joystick_selection {
+			label = "joystick selection";
+			gpios = <&st_morpho_header ST_MORPHO_R_19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&st_morpho_header ST_MORPHO_R_27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&st_morpho_header ST_MORPHO_L_38 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&st_morpho_header ST_MORPHO_R_17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&st_morpho_header ST_MORPHO_L_34 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&st_morpho_lcd_spi>;
+		dc-gpios = <&st_morpho_header ST_MORPHO_R_25 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&st_morpho_header ST_MORPHO_L_30 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		write-only;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <DT_FREQ_M(32)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			reg = <0>;
+			width = <240>;
+			height = <320>;
+			rotation = <180>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			frmctr1 = [00 1f]; /* 60Hz frame rate */
+		};
+	};
+};
+
+st_morpho_lcd_spi: &spi1 {};
+st_morpho_flash_spi: &spi2 {};
+
+&st_morpho_lcd_spi {
+	cs-gpios = <&st_morpho_header ST_MORPHO_R_21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&st_morpho_flash_spi {
+	cs-gpios = <&st_morpho_header ST_MORPHO_R_23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+
+	mx25l6433f: mx25l6433f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(50)>;
+		size = <DT_SIZE_M(64)>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <100000>;
+		jedec-id = [c2 20 17];
+	};
+};
