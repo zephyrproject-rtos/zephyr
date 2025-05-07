@@ -268,15 +268,79 @@ static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
 
 	return 0;
 }
+#endif
+
+#define ASYNC_MAP_OPTION_LEN 6
+
+static int lcp_add_async_map(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	net_pkt_write_u8(pkt, ASYNC_MAP_OPTION_LEN);
+	return net_pkt_write_be32(pkt, ctx->lcp.my_options.async_map);
+}
+
+static int lcp_ack_async_map(struct ppp_context *ctx, struct net_pkt *pkt,
+			     uint8_t oplen)
+{
+	int ret;
+	uint32_t async_map;
+
+	/* Handle ACK : */
+	if (oplen != sizeof(async_map)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &async_map, sizeof(async_map));
+	if (ret) {
+		return ret;
+	}
+	if (async_map != ctx->lcp.my_options.async_map) {
+		/* Didn't acked our ASYNC_MAP: */
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int lcp_nak_async_map(struct ppp_context *ctx, struct net_pkt *pkt,
+			     uint8_t oplen)
+{
+	int ret;
+	uint16_t async_map;
+
+	/* Handle NAK: accept only equal to ours */
+	if (oplen != sizeof(async_map)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &async_map, sizeof(async_map));
+	if (ret) {
+		return ret;
+	}
+
+	if (async_map != ctx->lcp.my_options.async_map) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 
 static const struct ppp_my_option_info lcp_my_options[] = {
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	PPP_MY_OPTION(LCP_OPTION_MRU, lcp_add_mru, lcp_ack_mru, lcp_nak_mru),
+#endif
+	PPP_MY_OPTION(LCP_OPTION_ASYNC_CTRL_CHAR_MAP, lcp_add_async_map,
+			lcp_ack_async_map, lcp_nak_async_map),
 };
 BUILD_ASSERT(ARRAY_SIZE(lcp_my_options) == LCP_NUM_MY_OPTIONS);
 
 static struct net_pkt *lcp_config_info_add(struct ppp_fsm *fsm)
 {
-	return ppp_my_options_add(fsm, MRU_OPTION_LEN);
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	return ppp_my_options_add(fsm, MRU_OPTION_LEN + ASYNC_MAP_OPTION_LEN);
+#else
+	return ppp_my_options_add(fsm, ASYNC_MAP_OPTION_LEN);
+#endif
 }
 
 static int lcp_config_info_nack(struct ppp_fsm *fsm, struct net_pkt *pkt,
@@ -297,7 +361,6 @@ static int lcp_config_info_nack(struct ppp_fsm *fsm, struct net_pkt *pkt,
 
 	return 0;
 }
-#endif
 
 static void lcp_init(struct ppp_context *ctx)
 {
@@ -311,8 +374,8 @@ static void lcp_init(struct ppp_context *ctx)
 	ppp_fsm_name_set(&ctx->lcp.fsm, ppp_proto2str(PPP_LCP));
 
 	ctx->lcp.my_options.mru = net_if_get_mtu(ctx->iface);
+	ctx->lcp.my_options.async_map = 0xffffffff;
 
-#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	ctx->lcp.fsm.my_options.info = lcp_my_options;
 	ctx->lcp.fsm.my_options.data = ctx->lcp.my_options_data;
 	ctx->lcp.fsm.my_options.count = ARRAY_SIZE(lcp_my_options);
@@ -321,7 +384,6 @@ static void lcp_init(struct ppp_context *ctx)
 	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
 	ctx->lcp.fsm.cb.config_info_nack = lcp_config_info_nack;
 	ctx->lcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
-#endif
 
 	ctx->lcp.fsm.cb.up = lcp_up;
 	ctx->lcp.fsm.cb.down = lcp_down;
