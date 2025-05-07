@@ -24,6 +24,8 @@ else()
 
   get_property(SIMICS_ARGS GLOBAL PROPERTY "BOARD_EMU_ARGS_simics")
 
+  file(REAL_PATH $ENV{SIMICS_PROJECT} simics_project_dir_real)
+
   add_custom_target(run_simics
     COMMAND
     ${SIMICS}
@@ -34,7 +36,7 @@ else()
     ${SIMICS_ARGS}
     $ENV{SIMICS_EXTRA_ARGS}
     -e run
-    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+    WORKING_DIRECTORY ${simics_project_dir_real}
     DEPENDS ${logical_target_for_zephyr_elf}
     USES_TERMINAL
     )
