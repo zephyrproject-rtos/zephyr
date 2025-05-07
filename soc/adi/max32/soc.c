@@ -62,6 +62,19 @@ static const struct pinctrl_dev_config *rv32_pcfg = PINCTRL_DT_DEV_CONFIG_GET(RV
 
 #endif
 
+#if defined(CONFIG_MAX32_SECONDARY_RV32) &&                \
+	defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) &&  \
+	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
+
+static ALWAYS_INLINE void soc_max32_rv32_delay(int n)
+{
+	while (n--) {
+		__asm__ volatile("nop");
+	}
+}
+
+#endif
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -83,8 +96,14 @@ void soc_early_init_hook(void)
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
 #ifdef CONFIG_MAX32_SECONDARY_RV32
+
 #if DO_RV32_DEBUG_PINCTRL
 	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
+#endif
+
+#if defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) && \
+	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
+	soc_max32_rv32_delay(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY);
 #endif
 
 	MXC_FCR->urvbootaddr = RV32_BASE_ADDR + RV32_OFFSET;

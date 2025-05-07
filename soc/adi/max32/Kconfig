@@ -86,6 +86,16 @@ config MAX32_STANDBY_DELAY
 	  Prevents the system from entering standby mode for a give number of ms.
 	  This is intended to prevent debug lockout when using power management.
 
+if MAX32_SECONDARY_RV32
+
+config MAX32_SECONDARY_RV32_STARTUP_DELAY
+	int "Secondary RISC-V core startup delay (in cycles)"
+	default 0
+
+endif # MAX32_SECONDARY_RV32
+
+endif # MAX32_HAS_SECONDARY_RV32
+
 config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 	help
