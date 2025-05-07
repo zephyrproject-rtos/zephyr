@@ -17,3 +17,14 @@ tests:
     filter: CONFIG_X86_64
     extra_configs:
       - CONFIG_X86_CET_IBT=y
+  arch.x86.cet.kernel.shstk64:
+    arch_allow: x86
+    filter: CONFIG_X86_64
+    extra_configs:
+      - CONFIG_HW_SHADOW_STACK=y
+  arch.x86.cet.kernel.shstk32:
+    arch_allow: x86
+    filter: not CONFIG_X86_64
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP=y
+      - CONFIG_HW_SHADOW_STACK=y
