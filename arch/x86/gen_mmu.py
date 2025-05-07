@@ -913,7 +913,7 @@ def main():
             pt.set_region_perms("_locore", FLAG_P | flag_user)
             pt.set_region_perms("_lorodata", FLAG_P | ENTRY_XD | flag_user)
 
-        if isdef("CONFIG_X86_CET_SHADOW_STACK"):
+        if isdef("CONFIG_HW_SHADOW_STACK"):
             pt.set_region_perms("__x86shadowstack", FLAG_P | FLAG_D | ENTRY_XD)
 
     written_size = pt.write_output(args.output)
