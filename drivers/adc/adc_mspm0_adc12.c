@@ -342,6 +342,9 @@ static int adc_mspm0g3xx_configSequence(const struct device *dev)
 
 	resolution_regVal = 0;
 	switch (data->resolution) {
+	case 14:
+		resolution_regVal |= DL_ADC12_SAMP_CONV_RES_12_BIT;
+		break;
 	case 12:
 		resolution_regVal |= DL_ADC12_SAMP_CONV_RES_12_BIT;
 		break;
@@ -393,7 +396,12 @@ static int adc_mspm0g3xx_configSequence(const struct device *dev)
 	case 128:
 		avg_enabled_regVal = DL_ADC12_AVERAGING_MODE_ENABLED;
 		avg_acc_regVal = DL_ADC12_HW_AVG_NUM_ACC_128;
-		avg_div_regVal = DL_ADC12_HW_AVG_DEN_DIV_BY_128;
+		if(data->resolution == 14){
+			avg_div_regVal = DL_ADC12_HW_AVG_DEN_DIV_BY_32;
+		}
+		else{
+			avg_div_regVal = DL_ADC12_HW_AVG_DEN_DIV_BY_128;
+		}
 		break;
 	default:
 		return -EINVAL;
@@ -466,12 +474,13 @@ static int adc_mspm0_read_internal(const struct device *dev, const struct adc_se
 	int ch_count;
 
 	/* Validate resolution */
-	if ((sequence->resolution != 12) && (sequence->resolution != 10) &&
+	if ((sequence->resolution != 14) && (sequence->resolution != 12) && (sequence->resolution != 10) &&
 	    (sequence->resolution != 8)) {
-		LOG_ERR("ADC resolution %d not supported. Only 8/10/12 bits.",
+		LOG_ERR("ADC resolution %d not supported. Only 8/10/12/14 bits.",
 			sequence->resolution);
 		return -EINVAL;
 	}
+
 	data->resolution = sequence->resolution;
 
 	/* Validate channel count */
@@ -510,6 +519,12 @@ static int adc_mspm0_read_internal(const struct device *dev, const struct adc_se
 			sequence->oversampling);
 		return -EINVAL;
 	}
+
+	if(data->resolution == 14 && sequence->oversampling != 128){
+		LOG_ERR("Oversampling has to be set to 128. 14-bit effective resolution can only be used with hardware averaging.");
+		return -EINVAL;
+	}
+
 	data->oversampling = sequence->oversampling;
 
 	if (sequence->calibrate) {
