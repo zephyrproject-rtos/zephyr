@@ -78,7 +78,7 @@ void __irq_vector_table __attribute__((naked)) _irq_vector_table(void) {
 #else
 
 /* The IRQ vector table is an array of vector addresses */
-uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
+const uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = (uintptr_t)&IRQ_VECTOR_TABLE_DEFAULT_ISR,
 };
 #endif /* CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
