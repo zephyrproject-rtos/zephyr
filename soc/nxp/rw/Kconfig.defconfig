@@ -67,7 +67,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 # as we use the TURN_OFF and TURN_ON actions to recover
 # from Standby mode (PM Mode 3)
 config PM_DEVICE
-	default y if "$(dt_nodelabel_enabled,standby)"
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
 
 # Enable PM_POLICY_DEVICE_CONSTRAINTS by default when doing PM_DEVICE.
 # This will allow support of device power states.
