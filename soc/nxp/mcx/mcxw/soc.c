@@ -131,6 +131,8 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
+	CLOCK_SetIpSrc(kCLOCK_I3c0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrcDiv(kCLOCK_I3c0, DT_PROP(DT_NODELABEL(i3c0), clk_divider));
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
@@ -187,6 +189,10 @@ __weak void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpadc0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay)) {
+		CLOCK_EnableClock(kCLOCK_I3c0);
 	}
 }
 

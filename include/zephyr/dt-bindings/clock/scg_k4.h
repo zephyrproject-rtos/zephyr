@@ -12,3 +12,4 @@
 #define SCG_K4_SIRC_CLK    6U
 #define SCG_K4_FIRC_CLK    7U
 #define SCG_K4_RTCOSC_CLK  8U
+#define SCG_K4_I3C_CLK     9U
