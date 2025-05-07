@@ -173,6 +173,8 @@ static int rts5912_kbd_init(const struct device *dev)
 	/* W/C interrupt status of KSI pins */
 	rts5912_intc_isr_clear(dev);
 
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+
 	/* Interrupts are enabled in the thread function */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    rts5912_kbd_isr, DEVICE_DT_INST_GET(0), 0);
