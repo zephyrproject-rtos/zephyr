@@ -131,7 +131,8 @@ static void process_thread(void)
 	LOG_DBG("Parsing Broadcast IP " CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_IP);
 	bcaddr.sin_family = AF_INET;
 	bcaddr.sin_port = htons(CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_PORT);
-	err = inet_pton(AF_INET, CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_IP, &bcaddr.sin_addr);
+	err = zsock_inet_pton(AF_INET, CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_IP,
+			      &bcaddr.sin_addr);
 	__ASSERT(err == 1, "inet_pton() failed %d", err);
 
 	LOG_INF("Waiting for connection...");
@@ -152,7 +153,7 @@ static void process_thread(void)
 		LOG_DBG("Parsing Broadcast IP %s", SAMPLE_GW_IP);
 		gwaddr.sin_family = AF_INET;
 		gwaddr.sin_port = htons(CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_PORT);
-		err = inet_pton(AF_INET, SAMPLE_GW_IP, &gwaddr.sin_addr);
+		err = zsock_inet_pton(AF_INET, SAMPLE_GW_IP, &gwaddr.sin_addr);
 		__ASSERT(err == 1, "inet_pton() failed %d", err);
 		struct mqtt_sn_data gwaddr_data = {.data = (uint8_t *)&bcaddr,
 						   .size = sizeof(struct sockaddr)};
