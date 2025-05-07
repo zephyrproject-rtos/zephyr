@@ -43,10 +43,6 @@ struct video_stm32_dcmi_data {
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	uint32_t pixel_format;
-	uint32_t height;
-	uint32_t width;
-	uint32_t pitch;
 	struct video_buffer *vbuf;
 };
 
@@ -127,7 +123,7 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*
 	 * DMA configuration
-	 * Due to use of QSPI HAL API in current driver,
+	 * Due to use of DMA HAL API in current driver,
 	 * both HAL and Zephyr DMA drivers should be configured.
 	 * The required configuration for Zephyr DMA driver should only provide
 	 * the minimum information to inform the DMA slot will be in used and
@@ -179,7 +175,6 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	const struct device *dcmi_clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
 
 	if (!device_is_ready(dcmi_clock)) {
 		LOG_ERR("clock control device not ready");
@@ -187,10 +182,15 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	err = clock_control_on(dcmi_clock, (clock_control_subsys_t *) &config->pclken);
-	if (err < 0) {
-		LOG_ERR("Failed to enable DCMI clock. Error %d", err);
-		return err;
+	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
+}
+
+static inline int video_stm32_dcmi_is_fmt_valid(uint32_t pixelformat, uint32_t pitch,
+						uint32_t height)
+{
+	if (video_bits_per_pixel(pixelformat) / BITS_PER_BYTE == 0 ||
+	    pitch * height > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+		return -EINVAL;
 	}
 
 	return 0;
@@ -202,24 +202,23 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
-	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	int ret;
 
-	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
-	if ((fmt->pitch * fmt->height) > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		return -EINVAL;
+	ret = video_stm32_dcmi_is_fmt_valid(fmt->pixelformat, fmt->pitch, fmt->height);
+	if (ret < 0) {
+		return ret;
 	}
 
-	data->pixel_format = fmt->pixelformat;
-	data->pitch = fmt->pitch;
-	data->height = fmt->height;
-	data->width = fmt->width;
-
-	if (video_set_format(config->sensor_dev, ep, fmt)) {
-		return -EIO;
+	ret = video_set_format(config->sensor_dev, ep, fmt);
+	if (ret < 0) {
+		return ret;
 	}
+
+	data->fmt = *fmt;
 
 	return 0;
 }
@@ -230,33 +229,38 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
+	int ret;
 
 	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
-	if (!video_get_format(config->sensor_dev, ep, fmt)) {
-		/* align DCMI with sensor fmt */
-		return video_stm32_dcmi_set_fmt(dev, ep, fmt);
+	/* Align DCMI format with the one provided by the sensor */
+	ret = video_get_format(config->sensor_dev, ep, fmt);
+	if (ret < 0) {
+		return ret;
 	}
 
-	fmt->pixelformat = data->pixel_format;
-	fmt->height = data->height;
-	fmt->width = data->width;
-	fmt->pitch = data->pitch;
+	ret = video_stm32_dcmi_is_fmt_valid(fmt->pixelformat, fmt->pitch, fmt->height);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->fmt = *fmt;
 
 	return 0;
 }
 
 static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 {
-	int err;
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
+	int err;
 
 	if (!enable) {
-		if (video_stream_stop(config->sensor_dev)) {
-			return -EIO;
+		err = video_stream_stop(config->sensor_dev);
+		if (err < 0) {
+			return err;
 		}
 
 		err = HAL_DCMI_Stop(&data->hdcmi);
@@ -285,11 +289,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
-	if (video_stream_start(config->sensor_dev)) {
-		return -EIO;
-	}
-
-	return 0;
+	return video_stream_start(config->sensor_dev);
 }
 
 static int video_stm32_dcmi_enqueue(const struct device *dev,
@@ -297,7 +297,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 				  struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const uint32_t buffer_size = data->pitch * data->height;
+	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
 
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
@@ -339,7 +339,6 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 				   struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
-	int ret = -ENODEV;
 
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
@@ -349,9 +348,7 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
-	ret = video_get_caps(config->sensor_dev, ep, caps);
-
-	return ret;
+	return video_get_caps(config->sensor_dev, ep, caps);
 }
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
@@ -479,7 +476,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	err = stm32_dcmi_enable_clock(dev);
 	if (err < 0) {
 		LOG_ERR("Clock enabling failed.");
-		return -EIO;
+		return err;
 	}
 
 	data->dev = dev;
