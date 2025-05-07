@@ -140,7 +140,7 @@ struct _thread_arch {
 	uint64_t cs;
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	uintptr_t *shstk_addr;
 	uintptr_t *shstk_base;
 	size_t shstk_size;

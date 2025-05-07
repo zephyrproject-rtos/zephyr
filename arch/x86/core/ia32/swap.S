@@ -322,7 +322,7 @@ CROHandlingDone:
 	popl	%edx
 #endif
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	cmpl $0, _thread_offset_to_shstk_addr(%edx)
 	jz __sh_stk_verify
 
@@ -382,7 +382,7 @@ __sh_stk_out:
 	 * - -EINVAL
 	 */
 
-#ifdef CONFIG_X86_CET_SHADOW_STACK
+#ifdef CONFIG_HW_SHADOW_STACK
 	pushl %eax
 	pushl %ebx
 	pushl %edi

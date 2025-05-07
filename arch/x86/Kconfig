@@ -112,6 +112,7 @@ config X86_CPU_HAS_SSE4A
 	bool
 
 config X86_CPU_HAS_CET
+	select ARCH_HAS_HW_SHADOW_STACK if !USERSPACE && !DYNAMIC_THREAD_ALLOC
 	bool
 
 if FPU || X86_64
@@ -507,31 +508,24 @@ config X86_CET_IBT
 	help
 	  This option enables Indirect Branch Tracking (IBT) support.
 
-config X86_CET_SHADOW_STACK
-	bool "Shadow Stack"
-	depends on X86_CET
-	depends on SRAM_REGION_PERMISSIONS
-	help
-	  This option enables Shadow Stack support.
-
 config X86_CET_SHADOW_STACK_ALIGNMENT
 	int "Shadow Stack alignment"
 	default 4096
-	depends on X86_CET_SHADOW_STACK
+	depends on HW_SHADOW_STACK
 	help
 	  This option sets the alignment of the Shadow Stack.
 
 config X86_CET_IRQ_SHADOW_STACK_SIZE
 	int "IRQ Shadow Stack size"
 	default 4096
-	depends on X86_CET_SHADOW_STACK
+	depends on HW_SHADOW_STACK
 	help
 	  This option sets the size of the shadow stack used for interrupt
 	  and exception handling.
 
 config X86_CET_VERIFY_KERNEL_SHADOW_STACK
 	bool "Verify kernel shadow stack"
-	depends on X86_CET_SHADOW_STACK
+	depends on HW_SHADOW_STACK
 	help
 	  When enabled, when a thread is swapped out, the kernel will verify
 	  if its shadow stack pointer is not null with shadow stack enabled -
@@ -539,7 +533,7 @@ config X86_CET_VERIFY_KERNEL_SHADOW_STACK
 
 config X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
 	bool "SOC prepare shadow stack switch"
-	depends on X86_CET_SHADOW_STACK
+	depends on HW_SHADOW_STACK
 	help
 	  When enabled, call SoC code just before switching shadow stacks.
 	  Code should be provided via soc_prepare_shadow_stack_switch assembler
