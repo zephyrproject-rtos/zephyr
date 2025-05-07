@@ -39,10 +39,16 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
+	cs-gpios = <&gpio7 0 0>;
 };
 
 &gpio0 {
 	status = "okay";
+};
+
+&gpio7 {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
 };
 
 &gpiote130 {
