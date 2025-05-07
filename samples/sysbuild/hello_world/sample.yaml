@@ -100,3 +100,11 @@ tests:
       - max32690evkit/max32690/m4
     extra_args:
       - SB_CONF_FILE=sysbuild/max32690evkit_max32690_rv32.conf
+
+  sample.sysbuild.hello_world.max78002evkit_m4_rv32:
+    platform_allow:
+      - max78002evkit/max78002/m4
+    integration_platforms:
+      - max78002evkit/max78002/m4
+    extra_args:
+      - SB_CONF_FILE=sysbuild/max78002evkit_max78002_rv32.conf
