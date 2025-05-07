@@ -75,6 +75,8 @@ tests:
     platform_allow:
       - max32655evkit/max32655/m4
       - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
     integration_platforms:
       - max32655evkit/max32655/m4
       - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
