@@ -1045,6 +1045,31 @@ config HW_SHADOW_STACK
 	  stack. Indeed, threads need to manually attach a shadow stack to
 	  use this feature. See the documentation for more information.
 
+config HW_SHADOW_STACK_PERCENTAGE_SIZE
+	int "Percentage of the stack size used to define shadow stack size"
+	depends on HW_SHADOW_STACK
+	default 30
+	range 0 100
+	help
+	  This option specifies the percentage of the stack to be used for
+	  shadow stack. The value is a percentage of the total stack size.
+	  The default value is 30%, which means that the shadow stack size
+	  will be 30% of the stack size, in *addition* to the stack size.
+	  used for shadow stack. Note that this size is constrained by the
+	  HW_SHADOW_STACK_MIN_SIZE config option.
+
+config HW_SHADOW_STACK_MIN_SIZE
+	int "Minimum size of the hardware shadow stack"
+	depends on HW_SHADOW_STACK
+	default 256
+	help
+	  This option specifies the minimum size of the hardware shadow stack,
+	  in bytes, so that threads that use minimal stack size can still
+	  have a sensible shadow stack size. The default value is 256 bytes,
+	  which means that the shadow stack size will be at least 256 bytes,
+	  even if the percentage defined via HW_SHADOW_STACK_PERCENTAGE_SIZE
+	  would define a smaller size.
+
 config HW_SHADOW_STACK_ALLOW_REUSE
 	bool "Allow reuse of the shadow stack"
 	depends on HW_SHADOW_STACK
