@@ -24,7 +24,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    in which the messages were sent, or the test fails.
 RunTest mesh_op_agg_test_max_access_payload \
 	op_agg_cli_max_len_sequence_msg_send op_agg_srv_max_len_status_msg_send
-
-overlay=overlay_psa_conf
-RunTest mesh_op_agg_test_max_access_payload_psa \
-	op_agg_cli_max_len_sequence_msg_send op_agg_srv_max_len_status_msg_send
