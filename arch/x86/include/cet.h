@@ -21,7 +21,7 @@ void z_x86_cet_enable(void);
 void z_x86_ibt_enable(void);
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_X86_CET_SHADOW_STACK)
+#if defined(CONFIG_X86_64) && defined(CONFIG_HW_SHADOW_STACK)
 static inline void z_x86_setup_interrupt_ssp_table(uintptr_t issp_table)
 {
 	z_x86_msr_write(X86_INTERRUPT_SSP_TABLE_MSR, issp_table);

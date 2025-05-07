@@ -87,13 +87,14 @@ extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 	}
 
 #define SHSTK_TOKEN_ENTRY(i, name, size)							\
-		  [size * (i + 1) / sizeof(z_x86_shadow_stack_t) - 1] =				\
-			(uintptr_t)name + size * (i + 1) - 1 * sizeof(z_x86_shadow_stack_t)	\
+		  [size * (i + 1) / sizeof(arch_thread_hw_shadow_stack_t) - 1] =		\
+			(uintptr_t)name + size * (i + 1) - 1 *					\
+			sizeof(arch_thread_hw_shadow_stack_t)
 
 #define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
-	z_x86_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)					\
+	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)			\
 	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
-	name[CONFIG_ISR_DEPTH * size / sizeof(z_x86_shadow_stack_t)] =				\
+	name[CONFIG_ISR_DEPTH * size / sizeof(arch_thread_hw_shadow_stack_t)] =			\
 		{										\
 			LISTIFY(CONFIG_ISR_DEPTH, SHSTK_TOKEN_ENTRY, (,), name, size)		\
 		}
@@ -107,7 +108,7 @@ extern uint8_t x86_cpu_loapics[];	/* CPU logical ID -> local APIC ID */
 				     CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE)
 
 #define SHSTK_LAST_ENTRY (CONFIG_X86_CET_IRQ_SHADOW_STACK_SIZE *				\
-			  CONFIG_ISR_DEPTH / sizeof(z_x86_shadow_stack_t) - 1)
+			  CONFIG_ISR_DEPTH / sizeof(arch_thread_hw_shadow_stack_t) - 1)
 
 #define X86_INTERRUPT_SSP_TABLE_INIT(n, _)							\
 	{											\
