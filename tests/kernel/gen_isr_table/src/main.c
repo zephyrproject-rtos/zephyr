@@ -12,7 +12,7 @@
 #include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
-extern uintptr_t _irq_vector_table[];
+extern const uintptr_t _irq_vector_table[];
 
 #if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS

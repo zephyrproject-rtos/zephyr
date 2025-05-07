@@ -198,7 +198,7 @@ typedef void (* ISR)(const void *);
         fp.write("}\n")
 
     def __write_address_irq_vector_table(self, fp):
-        fp.write("uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % self.__nv)
+        fp.write("const uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % self.__nv)
         for i in range(self.__nv):
             func = self.__vt[i]
 
