@@ -27,6 +27,5 @@ supported:
   - i2s
   - pwm
   - spi
-  - i2s
   - usb_device
   - watchdog
