@@ -1243,7 +1243,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		eth_stm32_mcast_filter(dev, &config->filter);
-		break;
+		return 0;
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 	default:
 		break;
