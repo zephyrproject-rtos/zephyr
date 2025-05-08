@@ -82,6 +82,12 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_GspiClkConfig(M4CLK, GSPI_INTF_PLL_CLK);
 		break;
+	case SIWX91X_CLK_I2S0:
+		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
+		break;
+	case SIWX91X_CLK_ULP_I2S:
+		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_I2S);
+		break;
 	default:
 		return -EINVAL;
 	}
