@@ -160,6 +160,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 		break;
 	default:
 		if (discardable) {
+			/* Discardable, decided in Host-side HCI Transport driver. */
 			buf = net_buf_alloc(&discardable_pool, timeout);
 		} else {
 			return bt_buf_get_rx(BT_BUF_EVT, timeout);
@@ -190,13 +191,6 @@ struct net_buf_pool *bt_buf_get_hci_rx_pool(void)
 	return &hci_rx_pool;
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
-
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
-struct net_buf_pool *bt_buf_get_discardable_pool(void)
-{
-	return &discardable_pool;
-}
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 struct net_buf_pool *bt_buf_get_num_complete_pool(void)
