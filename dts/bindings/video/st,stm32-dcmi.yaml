@@ -35,20 +35,6 @@ properties:
   interrupts:
     required: true
 
-  capture-rate:
-    type: int
-    enum:
-      - 1
-      - 2
-      - 4
-    default: 1
-    description: |
-      The DCMI can capture all frames or alternate frames. If it is not specified,
-      the default is all frames.
-      1 Capture all frames.
-      2 Capture alternate frames.
-      4 Capture one frame every 4 frames.
-
   dmas:
     required: true
     description: |
