@@ -17,5 +17,6 @@ supported:
   - pwm
   - watchdog
   - spi
+  - i2s
   - wifi
 vendor: silabs
