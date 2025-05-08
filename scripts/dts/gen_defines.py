@@ -100,6 +100,7 @@ def main():
             write_parent(node)
             write_children(node)
             write_dep_info(node)
+            write_power_domains(node)
             write_idents_and_existence(node)
             write_bus(node)
             write_special_props(node)
@@ -734,6 +735,47 @@ def write_dep_info(node: edtlib.Node) -> None:
     out_comment("Ordinals for what depends directly on this node:")
     out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS",
                   fmt_dep_list(node.required_by))
+
+
+def write_power_domains(node: edtlib.Node) -> None:
+    # Write power domain related information about the node.
+
+    pd_child_z_path_ids = []
+
+    for rbnode in node.required_by:
+        if rbnode.status != 'okay':
+            continue
+
+        if 'power-domains' not in rbnode.props:
+            continue
+
+        pd_cads = rbnode.props['power-domains'].val
+        pd_z_path_ids = [cad.controller.z_path_id for cad in pd_cads]
+
+        if node.z_path_id not in pd_z_path_ids:
+            continue
+
+        pd_child_z_path_ids.append(rbnode.z_path_id)
+
+    out_comment("Node's power domain children:")
+
+    out_dt_define(f"{node.z_path_id}_POWER_DOMAIN_CHILDREN_LEN_OKAY", len(pd_child_z_path_ids))
+    out_dt_define(f"{node.z_path_id}_POWER_DOMAIN_CHILDREN_FOREACH_OKAY(fn)",
+                  " ".join(
+                  f"fn(DT_{z_path_id})"
+                  for z_path_id in pd_child_z_path_ids))
+    out_dt_define(f"{node.z_path_id}_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(fn, sep)",
+                  " DT_DEBRACKET_INTERNAL sep ".join(
+                  f"fn(DT_{z_path_id})"
+                  for z_path_id in pd_child_z_path_ids))
+    out_dt_define(f"{node.z_path_id}_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_VARGS(fn, ...)",
+                  " ".join(
+                  f"fn(DT_{z_path_id}, __VA_ARGS__)"
+                  for z_path_id in pd_child_z_path_ids))
+    out_dt_define(f"{node.z_path_id}_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP_VARGS(fn, sep, ...)",
+                  " DT_DEBRACKET_INTERNAL sep ".join(
+                  f"fn(DT_{z_path_id}, __VA_ARGS__)"
+                  for z_path_id in pd_child_z_path_ids))
 
 
 def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:

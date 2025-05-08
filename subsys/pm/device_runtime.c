@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/__assert.h>
 
@@ -23,6 +24,31 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
 
 #define EVENT_MASK		(EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED)
+
+static int invoke_suspend(const struct device *dev)
+{
+	pm_policy_device_power_lock_put(dev);
+	pm_device_domain_children_turn_off(dev);
+
+	if (dev->pm_base->action_cb(dev, PM_DEVICE_ACTION_SUSPEND) < 0) {
+		pm_device_domain_children_turn_on(dev);
+		pm_policy_device_power_lock_get(dev);
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
+static int invoke_resume(const struct device *dev)
+{
+	if (dev->pm_base->action_cb(dev, PM_DEVICE_ACTION_RESUME) < 0) {
+		return -EAGAIN;
+	}
+
+	pm_device_domain_children_turn_on(dev);
+	pm_policy_device_power_lock_get(dev);
+	return 0;
+}
 
 /**
  * @brief Suspend a device
@@ -82,7 +108,7 @@ static int runtime_suspend(const struct device *dev, bool async,
 		(void)k_work_schedule(&pm->work, delay);
 	} else {
 		/* suspend now */
-		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = invoke_suspend(pm->dev);
 		if (ret < 0) {
 			pm->base.usage++;
 			goto unlock;
@@ -105,7 +131,7 @@ static void runtime_suspend_work(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
 
-	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+	ret = invoke_suspend(pm->dev);
 
 	(void)k_sem_take(&pm->lock, K_FOREVER);
 	if (ret < 0) {
@@ -149,7 +175,7 @@ static int get_sync_locked(const struct device *dev)
 			}
 		}
 
-		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
+		ret = invoke_resume(dev);
 		if (ret < 0) {
 			return ret;
 		}
@@ -255,7 +281,7 @@ int pm_device_runtime_get(const struct device *dev)
 		goto unlock;
 	}
 
-	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
+	ret = invoke_resume(pm->dev);
 	if (ret < 0) {
 		pm->base.usage--;
 		goto unlock;
@@ -291,7 +317,7 @@ static int put_sync_locked(const struct device *dev)
 
 	pm->base.usage--;
 	if (pm->base.usage == 0U) {
-		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = invoke_suspend(dev);
 		if (ret < 0) {
 			return ret;
 		}
@@ -389,7 +415,7 @@ static int runtime_enable_sync(const struct device *dev)
 	k_spinlock_key_t k = k_spin_lock(&pm->lock);
 
 	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
-		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = invoke_suspend(dev);
 		if (ret < 0) {
 			goto unlock;
 		}
@@ -443,7 +469,7 @@ int pm_device_runtime_enable(const struct device *dev)
 	}
 
 	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
-		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = invoke_suspend(dev);
 		if (ret < 0) {
 			goto unlock;
 		}
@@ -471,7 +497,7 @@ static int runtime_disable_sync(const struct device *dev)
 	k_spinlock_key_t k = k_spin_lock(&pm->lock);
 
 	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
+		ret = invoke_resume(dev);
 		if (ret < 0) {
 			goto unlock;
 		}
@@ -532,7 +558,7 @@ int pm_device_runtime_disable(const struct device *dev)
 
 	/* wake up the device if suspended */
 	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
+		ret = invoke_resume(dev);
 		if (ret < 0) {
 			goto unlock;
 		}

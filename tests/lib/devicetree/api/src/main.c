@@ -3670,4 +3670,35 @@ ZTEST(devicetree_api, test_interrupt_controller)
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
 }
 
+ZTEST(devicetree_api, test_power_domain_children)
+{
+	static const char *const pd0_children[] = {
+		DT_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(DT_NODELABEL(test_pd0), TO_STRING, (,))
+	};
+
+	static const char *const pd1_children[] = {
+		DT_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(DT_NODELABEL(test_pd1), TO_STRING, (,))
+	};
+
+	static const char *const pd2_children[] = {
+		DT_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP(DT_NODELABEL(test_pd2), TO_STRING, (,))
+	};
+
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd0)), 1);
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd1)), 2);
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd2)), 1);
+
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd0)),
+		      ARRAY_SIZE(pd0_children));
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd1)),
+		      ARRAY_SIZE(pd1_children));
+	zassert_equal(DT_POWER_DOMAIN_CHILDREN_LEN_OKAY(DT_NODELABEL(test_pd2)),
+		      ARRAY_SIZE(pd2_children));
+
+	zassert_str_equal(pd0_children[0], TO_STRING(DT_NODELABEL(test_pd1)));
+	zassert_str_equal(pd1_children[0], TO_STRING(DT_NODELABEL(test_dev_on_pd_okay0)));
+	zassert_str_equal(pd1_children[1], TO_STRING(DT_NODELABEL(test_dev_on_pd_okay1)));
+	zassert_str_equal(pd2_children[0], TO_STRING(DT_NODELABEL(test_dev_on_pd_okay1)));
+}
+
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);

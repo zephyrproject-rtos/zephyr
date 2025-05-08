@@ -110,6 +110,13 @@ node-macro =/ %s"DT_N" path-id %s"_FULL_NAME"
 node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
 ; The dependency ordinals of a node supports (reverse direct dependencies).
 node-macro =/ %s"DT_N" path-id %s"_SUPPORTS_ORDS"
+; These are used to iterate over and get the number of power domain
+; children with status "okay" of a node.
+node-macro =/ %s"DT_N" path-id %s"_POWER_DOMAIN_CHILDREN_LEN_OKAY"
+node-macro =/ %s"DT_N" path-id %s"_POWER_DOMAIN_CHILDREN_FOREACH_OKAY"
+node-macro =/ %s"DT_N" path-id %s"_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP"
+node-macro =/ %s"DT_N" path-id %s"_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_VARGS"
+node-macro =/ %s"DT_N" path-id %s"_POWER_DOMAIN_CHILDREN_FOREACH_OKAY_SEP_VARGS"
 
 ; --------------------------------------------------------------------
 ; pinctrl-macro: a macro related to the pinctrl properties in a node

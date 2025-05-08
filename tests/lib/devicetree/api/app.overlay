@@ -883,6 +883,38 @@
 				};
 			};
 		};
+
+		test_pd0: test-pd0 {
+			compatible = "power-domain";
+			#power-domain-cells = <0>;
+		};
+
+		test_pd1: test-pd1 {
+			compatible = "power-domain";
+			#power-domain-cells = <0>;
+			power-domains = <&test_pd0>;
+		};
+
+		test_pd2: test-pd2 {
+			compatible = "power-domain";
+			#power-domain-cells = <0>;
+		};
+
+		test_dev_on_pd_okay0: test-dev-on-pd-okay0 {
+			compatible = "vnd,device-base";
+			power-domains = <&test_pd1>;
+		};
+
+		test_dev_on_pd_okay1: test-dev-on-pd-okay1 {
+			compatible = "vnd,device-base";
+			power-domains = <&test_pd1 &test_pd2>;
+		};
+
+		test_dev_on_pd_disabled: test-dev-on-pd-disabled {
+			compatible = "vnd,device-base";
+			power-domains = <&test_pd1 &test_pd2>;
+			status = "disabled";
+		};
 	};
 
 	test_64 {
