@@ -101,6 +101,12 @@ int main(void)
 	int i = 0;
 	int err;
 
+	/* When the video shell is enabled, do not run the capture loop */
+	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
+		LOG_INF("Letting the user control the device with the video shell");
+		return 0;
+	}
+
 #if DT_HAS_CHOSEN(zephyr_camera)
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 
