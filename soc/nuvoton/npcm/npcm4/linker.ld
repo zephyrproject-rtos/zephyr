@@ -140,8 +140,17 @@ SECTIONS
     SECTION_PROLOGUE(header,,)
 	{
 	KEEP(*(.header))
-	__main_fw_seg_start__ = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+	
+    SECTION_PROLOGUE(header,,)
+	{
+	__fast_hook_seg_start__ = .;
+	KEEP(*(.fasthook))
+	. = ALIGN(16);
+	__fast_hook_seg_end__ = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+	
+	__main_fw_seg_start__ = .;
 	
     SECTION_PROLOGUE(rom_start,,)
 	{
@@ -206,7 +215,23 @@ SECTIONS
 #endif
 	__exidx_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
-
+	
+	/* user ram code */
+	__ram_code_flash_start__ = .;
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+	{
+		. = ALIGN(16);
+		__ram_code_ram_start__ = .;
+		KEEP(*(.userramcode))
+		. = ALIGN(16);
+		__ram_code_ram_end__ = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+	{
+		__ram_code_flash_end__ = .;
+    } GROUP_LINK_IN(ROMABLE_REGION)
+	
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
@@ -238,6 +263,7 @@ SECTIONS
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+			
 #include <zephyr/linker/cplusplus-rom.ld>
 
 #if defined(CONFIG_BUILD_ALIGN_LMA)
@@ -255,6 +281,7 @@ SECTIONS
 	__rodata_region_end = .;
 	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
 #endif
+		
 	__rom_region_end = __rom_region_start + . - ADDR(rom_start);
 
 	__main_fw_seg_end__ = .;

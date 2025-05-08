@@ -24,6 +24,8 @@
 };
 
 &qspi_spim {
+	zephyr,mutable;
+	
 	int_flash: w25q16@0 {
 		compatible ="nuvoton,npcm-nor";
 		size = <DT_SIZE_M(2 * 8)>;

@@ -30,8 +30,7 @@ config FLASH_BASE_ADDRESS
 	  avoid modifying it via the menu configuration.
 
 config ROM_START_OFFSET
-	default 0x0 if XIP
-	default 0x0 if !XIP
+	default 0x0
 	
 config ENTER_CPU_IDLE_HOOK
 	bool "CPU idle hook enable"

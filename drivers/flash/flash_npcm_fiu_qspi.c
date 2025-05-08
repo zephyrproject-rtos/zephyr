@@ -13,7 +13,9 @@
 #include <zephyr/dt-bindings/flash_controller/npcm_qspi.h>
 #include <soc.h>
 
+#include "spi_nor.h"
 #include "flash_npcm_qspi.h"
+#include "gdma.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(npcm_fiu_qspi, LOG_LEVEL_ERR);
@@ -23,6 +25,9 @@ LOG_MODULE_REGISTER(npcm_fiu_qspi, LOG_LEVEL_ERR);
 #define NPCM_FIU_PVT_CS		NPCM_QSPI_SW_CS0
 #define NPCM_FIU_SHD_CS		NPCM_QSPI_SW_CS1
 #define NPCM_FIU_BACK_CS	NPCM_QSPI_SW_CS2
+
+/* System configuration */
+#define HAL_SFCG_INST() (struct scfg_reg *)(DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg))
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) \
@@ -47,32 +52,20 @@ static inline void qspi_npcm_uma_cs_level(const struct device *dev, uint8_t sw_c
 
 	/* Set chip select to high/low level */
 	if (level) {
-		inst->UMA_ECTS |= BIT(sw_cs);
+		inst->UMA_ECTS |= sw_cs;
 	} else {
-		inst->UMA_ECTS &= ~BIT(sw_cs);
+		inst->UMA_ECTS &= ~sw_cs;
 	}
 }
 
 static inline void qspi_npcm_uma_write_byte(const struct device *dev, uint8_t data)
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
-	struct npcm_qspi_data *const qspi_data = dev->data;
-	const struct npcm_qspi_cfg *qspi_cfg = qspi_data->cur_cfg;
-	int cts = 0;
 
 	/* Set data to UMA_CODE and trigger UMA */
 	inst->UMA_CODE = data;
 
-	cts = UMA_CODE_ONLY_WRITE;
-
-	/* share flash select, otherwise pvt or back */
-	if (qspi_cfg->flags & NPCM_FIU_SHD_CS) {
-		cts |= UMA_FLD_SHD_SL;
-	} else {
-		cts &= ~UMA_FLD_SHD_SL;
-	}
-
-	inst->UMA_CTS = cts;
+	inst->UMA_CTS = UMA_CODE_ONLY_WRITE;
 
 	/* EXEC_DONE will be zero automatically if a UMA transaction is completed. */
 	while (IS_BIT_SET(inst->UMA_CTS, NPCM_UMA_CTS_EXEC_DONE)) {
@@ -80,44 +73,75 @@ static inline void qspi_npcm_uma_write_byte(const struct device *dev, uint8_t da
 	}
 }
 
-static inline void qspi_npcm_uma_read_byte(const struct device *dev, uint8_t *data)
+static inline void qspi_npcm_uma_write_bytes(const struct device *dev, uint8_t* data, uint32_t len)
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
-	struct npcm_qspi_data *const qspi_data = dev->data;
-	const struct npcm_qspi_cfg *qspi_cfg = qspi_data->cur_cfg;
-	int cts = 0;
+	uint32_t wr_len;
 
-	cts = UMA_CODE_ONLY_READ_BYTE(1);
+	while(len)
+	{
+		wr_len = (len > 16)?(16):(len);
+		len -= wr_len;
 
-	/* share flash select, otherwise pvt or back */
-	if (qspi_cfg->flags & NPCM_FIU_SHD_CS) {
-		cts |= UMA_FLD_SHD_SL;
-	} else {
-		cts &= ~UMA_FLD_SHD_SL;
+		memcpy((void*)inst->EXT_DB_F_0, data, wr_len);
+		data += wr_len;
+
+		inst->EXT_DB_CFG = BIT(NPCM_EXT_DB_CFG_EXT_DB_EN) | wr_len;
+		inst->UMA_CTS = (UMA_FLD_EXEC | UMA_FLD_WRITE | UMA_FLD_NO_CMD);
+
+		/* EXEC_DONE will be zero automatically if a UMA transaction is completed. */
+		while (IS_BIT_SET(inst->UMA_CTS, NPCM_UMA_CTS_EXEC_DONE)) {
+			continue;
+		}
 	}
 
-	/* Trigger UMA and Get data from DB0 later */
-	inst->UMA_CTS = cts;
+	inst->EXT_DB_CFG &= ~BIT(NPCM_EXT_DB_CFG_EXT_DB_EN);
+}
 
-	while (IS_BIT_SET(inst->UMA_CTS, NPCM_UMA_CTS_EXEC_DONE)) {
-		continue;
+static inline void qspi_npcm_uma_read_bytes(const struct device *dev, uint8_t *data, uint32_t len)
+{
+	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+	uint32_t rd_len;
+
+	while(len)
+	{
+		rd_len = (len > 4)?(4):(len);
+		len -= rd_len;
+
+		inst->UMA_CTS = UMA_FLD_EXEC | UMA_FLD_NO_CMD | rd_len;
+
+		/* EXEC_DONE will be zero automatically if a UMA transaction is completed. */
+		while (IS_BIT_SET(inst->UMA_CTS, NPCM_UMA_CTS_EXEC_DONE)) {
+			continue;
+		}
+
+		if(rd_len == 4)
+		{
+			*((uint32_t*)data) = inst->UMA_DB0_3;
+			data += rd_len;
+		}
+		else
+		{
+			uint32_t dat = inst->UMA_DB0_3;
+
+			while(rd_len--)
+			{
+				*data++ = dat & 0xFF;
+				dat >>= 8;
+			}
+		}
 	}
 
-	*data = inst->UMA_DB0;
+	inst->EXT_DB_CFG &= ~BIT(NPCM_EXT_DB_CFG_EXT_DB_EN);
 }
 
 /* NPCM SPI Direct Read Access (DRA)/User Mode Access (UMA) configuration functions */
-static inline void qspi_npcm_config_uma_mode(const struct device *dev,
-					     const struct npcm_qspi_cfg *qspi_cfg)
+static inline void qspi_npcm_config_uma_mode(const struct device *dev)
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
-	/* back flash select, otherwise share or pvt */
-	if (qspi_cfg->flags & NPCM_FIU_BACK_CS) {
-		inst->UMA_ECTS |= BIT(NPCM_UMA_ECTS_DEV_NUM_BACK);
-	} else {
-		inst->UMA_ECTS &= ~BIT(NPCM_UMA_ECTS_DEV_NUM_BACK);
-	}
+	/* set address length to 0 */
+	SET_FIELD(inst->UMA_ECTS, NPCM_UMA_ECTS_UMA_ADDR_SIZE, 0);
 }
 
 static inline void qspi_npcm_config_dra_4byte_mode(const struct device *dev,
@@ -126,17 +150,30 @@ static inline void qspi_npcm_config_dra_4byte_mode(const struct device *dev,
 #if defined(CONFIG_FLASH_NPCM_FIU_SUPP_DRA_4B_ADDR)
 	struct fiu_reg *const core_inst = HAL_INSTANCE(dev);
 	struct fiu_reg *const host_inst = HAL_HOST_INSTANCE(dev);
-	uint8_t addr_4b_en;
-
-	addr_4b_en = (qspi_cfg->flags & NPCM_QSPI_SW_CS_MASK) << 4;
-
+	struct npcm_qspi_data *const data = dev->data;
+	
 	if (qspi_cfg->enter_4ba != 0) {
-		core_inst->ADDR_4B_EN |= addr_4b_en;
-		host_inst->ADDR_4B_EN |= addr_4b_en;
-	} else {
-		core_inst->ADDR_4B_EN &= ~addr_4b_en;
-		host_inst->ADDR_4B_EN &= ~addr_4b_en;
+		core_inst->FIU_EXT_CFG |= BIT(NPCM_FIU_EXT_CFG_FOUR_BADDR);
+		host_inst->FIU_EXT_CFG |= BIT(NPCM_FIU_EXT_CFG_FOUR_BADDR);
 	}
+	else {
+		if(data->sw_cs & NPCM_QSPI_SW_CS0) {
+			core_inst->SET_CMD_EN &= ~BIT(NPCM_SET_CMD_EN_PVT_CMD_EN);
+			host_inst->SET_CMD_EN &= ~BIT(NPCM_SET_CMD_EN_PVT_CMD_EN);
+		}
+		else if(data->sw_cs & NPCM_QSPI_SW_CS1) {
+			core_inst->SET_CMD_EN &= ~BIT(NCPM_SET_CMD_EN_SHD_CMD_EN);
+			host_inst->SET_CMD_EN &= ~BIT(NCPM_SET_CMD_EN_SHD_CMD_EN);
+		}
+		else if(data->sw_cs & NPCM_QSPI_SW_CS2) {
+			core_inst->SET_CMD_EN &= ~BIT(NCPM_SET_CMD_EN_BACK_CMD_EN);
+			host_inst->SET_CMD_EN &= ~BIT(NCPM_SET_CMD_EN_BACK_CMD_EN);
+		}
+
+		core_inst->FIU_EXT_CFG &= ~BIT(NPCM_FIU_EXT_CFG_FOUR_BADDR);
+		host_inst->FIU_EXT_CFG &= ~BIT(NPCM_FIU_EXT_CFG_FOUR_BADDR);
+	}
+
 #endif /* CONFIG_FLASH_NPCM_FIU_SUPP_DRA_4B_ADDR */
 }
 
@@ -145,44 +182,53 @@ static inline void qspi_npcm_config_dra_mode(const struct device *dev,
 {
 	struct fiu_reg *const core_inst = HAL_INSTANCE(dev);
 	struct fiu_reg *const host_inst = HAL_HOST_INSTANCE(dev);
-	uint8_t rd_mode, rd_burst = NPCM_BURST_CFG_R_BURST_16B;
 
+	/* Selects the SPI read access type of Direct Read Access mode */
 	switch (qspi_cfg->rd_mode) {
 		case NPCM_RD_MODE_NORMAL:
-			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_NORMAL;
-			break;
+			SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_NORMAL);
+			SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_NORMAL);
+             break;
 		case NPCM_RD_MODE_FAST:
-			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_FAST;
+			SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST);
+			SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST);
 			break;
 		case NPCM_RD_MODE_FAST_DUAL:
-		case NPCM_RD_MODE_QUAD:
-			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL;
+			SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
+			SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
 			break;
-                default:
+		case NPCM_RD_MODE_QUAD:
+			SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
+			SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
+					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
+
+			core_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
+			host_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
+
+			/* Enable quad mode of Direct Read Mode if needed */
+			if (qspi_cfg->qer_type != JESD216_DW15_QER_NONE) {
+				/* set quad mode enable*/
+
+			}
+			break;
+		default:
 			LOG_ERR("un-support rd mode:%d", qspi_cfg->rd_mode);
-			return;
+			break;
 	}
-
-	/* Selects the SPI read access type of Direct Read Access mode,
-	 * for quad mode, need enable extra configuration.
-	 */
-	SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE, rd_mode);
-	SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE, rd_mode);
-
-	if (qspi_cfg->rd_mode == NPCM_RD_MODE_QUAD) {
-		core_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
-		host_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
-	} else {
-		core_inst->RESP_CFG &= ~BIT(NPCM_RESP_CFG_QUAD_EN);
-		host_inst->RESP_CFG &= ~BIT(NPCM_RESP_CFG_QUAD_EN);
-	}
-
-	/* set read max burst 16 bytes */
-	SET_FIELD(core_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, rd_burst);
-	SET_FIELD(host_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, rd_burst);
 
 	/* Enable/Disable 4 byte address mode for Direct Read Access (DRA) */
 	qspi_npcm_config_dra_4byte_mode(dev, qspi_cfg);
+
+	/* set read max burst 16 bytes */
+	SET_FIELD(core_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, NPCM_BURST_CFG_R_BURST_16B);
+	SET_FIELD(host_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, NPCM_BURST_CFG_R_BURST_16B);
 }
 
 static inline void qspi_npcm_fiu_set_operation(const struct device *dev, uint32_t operation)
@@ -220,18 +266,17 @@ static int qspi_npcm_fiu_uma_transceive(const struct device *dev, struct npcm_tr
 				     uint32_t flags)
 {
 	struct npcm_qspi_data *const data = dev->data;
-	int ret;
 
 	/* Transaction is permitted? */
 	if ((data->operation & NPCM_EX_OP_LOCK_TRANSCEIVE) != 0) {
 		return -EPERM;
 	}
 
+	/* uma init */
+	qspi_npcm_config_uma_mode(dev);
+
 	/* UMA block */
-	ret = qspi_npcm_fiu_uma_lock(dev);
-	if (ret) {
-		return ret;
-	}
+	qspi_npcm_fiu_uma_lock(dev);
 
 	/* Assert chip select */
 	qspi_npcm_uma_cs_level(dev, data->sw_cs, false);
@@ -240,31 +285,24 @@ static int qspi_npcm_fiu_uma_transceive(const struct device *dev, struct npcm_tr
 	qspi_npcm_uma_write_byte(dev, cfg->opcode);
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_ADDR) != 0) {
-		/* 3-byte or 4-byte address? */
-		const int addr_start = (data->cur_cfg->enter_4ba != 0) ? 0 : 1;
-
-		for (size_t i = addr_start; i < 4; i++) {
-			LOG_DBG("addr %d, %02x", i, cfg->addr.u8[i]);
-			qspi_npcm_uma_write_byte(dev, cfg->addr.u8[i]);
-		}
+		qspi_npcm_uma_write_bytes(dev, &cfg->addr.u8[(data->cur_cfg->enter_4ba != 0) ? 0 : 1],
+									(data->cur_cfg->enter_4ba != 0) ? 4 : 3);
 	}
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_WRITE) != 0) {
 		if (cfg->tx_buf == NULL) {
 			return -EINVAL;
 		}
-		for (size_t i = 0; i < cfg->tx_count; i++) {
-			qspi_npcm_uma_write_byte(dev, cfg->tx_buf[i]);
-		}
+
+		qspi_npcm_uma_write_bytes(dev, cfg->tx_buf,  cfg->tx_count);
 	}
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_READ) != 0) {
 		if (cfg->rx_buf == NULL) {
 			return -EINVAL;
 		}
-		for (size_t i = 0; i < cfg->rx_count; i++) {
-			qspi_npcm_uma_read_byte(dev, cfg->rx_buf + i);
-		}
+
+		qspi_npcm_uma_read_bytes(dev, cfg->rx_buf, cfg->rx_count);
 	}
 
 	/* De-assert chip select */
@@ -281,6 +319,7 @@ static void qspi_npcm_fiu_mutex_lock_configure(const struct device *dev,
 					const uint32_t operation)
 {
 	struct npcm_qspi_data *const data = dev->data;
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
 	k_sem_take(&data->lock_sem, K_FOREVER);
 
@@ -292,14 +331,14 @@ static void qspi_npcm_fiu_mutex_lock_configure(const struct device *dev,
 		pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 		/* Save SW CS bit used in UMA mode */
-		data->sw_cs = find_lsb_set(cfg->flags & NPCM_QSPI_SW_CS_MASK) - 1;
-
-		/* Configure User Mode Access (UMA) settings */
-		qspi_npcm_config_uma_mode(dev, cfg);
+		data->sw_cs = find_lsb_set(cfg->flags & NPCM_QSPI_SW_CS_MASK);
 
 		/* Configure for Direct Read Access (DRA) settings */
 		qspi_npcm_config_dra_mode(dev, cfg);
 	}
+
+	/* pin select */
+	inst_scfg->DEVALT0[0xc] |= BIT(2);
 
 	/* Set QSPI bus operation */
 	if (data->operation != operation) {

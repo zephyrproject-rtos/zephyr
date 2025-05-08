@@ -21,14 +21,12 @@ LOG_MODULE_REGISTER(npcm_spim_qspi, LOG_LEVEL_ERR);
 
 #ifdef CONFIG_XIP
 	#include <zephyr/linker/linker-defs.h>
-	#define RAMFUNC __attribute__ ((section(".ramfunc")))
+	#define RAMFUNC __attribute__((section(".ramfunc")))
 #else
 	#define RAMFUNC
 #endif
 
-#define NPCM_SPIM_INT_CS	NPCM_QSPI_SW_CS0
-
-#define NPCM_SPIM_MAX_FREQ  MHZ(50)
+#define NPCM_SPIM_MAX_FREQ  	MHZ(50)
 #define NPCM_SPIM_CLK_DIVIDER   0x1
 
 /* Driver convenience defines */
@@ -43,6 +41,18 @@ struct npcm_qspi_spim_config {
 	uint32_t clk_cfg;
 };
 
+#define SPIM_CTL0_DIRECT(cmd)	(((cmd) << 24) | \
+								((NPCM_SPIM_CTL0_OPMODE_DMM) << 22) | \
+								BIT(NPCM_SPIM_CTL0_CIPHOFF));
+
+#define SPIM_CTL0_NORMAL(bit_mode, output, bitwidth, len) \
+										((NPCM_SPIM_CTL0_OPMODE_NORMAL_IO << 22) | \
+										((bit_mode) << 20) | \
+										((output) << NPCM_SPIM_CTL0_QDIODIR) | \
+										(((len) - 1) << 13) | \
+										((bitwidth-1) << 8) | \
+										BIT(NPCM_SPIM_CTL0_CIPHOFF));
+
 /* NPCM SPI Normal functions */
 RAMFUNC static inline void qspi_npcm_normal_cs_level(const struct device *dev, uint8_t sw_cs, bool level)
 {
@@ -56,70 +66,57 @@ RAMFUNC static inline void qspi_npcm_normal_cs_level(const struct device *dev, u
 	}
 }
 
-RAMFUNC static void qspi_npcm_spim_cache_on(const struct device *dev)
+RAMFUNC static inline void qspi_npcm_spim_cache_on(const struct device *dev)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
 
-	ctrl_value = inst->SPIM_CTL1;
-	ctrl_value &= ~BIT(NPCM_SPIM_CTL1_CACHEOFF);
-	inst->SPIM_CTL1 = ctrl_value;
+	inst->SPIM_CTL1 &= ~BIT(NPCM_SPIM_CTL1_CACHEOFF);
 }
 
-RAMFUNC static void qspi_npcm_spim_cache_invalid(const struct device *dev)
+RAMFUNC static inline void qspi_npcm_spim_cache_invalid(const struct device *dev)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
 
-	ctrl_value = inst->SPIM_CTL1;
-	ctrl_value |= BIT(NPCM_SPIM_CTL1_CDINVAL);
-	inst->SPIM_CTL1 = ctrl_value;
-
+	inst->SPIM_CTL1 |= BIT(NPCM_SPIM_CTL1_CDINVAL);
 	while (inst->SPIM_CTL1 & BIT(NPCM_SPIM_CTL1_CDINVAL)) {
 		continue;
 	}
 }
 
-RAMFUNC static inline void qspi_npcm_normal_write_byte(const struct device *dev, uint8_t data)
+RAMFUNC static void qspi_npcm_normal_write_bytes(const struct device *dev, uint8_t* data, size_t len)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
+	uint8_t tx_len;
 
-	ctrl_value = inst->SPIM_CTL0;
+	while(len)
+	{
+		tx_len = (len > 4)?(4):(len);
+		len -= tx_len;
 
-	/* output direction */
-	ctrl_value |= BIT(NPCM_SPIM_CTL0_QDIODIR);
+		inst->SPIM_CTL0 = SPIM_CTL0_NORMAL(NPCM_SPIM_CTL0_BITMODE_STANDARD, 1, 8, tx_len);
 
-	/* update control register */
-	inst->SPIM_CTL0 = ctrl_value;
+	    while(tx_len)
+	    {
+	    	inst->SPIM_TX[--tx_len] = *data++;
+	    }
 
-	/* fill data */
-	inst->SPIM_TX0 = data;
+		/* execute transaction */
+		inst->SPIM_CTL1 |= BIT(NPCM_SPIM_CTL1_SPIMEN);
 
-	/* execute transaction */
-	inst->SPIM_CTL1 |= BIT(NPCM_SPIM_CTL1_SPIMEN);
-
-	/* SPIMEM will be zero automatically if a transaction is completed. */
-	while (inst->SPIM_CTL1 & BIT(NPCM_SPIM_CTL1_SPIMEN)) {
-		continue;
+		/* SPIMEM will be zero automatically if a transaction is completed. */
+		while (inst->SPIM_CTL1 & BIT(NPCM_SPIM_CTL1_SPIMEN)) {
+			continue;
+		}
 	}
-
-	/* write 1 to clear interupt flag */
-	inst->SPIM_CTL0 |= BIT(NPCM_SPIM_CTL0_IF);
 }
 
-RAMFUNC static inline void qspi_npcm_normal_read_byte(const struct device *dev, uint8_t *data)
+RAMFUNC static void qspi_npcm_normal_write_byte(const struct device *dev, uint8_t data)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
 
-	ctrl_value = inst->SPIM_CTL0;
+	inst->SPIM_CTL0 = SPIM_CTL0_NORMAL(NPCM_SPIM_CTL0_BITMODE_STANDARD, 1, 8, 1);
 
-	/* input direction */
-	ctrl_value &= ~BIT(NPCM_SPIM_CTL0_QDIODIR);
-
-	/* update control register */
-	inst->SPIM_CTL0 = ctrl_value;
+	inst->SPIM_TX[0] = data;
 
 	/* execute transaction */
 	inst->SPIM_CTL1 |= BIT(NPCM_SPIM_CTL1_SPIMEN);
@@ -128,90 +125,65 @@ RAMFUNC static inline void qspi_npcm_normal_read_byte(const struct device *dev, 
 	while (inst->SPIM_CTL1 & BIT(NPCM_SPIM_CTL1_SPIMEN)) {
 		continue;
 	}
+}
 
-	/* write 1 to clear interupt flag */
-	inst->SPIM_CTL0 |= BIT(NPCM_SPIM_CTL0_IF);
+RAMFUNC static void qspi_npcm_normal_read_bytes(const struct device *dev, uint8_t *data, size_t len)
+{
+	struct spim_reg *const inst = HAL_INSTANCE(dev);
+	uint8_t rx_len;
 
-	/* fill read data */
-	*data = inst->SPIM_RX0;
+	while(len)
+	{
+		rx_len = (len > 4)?(4):(len);
+		len -= rx_len;
+
+		/* update control register */
+		inst->SPIM_CTL0 = SPIM_CTL0_NORMAL(NPCM_SPIM_CTL0_BITMODE_STANDARD, 0, 8, rx_len);
+
+		/* execute transaction */
+		inst->SPIM_CTL1 |= BIT(NPCM_SPIM_CTL1_SPIMEN);
+
+		/* SPIMEM will be zero automatically if a transaction is completed. */
+		while (inst->SPIM_CTL1 & BIT(NPCM_SPIM_CTL1_SPIMEN)) {
+			continue;
+		}
+
+        while(rx_len) {
+            *data++ = inst->SPIM_RX[--rx_len];
+        }
+	}
 }
 
 RAMFUNC static inline void qspi_npcm_config_normal_mode(const struct device *dev,
 					     const struct npcm_qspi_cfg *qspi_cfg)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
 
-	ctrl_value = inst->SPIM_CTL0;
-
-	/* normal io mode */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_OPMODE,
-			NPCM_SPIM_CTL0_OPMODE_NORMAL_IO);
-
-	/* bit mode to standard */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_BITMODE,
-			NPCM_SPIM_CTL0_BITMODE_STANDARD);
-
-	/* data transmit width 8 bits */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_DWIDTH,
-			NPCM_SPIM_CTL0_DWIDTH_8);
-
-	/* transaction one byte in one transfer */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_BURSTNUM,
-			NPCM_SPIM_CTL0_BURSTNUM_1);
-
-	/* update control register */
-	inst->SPIM_CTL0 = ctrl_value;
+	inst->SPIM_CTL0 = SPIM_CTL0_NORMAL(NPCM_SPIM_CTL0_BITMODE_STANDARD, 0, 8, 0);
 }
 
 RAMFUNC static inline void qspi_npcm_config_dmm_mode(const struct device *dev,
 					     const struct npcm_qspi_cfg *qspi_cfg)
 {
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t ctrl_value = 0;
-
-	ctrl_value = inst->SPIM_CTL0;
-
-	/* dmm mode */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_OPMODE,
-			NPCM_SPIM_CTL0_OPMODE_DMM);
-
-	/* standard read */
-	SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_CMDCODE,
-			SPI_NOR_CMD_READ);
 
 	switch (qspi_cfg->rd_mode) {
 		case NPCM_RD_MODE_NORMAL:
-			SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_CMDCODE,
-					SPI_NOR_CMD_READ);
+			inst->SPIM_CTL0 = SPIM_CTL0_DIRECT(SPI_NOR_CMD_READ);
 			break;
 		case NPCM_RD_MODE_FAST:
-			SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_CMDCODE,
-					SPI_NOR_CMD_READ_FAST);
+			inst->SPIM_CTL0 = SPIM_CTL0_DIRECT(SPI_NOR_CMD_READ_FAST);
 			break;
 		case NPCM_RD_MODE_FAST_DUAL:
-			SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_CMDCODE,
-					SPI_NOR_CMD_2READ);
+			inst->SPIM_CTL0 = SPIM_CTL0_DIRECT(SPI_NOR_CMD_2READ);
 			break;
 		case NPCM_RD_MODE_QUAD:
-			SET_FIELD(ctrl_value, NPCM_SPIM_CTL0_CMDCODE,
-					SPI_NOR_CMD_4READ);
+			inst->SPIM_CTL0 = SPIM_CTL0_DIRECT(SPI_NOR_CMD_4READ);
 			break;
 		default:
 			LOG_ERR("un-support rd mode:%d", qspi_cfg->rd_mode);
 			break;
 	}
-
-#if defined(CONFIG_FLASH_NPCM_SPIM_SUPP_DRA_4B_ADDR)
-	if (qspi_cfg->enter_4ba != 0) {
-		ctrl_value |= BIT(NPCM_SPIM_CTL0_B4ADDREN);
-	} else {
-		ctrl_value &= ~BIT(NPCM_SPIM_CTL0_B4ADDREN);
-	}
-#endif
-
-	/* update control register */
-	inst->SPIM_CTL0 = ctrl_value;
 }
 
 RAMFUNC static inline void qspi_npcm_spim_set_operation(const struct device *dev, uint32_t operation)
@@ -221,6 +193,21 @@ RAMFUNC static inline void qspi_npcm_spim_set_operation(const struct device *dev
 	}
 }
 
+RAMFUNC static void qspi_npcm_wait_flash_ready(const struct device *dev)
+{
+	uint8_t reg1_sts;
+
+	/* check busy bit in status register 1 */
+	do {
+		qspi_npcm_normal_cs_level(dev, 0, false);
+
+		qspi_npcm_normal_write_byte(dev, 0x05);
+		qspi_npcm_normal_read_bytes(dev, &reg1_sts, 1);
+
+		qspi_npcm_normal_cs_level(dev, 0, true);
+	} while (reg1_sts & 0x01);
+}
+
 /* NPCM specific QSPI-SPIM controller functions */
 RAMFUNC static int qspi_npcm_spim_normal_transceive(const struct device *dev, struct npcm_transceive_cfg *cfg,
 				     uint32_t flags)
@@ -228,7 +215,6 @@ RAMFUNC static int qspi_npcm_spim_normal_transceive(const struct device *dev, st
 	struct spim_reg *const inst = HAL_INSTANCE(dev);
 	struct npcm_qspi_data *const data = dev->data;
 	uint32_t ctrl_value = 0;
-	uint8_t reg1_sts = 0;
 
 	/* Transaction is permitted? */
 	if ((data->operation & NPCM_EX_OP_LOCK_TRANSCEIVE) != 0) {
@@ -242,50 +228,37 @@ RAMFUNC static int qspi_npcm_spim_normal_transceive(const struct device *dev, st
     qspi_npcm_config_normal_mode(dev, data->cur_cfg);
 
 	/* Assert chip select */
-	qspi_npcm_normal_cs_level(dev, data->sw_cs, false);
+	qspi_npcm_normal_cs_level(dev, 0, false);
 
 	/* Transmit op-code first */
 	qspi_npcm_normal_write_byte(dev, cfg->opcode);
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_ADDR) != 0) {
-		/* 3-byte or 4-byte address? */
-		int addr_start = (data->cur_cfg->enter_4ba != 0) ? 0 : 1;
-
-		for (size_t i = addr_start; i < 4; i++) {
-			//LOG_DBG("addr %d, %02x", i, cfg->addr.u8[i]);
-			qspi_npcm_normal_write_byte(dev, cfg->addr.u8[i]);
-		}
+		qspi_npcm_normal_write_bytes(dev, &cfg->addr.u8[1],	3);
 	}
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_WRITE) != 0) {
 		if (cfg->tx_buf == NULL) {
 			return -EINVAL;
 		}
-		for (size_t i = 0; i < cfg->tx_count; i++) {
-			qspi_npcm_normal_write_byte(dev, cfg->tx_buf[i]);
-		}
+
+		qspi_npcm_normal_write_bytes(dev, cfg->tx_buf, cfg->tx_count);
 	}
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_READ) != 0) {
 		if (cfg->rx_buf == NULL) {
 			return -EINVAL;
 		}
-		for (size_t i = 0; i < cfg->rx_count; i++) {
-			qspi_npcm_normal_read_byte(dev, cfg->rx_buf + i);
-		}
+
+		qspi_npcm_normal_read_bytes(dev, cfg->rx_buf, cfg->rx_count);
 	}
 
 	/* De-assert chip select */
-	qspi_npcm_normal_cs_level(dev, data->sw_cs, true);
+	qspi_npcm_normal_cs_level(dev, 0, true);
 
-	// YH@ wait flash ready during flash write.
-	if(((flags & NPCM_TRANSCEIVE_ACCESS_READ) == 0) && (cfg->opcode != SPI_NOR_CMD_WREN))
-	{		do {
-			qspi_npcm_normal_cs_level(dev, data->sw_cs, false);
-			qspi_npcm_normal_write_byte(dev, 0x05);
-			qspi_npcm_normal_read_byte(dev, &reg1_sts);
-			qspi_npcm_normal_cs_level(dev, data->sw_cs, true);
-		} while (reg1_sts & 0x01);
+	/* Wait flash ready during flash write operation. */
+	if(((flags & NPCM_TRANSCEIVE_ACCESS_READ) == 0) && (cfg->opcode != SPI_NOR_CMD_WREN)) {
+		qspi_npcm_wait_flash_ready(dev);
 	}
 
 	/* cache invalid after normal I/O mode */
@@ -311,9 +284,6 @@ RAMFUNC static void qspi_npcm_spim_mutex_lock_configure(const struct device *dev
 
 		/* Apply pin-muxing and tri-state */
 		pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
-		/* Save SW CS bit used in normal mode */
-		data->sw_cs = find_lsb_set(cfg->flags & NPCM_QSPI_SW_CS_MASK) - 1;
 
 		/* Configure for Direct Memory Mapping (DMM) settings */
 		qspi_npcm_config_dmm_mode(dev, cfg);
@@ -373,7 +343,7 @@ RAMFUNC static int qspi_npcm_spim_init(struct device *dev)
         SET_FIELD(inst->SPIM_CTL1, NPCM_SPIM_CTL1_DIVIDER,
                 NPCM_SPIM_CLK_DIVIDER);
     } else {
-        SET_FIELD(inst->SPIM_CTL1, NPCM_SPIM_CTL1_DIVIDER, 0x0);
+        SET_FIELD(inst->SPIM_CTL1, NPCM_SPIM_CTL1_DIVIDER, 0);
     }
 
 	/* initialize mutex for qspi controller */

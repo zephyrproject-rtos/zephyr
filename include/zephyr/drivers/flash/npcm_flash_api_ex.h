@@ -65,9 +65,10 @@ struct npcm_ex_ops_qspi_oper_out {
 };
 
 /* Specific NPCM QSPI devices control bits */
-#define NPCM_EX_OP_LOCK_TRANSCEIVE	BIT(0) /* Lock/Unlock transceive */
-#define NPCM_EX_OP_INT_FLASH_WP 	BIT(1) /* Issue write protection of internal flash */
-#define NPCM_EX_OP_EXT_FLASH_WP 	BIT(2) /* Issue write protection of external flash */
+#define NPCM_EX_OP_LOCK_TRANSCEIVE		BIT(0) /* Lock/Unlock transceive */
+#define NPCM_EX_OP_INT_FLASH_WP 		BIT(1) /* Issue write protection of internal flash */
+#define NPCM_EX_OP_EXT_FLASH_WP 		BIT(2) /* Issue write protection of external flash */
+#define NPCM_EX_OP_EXT_FLASH_SPIP_WP	BIT(3) /* Issue write protection of external flash */
 
 #ifdef __cplusplus
 }

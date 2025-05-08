@@ -199,7 +199,7 @@
 		compatible ="nuvoton,npcm-nor";
 		size = <DT_SIZE_M(32 * 8)>;
 		reg = <0>;
-		enter-4byte-addr = <0xa5>;
+		enter-4byte-addr = <0x2>;
 		status = "okay";
 
 		/* quad spi bus configuration of nor flash device */
@@ -207,6 +207,21 @@
 		mapped-addr = <0x70000000>;
 		pinctrl-0 = <&fiu0_shd_cs_io0_io1_clk_gp44_45_46_47
 			     &fiu0_shd_quad_io2_io3_clk_gp55_56>;
+		pinctrl-names = "default";
+	};
+};
+
+&qspi_spip {
+	ext_flash_spip: w25q256jv@1 {
+		compatible ="nuvoton,npcm-nor";
+		size = <DT_SIZE_M(32 * 8)>;
+		reg = <0>;
+		enter-4byte-addr = <0x2>;
+		status = "okay";
+		rd-mode = "NPCM_RD_MODE_QUAD";
+
+		qspi-flags = <NPCM_QSPI_SW_CS0>;
+		pinctrl-0 = < &pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77 >;
 		pinctrl-names = "default";
 	};
 };

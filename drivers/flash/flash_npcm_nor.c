@@ -19,6 +19,7 @@
 
 #include "flash_npcm_qspi.h"
 #include "spi_nor.h"
+#include "gdma.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcm_nor, CONFIG_FLASH_LOG_LEVEL);
@@ -226,7 +227,7 @@ RAMFUNC static int flash_npcm_nor_write_status_regs(const struct device *dev, ui
 exit:
 
 #ifdef CONFIG_XIP
-	key = irq_lock();
+	irq_unlock(key);
 #endif
 
 	return ret;
@@ -292,8 +293,24 @@ RAMFUNC static int flash_npcm_nor_read(const struct device *dev, off_t addr,
 
 	/* handle by transceive, use genernal Read I/O */
 	if (config->mapped_addr == MAPPED_ADDR_NOT_SUPPORT) {
-		return flash_npcm_transceive_read_by_addr(dev,
-				SPI_NOR_CMD_READ, data, size, addr);
+		switch (config->qspi_cfg.rd_mode) {
+			case NPCM_RD_MODE_FAST:
+				return flash_npcm_transceive_read_by_addr(dev,
+								SPI_NOR_CMD_DREAD, data, size, addr);
+				break;
+			case NPCM_RD_MODE_FAST_DUAL:
+				return flash_npcm_transceive_read_by_addr(dev,
+								SPI_NOR_CMD_2READ, data, size, addr);
+				break;
+			case NPCM_RD_MODE_QUAD:
+				return flash_npcm_transceive_read_by_addr(dev,
+								SPI_NOR_CMD_4READ, data, size, addr);
+				break;
+			default:
+				return flash_npcm_transceive_read_by_addr(dev,
+								SPI_NOR_CMD_READ, data, size, addr);
+				break;
+		}
 	}
 
 	/* Lock/Unlock SPI bus also for DRA mode */
@@ -301,7 +318,7 @@ RAMFUNC static int flash_npcm_nor_read(const struct device *dev, off_t addr,
 				       dev_data->operation);
 
 	/* Trigger Direct Read Access (DRA) via reading memory mapped-address */
-	memcpy(data, (void *)(config->mapped_addr + addr), size);
+	gdma_memcpy_burst_u32(data, (void *)(config->mapped_addr + addr), size);
 
 	qspi_data->qspi_ops->unlock(config->qspi_bus);
 
@@ -642,11 +659,16 @@ RAMFUNC static int flash_npcm_nor_init(const struct device *dev)
 			return -ENOTSUP;
 		}
 		/* Set QE bit in status register */
-		sts_reg[qe_idx - 1] |= BIT(qe_bit);
-		ret = flash_npcm_nor_write_status_regs(dev, sts_reg);
-		if (ret != 0) {
-			LOG_ERR("Enable quad access: write reg failed %d!", ret);
-			return ret;
+		if(sts_reg[qe_idx - 1] & BIT(qe_bit)) {
+			ret = 0;
+		}
+		else {
+			sts_reg[qe_idx - 1] |= BIT(qe_bit);
+			ret = flash_npcm_nor_write_status_regs(dev, sts_reg);
+			if (ret != 0) {
+				LOG_ERR("Enable quad access: write reg failed %d!", ret);
+				return ret;
+			}
 		}
 	}
 
@@ -672,9 +694,14 @@ RAMFUNC static int flash_npcm_nor_init(const struct device *dev)
 }
 
 #define NPCM_FLASH_NOR_INIT(n)							\
-BUILD_ASSERT(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE ||		\
-	     DT_INST_STRING_TOKEN(n, rd_mode) == NPCM_RD_MODE_FAST_DUAL,	\
-	     "Fast Dual IO read must be selected in Quad mode");		\
+BUILD_ASSERT(!(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE &&		\
+			  DT_INST_STRING_TOKEN(n, rd_mode) == NPCM_RD_MODE_QUAD),	\
+	     	  "[quad-enable-requirements] must be selected in Quad mode");		\
+BUILD_ASSERT(!((DT_REG_ADDR(DT_INST_PARENT(n)) == 0x40020000 || \
+			  DT_REG_ADDR(DT_INST_PARENT(n)) == 0x40017000) && \
+			  DT_INST_STRING_TOKEN(n, rd_mode) != NPCM_RD_MODE_NORMAL && \
+			  DT_INST_PROP_OR(n, mapped_addr, MAPPED_ADDR_NOT_SUPPORT) == MAPPED_ADDR_NOT_SUPPORT),	\
+			  "FIU and SPIM only supports normal mode in non-DMM mode!"); \
 PINCTRL_DT_INST_DEFINE(n);							\
 static struct flash_npcm_nor_config flash_npcm_nor_config_##n = {		\
 	.qspi_bus = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),			\
