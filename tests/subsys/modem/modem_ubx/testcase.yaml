@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Trackunit Corporation
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  modem.modem_ubx:
+    tags: modem_ubx
+    harness: ztest
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
