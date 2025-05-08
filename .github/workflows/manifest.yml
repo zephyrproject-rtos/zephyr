@@ -53,10 +53,3 @@ jobs:
           verbosity-level: '1'
           labels: 'manifest'
           dnm-labels: 'DNM (manifest)'
-
-      - name: Check for label
-        if: ${{ contains(github.event.*.labels.*.name, 'DNM (manifest)') }}
-        run: |
-          echo "Pull request is labeled as 'DNM (manifest)'."
-          echo "This workflow fails so that the pull request cannot be merged."
-          exit 1
