@@ -671,8 +671,8 @@ static int spi_pico_pio_transceive_impl(const struct device *dev, const struct s
 
 	do {
 		spi_pico_pio_txrx(dev);
-		spi_context_update_tx(spi_ctx, 1, data->tx_count);
-		spi_context_update_rx(spi_ctx, 1, data->rx_count);
+		spi_context_update_tx(spi_ctx, data->dfs, data->tx_count);
+		spi_context_update_rx(spi_ctx, data->dfs, data->rx_count);
 	} while (spi_pico_pio_transfer_ongoing(data));
 
 	spi_context_cs_control(spi_ctx, false);
