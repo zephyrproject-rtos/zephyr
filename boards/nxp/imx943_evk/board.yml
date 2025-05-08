@@ -1,0 +1,6 @@
+board:
+  name: imx943_evk
+  full_name: i.MX943 EVK
+  vendor: nxp
+  socs:
+  - name: mimx94398
