@@ -128,16 +128,18 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_frmival_enum *match)
 {
-	uint64_t best_diff_nsec = INT32_MAX;
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
+	uint64_t best_diff_nsec = INT32_MAX;
+	uint64_t goal_nsec = video_frmival_nsec(&desired);
 
 	__ASSERT(match->type != VIDEO_FRMIVAL_TYPE_STEPWISE,
 		 "cannot find range matching the range, only a value matching the range");
 
 	for (fie.index = 0; video_enum_frmival(dev, ep, &fie) == 0; fie.index++) {
 		struct video_frmival tmp = {0};
-		uint64_t diff_nsec = 0, a, b;
+		uint64_t diff_nsec = 0;
+		uint64_t tmp_nsec;
 
 		switch (fie.type) {
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
@@ -150,13 +152,18 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			__ASSERT(false, "invalid answer from the queried video device");
 		}
 
-		a = video_frmival_nsec(&desired);
-		b = video_frmival_nsec(&tmp);
-		diff_nsec = a > b ? a - b : b - a;
+		tmp_nsec = video_frmival_nsec(&tmp);
+		diff_nsec = tmp_nsec > goal_nsec ? tmp_nsec - goal_nsec : goal_nsec - tmp_nsec;
+
 		if (diff_nsec < best_diff_nsec) {
 			best_diff_nsec = diff_nsec;
 			match->index = fie.index;
-			memcpy(&match->discrete, &tmp, sizeof(tmp));
+			match->discrete = tmp;
+		}
+
+		if (diff_nsec == 0) {
+			/* Exact match, stop searching a better match */
+			break;
 		}
 	}
 }
