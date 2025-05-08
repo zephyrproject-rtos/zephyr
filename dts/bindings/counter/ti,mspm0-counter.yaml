@@ -1,0 +1,23 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI MSPM0 counter node for MSPM0 SoCs. Each timer can be configured to use for
+  counter operation.
+
+  mspm0counter : counter {
+    counter_0 {
+      resolution = <16>;
+    };
+  };
+
+compatible: "ti,mspm0-timer-counter"
+
+include: base.yaml
+
+properties:
+  resolution:
+    type: int
+    required: true
+    description: |
+      Counter resolution
