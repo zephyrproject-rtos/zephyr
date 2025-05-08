@@ -36,3 +36,21 @@ tests:
     integration_platforms:
       - mimxrt1064_evk
       - mimxrt1170_evk/mimxrt1176/cm7
+  sample.video.capture.shell:
+    tags:
+      - video
+      - samples
+      - shell
+    extra_configs:
+      - CONFIG_VIDEO_SHELL=y
+      - CONFIG_FPU=y
+      - CONFIG_DISPLAY=n
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Letting the user control the device with the video shell"
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
