@@ -187,6 +187,71 @@ struct nrf_pinctrl_config {
 #define NRF_GET_PIN(pincfg) (((pincfg) >> NRF_PIN_POS) & NRF_PIN_MSK)
 
 /** @endcond */
+
+/* SoC-specific hooks. */
+
+/**
+ * @brief Hook called at the beginning of @ref pinctrl_configure_pins
+ *
+ * @param pins List of pins to be configured.
+ * @param pin_cnt Number of pins.
+ * @param reg Device register (optional).
+ *
+ * @retval 0 If succeeded
+ * @retval -errno Negative errno for other failures.
+ */
+int nrf_pinctrl_hook_start(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
+			   uintptr_t reg);
+
+/**
+ * @brief Hook called before GPIO properties configuration is written to register.
+ *
+ * @param pin Pointer to a structure describing pin that is currently handled.
+ * @param cfg Pointer to a structure describing current pin's configuration.
+ *
+ * @retval 0 If succeeded
+ * @retval -errno Negative errno for other failures.
+ */
+int nrf_pinctrl_hook_pre_write(const struct nrf_pinctrl_pin *pin, struct nrf_pinctrl_config *cfg);
+
+/**
+ * @brief Hook called after GPIO properties configuration is written to register.
+ **
+ * @param pin Pointer to a structure describing pin that is currently handled.
+ * @param cfg Pointer to a structure describing current pin's configuration.
+ *
+ * @retval 0 If succeeded
+ * @retval -errno Negative errno for other failures.
+ */
+int nrf_pinctrl_hook_post_write(const struct nrf_pinctrl_pin *pin, struct nrf_pinctrl_config *cfg);
+
+/**
+ * @brief Hook called at the end of @ref pinctrl_configure_pins
+ *
+ * @param pins List of pins to be configured.
+ * @param pin_cnt Number of pins.
+ * @param reg Device register (optional).
+ *
+ * @retval 0 If succeeded
+ * @retval -errno Negative errno for other failures.
+ */
+int nrf_pinctrl_hook_end(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
+			 uintptr_t reg);
+
+/**
+ * @brief Hook called when iterating over pinctrl handler functions.
+ *
+ * Only called at the end, when no other function handled that pin.
+ *
+ * @param pin Pointer to a structure describing pin that is currently handled.
+ * @param cfg Pointer to a structure describing current pin's configuration.
+ *
+ * @retval true Pin has been handled.
+ * @retval false Pin has not been handled.
+ */
+bool nrf_pinctrl_hook_custom_periph(const struct nrf_pinctrl_pin *pin,
+				    struct nrf_pinctrl_config *cfg);
+
 #ifdef __cplusplus
 }
 #endif

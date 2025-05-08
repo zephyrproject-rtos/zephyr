@@ -7,10 +7,6 @@
 #include <zephyr/drivers/pinctrl.h>
 
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
-
 BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_DOWN == NRF_GPIO_PIN_PULLDOWN) &&
 	      (NRF_PULL_UP == NRF_GPIO_PIN_PULLUP)),
@@ -626,13 +622,21 @@ static const nrf_pinctrl_fun funs_table[] = {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc) || defined(CONFIG_NRFX_GRTC)
 	nrf_pinctrl_grtc,
 #endif
+#if defined(CONFIG_PINCTRL_NRF_CUSTOM_HOOKS)
+	nrf_pinctrl_hook_custom_periph,
+#endif
 };
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	bool gpd_requested = false;
+	int ret = 0;
+#if defined(CONFIG_PINCTRL_NRF_CUSTOM_HOOKS)
+	ret = nrf_pinctrl_hook_start(pins, pin_cnt, reg);
+
+	if (ret < 0) {
+		return ret;
+	}
 #endif
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
@@ -687,21 +691,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				cfg.input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				if (!gpd_requested) {
-					int ret;
+#if defined(CONFIG_PINCTRL_NRF_CUSTOM_HOOKS)
+			ret = nrf_pinctrl_hook_pre_write(&pin, &cfg);
 
-					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
-					if (ret < 0) {
-						return ret;
-					}
-					gpd_requested = true;
-				}
-
-				nrf_gpio_pin_retain_disable(pin);
+			if (ret < 0) {
+				return ret;
 			}
-#endif /* CONFIG_SOC_NRF54H20_GPD */
+#endif
 
 			if (cfg.write != NRF_PINCTRL_WRITE_NONE) {
 				nrf_gpio_pin_write(pin.pin_num, cfg.write);
@@ -713,24 +709,20 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if NRF_GPIO_HAS_CLOCKPIN
 			nrf_gpio_pin_clock_set(pin.pin_num, cfg.clock_pin_en);
 #endif
-#ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				nrf_gpio_pin_retain_enable(pin);
+
+#if defined(CONFIG_PINCTRL_NRF_CUSTOM_HOOKS)
+			ret = nrf_pinctrl_hook_post_write(&pin, &cfg);
+
+			if (ret < 0) {
+				return ret;
 			}
-#endif /* CONFIG_SOC_NRF54H20_GPD */
+#endif
 		}
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (gpd_requested) {
-		int ret;
-
-		ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-	}
+#if defined(CONFIG_PINCTRL_NRF_CUSTOM_HOOKS)
+	ret = nrf_pinctrl_hook_end(pins, pin_cnt, reg);
 #endif
 
-	return 0;
+	return ret;
 }
