@@ -71,3 +71,8 @@ properties:
       protection register that initializes to write-protected.  Use this
       property to indicate that the BPR must be unlocked before write
       operations can proceed.
+
+  st,read-id-dummy-cycles:
+    type: int
+    default: 8
+    description: The number of dummy-cycles required when reading jedec id
