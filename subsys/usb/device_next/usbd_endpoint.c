@@ -61,7 +61,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct usb_device_descriptor *desc = uds_ctx->fs_desc;
 	size_t min_len = MIN(setup->wLength, buf->len);
-	uint8_t mps0 = 0;
+	int mps0 = 0;
 
 	switch (usbd_bus_speed(uds_ctx)) {
 	case USBD_SPEED_FS:
@@ -69,6 +69,9 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 		break;
 	case USBD_SPEED_HS:
 		mps0 = USB_CONTROL_EP_MPS;
+		break;
+	case USBD_SPEED_SS:
+		mps0 = 512;
 		break;
 	default:
 		__ASSERT(false, "Cannot determine bMaxPacketSize0 (unsupported speed)");

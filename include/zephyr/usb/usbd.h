@@ -37,11 +37,17 @@ extern "C" {
  * @{
  */
 
+/* 1 if USB device stack is compiled with Super-Speed support */
+#define USBD_SUPPORTS_SUPER_SPEED IS_EQ(CONFIG_USBD_MAX_SPEED, 2)
+
 /* 1 if USB device stack is compiled with High-Speed support */
-#define USBD_SUPPORTS_HIGH_SPEED IS_EQ(CONFIG_USBD_MAX_SPEED, 1)
+#define USBD_SUPPORTS_HIGH_SPEED						\
+	UTIL_OR(IS_EQ(CONFIG_USBD_MAX_SPEED, 1), USBD_SUPPORTS_SUPER_SPEED)
 
 /* Maximum bulk max packet size the stack supports */
-#define USBD_MAX_BULK_MPS COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (512), (64))
+#define USBD_MAX_BULK_MPS							\
+	COND_CODE_1(USBD_SUPPORTS_SUPER_SPEED, (1024),				\
+		    (COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (512), (64))))
 
 /*
  * The length of the string descriptor (bLength) is calculated from the
@@ -295,6 +301,8 @@ struct usbd_context {
 	sys_slist_t fs_configs;
 	/** slist to manage High-Speed device configurations */
 	sys_slist_t hs_configs;
+	/** slist to manage Super-Speed device configurations */
+	sys_slist_t ss_configs;
 	/** dlist to manage vendor requests with recipient device */
 	sys_dlist_t vreqs;
 	/** Status of the USB device support */
@@ -303,6 +311,8 @@ struct usbd_context {
 	void *fs_desc;
 	/** Pointer to High-Speed device descriptor */
 	void *hs_desc;
+	/** Pointer to Super-Speed device descriptor */
+	void *ss_desc;
 };
 
 /**
@@ -504,12 +514,34 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bNumConfigurations = 0,				\
 	};								\
 	))								\
+	IF_ENABLED(USBD_SUPPORTS_SUPER_SPEED, (				\
+	static struct usb_device_descriptor				\
+	ss_desc_##device_name = {					\
+		.bLength = sizeof(struct usb_device_descriptor),	\
+		.bDescriptorType = USB_DESC_DEVICE,			\
+		.bcdUSB = sys_cpu_to_le16(USB_SRN_3_2),			\
+		.bDeviceClass = USB_BCC_MISCELLANEOUS,			\
+		.bDeviceSubClass = 2,					\
+		.bDeviceProtocol = 1,					\
+		.bMaxPacketSize0 = 9,					\
+		.idVendor = vid,					\
+		.idProduct = pid,					\
+		.bcdDevice = sys_cpu_to_le16(USB_BCD_DRN),		\
+		.iManufacturer = 0,					\
+		.iProduct = 0,						\
+		.iSerialNumber = 0,					\
+		.bNumConfigurations = 0,				\
+	};								\
+	))								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
 		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (			\
 		.hs_desc = &hs_desc_##device_name,			\
+		))							\
+		IF_ENABLED(USBD_SUPPORTS_SUPER_SPEED, (			\
+		.ss_desc = &ss_desc_##device_name,			\
 		))							\
 	}
 
@@ -762,7 +794,13 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
 		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
 		.c_data = &class_name,						\
-	}									\
+	};									\
+	))									\
+	IF_ENABLED(USBD_SUPPORTS_SUPER_SPEED, (					\
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
+		usbd_class_ss, usbd_class_node, class_name##_ss) = {		\
+		.c_data = &class_name,						\
+	};									\
 	))
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req

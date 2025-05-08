@@ -120,11 +120,12 @@ int usbd_desc_remove_all(struct usbd_context *const uds_ctx)
 int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 			struct usbd_desc_node *const desc_nd)
 {
-	struct usb_device_descriptor *hs_desc, *fs_desc;
+	struct usb_device_descriptor *ss_desc, *hs_desc, *fs_desc;
 	int ret = 0;
 
 	usbd_device_lock(uds_ctx);
 
+	ss_desc = uds_ctx->ss_desc;
 	hs_desc = uds_ctx->hs_desc;
 	if (USBD_SUPPORTS_HIGH_SPEED && hs_desc == NULL) {
 		ret = -EPERM;
@@ -176,6 +177,10 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 				hs_desc->iManufacturer = desc_nd->str.idx;
 			}
 
+			if (USBD_SUPPORTS_SUPER_SPEED) {
+				ss_desc->iManufacturer = desc_nd->str.idx;
+			}
+
 			fs_desc->iManufacturer = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_PRODUCT:
@@ -183,11 +188,19 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 				hs_desc->iProduct = desc_nd->str.idx;
 			}
 
+			if (USBD_SUPPORTS_SUPER_SPEED) {
+				ss_desc->iManufacturer = desc_nd->str.idx;
+			}
+
 			fs_desc->iProduct = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_SERIAL_NUMBER:
 			if (USBD_SUPPORTS_HIGH_SPEED) {
 				hs_desc->iSerialNumber = desc_nd->str.idx;
+			}
+
+			if (USBD_SUPPORTS_SUPER_SPEED) {
+				ss_desc->iSerialNumber = desc_nd->str.idx;
 			}
 
 			fs_desc->iSerialNumber = desc_nd->str.idx;

@@ -13,7 +13,7 @@
 		zephyr_udc0: udc_vrt0 {
 			compatible = "zephyr,udc-virtual";
 			num-bidir-endpoints = <8>;
-			maximum-speed = "high-speed";
+			maximum-speed = "super-speed";
 		};
 	};
 };

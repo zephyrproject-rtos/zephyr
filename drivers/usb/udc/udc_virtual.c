@@ -491,7 +491,8 @@ static enum udc_bus_speed udc_vrt_device_speed(const struct device *dev)
 	struct udc_data *data = dev->data;
 
 	/* FIXME: get actual device speed */
-	return data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
+	return data->caps.ss ? UDC_BUS_SPEED_SS :
+	       data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
 }
 
 static int udc_vrt_enable(const struct device *dev)
@@ -576,9 +577,12 @@ static int udc_vrt_driver_preinit(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_MPS0_64;
-	if (config->speed_idx == 2) {
+	if (config->speed_idx >= 2) {
 		data->caps.hs = true;
 		mps = 1024;
+	}
+	if (config->speed_idx >= 3) {
+		data->caps.ss = true;
 	}
 
 	for (int i = 0; i < config->num_of_eps; i++) {

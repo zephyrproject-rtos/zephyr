@@ -11,8 +11,18 @@ menuconfig UDC_DRIVER
 
 if UDC_DRIVER
 
+config UDC_DRIVER_HAS_SUPER_SPEED_SUPPORT
+	bool
+
 config UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	bool
+
+config UDC_DRIVER_SUPER_SPEED_SUPPORT_ENABLED
+	bool "Allow Super-Speed operation"
+	default y if UDC_DRIVER_HAS_SUPER_SPEED_SUPPORT
+	help
+	  Allow Super-Speed capable device to operate at Super-Speed. Disable this
+	  option to force USB 2 only operation.
 
 config UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
 	bool "Allow High-Speed chirp"
