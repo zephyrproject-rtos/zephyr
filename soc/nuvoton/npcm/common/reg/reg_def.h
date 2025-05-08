@@ -601,21 +601,9 @@ struct spim_reg {
 	/* 0x00C: RX Clock Delay Control Register */
 	volatile uint32_t SPIM_RXCLKDLY;
 	/* 0x010: Data Receive Register 0 */
-	volatile uint32_t SPIM_RX0;
-	/* 0x014: Data Receive Register 1 */
-	volatile uint32_t SPIM_RX1;
-	/* 0x018: Data Receive Register 2 */
-	volatile uint32_t SPIM_RX2;
-	/* 0x01C: Data Receive Register 3 */
-	volatile uint32_t SPIM_RX3;
+	volatile uint32_t SPIM_RX[4];
 	/* 0x020: Data Transmit Register 0 */
-	volatile uint32_t SPIM_TX0;
-	/* 0x024: Data Transmit Register 1 */
-	volatile uint32_t SPIM_TX1;
-	/* 0x028: Data Transmit Register 2 */
-	volatile uint32_t SPIM_TX2;
-	/* 0x02C: Data Transmit Register 3 */
-	volatile uint32_t SPIM_TX3;
+	volatile uint32_t SPIM_TX[4];
 	/* 0x030: SRAM Memory Address Register */
 	volatile uint32_t SPIM_SRAMADDR;
 	/* 0x034: DMA Transfer Byte Count Register */

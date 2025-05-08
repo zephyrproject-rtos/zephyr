@@ -36,6 +36,58 @@ extern "C"
 #define GDMA_CTCNT1 M32(GDMA_BASE_ADDR + 0x38)
 
 
+/*------------------------------*/
+/* GDMA_CTL0 / GDMA_CTL1 fields */
+/*------------------------------*/
+#define GDMA_ERR_Pos                                (20)
+#define GDMA_ERR_Msk                                (0x1 << GDMA_ERR_Pos)
+
+#define GDMA_TC_Pos                                 (18)
+#define GDMA_TC_Msk                                 (0x1 << GDMA_TC_Pos)
+
+#define GDMA_SOFTREQ_Pos                            (16)
+#define GDMA_SOFTREQ_Msk                            (0x1 << GDMA_SOFTREQ_Pos)
+
+#define GDMA_GPS_Pos                                (14)
+#define GDMA_GPS_Msk                                (0x1 << GDMA_GPS_Pos)
+
+#define GDMA_TWS_Pos                                (12)
+#define GDMA_TWS_Msk                                (0x3 << GDMA_TWS_Pos)
+
+#define GDMA_BME_Pos                                (9)
+#define GDMA_BME_Msk                                (0x1 << GDMA_BME_Pos)
+
+#define GDMA_SIEN_Pos                               (8)
+#define GDMA_SIEN_Msk                               (0x1 << GDMA_SIEN_Pos)
+
+#define GDMA_SAFIX_Pos                              (7)
+#define GDMA_SAFIX_Msk                              (0x1 << GDMA_SAFIX_Pos)
+
+#define GDMA_DAFIX_Pos                              (6)
+#define GDMA_DAFIX_Msk                              (0x1 << GDMA_DAFIX_Pos)
+
+#define GDMA_SADIR_Pos                              (5)
+#define GDMA_SADIR_Msk                              (0x1 << GDMA_SADIR_Pos)
+
+#define GDMA_DADIR_Pos                              (4)
+#define GDMA_DADIR_Msk                              (0x1 << GDMA_DADIR_Pos)
+
+#define GDMA_MS_Pos                                 (2)
+#define GDMA_MS_Msk                                 (0x3 << GDMA_MS_Pos)
+
+#define GDMA_GPD_Pos                                (1)
+#define GDMA_GPD_Msk                                (0x1 << GDMA_GPD_Pos)
+
+#define GDMA_EN_Pos                                 (0)
+#define GDMA_EN_Msk                                 (0x1 << GDMA_EN_Pos)
+
+/*-------------------------------*/
+/* GDMA_TCNT / GDMA_CTCNT fields */
+/*-------------------------------*/
+#define GDMA_TFR_CNT_Pos                            (0)
+#define GDMA_TFR_CNT_Msk                            (0x0000FFFFFF << GDMA_TFR_CNT_Pos)
+
+
 #ifdef __cplusplus
 }
 #endif

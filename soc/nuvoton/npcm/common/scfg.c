@@ -87,6 +87,12 @@ int npcm_pinctrl_flash_write_protect_set(int interface)
 				return -EIO;
 			}
 			break;
+		case NPCM_SPIP_FLASH_WP:
+			inst_scfg->DEV_CTL3 |= BIT(NPCM_DEV_CTL3_WP_GPIO76);
+			if (!IS_BIT_SET(inst_scfg->DEV_CTL3, NPCM_DEV_CTL3_WP_GPIO76)) {
+				return -EIO;
+			}
+			break;
 		default:
 			return -EIO;
 	}

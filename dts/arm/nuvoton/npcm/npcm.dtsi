@@ -124,7 +124,14 @@
 			reg = <0x40020000 0x100
 			       0x40021000 0x100>;
 		};
-
+		
+		qspi_spip: quad-spi@40016000 {
+			compatible = "nuvoton,npcm-spip-qspi";
+			reg = <0x40016000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		
 		spip1: spi@40016000 {
 			compatible = "nuvoton,npcm-spip";
 			reg = <0x40016000 0x100>;
