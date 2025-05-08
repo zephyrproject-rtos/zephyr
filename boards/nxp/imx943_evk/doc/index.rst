@@ -64,8 +64,62 @@ Programming and Debugging (A55)
 
 .. zephyr:board-supported-runners::
 
-Boot Zephyr by Using U-Boot Command
-===================================
+There are multiple methods to program and debug Zephyr on the A55 core:
+
+Option 1. Boot Zephyr by Using JLink Runner
+===========================================
+
+Dependency
+----------
+
+Need to disable all watchdog in U-Boot, otherwise, watchdog will reset the board
+after Zephyr start up from the same A55 Core.
+
+Setup
+-----
+
+The default runner for the board is JLink, connect the EVK board's JTAG connector to
+the host computer using a J-Link debugger, power up the board and stop the board at
+U-Boot command line, execute the following U-boot command to disable D-Cache:
+
+.. code-block:: console
+
+    dcache off
+
+then use "west flash" or "west debug" command to load the zephyr.bin
+image from the host computer and start the Zephyr application on A55 core0.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55
+   :goals: flash
+
+Then the following log could be found on UART1 console:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.1.0-3650-gdb71736adb68 ***
+    Hello World! imx943_evk/mimx94398/a55
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55
+   :goals: debug
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
 
 U-Boot "go" command can be used to start Zephyr on A55 Core0.
 
