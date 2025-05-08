@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_AESC
+	bool "Aesc Silicon UART driver"
+	default y
+	depends on DT_HAS_AESC_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the Aesc Silicon UART driver.
