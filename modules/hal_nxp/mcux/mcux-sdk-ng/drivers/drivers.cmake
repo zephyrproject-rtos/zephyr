@@ -134,6 +134,7 @@ set_variable_ifdef(CONFIG_MCUX_LPCMP            CONFIG_MCUX_COMPONENT_driver.lpc
 set_variable_ifdef(CONFIG_NXP_RF_IMU            CONFIG_MCUX_COMPONENT_driver.imu)
 set_variable_ifdef(CONFIG_TRDC_MCUX_TRDC        CONFIG_MCUX_COMPONENT_driver.trdc)
 set_variable_ifdef(CONFIG_S3MU_MCUX_S3MU        CONFIG_MCUX_COMPONENT_driver.s3mu)
+set_variable_ifdef(CONFIG_DAI_NXP_MICFIL        CONFIG_MCUX_COMPONENT_driver.pdm)
 set_variable_ifdef(CONFIG_PINCTRL_NXP_PORT      CONFIG_MCUX_COMPONENT_driver.port)
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_soc_rev2)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS_SRTC    CONFIG_MCUX_COMPONENT_driver.snvs_lp)
@@ -264,7 +265,17 @@ if(CONFIG_SOC_SERIES_MCXN)
   set_variable_ifdef(CONFIG_SOC_FLASH_MCUX CONFIG_MCUX_COMPONENT_driver.romapi_flashiap)
 endif()
 
+if(CONFIG_SOC_FAMILY_NXP_IMXRT)
+  set_variable_ifdef(CONFIG_ETH_NXP_ENET CONFIG_MCUX_COMPONENT_driver.ocotp)
+endif()
+
 set_variable_ifdef(CONFIG_SOC_SERIES_MCXW CONFIG_MCUX_COMPONENT_driver.elemu)
+
+#specific operation to shared drivers
+if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
+  zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/flexspi/fsl_flexspi.c
+    LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+endif()
 
 # Load all drivers
 mcux_load_all_cmakelists_in_directory(${SdkRootDirPath}/drivers)

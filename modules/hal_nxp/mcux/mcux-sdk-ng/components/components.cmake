@@ -51,6 +51,11 @@ if(CONFIG_USE_component_osa_zephyr)
   set(CONFIG_MCUX_COMPONENT_component.osa_interface ON)
 endif()
 
+# Component definitions
+if(CONFIG_NXP_RF_IMU AND CONFIG_SOC_SERIES_MCXW)
+  zephyr_compile_definitions(HAL_RPMSG_SELECT_ROLE=0U)
+endif()
+
 add_subdirectory(${MCUX_SDK_NG_DIR}/components/osa
   ${CMAKE_CURRENT_BINARY_DIR}/osa
   )
