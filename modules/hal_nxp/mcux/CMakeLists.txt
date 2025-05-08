@@ -98,7 +98,7 @@ zephyr_compile_definitions_ifdef(
   )
 
 zephyr_compile_definitions_ifdef(
-  CONFIG_SOC_MIMX9596
+  CONFIG_CLOCK_CONTROL_ARM_SCMI
   FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL=1
   )
 
