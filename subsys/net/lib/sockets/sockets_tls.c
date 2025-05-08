@@ -1945,6 +1945,18 @@ static int tls_opt_session_cache_get(struct tls_context *context,
 	return 0;
 }
 
+static int tls_opt_cert_verify_result_get(struct tls_context *context,
+					  void *optval, socklen_t *optlen)
+{
+	if (*optlen != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	*(uint32_t *)optval = mbedtls_ssl_get_verify_result(&context->ssl);
+
+	return 0;
+}
+
 static int tls_opt_session_cache_purge_set(struct tls_context *context,
 					   const void *optval, socklen_t optlen)
 {
@@ -3491,6 +3503,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 
 	case TLS_SESSION_CACHE:
 		err = tls_opt_session_cache_get(ctx, optval, optlen);
+		break;
+
+	case TLS_CERT_VERIFY_RESULT:
+		err = tls_opt_cert_verify_result_get(ctx, optval, optlen);
 		break;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
