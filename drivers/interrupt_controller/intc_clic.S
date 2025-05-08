@@ -71,7 +71,9 @@ irq_loop:
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
-
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION
+        csrrsi t0, mstatus, MSTATUS_MIE
+#endif
 	/* Call corresponding registered function in _sw_isr_table. a0 is offset in pointer with
 	 * the mtvt, sw irq table is 2-pointer wide -> shift by one. */
 	csrr t0, CSR_MTVT

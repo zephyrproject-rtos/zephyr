@@ -23,6 +23,13 @@
 #error "Unknown CLIC controller compatible for this configuration"
 #endif
 
+/* Make sure that all priorities are treated as levels for irq preemption support */
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION
+BUILD_ASSERT(CONFIG_CLIC_PARAMETER_INTCTLBITS == CONFIG_CLIC_PARAMETER_MNLBITS,
+	     "CONFIG_CLIC_PARAMETER_INTCTLBITS must be equal to CONFIG_CLIC_PARAMETER_MNLBITS for "
+	     "irq preemption support");
+#endif
+
 struct clic_data {
 	uint8_t nlbits;
 	uint8_t intctlbits;

@@ -11,8 +11,8 @@
 /*
  * Run the nested interrupt test for the supported platforms only.
  */
-#if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC)
+#if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || defined(CONFIG_GIC) ||                  \
+	defined(CONFIG_NRFX_CLIC) || defined(CONFIG_SOC_GD32VF103)
 #define TEST_NESTED_ISR
 #endif
 
@@ -20,6 +20,12 @@
 
 #define ISR0_TOKEN	0xDEADBEEF
 #define ISR1_TOKEN	0xCAFEBABE
+
+#if defined(CONFIG_RISCV_HAS_CLIC)
+#define IRQ_FLAGS 1 /* rising edge */
+#else
+#define IRQ_FLAGS 0
+#endif
 
 /*
  * This test uses two IRQ lines selected within the range of available IRQs on
@@ -65,6 +71,12 @@
 #elif defined(CONFIG_SOC_NRF54H20_CPUPPR)
 #define IRQ0_LINE	14
 #define IRQ1_LINE	15
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
+#elif defined(CONFIG_SOC_GD32VF103)
+#define IRQ0_LINE	17
+#define IRQ1_LINE	18
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
@@ -150,8 +162,8 @@ ZTEST(interrupt_feature, test_nested_isr)
 #endif
 
 	/* Connect and enable test IRQs */
-	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, 0);
-	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, 0);
+	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, IRQ_FLAGS);
+	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, IRQ_FLAGS);
 
 	irq_enable(irq_line_0);
 	irq_enable(irq_line_1);
