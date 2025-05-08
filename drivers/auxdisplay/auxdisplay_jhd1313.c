@@ -20,44 +20,44 @@
 LOG_MODULE_REGISTER(auxdisplay_jhd1313, CONFIG_AUXDISPLAY_LOG_LEVEL);
 
 /* Defines for the JHD1313_CMD_CURSOR_SHIFT */
-#define JHD1313_CS_DISPLAY_SHIFT	(1 << 3)
-#define JHD1313_CS_RIGHT_SHIFT		(1 << 2)
+#define JHD1313_CS_DISPLAY_SHIFT (1 << 3)
+#define JHD1313_CS_RIGHT_SHIFT   (1 << 2)
 
 /* Defines for the JHD1313_CMD_INPUT_SET to change text direction */
-#define JHD1313_IS_INCREMENT		(1 << 1)
-#define JHD1313_IS_DECREMENT		(0 << 1)
-#define JHD1313_IS_SHIFT		(1 << 0)
+#define JHD1313_IS_INCREMENT (1 << 1)
+#define JHD1313_IS_DECREMENT (0 << 1)
+#define JHD1313_IS_SHIFT     (1 << 0)
 
 /* Defines for the JHD1313_CMD_FUNCTION_SET */
-#define JHD1313_FS_8BIT_MODE		(1 << 4)
-#define JHD1313_FS_ROWS_2		(1 << 3)
-#define JHD1313_FS_ROWS_1		(0 << 3)
-#define JHD1313_FS_DOT_SIZE_BIG		(1 << 2)
-#define JHD1313_FS_DOT_SIZE_LITTLE	(0 << 2)
+#define JHD1313_FS_8BIT_MODE       (1 << 4)
+#define JHD1313_FS_ROWS_2          (1 << 3)
+#define JHD1313_FS_ROWS_1          (0 << 3)
+#define JHD1313_FS_DOT_SIZE_BIG    (1 << 2)
+#define JHD1313_FS_DOT_SIZE_LITTLE (0 << 2)
 
 /* LCD Display Commands */
-#define JHD1313_CMD_SCREEN_CLEAR	(1 << 0)
-#define JHD1313_CMD_CURSOR_RETURN	(1 << 1)
-#define JHD1313_CMD_INPUT_SET		(1 << 2)
-#define JHD1313_CMD_DISPLAY_SWITCH	(1 << 3)
-#define JHD1313_CMD_CURSOR_SHIFT	(1 << 4)
-#define JHD1313_CMD_FUNCTION_SET	(1 << 5)
-#define JHD1313_CMD_SET_CGRAM_ADDR	(1 << 6)
-#define JHD1313_CMD_SET_DDRAM_ADDR	(1 << 7)
+#define JHD1313_CMD_SCREEN_CLEAR   (1 << 0)
+#define JHD1313_CMD_CURSOR_RETURN  (1 << 1)
+#define JHD1313_CMD_INPUT_SET      (1 << 2)
+#define JHD1313_CMD_DISPLAY_SWITCH (1 << 3)
+#define JHD1313_CMD_CURSOR_SHIFT   (1 << 4)
+#define JHD1313_CMD_FUNCTION_SET   (1 << 5)
+#define JHD1313_CMD_SET_CGRAM_ADDR (1 << 6)
+#define JHD1313_CMD_SET_DDRAM_ADDR (1 << 7)
 
-#define JHD1313_DS_DISPLAY_ON		(1 << 2)
-#define JHD1313_DS_CURSOR_ON		(1 << 1)
-#define JHD1313_DS_BLINK_ON		(1 << 0)
+#define JHD1313_DS_DISPLAY_ON (1 << 2)
+#define JHD1313_DS_CURSOR_ON  (1 << 1)
+#define JHD1313_DS_BLINK_ON   (1 << 0)
 
-#define JHD1313_LED_REG_R		0x04
-#define JHD1313_LED_REG_G		0x03
-#define JHD1313_LED_REG_B		0x02
+#define JHD1313_LED_REG_R 0x04
+#define JHD1313_LED_REG_G 0x03
+#define JHD1313_LED_REG_B 0x02
 
-#define JHD1313_LINE_FIRST		0x80
-#define JHD1313_LINE_SECOND		0xC0
+#define JHD1313_LINE_FIRST  0x80
+#define JHD1313_LINE_SECOND 0xC0
 
-#define CLEAR_DELAY_MS			20
-#define UPDATE_DELAY_MS			5
+#define CLEAR_DELAY_MS  20
+#define UPDATE_DELAY_MS 5
 
 struct auxdisplay_jhd1313_data {
 	uint8_t input_set;
@@ -75,18 +75,18 @@ struct auxdisplay_jhd1313_config {
 };
 
 static const uint8_t colour_define[][4] = {
-	{ 0,   0,   0   },      /* Off */
-	{ 255, 255, 255 },	/* White */
-	{ 255, 0,   0   },      /* Red */
-	{ 0,   255, 0   },      /* Green */
-	{ 0,   0,   255 },      /* Blue */
+	{0, 0, 0},       /* Off */
+	{255, 255, 255}, /* White */
+	{255, 0, 0},     /* Red */
+	{0, 255, 0},     /* Green */
+	{0, 0, 255},     /* Blue */
 };
 
 static void auxdisplay_jhd1313_reg_set(const struct device *dev, uint8_t addr, uint8_t data)
 {
 	const struct auxdisplay_jhd1313_config *config = dev->config;
 	const struct device *i2c = config->bus.bus;
-	uint8_t command[2] = { addr, data };
+	uint8_t command[2] = {addr, data};
 
 	i2c_write(i2c, command, sizeof(command), config->backlight_addr);
 }
@@ -94,7 +94,7 @@ static void auxdisplay_jhd1313_reg_set(const struct device *dev, uint8_t addr, u
 static int auxdisplay_jhd1313_print(const struct device *dev, const uint8_t *data, uint16_t size)
 {
 	const struct auxdisplay_jhd1313_config *config = dev->config;
-	uint8_t buf[] = { JHD1313_CMD_SET_CGRAM_ADDR, 0 };
+	uint8_t buf[] = {JHD1313_CMD_SET_CGRAM_ADDR, 0};
 	int rc = 0;
 	int16_t i;
 
@@ -133,7 +133,7 @@ static int auxdisplay_jhd1313_clear(const struct device *dev)
 {
 	int rc;
 	const struct auxdisplay_jhd1313_config *config = dev->config;
-	uint8_t clear[] = { 0, JHD1313_CMD_SCREEN_CLEAR };
+	uint8_t clear[] = {0, JHD1313_CMD_SCREEN_CLEAR};
 
 	rc = i2c_write_dt(&config->bus, clear, sizeof(clear));
 	LOG_DBG("Clear, delay 20 ms");
@@ -143,12 +143,11 @@ static int auxdisplay_jhd1313_clear(const struct device *dev)
 	return rc;
 }
 
-static int auxdisplay_jhd1313_update_display_state(
-				const struct auxdisplay_jhd1313_config *config,
-				struct auxdisplay_jhd1313_data *data)
+static int auxdisplay_jhd1313_update_display_state(const struct auxdisplay_jhd1313_config *config,
+						   struct auxdisplay_jhd1313_data *data)
 {
 	int rc;
-	uint8_t buf[] = { 0, JHD1313_CMD_DISPLAY_SWITCH };
+	uint8_t buf[] = {0, JHD1313_CMD_DISPLAY_SWITCH};
 
 	if (data->power) {
 		buf[1] |= JHD1313_DS_DISPLAY_ON;
@@ -192,7 +191,7 @@ static void auxdisplay_jhd1313_input_state_set(const struct device *dev, uint8_t
 {
 	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
-	uint8_t buf[] = { 0, 0 };
+	uint8_t buf[] = {0, 0};
 
 	data->input_set = opt;
 	buf[1] = (opt | JHD1313_CMD_INPUT_SET);
@@ -232,7 +231,7 @@ static void auxdisplay_jhd1313_function_set(const struct device *dev, uint8_t op
 {
 	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
-	uint8_t buf[] = { 0, 0 };
+	uint8_t buf[] = {0, 0};
 
 	data->function = opt;
 	buf[1] = (opt | JHD1313_CMD_FUNCTION_SET);
@@ -348,33 +347,30 @@ static DEVICE_API(auxdisplay, auxdisplay_jhd1313_auxdisplay_api) = {
 	.write = auxdisplay_jhd1313_print,
 };
 
-#define AUXDISPLAY_JHD1313_DEVICE(inst)								\
-	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {	\
-		.capabilities = {								\
-			.columns = 16,								\
-			.rows = 2,								\
-			.mode = 0,								\
-			.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-			.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-			.backlight.minimum = 0,							\
-			.backlight.maximum = ARRAY_SIZE(colour_define),				\
-			.custom_characters = 0,							\
-		},										\
-		.bus = I2C_DT_SPEC_INST_GET(inst),						\
-		.backlight_addr = DT_INST_PROP(inst, backlight_addr),				\
-	};											\
-	static struct auxdisplay_jhd1313_data auxdisplay_jhd1313_data_##inst = {		\
-		.power = true,									\
-		.cursor = false,								\
-		.blinking = false,								\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			&auxdisplay_jhd1313_initialize,						\
-			NULL,									\
-			&auxdisplay_jhd1313_data_##inst,					\
-			&auxdisplay_jhd1313_config_##inst,					\
-			POST_KERNEL,								\
-			CONFIG_AUXDISPLAY_INIT_PRIORITY,					\
-			&auxdisplay_jhd1313_auxdisplay_api);
+#define AUXDISPLAY_JHD1313_DEVICE(inst)                                                            \
+	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {         \
+		.capabilities =                                                                    \
+			{                                                                          \
+				.columns = 16,                                                     \
+				.rows = 2,                                                         \
+				.mode = 0,                                                         \
+				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
+				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
+				.backlight.minimum = 0,                                            \
+				.backlight.maximum = ARRAY_SIZE(colour_define),                    \
+				.custom_characters = 0,                                            \
+			},                                                                         \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.backlight_addr = DT_INST_PROP(inst, backlight_addr),                              \
+	};                                                                                         \
+	static struct auxdisplay_jhd1313_data auxdisplay_jhd1313_data_##inst = {                   \
+		.power = true,                                                                     \
+		.cursor = false,                                                                   \
+		.blinking = false,                                                                 \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_jhd1313_initialize, NULL,                          \
+			      &auxdisplay_jhd1313_data_##inst, &auxdisplay_jhd1313_config_##inst,  \
+			      POST_KERNEL, CONFIG_AUXDISPLAY_INIT_PRIORITY,                        \
+			      &auxdisplay_jhd1313_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_JHD1313_DEVICE)
