@@ -54,7 +54,11 @@
 
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
+#if DT_NODE_HAS_STATUS_OKAY(LFCLK_NODE)
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
+#else
+#define LFCLK_FREQUENCY_HZ CONFIG_CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
+#endif
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
@@ -414,8 +418,8 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 
 	/* This mechanism ensures that stored CC value is latched. */
 	uint32_t wait_time =
-		nrfy_grtc_timeout_get(NRF_GRTC) * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 32768 +
-		MAX_CC_LATCH_WAIT_TIME_US;
+		nrfy_grtc_timeout_get(NRF_GRTC) * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+		LFCLK_FREQUENCY_HZ + MAX_CC_LATCH_WAIT_TIME_US;
 	k_busy_wait(wait_time);
 	k_spin_unlock(&lock, key);
 	return 0;
