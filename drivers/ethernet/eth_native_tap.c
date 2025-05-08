@@ -307,7 +307,7 @@ static void create_rx_handler(struct eth_context *ctx)
 static void eth_iface_init(struct net_if *iface)
 {
 	struct eth_context *ctx = net_if_get_device(iface)->data;
-	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
+	struct net_linkaddr *ll_addr;
 #if !defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)
 	const char *mac_addr =
 		mac_addr_cmd_opt ? mac_addr_cmd_opt : CONFIG_ETH_NATIVE_TAP_MAC_ADDR;
@@ -354,6 +354,8 @@ static void eth_iface_init(struct net_if *iface)
 		}
 	}
 #endif
+
+	ll_addr = eth_get_mac(ctx);
 
 	/* If we have only one network interface, then use the name
 	 * defined in the Kconfig directly. This way there is no need to
