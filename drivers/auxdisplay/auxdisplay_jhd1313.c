@@ -19,8 +19,6 @@
 
 LOG_MODULE_REGISTER(auxdisplay_jhd1313, CONFIG_AUXDISPLAY_LOG_LEVEL);
 
-#define JHD1313_BACKLIGHT_ADDR		(0x62)
-
 /* Defines for the JHD1313_CMD_CURSOR_SHIFT */
 #define JHD1313_CS_DISPLAY_SHIFT	(1 << 3)
 #define JHD1313_CS_RIGHT_SHIFT		(1 << 2)
@@ -73,6 +71,7 @@ struct auxdisplay_jhd1313_data {
 struct auxdisplay_jhd1313_config {
 	struct auxdisplay_capabilities capabilities;
 	struct i2c_dt_spec bus;
+	uint8_t backlight_addr;
 };
 
 static const uint8_t colour_define[][4] = {
@@ -83,11 +82,13 @@ static const uint8_t colour_define[][4] = {
 	{ 0,   0,   255 },      /* Blue */
 };
 
-static void auxdisplay_jhd1313_reg_set(const struct device *i2c, uint8_t addr, uint8_t data)
+static void auxdisplay_jhd1313_reg_set(const struct device *dev, uint8_t addr, uint8_t data)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
+	const struct device *i2c = config->bus.bus;
 	uint8_t command[2] = { addr, data };
 
-	i2c_write(i2c, command, sizeof(command), JHD1313_BACKLIGHT_ADDR);
+	i2c_write(i2c, command, sizeof(command), config->backlight_addr);
 }
 
 static int auxdisplay_jhd1313_print(const struct device *dev, const uint8_t *data, uint16_t size)
@@ -202,7 +203,6 @@ static void auxdisplay_jhd1313_input_state_set(const struct device *dev, uint8_t
 
 static int auxdisplay_jhd1313_backlight_set(const struct device *dev, uint8_t colour)
 {
-	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
 	if (colour >= ARRAY_SIZE(colour_define)) {
@@ -212,9 +212,9 @@ static int auxdisplay_jhd1313_backlight_set(const struct device *dev, uint8_t co
 
 	data->backlight = colour;
 
-	auxdisplay_jhd1313_reg_set(config->bus.bus, JHD1313_LED_REG_R, colour_define[colour][0]);
-	auxdisplay_jhd1313_reg_set(config->bus.bus, JHD1313_LED_REG_G, colour_define[colour][1]);
-	auxdisplay_jhd1313_reg_set(config->bus.bus, JHD1313_LED_REG_B, colour_define[colour][2]);
+	auxdisplay_jhd1313_reg_set(dev, JHD1313_LED_REG_R, colour_define[colour][0]);
+	auxdisplay_jhd1313_reg_set(dev, JHD1313_LED_REG_G, colour_define[colour][1]);
+	auxdisplay_jhd1313_reg_set(dev, JHD1313_LED_REG_B, colour_define[colour][2]);
 
 	return 0;
 }
@@ -296,9 +296,9 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 
 	/* Now power on the background RGB control */
 	LOG_INF("Configuring the RGB background");
-	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x00, 0x00);
-	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x01, 0x05);
-	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x08, 0xAA);
+	auxdisplay_jhd1313_reg_set(dev, 0x00, 0x00);
+	auxdisplay_jhd1313_reg_set(dev, 0x01, 0x05);
+	auxdisplay_jhd1313_reg_set(dev, 0x08, 0xAA);
 
 	/* Now set the background colour to black */
 	LOG_DBG("Background set to off");
@@ -361,6 +361,7 @@ static DEVICE_API(auxdisplay, auxdisplay_jhd1313_auxdisplay_api) = {
 			.custom_characters = 0,							\
 		},										\
 		.bus = I2C_DT_SPEC_INST_GET(inst),						\
+		.backlight_addr = DT_INST_PROP(inst, backlight_addr),				\
 	};											\
 	static struct auxdisplay_jhd1313_data auxdisplay_jhd1313_data_##inst = {		\
 		.power = true,									\
