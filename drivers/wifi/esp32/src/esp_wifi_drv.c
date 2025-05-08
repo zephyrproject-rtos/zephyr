@@ -309,34 +309,90 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 #endif
 }
 
+static int handle_disconnect_event_while_not_connected(wifi_event_sta_disconnected_t *event)
+{
+	int status = 0;
+
+	switch (event->reason) {
+	case WIFI_REASON_ROAMING:
+		LOG_DBG("Roaming");
+		break;
+	case WIFI_REASON_ASSOC_LEAVE:
+		LOG_DBG("Disconnect Requested");
+		break;
+	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+	case WIFI_REASON_HANDSHAKE_TIMEOUT:
+		LOG_DBG("STA Auth Error");
+		status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+		break;
+	case WIFI_REASON_DISCONN_INACTIVITY:
+	case WIFI_REASON_TIMEOUT:
+		LOG_DBG("STA Connection Timeout");
+		status = WIFI_STATUS_CONN_TIMEOUT;
+		break;
+	case WIFI_REASON_NO_AP_FOUND:
+		LOG_DBG("AP Not found");
+		status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+		break;
+	default:
+		LOG_DBG("Generic Failure");
+		status = WIFI_STATUS_CONN_FAIL;
+		break;
+	}
+
+	return status;
+}
+
+static int handle_disconnect_event_while_connected(wifi_event_sta_disconnected_t *event)
+{
+#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+	net_dhcpv4_stop(esp32_wifi_iface);
+#endif
+
+	int status = 0;
+
+	switch (event->reason) {
+	case WIFI_REASON_ROAMING:
+		LOG_DBG("Roaming");
+		break;
+	case WIFI_REASON_AUTH_LEAVE:
+		LOG_DBG("AP Requested Disconnect");
+		status = WIFI_REASON_DISCONN_AP_LEAVING;
+		break;
+	case WIFI_REASON_ASSOC_LEAVE:
+		LOG_DBG("Disconnect Was Requested");
+		status = WIFI_REASON_DISCONN_USER_REQUEST;
+		break;
+	case WIFI_REASON_AUTH_EXPIRE:
+		LOG_DBG("AP not active");
+		status = WIFI_REASON_DISCONN_INACTIVITY;
+		break;
+	default:
+		LOG_DBG("Generic Failure");
+		status = WIFI_REASON_DISCONN_UNSPECIFIED;
+		break;
+	}
+
+	return status;
+}
+
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
 
+	LOG_DBG("Disconnect reason: %d", event->reason);
+
+	int disconn_status = 0;
+
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
-#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
-		net_dhcpv4_stop(esp32_wifi_iface);
-#endif
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+		disconn_status = handle_disconnect_event_while_connected(event);
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, disconn_status);
 	} else {
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
+		disconn_status = handle_disconnect_event_while_not_connected(event);
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, disconn_status);
 	}
 
-	LOG_DBG("Disconnect reason: %d", event->reason);
-	switch (event->reason) {
-	case WIFI_REASON_AUTH_EXPIRE:
-	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_AUTH_FAIL:
-	case WIFI_REASON_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_MIC_FAILURE:
-		LOG_DBG("STA Auth Error");
-		break;
-	case WIFI_REASON_NO_AP_FOUND:
-		LOG_DBG("AP Not found");
-		break;
-	default:
-		break;
-	}
+	wifi_mgmt_raise_disconnect_complete_event(esp32_wifi_iface, WIFI_REASON_DISCONN_SUCCESS);
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
 	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
