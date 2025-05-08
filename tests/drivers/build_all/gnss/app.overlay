@@ -12,6 +12,7 @@
 		test_uart: uart@0 {
 			compatible = "vnd,serial";
 			reg = <0x0 0x1000>;
+			current-speed = <9600>;
 			status = "okay";
 
 			gnss_nmea_generic: gnss-nmea-generic {
