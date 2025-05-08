@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/mimx94398avkm-pinctrl.dtsi>
+
+&pinctrl {
+	lpuart1_default: lpuart1_default {
+		group0 {
+			pinmux = <&iomuxc_uart1_rxd_lpuart_rx_lpuart1_rx>,
+				<&iomuxc_uart1_txd_lpuart_tx_lpuart1_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+};
