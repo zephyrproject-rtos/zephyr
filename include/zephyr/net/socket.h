@@ -237,6 +237,16 @@ extern "C" {
  *  will take place in consecutive send()/recv() call.
  */
 #define TLS_DTLS_HANDSHAKE_ON_CONNECT 18
+/** Read-only socket option to obtain the result of the certificate verification
+ *  from the most recent handshake if TLS_PEER_VERIFY_OPTIONAL was set on the
+ *  socket.
+ *  The option accepts a pointer to a 32-bit unsigned integer, holding the
+ *  verification result on return. A result of 0 indicates that verification
+ *  was successful, otherwise the verification result is indicated by a set of
+ *  flags. For mbed TLS backend, the flags are defined in "X509 Verify codes"
+ *  section of x509.h header.
+ */
+#define TLS_CERT_VERIFY_RESULT 19
 
 /* Valid values for @ref TLS_PEER_VERIFY option */
 #define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
