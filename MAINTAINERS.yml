@@ -992,6 +992,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - jarmouniA
   files:
     - drivers/display/
     - dts/bindings/display/
