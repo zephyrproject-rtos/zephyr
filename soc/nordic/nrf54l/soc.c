@@ -151,13 +151,6 @@ static inline void power_and_clock_configuration(void)
 	}
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
-#if NRF54L_ERRATA_31_ENABLE_WORKAROUND
-	/* Workaround for Errata 31 */
-	if (nrf54l_errata_31()) {
-		*((volatile uint32_t *)0x50120624ul) = 20 | 1<<5;
-		*((volatile uint32_t *)0x5012063Cul) &= ~(1<<19);
-	}
-#endif
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
 
