@@ -18,6 +18,7 @@ supported:
   - watchdog
   - spi
   - uart
+  - i2s
   - wifi
   - rtc
 vendor: silabs
