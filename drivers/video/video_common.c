@@ -149,7 +149,7 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
 			break;
 		default:
-			__ASSERT(false, "invalid answer from the queried video device");
+			CODE_UNREACHABLE;
 		}
 
 		tmp_nsec = video_frmival_nsec(&tmp);
