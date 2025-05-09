@@ -81,7 +81,7 @@ LOG_MODULE_REGISTER(lp5562);
 
 /* Brightness limits in percent */
 #define LP5562_MIN_BRIGHTNESS 0
-#define LP5562_MAX_BRIGHTNESS 100
+#define LP5562_MAX_BRIGHTNESS LED_BRIGTHNESS_MAX
 
 /* Output current limits in 0.1 mA */
 #define LP5562_MIN_CURRENT_SETTING 0

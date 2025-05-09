@@ -31,6 +31,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief Maximum brightness level, range is 0 to 100.
+ */
+#define LED_BRIGTHNESS_MAX 100u
+
+/**
  * @brief LED information structure
  *
  * This structure gathers useful information about LED controller.
