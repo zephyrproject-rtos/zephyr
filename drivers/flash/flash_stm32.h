@@ -55,8 +55,6 @@ struct flash_stm32_priv {
 #define FLASH_CR_SNB FLASH_CR_SSN
 #define FLASH_CR_SNB_Pos FLASH_CR_SSN_Pos
 #define KEYR1 KEYR
-#define FLASH_OPT_KEY1 FLASH_OPTKEY1
-#define FLASH_OPT_KEY2 FLASH_OPTKEY2
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
