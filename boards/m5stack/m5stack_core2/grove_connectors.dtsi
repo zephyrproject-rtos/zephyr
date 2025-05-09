@@ -15,5 +15,5 @@
 	};
 };
 
-grove_i2c: &i2c1 {};
+qwiic_i2c: &i2c1 {};
 grove_uart: &uart1 {};
