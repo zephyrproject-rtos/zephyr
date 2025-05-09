@@ -100,7 +100,7 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 		return -ENODEV;
 	}
 
-	if (value > 100) {
+	if (value > LED_BRIGTHNESS_MAX) {
 		return -EINVAL;
 	}
 
@@ -109,7 +109,7 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 	}
 
 	/* Rescale 0..100 to 0..31 */
-	value = value * NCP5623_MAX_BRIGHTNESS / 100;
+	value = value * NCP5623_MAX_BRIGHTNESS / LED_BRIGTHNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led] | value, 0x70);
 
@@ -122,7 +122,7 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 
 static inline int ncp5623_led_on(const struct device *dev, uint32_t led)
 {
-	return ncp5623_set_brightness(dev, led, 100);
+	return ncp5623_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
 }
 
 static inline int ncp5623_led_off(const struct device *dev, uint32_t led)
