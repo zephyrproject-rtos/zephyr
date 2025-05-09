@@ -18,12 +18,6 @@
 
 LOG_MODULE_REGISTER(can_numaker, CONFIG_CAN_LOG_LEVEL);
 
-/* CANFD Clock Source Selection */
-#define NUMAKER_CANFD_CLKSEL_HXT      0
-#define NUMAKER_CANFD_CLKSEL_PLL_DIV2 1
-#define NUMAKER_CANFD_CLKSEL_HCLK     2
-#define NUMAKER_CANFD_CLKSEL_HIRC     3
-
 /* Implementation notes
  * 1. Use Bosch M_CAN driver (m_can) as backend
  * 2. Need to modify can_numaker_get_core_clock() for new SOC support
@@ -55,18 +49,49 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 	clkdiv_divider = CLK_GetModuleClockDivider(config->clk_modidx) + 1;
 
 	switch (clksrc_rate_idx) {
-	case NUMAKER_CANFD_CLKSEL_HXT:
+#if defined(CONFIG_SOC_SERIES_M46X)
+	case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = __HXT / clkdiv_divider;
 		break;
-	case NUMAKER_CANFD_CLKSEL_PLL_DIV2:
+	case (CLK_CLKSEL0_CANFD0SEL_PLL_DIV2 >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = (CLK_GetPLLClockFreq() / 2) / clkdiv_divider;
 		break;
-	case NUMAKER_CANFD_CLKSEL_HCLK:
+	case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = CLK_GetHCLKFreq() / clkdiv_divider;
 		break;
-	case NUMAKER_CANFD_CLKSEL_HIRC:
+	case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = __HIRC / clkdiv_divider;
 		break;
+#elif defined(CONFIG_SOC_SERIES_M2L31X)
+	case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
+		*rate = __HXT / clkdiv_divider;
+		break;
+	case (CLK_CLKSEL0_CANFD0SEL_HIRC48M >> CLK_CLKSEL0_CANFD0SEL_Pos):
+		*rate = __HIRC48 / clkdiv_divider;
+		break;
+	case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
+		*rate = CLK_GetHCLKFreq() / clkdiv_divider;
+		break;
+	case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
+		*rate = __HIRC / clkdiv_divider;
+		break;
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+	case (CLK_CANFDSEL_CANFD0SEL_HXT >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = __HXT / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_APLL0_DIV2 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = (CLK_GetAPLL0ClockFreq() / 2) / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HCLK0 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = CLK_GetHCLK0Freq() / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HIRC >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = __HIRC / clkdiv_divider;
+		break;
+	case (CLK_CANFDSEL_CANFD0SEL_HIRC48M_DIV4 >> CLK_CANFDSEL_CANFD0SEL_Pos):
+		*rate = (__HIRC48M / 4) / clkdiv_divider;
+		break;
+#endif
 	default:
 		LOG_ERR("Invalid clock source rate index");
 		return -EIO;

@@ -6,6 +6,6 @@ config BOARD_UBX_EVK_IRIS_W1
 	select SOC_PART_NUMBER_RW612ETA2I
 
 config FLASH_MACRONIX
-	bool "Enable Macronix Flash support"
+	bool "Macronix Flash support"
 config FLASH_FIDELEX
-	bool "Enable Fidelex Flash support"
+	bool "Fidelex Flash support"

@@ -254,6 +254,9 @@ static int gpio_nrfx_pin_get_config(const struct device *port, gpio_pin_t pin,
 
 	if (dir == NRF_GPIO_PIN_DIR_OUTPUT) {
 		*flags |= GPIO_OUTPUT;
+		*flags |= nrf_gpio_pin_out_read(abs_pin)
+			? GPIO_OUTPUT_INIT_HIGH
+			: GPIO_OUTPUT_INIT_LOW;
 	}
 
 	nrf_gpio_pin_input_t input = nrf_gpio_pin_input_get(abs_pin);

@@ -33,7 +33,7 @@
 		zephyr,uart-mcumgr = &flexcomm3;
 	};
 
-	// IRIS-W1 RGB 
+	// IRIS-W1 RGB
 	rgb_leds {
 		compatible = "gpio-leds";
 		rgb_blue: led_1 {
@@ -53,7 +53,7 @@
 	sw {
 		compatible = "gpio-keys";
 		user_button_0: sw_1 {
-			label = "IRIS SWITCH_1";  // GPIO45  
+			label = "IRIS SWITCH_1";  // GPIO45
 			gpios = < &hsgpio1 0xd GPIO_ACTIVE_LOW >;
 			zephyr,code = < 0x2 >;
 		};
@@ -273,5 +273,3 @@ arduino_i2c: &flexcomm2 {
 		status = "okay";
 	};
 };
-
-

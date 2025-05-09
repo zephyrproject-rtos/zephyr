@@ -521,6 +521,33 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
+/* In the earlier linker-passes before we have the real generated
+ * implementation of the lookup functions, we need some weak dummies.
+ * Being __weak, they will be replaced by the generated implementations in
+ * the later linker passes.
+ */
+#ifdef CONFIG_DYNAMIC_OBJECTS
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *z_object_gperf_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#else
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *k_object_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#endif
+
 static unsigned int thread_index_get(struct k_thread *thread)
 {
 	struct k_object *ko;

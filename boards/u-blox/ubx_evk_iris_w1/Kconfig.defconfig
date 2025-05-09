@@ -33,4 +33,4 @@ config XTAL32K
 
 endif # COUNTER_MCUX_LPC_RTC_1HZ
 
-endif # BOARD_FRDM_RW612
+endif # BOARD_UBX_EVK_IRIS_W1

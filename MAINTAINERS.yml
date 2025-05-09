@@ -1838,6 +1838,8 @@ Release Notes:
   status: odd fixes
   collaborators:
     - aasinclair
+    - nordic-auko
+    - seov-nordic
   files:
     - drivers/mfd/
     - include/zephyr/drivers/mfd/
@@ -1865,7 +1867,8 @@ Release Notes:
 "Drivers: Regulators":
   status: maintained
   maintainers:
-    - gmarull
+    - nordic-auko
+    - seov-nordic
   collaborators:
     - danieldegrasse
     - aasinclair

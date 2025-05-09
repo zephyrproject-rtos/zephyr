@@ -7,7 +7,7 @@
 #include <nxp/rw/RW612-pinctrl.h>
 
 &pinctrl {
-	
+
 	//default-UART
 
 	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
@@ -47,7 +47,7 @@
 		};
 	};
 
-// i2c 
+// i2c
 
 	pinmux_flexcomm1_i2c: pinmux_flexcomm1_i2c {
 		group0 {
@@ -66,7 +66,7 @@
 	};
 
 
-//spi 
+//spi
 
 	pinmux_flexcomm0_spi: pinmux_flexcomm0_spi {
 		group0 {

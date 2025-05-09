@@ -1,6 +1,6 @@
 .. zephyr:board:: ubx_evk_iris_w1
 
-Overview 
+Overview
 ********
 
 .. figure:: EVK-IRIS-W1.jpg
@@ -43,7 +43,7 @@ This directory contains configuration files for each supported flash memory. You
 - ``CONFIG_FLASH_FIDELEX``
 - ``CONFIG_FLASH_MACRONIX``
 
-For build versions up to and including 2023 week 45, the module uses Macronix flash memory. For modules produced from week 46 of 2023 onward (date code "2346" or later), Fidelex flash memory is used.  
+For build versions up to and including 2023 week 45, the module uses Macronix flash memory. For modules produced from week 46 of 2023 onward (date code "2346" or later), Fidelex flash memory is used.
 
 Configuring a Debug Probe
 =========================
