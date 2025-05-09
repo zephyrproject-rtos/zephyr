@@ -143,9 +143,14 @@
 };
 
 &cpusec_cpuapp_ipc {
+	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuapp_cpusec_ipc_shm>;
 	rx-region = <&cpusec_cpuapp_ipc_shm>;
+};
+
+&cpusec_bellboard {
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
