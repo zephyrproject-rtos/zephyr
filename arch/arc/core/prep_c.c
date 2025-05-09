@@ -26,49 +26,6 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 
-/* XXX - keep for future use in full-featured cache APIs */
-#if 0
-/**
- * @brief Disable the i-cache if present
- *
- * For those ARC CPUs that have a i-cache present,
- * invalidate the i-cache and then disable it.
- */
-
-static void disable_icache(void)
-{
-	unsigned int val;
-
-	val = z_arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
-	val &= 0xff; /* version field */
-	if (val == 0) {
-		return; /* skip if i-cache is not present */
-	}
-	z_arc_v2_aux_reg_write(_ARC_V2_IC_IVIC, 0);
-	__builtin_arc_nop();
-	z_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, 1);
-}
-
-/**
- * @brief Invalidate the data cache if present
- *
- * For those ARC CPUs that have a data cache present,
- * invalidate the data cache.
- */
-
-static void invalidate_dcache(void)
-{
-	unsigned int val;
-
-	val = z_arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
-	val &= 0xff; /* version field */
-	if (val == 0) {
-		return; /* skip if d-cache is not present */
-	}
-	z_arc_v2_aux_reg_write(_ARC_V2_DC_IVDC, 1);
-}
-#endif
-
 #ifdef CONFIG_ISA_ARCV3
 /* NOTE: it will be called from early C code - we must NOT use global / static variables in it! */
 static void arc_cluster_scm_enable(void)
