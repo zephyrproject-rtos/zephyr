@@ -108,7 +108,7 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       bool is_tx)
 {
 	uint8_t *msg_start = net_pkt_data(pkt);
-	struct gptp_hdr *gptp_hdr;
+	struct gptp_hdr *ghdr;
 	int eth_hlen;
 	struct net_eth_hdr *hdr;
 
@@ -129,12 +129,12 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 			return false;
 		}
 
-		gptp_hdr = (struct gptp_hdr *)pkt->frags->frags->data;
+		ghdr = (struct gptp_hdr *)pkt->frags->frags->data;
 	} else {
-		gptp_hdr = (struct gptp_hdr *)(pkt->frags->data + eth_hlen);
+		ghdr = (struct gptp_hdr *)(pkt->frags->data + eth_hlen);
 	}
 
-	return gptp_hdr;
+	return ghdr;
 }
 
 static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
