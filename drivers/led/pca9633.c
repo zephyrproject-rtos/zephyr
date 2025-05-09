@@ -125,11 +125,6 @@ static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
 	/* Set the LED brightness value */
 	val = (value * 255U) / dev_data->max_brightness;
 	if (i2c_reg_write_byte_dt(&config->i2c,

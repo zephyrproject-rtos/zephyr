@@ -613,11 +613,6 @@ static int lp5562_program_set_brightness(const struct device *dev,
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
-	if ((brightness < dev_data->min_brightness) ||
-			(brightness > dev_data->max_brightness)) {
-		return -EINVAL;
-	}
-
 	val = (brightness * 0xFF) / dev_data->max_brightness;
 
 	return lp5562_program_command(dev, engine, command_index,
@@ -847,11 +842,6 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 	int ret;
 	uint8_t val, reg;
 	enum lp5562_led_sources current_source;
-
-	if ((value < dev_data->min_brightness) ||
-			(value > dev_data->max_brightness)) {
-		return -EINVAL;
-	}
 
 	ret = lp5562_get_led_source(dev, led, &current_source);
 	if (ret) {

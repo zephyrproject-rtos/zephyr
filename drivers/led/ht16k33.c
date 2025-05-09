@@ -135,11 +135,6 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	uint8_t dim;
 	uint8_t cmd;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
 	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / dev_data->max_brightness;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
