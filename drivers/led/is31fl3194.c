@@ -166,16 +166,6 @@ static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uin
 	return ret;
 }
 
-static inline int is31fl3194_led_on(const struct device *dev, uint32_t led)
-{
-	return is31fl3194_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static inline int is31fl3194_led_off(const struct device *dev, uint32_t led)
-{
-	return is31fl3194_set_brightness(dev, led, 0);
-}
-
 /*
  * Counts red, green, blue channels; returns true if color_id is valid
  * and no more than one channel maps to the same color
@@ -315,8 +305,6 @@ static int is31fl3194_init(const struct device *dev)
 
 static DEVICE_API(led, is31fl3194_led_api) = {
 	.set_brightness = is31fl3194_set_brightness,
-	.on = is31fl3194_led_on,
-	.off = is31fl3194_led_off,
 	.get_info = is31fl3194_get_info,
 	.set_color = is31fl3194_set_color,
 };
