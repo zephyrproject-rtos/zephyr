@@ -11,7 +11,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
-#include "adi_tmc_spi.h"
+#include <adi_tmc_spi.h>
 #include "adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
@@ -276,6 +276,8 @@ static void rampstat_work_handler(struct k_work *work)
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
+		case TMC5XXX_POS_REACHED:
+		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", stepper_data->stepper->name);
 			execute_callback(stepper_data->stepper, STEPPER_EVENT_STEPS_COMPLETED);
 			break;
