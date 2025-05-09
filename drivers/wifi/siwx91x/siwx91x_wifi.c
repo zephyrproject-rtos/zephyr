@@ -28,6 +28,34 @@ LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
 
+static const char *siwx91x_get_reason_string(uint8_t reason_code)
+{
+	static const struct {
+		int code;
+		const char *str;
+	} reason_strings[10] = {
+		{ WLAN_REASON_NO_REASON, "No reason specified" },
+		{ WLAN_REASON_AUTH_DENIAL, "Authentication denial" },
+		{ WLAN_REASON_ASSOC_DENIAL, "Association denial" },
+		{ WLAN_REASON_AP_NOT_PRESENT, "AP not present" },
+		{ WLAN_REASON_UNKNOWN, "Unknown" },
+		{ WLAN_REASON_HANDSHAKE_FAILURE, "Four way handshake failure" },
+		{ WLAN_REASON_USER_DEAUTH, "Deauthentication from User" },
+		{ WLAN_REASON_PSK_NOT_CONFIGURED, "PSK not configured" },
+		{ WLAN_REASON_AP_INITIATED_DEAUTH,
+		  "De-authentication (AP induced Roam/Deauth from supplicant)" },
+		{ WLAN_REASON_ROAMING_DISABLED, "Roaming not enabled" },
+	};
+
+	ARRAY_FOR_EACH(reason_strings, i) {
+		if (reason_strings[i].code == reason_code) {
+			return reason_strings[i].str;
+		}
+	}
+
+	return reason_strings[WLAN_REASON_UNKNOWN].str;
+}
+
 static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 {
 	switch (interface) {
@@ -119,6 +147,46 @@ static enum wifi_mfp_options siwx91x_set_sta_mfp_option(sl_wifi_security_t secur
 	}
 
 	return WIFI_MFP_UNKNOWN;
+}
+
+static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void *response,
+							   uint32_t result_length, void *arg)
+{
+	ARG_UNUSED(event);
+	ARG_UNUSED(result_length);
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	sl_si91x_module_state_stats_response_t *notif = response;
+	struct siwx91x_dev *sidev = arg;
+
+	uint8_t module_state = notif->state_code & 0xF0;
+	const char *reason_str = siwx91x_get_reason_string(notif->reason_code);
+
+	switch (module_state) {
+	case STATE_BEACON_LOSS:
+		LOG_WRN("Beacon Loss");
+		break;
+	case STATE_BETTER_AP_FOUND:
+		LOG_DBG("Better AP found while roaming");
+		break;
+	case STATE_ASSOCIATED:
+		sidev->state = WIFI_STATE_COMPLETED;
+		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
+			LOG_DBG("Associated");
+		} else {
+			wifi_mgmt_raise_ap_enable_result_event(sidev->iface,
+							       WIFI_STATUS_AP_SUCCESS);
+		}
+		break;
+	case STATE_DEAUTHENTICATION:
+	case STATE_UNASSOCIATED:
+		sidev->state = WIFI_STATE_DISCONNECTED;
+		wifi_mgmt_raise_disconnect_result_event(sidev->iface, WIFI_REASON_DISCONN_SUCCESS);
+		break;
+	}
+
+	LOG_DBG("Reason: %s", reason_str);
+
+	return 0;
 }
 
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
@@ -266,17 +334,32 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 
 static int siwx91x_disconnect(const struct device *dev)
 {
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
 	int ret;
 
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Interface not in STA mode");
+		return -EINVAL;
+	}
+
+	if (sidev->state != WIFI_STATE_COMPLETED) {
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
 	ret = sl_wifi_disconnect(SL_WIFI_CLIENT_INTERFACE);
-	if (ret) {
+	if (ret != SL_STATUS_OK) {
+		wifi_mgmt_raise_disconnect_result_event(sidev->iface, ret);
 		return -EIO;
 	}
+
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_on(sidev->iface);
 	}
+
 	sidev->state = WIFI_STATE_DISCONNECTED;
+
 	return 0;
 }
 
@@ -1047,6 +1130,8 @@ static void siwx91x_iface_init(struct net_if *iface)
 			     sidev);
 	sl_wifi_set_callback(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
 	sl_wifi_set_callback(SL_WIFI_CLIENT_DISCONNECTED_EVENTS, siwx91x_on_ap_sta_disconnect,
+			     sidev);
+	sl_wifi_set_callback(SL_WIFI_STATS_RESPONSE_EVENTS, siwx91x_wifi_module_stats_event_handler,
 			     sidev);
 
 	status = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
