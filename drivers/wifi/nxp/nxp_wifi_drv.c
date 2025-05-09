@@ -2052,8 +2052,9 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 #ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 		    || wlan_is_wmm_uapsd_enabled()
 #endif
-		)
+		) {
 			return -EBUSY;
+		}
 		/*
 		 * Trigger host sleep handshake here. Before handshake is done, host is not allowed
 		 * to enter low power mode

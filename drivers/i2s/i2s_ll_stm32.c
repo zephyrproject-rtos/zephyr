@@ -274,10 +274,11 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	/* set I2S clock polarity */
-	if ((i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) == I2S_FMT_BIT_CLK_INV)
+	if ((i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) == I2S_FMT_BIT_CLK_INV) {
 		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_HIGH);
-	else
+	} else {
 		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_LOW);
+	}
 
 	stream->state = I2S_STATE_READY;
 	return 0;

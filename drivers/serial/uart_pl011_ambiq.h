@@ -129,8 +129,8 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 		return 0;
 	case PM_DEVICE_ACTION_SUSPEND:
 
-		while ((get_uart(dev)->fr & PL011_FR_BUSY) != 0)
-			;
+		while ((get_uart(dev)->fr & PL011_FR_BUSY) != 0) {
+		}
 
 		/* Preserve UART registers*/
 		key = irq_lock();

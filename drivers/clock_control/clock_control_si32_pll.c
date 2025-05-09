@@ -80,8 +80,8 @@ static int clock_control_si32_pll_on(const struct device *dev, clock_control_sub
 	SI32_PLL_A_select_dco_frequency_lock_mode(config->pll);
 	while (!(SI32_PLL_A_is_locked(config->pll) ||
 		 SI32_PLL_A_is_saturation_low_interrupt_pending(config->pll) ||
-		 SI32_PLL_A_is_saturation_high_interrupt_pending(config->pll)))
-		;
+		 SI32_PLL_A_is_saturation_high_interrupt_pending(config->pll))) {
+	}
 
 	return 0;
 }

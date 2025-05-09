@@ -180,8 +180,9 @@ static inline bool is_el_highest_implemented(void)
 
 	curr_el = GET_EL(read_currentel());
 
-	if (curr_el < el_highest)
+	if (curr_el < el_highest) {
 		return false;
+	}
 
 	return true;
 }

@@ -73,8 +73,8 @@ static int counter_ra_agt_start(const struct device *dev)
 
 	reg->AGTCR = AGT_AGTCR_START_TIMER;
 
-	while (!(reg->AGTCR & BIT(R_AGTX0_AGT16_CTRL_AGTCR_TCSTF_Pos)) && likely(--timeout))
-		;
+	while (!(reg->AGTCR & BIT(R_AGTX0_AGT16_CTRL_AGTCR_TCSTF_Pos)) && likely(--timeout)) {
+	}
 
 	return timeout > 0 ? 0 : -EIO;
 }
@@ -86,8 +86,8 @@ static int counter_ra_agt_stop(const struct device *dev)
 
 	reg->AGTCR = AGT_AGTCR_STOP_TIMER;
 
-	while ((reg->AGTCR & BIT(R_AGTX0_AGT16_CTRL_AGTCR_TCSTF_Pos)) && likely(--timeout))
-		;
+	while ((reg->AGTCR & BIT(R_AGTX0_AGT16_CTRL_AGTCR_TCSTF_Pos)) && likely(--timeout)) {
+	}
 
 	return timeout > 0 ? 0 : -EIO;
 }
