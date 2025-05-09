@@ -17,7 +17,6 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
@@ -50,16 +49,20 @@ static inline void power_and_clock_configuration(void)
  */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 	uint32_t xosc32ktrim = NRF_FICR->XOSC32KTRIM;
-
-	uint32_t offset_k =
-		(xosc32ktrim & FICR_XOSC32KTRIM_OFFSET_Msk) >> FICR_XOSC32KTRIM_OFFSET_Pos;
-
+	/* The SLOPE field is in the two's complement form, hence this special
+	 * handling. Ideally, it would result in just one SBFX instruction for
+	 * extracting the slope value, at least gcc is capable of producing such
+	 * output, but since the compiler apparently tries first to optimize
+	 * additions and subtractions, it generates slightly less than optimal
+	 * code.
+	 */
 	uint32_t slope_field_k =
 		(xosc32ktrim & FICR_XOSC32KTRIM_SLOPE_Msk) >> FICR_XOSC32KTRIM_SLOPE_Pos;
 	uint32_t slope_mask_k = FICR_XOSC32KTRIM_SLOPE_Msk >> FICR_XOSC32KTRIM_SLOPE_Pos;
 	uint32_t slope_sign_k = (slope_mask_k - (slope_mask_k >> 1));
 	int32_t slope_k = (int32_t)(slope_field_k ^ slope_sign_k) - (int32_t)slope_sign_k;
-
+	uint32_t offset_k =
+		(xosc32ktrim & FICR_XOSC32KTRIM_OFFSET_Msk) >> FICR_XOSC32KTRIM_OFFSET_Pos;
 	/* As specified in the nRF54L15 PS:
 	 * CAPVALUE = round( (2*CAPACITANCE - 12) * (FICR->XOSC32KTRIM.SLOPE + 0.765625 * 2^9)/(2^9)
 	 *            + FICR->XOSC32KTRIM.OFFSET/(2^6) );
@@ -67,29 +70,22 @@ static inline void power_and_clock_configuration(void)
 	 * value between 4 pF and 18 pF in 0.5 pF steps.
 	 */
 
-	/* Encoding of desired capacitance (single ended) to value required for INTCAP core
-	 * calculation: (CAP_VAL - 4 pF)* 0.5
-	 * That translate to ((CAP_VAL_FEMTO_F - 4000fF) * 2UL) / 1000UL
-	 *
-	 * NOTE: The desired capacitance value is used in encoded from in INTCAP calculation formula
-	 *       That is different than in case of HFXO.
-	 */
-	uint32_t cap_val_encoded = (((DT_PROP(LFXO_NODE, load_capacitance_femtofarad) - 4000UL)
-				     * 2UL) / 1000UL);
+	uint32_t lfxo_intcap_femto_f = DT_PROP(LFXO_NODE, load_capacitance_femtofarad);
 
 	/* Calculation of INTCAP code before rounding. Min that calculations here are done on
 	 * values multiplied by 2^9, e.g. 0.765625 * 2^9 = 392.
 	 * offset_k should be divided by 2^6, but to add it to value shifted by 2^9 we have to
-	 * multiply it be 2^3.
+	 * multiply it be 2^3. Capacitance value passed to the formula is in femto Farads to
+	 * avoid floating point data type. Hence, offset_k needs to be multiplied by 1000.
 	 */
-	uint32_t mid_val = (2UL * cap_val_encoded - 12UL) * (uint32_t)(slope_k + 392UL)
-			   + (offset_k << 3UL);
+	uint32_t lfxo_intcap_mid_val = (2UL * lfxo_intcap_femto_f - 12000UL)
+			* (uint32_t)(slope_k + 392UL) + (offset_k << 3UL) * 1000UL;
 
-	/* Get integer part of the INTCAP code */
-	uint32_t lfxo_intcap = mid_val >> 9UL;
+	/* Get integer part of the INTCAP by dividing by 2^9 and convert to pico Farads. */
+	uint32_t lfxo_intcap = lfxo_intcap_mid_val / 512000UL;
 
-	/* Round based on fractional part */
-	if ((mid_val & BIT_MASK(9)) > (BIT_MASK(9) / 2)) {
+	/* Round based on fractional part. */
+	if (lfxo_intcap_mid_val % 512000UL >= 256000UL) {
 		lfxo_intcap++;
 	}
 
@@ -107,11 +103,11 @@ static inline void power_and_clock_configuration(void)
 	 * additions and subtractions, it generates slightly less than optimal
 	 * code.
 	 */
-	uint32_t slope_field =
+	uint32_t slope_field_m =
 		(xosc32mtrim & FICR_XOSC32MTRIM_SLOPE_Msk) >> FICR_XOSC32MTRIM_SLOPE_Pos;
-	uint32_t slope_mask = FICR_XOSC32MTRIM_SLOPE_Msk >> FICR_XOSC32MTRIM_SLOPE_Pos;
-	uint32_t slope_sign = (slope_mask - (slope_mask >> 1));
-	int32_t slope_m = (int32_t)(slope_field ^ slope_sign) - (int32_t)slope_sign;
+	uint32_t slope_mask_m = FICR_XOSC32MTRIM_SLOPE_Msk >> FICR_XOSC32MTRIM_SLOPE_Pos;
+	uint32_t slope_sign_m = (slope_mask_m - (slope_mask_m >> 1));
+	int32_t slope_m = (int32_t)(slope_field_m ^ slope_sign_m) - (int32_t)slope_sign_m;
 	uint32_t offset_m =
 		(xosc32mtrim & FICR_XOSC32MTRIM_OFFSET_Msk) >> FICR_XOSC32MTRIM_OFFSET_Pos;
 	/* As specified in the nRF54L15 PS:
@@ -121,22 +117,19 @@ static inline void power_and_clock_configuration(void)
 	 * holding any value between 4.0 pF and 17.0 pF in 0.25 pF steps.
 	 */
 
-	/* NOTE 1: Requested HFXO internal capacitance in femto Faradas is used directly in formula
-	 *         to calculate INTCAP code. That is different than in case of LFXO.
-	 *
-	 * NOTE 2: PS formula uses piko Farads, the implementation of the formula uses femto Farads
-	 *         to avoid use of floating point data type.
+	uint32_t hfxo_intcap_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
+
+	/* Capacitance value passed to the formula is in femto Farads to
+	 * avoid floating point data type. Hence, offset_m needs to be multiplied by 1000.
 	 */
-	uint32_t cap_val_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
+	uint32_t hfxo_intcap_mid_val = (((hfxo_intcap_femto_f - 5500UL)
+			* (uint32_t)(slope_m + 791UL)) + (offset_m << 2UL) * 1000UL) >> 8UL;
 
-	uint32_t mid_val_intcap = (((cap_val_femto_f - 5500UL) * (uint32_t)(slope_m + 791UL))
-		 + (offset_m << 2UL) * 1000UL) >> 8UL;
+	/* Convert the calculated value to piko Farads. */
+	uint32_t hfxo_intcap = hfxo_intcap_mid_val / 1000;
 
-	/* Convert the calculated value to piko Farads */
-	uint32_t hfxo_intcap = mid_val_intcap / 1000;
-
-	/* Round based on fractional part */
-	if (mid_val_intcap % 1000 >= 500) {
+	/* Round based on fractional part. */
+	if (hfxo_intcap_mid_val % 1000 >= 500) {
 		hfxo_intcap++;
 	}
 
