@@ -759,6 +759,12 @@ static int spi_nrfx_init(const struct device *dev)
 #endif
 	return pm_device_driver_init(dev, spim_nrfx_pm_action);
 }
+
+static int spi_nrfx_deinit(const struct device *dev)
+{
+	return 0;
+}
+
 /*
  * We use NODELABEL here because the nrfx API requires us to call
  * functions which are named according to SoC peripheral instance
@@ -862,8 +868,9 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
-	SPI_DEVICE_DT_DEFINE(SPIM(idx),					       \
+	SPI_DEVICE_DT_DEINIT_DEFINE(SPIM(idx),				       \
 		      spi_nrfx_init,					       \
+		      spi_nrfx_deinit,					       \
 		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
