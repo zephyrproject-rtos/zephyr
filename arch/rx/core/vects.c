@@ -8,6 +8,7 @@
 #include <zephyr/irq.h>
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/drivers/clock_control/renesas_rx_cgc.h>
 
 typedef void (*fp)(void);
 extern void _start(void);
@@ -23,6 +24,14 @@ extern void z_rx_irq_exit(void);
 #define FVECT_SECT  __attribute__((section(".fvectors")))
 
 #define __ISR__ __attribute__((interrupt, naked))
+
+#define SET_OFS1_HOCO_BITS(reg, freq)                                                              \
+	((reg) & ~(0b11 << 12)) | ((((freq) == 24000000   ? 0b10                                   \
+				     : (freq) == 32000000 ? 0b11                                   \
+				     : (freq) == 48000000 ? 0b01                                   \
+				     : (freq) == 64000000 ? 0b00                                   \
+							  : 0b11)                                  \
+				    << 12))
 
 static ALWAYS_INLINE void REGISTER_SAVE(void)
 {
@@ -421,7 +430,9 @@ const void *FixedVectors[] FVECT_SECT = {
 	/* Reserved for OFSM */
 	(fp)0xFFFFFFFF,
 	(fp)0xFFFFFFFF,
-	(fp)0xFFFFFFFF,
+	(fp)(SET_OFS1_HOCO_BITS(
+		0xFFFFFFFF,
+		(RX_CGC_PROP_HAS_STATUS_OKAY_OR(DT_NODELABEL(hoco), clock_frequency, 32000000)))),
 	(fp)0xFFFFFFFF,
 	/* Reserved area */
 	(fp)0xFFFFFFFF,
