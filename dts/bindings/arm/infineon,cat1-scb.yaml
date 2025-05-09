@@ -7,11 +7,14 @@ description: Infineon Serial Communication Blocks (SCB) node
 
 compatible: "infineon,cat1-scb"
 
-include: [base.yaml]
+include: [base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   reg:
     required: true
 
   interrupts:
-    required: true
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices
