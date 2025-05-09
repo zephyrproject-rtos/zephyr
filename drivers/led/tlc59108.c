@@ -146,11 +146,6 @@ static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led,
 		return -EINVAL;
 	}
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
 	/* Set the LED brightness value */
 	val = (value * 255U) / dev_data->max_brightness;
 	if (i2c_reg_write_byte_dt(&config->i2c, TLC59108_PWM_BASE + led, val)) {
