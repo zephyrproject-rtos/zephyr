@@ -2187,7 +2187,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 #endif /* XSPIM */
 
-#if defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2)
+#if defined(XSPI_DCR1_DLYBYP)
 	/* XSPI delay block init Function */
 	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
 
@@ -2201,7 +2201,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 
 	LOG_DBG("Delay Block Init");
-#endif /* DLYB_ */
+#endif /* XSPI_DCR1_DLYBYP */
 
 #if STM32_XSPI_USE_DMA
 	/* Configure and enable the DMA channels after XSPI config */
