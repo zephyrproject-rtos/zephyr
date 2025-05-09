@@ -1,5 +1,5 @@
 /**
- * @file drivers/stepper/adi/stepper.h
+ * @file drivers/stepper/adi_tmc/bus/include/adi_tmc_spi.h
  *
  * @brief Private API for Trinamic SPI bus
  *
@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_
-#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_
+#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_BUS_SPI_H_
+#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_BUS_SPI_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +60,4 @@ int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bi
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_ */
+#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_BUS_SPI_H_ */
