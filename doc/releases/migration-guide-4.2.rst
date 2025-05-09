@@ -610,8 +610,9 @@ SPI
 * The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name
   matching the compatible string.
 
-xSPI
-====
+
+oSPI/xSPI
+=========
 
 * On STM32 devices, external memories device tree descriptions for size and address are now split
   in two separate properties to comply with specification recommendations.
@@ -620,7 +621,7 @@ xSPI
   is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
 
   Note that the property gives the actual size of the memory device in bits.
-  Previous mapping address information is now described in xspi node at SoC dtsi level.
+  Previous mapping address information is now described in xspi or ospi nodes at SoC dtsi level.
 
 Video
 =====
