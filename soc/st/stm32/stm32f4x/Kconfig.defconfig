@@ -27,4 +27,7 @@ config IDLE_STACK_SIZE
 
 endif # PM
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+       default $(dt_node_int_prop_int,/soc/rcc@40023800,clock-frequency)
+
 endif # SOC_SERIES_STM32F4X
