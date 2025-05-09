@@ -231,6 +231,21 @@ void pm_policy_device_power_lock_get(const struct device *dev);
 void pm_policy_device_power_lock_put(const struct device *dev);
 
 /**
+ * @brief Check if a state will disable a device
+ *
+ * This function allows client code to check if a state will disable a device.
+ *
+ * @param dev Device reference.
+ * @param state The state to check on whether it disables the device.
+ * @param substate_id The substate to check on whether it disables the device.
+ *
+ * @retval true if the state disables the device
+ * @retval false if the state does not disable the device
+ */
+bool pm_policy_device_is_disabling_state(const struct device *dev,
+					 enum pm_state state, uint8_t substate_id);
+
+/**
  * @brief Returns the ticks until the next event
  *
  * If an event is registred, it will return the number of ticks until the next event, if the
