@@ -111,16 +111,6 @@ static int is31fl3733_led_set_brightness(const struct device *dev, uint32_t led,
 	return i2c_reg_write_byte_dt(&config->bus, led, led_brightness);
 }
 
-static int is31fl3733_led_on(const struct device *dev, uint32_t led)
-{
-	return is31fl3733_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static int is31fl3733_led_off(const struct device *dev, uint32_t led)
-{
-	return is31fl3733_led_set_brightness(dev, led, 0);
-}
-
 static int is31fl3733_led_write_channels(const struct device *dev, uint32_t start_channel,
 					 uint32_t num_channels, const uint8_t *buf)
 {
@@ -274,8 +264,6 @@ int is31fl3733_current_limit(const struct device *dev, uint8_t limit)
 }
 
 static DEVICE_API(led, is31fl3733_api) = {
-	.on = is31fl3733_led_on,
-	.off = is31fl3733_led_off,
 	.set_brightness = is31fl3733_led_set_brightness,
 	.write_channels = is31fl3733_led_write_channels,
 };
