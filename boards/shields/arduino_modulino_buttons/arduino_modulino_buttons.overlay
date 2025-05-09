@@ -7,7 +7,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
 
-&qwiic_i2c {
+&zephyr_i2c {
 	modulino-buttons@3e {
 		compatible = "i2c-device";
 		reg = <0x3e>;
