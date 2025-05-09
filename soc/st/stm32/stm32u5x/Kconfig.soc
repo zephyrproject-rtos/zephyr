@@ -13,6 +13,10 @@ config SOC_SERIES_STM32U5X
 config SOC_SERIES
 	default "stm32u5x" if SOC_SERIES_STM32U5X
 
+config SOC_STM32U535XX
+	bool
+	select SOC_SERIES_STM32U5X
+
 config SOC_STM32U545XX
 	bool
 	select SOC_SERIES_STM32U5X
