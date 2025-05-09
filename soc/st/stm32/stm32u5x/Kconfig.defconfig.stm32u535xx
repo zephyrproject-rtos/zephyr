@@ -1,0 +1,11 @@
+# ST Microelectronics STM32U535XX MCU
+
+# Copyright (c) 2025 Harris Tomy
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U535XX
+
+config NUM_IRQS
+	default 126
+
+endif # SOC_STM32U535XX
