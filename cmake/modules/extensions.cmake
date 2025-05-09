@@ -5167,6 +5167,10 @@ endfunction()
 #                       the given passes. Empty list means no passes.
 #                       PASS NOT [<p1>] [<p2>...] makes the section present in
 #                       all but the given passes. Empty list means all passes.
+# TYPE <type>         : Tag section for special treatment.
+#                       NOLOAD, BSS - Ensure that the section is NOLOAD
+#                       LINKER_SCRIPT_FOOTER - One single section to be
+#                                              generated last
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
 function(zephyr_linker_section)
