@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -137,4 +138,24 @@ void pm_policy_device_power_lock_put(const struct device *dev)
 					 constraints->constraints[j].substate_id);
 	}
 #endif
+}
+
+bool pm_policy_device_is_disabling_state(const struct device *dev,
+					 enum pm_state state, uint8_t substate_id)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	struct pm_state_device_constraint *constraints =
+				pm_policy_priv_device_find_device_constraints(dev);
+	if (constraints == NULL) {
+		return false;
+	}
+
+	for (size_t j = 0; j < constraints->pm_constraints_size; j++) {
+		if (constraints->constraints[j].state == state &&
+		    constraints->constraints[j].substate_id == substate_id) {
+			return true;
+		}
+	}
+#endif
+	return false;
 }
