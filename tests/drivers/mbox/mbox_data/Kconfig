@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,3 +9,8 @@ config INCLUDE_REMOTE_DIR
 	help
 	  Include remote build header files. Can be used if primary image
 	  needs to be aware of size or base address of secondary image
+
+config TEST_LOOPBACK
+	bool "Enable test loopback"
+	help
+	  Test ping-pong loopback data on a mbox channel within one core.
