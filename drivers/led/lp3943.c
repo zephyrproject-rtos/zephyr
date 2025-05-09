@@ -174,11 +174,6 @@ static int lp3943_led_set_brightness(const struct device *dev, uint32_t led,
 	int ret;
 	uint8_t reg, val, mode;
 
-	if (value < dev_data->min_brightness ||
-			value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
 	/* Use DIM0 for LEDs 0 to 7 and DIM1 for LEDs 8 to 15 */
 	if (led < 8) {
 		mode = LP3943_DIM0;
