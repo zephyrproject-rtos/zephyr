@@ -462,8 +462,6 @@ device.
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
-   * - zephyr,touch
-     - touchscreen controller device node.
    * - mcuboot,ram-load-dev
      - When a Zephyr application is built to be loaded to RAM by MCUboot, with
        :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,

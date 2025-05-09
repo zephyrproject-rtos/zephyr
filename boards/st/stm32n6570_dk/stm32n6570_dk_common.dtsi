@@ -20,7 +20,6 @@
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
-		zephyr,touch = &gt911;
 		spi-flash0 = &mx66uw1g45g;
 		zephyr,flash-controller = &mx66uw1g45g;
 		zephyr,flash = &mx66uw1g45g;
@@ -29,6 +28,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		touch = &gt911;
 	};
 
 	lvgl_pointer {

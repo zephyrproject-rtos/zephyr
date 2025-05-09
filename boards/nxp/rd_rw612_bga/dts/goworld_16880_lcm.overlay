@@ -3,7 +3,6 @@
 / {
 	chosen {
 		zephyr,display = &st7796s_lcdic;
-		zephyr,touch = &ft7401;
 	};
 
 	lvgl_pointer {
@@ -11,6 +10,10 @@
 		input = <&ft7401>;
 		swap-xy;
 		invert-y;
+	};
+
+	aliases {
+		touch = &ft7401;
 	};
 };
 

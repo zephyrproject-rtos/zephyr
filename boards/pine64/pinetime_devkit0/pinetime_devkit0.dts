@@ -27,7 +27,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &st7789v;
-		zephyr,touch = &cst816s;
 	};
 
 	aliases {
@@ -37,6 +36,7 @@
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
 		watchdog0 = &wdt0;
+		touch = &cst816s;
 	};
 
 	leds {

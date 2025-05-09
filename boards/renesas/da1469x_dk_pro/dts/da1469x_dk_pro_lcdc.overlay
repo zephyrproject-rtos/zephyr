@@ -10,13 +10,16 @@
 / {
 	chosen {
 		zephyr,display = &lcdc;
-		zephyr,touch = &display_touch;
 	};
 
 	lvgl_pointer {
 		input = <&display_touch>;
 		status = "okay";
 		swap-xy;
+	};
+
+	aliases {
+		touch = &display_touch;
 	};
 };
 

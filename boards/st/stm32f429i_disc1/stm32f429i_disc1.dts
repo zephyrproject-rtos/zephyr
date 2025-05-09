@@ -22,7 +22,6 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 		zephyr,display = &ltdc;
-		zephyr,touch = &stmpe811;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -59,6 +58,7 @@
 	aliases {
 		led0 = &green_led_3;
 		sw0 = &user_button;
+		touch = &stmpe811;
 	};
 
 	lvgl_pointer {
