@@ -216,8 +216,18 @@ void add_ipv6_addr_to_ot(struct openthread_context *context,
 	}
 
 	openthread_mutex_lock();
-	error = otIp6AddUnicastAddress(openthread_get_default_instance(), &addr);
+	if (!otIp6HasUnicastAddress(openthread_get_default_instance(),
+				    &addr.mAddress)) {
+		error = otIp6AddUnicastAddress(openthread_get_default_instance(),
+					       &addr);
+	} else {
+		error = OT_ERROR_ALREADY;
+	}
 	openthread_mutex_unlock();
+
+	if (error == OT_ERROR_ALREADY) {
+		return;
+	}
 
 	if (error != OT_ERROR_NONE) {
 		NET_ERR("Failed to add IPv6 unicast address %s [%d]",
@@ -238,6 +248,10 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context,
 	openthread_mutex_lock();
 	error = otIp6SubscribeMulticastAddress(openthread_get_default_instance(), &addr);
 	openthread_mutex_unlock();
+
+	if (error == OT_ERROR_ALREADY) {
+		return;
+	}
 
 	if (error != OT_ERROR_NONE) {
 		NET_ERR("Failed to add IPv6 multicast address %s [%d]",
