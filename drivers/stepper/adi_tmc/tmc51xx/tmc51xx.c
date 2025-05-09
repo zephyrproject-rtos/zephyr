@@ -4,45 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_tmc51xx
-
 #include <stdlib.h>
 
 #include <zephyr/drivers/stepper.h>
-#include <zephyr/drivers/stepper/stepper_trinamic.h>
 
-#include "adi_tmc_spi.h"
-#include "adi_tmc5xxx_common.h"
+#include <adi_tmc_bus.h>
+#include "tmc51xx.h"
+#include "../adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 
-struct tmc51xx_data {
-	struct k_sem sem;
-	struct k_work_delayable stallguard_dwork;
-	/* Work item to run the callback in a thread context. */
-	struct k_work_delayable rampstat_callback_dwork;
-	struct gpio_callback diag0_cb;
-	/* device pointer required to access config in k_work */
-	const struct device *stepper;
-	stepper_event_callback_t callback;
-	void *event_cb_user_data;
-};
+static inline int tmc51xx_bus_check(const struct device *dev)
+{
+	const struct tmc51xx_config *config = dev->config;
 
-struct tmc51xx_config {
-	const uint32_t gconf;
-	struct spi_dt_spec spi;
-	const uint32_t clock_frequency;
-	const uint16_t default_micro_step_res;
-	const int8_t sg_threshold;
-	const bool is_sg_enabled;
-	const uint32_t sg_velocity_check_interval_ms;
-	const uint32_t sg_threshold_velocity;
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN
-	const struct tmc_ramp_generator_data default_ramp_config;
-#endif
-	struct gpio_dt_spec diag0_gpio;
-};
+	return config->bus_io->check(&config->bus, config->comm_type);
+}
 
 static int read_actual_position(const struct device *dev, int32_t *position);
 static void rampstat_work_handler(struct k_work *work);
@@ -54,12 +32,11 @@ static int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const
 {
 	const struct tmc51xx_config *config = dev->config;
 	struct tmc51xx_data *data = dev->data;
-	const struct spi_dt_spec bus = config->spi;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
+	err = config->bus_io->write(dev, reg_addr, reg_val);
 
 	k_sem_give(&data->sem);
 
@@ -74,12 +51,11 @@ static int tmc51xx_read(const struct device *dev, const uint8_t reg_addr, uint32
 {
 	const struct tmc51xx_config *config = dev->config;
 	struct tmc51xx_data *data = dev->data;
-	const struct spi_dt_spec bus = config->spi;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
+	err = config->bus_io->read(dev, reg_addr, reg_val);
 
 	k_sem_give(&data->sem);
 
@@ -94,14 +70,16 @@ static int tmc51xx_stepper_set_event_callback(const struct device *dev,
 					      stepper_event_callback_t callback, void *user_data)
 {
 	struct tmc51xx_data *data = dev->data;
-	const struct tmc51xx_config *config = dev->config;
-	int err;
+	__maybe_unused const struct tmc51xx_config *config = dev->config;
+
+	__maybe_unused int err;
 
 	data->callback = callback;
 	data->event_cb_user_data = user_data;
 
 	/* Configure DIAG0 GPIO interrupt pin */
-	if (config->diag0_gpio.port) {
+	IF_ENABLED(TMC51XX_BUS_SPI, ({
+	if ((config->comm_type == TMC_COMM_SPI) && config->diag0_gpio.port) {
 		LOG_INF("Configuring DIAG0 GPIO interrupt pin");
 		if (!gpio_is_ready_dt(&config->diag0_gpio)) {
 			LOG_ERR("DIAG0 interrupt GPIO not ready");
@@ -138,7 +116,7 @@ static int tmc51xx_stepper_set_event_callback(const struct device *dev,
 		if (err != 0) {
 			return -EIO;
 		}
-	}
+	}}))
 
 	return 0;
 }
@@ -201,7 +179,7 @@ static int stallguard_enable(const struct device *dev, const bool enable)
 static void stallguard_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct tmc51xx_data *stepper_data =
+	struct tmc51xx_data const *stepper_data =
 		CONTAINER_OF(dwork, struct tmc51xx_data, stallguard_dwork);
 	const struct device *dev = stepper_data->stepper;
 	const struct tmc51xx_config *config = dev->config;
@@ -267,7 +245,7 @@ static void rampstat_work_handler(struct k_work *work)
 	struct tmc51xx_data *stepper_data =
 		CONTAINER_OF(dwork, struct tmc51xx_data, rampstat_callback_dwork);
 	const struct device *dev = stepper_data->stepper;
-	const struct tmc51xx_config *config = dev->config;
+	__maybe_unused const struct tmc51xx_config *config = dev->config;
 
 	__ASSERT_NO_MSG(dev);
 
@@ -314,6 +292,8 @@ static void rampstat_work_handler(struct k_work *work)
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
+		case TMC5XXX_POS_REACHED:
+		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", dev->name);
 			stepper_trigger_callback(dev, STEPPER_EVENT_STEPS_COMPLETED);
 			break;
@@ -324,23 +304,30 @@ static void rampstat_work_handler(struct k_work *work)
 			stepper_trigger_callback(dev, STEPPER_EVENT_STALL_DETECTED);
 			break;
 		default:
-			LOG_ERR("Illegal ramp stat bit field");
+			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;
 		}
 	} else {
-		/* Only reschedule polling if DIAG0 interrupt is not configured */
-		if (!config->diag0_gpio.port) {
+		/* For SPI with DIAG0 pin, we use interrupt-driven approach */
+		IF_ENABLED(TMC51XX_BUS_SPI, ({
+			if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
+				/* Using interrupt-driven approach - no polling needed */
+				return;
+			}
+			}))
+
+		/* For UART or SPI without DIAG0, reschedule RAMPSTAT polling */
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
-			k_work_reschedule(
-				&stepper_data->rampstat_callback_dwork,
-				K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+		k_work_reschedule(
+			&stepper_data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
 #endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
-		}
 	}
 }
 
-static void tmc51xx_diag0_gpio_callback_handler(const struct device *port, struct gpio_callback *cb,
-						gpio_port_pins_t pins)
+static void __maybe_unused tmc51xx_diag0_gpio_callback_handler(const struct device *port,
+							       struct gpio_callback *cb,
+							       gpio_port_pins_t pins)
 {
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -482,8 +469,26 @@ static int tmc51xx_stepper_set_reference_position(const struct device *dev, cons
 
 static int read_actual_position(const struct device *dev, int32_t *position)
 {
+	const struct tmc51xx_config *config = dev->config;
+
 	int err;
 	uint32_t raw_value;
+
+	/* Check if device is using UART and is currently moving */
+	if (config->comm_type == TMC_COMM_UART) {
+		bool is_moving;
+
+		err = tmc51xx_stepper_is_moving(dev, &is_moving);
+		if (err != 0) {
+			return -EIO;
+		}
+
+		if (is_moving) {
+			LOG_WRN("%s: Reading position while moving over UART is not supported",
+				dev->name);
+			return -ENOTSUP;
+		}
+	}
 
 	err = tmc51xx_read(dev, TMC51XX_XACTUAL, &raw_value);
 	if (err != 0) {
@@ -530,7 +535,16 @@ static int tmc51xx_stepper_move_to(const struct device *dev, const int32_t micro
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-	if (data->callback && !config->diag0_gpio.port) {
+	if (data->callback) {
+		/* For SPI with DIAG0 pin, we use interrupt-driven approach */
+		IF_ENABLED(TMC51XX_BUS_SPI, ({
+		if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
+			/* Using interrupt-driven approach - no polling needed */
+			return 0;
+		}
+		}))
+
+		/* For UART or SPI without DIAG0, reschedule RAMPSTAT polling */
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
 		k_work_reschedule(
 			&data->rampstat_callback_dwork,
@@ -545,7 +559,7 @@ static int tmc51xx_stepper_move_by(const struct device *dev, const int32_t micro
 	int err;
 	int32_t position;
 
-	err = stepper_get_actual_position(dev, &position);
+	err = tmc51xx_stepper_get_actual_position(dev, &position);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -590,7 +604,16 @@ static int tmc51xx_stepper_run(const struct device *dev, const enum stepper_dire
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
-	if (data->callback && !config->diag0_gpio.port) {
+	if (data->callback) {
+		/* For SPI with DIAG0 pin, we use interrupt-driven approach */
+		IF_ENABLED(TMC51XX_BUS_SPI, ({
+		if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
+			/* Using interrupt-driven approach - no polling needed */
+			return 0;
+		}
+		}))
+
+		/* For UART or SPI without DIAG0, reschedule RAMPSTAT polling */
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
 		k_work_reschedule(
 			&data->rampstat_callback_dwork,
@@ -678,10 +701,27 @@ static int tmc51xx_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
-		return -ENODEV;
+	err = tmc51xx_bus_check(dev);
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+		return err;
 	}
+
+#if TMC51XX_BUS_UART
+	/* Initialize SW_SEL GPIO if using UART and GPIO is specified */
+	if (config->comm_type == TMC_COMM_UART && config->sw_sel_gpio.port) {
+		if (!gpio_is_ready_dt(&config->sw_sel_gpio)) {
+			LOG_ERR("SW_SEL GPIO not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->sw_sel_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err < 0) {
+			LOG_ERR("Failed to configure SW_SEL GPIO");
+			return err;
+		}
+	}
+#endif
 
 	LOG_DBG("GCONF: %d", config->gconf);
 	err = tmc51xx_write(dev, TMC5XXX_GCONF, config->gconf);
@@ -760,36 +800,51 @@ static DEVICE_API(stepper, tmc51xx_api) = {
 	.set_event_callback = tmc51xx_stepper_set_event_callback,
 };
 
-#define TMC51XX_DEFINE(inst)									\
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),					\
-		     "clock frequency must be non-zero positive value");			\
-	static struct tmc51xx_data tmc51xx_data_##inst = {					\
-		.stepper = DEVICE_DT_GET(DT_DRV_INST(inst))};					\
-	COND_CODE_1(DT_PROP_EXISTS(inst, stallguard_threshold_velocity),			\
-	BUILD_ASSERT(DT_PROP(inst, stallguard_threshold_velocity),				\
-		     "stallguard threshold velocity must be a positive value"), ());		\
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN, (CHECK_RAMP_DT_DATA(inst)));		\
-	static const struct tmc51xx_config tmc51xx_config_##inst = {				\
-		.gconf = ((DT_INST_PROP(inst, en_pwm_mode) << TMC51XX_GCONF_EN_PWM_MODE_SHIFT) |   \
-			  (DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT) |       \
-			  (DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT) |    \
-			  (DT_INST_NODE_HAS_PROP(inst, diag0_gpios)                                \
-				   ? BIT(TMC51XX_GCONF_DIAG0_INT_PUSHPULL_SHIFT)                   \
-				   : 0)),                                                          \
-		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
-					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |               \
-					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
-					    0),                                                    \
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
-		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
-		.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),                         \
-		.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),        \
-		.sg_velocity_check_interval_ms =                                                   \
-			DT_INST_PROP(inst, stallguard_velocity_check_interval_ms),                 \
-		.is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),                         \
-		IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN,					   \
-		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC51XX(inst))),                      \
-			    .diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})};       \
+/* Initializes a struct tmc51xx_config for an instance on a SPI bus. */
+#define TMC51XX_CONFIG_SPI(inst)                                                                   \
+	.comm_type = TMC_COMM_SPI,                                                                 \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst,                                                      \
+					(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPOL |   \
+					 SPI_MODE_CPHA | SPI_WORD_SET(8)),                         \
+					0),                                                        \
+	.bus_io = &tmc51xx_spi_bus_io,                                                             \
+	.diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})
+
+/* Initializes a struct tmc51xx_config for an instance on a UART bus. */
+#define TMC51XX_CONFIG_UART(inst)                                                                  \
+	.comm_type = TMC_COMM_UART, .bus.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                  \
+	.bus_io = &tmc51xx_uart_bus_io, .uart_addr = DT_INST_PROP_OR(inst, uart_device_addr, 1U),  \
+	.sw_sel_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sw_sel_gpios, {0})
+
+/* Device initialization macros */
+#define TMC51XX_DEFINE(inst)                                                                       \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),                                    \
+		     "clock frequency must be non-zero positive value");                           \
+	static struct tmc51xx_data tmc51xx_data_##inst = {                                         \
+		.stepper = DEVICE_DT_GET(DT_DRV_INST(inst))};                                      \
+	COND_CODE_1(DT_PROP_EXISTS(inst, stallguard_threshold_velocity),			   \
+	BUILD_ASSERT(DT_PROP(inst, stallguard_threshold_velocity),				   \
+		     "stallguard threshold velocity must be a positive value"), ());               \
+	IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN, (CHECK_RAMP_DT_DATA(inst)));               \
+	static const struct tmc51xx_config tmc51xx_config_##inst = {COND_CODE_1			   \
+		(DT_INST_ON_BUS(inst, spi),							   \
+		(TMC51XX_CONFIG_SPI(inst)),							   \
+		(TMC51XX_CONFIG_UART(inst))),							   \
+		 .gconf = ((DT_INST_PROP(inst, en_pwm_mode) << TMC51XX_GCONF_EN_PWM_MODE_SHIFT) |  \
+			   (DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT) |      \
+			   (DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT) |   \
+			   (DT_INST_NODE_HAS_PROP(inst, diag0_gpios)                               \
+				    ? BIT(TMC51XX_GCONF_DIAG0_INT_PUSHPULL_SHIFT)                  \
+				    : 0)),                                                         \
+		 .clock_frequency = DT_INST_PROP(inst, clock_frequency),                           \
+		 .default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                     \
+		 .sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),                        \
+		 .sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),       \
+		 .sg_velocity_check_interval_ms =                                                  \
+			 DT_INST_PROP(inst, stallguard_velocity_check_interval_ms),                \
+		 .is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),                        \
+		 IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN,                                   \
+		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC51XX(inst)))};			   \
 	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,                      \
 			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      &tmc51xx_api);
