@@ -143,6 +143,10 @@ mapping:
           license-path:
             required: true
             type: str
+          click-through:
+            required: false
+            type: bool
+            default: false
           url:
             required: true
             type: str
@@ -341,6 +345,7 @@ def process_blobs(module, meta):
     for blob in mblobs:
         blob['module'] = meta.get('name', None)
         blob['abspath'] = blobs_path / Path(blob['path'])
+        blob['license-abspath'] = Path(module) / Path(blob['license-path'])
         blob['status'] = get_blob_status(blob['abspath'], blob['sha256'])
         blobs.append(blob)
 

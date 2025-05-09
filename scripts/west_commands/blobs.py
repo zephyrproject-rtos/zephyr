@@ -55,6 +55,8 @@ class Blobs(WestCommand):
             - type: type of blob
             - version: version string
             - license_path: path to the license file for the blob
+            - license-abspath: absolute path to the license file for the blob
+            - click-through: need license click-through or not
             - uri: URI to the remote location of the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
@@ -151,6 +153,33 @@ class Blobs(WestCommand):
                 self.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
             self.inf('Fetching blob {module}: {abspath}'.format(**blob))
+
+            if blob['click-through']:
+                while True:
+                    user_input = input("For this blob, need to read and accept "
+                                       "license to continue. Read it?\n"
+                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    if user_input.upper() == "Y" or user_input.upper() == "N":
+                        break
+
+                if user_input.upper() != "Y":
+                    self.wrn('Skip fetching this blob.')
+                    continue
+
+                with open(blob['license-abspath']) as license_file:
+                    license_content = license_file.read()
+                    print(license_content)
+
+                while True:
+                    user_input = input("Accept license to continue?\n"
+                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    if user_input.upper() == "Y" or user_input.upper() == "N":
+                        break
+
+                if user_input.upper() != "Y":
+                    self.wrn('Skip fetching this blob.')
+                    continue
+
             self.fetch_blob(blob['url'], blob['abspath'])
             if not self.verify_blob(blob):
                 bad_checksum_count += 1
