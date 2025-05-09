@@ -12,6 +12,10 @@
 #include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
+#if defined(CONFIG_SOC_SERIES_RP2350)
+#include <hardware/irq.h>
+#endif
+
 extern const uintptr_t _irq_vector_table[];
 
 #if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
@@ -40,6 +44,12 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
 #define TRIG_CHECK_SIZE	19
+#elif defined(CONFIG_SOC_SERIES_RP2350)
+#define ISR3_OFFSET SPARE_IRQ_2
+#define ISR4_OFFSET SPARE_IRQ_3
+#define ISR5_OFFSET SPARE_IRQ_4
+#define ISR6_OFFSET SPARE_IRQ_5
+#define TRIG_CHECK_SIZE (ISR6_OFFSET + 1)
 #else
 
 /* RISC-V has very few IRQ lines which can be triggered from software */
