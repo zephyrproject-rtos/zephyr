@@ -260,13 +260,19 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 		/* Every time buffer 64 pixels first before the transfer. */
 		DSI_SetDbiPixelFifoSendLevel(config->base, 64U);
 
-		/* Set payload size. */
+		/* There is limitation for payload size, if the total byte count exceeds the
+		 * limit, send the data in several payloads.
+		 */
 		if ((desc.height * desc.width * data->src_bytes_per_pixel) >
 			MIPI_DSI_MAX_PAYLOAD_SIZE) {
+			/* Calculate the max allowed height. */
 			desc.height = MIPI_DSI_MAX_PAYLOAD_SIZE /
 				(desc.width * data->src_bytes_per_pixel);
+			/* The left data will be sent in the following packat(s). */
+			data->height -= desc.height;
 		}
 
+		/* Set payload size. */
 		DSI_SetDbiPixelPayloadSize(config->base,
 			(desc.height * desc.width * data->src_bytes_per_pixel) >> 1U);
 
