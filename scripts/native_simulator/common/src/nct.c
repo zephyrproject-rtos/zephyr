@@ -147,7 +147,7 @@ NSI_INLINE int nct_sem_rewait(sem_t *semaphore)
 	int ret;
 
 	while ((ret = sem_wait(semaphore)) == EINTR) {
-		;
+		/* Restart wait if we were interrupted */
 	}
 	return ret;
 }
@@ -155,10 +155,10 @@ NSI_INLINE int nct_sem_rewait(sem_t *semaphore)
 /**
  * Helper function, run by a thread which is being aborted
  */
-static void abort_tail(struct threads_table_el *tt_el, int this_th_nbr)
+static void abort_tail(struct threads_table_el *tt_el)
 {
 	NCT_DEBUG("Thread [%i] %i: %s: Aborting (exiting) (rel mut)\n",
-		  tt_el->thead_cnt, this_th_nbr, __func__);
+		  tt_el->thead_cnt, tt_el->thread_idx, __func__);
 
 	tt_el->running = false;
 	tt_el->state = ABORTED;
@@ -183,7 +183,7 @@ static void nct_wait_until_allowed(struct threads_table_el *tt_el, int this_th_n
 	}
 
 	if (tt_el->state == ABORTING) {
-		abort_tail(tt_el, this_th_nbr);
+		abort_tail(tt_el);
 	}
 
 	tt_el->running = true;
@@ -236,7 +236,7 @@ void nct_swap_threads(void *this_arg, int next_allowed_thread_nbr)
 	if (tt_el->state == ABORTING) { /* We had set ourself as aborted => let's exit now */
 		NCT_DEBUG("Thread [%i] %i: %s: Aborting curr.\n",
 			  tt_el->thead_cnt, this_th_nbr, __func__);
-		abort_tail(tt_el, this_th_nbr);
+		abort_tail(tt_el);
 	} else {
 		nct_wait_until_allowed(tt_el, this_th_nbr);
 	}
@@ -269,7 +269,7 @@ void nct_first_thread_start(void *this_arg, int next_allowed_thread_nbr)
 static void *nct_thread_starter(void *arg_el)
 {
 	struct threads_table_el *tt_el = (struct threads_table_el *)arg_el;
-	struct nct_status_t *this = tt_el->nct_status;
+	const struct nct_status_t *this = tt_el->nct_status;
 
 	int thread_idx = tt_el->thread_idx;
 
