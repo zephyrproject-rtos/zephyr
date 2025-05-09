@@ -39,7 +39,8 @@ void soc_reset_hook(void)
  */
 DT_FOREACH_STATUS_OKAY(nxp_lpspi, FLEXCOMM_CHECK)
 
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MCXN947_CPU0)
+#if defined(CONFIG_SECOND_CORE_MCUX) &&                                                            \
+	(defined(CONFIG_SOC_MCXN947_CPU0) || defined(CONFIG_SOC_MCXN547_CPU0))
 
 /* This function is also called at deep sleep resume. */
 static int second_core_boot(void)
@@ -47,8 +48,9 @@ static int second_core_boot(void)
 	/* Configure CPU1 TrustZone access level before CPU1 is enabled */
 	AHBSC->MASTER_SEC_LEVEL |=
 		AHBSC_MASTER_SEC_LEVEL_CPU1(CONFIG_SECOND_CORE_MCUX_ACCESS_LEVEL);
-	AHBSC->MASTER_SEC_ANTI_POL_REG = (~AHBSC->MASTER_SEC_LEVEL &
-		~AHBSC_MASTER_SEC_ANTI_POL_REG_MASTER_SEC_LEVEL_ANTIPOL_LOCK_MASK) |
+	AHBSC->MASTER_SEC_ANTI_POL_REG =
+		(~AHBSC->MASTER_SEC_LEVEL &
+		 ~AHBSC_MASTER_SEC_ANTI_POL_REG_MASTER_SEC_LEVEL_ANTIPOL_LOCK_MASK) |
 		AHBSC_MASTER_SEC_ANTI_POL_REG_MASTER_SEC_LEVEL_ANTIPOL_LOCK(2);
 
 	/* Boot source for Core 1 from flash */
