@@ -434,13 +434,13 @@
 
 		octospi1: spi@44021000 {
 			compatible = "st,stm32-ospi";
-			reg = <0x44021000 0x400>;
+			reg = <0x44021000 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>,
 					<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
