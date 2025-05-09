@@ -136,16 +136,6 @@ static int lp50xx_set_brightness(const struct device *dev,
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
 
-static int lp50xx_on(const struct device *dev, uint32_t led)
-{
-	return lp50xx_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static int lp50xx_off(const struct device *dev, uint32_t led)
-{
-	return lp50xx_set_brightness(dev, led, 0);
-}
-
 static int lp50xx_set_color(const struct device *dev, uint32_t led,
 			    uint8_t num_colors, const uint8_t *color)
 {
@@ -350,8 +340,6 @@ static int lp50xx_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(led, lp50xx_led_api) = {
-	.on		= lp50xx_on,
-	.off		= lp50xx_off,
 	.get_info	= lp50xx_get_info,
 	.set_brightness	= lp50xx_set_brightness,
 	.set_color	= lp50xx_set_color,

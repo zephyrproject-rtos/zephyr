@@ -65,18 +65,6 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 	return 0;
 }
 
-static inline int lp5569_led_on(const struct device *dev, uint32_t led)
-{
-	/* Set LED brightness to 100 % */
-	return lp5569_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static inline int lp5569_led_off(const struct device *dev, uint32_t led)
-{
-	/* Set LED brightness to 0 % */
-	return lp5569_led_set_brightness(dev, led, 0);
-}
-
 static int lp5569_write_channels(const struct device *dev, uint32_t start_channel,
 				 uint32_t num_channels, const uint8_t *buf)
 {
@@ -185,8 +173,6 @@ static int lp5569_pm_action(const struct device *dev, enum pm_device_action acti
 
 static DEVICE_API(led, lp5569_led_api) = {
 	.set_brightness = lp5569_led_set_brightness,
-	.on = lp5569_led_on,
-	.off = lp5569_led_off,
 	.write_channels = lp5569_write_channels,
 };
 
