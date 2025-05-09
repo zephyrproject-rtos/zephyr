@@ -95,25 +95,25 @@
 
 		octospi1: spi@52005000 {
 			compatible = "st,stm32-ospi";
-			reg = <0x52005000 0x1000>;
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		octospi2: spi@5200a000 {
 			compatible = "st,stm32-ospi";
-			reg = <0x5200a000 0x1000>;
+			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 19U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
