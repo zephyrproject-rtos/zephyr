@@ -359,6 +359,36 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 #include <zephyr/syscalls/k_event_wait_all_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+uint32_t z_impl_k_event_wait_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	return k_event_wait_internal(event, events, K_EVENT_WAIT_REMOVE, timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_safe(struct k_event *event, uint32_t events,
+				  k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_safe(event, events, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_safe_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint32_t z_impl_k_event_wait_all_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	return k_event_wait_internal(event, events, K_EVENT_WAIT_ALL | K_EVENT_WAIT_REMOVE,
+				     timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_all_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_all_safe(event, events, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_all_safe_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 #ifdef CONFIG_OBJ_CORE_EVENT
 static int init_event_obj_core_list(void)
 {
