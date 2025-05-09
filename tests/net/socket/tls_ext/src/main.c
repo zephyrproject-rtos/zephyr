@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#include <mbedtls/x509.h>
+
 LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 /**
@@ -147,6 +149,7 @@ static const unsigned char client_privkey[] = {
 static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 {
 	const int server_fd = POINTER_TO_INT(arg0);
+	const int echo = POINTER_TO_INT(arg1);
 
 	int r;
 	int client_fd;
@@ -176,22 +179,27 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 	NET_DBG("accepted connection from [%s]:%d as fd %d",
 		addrstr, ntohs(sa.sin_port), client_fd);
 
-	NET_DBG("calling recv()");
-	r = recv(client_fd, addrstr, sizeof(addrstr), 0);
-	zassert_not_equal(r, -1, "recv() failed (%d)", errno);
-	zassert_equal(r, SECRET_SIZE, "expected: %zu actual: %d", SECRET_SIZE, r);
+	if (echo) {
+		NET_DBG("calling recv()");
+		r = recv(client_fd, addrstr, sizeof(addrstr), 0);
+		zassert_not_equal(r, -1, "recv() failed (%d)", errno);
+		zassert_equal(r, SECRET_SIZE, "expected: %zu actual: %d",
+			      SECRET_SIZE, r);
 
-	NET_DBG("calling send()");
-	r = send(client_fd, SECRET, SECRET_SIZE, 0);
-	zassert_not_equal(r, -1, "send() failed (%d)", errno);
-	zassert_equal(r, SECRET_SIZE, "expected: %zu actual: %d", SECRET_SIZE, r);
+		NET_DBG("calling send()");
+		r = send(client_fd, SECRET, SECRET_SIZE, 0);
+		zassert_not_equal(r, -1, "send() failed (%d)", errno);
+		zassert_equal(r, SECRET_SIZE, "expected: %zu actual: %d",
+			      SECRET_SIZE, r);
+	}
 
 	NET_DBG("closing client fd");
 	r = close(client_fd);
 	zassert_not_equal(r, -1, "close() failed on the server fd (%d)", errno);
 }
 
-static int test_configure_server(k_tid_t *server_thread_id, int peer_verify)
+static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
+				 int echo)
 {
 	static const sec_tag_t server_tag_list_verify_none[] = {
 		SERVER_CERTIFICATE_TAG,
@@ -273,7 +281,8 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify)
 	NET_DBG("Creating server thread");
 	*server_thread_id = k_thread_create(&server_thread, server_stack,
 					    STACK_SIZE, server_thread_fn,
-					    INT_TO_POINTER(server_fd), NULL, NULL,
+					    INT_TO_POINTER(server_fd),
+					    INT_TO_POINTER(echo), NULL,
 					    K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
 
 	r = k_sem_take(&server_sem, K_MSEC(TIMEOUT));
@@ -282,7 +291,8 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify)
 	return server_fd;
 }
 
-static int test_configure_client(struct sockaddr_in *sa, bool own_cert)
+static int test_configure_client(struct sockaddr_in *sa, bool own_cert,
+				 const char *hostname)
 {
 	static const sec_tag_t client_tag_list_verify_none[] = {
 		CA_CERTIFICATE_TAG,
@@ -319,8 +329,8 @@ static int test_configure_client(struct sockaddr_in *sa, bool own_cert)
 		       sec_tag_list, sec_tag_list_size);
 	zassert_not_equal(r, -1, "failed to set TLS_SEC_TAG_LIST (%d)", errno);
 
-	r = setsockopt(client_fd, SOL_TLS, TLS_HOSTNAME, "localhost",
-			       sizeof("localhost"));
+	r = setsockopt(client_fd, SOL_TLS, TLS_HOSTNAME, hostname,
+		       strlen(hostname) + 1);
 	zassert_not_equal(r, -1, "failed to set TLS_HOSTNAME (%d)", errno);
 
 	sa->sin_family = AF_INET;
@@ -370,12 +380,13 @@ static void test_common(int peer_verify)
 	/*
 	 * Server socket setup
 	 */
-	server_fd = test_configure_server(&server_thread_id, peer_verify);
+	server_fd = test_configure_server(&server_thread_id, peer_verify, true);
 
 	/*
 	 * Client socket setup
 	 */
-	client_fd = test_configure_client(&sa, peer_verify != TLS_PEER_VERIFY_NONE);
+	client_fd = test_configure_client(&sa, peer_verify != TLS_PEER_VERIFY_NONE,
+					  "localhost");
 
 	/*
 	 * The main part of the test
@@ -416,6 +427,50 @@ ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_optional)
 ZTEST(net_socket_tls_api_extension, test_tls_peer_verify_required)
 {
 	test_common(TLS_PEER_VERIFY_REQUIRED);
+}
+
+static void test_tls_cert_verify_result_opt_common(uint32_t expect)
+{
+	int server_fd, client_fd, ret;
+	k_tid_t server_thread_id;
+	struct sockaddr_in sa;
+	uint32_t optval;
+	socklen_t optlen = sizeof(optval);
+	const char *hostname = "localhost";
+	int peer_verify = TLS_PEER_VERIFY_OPTIONAL;
+
+	if (expect == MBEDTLS_X509_BADCERT_CN_MISMATCH) {
+		hostname = "dummy";
+	}
+
+	server_fd = test_configure_server(&server_thread_id, TLS_PEER_VERIFY_NONE,
+					  false);
+	client_fd = test_configure_client(&sa, false, hostname);
+
+	ret = zsock_setsockopt(client_fd, SOL_TLS, TLS_PEER_VERIFY,
+			       &peer_verify, sizeof(peer_verify));
+	zassert_ok(ret, "failed to set TLS_PEER_VERIFY (%d)", errno);
+
+	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	zassert_not_equal(ret, -1, "failed to connect (%d)", errno);
+
+	ret = zsock_getsockopt(client_fd, SOL_TLS, TLS_CERT_VERIFY_RESULT,
+			       &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, expect, "getsockopt got invalid verify result %d",
+		      optval);
+
+	test_shutdown(client_fd, server_fd, server_thread_id);
+}
+
+ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_result_opt_ok)
+{
+	test_tls_cert_verify_result_opt_common(0);
+}
+
+ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_result_opt_bad_cn)
+{
+	test_tls_cert_verify_result_opt_common(MBEDTLS_X509_BADCERT_CN_MISMATCH);
 }
 
 static void *setup(void)
