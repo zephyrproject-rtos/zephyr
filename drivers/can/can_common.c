@@ -158,7 +158,8 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
 	uint16_t tseg1_max = max->phase_seg1 + max->prop_seg;
 	uint16_t tseg1_min = min->phase_seg1 + min->prop_seg;
 	uint32_t sample_pnt_res;
-	uint16_t tseg1, tseg2;
+	uint16_t tseg1;
+	uint16_t tseg2;
 
 	/* Calculate number of time quanta in tseg2 for given sample point */
 	tseg2 = total_tq - (total_tq * sample_pnt) / 1000;
