@@ -11,7 +11,8 @@
 static ALWAYS_INLINE void pin_delay_asm(uint32_t delay)
 {
 #if defined(CONFIG_CPU_CORTEX_M)
-	__asm volatile ("movs r3, %[p]\n"
+	__asm volatile (".syntax unified\n"
+			"movs r3, %[p]\n"
 			".start_%=:\n"
 			"subs r3, #1\n"
 			"bne .start_%=\n"
