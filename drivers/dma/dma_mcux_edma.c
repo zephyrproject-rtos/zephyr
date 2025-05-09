@@ -659,8 +659,9 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 
 		/* Previous TCD index in circular list */
 		pre_idx = data->transfer_settings.write_idx - 1;
-		if (pre_idx >= CONFIG_DMA_TCD_QUEUE_SIZE)
+		if (pre_idx >= CONFIG_DMA_TCD_QUEUE_SIZE) {
 			pre_idx = CONFIG_DMA_TCD_QUEUE_SIZE - 1;
+		}
 
 		/* Configure a TCD for the transfer */
 		tcd = &(DEV_CFG(dev)->tcdpool[channel][data->transfer_settings.write_idx]);

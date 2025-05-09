@@ -82,12 +82,13 @@ static int dma_nxp_sdma_consume(struct sdma_channel_data *chan_data, uint32_t by
 	chan_data->stat.read_position += bytes;
 	chan_data->stat.read_position %= chan_data->capacity;
 
-	if (chan_data->stat.read_position > chan_data->stat.write_position)
+	if (chan_data->stat.read_position > chan_data->stat.write_position) {
 		chan_data->stat.free = chan_data->stat.read_position -
 			chan_data->stat.write_position;
-	else
+	} else {
 		chan_data->stat.free = chan_data->capacity -
 			(chan_data->stat.write_position - chan_data->stat.read_position);
+	}
 
 	chan_data->stat.pending_length = chan_data->capacity - chan_data->stat.free;
 
@@ -102,12 +103,13 @@ static int dma_nxp_sdma_produce(struct sdma_channel_data *chan_data, uint32_t by
 	chan_data->stat.write_position += bytes;
 	chan_data->stat.write_position %= chan_data->capacity;
 
-	if (chan_data->stat.write_position > chan_data->stat.read_position)
+	if (chan_data->stat.write_position > chan_data->stat.read_position) {
 		chan_data->stat.pending_length = chan_data->stat.write_position -
 			chan_data->stat.read_position;
-	else
+	} else {
 		chan_data->stat.pending_length = chan_data->capacity -
 			(chan_data->stat.read_position - chan_data->stat.write_position);
+	}
 
 	chan_data->stat.free = chan_data->capacity - chan_data->stat.pending_length;
 
@@ -389,13 +391,15 @@ static int dma_nxp_sdma_reload(const struct device *dev, uint32_t channel, uint3
 
 	chan_data = &dev_data->chan[channel];
 
-	if (!size)
+	if (!size) {
 		return 0;
+	}
 
-	if (chan_data->direction == MEMORY_TO_PERIPHERAL)
+	if (chan_data->direction == MEMORY_TO_PERIPHERAL) {
 		dma_nxp_sdma_produce(chan_data, size);
-	else
+	} else {
 		dma_nxp_sdma_consume(chan_data, size);
+	}
 
 	return 0;
 }
@@ -424,11 +428,13 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 	struct sdma_dev_data *dev_data = dev->data;
 
 	/* chan 0 is reserved for boot channel */
-	if (chan_id == 0)
+	if (chan_id == 0) {
 		return false;
+	}
 
-	if (chan_id >= FSL_FEATURE_SDMA_MODULE_CHANNEL)
+	if (chan_id >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
 		return false;
+	}
 
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;

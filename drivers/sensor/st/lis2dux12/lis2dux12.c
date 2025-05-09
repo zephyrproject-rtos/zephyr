@@ -173,8 +173,9 @@ static int lis2dux12_sample_fetch(const struct device *dev, enum sensor_channel 
 #endif
 	case SENSOR_CHAN_ALL:
 		ret = chip_api->sample_fetch_accel(dev);
-		if (ret != 0)
+		if (ret != 0) {
 			break;
+		}
 #if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
 		ret = chip_api->sample_fetch_temp(dev);
 #endif
