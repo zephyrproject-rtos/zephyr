@@ -281,3 +281,118 @@ Additional tips:
   separate ``west global`` command since ``global`` already searches for the
   ``GTAGS`` file starting from your current working directory. This is why you
   need to run ``global`` from inside the workspace.
+
+.. _west-patch:
+
+Working with patches: ``west patch``
+************************************
+
+The ``patch`` command allows users to apply patches to Zephyr or Zephyr modules
+in a controlled manner that makes automation and tracking easier.
+
+There are several sub-commands available:
+- ``apply``: apply a patch to the Zephyr module or a module in the workspace.
+- ``clean``: remove all patches that have been applied to the Zephyr module or a module in the workspace.
+- ``list``: list all patches that have been applied to the Zephyr module or a module in the workspace.
+- ``gh-fetch``: fetch patches from GitHub.
+
+Patches are described in a YAML file that is typically located in the ``zephyr/patches.yml`` file.
+
+A typical use case is when a project uses the :ref:`T2 Star Topology <west-t2>`
+where an external application is the manifest repository.
+
+.. code-block:: none
+  :alt: layout of a typical T2 Star Topology workspace
+
+   west-workspace/
+   ├── application/
+        ...
+   ├── west.yml
+   └── zephyr
+       ├── module.yml
+       ├── patches
+       │   └── zephyr
+       │       └── my-zephyr-change.patch
+       └── patches.yml
+
+In this example, the ``west.yml`` file pins to a specific revision of Zephyr (``v4.1.0``).
+However, the application requires a change to main Zephyr project code in order to meet
+requirements.
+
+The ``patches.yml`` file can be used to keep metadata about the patch, to track its upstreaming
+status, and makes it very easy to remove patches that are no longer necessary. This makes it
+possible to maintain a tracked set of changes against specific revisions of zephyr modules
+without maintaining separate forks.
+
+.. code-block:: yaml
+  :alt: example of a ``patches.yml`` file
+
+    patches:
+      - path: zephyr/my-zephyr-change.patch
+        sha256sum: c676cd376a4d19dc95ac4e44e179c253853d422b758688a583bb55c3c9137035
+        module: zephyr
+        author: Obi-Wan Kenobi
+        email: obiwan@jedi.org
+        date: 2025-05-04
+        upstreamable: false
+        comments: |
+          An application-specific change we need for Zephyr.
+      - path: bootloader/mcuboot/my-tweak-for-mcuboot.patch
+        sha256sum: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        module: zephyr
+        author: Obi-Wan Kenobi
+        email: obiwan@jedi.org
+        date: 2025-05-04
+        merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/<pr-number>
+        issue: https://github.com/zephyrproject-rtos/zephyr/issues/<issue-number>
+        merge-status: true
+        merge-commit: 1234567890abcdef1234567890abcdef12345678
+        merge-date: 2025-05-06
+        apply-command: git apply
+        comments: |
+          A change to mcuboot that has been merged already. We can remove this
+          patch when we update to the next release.
+
+Patches can easily be applied in an automated manner. For example:
+
+   .. code-block:: bash
+    :alt: a possibly automated workflow that uses west patch
+
+    west init -m <manifest repo> <workspace>
+    cd <workspace>
+    west update
+    west patch apply
+
+When it is time to update to a newer version of Zephyr, the ``west.yml`` file can be updated to
+point at e.g. ``v4.2.0``, and then the following commands can be run.
+
+   .. code-block:: bash
+    :alt: re-applying patches after a Zephyr update with west patch
+
+    west patch clean
+    west update
+    west patch apply -r # rolls-back all patches if one does not apply cleanly
+
+
+It is also possible to use ``west patch gh-fetch`` to fetch patches from a GitHub pull request and
+automatically create or update ``patches.yml`` file along with all local patch files.
+
+This can be useful when the author already has a number of changes captured in existing upstream
+pull requests
+
+.. code-block:: bash
+  :alt: fetching patches from GitHub pull request
+
+    west patch gh-fetch -o zephyrproject-rtos -r zephyr -pr <pr-number> -m zephyr -s
+
+The above command will create the directory and file structure below.
+
+.. code-block:: none
+  :alt: example of a ``patches.yml`` file for a pull-request
+
+    zephyr
+    ├── patches
+    │   ├── first-commit-from-pr.patch
+    │   ├── second-commit-from-pr.patch
+    │   └── third-commit-from-pr.patch
+    └── patches.yml
