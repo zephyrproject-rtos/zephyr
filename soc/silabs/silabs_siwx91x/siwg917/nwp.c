@@ -33,7 +33,9 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		.region_code = DEFAULT_REGION,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
+			.feature_bit_map = SL_SI91X_FEAT_SECURITY_PSK | SL_SI91X_FEAT_WPS_DISABLE |
+					   SL_SI91X_FEAT_AGGREGATION |
+					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
 			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
