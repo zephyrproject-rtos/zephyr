@@ -261,7 +261,6 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 	struct can_timing tmp_res = { 0 };
 	int err_min = INT_MAX;
 	uint32_t core_clock;
-	int prescaler;
 	int err;
 
 	if (bitrate == 0 || sample_pnt >= 1000) {
@@ -277,7 +276,7 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		sample_pnt = sample_point_for_bitrate(bitrate);
 	}
 
-	for (prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
+	for (int prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
 	     prescaler <= max->prescaler;
 	     prescaler++) {
 
