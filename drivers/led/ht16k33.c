@@ -305,7 +305,7 @@ static int ht16k33_init(const struct device *dev)
 	dev_data->min_period = 0U;
 	dev_data->max_period = 2000U;
 	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
+	dev_data->max_brightness = LED_BRIGTHNESS_MAX;
 
 	/* System oscillator on */
 	cmd[0] = HT16K33_CMD_SYSTEM_SETUP | HT16K33_OPT_S;

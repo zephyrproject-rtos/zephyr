@@ -49,12 +49,12 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 	uint8_t val;
 	int ret;
 
-	if (led >= LP5569_NUM_LEDS || brightness > 100) {
+	if (led >= LP5569_NUM_LEDS || brightness > LED_BRIGTHNESS_MAX) {
 		return -EINVAL;
 	}
 
 	/* Map 0-100 % to 0-255 pwm register value */
-	val = brightness * 255 / 100;
+	val = brightness * 255 / LED_BRIGTHNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_LED0_PWM + led, val);
 	if (ret < 0) {
@@ -68,7 +68,7 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 static inline int lp5569_led_on(const struct device *dev, uint32_t led)
 {
 	/* Set LED brightness to 100 % */
-	return lp5569_led_set_brightness(dev, led, 100);
+	return lp5569_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
 }
 
 static inline int lp5569_led_off(const struct device *dev, uint32_t led)

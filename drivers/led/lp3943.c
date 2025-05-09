@@ -264,7 +264,7 @@ static int lp3943_led_init(const struct device *dev)
 	dev_data->min_period = 0U;
 	dev_data->max_period = 1600U;
 	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
+	dev_data->max_brightness = LED_BRIGTHNESS_MAX;
 
 	return 0;
 }
