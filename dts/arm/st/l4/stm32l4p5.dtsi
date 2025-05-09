@@ -379,7 +379,7 @@
 
 		octospi1: spi@a0001000 {
 			compatible = "st,stm32-ospi";
-			reg = <0xa0001000 0x400>;
+			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <71 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>,
@@ -387,13 +387,13 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		octospi2: spi@a0001400 {
 			compatible = "st,stm32-ospi";
-			reg = <0xa0001400 0x400>;
+			reg = <0xa0001400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 9U)>,
@@ -401,7 +401,7 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
