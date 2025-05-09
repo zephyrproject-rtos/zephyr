@@ -128,8 +128,8 @@ static int kb1200_uart_fifo_fill(const struct device *dev, const uint8_t *tx_dat
 
 	while ((size - tx_bytes) > 0) {
 		/* Check Tx FIFO not Full*/
-		while (config->ser->SERSTS & SERSTS_TX_FULL)
-			;
+		while (config->ser->SERSTS & SERSTS_TX_FULL) {
+		}
 		/* Put a character into	Tx FIFO	*/
 		config->ser->SERTBUF = tx_data[tx_bytes];
 		tx_bytes++;
@@ -276,7 +276,6 @@ static void kb1200_uart_poll_out(const struct device *dev, unsigned char c)
 
 	/* Wait	Tx FIFO	not Full*/
 	while (config->ser->SERSTS & SER_TxFull) {
-		;
 	}
 	/* Put a character into	Tx FIFO */
 	config->ser->SERTBUF = c;
