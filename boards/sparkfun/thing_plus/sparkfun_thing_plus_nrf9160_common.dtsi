@@ -124,7 +124,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&i2c1 {
+qwiic_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 
