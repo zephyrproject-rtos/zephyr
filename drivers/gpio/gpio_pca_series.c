@@ -1684,6 +1684,11 @@ static int gpio_pca_series_init(const struct device *dev)
 		LOG_ERR("i2c bus device not found");
 		goto out_bus;
 	}
+
+	/** device reset */
+	gpio_pca_series_reset(dev);
+	LOG_DBG("device reset done");
+
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
@@ -1701,10 +1706,6 @@ static int gpio_pca_series_init(const struct device *dev)
 		goto out;
 	}
 	LOG_DBG("cache init done");
-
-	/** device reset */
-	gpio_pca_series_reset(dev);
-	LOG_DBG("device reset done");
 
 	/** configure interrupt */
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
