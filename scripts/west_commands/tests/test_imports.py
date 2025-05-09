@@ -49,6 +49,7 @@ def test_runner_imports():
         'rfp',
         'silabs_commander',
         'spi_burn',
+        'spsdk',
         'stm32cubeprogrammer',
         'stm32flash',
         'sy1xx',
