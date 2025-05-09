@@ -27,6 +27,8 @@ static void can_tx_default_cb(const struct device *dev, int error, void *user_da
 {
 	struct can_tx_default_cb_ctx *ctx = user_data;
 
+	ARG_UNUSED(dev);
+
 	ctx->status = error;
 	k_sem_give(&ctx->done);
 }
