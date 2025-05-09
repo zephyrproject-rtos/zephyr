@@ -62,6 +62,7 @@ endif
 
 rsource "Kconfig.amp"
 rsource "Kconfig.console"
+rsource "Kconfig.efuse"
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
