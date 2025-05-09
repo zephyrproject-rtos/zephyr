@@ -7,6 +7,9 @@ compatible: "ti,ads1119"
 
 include: [adc-controller.yaml, i2c-device.yaml]
 
+io-channel-cells:
+  - input
+
 properties:
   "#io-channel-cells":
     const: 1
