@@ -4590,6 +4590,9 @@ TDK Sensors:
   status: maintained
   maintainers:
     - RobinKastberg
+  collaborators:
+    - bjorniuppsala
+    - LoveKarlsson
   files:
     - cmake/*/iar/
     - include/zephyr/toolchain/iar.h
