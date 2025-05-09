@@ -1252,6 +1252,7 @@ struct shm_reg {
 #define NPCM_SMC_CTL_ACC_IE              5
 #define NPCM_SMC_CTL_HSEM_IMA_IE         6
 #define NPCM_SMC_CTL_HOSTWAIT            7
+#define NPCM_SMC_CTL2_HSEM5_IE           4
 #define NPCM_FLASH_SIZE_STALL_HOST       6
 #define NPCM_FLASH_SIZE_RD_BURST         7
 #define NPCM_WIN_SIZE_RWIN1_SIZE_FIELD   FIELD(0, 4)
