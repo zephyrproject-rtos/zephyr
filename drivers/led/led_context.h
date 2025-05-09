@@ -25,10 +25,6 @@ struct led_data {
 	uint32_t min_period;
 	/* Maximum acceptable LED blinking time period (in ms) */
 	uint32_t max_period;
-	/* Minimum acceptable LED brightness value */
-	uint16_t min_brightness;
-	/* Maximum acceptable LED brightness value */
-	uint16_t max_brightness;
 };
 
 #ifdef __cplusplus
