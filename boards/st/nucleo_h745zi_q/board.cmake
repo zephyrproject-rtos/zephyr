@@ -12,5 +12,5 @@ endif()
 
 # keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
-include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

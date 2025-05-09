@@ -79,6 +79,10 @@ Boards
 * Espressif boards ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover`` shared almost identical features.
   The differences are covered by the Kconfig options so both boards were merged into ``esp32_devkitc``.
 
+* STM32 boards should now add OpenOCD programming support by including ``openocd-stm32.board.cmake``
+  instead of ``openocd.board.cmake``. The ``openocd-stm32.board.cmake`` file extends the default
+  OpenOCD runner with manufacturer-specific configuration like STM32 mass erase commands.
+
 Device Drivers and Devicetree
 *****************************
 
