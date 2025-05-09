@@ -124,16 +124,6 @@ static int is31fl3216a_led_set_brightness(const struct device *dev,
 	return is31fl3216a_update_pwm(&config->i2c);
 }
 
-static int is31fl3216a_led_on(const struct device *dev, uint32_t led)
-{
-	return is31fl3216a_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static int is31fl3216a_led_off(const struct device *dev, uint32_t led)
-{
-	return is31fl3216a_led_set_brightness(dev, led, 0);
-}
-
 static int is31fl3216a_init_registers(const struct i2c_dt_spec *i2c)
 {
 	int i;
@@ -224,8 +214,6 @@ static int is31fl3216a_init(const struct device *dev)
 
 static DEVICE_API(led, is31fl3216a_led_api) = {
 	.set_brightness = is31fl3216a_led_set_brightness,
-	.on = is31fl3216a_led_on,
-	.off = is31fl3216a_led_off,
 	.write_channels = is31fl3216a_led_write_channels
 };
 

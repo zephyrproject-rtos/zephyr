@@ -68,16 +68,6 @@ static int led_pwm_set_brightness(const struct device *dev,
 			(uint32_t) ((uint64_t) dt_led->period * value / LED_BRIGTHNESS_MAX));
 }
 
-static int led_pwm_on(const struct device *dev, uint32_t led)
-{
-	return led_pwm_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static int led_pwm_off(const struct device *dev, uint32_t led)
-{
-	return led_pwm_set_brightness(dev, led, 0);
-}
-
 static int led_pwm_init(const struct device *dev)
 {
 	const struct led_pwm_config *config = dev->config;
@@ -125,8 +115,6 @@ static int led_pwm_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(led, led_pwm_api) = {
-	.on		= led_pwm_on,
-	.off		= led_pwm_off,
 	.blink		= led_pwm_blink,
 	.set_brightness	= led_pwm_set_brightness,
 };

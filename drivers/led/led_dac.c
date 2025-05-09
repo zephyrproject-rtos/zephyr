@@ -49,31 +49,7 @@ static int led_dac_set_brightness(const struct device *dev, uint32_t led, uint8_
 	return led_dac_set_raw(dev, led, value);
 }
 
-static inline int led_dac_on(const struct device *dev, uint32_t led)
-{
-	const struct led_dac_config *config = dev->config;
-
-	if (led >= config->num_leds) {
-		return -EINVAL;
-	}
-
-	return led_dac_set_raw(dev, led, config->leds[led].dac_max_brightness);
-}
-
-static inline int led_dac_off(const struct device *dev, uint32_t led)
-{
-	const struct led_dac_config *config = dev->config;
-
-	if (led >= config->num_leds) {
-		return -EINVAL;
-	}
-
-	return led_dac_set_raw(dev, led, 0);
-}
-
 static DEVICE_API(led, led_dac_api) = {
-	.on = led_dac_on,
-	.off = led_dac_off,
 	.set_brightness = led_dac_set_brightness,
 };
 

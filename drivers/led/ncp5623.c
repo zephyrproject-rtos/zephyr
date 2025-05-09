@@ -120,16 +120,6 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 	return ret;
 }
 
-static inline int ncp5623_led_on(const struct device *dev, uint32_t led)
-{
-	return ncp5623_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
-}
-
-static inline int ncp5623_led_off(const struct device *dev, uint32_t led)
-{
-	return ncp5623_set_brightness(dev, led, 0);
-}
-
 static int ncp5623_led_init(const struct device *dev)
 {
 	const struct ncp5623_config *config = dev->config;
@@ -186,8 +176,6 @@ static int ncp5623_led_init(const struct device *dev)
 
 static DEVICE_API(led, ncp5623_led_api) = {
 	.set_brightness = ncp5623_set_brightness,
-	.on = ncp5623_led_on,
-	.off = ncp5623_led_off,
 	.get_info = ncp5623_get_info,
 	.set_color = ncp5623_set_color,
 };
