@@ -151,6 +151,48 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Zephyr board options
+====================
+
+Zephyr supports building both Secure and Non-Secure firmware for
+STM32WBA65I-DK1 board where TF-M is the embedded Secure firmware
+and Zephyr the Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++---------------------------------+------------------------------------------+
+| BOARD                           | Description                              |
++=================================+==========================================+
+| stm32wba65i_dk1                 | For building TrustZone Disabled firmware |
++---------------------------------+------------------------------------------+
+| stm32wba65i_dk1/stm32wba65xx/ns | For building Non-Secure firmware         |
++---------------------------------+------------------------------------------+
+
+Here are the instructions to build Zephyr with a non-secure configuration,
+using :zephyr:code-sample:`tfm_ipc` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/tfm_ipc
+   :board: stm32wba65i_dk1/stm32wba65xx/ns
+   :goals: build
+
+Once done, before flashing, you need to first run a generated script that
+will set platform Option Bytes config and erase internal flash (among others,
+Option Bit TZEN will be set).
+
+.. code-block:: bash
+
+   $ ./build/tfm/api_ns/regression.sh
+   $ west flash
+
+Please note that, after having programmed the board for a TrustZone enabled system
+(e.g. with ``./build/tfm/api_ns/regression.sh``), the SoC TZEN Option Byte is enabled
+and you will need to operate specific sequence to disable this TZEN Option Byte
+configuration to get your board back in normal state for booting with a TrustZone
+disabled system (e.g. without TF-M support).
+You can use STM32CubeProgrammer_ to disable the SoC TZEN Option Byte config. Refer
+to `How to disable STM32WBA65 TZEN Option Byte`_.
+
 Connections and IOs
 ===================
 
@@ -230,3 +272,6 @@ You can debug an application in the usual way using OpenOCD. Here is an example 
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _How to disable STM32WBA65 TZEN Option Byte:
+   https://wiki.st.com/stm32mcu/wiki/Connectivity:STM32WBA_BLE_%26_TrustZone#How_to_disable_the_TrustZone
