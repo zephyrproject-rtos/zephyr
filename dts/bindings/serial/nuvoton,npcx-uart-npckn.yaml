@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton npcx serial uart for npckn variant
+
+compatible: "nuvoton,npcx-uart-npckn"
+
+include: nuvoton,npcx-uart.yaml

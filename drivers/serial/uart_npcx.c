@@ -167,7 +167,11 @@ static int uart_npcx_rx_fifo_available(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* True if at least one byte is in the Rx FIFO */
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return inst->URXFLV != 0;
+#else
 	return IS_BIT_SET(inst->UFRSTS, NPCX_UFRSTS_RFIFO_NEMPTY_STS);
+#endif
 }
 
 static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
@@ -176,8 +180,12 @@ static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* Disable all Tx interrupts */
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UICTRL &= ~BIT(NPCX_UICTRL_ETI);
+#else
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) | BIT(NPCX_UFTCTL_TEMPTY_EN) |
 			  BIT(NPCX_UFTCTL_NXMIP_EN));
+#endif
 }
 
 static void uart_npcx_clear_rx_fifo(const struct device *dev)
@@ -201,7 +209,11 @@ static int uart_npcx_tx_fifo_ready(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* True if the Tx FIFO is not completely full */
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return inst->UTXFLV != NPCK_SZ_UART_FIFO;
+#else
 	return !(GET_FIELD(inst->UFTSTS, NPCX_UFTSTS_TEMPTY_LVL) == 0);
+#endif
 }
 
 static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
@@ -246,22 +258,32 @@ static void uart_npcx_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
+
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UICTRL |= BIT(NPCX_UICTRL_ETI);
+#else
 	struct uart_npcx_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	inst->UFTCTL |= BIT(NPCX_UFTCTL_TEMPTY_EN);
 	k_spin_unlock(&data->lock, key);
+#endif
 }
 
 static void uart_npcx_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
+
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UICTRL &= ~(BIT(NPCX_UICTRL_ETI));
+#else
 	struct uart_npcx_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_EN));
 	k_spin_unlock(&data->lock, key);
+#endif
 }
 
 static bool uart_npcx_irq_tx_is_enabled(const struct device *dev)
@@ -269,7 +291,11 @@ static bool uart_npcx_irq_tx_is_enabled(const struct device *dev)
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
 
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_ETI);
+#else
 	return IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_TEMPTY_EN);
+#endif
 }
 
 static int uart_npcx_irq_tx_ready(const struct device *dev)
@@ -283,7 +309,11 @@ static int uart_npcx_irq_tx_complete(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* Tx FIFO is empty or last byte is sending */
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return inst->UTXFLV == 0;
+#else
 	return IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP);
+#endif
 }
 
 static void uart_npcx_irq_rx_enable(const struct device *dev)
@@ -291,7 +321,11 @@ static void uart_npcx_irq_rx_enable(const struct device *dev)
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
 
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UICTRL |= BIT(NPCX_UICTRL_ERI);
+#else
 	inst->UFRCTL |= BIT(NPCX_UFRCTL_RNEMPTY_EN);
+#endif
 }
 
 static void uart_npcx_irq_rx_disable(const struct device *dev)
@@ -299,7 +333,11 @@ static void uart_npcx_irq_rx_disable(const struct device *dev)
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
 
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UICTRL &= ~(BIT(NPCX_UICTRL_ERI));
+#else
 	inst->UFRCTL &= ~(BIT(NPCX_UFRCTL_RNEMPTY_EN));
+#endif
 }
 
 static bool uart_npcx_irq_rx_is_enabled(const struct device *dev)
@@ -307,7 +345,11 @@ static bool uart_npcx_irq_rx_is_enabled(const struct device *dev)
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
 
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_ERI);
+#else
 	return IS_BIT_SET(inst->UFRCTL, NPCX_UFRCTL_RNEMPTY_EN);
+#endif
 }
 
 static int uart_npcx_irq_rx_ready(const struct device *dev)
@@ -895,6 +937,7 @@ static void uart_npcx_isr(const struct device *dev)
 	}
 #endif
 
+#if !defined(CONFIG_UART_NPCX_FIFO_EX)
 #if defined(CONFIG_PM) || defined(CONFIG_UART_ASYNC_API)
 	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
 	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
@@ -914,6 +957,7 @@ static void uart_npcx_isr(const struct device *dev)
 		}
 #endif
 	}
+#endif
 #endif
 }
 #endif
@@ -1060,8 +1104,12 @@ static int uart_npcx_init(const struct device *dev)
 
 	/* Initialize UART FIFO if mode is interrupt driven */
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UFCTRL |= BIT(NPCK_FIFO_EN);
+#else
 	/* Enable the UART FIFO mode */
 	inst->UMDSL |= BIT(NPCX_UMDSL_FIFO_MD);
+#endif
 
 	/* Disable all UART tx FIFO interrupts */
 	uart_npcx_dis_all_tx_interrupts(dev);
