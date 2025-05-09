@@ -391,7 +391,7 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
 	int ret;
-	uint16_t start, end, h_idx;
+	uint16_t start, end;
 	const uint8_t *src;
 	bool first_cmd;
 	uint8_t param[4];
@@ -450,13 +450,20 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	src = buf;
 	first_cmd = true;
 
+#ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+	/* NXP DCNano LCDIF can handle non-contiguous buffer, no need to
+	 * send each line separately.
+	 */
+	rm67162_write_fb(dev, first_cmd, src,
+		desc->height * desc->width * data->bytes_per_pixel);
+#else
 	if (desc->pitch == desc->width) {
 		/* Buffer is contiguous, we can perform entire transfer */
 		rm67162_write_fb(dev, first_cmd, src,
 			desc->height * desc->width * data->bytes_per_pixel);
 	} else {
 		/* Buffer is not contiguous, we must write each line separately */
-		for (h_idx = 0; h_idx < desc->height; h_idx++) {
+		for (uint16_t h_idx = 0; h_idx < desc->height; h_idx++) {
 			rm67162_write_fb(dev, first_cmd, src,
 				desc->width * data->bytes_per_pixel);
 			first_cmd = false;
@@ -464,6 +471,7 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 			src += data->bytes_per_pixel * (desc->pitch - desc->width);
 		}
 	}
+#endif
 
 	return 0;
 }
