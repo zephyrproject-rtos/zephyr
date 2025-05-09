@@ -47,7 +47,7 @@ extern volatile irq_offload_routine_t offload_routine;
 /* Prefix. Indicates that this is an EXC_RETURN value.
  * This field reads as 0b11111111.
  */
-#define EXC_RETURN_INDICATOR_PREFIX            (0xFF << 24)
+#define EXC_RETURN_INDICATOR_PREFIX            (0xFFU << 24)
 /* bit[0]: Exception Secure. The security domain the exception was taken to. */
 #define EXC_RETURN_EXCEPTION_SECURE_Pos        0
 #define EXC_RETURN_EXCEPTION_SECURE_Msk        BIT(EXC_RETURN_EXCEPTION_SECURE_Pos)
