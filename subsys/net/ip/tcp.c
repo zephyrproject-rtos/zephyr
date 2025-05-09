@@ -4289,8 +4289,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				while (tcp_conn_close(conn, 0))
-					;
+				while (tcp_conn_close(conn, 0)) {
+				}
 				tcp_free(context);
 			}
 			tp_mem_stat();
