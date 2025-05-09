@@ -112,15 +112,21 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_RX)
 	__asm__ volatile ("brk");
+#elif defined(CONFIG_SOC_FAMILY_MAX32_RV32)
+	/* The MAX32 RV32 core does not trap on writes to
+	 * non-existent CSRs, so use a different illegal instruction
+	 * for this test.
+	 */
+	__asm__ volatile (".word 0");
 #elif defined(CONFIG_RISCV)
 	/* In riscv architecture, use an undefined
 	 * instruction to trigger illegal instruction on RISCV.
 	 */
 	__asm__ volatile ("unimp");
+#elif defined(CONFIG_ARC)
 	/* In arc architecture, SWI instruction is used
 	 * to trigger soft interrupt.
 	 */
-#elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
