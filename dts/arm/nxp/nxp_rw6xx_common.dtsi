@@ -202,6 +202,7 @@
 		reg = <0xe000 0x1000>;
 		interrupts = <0 0>;
 		status = "disabled";
+		power-domains = <&power_mode3_domain>;
 		clk-divider = <1>;
 	};
 
