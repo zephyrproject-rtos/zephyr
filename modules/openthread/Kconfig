@@ -6,7 +6,6 @@ config OPENTHREAD
 	imply FLASH
 	imply FLASH_MAP
 	imply MPU_ALLOW_FLASH_WRITE
-
 	select SETTINGS if FLASH
 	select OPENTHREAD_SETTINGS_RAM if !FLASH
 	select CPP
@@ -31,7 +30,6 @@ config OPENTHREAD_SYS_INIT_PRIORITY
 	depends on OPENTHREAD_SYS_INIT
 	help
 	  This option sets the priority of the OpenThread system initialization.
-
 
 choice OPENTHREAD_IMPLEMENTATION
 	prompt "OpenThread origin selection"
@@ -72,14 +70,19 @@ choice OPENTHREAD_LOG_LEVEL_CHOICE
 
 config OPENTHREAD_LOG_LEVEL_CRIT
 	bool "Critical"
+
 config OPENTHREAD_LOG_LEVEL_WARN
 	bool "Warning"
+
 config OPENTHREAD_LOG_LEVEL_NOTE
 	bool "Notice"
+
 config OPENTHREAD_LOG_LEVEL_INFO
 	bool "Informational"
+
 config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
+
 endchoice # OPENTHREAD_LOG_LEVEL_CHOICE
 
 config OPENTHREAD_LOG_LEVEL
@@ -122,7 +125,6 @@ config OPENTHREAD_THREAD_STACK_SIZE
 	default 3168 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 3072
 
-
 config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for IPv6 packet buffering"
 	default 10
@@ -134,13 +136,11 @@ config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 
 endmenu # "Zephyr optimizations"
 
-
 config OPENTHREAD_SHELL
 	bool "OpenThread shell"
 	depends on SHELL
 
 config MBEDTLS_PROMPTLESS
-	bool
 	default y if !CUSTOM_OPENTHREAD_SECURITY
 
 choice OPENTHREAD_SECURITY
@@ -190,7 +190,6 @@ config OPENTHREAD_MBEDTLS
 	select MBEDTLS_PK_WRITE_C if OPENTHREAD_ECDSA
 	select MBEDTLS_ECP_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || OPENTHREAD_ECDSA
 
-
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
 	default "mbedTLS"
@@ -215,8 +214,10 @@ choice OPENTHREAD_COPROCESSOR_CHOICE
 
 config OPENTHREAD_COPROCESSOR_NCP
 	bool "NCP - Network Co-Processor"
+
 config OPENTHREAD_COPROCESSOR_RCP
 	bool "RCP - Radio Co-Processor"
+
 endchoice # OPENTHREAD_COPROCESSOR_CHOICE
 
 config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
