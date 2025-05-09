@@ -164,11 +164,20 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_SOC_SERIES_RP2350)
+#include <hardware/irq.h>
+#endif
+
 #if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
 static inline void trigger_irq(int irq)
 {
 	riscv_clic_irq_set_pending(irq);
+}
+#elif defined(CONFIG_SOC_SERIES_RP2350)
+static inline void trigger_irq(int irq)
+{
+	irq_set_pending(irq);
 }
 #else
 static inline void trigger_irq(int irq)
