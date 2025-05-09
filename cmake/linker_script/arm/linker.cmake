@@ -256,3 +256,11 @@ dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
   zephyr_linker_dts_section(PATH ${path})
 endforeach()
+
+
+# .last_section must be last in romable region
+# .last_section contains a fixed word to ensure location counter and actual
+# rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y.
+zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH NOINPUT)
+# KEEP can not be passed to zephyr_linker_section, so:
+zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)
