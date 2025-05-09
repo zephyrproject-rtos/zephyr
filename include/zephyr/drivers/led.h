@@ -187,9 +187,10 @@ static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
  * This optional routine sets the brightness of a LED to the given value.
  * Calling this function after led_blink() won't affect blinking.
  *
- * LEDs which can only be turned on or off may provide this function.
+ * LEDs which can only be turned on or off do not need to provide this
+ * function.
  * These should simply turn the LED on if @p value is nonzero, and off
- * if @p value is zero.
+ * if @p value is zero using the on/off APIs automatically.
  *
  * @param dev LED device
  * @param led LED number
@@ -206,12 +207,21 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
-	if (api->set_brightness == NULL) {
+	if (api->set_brightness == NULL &&
+	    api->on == NULL && api->off == NULL) {
 		return -ENOSYS;
 	}
 
 	if (value < 0 || value > LED_BRIGTHNESS_MAX) {
 		return -EINVAL;
+	}
+
+	if (api->set_brightness == NULL) {
+		if (value > 0) {
+			return api->on(dev, led);
+		} else {
+			return api->off(dev, led);
+		}
 	}
 
 	return api->set_brightness(dev, led, value);
@@ -307,6 +317,9 @@ static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
  *
  * This routine turns on an LED
  *
+ * LEDs which implements brightness control do not need to implement this, the
+ * set_brightness API is used automatically.
+ *
  * @param dev LED device
  * @param led LED number
  * @return 0 on success, negative on error
@@ -318,6 +331,15 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
+	if (api->set_brightness == NULL &&
+	    api->on == NULL && api->off == NULL) {
+		return -ENOSYS;
+	}
+
+	if (api->on == NULL && api->off == NULL) {
+		return api->set_brightness(dev, led, LED_BRIGTHNESS_MAX);
+	}
+
 	return api->on(dev, led);
 }
 
@@ -325,6 +347,9 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
  * @brief Turn off an LED
  *
  * This routine turns off an LED
+ *
+ * LEDs which implements brightness control do not need to implement this, the
+ * set_brightness API is used automatically.
  *
  * @param dev LED device
  * @param led LED number
@@ -336,6 +361,15 @@ static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 {
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
+
+	if (api->set_brightness == NULL &&
+	    api->on == NULL && api->off == NULL) {
+		return -ENOSYS;
+	}
+
+	if (api->on == NULL && api->off == NULL) {
+		return api->set_brightness(dev, led, 0);
+	}
 
 	return api->off(dev, led);
 }
