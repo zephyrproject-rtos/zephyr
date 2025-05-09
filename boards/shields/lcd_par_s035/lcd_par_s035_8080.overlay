@@ -9,7 +9,6 @@
 /{
 	chosen {
 		zephyr,display = &st7796s;
-		zephyr,touch = &gt911_lcd_par_s035;
 	};
 
 	lvgl_pointer {
@@ -17,6 +16,10 @@
 		input = <&gt911_lcd_par_s035>;
 		swap-xy;
 		invert-y;
+	};
+
+	aliases {
+		touch = &gt911_lcd_par_s035;
 	};
 };
 

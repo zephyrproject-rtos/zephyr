@@ -9,7 +9,6 @@
 / {
 	chosen {
 		zephyr,display = &ili9488_buydisplay_3_5_tft_touch_arduino;
-		zephyr,touch = &ft5336_buydisplay_3_5_tft_touch_arduino;
 	};
 
 	lvgl_pointer {
@@ -43,6 +42,10 @@
 			pgamctrl = [00 03 09 08 16 0a 3f 78 4c 09 0a 08 16 1a 0f];
 			ngamctrl = [00 16 19 03 0f 05 32 45 46 04 0e 0d 35 37 0f];
 		};
+	};
+
+	aliases {
+		touch = &ft5336_buydisplay_3_5_tft_touch_arduino;
 	};
 };
 
