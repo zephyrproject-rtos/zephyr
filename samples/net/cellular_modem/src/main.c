@@ -9,8 +9,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dns_resolve.h>
-#include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
+#include <zephyr/internal/pm/device.h>
 #include <string.h>
 
 #include <zephyr/drivers/cellular.h>

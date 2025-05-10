@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 #define NUMBER_OF_DEVICES 3
