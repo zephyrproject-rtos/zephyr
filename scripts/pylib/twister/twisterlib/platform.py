@@ -161,7 +161,6 @@ class Platform:
           "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
           "arm64": ["zephyr", "cross-compile"],
           "mips": ["zephyr"],
-          "nios2": ["zephyr"],
           "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
           "sparc": ["zephyr"],
