@@ -8,11 +8,11 @@ tests:
       - net
       - socket
       - shield
-    platform_allow: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk/mimxrt1064
     depends_on:
       - video
       - netif
     integration_platforms:
-      - mimxrt1064_evk
+      - mimxrt1064_evk/mimxrt1064
     extra_args:
-      - platform:mimxrt1064_evk:SHIELD=dvp_fpc24_mt9m114
+      - platform:mimxrt1064_evk/mimxrt1064:SHIELD=dvp_fpc24_mt9m114

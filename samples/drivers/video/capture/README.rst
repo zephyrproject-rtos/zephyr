@@ -85,7 +85,14 @@ using the :ref:`dvp_20pin_ov7670` and :ref:`lcd_par_s035` connected to the board
 
 For testing purpose without the need of any real video capture and/or display hardwares,
 a video software pattern generator is supported by the above build commands without
-specifying the shields.
+specifying the shields, and using :ref:`snippet-video-sw-generator`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: native_sim
+   :snippets: video-sw-generator
+   :goals: build
+   :compact:
 
 Sample Output
 =============
