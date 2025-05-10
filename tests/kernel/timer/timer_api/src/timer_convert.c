@@ -14,12 +14,6 @@ enum units { UNIT_ticks, UNIT_cyc, UNIT_ms, UNIT_us, UNIT_ns };
 
 enum round { ROUND_floor, ROUND_ceil, ROUND_near };
 
-static const char *const round_s[] = {
-	[ROUND_floor] = "floor",
-	[ROUND_ceil] = "ceil",
-	[ROUND_near] = "near",
-};
-
 struct test_rec {
 	enum units src;
 	enum units dst;
@@ -287,8 +281,8 @@ static void test_conversion(struct test_rec *t, uint64_t val)
 	zassert_true(diff <= maxdiff && diff >= mindiff,
 		     "Convert %llu (%llx) from %u Hz to %u Hz %u-bit %s\n"
 		     "result %llu (%llx) diff %lld (%llx) should be in [%lld:%lld]",
-		     val, val, from_hz, to_hz, t->precision, round_s[t->round],
-		     result, result, diff, diff, mindiff, maxdiff);
+		     val, val, from_hz, to_hz, t->precision, t->round, result, result, diff, diff,
+		     mindiff, maxdiff);
 }
 
 ZTEST(timer_api, test_time_conversions)
