@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DEBUG_DRIVER
+	bool "Debug drivers"
+	help
+	  Enable support for debug drivers
+
+if DEBUG_DRIVER
+
+config DEBUG_DRIVER_INIT_PRIORITY
+	int "Initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Debug drivers initialization priority.
+
+# zephyr-keep-sorted-start
+source "drivers/debug/Kconfig.silabs"
+# zephyr-keep-sorted-stop
+
+module = DEBUG_DRIVER
+module-str = debug_driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
