@@ -6,9 +6,10 @@ description: |
 
     Representation of a serial flash on a xspi bus:
 
-        mx25lm51245: xspi-nor-flash@70000000 {
+        mx25lm51245: xspi-nor-flash@0 {
                 compatible = "st,stm32-xspi-nor";
-                reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+                reg = <0>;
+                size = <DT_SIZE_M(512)>; /* 512 Mbits */
                 data-mode = <XSPI_OCTO_MODE>; /* access on 8 data lines */
                 data-rate = <XSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
