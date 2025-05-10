@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <fsl_clock.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
@@ -177,7 +178,17 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		__WFI();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
+		/* save old value of main clock mux and switch to lposc */
+		uint32_t main_sel_a = CLKCTL0->MAINCLKSELA;
+		uint32_t main_sel_b = CLKCTL0->MAINCLKSELB;
+
+		CLKCTL0->MAINCLKSELA = 2;
+		CLKCTL0->MAINCLKSELB = 0;
 		POWER_EnterPowerMode(POWER_MODE2, &slp_cfg);
+		/* restore previous main clock */
+		CLKCTL0->MAINCLKSELA = main_sel_a;
+		CLKCTL0->MAINCLKSELB = main_sel_b;
+
 		break;
 	case PM_STATE_STANDBY:
 #ifdef CONFIG_MPU
