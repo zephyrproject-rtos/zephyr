@@ -53,6 +53,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_WP_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(wp_gpios)
 #define ANY_INST_HAS_HOLD_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(hold_gpios)
 #define ANY_INST_USE_4B_ADDR_OPCODES DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_4b_addr_opcodes)
+#define ANY_INST_HAS_FLSR \
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_flag_status_register)
+#define ANY_INST_USE_FAST_READ DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_fast_read)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -150,6 +153,8 @@ struct spi_nor_config {
 	bool requires_ulbpr_exist:1;
 	bool wp_gpios_exist:1;
 	bool hold_gpios_exist:1;
+	bool has_flsr: 1;
+	bool use_fast_read: 1;
 };
 
 /**
@@ -356,6 +361,10 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  */
 #define NOR_ACCESS_32BIT_ADDR BIT(2)
 
+/* Indicates that a dummy byte is to be sent following the address.
+ */
+#define NOR_ACCESS_DUMMY_BYTE BIT(3)
+
 /* Indicates that an access command is performing a write.  If not
  * provided access is a read.
  */
@@ -381,8 +390,9 @@ static int spi_nor_access(const struct device *const dev,
 	struct spi_nor_data *const driver_data = dev->data;
 	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
-	uint8_t buf[5] = { 0 };
-	struct spi_buf spi_buf[2] = {
+	bool has_dummy = (access & NOR_ACCESS_DUMMY_BYTE) != 0U;
+	uint8_t buf[6] = {opcode};
+	struct spi_buf spi_buf_tx[2] = {
 		{
 			.buf = buf,
 			.len = 1,
@@ -392,8 +402,17 @@ static int spi_nor_access(const struct device *const dev,
 			.len = length
 		}
 	};
+	struct spi_buf spi_buf_rx[2] = {
+		{
+			.buf = NULL,
+			.len = 1,
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
 
-	buf[0] = opcode;
 	if (is_addressed) {
 		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
 		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
@@ -409,20 +428,26 @@ static int spi_nor_access(const struct device *const dev,
 
 		if (use_32bit) {
 			memcpy(&buf[1], &addr32.u8[0], 4);
-			spi_buf[0].len += 4;
+			spi_buf_tx[0].len += 4;
+			spi_buf_rx[0].len += 4;
 		} else {
 			memcpy(&buf[1], &addr32.u8[1], 3);
-			spi_buf[0].len += 3;
+			spi_buf_tx[0].len += 3;
+			spi_buf_rx[0].len += 3;
 		}
 	};
+	if (has_dummy) {
+		spi_buf_tx[0].len++;
+		spi_buf_rx[0].len++;
+	}
 
 	const struct spi_buf_set tx_set = {
-		.buffers = spi_buf,
-		.count = (length != 0) ? 2 : 1,
+		.buffers = spi_buf_tx,
+		.count = (is_write && length != 0) ? 2 : 1,
 	};
 
 	const struct spi_buf_set rx_set = {
-		.buffers = spi_buf,
+		.buffers = spi_buf_rx,
 		.count = 2,
 	};
 
@@ -443,6 +468,17 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_read_4b(dev, opcode, addr, dest, length)                                  \
 	spi_nor_access(dev, opcode, NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED, addr, dest,      \
 		       length)
+#define spi_nor_cmd_addr_fast_read(dev, opcode, addr, dest, length)                                \
+	spi_nor_access(dev, opcode, NOR_ACCESS_ADDRESSED | NOR_ACCESS_DUMMY_BYTE, addr, dest,      \
+		       length)
+#define spi_nor_cmd_addr_fast_read_3b(dev, opcode, addr, dest, length)                             \
+	spi_nor_access(dev, opcode,                                                                \
+		       NOR_ACCESS_24BIT_ADDR | NOR_ACCESS_ADDRESSED | NOR_ACCESS_DUMMY_BYTE, addr, \
+		       dest, length)
+#define spi_nor_cmd_addr_fast_read_4b(dev, opcode, addr, dest, length)                             \
+	spi_nor_access(dev, opcode,                                                                \
+		       NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED | NOR_ACCESS_DUMMY_BYTE, addr, \
+		       dest, length)
 #define spi_nor_cmd_write(dev, opcode) \
 	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
@@ -474,16 +510,53 @@ static int spi_nor_access(const struct device *const dev,
  */
 static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_delay)
 {
+	const struct spi_nor_config *cfg = dev->config;
 	int ret;
 	uint8_t reg;
 
 	ARG_UNUSED(poll_delay);
 
 	while (true) {
-		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
-		/* Exit on error or no longer WIP */
-		if (ret || !(reg & SPI_NOR_WIP_BIT)) {
-			break;
+		/* If flag status register is present, check it rather than the standard
+		 * status register since it allows better error detection. Also, some devices
+		 * that have it require it to be read after a program operation.
+		 */
+		if (IS_ENABLED(ANY_INST_HAS_FLSR) && cfg->has_flsr) {
+			ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDFLSR, &reg, sizeof(reg));
+			if (ret) {
+				break;
+			}
+			if (reg & SPI_NOR_FLSR_READY) {
+				if (reg & SPI_NOR_FLSR_ERASE_FAIL) {
+					LOG_ERR("Erase failure");
+					ret = -EIO;
+				}
+				if (reg & SPI_NOR_FLSR_PROGRAM_FAIL) {
+					LOG_ERR("Program failure");
+					ret = -EIO;
+				}
+				if (reg & SPI_NOR_FLSR_PROT_ERROR) {
+					LOG_ERR("Protection violation");
+					ret = -EIO;
+				}
+
+				if (ret) {
+					/* Clear flag status register for next operation */
+					int ret2 = spi_nor_cmd_write(dev, SPI_NOR_CMD_CLRFLSR);
+
+					if (ret2) {
+						LOG_ERR("Failed to clear flag status register: %d",
+							ret2);
+					}
+				}
+				break;
+			}
+		} else {
+			ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+			/* Exit on error or no longer WIP */
+			if (ret || !(reg & SPI_NOR_WIP_BIT)) {
+				break;
+			}
 		}
 #ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 		/* Don't monopolise the CPU while waiting for ready */
@@ -788,6 +861,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
+	const struct spi_nor_config *cfg = dev->config;
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
 
@@ -803,14 +877,31 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 
 	acquire_device(dev);
 
-	if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && DEV_CFG(dev)->use_4b_addr_opcodes) {
+	if (IS_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES) && cfg->use_4b_addr_opcodes) {
 		if (addr > SPI_NOR_3B_ADDR_MAX) {
-			ret = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_READ_4B, addr, dest, size);
+			if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+				ret = spi_nor_cmd_addr_fast_read_4b(dev, SPI_NOR_CMD_READ_FAST_4B,
+								    addr, dest, size);
+			} else {
+				ret = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_READ_4B, addr, dest,
+							       size);
+			}
 		} else {
-			ret = spi_nor_cmd_addr_read_3b(dev, SPI_NOR_CMD_READ, addr, dest, size);
+			if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+				ret = spi_nor_cmd_addr_fast_read_3b(dev, SPI_NOR_CMD_READ_FAST,
+								    addr, dest, size);
+			} else {
+				ret = spi_nor_cmd_addr_read_3b(dev, SPI_NOR_CMD_READ, addr, dest,
+							       size);
+			}
 		}
 	} else {
-		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+		if (IS_ENABLED(ANY_INST_USE_FAST_READ) && cfg->use_fast_read) {
+			ret = spi_nor_cmd_addr_fast_read(dev, SPI_NOR_CMD_READ_FAST, addr, dest,
+							 size);
+		} else {
+			ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+		}
 	}
 
 	release_device(dev);
@@ -1807,6 +1898,8 @@ static DEVICE_API(flash, spi_nor_api) = {
 		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
 		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
 		.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),			\
+		.has_flsr = DT_INST_PROP(idx, use_flag_status_register),			\
+		.use_fast_read = DT_INST_PROP(idx, use_fast_read),				\
 		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
 		IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))				\
 		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\
