@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_SERIAL_UART_SAM0_H_
+#define ZEPHYR_DRIVERS_SERIAL_UART_SAM0_H_
+
+/* GCLK registers */
+
+#define CLKCTRL_OFFSET 0x02
+#define PCHCTRL_OFFSET 0x80
+
+#define CLKCTRL_ID(n)  FIELD_PREP(GENMASK(5, 0), n)
+#define CLKCTRL_GEN(n) FIELD_PREP(GENMASK(11, 8), n)
+#define CLKCTRL_CLKEN  BIT(14)
+
+#define PCHCTRL_GEN(n) FIELD_PREP(GENMASK(3, 0), n)
+#define PCHCTRL_CHEN   BIT(6)
+
+/* SERCOM USART registers */
+
+#define CTRLA_OFFSET 0x00
+#define CTRLB_OFFSET 0x04
+
+#if defined(CONFIG_SOC_SERIES_SAMD20)
+
+#define BAUD_OFFSET     0x0A
+#define INTENCLR_OFFSET 0x0C
+#define INTENSET_OFFSET 0x0D
+#define INTFLAG_OFFSET  0x0E
+#define STATUS_OFFSET   0x10
+#define DATA_OFFSET     0x18
+
+#define INTENCLR_MASK 0x0F
+
+#else
+
+#define BAUD_OFFSET     0x0C
+#define INTENCLR_OFFSET 0x14
+#define INTENSET_OFFSET 0x16
+#define INTFLAG_OFFSET  0x18
+#define STATUS_OFFSET   0x1A
+#define SYNCBUSY_OFFSET 0x1C
+#define DATA_OFFSET     0x28
+
+#define INTENCLR_MASK 0xBF
+
+#endif
+
+#define CTRLA_ENABLE_BIT 1
+#define CTRLA_MODE(n)    FIELD_PREP(GENMASK(4, 2), n)
+#define CTRLA_SAMPR(n)   FIELD_PREP(GENMASK(15, 13), n)
+#define CTRLA_TXPO_BIT   16
+#define CTRLA_RXPO_BIT   20
+#define CTRLA_FORM_BIT   24
+#define CTRLA_FORM(n)    FIELD_PREP(GENMASK(27, 24), n)
+#define CTRLA_CPOL       BIT(29)
+#define CTRLA_DORD       BIT(30)
+
+#define CTRLB_CHSIZE_MASK GENMASK(2, 0)
+#define CTRLB_CHSIZE(n)   FIELD_PREP(CTRLB_CHSIZE_MASK, n)
+#define CTRLB_SBMODE_BIT  6
+#define CTRLB_COLDEN_BIT  8
+#define CTRLB_PMODE_BIT   13
+#define CTRLB_TXEN        BIT(16)
+#define CTRLB_RXEN        BIT(17)
+
+#define INTFLAG_DRE   BIT(0)
+#define INTFLAG_TXC   BIT(1)
+#define INTFLAG_RXC   BIT(2)
+#define INTFLAG_RXS   BIT(3)
+#define INTFLAG_CTSIC BIT(4)
+#define INTFLAG_RXBRK BIT(5)
+#define INTFLAG_ERROR BIT(7)
+
+#define INTENSET_DRE   BIT(0)
+#define INTENSET_TXC   BIT(1)
+#define INTENSET_RXC   BIT(2)
+#define INTENSET_ERROR BIT(7)
+
+#define INTENCLR_DRE   BIT(0)
+#define INTENCLR_TXC   BIT(1)
+#define INTENCLR_RXC   BIT(2)
+#define INTENCLR_ERROR BIT(7)
+
+#define STATUS_PERR_BIT     0
+#define STATUS_FERR_BIT     1
+#define STATUS_BUFOVF_BIT   2
+#define STATUS_ISF_BIT      4
+#define STATUS_COLL_BIT     5
+#define STATUS_SYNCBUSY_BIT 15
+
+#if defined(CONFIG_SOC_SERIES_SAMD51) || defined(CONFIG_SOC_SERIES_SAME51) ||                      \
+	defined(CONFIG_SOC_SERIES_SAME53) || defined(CONFIG_SOC_SERIES_SAME54)
+
+#define SYNCBUSY_MASK GENMASK(4, 0)
+#else
+#define SYNCBUSY_MASK GENMASK(2, 0)
+#endif
+
+#endif /* ZEPHYR_DRIVERS_SERIAL_UART_SAM0_H_ */
