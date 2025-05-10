@@ -74,9 +74,6 @@ const size_t _kernel_thread_info_offsets[] = {
 #elif defined(CONFIG_MIPS)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
-#elif defined(CONFIG_NIOS2)
-	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
-						callee_saved.sp),
 #elif defined(CONFIG_RISCV)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),

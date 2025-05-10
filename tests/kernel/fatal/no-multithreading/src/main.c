@@ -34,8 +34,6 @@ static void entry_cpu_exception(void)
 	TC_PRINT("cpu exception\n");
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else

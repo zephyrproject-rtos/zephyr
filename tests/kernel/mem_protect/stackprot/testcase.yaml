@@ -1,7 +1,6 @@
 tests:
   kernel.memory_protection.stackprot:
     arch_exclude:
-      - nios2
       - xtensa
       - posix
       - sparc

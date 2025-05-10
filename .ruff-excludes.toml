@@ -1685,7 +1685,6 @@ exclude = [
     "./scripts/west_commands/runners/mdb.py",
     "./scripts/west_commands/runners/misc.py",
     "./scripts/west_commands/runners/native.py",
-    "./scripts/west_commands/runners/nios2.py",
     "./scripts/west_commands/runners/nrf_common.py",
     "./scripts/west_commands/runners/nrfjprog.py",
     "./scripts/west_commands/runners/nrfutil.py",
