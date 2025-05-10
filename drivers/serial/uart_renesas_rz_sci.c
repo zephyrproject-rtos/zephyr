@@ -39,6 +39,8 @@ struct uart_rz_sci_data {
 };
 
 #define SCI_UART_ERROR_RATE_x1000 (5000)
+#define SCI_UART_CCR0_TEIE_MASK   BIT(21)
+#define SCI_UART_CCR0_TIE_MASK    BIT(20)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void sci_uart_rxi_isr(void);
@@ -406,12 +408,15 @@ static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
 	case UART_EVENT_RX_CHAR:
 		data->int_data.rx_byte = p_args->data;
 		break;
-	case UART_EVENT_RX_COMPLETE:
-		break;
 	case UART_EVENT_TX_DATA_EMPTY:
+		uint32_t ccr0 = data->fsp_ctrl->p_reg->CCR0;
+
+		ccr0 &= ~SCI_UART_CCR0_TEIE_MASK;
+		ccr0 |= SCI_UART_CCR0_TIE_MASK;
+		data->fsp_ctrl->p_reg->CCR0 = ccr0;
 		break;
 	case UART_EVENT_TX_COMPLETE:
-		break;
+	case UART_EVENT_RX_COMPLETE:
 	default:
 		break;
 	}

@@ -13,6 +13,9 @@
 
 LOG_MODULE_REGISTER(rz_scif_uart);
 
+#define SCIF_UART_SCR_TEIE_MASK BIT(21)
+#define SCIF_UART_SCR_TIE_MASK  BIT(20)
+
 struct uart_rz_scif_config {
 	const struct pinctrl_dev_config *pin_config;
 	const uart_api_t *fsp_api;
@@ -389,14 +392,17 @@ static void uart_rz_scif_event_handler(uart_callback_args_t *p_args)
 	case UART_EVENT_RX_CHAR:
 		data->int_data.rx_byte = p_args->data;
 		break;
-	case UART_EVENT_RX_COMPLETE:
-		break;
 	case UART_EVENT_TX_DATA_EMPTY:
-		data->int_data.tei_flag = true;
+		uint32_t scr = data->fsp_ctrl->p_reg->SCR;
+
+		scr &= ~SCIF_UART_SCR_TEIE_MASK;
+		scr |= SCIF_UART_SCR_TIE_MASK;
+		data->fsp_ctrl->p_reg->SCR = scr;
 		break;
 	case UART_EVENT_TX_COMPLETE:
 		data->int_data.tei_flag = false;
 		break;
+	case UART_EVENT_RX_COMPLETE:
 	default:
 		break;
 	}
