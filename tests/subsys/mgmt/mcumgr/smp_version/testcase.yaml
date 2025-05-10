@@ -10,7 +10,6 @@ tests:
       - mcumgr
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
     arch_exclude:
-      - nios2
       - mips
       - posix
     platform_exclude:
@@ -23,7 +22,6 @@ tests:
       - CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL=n
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
     arch_exclude:
-      - nios2
       - mips
       - posix
     platform_exclude:

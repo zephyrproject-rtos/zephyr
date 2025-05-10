@@ -1,7 +1,5 @@
 common:
   filter: not CONFIG_NATIVE_LIBC
-  arch_exclude:
-    - nios2
   tags:
     - posix
     - filesystem

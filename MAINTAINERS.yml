@@ -3157,16 +3157,6 @@ Networking:
   tests:
     - net.http
 
-NIOS-2 arch:
-  status: maintained
-  maintainers:
-    - nashif
-  files:
-    - arch/nios2/
-    - include/zephyr/arch/nios2/
-  labels:
-    - "area: NIOS2"
-
 nRF BSIM:
   status: maintained
   maintainers:
@@ -4943,15 +4933,6 @@ West:
   files: []
   labels:
     - "platform: ADI"
-
-"West project: hal_altera":
-  status: odd fixes
-  collaborators:
-    - nashif
-  files:
-    - modules/Kconfig.altera
-  labels:
-    - "platform: Altera"
 
 "West project: hal_ambiq":
   status: odd fixes

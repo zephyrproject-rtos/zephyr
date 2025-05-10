@@ -63,7 +63,6 @@ config SYSTEM_CLOCK_LOCK_FREE_COUNT
 	  cycle count accessor. This is needed for instrumenting spin lock
 	  hold times.
 
-source "drivers/timer/Kconfig.altera_avalon"
 source "drivers/timer/Kconfig.ambiq"
 source "drivers/timer/Kconfig.x86"
 source "drivers/timer/Kconfig.arcv2"

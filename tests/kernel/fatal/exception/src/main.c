@@ -83,8 +83,6 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #elif defined(CONFIG_RISCV)
@@ -112,8 +110,6 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("udf #0");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_RX)
 	__asm__ volatile ("brk");
 #elif defined(CONFIG_RISCV)
