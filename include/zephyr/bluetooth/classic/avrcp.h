@@ -63,6 +63,12 @@ typedef enum __packed {
 	BT_AVRCP_RSP_INTERIM = 0xf,
 } bt_avrcp_rsp_t;
 
+/** @brief AV/C subunit type, also used for unit type */
+typedef enum __packed {
+	BT_AVRCP_SUBUNIT_TYPE_PANEL = 0x09,
+	BT_AVRCP_SUBUNIT_TYPE_UNIT = 0x1f,
+} bt_avrcp_subunit_type_t;
+
 /** @brief AV/C operation ids used in AVRCP passthrough commands */
 typedef enum __packed {
 	BT_AVRCP_OPID_SELECT = 0x00,
@@ -135,16 +141,18 @@ typedef enum __packed {
 	BT_AVRCP_BUTTON_RELEASED = 1,
 } bt_avrcp_button_state_t;
 
-/** @brief AVRCP structure */
-struct bt_avrcp;
+/** @brief AVRCP CT structure */
+struct bt_avrcp_ct;
+/** @brief AVRCP TG structure */
+struct bt_avrcp_tg;
 
 struct bt_avrcp_unit_info_rsp {
-	uint8_t unit_type;
+	bt_avrcp_subunit_type_t unit_type;
 	uint32_t company_id;
 };
 
 struct bt_avrcp_subunit_info_rsp {
-	uint8_t subunit_type;
+	bt_avrcp_subunit_type_t subunit_type;
 	uint8_t max_subunit_id;
 	const uint8_t *extended_subunit_type; /**< contains max_subunit_id items */
 	const uint8_t *extended_subunit_id;   /**< contains max_subunit_id items */
@@ -167,68 +175,69 @@ struct bt_avrcp_get_cap_rsp {
 	uint8_t cap[];   /**< 1 or 3 octets each depends on cap_id */
 };
 
-struct bt_avrcp_cb {
-	/** @brief An AVRCP connection has been established.
+struct bt_avrcp_ct_cb {
+	/** @brief An AVRCP CT connection has been established.
 	 *
 	 *  This callback notifies the application of an avrcp connection,
 	 *  i.e., an AVCTP L2CAP connection.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param conn Connection object.
+	 *  @param ct AVRCP CT connection object.
 	 */
-	void (*connected)(struct bt_avrcp *avrcp);
+	void (*connected)(struct bt_conn *conn, struct bt_avrcp_ct *ct);
 
-	/** @brief An AVRCP connection has been disconnected.
+	/** @brief An AVRCP CT connection has been disconnected.
 	 *
 	 *  This callback notifies the application that an avrcp connection
 	 *  has been disconnected.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param ct AVRCP CT connection object.
 	 */
-	void (*disconnected)(struct bt_avrcp *avrcp);
+	void (*disconnected)(struct bt_avrcp_ct *ct);
 
 	/** @brief Callback function for bt_avrcp_get_cap().
 	 *
 	 *  Called when the get capabilities process is completed.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param ct AVRCP CT connection object.
 	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for Get Capabilities command.
 	 */
-	void (*get_cap_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+	void (*get_cap_rsp)(struct bt_avrcp_ct *ct, uint8_t tid,
 			    const struct bt_avrcp_get_cap_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_get_unit_info().
 	 *
 	 *  Called when the get unit info process is completed.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param ct AVRCP CT connection object.
 	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for UNIT INFO command.
 	 */
-	void (*unit_info_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+	void (*unit_info_rsp)(struct bt_avrcp_ct *ct, uint8_t tid,
 			      struct bt_avrcp_unit_info_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_get_subunit_info().
 	 *
 	 *  Called when the get subunit info process is completed.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param ct AVRCP CT connection object.
 	 *  @param tid The transaction label of the response.
 	 *  @param rsp The response for SUBUNIT INFO command.
 	 */
-	void (*subunit_info_rsp)(struct bt_avrcp *avrcp, uint8_t tid,
+	void (*subunit_info_rsp)(struct bt_avrcp_ct *ct, uint8_t tid,
 				 struct bt_avrcp_subunit_info_rsp *rsp);
 
 	/** @brief Callback function for bt_avrcp_passthrough().
 	 *
 	 *  Called when a passthrough response is received.
 	 *
-	 *  @param avrcp AVRCP connection object.
+	 *  @param ct AVRCP CT connection object.
 	 *  @param tid The transaction label of the response.
 	 *  @param result The result of the operation.
 	 *  @param rsp The response for PASS THROUGH command.
 	 */
-	void (*passthrough_rsp)(struct bt_avrcp *avrcp, uint8_t tid, bt_avrcp_rsp_t result,
+	void (*passthrough_rsp)(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_rsp_t result,
 				const struct bt_avrcp_passthrough_rsp *rsp);
 };
 
@@ -240,72 +249,72 @@ struct bt_avrcp_cb {
  *
  *  @param conn Pointer to bt_conn structure.
  *
- *  @return pointer to struct bt_avrcp in case of success or NULL in case
- *  of error.
+ *  @return 0 in case of success or error code in case of error.
+ *
  */
-struct bt_avrcp *bt_avrcp_connect(struct bt_conn *conn);
+int bt_avrcp_connect(struct bt_conn *conn);
 
 /** @brief Disconnect AVRCP.
  *
  *  This function close AVCTP L2CAP connection.
  *
- *  @param avrcp The AVRCP instance.
+ *  @param conn Pointer to bt_conn structure.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_disconnect(struct bt_avrcp *avrcp);
+int bt_avrcp_disconnect(struct bt_conn *conn);
 
 /** @brief Register callback.
  *
  *  Register AVRCP callbacks to monitor the state and interact with the remote device.
  *
- *  @param cb The callback function.
+ *  @param cb The AVRCP CT callback function.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
+int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb);
 
 /** @brief Get AVRCP Capabilities.
  *
  *  This function gets the capabilities supported by remote device.
  *
- *  @param avrcp The AVRCP instance.
+ *  @param ct The AVRCP CT instance.
  *  @param tid The transaction label of the response, valid from 0 to 15.
  *  @param cap_id Specific capability requested, see @ref bt_avrcp_cap_t.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_cap(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cap_id);
+int bt_avrcp_ct_get_cap(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t cap_id);
 
 /** @brief Get AVRCP Unit Info.
  *
  *  This function obtains information that pertains to the AV/C unit as a whole.
  *
- *  @param avrcp The AVRCP instance.
+ *  @param ct The AVRCP CT instance.
  *  @param tid The transaction label of the response, valid from 0 to 15.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp, uint8_t tid);
+int bt_avrcp_ct_get_unit_info(struct bt_avrcp_ct *ct, uint8_t tid);
 
 /** @brief Get AVRCP Subunit Info.
  *
  *  This function obtains information about the subunit(s) of an AV/C unit. A device with AVRCP
  *  may support other subunits than the panel subunit if other profiles co-exist in the device.
  *
- *  @param avrcp The AVRCP instance.
+ *  @param ct The AVRCP CT instance.
  *  @param tid The transaction label of the response, valid from 0 to 15.
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid);
+int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid);
 
 /** @brief Send AVRCP Pass Through command.
  *
  *  This function send a pass through command to the remote device. Passsthhrough command is used
  *  to transfer user operation information from a CT to Panel subunit of TG.
  *
- *  @param avrcp The AVRCP instance.
+ *  @param ct The AVRCP CT instance.
  *  @param tid The transaction label of the response, valid from 0 to 15.
  *  @param opid The user operation id, see @ref bt_avrcp_opid_t.
  *  @param state The button state, see @ref bt_avrcp_button_state_t.
@@ -314,9 +323,61 @@ int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp, uint8_t tid);
  *
  *  @return 0 in case of success or error code in case of error.
  */
-int bt_avrcp_passthrough(struct bt_avrcp *avrcp, uint8_t tid, uint8_t opid, uint8_t state,
-			 const uint8_t *payload, uint8_t len);
+int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, uint8_t state,
+			    const uint8_t *payload, uint8_t len);
 
+struct bt_avrcp_tg_cb {
+	/** @brief An AVRCP TG connection has been established.
+	 *
+	 *  This callback notifies the application of an avrcp connection,
+	 *  i.e., an AVCTP L2CAP connection.
+	 *
+	 *  @param conn Connection object.
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*connected)(struct bt_conn *conn, struct bt_avrcp_tg *tg);
+
+	/** @brief An AVRCP TG connection has been disconnected.
+	 *
+	 *  This callback notifies the application that an avrcp connection
+	 *  has been disconnected.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*disconnected)(struct bt_avrcp_tg *tg);
+
+	/** @brief Unit info request callback.
+	 *
+	 *  This callback is called whenever an AVRCP unit info is requested.
+	 *
+	 *  @param tid The transaction label of the request.
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+};
+
+/** @brief Register callback.
+ *
+ *  Register AVRCP callbacks to monitor the state and interact with the remote device.
+ *
+ *  @param cb The AVRCP TG callback function.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
+
+/** @brief Send the unit info response.
+ *
+ *  This function is called by the application to send the unit info response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param rsp The response for UNIT INFO command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+				   struct bt_avrcp_unit_info_rsp *rsp);
 #ifdef __cplusplus
 }
 #endif
