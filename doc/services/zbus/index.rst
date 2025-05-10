@@ -401,7 +401,7 @@ rate by following design tips:
    ZBus uses :zephyr_file:`include/zephyr/net_buf.h` (network buffers) to exchange data with message
    subscribers. Thus, choose carefully the configurations
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
-   :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution
+   :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS`. They are crucial to a proper VDED execution
    (delivery guarantee) considering message subscribers. If you want to keep an isolated pool for a
    specific set of channels, you can use
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` with a dedicated pool. Look
@@ -936,6 +936,7 @@ Related configuration options:
   a pool for the message subscriber for a set of channels;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
   channels to be transported into a message buffer;
+* :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS` the reserved heap size for message buffer allocation;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration.
 
 API Reference
