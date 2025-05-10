@@ -22,6 +22,7 @@
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/pm/device.h>
 
 #include <soc.h>
 
@@ -208,7 +209,7 @@ uint32_t nxp_mrt_get_freq(const struct device *dev)
 	return freq;
 }
 
-static int nxp_mrt_init(const struct device *dev)
+static int nxp_mrt_init_common(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
 	MRT_Type *base = config->base;
@@ -237,6 +238,32 @@ static int nxp_mrt_init(const struct device *dev)
 	}
 
 	return 0;
+}
+
+static int nxp_mrt_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		nxp_mrt_init_common(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int nxp_mrt_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, nxp_mrt_pm_action);
 }
 
 static void nxp_mrt_isr(const struct device *dev)
@@ -348,8 +375,10 @@ DEVICE_API(counter, nxp_mrt_api) = {
 		.reset = RESET_DT_SPEC_INST_GET(n),				\
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, nxp_mrt_pm_action);				\
+										\
 	/* Init parent device in order to handle ISR and init. */		\
-	DEVICE_DT_INST_DEFINE(n, &nxp_mrt_init, NULL, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, &nxp_mrt_init, PM_DEVICE_DT_INST_GET(n), NULL,	\
 				&nxp_mrt_##n##_config,				\
 				POST_KERNEL,					\
 				CONFIG_COUNTER_INIT_PRIORITY, NULL);
