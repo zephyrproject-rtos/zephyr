@@ -23,13 +23,17 @@ int step_counter_timing_source_update(const struct device *dev,
 	const struct step_dir_stepper_common_config *config = dev->config;
 	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
+	uint64_t toggle_freq = counter_get_frequency(config->counter) * microstep_interval_ns;
 
 	if (microstep_interval_ns == 0) {
 		return -EINVAL;
 	}
 
-	data->counter_top_cfg.ticks = DIV_ROUND_UP(
-		counter_get_frequency(config->counter) * microstep_interval_ns, NSEC_PER_SEC);
+	if (config->dual_edge) {
+		data->counter_top_cfg.ticks = DIV_ROUND_UP(toggle_freq, NSEC_PER_SEC);
+	} else {
+		data->counter_top_cfg.ticks = DIV_ROUND_UP(toggle_freq / 2, NSEC_PER_SEC);
+	}
 
 	/* Lock interrupts while modifying counter settings */
 	int key = irq_lock();
