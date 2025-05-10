@@ -450,6 +450,7 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
+    - samples/bluetooth/handsfree*/
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -553,6 +554,7 @@ Bluetooth Classic:
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
     - tests/bluetooth/classic/
+    - samples/bluetooth/handsfree*/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
