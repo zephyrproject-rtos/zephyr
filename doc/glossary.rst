@@ -127,6 +127,10 @@ Glossary of Terms
       Power gating reduces power consumption by shutting off areas of an
       integrated circuit that are not in use.
 
+   public symbol
+      Any function, structure or macro defined inside the ``include/zephyr``
+      folder that is intended for use by applications or drivers.
+
    SoC
       A `System on a chip`_, that is, an integrated circuit that contains at
       least one :term:`CPU cluster` (in turn with at least one :term:`CPU core`),
