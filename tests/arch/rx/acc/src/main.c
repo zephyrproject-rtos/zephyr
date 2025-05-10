@@ -85,8 +85,6 @@ static void thread_2_entry(void *p1, void *p2, void *p3)
 ZTEST(rx_acc_tests, test_counting_value)
 {
 
-	uint32_t events;
-
 	k_event_init(&my_event);
 
 	k_tid_t tid_1 = k_thread_create(&thread_1, tstack_thread_1, STACK_SIZE, thread_1_entry,
