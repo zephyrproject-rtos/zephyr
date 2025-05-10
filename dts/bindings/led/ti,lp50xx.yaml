@@ -1,5 +1,104 @@
 # Copyright (c) 2020 Seagate Technology LLC
+# Copyright (c) 2025 TecInvent Electronics Ltd
 # SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments LP50xx 3-channel LED driver
+
+  This driver supports both single-channel and RGB LEDs. For single channel LEDs,
+  the led_set_brightness() API can be used to set the brightness of each LED.
+  For RGB LEDs, the led_set_color() API can be used to set the red, green and blue
+  components; the driver takes care of routing to the outputs described by the
+  color-mapping property. It is also possible to mix single LEDs with RGB modules
+  on a single LP50xx device.
+
+  The LED_SHELL application can be used for testing.
+
+  The index property refers to the output channel for the single LED and it refers
+  to the red component of a RGB LED.
+
+  The following defines two RGB LED DT node:
+
+  lp5024@28 {
+    compatible = "ti,lp5024";
+    reg = <0x28>;
+    enable-gpios = <&gpiob 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+
+    led_rgb_1 {
+      label = "RGB 1";
+      index = <0>;
+      color-mapping =
+              <LED_COLOR_ID_RED>,
+              <LED_COLOR_ID_GREEN>,
+              <LED_COLOR_ID_BLUE>;
+    };
+
+    led_rgb_2 {
+      label = "RGB 2";
+      index = <3>;
+      color-mapping =
+              <LED_COLOR_ID_RED>,
+              <LED_COLOR_ID_GREEN>,
+              <LED_COLOR_ID_BLUE>;
+    };
+  };
+
+  In the above example you can see how the index property is being used. The index value
+  refers to the controller output channel where the red component is being connected.
+
+  The following example refers to a case where single-channel LEDs are being used:
+
+  lp5024@28 {
+    compatible = "ti,lp5024";
+    reg = <0x28>;
+    enable-gpios = <&gpiob 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+
+    led_a_1 {
+      label = "Amber 1";
+      index = <0>;
+      color-mapping = <LED_COLOR_ID_AMBER>;
+    };
+    led_a_2 {
+      label = "Amber 2";
+      index = <1>;
+      color-mapping = <LED_COLOR_ID_AMBER>;
+    };
+  };
+
+  The meaning of the index is kept (as with the RGB case) and it refers to the output channel.
+
+  The last example describes a case where mixed LEDs are being used:
+
+  lp5024@28 {
+    compatible = "ti,lp5024";
+    reg = <0x28>;
+    enable-gpios = <&gpiob 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+
+    led_a_1 {
+      label = "Amber 1";
+      index = <0>;
+      color-mapping = <LED_COLOR_ID_AMBER>;
+    };
+    led_a_2 {
+      label = "Amber 2";
+      index = <1>;
+      color-mapping = <LED_COLOR_ID_AMBER>;
+    };
+
+    led_rgb_1 {
+      label = "RGB 1";
+      index = <3>;
+      color-mapping =
+              <LED_COLOR_ID_RED>,
+              <LED_COLOR_ID_GREEN>,
+              <LED_COLOR_ID_BLUE>;
+    };
+
+  };
+
+  Note that the RGB is connected to output 3 as suggested by the data-sheet that states that
+  the RGB's red channel should be placed on a multiple of three output (e.g. 0, 3, 6, etc).
+  So in this case index (output channel) 2 is unused.
 
 include: ["i2c-device.yaml", "led-controller.yaml"]
 
@@ -12,7 +111,7 @@ properties:
     type: boolean
     description: |
       If enabled the maximum current output is set to 35 mA (25.5 mA else).
-  log_scale_en:
+  log-scale-en:
     type: boolean
     description: |
       If enabled a logarithmic dimming scale curve is used for LED brightness
