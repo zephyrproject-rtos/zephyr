@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 #include "webusb.h"
 #include "msosv2.h"
 
+static struct usbd_context *sample_usbd;
+
 static void msg_cb(struct usbd_context *const usbd_ctx,
 		   const struct usbd_msg *const msg)
 {
@@ -42,12 +44,13 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 	}
 }
 
+USBD_MSG_REGISTER_CB(&sample_usbd, msg_cb);
+
 int main(void)
 {
-	struct usbd_context *sample_usbd;
 	int ret;
 
-	sample_usbd = sample_usbd_setup_device(msg_cb);
+	sample_usbd = sample_usbd_setup_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to setup USB device");
 		return -ENODEV;

@@ -84,11 +84,13 @@ static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg 
 	}
 }
 
+USBD_MSG_REGISTER_CB(&sample_usbd, sample_msg_cb);
+
 static int enable_usb_device_next(void)
 {
 	int err;
 
-	sample_usbd = sample_usbd_init_device(sample_msg_cb);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;

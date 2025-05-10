@@ -81,7 +81,7 @@ int main(void)
 
 	usbd_midi_set_ops(midi, &ops);
 
-	sample_usbd = sample_usbd_init_device(NULL);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -1;

@@ -293,8 +293,6 @@ struct usbd_context {
 	struct k_mutex mutex;
 	/** Pointer to UDC device */
 	const struct device *dev;
-	/** Notification message recipient callback */
-	usbd_msg_cb_t msg_cb;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, BOS */
@@ -770,6 +768,22 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	VENDOR_REQ_DEFINE(((uint8_t []) { _reqs }), \
 			  sizeof((uint8_t []) { _reqs }))
 
+struct usbd_msg_cb {
+	struct usbd_context *const uds_ctx;
+	const usbd_msg_cb_t cb;
+};
+
+/**
+ * @brief Register USB notification message callback
+ *
+ * @param[in] _uds_ctx Pointer to USB device support context
+ * @param[in] _cb      Pointer to message callback function
+ */
+#define USBD_MSG_REGISTER_CB(_uds_ctx, _cb)						\
+	static const STRUCT_SECTION_ITERABLE(usbd_msg_cb, usbd_msg_cb__##_cb) = {	\
+		.uds_ctx = _uds_ctx,							\
+		.cb = _cb,								\
+	}
 
 /**
  * @brief Add common USB descriptor
@@ -907,17 +921,6 @@ int usbd_unregister_class(struct usbd_context *uds_ctx,
  */
 int usbd_unregister_all_classes(struct usbd_context *uds_ctx,
 				const enum usbd_speed speed, uint8_t cfg);
-
-/**
- * @brief Register USB notification message callback
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] cb      Pointer to message callback function
- *
- * @return 0 on success, other values on fail.
- */
-int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
-			 const usbd_msg_cb_t cb);
 
 /**
  * @brief Initialize USB device

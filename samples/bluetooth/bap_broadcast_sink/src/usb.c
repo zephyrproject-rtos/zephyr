@@ -359,7 +359,7 @@ int usb_init(void)
 
 	usbd_uac2_set_ops(mic_dev, &usb_audio_ops, NULL);
 
-	sample_usbd = sample_usbd_init_device(NULL);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		return -ENODEV;
 	}

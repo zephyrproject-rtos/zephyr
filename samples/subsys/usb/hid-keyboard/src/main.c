@@ -55,6 +55,8 @@ UDC_STATIC_BUF_DEFINE(report, KB_REPORT_COUNT);
 static uint32_t kb_duration;
 static bool kb_ready;
 
+static struct usbd_context *sample_usbd;
+
 static void input_cb(struct input_event *evt, void *user_data)
 {
 	struct kb_event kb_evt;
@@ -169,9 +171,10 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 }
 /* doc device msg-cb end */
 
+USBD_MSG_REGISTER_CB(&sample_usbd, msg_cb);
+
 int main(void)
 {
-	struct usbd_context *sample_usbd;
 	const struct device *hid_dev;
 	int ret;
 
@@ -206,7 +209,7 @@ int main(void)
 		return ret;
 	}
 
-	sample_usbd = sample_usbd_init_device(msg_cb);
+	sample_usbd = sample_usbd_init_device();
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;
