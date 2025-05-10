@@ -9,7 +9,7 @@
 
 #include <zephyr/ztest.h>
 
-ZTEST(mutex_attr, test_pthread_mutexattr_init)
+ZTEST(posix_threads_base, test_pthread_mutexattr_init)
 {
 	pthread_mutexattr_t attr;
 
@@ -22,7 +22,7 @@ ZTEST(mutex_attr, test_pthread_mutexattr_init)
 	zassert_ok(pthread_mutexattr_destroy(&attr));
 }
 
-ZTEST(mutex_attr, test_pthread_mutexattr_destroy)
+ZTEST(posix_threads_base, test_pthread_mutexattr_destroy)
 {
 	pthread_mutexattr_t attr;
 
@@ -42,5 +42,3 @@ ZTEST(mutex_attr, test_pthread_mutexattr_destroy)
 		zassert_equal(EINVAL, pthread_mutexattr_destroy(&attr));
 	}
 }
-
-ZTEST_SUITE(mutex_attr, NULL, NULL, NULL, NULL, NULL);
