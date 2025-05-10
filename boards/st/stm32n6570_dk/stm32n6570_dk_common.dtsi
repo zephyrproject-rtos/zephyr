@@ -46,6 +46,21 @@
 			label = "User LD2";
 		};
 	};
+
+	csi_camera_connector: connector_csi_camera {
+		compatible = "st,stm32-csi-camera";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <11  0 &gpioq 5  0>,  /* TOF_LPn */
+			   <12  0 &gpioq 0  0>,  /* TOF_INT */
+			   <14  0 &gpioq 1  0>,  /* IMU_INT1 */
+			   <15  0 &gpioq 2  0>,  /* IMU_INT2 */
+			   <17  0 &gpioc 8  0>,  /* NRST_CAM */
+			   <18  0 &gpiod 2  0>,  /* EN_MODULE */
+			   <20  0 &gpioh 9  0>,  /* I2C1_SCL */
+			   <21  0 &gpioc 1  0>;  /* I2C1_SDA */
+	};
 };
 
 &clk_hse {
@@ -137,6 +152,18 @@
 	status = "okay";
 };
 
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+&ic18 {
+	pll-src = <1>;
+	ic-div = <60>;
+	status = "okay";
+};
+
 &perck {
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
 	status = "okay";
@@ -173,7 +200,7 @@
 	status = "okay";
 };
 
-&i2c1 {
+st_cam_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
