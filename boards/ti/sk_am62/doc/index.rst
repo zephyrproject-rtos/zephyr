@@ -4,11 +4,20 @@ Overview
 ********
 
 The SK-AM62 board configuration is used by Zephyr applications that run on
-the TI AM62x platform. The board configuration provides support for the ARM
-Cortex-M4F MCU core and the following features:
+the TI AM62x platform. The board configuration provides support for:
 
-- Nested Vector Interrupt Controller (NVIC)
-- System Tick System Clock (SYSTICK)
+- ARM Cortex-M4F MCU core and the following features:
+
+   - Nested Vector Interrupt Controller (NVIC)
+   - System Tick System Clock (SYSTICK)
+
+- ARM Cortex-A53 core and the following features:
+
+   - General Interrupt Controller (GIC)
+   - ARM Generic Timer (arch_timer)
+   - On-chip SRAM (oc_sram)
+   - UART interfaces (uart0 to uart6)
+   - Mailbox interface (mbox0)
 
 The board configuration also enables support for the semihosting debugging console.
 
@@ -18,8 +27,9 @@ Hardware
 ********
 The SK-AM62 EVM features the AM62x SoC, which is composed of a quad Cortex-A53
 cluster and a single Cortex-M4 core in the MCU domain. Zephyr is ported to run on
-the M4F core and the following listed hardware specifications are used:
+the M4F and A53 cores. The following listed hardware specifications are used:
 
+- High-performance ARM Cortex-A53
 - Low-power ARM Cortex-M4F
 - Memory
 
@@ -59,15 +69,12 @@ SD Card
 
 Download TI's official `WIC`_ and flash the WIC file with an etching software
 onto an SD-card. This will boot Linux on the A53 application cores of the EVM.
-These cores will then load the zephyr binary on the M4 core using remoteproc.
+While programming for the M4 core, the A53 cores will then load the zephyr binary on the M4 core using remoteproc.
 
-The default configuration can be found in
-:zephyr_file:`boards/ti/sk_am62/sk_am62_am6234_m4_defconfig`
+Programming for M4F Core
+************************
 
-Flashing
-********
-
-The board can using remoteproc, and uses the OpenAMP resource table to accomplish this.
+The board can use remoteproc, and uses the OpenAMP resource table to accomplish this.
 
 The testing requires the binary to be copied to the SD card to allow the A53 cores to load it while booting using remoteproc.
 
@@ -98,14 +105,39 @@ To allow the board to boot using the SD card, set the boot pins to the SD Card b
 After changing the boot mode, the board should go through the boot sequence on powering up.
 The binary will run and print Hello world to the MCU_UART0 port.
 
+Programming for A53 Core
+************************
+
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use U-Boot to load and kick zephyr.bin:
+
+.. code-block:: console
+
+    fatload mmc 1:1 0x82000000 zephyr.bin; go 0x82000000
+
+The Zephyr application should start running on the A53 core.
+
 Debugging
 *********
 
 The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the ``debug`` build target:
 
+- M4F Core
+
 .. zephyr-app-commands::
    :app: <my_app>
    :board: sk_am62/am6234/m4
+   :maybe-skip-config:
+   :goals: debug
+
+- A53 Core
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: sk_am62/am6234/a53
    :maybe-skip-config:
    :goals: debug
 
@@ -123,8 +155,7 @@ AM62x SK EVM TRM:
    https://www.ti.com/product/AM625
 
 .. _WIC:
-   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-PvdSyIiioq/08.06.00.42/tisdk-default-image-am62xx-evm.wic.xz
-
+   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-PvdSyIiioq/10.01.10.04/tisdk-default-image-am62xx-evm-10.01.10.04.rootfs.wic.xz
 .. _AM62x SK EVM TRM:
    https://www.ti.com/lit/ug/spruiv7/spruiv7.pdf
 
