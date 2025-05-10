@@ -713,26 +713,45 @@ foreach(file IN LISTS PREPROCESSOR_FILES )
 endforeach()
 
 # To pickup information gathered by the scripts from the previous pass, we use
-# the syntax @FOO@ where FOO is a cmake variable name
+# the syntax @FOO[,undef:VALUE][,var=VALUE]@
+# The expansion is recursive so if FOO contains @BAR@ it @BAR will also be
+# expanded
+# Where the undef:VALUE gets picked if we dont find FOO
+# and foo=bar defines a (local) variable in the coming expansion
+# The variable values are kept in cmake varaiables, MOSTLY with the
+# AT_VAR_ prefix to avoid name-clashes
 function(do_var_replace_in res_ptr src)
-  string(REGEX MATCHALL "@([^@]*)@" match_res "${src}")
+  string(REGEX MATCHALL "@[^@]*@" match_res "${src}")
   foreach(match IN LISTS match_res)
-    string(REPLACE "@" "" expr ${match})
-    # the variable expression is as follows:
-    # @NAME[,undef:VALUE]@ Where the VALUE gets picked if we dont find NAME
-    string(REPLACE "," ";" expr ${expr})
-    list(GET expr 0 var)
+    #Drop the leading and closing @
+    string(REGEX MATCH "@([^@]*)@" expr ${match})
+
+    # Turn the , into ; to treat it as a list:
+    string(REPLACE "," ";" expr ${CMAKE_MATCH_1})
+    unset(undef_value)
+    list(POP_FRONT expr var)
+    foreach(e IN LISTS expr)
+      if(e MATCHES "undef:([^,]*)")
+        set(undef_value ${CMAKE_MATCH_1})
+      elseif(e MATCHES "([^=;]+)=([^=;]+)")
+        set(AT_VAR_${CMAKE_MATCH_1} ${CMAKE_MATCH_2})
+      endif()
+    endforeach()
+
     if(DEFINED "AT_VAR_${var}")
       set(value "${AT_VAR_${var}}")
-    elseif(DEFINED ${var}) # set by zephyr_linker_include_generated files
+    elseif(DEFINED ${var})
       set(value "${${var}}")
-    elseif("${expr}" MATCHES ";undef:([^,]*)")
-      set(value "${CMAKE_MATCH_1}")
+    elseif(DEFINED undef_value)
+      set(value "${undef_value}")
     else()
-      set(value "${match}")
       # can't warn here because we can't check for what is relevant in this pass
       # message(WARNING "Missing definition for ${match}")
+      continue()
     endif()
+
+    #Resolve variables inside variables
+    do_var_replace_in(value "${value}")
 
     if(CMAKE_VERBOSE_MAKEFILE)
       message("Using variable ${match} with value ${value}")
