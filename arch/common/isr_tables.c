@@ -78,7 +78,7 @@ void __irq_vector_table __attribute__((naked)) _irq_vector_table(void) {
 #else
 
 /* The IRQ vector table is an array of vector addresses */
-uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
+const uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = (uintptr_t)&IRQ_VECTOR_TABLE_DEFAULT_ISR,
 };
 #endif /* CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
@@ -88,6 +88,9 @@ uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
  * type and bypass the _sw_isr_table, then do not generate one.
  */
 #ifdef CONFIG_GEN_SW_ISR_TABLE
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
 struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = {(const void *)0x42,
 				       &z_irq_spurious},
