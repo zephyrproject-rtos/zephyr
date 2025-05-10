@@ -368,11 +368,8 @@ static inline int z_impl_rtc_alarm_is_pending(const struct device *dev, uint16_t
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_alarm_set_callback(const struct device *dev, uint16_t id,
-				     rtc_alarm_callback callback, void *user_data);
-
-static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
-						rtc_alarm_callback callback, void *user_data)
+static inline int rtc_alarm_set_callback(const struct device *dev, uint16_t id,
+					 rtc_alarm_callback callback, void *user_data)
 {
 	if (DEVICE_API_GET(rtc, dev)->alarm_set_callback == NULL) {
 		return -ENOSYS;
@@ -411,11 +408,8 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_update_set_callback(const struct device *dev, rtc_update_callback callback,
-				      void *user_data);
-
-static inline int z_impl_rtc_update_set_callback(const struct device *dev,
-						 rtc_update_callback callback, void *user_data)
+static inline int rtc_update_set_callback(const struct device *dev,
+					  rtc_update_callback callback, void *user_data)
 {
 	if (DEVICE_API_GET(rtc, dev)->update_set_callback == NULL) {
 		return -ENOSYS;
