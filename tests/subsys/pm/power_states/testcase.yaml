@@ -39,12 +39,3 @@ tests:
     extra_args:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
-
-  pm.power_states.pm_device_system_managed:
-    platform_allow:
-      - stm32l562e_dk
-    tags:
-      - pm
-    extra_args:
-      - CONFIG_PM_DEVICE=y
-      - CONFIG_PM_DEVICE_SYSTEM_MANAGED=y

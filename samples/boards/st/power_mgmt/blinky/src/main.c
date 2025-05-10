@@ -38,17 +38,14 @@ int main(void)
 	printk("Device ready\n");
 
 	while (true) {
-		gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-		gpio_pin_set(led.port, led.pin, (int)led_is_on);
-		if (led_is_on == false) {
-			/* Release resource to release device clock */
-			gpio_pin_configure(led.port, led.pin, GPIO_DISCONNECTED);
+		pm_device_runtime_get(led.port);
+		if (led_is_on) {
+			gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+		} else {
+			gpio_pin_configure_dt(&led, GPIO_DISCONNECTED);
 		}
+		pm_device_runtime_put(led.port);
 		k_msleep(SLEEP_TIME_MS);
-		if (led_is_on == true) {
-			/* Release resource to release device clock */
-			gpio_pin_configure(led.port, led.pin, GPIO_DISCONNECTED);
-		}
 		led_is_on = !led_is_on;
 	}
 	return 0;
