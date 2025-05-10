@@ -248,9 +248,19 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 	}
 }
 
+#define BR_SSP_AUTH_MITM_DISABLED(auth) (((auth) & BT_MITM) == 0)
+
 static void ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
+
+	if (BR_SSP_AUTH_MITM_DISABLED(conn->br.local_auth) &&
+	    BR_SSP_AUTH_MITM_DISABLED(conn->br.remote_auth)) {
+		/*
+		 * If the MITM flag of both sides is false, the pairing method is `just works`.
+		 */
+		conn->br.pairing_method = JUST_WORKS;
+	}
 
 	/*
 	 * If local required security is HIGH then MITM is mandatory.
@@ -756,6 +766,8 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		/* If bondable is false, clear bonding flag. */
 		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
+
+	conn->br.local_auth = auth;
 
 	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY, sizeof(*cp));
 	if (!resp_buf) {
