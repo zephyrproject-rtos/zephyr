@@ -35,6 +35,7 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
+from plugin_filters.plugin_filters_api import plugin_filter_get_filters, plugin_filter_handle_suite, plugin_filter_teardown_filters
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
@@ -492,6 +493,9 @@ class TestPlan:
     def add_testsuites(self, testsuite_filter=None):
         if testsuite_filter is None:
             testsuite_filter = []
+
+        plugin_filters = plugin_filter_get_filters(self.options.plugin_filter, logger)
+
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -577,9 +581,16 @@ class TestPlan:
                         else:
                             self.testsuites[suite.name] = suite
 
+                        if plugin_filters:
+                            plugin_filter_handle_suite(suite, plugin_filters)
+
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")
                     self.load_errors += 1
+
+        if plugin_filters:
+            plugin_filter_teardown_filters(plugin_filters)
+
         return len(self.testsuites)
 
     def __str__(self):

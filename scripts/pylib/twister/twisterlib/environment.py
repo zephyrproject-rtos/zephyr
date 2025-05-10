@@ -26,6 +26,8 @@ from twisterlib.coverage import supported_coverage_formats
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
+from plugin_filters.plugin_filters_api import plugin_filter_add_arguments, plugin_filter_parse_arguments
+
 logger = logging.getLogger('twister')
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
@@ -150,6 +152,8 @@ Artificially long but functional example:
         action="store_true",
         help="Run only those tests that failed the previous twister run "
              "invocation.")
+
+    plugin_filter_add_arguments(case_select)
 
     test_plan_report_xor.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
@@ -1030,6 +1034,8 @@ def parse_arguments(
     elif on_init and options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
         logger.warning("You work with installed version of "
                        "pytest-twister-harness plugin.")
+
+    plugin_filter_parse_arguments(options, logger)
 
     return options
 
