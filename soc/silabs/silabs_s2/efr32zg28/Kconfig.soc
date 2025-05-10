@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Shontal Biton
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32ZG28
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs EFR32ZG28 Series MCU
+
+config SOC_PART_NUMBER_EFR32ZG28B322F1024IM68
+	bool
+	select SOC_SERIES_EFR32ZG28
+
+config SOC_SERIES
+	default "efr32zg28" if SOC_SERIES_EFR32ZG28
+
+config SOC
+	default "efr32zg28b322f1024im68" if SOC_PART_NUMBER_EFR32ZG28B322F1024IM68
+
+config SOC_PART_NUMBER
+	default "EFR32ZG28B322F1024IM68" if SOC_PART_NUMBER_EFR32ZG28B322F1024IM68
