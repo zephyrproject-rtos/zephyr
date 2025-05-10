@@ -20,6 +20,7 @@
 		watchdog0 = &wdt0;
 		rtc = &pfc8563_rtc;
 		pwm-led0 = &backlight_pwm;
+		touch = &ft5336;
 	};
 
 	chosen {
@@ -30,7 +31,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &st7789v;
-		zephyr,touch = &ft5336;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
 	};
