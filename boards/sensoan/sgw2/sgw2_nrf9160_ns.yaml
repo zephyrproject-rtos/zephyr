@@ -1,0 +1,17 @@
+identifier: sgw2/nrf9160/ns
+name: SGW2-nRF9160-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - netif:modem
+  - spi
+vendor: sensoan
