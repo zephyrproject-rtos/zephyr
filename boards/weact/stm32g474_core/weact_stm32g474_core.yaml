@@ -1,0 +1,23 @@
+identifier: weact_stm32g474_core
+name: WeAct Studio STM32G474 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - nvs
+  - pwm
+  - i2c
+  - gpio
+  - usb device
+  - counter
+  - spi
+  - watchdog
+  - dma
+  - can
+  - rtc
+vendor: weact
