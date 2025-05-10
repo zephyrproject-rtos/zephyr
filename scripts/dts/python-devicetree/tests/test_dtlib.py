@@ -26,6 +26,19 @@ from devicetree import dtlib
 #   - to run a particular test function or functions, use
 #     '-k test_function_pattern_goes_here'
 
+def uncomment(dts):
+    '''Trim added comments from a DT string.'''
+
+    # remove node comments, including leading empty line
+    # but keep the one before the root node
+    dts = re.sub(r'\n\n[ \t]*/\*.*?\*/\n', '\n', dts, flags=re.DOTALL)
+    dts = re.sub(r'\n/ {\n', r'\n\n/ {\n', dts)
+
+    # remove property comments
+    dts = re.sub(r'[ \t]*/\*.*?\*/\n', '\n', dts)
+
+    return dts
+
 def parse(dts, include_path=(), **kwargs):
     '''Parse a DTS string 'dts', using the given include path.
 
@@ -48,7 +61,7 @@ def verify_parse(dts, expected, include_path=()):
 
     dt = parse(dts[1:], include_path)
 
-    actual = str(dt)
+    actual = uncomment(str(dt))
     expected = expected[1:-1]
     assert actual == expected, f'unexpected round-trip on {dts}'
 
@@ -530,7 +543,9 @@ def test_property_offset_labels():
 /dts-v1/;
 
 / {
-	a = l01: l02: < l03: &node l04: l05: 0x2 l06: l07: l08: >, [ l09: 03 l10: l11: 04 l12: l13: l14: ], "A";
+	a = l01: l02: < l03: &node l04: l05: 0x2 l06: l07: l08: >,
+	    [ l09: 03 l10: l11: 04 l12: l13: l14: ],
+	    "A";
 	b = < 0x0 l23: l24: >;
 	node: node {
 		phandle = < 0x1 >;
@@ -610,8 +625,11 @@ def test_node_path_references():
 
 / {
 	a = &label;
-	b = [ 01 ], &label;
-	c = [ 01 ], &label, < 0x2 >;
+	b = [ 01 ],
+	    &label;
+	c = [ 01 ],
+	    &label,
+	    < 0x2 >;
 	d = &{/abc};
 	label: abc {
 		e = &label;
@@ -867,7 +885,12 @@ def test_mixed_assign():
 /dts-v1/;
 
 / {
-	x = [ FF FF ], &abc, < 0xff &abc 0xff &abc >, &abc, [ FF FF ], "abc";
+	x = [ FF FF ],
+	    &abc,
+	    < 0xff &abc 0xff &abc >,
+	    &abc,
+	    [ FF FF ],
+	    "abc";
 	abc: abc {
 		phandle = < 0x1 >;
 	};
@@ -1019,7 +1042,7 @@ def test_include_curdir(tmp_path):
 };
 """)
         dt = dtlib.DT("test.dts")
-        assert str(dt) == """
+        assert uncomment(str(dt)) == """
 /dts-v1/;
 
 / {
@@ -1076,7 +1099,7 @@ y /include/ "via-include-path-1"
 	y = < 0x2 >;
 };
 """[1:-1]
-    assert str(dt) == expected_dt
+    assert uncomment(str(dt)) == expected_dt
 
 def test_include_misc(tmp_path):
     '''Miscellaneous /include/ tests.'''
@@ -1180,7 +1203,8 @@ def test_omit_if_no_ref():
 /dts-v1/;
 
 / {
-	x = < &{/referenced} >, &referenced2;
+	x = < &{/referenced} >,
+	    &referenced2;
 	referenced {
 		phandle = < 0x1 >;
 	};
@@ -1775,7 +1799,7 @@ def test_prop_type_casting():
         "strings",
         "expected property 'strings' on / in .* to be assigned with " +
         re.escape("'strings = \"string\";', ")+
-        re.escape("not 'strings = \"foo\", \"bar\", \"baz\";'"))
+        "not 'strings = \"foo\",\\s*\"bar\",\\s*\"baz\";'")
     verify_to_string_error_matches(
         "invalid_string",
         re.escape(r"value of property 'invalid_string' (b'\xff\x00') on / ") +
@@ -2076,7 +2100,9 @@ def test_duplicate_labels():
 
 / {
 	label: foo {
-		x = &{/foo}, &label, < &label >;
+		x = &{/foo},
+		    &label,
+		    < &label >;
 		phandle = < 0x1 >;
 	};
 };
@@ -2175,7 +2201,8 @@ def test_names():
 /dts-v1/;
 
 / {
-	aA0,._+*#?- = &_, &{/aA0,._+@-};
+	aA0,._+*#?- = &_,
+	              &{/aA0,._+@-};
 	+ = [ 00 ];
 	* = [ 02 ];
 	- = [ 01 ];
@@ -2232,7 +2259,9 @@ def test_dense_input():
 / {
 	l1: l2: foo {
 		l3: l4: bar {
-			l5: x = l6: [ l7: 01 l8: 02 l9: ], [ 03 ], "a";
+			l5: x = l6: [ l7: 01 l8: 02 l9: ],
+			        [ 03 ],
+			        "a";
 		};
 	};
 };
@@ -2509,7 +2538,7 @@ def test_filename_and_lineno():
             f.write('''/* a new node */
 / {
 	node1: test-node1 {
-		prop1A = "value1A";
+		prop1A = "short value 1A";
 	};
 };
 ''')
@@ -2522,17 +2551,17 @@ def test_filename_and_lineno():
 
 / {
 	node2: test-node2 {
-		prop2A = "value2A";
-		prop2B = "value2B";
+		prop2A = "value 2A";
+		prop2B = "multi", "line", "value", "2B";
 	};
 };
 
 &node1 {
-	prop1B = "value1B";
+	prop1B = "longer value 1B";
 };
 ''')
 
-        dt = dtlib.DT(main_file, include_path=[tmpdir])
+        dt = dtlib.DT(main_file, include_path=[tmpdir], base_dir=tmpdir)
 
         test_node2 = dt.get_node('/test-node2')
         prop2A = test_node2.props['prop2A']
@@ -2555,3 +2584,27 @@ def test_filename_and_lineno():
         assert prop1A.lineno == 4
         assert os.path.samefile(prop1B.filename, main_file)
         assert prop1B.lineno == 13
+
+        # Test contents and alignment of the generated file comments
+        assert str(dt) == '''
+/dts-v1/;
+
+/* node '/' defined in included.dtsi:2 */
+/ {
+
+	/* node '/test-node1' defined in included.dtsi:3 */
+	node1: test-node1 {
+		prop1A = "short value 1A";  /* in included.dtsi:4 */
+		prop1B = "longer value 1B"; /* in test_with_include.dts:13 */
+	};
+
+	/* node '/test-node2' defined in test_with_include.dts:6 */
+	node2: test-node2 {
+		prop2A = "value 2A"; /* in test_with_include.dts:7 */
+		prop2B = "multi",
+		         "line",
+		         "value",
+		         "2B";       /* in test_with_include.dts:8 */
+	};
+};
+'''[1:-1]
