@@ -1296,3 +1296,8 @@ test_i2c_icm45686: icm45686@b1 {
 	reg = <0xb1>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_bh1790: bh1790@b2 {
+	compatible = "rohm,bh1790";
+	reg = <0xb2>;
+};
