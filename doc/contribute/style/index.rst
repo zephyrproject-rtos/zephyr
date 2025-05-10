@@ -7,6 +7,7 @@ Coding Style Guidelines
 .. toctree::
    :maxdepth: 1
 
+   naming.rst
    code.rst
    cmake.rst
    devicetree.rst
