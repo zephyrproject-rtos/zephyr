@@ -215,6 +215,23 @@ use of it.
     for example, if the new work items perform blocking operations that
     would delay other system workqueue processing to an unacceptable degree.
 
+Stack Size
+==========
+
+By default the stack size of the system workqueue is determined co-operatively
+among all users of the workqueue. The build system compares the value of all
+Kconfig symbols matching the pattern
+``CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_*`` and selects the largest value as
+the stack size. :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` is
+included in this calculation by its value being copied into
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_DEFAULT`.
+
+.. note::
+    This behaviour can be disabled through
+    :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`, in which
+    case the value of :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` will
+    be used directly.
+
 How to Use Workqueues
 *********************
 

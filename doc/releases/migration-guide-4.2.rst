@@ -26,6 +26,15 @@ Build System
 Kernel
 ******
 
+* The stack size of the system workqueue is now computed co-operatively
+  among users as the maximum value of any Kconfig options whose name starts
+  with ``CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_``. The existing
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` symbol value is copied
+  to :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_DEFAULT` so that
+  it is included in the calculation without any application changes.
+  The previous behaviour can be selected with
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`.
+
 Boards
 ******
 
