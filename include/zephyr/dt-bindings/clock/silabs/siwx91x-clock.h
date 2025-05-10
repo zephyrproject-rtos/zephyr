@@ -15,5 +15,7 @@
 #define SIWX91X_CLK_WATCHDOG      8
 #define SIWX91X_CLK_PWM           9
 #define SIWX91X_CLK_GSPI          10
+#define SIWX91X_CLK_I2S0          11
+#define SIWX91X_CLK_ULP_I2S       12
 
 #endif
