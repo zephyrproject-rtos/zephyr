@@ -179,6 +179,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
 void *radio_ccm_iso_tx_pkt_set(struct ccm *ccm, uint8_t pdu_type, void *pkt);
 uint32_t radio_ccm_is_done(void);
 uint32_t radio_ccm_mic_is_valid(void);
+void radio_ccm_disable(void);
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags);
 uint32_t radio_ar_match_get(void);

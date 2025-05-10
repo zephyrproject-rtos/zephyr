@@ -482,6 +482,15 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	if (!prepare_param) {
 		radio_isr_set(isr_done, param);
 		radio_disable();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)) {
+			const struct lll_sync_iso *lll = param;
+
+			if (lll->enc) {
+				radio_ccm_disable();
+			}
+		}
+
 		return;
 	}
 
