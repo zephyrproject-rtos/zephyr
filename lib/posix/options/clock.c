@@ -43,6 +43,23 @@ int z_impl___posix_clock_get_base(clockid_t clock_id, struct timespec *base)
 			*base = rt_clock_base;
 		}
 		break;
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	case CLOCK_THREAD_CPUTIME_ID: {
+		uint64_t ns;
+		k_thread_runtime_stats_t stats;
+		k_tid_t thread = k_current_get();
+
+		if (!k_thread_runtime_stats_is_enabled(thread)) {
+			errno = EINVAL;
+			return -1;
+		}
+		k_thread_runtime_stats_get(thread, &stats);
+		ns = k_cyc_to_ns_floor64(stats.execution_cycles);
+		base->tv_sec = ns / NSEC_PER_SEC;
+		base->tv_nsec = ns % NSEC_PER_SEC;
+		break;
+	}
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
 
 	default:
 		errno = EINVAL;
@@ -74,6 +91,13 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	case CLOCK_REALTIME:
 		(void)__posix_clock_get_base(clock_id, &base);
 		break;
+
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	case CLOCK_THREAD_CPUTIME_ID:
+		(void)__posix_clock_get_base(clock_id, &base);
+		*ts = base;
+		return 0;
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
 
 	default:
 		errno = EINVAL;

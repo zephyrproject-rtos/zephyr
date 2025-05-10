@@ -226,6 +226,13 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
 
+
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
+
 New Boards
 **********
 
