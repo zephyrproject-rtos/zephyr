@@ -1,0 +1,4 @@
+tests:
+  buildsystem.syscalls:
+    build_only: true
+    platform_allow: native_sim
