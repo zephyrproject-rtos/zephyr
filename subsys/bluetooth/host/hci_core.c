@@ -234,11 +234,6 @@ static void handle_vs_event(uint8_t event, struct net_buf *buf,
 	/* Other possible errors are handled by handle_event_common function */
 }
 
-void bt_acl_set_ncp_sent(struct net_buf *packet, bool value)
-{
-	acl(packet)->host_ncp_sent = value;
-}
-
 void bt_send_one_host_num_completed_packets(uint16_t handle)
 {
 	if (!IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
@@ -277,7 +272,9 @@ __weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
+	struct bt_hci_cp_host_num_completed_packets *cp;
 	uint16_t handle = acl(buf)->handle;
+	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
 	uint8_t index = acl(buf)->index;
 
@@ -286,10 +283,6 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	}
 
 	net_buf_destroy(buf);
-
-	if (acl(buf)->host_ncp_sent) {
-		return;
-	}
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
@@ -311,7 +304,23 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 
-	bt_send_one_host_num_completed_packets(handle);
+	LOG_DBG("Reporting completed packet for handle %u", handle);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
+				sizeof(*cp) + sizeof(*hc));
+	if (!buf) {
+		LOG_ERR("Unable to allocate new HCI command");
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->num_handles = sys_cpu_to_le16(1);
+
+	hc = net_buf_add(buf, sizeof(*hc));
+	hc->handle = sys_cpu_to_le16(handle);
+	hc->count  = sys_cpu_to_le16(1);
+
+	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
