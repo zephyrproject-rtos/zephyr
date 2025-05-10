@@ -122,11 +122,16 @@ void tc_unattached_wait_src_exit(void *obj)
 void tc_attach_wait_src_entry(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
 
 	LOG_INF("AttachWait.SRC");
 
 	/* Initialize the cc state to open */
 	tc->cc_state = TC_CC_NONE;
+
+	usbc_vbus_enable(vbus, true);
 }
 
 void tc_attach_wait_src_run(void *obj)
