@@ -430,6 +430,7 @@
 		status = "disabled";
 		prescaler = <8>;
 		#pwm-cells = <3>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
 	};
 
