@@ -575,6 +575,7 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	size_t label_size;
 	uint16_t inst_offs;
 	uint16_t offset = buf_offset;
+	const char *hostname = net_hostname_get();
 
 	if ((DNS_SD_PTR_MASK & instance_offset) != 0) {
 		NET_DBG("offset %u too big for message compression",
@@ -593,9 +594,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 		/* pointer to .<Instance>.<Service>.<Protocol>.local. */
 		DNS_POINTER_SIZE + sizeof(*rr)
 		+ sizeof(*rdata)
-		/* .<Instance> */
+		/* .<Hostname> */
 		+ DNS_LABEL_LEN_SIZE
-		+ strlen(inst->instance)
+		+ strlen(hostname)
 		/* pointer to .local. */
 		+ DNS_POINTER_SIZE;
 
@@ -616,9 +617,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	rr->type = htons(DNS_RR_TYPE_SRV);
 	rr->class_ = htons(DNS_CLASS_IN | DNS_CLASS_FLUSH);
 	rr->ttl = htonl(ttl);
-	/* .<Instance>.local. */
+	/* .<Hostname>.local. */
 	rr->rdlength = htons(sizeof(*rdata) + DNS_LABEL_LEN_SIZE
-			     + strlen(inst->instance) +
+			     + strlen(hostname) +
 			     DNS_POINTER_SIZE);
 	offset += sizeof(*rr);
 
@@ -630,9 +631,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 
 	*host_offset = offset;
 
-	label_size = strlen(inst->instance);
+	label_size = strlen(hostname);
 	buf[offset++] = label_size;
-	memcpy(&buf[offset], inst->instance, label_size);
+	memcpy(&buf[offset], hostname, label_size);
 	offset += label_size;
 
 	domain_offset |= DNS_SD_PTR_MASK;
