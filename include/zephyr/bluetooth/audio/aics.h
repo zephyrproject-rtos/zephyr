@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,26 +85,26 @@ extern "C" {
 /** @} */
 
 /**
- * @name Audio Input Control Service input types
- * @{
+ * Audio Input Control Service input types
  */
-/** The input is unspecified */
-#define BT_AICS_INPUT_TYPE_UNSPECIFIED             0x00
-/** The input is a Bluetooth Audio Stream */
-#define BT_AICS_INPUT_TYPE_BLUETOOTH               0x01
-/** The input is a microphone */
-#define BT_AICS_INPUT_TYPE_MICROPHONE              0x02
-/** The input is analog */
-#define BT_AICS_INPUT_TYPE_ANALOG                  0x03
-/** The input is digital */
-#define BT_AICS_INPUT_TYPE_DIGITAL                 0x04
-/** The input is a radio (AM/FM/XM/etc.) */
-#define BT_AICS_INPUT_TYPE_RADIO                   0x05
-/** The input is a Streaming Audio Source */
-#define BT_AICS_INPUT_TYPE_STREAMING               0x06
-/** The input is transparent / pass-through */
-#define BT_AICS_INPUT_TYPE_AMBIENT                 0x07
-/** @} */
+enum bt_aics_input_type {
+	/** The input is unspecified */
+	BT_AICS_INPUT_TYPE_UNSPECIFIED = 0x00,
+	/** The input is a Bluetooth Audio Stream */
+	BT_AICS_INPUT_TYPE_BLUETOOTH = 0x01,
+	/** The input is a microphone */
+	BT_AICS_INPUT_TYPE_MICROPHONE = 0x02,
+	/** The input is analog */
+	BT_AICS_INPUT_TYPE_ANALOG = 0x03,
+	/** The input is digital */
+	BT_AICS_INPUT_TYPE_DIGITAL = 0x04,
+	/** The input is a radio (AM/FM/XM/etc.) */
+	BT_AICS_INPUT_TYPE_RADIO = 0x05,
+	/** The input is a Streaming Audio Source */
+	BT_AICS_INPUT_TYPE_STREAMING = 0x06,
+	/** The input is transparent / pass-through */
+	BT_AICS_INPUT_TYPE_AMBIENT = 0x07,
+};
 
 /**
  * @name Audio Input Control Service Error codes
@@ -149,7 +149,7 @@ struct bt_aics_register_param {
 	int8_t max_gain;
 
 	/** Initial audio input type */
-	uint8_t type;
+	enum bt_aics_input_type type;
 
 	/** Initial audio input status (active/inactive) */
 	bool status;
@@ -275,9 +275,9 @@ typedef void (*bt_aics_gain_setting_cb)(struct bt_aics *inst, int err,
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
- * @param type   The input type.
+ * @param type         The input type.
  */
-typedef void (*bt_aics_type_cb)(struct bt_aics *inst, int err, uint8_t type);
+typedef void (*bt_aics_type_cb)(struct bt_aics *inst, int err, enum bt_aics_input_type type);
 
 /**
  * @brief Callback function for the input status.
