@@ -164,15 +164,16 @@ static inline void ts_register_tx_event(const struct device *dev,
 
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
 		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt) && frameinfo->isTsAvail) {
-			k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
-
+			/* Timestamp is written to packet in ISR.
+			 * Semaphore ensures sequential execution of writing
+			 * the timestamp here and subsequently reading the timestamp
+			 * after waiting for the semaphore in eth_wait_for_ptp_ts().
+			 */
 			pkt->timestamp.nanosecond = frameinfo->timeStamp.nanosecond;
 			pkt->timestamp.second = frameinfo->timeStamp.second;
 
 			net_if_add_tx_timestamp(pkt);
 			k_sem_give(&data->ptp.ptp_ts_sem);
-
-			k_mutex_unlock(data->ptp.ptp_mutex);
 		}
 		net_pkt_unref(pkt);
 	}
