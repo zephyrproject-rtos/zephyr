@@ -1,0 +1,23 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Microchip SAM Slow Clock Controller (SCKC)
+
+compatible: "microchip,sama7g5-sckc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+    description: |
+      from common clock binding; shall be set to 1.
+
+clock-cells:
+  - clock-crystal-osc
