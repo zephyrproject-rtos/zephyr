@@ -50,17 +50,36 @@
 	}
 
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
+#ifdef CONFIG_SMP
+#define CTF_EVENT(...)                                                         \
+	{                                                                      \
+		const uint32_t tstamp = k_cyc_to_ns_floor64(k_cycle_get_32()); \
+		const uint32_t core_id =arch_proc_id(); \
+										\
+		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__, core_id)                         \
+	}
+#else
 #define CTF_EVENT(...)                                                         \
 	{                                                                      \
 		const uint32_t tstamp = k_cyc_to_ns_floor64(k_cycle_get_32()); \
 									       \
 		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                         \
 	}
+#endif
+#else
+#ifdef CONFIG_SMP
+#define CTF_EVENT(...)                                                         \
+	{                                                                      \
+		const uint32_t core_id =arch_proc_id(); \
+											\
+		CTF_GATHER_FIELDS(__VA_ARGS__, core_id)                                 \
+	}
 #else
 #define CTF_EVENT(...)                                                         \
 	{                                                                      \
 		CTF_GATHER_FIELDS(__VA_ARGS__)                                 \
 	}
+#endif
 #endif
 
 /* Anonymous compound literal with 1 member. Legal since C99.
