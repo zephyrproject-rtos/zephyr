@@ -22,6 +22,10 @@ menuconfig CLOCK_CONTROL_NRF
 
 if CLOCK_CONTROL_NRF
 
+config CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
+	int "32k source clock frequency"
+	default 32768
+
 config CLOCK_CONTROL_NRF_SHELL
 	bool "Shell commands"
 	depends on SHELL
