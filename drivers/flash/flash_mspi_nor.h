@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,11 +21,28 @@ extern "C" {
 #define WITH_RESET_GPIO 1
 #endif
 
+/* Flash chip specific quirks */
+struct flash_mspi_nor_quirks {
+	/* Called after switching to default IO mode. */
+	int (*post_switch_mode)(const struct device *dev);
+};
+
+/* Flash data. Stored in ROM unless CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE is enabled */
+struct flash_mspi_device_data {
+	const struct flash_mspi_nor_cmds *jedec_cmds;
+	const struct flash_mspi_nor_quirks *quirks;
+	struct mspi_dev_cfg dev_cfg;
+	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
+	uint8_t dw15_qer;
+	uint32_t flash_size;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	struct flash_pages_layout layout;
+#endif
+};
+
 struct flash_mspi_nor_config {
 	const struct device *bus;
-	uint32_t flash_size;
 	struct mspi_dev_id mspi_id;
-	struct mspi_dev_cfg mspi_nor_cfg;
 	struct mspi_dev_cfg mspi_nor_init_cfg;
 	enum mspi_dev_cfg_mask mspi_nor_cfg_mask;
 #if defined(CONFIG_MSPI_XIP)
@@ -35,20 +53,25 @@ struct flash_mspi_nor_config {
 	uint32_t reset_pulse_us;
 	uint32_t reset_recovery_us;
 #endif
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	struct flash_pages_layout layout;
+#if !defined(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE)
+	struct flash_mspi_device_data flash_data;
 #endif
-	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
-	const struct flash_mspi_nor_cmds *jedec_cmds;
-	struct flash_mspi_nor_quirks *quirks;
-	uint8_t dw15_qer;
 };
+
+#if defined(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE)
+#define FLASH_DATA(dev) (((struct flash_mspi_nor_data *)(dev->data))->flash_data)
+#else
+#define FLASH_DATA(dev) (((const struct flash_mspi_nor_config *)(dev->config))->flash_data)
+#endif
 
 struct flash_mspi_nor_data {
 	struct k_sem acquired;
 	struct mspi_xfer_packet packet;
 	struct mspi_xfer xfer;
 	struct mspi_dev_cfg *curr_cfg;
+#if defined(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE)
+	struct flash_mspi_device_data flash_data;
+#endif
 };
 
 struct flash_mspi_nor_cmd {
@@ -73,171 +96,21 @@ struct flash_mspi_nor_cmds {
 	struct flash_mspi_nor_cmd sfdp;
 };
 
-const struct flash_mspi_nor_cmds commands_single = {
-	.id = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_CMD_READ_ID,
-		.cmd_length = 1,
-	},
-	.write_en = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WREN,
-		.cmd_length = 1,
-	},
-	.read = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_READ_FAST,
-		.cmd_length = 1,
-		.addr_length = 3,
-		.rx_dummy = 8,
-	},
-	.status = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RDSR,
-		.cmd_length = 1,
-	},
-	.config = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RDCR,
-		.cmd_length = 1,
-	},
-	.page_program = {
-		.dir  = MSPI_TX,
-		.cmd = SPI_NOR_CMD_PP,
-		.cmd_length = 1,
-		.addr_length = 3,
-	},
-	.sector_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_SE,
-		.cmd_length = 1,
-		.addr_length = 3,
-	},
-	.chip_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_CE,
-		.cmd_length = 1,
-	},
-	.sfdp = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_CMD_READ_SFDP,
-		.cmd_length = 1,
-		.addr_length = 3,
-		.rx_dummy = 8,
-	},
+struct flash_mspi_nor_devs {
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
+	const struct mspi_dev_cfg dev_cfg;
+	const struct flash_mspi_nor_cmds jedec_cmds;
+	const struct flash_mspi_nor_quirks quirks;
+	uint8_t dw15_qer;
+	uint32_t flash_size;
+	uint32_t page_size;
 };
 
-const struct flash_mspi_nor_cmds commands_quad_1_4_4 = {
-	.id = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_CMD_READ_ID,
-		.cmd_length = 1,
-		.force_single = true,
-	},
-	.write_en = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WREN,
-		.cmd_length = 1,
-	},
-	.read = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_4READ,
-		.cmd_length = 1,
-		.addr_length = 3,
-		.rx_dummy = 6,
-	},
-	.status = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RDSR,
-		.cmd_length = 1,
-		.force_single = true,
-	},
-	.config = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RDCR,
-		.cmd_length = 1,
-		.force_single = true,
-	},
-	.page_program = {
-		.dir  = MSPI_TX,
-		.cmd = SPI_NOR_CMD_PP_1_4_4,
-		.cmd_length = 1,
-		.addr_length = 3,
-	},
-	.sector_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_SE,
-		.cmd_length = 1,
-		.addr_length = 3,
-		.force_single = true,
-	},
-	.chip_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_CE,
-		.cmd_length = 1,
-	},
-	.sfdp = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_CMD_READ_SFDP,
-		.cmd_length = 1,
-		.addr_length = 3,
-		.rx_dummy = 8,
-		.force_single = true,
-	},
-};
-
-const struct flash_mspi_nor_cmds commands_octal = {
-	.id = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_OCMD_READ_ID,
-		.cmd_length = 2,
-		.addr_length = 4,
-		.rx_dummy = 4
-	},
-	.write_en = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_OCMD_WREN,
-		.cmd_length = 2,
-	},
-	.read = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_OCMD_RD,
-		.cmd_length = 2,
-		.addr_length = 4,
-		.rx_dummy = 20,
-	},
-	.status = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_OCMD_RDSR,
-		.cmd_length = 2,
-		.addr_length = 4,
-		.rx_dummy = 4,
-	},
-	.page_program = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_OCMD_PAGE_PRG,
-		.cmd_length = 2,
-		.addr_length = 4,
-	},
-	.sector_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_OCMD_SE,
-		.cmd_length = 2,
-		.addr_length = 4,
-	},
-	.chip_erase = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_OCMD_CE,
-		.cmd_length = 2,
-	},
-	.sfdp = {
-		.dir = MSPI_RX,
-		.cmd = JESD216_OCMD_READ_SFDP,
-		.cmd_length = 2,
-		.addr_length = 4,
-		.rx_dummy = 20,
-	},
-};
+extern struct flash_mspi_nor_devs mspi_nor_devs[];
+extern const uint32_t mspi_nor_devs_count;
+extern const struct flash_mspi_nor_cmds commands_single;
+extern const struct flash_mspi_nor_cmds commands_quad;
+extern const struct flash_mspi_nor_cmds commands_octal;
 
 void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_nor_cmd *cmd);
 
