@@ -9,4 +9,12 @@ config NUM_IRQS
 config BUILD_OUTPUT_HEX
 	default y
 
+config PM
+	default n
+
+choice PM_POLICY
+	default PM_POLICY_DEFAULT
+	depends on PM
+endchoice
+
 endif
