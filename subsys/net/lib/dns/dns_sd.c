@@ -1017,36 +1017,30 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		}
 	}
 
-	if (query_size <= DNS_MSG_HEADER_SIZE) {
-		NET_DBG("query size %zu is less than DNS_MSG_HEADER_SIZE %d", query_size,
-			DNS_MSG_HEADER_SIZE);
-		return -EINVAL;
-	}
-
-	query += DNS_MSG_HEADER_SIZE;
-	query_size -= DNS_MSG_HEADER_SIZE;
-	offset = DNS_MSG_HEADER_SIZE;
+	offset = 0;
 	dns_sd_create_wildcard_filter(record);
 	/* valid record must have non-NULL port */
 	record->port = &dns_sd_port_zero;
 
+    if (query[0] == '.') {
+        query++;
+    }
+
 	/* also counts labels */
 	for (i = 0, qlabels = 0; query_size > 0;) {
-		qsize = *query;
-		++offset;
-		++query;
-		--query_size;
-
+        qsize = 0;
+        while (qsize < query_size && query[qsize] != '.' && query[qsize] != '\0') {
+		    qsize++;
+	    }
 		if (qsize == 0) {
+			NET_DBG("empty label in query");
+			++query;
+			--query_size;
+			++offset;
 			break;
 		}
 
 		++qlabels;
-		if (qsize >= query_size) {
-			NET_DBG("claimed query size %zu > query buffer size %zu", qsize,
-				query_size);
-			return -EINVAL;
-		}
 
 		if (qsize >= size[i]) {
 			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
@@ -1064,6 +1058,15 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		offset += qsize;
 		query += qsize;
 		query_size -= qsize;
+
+		if (query_size && *query == '.') {
+			++query;
+			--query_size;
+			++offset;
+		} else if (strlen(query) == 0) {
+			/* end of query string */
+			break;
+		}
 	}
 
 	/* write-out the actual number of labels in 'n' */
