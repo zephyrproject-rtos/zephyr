@@ -21,7 +21,6 @@
 #include <zephyr/mgmt/hawkbit/hawkbit.h>
 #include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/mgmt/hawkbit/event.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
@@ -75,10 +74,18 @@ static bool hawkbit_initialized;
 
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
+#ifdef CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#define SERVER_ADDR_LEN CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#elif defined(CONFIG_NET_IPV6)
+#define SERVER_ADDR_LEN INET6_ADDRSTRLEN
+#else
+#define SERVER_ADDR_LEN INET_ADDRSTRLEN
+#endif
+
 static struct hawkbit_config {
 	int32_t action_id;
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	char server_addr[DNS_MAX_NAME_SIZE + 1];
+	char server_addr[SERVER_ADDR_LEN + 1];
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
@@ -285,11 +292,12 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	if (settings_name_steq(name, "server_addr", &next) && !next) {
-		if (len != sizeof(hb_cfg.server_addr)) {
+		rc = read_cb(cb_arg, &hb_cfg.server_addr, MIN(len, sizeof(hb_cfg.server_addr)));
+		if (strnlen(hb_cfg.server_addr, sizeof(hb_cfg.server_addr)) ==
+		    sizeof(hb_cfg.server_addr)) {
+			memset(hb_cfg.server_addr, 0, sizeof(hb_cfg.server_addr));
 			return -EINVAL;
 		}
-
-		rc = read_cb(cb_arg, &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
 		LOG_DBG("<%s> = %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		if (rc >= 0) {
 			return 0;
@@ -358,7 +366,7 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 	LOG_DBG("export hawkbit settings");
 	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
+	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, strlen(hb_cfg.server_addr) + 1);
 	uint16_t hawkbit_port = atoi(hb_cfg.server_port);
 	(void)cb("hawkbit/server_port", &hawkbit_port, sizeof(hawkbit_port));
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
@@ -780,6 +788,12 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 {
 	if (k_sem_take(&probe_sem, HAWKBIT_SET_SERVER_TIMEOUT) == 0) {
 		if (config->server_addr != NULL) {
+			if (strnlen(config->server_addr, sizeof(hb_cfg.server_addr)) ==
+			    sizeof(hb_cfg.server_addr)) {
+				LOG_ERR("%s too long: %s", "hawkbit/server_addr",
+					config->server_addr);
+				return -EINVAL;
+			}
 			strncpy(hb_cfg.server_addr, config->server_addr,
 				sizeof(hb_cfg.server_addr));
 			LOG_DBG("configured %s: %s", "hawkbit/server_addr", hb_cfg.server_addr);
