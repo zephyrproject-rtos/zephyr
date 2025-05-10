@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX build options"
+
+config POSIX_HEADERS_IN_DEFAULT_SEARCH_PATH
+	bool "POSIX headers in default search path"
+	help
+	  Select 'y' here and Zephyr's POSIX headers will be included in the default search path.
+
+endmenu
