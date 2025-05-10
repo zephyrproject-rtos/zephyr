@@ -13,6 +13,33 @@ config BUILD_OUTPUT_HEX
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
+config BOOTLOADER_TEENSY
+	bool "Teensy bootloader support"
+	select SERIAL
+	select USB_DEVICE_STACK
+	select USB_CDC_ACM
+	select CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
+	select USB_DEVICE_INITIALIZE_AT_BOOT
+	help
+	  Sets wether the teensy bootloader should be loaded when an baudrate change is send or not.
+
+config BOOTLOADER_TEENSY_DEVICE_NAME
+	string "Teensy CDC ACM device name"
+	depends on BOOTLOADER_TEENSY
+	default "USB CDC-ACM"
+	help
+	  Sets the CDC ACM port to watch for reboot commands.
+
+if BOOTLOADER_TEENSY
+
+config USB_DEVICE_VID
+	default 0x16c0
+
+config USB_DEVICE_PID
+	default 0x0483
+
+endif # BOOTLOADER_TEENSY
+
 if NETWORKING
 
 config NET_L2_ETHERNET

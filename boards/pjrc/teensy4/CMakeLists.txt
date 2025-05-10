@@ -12,3 +12,5 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library_sources(flexspi_nor_config.c)
   zephyr_library_sources_ifdef(CONFIG_DEVICE_CONFIGURATION_DATA teensy4_sdram_ini_dcd.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_BOOTLOADER_TEENSY bootloader_teensy.c)
