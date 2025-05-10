@@ -18,3 +18,5 @@ elseif(CONFIG_SOC_SERIES_STM32F2X OR
        CONFIG_SOC_SERIES_STM32F7X)
   board_runner_args(openocd "--cmd-erase=stm32f2x mass_erase 0")
 endif()
+
+include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
