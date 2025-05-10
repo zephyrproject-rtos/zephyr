@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
 #include <zephyr/cache.h>
@@ -1076,28 +1077,6 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 }
 
 #ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-#endif /* CONFIG_MEM_ATTR */
-
-	return buf_within_nocache;
-}
-
 static bool is_dummy_buffer(const struct spi_buf *buf)
 {
 	return buf->buf == NULL;
@@ -1109,7 +1088,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 		const struct spi_buf *buf = &bufs->buffers[i];
 
 		if (!is_dummy_buffer(buf) &&
-				!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+				!stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
 			return false;
 		}
 	}
