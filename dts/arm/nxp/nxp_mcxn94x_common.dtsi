@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -866,9 +866,10 @@
 		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
+		nxp,current-compensation-en;
+		nxp,high-performance-en;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
-
 	};
 
 	lpadc0: adc@10d000 {
