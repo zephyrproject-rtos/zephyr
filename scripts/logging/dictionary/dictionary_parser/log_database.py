@@ -36,16 +36,6 @@ ARCHS = {
     "x86" : {
         "kconfig": "CONFIG_X86",
     },
-    "nios2" : {
-        "kconfig": "CONFIG_NIOS2",
-
-        # Small static strings are put into section "datas"
-        # so we need to include them also.
-        #
-        # See include/arch/nios2/linker.ld on .sdata.*
-        # for explanation.
-        "extra_string_section": ['datas'],
-    },
     "posix" : {
         "kconfig": "CONFIG_ARCH_POSIX",
     },
