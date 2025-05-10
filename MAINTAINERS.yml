@@ -3163,18 +3163,9 @@ NIOS-2 arch:
     - nashif
   files:
     - arch/nios2/
-    - dts/nios2/intel/
-    - boards/common/nios2.board.cmake
-    - soc/altr/*nios2*/
     - include/zephyr/arch/nios2/
-    - tests/boards/altera_max10/
-    - boards/qemu/nios2/
-    - boards/altr/max10/
-    - scripts/support/quartus-flash.py
   labels:
     - "area: NIOS2"
-  tests:
-    - boards.altera_max10
 
 nRF BSIM:
   status: maintained
