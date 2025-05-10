@@ -28,7 +28,7 @@ extern struct fcb test_fcb;
 extern struct fcb test_fcb_crc_disabled;
 #endif
 
-extern struct flash_sector test_fcb_sector[];
+extern const struct flash_sector test_fcb_sector[];
 
 extern uint8_t fcb_test_erase_value;
 
