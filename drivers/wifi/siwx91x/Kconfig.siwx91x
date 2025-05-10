@@ -45,6 +45,9 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+config WIFI_SILABS_SIWX91X_SNTP_CLIENT
+	bool "SNTP"
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	help
