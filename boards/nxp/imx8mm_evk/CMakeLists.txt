@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_MIMX8ML8_A53)
+if(CONFIG_SOC_MIMX8MM6_A53)
   file(WRITE ${CMAKE_BINARY_DIR}/zephyr/runner.jlinkscript
     "LE
     loadfile "${CMAKE_BINARY_DIR}/zephyr/zephyr.bin" ${CONFIG_SRAM_BASE_ADDRESS}
