@@ -49,8 +49,12 @@ config POSIX_UNAME_NODENAME_LEN
 	help
 	  Defines the maximum string length of nodename version.
 
+endif # POSIX_SINGLE_PROCESS
+
+if POSIX_SINGLE_PROCESS || XSI_SINGLE_PROCESS
+
 module = POSIX_ENV
 module-str = POSIX env logging
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # POSIX_SINGLE_PROCESS
+endif # POSIX_SINGLE_PROCESS || XSI_SINGLE_PROCESS
