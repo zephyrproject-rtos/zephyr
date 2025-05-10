@@ -23,7 +23,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/arch/cache.h>
 
-#if defined(CONFIG_CPU_HAS_NXP_SYSMPU)
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 #include <fsl_sysmpu.h>
 #endif
 
