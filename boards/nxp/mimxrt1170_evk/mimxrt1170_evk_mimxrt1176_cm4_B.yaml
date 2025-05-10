@@ -14,6 +14,7 @@ toolchain:
 ram: 128
 flash: 128
 supported:
+  - dac
   - dma
   - flash
   - gpio
