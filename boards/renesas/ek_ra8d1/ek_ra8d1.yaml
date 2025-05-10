@@ -13,4 +13,5 @@ supported:
   - watchdog
   - usbd
   - display
+  - crc
 vendor: renesas
