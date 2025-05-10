@@ -1,9 +1,9 @@
-.. zephyr:board:: imx8mp_var_som
+.. zephyr:board:: imx8mp_var_dart
 
 Overview
 ********
 
-Variscite's VAR-SOM-MX8M-PLUS System on Module (SoM) is based on the i.MX 8M Plus family,
+Variscite's DART-MX8M-PLUS System on Module (SoM) is based on the i.MX 8M Plus family,
 which is a set of NXP products built to achieve both high performance and low power
 consumption and relies on a powerful, fully coherent core complex based on a quad Cortex®-A53
 cluster and Cortex®-M7 low-power coprocessor, audio digital signal processor, machine learning
@@ -89,7 +89,7 @@ Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART4.
+CPU's UART3.
 
 Programming and Debugging (A53)
 *******************************
@@ -111,7 +111,7 @@ for example, with the :zephyr:code-sample:`hello_world` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: imx8mp_var_som/mimx8ml8/a53
+   :board: imx8mp_var_dart/mimx8ml8/a53
    :goals: build
 
 This will build an image with the hello_world sample app. When loaded and executed
@@ -120,7 +120,7 @@ it will display the following ram console output:
 .. code-block:: console
 
    *** Booting Zephyr OS build v4.0.0-3113-g5aeda6fe7dfa ***
-   Hello World! imx8mp_var_som/mimx8ml8/a53
+   Hello World! imx8mp_var_dart/mimx8ml8/a53
 
 
 Programming and Debugging (M7)
@@ -128,7 +128,7 @@ Programming and Debugging (M7)
 
 .. zephyr:board-supported-runners::
 
-The VAR-SOM-MX8M-PLUS don't have QSPI flash for the M7, and it needs to be
+The DART-MX8M-PLUS doesn't have QSPI flash for the M7, and it needs to be
 started by the A53 core. The A53 core is responsible to load the M7 binary
 application into the RAM, put the M7 in reset, set the M7 Program Counter and
 Stack Pointer, and get the M7 out of reset. The A53 can perform these steps at
@@ -155,8 +155,8 @@ For more information about memory mapping see the
 `i.MX 8M Applications Processor Reference Manual`_  (section 2.1 to 2.3)
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done based on board name (e.g. imx8mp_var_som/mimx8ml8/m7
-for ITCM and imx8mp_var_som/mimx8ml8/m7/ddr for DDR).
+configuration is done based on board name (e.g. imx8mp_var_dart/mimx8ml8/m7
+for ITCM and imx8mp_var_dart/mimx8ml8/m7/ddr for DDR).
 
 There are two methods to load M7 Core images: U-Boot command and Linux remoteproc.
 
@@ -204,12 +204,12 @@ for MCUXpresso binaries:
    [  212.912070] remoteproc remoteproc0: No resource table in elf
    [  213.444675] remoteproc remoteproc0: remote processor imx-rproc is now up
 
-Which should yield the following result on the UART4 serial console:
+Which should yield the following result on the UART3 serial console:
 
 .. code-block:: console
 
    *** Booting Zephyr OS build v4.0.0-3113-g5aeda6fe7dfa ***
-   Hello World! imx8mp_var_som/mimx8ml8/m7
+   Hello World! imx8mp_var_dart/mimx8ml8/m7
 
 If the device tree dedicated to be used with Cortex-M7 applications is not being
 currently used, the script will give instructions on how to do so:
@@ -219,7 +219,7 @@ currently used, the script will give instructions on how to do so:
    Error: /sys/class/remoteproc/remoteproc0 not found.
    Please enable remoteproc driver.
    Most likely you need to use the correct device tree, for example:
-   fw_setenv fdt_file imx8mp-var-som-symphony-m7.dtb && reboot
+   fw_setenv fdt_file imx8mp-var-dart-dt8mcustomboard-m7.dtb && reboot
 
 You can also configure U-Boot to load firmware on boot:
 
@@ -228,7 +228,7 @@ You can also configure U-Boot to load firmware on boot:
    root@imx8mp-var-dart:~# /etc/remoteproc/variscite-rproc-u-boot -f /boot/zephyr.bin
    Configuring for TCM memory
    + fw_setenv m7_addr 0x7E0000
-   + fw_setenv fdt_file imx8mp-var-som-symphony-m7.dtb
+   + fw_setenv fdt_file imx8mp-var-dart-dt8mcustomboard-m7.dtb
    + fw_setenv use_m7 yes
    + fw_setenv m7_bin zephyr.bin
 
@@ -240,16 +240,15 @@ support, visit `Variscite Wiki`_.
 Debugging
 =========
 
-VAR-SOM-MX8M-PLUS board can be debugged by connecting an external
-JLink JTAG debugger to the 14-pin header on the top left side of
-the SoM and to the PC. Then the application can be debugged using
-the usual way.
+DART-MX8M-PLUS board can be debugged by connecting an external
+JLink JTAG debugger to the J29 of the DT8MCustomBoard and to the PC.
+Then the application can be debugged using the usual way.
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: imx8mp_var_som/mimx8ml8/m7
+   :board: imx8mp_var_dart/mimx8ml8/m7
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -258,7 +257,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v4.0.0-3113-g5aeda6fe7dfa ***
-   Hello World! imx8mp_var_som/mimx8ml8/m7
+   Hello World! imx8mp_var_dart/mimx8ml8/m7
 
 References
 ==========
@@ -268,10 +267,10 @@ References
 - `i.MX 8M Applications Processor Reference Manual`_
 
 .. _Variscite Wiki:
-   https://variwiki.com/index.php?title=VAR-SOM-MX8M-PLUS
+   https://variwiki.com/index.php?title=DART-MX8M-PLUS
 
 .. _Variscite website:
-   https://www.variscite.com/product/system-on-module-som/cortex-a53-krait/var-som-mx8m-plus-nxp-i-mx-8m-plus
+   https://www.variscite.com/product/system-on-module-som/cortex-a53-krait/dart-mx8m-plus-nxp-i-mx-8m-plus
 
 .. _i.MX 8M Applications Processor Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMX8MPRM

@@ -1,0 +1,20 @@
+/*
+ * Copyright 2025 Variscite Ltd.
+ * Copyright (c) 2021, Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx8ml_m7.dtsi>
+
+/ {
+	soc {
+		uart3: uart@30880000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30880000 0x10000>;
+			interrupts = <28 3>;
+			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
+			status = "disabled";
+		};
+	};
+};
