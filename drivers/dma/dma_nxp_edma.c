@@ -60,6 +60,12 @@ static void edma_isr(const void *parameter)
 		}
 	}
 
+	/* Once dma channel request done, updated machine state into CHAN_STATE_DONE. */
+	if ((EDMA_ChannelRegRead(data->hal_cfg, chan->id, EDMA_TCD_CH_CSR) & EDMA_TCD_CH_CSR_DONE_MASK) == EDMA_TCD_CH_CSR_DONE_MASK)
+	{
+		chan->state = CHAN_STATE_DONE;
+	}
+
 	/* TODO: are there any sanity checks we have to perform before invoking
 	 * the registered callback?
 	 */
@@ -291,6 +297,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 
 	chan->cb = dma_cfg->dma_callback;
 	chan->arg = dma_cfg->user_data;
+	chan->transfer_type = transfer_type;
 
 	/* warning: this sets SOFF and DOFF to SSIZE and DSIZE which are POSITIVE. */
 	ret = EDMA_ConfigureTransfer(data->hal_cfg, chan_id,
@@ -305,6 +312,17 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 		LOG_ERR("failed to configure transfer");
 		return to_std_error(ret);
 	}
+
+        if (dma_cfg->dest_chaining_en) {
+		chan->link_type = kEDMA_MajorLink;
+                EDMA_SetChannelLink(data->hal_cfg, chan_id, kEDMA_MajorLink,
+                                    dma_cfg->linked_channel);
+        }
+        if (dma_cfg->source_chaining_en) {
+		chan->link_type = kEDMA_MinorLink;
+                EDMA_SetChannelLink(data->hal_cfg, chan_id, kEDMA_MinorLink,
+                                    dma_cfg->linked_channel);
+        }
 
 	/* TODO: channel MUX should be forced to 0 based on the previous state */
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
@@ -519,10 +537,37 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 
 	LOG_DBG("starting channel %u", chan_id);
 
-	/* enable HW requests */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
-			      EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+	/* enable dma channel request according into transfer type. */
+	if (kEDMA_TransferTypeM2M == chan->transfer_type)
+	{
+		if (!chan->link_type)
+		{
+			/* the software channel trigger will be cleared after once time burst request finised
+			 * loop enable this reuqest until CITER=0
+			 * */
+			uint16_t citer;
+			citer = EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CITER);
 
+			while(citer >= 1)
+			{
+				if (!(EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CSR) & EDMA_TCD_CSR_START_MASK))
+				{
+					EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CSR, EDMA_TCD_CSR_START_MASK, 0);
+					citer--;
+				}
+			}
+		}
+		else
+		{
+			EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CSR, EDMA_TCD_CSR_START_MASK, 0);
+
+		}
+	}
+	else
+	{
+		/* enable HW requests */
+                EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+	}
 	chan->state = CHAN_STATE_STARTED;
 
 	return 0;
@@ -754,6 +799,7 @@ static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);	\
 static void interrupt_config_function_##inst(void)				\
 {										\
 	EDMA_CONNECT_INTERRUPTS(inst);						\
+	EDMA_INTERRUPTS_ENABLE(inst);						\
 }										\
 										\
 static struct edma_config edma_config_##inst = {				\
