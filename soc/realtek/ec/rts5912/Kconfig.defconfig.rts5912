@@ -22,4 +22,8 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 
 endif # REALTEK_RTS5912_RTMR
 
+config HEAP_MEM_POOL_SIZE
+	default 8192
+	depends on ESPI_RTS5912
+
 endif # SOC_RTS5912
