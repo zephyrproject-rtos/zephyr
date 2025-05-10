@@ -62,6 +62,10 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #else
 #define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
 #endif
+/* Definitions aligned with HAL macros for PHY type selection */
+#define USB_OTG_HS_PHY_ULPI	1U
+#define USB_FS_EMBEDDED_PHY	2U
+#define USB_OTG_HS_EMBEDDED_PHY	3U
 
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
@@ -985,6 +989,42 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(0), maximum_speed, 1),
 };
 
+/*
+ * Function to determine the USB PHY interface selection for STM32 using device tree configurations.
+ * The function checks for compatible PHY types and phy phandle,
+ * and returns the corresponding physel.
+ * There are three types of supported physel:
+ * - USB_OTG_HS_PHY_ULPI: UTMI+ Low Pin Interface for external high-speed PHY.
+ * - USB_FS_EMBEDDED_PHY: on-chip full-speed PHY.
+ * - USB_OTG_HS_EMBEDDED_PHY: on-chip high-speed PHY.
+ */
+static uint8_t usb_dc_stm32_get_physel(void)
+{
+	uint8_t physel;
+
+/* If the ULPI interface for an external high-speed PHY is enabled, it is assumed to be chosen. */
+#if DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy)
+	physel = USB_OTG_HS_PHY_ULPI;
+#elif (((DT_PHANDLE(DT_INST(0, st_stm32_otgfs), phys) == otgfs_phy) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_usb), phys) == otgfs_phy) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_usb), phys) == usb_fs_phy)) && \
+	DT_HAS_COMPAT_STATUS_OKAY(usb_nop_xceiv))
+	physel = USB_FS_EMBEDDED_PHY;
+#elif (((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == otghs_fs_phy) && \
+	DT_HAS_COMPAT_STATUS_OKAY(usb_nop_xceiv)) || \
+	((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == otghs_phy) && \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)) || \
+	(((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == usbphyc) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == usbphyc1)) && \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)))
+	physel = USB_OTG_HS_EMBEDDED_PHY;
+#else
+#error "Unsupported device"
+#endif
+
+	return physel;
+}
+
 static void priv_pcd_prepare(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -992,27 +1032,13 @@ static void priv_pcd_prepare(const struct device *dev)
 
 	memset(&priv->pcd, 0, sizeof(priv->pcd));
 
-	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
+	/* Per controller/Phy values */
 	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
 
-	/* Per controller/Phy values */
-#if defined(USB)
-	priv->pcd.Instance = USB;
-#elif defined(USB_DRD_FS)
-	priv->pcd.Instance = USB_DRD_FS;
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
-#endif /* USB */
-
-#if USB_OTG_HS_EMB_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	priv->pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	priv->pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_OTG_HS_EMB_PHY */
+	priv->pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	priv->pcd.Init.phy_itface = usb_dc_stm32_get_physel();
 }
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
