@@ -325,6 +325,38 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the data does not match");
 	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
 			"the data does not match");
+
+	/* Extensive tests for edge cases */
+	int ret;
+
+	sensor_value_from_double(&data, -2147483648.0);
+	zassert_equal(data.val1, -2147483648, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_double(&data, -2147483649.0);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_double(&data, 2147483647.0);
+	zassert_equal(data.val1, 2147483647, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_double(&data, 2147483648.0);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_float(&data, -2147483648.0f);
+	zassert_equal(data.val1, -2147483648, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_float(&data, -2147483904.0f);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_float(&data, 2147483520.0f);
+	zassert_equal(data.val1, 2147483520, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_float(&data, 2147483584.0f);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
 #endif
 	/* reset test data to positive value */
 	data.val1 = 3;
