@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config AFBR_S50
+	bool "AFBR-S50 Time-of-Flight Sensor"
+	default y
+	depends on DT_HAS_BRCM_AFBR_S50_ENABLED
+	select SENSOR_ASYNC_API
+	select SPI
+	select SPI_RTIO
+	select RTIO_WORKQ
+	select AFBR_LIB
+	select PINCTRL
+	select PINCTRL_NON_STATIC
+	help
+	  Enable driver for the AFBR-S50 Time-of-Flight sensor.
