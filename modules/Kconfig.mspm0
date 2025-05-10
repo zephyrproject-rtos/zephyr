@@ -1,0 +1,13 @@
+# MSPM0 SDK configuration
+
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_MSPM0_SDK
+	bool
+
+config USE_MSPM0_DL_GPIO
+	bool
+
+config USE_MSPM0_DL_UART
+	bool
