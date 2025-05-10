@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Andreas Wolf <awolf002@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &code_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100 - DT_SIZE_K(16))>;
+			read-only;
+		};
+
+		storage_partition: storage_partition@1fc000 {
+			label = "storage-partition";
+			reg = <(DT_SIZE_M(2) - DT_SIZE_K(16)) (DT_SIZE_K(16))>;
+		};
+	};
+};
