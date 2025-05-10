@@ -19,6 +19,9 @@
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
+#ifdef CONFIG_PM
+#include "sl_si91x_power_manager.h"
+#endif
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
@@ -37,8 +40,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
 			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
-		}
-	};
+		}};
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
@@ -50,7 +52,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(320)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
 	} else {
-		 k_panic();
+		k_panic();
 	}
 
 	if (wifi_oper_mode == SL_SI91X_CLIENT_MODE) {
@@ -181,7 +183,10 @@ static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
 	sl_status_t status;
-
+#ifdef CONFIG_PM
+	sl_wifi_performance_profile_t performance_profile = {.profile =
+								     DEEP_SLEEP_WITH_RAM_RETENTION};
+#endif
 	siwg91x_get_nwp_config(SL_SI91X_CLIENT_MODE, &network_config);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
@@ -191,6 +196,14 @@ static int siwg917_nwp_init(void)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_PM
+	status = sl_wifi_set_performance_profile(&performance_profile);
+	if (status != SL_STATUS_OK) {
+
+		return -EINVAL;
+	}
+
+#endif
 	return 0;
 }
 SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
@@ -204,9 +217,9 @@ Z_ISR_DECLARE(74, 0, IRQ074_Handler, 0);
  * FIXME: Allow to configure size of buffer
  */
 static uint8_t __aligned(8) siwg917_nwp_stack[10 * 1024];
-static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList)
-	__used __isr_siwg917_coprocessor_stack_irq = {
+static Z_DECL_ALIGN(struct _isr_list)
+	Z_GENERIC_SECTION(.intList) __used __isr_siwg917_coprocessor_stack_irq = {
 		.irq = 30,
 		.flags = ISR_FLAG_DIRECT,
 		.func = &siwg917_nwp_stack[sizeof(siwg917_nwp_stack) - 1],
-	};
+};
