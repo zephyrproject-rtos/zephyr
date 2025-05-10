@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/rw/RW612-pinctrl.h>
+
+&pinctrl {
+
+	//default-UART
+
+	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
+		group0 {
+			pinmux = <IO_MUX_FC3_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	// FCx all default configure as a UART
+
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <IO_MUX_FC0_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm2_usart: pinmux_flexcomm2_usart {
+		group0 {
+			pinmux = <IO_MUX_FC2_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm1_usart: pinmux_flexcomm1_usart {
+		group0 {
+			pinmux = <IO_MUX_FC1_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm14_usart: pinmux_flexcomm14_usart {
+		group0 {
+			pinmux = <IO_MUX_FC14_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+// i2c
+
+	pinmux_flexcomm1_i2c: pinmux_flexcomm1_i2c {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2C_8_9>;
+			slew-rate = "normal";
+			bias-pull-up;
+		};
+	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <IO_MUX_FC2_I2C_16_17>;
+			slew-rate = "normal";
+			bias-pull-up;
+		};
+	};
+
+
+//spi
+
+	pinmux_flexcomm0_spi: pinmux_flexcomm0_spi {
+		group0 {
+			pinmux = <IO_MUX_FC0_SPI_SS0>;
+			slew-rate = "ultra";
+		};
+	};
+
+
+
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <IO_MUX_ENET_CLK
+				IO_MUX_ENET_RX
+				IO_MUX_ENET_TX
+				IO_MUX_GPIO21
+				IO_MUX_GPIO55>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <IO_MUX_ENET_MDIO>;
+			slew-rate = "fast";
+		};
+	};
+
+
+	pinmux_pwm0: pinmux_pwm0 {
+		group0 {
+			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_lcdic: pinmux_lcdic {
+		group0 {
+			pinmux = <IO_MUX_LCD_SPI_IO44
+				IO_MUX_LCD_SPI_IO45
+				IO_MUX_LCD_SPI_IO46
+				IO_MUX_LCD_SPI_IO47
+				IO_MUX_LCD_SPI_IO48
+				IO_MUX_LCD_SPI_IO49>;
+			slew-rate = "ultra";
+		};
+	};
+
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2S>;
+			slew-rate = "normal";
+		};
+	};
+};
