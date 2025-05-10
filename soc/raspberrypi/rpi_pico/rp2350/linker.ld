@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CONFIG_RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 MEMORY
 {
 	IMAGE_DEF_FLASH (r) : ORIGIN = 0x10000000, LENGTH = 128
@@ -23,5 +24,6 @@ SECTIONS
 		LONG(0xab123579) /* PICOBIN_BLOCK_MARKER_END */
 	} > IMAGE_DEF_FLASH
 }
+#endif /* CONFIG_RP2_REQUIRES_IMAGE_DEFINITION_BLOCK */
 
 #include <zephyr/arch/arm/cortex_m/scripts/linker.ld>

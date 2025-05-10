@@ -29,7 +29,7 @@ config SOC_RP2350B_M33
 
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
-	default y
+	default y if FLASH_LOAD_OFFSET = 0x100
 	# Currently the IDF only supports using the Cortex-M33 cores. Enforce
 	# this at build configuration time.
 	depends on SOC_SERIES_RP2350 && CPU_CORTEX_M33
