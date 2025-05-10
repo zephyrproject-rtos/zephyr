@@ -46,6 +46,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL   clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RTS5912_SCCON       clock_control_rts5912_sccon.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL       clock_control_nrf2_audiopll.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_IT51XXX             clock_control_it51xxx.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_XLNX_PS7_CLKC       clock_control_xlnx_ps7_clkc.c)
 
 if(CONFIG_CLOCK_CONTROL_NRF2)
   zephyr_library_sources(clock_control_nrf2_common.c)
