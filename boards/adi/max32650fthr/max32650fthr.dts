@@ -18,7 +18,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram4;
 		zephyr,flash = &flash0;
 	};
 
@@ -56,6 +56,7 @@
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -85,5 +86,23 @@
 };
 
 &gpio3 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_mosi_p1_29 &spi1_miso_p1_28 &spi1_sck_p1_26 &spi1_ss0_p1_23>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc_counter {
 	status = "okay";
 };
