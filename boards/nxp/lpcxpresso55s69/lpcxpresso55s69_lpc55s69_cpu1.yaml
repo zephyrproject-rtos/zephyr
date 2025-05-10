@@ -15,4 +15,3 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
-vendor: nxp

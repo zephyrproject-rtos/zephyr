@@ -14,4 +14,3 @@ toolchain:
 ram: 1024
 supported:
   - uart
-vendor: nxp

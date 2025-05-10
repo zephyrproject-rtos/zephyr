@@ -24,4 +24,3 @@ supported:
   - spi
   - dma
   - watchdog
-vendor: nxp

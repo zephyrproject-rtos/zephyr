@@ -16,4 +16,3 @@ supported:
   - counter
   - i2c
   - uart
-vendor: nxp

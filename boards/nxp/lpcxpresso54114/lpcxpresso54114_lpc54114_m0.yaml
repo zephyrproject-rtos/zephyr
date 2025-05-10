@@ -16,4 +16,3 @@ testing:
 toolchain:
   - zephyr
   - gnuarmemb
-vendor: nxp

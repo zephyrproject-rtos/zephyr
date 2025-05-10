@@ -17,4 +17,3 @@ supported:
   - i2c
   - smp
   - uart
-vendor: nxp

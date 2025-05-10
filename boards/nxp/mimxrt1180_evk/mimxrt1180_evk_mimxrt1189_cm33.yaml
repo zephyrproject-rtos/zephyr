@@ -30,4 +30,3 @@ supported:
   - watchdog
   - usbd
   - sdhc
-vendor: nxp

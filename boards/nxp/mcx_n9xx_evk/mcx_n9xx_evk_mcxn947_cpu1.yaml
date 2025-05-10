@@ -16,4 +16,3 @@ toolchain:
 supported:
   - dma
   - gpio
-vendor: nxp

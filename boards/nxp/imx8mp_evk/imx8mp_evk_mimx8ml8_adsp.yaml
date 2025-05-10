@@ -13,4 +13,3 @@ testing:
     - net
     - bluetooth
     - mcumgr
-vendor: nxp

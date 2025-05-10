@@ -19,4 +19,3 @@ supported:
   - pwm
   - spi
   - netif:eth
-vendor: nxp

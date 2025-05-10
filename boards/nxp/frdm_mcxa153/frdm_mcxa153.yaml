@@ -22,4 +22,3 @@ supported:
   - pwm
   - spi
   - uart
-vendor: nxp

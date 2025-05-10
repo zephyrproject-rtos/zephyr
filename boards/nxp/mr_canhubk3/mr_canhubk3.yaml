@@ -23,4 +23,3 @@ supported:
   - spi
   - uart
   - watchdog
-vendor: nxp
