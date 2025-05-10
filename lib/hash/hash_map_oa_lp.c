@@ -50,7 +50,7 @@ static struct oalp_entry *sys_hashmap_oa_lp_find(const struct sys_hashmap *map, 
 
 		switch (entry->state) {
 		case USED:
-			if (used_ok && entry->key == key) {
+			if (used_ok && map->eq_func(entry->key, key)) {
 				return entry;
 			}
 			break;
@@ -74,7 +74,7 @@ static struct oalp_entry *sys_hashmap_oa_lp_find(const struct sys_hashmap *map, 
 }
 
 static int sys_hashmap_oa_lp_insert_no_rehash(struct sys_hashmap *map, uint64_t key, uint64_t value,
-					      uint64_t *old_value)
+					      uint64_t *old_value, uint64_t *old_key)
 {
 	int ret;
 	struct oalp_entry *entry = NULL;
@@ -101,6 +101,9 @@ static int sys_hashmap_oa_lp_insert_no_rehash(struct sys_hashmap *map, uint64_t 
 
 	if (old_value != NULL) {
 		*old_value = entry->value;
+	}
+	if (old_key != NULL) {
+		*old_key = entry->key;
 	}
 
 	entry->state = USED;
@@ -152,7 +155,8 @@ static int sys_hashmap_oa_lp_rehash(struct sys_hashmap *map, bool grow)
 		entry = &old_buckets[i];
 
 		if (entry->state == USED) {
-			sys_hashmap_oa_lp_insert_no_rehash(map, entry->key, entry->value, NULL);
+			sys_hashmap_oa_lp_insert_no_rehash(map, entry->key, entry->value, NULL,
+							   NULL);
 			++j;
 		}
 	}
@@ -232,7 +236,7 @@ static void sys_hashmap_oa_lp_clear(struct sys_hashmap *map, sys_hashmap_callbac
 }
 
 static inline int sys_hashmap_oa_lp_insert(struct sys_hashmap *map, uint64_t key, uint64_t value,
-					   uint64_t *old_value)
+					   uint64_t *old_value, uint64_t *old_key)
 {
 	int ret;
 
@@ -241,10 +245,11 @@ static inline int sys_hashmap_oa_lp_insert(struct sys_hashmap *map, uint64_t key
 		return ret;
 	}
 
-	return sys_hashmap_oa_lp_insert_no_rehash(map, key, value, old_value);
+	return sys_hashmap_oa_lp_insert_no_rehash(map, key, value, old_value, old_key);
 }
 
-static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value,
+				     uint64_t *old_key)
 {
 	struct oalp_entry *entry;
 	struct sys_hashmap_oa_lp_data *data = (struct sys_hashmap_oa_lp_data *)map->data;
@@ -256,6 +261,9 @@ static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint
 
 	if (value != NULL) {
 		*value = entry->value;
+	}
+	if (old_key != NULL) {
+		*old_key = entry->key;
 	}
 
 	entry->state = TOMBSTONE;
