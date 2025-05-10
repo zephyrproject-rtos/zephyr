@@ -26,6 +26,7 @@ enum udc_mps0 {
 	UDC_MPS0_16,
 	UDC_MPS0_32,
 	UDC_MPS0_64,
+	UDC_MPS0_512,
 };
 
 /**
@@ -36,6 +37,8 @@ enum udc_mps0 {
 struct udc_device_caps {
 	/** USB high speed capable controller */
 	uint32_t hs : 1;
+	/** USB super speed capable controller */
+	uint32_t ss : 1;
 	/** Controller supports USB remote wakeup */
 	uint32_t rwup : 1;
 	/** Controller performs status OUT stage automatically */
@@ -45,7 +48,7 @@ struct udc_device_caps {
 	/** Controller can detect the state change of USB supply VBUS.*/
 	uint32_t can_detect_vbus : 1;
 	/** Maximum packet size for control endpoint */
-	enum udc_mps0 mps0 : 2;
+	enum udc_mps0 mps0 : 3;
 };
 
 /**
@@ -221,7 +224,7 @@ typedef int (*udc_event_cb_t)(const struct device *dev,
  * @brief UDC driver API
  * This is the mandatory API any USB device controller driver needs to expose
  * with exception of:
- *   device_speed(), test_mode() are only required for HS controllers
+ *   device_speed(), test_mode() are only required for HS and SS controllers
  */
 struct udc_api {
 	enum udc_bus_speed (*device_speed)(const struct device *dev);
@@ -243,6 +246,8 @@ struct udc_api {
 	int (*host_wakeup)(const struct device *dev);
 	int (*set_address)(const struct device *dev,
 			   const uint8_t addr);
+	int (*set_system_exit_latency)(const struct device *dev,
+				       const struct usb_system_exit_latency *sel);
 	int (*test_mode)(const struct device *dev,
 			 const uint8_t mode, const bool dryrun);
 	int (*enable)(const struct device *dev);
@@ -407,7 +412,7 @@ int udc_shutdown(const struct device *dev);
  * @brief Get USB device controller capabilities
  *
  * Obtain the capabilities of the controller
- * such as full speed (FS), high speed (HS), and more.
+ * such as full speed (FS), high speed (HS), super speed (SS), and more.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
@@ -487,6 +492,40 @@ static inline int udc_test_mode(const struct device *dev,
 	if (api->test_mode != NULL) {
 		api->lock(dev);
 		ret = api->test_mode(dev, mode, dryrun);
+		api->unlock(dev);
+	} else {
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Set USB3 U1/P1 U2/P2 link latency.
+ *
+ * USB3 defines link latencies values, and the host is expected to configure
+ * these parameters for the device through a SET_SEL command, defined in
+ * USB 3.2 R1 document (section 9.4.12).
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ * @param[in] sel Pointer to struct with the latency values from the host
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not enabled (or not initialized)
+ */
+static inline int udc_set_system_exit_latency(const struct device *dev,
+					      const struct usb_system_exit_latency *sel)
+{
+	const struct udc_api *api = dev->api;
+	int ret;
+
+	if (!udc_is_enabled(dev)) {
+		return -EPERM;
+	}
+
+	if (api->set_system_exit_latency != NULL) {
+		api->lock(dev);
+		ret = api->set_system_exit_latency(dev, sel);
 		api->unlock(dev);
 	} else {
 		ret = -ENOTSUP;

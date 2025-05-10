@@ -17,8 +17,10 @@
 /* Default configurations used in the shell context. */
 USBD_CONFIGURATION_DEFINE(config_1_fs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
 USBD_CONFIGURATION_DEFINE(config_1_hs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_1_ss, USB_SCD_REMOTE_WAKEUP, 200, NULL);
 USBD_CONFIGURATION_DEFINE(config_2_fs, USB_SCD_SELF_POWERED, 200, NULL);
 USBD_CONFIGURATION_DEFINE(config_2_hs, USB_SCD_SELF_POWERED, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_2_ss, USB_SCD_SELF_POWERED, 200, NULL);
 
 static struct usbd_shell_config {
 	struct usbd_config_node *cfg_nd;
@@ -27,8 +29,10 @@ static struct usbd_shell_config {
 } sh_configs[] = {
 	{.cfg_nd = &config_1_fs, .speed = USBD_SPEED_FS, .name = "FS1",},
 	{.cfg_nd = &config_1_hs, .speed = USBD_SPEED_HS, .name = "HS1",},
+	{.cfg_nd = &config_1_ss, .speed = USBD_SPEED_SS, .name = "SS1",},
 	{.cfg_nd = &config_2_fs, .speed = USBD_SPEED_FS, .name = "FS2",},
 	{.cfg_nd = &config_2_hs, .speed = USBD_SPEED_HS, .name = "HS2",},
+	{.cfg_nd = &config_2_ss, .speed = USBD_SPEED_SS, .name = "SS2",},
 };
 
 static struct usbd_shell_speed {
@@ -37,6 +41,7 @@ static struct usbd_shell_speed {
 } sh_speed[] = {
 	{.speed = USBD_SPEED_FS, .name = "fs",},
 	{.speed = USBD_SPEED_HS, .name = "hs",},
+	{.speed = USBD_SPEED_SS, .name = "ss",},
 };
 
 /* Default string descriptors used in the shell context. */
@@ -148,7 +153,7 @@ static int register_classes(const struct shell *sh)
 	}
 
 	if (!USBD_SUPPORTS_HIGH_SPEED ||
-	    usbd_caps_speed(my_uds_ctx) != USBD_SPEED_HS) {
+	    usbd_caps_speed(my_uds_ctx) < USBD_SPEED_HS) {
 		return 0;
 	}
 
@@ -163,6 +168,24 @@ static int register_classes(const struct shell *sh)
 		}
 
 		shell_print(sh, "dev: register HS %s", c_nd->c_data->name);
+	}
+
+	if (!USBD_SUPPORTS_SUPER_SPEED ||
+	    usbd_caps_speed(my_uds_ctx) < USBD_SPEED_SS) {
+		return 0;
+	}
+
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss, usbd_class_node, c_nd) {
+		err = usbd_register_class(my_uds_ctx, c_nd->c_data->name,
+					  USBD_SPEED_SS, 1);
+		if (err) {
+			shell_error(sh,
+				    "dev: failed to register SS %s (%d)",
+				    c_nd->c_data->name, err);
+			return err;
+		}
+
+		shell_print(sh, "dev: register SS %s", c_nd->c_data->name);
 	}
 
 	return 0;
@@ -196,7 +219,17 @@ static int cmd_usbd_default_config(const struct shell *sh,
 		return err;
 	}
 
-	if (usbd_caps_speed(my_uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_SUPER_SPEED &&
+	    usbd_caps_speed(my_uds_ctx) >= USBD_SPEED_SS) {
+		err = usbd_add_configuration(my_uds_ctx, USBD_SPEED_SS, &config_1_ss);
+		if (err) {
+			shell_error(sh, "dev: Failed to add SS configuration");
+			return err;
+		}
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(my_uds_ctx) >= USBD_SPEED_HS) {
 		err = usbd_add_configuration(my_uds_ctx, USBD_SPEED_HS, &config_1_hs);
 		if (err) {
 			shell_error(sh, "dev: Failed to add HS configuration");
