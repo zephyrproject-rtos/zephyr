@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &led0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+	pinctrl-0 = <&P2_09_D4_gpio>;
+	pinctrl-names = "default";
+};
