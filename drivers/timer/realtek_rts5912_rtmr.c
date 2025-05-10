@@ -74,6 +74,8 @@ static void rtmr_isr(const void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
+
 	rtmr_restart(RTMR_COUNTER_MAX * CYCLES_PER_TICK);
 
 	cycles = previous_cnt;
@@ -220,6 +222,8 @@ void arch_busy_wait(uint32_t n_usec)
 static int sys_clock_driver_init(void)
 {
 	/* Enable RTMR clock power */
+	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 
 	SYSTEM_Type *sys_reg = RTS5912_SCCON_REG_BASE;
 
