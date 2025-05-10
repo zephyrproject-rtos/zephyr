@@ -33,8 +33,8 @@ static inline bool linker_is_in_rodata(const void *addr)
 	}
 #endif
 
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || defined(CONFIG_ARM64) ||  \
-	defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC) ||                 \
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
+	defined(CONFIG_ARM64) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC) || \
 	defined(CONFIG_MIPS) || defined(CONFIG_XTENSA) || defined(CONFIG_RX)
 	extern char __rodata_region_start[];
 	extern char __rodata_region_end[];

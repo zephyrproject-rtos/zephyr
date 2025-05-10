@@ -24,8 +24,6 @@
 #include <zephyr/arch/xtensa/arch_inlines.h>
 #elif defined(CONFIG_RISCV)
 #include <zephyr/arch/riscv/arch_inlines.h>
-#elif defined(CONFIG_NIOS2)
-#include <zephyr/arch/nios2/arch_inlines.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/arch_inlines.h>
 #elif defined(CONFIG_ARCH_POSIX)
