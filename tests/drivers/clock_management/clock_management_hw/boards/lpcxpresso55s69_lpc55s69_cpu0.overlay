@@ -1,0 +1,70 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+&system_clock {
+	sys_clk_96mhz: sys-clk-96mhz {
+		compatible = "clock-state";
+		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+		clock-frequency = <DT_FREQ_M(96)>;
+		locking-state;
+	};
+};
+
+&cpu0 {
+	clock-state-0 = <&sys_clk_96mhz>;
+};
+
+/* Define clock states for clockout clock */
+&clkout_clock {
+	clkout_default: clkout-default {
+		compatible = "clock-state";
+		/* Enable PLL1 and switch clkout to use it */
+		clocks = <&xtal32m 1 &clk_in_en 1 &pll1clksel 1 &pll1_pdec 2
+			&pll1_directo 0 &pll1 300000000 4 75 0 39 19
+			&pll1_bypass 0 &clkoutsel 5 &clkoutdiv 2>;
+		clock-frequency = <75000000>;
+	};
+	clkout_sleep: clkout-sleep {
+		compatible = "clock-state";
+		clocks = <&fro_hf 1 &clkoutsel 3 &clkoutdiv 1>;
+		clock-frequency = <96000000>;
+	};
+	clkout_test1: clkout-test1 {
+		/* Should use runtime frequency requests */
+		compatible = "clock-state";
+		clock-frequency = <73000000>;
+	};
+	clkout_test2: clkout-test2 {
+		/* Should use runtime frequency requests */
+		compatible = "clock-state";
+		clock-frequency = <147640000>;
+	};
+	clkout_test3: clkout-test3 {
+		/* Should use runtime frequency requests */
+		compatible = "clock-state";
+		clock-frequency = <1000000>;
+	};
+};
+
+/ {
+	emul_dev: emul-dev {
+		compatible = "vnd,emul-clock-consumer";
+		clock-outputs = <&clkout_clock>;
+		clock-output-names = "default";
+		clock-state-0 = <&clkout_default>;
+		default-freq = <75000000>;
+		clock-state-1 = <&clkout_sleep>;
+		sleep-freq = <96000000>;
+		clock-state-2 = <&clkout_test1>;
+		test1-freq = <73000000>;
+		clock-state-3 = <&clkout_test2>;
+		test2-freq = <147640000>;
+		clock-state-4 = <&clkout_test3>;
+		test3-freq = <1000000>;
+		clock-state-names= "default", "sleep", "test1",
+				"test2", "test3";
+	};
+};
