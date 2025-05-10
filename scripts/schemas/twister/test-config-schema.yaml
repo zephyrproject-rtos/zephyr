@@ -13,6 +13,22 @@ mapping:
         required: false
         sequence:
           - type: str
+  "qa":
+    type: map
+    required: false
+    mapping:
+      "max_platform_allow":
+        type: int
+        required: false
+      "max_integration_platforms":
+        type: int
+        required: false
+      "max_scenarios":
+        type: int
+        required: false
+      "max_platform_exclude":
+        type: int
+        required: false
   "platforms":
     type: map
     required: false

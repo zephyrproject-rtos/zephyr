@@ -16,5 +16,22 @@ SUPPORTED_SIMS = [
     "custom",
     "simics",
 ]
+SUPPORTED_RUNNABLE_HARNESS = [
+    'console',
+    'ztest',
+    'power',
+    'pytest',
+    'test',
+    'gtest',
+    'robot',
+    'ctest',
+    'shell',
+]
+SUPPORTED_BUILDABLE_HARNESS = [
+    'bsim',
+]
+
+SUPPORTED_HARNESS = SUPPORTED_RUNNABLE_HARNESS + SUPPORTED_BUILDABLE_HARNESS
+
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']
