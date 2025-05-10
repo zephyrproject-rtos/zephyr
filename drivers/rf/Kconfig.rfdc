@@ -1,0 +1,8 @@
+config XLNX_RFDC
+    bool "Xilinx RF Data Converter driver enable"
+
+if XLNX_RFDC
+config RFDC_INIT_PRIORITY
+	int	"RF ADC/DAC init priority"
+	default 80
+endif # XLNX_RFDC
