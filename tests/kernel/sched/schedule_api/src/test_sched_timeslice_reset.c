@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017,2025 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,20 +7,41 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
-
 #define NUM_THREAD 3
 
-BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
-
-/* slice size in millisecond */
 #define SLICE_SIZE 200
-/* busy for more than one slice */
-#define BUSY_MS (SLICE_SIZE + 20)
+
 /* a half timeslice */
 #define HALF_SLICE_SIZE (SLICE_SIZE >> 1)
 #define HALF_SLICE_SIZE_CYCLES                                                 \
 	((uint64_t)(HALF_SLICE_SIZE)*sys_clock_hw_cycles_per_sec() / 1000)
+
+/* 1/4 of a time slice */
+#define QUARTER_SLICE_SIZE  (SLICE_SIZE / 4)
+#define QUARTER_SLICE_SIZE_CYCLES                                              \
+	((uint64_t)(QUARTER_SLICE_SIZE) * sys_clock_hw_cycles_per_sec() / 1000)
+
+/* 3/4 of a time slice */
+#define THREE_QUARTER_SLICE_SIZE  ((SLICE_SIZE * 3) / 4)
+#define THREE_QUARTER_SLICE_SIZE_CYCLES                                        \
+	((uint64_t)(THREE_QUARTER_SLICE_SIZE) * sys_clock_hw_cycles_per_sec() / 1000)
+
+/* Task switch tolerance ... */
+#if CONFIG_SYS_CLOCK_TICKS_PER_SEC >= 1000
+/* ... will not take more than 1 ms. */
+#define TASK_SWITCH_TOLERANCE (1)
+#else
+/* ... 1ms is faster than a tick, loosen tolerance to 1 tick */
+#define TASK_SWITCH_TOLERANCE (1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif
+
+#if defined(CONFIG_TIMESLICE_AUTO_RESET)
+
+BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
+
+/* slice size in millisecond */
+/* busy for more than one slice */
+#define BUSY_MS (SLICE_SIZE + 20)
 
 /* Task switch tolerance ... */
 #if CONFIG_SYS_CLOCK_TICKS_PER_SEC >= 1000
@@ -195,8 +216,93 @@ ZTEST(threads_scheduling, test_slice_reset)
 	}
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+#elif defined(CONFIG_TIMESLICING)
 
-#else /* CONFIG_TIMESLICING */
+static uint32_t saved_cycles[30];
+static uint32_t saved_cycles_index;
+static struct k_spinlock lock;
+static bool do_yield;
+
+/*
+ * 3 threads running in parallel on a UP system.
+ * 1st thread consumes 3/4 of the time slice.
+ * 2nd thread consumes remaining 1/4 time slice before time slice expires.
+ * 3rd thread consumes 3/4 of the time slice
+ * 1st thread consumes remaining 1/4 time slice before time slice expires.
+ * 2nd thread consumes 3/4 of the time slice.
+ * ...
+ */
+static void thread_entry(void *p1, void *p2, void *p3)
+{
+	k_spinlock_key_t  key;
+	bool saved_yield;
+
+	for (unsigned int i = 0; i < 10; i++) {
+		key = k_spin_lock(&lock);
+		/* Save cycle info for post-processing */
+		saved_cycles[saved_cycles_index] = k_cycle_get_32();
+		saved_cycles_index++;
+
+		/* Toggle the yield decision and save it */
+		do_yield ^= true;
+		saved_yield = do_yield;
+		k_spin_unlock(&lock, key);
+
+		spin_for_ms(THREE_QUARTER_SLICE_SIZE);
+		if (saved_yield) {
+			k_yield();
+		}
+	}
+}
+
+ZTEST(threads_scheduling, test_slice_reset)
+{
+	struct k_thread t[NUM_THREAD];
+	uint32_t  diff;
+	uint32_t  tolerance = sys_clock_hw_cycles_per_sec() / 500;
+	uint32_t  expected_consumption;
+	unsigned int i;
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(5));
+	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
+
+	/* Align to a tick boundary */
+	k_sleep(K_TICKS(1));
+
+	for (i = 0; i < NUM_THREAD; i++) {
+		k_thread_create(&t[i], tstacks[i], STACK_SIZE,
+				thread_entry, NULL, NULL, NULL,
+				K_PRIO_PREEMPT(6), 0, K_NO_WAIT);
+	}
+
+	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
+
+	for (i = 0; i < NUM_THREAD; i++) {
+		k_thread_join(&t[i], K_FOREVER);
+	}
+
+	for (i = 1; i < 30; i++) {
+		diff = saved_cycles[i] - saved_cycles[i - 1];
+
+		expected_consumption = (i & 1) ? THREE_QUARTER_SLICE_SIZE_CYCLES
+					       : QUARTER_SLICE_SIZE_CYCLES;
+
+		/*
+		 * Allow for +/- 2 msec. (It has been observed on heavily
+		 * loaded systems that +/- 1 msec is sometimes ever so
+		 * slightly too tight.)
+		 */
+
+		zassert_true(diff >= expected_consumption - tolerance,
+			     "Consumed too little of slice %u. Expected at least %u. Got %u.",
+			     i, expected_consumption - tolerance, diff);
+
+		zassert_true(diff <= expected_consumption + tolerance,
+			     "Consumed too much of slice %u. Expected at most %u. Got %u.",
+			     i, expected_consumption + tolerance, diff);
+	}
+}
+#else /* !CONFIG_TIMESLICING */
 ZTEST(threads_scheduling, test_slice_reset)
 {
 	ztest_test_skip();

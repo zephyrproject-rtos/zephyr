@@ -680,6 +680,16 @@ config TIMESLICE_PER_THREAD
 	  a per-thread basis, with an application callback invoked when
 	  a thread reaches the end of its timeslice.
 
+config TIMESLICE_AUTO_RESET
+	bool "Automatically reset time slice on a thread context switch"
+	default y
+	depends on TIMESLICING
+	help
+	  Enabled by default, this option resets the time slice each time a new
+	  thread is scheduled to execute. If disabled, newly scheduled threads
+	  may appear to have a shorter than expected time slice as the previous
+	  thread may have consumed a portion of it.
+
 endmenu
 
 menu "Other Kernel Object Options"
