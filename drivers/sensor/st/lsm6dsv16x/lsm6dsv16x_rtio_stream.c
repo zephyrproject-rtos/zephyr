@@ -16,8 +16,67 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSV16X_RTIO);
 
-#define FIFO_TH 1
-#define FIFO_FULL 2
+/*
+ * Create a chain of SQEs representing a bus transaction to read a reg.
+ * The RTIO-enabled bus driver will:
+ *
+ *     - write "reg" address
+ *     - read "len" data bytes into "buf".
+ *     - call complete_op callback
+ *
+ * If drdy_xl is active it reads XL data (6 bytes) from LSM6DSV16X_OUTX_L_A reg.
+ */
+static void lsm6dsv16x_rtio_rw_transaction(const struct device *dev, uint8_t reg,
+					   uint8_t *buf, uint32_t len,
+					   rtio_callback_t complete_op_cb)
+{
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
+	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
+	struct rtio_sqe *write_addr = rtio_sqe_acquire(rtio);
+	struct rtio_sqe *read_reg = rtio_sqe_acquire(rtio);
+	struct rtio_sqe *complete_op = rtio_sqe_acquire(rtio);
+	struct rtio_iodev_sqe *sqe = lsm6dsv16x->streaming_sqe;
+	uint8_t reg_bus = lsm6dsv16x_bus_reg(lsm6dsv16x, reg);
+
+	/* check we have been able to acquire sqe */
+	if (write_addr == NULL || read_reg == NULL || complete_op == NULL) {
+		return;
+	}
+
+	rtio_sqe_prep_tiny_write(write_addr, iodev, RTIO_PRIO_NORM, &reg_bus, 1, NULL);
+	write_addr->flags = RTIO_SQE_TRANSACTION;
+	rtio_sqe_prep_read(read_reg, iodev, RTIO_PRIO_NORM, buf, len, NULL);
+	read_reg->flags = RTIO_SQE_CHAINED;
+	if (lsm6dsv16x->bus_type == BUS_I2C) {
+		read_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (lsm6dsv16x->bus_type == BUS_I3C) {
+		read_reg->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
+	}
+
+	rtio_sqe_prep_callback_no_cqe(complete_op, complete_op_cb, (void *)dev, sqe);
+	rtio_submit(rtio, 0);
+}
+
+static void lsm6dsv16x_config_drdy(const struct device *dev, struct trigger_config trig_cfg)
+{
+	const struct lsm6dsv16x_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
+	int16_t buf[3];
+
+	/* dummy read: re-trigger interrupt */
+	lsm6dsv16x_acceleration_raw_get(ctx, buf);
+
+	pin_int.drdy_xl = PROPERTY_ENABLE;
+
+	/* Set pin interrupt */
+	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
+		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
+	} else {
+		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
+	}
+}
 
 int lsm6dsv16x_gbias_config(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -58,7 +117,7 @@ int lsm6dsv16x_gbias_get_config(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
+static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_config trig_cfg)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	const struct lsm6dsv16x_config *config = dev->config;
@@ -79,9 +138,9 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	pin_int.fifo_th = PROPERTY_DISABLE;
 	pin_int.fifo_full = PROPERTY_DISABLE;
 
-	if (fifo_irq != 0) {
-		pin_int.fifo_th = (fifo_irq & FIFO_TH) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
-		pin_int.fifo_full = (fifo_irq & FIFO_FULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+	if (trig_cfg.int_fifo_th || trig_cfg.int_fifo_full) {
+		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 		xl_batch = config->accel_batch;
 		gy_batch = config->gyro_batch;
@@ -178,7 +237,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	/* Set pin interrupt (fifo_th could be on or off) */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
 		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
-	}  else {
+	} else {
 		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
 	}
 }
@@ -190,7 +249,7 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	uint8_t fifo_irq = 0;
+	struct trigger_config trig_cfg = { 0 };
 
 	if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 		gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
@@ -198,18 +257,30 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 
 	for (size_t i = 0; i < cfg->count; i++) {
 		if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			fifo_irq = FIFO_TH;
+			trig_cfg.int_fifo_th = 1;
 		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_FULL) {
-			fifo_irq = FIFO_FULL;
+			trig_cfg.int_fifo_full = 1;
+		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_DATA_READY) {
+			trig_cfg.int_drdy = 1;
 		}
 	}
 
-	/* if any change in fifo irq */
-	if (fifo_irq != lsm6dsv16x->fifo_irq) {
-		lsm6dsv16x->fifo_irq = fifo_irq;
+	/* if any change in trig_cfg for FIFO triggers */
+	if (trig_cfg.int_fifo_th != lsm6dsv16x->trig_cfg.int_fifo_th ||
+	    trig_cfg.int_fifo_full != lsm6dsv16x->trig_cfg.int_fifo_full) {
+		lsm6dsv16x->trig_cfg.int_fifo_th = trig_cfg.int_fifo_th;
+		lsm6dsv16x->trig_cfg.int_fifo_full = trig_cfg.int_fifo_full;
 
 		/* enable/disable the FIFO */
-		lsm6dsv16x_config_fifo(dev, fifo_irq);
+		lsm6dsv16x_config_fifo(dev, trig_cfg);
+	}
+
+	/* if any change in trig_cfg for DRDY triggers */
+	if (trig_cfg.int_drdy != lsm6dsv16x->trig_cfg.int_drdy) {
+		lsm6dsv16x->trig_cfg.int_drdy = trig_cfg.int_drdy;
+
+		/* enable/disable drdy events */
+		lsm6dsv16x_config_drdy(dev, trig_cfg);
 	}
 
 	lsm6dsv16x->streaming_sqe = iodev_sqe;
@@ -219,6 +290,9 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 	}
 }
 
+/*
+ * Called by bus driver to complete the sqe.
+ */
 static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
@@ -237,11 +311,16 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 	}
 }
 
+/*
+ * Called by bus driver to complete the LSM6DSV16X_FIFO_STATUS read op (2 bytes).
+ * If FIFO threshold or FIFO full events are active it reads all FIFO entries.
+ */
 static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
 {
 	const struct device *dev = arg;
 	const struct lsm6dsv16x_config *config = dev->config;
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
 	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
 	struct sensor_read_config *read_config;
@@ -293,17 +372,18 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 		return;
 	}
 
+	/* flush completion */
 	struct rtio_cqe *cqe;
 	int res = 0;
 
 	do {
-		cqe = rtio_cqe_consume(lsm6dsv16x->rtio_ctx);
+		cqe = rtio_cqe_consume(rtio);
 		if (cqe != NULL) {
 			if ((cqe->result < 0) && (res == 0)) {
 				LOG_ERR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
-			rtio_cqe_release(lsm6dsv16x->rtio_ctx, cqe);
+			rtio_cqe_release(rtio, cqe);
 		}
 	} while (cqe != NULL);
 
@@ -346,7 +426,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 
 		memset(buf, 0, buf_len);
 		rx_data->header.is_fifo = 1;
-		rx_data->header.timestamp = lsm6dsv16x->fifo_timestamp;
+		rx_data->header.timestamp = lsm6dsv16x->timestamp;
 		rx_data->int_status = lsm6dsv16x->fifo_status[1];
 		rx_data->fifo_count = 0;
 
@@ -366,7 +446,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 			 *
 			 *   lsm6dsv16x_fifo_mode_set(ctx, LSM6DSV16X_BYPASS_MODE);
 			 */
-			struct rtio_sqe *write_fifo_mode = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
+			struct rtio_sqe *write_fifo_mode = rtio_sqe_acquire(rtio);
 			uint8_t lsm6dsv16x_fifo_mode_set[] = {
 				LSM6DSV16X_FIFO_CTRL4,
 				LSM6DSV16X_BYPASS_MODE,
@@ -377,7 +457,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 						 RTIO_PRIO_NORM, lsm6dsv16x_fifo_mode_set,
 						 ARRAY_SIZE(lsm6dsv16x_fifo_mode_set), NULL);
 
-			rtio_submit(lsm6dsv16x->rtio_ctx, 0);
+			rtio_submit(rtio, 0);
 		}
 
 		return;
@@ -404,7 +484,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 			.accel_fs_idx = LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(
 				config->accel_fs_map[lsm6dsv16x->accel_fs]),
 			.gyro_fs = lsm6dsv16x->gyro_fs,
-			.timestamp = lsm6dsv16x->fifo_timestamp,
+			.timestamp = lsm6dsv16x->timestamp,
 		},
 		.fifo_count = fifo_count,
 		.accel_batch_odr = lsm6dsv16x->accel_batch_odr,
@@ -435,33 +515,163 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 	 *     lsm6dsv16x_fifo_out_raw_get(&dev_ctx, &f_data);
 	 *   }
 	 */
-	struct rtio_sqe *write_fifo_dout_addr = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-	struct rtio_sqe *read_fifo_dout_reg = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-	uint8_t reg = lsm6dsv16x_bus_reg(lsm6dsv16x, LSM6DSV16X_FIFO_DATA_OUT_TAG);
-
-	rtio_sqe_prep_tiny_write(write_fifo_dout_addr, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
-	write_fifo_dout_addr->flags = RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_fifo_dout_reg, iodev, RTIO_PRIO_NORM,
-			   read_buf, buf_avail, lsm6dsv16x->streaming_sqe);
-	read_fifo_dout_reg->flags = RTIO_SQE_CHAINED;
-	if (lsm6dsv16x->bus_type == BUS_I2C) {
-		read_fifo_dout_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else if (lsm6dsv16x->bus_type == BUS_I3C) {
-		read_fifo_dout_reg->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
-	}
-	rtio_sqe_prep_callback_no_cqe(complete_op, lsm6dsv16x_complete_op_cb, (void *)dev,
-				      lsm6dsv16x->streaming_sqe);
-
-	rtio_submit(lsm6dsv16x->rtio_ctx, 0);
+	lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_FIFO_DATA_OUT_TAG,
+				       read_buf, buf_avail, lsm6dsv16x_complete_op_cb);
 }
 
+/*
+ * Called by bus driver to complete the LSM6DSV16X_STATUS_REG read op.
+ * If drdy_xl is active it reads XL data (6 bytes) from LSM6DSV16X_OUTX_L_A reg.
+ */
+static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+{
+	const struct device *dev = arg;
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	const struct lsm6dsv16x_config *config = dev->config;
+#endif
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
+	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
+	struct sensor_read_config *read_config;
+
+	/* At this point, no sqe request is queued should be considered as a bug */
+	__ASSERT_NO_MSG(lsm6dsv16x->streaming_sqe != NULL);
+
+	read_config = (struct sensor_read_config *)lsm6dsv16x->streaming_sqe->sqe.iodev->data;
+	__ASSERT_NO_MSG(read_config != NULL);
+	__ASSERT_NO_MSG(read_config->is_streaming == true);
+
+	/* parse the configuration in search for any configured trigger */
+	struct sensor_stream_trigger *data_ready = NULL;
+
+	for (int i = 0; i < read_config->count; ++i) {
+		if (read_config->triggers[i].trigger == SENSOR_TRIG_DATA_READY) {
+			data_ready = &read_config->triggers[i];
+			break;
+		}
+	}
+
+	/* flush completion */
+	struct rtio_cqe *cqe;
+	int res = 0;
+
+	do {
+		cqe = rtio_cqe_consume(rtio);
+		if (cqe != NULL) {
+			if ((cqe->result < 0) && (res == 0)) {
+				LOG_ERR("Bus error: %d", cqe->result);
+				res = cqe->result;
+			}
+			rtio_cqe_release(rtio, cqe);
+		}
+	} while (cqe != NULL);
+
+	/* Bail/cancel attempt to read sensor on any error */
+	if (res != 0) {
+		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, res);
+		lsm6dsv16x->streaming_sqe = NULL;
+		return;
+	}
+
+	if (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
+	    data_ready->opt == SENSOR_STREAM_DATA_DROP) {
+		uint8_t *buf;
+		uint32_t buf_len;
+
+		/* Clear streaming_sqe since we're done with the call */
+		if (rtio_sqe_rx_buf(lsm6dsv16x->streaming_sqe, sizeof(struct lsm6dsv16x_rtio_data),
+				    sizeof(struct lsm6dsv16x_rtio_data), &buf, &buf_len) != 0) {
+			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
+			lsm6dsv16x->streaming_sqe = NULL;
+			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+				gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+			}
+			return;
+		}
+
+		struct lsm6dsv16x_rtio_data *rx_data = (struct lsm6dsv16x_rtio_data *)buf;
+
+		memset(buf, 0, buf_len);
+		rx_data->header.is_fifo = 0;
+		rx_data->header.timestamp = lsm6dsv16x->timestamp;
+		rx_data->has_accel = 0;
+		rx_data->has_gyro = 0;
+		rx_data->has_temp = 0;
+
+		/* complete request with ok */
+		rtio_iodev_sqe_ok(lsm6dsv16x->streaming_sqe, 0);
+		lsm6dsv16x->streaming_sqe = NULL;
+		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		}
+	}
+
+	/*
+	 * Read XL data
+	 *
+	 * lsm6dsv16x_data_ready_t drdy;
+	 * if (drdy.drdy_xl) {
+	 */
+	if (lsm6dsv16x->status & 0x1) {
+		uint8_t *buf, *read_buf;
+		uint32_t buf_len;
+		uint32_t req_len = 6 + sizeof(struct lsm6dsv16x_rtio_data);
+
+		if (rtio_sqe_rx_buf(lsm6dsv16x->streaming_sqe,
+				    req_len, req_len, &buf, &buf_len) != 0) {
+			LOG_ERR("Failed to get buffer");
+			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
+			lsm6dsv16x->streaming_sqe = NULL;
+			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
+				gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+			}
+			return;
+		}
+
+		struct lsm6dsv16x_rtio_data hdr = {
+			.header = {
+				.is_fifo = false,
+				.accel_fs_idx = lsm6dsv16x->accel_fs,
+				.gyro_fs = lsm6dsv16x->gyro_fs,
+				.timestamp = lsm6dsv16x->timestamp,
+			},
+			.has_accel = 1,
+			.has_gyro = 0,
+			.has_temp = 0,
+		};
+
+		memcpy(buf, &hdr, sizeof(hdr));
+		read_buf = (uint8_t *)&((struct lsm6dsv16x_rtio_data *)buf)->acc[0];
+
+		/*
+		 * Prepare rtio enabled bus to read LSM6DSV16X_OUTX_L_A register
+		 * where accelerometer data is available.
+		 * Then lsm6dsv16x_complete_op_cb callback will be invoked.
+		 *
+		 * STMEMSC API equivalent code:
+		 *
+		 *   uint8_t accel_raw[6];
+		 *
+		 *   lsm6dsv16x_acceleration_raw_get(&dev_ctx, accel_raw);
+		 */
+		lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_OUTX_L_A,
+					       read_buf, 6, lsm6dsv16x_complete_op_cb);
+	}
+}
+
+/*
+ * Called when one of the following trigger is active:
+ *
+ *     - int_fifo_th (SENSOR_TRIG_FIFO_WATERMARK)
+ *     - int_fifo_full (SENSOR_TRIG_FIFO_FULL)
+ *     - int_drdy (SENSOR_TRIG_DATA_READY)
+ */
 void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
-	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
+	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 #endif
 	uint64_t cycles;
 	int rc;
@@ -478,53 +688,64 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	}
 
 	/* get timestamp as soon as the irq is served */
-	lsm6dsv16x->fifo_timestamp = sensor_clock_cycles_to_ns(cycles);
+	lsm6dsv16x->timestamp = sensor_clock_cycles_to_ns(cycles);
 
+	/* handle FIFO triggers */
+	if (lsm6dsv16x->trig_cfg.int_fifo_th || lsm6dsv16x->trig_cfg.int_fifo_full) {
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-	if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {
-		/*
-		 * If we are on an I3C bus, then it should be expected that the fifo status was
-		 * already received in the IBI payload and we don't need to read it again.
-		 */
-		lsm6dsv16x->fifo_status[0] = lsm6dsv16x->ibi_payload.fifo_status1;
-		lsm6dsv16x->fifo_status[1] = lsm6dsv16x->ibi_payload.fifo_status2;
-	} else
+		if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {
+			/*
+			 * If we are on an I3C bus, then it should be expected that the fifo status
+			 * was already received in the IBI payload and we don't need to read it
+			 * again.
+			 */
+			lsm6dsv16x->fifo_status[0] = lsm6dsv16x->ibi_payload.fifo_status1;
+			lsm6dsv16x->fifo_status[1] = lsm6dsv16x->ibi_payload.fifo_status2;
+
+			struct rtio_sqe *check_fifo_status_reg = rtio_sqe_acquire(rtio);
+
+			rtio_sqe_prep_callback_no_cqe(check_fifo_status_reg,
+					      lsm6dsv16x_read_fifo_cb, (void *)dev, NULL);
+			rtio_submit(rtio, 0);
+		} else {
 #endif
-	{
-		lsm6dsv16x->fifo_status[0] = lsm6dsv16x->fifo_status[1] = 0;
+			lsm6dsv16x->fifo_status[0] = lsm6dsv16x->fifo_status[1] = 0;
+
+			/*
+			 * Prepare rtio enabled bus to read LSM6DSV16X_FIFO_STATUS1 and
+			 * LSM6DSV16X_FIFO_STATUS2 registers where FIFO threshold condition and
+			 * count are reported. Then lsm6dsv16x_read_fifo_cb callback will be
+			 * invoked.
+			 *
+			 * STMEMSC API equivalent code:
+			 *
+			 *   lsm6dsv16x_fifo_status_t fifo_status;
+			 *
+			 *   lsm6dsv16x_fifo_status_get(&dev_ctx, &fifo_status);
+			 */
+			lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_FIFO_STATUS1,
+					lsm6dsv16x->fifo_status, 2, lsm6dsv16x_read_fifo_cb);
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+		}
+#endif
+	}
+
+	/* handle drdy trigger */
+	if (lsm6dsv16x->trig_cfg.int_drdy) {
+		lsm6dsv16x->status = 0;
 
 		/*
-		 * Prepare rtio enabled bus to read LSM6DSV16X_FIFO_STATUS1 and
-		 * LSM6DSV16X_FIFO_STATUS2 registers where FIFO threshold condition and count are
-		 * reported. Then lsm6dsv16x_read_fifo_cb callback will be invoked.
+		 * Prepare rtio enabled bus to read LSM6DSV16X_STATUS_REG register
+		 * where accelerometer and gyroscope data ready status is available.
+		 * Then lsm6dsv16x_read_status_cb callback will be invoked.
 		 *
 		 * STMEMSC API equivalent code:
 		 *
-		 *   lsm6dsv16x_fifo_status_t fifo_status;
+		 *   lsm6dsv16x_data_ready_t drdy;
 		 *
-		 *   lsm6dsv16x_fifo_status_get(&dev_ctx, &fifo_status);
+		 *   lsm6dsv16x_flag_data_ready_get(&dev_ctx, &drdy);
 		 */
-		struct rtio_sqe *write_fifo_status_addr = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-		struct rtio_sqe *read_fifo_status_reg = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-		uint8_t reg = lsm6dsv16x_bus_reg(lsm6dsv16x, LSM6DSV16X_FIFO_STATUS1);
-
-		rtio_sqe_prep_tiny_write(write_fifo_status_addr, iodev, RTIO_PRIO_NORM, &reg, 1,
-					 NULL);
-		write_fifo_status_addr->flags = RTIO_SQE_TRANSACTION;
-		rtio_sqe_prep_read(read_fifo_status_reg, iodev, RTIO_PRIO_NORM,
-				   lsm6dsv16x->fifo_status, 2, NULL);
-		read_fifo_status_reg->flags = RTIO_SQE_CHAINED;
-		if (lsm6dsv16x->bus_type == BUS_I2C) {
-			read_fifo_status_reg->iodev_flags |=
-				RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-		} else if (lsm6dsv16x->bus_type == BUS_I3C) {
-			read_fifo_status_reg->iodev_flags |=
-				RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
-		}
+		lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_STATUS_REG,
+					       &lsm6dsv16x->status, 1, lsm6dsv16x_read_status_cb);
 	}
-	struct rtio_sqe *check_fifo_status_reg = rtio_sqe_acquire(lsm6dsv16x->rtio_ctx);
-
-	rtio_sqe_prep_callback_no_cqe(check_fifo_status_reg,
-				      lsm6dsv16x_read_fifo_cb, (void *)dev, NULL);
-	rtio_submit(lsm6dsv16x->rtio_ctx, 0);
 }
