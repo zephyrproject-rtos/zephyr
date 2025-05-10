@@ -57,6 +57,8 @@ struct st7735r_config {
 struct st7735r_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
+
+	enum display_orientation orientation;
 };
 
 static void st7735r_set_lcd_margins(const struct device *dev,
@@ -147,8 +149,18 @@ static int st7735r_set_mem_area(const struct device *dev,
 		return ret;
 	}
 
-	uint16_t ram_x = x + data->x_offset;
-	uint16_t ram_y = y + data->y_offset;
+	uint16_t ram_x;
+	uint16_t ram_y;
+
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+		data->orientation == DISPLAY_ORIENTATION_ROTATED_180
+	) {
+		ram_x = x + data->x_offset;
+		ram_y = y + data->y_offset;
+	} else {
+		ram_x = x + data->y_offset;
+		ram_y = y + data->x_offset;
+	}
 
 	spi_data[0] = sys_cpu_to_be16(ram_x);
 	spi_data[1] = sys_cpu_to_be16(ram_x + w - 1);
@@ -248,10 +260,18 @@ static void st7735r_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct st7735r_config *config = dev->config;
+	const struct st7735r_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+		data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		capabilities->x_resolution = config->width;
+		capabilities->y_resolution = config->height;
+	} else {
+		capabilities->x_resolution = config->height;
+		capabilities->y_resolution = config->width;
+	}
 
 	/*
 	 * Invert the pixel format if rgb_is_inverted is enabled.
@@ -295,13 +315,48 @@ static int st7735r_set_pixel_format(const struct device *dev,
 static int st7735r_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+	struct st7735r_data *data = dev->data;
+
+	if (data->orientation == orientation) {
 		return 0;
 	}
 
-	LOG_ERR("Changing display orientation not implemented");
+	uint8_t madctl = 0;
 
-	return -ENOTSUP;
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		madctl = (
+			ST7735R_MADCTL_MV_NORMAL_MODE | ST7735R_MADCTL_MY_TOP_TO_BOTTOM |
+			ST7735R_MADCTL_MX_LEFT_TO_RIGHT
+		);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		madctl = (
+			ST7735R_MADCTL_MV_REVERSE_MODE | ST7735R_MADCTL_MY_BOTTOM_TO_TOP |
+			ST7735R_MADCTL_MX_LEFT_TO_RIGHT
+		);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		madctl = (
+			ST7735R_MADCTL_MV_NORMAL_MODE | ST7735R_MADCTL_MY_BOTTOM_TO_TOP |
+			ST7735R_MADCTL_MX_RIGHT_TO_LEFT
+		);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		madctl = (
+			ST7735R_MADCTL_MV_REVERSE_MODE | ST7735R_MADCTL_MY_TOP_TO_BOTTOM |
+			ST7735R_MADCTL_MX_RIGHT_TO_LEFT
+		);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	st7735r_transmit(dev, ST7735R_CMD_MADCTL, &madctl, 1);
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int st7735r_lcd_init(const struct device *dev)
