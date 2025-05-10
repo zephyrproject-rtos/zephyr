@@ -1,0 +1,11 @@
+sample:
+  name: UART RS48API
+tests:
+  sample.drivers.uart.кrs485:
+    platform_allow:
+      - nucleo_f411re
+    tags:
+      - serial
+      - uart
+      - rs485
+    harness: keyboard
