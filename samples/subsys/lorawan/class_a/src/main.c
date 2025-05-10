@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
-static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+static void dl_callback(struct lorawan_downlink_cb *cb,
+			uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
 			const uint8_t *hex_data)
 {
 	LOG_INF("Port %d, Pending %d, RSSI %ddB, SNR %ddBm, Time %d", port,
