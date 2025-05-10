@@ -15,7 +15,6 @@ config SOC_MPS3_CORSTONE300
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
-	select ARM_MPU_PXN if ARM_MPU
 
 config SOC_MPS3_CORSTONE310
 	select CPU_CORTEX_M85
@@ -26,7 +25,6 @@ config SOC_MPS3_CORSTONE310
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
-	select ARM_MPU_PXN if ARM_MPU
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int
