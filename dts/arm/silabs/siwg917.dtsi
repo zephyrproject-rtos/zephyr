@@ -25,6 +25,19 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
+
+		power-states {
+			pstate_ps4_standby: ps4_standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+			pstate_ps4_sleep: ps4_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+				exit-latency-us = <3000>;
+			};
+		};
 	};
 
 	/* The first 1KB of SRAM is reserved for the NWP (Network Processor).
