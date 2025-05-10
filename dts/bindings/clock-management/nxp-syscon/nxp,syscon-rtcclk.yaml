@@ -1,0 +1,37 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON RTC clock divider node. This node accepts one specifier, which
+  sets the integer divider value for the RTC clock. The range of values
+  supported is specific to each clock node.
+
+compatible: "nxp,syscon-rtcclk"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to configure the RTC divider
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to configure divider
+
+  add-factor:
+    type: int
+    required: true
+    description: |
+      Integer factor to subtract when calculating register value for
+      a given divisor request
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - divider
