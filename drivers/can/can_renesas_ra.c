@@ -144,6 +144,11 @@ struct can_renesas_ra_global_cfg {
 	const struct clock_control_ra_subsys_cfg ram_subsys;
 	const unsigned int dll_min_freq;
 	const unsigned int dll_max_freq;
+	void (*irq_configure)(void);
+};
+
+struct can_renesas_ra_global_data {
+	canfd_global_cfg_t fsp_canfd_global_cfg;
 };
 
 struct can_renesas_ra_filter {
@@ -160,17 +165,23 @@ struct can_renesas_ra_cfg {
 	const struct device *dll_clk;
 	const struct clock_control_ra_subsys_cfg dll_subsys;
 	const uint32_t rx_filter_num;
+	void (*irq_configure)(void);
 };
 
 struct can_renesas_ra_data {
 	struct can_driver_data common;
 	struct k_mutex inst_mutex;
-	const struct device *dev;
-	can_instance_t fsp_can;
 	can_tx_callback_t tx_cb;
 	struct k_sem tx_sem;
 	void *tx_usr_data;
 	struct can_renesas_ra_filter *rx_filter;
+
+	/* FSP canfd instance data */
+	can_instance_t fsp_can;
+	canfd_instance_ctrl_t fsp_canfd_ctrl;
+	can_cfg_t fsp_can_cfg;
+	canfd_extended_cfg_t fsp_canfd_extend;
+	can_bit_timing_cfg_t bit_timing;
 	can_bit_timing_cfg_t data_timing;
 };
 
@@ -178,8 +189,6 @@ extern void canfd_error_isr(void);
 extern void canfd_rx_fifo_isr(void);
 extern void canfd_common_fifo_rx_isr(void);
 extern void canfd_channel_tx_isr(void);
-
-static const can_api_t *can_api = &g_canfd_on_canfd;
 
 static inline int set_hw_timing_configuration(const struct device *dev,
 					      can_bit_timing_cfg_t *f_timing,
@@ -223,8 +232,7 @@ static void set_afl_rule(const struct device *dev, const struct can_filter *filt
 			 uint32_t afl_offset)
 {
 	struct can_renesas_ra_data *data = dev->data;
-	canfd_extended_cfg_t const *p_extend = data->fsp_can.p_cfg->p_extend;
-	canfd_afl_entry_t *afl = (canfd_afl_entry_t *)&p_extend->p_afl[afl_offset];
+	canfd_afl_entry_t *afl = (canfd_afl_entry_t *)&data->fsp_canfd_extend.p_afl[afl_offset];
 
 	*afl = (canfd_afl_entry_t){.id = {.id = filter->id,
 #ifndef CONFIG_CAN_ACCEPT_RTR
@@ -248,7 +256,7 @@ static void set_afl_rule(const struct device *dev, const struct can_filter *filt
 
 	if (data->common.started) {
 		/* These steps help update AFL rules while CAN module running */
-		canfd_instance_ctrl_t *p_ctrl = (canfd_instance_ctrl_t *)data->fsp_can.p_ctrl;
+		canfd_instance_ctrl_t *p_ctrl = &data->fsp_canfd_ctrl;
 		R_CANFD_Type *reg = p_ctrl->p_reg;
 
 		/* Ignore AFL entry which will be changed */
@@ -269,8 +277,7 @@ static void set_afl_rule(const struct device *dev, const struct can_filter *filt
 static void remove_afl_rule(const struct device *dev, uint32_t afl_offset)
 {
 	struct can_renesas_ra_data *data = dev->data;
-	canfd_extended_cfg_t const *p_extend = data->fsp_can.p_cfg->p_extend;
-	canfd_afl_entry_t *afl = (canfd_afl_entry_t *)&p_extend->p_afl[afl_offset];
+	canfd_afl_entry_t *afl = (canfd_afl_entry_t *)&data->fsp_canfd_extend.p_afl[afl_offset];
 
 	/* Set the AFL ID to reserved ID */
 	*afl = (canfd_afl_entry_t){
@@ -280,7 +287,7 @@ static void remove_afl_rule(const struct device *dev, uint32_t afl_offset)
 
 	if (data->common.started) {
 		/* These steps help update AFL rules while CAN module running */
-		canfd_instance_ctrl_t *p_ctrl = (canfd_instance_ctrl_t *)data->fsp_can.p_ctrl;
+		canfd_instance_ctrl_t *p_ctrl = &data->fsp_canfd_ctrl;
 		R_CANFD_Type *reg = p_ctrl->p_reg;
 
 		/* Ignore AFL entry which will be changed */
@@ -302,7 +309,7 @@ static void remove_afl_rule(const struct device *dev, uint32_t afl_offset)
 static int recover_bus(const struct device *dev, k_timeout_t timeout)
 {
 	struct can_renesas_ra_data *data = dev->data;
-	canfd_instance_ctrl_t *p_ctrl = data->fsp_can.p_ctrl;
+	canfd_instance_ctrl_t *p_ctrl = &data->fsp_canfd_ctrl;
 	R_CANFD_Type *reg = p_ctrl->p_reg;
 	uint32_t cfdcnctr = reg->CFDC->CTR;
 	int ret = 0;
@@ -384,6 +391,7 @@ static inline void can_renesas_ra_call_state_change_cb(const struct device *dev,
 						       enum can_state state)
 {
 	struct can_renesas_ra_data *data = dev->data;
+	const can_api_t *can_api = data->fsp_can.p_api;
 	can_info_t can_info;
 
 	if (FSP_SUCCESS != can_api->infoGet(data->fsp_can.p_ctrl, &can_info)) {
@@ -418,6 +426,7 @@ static int can_renesas_ra_get_capabilities(const struct device *dev, can_mode_t 
 static int can_renesas_ra_start(const struct device *dev)
 {
 	struct can_renesas_ra_data *data = dev->data;
+	const can_api_t *can_api = data->fsp_can.p_api;
 	const struct device *transceiver_dev = can_get_transceiver(dev);
 	int ret = 0;
 
@@ -436,17 +445,18 @@ static int can_renesas_ra_start(const struct device *dev)
 	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	canfd_extended_cfg_t *p_extend = (canfd_extended_cfg_t *)data->fsp_can.p_cfg->p_extend;
 
-	p_extend->p_data_timing =
+	data->fsp_canfd_extend.p_data_timing =
 		(can_bit_timing_cfg_t *)((data->common.mode & CAN_MODE_FD) != 0
 						 ? &data->data_timing
 						 : &classic_can_data_timing_default);
 
-	if (FSP_SUCCESS != can_api->close(data->fsp_can.p_ctrl)) {
-		LOG_DBG("CAN close failed");
-		ret = -EIO;
-		goto end;
+	if (data->fsp_canfd_ctrl.open != 0) {
+		if (FSP_SUCCESS != can_api->close(data->fsp_can.p_ctrl)) {
+			LOG_DBG("CAN close failed");
+			ret = -EIO;
+			goto end;
+		}
 	}
 
 	if (FSP_SUCCESS != can_api->open(data->fsp_can.p_ctrl, data->fsp_can.p_cfg)) {
@@ -474,6 +484,7 @@ end:
 static int can_renesas_ra_stop(const struct device *dev)
 {
 	struct can_renesas_ra_data *data = dev->data;
+	const can_api_t *can_api = data->fsp_can.p_api;
 	const struct device *transceiver_dev = can_get_transceiver(dev);
 	int ret = 0;
 
@@ -548,13 +559,14 @@ static int can_renesas_ra_set_timing(const struct device *dev, const struct can_
 		return -EBUSY;
 	}
 
-	return set_hw_timing_configuration(dev, data->fsp_can.p_cfg->p_bit_timing, timing);
+	return set_hw_timing_configuration(dev, &data->bit_timing, timing);
 }
 
 static int can_renesas_ra_send(const struct device *dev, const struct can_frame *frame,
 			       k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
 {
 	struct can_renesas_ra_data *data = dev->data;
+	const can_api_t *can_api = data->fsp_can.p_api;
 
 	if (!data->common.started) {
 		return -ENETDOWN;
@@ -696,6 +708,7 @@ static int can_renesas_ra_get_state(const struct device *dev, enum can_state *st
 				    struct can_bus_err_cnt *err_cnt)
 {
 	struct can_renesas_ra_data *data = dev->data;
+	const can_api_t *can_api = data->fsp_can.p_api;
 	can_info_t fsp_info = {0};
 
 	if (state == NULL && err_cnt == NULL) {
@@ -840,7 +853,9 @@ void can_renesas_ra_fsp_cb(can_callback_args_t *p_args)
 
 static inline int can_renesas_ra_apply_default_config(const struct device *dev)
 {
-	struct can_renesas_ra_cfg *cfg = (struct can_renesas_ra_cfg *)dev->config;
+	const struct can_renesas_ra_cfg *cfg = dev->config;
+	struct can_renesas_ra_data *data = dev->data;
+	struct can_renesas_ra_global_data *global_data = cfg->global_dev->data;
 	int ret;
 
 	struct can_timing timing = {0};
@@ -864,6 +879,7 @@ static inline int can_renesas_ra_apply_default_config(const struct device *dev)
 	}
 #endif
 
+	data->fsp_canfd_extend.p_global_cfg = &global_data->fsp_canfd_global_cfg;
 	for (uint32_t filter_id = 0; filter_id < cfg->rx_filter_num; filter_id++) {
 		remove_afl_rule(dev, filter_id);
 	}
@@ -943,6 +959,10 @@ static int can_renesas_ra_init(const struct device *dev)
 	struct can_renesas_ra_data *data = dev->data;
 	int ret = 0;
 
+	if (!device_is_ready(cfg->global_dev)) {
+		return -ENODEV;
+	}
+
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_sem, 1, 1);
 	data->common.started = false;
@@ -967,20 +987,29 @@ static int can_renesas_ra_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_api->open(data->fsp_can.p_ctrl, data->fsp_can.p_cfg);
-	if (ret != FSP_SUCCESS) {
-		LOG_DBG("CAN bus initialize failed");
-		return -EIO;
+	cfg->irq_configure();
+
+	return 0;
+}
+
+static int can_renesas_ra_global_init(const struct device *dev)
+{
+	const struct can_renesas_ra_global_cfg *cfg = dev->config;
+	int ret;
+
+	ret = clock_control_on(cfg->op_clk, (clock_control_subsys_t)&cfg->op_subsys);
+	if (ret < 0) {
+		LOG_DBG("clock initialize failed");
+		return ret;
 	}
 
-	/* Put CAN controller into stopped state */
-	ret = can_api->modeTransition(data->fsp_can.p_ctrl, CAN_OPERATION_MODE_HALT,
-				      CAN_TEST_MODE_DISABLED);
-	if (ret != FSP_SUCCESS) {
-		can_api->close(data->fsp_can.p_ctrl);
-		LOG_DBG("CAN bus initialize failed");
-		return -EIO;
+	ret = clock_control_on(cfg->ram_clk, (clock_control_subsys_t)&cfg->ram_subsys);
+	if (ret < 0) {
+		LOG_DBG("clock initialize failed");
+		return ret;
 	}
+
+	cfg->irq_configure();
 
 	return 0;
 }
@@ -1010,75 +1039,66 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-#define CAN_RENESAS_RA_GLOBAL_IRQ_INIT()                                                           \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_GLERR);         \
-	R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_RXF);             \
-	IRQ_CONNECT(VECTOR_NUMBER_CAN_GLERR,                                                       \
-		    DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), glerr, priority),          \
-		    canfd_error_isr, NULL, 0);                                                     \
-	IRQ_CONNECT(VECTOR_NUMBER_CAN_RXF,                                                         \
-		    DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), rxf, priority),            \
-		    canfd_rx_fifo_isr, NULL, 0);                                                   \
-	irq_enable(VECTOR_NUMBER_CAN_RXF);                                                         \
-	irq_enable(VECTOR_NUMBER_CAN_GLERR);
+#define CAN_RENESAS_RA_GLOBAL_DEFINE(id)                                                           \
+	static void can_renesas_ra_global_irq_configure##id(void)                                  \
+	{                                                                                          \
+		R_ICU->IELSR_b[VECTOR_NUMBER_CAN_GLERR].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_GLERR); \
+		R_ICU->IELSR_b[VECTOR_NUMBER_CAN_RXF].IELS = BSP_PRV_IELS_ENUM(EVENT_CAN_RXF);     \
+		IRQ_CONNECT(VECTOR_NUMBER_CAN_GLERR, DT_IRQ_BY_NAME(id, glerr, priority),          \
+			    canfd_error_isr, NULL, 0);                                             \
+		IRQ_CONNECT(VECTOR_NUMBER_CAN_RXF, DT_IRQ_BY_NAME(id, rxf, priority),              \
+			    canfd_rx_fifo_isr, NULL, 0);                                           \
+		irq_enable(VECTOR_NUMBER_CAN_RXF);                                                 \
+		irq_enable(VECTOR_NUMBER_CAN_GLERR);                                               \
+	}                                                                                          \
+                                                                                                   \
+	static struct can_renesas_ra_global_data can_renesas_ra_global_data##id = {                \
+		.fsp_canfd_global_cfg =                                                            \
+			{                                                                          \
+				.global_interrupts = CANFD_CFG_GLERR_IRQ,                          \
+				.global_config = CANFD_CFG_GLOBAL,                                 \
+				.rx_mb_config = CANFD_CFG_RXMB,                                    \
+				.global_err_ipl = DT_IRQ_BY_NAME(id, glerr, priority),             \
+				.rx_fifo_ipl = DT_IRQ_BY_NAME(id, rxf, priority),                  \
+				.rx_fifo_config = CANFD_CFG_RXFIFO,                                \
+				.common_fifo_config = CANFD_CFG_COMMONFIFO,                        \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static const struct can_renesas_ra_global_cfg can_renesas_ra_global_cfg##id = {            \
+		.op_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(id, opclk)),                        \
+		.ram_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(id, ramclk)),                      \
+		.op_subsys =                                                                       \
+			{                                                                          \
+				.mstp = DT_CLOCKS_CELL_BY_NAME(id, opclk, mstp),                   \
+				.stop_bit = DT_CLOCKS_CELL_BY_NAME(id, opclk, stop_bit),           \
+			},                                                                         \
+		.ram_subsys =                                                                      \
+			{                                                                          \
+				.mstp = DT_CLOCKS_CELL_BY_NAME(id, ramclk, mstp),                  \
+				.stop_bit = DT_CLOCKS_CELL_BY_NAME(id, ramclk, stop_bit),          \
+			},                                                                         \
+		.dll_min_freq = DT_PROP_OR(id, dll_min_freq, 0),                                   \
+		.dll_max_freq = DT_PROP_OR(id, dll_max_freq, UINT_MAX),                            \
+		.irq_configure = can_renesas_ra_global_irq_configure##id,                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_DEFINE(id, can_renesas_ra_global_init, NULL, &can_renesas_ra_global_data##id,    \
+			 &can_renesas_ra_global_cfg##id, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,   \
+			 NULL)
 
-static canfd_global_cfg_t g_canfd_global_cfg = {
-	.global_interrupts = CANFD_CFG_GLERR_IRQ,
-	.global_config = CANFD_CFG_GLOBAL,
-	.rx_mb_config = CANFD_CFG_RXMB,
-	.global_err_ipl = DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), glerr, priority),
-	.rx_fifo_ipl = DT_IRQ_BY_NAME(DT_INST(0, renesas_ra_canfd_global), rxf, priority),
-	.rx_fifo_config = CANFD_CFG_RXFIFO,
-	.common_fifo_config = CANFD_CFG_COMMONFIFO,
-};
-
-static const struct can_renesas_ra_global_cfg g_can_renesas_ra_global_cfg = {
-	.op_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk)),
-	.ram_clk =
-		DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST(0, renesas_ra_canfd_global), ramclk)),
-	.op_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk,
-						     mstp),
-		      .stop_bit = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), opclk,
-							 stop_bit)},
-	.ram_subsys = {.mstp = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global), ramclk,
-						      mstp),
-		       .stop_bit = DT_CLOCKS_CELL_BY_NAME(DT_INST(0, renesas_ra_canfd_global),
-							  ramclk, stop_bit)},
-	.dll_min_freq = DT_PROP_OR(DT_INST(0, renesas_ra_canfd_global), dll_min_freq, 0),
-	.dll_max_freq = DT_PROP_OR(DT_INST(0, renesas_ra_canfd_global), dll_max_freq, UINT_MAX),
-};
-
-static int can_renesas_ra_global_init(const struct device *dev)
-{
-	int ret;
-	const struct can_renesas_ra_global_cfg *cfg = dev->config;
-
-	ret = clock_control_on(cfg->op_clk, (clock_control_subsys_t)&cfg->op_subsys);
-	if (ret < 0) {
-		LOG_DBG("clock initialize failed");
-		return ret;
-	}
-
-	ret = clock_control_on(cfg->ram_clk, (clock_control_subsys_t)&cfg->ram_subsys);
-	if (ret < 0) {
-		LOG_DBG("clock initialize failed");
-		return ret;
-	}
-
-	CAN_RENESAS_RA_GLOBAL_IRQ_INIT();
-
-	return 0;
-}
-
-DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_renesas_ra_global_init,
-		 NULL, NULL, &g_can_renesas_ra_global_cfg, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,
-		 NULL)
+DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 
 #define EVENT_CAN_COMFRX(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _COMFRX))
 #define EVENT_CAN_TX(channel)     BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _TX))
 #define EVENT_CAN_CHERR(channel)  BSP_PRV_IELS_ENUM(CONCAT(EVENT_CAN, channel, _CHERR))
 
-#define CAN_RENESAS_RA_CHANNEL_IRQ_INIT(index)                                                     \
+#define CAN_RENESAS_RA_INIT(index)                                                                 \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+	static canfd_afl_entry_t canfd_afl##index[DT_INST_PROP(index, rx_max_filters)];            \
+	struct can_renesas_ra_filter                                                               \
+		can_renesas_ra_rx_filter##index[DT_INST_PROP(index, rx_max_filters)];              \
+	static void can_renesas_ra_irq_configure##inst(void)                                       \
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, rx, irq)].IELS =                         \
 			EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                            \
@@ -1099,14 +1119,7 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_ren
 		irq_enable(DT_INST_IRQ_BY_NAME(index, rx, irq));                                   \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, tx, irq));                                   \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, err, irq));                                  \
-	}
-
-#define CAN_RENESAS_RA_INIT(index)                                                                 \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-	static canfd_afl_entry_t canfd_afl##index[DT_INST_PROP(index, rx_max_filters)];            \
-	struct can_renesas_ra_filter                                                               \
-		can_renesas_ra_rx_filter##index[DT_INST_PROP(index, rx_max_filters)];              \
-	static can_bit_timing_cfg_t g_canfd_bit_timing##index;                                     \
+	};                                                                                         \
 	static const struct can_renesas_ra_cfg can_renesas_ra_cfg##index = {                       \
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(index, 0, 5000000),                        \
 		.global_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),                                \
@@ -1118,47 +1131,38 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_ren
 				.stop_bit = DT_INST_CLOCKS_CELL_BY_NAME(index, dllclk, stop_bit),  \
 			},                                                                         \
 		.rx_filter_num = DT_INST_PROP(index, rx_max_filters),                              \
-	};                                                                                         \
-	static canfd_instance_ctrl_t fsp_canfd_ctrl##index;                                        \
-	static canfd_extended_cfg_t fsp_canfd_extend####index = {                                  \
-		.p_afl = canfd_afl##index,                                                         \
-		.txmb_txi_enable = CANFD_CFG_TXMB_TXI_ENABLE,                                      \
-		.error_interrupts = 0U,                                                            \
-		.p_global_cfg = &g_canfd_global_cfg,                                               \
-	};                                                                                         \
-	static can_cfg_t fsp_canfd_cfg####index = {                                                \
-		.channel = DT_INST_PROP(index, channel),                                           \
-		.ipl = DT_INST_IRQ_BY_NAME(index, err, priority),                                  \
-		.error_irq = DT_INST_IRQ_BY_NAME(index, err, irq),                                 \
-		.rx_irq = DT_INST_IRQ_BY_NAME(index, rx, irq),                                     \
-		.tx_irq = DT_INST_IRQ_BY_NAME(index, tx, irq),                                     \
-		.p_extend = &fsp_canfd_extend##index,                                              \
-		.p_bit_timing = &g_canfd_bit_timing##index,                                        \
-		.p_context = DEVICE_DT_INST_GET(index),                                            \
-		.p_callback = can_renesas_ra_fsp_cb,                                               \
+		.irq_configure = can_renesas_ra_irq_configure##inst,                               \
 	};                                                                                         \
 	static struct can_renesas_ra_data can_renesas_ra_data##index = {                           \
 		.fsp_can =                                                                         \
 			{                                                                          \
-				.p_ctrl = &fsp_canfd_ctrl##index,                                  \
-				.p_cfg = &fsp_canfd_cfg##index,                                    \
+				.p_ctrl = &can_renesas_ra_data##index.fsp_canfd_ctrl,              \
+				.p_cfg = &can_renesas_ra_data##index.fsp_can_cfg,                  \
 				.p_api = &g_canfd_on_canfd,                                        \
 			},                                                                         \
+		.fsp_can_cfg =                                                                     \
+			{                                                                          \
+				.channel = DT_INST_PROP(index, channel),                           \
+				.ipl = DT_INST_IRQ_BY_NAME(index, err, priority),                  \
+				.error_irq = DT_INST_IRQ_BY_NAME(index, err, irq),                 \
+				.rx_irq = DT_INST_IRQ_BY_NAME(index, rx, irq),                     \
+				.tx_irq = DT_INST_IRQ_BY_NAME(index, tx, irq),                     \
+				.p_extend = &can_renesas_ra_data##index.fsp_canfd_extend,          \
+				.p_bit_timing = &can_renesas_ra_data##index.bit_timing,            \
+				.p_context = DEVICE_DT_INST_GET(index),                            \
+				.p_callback = can_renesas_ra_fsp_cb,                               \
+			},                                                                         \
+		.fsp_canfd_extend =                                                                \
+			{                                                                          \
+				.p_afl = canfd_afl##index,                                         \
+				.txmb_txi_enable = CANFD_CFG_TXMB_TXI_ENABLE,                      \
+				.error_interrupts = 0U,                                            \
+				.p_data_timing = &can_renesas_ra_data##index.data_timing,          \
+			},                                                                         \
 		.rx_filter = can_renesas_ra_rx_filter##index,                                      \
-		.dev = DEVICE_DT_INST_GET(index),                                                  \
 	};                                                                                         \
-	static int can_renesas_ra_init##index(const struct device *dev)                            \
-	{                                                                                          \
-		const struct device *global_canfd = DEVICE_DT_GET(DT_INST_PARENT(index));          \
-		if (!device_is_ready(global_canfd)) {                                              \
-			return -EIO;                                                               \
-		}                                                                                  \
-		CAN_RENESAS_RA_CHANNEL_IRQ_INIT(index)                                             \
-		return can_renesas_ra_init(dev);                                                   \
-	}                                                                                          \
-	CAN_DEVICE_DT_INST_DEFINE(index, can_renesas_ra_init##index, NULL,                         \
-				  &can_renesas_ra_data##index, &can_renesas_ra_cfg##index,         \
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                           \
-				  &can_renesas_ra_driver_api);
+	CAN_DEVICE_DT_INST_DEFINE(index, can_renesas_ra_init, NULL, &can_renesas_ra_data##index,   \
+				  &can_renesas_ra_cfg##index, POST_KERNEL,                         \
+				  CONFIG_CAN_INIT_PRIORITY, &can_renesas_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_RENESAS_RA_INIT)
