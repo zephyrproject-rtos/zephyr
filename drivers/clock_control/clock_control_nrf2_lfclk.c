@@ -19,39 +19,41 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define LFCLK_HFXO_NODE DT_INST_PHANDLE_BY_NAME(0, clocks, hfxo)
 
-#define LFCLK_LFLPRC_ACCURACY DT_INST_PROP(0, lflprc_accuracy_ppm)
 #define LFCLK_LFRC_ACCURACY DT_INST_PROP(0, lfrc_accuracy_ppm)
 #define LFCLK_HFXO_ACCURACY DT_PROP(LFCLK_HFXO_NODE, accuracy_ppm)
 
-#define LFCLK_MAX_OPTS 5
-#define LFCLK_DEF_OPTS 3
+#define LFCLK_MAX_OPTS 4
+#define LFCLK_DEF_OPTS 2
 
 #define NRFS_CLOCK_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS)
 
 #define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
 
-/* Clock options sorted from lowest to highest accuracy/precision */
+/* Clock options sorted from highest to lowest power consumption.
+ * - Clock synthesized from a high frequency clock
+ * - Internal RC oscillator
+ * - External clock. These are inserted into the list at driver initialization.
+ *   Set to one of the following:
+ *   - XTAL. Low or High precision
+ *   - External sine or square wave
+ */
 static struct clock_options {
 	uint16_t accuracy : 15;
 	uint16_t precision : 1;
 	nrfs_clock_src_t src;
 } clock_options[LFCLK_MAX_OPTS] = {
 	{
-		.accuracy = LFCLK_LFLPRC_ACCURACY,
-		.precision = 0,
-		.src = NRFS_CLOCK_SRC_LFCLK_LFLPRC,
+		/* NRFS will request FLL16M use HFXO in bypass mode if SYNTH src is used */
+		.accuracy = LFCLK_HFXO_ACCURACY,
+		.precision = 1,
+		.src = NRFS_CLOCK_SRC_LFCLK_SYNTH,
 	},
 	{
 		.accuracy = LFCLK_LFRC_ACCURACY,
 		.precision = 0,
 		.src = NRFS_CLOCK_SRC_LFCLK_LFRC,
 	},
-	{
-		/* NRFS will request FLL16M use HFXO in bypass mode if SYNTH src is used */
-		.accuracy = LFCLK_HFXO_ACCURACY,
-		.precision = 1,
-		.src = NRFS_CLOCK_SRC_LFCLK_SYNTH,
-	},
+	/* Remaining options are populated on lfclk_init */
 };
 
 struct lfclk_dev_data {
@@ -125,10 +127,18 @@ static struct onoff_manager *lfclk_find_mgr(const struct device *dev,
 		 ? dev_data->max_accuracy
 		 : spec->accuracy;
 
-	for (int i = 0; i < dev_data->clock_options_cnt; ++i) {
-		if ((accuracy &&
-		     accuracy < clock_options[i].accuracy) ||
-		    spec->precision > clock_options[i].precision) {
+	/* Select a clock manager which has the required precision and accuracy.
+	 * The clock source with the lowest power consumption is preferred.
+	 * That is, we start iterating from the end of the list.
+	 */
+	if (accuracy == 0) {
+		LOG_ERR("invalid accuracy");
+		return NULL;
+	}
+
+	for (int i = dev_data->clock_options_cnt - 1; i >= 0; --i) {
+		if ((accuracy < clock_options[i].accuracy) ||
+		    (spec->precision > clock_options[i].precision)) {
 			continue;
 		}
 
@@ -219,24 +229,24 @@ static int lfclk_init(const struct device *dev)
 
 		switch (lfosc_mode) {
 		case NRF_BICR_LFOSC_MODE_CRYSTAL:
-			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 2].precision = 0;
-			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE;
-
 			clock_options[LFCLK_MAX_OPTS - 1].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 1].precision = 1;
-			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE_HP;
+			clock_options[LFCLK_MAX_OPTS - 1].precision = 0;
+			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE;
+
+			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
+			clock_options[LFCLK_MAX_OPTS - 2].precision = 1;
+			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE_HP;
 
 			dev_data->clock_options_cnt += 2;
 			break;
 		case NRF_BICR_LFOSC_MODE_EXTSINE:
-			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 2].precision = 0;
-			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE;
-
 			clock_options[LFCLK_MAX_OPTS - 1].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 1].precision = 1;
-			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE_HP;
+			clock_options[LFCLK_MAX_OPTS - 1].precision = 0;
+			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE;
+
+			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
+			clock_options[LFCLK_MAX_OPTS - 2].precision = 1;
+			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE_HP;
 
 			dev_data->clock_options_cnt += 2;
 			break;
