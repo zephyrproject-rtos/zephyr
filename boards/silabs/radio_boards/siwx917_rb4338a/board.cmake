@@ -1,8 +1,12 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
-
+# Set the flash file based on signing is enabled or not.
+set(FLASH_FILE ${PROJECT_BINARY_DIR}/zephyr_signed.bin.rps)
+if(NOT EXISTS ${FLASH_FILE})
+    set(FLASH_FILE ${PROJECT_BINARY_DIR}/zephyr.bin.rps)
+endif()
 board_runner_args(silabs_commander "--device=SiWG917M111GTBA" "--file-type=bin"
-    "--file=${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}.rps")
+    "--file=${FLASH_FILE}")
 include(${ZEPHYR_BASE}/boards/common/silabs_commander.board.cmake)
 
 # It is not possible to load/flash a firmware using JLink, but it is possible to
