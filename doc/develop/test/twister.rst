@@ -604,6 +604,18 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per test scenario and the fixture name has to
         be unique across all tests in the test suite.
 
+    ztest_suite_repeat: <int> (default 1)
+        This parameter specifies the number of times the entire test suite should be repeated.
+
+    ztest_test_repeat: <int> (default 1)
+        This parameter specifies the number of times each individual test within the test suite
+        should be repeated.
+
+    ztest_test_shuffle: <True|False> (default False)
+        This parameter indicates whether the order of the tests within the test suite should
+        be shuffled. When set to ``true``, the tests will be executed in a random order.
+
+
 
     The following is an example yaml file with robot harness_config options.
 
