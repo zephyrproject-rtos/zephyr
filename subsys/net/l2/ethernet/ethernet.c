@@ -118,48 +118,6 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 #define print_vlan_ll_addrs(...)
 #endif /* CONFIG_NET_VLAN */
 
-static inline void ethernet_update_length(struct net_if *iface,
-					  struct net_pkt *pkt)
-{
-	uint16_t len;
-#ifdef CONFIG_NET_VLAN
-	const uint16_t min_len =
-		NET_ETH_MINIMAL_FRAME_SIZE - (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC
-						      ? sizeof(struct net_eth_vlan_hdr)
-						      : sizeof(struct net_eth_hdr));
-#else
-	const uint16_t min_len = NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr);
-#endif
-
-	/* Let's check IP payload's length. If it's smaller than 46 bytes,
-	 * i.e. smaller than minimal Ethernet frame size minus ethernet
-	 * header size,then Ethernet has padded so it fits in the minimal
-	 * frame size of 60 bytes. In that case, we need to get rid of it.
-	 */
-
-	if (net_pkt_family(pkt) == AF_INET) {
-		len = ntohs(NET_IPV4_HDR(pkt)->len);
-	} else if (net_pkt_family(pkt) == AF_INET6) {
-		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
-	} else {
-		return;
-	}
-
-	if (len < min_len) {
-		struct net_buf *frag;
-
-		for (frag = pkt->frags; frag; frag = frag->frags) {
-			if (frag->len < len) {
-				len -= frag->len;
-			} else {
-				frag->len = len;
-				len = 0U;
-			}
-		}
-	}
-}
-
-
 static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
 				     bool dst_broadcast, bool dst_eth_multicast)
 {
@@ -180,29 +138,6 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
 	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
-
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
-/* Drop packet if it has broadcast destination MAC address but the IP
- * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
- */
-static inline
-enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
-						struct net_eth_hdr *hdr)
-{
-	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
-		return NET_OK;
-	}
-
-	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
-		return NET_DROP;
-	}
-
-	return NET_OK;
-}
-#endif
 
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
@@ -259,7 +194,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	enum net_verdict verdict = NET_CONTINUE;
 	bool is_vlan_pkt = false;
-	bool handled = false;
 	struct net_linkaddr *lladdr;
 	uint16_t type;
 	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
@@ -381,86 +315,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	body_len = net_pkt_get_len(pkt);
 
-	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
-		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
-		    l3->handler == NULL) {
-			continue;
-		}
-
-		NET_DBG("Calling L3 %s handler for type 0x%04x iface %d (%p)",
-			l3->name, type, net_if_get_by_iface(iface), iface);
-
-		verdict = l3->handler(iface, type, pkt);
-		if (verdict == NET_OK) {
-			/* the packet was consumed by the l3-handler */
-			goto out;
-		} else if (verdict == NET_DROP) {
-			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
-			goto drop;
-		}
-
-		/* The packet will be processed further by IP-stack
-		 * when NET_CONTINUE is returned
-		 */
-		handled = true;
-		break;
-	}
-
-	if (!handled) {
-		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
-			net_pkt_set_family(pkt, AF_UNSPEC);
-		} else {
-			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
-				net_if_get_by_iface(iface), iface);
-			eth_stats_update_unknown_protocol(iface);
-			return NET_DROP;
-		}
-	}
-
-	if (type != NET_ETH_PTYPE_EAPOL) {
-		ethernet_update_length(iface, pkt);
-	}
-
-out:
 	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
 	eth_stats_update_errors_rx(iface);
 	return NET_DROP;
 }
-
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
-static enum net_verdict ethernet_ip_recv(struct net_if *iface,
-					 uint16_t ptype,
-					 struct net_pkt *pkt)
-{
-	ARG_UNUSED(iface);
-
-	if (ptype == NET_ETH_PTYPE_IP) {
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ethernet_check_ipv4_bcast_addr(pkt, hdr) == NET_DROP) {
-			return NET_DROP;
-		}
-
-		net_pkt_set_family(pkt, AF_INET);
-	} else if (ptype == NET_ETH_PTYPE_IPV6) {
-		net_pkt_set_family(pkt, AF_INET6);
-	} else {
-		return NET_DROP;
-	}
-
-	return NET_CONTINUE;
-}
-#endif /* CONFIG_NET_IPV4 || CONFIG_NET_IPV6 */
-
-#ifdef CONFIG_NET_IPV4
-ETH_NET_L3_REGISTER(IPv4, NET_ETH_PTYPE_IP, ethernet_ip_recv);
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-ETH_NET_L3_REGISTER(IPv6, NET_ETH_PTYPE_IPV6, ethernet_ip_recv);
-#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)

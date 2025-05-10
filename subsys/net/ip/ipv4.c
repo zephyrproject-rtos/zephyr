@@ -489,6 +489,51 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 #endif
 }
 
+/* Drop packet if it has broadcast destination MAC address but the IP
+ * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
+ */
+static inline enum net_verdict ip_check_bcast_addr(struct net_pkt *pkt, struct net_eth_hdr *hdr)
+{
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
+		return NET_OK;
+	}
+
+	if (net_eth_is_addr_broadcast(&hdr->dst) &&
+	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
+	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
+				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
+		return NET_DROP;
+	}
+
+	return NET_OK;
+}
+
+static enum net_verdict ip_recv(struct net_if *iface, uint16_t ptype, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	/* IP version and header length. */
+	uint8_t vhl = NET_IPV4_HDR(pkt)->vhl & 0xf0;
+
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (ip_check_bcast_addr(pkt, hdr) == NET_DROP) {
+		return NET_DROP;
+	}
+
+	net_pkt_set_family(pkt, AF_INET);
+	if (vhl == 0x40) {
+		return net_ipv4_input(pkt, net_pkt_is_loopback(pkt));
+	}
+
+	NET_DBG("Unknown IP family packet (0x%x)", NET_IPV4_HDR(pkt)->vhl & 0xf0);
+	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+	net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
+
+	return NET_CONTINUE;
+}
+
+NET_L3_REGISTER(NULL, IPv4, NET_ETH_PTYPE_IP, ip_recv);
+
 void net_ipv4_init(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {

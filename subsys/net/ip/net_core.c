@@ -64,11 +64,16 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_NATIVE)
-static inline enum net_verdict process_data(struct net_pkt *pkt,
-					    bool is_loopback)
+static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
-	bool locally_routed = false;
+
+	/* If there is no data, then drop the packet. */
+	if (pkt->frags == NULL) {
+		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
+		net_stats_update_processing_error(net_pkt_iface(pkt));
+		return NET_DROP;
+	}
 
 	net_pkt_set_l2_processed(pkt, false);
 
@@ -78,34 +83,27 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return ret;
 	}
 
-	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
-	 * then do not pass it to L2 as the packet does not have link layer headers in it.
+	/* If the packet is routed back to us via loopback or is an IPv4/IPv6 reassembled
+	 * packet then it can be processed by the l3 directly.
 	 */
-	if (net_pkt_is_ip_reassembled(pkt)) {
-		locally_routed = true;
+	if (net_pkt_is_loopback(pkt) || net_pkt_is_ip_reassembled(pkt)) {
+		goto l3_process;
 	}
 
-	/* If there is no data, then drop the packet. */
-	if (!pkt->frags) {
-		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
-		net_stats_update_processing_error(net_pkt_iface(pkt));
-
-		return NET_DROP;
-	}
-
-	if (!is_loopback && !locally_routed) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		if (ret != NET_CONTINUE) {
-			if (ret == NET_DROP) {
-				NET_DBG("Packet %p discarded by L2", pkt);
-				net_stats_update_processing_error(
-							net_pkt_iface(pkt));
-			}
-
-			return ret;
+	ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
+	if (ret != NET_CONTINUE) {
+		if (ret == NET_DROP) {
+			NET_DBG("Packet %p discarded by L2", pkt);
+			net_stats_update_processing_error(net_pkt_iface(pkt));
 		}
+
+		return ret;
 	}
 
+l3_process:
+	/* Start processing l3 handlers. By this point, the buffer of the
+	 * first frag should point to the beginning of the payload.
+	 */
 	net_pkt_set_l2_processed(pkt, true);
 
 	/* L2 has modified the buffer starting point, it is easier
@@ -123,35 +121,45 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
-	uint8_t family = net_pkt_family(pkt);
-
-	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
-					  family == AF_UNSPEC || family == AF_PACKET)) {
-		/* IP version and header length. */
-		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
-
-		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt, is_loopback);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt, is_loopback);
+	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
+		if (l3->ptype != net_pkt_ll_proto_type(pkt) ||
+		    (l3->l2 != NULL && l3->l2 != net_pkt_orig_iface(pkt)->if_dev->l2) ||
+		    l3->handler == NULL) {
+			continue;
 		}
 
-		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
-		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
-		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
-		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+		NET_DBG("Calling L3 %s handler for type 0x%04x iface %d (%p)", l3->name,
+			net_pkt_ll_proto_type(pkt), net_if_get_by_iface(net_pkt_iface(pkt)),
+			net_pkt_iface(pkt));
+
+		ret = l3->handler(net_pkt_iface(pkt), net_pkt_ll_proto_type(pkt), pkt);
+		if (ret == NET_OK) {
+			return NET_OK;
+		} else if (ret == NET_DROP) {
+			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
+			net_stats_update_processing_error(net_pkt_iface(pkt));
+			return NET_DROP;
+		}
+
+		break;
+	}
+
+	uint8_t family = net_pkt_family(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 		return net_canbus_socket_input(pkt);
 	}
 
-	NET_DBG("Unknown protocol family packet (0x%x)", family);
+	NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", net_pkt_ll_proto_type(pkt),
+		net_if_get_by_iface(net_pkt_iface(pkt)), net_pkt_iface(pkt));
+	net_stats_update_processing_error(net_pkt_iface(pkt));
 	return NET_DROP;
 }
 
-static void processing_data(struct net_pkt *pkt, bool is_loopback)
+static void processing_data(struct net_pkt *pkt)
 {
 again:
-	switch (process_data(pkt, is_loopback)) {
+	switch (process_data(pkt)) {
 	case NET_CONTINUE:
 		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
 			/* If we have a tunneling packet, feed it back
@@ -426,7 +434,8 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * to RX processing.
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
-		processing_data(pkt, true);
+		net_pkt_set_loopback(pkt, true);
+		processing_data(pkt);
 		ret = 0;
 		goto err;
 	}
@@ -486,7 +495,6 @@ err:
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	bool is_loopback = false;
 	size_t pkt_len;
 
 	pkt_len = net_pkt_get_len(pkt);
@@ -498,12 +506,12 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			is_loopback = true;
+			net_pkt_set_loopback(pkt, true);
 		}
 #endif
 	}
 
-	processing_data(pkt, is_loopback);
+	processing_data(pkt);
 
 	net_print_statistics();
 	net_pkt_print();
@@ -584,11 +592,8 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		net_pkt_set_orig_iface(pkt, iface);
-	}
-
 	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_orig_iface(pkt, iface);
 
 	if (!net_pkt_filter_recv_ok(pkt)) {
 		/* Silently drop the packet, but update the statistics in order
