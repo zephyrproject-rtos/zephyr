@@ -8,3 +8,12 @@ config LED_GPIO
 	select GPIO
 	help
 	  Enable driver for GPIO LEDs.
+
+if LED_GPIO
+
+config LED_GPIO_BLINK
+	bool "GPIO LED Blink API"
+	help
+	  Enable support of the blink API.
+
+endif
