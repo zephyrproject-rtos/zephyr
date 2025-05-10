@@ -15,6 +15,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -104,9 +105,12 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 				    const struct spi_buf_set *const tx,
 				    const struct spi_buf_set *const rx)
 {
-	int ret = spi_transceive_dt(spec, tx, rx);
+	int ret;
 
-	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	zassert_ok(pm_device_runtime_get(spec->bus));
+	ret = spi_transceive_dt(spec, tx, rx);
+	zassert_ok(ret, "SPI transceive failed, code %d", ret);
+	zassert_ok(pm_device_runtime_put(spec->bus));
 }
 
 /* The most spi buf currently used by any test case is 4, change if needed */
@@ -443,9 +447,10 @@ ZTEST(spi_extra_api_features, test_spi_lock_release)
 
 	lock_spec->config.operation |= SPI_LOCK_ON;
 
+	zassert_ok(pm_device_runtime_get(lock_spec->bus));
 	spi_loopback_transceive(lock_spec, &tx, &rx);
-
 	zassert_false(spi_release_dt(lock_spec), "SPI release failed");
+	zassert_ok(pm_device_runtime_put(lock_spec->bus));
 
 	spi_loopback_transceive(try_spec, &tx, &rx);
 
