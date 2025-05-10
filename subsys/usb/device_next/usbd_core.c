@@ -31,12 +31,6 @@ static struct k_thread usbd_thread_data;
 K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
 	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
 
-static int usbd_event_carrier(const struct device *dev,
-			      const struct udc_event *const event)
-{
-	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
-}
-
 static int event_handler_ep_request(struct usbd_context *const uds_ctx,
 				    const struct udc_event *const event)
 {
@@ -60,7 +54,7 @@ static int event_handler_ep_request(struct usbd_context *const uds_ctx,
 }
 
 static void usbd_class_bcast_event(struct usbd_context *const uds_ctx,
-				   struct udc_event *const event)
+				   const struct udc_event *const event)
 {
 	struct usbd_config_node *cfg_nd;
 	struct usbd_class_node *c_nd;
@@ -200,6 +194,24 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 			 "USB device is not initialized");
 		usbd_event_handler(uds_ctx, &event);
 	}
+}
+
+static int usbd_event_carrier(const struct device *dev,
+			      const struct udc_event *const event)
+{
+	struct usbd_context *const uds_ctx = (void *)udc_get_event_ctx(event->dev);
+
+	/*
+	 * Queue the SOF events only if they are from the ISR context.
+	 * Primarily to avoid message queue flooding from high speed
+	 * controllers.
+	 */
+	if (event->type == UDC_EVT_SOF && !k_is_in_isr()) {
+		usbd_class_bcast_event(uds_ctx, event);
+		return 0;
+	}
+
+	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
 }
 
 int usbd_device_init_core(struct usbd_context *const uds_ctx)
