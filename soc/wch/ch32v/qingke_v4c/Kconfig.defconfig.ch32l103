@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Paul Wedeck
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH32L103
+
+config VECTOR_TABLE_SIZE
+	default 68
+
+config NUM_IRQS
+	default 128
+
+endif # SOC_CH32L103
