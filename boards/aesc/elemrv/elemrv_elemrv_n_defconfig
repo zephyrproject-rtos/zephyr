@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
