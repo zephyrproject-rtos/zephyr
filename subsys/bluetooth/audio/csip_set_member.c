@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -909,14 +909,8 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
 	static bool first_register;
-	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
-
-	if (instance_cnt == ARRAY_SIZE(svc_insts)) {
-		LOG_DBG("Too many set member registrations");
-		return -ENOMEM;
-	}
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("NULL param");
@@ -937,15 +931,26 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		first_register = true;
 	}
 
-	inst = &svc_insts[instance_cnt];
+	inst = NULL;
+	ARRAY_FOR_EACH(svc_insts, i) {
+		if (svc_insts[i].service_p == NULL) {
+			inst = &svc_insts[i];
 
-	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-	if (err != 0) {
-		LOG_DBG("Failed to lock mutex: %d", err);
-		return -EBUSY;
+			err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+			if (err != 0) {
+				/* Try the next */
+				continue;
+			}
+
+			inst->service_p = &csip_set_member_service_list[i];
+			break;
+		}
 	}
 
-	inst->service_p = &csip_set_member_service_list[instance_cnt];
+	if (inst == NULL) {
+		LOG_DBG("Too many set member registrations");
+		return -ENOMEM;
+	}
 
 	/* The removal of the optional characteristics should be done in reverse order of the order
 	 * in BT_CSIP_SERVICE_DEFINITION, as that improves the performance of remove_csis_char,
@@ -973,7 +978,6 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		return err;
 	}
 
-	instance_cnt++;
 	k_work_init_delayable(&inst->set_lock_timer,
 			      set_lock_timer_handler);
 	inst->rank = param->rank;
@@ -1029,6 +1033,16 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst)
 
 		return err;
 	}
+
+	/* Restore original declaration */
+
+	/* attrs_0 is an array of the original attributes, and while the actual number of attributes
+	 * may change, the size of the array stays the same, so we can use that to restore the
+	 * original attribute count
+	 */
+	(void)memcpy(svc_inst->service_p->attrs,
+		     (struct bt_gatt_attr[])BT_CSIP_SERVICE_DEFINITION(svc_inst), sizeof(attrs_0));
+	svc_inst->service_p->attr_count = ARRAY_SIZE(attrs_0);
 
 	(void)k_work_cancel_delayable(&svc_inst->set_lock_timer);
 
