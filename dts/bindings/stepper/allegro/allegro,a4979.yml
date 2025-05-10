@@ -24,7 +24,7 @@ description: |
 compatible: "allegro,a4979"
 
 include:
-  - name: stepper-controller.yaml
+  - name: stepper.yaml
 
 properties:
   m0-gpios:

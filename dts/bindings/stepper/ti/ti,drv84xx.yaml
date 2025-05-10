@@ -30,7 +30,7 @@ description: |
 compatible: "ti,drv84xx"
 
 include:
-  - name: stepper-controller.yaml
+  - name: stepper.yaml
 
 properties:
   fault-gpios:
