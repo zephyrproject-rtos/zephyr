@@ -182,6 +182,10 @@ struct zbus_channel_observation {
 	const struct zbus_observer *obs;
 };
 
+struct zbus_global_observation {
+	const struct zbus_observer *obs;
+};
+
 #ifdef __cplusplus
 #define _ZBUS_CPP_EXTERN extern
 #else
@@ -332,6 +336,20 @@ struct zbus_channel_observation {
  * @param _prio Observer notification sequence priority.
  */
 #define ZBUS_CHAN_ADD_OBS(_chan, _obs, _prio) ZBUS_CHAN_ADD_OBS_WITH_MASK(_chan, _obs, false, _prio)
+
+/**
+ * @brief Add a static global zbus observation.
+ *
+ * This macro initializes a global channel observation by receiving the observer.
+ *
+ * @param _obs Observer instance.
+ * @param _prio Observer notification sequence priority.
+ */
+#define ZBUS_GLOBAL_ADD_OBS(_obs, _prio)                                                           \
+	const STRUCT_SECTION_ITERABLE(zbus_global_observation,                                     \
+				      _CONCAT(_CONCAT(_global, zz), _CONCAT(_prio, _obs))) = {     \
+		.obs = &_obs,                                                                      \
+	};
 
 /**
  * @def ZBUS_OBS_DECLARE

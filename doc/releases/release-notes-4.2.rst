@@ -712,6 +712,10 @@ New Drivers
    * :dtcompatible:`silabs,siwx91x-wdt`
    * :dtcompatible:`wch,iwdg`
 
+* zbus
+
+   * :c:macro:`ZBUS_GLOBAL_ADD_OBS`
+
 New Samples
 ***********
 
