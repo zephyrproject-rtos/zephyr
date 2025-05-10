@@ -130,10 +130,14 @@ union fuel_gauge_prop_val {
 	int current;
 	/** FUEL_GAUGE_CYCLE_COUNT */
 	uint32_t cycle_count;
+	/** FUEL_GAUGE_CONNECT_STATE */
+	uint32_t connect_state;
 	/** FUEL_GAUGE_FLAGS */
 	uint32_t flags;
 	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
 	uint32_t full_charge_capacity;
+	/** FUEL_GAUGE_PRESENT_STATE */
+	bool present_state;
 	/** FUEL_GAUGE_REMAINING_CAPACITY */
 	uint32_t remaining_capacity;
 	/** FUEL_GAUGE_RUNTIME_TO_EMPTY */
