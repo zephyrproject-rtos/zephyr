@@ -207,26 +207,21 @@ endif()
 #
 #   If the user wants to tweak the optimizations, there are two ways:
 #    1) Using EXTRA_CFLAGS which is applied regardless of kconfig choice, or
-#    2) Rely on override support being implemented by your toolchain_cc_optimize_*()
+#    2) Rely on override support for compiler properties provided by compiler_flags.cmake
 #
-get_property(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_optimization)
-get_property(OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
-get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
-get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
-get_property(OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
 
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
 if(CONFIG_NO_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(optimization_prop "optimization_no_optimization")
 elseif(CONFIG_DEBUG_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+  set(optimization_prop "optimization_debug")
 elseif(CONFIG_SPEED_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
+  set(optimization_prop "optimization_speed")
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
+  set(optimization_prop "optimization_size") # Default in kconfig
 elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(optimization_prop "optimization_size_aggressive")
 else()
   message(FATAL_ERROR
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
@@ -240,8 +235,14 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,${optimization_prop}>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,${optimization_prop}>>)
+
+# Genex to fetch linker property defining the target providing optimization settings for linking.
+set(opt_target_genex $<TARGET_PROPERTY:linker,optimization_target>)
+# Genex to use optimization properties from defined target with fallback to linker target.
+set(opt_target_select $<IF:$<BOOL:${opt_target_genex}>,${opt_target_genex},linker>)
+add_link_options($<TARGET_PROPERTY:${opt_target_select},${optimization_prop}>)
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
