@@ -90,14 +90,14 @@ int hw_irq_ctrl_get_highest_prio_irq(void)
 		return -1;
 	}
 
-	uint64_t irq_status = hw_irq_ctrl_get_irq_status();
+	uint64_t irq_status_temp = hw_irq_ctrl_get_irq_status();
 	int winner = -1;
 	int winner_prio = 256;
 
-	while (irq_status != 0U) {
-		int irq_nbr = nsi_find_lsb_set64(irq_status) - 1;
+	while (irq_status_temp != 0U) {
+		int irq_nbr = nsi_find_lsb_set64(irq_status_temp) - 1;
 
-		irq_status &= ~((uint64_t) 1 << irq_nbr);
+		irq_status_temp &= ~((uint64_t) 1 << irq_nbr);
 		if ((winner_prio > (int)irq_prio[irq_nbr])
 		   && (currently_running_prio > (int)irq_prio[irq_nbr])) {
 			winner = irq_nbr;
@@ -124,10 +124,8 @@ uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock)
 
 	irqs_locked = new_lock;
 
-	if ((previous_lock == true) && (new_lock == false)) {
-		if (irq_status != 0U) {
-			nsif_cpu0_irq_raised_from_sw();
-		}
+	if ((previous_lock == true) && (new_lock == false) && (irq_status != 0U)) {
+		nsif_cpu0_irq_raised_from_sw();
 	}
 	return previous_lock;
 }
@@ -206,6 +204,8 @@ static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 		}
 	} else if (irq == PHONY_HARD_IRQ) {
 		lock_ignore = true;
+	} else {
+		/* PHONY_WEAK_IRQ does not require any action */
 	}
 }
 
@@ -218,7 +218,7 @@ static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 void hw_irq_ctrl_set_irq(unsigned int irq)
 {
 	hw_irq_ctrl_irq_raise_prefix(irq);
-	if ((irqs_locked == false) || (lock_ignore)) {
+	if ((irqs_locked == false) || lock_ignore) {
 		/*
 		 * Awake CPU in 1 delta
 		 * Note that we awake the CPU even if the IRQ is disabled
@@ -239,7 +239,7 @@ static void irq_raising_from_hw_now(void)
 	 * but not if irqs are locked unless this is due to a
 	 * PHONY_HARD_IRQ
 	 */
-	if ((irqs_locked == false) || (lock_ignore)) {
+	if ((irqs_locked == false) || lock_ignore) {
 		lock_ignore = false;
 		nsif_cpu0_irq_raised();
 	}
