@@ -33,6 +33,7 @@ config ARM
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select ARCH_SUPPORTS_COREDUMP_THREADS if CPU_CORTEX_M
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if CPU_CORTEX_M
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
@@ -703,6 +704,9 @@ config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
 config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	bool
+
+config ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	bool
 
 config ARCH_SUPPORTS_ARCH_HW_INIT
