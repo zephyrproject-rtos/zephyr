@@ -62,6 +62,14 @@ endchoice
 
 endif # HWINFO_CC13XX_CC26XX
 
+config HWINFO_CC23X0
+	bool "TI CC23X0 hwinfo"
+	default y
+	depends on SOC_FAMILY_TI_SIMPLELINK && SOC_SERIES_CC23X0
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable CC23X0 hwinfo driver.
+
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
