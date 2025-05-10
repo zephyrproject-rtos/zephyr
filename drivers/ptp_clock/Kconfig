@@ -16,4 +16,12 @@ config PTP_CLOCK_INIT_PRIORITY
 	help
 	  PTP Clock device driver initialization priority
 
+config PTP_CLOCK_SHELL
+	bool "PTP Clock Shell"
+	depends on SHELL
+	help
+	  Enable PTP Clock Shell.
+
+	  The PTP clock shell currently supports clock operations.
+
 endif # PTP_CLOCK
