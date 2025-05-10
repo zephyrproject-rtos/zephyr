@@ -17,6 +17,9 @@
 #include <errno.h>
 #include <ksched.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)
@@ -599,6 +602,50 @@ bool k_work_cancel_sync(struct k_work *work,
 	return pending;
 }
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+static void workto_handler(struct _timeout *to)
+{
+	struct k_work_q *queue = CONTAINER_OF(to, struct k_work_q, workto);
+	const char *name;
+	struct k_work *work;
+	k_work_handler_t handler;
+
+	name = k_thread_name_get(&queue->thread);
+
+	K_SPINLOCK(&lock) {
+		work = queue->work;
+		handler = work->handler;
+	}
+
+	if (name != NULL) {
+		LOG_ERR("queue %s blocked by work %p with handler %p", name, work, handler);
+	} else {
+		LOG_ERR("queue %p blocked by work %p with handler %p", queue, work, handler);
+	}
+
+	k_thread_abort(&queue->thread);
+}
+
+static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
+{
+	if (K_TIMEOUT_EQ(queue->work_timeout, K_FOREVER)) {
+		return;
+	}
+
+	queue->work = work;
+	z_add_timeout(&queue->workto, workto_handler, queue->work_timeout);
+}
+
+static void work_timeout_stop_locked(struct k_work_q *queue)
+{
+	if (K_TIMEOUT_EQ(queue->work_timeout, K_FOREVER)) {
+		return;
+	}
+
+	z_abort_timeout(&queue->workto);
+}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 /* Loop executed by a work queue thread.
  *
  * @param workq_ptr pointer to the work queue structure
@@ -678,6 +725,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			continue;
 		}
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+		work_timeout_start_locked(queue, work);
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 		k_spin_unlock(&lock, key);
 
 		__ASSERT_NO_MSG(handler != NULL);
@@ -689,6 +740,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		 * yield to prevent starving other threads.
 		 */
 		key = k_spin_lock(&lock);
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+		work_timeout_stop_locked(queue);
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
 		flag_clear(&work->flags, K_WORK_RUNNING_BIT);
 		if (flag_test(&work->flags, K_WORK_FLUSHING_BIT)) {
@@ -760,6 +815,14 @@ void k_work_queue_start(struct k_work_q *queue,
 	if ((cfg != NULL) && (cfg->essential)) {
 		queue->thread.base.user_options |= K_ESSENTIAL;
 	}
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+	if ((cfg != NULL) && (cfg->work_timeout_ms)) {
+		queue->work_timeout = K_MSEC(cfg->work_timeout_ms);
+	} else {
+		queue->work_timeout = K_FOREVER;
+	}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
 	k_thread_start(&queue->thread);
 
