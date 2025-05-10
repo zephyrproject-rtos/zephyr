@@ -1,0 +1,8 @@
+tests:
+  sensor_sim_async.testing.ztest:
+    tags:
+      - drivers
+      - sensors
+    platform_allow:
+      - native_sim
+    sysbuild: true
