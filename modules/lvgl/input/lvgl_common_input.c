@@ -52,7 +52,8 @@ static lv_display_t *lvgl_input_get_display(const struct device *dev)
 	lv_display_t *lv_disp = NULL;
 
 	if (disp_dev == NULL) {
-		return NULL;
+		LOG_DBG("No display phandle is passed in DT, defaulting to LV Default Display");
+		return lv_display_get_default();
 	}
 
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
