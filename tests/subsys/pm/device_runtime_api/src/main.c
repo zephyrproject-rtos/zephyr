@@ -300,7 +300,7 @@ ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 void *device_runtime_api_setup(void)
 {
 	test_dev = device_get_binding("test_driver");
-	zassert_not_null(test_dev, NULL);
+	zassert_not_null(test_dev);
 	return NULL;
 }
 

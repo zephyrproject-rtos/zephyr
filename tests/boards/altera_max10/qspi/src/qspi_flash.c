@@ -22,7 +22,7 @@ ZTEST(nios2_qspi, test_qspi_flash)
 	uint8_t rd_buf[2];
 
 	flash_dev = DEVICE_DT_GET(DT_NODELABEL(n25q512ax3));
-	zassert_true(!device_is_ready(flash_dev), TC_PASS, "Flash device is not ready!");
+	zassert_true(!device_is_ready(flash_dev), "Flash device is not ready!");
 
 	for (i = 0U; i < NUM_OF_SECTORS_TO_TEST; i++) {
 		TC_PRINT("\nTesting: Flash Sector-%d\n", i);

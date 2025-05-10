@@ -41,7 +41,7 @@ uint32_t calculate_blocks(uint32_t freeb, uint32_t B)
 
 static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 {
-	int64_t ret = 0;
+	int ret = 0;
 	struct fs_file_t file;
 	struct fs_dirent entry;
 
@@ -50,7 +50,7 @@ static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 	zassert_equal(ret, 0, "File open failed (ret=%d)", ret);
 
 	ret = testfs_write_incrementing(&file, 0, bytes_to_write);
-	zassert_equal(ret, bytes_to_write, "Different number of bytes written %ld (expected %ld)",
+	zassert_equal(ret, bytes_to_write, "Different number of bytes written %d (expected %d)",
 			ret, bytes_to_write);
 
 	ret = fs_close(&file);
@@ -61,7 +61,7 @@ static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 	ret = fs_stat(file_path, &entry);
 	zassert_equal(ret, 0, "File stat failed (ret=%d)", ret);
 	zassert_equal(entry.size, bytes_to_write,
-			"Wrong file size %d (expected %d)", entry.size,
+			"Wrong file size %d (expected %d)", (uint32_t)entry.size,
 			bytes_to_write);
 
 	fs_file_t_init(&file);
@@ -70,7 +70,7 @@ static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 
 
 	ret = testfs_verify_incrementing(&file, 0, bytes_to_write);
-	zassert_equal(ret, bytes_to_write, "Different number of bytes read %ld (expected %ld)",
+	zassert_equal(ret, bytes_to_write, "Different number of bytes read %d (expected %d)",
 			ret, bytes_to_write);
 
 	ret = fs_close(&file);
@@ -79,7 +79,7 @@ static void write_to_file(const char *file_path, uint32_t bytes_to_write)
 
 static void truncate_file(const char *file_path, uint32_t new_size)
 {
-	int64_t ret = 0;
+	int ret = 0;
 	struct fs_file_t file;
 	struct fs_dirent entry;
 
@@ -96,13 +96,13 @@ static void truncate_file(const char *file_path, uint32_t new_size)
 	ret = fs_stat(file_path, &entry);
 	zassert_equal(ret, 0, "File stat failed (ret=%d)", ret);
 	zassert_equal(entry.size, new_size,
-			"Wrong file size %d (expected %d)", entry.size, new_size);
+			"Wrong file size %d (expected %d)", (uint32_t)entry.size, new_size);
 
 	ret = fs_seek(&file, 0, FS_SEEK_SET);
 	zassert_equal(ret, 0, "File seek failed (ret=%d)", ret);
 
 	ret = testfs_verify_incrementing(&file, 0, new_size);
-	zassert_equal(ret, new_size, "Different number of bytes read %ld (expected %ld)",
+	zassert_equal(ret, new_size, "Different number of bytes read %d (expected %d)",
 			ret, new_size);
 
 	ret = fs_close(&file);
@@ -111,7 +111,7 @@ static void truncate_file(const char *file_path, uint32_t new_size)
 
 void writing_test(struct ext2_cfg *config)
 {
-	int64_t ret = 0;
+	int ret = 0;
 	struct fs_statvfs sbuf;
 	struct fs_mount_t *mp = &testfs_mnt;
 	static const char *file_path = "/sml/file";
@@ -151,7 +151,7 @@ void writing_test(struct ext2_cfg *config)
 
 ZTEST(ext2tests, test_indirect_block_removal)
 {
-	int64_t ret = 0;
+	int ret = 0;
 	struct fs_statvfs sbuf;
 	struct fs_mount_t *mp = &testfs_mnt;
 	static const char *file_path = "/sml/file";
