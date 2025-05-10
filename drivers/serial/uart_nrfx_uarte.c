@@ -199,6 +199,7 @@ struct uarte_async_rx {
 #endif /* CONFIG_UART_NRFX_UARTE_ENHANCED_RX */
 	uint8_t flush_cnt;
 	volatile bool enabled;
+	volatile bool tout;
 	volatile bool discard_fifo;
 };
 
@@ -1312,6 +1313,7 @@ static void rx_timeout(struct k_timer *timer)
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY)) {
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+			async_rx->tout = true;
 	}
 	return;
 #else /* UARTE_HAS_FRAME_TIMEOUT */
@@ -1333,6 +1335,7 @@ static void rx_timeout(struct k_timer *timer)
 		 */
 		if (async_rx->idle_cnt == (RX_TIMEOUT_DIV - 1)) {
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+			async_rx->tout = true;
 			return;
 		}
 	}
@@ -1546,6 +1549,7 @@ static void endrx_isr(const struct device *dev)
 		unsigned int key = irq_lock();
 
 		if (async_rx->buf) {
+			async_rx->tout = false;
 			/* Check is based on assumption that ISR handler handles
 			 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
 			 * event will be set.
@@ -1556,10 +1560,20 @@ static void endrx_isr(const struct device *dev)
 			/* Remove the short until the subsequent next buffer is setup */
 			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 		} else {
+			if (!async_rx->tout
+#if UARTE_HAS_FRAME_TIMEOUT
+			    && !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_FRAME_TIMEOUT)
+#endif
+			    ) {
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+			}
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 		}
 
 		irq_unlock(key);
+#if UARTE_HAS_FRAME_TIMEOUT
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_FRAME_TIMEOUT);
+#endif
 	}
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
