@@ -105,6 +105,14 @@ int adxl345_trigger_set(const struct device *dev,
 		drv_data->drdy_trigger = trig;
 		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK;
 		break;
+	case SENSOR_TRIG_MOTION:
+		drv_data->drdy_handler = handler;
+		drv_data->drdy_trigger = trig;
+		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
+					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
+					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
+		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
