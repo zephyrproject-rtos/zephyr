@@ -551,6 +551,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 			return 0;                                                                  \
 		}                                                                                  \
                                                                                                    \
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(id));                                            \
 		RTS5912_GPIO_DTNAMIC_IRQ(id)                                                       \
                                                                                                    \
 		return 0;                                                                          \
