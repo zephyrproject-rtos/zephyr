@@ -145,4 +145,6 @@ source "drivers/spi/Kconfig.xmc4xxx"
 source "drivers/spi/spi_nxp_lpspi/Kconfig"
 # zephyr-keep-sorted-stop
 
+source "drivers/spi/Kconfig.mec5"
+
 endif # SPI

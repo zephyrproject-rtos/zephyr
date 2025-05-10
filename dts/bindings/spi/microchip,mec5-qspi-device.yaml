@@ -1,0 +1,44 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip QSPI controller SPI additional timing setting specific to SPI flash devices.
+
+include: [spi-device.yaml]
+
+properties:
+  dcsckon:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# assertion to first clock edge.
+      If not present use hardware default value. Refer to chip documention
+      for QMSPI input clock frequency.
+
+  dckcsoff:
+    type: int
+    description: |
+      Delay in QSPI main clocks from last clock edge to CS# de-assertion.
+      If not presetn use hardware default value. Refer to chip documention
+      for QSPI input clock frequency.
+
+  dldh:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# de-assertion to driving HOLD#
+      and WP#. If not present use hardware default value. Refer to chip
+      documention for QSPI input clock frequency.
+
+  dcsda:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# de-assertion to CS# assertion.
+      If not present use hardware default value. Refer to chip documention
+      for QSPI input clock frequency.
+
+  ctrl-tap:
+    type: int
+    description: Select control tap point. Values are in [0, 255].
+
+  clock-tap:
+    type: int
+    description: |
+      Select clock tap point to offset any off chip delays. Values are in [0, 255].
