@@ -341,7 +341,7 @@ static int tmc50xx_stepper_is_moving(const struct device *dev, bool *is_moving)
 		return -EIO;
 	}
 
-	*is_moving = (FIELD_GET(TMC5XXX_DRV_STATUS_STST_BIT, reg_value) == 1U);
+	*is_moving = (FIELD_GET(TMC5XXX_DRV_STATUS_STST_BIT, reg_value) != 1U);
 	LOG_DBG("Stepper motor controller %s is moving: %d", dev->name, *is_moving);
 	return 0;
 }
