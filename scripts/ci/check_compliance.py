@@ -522,7 +522,7 @@ class KconfigCheck(ComplianceTest):
         root_args = argparse.Namespace(**{'board_roots': board_roots,
                                           'soc_roots': soc_roots, 'board': None,
                                           'board_dir': []})
-        v2_boards = list_boards.find_v2_boards(root_args).values()
+        v2_boards = list_boards.find_v2_boards(root_args)
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for board in v2_boards:

@@ -209,7 +209,7 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
                         board=None, board_dir=None)
 
-    for board in list_boards.find_v2_boards(lb_args).values():
+    for board in list_boards.find_v2_boards(lb_args):
         for board_dir in board.directories:
             if board_dir in dir2data:
                 # don't load the same board data twice

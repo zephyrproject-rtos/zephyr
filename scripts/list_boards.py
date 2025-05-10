@@ -347,7 +347,7 @@ def find_v2_boards(args):
         board_extensions.extend(e)
 
     extend_v2_boards(boards, board_extensions)
-    return boards
+    return sorted(boards.values(), key=lambda board: board.name)
 
 
 def parse_args():
@@ -415,7 +415,7 @@ def board_v2_qualifiers_csv(board):
 def dump_v2_boards(args):
     boards = find_v2_boards(args)
 
-    for b in boards.values():
+    for b in boards:
         qualifiers_list = board_v2_qualifiers(b)
         if args.cmakeformat is not None:
             notfound = lambda x: x or 'NOTFOUND'

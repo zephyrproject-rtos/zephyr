@@ -106,7 +106,7 @@ class Boards(WestCommand):
                                         revisions=revisions_list,
                                         dir=board.dir, hwm=board.hwm, qualifiers=''))
 
-        for board in list_boards.find_v2_boards(args).values():
+        for board in list_boards.find_v2_boards(args):
             if name_re is not None and not name_re.search(board.name):
                 continue
 
