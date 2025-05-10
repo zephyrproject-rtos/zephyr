@@ -51,6 +51,9 @@ struct mcux_flexcomm_config {
 	void (*rx_timeout_func)(struct k_work *work);
 	void (*tx_timeout_func)(struct k_work *work);
 #endif
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	void (*pm_unlock_work_fn)(struct k_work *);
+#endif
 };
 
 #if CONFIG_UART_ASYNC_API
@@ -90,6 +93,7 @@ struct mcux_flexcomm_data {
 #endif
 #ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	bool pm_policy_state_lock;
+	struct k_work pm_lock_work;
 #endif
 };
 
@@ -104,13 +108,27 @@ static void mcux_flexcomm_pm_policy_state_lock_get(const struct device *dev)
 	}
 }
 
+static void mcux_flexcomm_pm_unlock_if_idle(const struct device *dev)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (config->base->STAT & USART_STAT_TXIDLE_MASK) {
+		data->pm_policy_state_lock = false;
+		pm_policy_device_power_lock_put(dev);
+	} else {
+		/* can't block systemn workqueue so keep re-submitting until it's done */
+		k_work_submit(&data->pm_lock_work);
+	}
+}
+
 static void mcux_flexcomm_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct mcux_flexcomm_data *data = dev->data;
 
 	if (data->pm_policy_state_lock) {
-		data->pm_policy_state_lock = false;
-		pm_policy_device_power_lock_put(dev);
+		/* we can't block on TXidle mask in IRQ context so offload */
+		k_work_submit(&data->pm_lock_work);
 	}
 }
 #endif
@@ -1157,6 +1175,13 @@ static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_acti
 
 static int mcux_flexcomm_init(const struct device *dev)
 {
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+
+	k_work_init(&data->pm_lock_work, config->pm_unlock_work_fn);
+#endif
+
 	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
 	 * which is invoked by pm_device_driver_init().
 	 */
@@ -1214,6 +1239,21 @@ static DEVICE_API(uart, mcux_flexcomm_driver_api) = {
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)				\
+static void mcux_flexcomm_##n##_pm_unlock(struct k_work *work)			\
+{										\
+	const struct device *dev = DEVICE_DT_INST_GET(n);			\
+										\
+	mcux_flexcomm_pm_unlock_if_idle(dev);					\
+}
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
+	.pm_unlock_work_fn = mcux_flexcomm_##n##_pm_unlock,
+#else
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 #ifdef CONFIG_UART_ASYNC_API
 #define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)					\
@@ -1288,6 +1328,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 	UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
+	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
 };
 
 #define UART_MCUX_FLEXCOMM_INIT(n)						\
@@ -1297,6 +1338,8 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;		\
 										\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
+										\
+	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)				\
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_pm_action);			\
 										\
