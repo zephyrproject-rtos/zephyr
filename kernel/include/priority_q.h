@@ -280,7 +280,7 @@ static ALWAYS_INLINE unsigned int z_priq_mq_best_queue_index(struct _priq_mq *pq
 
 static ALWAYS_INLINE void z_priq_mq_init(struct _priq_mq *q)
 {
-	for (int i = 0; i < ARRAY_SIZE(q->queues); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(q->queues); i++) {
 		sys_dlist_init(&q->queues[i]);
 	}
 
