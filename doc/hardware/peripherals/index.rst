@@ -58,6 +58,7 @@ Peripherals
    stepper.rst
    smbus.rst
    uart.rst
+   ufshc.rst
    usbc_vbus.rst
    tcpc.rst
    tgpio.rst

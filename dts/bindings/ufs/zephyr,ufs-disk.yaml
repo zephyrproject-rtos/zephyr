@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This Zephyr UFS disk node binding indicates that a UFS disk device is attached
+  to a specific UFS LUN in the host controller. It enables the disk to be used
+  with the disk driver API and any relevant subsystems, such as Filesystems.
+
+compatible: "zephyr,ufs-disk"
+
+include: base.yaml
+
+properties:
+  lun:
+    type: int
+    default: 0
+    description: |
+      Specifies the UFS LUN for disk operations. The default is LUN 0 if not
+      explicitly defined. The range for LUN values is 0 to 31.
+
+  disk-name:
+    type: string
+    required: true
+    description: The name of the disk, used by the Disk subsystem for registering the UFS disk.
