@@ -1,0 +1,21 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xen Platform Control Registers
+
+compatible: "xen,virtio-mmio-backend"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  guest-domain-uuid:
+    type: string
+
+  guest-domain-id:
+    type: int

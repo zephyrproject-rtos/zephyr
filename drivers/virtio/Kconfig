@@ -22,6 +22,21 @@ config VIRTIO_MMIO
 	help
 	  Enable options for VIRTIO over MMIO
 
+config VIRTIO_XEN_MMIO_BACKEND
+	bool "mmio backedn"
+	default y
+	select DEMAND_PAGING
+	select DEMAND_MAPPING
+	select DYNAMIC_INTERRUPTS
+	depends on DT_HAS_XEN_VIRTIO_MMIO_BACKEND_ENABLED
+	help
+	  hoge
+
+config XEN_VIRTIO_MMIO_DEV_SIZE
+	int
+	default 512
+	depends on VIRTIO_XEN_MMIO_BACKEND
+
 endif # VIRTIO
 
 module = VIRTIO
