@@ -194,6 +194,7 @@ source "drivers/modem/Kconfig.cellular"
 source "drivers/modem/Kconfig.at_shell"
 
 source "drivers/modem/Kconfig.hl7800"
+source "drivers/modem/hl78xx/Kconfig.hl78xx"
 source "drivers/modem/Kconfig.simcom-sim7080"
 
 endif # MODEM
