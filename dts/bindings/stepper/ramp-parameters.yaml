@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Collection of ramp parameters for stepper motors.
+
+properties:
+  acceleration:
+    type: int
+    default: 0
+    description: |
+      Maximum acceleration in micro-steps per second squared.
+
+  max-speed:
+    type: int
+    default: 0
+    description: |
+      Maximum speed in micro-steps per second.
+
+  deceleration:
+    type: int
+    default: 0
+    description: |
+      Maximum deceleration in micro-steps per second squared.
+
+  pre-decel-steps:
+    type: int
+    default: 0
+    description: |
+      Maximum Number of steps over which to decelerate while changing motor-direction
+      during active ramping, Higher number corresponds to longer deceleration, hence
+      smoother change in direction of motion
+
+  ramp-type:
+    type: int
+    description: |
+      Type of ramping to be used. The options are:
+      1: Linear ramping - trapezoidal ramping with constant acceleration and deceleration
+      Further ramping types can be added in <include/zephyr/dt-bindings/stepper/ramp.h>
+    default: 1
+    enum:
+      - 1
