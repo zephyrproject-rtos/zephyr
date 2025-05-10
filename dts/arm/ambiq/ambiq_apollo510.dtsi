@@ -549,6 +549,17 @@
 			status = "disabled";
 		};
 
+		adc0: adc@ADC_BASE_NAME {
+			compatible = "ambiq,adc";
+			reg = <ADC_REG_BASE ADC_REG_SIZE>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1190>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		pinctrl: pin-controller@GPIO_BASE_NAME {
 			compatible = "ambiq,apollo5-pinctrl";
 			reg = <GPIO_REG_BASE GPIO_REG_SIZE>;
