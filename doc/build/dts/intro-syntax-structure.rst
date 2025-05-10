@@ -51,7 +51,9 @@ The above tree has three nodes:
 Nodes can be assigned *node labels*, which are unique shorthands that refer to
 the labeled node. Above, ``a-sub-node`` has the node label
 ``subnode_nodelabel``. A node can have zero, one, or multiple node labels. You
-can use node labels to refer to the node elsewhere in the devicetree.
+can use node labels to refer to the node elsewhere in the devicetree. Note that
+the :ref:`C API <dt-from-c>` uses ``nodelabel`` or ``NODELABEL``
+(no separation between words) to refer to node labels.
 
 Devicetree nodes have *paths* identifying their locations in the tree. Like
 Unix file system paths, devicetree paths are strings separated by slashes
@@ -66,6 +68,12 @@ Properties
 Devicetree nodes can also have *properties*. Properties are name/value pairs.
 Property values can be any sequence of bytes. In some cases, the values are an
 array of what are called *cells*. A cell is just a 32-bit unsigned integer.
+
+.. _dt-property-labels:
+
+Just like nodes, properties can also have *property labels*, which use the same
+syntax and share the same purpose as node labels (but for properties),
+described in the previous section.
 
 Node ``a-sub-node`` has a property named ``foo``, whose value is a cell with
 value 3. The size and type of ``foo``\ 's value are implied by the enclosing
@@ -308,7 +316,8 @@ interrupts
 .. note::
 
    Earlier versions of Zephyr made frequent use of the ``label`` property,
-   which is distinct from the standard :ref:`node label <dt-node-labels>`.
+   which is distinct from the standard :ref:`node label <dt-node-labels>` and
+   :ref:`property label <dt-property-labels>`.
    Use of the label *property* in new devicetree bindings, as well as use of
    the :c:macro:`DT_LABEL` macro in new code, are actively discouraged. Label
    properties continue to persist for historical reasons in some existing
