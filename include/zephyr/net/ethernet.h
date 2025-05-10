@@ -722,9 +722,6 @@ struct ethernet_context {
 	/** Is network carrier up */
 	bool is_net_carrier_up : 1;
 
-	/** Is this context already initialized */
-	bool is_init : 1;
-
 	/** Types of Ethernet network interfaces */
 	enum ethernet_if_types eth_if_type;
 };
@@ -750,6 +747,13 @@ struct net_eth_vlan_hdr {
 	} vlan;
 	uint16_t type;
 } __packed;
+
+/* Vlan header */
+struct net_vlan_hdr {
+	uint16_t tpid; /* tag protocol id */
+	uint16_t tci; /* tag control info */
+	uint16_t type; /* Next protocol type */
+};
 
 /** @endcond */
 

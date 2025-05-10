@@ -278,10 +278,6 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
 			net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
 		}
-
-		if (IS_ENABLED(CONFIG_NET_VLAN) && pending) {
-			net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(pending));
-		}
 	}
 
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
