@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+&qwiic_i2c {
+	modulino-buttons@3e {
+		compatible = "i2c-device";
+		reg = <0x3e>;
+
+		modulino_buttons: modulino-buttons {
+			compatible = "arduino,modulino-buttons";
+			zephyr,codes = <INPUT_KEY_A>,
+				       <INPUT_KEY_B>,
+				       <INPUT_KEY_C>;
+		};
+
+		modulino_leds: modulino-leds {
+			compatible = "arduino,modulino-buttons-leds";
+		};
+	};
+
+};
