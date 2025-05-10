@@ -275,7 +275,7 @@ static int counter_it8xxx2_init(const struct device *dev)
 	const struct counter_it8xxx2_config *config = dev->config;
 
 	LOG_DBG("max top value = 0x%08x", config->info.max_top_value);
-	LOG_DBG("frequency = %d", config->info.freq);
+	LOG_DBG("frequency = %llu", config->info.freq);
 	LOG_DBG("channels = %d", config->info.channels);
 
 	/* set the top value of top timer  */
