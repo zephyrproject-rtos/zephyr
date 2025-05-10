@@ -17,6 +17,10 @@
 	};
 };
 
+&cpusec_bellboard {
+	status = "okay";
+};
+
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
 	status = "okay";
