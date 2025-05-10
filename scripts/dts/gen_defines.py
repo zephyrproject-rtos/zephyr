@@ -279,6 +279,7 @@ def write_special_props(node: edtlib.Node) -> None:
     out_comment("Macros for properties that are special in the specification:")
     write_regs(node)
     write_ranges(node)
+    write_dma_ranges(node)
     write_interrupts(node)
     write_compatibles(node)
     write_status(node)
@@ -332,6 +333,44 @@ def write_ranges(node: edtlib.Node) -> None:
 
     out_dt_define(f"{path_id}_FOREACH_RANGE(fn)",
             " ".join(f"fn(DT_{path_id}, {i})" for i,range in enumerate(node.ranges)))
+
+
+def write_dma_ranges(node: edtlib.Node) -> None:
+    # dma-ranges property: edtlib knows the right #address-cells and
+    # #size-cells of parent and child, and can therefore pack the
+    # child & parent addresses and sizes correctly
+
+    idx_vals = []
+    path_id = node.z_path_id
+
+    if node.dma_ranges is not None:
+        idx_vals.append((f"{path_id}_DMA_RANGES_NUM", len(node.dma_ranges)))
+
+    for i,dma_range in enumerate(node.dma_ranges):
+        idx_vals.append((f"{path_id}_DMA_RANGES_IDX_{i}_EXISTS", 1))
+
+        if dma_range.child_bus_addr is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_CHILD_BUS_ADDRESS"
+            if "pcie" in node.buses:
+                idx_value = dma_range.child_bus_addr & ((1 << (dma_range.child_bus_cells - 1) * 32) - 1)
+            else:
+                idx_value = dma_range.child_bus_addr
+            idx_vals.append((idx_macro,
+                             f"{idx_value} /* {hex(idx_value)} */"))
+        if dma_range.parent_bus_addr is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_PARENT_BUS_ADDRESS"
+            idx_vals.append((idx_macro,
+                             f"{dma_range.parent_bus_addr} /* {hex(dma_range.parent_bus_addr)} */"))
+        if dma_range.length is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_LENGTH"
+            idx_vals.append((idx_macro,
+                             f"{dma_range.length} /* {hex(dma_range.length)} */"))
+
+    for macro, val in idx_vals:
+        out_dt_define(macro, val)
+
+    out_dt_define(f"{path_id}_FOREACH_DMA_RANGE(fn)",
+            " ".join(f"fn(DT_{path_id}, {i})" for i,dma_range in enumerate(node.dma_ranges)))
 
 
 def write_regs(node: edtlib.Node) -> None:
