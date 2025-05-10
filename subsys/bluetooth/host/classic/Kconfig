@@ -419,6 +419,13 @@ config BT_HFP_AG_REJECT_CALL
 	help
 	  This option enables ability to reject a call for HFP AG
 
+config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
+	int "Timeout after the get ongoing calls callback notified (milliseconds) [EXPERIMENTAL]"
+	default 10000
+	range 1000 10000
+	help
+	  This option sets the timeout after the get ongoing calls callback notified
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
