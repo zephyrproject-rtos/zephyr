@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Polytech A/S.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+temp_sensor: &temp {
+	status = "okay";
+};
