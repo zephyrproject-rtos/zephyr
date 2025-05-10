@@ -1,8 +1,8 @@
-# Copyright (c), 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Nordic nPM1300 PMIC
+  Nordic nPM1304 PMIC
 
   The PMIC has two buck converters and two LDOs.
   The regulators need to be defined as child nodes, strictly following the
@@ -13,7 +13,7 @@ description: |
     reg = <0x6b>;
     ...
     regulators {
-      compatible = "nordic,npm1300-regulator";
+      compatible = "nordic,npm1304-regulator";
 
       BUCK1 {
         /* all properties for BUCK1 */
@@ -30,6 +30,6 @@ description: |
     };
   };
 
-compatible: "nordic,npm1300-regulator"
+compatible: "nordic,npm1304-regulator"
 
 include: "nordic,npm13xx-regulator.yaml"
