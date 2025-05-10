@@ -110,4 +110,6 @@ source "drivers/interrupt_controller/Kconfig.mtk_adsp"
 
 source "drivers/interrupt_controller/Kconfig.wch_pfic"
 
+source "drivers/interrupt_controller/Kconfig.wch_exti"
+
 endmenu
