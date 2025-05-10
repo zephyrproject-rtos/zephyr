@@ -142,7 +142,8 @@ static void purge_buffers(sys_slist_t *list)
 {
 	struct net_buf *buf;
 
-	while ((buf = (void *)net_buf_slist_get(list))) {
+	while (!sys_slist_is_empty(list)) {
+		buf = CONTAINER_OF(sys_slist_get_not_empty(list), struct net_buf, node);
 		net_buf_unref(buf);
 	}
 }
@@ -693,7 +694,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 
 static void enqueue_buf(struct bt_mesh_friend *frnd, struct net_buf *buf)
 {
-	net_buf_slist_put(&frnd->queue, buf);
+	sys_slist_append(&frnd->queue, &buf->node);
 	frnd->queue_size++;
 }
 
@@ -1143,7 +1144,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 		return;
 	}
 
-	net_buf_slist_put(&seg->queue, buf);
+	sys_slist_append(&seg->queue, &buf->node);
 
 	if (type == BT_MESH_FRIEND_PDU_COMPLETE) {
 		sys_slist_merge_slist(&frnd->queue, &seg->queue);
@@ -1261,12 +1262,12 @@ static void friend_timeout(struct k_work *work)
 		return;
 	}
 
-	frnd->last = (void *)net_buf_slist_get(&frnd->queue);
-	if (!frnd->last) {
+	if (sys_slist_is_empty(&frnd->queue)) {
 		LOG_WRN("Friendship not established with 0x%04x", frnd->lpn);
 		friend_clear(frnd);
 		return;
 	}
+	frnd->last = CONTAINER_OF(sys_slist_get_not_empty(&frnd->queue), struct net_buf, node);
 
 	md = (uint8_t)(sys_slist_peek_head(&frnd->queue) != NULL);
 
@@ -1676,12 +1677,14 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 	pending_segments = false;
 
 	while (pending_segments || avail_space < seg_count) {
-		struct net_buf *buf = (void *)net_buf_slist_get(&frnd->queue);
 
-		if (!buf) {
+		if (sys_slist_is_empty(&frnd->queue)) {
 			LOG_ERR("Unable to free up enough buffers");
 			return false;
 		}
+
+		struct net_buf *buf =
+			CONTAINER_OF(sys_slist_get_not_empty(&frnd->queue), struct net_buf, node);
 
 		frnd->queue_size--;
 		avail_space++;
