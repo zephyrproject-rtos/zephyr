@@ -235,10 +235,8 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && !defined(CONFIG_BT_CTLR_DF)
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_END
-#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_END
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_PHYEND
-#define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 
 /* Clear SW-switch timer on packet end:
@@ -322,7 +320,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * a PPI to publish RADIO END event.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT \
-	(NRF_RADIO->HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END)
+	(NRF_RADIO->HAL_RADIO_PUBLISH_END)
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	(((HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI << \
 		RADIO_PUBLISH_END_CHIDX_Pos) \
@@ -529,9 +527,9 @@ static inline void hal_radio_sw_switch_cleanup(void)
 {
 	hal_radio_sw_switch_disable();
 	nrf_dppi_channels_disable(NRF_DPPIC,
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) || defined(CONFIG_BT_CTLR_DF)
 				  BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 				  BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
