@@ -7,12 +7,28 @@ tests:
       - drivers
       - mspi
       - flash
-    filter: dt_compat_enabled("zephyr,mspi-emul-flash") or
-            dt_compat_enabled("mspi-atxp032")
+    filter: dt_compat_enabled("zephyr,mspi-emul-flash")
+      or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+      or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
     harness: ztest
     platform_allow:
       - native_sim
       - apollo3p_evb
+      - apollo510_evb
     integration_platforms:
       - native_sim
       - apollo3p_evb
+      - apollo510_evb
+  drivers.mspi.flash.xip_read:
+    tags:
+      - drivers
+      - mspi
+      - flash
+    filter: dt_compat_enabled("mspi-is25xX0xx")
+    harness: ztest
+    platform_allow:
+      - apollo510_evb
+    integration_platforms:
+      - apollo510_evb
+    extra_configs:
+      - CONFIG_FLASH_MSPI_XIP_READ=y
