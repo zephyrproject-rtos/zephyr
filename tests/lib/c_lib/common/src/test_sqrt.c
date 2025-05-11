@@ -149,10 +149,9 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 
 ZTEST(libc_common, test_sqrt)
 {
-#if __SIZEOF_DOUBLE__ != 8
-	TC_PRINT("test_sqrt skipped, double not 64 bits\n");
-	ztest_test_skip();
-#else
+	if (sizeof(double) != 8) {
+		ztest_test_skip();
+	}
 int i;
 double	resd, error, square, root_squared, exponent;
 uint64_t max_error;
@@ -208,5 +207,4 @@ int64_t *p_root_squared = (int64_t *)&root_squared;
 	zassert_true(max_error < 0x04, "huge errors in sqrt implementation");
 	/* print the max error */
 	TC_PRINT("test_sqrt max error %d counts\n", (uint32_t)max_error);
-#endif
 }
