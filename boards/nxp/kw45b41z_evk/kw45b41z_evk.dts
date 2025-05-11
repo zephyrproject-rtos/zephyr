@@ -1,0 +1,150 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw71.dtsi>
+#include "kw45b41z_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP KW45B41Z83-EVK board";
+	compatible = "nxp,kw45";
+
+	aliases {
+		led0 = &blue_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
+	};
+
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &stcm0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart0;
+		zephyr,canbus = &flexcan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm0 1 PWM_USEC(200) PWM_POLARITY_NORMAL>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm0 2 PWM_USEC(200) PWM_POLARITY_NORMAL>;
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 0 PWM_USEC(200) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&lpuart0 {
+	current-speed = <115200>;
+	status =  "okay";
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	status =  "okay";
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	status = "okay";
+	bitrate = <125000>;
+	pinctrl-0 = <&pinmux_flexcan>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <420000000>;
+	};
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			reg = <0x10000 DT_SIZE_K(416)>;
+		};
+
+		slot1_partition: partition@78000 {
+			reg = <0x78000 DT_SIZE_K(416)>;
+		};
+
+		storage_partition: partition@e0000 {
+			reg = <0xe0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&fmu {
+	status = "okay";
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm0>;
+	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
+};

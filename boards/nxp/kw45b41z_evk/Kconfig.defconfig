@@ -1,0 +1,11 @@
+# KW45B41Z-EVK board
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KW45B41Z_EVK
+
+config BT_DIS_MANUF
+	default "NXP"
+
+endif # BOARD_KW45B41Z_EVK

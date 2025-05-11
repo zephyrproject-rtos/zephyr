@@ -1,0 +1,20 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kw45b41z_evk
+name: NXP KW45B41Z-EVK
+type: mcu
+arch: arm
+ram: 64
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - can
+  - gpio
+  - spi
+  - watchdog
+  - i2c
+vendor: nxp
