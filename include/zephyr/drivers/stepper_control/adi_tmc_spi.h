@@ -6,12 +6,13 @@
  */
 
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_
-#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_CONTROL_ADI_TMC_SPI_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_CONTROL_ADI_TMC_SPI_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +26,10 @@ extern "C" {
  */
 
 #include <zephyr/drivers/spi.h>
+
+int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val);
+
+int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val);
 
 /**
  * @brief Read a register from the TMC module using the SPI Bus.
@@ -60,4 +65,4 @@ int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bi
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_SPI_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_CONTROL_ADI_TMC_SPI_H_ */

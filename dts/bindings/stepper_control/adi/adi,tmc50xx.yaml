@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,tmc50xx"
+
+include:
+  - name: spi-device.yaml
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - poscmp-enable
+      - test-mode
+      - lock-gconf
+      - shaft1
+      - shaft2
+
+properties:
+  "#address-cells":
+    default: 1
+    const: 1
+
+  "#size-cells":
+    default: 0
+    const: 0
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The frequency of the clock signal provided to the TMC50XX.
+      This is used for real world conversion.
+
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
+            where v[50xx] is the value written to the TMC50XX.

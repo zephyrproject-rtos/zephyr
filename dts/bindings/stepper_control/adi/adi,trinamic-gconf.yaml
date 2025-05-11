@@ -81,3 +81,13 @@ properties:
          (depending on velocity thresholds). Switch from
          off to on state while in stand-still and at IHOLD=
          nominal IRUN current, only.
+
+  shaft1:
+    type: boolean
+    description: |
+      Invert the direction of the motor shaft.
+
+  shaft2:
+    type: boolean
+    description: |
+      Invert the direction of the motor shaft.

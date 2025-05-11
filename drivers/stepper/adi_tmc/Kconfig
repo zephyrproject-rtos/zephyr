@@ -15,12 +15,11 @@ config STEPPER_ADI_TMC_SPI
 	depends on STEPPER_ADI_TMC
 	select SPI
 	help
-	  A Trinamic Stepper Controller with SPI is enabled
+	  A Trinamic Stepper Driver with SPI is enabled
 
 comment "Trinamic Stepper Drivers"
 
 rsource "Kconfig.tmc22xx"
-rsource "Kconfig.tmc50xx"
-rsource "Kconfig.tmc51xx"
+rsource "Kconfig.tmc5xxx"
 
 endif # STEPPER_ADI_TMC

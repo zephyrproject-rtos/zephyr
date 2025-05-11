@@ -23,6 +23,7 @@ comment "Stepper Control Drivers"
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.zephyr_stepper_control"
+rsource "adi_tmc/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # STEPPER_CONTROL
