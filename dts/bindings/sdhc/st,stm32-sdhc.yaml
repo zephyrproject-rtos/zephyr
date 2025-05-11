@@ -1,0 +1,59 @@
+# Copyright (c) 2025 EXALT Technologies.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "st,stm32-sdhc"
+
+bus: sd
+
+include: [sdhc.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  hw-flow-control:
+    type: boolean
+    description: Set to enable RTS/CTS flow control at boot time
+
+  sdhi-on-gpios:
+    description: |
+      GPIO used to enable/disable the SDHI.
+    type: phandle-array
+
+  cd-gpios:
+    type: phandle-array
+    description: |
+      Card detect pin.
+
+  clocks:
+    required: true
+
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  support-1-8-v:
+    type: boolean
+    description: |
+      When defined, indicates that the external SDIO circuit supports 1.8V signaling,
+
+  bus-width:
+    type: int
+    default: 1
+    description: |
+        bus width for SDMMC access, defaults to the minimum necessary
+        number of bus lines
+    enum:
+      - 1
+      - 4
+      - 8
+
+  clk-div:
+    type: int
+    default: 1
+    description: |
+        Clock division factor for SDMMC. Typically the clock operates at 25MHz so
+        a division factor of 2 would be 25MHz / 2 = 12.5MHz.
