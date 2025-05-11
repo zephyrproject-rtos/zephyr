@@ -43,20 +43,16 @@
 
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
-		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
-	status = "okay";
-};
-
-&clk_lsi {
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
 &pll {
 	div-m = <1>;
-	mul-n = <6>;
+	mul-n = <3>;
 	div-r = <2>;
 	div-q = <2>;
-	clocks = <&clk_hsi>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
@@ -99,7 +95,7 @@
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
-		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
@@ -112,10 +108,6 @@
 };
 
 &rng {
-	status = "okay";
-};
-
-&clk_hsi {
 	status = "okay";
 };
 
