@@ -667,7 +667,7 @@ static int lsm6dsv16x_shub_set_data_channel(const struct device *dev)
 		trgt_cfg.slv_subadd = sp->out_data_addr;
 		trgt_cfg.slv_len = sp->out_data_len;
 
-		if (lsm6dsv16x_sh_slv_cfg_read(ctx, n + 1, &trgt_cfg) < 0) {
+		if (lsm6dsv16x_sh_slv_cfg_read(ctx, n, &trgt_cfg) < 0) {
 			LOG_DBG("shub: error configuring shub for ext targets");
 			return -EIO;
 		}
@@ -834,6 +834,23 @@ int lsm6dsv16x_shub_init(const struct device *dev)
 	}
 
 	lsm6dsv16x_shub_set_data_channel(dev);
+
+#if defined(CONFIG_LSM6DSV16X_STREAM)
+	/*
+	 * Enable FIFO batching for each configured shub slave so that their
+	 * data is tagged SENSORHUB_SLAVEn_TAG in the FIFO and can be decoded
+	 * by the RTIO stream path without any polling that would corrupt the
+	 * FIFO state machine.
+	 */
+	for (n = 0; n < data->num_ext_dev; n++) {
+		int ret = lsm6dsv16x_fifo_sh_batch_slave_set(ctx, n, 1);
+
+		if (ret < 0) {
+			LOG_ERR("%s: shub FIFO batch enable slave %d failed (%d)",
+				dev->name, n, ret);
+		}
+	}
+#endif /* CONFIG_LSM6DSV16X_STREAM */
 
 	return 0;
 }
