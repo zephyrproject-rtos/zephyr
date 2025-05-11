@@ -1068,7 +1068,7 @@ static int gpio_pca_series_port_read_standard(
 	if (ret) {
 		LOG_ERR("port read error %d", ret);
 	} else {
-		value = sys_le32_to_cpu(input_data);
+		*value = (gpio_port_value_t)sys_le32_to_cpu(input_data);
 	}
 	k_sem_give(&data->lock);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
