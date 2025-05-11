@@ -1,0 +1,39 @@
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,uart-mcumgr = &cdc_acm_uart0;
+	};
+};
+
+&usbotg_fs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		status = "okay";
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&cdc_acm_uart0 {
+	status = "okay";
+};
+
+sdhc: &sdmmc1 {
+	compatible = "st,stm32-sdhc";
+	interrupts = <49 0>;
+	interrupt-names = "event";
+	hw-flow-control;
+	bus-width=<4>;
+	clk-div = <8>;
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	min-bus-freq = <25000000>;
+	max-bus-freq = <208000000>;
+	sdhi-on-gpios    = <&gpiob 10 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+	status= "okay";
+};
