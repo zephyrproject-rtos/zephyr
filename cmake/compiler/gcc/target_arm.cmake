@@ -3,6 +3,7 @@
 set(ARM_C_FLAGS)
 
 list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU})
+list(APPEND ARM_C_FLAGS   -masm-syntax-unified)
 
 if(CONFIG_COMPILER_ISA_THUMB2)
   list(APPEND ARM_C_FLAGS   -mthumb)
