@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig STEPPER
-	bool "Stepper Controller"
+	bool "Stepper Driver"
 	help
-	  Enable stepper controller
+	  Enable stepper driver
 
 if STEPPER
 

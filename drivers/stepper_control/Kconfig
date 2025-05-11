@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_CONTROL
+	bool "Stepper Motion Controller"
+	select STEPPER
+	help
+	  Enable support for stepper motor control.
+
+if STEPPER_CONTROL
+
+module = STEPPER_CONTROL
+module-str = stepper_control
+source "subsys/logging/Kconfig.template.log_config"
+
+config STEPPER_CONTROL_INIT_PRIORITY
+	int "Stepper motor control init priority"
+	default 90
+	help
+	  Stepper motor control initialization priority.
+
+comment "Stepper Control Drivers"
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.zephyr_stepper_control"
+# zephyr-keep-sorted-stop
+
+endif # STEPPER_CONTROL
