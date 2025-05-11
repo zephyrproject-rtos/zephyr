@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(wdt_sam0);
 #endif
 
 struct wdt_sam0_dev_data {
-	wdt_callback_t cb;
+	wdt_callback_t ew_cb;
 	bool timeout_valid;
 };
 
@@ -90,8 +90,8 @@ static void wdt_sam0_isr(const struct device *dev)
 
 	WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
 
-	if (data->cb != NULL) {
-		data->cb(dev, 0);
+	if (data->ew_cb != NULL) {
+		data->ew_cb(dev, 0);
 	}
 }
 
@@ -205,8 +205,8 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 	wdt_sam0_wait_synchronization();
 
 	/* Only enable IRQ if a callback was provided */
-	data->cb = cfg->callback;
-	if (data->cb) {
+	data->ew_cb = cfg->callback;
+	if (data->ew_cb) {
 		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
 	} else {
 		WDT_REGS->INTENCLR.reg = WDT_INTENCLR_EW;
@@ -219,7 +219,7 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 
 timeout_invalid:
 	data->timeout_valid = false;
-	data->cb = NULL;
+	data->ew_cb = NULL;
 
 	return -EINVAL;
 }

@@ -83,6 +83,24 @@ static void wdt_callback(const struct device *wdt_dev, int channel_id)
 }
 #endif /* WDT_ALLOW_CALLBACK */
 
+#if WDT_EARLY_WARNING_INTERRUPT_SUPPORT
+
+static void wdt_ew_callback(const struct device *wdt_dev, int channel_id)
+{
+
+	static bool handled_event;
+
+	if (handled_event) {
+		return;
+	}
+
+	wdt_feed(wdt_dev, channel_id);
+
+	printk("Fed watchdog after watchdog window opened... \n");
+	handled_event = true;
+}
+#endif /* WDT_EARLY_WARNING_INTERRUPT_SUPPORT*/
+
 int main(void)
 {
 	int err;
@@ -110,9 +128,14 @@ int main(void)
 	wdt_config.callback = wdt_callback;
 
 	printk("Attempting to test pre-reset callback\n");
-#else /* WDT_ALLOW_CALLBACK */
+#else  /* WDT_ALLOW_CALLBACK */
 	printk("Callback in RESET_SOC disabled for this platform\n");
 #endif /* WDT_ALLOW_CALLBACK */
+
+#if WDT_EARLY_WARNING_INTERRUPT_SUPPORT
+	/* Set up watchdog early warning callback*/
+	wdt_config.ew_callback = wdt_ew_callback;
+#endif /* WDT_EARLY_WARNING_INTERRUPT_SUPPORT*/
 
 	wdt_channel_id = wdt_install_timeout(wdt, &wdt_config);
 	if (wdt_channel_id == -ENOTSUP) {
