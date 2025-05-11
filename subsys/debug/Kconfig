@@ -228,6 +228,7 @@ config FORCE_NO_ASSERT
 config ASSERT_VERBOSE
 	bool "Verbose assertions"
 	default y
+	depends on PRINTK
 	help
 	  This option enables printing an assert message with information about
 	  the assertion that occurred. This includes printing the location,
