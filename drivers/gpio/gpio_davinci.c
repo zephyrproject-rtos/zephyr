@@ -153,12 +153,9 @@ static DEVICE_API(gpio, gpio_davinci_driver_api) = {
 static int gpio_davinci_init(const struct device *dev)
 {
 	const struct gpio_davinci_config *config = DEV_CFG(dev);
-	volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev);
 	int ret;
 
 	DEVICE_MMIO_NAMED_MAP(dev, port_base, K_MEM_CACHE_NONE);
-
-	regs->dir = GPIO_DAVINCI_DIR_RESET_VAL;
 
 	config->bank_config(dev);
 
@@ -174,7 +171,7 @@ static int gpio_davinci_init(const struct device *dev)
 	static void gpio_davinci_bank_##n##_config(const struct device *dev)	  \
 	{									  \
 		volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev); \
-		ARG_UNUSED(regs);						  \
+		regs->dir = GPIO_DAVINCI_DIR_RESET_VAL;                           \
 	}
 
 #define GPIO_DAVINCI_INIT(n)							  \
