@@ -9,6 +9,7 @@
 #
 
 add_library(mocks STATIC
+  src/assert.c
   src/bap_stream.c
   src/conn.c
   src/crypto.c
@@ -39,8 +40,7 @@ target_sources(testbinary PRIVATE
   ${ZEPHYR_BASE}/include/zephyr/kernel.h
 )
 
-add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
-
-target_link_libraries(mocks PRIVATE test_interface host_mocks)
+target_link_libraries(mocks PRIVATE test_interface)
+target_compile_options(test_interface INTERFACE -include ztest.h)
 target_link_options(mocks PUBLIC
   "SHELL:-T ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/mock-sections.ld")
