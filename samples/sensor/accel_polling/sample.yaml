@@ -32,6 +32,8 @@ tests:
       - SHIELD=pmod_acl
       - EXTRA_CONF_FILE=adxl345-stream.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_polling.adxl362-stream:
@@ -39,6 +41,8 @@ tests:
       - SHIELD=eval_adxl362_ardz
       - EXTRA_CONF_FILE=adxl362-stream.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_polling.adxl367-stream:
