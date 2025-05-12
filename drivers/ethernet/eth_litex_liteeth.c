@@ -139,7 +139,7 @@ static void eth_rx(const struct device *port)
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERR("Failed to obtain RX buffer of length %u", len);
 		return;
 	}
 
