@@ -13,17 +13,20 @@
  */
 
 #include <soc.h>
+#include <adsp_debug_window.h>
 #include <adsp_memory.h>
 #include <mem_window.h>
 #include <zephyr/cache.h>
 
-#define RING_SIZE 128
+#define RING_SIZE 512
+#define SOF_GDB_WINDOW_OFFSET 1024
+
 struct gdb_sram_ring {
-	unsigned char head;
+	unsigned int head;
 	/* Fill spaces are to ensure head/tail are in their own cache line */
-	unsigned char fill1[63];
-	unsigned char tail;
-	unsigned char fill2[63];
+	unsigned char fill1[60];
+	unsigned int tail;
+	unsigned char fill2[60];
 	unsigned char data[RING_SIZE];
 };
 static inline unsigned int ring_next_head(const volatile struct gdb_sram_ring *ring)
@@ -46,13 +49,16 @@ static inline int ring_have_data(const volatile struct gdb_sram_ring *ring)
 	return ring->head != ring->tail;
 }
 
-#define RX_UNCACHED (uint8_t *) HP_SRAM_WIN2_BASE
-#define TX_UNCACHED (uint8_t *) (HP_SRAM_WIN2_BASE + sizeof(struct gdb_sram_ring))
+#define RX_UNCACHED (uint8_t *) (HP_SRAM_WIN2_BASE + SOF_GDB_WINDOW_OFFSET)
+#define TX_UNCACHED (uint8_t *) (RX_UNCACHED + sizeof(struct gdb_sram_ring))
+
 static volatile struct gdb_sram_ring *rx;
 static volatile struct gdb_sram_ring *tx;
 
 void z_gdb_backend_init(void)
 {
+	__ASSERT_NO_MSG(sizeof(ADSP_DW->descs) <= SOF_GDB_WINDOW_OFFSET);
+
 	rx = sys_cache_uncached_ptr_get(RX_UNCACHED);
 	tx = sys_cache_uncached_ptr_get(TX_UNCACHED);
 	rx->head = rx->tail = 0;
