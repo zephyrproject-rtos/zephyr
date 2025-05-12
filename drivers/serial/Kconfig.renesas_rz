@@ -23,6 +23,17 @@ config UART_RENESAS_RZ_SCI
 	help
 	  Enable Renesas RZ SCI UART Driver.
 
+config UART_RENESAS_RZ_SCI_B
+	bool "Renesas RZ SCI-B UART"
+	default y
+	depends on DT_HAS_RENESAS_RZ_SCI_B_UART_ENABLED
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_RZ_FSP_SCI_UART
+	help
+	  Enable Renesas RZ SCI-B UART Driver.
+
 if UART_RENESAS_RZ_SCIF
 
 config UART_RENESAS_RZG_INIT_DELAY_MS
