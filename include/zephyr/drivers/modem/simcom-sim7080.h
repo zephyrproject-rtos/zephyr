@@ -17,6 +17,7 @@ extern "C" {
 
 #define SIM7080_GNSS_DATA_UTC_LEN 20
 #define SIM7080_SMS_MAX_LEN 160
+#define SIM7080_UE_SYS_INFO_BAND_SIZE 32
 
 enum sim7080_state {
 	SIM7080_STATE_INIT = 0,
@@ -124,6 +125,86 @@ struct sim7080_sms_buffer {
 	struct sim7080_sms *sms;
 	/* Number of sms structures. */
 	uint8_t nsms;
+};
+
+enum sim7080_ue_sys_mode {
+	SIM7080_UE_SYS_MODE_NO_SERVICE,
+	SIM7080_UE_SYS_MODE_GSM,
+	SIM7080_UE_SYS_MODE_LTE_CAT_M1,
+	SIM7080_UE_SYS_MODE_LTE_NB_IOT,
+};
+
+enum sim7080_ue_op_mode {
+	SIM7080_UE_OP_MODE_ONLINE,
+	SIM7080_UE_OP_MODE_OFFLINE,
+	SIM7080_UE_OP_MODE_FACTORY_TEST_MODE,
+	SIM7080_UE_OP_MODE_RESET,
+	SIM7080_UE_OP_MODE_LOW_POWER_MODE,
+};
+
+struct sim7080_ue_sys_info_gsm {
+	/* Mobile country code */
+	uint16_t mcc;
+	/* Mobile network code */
+	uint16_t mcn;
+	/* Location area code */
+	uint16_t lac;
+	/* Cell ID */
+	uint16_t cid;
+	/* Absolute radio frequency channel number */
+	uint8_t arfcn[SIM7080_UE_SYS_INFO_BAND_SIZE + 1];
+	/* RX level in dBm */
+	int16_t rx_lvl;
+	/* Track LO adjust */
+	int16_t track_lo_adjust;
+	/* C1 coefficient */
+	uint16_t c1;
+	/* C2 coefficient */
+	uint16_t c2;
+};
+
+struct sim7080_ue_sys_info_lte {
+	/* Mobile country code */
+	uint16_t mcc;
+	/* Mobile network code */
+	uint16_t mcn;
+	/* Tracing area code */
+	uint16_t tac;
+	/* Serving Cell ID */
+	uint32_t sci;
+	/* Physical Cell ID */
+	uint16_t pci;
+	/* Frequency band */
+	uint8_t band[SIM7080_UE_SYS_INFO_BAND_SIZE + 1];
+	/* E-UTRA absolute radio frequency channel number */
+	uint16_t earfcn;
+	/* Downlink bandwidth in MHz */
+	uint16_t dlbw;
+	/* Uplink bandwidth in MHz */
+	uint16_t ulbw;
+	/* Reference signal received quality in dB */
+	int16_t rsrq;
+	/* Reference signal received power in dBm */
+	int16_t rsrp;
+	/* Received signal strength indicator in dBm */
+	int16_t rssi;
+	/* Reference signal signal to noise ratio in dB */
+	int16_t rssnr;
+	/* Signal to interference plus noise ratio in dB */
+	int16_t sinr;
+};
+
+struct sim7080_ue_sys_info {
+	/* Refer to sim7080_ue_sys_mode */
+	enum sim7080_ue_sys_mode sys_mode;
+	/* Refer to sim7080_ue_op_mode */
+	enum sim7080_ue_op_mode op_mode;
+	union {
+		/* Only set if sys_mode is GSM */
+		struct sim7080_ue_sys_info_gsm gsm;
+		/* Only set if sys mode is LTE CAT-M1/NB-IOT */
+		struct sim7080_ue_sys_info_lte lte;
+	} cell;
 };
 
 /**
@@ -277,6 +358,14 @@ int mdm_sim7080_ftp_get_read(char *dst, size_t *size);
  * @return 0 on success. Otherwise a negative error is returned.
  */
 int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage);
+
+/**
+ * Read the ue system information
+ *
+ * @param info Destination buffer for information.
+ * @return 0 on success. Otherwise a negative error is returned.
+ */
+int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info);
 
 #ifdef __cplusplus
 }
