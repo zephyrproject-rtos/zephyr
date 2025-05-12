@@ -113,3 +113,4 @@ tests:
       - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
+      - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2
