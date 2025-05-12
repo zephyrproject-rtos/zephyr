@@ -330,6 +330,9 @@ Bluetooth Host
 * The macro ``BT_GATT_CCC_INITIALIZER`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h`
   has been renamed to :c:macro:`BT_GATT_CCC_MANAGED_USER_DATA_INIT`. (:github:`88652`)
 
+* The ``CONFIG_BT_ISO_TX_FRAG_COUNT`` Kconfig option was removed as it was completely unused.
+  Any uses of it can simply be removed. (:github:`89836`)
+
 Bluetooth Classic
 =================
 
