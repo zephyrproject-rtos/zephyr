@@ -144,6 +144,8 @@ typedef int16_t device_handle_t;
  * device from a devicetree node, use DEVICE_DT_DEINIT_DEFINE() or
  * DEVICE_DT_INST_DEINIT_DEFINE() instead.
  *
+ * Note: deinit_fn will only be used if CONFIG_DEVICE_DEINIT_SUPPORT is enabled.
+ *
  * @param dev_id A unique token which is used in the name of the global device
  * structure as a C identifier.
  * @param name A string name for the device, which will be stored in
@@ -213,6 +215,8 @@ typedef int16_t device_handle_t;
  * file that includes `<zephyr/device.h>` (even from extensions, when
  * @kconfig{CONFIG_LLEXT_EXPORT_DEVICES} is enabled). Before using the
  * pointer, the referenced object should be checked using device_is_ready().
+ *
+ * Note: deinit_fn will only be used if CONFIG_DEVICE_DEINIT_SUPPORT is enabled.
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Pointer to the device's initialization function, which will be
@@ -494,8 +498,10 @@ typedef uint8_t device_flags_t;
 struct device_ops {
 	/** Initialization function */
 	int (*init)(const struct device *dev);
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 	/** De-initialization function */
 	int (*deinit)(const struct device *dev);
+#endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
 };
 
 /**
@@ -881,6 +887,8 @@ __syscall int device_init(const struct device *dev);
  * acquired (e.g. pins, memory, clocks, DMA channels, etc.) and its status will
  * be left as in its reset state.
  *
+ * Note: this will be available if CONFIG_DEVICE_DEINIT_SUPPORT is enabled.
+ *
  * @warning It is the responsibility of the caller to ensure that the device is
  * ready to be de-initialized.
  *
@@ -888,7 +896,8 @@ __syscall int device_init(const struct device *dev);
  *
  * @retval 0 If successful
  * @retval -EPERM If device has not been initialized.
- * @retval -ENOTSUP If device does not support de-initialization.
+ * @retval -ENOTSUP If device does not support de-initialization, or if the
+ *         feature is not enabled (see CONFIG_DEVICE_DEINIT_SUPPORT)
  * @retval -errno For any other errors.
  */
 __syscall int device_deinit(const struct device *dev);
@@ -1133,6 +1142,19 @@ device_get_dt_nodelabels(const struct device *dev)
 			    Z_STRINGIFY(name) " too long")
 
 /**
+ * @brief Fill in the struct device_ops
+ *
+ * @param init_fn_ Initialization function
+ * @param deinit_fn_ De-initialization function
+ */
+#define Z_DEVICE_OPS(init_fn_, deinit_fn_)                                     \
+	{                                                                      \
+		.init = (init_fn_),                                            \
+		IF_ENABLED(CONFIG_DEVICE_DEINIT_SUPPORT,                       \
+			   (.deinit = (deinit_fn_),))                          \
+	}
+
+/**
  * @brief Initializer for @ref device.
  *
  * @param name_ Name of the device.
@@ -1156,7 +1178,7 @@ device_get_dt_nodelabels(const struct device *dev)
 		.api = (api_),								\
 		.state = (state_),							\
 		.data = (data_),							\
-		.ops = { .init = (init_fn_), .deinit = (deinit_fn_) },			\
+		.ops = Z_DEVICE_OPS(init_fn_, deinit_fn_),				\
 		.flags = (flags_),							\
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
 		IF_ENABLED(CONFIG_PM_DEVICE, Z_DEVICE_INIT_PM_BASE(pm_)) /**/		\
