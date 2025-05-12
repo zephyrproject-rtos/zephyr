@@ -253,6 +253,16 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
  */
 int mdm_sim7080_ftp_get_read(char *dst, size_t *size);
 
+/**
+ * Read voltage, charge status and battery connection level.
+ *
+ * @param bcs [out] Charge status.
+ * @param bcl [out] Battery connection level.
+ * @param voltage [out] Battery voltage in mV.
+ * @return 0 on success. Otherwise a negative error is returned.
+ */
+int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage);
+
 #ifdef __cplusplus
 }
 #endif
