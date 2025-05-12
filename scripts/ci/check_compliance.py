@@ -1137,6 +1137,9 @@ flagged.
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
         "TEST1",
+        "TOOLCHAIN", # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
+                     # It is used by MCUX SDK cmake functions to add content
+                     # based on current toolchain.
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
                                                     # toolchain variant and therefore not visible
