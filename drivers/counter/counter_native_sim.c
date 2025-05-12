@@ -73,10 +73,8 @@ static void counter_isr(const void *arg)
 		}
 	}
 
-	if (is_top_set && (current_value == top.ticks)) {
-		if (top.callback) {
-			top.callback(dev_p, top.user_data);
-		}
+	if (is_top_set && (current_value == top.ticks) && top.callback) {
+		top.callback(dev_p, top.user_data);
 	}
 
 	schedule_next_isr();
