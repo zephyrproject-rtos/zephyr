@@ -18,6 +18,14 @@ extern "C" {
 #define SIM7080_GNSS_DATA_UTC_LEN 20
 #define SIM7080_SMS_MAX_LEN 160
 
+enum sim7080_state {
+	SIM7080_STATE_INIT = 0,
+	SIM7080_STATE_IDLE,
+	SIM7080_STATE_NETWORKING,
+	SIM7080_STATE_GNSS,
+	SIM7080_STATE_OFF,
+};
+
 struct sim7080_gnss_data {
 	/**
 	 * Whether gnss is powered or not.
@@ -117,6 +125,13 @@ struct sim7080_sms_buffer {
 	/* Number of sms structures. */
 	uint8_t nsms;
 };
+
+/**
+ * Get the current state of the modem.
+ *
+ * @return The current state.
+ */
+enum sim7080_state mdm_sim7080_get_state(void);
 
 /**
  * @brief Power on the Sim7080.
