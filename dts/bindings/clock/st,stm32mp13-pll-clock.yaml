@@ -80,8 +80,8 @@ properties:
         PLLx_R division factor (aka DIVR + 1)
         Valid range: 1 - 128
 
-  frac-v:
+  fracn:
     type: int
     description: |
         PLLx FRACV fractional latch
-        Valid range: 1 - 8192
+        Valid range: 0 - 8191

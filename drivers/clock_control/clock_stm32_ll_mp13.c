@@ -173,7 +173,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	uint32_t pll1_n = DT_PROP(DT_NODELABEL(pll1), mul_n);
 	uint32_t pll1_m = DT_PROP(DT_NODELABEL(pll1), div_m);
 	uint32_t pll1_p = DT_PROP(DT_NODELABEL(pll1), div_p);
-	uint32_t pll1_v = DT_PROP(DT_NODELABEL(pll1), frac_v);
+	uint32_t pll1_fracn = DT_PROP(DT_NODELABEL(pll1), fracn);
 
 	LL_RCC_PLL1_SetN(pll1_n);
 	while (LL_RCC_PLL1_GetN() != pll1_n) {
@@ -184,8 +184,8 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_PLL1_SetP(pll1_p);
 	while (LL_RCC_PLL1_GetP() != pll1_p) {
 	}
-	LL_RCC_PLL1_SetFRACV(pll1_v);
-	while (LL_RCC_PLL1_GetFRACV() != pll1_v) {
+	LL_RCC_PLL1_SetFRACV(pll1_fracn);
+	while (LL_RCC_PLL1_GetFRACV() != pll1_fracn) {
 	}
 
 	LL_RCC_PLL1_Enable();

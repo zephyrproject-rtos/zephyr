@@ -85,7 +85,7 @@
 	div-m = <2>;
 	mul-n = <83>;
 	div-p = <1>;
-	frac-v = <2730>;
+	fracn = <2730>;
 	status = "okay";
 };
 
