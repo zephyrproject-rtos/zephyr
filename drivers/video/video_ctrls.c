@@ -108,6 +108,9 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 		*type = VIDEO_CTRL_TYPE_INTEGER64;
 		*flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 		break;
+	case VIDEO_CID_LINK_FREQ:
+		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
+		break;
 	default:
 		*type = VIDEO_CTRL_TYPE_INTEGER;
 		break;
@@ -539,6 +542,8 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Pixel Rate";
 	case VIDEO_CID_TEST_PATTERN:
 		return "Test Pattern";
+	case VIDEO_CID_LINK_FREQ:
+		return "Link Frequency";
 	default:
 		return NULL;
 	}
