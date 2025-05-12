@@ -1485,6 +1485,31 @@ class Identity(ComplianceTest):
                 self.failure('\n'.join(failures))
 
 
+class GithubReferences(ComplianceTest):
+    """
+    Checks if there are github references in commit descriptions
+    """
+    name = "GithubReferences"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
+
+    def run(self):
+        for shaidx in get_shas(COMMIT_RANGE):
+            body = git(
+                'show', '-s', '--format=%b', shaidx
+            )
+
+            match_references = re.search(r"(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s(GH\-|#[0-9])", body,
+                                         re.IGNORECASE)
+
+            failures = []
+
+            if match_references:
+                failures.append(f'{shaidx}: Contains github references (place in github pull request message instead)')
+
+            if failures:
+                self.failure('\n'.join(failures))
+
+
 class BinaryFiles(ComplianceTest):
     """
     Check that the diff contains no binary files.
