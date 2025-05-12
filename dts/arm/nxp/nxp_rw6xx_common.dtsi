@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -547,6 +547,7 @@
 			interrupts = <112 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			zephyr,disabling-power-states = <&suspend &standby>;
 			power-domains = <&power_mode3_domain>;
 		};
 
@@ -556,6 +557,7 @@
 			interrupts = <111 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			zephyr,disabling-power-states = <&suspend &standby>;
 			power-domains = <&power_mode3_domain>;
 		};
 
