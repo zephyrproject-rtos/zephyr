@@ -3310,6 +3310,19 @@ RISCV arch:
   tests:
     - arch.riscv
 
+RX arch:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  files:
+    - arch/rx/
+    - dts/rx/
+    - include/zephyr/arch/rx/
+    - boards/qemu/rx/
+    - soc/renesas/rx/
+  labels:
+    - "area: RX Architecture"
+
 Retention:
   status: maintained
   maintainers:
