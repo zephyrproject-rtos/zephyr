@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+&m2_hci_bt_uart {
+	current-speed = <115200>;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		m2_bt_module {
+			compatible = "nxp,bt-hci-uart";
+			hci-operation-speed = <3000000>;
+			hw-flow-control;
+			fw-download-primary-speed = <115200>;
+			fw-download-secondary-speed = <3000000>;
+			fw-download-secondary-flowcontrol;
+		};
+	};
+};
+
+&m2_wifi_sdio {
+	nxp_wifi {
+		compatible = "nxp,wifi";
+		status = "okay";
+	};
+};
