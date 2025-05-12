@@ -1445,6 +1445,30 @@ class SysbuildKconfigCheck(KconfigCheck):
         "OTHER_APP_IMAGE_PATH", # Used in sysbuild documentation as example
         "SECOND_SAMPLE", # Used in sysbuild documentation
         # zephyr-keep-sorted-stop
+
+        # NCS-specific allowlist
+        # zephyr-keep-sorted-start re(^\s+")
+        "APP_CPUNET_RUN", # Used by sample
+        "APP_DFU", # Used by sample
+        "BT_FAST_PAIR", # Legacy/removed, used in migration documentation
+        "COMP_DATA_LAYOUT_ARRAY", # Used by test
+        "COMP_DATA_LAYOUT_MULTIPLE", # Used by test
+        "COMP_DATA_LAYOUT_SINGLE", # Used by test
+        "DTM_NO_DFE", # Used by DTM application
+        "DTM_TRANSPORT_HCI", # Used by DTM application
+        "INCLUDE_REMOTE_IMAGE", # Used by machine learning application
+        "MCUBOOT_FPROTECT_ALLOW_COMBINED_REGIONS", # Used in migration documentation
+        "ML_APP_INCLUDE_REMOTE_IMAGE", # Used by machine learning application
+        "ML_APP_REMOTE_BOARD", # Used by machine learning application
+        "MY_APP_IMAGE_ABC", # Used in documentation
+        "REMOTE_GLOBAL_DOMAIN_CLOCK_FREQUENCY_SWITCHING", # Used in tests
+        "SOC_FLASH_NRF_RADIO_SYNC_RPC", # Used in documentation
+        "SUIT_ENVELOPE_", # Used by jinja
+        "SUIT_ENVELOPE_SEQUENCE_NUM", # Legacy/removed, used in migration documentation
+        "SUIT_MPI_", # Used by jinja
+        "SUIT_RECOVERY_APPLICATION_CUSTOM", # Used in documentation
+        "SUPPORT_NETCORE_PERIPHERAL_RADIO_TEST", # Used by wifi radio test sample
+        # zephyr-keep-sorted-stop
     }
 
 
