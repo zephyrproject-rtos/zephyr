@@ -515,7 +515,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 
 		/* Wait for interrupt pin to be active */
-		k_sem_take(&sem_request, K_FOREVER);
+		ret = k_sem_take(&sem_request, K_FOREVER);
+		if (ret) {
+			LOG_DBG("Failed to take the semaphore. The RX thread exits.");
+			break;
+		}
 
 		LOG_DBG("");
 
@@ -685,12 +689,39 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+static int bt_spi_close(const struct device *dev)
+{
+	struct bt_spi_data *hci = dev->data;
+	int ret;
+
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+
+	/* To exit the thread safely */
+	k_sem_reset(&sem_request);
+	ret = k_thread_join(&spi_rx_thread_data, K_MSEC(100));
+	if (ret) {
+		LOG_DBG("bt_spi_rx_thread is unable to exit");
+		return ret;
+	}
+
+	/* Reset the BLE controller */
+	gpio_pin_set_dt(&rst_gpio, 1);
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+	gpio_pin_set_dt(&rst_gpio, 0);
+
+	hci->recv = NULL;
+	LOG_DBG("Bluetooth disabled");
+
+	return 0;
+}
+
 static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
+	.close		= bt_spi_close,
 };
 
 static int bt_spi_init(const struct device *dev)
