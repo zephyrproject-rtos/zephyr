@@ -12,6 +12,7 @@
 	};
 
 	sdl_dc {
+		title = "Zephyr Display 1";
 		width = <800>;
 		height = <600>;
 		status = "okay";
@@ -31,6 +32,7 @@
 
 	sdl_dc2: sdl-dc2 {
 		compatible = "zephyr,sdl-dc";
+		title = "Zephyr Display 2";
 		width = <800>;
 		height = <600>;
 		status = "okay";
