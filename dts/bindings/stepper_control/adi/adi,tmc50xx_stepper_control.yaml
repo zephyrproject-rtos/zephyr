@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Analog Devices TMC50xx stepper motor motion controller driver.
+
+compatible: "adi,tmc50xx_stepper_control"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - reg
+  - name: adi,trinamic-ramp-generator.yaml
+    property-allowlist:
+      - vstart
+      - a1
+      - v1
+      - amax
+      - vmax
+      - dmax
+      - d1
+      - vstop
+      - tzerowait
+      - vhigh
+      - vcoolthrs
+      - ihold
+      - irun
+      - iholddelay

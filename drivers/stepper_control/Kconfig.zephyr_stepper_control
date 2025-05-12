@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_STEPPER_CONTROL
+	bool "Zephyr SW based Stepper motor control"
+	depends on DT_HAS_ZEPHYR_STEPPER_CONTROL_ENABLED
+	default y

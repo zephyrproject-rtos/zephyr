@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_CONTROL_ADI_TMC
+	bool "Activate trinamic tmc stepper motion controller"
+	depends on STEPPER_CONTROL
+	default y
+
+if STEPPER_CONTROL_ADI_TMC
+
+config STEPPER_ADI_TMC_SPI
+	bool "Use Trinamic Stepper Controller with SPI"
+	depends on STEPPER_ADI_TMC
+	select SPI
+	help
+	  A Trinamic Stepper Motion Controller with SPI is enabled
+
+comment "Trinamic Stepper Control Drivers"
+
+rsource "Kconfig.tmc50xx"
+
+endif # STEPPER_CONTROL_ADI_TMC

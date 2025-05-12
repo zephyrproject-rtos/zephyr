@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config ADI_TMC5XXX_STEPPER_DRIVER
+	bool "Activate trinamic tmc5xxx stepper driver"
+	depends on DT_HAS_ADI_TMC5XXX_STEPPER_DRIVER_ENABLED
+	select STEPPER_ADI_TMC_SPI
+	default y

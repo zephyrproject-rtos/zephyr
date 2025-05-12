@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_ADI_TMC5XXX_COMMON_H_
 #define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_ADI_TMC5XXX_COMMON_H_
 
-#include "adi_tmc_reg.h"
+#include <zephyr/drivers/stepper/adi_tmc_reg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +24,10 @@ extern "C" {
  *
  * @{
  */
+
+int tmc5xxx_stallguard_enable(const struct device *dev, const bool enable);
+
+void tmc5xxx_log_stallguard(const struct device *dev, const uint32_t drv_status);
 
 /**
  * @brief Calculate the velocity in full clock cycles from the velocity in Hz

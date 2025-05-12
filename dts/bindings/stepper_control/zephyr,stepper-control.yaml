@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+
+description: |
+    Stepper Controller for stepper motor drivers
+    This binding is used to configure the stepper controller in Zephyr.
+    It is used to control the stepper motor driver.
+
+    Example:
+    stepper_control: stepper_control {
+        compatible = "zephyr,stepper-control";
+        stepper = <&gpio_stepper>;
+        step-tick-ns = <1000000>;
+    };
+
+compatible: "zephyr,stepper-control"
+
+properties:
+  stepper:
+    type: phandle
+    required: true
+    description: |
+      The phandle to the stepper motor driver node.
+
+  step-tick-ns:
+    type: int
+    required: true
+    description: |
+      The time in nanoseconds between each step signal.
