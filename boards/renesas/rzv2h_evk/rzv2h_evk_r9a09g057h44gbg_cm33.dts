@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
+#include <arm/renesas/rz/rzv/r9a09g057_cm33.dtsi>
+#include "rzv2h_evk-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZ/V2H EVK";
+	compatible = "renesas,rzv2h-evk";
+
+	aliases {
+		led0 = &led5;
+		led1 = &led6;
+	};
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led5: led5 {
+			gpios = <&gpio0 0 0>;
+			label = "led5";
+		};
+
+		led6: led6 {
+			gpios = <&gpio0 1 0>;
+			label = "led6";
+		};
+	};
+
+	ddr: memory@80000000 {
+		compatible = "mmio-sram";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+	};
+
+	sram: memory@8003000 {
+		compatible = "mmio-sram";
+		reg = <0x08003000 0xfbfff>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
