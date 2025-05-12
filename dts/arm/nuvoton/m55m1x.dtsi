@@ -45,6 +45,7 @@
 			reg = <0x40001000 0x100>;
 			#clock-cells = <0>;
 			lxt = "enable";
+			hirc48m = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_PCLK0DIV(2) |
 					NUMAKER_CLK_PCLKDIV_PCLK1DIV(2) |
 					NUMAKER_CLK_PCLKDIV_PCLK2DIV(2) |
@@ -459,6 +460,19 @@
 			clocks = <&pcc NUMAKER_EPWM1_MODULE NUMAKER_CLK_EPWMSEL_EPWM1SEL_PCLK2 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
+		};
+
+		usbd: usbd@4025c000 {
+			compatible = "nuvoton,numaker-usbd";
+			reg = <0x4025c000 0x1000>;
+			interrupts = <58 0>;
+			resets = <&rst NUMAKER_SYS_USBD0RST>;
+			clocks = <&pcc NUMAKER_USBD0_MODULE NUMAKER_CLK_USBSEL_USBSEL_HIRC48M
+				  NUMAKER_CLK_USBDIV_USBDIV(1)>;
+			dma-buffer-size = <1536>;
+			status = "disabled";
+			num-bidir-endpoints = <25>;
+			disallow-iso-in-out-same-number;
 		};
 	};
 };

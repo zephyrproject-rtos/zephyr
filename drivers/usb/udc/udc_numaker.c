@@ -299,9 +299,17 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	SYS_UnlockReg();
 
-	/* Configure USB PHY for USBD */
+	/* Configure USB role as USB Device and enable USB PHY */
+#if defined(CONFIG_SOC_SERIES_M46X)
 	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
 		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk);
+#elif defined(CONFIG_SOC_SERIES_M2L31X)
+	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk);
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+		      ((0 << SYS_USBPHY_USBROLE_Pos) | SYS_USBPHY_OTGPHYEN_Msk);
+#endif
 
 	/* Invoke Clock controller to enable module clock */
 	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
