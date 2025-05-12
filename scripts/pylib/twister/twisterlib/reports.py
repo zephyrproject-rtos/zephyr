@@ -87,7 +87,7 @@ class Reporting:
     ):
         fails, passes, errors, skips = stats
 
-        if status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
+        if status in [TwisterStatus.SKIP, TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
             duration = 0
 
         eleTestcase = ET.SubElement(
@@ -96,7 +96,7 @@ class Reporting:
             name=f"{name}",
             time=f"{duration}")
 
-        if status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
+        if status in [TwisterStatus.SKIP, TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
             skips += 1
             # temporarily add build_only_as_skip to restore existing CI report behaviour
             if ts_status == TwisterStatus.PASS and not runnable:
@@ -351,7 +351,7 @@ class Reporting:
                 suite['run_id'] = instance.run_id
 
             suite["runnable"] = False
-            if instance.status != TwisterStatus.FILTER:
+            if instance.status not in [TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
                 suite["runnable"] = instance.run
 
             if used_ram:
@@ -387,6 +387,9 @@ class Reporting:
                 instance.reason = suite["reason"]
             elif instance.status == TwisterStatus.FILTER:
                 suite["status"] = TwisterStatus.FILTER
+                suite["reason"] = instance.reason
+            elif instance.status == TwisterStatus.QUARANTINE:
+                suite["status"] = TwisterStatus.QUARANTINE
                 suite["reason"] = instance.reason
             elif instance.status == TwisterStatus.PASS:
                 suite["status"] = TwisterStatus.PASS
@@ -455,7 +458,8 @@ class Reporting:
                 instance.status not in [
                     TwisterStatus.NONE,
                     TwisterStatus.ERROR,
-                    TwisterStatus.FILTER
+                    TwisterStatus.FILTER,
+                    TwisterStatus.QUARANTINE
                 ]
                 and self.env.options.create_rom_ram_report
                 and self.env.options.footprint_report is not None
@@ -589,6 +593,7 @@ class Reporting:
             if instance.status not in [
                 TwisterStatus.PASS,
                 TwisterStatus.FILTER,
+                TwisterStatus.QUARANTINE,
                 TwisterStatus.SKIP,
                 TwisterStatus.NOTRUN
             ]:
@@ -690,6 +695,7 @@ class Reporting:
             instance.platform.name for instance in self.instances.values()
             if instance.status not in [
                 TwisterStatus.FILTER,
+                TwisterStatus.QUARANTINE,
                 TwisterStatus.NOTRUN,
                 TwisterStatus.SKIP
             ]

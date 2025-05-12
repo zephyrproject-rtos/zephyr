@@ -30,6 +30,7 @@ class TwisterStatus(str, Enum):
             TwisterStatus.SKIP: Fore.YELLOW,
             TwisterStatus.FILTER: Fore.YELLOW,
             TwisterStatus.BLOCK: Fore.YELLOW,
+            TwisterStatus.QUARANTINE: Fore.YELLOW,
             TwisterStatus.FAIL: Fore.RED,
             TwisterStatus.ERROR: Fore.RED,
             TwisterStatus.STARTED: Fore.MAGENTA,
@@ -45,6 +46,7 @@ class TwisterStatus(str, Enum):
     # All statuses below this comment can be used for TestInstance
     FILTER = 'filtered'
     NOTRUN = 'not run'
+    QUARANTINE = 'quarantined'
 
     # All statuses below this comment can be used for Harness
     NONE = None
