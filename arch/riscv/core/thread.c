@@ -71,6 +71,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #elif defined(CONFIG_FPU)
 	/* Unshared FP mode: enable FPU of each thread. */
 	stack_init->mstatus |= MSTATUS_FS_INIT;
+	#ifdef CONFIG_RISCV_ISA_EXT_V
+	#ifdef CONFIG_RISCV_ISA_EXT_V_LAZY
+	stack_init->mstatus |= MSTATUS_VS_INIT;
+	#endif
+#endif
 #endif
 
 #if defined(CONFIG_USERSPACE)
