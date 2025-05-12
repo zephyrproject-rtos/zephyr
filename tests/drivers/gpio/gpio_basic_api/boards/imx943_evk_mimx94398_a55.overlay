@@ -1,0 +1,22 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	resources {
+		compatible = "test-gpio-basic-api";
+		/*
+		 * Use connector J44 Pin10 M1_LED_TP1 which connects to GPIO2 Pin31 as output
+		 * GPIO, and connector J52 Pin16 M1_PWM_PFC2 which connect to GPIO2 Pin21 as
+		 * input GPIO, connect these two pins with a Dupont Line.
+		 */
+		out-gpios = <&gpio2 31 0>;
+		in-gpios = <&gpio2 21 0>;
+	};
+};
+
+&gpio2 {
+	status = "okay";
+};
