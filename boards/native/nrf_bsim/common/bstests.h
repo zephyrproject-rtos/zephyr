@@ -92,7 +92,7 @@ struct bst_test_instance {
 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 
 struct bst_test_list {
-	struct bst_test_instance  *test_instance;
+	const struct bst_test_instance *test_instance;
 	struct bst_test_list    *next;
 };
 
