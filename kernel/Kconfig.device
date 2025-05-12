@@ -33,6 +33,19 @@ config DEVICE_DT_METADATA
 	  each device. This allows you to use device_get_by_dt_nodelabel(),
 	  device_get_dt_metadata(), etc.
 
+config DEVICE_DT_NAME_FROM_NODE_LABEL
+	bool "Use DTS (first) node label as device name"
+	help
+	  In DTS you can provide a 'label' property to define a more human
+	  readable name. However, this is nowadays a deprecated property,
+	  letting the node full name as the default.
+	  But it is less human readable, and can be confusing in some
+	  cases (i2c@0f00bar0 can be less readable than i2c1 for instance).
+	  DTS provides an other way to get a unique identifier,
+	  more human readable: the node-label. Let's use it instead.
+	  Note that in case there are 2+ node-labels define for a node,
+	  the first one will be used.
+
 endmenu
 
 menu "Initialization Priorities"

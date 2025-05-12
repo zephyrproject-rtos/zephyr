@@ -196,6 +196,34 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
+ * @brief Check if a node has a main node-label
+ *
+ * @param node_id node identifier
+ * @return 1 if such macro exists, 0 otherwise
+ */
+#define DT_HAS_NODELABEL_MAIN(node_id)				\
+	IS_ENABLED(DT_CAT(node_id, _NODELABEL_MAIN_EXISTS))
+
+/**
+ * @brief Get the main node label macro from a node identifier
+ *
+ * @param node_id node identifier
+ * @return the macro which, if it exists, will give the main node label
+ */
+#define DT_NODELABEL_MAIN(node_id) DT_CAT(node_id, _NODELABEL_MAIN)
+
+/**
+ * @brief Get the main node label as a string
+ *
+ * Note: Prior to calling this macro, one should ensure that DT_NODELABEL_MAIN
+ * actually exists.
+ *
+ * @param node_id node identifier
+ * @return node's main label as a string
+ */
+#define DT_NODELABEL_MAIN_STR(node_id) STRINGIFY(DT_NODELABEL_MAIN(node_id))
+
+/**
  * @brief Get a node identifier from /aliases
  *
  * This macro's argument is a property of the `/aliases` node. It

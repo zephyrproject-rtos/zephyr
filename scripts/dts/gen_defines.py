@@ -92,6 +92,9 @@ def main():
 
             out_comment("Helpers for dealing with node labels:")
             out_dt_define(f"{node.z_path_id}_NODELABEL_NUM", len(node.labels))
+            if len(node.labels) >= 1:
+                out_dt_define(f"{node.z_path_id}_NODELABEL_MAIN", node.labels[0])
+                out_dt_define(f"{node.z_path_id}_NODELABEL_MAIN_EXISTS", 1)
             out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL(fn)",
                           " ".join(f"fn({nodelabel})" for nodelabel in node.labels))
             out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL_VARGS(fn, ...)",

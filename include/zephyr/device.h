@@ -195,9 +195,17 @@ typedef int16_t device_handle_t;
  *
  * @return The value of the node's `label` property, if it has one.
  * Otherwise, the node's full name in `node-name@unit-address` form.
+ * If CONFIG_DEVICE_DT_NAME_FROM_NODE_LABEL is enabled, it will use the
+ * node-label in priority over the full name, if the `label` property is not
+ * present. Note that, in this case, the first node-label is always used.
  */
 #define DEVICE_DT_NAME(node_id)                                                \
-	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
+	DT_PROP_OR(node_id, label,                                             \
+		   COND_CODE_1(CONFIG_DEVICE_DT_NAME_FROM_NODE_LABEL,          \
+			       (COND_CODE_1(DT_HAS_NODELABEL_MAIN(node_id),   \
+					    (DT_NODELABEL_MAIN_STR(node_id)), \
+					    (DT_NODE_FULL_NAME(node_id)))),   \
+			       (DT_NODE_FULL_NAME(node_id))))
 
 /**
  * @brief Create a device object from a devicetree node identifier and set it up
