@@ -359,6 +359,17 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 	return pm_device_runtime_put(dev);
 }
 
+static void intel_adsp_hda_enable_irqs(const struct device *dev)
+{
+#if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+
+	if (cfg->irq_config) {
+		cfg->irq_config();
+	}
+#endif
+}
+
 static void intel_adsp_hda_channels_init(const struct device *dev)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
@@ -375,19 +386,15 @@ static void intel_adsp_hda_channels_init(const struct device *dev)
 		}
 	}
 
-#if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
-	/* Configure interrupts */
-	if (cfg->irq_config) {
-		cfg->irq_config();
-	}
-#endif
+	intel_adsp_hda_enable_irqs(dev);
 }
 
 int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	ARG_UNUSED(dev);
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		intel_adsp_hda_enable_irqs(dev);
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 	case PM_DEVICE_ACTION_TURN_ON:
 	case PM_DEVICE_ACTION_TURN_OFF:
