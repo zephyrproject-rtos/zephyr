@@ -602,6 +602,11 @@ int modbus_serial_init(struct modbus_context *ctx,
 		}
 	}
 
+	if (param.serial.baud == 0) {
+		LOG_ERR("Baudrate is 0");
+		return -EINVAL;
+	}
+
 	if (param.serial.baud <= 38400) {
 		cfg->rtu_timeout = (numof_bits * if_delay_max) /
 				   param.serial.baud;
