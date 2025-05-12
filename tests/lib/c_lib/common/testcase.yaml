@@ -2,6 +2,9 @@ common:
   tags:
     - clib
   ignore_faults: true
+  arch_exclude:
+    # see #89839
+    - rx
   integration_platforms:
     - mps2/an385
 tests:
