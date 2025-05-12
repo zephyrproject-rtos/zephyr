@@ -936,15 +936,23 @@ ZTEST(lib_json_test, test_json_double_infinity)
 
 ZTEST(lib_json_test, test_json_doubles_limits)
 {
-	char encoded[] = "{\"double_max\":1.797693134862315e+308,"
+#if __SIZEOF_DOUBLE__ == 4
+#define TEST_DOUBLE_MIN -1.1754e-38
+#define TEST_DOUBLE_MAX 1.1754e-38
+#else
+#define TEST_DOUBLE_MIN 1.797693134862315e+308
+#define TEST_DOUBLE_MAX 1.797693134862315e+308
+#endif
+#define str(x) #x
+	char encoded[] = "{\"double_max\":" str(TEST_DOUBLE_MAX) ","
 			 "\"double_cero\":0,"
-			 "\"double_min\":-1.797693134862315e+308"
+		         "\"double_min\":" str(TEST_DOUBLE_MIN) "-1.797693134862315e+308"
 			 "}";
 
 	struct test_double_limits limits = {
-		.double_max = 1.797693134862315e+308,
+		.double_max = TEST_DOUBLE_MAX,
 		.double_cero = 0,
-		.double_min = -1.797693134862315e+308,
+		.double_min = TEST_DOUBLE_MIN
 	};
 
 	char buffer[sizeof(encoded)];
