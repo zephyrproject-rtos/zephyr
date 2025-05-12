@@ -27,8 +27,7 @@ LOG_MODULE_REGISTER(gpio_davinci, CONFIG_GPIO_LOG_LEVEL);
 #define DEV_CFG(dev) \
 		((const struct gpio_davinci_config *)((dev)->config))
 #define DEV_DATA(dev) ((struct gpio_davinci_data *)(dev)->data)
-#define DEV_GPIO_CFG_BASE(dev) \
-	((struct gpio_davinci_regs *)DEVICE_MMIO_NAMED_GET(dev, port_base))
+#define DEV_GPIO_CFG_BASE(dev) ((struct gpio_davinci_regs *)DEVICE_MMIO_GET(dev))
 
 #define GPIO_DAVINCI_DIR_RESET_VAL	(0xFFFFFFFF)
 
@@ -47,18 +46,18 @@ struct gpio_davinci_regs {
 };
 
 struct gpio_davinci_data {
-	struct gpio_driver_data common;
+	DEVICE_MMIO_RAM;
 
-	DEVICE_MMIO_NAMED_RAM(port_base);
+	struct gpio_driver_data common;
 
 	sys_slist_t cb;
 };
 
 struct gpio_davinci_config {
+	DEVICE_MMIO_ROM;
+
 	struct gpio_driver_config common;
 	void (*bank_config)(const struct device *dev);
-
-	DEVICE_MMIO_NAMED_ROM(port_base);
 
 	uint32_t port_num;
 	const struct pinctrl_dev_config *pcfg;
@@ -155,7 +154,7 @@ static int gpio_davinci_init(const struct device *dev)
 	const struct gpio_davinci_config *config = DEV_CFG(dev);
 	int ret;
 
-	DEVICE_MMIO_NAMED_MAP(dev, port_base, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	config->bank_config(dev);
 
@@ -182,7 +181,7 @@ static int gpio_davinci_init(const struct device *dev)
 		.common = {							  \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	  \
 		},								  \
-		DEVICE_MMIO_NAMED_ROM_INIT(port_base, DT_DRV_INST(n)),		  \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                             \
 		.port_num = n,							  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			  \
 	};									  \
