@@ -842,6 +842,11 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 	struct mqtt_sn_gateway *gw = NULL;
 	int64_t next_ping;
 
+	if (CONFIG_MQTT_SN_KEEPALIVE == 0) {
+		/* Keep Alive disabled. */
+		return 0;
+	}
+
 	if (client->ping_retries == N_RETRY) {
 		/* Last ping was acked */
 		next_ping = client->last_ping + T_KEEPALIVE_MSEC;
