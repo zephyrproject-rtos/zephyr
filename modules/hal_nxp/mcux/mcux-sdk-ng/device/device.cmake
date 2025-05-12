@@ -22,15 +22,31 @@ if(NOT mcux_device_folder)
   message(FATAL_ERROR "Device ${MCUX_DEVICE} not found in ${SdkRootDirPath}/devices/")
 endif()
 
+# Note: Difference between `core_id` and `core_id_suffix_name` in MCUX SDK NG.
+#
+# MCUX SDK NG uses `core_id` to distinguish which core currently is running on.
+#
+# In most of the time, `core_id` and `core_id_suffix_name` are the same, but
+# there are some exceptions, for example: RT595 FUSIONF1.
+# `core_id` is used for the core's folder name in device folder, like:
+# "mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/fusionf1", here `core_id` is fusionf1.
+# `core_id_suffix_name` is used for the device files and macro suffix, such as:
+# file "system_MIMXRT595S_dsp.h", macro `CPU_MIMXRT595SFAWC_dsp`, here
+# `core_id_suffix_name` is dsp.
+#
+# MCUX SDK NG needs `core_id` as input, it defines `core_id_suffix_name` based on
+# `core_id` in file "mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/<core_id>".
+#
+# Zephyr provides `MCUX_CORE_SUFFIX` to distinguish the core, it is actaully the
+# `core_id_suffix_name` in MCUX SDK NG, here convert it to `core_id`, then pass
+# it to MCUX SDK NG.
 if(DEFINED CONFIG_MCUX_CORE_SUFFIX)
-  string (REGEX REPLACE "^_" "" core_id "${CONFIG_MCUX_CORE_SUFFIX}")
+  if (CONFIG_SOC_MIMXRT595S_F1)
+    set(core_id "fusionf1")
+  else()
+    string (REGEX REPLACE "^_" "" core_id "${CONFIG_MCUX_CORE_SUFFIX}")
+  endif()
 endif()
-
-# Definitions to load device drivers
-set(CONFIG_MCUX_HW_DEVICE_CORE "${MCUX_DEVICE}${CONFIG_MCUX_CORE_SUFFIX}")
-
-# Define CPU macro
-zephyr_compile_definitions("CPU_${CONFIG_SOC_PART_NUMBER}${CONFIG_MCUX_CORE_SUFFIX}")
 
 if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
   set(CONFIG_MCUX_COMPONENT_device.boot_header ON)
@@ -61,6 +77,13 @@ endif()
 
 # load device variables
 include(${mcux_device_folder}/variable.cmake)
+
+# Define CPU macro, like: CPU_MIMXRT595SFAWC_dsp.
+# Variable `core_id_suffix_name` is from file ${mcux_device_folder}/variable.cmake
+zephyr_compile_definitions("CPU_${CONFIG_SOC_PART_NUMBER}${core_id_suffix_name}")
+
+# Definitions to load device drivers, like: CPU_MIMXRT595SFAWC_dsp.
+set(CONFIG_MCUX_HW_DEVICE_CORE "${MCUX_DEVICE}${core_id_suffix_name}")
 
 # Load device files
 mcux_add_cmakelists(${mcux_device_folder})
