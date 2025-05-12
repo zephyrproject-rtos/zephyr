@@ -441,6 +441,7 @@
 			interrupts = <35 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			smb-wui = <&wui_smb1>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -450,6 +451,7 @@
 			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			smb-wui = <&wui_smb2>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -459,6 +461,7 @@
 			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 2>;
 			smb-wui = <&wui_smb3>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -468,6 +471,7 @@
 			interrupts = <38 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 3>;
 			smb-wui = <&wui_smb4>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -477,6 +481,7 @@
 			interrupts = <39 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			smb-wui = <&wui_smb5>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -486,6 +491,7 @@
 			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 5>;
 			smb-wui = <&wui_smb6>;
+			dma-driven;
 			status = "disabled";
 		};
 
