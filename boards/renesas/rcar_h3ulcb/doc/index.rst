@@ -1,72 +1,84 @@
-.. _rcar_h3ulcb_boards:
-
-Renesas R-Car H3ULCB
-####################
+.. zephyr:board:: rcar_h3ulcb
 
 Overview
 ********
-- The H3 Starter Kit board is designed for evaluating the features and performance of the R-CAR H3 device from Renesas Electronics and it is also used for developing and evaluating application software for these R-CAR H3.
+R-Car H3ULCB starter kit board is based on the R-Car H3 SoC that features basic
+functions for next-generation car navigation systems.
+It is composed of a quad Cortex |reg|-A57, a quad Cortex |reg|-A53 cluster and a
+dual lockstep Cortex |reg|-R7.
 
-- The H3 Starter Kit, based on the R-CAR H3 SIP, comes with LPDDR4 @4GB in 2-channel, each 64-bit wide+Hyperflash @64MB, CSI2 interfaces and several communication interfaces like USB, Ethernet, HDMI and can work standalone or can be adapted to other boards, via 440pin connector on bottom side.
+Zephyr OS support is available for both Cortex |reg|-A cores & Cortex |reg|-R7 core.
 
-It is possible to order 2 different types of H3 Starter Kit Boards, one with Ethernet connection onboard and one with Ethernet connection on ComExpress.
-
-.. figure:: img/rcar_h3ulcb_starter_kit.jpg
-   :align: center
-   :alt: R-Car starter kit
-
-.. note:: The H3ULCB board can be plugged on a Renesas Kingfisher Infotainment daughter board through COM Express connector in order to physically access more I/O. CAUTION: In this case, power supply is managed by the daughter board.
-
-More information about the board can be found at `Renesas R-Car Starter Kit website`_.
+More information about the H3 SoC can be fount at `Renesas R-Car H3 chip`_.
 
 Hardware
 ********
 
-Hardware capabilities for the H3ULCB for can be found on the `eLinux H3SK page`_ of the board.
+- H3ULCB features:
 
-.. figure:: img/rcar_h3ulcb_features.jpg
-   :align: center
-   :alt: R-Car starter kit features
+  - Storage:
 
-.. note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.
+    - 384KB System RAM
+    - 4/8 GB LPDDR4
+    - 64 MB HYPER FLASH (512 MBITS, 160 MHZ, 320 MBYTES/S)
+    - 16MB QSPI FLASH (128 MBITS,80 MHZ,80 MBYTES/S)1 HEADER QSPI MODULE
+    - 8/32/64/128 GB EMMC (HS400 240 MBYTES/S)
+    - MICROSD-CARD SLOT (SDR104 100 MBYTES/S)
+  - Connectors
 
-More information about the SoC that equips the board can be found here:
+    - CN1 COM Express type connector 440pin
+    - CN2 QSPI Flash module
+    - CN3 DEBUG JTAG
+    - CN4 HDMI (HDMI-0)
+    - CN5 USB 2.0 (USB2.0-1)
+    - CN6 Push-Pull microSD Card Socket (SDHI-0)
+    - CN7 Ethernet, Connector, RJ45
+    - CN8 LINE Out
+    - CN9 MIC Input
+    - CN10 DEBUG SERIAL (not populated)
+    - CN11 CPLD Programming JTAG
+    - CN12 DEBUG SERIAL (serial)
+    - CN13 Main Power Supply input (5VDC)
+    - CN14 CPU Fan
+  - Input
 
-- `Renesas R-Car H3 chip`_
+    - SW1 Hyper Flash
+    - SW2 Software Readable DIPSWITCHES (4x)
+    - SW3 Software Readable Push button
+    - SW4 Software Readable Push button
+    - SW5 Software Readable Push button
+    - SW6 Mode Settings
+    - SW7 CPLD Reset
+    - SW8 Power
+    - SW9 Reset
+  - Output
+
+    - LED1 HDMI / Hot Plug Sync Detect
+    - LED4 Software Controllable LED
+    - LED5 Software Controllable LED
+    - LED6 Software Controllable LED
+    - LED9 5V Main Supply
+    - LED14 Backup LED
+    - LED15 System Reset
+
+
+Complete list of the H3ULCB board capabilities can be found on the `eLinux H3SK page`_ of the board.
+
+More information about the board can be found at `Renesas R-Car Starter Kit website`_.
 
 Supported Features
 ==================
 
-Here is the current supported features when running Zephyr Project on the R-Car ULCB CR7:
+.. zephyr:board-supported-hw::
 
-+-----------+------------------------------+--------------------------------+
-| Interface | Driver/components            | Support level                  |
-+===========+==============================+================================+
-| PINMUX    | pinmux                       |                                |
-+-----------+------------------------------+--------------------------------+
-| CLOCK     | clock_control                |                                |
-+-----------+------------------------------+--------------------------------+
-| GPIO      | gpio                         |                                |
-+-----------+------------------------------+--------------------------------+
-| UART      | uart                         | serial port-polling            |
-+           +                              +                                +
-|           | FT232RQ / CP2102             | serial port-interrupt          |
-+-----------+------------------------------+--------------------------------+
-| CAN       | can                          | normal mode                    |
-+           +                              +                                +
-|           | TCAN332GDCNT                 | loopback mode                  |
-+-----------+------------------------------+--------------------------------+
-| I2C       | i2c                          | interrupt driven               |
-+-----------+------------------------------+--------------------------------+
-| PWM       | pwm                          | All channels                   |
-+-----------+------------------------------+--------------------------------+
+.. note::
 
-It's also currently possible to write on the ram console.
-
-More features will be supported soon.
+   It is recommended to disable peripherals used by the R7 core on the Linux host.
 
 Connections and IOs
 ===================
+
+The H3ULCB Starter Kit can be plugged on a Kingfisher daughter board.
 
 H3ULCB Board
 ------------
@@ -110,9 +122,9 @@ Here is information about these serial ports:
 | CN04 DEBUG SERIAL  | Kingfisher        | SCIF1              |           | Secondary UART // Through ComExpress |
 +--------------------+-------------------+--------------------+-----------+--------------------------------------+
 
-.. note:: The Zephyr console output is assigned to SCIF1 (commonly used on Kingfisher daughter board) with settings 115200 8N1 without hardware flow control by default.
+H3ULCB A53 support is assigning SCIF2 as UART while R7 supports is using SCIF1. In both cases, console are set to 115200 8N1 without hardware flow control by default.
 
-Here is CN04 UART interface pinout (depending on your Kingfisher board version):
+To access SCIF1 using CN04 UART interface, please follow the following pinout (depending on your Kingfisher board version):
 
 +--------+----------+----------+
 | Signal | Pin KF03 | Pin KF04 |
@@ -171,8 +183,18 @@ ULCB boards provide one PWM controller with a maximum of 7 channels [0..6]. H3UL
 
 When plugged on a Kingfisher daughter board, pwm4 channel is available on CN7 LVDS connector.
 
-Programming and Debugging
-*************************
+Programming and Debugging (A53)
+*******************************
+
+Flashing
+========
+
+At that time, no flashing method is officially supported by this Zephyr port.
+
+Programming and Debugging (R7)
+******************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -271,6 +293,3 @@ References
 
 .. _Kingfisher bottom view:
 	https://elinux.org/images/0/06/Kfisher_bot_specs.png
-
-.. _Install a toolchain:
-	https://docs.zephyrproject.org/latest/getting_started/index.html#install-a-toolchain
