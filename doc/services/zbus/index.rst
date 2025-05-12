@@ -69,6 +69,8 @@ Another essential aspect of zbus is the observers. There are three types of obse
 
 * Listeners, a callback that the event dispatcher executes every time an observed channel is
   published or notified;
+* Async Listeners, a callback that the event dispatcher schedules to execute in the system work
+  queue every time an observed channel is published or notified;
 * Subscriber, a thread-based observer that relies internally on a message queue where the event
   dispatcher puts a changed channel's reference every time an observed channel is published or
   notified. Note this kind of observer does not receive the message itself. It should read the
@@ -391,8 +393,8 @@ message delivery guarantees for subscribers because zbus only sends the notifica
 message reading depends on the subscriber's implementation. It is possible to increase the delivery
 rate by following design tips:
 
-* Keep the listeners quick-as-possible (deal with them as ISRs). If some processing is needed,
-  consider submitting a work item to a work-queue;
+* Keep the listeners as quick as possible (deal with them as ISRs). If some processing is needed,
+  consider using async listeners instead;
 * Try to give producers a high priority to avoid losses;
 * Leave spare CPU for observers to consume data produced;
 * Consider using message queues or pipes for intensive byte transfers.
@@ -434,10 +436,12 @@ The message delivery will follow the precedence:
 Usage
 *****
 
-ZBus operation depends on channels and observers. Therefore, it is necessary to determine its
-message and observers list during the channel definition. A message is a regular C struct; the
-observer can be a subscriber (asynchronous), a message subscriber (asynchronous), or a listener
-(synchronous).
+ZBus operation depends on channels and observers. Therefore, it is necessary to determine the
+channel's message during the channel definition and its list of observers, which can be either
+statically (in the channel definition), using the :c:macro:`ZBUS_CHAN_ADD_OBS` or at runtime (see
+`runtime observers`_). A message is a regular C struct; the observer can be a listener
+(synchronous), an async listener (asynchronous), a subscriber (asynchronous), or a message
+subscriber (asynchronous).
 
 The following code defines and initializes a regular channel and its dependencies. This channel
 exchanges accelerometer data, for example.
@@ -844,6 +848,7 @@ The following code has the exact behavior of the code in :ref:`reading from a ch
             zbus_chan_finish(&acc_chan);
     }
 
+.. _runtime observers:
 
 Runtime observer registration
 -----------------------------
