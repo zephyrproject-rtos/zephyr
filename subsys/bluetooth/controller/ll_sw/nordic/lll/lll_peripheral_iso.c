@@ -1012,6 +1012,8 @@ static void next_cis_prepare(void *param)
 		return;
 	}
 
+	payload_count_rx_flush_or_txrx_inc(cis_lll);
+
 	cis_handle_curr = cis_handle;
 
 	radio_isr_set(isr_prepare_subevent_next_cis, next_cis_lll);
