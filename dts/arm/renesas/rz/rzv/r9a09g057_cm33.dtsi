@@ -30,6 +30,14 @@
 			};
 		};
 	};
+
+	soc {
+		pinctrl: pin-controller@40410000 {
+			compatible = "renesas,rzv-pinctrl";
+			reg = <0x40410000 DT_SIZE_K(64)>;
+			reg-names = "pinctrl";
+		};
+	};
 };
 
 &nvic {
