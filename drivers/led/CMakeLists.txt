@@ -27,3 +27,5 @@ zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
 zephyr_library_sources_ifdef(CONFIG_LED_SHELL   led_shell.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   led_handlers.c)
+
+zephyr_library_sources_ifdef(CONFIG_LED_BLINK_FALLBACK blink_fallback.c)
