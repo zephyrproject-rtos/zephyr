@@ -206,6 +206,10 @@ def parse_log_const_symbols(database, log_const_area, log_const_symbols, string_
             # Not enough data to unpack
             continue
 
+        if sym.entry['st_size'] == 0:
+            # Empty entry
+            continue
+
         str_ptr, level = struct.unpack(formatter, datum)
 
         # Offset to rodata section for string
