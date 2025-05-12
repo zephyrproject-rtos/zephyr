@@ -160,7 +160,7 @@ static int gpio_davinci_init(const struct device *dev)
 	config->bank_config(dev);
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		LOG_ERR("failed to apply pinctrl");
 		return ret;
 	}
