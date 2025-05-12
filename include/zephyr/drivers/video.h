@@ -843,6 +843,23 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
 
 /**
+ * @brief Return the link-frequency advertised by a device
+ *
+ * Device exposing a CSI link should advertise at least one of the following two controls:
+ *   - @ref VIDEO_CID_LINK_FREQ
+ *   - @ref VIDEO_CID_PIXEL_RATE
+ *
+ * At first the helper will try read the @ref VIDEO_CID_LINK_FREQ and if not available will
+ * approximate the link-frequency from the @ref VIDEO_CID_PIXEL_RATE value, taking into
+ * consideration the bits per pixel of the format and the number of lanes.
+ *
+ * @param dev Video device to query.
+ * @param bpp Amount of bits per pixel of the pixel format produced by the device
+ * @param lane_nb Number of CSI-2 lanes used
+ */
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
