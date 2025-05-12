@@ -9,8 +9,8 @@ Overview
 
 A sample showcasing LVGL multi-display support in Zephyr.
 
-By default, it runs Benchmark demo on the first display, and Widgets demo on the other ones (order
-as defined in the "displays" property of "zephyr,displays" compatible node in deviceTree).
+By default, it runs the Music demo on the first display, and the Widgets demo on the other ones
+(order as defined in the "displays" property of "zephyr,displays" compatible node in deviceTree).
 Which demos are run can be changed by modifying the value of CONFIG_LV_Z_DEMO_FIRST_DISP## and
 CONFIG_LV_Z_DEMO_OTHER_DISPS## Kconfig symbols.
 
