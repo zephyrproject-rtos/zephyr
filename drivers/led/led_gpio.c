@@ -15,6 +15,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_LOG_LEVEL);
@@ -22,6 +23,7 @@ LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_LOG_LEVEL);
 struct led_gpio_config {
 	size_t num_leds;
 	const struct gpio_dt_spec *led;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
@@ -59,6 +61,12 @@ static int led_gpio_init(const struct device *dev)
 		err = -ENODEV;
 	}
 
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0 && err != -ENOENT) {
+		LOG_ERR("failed to apply pinctrl");
+		return err;
+	}
+
 	for (size_t i = 0; (i < config->num_leds) && !err; i++) {
 		const struct gpio_dt_spec *led = &config->led[i];
 
@@ -84,6 +92,7 @@ static DEVICE_API(led, led_gpio_api) = {
 };
 
 #define LED_GPIO_DEVICE(i)					\
+PINCTRL_DT_INST_DEFINE(i);					\
 								\
 static const struct gpio_dt_spec gpio_dt_spec_##i[] = {		\
 	DT_INST_FOREACH_CHILD_SEP_VARGS(i, GPIO_DT_SPEC_GET, (,), gpios) \
@@ -92,6 +101,7 @@ static const struct gpio_dt_spec gpio_dt_spec_##i[] = {		\
 static const struct led_gpio_config led_gpio_config_##i = {	\
 	.num_leds	= ARRAY_SIZE(gpio_dt_spec_##i),	\
 	.led		= gpio_dt_spec_##i,			\
+	.pcfg		= PINCTRL_DT_INST_DEV_CONFIG_GET(i),	\
 };								\
 								\
 DEVICE_DT_INST_DEFINE(i, &led_gpio_init, NULL,			\
