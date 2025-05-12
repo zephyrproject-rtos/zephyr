@@ -49,6 +49,14 @@
 	status = "okay";
 };
 
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -96,6 +104,13 @@
 
 &emac {
 	pinctrl-0 = <&emac_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* On enabled, usbd is required to be clocked in 48MHz. */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
