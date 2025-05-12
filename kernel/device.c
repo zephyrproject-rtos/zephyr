@@ -145,6 +145,7 @@ bool z_impl_device_is_ready(const struct device *dev)
 
 int z_impl_device_deinit(const struct device *dev)
 {
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 	int ret;
 
 	if (!dev->state->initialized) {
@@ -163,6 +164,10 @@ int z_impl_device_deinit(const struct device *dev)
 	dev->state->initialized = false;
 
 	return 0;
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
 }
 
 #ifdef CONFIG_USERSPACE
