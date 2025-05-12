@@ -124,12 +124,6 @@ static int lp50xx_set_brightness(const struct device *dev,
 		return -ENODEV;
 	}
 
-	if (value > LED_BRIGTHNESS_MAX) {
-		LOG_ERR("%s: brightness value out of bounds: val=%d, max=%d",
-			dev->name, value, LED_BRIGTHNESS_MAX);
-		return -EINVAL;
-	}
-
 	buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
 	buf[1] = (value * 0xff) / LED_BRIGTHNESS_MAX;
 

@@ -145,10 +145,6 @@ static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uin
 		return -ENOTSUP;
 	}
 
-	if (value > LED_BRIGTHNESS_MAX) {
-		return -EINVAL;
-	}
-
 	/* Rescale 0..100 to 0..255 */
 	value = value * 255 / LED_BRIGTHNESS_MAX;
 

@@ -30,7 +30,7 @@ static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8
 	const struct led_gpio_config *config = dev->config;
 	const struct gpio_dt_spec *led_gpio;
 
-	if ((led >= config->num_leds) || (value > LED_BRIGTHNESS_MAX)) {
+	if (led >= config->num_leds) {
 		return -EINVAL;
 	}
 

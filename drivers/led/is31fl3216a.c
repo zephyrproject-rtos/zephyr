@@ -111,7 +111,7 @@ static int is31fl3216a_led_set_brightness(const struct device *dev,
 	int status;
 	uint8_t pwm_value;
 
-	if (led > IS31FL3216A_MAX_LEDS - 1 || value > LED_BRIGTHNESS_MAX) {
+	if (led > IS31FL3216A_MAX_LEDS - 1) {
 		return -EINVAL;
 	}
 
