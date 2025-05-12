@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+
 &pmod_spi {
 	status = "okay";
 
@@ -12,7 +14,7 @@
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
 		status = "okay";
-		odr = <25>;
+		odr = <ADXL345_DT_ODR_25>;
 		fifo-watermark = <31>;
 	};
 };
