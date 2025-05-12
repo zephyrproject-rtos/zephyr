@@ -10,8 +10,8 @@
 #include <soc.h>
 
 /* Core clock frequency: 96MHz */
-#define CLOCK_INIT_CORE_CLOCK            960000000U
-#define BOARD_BOOTCLOCKFRO96M_CORE_CLOCK 960000000U
+#define CLOCK_INIT_CORE_CLOCK            96000000U
+#define BOARD_BOOTCLOCKFRO96M_CORE_CLOCK 96000000U
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -65,6 +65,21 @@ void board_early_init_hook(void)
 	/*!< Set up dividers */
 	CLOCK_SetClockDiv(kCLOCK_DivAHBCLK, 1U);     /* !< Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClockDiv(kCLOCK_DivFRO_HF_DIV, 1U); /* !< Set FROHFDIV divider to value 1 */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER2, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER2);
+#endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	RESET_ReleasePeripheralReset(kDMA_RST_SHIFT_RSTn);
