@@ -40,6 +40,7 @@ zephyr_include_directories(
 
 zephyr_library_sources(
   ${SISDK_DIR}/platform/common/src/sl_core_cortexm.c
+  ${SISDK_DIR}/platform/common/src/sl_slist.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
@@ -120,6 +121,17 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
   )
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT
     ${WISECONNECT_DIR}/components/service/sntp/si91x/sl_sntp.c
+  )
+  zephyr_compile_definitions_ifdef(CONFIG_WIFI_SILABS_SIWX91X_HTTP_CLIENT
+    SLI_SI91X_INTERNAL_HTTP_CLIENT
+  )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_HTTP_CLIENT
+    ${WISECONNECT_DIR}/components/service/http_client/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/inc/http_client/inc
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_HTTP_CLIENT
+    ${WISECONNECT_DIR}/components/service/http_client/si91x_socket/sl_http_client.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_http_client_callback_framework.c
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
