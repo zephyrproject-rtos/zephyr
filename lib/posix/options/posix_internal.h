@@ -68,10 +68,10 @@ struct posix_thread {
 
 struct posix_condattr {
 	/* leaves room for CLOCK_REALTIME (1, default) and CLOCK_MONOTONIC (4) */
-	unsigned int clock: 3;
-	bool initialized: 1;
+	unsigned char clock: 3;
+	char initialized: 1;
 #ifdef _POSIX_THREAD_PROCESS_SHARED
-	unsigned int pshared: 1;
+	unsigned char pshared: 1;
 #endif
 };
 
