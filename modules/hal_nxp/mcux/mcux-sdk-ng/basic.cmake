@@ -20,3 +20,21 @@ function(set_variable_ifdef feature_toggle variable)
     set(${variable} ON PARENT_SCOPE)
   endif()
 endfunction()
+
+# mcux sdk ng cmake functions `mcux_add_xxx` support add content based on
+# toolchains, like
+#
+#    mcux_add_library(
+#        LIBS ../iar/iar_lib_fro_calib_cm33_core0.a
+#        TOOLCHAINS iar
+#    )
+#
+# CMake should set current toolchain in CMake Variable
+# `CONFIG_TOOLCHAIN` to use this feature.
+if (${COMPILER} STREQUAL iar)
+  set(CONFIG_TOOLCHAIN iar)
+elseif (${COMPILER} STREQUAL xcc)
+  set(CONFIG_TOOLCHAIN xtensa)
+else ()
+  set(CONFIG_TOOLCHAIN armgcc)
+endif()
