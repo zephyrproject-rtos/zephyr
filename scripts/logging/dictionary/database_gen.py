@@ -159,7 +159,7 @@ def find_log_const_symbols(elf):
             continue
 
         for symbol in section.iter_symbols():
-            if symbol.name.startswith("log_const_"):
+            if symbol.name.startswith("log_const_") or symbol.name.startswith("_log_const_"):
                 ret_list.append(symbol)
 
     return ret_list
