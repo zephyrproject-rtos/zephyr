@@ -75,6 +75,14 @@
 
 &hsgpio0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
