@@ -19,6 +19,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - i3c
   - pwm
   - spi
   - uart
