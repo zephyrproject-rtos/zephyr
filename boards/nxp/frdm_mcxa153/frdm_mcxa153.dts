@@ -148,6 +148,10 @@
 	pinctrl-names = "default";
 };
 
+&lptmr0 {
+	status = "okay";
+};
+
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
