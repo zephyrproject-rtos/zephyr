@@ -274,14 +274,15 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 	pthread_spin_lock(&data->tx_lock);
 
 	len = net_pkt_get_len(pkt);
-	if (len < ETH_ZLEN) {
-		len = ETH_ZLEN;
-	}
+
 	ret = net_pkt_read(pkt, data->tx_buffer.data, len);
 	if (ret != 0) {
 		goto error;
 	}
 
+	if (len < ETH_ZLEN) {
+		len = ETH_ZLEN;
+	}	
 	data->tx_buffer.metadata.frame_length = len;
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &ts); /* TODO: Replace with HW clock */

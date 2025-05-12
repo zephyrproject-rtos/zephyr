@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(eth_tsn_nic_tsn, LOG_LEVEL_ERR);
 
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/cpu.h>
