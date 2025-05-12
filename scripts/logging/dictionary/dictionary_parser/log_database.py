@@ -55,6 +55,9 @@ ARCHS = {
     "riscv" : {
         "kconfig": "CONFIG_RISCV",
     },
+    "rx" : {
+        "kconfig": "CONFIG_RX",
+    },
     "xtensa" : {
         "kconfig": "CONFIG_XTENSA",
     },
