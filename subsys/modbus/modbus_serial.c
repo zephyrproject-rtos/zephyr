@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include <modbus_internal.h>
 
+#define MODBUS_INFINITE_RTU_TIMEOUT UINT32_MAX
+
 static void modbus_serial_tx_on(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
@@ -582,9 +584,10 @@ int modbus_serial_init(struct modbus_context *ctx,
 		}
 	}
 
-	if (param.serial.baud <= 38400) {
-		cfg->rtu_timeout = (numof_bits * if_delay_max) /
-				   param.serial.baud;
+	if (param.serial.baud == 0) {
+		cfg->rtu_timeout = MODBUS_INFINITE_RTU_TIMEOUT;
+	} else if (param.serial.baud <= 38400) {
+		cfg->rtu_timeout = (numof_bits * if_delay_max) / param.serial.baud;
 	} else {
 		cfg->rtu_timeout = (numof_bits * if_delay_max) / 38400;
 	}
