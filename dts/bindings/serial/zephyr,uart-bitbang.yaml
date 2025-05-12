@@ -1,0 +1,65 @@
+# Copyright (c) 2025 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr UART Bitbang driver
+
+compatible: "zephyr,uart-bitbang"
+
+include:
+  - name: uart-controller.yaml
+    property-blocklist:
+      - clock-frequency
+
+properties:
+  tx-gpios:
+    type: phandle-array
+    description: |
+      Tx gpio info.
+
+  rx-gpios:
+    type: phandle-array
+    description: |
+      Rx gpio info.
+
+  de-gpios:
+    type: phandle-array
+    description: |
+      RS485 driver enable gpio info.
+
+  tx-timer:
+    type: phandle
+    description: |
+      Reference to a TIMER instance to handle Tx data.
+      Tx timer and Rx timer can be the same instance in the case of half-duplex
+      communications (no transmission and reception of data at the same time).
+
+  rx-timer:
+    type: phandle
+    description: |
+      Reference to a TIMER instance to handle Rx data.
+      Tx timer and Rx timer can be the same instance in the case of half-duplex
+      communications (no transmission and reception of data at the same time).
+
+  tx-fifo-size:
+    type: int
+    default: 64
+    description: |
+      Size of the Tx ring buffer.
+
+  rx-fifo-size:
+    type: int
+    default: 64
+    description: |
+      Size of the Rx ring buffer.
+
+  msb:
+    type: boolean
+    description: |
+      Indicate data are transferred Most Significant Bit (MSB) first.
+
+  hw-rs485-flow-control:
+    type: boolean
+    description: |
+      Set to enable DE (driver enable) signal, which can be used to enable
+      the driver of an external RS-485 transceiver. Note hw-flow-control
+      should be set to false.
