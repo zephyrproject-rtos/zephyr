@@ -6,9 +6,24 @@
  */
 
 #include <math.h>
+#include <float.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+#ifndef FLT_IS_IEC_60559
+#ifdef __FLT_IS_IEC_60559__
+#define FLT_IS_IEC_60559 __FLT_IS_IEC_60559__
+#else
+#define FLT_IS_IEC_60559 0
+#endif
+#endif
+#ifndef DBL_IS_IEC_60559
+#ifdef __DBL_IS_IEC_60559__
+#define DBL_IS_IEC_60559 __DBL_IS_IEC_60559__
+#else
+#define DBL_IS_IEC_60559 0
+#endif
+#endif
 
 #define local_abs(x) (((x) < 0) ? -(x) : (x))
 
@@ -97,11 +112,14 @@ int32_t ierror;
 int32_t *p_square = (int32_t *)&square;
 int32_t *p_root_squared = (int32_t *)&root_squared;
 
-
 	max_error = 0;
 
 	/* test the special cases of 0.0, NAN, -NAN, INFINITY, -INFINITY,  and -10.0 */
 	zassert_true(sqrtf(0.0f) == 0.0f, "sqrtf(0.0)");
+#ifndef FLT_IS_IEC_60559
+#error no iec indication
+#endif
+#if FLT_IS_IEC_60559 == 1
 	zassert_true(isnanf(sqrtf(NAN)), "sqrt(nan)");
 #ifdef issignallingf
 	zassert_true(issignallingf(sqrtf(NAN)), "ssignalingf(sqrtf(nan))");
@@ -111,6 +129,7 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 	zassert_true(isinff(sqrtf(INFINITY)), "isinff(sqrt(inf))");
 	zassert_true(isnanf(sqrtf(-INFINITY)), "isnanf(sqrt(-inf))");
 	zassert_true(isnanf(sqrtf(-10.0f)), "isnanf(sqrt(-10.0))");
+#endif
 
 	for (exponent = 1.0e-10f; exponent < 1.0e10f; exponent *= 10.0f) {
 		for (i = 0; i < NUM_TEST_FLOATS; i++) {
@@ -165,6 +184,7 @@ int64_t *p_root_squared = (int64_t *)&root_squared;
 
 	/* test the special cases of 0.0, NAN, -NAN, INFINITY, -INFINITY,  and -10.0 */
 	zassert_true(sqrt(0.0) == 0.0, "sqrt(0.0)");
+#if DBL_IS_IEC_60559 == 1
 	zassert_true(isnan(sqrt((double)NAN)), "sqrt(nan)");
 #ifdef issignalling
 	zassert_true(issignalling(sqrt((double)NAN)), "ssignaling(sqrt(nan))");
@@ -174,6 +194,7 @@ int64_t *p_root_squared = (int64_t *)&root_squared;
 	zassert_true(isinf(sqrt((double)INFINITY)), "isinf(sqrt(inf))");
 	zassert_true(isnan(sqrt((double)-INFINITY)), "isnan(sqrt(-inf))");
 	zassert_true(isnan(sqrt(-10.0)), "isnan(sqrt(-10.0))");
+#endif
 
 	for (exponent = 1.0e-10; exponent < 1.0e10; exponent *= 10.0) {
 		for (i = 0; i < NUM_TEST_DOUBLES; i++) {
