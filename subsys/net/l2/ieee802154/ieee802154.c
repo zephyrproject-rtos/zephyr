@@ -683,3 +683,16 @@ void ieee802154_init(struct net_if *iface)
 		ctx->tx_power = tx_power;
 	}
 }
+
+static enum net_verdict ieee802154_l3_recv(struct net_if *iface, uint16_t ptype,
+					   struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+	ARG_UNUSED(pkt);
+
+	return NET_CONTINUE;
+}
+
+NET_L3_REGISTER(&NET_L2_GET_NAME(IEEE802154), IEEE802154, NET_ETH_PTYPE_IEEE802154,
+		ieee802154_l3_recv);

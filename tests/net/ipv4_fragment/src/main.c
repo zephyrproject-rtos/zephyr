@@ -627,6 +627,7 @@ ZTEST(net_ipv4_fragment, test_udp)
 	/* Setup packet for insertion */
 	net_pkt_set_iface(pkt, iface1);
 	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Update IPv4 headers */
@@ -696,6 +697,7 @@ ZTEST(net_ipv4_fragment, test_tcp)
 
 	net_pkt_set_iface(pkt, iface1);
 	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	packet_len = net_pkt_get_len(pkt);
@@ -750,6 +752,7 @@ ZTEST(net_ipv4_fragment, test_fragment_timeout)
 	zassert_not_null(pkt, "Packet creation failure");
 
 	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Create packet from base data */
@@ -840,6 +843,7 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 	/* Setup packet for insertion */
 	net_pkt_set_iface(pkt, iface1);
 	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Update IPv4 headers */

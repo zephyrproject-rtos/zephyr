@@ -2047,6 +2047,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_l2_bridged(clone_pkt, net_pkt_is_l2_bridged(pkt));
 	net_pkt_set_l2_processed(clone_pkt, net_pkt_is_l2_processed(pkt));
 	net_pkt_set_ll_proto_type(clone_pkt, net_pkt_ll_proto_type(pkt));
+	net_pkt_set_loopback(clone_pkt, net_pkt_is_loopback(pkt));
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
 	net_pkt_set_remote_address(clone_pkt, net_pkt_remote_address(pkt),
