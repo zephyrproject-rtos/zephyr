@@ -17,6 +17,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 
 void arch_irq_offload_init(void)
 {
+	/* Nothing to be done for this architecture */
 }
 #endif
 
