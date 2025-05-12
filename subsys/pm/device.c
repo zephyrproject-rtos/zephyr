@@ -173,14 +173,24 @@ int pm_device_power_domain_add(const struct device *dev,
 
 #ifdef CONFIG_DEVICE_DEPS
 struct pm_visitor_context {
+	const struct device *domain;
 	pm_device_action_failed_cb_t failure_cb;
 	enum pm_device_action action;
 };
 
 static int pm_device_children_visitor(const struct device *dev, void *context)
 {
-	struct pm_visitor_context *visitor_context = context;
+	struct pm_device_base *pm = dev->pm_base;
+	const struct pm_visitor_context *visitor_context = context;
 	int rc;
+
+	if (pm == NULL) {
+		return 0;
+	}
+
+	if (pm->domain != visitor_context->domain) {
+		return 0;
+	}
 
 	rc = pm_device_action_run(dev, visitor_context->action);
 	if ((visitor_context->failure_cb != NULL) && (rc < 0)) {
@@ -197,6 +207,7 @@ void pm_device_children_action_run(const struct device *dev,
 				   pm_device_action_failed_cb_t failure_cb)
 {
 	struct pm_visitor_context visitor_context = {
+		.domain = dev,
 		.failure_cb = failure_cb,
 		.action = action
 	};
