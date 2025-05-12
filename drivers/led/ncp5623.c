@@ -100,10 +100,6 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 		return -ENODEV;
 	}
 
-	if (value > LED_BRIGTHNESS_MAX) {
-		return -EINVAL;
-	}
-
 	if (led_info->num_colors != 1) {
 		return -ENOTSUP;
 	}

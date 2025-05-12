@@ -49,7 +49,7 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 	uint8_t val;
 	int ret;
 
-	if (led >= LP5569_NUM_LEDS || brightness > LED_BRIGTHNESS_MAX) {
+	if (led >= LP5569_NUM_LEDS) {
 		return -EINVAL;
 	}
 

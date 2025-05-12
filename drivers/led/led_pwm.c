@@ -58,7 +58,7 @@ static int led_pwm_set_brightness(const struct device *dev,
 	const struct led_pwm_config *config = dev->config;
 	const struct pwm_dt_spec *dt_led;
 
-	if (led >= config->num_leds || value > LED_BRIGTHNESS_MAX) {
+	if (led >= config->num_leds) {
 		return -EINVAL;
 	}
 
