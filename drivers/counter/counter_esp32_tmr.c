@@ -204,10 +204,20 @@ uint32_t counter_esp32_get_freq(const struct device *dev)
 	return data->clock_src_hz / config->config.divider;
 }
 
+static int counter_esp32_reset(const struct device *dev)
+{
+	struct counter_esp32_data *data = dev->data;
+
+	timer_hal_set_counter_value(&data->hal_ctx, 0);
+
+	return 0;
+}
+
 static DEVICE_API(counter, counter_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,
+	.reset = counter_esp32_reset,
 	.get_value_64 = counter_esp32_get_value_64,
 	.set_alarm = counter_esp32_set_alarm,
 	.cancel_alarm = counter_esp32_cancel_alarm,
