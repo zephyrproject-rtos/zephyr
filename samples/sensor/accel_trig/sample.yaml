@@ -28,6 +28,8 @@ tests:
       - SHIELD=pmod_acl
       - EXTRA_CONF_FILE=adxl345-trigger.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_trig.adxl362-trigger:
@@ -35,6 +37,8 @@ tests:
       - SHIELD=eval_adxl362_ardz
       - EXTRA_CONF_FILE=adxl362-trigger.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_trig.shield-tap:
