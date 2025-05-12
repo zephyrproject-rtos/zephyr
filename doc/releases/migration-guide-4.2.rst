@@ -501,6 +501,13 @@ Video
   ``VIDEO_PIX_FMT_GRBG8`` becomes ``VIDEO_PIX_FMT_SGRBG8``
   ``VIDEO_PIX_FMT_RGGB8`` becomes ``VIDEO_PIX_FMT_SRGGB8``
 
+* On STM32 devices, the DCMI driver (:dtcompatible:`st,stm32-dcmi`) now relies on endpoint based
+  video-interfaces.yaml bindings for sensor interface properties (such as bus width and
+  synchronization signals).
+  Also the ``capture-rate`` property has been replaced by the usage of the frame interval API
+  :c:func:`video_set_frmival`.
+  See (:github:`89627`).
+
 Other subsystems
 ****************
 
