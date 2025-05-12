@@ -99,6 +99,21 @@ static int WriteFrmtd_vf(FILE *stream, char *format, ...)
  *
  */
 
+#ifndef FLT_IS_IEC_60559
+#ifdef __FLT_IS_IEC_60559__
+#define FLT_IS_IEC_60559 __FLT_IS_IEC_60559__
+#else
+#define FLT_IS_IEC_60559 0
+#endif
+#endif
+#ifndef DBL_IS_IEC_60559
+#ifdef __DBL_IS_IEC_60559__
+#define DBL_IS_IEC_60559 __DBL_IS_IEC_60559__
+#else
+#define DBL_IS_IEC_60559 0
+#endif
+#endif
+
 #ifdef CONFIG_STDOUT_CONSOLE
 ZTEST(sprintf, test_sprintf_double)
 {
@@ -118,6 +133,7 @@ ZTEST(sprintf, test_sprintf_double)
 		return;
 	}
 
+#if DBL_IS_IEC_60559 == 1 && __SIZEOF_DOUBLE__ == 8
 	var.exponent = 0x00000000;
 	var.fraction = 0x7ff00000; /* Bit pattern for +INF (double) */
 	sprintf(buffer, "%e", var.d);
@@ -229,6 +245,7 @@ ZTEST(sprintf, test_sprintf_double)
 	sprintf(buffer, "%G", var.d);
 	zassert_true((strcmp(buffer, "-NAN") == 0),
 		     "sprintf(-NAN) - incorrect output '%s'\n", buffer);
+#endif
 
 	var.d = 1.0;
 	sprintf(buffer, "%f", var.d);
@@ -268,6 +285,7 @@ ZTEST(sprintf, test_sprintf_double)
 	zassert_true((strcmp(buffer, "-1.000000") == 0),
 		     "sprintf(-1.0) - incorrect output '%s'\n", buffer);
 
+#if __SIZEOF_DOUBLE__ >= 8
 	var.d = 1234.56789;
 	sprintf(buffer, "%f", var.d);
 	zassert_true((strcmp(buffer, "1234.567890") == 0),
@@ -279,7 +297,6 @@ ZTEST(sprintf, test_sprintf_double)
 	 * on the library used and FPU implementation. However the length
 	 * and decimal position should remain identical.
 	 */
-	var.d = 0x1p800;
 	sprintf(buffer, "%.140f", var.d);
 	zassert_true((strlen(buffer) == 382),
 		     "sprintf(<large output>) - incorrect length %d\n",
@@ -309,6 +326,7 @@ ZTEST(sprintf, test_sprintf_double)
 	zassert_true((strcmp(buffer + 119, "0000387259") == 0),
 		      "sprintf(<large output>) - got \"%s\" "
 		      "while expecting \"0000387259\"\n", buffer + 119);
+#endif
 
 	/*******************/
 	var.d = 1234.0;
@@ -376,6 +394,7 @@ ZTEST(sprintf, test_sprintf_double)
 		     "sprintf(0.0001505) - incorrect "
 		     "output '%s'\n", buffer);
 
+#if __SIZEOF_DOUBLE__ >= 8
 	var.exponent = 0x00000001;
 	var.fraction = 0x00000000; /* smallest denormal value */
 	sprintf(buffer, "%g", var.d);
@@ -387,6 +406,7 @@ ZTEST(sprintf, test_sprintf_double)
 	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
 		     "sprintf(4.94066e-324) - incorrect "
 		     "output '%s'\n", buffer);
+#endif
 #endif
 }
 
