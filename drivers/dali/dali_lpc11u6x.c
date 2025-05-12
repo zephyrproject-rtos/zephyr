@@ -67,14 +67,14 @@ enum rx_counter_event {
 };
 
 /* see IEC 62386-101:2022 Table 22 - Multi-master transmitter settling time values */
-static const uint32_t settling_time_us[] = {
+static const uint32_t settling_time_us[DALI_PRIORITY_5 + 1] = {
 	(DALI_TX_BACKWARD_INTERFRAME_MIN_US + (GREY_AREA_INTERFRAME_US / 2)),
 	(DALI_TX_PRIO_1_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
 	(DALI_TX_PRIO_2_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
 	(DALI_TX_PRIO_3_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
 	(DALI_TX_PRIO_4_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
 	(DALI_TX_PRIO_5_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
-	(DALI_TX_STOP_BIT_US + GREY_AREA_INTERFRAME_US)};
+};
 
 struct dali_tx_slot {
 	uint32_t count[COUNT_ARRAY_SIZE];
@@ -318,7 +318,10 @@ static bool dali_lpc11u6x_is_tx_slot_empty(const struct dali_tx_slot *slot)
 static void dali_lpc11u6x_add_signal_phase(struct dali_tx_slot *slot, uint32_t duration_us,
 					   bool change_last_phase)
 {
-	__ASSERT((slot->index_max < COUNT_ARRAY_SIZE), "PWM pattern does not fit into buffer");
+	if (slot->index_max >= COUNT_ARRAY_SIZE || (change_last_phase && slot->index_max == 0)) {
+		__ASSERT(true, "Access beyond array bounds");
+		return;
+	}
 
 	if (change_last_phase) {
 		slot->index_max--;
@@ -496,7 +499,7 @@ void dali_lpc11u6x_handle_collision_callback(const struct device *dev)
 	struct dali_lpc11u6x_data *data = dev->data;
 	struct dali_tx_slot *active = data->active;
 
-	if (dali_lpc11u6x_get_rx_pin() == active->state_now) {
+	if (active && dali_lpc11u6x_get_rx_pin() == active->state_now) {
 		dali_lpc11u6x_stop_tx(data);
 		LOG_ERR("unexpected bus state while sending period %d -- stop transmission",
 			active->index_next);
@@ -527,12 +530,19 @@ static void dali_lpc11u6x_start_tx(struct dali_lpc11u6x_data *data)
 
 static void dali_lpc11u6x_schedule_tx(struct dali_lpc11u6x_data *data)
 {
-	/* select the frame to send - backward frame is dominant */
-	if (!dali_lpc11u6x_is_tx_slot_empty(&data->forward)) {
-		data->active = &data->forward;
+	if (!data->active) {
+		/* no active frame, select one to send - backward frame is dominant */
+		if (!dali_lpc11u6x_is_tx_slot_empty(&data->forward)) {
+			data->active = &data->forward;
+		}
+		if (!dali_lpc11u6x_is_tx_slot_empty(&data->backward)) {
+			data->active = &data->backward;
+		}
 	}
-	if (!dali_lpc11u6x_is_tx_slot_empty(&data->backward)) {
-		data->active = &data->backward;
+
+	if (!data->active) {
+		/* nothing to do */
+		return;
 	}
 
 	uint32_t start_send_rx_count = data->active->inter_frame_idle;
@@ -699,7 +709,7 @@ static uint32_t dali_lpc11u6x_get_time_difference_us(const struct dali_lpc11u6x_
 	const struct dali_lpc11u6x_config *config = data->config;
 
 	const uint32_t time_difference_us = data->edge_count - data->last_edge_count;
-	if (data->last_data_bit ^ invert) {
+	if (data->last_data_bit != invert) {
 		return time_difference_us - config->rx_rise_fall_delta_us;
 	}
 	return time_difference_us + config->rx_rise_fall_delta_us;
@@ -719,7 +729,7 @@ static void dali_lpc11u6x_set_status(struct dali_lpc11u6x_data *data, enum rx_st
 
 static void dali_lpc11u6x_add_bit_to_rx_data(struct dali_lpc11u6x_data *data)
 {
-	data->rx_data = (data->rx_data << 1U) | data->last_data_bit;
+	data->rx_data = (data->rx_data << 1U) | (data->last_data_bit ? (1U) : (0U));
 	data->rx_frame_length++;
 	if (data->rx_frame_length > DALI_MAX_BIT_PER_FRAME) {
 		dali_lpc11u6x_set_status(data, ERROR_IN_FRAME);
@@ -857,15 +867,12 @@ static void dali_lpc11u6x_process_capture_event(struct dali_lpc11u6x_data *data)
 		dali_lpc11u6x_check_start_timing(data);
 		dali_lpc11u6x_set_status(data, START_BIT_INSIDE);
 		break;
-	case START_BIT_INSIDE:
-		dali_lpc11u6x_check_collision(data);
-		dali_lpc11u6x_set_status(data, dali_lpc11u6x_check_inside_timing(data));
-		break;
 	case DATA_BIT_START:
 		dali_lpc11u6x_check_collision(data);
 		dali_lpc11u6x_check_start_timing(data);
 		dali_lpc11u6x_set_status(data, DATA_BIT_INSIDE);
 		break;
+	case START_BIT_INSIDE:
 	case DATA_BIT_INSIDE:
 		dali_lpc11u6x_check_collision(data);
 		dali_lpc11u6x_set_status(data, dali_lpc11u6x_check_inside_timing(data));
@@ -1031,7 +1038,6 @@ static int dali_lpc11u6x_receive(const struct device *dev, struct dali_frame *fr
 				 k_timeout_t timeout)
 {
 	struct dali_lpc11u6x_data *data = dev->data;
-	__ASSERT(data->rx_queue, "invalid queue");
 
 	if (k_msgq_get(&data->rx_queue, frame, timeout) < 0) {
 		return -ENOMSG;
@@ -1047,11 +1053,9 @@ static int dali_lpc11u6x_send(const struct device *dev, const struct dali_tx_fra
 	}
 
 	struct dali_lpc11u6x_data *data = dev->data;
-	if (data->active) {
-		if (data->active->index_next) {
-			LOG_ERR("send is busy sending");
-			return -EBUSY;
-		}
+	if (data->active && data->active->index_next) {
+		LOG_ERR("send is busy sending");
+		return -EBUSY;
 	}
 
 	switch (frame_type) {
