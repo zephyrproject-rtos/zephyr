@@ -61,14 +61,6 @@
 #define MDM_IMSI_LENGTH 16
 #define MDM_ICCID_LENGTH 32
 
-enum sim7080_state {
-	SIM7080_STATE_INIT = 0,
-	SIM7080_STATE_IDLE,
-	SIM7080_STATE_NETWORKING,
-	SIM7080_STATE_GNSS,
-	SIM7080_STATE_OFF,
-};
-
 /* Possible states of the ftp connection. */
 enum sim7080_ftp_connection_state {
 	/* Not connected yet. */
