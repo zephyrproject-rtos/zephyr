@@ -90,15 +90,16 @@ static const struct gpio_dt_spec ulpi_reset =
 /**
  * The following defines are used to map the value of the "maxiumum-speed"
  * DT property to the corresponding definition used by the STM32 HAL.
+ *
+ * If full speed is selected (idx 1), but the phy is high speed capable, then
+ * select USB_OTG_SPEED_HIGH_IN_FULL. Otherwise, select the corresponding
+ * speed.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
-	defined(USB_OTG_HS_EMB_PHY)
-#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
-#else
 #define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
-#endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#if DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed) == 1 && \
+	(defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY)
+#define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define USB_DC_STM32_FULL_SPEED             PCD_SPEED_FULL
 #else
 #define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL

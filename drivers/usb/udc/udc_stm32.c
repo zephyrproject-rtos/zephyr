@@ -41,7 +41,10 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+#define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 #define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
@@ -50,14 +53,16 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 /**
  * The following defines are used to map the value of the "maxiumum-speed"
  * DT property to the corresponding definition used by the STM32 HAL.
+ *
+ * If full speed is selected (idx 1), but the phy is high speed capable, then
+ * select USB_OTG_SPEED_HIGH_IN_FULL. Otherwise, select the corresponding
+ * speed.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
-#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
-#else
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
-#endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#if DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed) == 1 && \
+	(defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY)
+#define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define UDC_STM32_FULL_SPEED             PCD_SPEED_FULL
 #else
 #define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
@@ -1006,13 +1011,13 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
 #endif /* USB */
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #elif USB_OTG_HS_ULPI_PHY
 	priv->pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
 #else
 	priv->pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_OTG_HS_EMB_PHY */
+#endif /* USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY */
 }
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
@@ -1146,7 +1151,7 @@ static int priv_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
