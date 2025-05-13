@@ -243,6 +243,14 @@ config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
 	    This variable specifies maximum number of stored TLS/DTLS sessions,
 	    used for TLS/DTLS session resumption.
 
+config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
+	bool "TLS certificate verification callback support"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This option controls whether TLS_CERT_VERIFY_CALLBACK TLS socket option
+	  is available to use. It allows to register a certificate verification
+	  callback, which is called by the TLS backend during the TLS handshake.
+
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs"
 	help
