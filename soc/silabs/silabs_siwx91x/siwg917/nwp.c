@@ -109,6 +109,11 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 			LOG_WRN("Bluetooth is not supported in AP mode");
 		}
+
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
+			boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+		}
+
 	} else {
 		return -EINVAL;
 	}

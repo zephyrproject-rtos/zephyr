@@ -45,6 +45,14 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
+	bool "Limits the number of packets buffered per STA in AP mode"
+	default y
+	help
+	  In AP mode, if the bit is set, only two packets per Station (STA)
+	  would be buffered when the STA is in Power Save (PS) mode.
+	  This helps manage buffer usage and ensures efficient packet handling.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	help
