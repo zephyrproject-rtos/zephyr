@@ -2072,6 +2072,11 @@ struct ccm_job_ptr {
 #define CCM_JOB_PTR_ATTRIBUTE_ADATA 13U
 #define CCM_JOB_PTR_ATTRIBUTE_MDATA 14U
 
+/* For a Max 27 byte PDU reception, an actual 26 byte PDU needs the below extra MDATA length to
+ * mitigate MIC failures. I.e. MDATA length = 27 + 4 (MIC size) + 2 (extra).
+ */
+#define NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA 2U
+
 static struct {
 	uint16_t in_alen;
 	uint16_t in_mlen;
@@ -2253,7 +2258,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
 	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
-	ccm_job.in[4].length = mlen;
+	ccm_job.in[4].length = mlen + NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA;
 	ccm_job.in[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
 	ccm_job.in[5].ptr = NULL;
