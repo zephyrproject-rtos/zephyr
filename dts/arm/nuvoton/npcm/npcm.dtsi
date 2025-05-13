@@ -703,6 +703,37 @@
 			rtc-wk = <&wui_rtc>;
 			status = "disabled";
 		};
+
+                host_sub: lpc@400c1000 {
+			compatible = "nuvoton,npcm-host-sub";
+			/* host sub-module register address & size */
+			reg = <0x400c1000 0x2000
+			       0x40010000 0x2000
+			       0x400c9000 0x2000
+			       0x400cb000 0x2000
+			       0x400cd000 0x2000
+			       0x400cf000 0x1000>;
+			reg-names = "mswc", "shm", "pm_acpi",
+				    "pm_hcmd", "pmch3", "pmch4";
+
+			/* host sub-module IRQ and priority */
+			interrupts = <4 3>, /* PMCH Input-Buf-Full (IBF) */
+				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
+				     <7 3>,  /* SHM mailbox */
+				     <6 3>;  /* Port80 FIFO Not Empty */
+			interrupt-names = "pmch_ibf", "pmch_obe", "shm_mai", "p80_fifo";
+
+			/* WUI map for accessing host sub-modules */
+			host-acc-wui = <&wui_host_acc>;
+
+			/* clocks for host sub-modules */
+			clocks = <&pcc NPCM_CLOCK_HOSTSUB1>,
+				 <&pcc NPCM_CLOCK_HOSTSUB1>,
+				 <&pcc NPCM_CLOCK_HOSTSUB1>,
+				 <&pcc NPCM_CLOCK_HOSTSUB1>,
+				 <&pcc NPCM_CLOCK_HOSTSUB1>;
+		};
+
 	};
 
 	soc-id {

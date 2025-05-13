@@ -1,0 +1,69 @@
+# NPCM4XX eSPI driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_NPCM
+	bool "Nuvoton NPCM ESPI driver"
+	depends on SOC_FAMILY_NPCM
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  (eSPI) for NPCM4XX family of processors.
+
+config ESPI_NPCM4XX_PERIPHERAL_ACPI_SHD_MEM_SIZE
+	int "Host I/O peripheral port size for shared memory in npcm4xx series"
+	depends on ESPI_NPCM4XX || ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used by the Host and NPCM4XX to communicate over
+	  the shared memory region to return the ACPI response data. Please
+	  notice the valid value in npcm4xx for this option is 8/16/32/
+	  64/128/256/512/1024/2048/4096 bytes.
+
+config ESPI_NPCM4XX_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for host command in npcm4xx series"
+	depends on ESPI_NPCM4XX || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and npcm4xx to communicate over
+	  the shared memory region to return the host command parameter data.
+	  Please notice the valid value in npcm4xx for this option is
+	  8/16/32/64/128/256/512/1024/2048/4096 bytes.
+
+# The default value 'y' for the existing options if ESPI_NPCM4XX is selected.
+if ESPI_NPCM4XX
+
+config ESPI_OOB_CHANNEL
+	default  y
+
+config ESPI_PERIPHERAL_8042_KBC
+	default n
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default n
+
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	default y
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default y
+
+config ESPI_PERIPHERAL_CUSTOM_OPCODE
+	default y
+
+config ESPI_PERIPHERAL_PMCH3
+	bool "NPCM4XX PMCH3 Support"
+	default y
+	help
+	  Enables PM channel 3 for eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_PMCH4
+	bool "NPCM4XX PMCH4 Support"
+	default y
+	help
+	  Enables PM channel 4 for eSPI peripheral channel.
+
+endif #ESPI_NPCM4XX
