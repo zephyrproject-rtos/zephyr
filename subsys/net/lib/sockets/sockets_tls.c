@@ -207,6 +207,10 @@ __net_socket struct tls_context {
 
 		bool dtls_handshake_on_connect;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+		struct tls_cert_verify_cb cert_verify;
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -1425,6 +1429,14 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	mbedtls_ssl_conf_early_data(&context->config, MBEDTLS_SSL_EARLY_DATA_ENABLED);
 #endif
 
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+	if (context->options.cert_verify.cb != NULL) {
+		mbedtls_ssl_conf_verify(&context->config,
+					context->options.cert_verify.cb,
+					context->options.cert_verify.ctx);
+	}
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
+
 	ret = mbedtls_ssl_setup(&context->ssl,
 				&context->config);
 	if (ret != 0) {
@@ -2043,6 +2055,42 @@ static int tls_opt_dtls_role_set(struct tls_context *context,
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+static int tls_opt_cert_verify_callback_set(struct tls_context *context,
+					    const void *optval,
+					    socklen_t optlen)
+{
+	struct tls_cert_verify_cb *cert_verify;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (optlen != sizeof(struct tls_cert_verify_cb)) {
+		return -EINVAL;
+	}
+
+	cert_verify = (struct tls_cert_verify_cb *)optval;
+	if (cert_verify->cb == NULL) {
+		return -EINVAL;
+	}
+
+	context->options.cert_verify = *cert_verify;
+
+	return 0;
+}
+#else /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
+static int tls_opt_cert_verify_callback_set(struct tls_context *context,
+					    const void *optval,
+					    socklen_t optlen)
+{
+	NET_ERR("TLS_CERT_VERIFY_CALLBACK option requires "
+		"CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK enabled");
+
+	return -ENOPROTOOPT;
+}
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
 
 static int protocol_check(int family, int type, int *proto)
 {
@@ -3629,6 +3677,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 
 	case TLS_SESSION_CACHE_PURGE:
 		err = tls_opt_session_cache_purge_set(ctx, optval, optlen);
+		break;
+
+	case TLS_CERT_VERIFY_CALLBACK:
+		err = tls_opt_cert_verify_callback_set(ctx, optval, optlen);
 		break;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
