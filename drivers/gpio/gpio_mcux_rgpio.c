@@ -56,6 +56,10 @@ static int mcux_rgpio_configure(const struct device *dev,
 	struct pinctrl_soc_pin pin_cfg;
 	int cfg_idx = pin, i;
 
+	if (flags == GPIO_DISCONNECTED) {
+		return -ENOTSUP;
+	}
+
 	/* Make sure pin is supported */
 	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
 		return -ENOTSUP;
