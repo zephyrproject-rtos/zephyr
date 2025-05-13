@@ -16,11 +16,6 @@ struct eeprom_tmp11x_config {
 	const struct device *parent;
 };
 
-BUILD_ASSERT(CONFIG_EEPROM_INIT_PRIORITY >
-	     CONFIG_SENSOR_INIT_PRIORITY,
-	     "TMP11X eeprom driver must be initialized after TMP11X sensor "
-	     "driver");
-
 static size_t eeprom_tmp11x_size(const struct device *dev)
 {
 	return EEPROM_TMP11X_SIZE;
