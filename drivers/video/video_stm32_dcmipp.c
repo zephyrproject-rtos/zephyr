@@ -16,6 +16,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/video/stm32_dcmipp.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -32,6 +33,26 @@
 #define STM32_DCMIPP_HAS_CSI
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
+
+/* Weak function declaration in order to interface with external ISP handler */
+void __weak stm32_dcmipp_isp_vsync_update(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
+{
+}
+
+int __weak stm32_dcmipp_isp_init(DCMIPP_HandleTypeDef *hdcmipp, const struct device *source)
+{
+	return 0;
+}
+
+int __weak stm32_dcmipp_isp_start(void)
+{
+	return 0;
+}
+
+int __weak stm32_dcmipp_isp_stop(void)
+{
+	return 0;
+}
 
 LOG_MODULE_REGISTER(stm32_dcmipp, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -147,6 +168,12 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 			CONTAINER_OF(hdcmipp, struct stm32_dcmipp_data, hdcmipp);
 	struct stm32_dcmipp_pipe_data *pipe = dcmipp->pipe[Pipe];
 	int ret;
+
+	/*
+	 * Let the external ISP handler know that a VSYNC happened a new statistics are
+	 * thus available
+	 */
+	stm32_dcmipp_isp_vsync_update(hdcmipp, Pipe);
 
 	if (pipe->state != STM32_DCMIPP_RUNNING) {
 		return;
@@ -526,9 +553,64 @@ out:
 	return ret;
 }
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+static void stm32_dcmipp_get_isp_decimation(struct stm32_dcmipp_data *dcmipp)
+{
+	DCMIPP_DecimationConfTypeDef ispdec_cfg;
+	uint32_t is_enabled;
+
+	is_enabled = HAL_DCMIPP_PIPE_IsEnabledISPDecimation(&dcmipp->hdcmipp, DCMIPP_PIPE1);
+	if (is_enabled == 0) {
+		dcmipp->isp_dec_hratio = 1;
+		dcmipp->isp_dec_vratio = 1;
+	} else {
+		HAL_DCMIPP_PIPE_GetISPDecimationConfig(&dcmipp->hdcmipp, DCMIPP_PIPE1, &ispdec_cfg);
+		dcmipp->isp_dec_hratio = 1 << (ispdec_cfg.HRatio >> DCMIPP_P1DECR_HDEC_Pos);
+		dcmipp->isp_dec_vratio = 1 << (ispdec_cfg.VRatio >> DCMIPP_P1DECR_VDEC_Pos);
+	}
+}
+#endif
+
 static int stm32_dcmipp_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+	const struct stm32_dcmipp_config *config = dev->config;
+	static atomic_t isp_init_once;
+	int ret;
+
+	/* Initialize the external ISP handling stack */
+	/*
+	 * TODO - this is not the right place to do that, however we need to know
+	 * the source format before calling the isp_init handler hence can't
+	 * do that within the stm32_dcmipp_init function due to unknown
+	 * driver initialization order
+	 *
+	 * Would need an ops that get called when both side of an endpoint get
+	 * initiialized
+	 */
+	if (atomic_cas(&isp_init_once, 0, 1) &&
+	    (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2)) {
+		/*
+		 * It is necessary to perform a dummy configuration here otherwise any
+		 * ISP related configuration done by the stm32_dcmipp_isp_init will
+		 * fail due to the HAL DCMIPP driver not being in READY state
+		 */
+		ret = stm32_dcmipp_conf_parallel(dcmipp->dev, &stm32_dcmipp_input_fmt_desc[0]);
+		if (ret < 0) {
+			LOG_ERR("Failed to perform dummy parallel configuration");
+			return ret;
+		}
+
+		ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to initialize the ISP");
+			return ret;
+		}
+		stm32_dcmipp_get_isp_decimation(dcmipp);
+	}
+#endif
 
 	*fmt = pipe->fmt;
 
@@ -864,6 +946,12 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 #endif
 
+	/* Initialize the external ISP handling stack */
+	ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
+	if (ret < 0) {
+		goto out;
+	}
+
 	/* Enable the DCMIPP Pipeline */
 	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
 		ret = HAL_DCMIPP_PIPE_Start(&dcmipp->hdcmipp, pipe->id,
@@ -909,6 +997,12 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 	}
 
+	/* Start the external ISP handling */
+	ret = stm32_dcmipp_isp_start();
+	if (ret < 0) {
+		goto out;
+	}
+
 	pipe->state = STM32_DCMIPP_RUNNING;
 	pipe->is_streaming = true;
 	dcmipp->enabled_pipe++;
@@ -930,6 +1024,12 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 
 	if (!pipe->is_streaming) {
 		ret = -EINVAL;
+		goto out;
+	}
+
+	/* Stop the external ISP handling */
+	ret = stm32_dcmipp_isp_stop();
+	if (ret < 0) {
 		goto out;
 	}
 
