@@ -35,8 +35,14 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		.boot_config = {
 			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
-			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
-			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
+			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
+						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
+			.ext_custom_feature_bit_map =
+				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
+				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
+				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
+				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
+				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH,
 		}
 	};
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
@@ -78,9 +84,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 		boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
 		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
-		boot_config->ext_custom_feature_bit_map |=
-			SL_SI91X_EXT_FEAT_IEEE_80211W |
-			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
 #endif
 
 #ifdef CONFIG_BT_SILABS_SIWX91X
@@ -111,7 +115,8 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		}
 
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
-			boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
 		}
 
 	} else {
@@ -119,6 +124,10 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
+	if (!IS_ENABLED(CONFIG_PM)) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+	}
+
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
