@@ -250,8 +250,7 @@ int img_mgmt_active_image(void)
 /*
  * Reads the version and build hash from the specified image slot.
  */
-int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
-				   uint32_t *flags)
+int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash, uint32_t *flags)
 {
 	struct image_header hdr;
 	struct image_tlv tlv;
