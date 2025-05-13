@@ -3,14 +3,15 @@
 #include <zephyr/arch/cpu.h>
 #include <stdio.h>
 #include <string.h>
-#include "../data/matrices_128.hpp"
-// #include "../data/matrices.hpp"
+// #include "../data/matrices_128.hpp"
+#include "../data/matrices.hpp"
+// #include "../data/matrices_8.hpp"
 #include <riscv_vector.h>
 #include <zephyr/timing/timing.h>
 #include <math.h>
 
-constexpr int N = 128;
-constexpr int nHalf = N / 2;
+constexpr int N_CFG = 32;
+constexpr int nHalf = N_CFG / 2;
 
 #define NUM_THREADS 4
 #define STACK_SIZE 16384 * 4
@@ -84,7 +85,7 @@ inline void matmul_rvvt(float *a, float *b, float *c,
             // k_mutex_lock(&print_mutex, K_FOREVER);
             // printf("Thread loop iter %d, %d.\n", I, J);
             // k_mutex_unlock(&print_mutex);
-                enable_vector_operations();
+            //     enable_vector_operations();
                 vec_s = __riscv_vfmacc_vv_f32m1(vec_s, vec_a, vec_b, vl);
             }
 
@@ -100,7 +101,7 @@ void worker_thread(void *arg1, void *, void *) {
     int thread_id = (int)(uintptr_t)arg1;
     ThreadTask &task = thread_tasks[thread_id];
 
-    enable_vector_operations();
+    // enable_vector_operations();
     // k_mutex_lock(&print_mutex, K_FOREVER);
     // printf("Thread %d started and waiting.\n", thread_id);
     // k_mutex_unlock(&print_mutex );
@@ -112,12 +113,12 @@ void worker_thread(void *arg1, void *, void *) {
         // k_mutex_unlock(&print_mutex );
 
         task.start_ct = timing_counter_get();
-        for (int k = 0; k < N; k += task.tile_size) {
+        for (int k = 0; k < N_CFG; k += task.tile_size) {
             // k_mutex_lock(&print_mutex, K_FOREVER);
             // printf("Thread %d loop iter %d.\n", thread_id, k);
             // k_mutex_unlock(&print_mutex );
             matmul_rvvt(task.a, task.b, task.c,
-                        task.i, task.j, k, N, N, N, task.tile_size);
+                        task.i, task.j, k, N_CFG, N_CFG, N_CFG, task.tile_size);
         }
         task.end_ct = timing_counter_get();
 
@@ -183,10 +184,10 @@ void report_timing(const char *label, TaskTiming t) {
     uint64_t total_ns          = timing_cycles_to_ns(total_cycles);
 
     printf("\n=== Timing Report: %s ===\n", label);
-    printf("Start overhead:      %llu ns (%llu cycles)\n", start_overhead_ns, start_overhead_cycles);
-    printf("Compute time:        %llu ns (%llu cycles)\n", compute_ns, compute_cycles);
-    printf("Sync overhead:       %llu ns (%llu cycles)\n", sync_overhead_ns, sync_overhead_cycles);
-    printf("Total time:          %llu ns (%llu cycles)\n", total_ns, total_cycles);
+    printf("Start overhead:      %llu ns (%llu mtime cycles)\n", start_overhead_ns, start_overhead_cycles);
+    printf("Compute time:        %llu ns (%llu mtime cycles)\n", compute_ns, compute_cycles);
+    printf("Sync overhead:       %llu ns (%llu mtime cycles)\n", sync_overhead_ns, sync_overhead_cycles);
+    printf("Total time:          %llu ns (%llu mtime cycles)\n", total_ns, total_cycles);
 }
 
 int main(void) {
@@ -194,12 +195,12 @@ int main(void) {
     timing_start();
     k_mutex_init(&print_mutex);
 
-    printf("Running matmul with threadpool on %s\n", CONFIG_BOARD);
+    printf("Running matmul of size %d with threadpool on %s\n", N_CFG, CONFIG_BOARD);
 
     threadpool_init();
-    k_sleep(K_MSEC(100));  // Ensure threads initialize and print their initial messages
+    // k_sleep(K_MSEC(100));  // Ensure threads initialize and print their initial messages
 
-    float C_computed[N][N] = {0};
+    float C_computed[N_CFG][N_CFG] = {0};
 
     
     k_mutex_lock(&print_mutex, K_FOREVER);
@@ -218,10 +219,11 @@ int main(void) {
     // Validation (simplified)
     bool valid = true;
     float tolerance = 1e-2f;
-    for (int i = 0; i < N && valid; ++i)
-        for (int j = 0; j < N; ++j)
+    for (int i = 0; i < N_CFG && valid; ++i)
+        for (int j = 0; j < N_CFG; ++j)
             if (fabs(C_computed[i][j] - matrix_C[i][j]) > tolerance) {
                 valid = false;
+                printf("Error at index %d, %d, expected %f, got %f\n", i, j, C_computed[i][j], matrix_C[i][j]);
                 break;
             }
 

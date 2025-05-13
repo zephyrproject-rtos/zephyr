@@ -39,7 +39,7 @@ def main():
     header_content = "\n".join(header_lines)
     
     # Write the header file.
-    with open("matrices.hpp", "w") as f:
+    with open(f"matrices_{N}.hpp", "w") as f:
         f.write(header_content)
     
     print("Header file 'matrices.hpp' generated successfully.")
