@@ -341,7 +341,7 @@ typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps 
  *
  * See video_set_signal() for argument descriptions.
  */
-typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *signal);
+typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
 
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
@@ -706,11 +706,11 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
  * unregisters any previously registered signal.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param signal Pointer to k_poll_signal
+ * @param sig Pointer to k_poll_signal
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_set_signal(const struct device *dev, struct k_poll_signal *signal)
+static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
@@ -718,7 +718,7 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 		return -ENOSYS;
 	}
 
-	return api->set_signal(dev, signal);
+	return api->set_signal(dev, sig);
 }
 
 /**
