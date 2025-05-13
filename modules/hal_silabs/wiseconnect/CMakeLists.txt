@@ -22,6 +22,7 @@ zephyr_compile_definitions(
 zephyr_include_directories(
   ${SISDK_DIR}/platform/common/inc
   ${SISDK_DIR}/platform/common/config
+  ${SISDK_DIR}/platform/service/mem_pool/inc
   ${WISECONNECT_DIR}/components/board/silabs/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/inc
@@ -40,6 +41,7 @@ zephyr_include_directories(
 
 zephyr_library_sources(
   ${SISDK_DIR}/platform/common/src/sl_core_cortexm.c
+  ${SISDK_DIR}/platform/service/mem_pool/src/sl_mem_pool.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
@@ -155,7 +157,7 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform_wireless.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/memory/malloc_buffers.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
     ${WISECONNECT_DIR}/components/protocol/wifi/si91x/sl_wifi.c
