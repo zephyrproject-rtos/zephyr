@@ -82,9 +82,9 @@ Zephyr SDK installation
 
 .. tabs::
 
-   .. group-tab:: Ubuntu
+   .. group-tab:: Linux
 
-      .. _ubuntu_zephyr_sdk:
+      .. _linux_zephyr_sdk:
 
       #. Download and verify the `Zephyr SDK bundle`_:
 
