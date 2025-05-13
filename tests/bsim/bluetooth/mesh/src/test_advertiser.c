@@ -19,6 +19,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define WAIT_TIME 60 /*seconds*/
 
+enum suspending_ctx {
+	NOT_SUSPENDED,
+	SUSPENDED_IN_CTX,
+	SUSPENDED_IN_CB
+};
+
 extern const struct bt_mesh_comp comp;
 
 static uint8_t test_prov_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa };
@@ -796,7 +802,7 @@ static void adv_resume(void)
 }
 
 struct adv_suspend_ctx {
-	bool suspend;
+	enum suspending_ctx suspend;
 	int instance_idx;
 };
 
@@ -812,7 +818,7 @@ static void adv_send_end(int err, void *cb_data)
 
 	ASSERT_EQUAL(err, 0);
 
-	if (adv_data->suspend) {
+	if (adv_data->suspend != NOT_SUSPENDED) {
 		/* When suspending, the end callback will be called only for the first adv, because
 		 * it was already scheduled.
 		 */
@@ -831,8 +837,8 @@ static void adv_send_start(uint16_t duration, int err, void *cb_data)
 	LOG_DBG("start(): err (%d), suspend (%d), i (%d)", err, adv_data->suspend,
 		adv_data->instance_idx);
 
-	if (adv_data->suspend) {
-		if (adv_data->instance_idx == 0) {
+	if (adv_data->suspend != NOT_SUSPENDED) {
+		if (adv_data->instance_idx == 0 && adv_data->suspend == SUSPENDED_IN_CB) {
 			ASSERT_EQUAL(err, 0);
 			adv_suspend();
 		} else {
@@ -851,7 +857,8 @@ static void adv_send_start(uint16_t duration, int err, void *cb_data)
 	}
 }
 
-static void adv_create_and_send(bool suspend, uint8_t first_byte, struct adv_suspend_ctx *adv_data)
+static void adv_create_and_send(enum suspending_ctx suspend, uint8_t first_byte,
+				struct adv_suspend_ctx *adv_data)
 {
 	struct bt_mesh_adv *advs[CONFIG_BT_MESH_ADV_BUF_COUNT];
 	static const struct bt_mesh_send_cb send_cb = {
@@ -864,7 +871,7 @@ static void adv_create_and_send(bool suspend, uint8_t first_byte, struct adv_sus
 		adv_data[i].instance_idx = i;
 
 		advs[i] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
-					    BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
+					     BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
 		ASSERT_FALSE_MSG(!advs[i], "Out of advs\n");
 
 		net_buf_simple_add_u8(&advs[i]->b, first_byte);
@@ -877,17 +884,10 @@ static void adv_create_and_send(bool suspend, uint8_t first_byte, struct adv_sus
 	}
 }
 
-static void test_tx_disable(void)
+static void check_suspending(void)
 {
-	struct adv_suspend_ctx adv_data[CONFIG_BT_MESH_ADV_BUF_COUNT];
 	struct bt_mesh_adv *extra_adv;
 	int err;
-
-	bt_init();
-	adv_init();
-
-	/* Fill up the adv pool and suspend the advertiser in the first start callback call. */
-	adv_create_and_send(true, 0xAA, adv_data);
 
 	err = k_sem_take(&adv_suspended_sem, K_SECONDS(10));
 	ASSERT_OK_MSG(err, "Not all advs were sent");
@@ -895,11 +895,30 @@ static void test_tx_disable(void)
 	extra_adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				       BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
 	ASSERT_TRUE_MSG(!extra_adv, "Created adv while suspended");
+}
 
+static void test_tx_disable(void)
+{
+	struct adv_suspend_ctx adv_data[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	int err;
+
+	bt_init();
+	adv_init();
+
+	LOG_INF("Fill up the adv pool and suspend the advertiser right after in the same context.");
+	adv_create_and_send(SUSPENDED_IN_CTX, 0xAA, adv_data);
+	adv_suspend();
+	check_suspending();
 	adv_resume();
 
-	/* Fill up the adv pool and suspend the advertiser and let it send all advs. */
-	adv_create_and_send(false, 0xBB, adv_data);
+	LOG_INF("Fill up the adv pool and suspend the advertiser in the first start callback "
+		"call.");
+	adv_create_and_send(SUSPENDED_IN_CB, 0xAA, adv_data);
+	check_suspending();
+	adv_resume();
+
+	LOG_INF("Fill up the adv pool and suspend the advertiser and let it send all advs");
+	adv_create_and_send(NOT_SUSPENDED, 0xBB, adv_data);
 
 	err = k_sem_take(&adv_sent_sem, K_SECONDS(10));
 	ASSERT_OK_MSG(err, "Not all advs were sent");
