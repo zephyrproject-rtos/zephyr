@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <freq.h>
 
 /*
@@ -81,7 +82,8 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>;
 		zephyr,memory-region = "EXTMEM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	clocks {
@@ -767,6 +769,32 @@
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+		};
+
+		xspi1: spi@52005000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <105 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB5, 5U)>,
+				<&rcc STM32_SRC_PLL2_S XSPI1_SEL(1)>,
+				<&rcc STM32_CLOCK(AHB5, 14U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		xspi2: spi@5200a000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
+			interrupts = <106 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB5, 12U)>,
+				<&rcc STM32_SRC_PLL2_S XSPI2_SEL(1)>,
+				<&rcc STM32_CLOCK(AHB5, 14U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		rng: rng@48020000 {

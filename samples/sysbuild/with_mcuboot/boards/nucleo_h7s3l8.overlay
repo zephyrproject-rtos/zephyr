@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Define the device, controller and partition to be the external memory
+ * for running the application in external NOR from MCUboot
+ */
+/ {
+	chosen {
+		zephyr,flash = &mx25uw25645;
+		zephyr,flash-controller = &mx25uw25645;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
