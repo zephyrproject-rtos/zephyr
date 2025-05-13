@@ -21,15 +21,17 @@ static void counter_mspm0_isr(void *arg);
 
 struct counter_mspm0_data {
 	void *user_data;
+	uint32_t current_top;
 	counter_top_callback_t top_cb;
+	counter_alarm_callback_t alarm_cb;
 };
 
 struct counter_mspm0_config {
+	struct counter_config_info counter_info;
 	GPTIMER_Regs *base;
 	const struct mspm0_clockSys *clock_subsys;
 	DL_Timer_ClockConfig clk_config;
 	void (*irq_config_func)(const struct device *dev);
-	struct counter_config_info counter_info;
 };
 
 static int counter_mspm0_start(const struct device *dev)
@@ -94,6 +96,57 @@ static int counter_mspm0_set_top_value(const struct device *dev,
 	return 0;
 }
 
+static int counter_mspm0_set_alarm(const struct device *dev,
+				   uint8_t chan_id,
+				   const struct counter_alarm_cfg *alarm_cfg)
+{
+	const struct counter_mspm0_config *config = dev->config;
+	struct counter_mspm0_data *data = dev->data;
+
+	if (alarm_cfg->ticks > config->counter_info.max_top_value) {
+		return -ENOTSUP;
+	}
+
+	if (data->alarm_cb != NULL) {
+		LOG_DBG("Alarm busy\n");
+		return -EBUSY;
+	}
+
+	/* Due to limitation of Timer has no alarm function or interrmediate
+	 * interrupt, override top value as alarm ticks to get interrupt
+	 */
+	data->current_top = DL_Timer_getLoadValue(config->base);
+	data->alarm_cb = alarm_cfg->callback;
+	data->user_data = alarm_cfg->user_data;
+
+	DL_Timer_stopCounter(config->base);
+	DL_Timer_setCounterRepeatMode(config->base,
+				      DL_TIMER_REPEAT_MODE_DISABLED);
+	DL_Timer_setLoadValue(config->base, alarm_cfg->ticks);
+	DL_Timer_startCounter(config->base);
+	DL_Timer_clearInterruptStatus(config->base,
+				      DL_TIMER_INTERRUPT_LOAD_EVENT);
+	DL_Timer_enableInterrupt(config->base,
+				 DL_TIMER_INTERRUPT_LOAD_EVENT);
+
+	return 0;
+}
+
+int counter_mspm0_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_mspm0_config *config = dev->config;
+	struct counter_mspm0_data *data = dev->data;
+
+	DL_Timer_disableInterrupt(config->base,
+				  DL_TIMER_INTERRUPT_LOAD_EVENT);
+	DL_Timer_setLoadValue(config->base, data->current_top);
+	DL_Timer_setCounterRepeatMode(config->base,
+				      DL_TIMER_REPEAT_MODE_ENABLED);
+	DL_Timer_startCounter(config->base);
+
+	return 0;
+}
+
 static uint32_t counter_mspm0_get_pending_int(const struct device *dev)
 {
 	const struct counter_mspm0_config *config = dev->config;
@@ -135,6 +188,7 @@ static uint32_t counter_mspm0_get_freq(const struct device *dev)
 static int counter_mspm0_init(const struct device *dev)
 {
 	const struct counter_mspm0_config *config = dev->config;
+	struct counter_mspm0_data *data = dev->data;
 	DL_Timer_TimerConfig tim_config = {
 			.period = 0,
 			.timerMode = DL_TIMER_TIMER_MODE_PERIODIC_UP,
@@ -151,6 +205,7 @@ static int counter_mspm0_init(const struct device *dev)
 		DL_Timer_enablePower(config->base);
 	}
 
+	data->current_top = config->counter_info.max_top_value;
 	k_msleep(1);
 	DL_Timer_setClockConfig(config->base,
 				(DL_Timer_ClockConfig *)&config->clk_config);
@@ -171,6 +226,8 @@ static DEVICE_API(counter, mspm0_counter_api) = {
 	.get_pending_int = counter_mspm0_get_pending_int,
 	.get_top_value = counter_mspm0_get_top_value,
 	.get_freq = counter_mspm0_get_freq,
+	.cancel_alarm = counter_mspm0_cancel_alarm,
+	.set_alarm = counter_mspm0_set_alarm,
 };
 
 static void counter_mspm0_isr(void *arg)
@@ -189,6 +246,10 @@ static void counter_mspm0_isr(void *arg)
 	counter_mspm0_get_value(dev, &now);
 	if (data->top_cb) {
 		data->top_cb(dev, data->user_data);
+	} else if (data->alarm_cb) {
+		counter_alarm_callback_t alarm_cb = data->alarm_cb;
+		data->alarm_cb = NULL;
+		alarm_cb(dev, 0, now, data->user_data);
 	}
 }
 
