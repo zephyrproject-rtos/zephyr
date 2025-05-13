@@ -109,7 +109,13 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#if NRF_TIMER_HAS_SHUTDOWN
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+#else
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+#endif
+
 #ifdef COUNTER_ANY_FAST
 	struct counter_nrfx_data *data = dev->data;
 
