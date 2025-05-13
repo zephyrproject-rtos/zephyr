@@ -5,13 +5,14 @@ common:
   tags:
     - cellular
     - modem
+  filter: dt_alias_exists("modem")
 tests:
   sample.net.cellular_modem:
-    tags:
-      - cellular
-      - modem
-    filter: dt_alias_exists("modem")
     platform_allow:
       - b_u585i_iot02a
     integration_platforms:
       - b_u585i_iot02a
+  sample.net.cellular_modem.mikroe_lte_iot10_click:
+    extra_args:
+      - SHIELD=mikroe_lte_iot10_click
+    platform_allow: ek_ra6m4
