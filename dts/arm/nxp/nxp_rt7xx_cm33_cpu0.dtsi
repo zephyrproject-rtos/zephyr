@@ -1003,6 +1003,30 @@
 		status = "disabled";
 	};
 
+	usdhc0: usdhc@412000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x412000 0x1000>;
+		status = "disabled";
+		interrupts = <37 0>;
+		clocks = <&clkctl4 MCUX_USDHC1_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
+	usdhc1: usdhc@413000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x413000 0x1000>;
+		status = "disabled";
+		interrupts = <38 0>;
+		clocks = <&clkctl4 MCUX_USDHC2_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
 	mrt0: mrt@2d000 {
 		compatible = "nxp,mrt";
 		reg = <0x2d000 0x100>;
