@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 list(APPEND TOOLCHAIN_C_FLAGS)
-list(APPEND TOOLCHAIN_C_FLAGS  -mlittle-endian-data -ffunction-sections -fdata-sections)
+list(APPEND TOOLCHAIN_C_FLAGS  -mlittle-endian-data -ffunction-sections -fdata-sections -m64bit-doubles)
 
 list(APPEND TOOLCHAIN_LD_FLAGS)
 list(APPEND TOOLCHAIN_LD_FLAGS -mlittle-endian-data)
