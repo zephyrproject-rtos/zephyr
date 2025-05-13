@@ -5806,3 +5806,19 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+RX arch:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  files:
+    - arch/rx/
+    - include/zephyr/arch/rx/
+    - dts/rx/
+    - boards/qemu/rx/
+    - soc/renesas/rx/
+    - tests/arch/rx/
+  labels:
+    - "area: RX"
+  tests:
+    - arch.rx
