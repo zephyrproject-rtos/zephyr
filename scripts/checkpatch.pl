@@ -5643,7 +5643,7 @@ sub process {
 # function declarations
 		if ($line =~ /^\+.*$String/ &&
 		    defined($context_function) &&
-		    get_quoted_string($line, $rawline) =~ /\b$context_function\b/ &&
+		    get_quoted_string($line, $rawline) =~ /%s.*\b$context_function\b/ &&
 		    length(get_quoted_string($line, $rawline)) != (length($context_function) + 2)) {
 			WARN("EMBEDDED_FUNCTION_NAME",
 			     "Prefer using '\"%s...\", __func__' to using '$context_function', this function's name, in a string\n" . $herecurr);
