@@ -1456,16 +1456,23 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            auth_name, auth_email, body = git(
-                'show', '-s', '--format=%an%n%ae%n%b', shaidx
-            ).split('\n', 2)
+            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
+
+            failures = []
+
+            if len(commit_info) == 2:
+                failures.append(f'{shaidx}: Empty commit message body')
+                auth_name, auth_email = commit_info
+                body = ''
+            elif len(commit_info) == 3:
+                auth_name, auth_email, body = commit_info
+            else:
+                self.failure(f'Unable to parse commit message for {shaidx}')
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
             detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
                                        re.IGNORECASE)
-
-            failures = []
 
             if auth_email.endswith("@users.noreply.github.com"):
                 failures.append(f"{shaidx}: author email ({auth_email}) must "
