@@ -463,7 +463,10 @@ struct video_ctrl_query {
 	/** control range */
 	struct video_ctrl_range range;
 	/** menu if control is of menu type */
-	const char *const *menu;
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
+	};
 };
 
 /**
