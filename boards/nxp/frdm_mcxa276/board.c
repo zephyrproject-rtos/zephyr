@@ -188,6 +188,20 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClockDiv(kCLOCK_DivADC, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_ADC);
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_EnableClock(kCLOCK_GateADC1);
+#endif
+
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*
