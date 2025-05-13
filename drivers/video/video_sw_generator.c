@@ -40,7 +40,7 @@ struct video_sw_generator_data {
 	struct k_work_delayable buf_work;
 	struct k_work_sync work_sync;
 	int pattern;
-	struct k_poll_signal *signal;
+	struct k_poll_signal *sig;
 	uint32_t frame_rate;
 };
 
@@ -163,8 +163,8 @@ static void __buffer_work(struct k_work *work)
 
 	k_fifo_put(&data->fifo_out, vbuf);
 
-	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
-		k_poll_signal_raise(data->signal, VIDEO_BUF_DONE);
+	if (IS_ENABLED(CONFIG_POLL) && data->sig) {
+		k_poll_signal_raise(data->sig, VIDEO_BUF_DONE);
 	}
 
 	k_yield();
@@ -205,8 +205,8 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 	} else {
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
-				k_poll_signal_raise(data->signal, VIDEO_BUF_ABORTED);
+			if (IS_ENABLED(CONFIG_POLL) && data->sig) {
+				k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
 			}
 		}
 	}
@@ -226,15 +226,15 @@ static int video_sw_generator_get_caps(const struct device *dev, struct video_ca
 }
 
 #ifdef CONFIG_POLL
-static int video_sw_generator_set_signal(const struct device *dev, struct k_poll_signal *signal)
+static int video_sw_generator_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (data->signal && signal != NULL) {
+	if (data->sig && sig != NULL) {
 		return -EALREADY;
 	}
 
-	data->signal = signal;
+	data->sig = sig;
 
 	return 0;
 }

@@ -32,7 +32,7 @@ struct video_mcux_csi_data {
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	struct k_poll_signal *signal;
+	struct k_poll_signal *sig;
 };
 
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
@@ -92,8 +92,8 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 
 done:
 	/* Trigger Event */
-	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
-		k_poll_signal_raise(data->signal, result);
+	if (IS_ENABLED(CONFIG_POLL) && data->sig) {
+		k_poll_signal_raise(data->sig, result);
 	}
 
 	return;
@@ -246,8 +246,8 @@ static int video_mcux_csi_flush(const struct device *dev, bool cancel)
 
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
-				k_poll_signal_raise(data->signal, VIDEO_BUF_ABORTED);
+			if (IS_ENABLED(CONFIG_POLL) && data->sig) {
+				k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
 			}
 		}
 	}
@@ -371,15 +371,15 @@ static int video_mcux_csi_init(const struct device *dev)
 }
 
 #ifdef CONFIG_POLL
-static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_signal *signal)
+static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
 	struct video_mcux_csi_data *data = dev->data;
 
-	if (data->signal && signal != NULL) {
+	if (data->sig && sig != NULL) {
 		return -EALREADY;
 	}
 
-	data->signal = signal;
+	data->sig = sig;
 
 	return 0;
 }
