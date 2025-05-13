@@ -18,6 +18,7 @@ supported:
   - uart
   - flash
   - adc
+  - i2c
   - watchdog
   - counter
   - dma
