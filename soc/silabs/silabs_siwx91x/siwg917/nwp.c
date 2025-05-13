@@ -22,9 +22,9 @@
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
-BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(196) ||
-	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(256) ||
-	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(320));
+BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
+	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
+	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
 int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
 {
@@ -49,11 +49,12 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 
 	__ASSERT(get_config, "get_config cannot be NULL");
 
-	if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(196)) {
+	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
+	if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(256)) {
+	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(320)) {
+	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
 	} else {
 		 k_panic();

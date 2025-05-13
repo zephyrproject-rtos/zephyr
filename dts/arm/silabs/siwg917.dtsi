@@ -27,19 +27,28 @@
 		};
 	};
 
-	sram0: memory@0 {
+	/* The first 1KB of SRAM is reserved for the NWP (Network Processor).
+	 * It also protects against null pointer exceptions.
+	 */
+	nwp_reserved: memory@0 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(1)>;
+		zephyr,memory-region = "NWP_RESERVED_RAM";
+	};
+
+	sram0: memory@400 {
 		compatible = "mmio-sram";
-		/* siwx91x has 672kB of SRAM shared between the Cortex-M4
+		/* siwx91x has 671kB of SRAM shared between the Cortex-M4
 		 * (Zephyr) and the NWP (Network Processor). 3 memory
 		 * configurations are
 		 * possible:
-		 *  - 196kB
-		 *  - 256kB
-		 *  - 320kB
+		 *  - 195kB
+		 *  - 255kB
+		 *  - 319kB
 		 * Less memory is allocated to Zephyr, more memory is allocated
 		 * to NWP, better are the WiFi and BLE performances.
 		 */
-		reg = <0x00000000 DT_SIZE_K(256)>;
+		reg = <0x00000400 DT_SIZE_K(255)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
