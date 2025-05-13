@@ -544,8 +544,6 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	struct net_pkt *pkt = NULL;
 	uint32_t timeout = UINT32_MAX;
 
-	iface->config.dhcpv4.xid++;
-
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
@@ -976,6 +974,13 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 		if (type == DHCPV4_OPTIONS_END) {
 			NET_DBG("options_end");
 			goto end;
+		}
+
+		if (type == DHCPV4_OPTIONS_PAD) {
+			/* Pad option has a fixed 1-byte length and should be
+			 * ignored.
+			 */
+			continue;
 		}
 
 		if (net_pkt_read_u8(pkt, &length)) {
@@ -1680,8 +1685,11 @@ const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type)
 		"inform"
 	};
 
-	__ASSERT_NO_MSG(msg_type >= 1 && msg_type <= sizeof(name));
-	return name[msg_type - 1];
+	if (msg_type >= 1 && msg_type <= sizeof(name)) {
+		return name[msg_type - 1];
+	}
+
+	return "invalid";
 }
 
 static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
