@@ -188,7 +188,8 @@
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
-			num-lines = <16>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			num-lines = <64>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
 				     <10 0>, <23 0>, <40 0>;
 			interrupt-names = "line0", "line1", "line2-TSC", "line3",
