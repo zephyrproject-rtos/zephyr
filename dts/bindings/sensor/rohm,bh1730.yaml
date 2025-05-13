@@ -1,0 +1,37 @@
+# Copyright (c) 2025, Borislav Kereziev
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rohm BH1730 ambient light sensor.
+
+compatible: "rohm,bh1730"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  gain:
+    type: int
+    default: 0
+    description: |
+      ADC resolution setting
+      0 = x1 gain mode
+      1 = x2 gain mode
+      2 = x64 gain mode
+      3 = x128 gain mode
+      Lower gain values (x1 and x2) reduce sensitivity and prevent
+      saturation in brighter environments.
+      Higher gain values (x64 and x128) result in higher sensitivity,
+      which are useful in low-light environments.
+      The default corresponds to the reset value of the GAIN register.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+  itime:
+    type: int
+    default: 0xDA
+    description: |
+      ITIME value in TIMING register determines integration time.
+      Higher values result in longer integration time and
+      increased accuracy.
+      The default corresponds to the reset value of the TIMING register.
