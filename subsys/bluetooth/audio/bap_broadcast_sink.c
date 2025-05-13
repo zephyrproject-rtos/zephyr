@@ -153,6 +153,7 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 					  uint8_t reason)
 {
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	bool sink_is_streaming = false;
 	int err;
 
 	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
@@ -171,10 +172,21 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 		/* Sync failed due to bad broadcast code */
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	} else {
-		mod_src_param.encrypt_state = recv_state->encrypt_state;
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	}
 
-	if (reason != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+	/* Determine if the previous receive state reported that streaming was active
+	 * If it was previously active, then we need to set the BIS_sync state to 0
+	 * (not streaming), and if not then we consider this a BIG Sync failure and
+	 * set BT_BAP_BIS_SYNC_FAILED
+	 */
+	for (uint8_t i = 0U; i < recv_state->num_subgroups && !sink_is_streaming; i++) {
+		sink_is_streaming = recv_state->subgroups[i].bis_sync != 0 &&
+				    recv_state->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_FAILED;
+	}
+
+	if (!sink_is_streaming) {
+		/* BASS spec 3.1.1.5: Set Sync Failed when the server fails to sync to the BIG */
 		for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 			mod_src_param.subgroups[i].bis_sync = BT_BAP_BIS_SYNC_FAILED;
 		}
