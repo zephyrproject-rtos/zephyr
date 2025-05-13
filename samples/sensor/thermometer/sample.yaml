@@ -35,6 +35,7 @@ tests:
         - "Temperature is [0-9|.]+°C"
     integration_platforms:
       - frdm_mcxn947/mcxn947/cpu0 # p3t1755
+      - frdm_mcxa153              # p3t1755
     depends_on:
       - i3c
     filter: dt_alias_exists("ambient-temp0")
