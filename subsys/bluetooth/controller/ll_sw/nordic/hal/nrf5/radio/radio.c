@@ -2214,11 +2214,16 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
+
+#define NRF_CCM_WORKAROUND_XXXX_MAXPACKETSIZE_EXTRA 1U
+
 	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
 				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
-	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+	NRF_CCM->MAXPACKETSIZE =
+		MAX(MIN((max_len - 4U + NRF_CCM_WORKAROUND_XXXX_MAXPACKETSIZE_EXTRA), 0x00FB),
+		    0x001B);
 #endif
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
