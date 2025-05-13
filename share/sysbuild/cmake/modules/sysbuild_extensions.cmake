@@ -388,6 +388,17 @@ function(ExternalZephyrProject_Add)
 
   if(DEFINED ZBUILD_APP_TYPE)
     list(APPEND image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
+    set(image_default_dtc_overlay "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.overlay")
+
+    if(EXISTS ${image_default_dtc_overlay})
+      if(NOT ${image_default_dtc_overlay} IN_LIST ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE)
+        list(APPEND ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE ${image_default_dtc_overlay})
+        set(${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE
+            ${${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE}
+            CACHE INTERNAL "Application extra DTC overlay file" FORCE
+        )
+      endif()
+    endif()
   endif()
 
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT "${image_default}")
