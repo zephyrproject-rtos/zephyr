@@ -64,6 +64,7 @@ config MCUMGR_GRP_IMG_VERBOSE_ERR
 
 config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
 	bool "Allow to confirm secondary slot of non-active image"
+	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	default y
 	help
 	  Allows to confirm secondary (non-active) slot of non-active image.
@@ -74,6 +75,7 @@ config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
 
 config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
 	bool "Allow to confirm slots of non-active image"
+	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	select MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
 	help
 	  Allows to confirm any slot of non-active image.
@@ -82,18 +84,18 @@ config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
 	  broken and may not boot in other slot; instead application should
 	  have means to test and confirm the image.
 
-if !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
 	bool "Allow to erase pending slot"
+	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	default y
 	help
 	  Allows erasing secondary slot which is marked for test or confirmed; this allows
 	  erasing slots that have been set for next boot but the device has not
 	  reset yet, so has not yet been swapped.
-endif
 
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
+	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	help
 	  Enables directly uploading image to selected image partition.
 	  This changes how "image" is understood by MCUmgr: normally MCUmgr allows uploading to
@@ -106,6 +108,7 @@ config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 
 config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
+	depends on MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP || MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	help
 	  When enabled, the MCUmgr will compare base address of application,
 	  encoded into .bin file header with use of imgtool, on upload and will
