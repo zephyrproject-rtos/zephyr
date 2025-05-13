@@ -193,9 +193,6 @@ def process_pr(gh, maintainer_file, number):
                 gh_user = gh.get_user(collaborator)
                 if pr.user == gh_user or gh_user in existing_reviewers:
                     continue
-                if not gh_repo.has_in_collaborators(gh_user):
-                    log(f"Skip '{collaborator}': not in collaborators")
-                    continue
                 if gh_user in self_removal:
                     log(f"Skip '{collaborator}': self removed")
                     continue
@@ -208,12 +205,13 @@ def process_pr(gh, maintainer_file, number):
             reviewers = reviewers[:reviewer_vacancy]
 
             if reviewers:
-                try:
-                    log(f"adding reviewers {reviewers}...")
-                    if not args.dry_run:
-                        pr.create_review_request(reviewers=reviewers)
-                except GithubException:
-                    log("cant add reviewer")
+                log(f"adding reviewers {reviewers}...")
+                for r in reviewers:
+                    try:
+                        if not args.dry_run:
+                            pr.create_review_request(reviewers=[r])
+                    except GithubException:
+                        log(f"can't add reviewer {r}")
         else:
             log("not adding reviewers because the existing reviewer count is greater than or "
                 "equal to 15")
