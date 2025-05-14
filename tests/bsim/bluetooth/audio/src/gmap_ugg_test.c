@@ -187,6 +187,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	printk("Started stream %p\n", stream);
 
@@ -935,6 +936,20 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 	}
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+
+	ARRAY_FOR_EACH_PTR(unicast_streams, unicast_stream) {
+		if (bap_stream_rx_can_recv(&unicast_stream->stream.stream.bap_stream) &&
+		    audio_test_stream_is_streaming(&unicast_stream->stream)) {
+			WAIT_FOR_FLAG(unicast_stream->stream.flag_audio_received);
+		}
+	}
+
+	printk("Data received\n");
+}
+
 static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 {
 	struct bt_cap_unicast_group *unicast_group;
@@ -994,8 +1009,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 	}
 
 	if (expect_rx) {
-		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		wait_for_data();
 	}
 
 	cap_initiator_unicast_audio_stop(unicast_group);
