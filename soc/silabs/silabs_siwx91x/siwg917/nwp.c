@@ -28,6 +28,126 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
+static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config)
+{
+	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
+	size_t sram_size = DT_REG_SIZE(DT_CHOSEN(zephyr_sram));
+
+	if (sram_size == KB(195)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
+	} else if (sram_size == KB(255)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
+	} else if (sram_size == KB(319)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
+	} else {
+		k_panic();
+	}
+}
+
+static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_config)
+{
+	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
+	const bool bt_enabled = IS_ENABLED(CONFIG_BT_SILABS_SIWX91X);
+
+	boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
+
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
+		boot_config->custom_feature_bit_map |=
+			SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
+	}
+
+	if (wifi_enabled && bt_enabled) {
+		boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
+	} else if (wifi_enabled) {
+		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+	} else {
+		/*
+		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
+		 */
+		boot_config->coex_mode = SL_SI91X_BLE_MODE;
+	}
+
+#ifdef CONFIG_WIFI_SILABS_SIWX91X
+	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
+	boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W |
+			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+#endif
+
+#ifdef CONFIG_BT_SILABS_SIWX91X
+	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
+	boot_config->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
+	boot_config->ble_feature_bit_map |=
+			SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
+			SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
+			SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
+			SL_SI91X_BLE_MAX_NBR_ATT_REC(RSI_BLE_MAX_NBR_ATT_REC) |
+			SL_SI91X_BLE_PWR_INX(RSI_BLE_PWR_INX) |
+			SL_SI91X_BLE_PWR_SAVE_OPTIONS(RSI_BLE_PWR_SAVE_OPTIONS) |
+			SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
+			SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
+
+	boot_config->ble_ext_feature_bit_map |=
+			SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
+			SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) |
+			SL_SI91X_BLE_ENABLE_ADV_EXTN |
+			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
+#endif
+}
+
+static void siwx91x_configure_ap_mode(sl_si91x_boot_configuration_t *boot_config,
+				      bool hidden_ssid, uint8_t max_num_sta)
+{
+	boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
+	boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+	boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+
+	if (hidden_ssid) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
+	}
+
+	boot_config->custom_feature_bit_map |= SL_WIFI_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(max_num_sta);
+
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		LOG_WRN("Bluetooth is not supported in AP mode");
+	}
+}
+
+static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_config,
+					    uint8_t wifi_oper_mode)
+{
+	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
+		return;
+	}
+
+	boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
+	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
+
+		if (wifi_oper_mode == WIFI_STA_MODE) {
+			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
+		} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
+			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
+		} else {
+			/* No DHCPv6 configuration needed for other modes */
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		if (wifi_oper_mode == WIFI_STA_MODE) {
+			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
+		} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
+			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
+		} else {
+			/* No DHCPv4 configuration needed for other modes */
+		}
+	}
+}
+
 int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t wifi_oper_mode,
 			   bool hidden_ssid, uint8_t max_num_sta)
 {
@@ -52,6 +172,7 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 				SL_SI91X_EXT_FEAT_XTAL_CLK,
 		}
 	};
+
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
@@ -63,128 +184,23 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 		return -EINVAL;
 	}
 
-	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
-	if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
-	} else {
-		 k_panic();
-	}
+	siwx91x_apply_sram_config(boot_config);
 
-	if (wifi_oper_mode == WIFI_STA_MODE) {
-		boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
-
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
-			boot_config->custom_feature_bit_map |=
-				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
-		}
-
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) &&
-		    IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-			boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
-		} else if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-			boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-		} else if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-			boot_config->coex_mode = SL_SI91X_BLE_MODE;
-		} else {
-			/*
-			 * Even if neither WiFi or BLE is used we have to specify a Coex mode
-			 */
-			boot_config->coex_mode = SL_SI91X_BLE_MODE;
-		}
-
-#ifdef CONFIG_WIFI_SILABS_SIWX91X
-		boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
-#endif
-
-#ifdef CONFIG_BT_SILABS_SIWX91X
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
-		boot_config->bt_feature_bit_map |=
-			SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
-		boot_config->ble_feature_bit_map |=
-			SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
-			SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
-			SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
-			SL_SI91X_BLE_MAX_NBR_ATT_REC(RSI_BLE_MAX_NBR_ATT_REC) |
-			SL_SI91X_BLE_PWR_INX(RSI_BLE_PWR_INX) |
-			SL_SI91X_BLE_PWR_SAVE_OPTIONS(RSI_BLE_PWR_SAVE_OPTIONS) |
-			SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
-			SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
-		boot_config->ble_ext_feature_bit_map |=
-			SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
-			SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) |
-			SL_SI91X_BLE_ENABLE_ADV_EXTN |
-			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
-#endif
-	} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
-		boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
-		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
-
-		if (hidden_ssid) {
-			boot_config->custom_feature_bit_map |=
-				SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
-		}
-
-		boot_config->custom_feature_bit_map |=
-			SL_WIFI_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(max_num_sta);
-
-		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-			LOG_WRN("Bluetooth is not supported in AP mode");
-		}
-
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
-			boot_config->custom_feature_bit_map |=
-				SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
-		}
-
-	} else {
+	switch (wifi_oper_mode) {
+	case WIFI_STA_MODE:
+		siwx91x_configure_sta_mode(boot_config);
+		break;
+	case WIFI_SOFTAP_MODE:
+		siwx91x_configure_ap_mode(boot_config, hidden_ssid, max_num_sta);
+		break;
+	default:
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_WIFI_SILABS_SIWX91X
-	if (!IS_ENABLED(CONFIG_PM)) {
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		siwx91x_configure_network_stack(boot_config, wifi_oper_mode);
 	}
 
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
-		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
-		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
-		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
-
-		if (IS_ENABLED(CONFIG_NET_IPV6)) {
-			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
-			if (wifi_oper_mode == WIFI_STA_MODE) {
-				boot_config->tcp_ip_feature_bit_map |=
-					SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
-			} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
-				boot_config->tcp_ip_feature_bit_map |=
-					SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
-			} else {
-				/* No DHCPv6 configuration needed for other modes */
-			}
-		}
-
-		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			if (wifi_oper_mode == WIFI_STA_MODE) {
-				boot_config->tcp_ip_feature_bit_map |=
-					SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
-			} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
-				boot_config->tcp_ip_feature_bit_map |=
-					SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
-			} else {
-				/* No DHCPv4 configuration needed for other modes */
-			}
-		}
-	} else {
-		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
-	}
-#endif
 	memcpy(get_config, &default_config, sizeof(default_config));
 	return 0;
 }
