@@ -1,0 +1,15 @@
+{
+    "policy": {
+        "platform": "cyw20829",
+        "version": 2.0,
+        "type": "no_secure"
+    },
+    "device_policy":
+    {
+        "flow_control":
+        {
+            "target_lcs": {
+            }
+        }
+    }
+}
