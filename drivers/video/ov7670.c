@@ -554,7 +554,7 @@ static int ov7670_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_YUYV;
 	fmt.width = 640;
 	fmt.height = 480;
-	fmt.pitch = fmt.width * 2;
+	fmt.pitch = fmt.width * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 	ret = ov7670_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;
