@@ -1,0 +1,350 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+		zephyr,entropy = &rng;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			cpu-power-states = <&state0 &state1 &state2>;
+		};
+
+		power-states {
+			state0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <350>;
+			};
+
+			state1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <350>;
+				exit-latency-us = <150>;
+			};
+
+			/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force */
+			state2: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+				status = "disabled";
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	uartclk: uart-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		flash_controller: flash-controller@40021000 {
+			compatible = "ti,cc27xx-flash-controller";
+			reg = <0x40021000 0x418>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Main flash sector */
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+
+			/* CCFG flash sector */
+			flash1: flash@4e020000 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+
+			/* SCFG flash sector */
+			flash2: flash@4e040000 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+		};
+
+		gpio0: gpio@40023000 {
+			compatible = "ti,cc27xx-gpio";
+			reg = <0x40023000 0x814>;
+			interrupts = <5 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <33>;
+		};
+
+		pinctrl: pinctrl@40003000 {
+			compatible = "ti,cc27xx-pinctrl";
+			reg = <0x40003000 0xc1c>;
+		};
+
+		uart0: uart@40034000 {
+			compatible = "ti,lpf3-uart";
+			reg = <0x40034000 0x4c>;
+			interrupts = <11 0>;
+			clocks = <&uartclk>;
+			ti,clkctl-id = <0x4>; /* CLKCTL_UART0 */
+			dmas = <&dma 2 6>, <&dma 3 7>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		uart1: uart@40035000 {
+			compatible = "ti,lpf3-uart";
+			reg = <0x40035000 0x4c>;
+			interrupts = <22 0>;
+			clocks = <&uartclk>;
+			ti,clkctl-id = <0x8>; /* CLKCTL_UART1 */
+			dmas = <&dma 1 12>, <&dma 0 13>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40038000 {
+			compatible = "ti,cc23xx-cc27xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40038000 0x820>;
+			interrupts = <12 0>;
+			status = "disabled";
+		};
+
+		spi0: spi@40030000 {
+			compatible = "ti,cc23x0-cc27xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40030000 0x164>;
+			clock-id = <0x400>;	/* CLKCTL_SPI0 */
+			interrupts = <10 0>;
+			dmas = <&dma 0 0>, <&dma 1 1>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		spi1: spi@40031000 {
+			compatible = "ti,cc23x0-cc27xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40031000 0x164>;
+			clock-id = <0x800>;	/* CLKCTL_SPI1 */
+			interrupts = <23 0>;
+			dmas = <&dma 6 10>, <&dma 7 11>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2s0: i2s@400c1000 {
+			compatible = "ti,cc27xx-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400c1000 0x100>;
+			interrupts = <20 0>;
+			afclk-source = <0x02>; /* CLKAF (AFOSC) */
+			afosc-freq = <98304000>; /* 98.304 MHz for 48 kHz family */
+			cclk-divider = <40>; /* CCLK = AFCLK / 40 = 2.4576 MHz */
+			startup-delay = <2>; /* 2 WS cycles delay */
+			pin-dir-sd0 = <0x02>;  /* OUTPUT (TX to codec) */
+			pin-dir-sd1 = <0x01>;  /* INPUT (RX from codec) */
+			status = "disabled";
+		};
+
+		aes: aes@400c0000 {
+			compatible = "ti,cc23xx-cc27xx-aes";
+			reg = <0x400c0000 0x120>;
+			interrupts = <9 0>;
+			dmas = <&dma 4 3>, <&dma 5 4>;
+			dma-names = "cha", "chb";
+			status = "disabled";
+		};
+
+		rng: entropy {
+			compatible = "ti,cc27xx-rng", "simple-bus";
+			status = "disabled";
+		};
+
+		dma: dma@400c4000 {
+			compatible = "ti,lpf3-dma";
+			reg = <0x400c4000 0x524>;
+			interrupts = <8 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		adc0: adc@40050000 {
+			compatible = "ti,lpf3-adc";
+			reg = <0x40050000 0xe30>;
+			interrupts = <15 0>;
+			#io-channel-cells = <1>;
+			dmas = <&dma 3 5>;
+			dma-names = "dma";
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40001000 {
+			compatible = "ti,lpf3-wdt";
+			reg = <0x40001000 0x1000>;
+			status = "disabled";
+		};
+
+		rtc: rtc@40002000 {
+			compatible = "ti,lpf3-rtc-timer";
+			reg = <0x40002000 0x68>;
+			interrupts = <30 0>;
+			status = "disabled";
+		};
+
+		lgpt0: lgpt@40060000 {
+			compatible = "ti,cc27xx-lgpt";
+			reg = <0x40060000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <13 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+
+			pwm0: pwm0 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <0>;
+				status = "disabled";
+			};
+
+			pwm1: pwm1 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <1>;
+				status = "disabled";
+			};
+
+			pwm2: pwm2 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <2>;
+				status = "disabled";
+			};
+		};
+
+		lgpt1: lgpt@40061000 {
+			compatible = "ti,cc27xx-lgpt";
+			reg = <0x40061000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <14 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+
+			pwm3: pwm0 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <0>;
+				status = "disabled";
+			};
+
+			pwm4: pwm1 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <1>;
+				status = "disabled";
+			};
+
+			pwm5: pwm2 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <2>;
+				status = "disabled";
+			};
+		};
+
+		lgpt2: lgpt@40062000 {
+			compatible = "ti,cc27xx-lgpt";
+			reg = <0x40062000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <18 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+
+			pwm6: pwm0 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <0>;
+				status = "disabled";
+			};
+
+			pwm7: pwm1 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <1>;
+				status = "disabled";
+			};
+
+			pwm8: pwm2 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <2>;
+				status = "disabled";
+			};
+		};
+
+		lgpt3: lgpt@40063000 {
+			compatible = "ti,cc27xx-lgpt";
+			reg = <0x40063000 0x1d2>;
+			max-top-value = <0xffffff>;
+			interrupts = <19 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+
+			pwm9: pwm0 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <0>;
+				status = "disabled";
+			};
+
+			pwm10: pwm1 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <1>;
+				status = "disabled";
+			};
+
+			pwm11: pwm2 {
+				compatible = "ti,cc27xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				ti,output-index = <2>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>; /* Interrupt levels are 0-192 in steps of 64 */
+};
+
+&systick {
+	status = "disabled";
+};

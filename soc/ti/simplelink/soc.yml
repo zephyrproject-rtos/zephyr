@@ -18,6 +18,9 @@ family:
     socs:
     - name: cc2340r5
     - name: cc2340r53
+  - name: cc27xx
+    socs:
+    - name: cc2745r10_q1
   - name: cc32xx
     socs:
     - name: cc3220sf

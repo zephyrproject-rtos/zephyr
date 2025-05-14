@@ -1,0 +1,500 @@
+# Copyright (c) 2025-2026 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC27XX
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_SAU
+	select CPU_CORTEX_M_HAS_VTOR
+	select TICKLESS_KERNEL
+	select DYNAMIC_INTERRUPTS
+	select HAS_TI_SCFG if !BOOTLOADER_MCUBOOT
+	select HAS_TI_CCFG if !BOOTLOADER_MCUBOOT
+	select TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	select EVENTS
+	select THREAD_STACK_INFO
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
+	select PM_DEVICE if PM
+	select HAS_POWEROFF
+
+
+menu "Customer Configuration (CCFG)"
+depends on SOC_SERIES_CC27XX
+
+menu "Bootloader Configuration"
+
+choice CC27XX_BLDR_VTOR_TYPE
+	prompt "Pointer to user bootloader vector table"
+	default CC27XX_BLDR_VTOR_TYPE_USE_FCFG
+
+config CC27XX_BLDR_VTOR_TYPE_UNDEF
+	bool "ROM serial bootloader"
+
+config CC27XX_BLDR_VTOR_TYPE_FORBID
+	bool "No bootloader invoked"
+
+config CC27XX_BLDR_VTOR_TYPE_USE_FCFG
+	bool "Use factory configuration"
+
+config CC27XX_BLDR_VTOR_TYPE_FLASH
+	bool "Use valid main flash address"
+
+endchoice # CC27XX_BLDR_VTOR_TYPE
+
+config CC27XX_BLDR_VTOR_FLASH
+	hex "User bootloader vector table address" if CC27XX_BLDR_VTOR_TYPE_FLASH
+	range 0 0x0effffff
+	default 0
+	help
+	  Whether a bootloader is run or not and where bootloader parameters are picked from
+	  depends on this address. If a bootloader is selected then that bootloader is always
+	  invoked as part of the boot process.
+
+config CC27XX_BLDR_ENABLED
+	bool "Bootloader commands"
+	default n
+	help
+	  If n, bootloader ignores all commands.
+
+config CC27XX_SERIAL_IO_CFG_INDEX
+	int "Serial IO configuration index"
+	range 0 7
+	default 0
+	help
+	  Index of which I/O mapping to use for UART/SPI.
+
+config CC27XX_PIN_TRIGGER_ENABLED
+	bool "Pin trigger"
+	default n
+	help
+	  If n, bootloader unconditionally triggers. Else normal pin trigger check is performed.
+
+config CC27XX_PIN_TRIGGER_DIO
+	int "Trigger DIO pin" if CC27XX_PIN_TRIGGER_ENABLED
+	range 0 63
+	default 0
+	help
+	  Index of DIO pin to use for pin trigger check.
+
+config CC27XX_PIN_TRIGGER_LEVEL_HI
+	bool "Trigger level high" if CC27XX_PIN_TRIGGER_ENABLED
+	default n
+	help
+	  Level on trigger pin that triggers bootloader.
+	  n = Low, y = High.
+
+config CC27XX_P_APP_VTOR
+	hex "Application vector table address"
+	range 0 0xffffffff
+	default 0x00000000
+	help
+	  User application start address.
+
+endmenu # "Bootloader Configuration"
+menu "Hardware Options"
+
+config CC27XX_HW_OPTS_1
+	hex "Hardware options 1"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask defining which peripherals/features and how much memory is accessible.
+
+config CC27XX_HW_OPTS_2
+	hex "Hardware options 2"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask defining which peripherals/features and how much memory is accessible.
+
+endmenu # "Hardware Options"
+
+menu "Device Permission Settings"
+
+config CC27XX_ALLOW_DEBUG_PORT
+	bool "Allow enabling of SWD port"
+	default y
+	help
+	  If n, then the SWD port is disabled altogether at a certain point in boot before
+	  invoking either bootloader or application.
+
+config CC27XX_ALLOW_ENERGY_TRACE
+	bool "Allow using EnergyTrace power analyzer tool"
+	default y
+	help
+	  EnergyTrace software is an energy-based code analysis tool that measures
+	  and displays the energy profile of an application and helps optimize it for
+	  ultra-low-power consumption.
+
+config CC27XX_ALLOW_FLASH_VERIFY
+	bool "Allow flash verify by SACI"
+	default y
+	help
+	  Determines whether flash verify commands are allowed. These commands only check integrity
+	  against a provided CRC32 value, never return any flash contents. Flash verify commands
+	  are always allowed after a chip erase and until the first reset after the CCFG sector has
+	  been programmed.
+
+config CC27XX_ALLOW_FLASH_PROGRAM
+	bool "Allow flash program by SACI"
+	default y
+	help
+	  Determines whether flash programming commands are allowed.
+	  Reset to allowed after a chip erase.
+
+config CC27XX_ALLOW_CHIP_ERASE
+	bool "Allow chip erase by SACI"
+	default y
+	help
+	  Determines whether the chip erase command is allowed.
+
+config CC27XX_ALLOW_TOOLS_CLIENT_MODE
+	bool "Allow tools client mode to be enabled by SACI"
+	default y
+	help
+	  Used by TI tools such as SmartRF Studio and Packet Sniffer to allow in-situ RF testing
+	  on customer boards without disturbing the application stored in flash.
+
+config CC27XX_ALLOW_RETURN_TO_FACTORY
+	bool "Allow return-to-factory procedure by SACI"
+	default y
+	help
+	  To do full failure analysis including flash, a return to factory procedure is supported.
+
+endmenu # "Device Permission Settings"
+
+menu "SACI Settings (Secure AP Command Interface)"
+
+config CC27XX_SACI_TIMEOUT_OVERRIDE
+	bool "Override SACI timeout"
+	default n
+	help
+	  Determines if SACI timeout defined in FCFG is overridden by SACI timeout defined in CCFG.
+
+config CC27XX_SACI_TIMEOUT_EXP
+	int "SACI timeout" if CC27XX_SACI_TIMEOUT_OVERRIDE
+	range 0 7
+	default 0
+	help
+	  Configures the SACI timeout when there is a bootloader or application to boot into.
+	  SACI timeout is infinite when 0, else (2 ^ saciTimeoutExp) * 64 ms.
+
+config CC27XX_ALLOW_MAIN_APP_ERASE
+	bool "Allow main app erase by SACI"
+	default y
+
+
+endmenu # "SACI Settings (Secure AP Command Interface)"
+
+menu "Flash Protection Settings"
+
+config CC27XX_WR_ER_PROT_SECT0_31
+	hex "Write/Erase protection mask (sectors 0-31)"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of individual sectors in sector range [0, 31].
+	  Controls whether flash programming is allowed through SACI. The same mechanism
+	  controls whether the application is allowed to program these sectors.
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_SECT32_255
+	hex "Write/Erase protection mask (sectors 32-255)"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of groups of 8 sectors.
+	  Bit i protects sectors [32 + 8i, 39 + 8i].
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_SECT256_511
+	hex "Write/Erase protection mask (sectors 256-511)"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of groups of 8 sectors.
+	  Bit i protects sectors [256 + 8i, 263 + 8i].
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_SECT512_767
+	hex "Write/Erase protection mask (sectors 512-767)"
+	depends on HAS_CC27XXX20_SDK
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of groups of 8 sectors.
+	  Bit i protects sectors [512 + 8i, 519 + 8i].
+	  0 = protected.
+	  Only applicable to devices with 2 MB flash (CC27XX20 family).
+
+config CC27XX_WR_ER_PROT_SECT768_1023
+	hex "Write/Erase protection mask (sectors 768-1023)"
+	depends on HAS_CC27XXX20_SDK
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of groups of 8 sectors.
+	  Bit i protects sectors [768 + 8i, 775 + 8i].
+	  0 = protected.
+	  Only applicable to devices with 2 MB flash (CC27XX20 family).
+
+config CC27XX_WR_ER_PROT_CCFG_SECT
+	hex "Write/Erase protection mask (CCFG sectors)"
+	range 0 1
+	default 0
+	help
+	  Bitmask for write/erase protection of CCFG sectors.
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_FCFG_SECT
+	hex "Write/Erase protection mask (FCFG sectors)"
+	range 0 1
+	default 0
+	help
+	  Bitmask for write/erase protection of FCFG sectors.
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_ENGR_SECT
+	hex "Write/Erase protection mask (ENGR sectors)"
+	range 0 1
+	default 0
+	help
+	  Bitmask for write/erase protection of ENGR sectors.
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_SCFG_SECT
+	hex "Write/Erase protection mask (SCFG sectors)"
+	range 0 1
+	default 0
+	help
+	  Bitmask for write/erase protection of ENGR sectors.
+	  0 = protected.
+
+config CC27XX_WR_ER_PROT_VLOG_SECT
+	hex "Write/Erase protection mask (VLOG sectors)"
+	range 0 1
+	default 0
+	help
+	  Bitmask for write/erase protection of ENGR sectors.
+	  0 = protected.
+
+config CC27XX_READ_PROT_MAIN_SEC
+	hex "Main sector read protection"
+	range 0 0xf
+	default 0xf
+
+config CC27XX_READ_PROT_CCFG_SEC
+	hex "CCFG sector read protection"
+	range 0 0x3f
+	default 0x3f
+
+config CC27XX_CHIP_ER_RETAIN_SECT0_31
+	hex "Chip erase protection mask (sectors 0-31)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of individual sectors in sector range [0, 31].
+	  Controls whether a chip erase affects a sector or not. The mechanism is intended
+	  to allow flash sectors devoted to logging or runtime state/configuration to survive
+	  the chip erase during a FW update.
+	  0 = protected.
+
+config CC27XX_CHIP_ER_RETAIN_SECT32_255
+	hex "Chip erase protection mask (sectors 32-511)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of groups of 8 sectors.
+	  Bit i protects sectors [32 + 8i, 39 + 8i].
+	  0 = protected.
+
+config CC27XX_CHIP_ER_RETAIN_SECT256_511
+	hex "Chip erase protection mask (sectors 256-511)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of groups of 8 sectors.
+	  Bit i protects sectors [256 + 8i, 263 + 8i].
+	  0 = protected.
+
+config CC27XX_CHIP_ER_RETAIN_SECT512_767
+	hex "Chip erase protection mask (sectors 512-767)"
+	depends on HAS_CC27XXX20_SDK
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of groups of 8 sectors.
+	  Bit i protects sectors [512 + 8i, 519 + 8i].
+	  0 = protected.
+	  Only applicable to devices with 2 MB flash (CC27XX20 family).
+
+config CC27XX_CHIP_ER_RETAIN_SECT768_1023
+	hex "Chip erase protection mask (sectors 768-1023)"
+	depends on HAS_CC27XXX20_SDK
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of groups of 8 sectors.
+	  Bit i protects sectors [768 + 8i, 775 + 8i].
+	  0 = protected.
+	  Only applicable to devices with 2 MB flash (CC27XX20 family).
+
+config CC27XX_CHIP_READ_PROT_MAIN_SECTOR
+	hex "Main sector read protection"
+	range 0 0xf
+	default 0xf
+	help
+	  Sticky-0 bits written to VIMS.RDPRMN (0-4 2K blocks at beginning of main)
+
+config CC27XX_CHIP_READ_PROT_CCFG_SECTOR
+	hex "CCFG sector read protection"
+	range 0 0x3f
+	default 0x3f
+	help
+	  Sticky-0 bits written to VIMS.RDPRMN (watermark at end-x*168)
+
+endmenu # "Flash Protection Settings"
+
+endmenu # Customer Configuration (CCFG)
+
+menu "Secure Configuration (SCFG)"
+depends on SOC_SERIES_CC27XX
+
+menu "Secure Bootloader Configuration"
+
+choice CC27XX_POLICY_AUTH_METHOD
+	prompt "Enable secure boot and choose authorization method"
+	default CC27XX_POLICY_NO_AUTH
+
+config CC27XX_POLICY_NO_AUTH
+	bool "Disable Secure Boot entirely"
+
+config CC27XX_POLICY_SIGNATURE
+	bool "Signature"
+
+config CC27XX_POLICY_HASH_LOCK
+	bool "Hash Lock"
+
+endchoice # CC27XX_POLICY_AUTH_METHOD
+
+choice CC27XX_POLICY_AUTH_ALGORITHM
+	prompt "Choose secure boot authentication algorithm"
+	default CC27XX_POLICY_ALG_RSA_3K_SHA256
+
+config CC27XX_POLICY_ALG_RSA_3K_SHA256
+	bool "RSA 3K SHA256"
+
+config CC27XX_POLICY_ALG_ECDSA_P256_SHA256
+	bool "ECDSA P256 SHA256"
+
+config CC27XX_POLICY_ALG_ECDSA_P521_SHA512
+	bool "ECDSA P521 SHA512"
+
+endchoice # CC27XX_POLICY_AUTH_ALGORITHM
+
+choice CC27XX_POLICY_MODE
+	prompt "Choose secure boot policy mode"
+	default CC27XX_POLICY_MODE_XIPRD
+
+config CC27XX_POLICY_MODE_OVRWRT
+	bool "Policy Mode Overwrite"
+
+config CC27XX_POLICY_MODE_XIPRE
+	bool "Policy Mode XIP Revert Enabled"
+
+config CC27XX_POLICY_MODE_XIPRD
+	bool "Policy Mode XIP Revert Disabled"
+
+endchoice # CC27XX_POLICY_MODE
+
+endmenu # Secure Bootloader Configuration
+
+menu "Device Permission Settings"
+
+config CC27XX_ALLOW_DEBUG_PORT
+	bool "Allow enabling of SWD port"
+	default y
+	help
+	  If n, then the SWD port is disabled altogether at a certain point in boot before
+	  invoking either bootloader or application.
+
+config CC27XX_ALLOW_ENERGY_TRACE
+	bool "Allow using EnergyTrace power analyzer tool"
+	default y
+	help
+	  EnergyTrace software is an energy-based code analysis tool that measures
+	  and displays the energy profile of an application and helps optimize it for
+	  ultra-low-power consumption.
+
+config CC27XX_ALLOW_FLASH_VERIFY
+	bool "Allow flash verify by SACI"
+	default y
+	help
+	  Determines whether flash verify commands are allowed. These commands only check integrity
+	  against a provided CRC32 value, never return any flash contents. Flash verify commands
+	  are always allowed after a chip erase and until the first reset after the CCFG sector has
+	  been programmed.
+
+config CC27XX_ALLOW_FLASH_PROGRAM
+	bool "Allow flash program by SACI"
+	default y
+	help
+	  Determines whether flash programming commands are allowed.
+	  Reset to allowed after a chip erase.
+
+config CC27XX_ALLOW_CHIP_ERASE
+	bool "Allow chip erase by SACI"
+	default y
+	help
+	  Determines whether the chip erase command is allowed.
+
+config CC27XX_ALLOW_TOOLS_CLIENT_MODE
+	bool "Allow tools client mode to be enabled by SACI"
+	default y
+	help
+	  Used by TI tools such as SmartRF Studio and Packet Sniffer to allow in-situ RF testing
+	  on customer boards without disturbing the application stored in flash.
+
+config CC27XX_ALLOW_RETURN_TO_FACTORY
+	bool "Allow return-to-factory procedure by SACI"
+	default y
+	help
+	  To do full failure analysis including flash, a return to factory procedure is supported.
+
+config CC27XX_ALLOW_MAIN_APP_ERASE
+	bool "Allow main app ease by SACI. Only available for SCFG."
+	default y
+	help
+	  Determines whether main app erase is enabled.
+
+config CC27XX_ALLOW_FAKE_STANDBY
+	bool "Allow fake standby."
+	default y
+	help
+	  Determines whether fake standby is enabled.
+
+endmenu # "Device Permission Settings"
+
+menu "EM Sensor Settings"
+
+choice CC27XX_EM_SENSOR
+	prompt "Enable or disable HW EM Sensor"
+	default CC27XX_EM_SENSOR_ENABLED
+
+config CC27XX_EM_SENSOR_ENABLED
+	bool "HW EM Sensor enabled"
+
+config CC27XX_EM_SENSOR_DISABLED
+	bool "HW EM Sensor disabled"
+
+endchoice # CC27XX_EM_SENSOR_CFG
+
+endmenu # "EM Sensor Settings"
+
+endmenu # Secure Configuration (SCFG)

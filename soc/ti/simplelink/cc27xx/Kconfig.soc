@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# These symbols are also defined in modules/Kconfig.simplelink when the HAL
+# module is present. They are defined here to keep the SoC tree self-contained
+# for the KconfigHWMv2 compliance check.
+
+config HAS_CC27XXX10_SDK
+	bool
+
+config HAS_CC27XXX20_SDK
+	bool
+
+config SOC_SERIES_CC27XX
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC27XX series SOCs.
+
+config SOC_CC2745R10_Q1
+	bool
+	select SOC_SERIES_CC27XX
+	select HAS_CC27XXX10_SDK
+	help
+	  CC2745R10_Q1
+
+config SOC_CC2755R10
+	bool
+	select SOC_SERIES_CC27XX
+	select HAS_CC27XXX10_SDK
+	help
+	  CC2755R10
+
+config SOC_CC2755P10
+	bool
+	select SOC_SERIES_CC27XX
+	select HAS_CC27XXX10_SDK
+	help
+	  CC2755P10
+
+config SOC_CC2755P20
+	bool
+	select SOC_SERIES_CC27XX
+	select HAS_CC27XXX20_SDK
+	help
+	  CC2755P20
+
+config SOC_SERIES
+	default "cc27xx" if SOC_SERIES_CC27XX
+
+config SOC
+	default "cc2745r10_q1" if SOC_CC2745R10_Q1
+	default "cc2755r10" if SOC_CC2755R10
+	default "cc2755p10" if SOC_CC2755P10
+	default "cc2755p20" if SOC_CC2755P20

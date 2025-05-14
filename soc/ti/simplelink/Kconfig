@@ -12,6 +12,12 @@ config HAS_TI_CCFG
 	  Selected when CCFG (Customer Configuration) registers
 	  appear at the end of flash
 
+config HAS_TI_SCFG
+	bool
+	help
+	  Selected when SCFG (Secure Configuration) registers
+	  appear at the end of flash
+
 config TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
 	bool
 	help
