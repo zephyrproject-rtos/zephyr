@@ -10,6 +10,7 @@ include:
     property-allowlist:
       - regulator-name
       - regulator-boot-on
+      - regulator-boot-off
       - regulator-always-on
       - regulator-min-microvolt
       - regulator-max-microvolt
