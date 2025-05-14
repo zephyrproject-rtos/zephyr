@@ -1,0 +1,8 @@
+# Copyright (c) 2025-2026 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_EM_CC2745R10_Q1
+	select SOC_CC2745R10_Q1 if BOARD_LP_EM_CC2745R10_Q1_CC2745R10_Q1
+	select SOC_CC2755R10 if BOARD_LP_EM_CC2745R10_Q1_CC2755R10

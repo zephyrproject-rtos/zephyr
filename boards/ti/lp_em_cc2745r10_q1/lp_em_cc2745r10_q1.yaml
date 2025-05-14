@@ -1,0 +1,11 @@
+identifier: lp_em_cc2745r10_q1
+name: TI SimpleLink CC2745R10_Q1 LaunchPad
+type: mcu
+arch: arm
+ram: 162
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+vendor: ti
