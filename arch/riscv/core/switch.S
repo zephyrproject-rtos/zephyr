@@ -55,12 +55,14 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 #endif
 
 #if defined(CONFIG_RISCV_ISA_EXT_V)
+#ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 	mv s0, a0
 	mv a0, a1
 	call z_riscv_vstate_save_thread
 	mv a0, s0
 	call z_riscv_vstate_restore_thread
 	mv a0, s0
+#endif
 #endif
 	
 #if defined(CONFIG_FPU_SHARING)

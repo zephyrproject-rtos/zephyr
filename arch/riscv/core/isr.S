@@ -199,7 +199,9 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	get_current_cpu s0
 
 #ifdef CONFIG_RISCV_ISA_EXT_V
+#ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 	call z_riscv_vstate_save
+#endif
 #endif /* CONFIG_RISCV_ISA_EXT_V */
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
@@ -283,6 +285,21 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bnez t1, no_fp
 #else
 	beqz t1, is_fp
+#ifdef CONFIG_RISCV_ISA_EXT_V
+#ifdef CONFIG_RISCV_ISA_EXT_V_LAZY
+/* Vector extension instructions, but vxsat&vxrm is not processed */
+	li t1, 0x8	// vstart
+	beq t0, t1, is_fp
+	li t1, 0xf	// vcsr
+	beq t0, t1, is_fp
+	li t1, 0xc20	// vl
+	beq t0, t1, is_fp
+	li t1, 0xc21	// vtype
+	beq t0, t1, is_fp
+	li t1, 0xc22	// vlenb
+	beq t0, t1, is_fp
+#endif
+#endif
 2:	/* remaining non RVC (0b11) and RVC with 0b01 are not FP instructions */
 	andi t1, t2, 1
 	bnez t1, no_fp
@@ -763,7 +780,9 @@ fp_trap_exit:
 	csrw mstatus, t2
 
 #ifdef CONFIG_RISCV_ISA_EXT_V
+#ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 	call z_riscv_vstate_restore
+#endif
 #endif /* CONFIG_RISCV_ISA_EXT_V */
 
 #ifdef CONFIG_USERSPACE

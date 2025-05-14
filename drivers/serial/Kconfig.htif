@@ -19,7 +19,7 @@ config UART_HTIF_USE_YIELD_SLEEP
 
 config UART_HTIF_SYSCALL_PRINT
     bool "Enable syscall-based full-string printing"
-    default y
+    default n
     depends on UART_HTIF
     help
       When enabled, the driver will use an HTIF command to send a pointer to a
@@ -28,7 +28,7 @@ config UART_HTIF_SYSCALL_PRINT
 
 config UART_HTIF_BUFFERED_OUTPUT
     bool "Buffer UART output until newline"
-    default y
+    default n
     depends on UART_HTIF
     help
       If enabled, characters are buffered until a newline or the buffer becomes full.
