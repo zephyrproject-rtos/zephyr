@@ -296,6 +296,14 @@
 			#size-cells = <0>;
 			fifo-depth = <16>;
 		};
+
+		mc: memory-controller@fd070000 {
+			compatible = "xlnx,zynqmp-ddrc-2.40a";
+			status = "disabled";
+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			reg = <0xfd070000 0x30000>;
+		};
 	};
 
 };
