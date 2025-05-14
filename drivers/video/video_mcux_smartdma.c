@@ -218,6 +218,7 @@ static const struct video_format_cap fmts[] = {
 static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
+	int ret;
 
 	if (fmt == NULL) {
 		return -EINVAL;
@@ -230,14 +231,20 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 
 	if ((fmt->pixelformat != fmts[0].pixelformat) ||
 	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min) ||
-	    (fmt->pitch != fmts[0].width_min * 2)) {
+	    (fmt->height != fmts[0].height_min)) {
 		LOG_ERR("Unsupported format");
 		return -ENOTSUP;
 	}
 
 	/* Forward format to sensor device */
-	return video_set_format(config->sensor_dev, fmt);
+	ret = video_set_format(config->sensor_dev, fmt);
+	if (ret < 0) {
+		return ret;
+	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
+	return 0;
 }
 
 static int nxp_video_sdma_get_format(const struct device *dev, struct video_format *fmt)
@@ -267,8 +274,7 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 	/* Verify that format is RGB565 */
 	if ((fmt->pixelformat != fmts[0].pixelformat) ||
 	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min) ||
-	    (fmt->pitch != fmts[0].width_min * 2)) {
+	    (fmt->height != fmts[0].height_min)) {
 		/* Update format of sensor */
 		fmt->pixelformat = fmts[0].pixelformat;
 		fmt->width = fmts[0].width_min;
@@ -280,6 +286,8 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 			return ret;
 		}
 	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	return 0;
 }
