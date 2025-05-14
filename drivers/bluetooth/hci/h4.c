@@ -37,6 +37,8 @@ struct h4_data {
 		struct net_buf *buf;
 		struct k_fifo   fifo;
 
+		struct k_sem    ready;
+
 		uint16_t        remaining;
 		uint16_t        discard;
 
@@ -257,8 +259,10 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		/* Let the ISR continue receiving new packets */
 		uart_irq_rx_enable(cfg->uart);
 
-		buf = k_fifo_get(&h4->rx.fifo, K_FOREVER);
-		do {
+		k_sem_take(&h4->rx.ready, K_FOREVER);
+
+		buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
+		while (buf != NULL) {
 			uart_irq_rx_enable(cfg->uart);
 
 			LOG_DBG("Calling bt_recv(%p)", buf);
@@ -272,7 +276,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			uart_irq_rx_disable(cfg->uart);
 			buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
-		} while (buf);
+		}
 	}
 }
 
@@ -311,6 +315,18 @@ static inline void read_payload(const struct device *dev)
 
 			LOG_WRN("Failed to allocate, deferring to rx_thread");
 			uart_irq_rx_disable(cfg->uart);
+			/*
+			 * At this time, HCI UART RX is turned off, which means that no new
+			 * received data buffer will be put into the RX FIFO. This will cause
+			 * `rx.ready` to not be modified. It will probably remain unchanged and
+			 * the count of `rx.ready` will probably be 0.
+			 *
+			 * Since it is uncertain whether the RX thread is blocked waiting for
+			 * `rx.ready`, give a semaphore to try to wake up the RX thread.
+			 * Then there will be a renewed attempt at allocating an RX buffer in
+			 * the RX thread.
+			 */
+			k_sem_give(&h4->rx.ready);
 			return;
 		}
 
@@ -352,6 +368,7 @@ static inline void read_payload(const struct device *dev)
 
 	LOG_DBG("Putting buf %p to rx fifo", buf);
 	k_fifo_put(&h4->rx.fifo, buf);
+	k_sem_give(&h4->rx.ready);
 }
 
 static inline void read_header(const struct device *dev)
@@ -513,6 +530,9 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
 
+	/* Active rx_thread at first time */
+	k_sem_give(&h4->rx.ready);
+
 	return 0;
 }
 
@@ -585,6 +605,7 @@ static DEVICE_API(bt_hci, h4_driver_api) = {
 	static struct h4_data h4_data_##inst = { \
 		.rx = { \
 			.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.rx.fifo), \
+			.ready = Z_SEM_INITIALIZER(h4_data_##inst.rx.ready, 0, 1), \
 		}, \
 		.tx = { \
 			.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo), \
