@@ -28,7 +28,7 @@ struct timer_data {
  */
 #define INEXACT_MS_CONVERT ((CONFIG_SYS_CLOCK_TICKS_PER_SEC % MSEC_PER_SEC) != 0)
 
-#if CONFIG_NRF_RTC_TIMER
+#if CONFIG_NRF_RTC_TIMER || CONFIG_NRF_GRTC_TIMER
 /* On Nordic SOCs one or both of the tick and busy-wait clocks may
  * derive from sources that have slews that sum to +/- 13%.
  */
