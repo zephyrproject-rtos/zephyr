@@ -296,30 +296,17 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	}
 }
 
-void iis3dwb_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
+void iis3dwb_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct device *dev = cfg->sensor;
 
 	if (!cfg->is_streaming) {
 		iis3dwb_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_IIS3DWB_STREAM)) {
+		iis3dwb_submit_stream(dev, iodev_sqe);
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
-}
-
-void iis3dwb_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
-{
-	struct rtio_work_req *req = rtio_work_req_alloc();
-
-	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
-		return;
-	}
-
-	rtio_work_req_submit(req, iodev_sqe, iis3dwb_submit_sync);
 }
 
 static DEVICE_API(sensor, iis3dwb_driver_api) = {
@@ -371,6 +358,15 @@ static int iis3dwb_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_IIS3DWB_TRIGGER
+	if (cfg->trig_enabled) {
+		if (iis3dwb_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
+	}
+#endif
+
 	/* set sensor default scale (used to convert sample values) */
 	LOG_DBG("%s: range is %d", dev->name, cfg->range);
 	ret = iis3dwb_set_range_raw(dev, cfg->range);
@@ -406,6 +402,17 @@ static int iis3dwb_init(const struct device *dev)
 		DT_DRV_INST(inst), IIS3DWB_SPI_OPERATION, 0U);		\
 	RTIO_DEFINE(iis3dwb_rtio_ctx_##inst, 8, 8);
 
+#ifdef CONFIG_IIS3DWB_TRIGGER
+#define IIS3DWB_CFG_IRQ(inst)							\
+	.trig_enabled = true,							\
+	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),		\
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),		\
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),				\
+	.drdy_pin = DT_INST_PROP(inst, drdy_pin),
+#else
+#define IIS3DWB_CFG_IRQ(inst)
+#endif /* CONFIG_IIS3DWB_TRIGGER */
+
 #define IIS3DWB_CONFIG(inst)								\
 	{										\
 		STMEMSC_CTX_SPI(&iis3dwb_config_##inst.stmemsc_cfg),			\
@@ -417,6 +424,16 @@ static int iis3dwb_init(const struct device *dev)
 		.range = DT_INST_PROP(inst, range),					\
 		.filter = DT_INST_PROP(inst, filter),					\
 		.odr = DT_INST_PROP(inst, odr),						\
+											\
+		IF_ENABLED(CONFIG_IIS3DWB_STREAM,					\
+			(.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),		\
+			.accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),	\
+			.temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),	\
+			.ts_batch  = DT_INST_PROP(inst, timestamp_fifo_batch_rate),))	\
+											\
+		IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+				   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
+			   (IIS3DWB_CFG_IRQ(inst)))					\
 	}
 
 #define IIS3DWB_DEFINE(inst)									\
