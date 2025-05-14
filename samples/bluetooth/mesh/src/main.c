@@ -24,6 +24,11 @@
 #define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define OP_ONOFF_STATUS    BT_MESH_MODEL_OP_2(0x82, 0x04)
 
+#define BT_MESH_OPCODE_SIZE        2 /* 2 bytes for the opcode */
+#define BT_MESH_ONOFF_PAYLOAD_SIZE 1 /* 1 byte for the OnOff value */
+
+static bool client_onoff_val;
+
 static void attention_on(const struct bt_mesh_model *mod)
 {
 	board_led_set(true);
@@ -45,7 +50,7 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-static const char *const onoff_str[] = { "off", "on" };
+static const char *const onoff_str[] = {"off", "on"};
 
 static struct {
 	bool val;
@@ -101,16 +106,14 @@ static inline uint8_t model_time_encode(int32_t ms)
 	return 0x3f;
 }
 
-static int onoff_status_send(const struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx)
+static int onoff_status_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx)
 {
 	uint32_t remaining;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_STATUS, 3);
 	bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
 
-	remaining = k_ticks_to_ms_floor32(
-			    k_work_delayable_remaining_get(&onoff.work)) +
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&onoff.work)) +
 		    onoff.transition_time;
 
 	/* Check using remaining time instead of "work pending" to make the
@@ -150,16 +153,14 @@ static void onoff_timeout(struct k_work *work)
 
 /* Generic OnOff Server message handlers */
 
-static int gen_onoff_get(const struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
+static int gen_onoff_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
 	onoff_status_send(model, ctx);
 	return 0;
 }
 
-static int gen_onoff_set_unack(const struct bt_mesh_model *model,
-			       struct bt_mesh_msg_ctx *ctx,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
 	uint8_t val = net_buf_simple_pull_u8(buf);
@@ -185,8 +186,7 @@ static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 		return 0;
 	}
 
-	printk("set: %s delay: %d ms time: %d ms\n", onoff_str[val], delay,
-	       trans);
+	printk("set: %s delay: %d ms time: %d ms\n", onoff_str[val], delay, trans);
 
 	onoff.tid = tid;
 	onoff.src = ctx->addr;
@@ -201,8 +201,7 @@ static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set(const struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
+static int gen_onoff_set(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
 	(void)gen_onoff_set_unack(model, ctx, buf);
@@ -212,27 +211,25 @@ static int gen_onoff_set(const struct bt_mesh_model *model,
 }
 
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
-	{ OP_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_onoff_get },
-	{ OP_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_onoff_set },
-	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_onoff_set_unack },
+	{OP_ONOFF_GET, BT_MESH_LEN_EXACT(0), gen_onoff_get},
+	{OP_ONOFF_SET, BT_MESH_LEN_MIN(2), gen_onoff_set},
+	{OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2), gen_onoff_set_unack},
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Generic OnOff Client */
 
-static int gen_onoff_status(const struct bt_mesh_model *model,
-			    struct bt_mesh_msg_ctx *ctx,
+static int gen_onoff_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	uint8_t present = net_buf_simple_pull_u8(buf);
 
 	if (buf->len) {
 		uint8_t target = net_buf_simple_pull_u8(buf);
-		int32_t remaining_time =
-			model_time_decode(net_buf_simple_pull_u8(buf));
+		int32_t remaining_time = model_time_decode(net_buf_simple_pull_u8(buf));
 
-		printk("OnOff status: %s -> %s: (%d ms)\n", onoff_str[present],
-		       onoff_str[target], remaining_time);
+		printk("OnOff status: %s -> %s: (%d ms)\n", onoff_str[present], onoff_str[target],
+		       remaining_time);
 		return 0;
 	}
 
@@ -240,6 +237,17 @@ static int gen_onoff_status(const struct bt_mesh_model *model,
 
 	return 0;
 }
+
+static int gen_onoff_cli_pub_cb(const struct bt_mesh_model *mod)
+{
+	printk("Generic OnOff Client publish callback #%d\n", mod->id);
+	return 0; /* Return success */
+}
+
+static struct bt_mesh_model_pub gen_onoff_cli_pub = {
+	.msg = NET_BUF_SIMPLE(BT_MESH_OPCODE_SIZE + BT_MESH_ONOFF_PAYLOAD_SIZE),
+	.update = gen_onoff_cli_pub_cb,
+};
 
 static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
 	{OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_onoff_status},
@@ -250,10 +258,8 @@ static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
 static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, NULL,
-		      NULL),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, NULL,
-		      NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, NULL, NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, &gen_onoff_cli_pub, NULL),
 };
 
 static const struct bt_mesh_elem elements[] = {
@@ -308,9 +314,14 @@ static const struct bt_mesh_prov prov = {
 /** Send an OnOff Set message from the Generic OnOff Client to all nodes. */
 static int gen_onoff_send(bool val)
 {
+	if (elements[0].models[3].pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		printk("No group address found for the Generic OnOff Client.\n");
+		return -EINVAL; /* Return an error if no group address is found */
+	}
+
 	struct bt_mesh_msg_ctx ctx = {
 		.app_idx = models[3].keys[0], /* Use the bound key */
-		.addr = BT_MESH_ADDR_ALL_NODES,
+		.addr = elements[0].models[3].pub->addr,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 	};
 	static uint8_t tid;
@@ -321,7 +332,8 @@ static int gen_onoff_send(bool val)
 		return -ENOENT;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK, 2);
+	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK,
+				 BT_MESH_OPCODE_SIZE + BT_MESH_ONOFF_PAYLOAD_SIZE);
 	bt_mesh_model_msg_init(&buf, OP_ONOFF_SET_UNACK);
 	net_buf_simple_add_u8(&buf, val);
 	net_buf_simple_add_u8(&buf, tid++);
@@ -334,7 +346,18 @@ static int gen_onoff_send(bool val)
 static void button_pressed(struct k_work *work)
 {
 	if (bt_mesh_is_provisioned()) {
-		(void)gen_onoff_send(!onoff.val);
+		/* Toggle the client's onoff value */
+		client_onoff_val = !client_onoff_val;
+
+		/* Send the new value */
+		int err = gen_onoff_send(client_onoff_val);
+
+		if (err) {
+			printk("Failed to send OnOff message (err: %d)\n", err);
+			return;
+		}
+
+		printk("Client OnOff value toggled to: %s\n", onoff_str[client_onoff_val]);
 		return;
 	}
 
