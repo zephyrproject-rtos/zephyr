@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi4 {
+	status = "okay";
+	zephyr,deferred-init;
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+};
+
+/ {
+	zephyr,user {
+		spi = <&spi4>;
+		cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+	};
+};
