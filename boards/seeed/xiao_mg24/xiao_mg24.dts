@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg24b220f1536im48.dtsi>
+#include <silabs/xg24/efr32mg24b220f1536im48.dtsi>
 #include "xiao_mg24-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 
