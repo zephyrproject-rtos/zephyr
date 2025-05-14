@@ -19,7 +19,7 @@
  * - no statistics collection
  */
 
-#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
+#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM) || defined(CONFIG_SOC_SAMA7G54)
 #define DT_DRV_COMPAT atmel_sam_gmac
 #else
 #define DT_DRV_COMPAT atmel_sam0_gmac
@@ -109,6 +109,8 @@ static inline void dcache_clean(void *addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
+#elif defined(CONFIG_SOC_SAMA7G54)
+#define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
 #endif
@@ -1741,6 +1743,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
+#elif defined(CONFIG_SOC_SAMA7G54)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1851,6 +1854,9 @@ static void eth0_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
+#ifdef CONFIG_SOC_SAMA7G54
+		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
+#endif
 		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
 		| GMAC_MAX_FRAME_SIZE;
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
