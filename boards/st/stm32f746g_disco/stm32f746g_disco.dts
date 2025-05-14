@@ -210,9 +210,10 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 
