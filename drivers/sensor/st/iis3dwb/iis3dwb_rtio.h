@@ -10,7 +10,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/work.h>
 
 void iis3dwb_submit(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
 void iis3dwb_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
