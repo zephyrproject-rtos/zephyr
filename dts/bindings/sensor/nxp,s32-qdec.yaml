@@ -1,8 +1,10 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+title: NXP S32 Quadrature Decoder
+
 description: |
-  Quadrature Decoder driver which processes encoder signals to determine motor revs
+  Quadrature Decoder processes encoder signals to determine motor revs
   with the cooperation of S32 IP blocks- eMIOS, TRGMUX and LCU.
   The sensor qdec application can be used for testing this driver.
   The following example uses TRGMUX IN2 and IN3 to connect to LCU1 LC0 I0 and I1.
