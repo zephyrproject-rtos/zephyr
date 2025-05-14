@@ -107,9 +107,26 @@ be a problem if the operation is fast, e.g. a register toggle. However, the
 situation will not be the same if suspension involves sending packets through a
 slow bus. For this reason the device drivers can also make use of the
 :c:func:`pm_device_runtime_put_async` function. This function will schedule
-the suspend operation, again, if device is no longer used. The suspension will
-then be carried out when the system work queue gets the chance to run. The
-sequence diagram shown below illustrates this scenario.
+the suspend operation, again, if device is no longer used.
+
+
+By default, runtime PM operations are offloaded to the system work queue.
+However, device drivers must not perform any blocking operations during suspend, as
+this can stall the system work queue and negatively impact system responsiveness.
+
+To address this, applications can configure runtime PM to use a dedicated work queue
+by enabling :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`.
+
+If blocking behavior is required—for example, when accessing a slow peripheral
+or waiting for a bus transaction—the PM subsystem work queue must be used instead.
+Drivers that require this behavior can explicitly request it by enabling
+:kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`.
+
+For targets with constrained resources that do not need asynchronous
+operations, this functionality can be disabled altogether by
+de-selecting :kconfig:option:`CONFIOG_PM_DEVICE_RUNTIME_ASYNC`, reducing
+memory usage and system complexity.
+
 
 .. figure:: images/devr-async-ops.svg
 
