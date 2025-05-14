@@ -10,6 +10,7 @@
 #include <zephyr/types.h>
 
 #include <stdint.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -254,11 +255,38 @@ int mdm_sim7080_stop_network(void);
 int mdm_sim7080_start_gnss(void);
 
 /**
+ * @brief Starts the modem in gnss operation mode with xtra functionality.
+ *
+ * @return 0 on success. Otherwise <0 is returned.
+ * @note The modem needs to be booted for this function to work.
+ * 		 Concurrent use of network and gnss is not possible.
+ * @note If enabling xtra functionality fails a normal cold start will be performed.
+ */
+int mdm_sim7080_start_gnss_xtra(void);
+
+/**
  * @brief Stops the modem gnss operation mode.
  *
  * @return 0 on success. Otherwise <0 is returned.
  */
 int mdm_sim7080_stop_gnss(void);
+
+/**
+ * @brief Download the XTRA file for assisted gnss.
+ *
+ * @param server_id Id of the server to download XTRA file from.
+ * @param f_name The name of the XTRA file to download.
+ * @return 0 on success. Otherwise <0 is returned.
+ */
+int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name);
+
+/**
+ * @brief Query the validity of the XTRA file.
+ *
+ * @param diff_h Difference between the local time and the XTRA inject time in hours.
+ * @param duration_h Valid time of the XTRA file in hours.
+ */
+int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h);
 
 /**
  * @brief Query gnss position form the modem.

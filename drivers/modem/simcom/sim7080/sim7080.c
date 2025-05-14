@@ -415,6 +415,14 @@ MODEM_CMD_DEFINE(on_urc_cpin)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_urc_httptofs)
+{
+	mdata.http_status = (uint16_t)strtoul(argv[0], NULL, 10);
+	LOG_INF("HTTP status: %u", mdata.http_status);
+	k_sem_give(&mdata.sem_http);
+	return 0;
+}
+
 /*
  * Possible responses by the sim7080.
  */
@@ -438,6 +446,7 @@ static const struct modem_cmd unsolicited_cmds[] = {
 	MODEM_CMD("RDY", on_urc_rdy, 0U, ""),
 	MODEM_CMD("NORMAL POWER DOWN", on_urc_pwr_down, 0U, ""),
 	MODEM_CMD("+CPIN: ", on_urc_cpin, 1U, ","),
+	MODEM_CMD("+HTTPTOFS: ", on_urc_httptofs, 2U, ","),
 };
 
 /*
@@ -755,6 +764,7 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_tx_ready, 0, 1);
 	k_sem_init(&mdata.sem_dns, 0, 1);
 	k_sem_init(&mdata.sem_ftp, 0, 1);
+	k_sem_init(&mdata.sem_http, 0, 1);
 	k_sem_init(&mdata.boot_sem, 0 ,1);
 	k_sem_init(&mdata.pdp_sem, 0, 1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
