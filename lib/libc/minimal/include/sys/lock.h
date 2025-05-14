@@ -1,0 +1,1 @@
+/* empty file for newlib compatibility */
