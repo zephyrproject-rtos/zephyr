@@ -266,8 +266,8 @@
 		quadspi: spi@a0001000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0xa0001000 0x400>;
+			#size-cells = <0>;
+			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <71 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
 			status = "disabled";
