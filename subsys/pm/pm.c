@@ -18,7 +18,6 @@
 #include <zephyr/tracing/tracing.h>
 
 #include "pm_stats.h"
-#include "device_system_managed.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
@@ -104,14 +103,6 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
-#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
-		if (atomic_add(&_cpus_active, 1) == 0) {
-			if ((z_cpus_pm_state[id]->state != PM_STATE_RUNTIME_IDLE) &&
-					!z_cpus_pm_state[id]->pm_device_disabled) {
-				pm_resume_devices();
-			}
-		}
-#endif
 		pm_state_exit_post_ops(z_cpus_pm_state[id]->state,
 				       z_cpus_pm_state[id]->substate_id);
 		pm_state_notify(false);
@@ -173,22 +164,6 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, PM_STATE_ACTIVE);
 		return false;
 	}
-
-#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
-	if (atomic_sub(&_cpus_active, 1) == 1) {
-		if ((z_cpus_pm_state[id]->state != PM_STATE_RUNTIME_IDLE) &&
-		    !z_cpus_pm_state[id]->pm_device_disabled) {
-			if (!pm_suspend_devices()) {
-				pm_resume_devices();
-				z_cpus_pm_state[id] = NULL;
-				(void)atomic_add(&_cpus_active, 1);
-				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
-							   PM_STATE_ACTIVE);
-				return false;
-			}
-		}
-	}
-#endif
 
 	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id]->exit_latency_us);
 	if ((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) {
