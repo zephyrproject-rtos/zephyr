@@ -1183,7 +1183,6 @@ static int gc2145_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = RESOLUTION_QVGA_W;
 	fmt.height = RESOLUTION_QVGA_H;
-	fmt.pitch = RESOLUTION_QVGA_W * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {

@@ -133,16 +133,11 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	status_t ret;
 	struct video_format format = *fmt;
 
-	if (bpp == 0) {
-		return -EINVAL;
-	}
-
-	data->csi_config.bytesPerPixel = bpp;
-	data->csi_config.linePitch_Bytes = fmt->pitch;
+	data->csi_config.bytesPerPixel = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	data->csi_config.linePitch_Bytes = fmt->width * data->csi_config.bytesPerPixel;
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 	if (fmt->pixelformat != VIDEO_PIX_FMT_XRGB32 && fmt->pixelformat != VIDEO_PIX_FMT_XYUV32) {
 		return -ENOTSUP;
@@ -171,6 +166,8 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	if (config->source_dev && video_set_format(config->source_dev, &format)) {
 		return -EIO;
 	}
+
+	fmt->pitch = data->csi_config.linePitch_Bytes;
 
 	return 0;
 }
