@@ -46,7 +46,9 @@ Execute_AC_6_I 32_2_1
 # https://github.com/zephyrproject-rtos/zephyr/issues/83586
 # Execute_AC_6_I 441_2_1
 Execute_AC_6_I 48_1_1
-Execute_AC_6_I 48_2_1
+# bt_iso_chan_disconnected: 0x857f940, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_6_I 48_2_1
 Execute_AC_6_I 48_3_1
 Execute_AC_6_I 48_4_1
 Execute_AC_6_I 48_5_1
