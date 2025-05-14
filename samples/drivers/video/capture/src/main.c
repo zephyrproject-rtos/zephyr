@@ -150,7 +150,6 @@ int main(void)
 
 #if CONFIG_VIDEO_FRAME_WIDTH
 	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
-	fmt.pitch = fmt.width * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 #endif
 
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
