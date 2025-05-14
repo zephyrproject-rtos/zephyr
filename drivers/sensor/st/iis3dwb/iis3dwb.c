@@ -52,6 +52,11 @@ static int iis3dwb_odr_set(const struct device *dev,
 		break;
 
 	default:
+		if (val->val1 > 26) {
+			LOG_ERR("%s: odr %d Hz not supported", dev->name, val->val1);
+			return -EINVAL;
+		}
+
 		odr = IIS3DWB_XL_ODR_26k7Hz;
 		break;
 	}
@@ -64,25 +69,20 @@ static int iis3dwb_odr_set(const struct device *dev,
 	return 0;
 }
 
-static int iis3dwb_set_fs(const struct device *dev, uint8_t fs)
+static int iis3dwb_set_fs(const struct device *dev, int32_t fs)
 {
 	int ret;
 	uint8_t range;
 
-	switch (fs) {
-	case 2:
+	if (fs <= 2) {
 		range = IIS3DWB_DT_FS_2G;
-		break;
-	case 4:
+	} else if (fs <= 4) {
 		range = IIS3DWB_DT_FS_4G;
-		break;
-	case 8:
+	} else if (fs <= 8) {
 		range = IIS3DWB_DT_FS_8G;
-		break;
-	case 16:
+	} else if (fs <= 16) {
 		range = IIS3DWB_DT_FS_16G;
-		break;
-	default:
+	} else {
 		LOG_ERR("fs [%d] not supported.", fs);
 		return -EINVAL;
 	}
@@ -172,6 +172,8 @@ void iis3dwb_rtio_rd_transaction(const struct device *dev,
 		read_reg = rtio_sqe_acquire(rtio);
 
 		if (write_addr == NULL || read_reg == NULL) {
+			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			rtio_sqe_drop_all(rtio);
 			return;
 		}
 
@@ -185,6 +187,8 @@ void iis3dwb_rtio_rd_transaction(const struct device *dev,
 
 	complete_op = rtio_sqe_acquire(rtio);
 	if (complete_op == NULL) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		rtio_sqe_drop_all(rtio);
 		return;
 	}
 
@@ -210,6 +214,7 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
 
@@ -291,43 +296,28 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 		}
 	}
 
-	if (edata->has_accel == 0) {
+	if (edata->has_accel == 0 && edata->has_temp == 0) {
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
-	}
-}
-
-void iis3dwb_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct device *dev = cfg->sensor;
-
-	if (!cfg->is_streaming) {
-		iis3dwb_submit_one_shot(dev, iodev_sqe);
-	} else {
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
 
 void iis3dwb_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct rtio_work_req *req = rtio_work_req_alloc();
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 
-	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
-		return;
+	if (!cfg->is_streaming) {
+		iis3dwb_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_IIS3DWB_STREAM)) {
+		iis3dwb_submit_stream(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
-
-	rtio_work_req_submit(req, iodev_sqe, iis3dwb_submit_sync);
 }
 
 static DEVICE_API(sensor, iis3dwb_driver_api) = {
 	.attr_set = iis3dwb_attr_set,
-#ifdef CONFIG_SENSOR_ASYNC_API
 	.get_decoder = iis3dwb_get_decoder,
 	.submit = iis3dwb_submit,
-#endif
 };
 
 static int iis3dwb_init_chip(const struct device *dev)
@@ -350,9 +340,8 @@ static int iis3dwb_init_chip(const struct device *dev)
 	 *  Restore default configuration
 	 */
 	iis3dwb_reset_set(ctx, PROPERTY_ENABLE);
-	do {
-		iis3dwb_reset_get(ctx, &rst);
-	} while (rst);
+	WAIT_FOR((iis3dwb_reset_get(ctx, &rst) == 0) && !rst,
+		 100 * USEC_PER_MSEC, k_msleep(10));
 
 	/* Enable Block Data Update */
 	iis3dwb_block_data_update_set(ctx, PROPERTY_ENABLE);
@@ -370,6 +359,15 @@ static int iis3dwb_init(const struct device *dev)
 		LOG_DBG("Failed to initialize chip");
 		return -EIO;
 	}
+
+#ifdef CONFIG_IIS3DWB_TRIGGER
+	if (cfg->trig_enabled) {
+		if (iis3dwb_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
+	}
+#endif
 
 	/* set sensor default scale (used to convert sample values) */
 	LOG_DBG("%s: range is %d", dev->name, cfg->range);
@@ -406,6 +404,17 @@ static int iis3dwb_init(const struct device *dev)
 		DT_DRV_INST(inst), IIS3DWB_SPI_OPERATION, 0U);		\
 	RTIO_DEFINE(iis3dwb_rtio_ctx_##inst, 8, 8);
 
+#ifdef CONFIG_IIS3DWB_TRIGGER
+#define IIS3DWB_CFG_IRQ(inst)							\
+	.trig_enabled = true,							\
+	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),		\
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),		\
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),				\
+	.drdy_pin = DT_INST_PROP(inst, drdy_pin),
+#else
+#define IIS3DWB_CFG_IRQ(inst)
+#endif /* CONFIG_IIS3DWB_TRIGGER */
+
 #define IIS3DWB_CONFIG(inst)								\
 	{										\
 		STMEMSC_CTX_SPI(&iis3dwb_config_##inst.stmemsc_cfg),			\
@@ -417,6 +426,16 @@ static int iis3dwb_init(const struct device *dev)
 		.range = DT_INST_PROP(inst, range),					\
 		.filter = DT_INST_PROP(inst, filter),					\
 		.odr = DT_INST_PROP(inst, odr),						\
+											\
+		IF_ENABLED(CONFIG_IIS3DWB_STREAM,					\
+			(.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),		\
+			.accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),	\
+			.temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),	\
+			.ts_batch  = DT_INST_PROP(inst, timestamp_fifo_batch_rate),))	\
+											\
+		IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+				   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
+			   (IIS3DWB_CFG_IRQ(inst)))					\
 	}
 
 #define IIS3DWB_DEFINE(inst)									\

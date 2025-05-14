@@ -13,6 +13,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(IIS3DWB_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_IIS3DWB_STREAM
+static const uint32_t accel_period_ns[] = {
+	[IIS3DWB_DT_XL_NOT_BATCHED] = UINT32_C(0),
+	[IIS3DWB_DT_XL_BATCHED_AT_26k7Hz] = UINT32_C(1000000000) / 26700,
+};
+
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+static const uint32_t temp_period_ns[] = {
+	[IIS3DWB_DT_TEMP_NOT_BATCHED] = UINT32_C(0),
+	[IIS3DWB_DT_TEMP_BATCHED_AT_104Hz] = UINT32_C(1000000000) / 104,
+};
+#endif
+#endif /* CONFIG_IIS3DWB_STREAM */
+
 /*
  * Expand val to q31_t according to its range; this is achieved multiplying by 2^31/2^range.
  */
@@ -40,7 +54,7 @@ static const int8_t temp_range = 9;
 
 /* transform temperature LSB into micro-Celsius */
 #define SENSOR_TEMP_UCELSIUS(t_lsb) \
-	(int64_t) (25000000LL + (((int64_t)(t_lsb) * 1000000LL) / 355LL))
+	(int64_t) (25000000LL + (((int64_t)(t_lsb) * 1000000LL) / 256LL))
 
 #endif
 
@@ -96,10 +110,195 @@ static int iis3dwb_decoder_get_frame_count(const uint8_t *buffer,
 		return 0;
 	}
 
+#ifdef CONFIG_IIS3DWB_STREAM
+	const struct iis3dwb_fifo_data *edata = (const struct iis3dwb_fifo_data *)buffer;
+	const uint8_t *buffer_end;
+	uint8_t fifo_tag;
+	uint16_t tot_accel_fifo_words = 0;
+
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+	uint16_t tot_temp_fifo_words = 0;
+#endif
+
+	buffer += sizeof(struct iis3dwb_fifo_data);
+	buffer_end = buffer + IIS3DWB_FIFO_SIZE(edata->fifo_count);
+
+	/* count total FIFO word for each tag */
+	while (buffer < buffer_end) {
+		fifo_tag = (buffer[0] >> 3);
+
+		switch (fifo_tag) {
+		case IIS3DWB_XL_TAG:
+			tot_accel_fifo_words++;
+			break;
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+		case IIS3DWB_TEMPERATURE_TAG:
+			tot_temp_fifo_words++;
+			break;
+#endif
+		default:
+			break;
+		}
+
+		buffer += IIS3DWB_FIFO_ITEM_LEN;
+	}
+
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		*frame_count = tot_accel_fifo_words;
+		break;
+
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+	case SENSOR_CHAN_DIE_TEMP:
+		*frame_count = tot_temp_fifo_words;
+		break;
+#endif
+	default:
+		*frame_count = 0;
+		break;
+	}
+#endif /* CONFIG_IIS3DWB_STREAM */
+
 	return 0;
 }
 
-static int iis3dwb_decode_sample(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+#ifdef CONFIG_IIS3DWB_STREAM
+static int iis3dwb_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				  uint32_t *fit, uint16_t max_count, void *data_out)
+{
+	const struct iis3dwb_fifo_data *edata = (const struct iis3dwb_fifo_data *)buffer;
+	const uint8_t *buffer_end;
+	const struct iis3dwb_decoder_header *header = &edata->header;
+	int count = 0;
+	uint8_t fifo_tag;
+	uint16_t xl_count = 0;
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+	uint16_t temp_count = 0;
+#endif
+	uint16_t tot_fifo_samples = 0;
+	int ret;
+
+	/* count total FIFO word for each tag */
+	ret = iis3dwb_decoder_get_frame_count(buffer, chan_spec, &tot_fifo_samples);
+	if (ret < 0) {
+		return 0;
+	}
+
+	buffer += sizeof(struct iis3dwb_fifo_data);
+	buffer_end = buffer + IIS3DWB_FIFO_SIZE(edata->fifo_count);
+
+	/*
+	 * Timestamp in header is set when FIFO threshold is reached, so
+	 * set time baseline going back in past according to total number
+	 * of FIFO word for each type.
+	 */
+	if (SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp -
+			(tot_fifo_samples - 1) *
+				accel_period_ns[edata->accel_batch_odr];
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+	} else if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp -
+			(tot_fifo_samples - 1) *
+				temp_period_ns[edata->temp_batch_odr];
+#endif
+	}
+
+	while (count < max_count && buffer < buffer_end) {
+		const uint8_t *frame_end = buffer;
+		uint8_t skip_frame;
+
+		skip_frame = 0;
+		frame_end += IIS3DWB_FIFO_ITEM_LEN;
+
+		fifo_tag = (buffer[0] >> 3);
+
+		switch (fifo_tag) {
+		case IIS3DWB_XL_TAG: {
+			struct sensor_three_axis_data *out = data_out;
+			int16_t x, y, z;
+			const int32_t scale = accel_scaler[header->range];
+
+			xl_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (!SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta =
+				(xl_count - 1) * accel_period_ns[edata->accel_batch_odr];
+
+			x = *(int16_t *)&buffer[1];
+			y = *(int16_t *)&buffer[3];
+			z = *(int16_t *)&buffer[5];
+
+			out->shift = accel_range[header->range];
+
+			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
+			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
+			out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+			break;
+		}
+
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+		case IIS3DWB_TEMPERATURE_TAG: {
+			struct sensor_q31_data *out = data_out;
+			int16_t t;
+			int64_t t_uC;
+
+			temp_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != SENSOR_CHAN_DIE_TEMP) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta =
+				(temp_count - 1) * temp_period_ns[edata->temp_batch_odr];
+
+			t = *(int16_t *)&buffer[1];
+			t_uC = SENSOR_TEMP_UCELSIUS(t);
+
+			out->shift = temp_range;
+
+			out->readings[count].temperature = Q31_SHIFT_MICROVAL(t_uC, out->shift);
+			break;
+		}
+#endif
+
+		default:
+			/* skip unhandled FIFO tag */
+			buffer = frame_end;
+			LOG_DBG("unknown FIFO tag %02x", fifo_tag);
+			continue;
+		}
+
+		buffer = frame_end;
+		*fit = (uintptr_t)frame_end;
+		count++;
+	}
+
+	return count;
+}
+#endif /* CONFIG_IIS3DWB_STREAM */
+
+static int iis3dwb_decode_one_shot(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct iis3dwb_rtio_data *edata = (const struct iis3dwb_rtio_data *)buffer;
@@ -167,7 +366,16 @@ static int iis3dwb_decode_sample(const uint8_t *buffer, struct sensor_chan_spec 
 static int iis3dwb_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				     uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	return iis3dwb_decode_sample(buffer, chan_spec, fit, max_count, data_out);
+#ifdef CONFIG_IIS3DWB_STREAM
+	const struct iis3dwb_decoder_header *header =
+		(const struct iis3dwb_decoder_header *)buffer;
+
+	if (header->is_fifo) {
+		return iis3dwb_decode_fifo(buffer, chan_spec, fit, max_count, data_out);
+	}
+#endif
+
+	return iis3dwb_decode_one_shot(buffer, chan_spec, fit, max_count, data_out);
 }
 
 static int iis3dwb_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
@@ -190,10 +398,31 @@ static int iis3dwb_decoder_get_size_info(struct sensor_chan_spec chan_spec, size
 	}
 }
 
+static bool iis3dwb_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+{
+#ifdef CONFIG_IIS3DWB_STREAM
+	const struct iis3dwb_decoder_header *header =
+		(const struct iis3dwb_decoder_header *)buffer;
+
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return header->int_status & 0x01;
+	case SENSOR_TRIG_FIFO_WATERMARK:
+		return header->int_status & 0x80;
+	case SENSOR_TRIG_FIFO_FULL:
+		return header->int_status & 0x20;
+	default:
+		return false;
+	}
+#endif
+	return false;
+}
+
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = iis3dwb_decoder_get_frame_count,
 	.get_size_info = iis3dwb_decoder_get_size_info,
 	.decode = iis3dwb_decoder_decode,
+	.has_trigger = iis3dwb_decoder_has_trigger,
 };
 
 int iis3dwb_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
