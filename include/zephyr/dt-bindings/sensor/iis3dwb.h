@@ -38,4 +38,18 @@
 #define IIS3DWB_DT_LP_ODR_DIV_400   0x86
 #define IIS3DWB_DT_LP_ODR_DIV_800   0x87
 
+/* Accelerometer FIFO batching data rate */
+#define IIS3DWB_DT_XL_NOT_BATCHED        0x0
+#define IIS3DWB_DT_XL_BATCHED_AT_26k7Hz  0xA
+
+/* Temperature FIFO batching data rate */
+#define IIS3DWB_DT_TEMP_NOT_BATCHED      0
+#define IIS3DWB_DT_TEMP_BATCHED_AT_104Hz 3
+
+/* Accelerometer FIFO timestamp ratio */
+#define IIS3DWB_DT_TS_NOT_BATCHED 0x0
+#define IIS3DWB_DT_DEC_TS_1       0x1
+#define IIS3DWB_DT_DEC_TS_8       0x2
+#define IIS3DWB_DT_DEC_TS_32      0x3
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_IIS3DWB_H_ */
