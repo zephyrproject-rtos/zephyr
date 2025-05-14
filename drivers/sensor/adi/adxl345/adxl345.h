@@ -151,10 +151,11 @@ enum adxl345_op_mode {
 };
 
 struct adxl345_dev_data {
-	unsigned int sample_number;
-	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	struct {
+		int16_t x;
+		int16_t y;
+		int16_t z;
+	} samples;
 	struct adxl345_fifo_config fifo_config;
 	uint8_t is_full_res;
 	uint8_t selected_range;
@@ -273,8 +274,8 @@ int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
 int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode);
-#ifdef CONFIG_SENSOR_ASYNC_API
 int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample);
+#ifdef CONFIG_SENSOR_ASYNC_API
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
