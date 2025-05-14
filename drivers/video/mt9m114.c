@@ -564,7 +564,7 @@ static int mt9m114_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = 480;
 	fmt.height = 272;
-	fmt.pitch = fmt.width * 2;
+	fmt.pitch = fmt.width * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 
 	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
