@@ -99,8 +99,9 @@ if(SYSROOT_DIR)
 endif()
 
 # This libgcc code is partially duplicated in compiler/*/target.cmake
+get_property(optimization TARGET compiler PROPERTY optimization)
 execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${optimization} --print-libgcc-file-name
   OUTPUT_VARIABLE LIBGCC_FILE_NAME
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
