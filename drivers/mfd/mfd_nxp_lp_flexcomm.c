@@ -81,6 +81,18 @@ void nxp_lp_flexcomm_setirqhandler(const struct device *dev, const struct device
 	child->dev = child_dev;
 }
 
+void nxp_lp_flexcomm_clearirqhandler(const struct device *dev, LP_FLEXCOMM_PERIPH_T periph)
+{
+	struct nxp_lp_flexcomm_data *data = dev->data;
+	struct nxp_lp_flexcomm_child *child;
+
+	child = &data->children[periph];
+
+	/* Clear the interrupt handler and the child device node */
+	child->lp_flexcomm_child_isr = NULL;
+	child->dev = NULL;
+}
+
 static int nxp_lp_flexcomm_init(const struct device *dev)
 {
 	const struct nxp_lp_flexcomm_config *config = dev->config;
