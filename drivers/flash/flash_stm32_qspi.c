@@ -37,8 +37,9 @@
 #define STM32_QSPI_USE_QUAD_IO 0
 #endif
 
-/* Get the base address of the flash from the DTS node */
-#define STM32_QSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
+#define STM32_QSPI_NODE DT_INST_PARENT(0)
+/* Get the base address of the flash from the DTS st,stm32-qspi node */
+#define STM32_QSPI_BASE_ADDRESS DT_REG_ADDR_BY_IDX(STM32_QSPI_NODE, 1)
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 #define STM32_QSPI_RESET_CMD  DT_INST_PROP(0, reset_cmd)
@@ -1702,7 +1703,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
 	},
 	.irq_config = flash_stm32_qspi_irq_config_func,
-	.flash_size = DT_INST_REG_SIZE(0) << STM32_QSPI_DOUBLE_FLASH,
+	.flash_size = (DT_INST_PROP(0, size) / 8) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO
