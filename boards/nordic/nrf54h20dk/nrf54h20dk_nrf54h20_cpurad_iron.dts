@@ -19,3 +19,11 @@
 	mbox-names = "tx", "rx";
 	status = "okay";
 };
+
+slot0_partition: &cpurad_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpurad_slot1_partition {
+	label = "image-1";
+};
