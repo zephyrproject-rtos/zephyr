@@ -6,7 +6,37 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
+#include <da1469x_trimv.h>
+
+#define PRODUCT_INFO_GPOUP	(12U)
+#define CHIP_ID_GPOUP		(13U)
+
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+{
+	size_t len;
+	uint32_t unique_id[4];
+	uint8_t product_info_len = da1469x_trimv_group_num_words_get(PRODUCT_INFO_GPOUP);
+	uint8_t chip_id_len = da1469x_trimv_group_num_words_get(CHIP_ID_GPOUP);
+
+	if ((product_info_len != 3) || (chip_id_len != 1)) {
+		return -ENODATA;
+	}
+
+	da1469x_trimv_group_read(PRODUCT_INFO_GPOUP, &unique_id[0], product_info_len);
+	da1469x_trimv_group_read(CHIP_ID_GPOUP, &unique_id[3], chip_id_len);
+
+	for (uint8_t i = 0; i < (product_info_len + chip_id_len); i++) {
+		unique_id[i] = BSWAP_32(unique_id[i]);
+	}
+
+	len = MIN(length, sizeof(unique_id));
+
+	memcpy(buffer, unique_id, len);
+
+	return len;
+}
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
