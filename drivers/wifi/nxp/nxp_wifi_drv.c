@@ -1233,7 +1233,11 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 			} else {
 				status->link_mode = WIFI_3;
 			}
-
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+			status->twt_capable = nxp_wlan_network.twt_capab;
+#else
+			status->twt_capable = false;
+#endif
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
