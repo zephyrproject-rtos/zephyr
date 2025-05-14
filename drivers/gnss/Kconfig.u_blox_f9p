@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_U_BLOX_F9P
+	bool "U-BLOX F9P High precision GNSS Module"
+	default y
+	depends on GNSS
+	depends on DT_HAS_U_BLOX_F9P_ENABLED
+	select MODEM_MODULES
+	select MODEM_BACKEND_UART
+	select MODEM_UBX
+	help
+	  Enable U-BLOX F9P High precision GNSS modem driver.
+
+if GNSS_U_BLOX_F9P
+if GNSS_SATELLITES
+
+config GNSS_U_BLOX_F9P_SATELLITES_COUNT
+	int "Maximum satellite count"
+	depends on GNSS_SATELLITES
+	default 24
+
+endif # GNSS_SATELLITES
+endif # GNSS_U_BLOX_F9P
