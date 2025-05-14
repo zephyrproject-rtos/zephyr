@@ -141,7 +141,17 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
-BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
+/* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
+ * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
+ */
+#ifndef GMAC_UR_MIM_RGMII
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
+#else
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 2
+#endif
+
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= SAM_GMAC_PHY_CONNECTION_TYPE_MAX,
+	     "Invalid PHY connection");
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
@@ -1091,6 +1101,11 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	case 1: /* rmii */
 		gmac->GMAC_UR = 0x0;
 		break;
+#ifdef GMAC_UR_MIM_RGMII
+	case 2: /* rgmii */
+		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
+		break;
+#endif
 	default:
 		/* Build assert at top of file should catch this case */
 		LOG_ERR("The phy connection type is invalid");
