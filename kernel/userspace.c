@@ -364,7 +364,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
 		if (dyn->data == NULL) {
-			k_free(dyn->data);
+			k_free(dyn);
 			return NULL;
 		}
 		dyn->kobj.name = dyn->data;
