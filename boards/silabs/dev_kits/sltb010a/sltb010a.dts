@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32bg22.dtsi>
+#include <silabs/xg22/efr32bg22c224f512im40.dtsi>
 #include "sltb010a-pinctrl.dtsi"
 #include "thunderboard.dtsi"
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
