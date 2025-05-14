@@ -1114,6 +1114,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_TMR_ESP32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
 	return false;
 }
 
