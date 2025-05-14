@@ -214,7 +214,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 		break;
 
 	case MQTT_EVT_SUBACK:
-		if (evt->result == 0x80) {
+		if (evt->result == MQTT_SUBACK_FAILURE) {
 			LOG_ERR("MQTT SUBACK error [%d]", evt->result);
 			break;
 		}

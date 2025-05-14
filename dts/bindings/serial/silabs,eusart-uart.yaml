@@ -1,4 +1,9 @@
-description: Silabs EUSART UART
+title: |
+  Silicon Labs Series 2 EUSART (Enhanced Universal Synchronous/Asynchronous Receiver/Transmitter)
+
+description: |
+  EUSART (Enhanced Universal Synchronous/Asynchronous Receiver/Transmitter) peripheral for
+  Silicon Labs Series 2 SoCs used in UART mode.
 
 compatible: "silabs,eusart-uart"
 

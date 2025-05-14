@@ -717,7 +717,7 @@ static int adxl362_chip_init(const struct device *dev)
 	}
 
 	/* Configures the FIFO feature. */
-	ret = adxl362_fifo_setup(dev, ADXL362_FIFO_DISABLE, 0, 0);
+	ret = adxl362_fifo_setup(dev, config->fifo_mode, config->water_mark_lvl, 0);
 	if (ret) {
 		return ret;
 	}
@@ -821,7 +821,7 @@ static int adxl362_init(const struct device *dev)
 						ADXL362_SPI_CFG, 0U);                        \
 	RTIO_DEFINE(adxl362_rtio_ctx_##inst, 8, 8);
 
-#define ADXL362_DEFINE(inst)					\
+#define ADXL362_DEFINE(inst)\
 	IF_ENABLED(CONFIG_ADXL362_STREAM, (ADXL362_RTIO_DEFINE(inst)));                          \
 	static struct adxl362_data adxl362_data_##inst = {			\
 	IF_ENABLED(CONFIG_ADXL362_STREAM, (.rtio_ctx = &adxl362_rtio_ctx_##inst,                  \
@@ -832,6 +832,8 @@ static int adxl362_init(const struct device *dev)
 		.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |			\
 			(DT_INST_PROP(inst, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |		\
 			(DT_INST_PROP(inst, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),		\
+		.fifo_mode = DT_INST_PROP_OR(inst, fifo_mode, ADXL362_FIFO_DISABLE),	\
+		.water_mark_lvl = DT_INST_PROP_OR(inst, fifo_watermark, 0x80),	\
 		IF_ENABLED(CONFIG_ADXL362_TRIGGER,						\
 			   (.interrupt = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
 	};											\

@@ -105,7 +105,6 @@ check_set_compiler_property(PROPERTY warning_extended
                             -Wno-address-of-packed-member
                             -Wno-initializer-overrides
                             -Wno-section
-                            -Wno-unused-variable
                             -Wno-gnu
 )
 

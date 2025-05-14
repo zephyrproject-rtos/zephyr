@@ -30,6 +30,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -89,4 +90,8 @@
 		     &spi0_miso_default
 		     &spi0_cs_default>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };

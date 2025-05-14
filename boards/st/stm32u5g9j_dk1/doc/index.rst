@@ -1,0 +1,162 @@
+.. zephyr:board:: stm32u5g9j_dk1
+
+Overview
+********
+
+The STM32U5G9J-DK1 Discovery kit is a complete demonstration and development
+platform for the STM32U5G9NJH6Q microcontroller, featuring an Arm |reg| Cortex |reg|-M33
+core with Arm |reg| TrustZone |reg|.
+
+Leveraging the innovative ultra-low-power oriented features, 3 Mbytes of
+embedded SRAM, 4 Mbytes of embedded flash memory, and rich graphics features,
+the STM32U5G9J-DK1 Discovery kit enables users to easily prototype applications
+with state-of-the-art energy efficiency, as well as providing stunning and
+optimized graphics rendering with the support of the 2.5D NeoChrom Accelerator,
+Chrom-ART Accelerator, and Chrom-GRC™ MMU.
+
+The full range of hardware features available on the board helps users to enhance
+their application development by an evaluation of all the peripherals such as a
+2.47-inch RGB 480 x 480 pixels TFT round LCD module with MIPI DSI |reg| interface and
+capacitive touch panel, USB Type-C |reg| HS, Octo-SPI flash memory device, Hexadeca-SPI
+PSRAM memory device, eMMC flash memory device, Time-of-Flight and gesture detection
+sensor, temperature sensor, 20-pin audio MEMS connector, and two 2.54 mm pitch
+double-row flexible expansion connectors for easy prototyping with daughterboards
+for specific applications (USART, LPUART, two SPIs, SAI, three I2C, SDMMC, ADCs,
+timers, and GPIOs).
+
+The STM32U5G9J-DK1 Discovery kits integrate an STLINK-V3E embedded in-circuit
+debugger and programmer for the STM32 microcontroller with a USB Virtual COM port
+bridge and comes with the STM32CubeU5 MCU Package, which provides an STM32
+comprehensive software HAL library as well as various software.
+
+More information about the board can be found at the `STM32U5G9J-DK1 website`_.
+More information about STM32U5A9NJH6Q can be found here:
+
+- `STM32U5G9NJ on www.st.com`_
+- `STM32U5 Series reference manual`_
+- `STM32U5Gxxx datasheet`_
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+Pin Mapping
+===========
+
+For more details please refer to `STM32U5G9J-DK1 board User Manual`_.
+
+Default Zephyr Peripheral Mapping:
+----------------------------------
+
+- USART_1 TX/RX : PA9/PA10 (ST-Link Virtual Port Com)
+- LD3 (GREEN) : PE0
+- LD4 (RED) : PE1
+- User Button: PC13
+- USART_3 TX/RX : PB10/PB11
+- LPUART_1 TX/RX : PG7/PG8
+- I2C1 SCL/SDA : PG14/PG13
+- I2C2 SCL/SDA : PF1/PF0
+- I2C6 SCL/SDA : PD1/PD0
+- SPI2 SCK/MISO/MOSI/CS : PB13/PD3/PD4/PB12
+- SPI3 SCK/MISO/MOSI/CS : PG9/PG10/PG11/PG15
+- ADC1 : channel5 PA0, channel14 PC5
+- ADC2 : channel9 PA4
+- ADC4 : channel5 PF14
+
+System Clock
+============
+
+The STM32U5G9J-DK1 Discovery kit relies on an HSE oscillator (16 MHz crystal)
+and an LSE oscillator (32.768 kHz crystal) as clock references.
+Using the HSE (instead of HSI) is mandatory to manage the DSI interface for
+the LCD module and the USB high-speed interface.
+
+Serial Port
+===========
+
+The STM32U5G9J Discovery kit has up to 4 USARTs, 2 UARTs, and 1 LPUART.
+The Zephyr console output is assigned to USART1 is which connected to the onboard
+ST-LINK/V3.0. Virtual COM port interface. Default communication settings are
+115200 8N1.
+
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+STM32U5G9J Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
+This probe allows to flash and debug the board using various tools.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Flashing an application to STM32U5G9J_DK
+----------------------------------------
+
+Connect the STM32U5G9J Discovery board to your host computer using the USB
+port, then run a serial host program to connect with your Discovery
+board. For example:
+
+.. code-block:: console
+
+   $ minicom -D /dev/ttyACM0 -b 115200
+
+Then, build and flash in the usual way. Here is an example for the
+:zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32u5g9j_dk1
+   :goals: build flash
+
+You should see the following message on the console:
+
+.. code-block:: console
+
+   Hello World! stm32u5g9j_dk1
+
+Debugging
+=========
+
+Default debugger for this board is OpenOCD. It could be used in the usual way
+with "west debug" command.
+Here is an example for the :zephyr:code-sample:`blinky` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32u5g9j_dk1
+   :goals: debug
+
+
+.. _STM32U5G9J-DK1 website:
+   https://www.st.com/en/evaluation-tools/stm32u5g9j-dk1.html
+
+.. _STM32U5G9J-DK1 board User Manual:
+   https://www.st.com/resource/en/user_manual/um2967-discovery-kits-with-stm32u5x9nj-mcus-stmicroelectronics.pdf
+
+.. _STM32U5G9NJ on www.st.com:
+   https://www.st.com/en/microcontrollers-microprocessors/stm32u5g9nj.html
+
+.. _STM32U5 Series reference manual:
+   https://www.st.com/resource/en/reference_manual/rm0456-stm32u5-series-armbased-32bit-mcus-stmicroelectronics.pdf
+
+.. _STM32U5Gxxx datasheet:
+   https://www.st.com/resource/en/datasheet/stm32u5g9nj.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32U5G9J_DK1 board schematics:
+   https://www.st.com/resource/en/schematic_pack/mb1829-u5a9njq-b01-schematic.pdf

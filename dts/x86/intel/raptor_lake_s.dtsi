@@ -56,7 +56,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
-			device-id = <0x7a23>;
+			device-id = <0x7aa3>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 

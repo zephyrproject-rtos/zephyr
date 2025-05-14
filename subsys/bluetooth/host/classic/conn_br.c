@@ -143,3 +143,30 @@ const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
 
 	return &conn->br.dst;
 }
+
+void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
+{
+	uint16_t acl_total_len;
+	struct bt_l2cap_hdr *hdr;
+	struct net_buf_simple_state state;
+
+	do {
+		net_buf_simple_save(&buf->b, &state);
+
+		hdr = (void *)buf->data;
+		acl_total_len = sys_le16_to_cpu(hdr->len) + sizeof(*hdr);
+		if (buf->len > acl_total_len) {
+			LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
+			buf->len = acl_total_len;
+		} else if (buf->len < acl_total_len) {
+			LOG_ERR("Short packet (%u < %u)", buf->len, acl_total_len);
+			break;
+		}
+		bt_l2cap_recv(conn, net_buf_ref(buf), complete);
+
+		net_buf_simple_restore(&buf->b, &state);
+		net_buf_pull(buf, acl_total_len);
+	} while (buf->len > 0);
+
+	net_buf_unref(buf);
+}

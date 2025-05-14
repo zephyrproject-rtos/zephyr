@@ -735,6 +735,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     # Need to account for code and data where there are not emitted
     # symbols associated with them.
     node_hidden_syms = TreeNode('(hidden)', "(hidden)", parent=root)
+    node_no_paths._size = sum_node_children_size(node_no_paths)
     node_hidden_syms._size = root._size - sum_node_children_size(root)
 
     return root

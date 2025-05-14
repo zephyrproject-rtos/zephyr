@@ -3565,6 +3565,8 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 	}
 
 	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_ag_pool), "Conn index is out of bounds");
+
 	ag = &bt_hfp_ag_pool[index];
 	if (ag->acl_conn) {
 		LOG_ERR("AG connection (%p) is established", conn);
@@ -3705,6 +3707,8 @@ static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
 	LOG_DBG("conn %p", info->acl);
 
 	index = (size_t)bt_conn_index(info->acl);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_ag_pool), "Conn index is out of bounds");
+
 	ag = &bt_hfp_ag_pool[index];
 	if (ag->acl_conn != info->acl) {
 		LOG_ERR("ACL %p of AG is unaligned with SCO's %p", ag->acl_conn, info->acl);

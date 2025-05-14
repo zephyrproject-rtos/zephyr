@@ -1917,7 +1917,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -1928,7 +1928,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1

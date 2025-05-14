@@ -31,7 +31,7 @@ static int lps22hh_enable_int(const struct device *dev, int enable)
 	/* set interrupt */
 	lps22hh_pin_int_route_get(ctx, &int_route);
 	int_route.drdy_pres = enable;
-	return lps22hh_pin_int_route_set(ctx, &int_route);
+	return lps22hh_pin_int_route_set(ctx, int_route);
 }
 
 /**

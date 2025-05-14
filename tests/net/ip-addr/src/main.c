@@ -224,10 +224,21 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 					    0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 	struct in6_addr addr6_pref3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x64, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+	struct in6_addr ula = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+				    0, 0, 0, 0, 0xd1, 0xd2, 0xd3, 0xd4 } } };
+	struct in6_addr ula2 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0x1, 0x2, 0x3, 0x4 } } };
+	struct in6_addr ula3 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0xf1, 0xf2, 0xf3, 0xf4 } } };
+	struct in6_addr ula4 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0xf1, 0xf2, 0xf3, 0xf5 } } };
+	struct in6_addr ula5 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0xf1, 0xf2, 0xf3, 0xf6 } } };
 	struct in6_addr *tmp;
 	const struct in6_addr *out;
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
+	struct net_if_ipv6_prefix *prefix;
 	struct net_if *iface;
 	int i;
 
@@ -368,6 +379,81 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	zassert_true(net_if_ipv6_addr_rm(default_iface, &addr6),
 		     "IPv6 removing address failed\n");
 	zassert_true(net_if_ipv6_addr_rm(default_iface, &addr6_pref2),
+		     "IPv6 removing address failed\n");
+
+	/**TESTPOINTS: Check what IPv6 address is selected when some
+	 * addresses are in preferred state and some in deprecated state.
+	 */
+	ifaddr2 = net_if_ipv6_addr_add(default_iface, &ula,
+				       NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr2, "IPv6 ula address add failed");
+
+	ifaddr2->addr_state = NET_ADDR_PREFERRED;
+
+	out = net_if_ipv6_select_src_addr(default_iface, &ula2);
+	zassert_not_null(out, "IPv6 src ula addr selection failed, "
+			 "iface %p\n", default_iface);
+
+	DBG("Selected IPv6 address %s, iface %p\n",
+	    net_sprint_ipv6_addr(out), iface);
+
+	zassert_false(memcmp(out->s6_addr, &ula.s6_addr, sizeof(struct in6_addr)),
+		      "IPv6 wrong src ula address selected, iface %p\n", iface);
+
+	/* Allow selection of deprecated address if no other address
+	 * is available.
+	 */
+	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
+
+	out = net_if_ipv6_select_src_addr(default_iface, &ula3);
+	zassert_not_null(out, "IPv6 src ula addr selection failed, "
+			 "iface %p\n", default_iface);
+
+	/* Then add another address with preferred state and check that we
+	 * still select the deprecated address as it is a better match.
+	 */
+	ifaddr2 = net_if_ipv6_addr_add(default_iface, &ula3,
+				       NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr2, "IPv6 ula address add failed");
+
+	ifaddr2->addr_state = NET_ADDR_PREFERRED;
+
+	out = net_if_ipv6_select_src_addr(default_iface, &ula2);
+	zassert_not_null(out, "IPv6 src ula addr selection failed, "
+			 "iface %p\n", default_iface);
+
+	DBG("Selected IPv6 address %s, iface %p\n",
+	    net_sprint_ipv6_addr(out), iface);
+
+	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct in6_addr)),
+		      "IPv6 wrong src ula address selected, iface %p\n", iface);
+
+	zassert_true(net_if_ipv6_addr_rm(default_iface, &ula),
+		     "IPv6 removing address failed\n");
+
+	prefix = net_if_ipv6_prefix_add(default_iface, &ula4, 96, 3600);
+	zassert_not_null(prefix, "IPv6 ula prefix add failed");
+
+	ifaddr1 = net_if_ipv6_addr_add(default_iface, &ula4,
+				       NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr1, "IPv6 ula address add failed");
+
+	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
+
+	out = net_if_ipv6_select_src_addr(default_iface, &ula5);
+	zassert_not_null(out, "IPv6 src ula addr selection failed, "
+			 "iface %p\n", default_iface);
+
+	DBG("Selected IPv6 address %s, iface %p\n",
+	    net_sprint_ipv6_addr(out), iface);
+
+	zassert_false(memcmp(out->s6_addr, &ula4.s6_addr, sizeof(struct in6_addr)),
+		      "IPv6 wrong src ula address selected, iface %p\n", iface);
+
+	zassert_true(net_if_ipv6_addr_rm(default_iface, &ula3),
+		     "IPv6 removing address failed\n");
+
+	zassert_true(net_if_ipv6_addr_rm(default_iface, &ula4),
 		     "IPv6 removing address failed\n");
 }
 

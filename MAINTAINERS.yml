@@ -126,6 +126,19 @@ ACPI:
   tests:
     - acpi
 
+Aesc Platform:
+  status: maintained
+  maintainers:
+    - dnltz
+  files:
+    - soc/aesc/
+    - dts/riscv/aesc/
+    - boards/aesc/
+  files-regex:
+    - ^drivers/.*aesc(\.c)?$
+  labels:
+    - "area: Aesc Silicon Platform"
+
 Antmicro platforms:
   status: maintained
   maintainers:
@@ -170,6 +183,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - drivers/*/*modulino*
 
 ARM arch:
   status: maintained
@@ -522,6 +536,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio_samples/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
+    - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
     - doc/connectivity/bluetooth/shell/audio/
@@ -955,8 +970,6 @@ Devicetree:
     - include/zephyr/dt-bindings/dt-util.h
     - dts/binding-template.yaml
     - dts/bindings/base/
-  files-exclude:
-    - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
@@ -993,6 +1006,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - jarmouniA
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1700,10 +1714,11 @@ Release Notes:
     - drivers.memc
 
 "Drivers: MDIO":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
-    - maass-hamburg
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
@@ -1838,6 +1853,8 @@ Release Notes:
   status: odd fixes
   collaborators:
     - aasinclair
+    - nordic-auko
+    - seov-nordic
   files:
     - drivers/mfd/
     - include/zephyr/drivers/mfd/
@@ -1865,7 +1882,8 @@ Release Notes:
 "Drivers: Regulators":
   status: maintained
   maintainers:
-    - gmarull
+    - nordic-auko
+    - seov-nordic
   collaborators:
     - danieldegrasse
     - aasinclair
@@ -2163,6 +2181,7 @@ Release Notes:
     - loicpoulain
     - josuah
     - ngphibang
+    - avolmat-st
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
@@ -3509,19 +3528,20 @@ Bouffalolab Platforms:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
-    - boards/bouffalolab/
+    - boards/bflb/
     - drivers/*/*bflb*
-    - dts/riscv/bouffalolab/
+    - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
-    - soc/bouffalolab/
+    - soc/bflb/
   labels:
     - "platform: bouffalolab"
 
 Broadcom Platforms:
   status: odd fixes
   files:
-    - dts/arm/broadcom/
+    - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
 
@@ -3894,6 +3914,7 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
+    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
@@ -3906,6 +3927,8 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
+  files-exclude:
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
@@ -3948,10 +3971,13 @@ NXP Platforms (Robotics Products):
   maintainers:
     - bperseghetti
     - PetervdPerk-NXP
+  collaborators:
+    - manuargue
   files:
     - boards/nxp/vmu*/
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
@@ -4020,13 +4046,19 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
+    - drivers/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
     - dts/*/nordic/
     - dts/bindings/*/nordic,*
+    - include/zephyr/drivers/*/*nrf*.h
+    - include/zephyr/drivers/*/*nrf*/
+    - include/zephyr/dt-bindings/*/nordic*.h
+    - include/zephyr/dt-bindings/*/nrf*.h
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
+    - tests/boards/nrf/
   labels:
     - "platform: nRF"
 
@@ -4172,6 +4204,7 @@ STM32 Platforms:
     - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
+    - etienne-lms
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4239,8 +4272,7 @@ Espressif Platforms:
     - drivers/*/*esp32*.c
     - boards/espressif/
     - soc/espressif/
-    - dts/xtensa/espressif/
-    - dts/riscv/espressif/
+    - dts/*/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
@@ -4572,6 +4604,9 @@ TDK Sensors:
   status: maintained
   maintainers:
     - RobinKastberg
+  collaborators:
+    - bjorniuppsala
+    - LoveKarlsson
   files:
     - cmake/*/iar/
     - include/zephyr/toolchain/iar.h
@@ -4953,6 +4988,7 @@ West:
   status: maintained
   maintainers:
     - nandojve
+    - VynDragon
   files:
     - modules/hal_bouffalolab/
   labels:
@@ -5792,3 +5828,19 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+RX arch:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  files:
+    - arch/rx/
+    - include/zephyr/arch/rx/
+    - dts/rx/
+    - boards/qemu/rx/
+    - soc/renesas/rx/
+    - tests/arch/rx/
+  labels:
+    - "area: RX"
+  tests:
+    - arch.rx

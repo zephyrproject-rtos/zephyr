@@ -154,11 +154,13 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	}
 
 	SDL_SetRenderTarget(renderer, read_texture);
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
 
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 	SDL_RenderReadPixels(renderer, &rect, SDL_PIXELFORMAT_ARGB8888, buf, width * 4);
 
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	SDL_SetRenderTarget(renderer, NULL);
 
 	SDL_UnlockMutex(mutex);

@@ -480,7 +480,7 @@ static void http_report_progress(struct http_request *req)
 static int http_wait_data(int sock, struct http_request *req, const k_timepoint_t req_end_timepoint)
 {
 	int total_received = 0;
-	size_t offset = 0;
+	size_t offset = 0, processed = 0;
 	int received, ret;
 	struct zsock_pollfd fds[1];
 	int nfds = 1;
@@ -525,25 +525,49 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			} else if (received < 0) {
 				ret = -errno;
 				goto error;
-			} else {
-				req->internal.response.data_len += received;
-
-				(void)http_parser_execute(
-					&req->internal.parser, &req->internal.parser_settings,
-					req->internal.response.recv_buf + offset, received);
 			}
 
 			total_received += received;
 			offset += received;
 
+			/* Initialize the data length with the received data length. */
+			req->internal.response.data_len = offset;
+
+			processed = http_parser_execute(
+				&req->internal.parser, &req->internal.parser_settings,
+				req->internal.response.recv_buf, offset);
+
+			if (processed > offset) {
+				LOG_ERR("HTTP parser error, too much data consumed");
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			if (req->internal.parser.http_errno != HPE_OK) {
+				LOG_ERR("HTTP parsing error, %d",
+					req->internal.parser.http_errno);
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			/* Update the response data length with the actually
+			 * processed bytes.
+			 */
+			req->internal.response.data_len = processed;
+			offset -= processed;
+
 			if (offset >= req->internal.response.recv_buf_len) {
-				offset = 0;
+				/* This means the parser did not consume any data
+				 * and we can't fit any more in the buffer.
+				 */
+				LOG_ERR("HTTP RX buffer full, cannot proceed");
+				ret = -ENOMEM;
+				goto error;
 			}
 
 			if (req->internal.response.message_complete) {
 				http_report_complete(req);
-				break;
-			} else if (offset == 0) {
+			} else {
 				http_report_progress(req);
 
 				/* Re-use the result buffer and start to fill it again */
@@ -551,9 +575,23 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 				req->internal.response.body_frag_start = NULL;
 				req->internal.response.body_frag_len = 0;
 			}
+
+			if (offset > 0) {
+				/* In case there are any unprocessed data left,
+				 * move them to the front of the buffer.
+				 */
+				memmove(req->internal.response.recv_buf,
+					req->internal.response.recv_buf + processed,
+					offset);
+			}
 		}
 
-	} while (true);
+	} while (!req->internal.response.message_complete);
+
+	/* If there's still some data left in the buffer after HTTP processing,
+	 * reflect this in data_len variable.
+	 */
+	req->data_len = offset;
 
 	return total_received;
 

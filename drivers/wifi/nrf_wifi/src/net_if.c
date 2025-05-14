@@ -331,8 +331,8 @@ static bool is_eapol(struct net_pkt *pkt)
 
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {
-	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T);
+	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
+			ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE);
 
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -575,6 +575,7 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 		random_mac_addr,
 		WIFI_MAC_ADDR_LEN);
 #elif CONFIG_WIFI_OTP_MAC_ADDRESS
+#ifndef CONFIG_NRF71_ON_IPC
 	status = nrf_wifi_fmac_otp_mac_addr_get(fmac_dev_ctx,
 				vif_ctx_zep->vif_idx,
 				vif_ctx_zep->mac_addr.addr);
@@ -583,6 +584,15 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 			__func__);
 		goto unlock;
 	}
+#else
+	/* Set dummy MAC address */
+	vif_ctx_zep->mac_addr.addr[0] = 0x00;
+	vif_ctx_zep->mac_addr.addr[1] = 0x00;
+	vif_ctx_zep->mac_addr.addr[2] = 0x5E;
+	vif_ctx_zep->mac_addr.addr[3] = 0x00;
+	vif_ctx_zep->mac_addr.addr[4] = 0x10;
+	vif_ctx_zep->mac_addr.addr[5] = 0x00;
+#endif /* !CONFIG_NRF71_ON_IPC */
 #endif
 
 	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {

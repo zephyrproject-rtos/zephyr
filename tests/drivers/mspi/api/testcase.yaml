@@ -7,11 +7,21 @@ tests:
       - drivers
       - mspi
       - api
-    filter: dt_compat_enabled("zephyr,mspi-emul-controller") or
-            dt_compat_enabled("ambiq,mspi-controller")
+    filter: dt_compat_enabled("zephyr,mspi-emul-controller")
     harness: ztest
     platform_allow:
       - native_sim
-      - apollo3p_evb
     integration_platforms:
       - native_sim
+  drivers.mspi.api.ambiq:
+    tags:
+      - drivers
+      - mspi
+      - api
+    filter: dt_compat_enabled("ambiq,mspi-controller")
+    harness: ztest
+    platform_allow:
+      - apollo3p_evb
+      - apollo510_evb
+    extra_configs:
+      - CONFIG_MSPI_AMBIQ_CONTROLLER=y

@@ -526,7 +526,7 @@ function(yaml_save)
 
     cmake_path(SET yaml_path "${yaml_file}")
     cmake_path(GET yaml_path STEM yaml_file_no_ext)
-    set(expanded_file ${yaml_file_no_ext}_${genex_save_count}.yaml)
+    set(expanded_file ${CMAKE_CURRENT_BINARY_DIR}/${yaml_file_no_ext}_${genex_save_count}.yaml)
     set_property(TARGET ${save_target} PROPERTY expanded_file ${expanded_file})
 
     # comment this to keep the temporary files

@@ -27,7 +27,7 @@ extern "C" {
  * @brief Connection Manager Connectivity Implementation API
  * @defgroup conn_mgr_connectivity_impl Connection Manager Connectivity Implementation API
  * @since 3.4
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup conn_mgr_connectivity
  * @{
  */

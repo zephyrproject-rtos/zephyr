@@ -18,4 +18,6 @@ supported:
   - uart
   - flash
   - watchdog
+  - counter
+  - dma
 vendor: nxp

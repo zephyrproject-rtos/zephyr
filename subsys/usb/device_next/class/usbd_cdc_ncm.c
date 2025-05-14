@@ -1110,7 +1110,7 @@ static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T;
+	return ETHERNET_LINK_10BASE;
 }
 
 static int cdc_ncm_iface_start(const struct device *dev)

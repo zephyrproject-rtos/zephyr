@@ -19,4 +19,5 @@ supported:
   - pwm
   - spi
   - netif:eth
+  - counter
 vendor: nxp

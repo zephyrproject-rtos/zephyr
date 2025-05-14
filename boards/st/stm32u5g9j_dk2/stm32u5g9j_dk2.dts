@@ -1,0 +1,337 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/u5/stm32u5g9Xj.dtsi>
+#include <st/u5/stm32u5g9zjtxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32U5G9J DISCOVERY-2 KIT board";
+	compatible = "st,stm32u5g9j-dk2";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ltdc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led_0: led_3 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+
+		red_led_0: led_2 {
+			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &red_led_0;
+		sw0 = &user_button;
+		sdhc0 = &sdmmc1; /* disabled by default : conflict with ltdc node */
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pc6 &ltdc_r1_pc7 &ltdc_r2_pe15 &ltdc_r3_pd8
+			&ltdc_r4_pd9 &ltdc_r5_pd10 &ltdc_r6_pd11 &ltdc_r7_pd12
+			&ltdc_g0_pc8 &ltdc_g1_pc9 &ltdc_g2_pe9 &ltdc_g3_pe10
+			&ltdc_g4_pe11 &ltdc_g5_pe12 &ltdc_g6_pe13 &ltdc_g7_pe14
+			&ltdc_b0_pb9 &ltdc_b1_pb2 &ltdc_b2_pd14 &ltdc_b3_pd15
+			&ltdc_b4_pd0 &ltdc_b5_pd1 &ltdc_b6_pe7 &ltdc_b7_pe8
+			&ltdc_de_pd6 &ltdc_clk_pd3 &ltdc_hsync_pe0 &ltdc_vsync_pd13>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0x00>;
+	def-back-color-green = <0x00>;
+	def-back-color-blue = <0x00>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <5>;
+		vsync-len = <5>;
+		hback-porch = <8>;
+		vback-porch = <8>;
+		hfront-porch = <8>;
+		vfront-porch = <14>;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>; /* 4MHz (reset value) */
+	msi-pll-mode;
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&pll1 {
+	div-m = <4>;
+	mul-n = <80>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <4>;
+	mul-n = <66>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <4>;
+	mul-n = <125>;
+	div-p = <20>;
+	div-q = <20>;
+	div-r = <20>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <1>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch2_pe11>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers2 {
+	st,prescaler = <1>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+/* Connected to onboard 4-Gbyte eMMC flash memory */
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		&sdmmc1_d4_pb8 &sdmmc1_d5_pb9
+		&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
+		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	/* disabled due to conflicting pins pc6, pc7, pc8
+	 * pc9 and pb9 with LTDC node.
+	 */
+	status = "disabled";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <1>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@5 {
+		reg = <0x5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@c {
+		reg = <0xc>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in4_pc3>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <1>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@4 {
+		reg = <0x4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of bootloader
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(1952)>;
+		};
+
+		slot1_partition: partition@1f8000 {
+			label = "image-1";
+			reg = <0x001f8000 DT_SIZE_K(1960)>;
+		};
+
+		storage_partition: partition@3e2000 {
+			label = "storage";
+			reg = <0x003e2000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&rtc {
+	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};

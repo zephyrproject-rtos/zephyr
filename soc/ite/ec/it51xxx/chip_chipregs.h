@@ -9,6 +9,8 @@
 
 #include <zephyr/sys/util.h>
 
+#define IT51XXX_EC_FREQ KHZ(9200)
+
 #ifdef _ASMLANGUAGE
 #define ECREG(x) x
 #else
@@ -320,5 +322,17 @@ struct gctrl_it51xxx_regs {
 /* Alias gctrl_ite_ec_regs to gctrl_it51xxx_regs for compatibility */
 #define gctrl_ite_ec_regs      gctrl_it51xxx_regs
 #define GCTRL_ITE_EC_REGS_BASE GCTRL_IT51XXX_REGS_BASE
+
+/**
+ *
+ * (42xxh) SMBus Interface for target (SMB) registers
+ *
+ */
+#define IT51XXX_SMB_BASE 0xf04200
+/* 0x0a, 0x2a, 0x4a: Slave n Dedicated FIFO Pre-defined Control Register */
+#define SMB_SADFPCTL     (IT51XXX_SMB_BASE + 0x0a)
+#define SMB_SBDFPCTL     (IT51XXX_SMB_BASE + 0x2a)
+#define SMB_SCDFPCTL     (IT51XXX_SMB_BASE + 0x4a)
+#define SMB_HSAPE        BIT(1)
 
 #endif /* CHIP_CHIPREGS_H */

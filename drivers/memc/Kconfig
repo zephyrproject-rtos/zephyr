@@ -34,6 +34,8 @@ source "drivers/memc/Kconfig.mspi"
 
 source "drivers/memc/Kconfig.renesas_ra"
 
+source "drivers/memc/Kconfig.max32_hpb"
+
 module = MEMC
 module-str = memc
 source "subsys/logging/Kconfig.template.log_config"

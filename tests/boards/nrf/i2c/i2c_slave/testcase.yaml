@@ -1,12 +1,14 @@
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_loopback
+
 tests:
   boards.nrf.i2c.i2c_slave:
-    depends_on: i2c
-    tags:
-      - drivers
-      - i2c
-    harness: ztest
-    harness_config:
-      fixture: i2c_loopback
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
@@ -20,3 +22,30 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuppr
+  boards.nrf.i2c.i2c_slave.fast:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/i2c_speed_fast.overlay"
+  boards.nrf.i2c.i2c_slave.fast_plus:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/i2c_speed_fast_plus.overlay"

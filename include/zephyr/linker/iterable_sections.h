@@ -14,27 +14,28 @@
 
 /* clang-format off */
 #define Z_LINK_ITERABLE(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_start)); \
 	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
-	_CONCAT(_##struct_type, _list_end) = .
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_end));
+
 
 #define Z_LINK_ITERABLE_NUMERIC(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_start)); \
 	KEEP(*(SORT(._##struct_type.static.*_?_*))); \
 	KEEP(*(SORT(._##struct_type.static.*_??_*))); \
 	KEEP(*(SORT(._##struct_type.static.*_???_*))); \
 	KEEP(*(SORT(._##struct_type.static.*_????_*))); \
 	KEEP(*(SORT(._##struct_type.static.*_?????_*))); \
-	_CONCAT(_##struct_type, _list_end) = .
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_end));
 
 #define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
 	. = ALIGN(align); \
 	Z_LINK_ITERABLE(struct_type);
 
 #define Z_LINK_ITERABLE_GC_ALLOWED(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_start)); \
 	*(SORT_BY_NAME(._##struct_type.static.*)); \
-	_CONCAT(_##struct_type, _list_end) = .
+	PLACE_SYMBOL_HERE(_CONCAT(_##struct_type, _list_end));
 /* clang-format on */
 
 #define Z_LINK_ITERABLE_SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN

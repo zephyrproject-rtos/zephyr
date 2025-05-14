@@ -103,6 +103,12 @@
 			interrupts = <10 0>;
 			status = "disabled";
 		};
+
+		wdt0: watchdog@40001000 {
+			compatible = "ti,cc23x0-wdt";
+			reg = <0x40001000 0x310>;
+			status = "disabled";
+		};
 	};
 };
 

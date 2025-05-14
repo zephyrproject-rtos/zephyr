@@ -53,6 +53,12 @@
 
 #define ZPERF_VERSION "1.1"
 
+enum session_proto {
+	SESSION_UDP = 0,
+	SESSION_TCP = 1,
+	SESSION_PROTO_END
+};
+
 struct zperf_udp_datagram {
 	uint32_t id;
 	uint32_t tv_sec;
@@ -111,12 +117,23 @@ struct sockaddr_in *zperf_get_sin(void);
 
 extern void connect_ap(char *ssid);
 
+struct zperf_work {
+	struct k_work_q *queue;
+	struct z_thread_stack_element *stack;
+	struct k_event *start_event;
+	size_t stack_size;
+};
+
+#define START_EVENT 0x0001
+extern void start_jobs(void);
+extern struct zperf_work *get_queue(enum session_proto proto, int session_id);
+
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 			      int priority, int tcp_nodelay, int proto);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 
-void zperf_async_work_submit(struct k_work *work);
+void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work);
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
 

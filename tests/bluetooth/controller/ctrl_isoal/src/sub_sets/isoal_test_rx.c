@@ -353,7 +353,7 @@ static uint32_t get_next_time_offset(uint32_t time_offset,
 }
 
 /**
- * @breif Wrapper to test time wrapping
+ * @brief Wrapper to test time wrapping
  * @param  time_now  Current time value
  * @param  time_diff Time difference (signed)
  * @return           Wrapped time after difference

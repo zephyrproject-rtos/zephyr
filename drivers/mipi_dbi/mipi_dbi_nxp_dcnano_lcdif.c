@@ -329,7 +329,7 @@ static int mipi_dbi_dcnano_lcdif_reset(const struct device *dev, k_timeout_t del
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mcux_dcnano_lcdif_dbi_api = {
+static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 	.reset = mipi_dbi_dcnano_lcdif_reset,
 	.command_write = mipi_dbi_dcnano_lcdif_command_write,
 	.write_display = mipi_dbi_dcnano_lcdif_write_display,

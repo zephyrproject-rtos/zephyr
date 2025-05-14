@@ -1,0 +1,28 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+
+		zephyr,ipc_shm = &sramh;
+		zephyr,ipc = &mailbox0;
+	};
+
+	/* Delete MBOX Driver node */
+	/delete-node/ mbox@b2000;
+	soc {
+		mailbox0:mailbox@400b2000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x400b2000 0xEC>;
+			interrupts = <54 0>;
+			resets = <&reset NXP_SYSCON_RESET(0, 26)>;
+			status = "okay";
+		};
+	};
+};

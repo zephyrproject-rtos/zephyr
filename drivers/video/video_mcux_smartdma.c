@@ -365,13 +365,13 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.flush = nxp_video_sdma_flush
 };
 
-#define SOURCE_DEV(inst) DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor))
+#define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))
 
 #define NXP_VIDEO_SDMA_INIT(inst)                                                                  \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
 		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-		.sensor_dev = SOURCE_DEV(n),                                                       \
+		.sensor_dev = SOURCE_DEV(inst),                                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
 		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \

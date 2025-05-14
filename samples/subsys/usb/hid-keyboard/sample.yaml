@@ -14,6 +14,8 @@ common:
     - nucleo_f413zh
     - mimxrt685_evk/mimxrt685s/cm33
     - mimxrt1060_evk/mimxrt1062/qspi
+    - samd21_xpro
+    - same54_xpro
 tests:
   sample.usbd.hid-keyboard:
     tags: usb

@@ -23,6 +23,8 @@ description: |
 
 compatible: "x-powers,axp2101-charger"
 
+on-bus: axp2101
+
 include:
   - base.yaml
   - battery.yaml

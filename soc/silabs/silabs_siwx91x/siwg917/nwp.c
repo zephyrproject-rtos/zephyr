@@ -193,7 +193,11 @@ static int siwg917_nwp_init(void)
 
 	return 0;
 }
-SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#if defined(CONFIG_MBEDTLS_INIT)
+BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	     "mbed TLS must be initialized after the NWP.");
+#endif
+SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_SIWX91X_NWP_INIT_PRIORITY);
 
 /* IRQn 74 is used for communication with co-processor */
 Z_ISR_DECLARE(74, 0, IRQ074_Handler, 0);

@@ -1,0 +1,20 @@
+# PZEM004T Multifunction AC Meter configuration options
+
+# Copyright (c) 2025 Srishtik Bhandarkar
+# SPDX-License-Identifier: Apache-2.0
+
+config PZEM004T
+	bool "PZEM004T Multifunction AC Meter"
+	default y
+	depends on DT_HAS_PEACEFAIR_PZEM004T_ENABLED
+	depends on MODBUS
+	depends on MODBUS_SERIAL
+	depends on MODBUS_RAW_ADU
+	help
+	  Enable the driver for the Peacefair PZEM004T Multifunction AC Meter.
+
+config PZEM004T_ENABLE_RESET_ENERGY
+	bool "Include support for resetting energy value"
+	depends on PZEM004T
+	help
+	  Enable support for resetting the energy counter on the PZEM004T device.

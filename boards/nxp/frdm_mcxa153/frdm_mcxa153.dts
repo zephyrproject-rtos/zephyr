@@ -56,16 +56,20 @@
 
 		user_button_2: button_2 {
 			label = "User SW2";
-			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		user_button_3: button_3 {
 			label = "User SW3";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+};
+
+&edma0 {
+	status = "okay";
 };
 
 &flash {
@@ -116,9 +120,40 @@
 	status = "okay";
 };
 
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
 };

@@ -125,6 +125,8 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
 					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
 
+	k_sem_give(&disp_data->task_sem);
+
 	if (rc != 0) {
 		nsi_print_error_and_exit("Failed to create SDL display");
 		return;
@@ -169,6 +171,8 @@ static int sdl_display_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(disp_data->sdl_thread_stack),
 			sdl_task_thread, (void *)dev, NULL, NULL,
 			CONFIG_SDL_DISPLAY_THREAD_PRIORITY, 0, K_NO_WAIT);
+	/* Ensure task thread has performed the init */
+	k_sem_take(&disp_data->task_sem, K_FOREVER);
 
 	return 0;
 }

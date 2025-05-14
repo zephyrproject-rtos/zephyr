@@ -1109,7 +1109,7 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 		.channels = dma_xilinx_axi_dma##inst##_channels,                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &dma_xilinx_axi_dma_init, NULL,                                \
+	DEVICE_DT_INST_DEFINE(inst, dma_xilinx_axi_dma_init, NULL,                                 \
 			      &dma_xilinx_axi_dma##inst##_data,                                    \
 			      &dma_xilinx_axi_dma##inst##_config, POST_KERNEL,                     \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_xilinx_axi_dma_driver_api);

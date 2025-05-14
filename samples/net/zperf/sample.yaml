@@ -36,6 +36,11 @@ tests:
     extra_configs:
       - CONFIG_NET_SHELL=n
     platform_allow: qemu_x86
+  sample.net.zperf_concurrent_upload:
+    harness: net
+    extra_configs:
+      - CONFIG_ZPERF_SESSION_PER_THREAD=y
+    platform_allow: qemu_x86
   sample.net.zperf.netusb_ecm:
     harness: net
     extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"

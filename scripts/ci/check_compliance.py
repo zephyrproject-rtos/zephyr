@@ -1024,6 +1024,7 @@ flagged.
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
+        "BOOT_FIRMWARE_LOADER_BOOT_MODE", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
@@ -1070,8 +1071,10 @@ flagged.
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
+        "IAR_DATA_INIT",
         "IAR_LIBCPP",
         "IAR_SEMIHOSTING",
+        "IAR_ZEPHYR_INIT",
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
                                                       # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
@@ -1459,7 +1462,8 @@ class Identity(ComplianceTest):
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
-            detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
+            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
+                                       body,
                                        re.IGNORECASE)
 
             failures = []

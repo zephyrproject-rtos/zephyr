@@ -75,9 +75,9 @@ config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"
-	default y if NRF_RTC_TIMER
+	default y if NRF_RTC_TIMER || NRF_GRTC_TIMER
 	help
-	  If RTC is used as system timer then LF clock is always on and handling
+	  If RTC or GRTC is used as system timer then LF clock is always on and handling
 	  can be simplified.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD

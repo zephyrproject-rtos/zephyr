@@ -43,17 +43,18 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL) && \
-	(defined(CONFIG_HAS_HW_NRF_SPIM120) || \
-	 defined(CONFIG_HAS_HW_NRF_SPIM121))
-#define SPIM_REQUESTS_CLOCK(idx) UTIL_OR(IS_EQ(idx, 120), \
-					 IS_EQ(idx, 121))
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL)
+#define SPIM_REQUESTS_CLOCK(node) \
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(DT_CLOCKS_CTLR(node)), nordic_nrf_hsfll_global)
+#define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
+#if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
 #define USE_CLOCK_REQUESTS 1
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast SPIM PM actions can only be
  * called from a thread context.
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
+#endif
 #else
 #define SPIM_REQUESTS_CLOCK(idx) 0
 #endif
@@ -153,7 +154,12 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 	void *reg = dev_config->spim.p_reg;
 
 	if (deactivate_cs) {
+		/*
+		 * We may suspend SPI only if we don't have to keep CS asserted, as we
+		 * need to keep the CS GPIO port resumed until spi_release() in this case.
+		 */
 		spi_context_cs_control(&dev_data->ctx, false);
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
 	}
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -163,8 +169,6 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		release_clock(dev);
 	}
-
-	pm_device_runtime_put_async(dev, K_NO_WAIT);
 }
 
 static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
@@ -402,7 +406,7 @@ static void finish_transaction(const struct device *dev, int error)
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
-	finalize_spi_transaction(dev, true);
+	finalize_spi_transaction(dev, (dev_data->ctx.config->operation & SPI_HOLD_ON_CS) > 0);
 }
 
 static void transfer_next_chunk(const struct device *dev)
@@ -661,11 +665,16 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 static int spim_resume(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 	/* nrfx_spim_init() will be called at configuration before
 	 * the next transfer.
 	 */
+
+	if (spi_context_cs_get_all(&dev_data->ctx)) {
+		return -EAGAIN;
+	}
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
@@ -687,6 +696,8 @@ static void spim_suspend(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		release_clock(dev);
 	}
+
+	spi_context_cs_put_all(&dev_data->ctx);
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, true);

@@ -8,7 +8,7 @@
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-#include <stm32_ll_icache.h>
+#include <zephyr/cache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
@@ -39,7 +39,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	struct stm32_uid dev_id;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Disable();
+	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_2);
@@ -47,7 +47,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_0);
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	if (length > sizeof(dev_id.id)) {

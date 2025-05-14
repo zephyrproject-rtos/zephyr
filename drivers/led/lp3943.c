@@ -169,15 +169,8 @@ static int lp3943_led_set_brightness(const struct device *dev, uint32_t led,
 				     uint8_t value)
 {
 	const struct lp3943_config *config = dev->config;
-	struct lp3943_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint8_t reg, val, mode;
-
-	if (value < dev_data->min_brightness ||
-			value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
 
 	/* Use DIM0 for LEDs 0 to 7 and DIM1 for LEDs 8 to 15 */
 	if (led < 8) {
@@ -192,7 +185,7 @@ static int lp3943_led_set_brightness(const struct device *dev, uint32_t led,
 		reg = LP3943_PWM1;
 	}
 
-	val = (value * 255U) / dev_data->max_brightness;
+	val = (value * 255U) / LED_BRIGTHNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
 		LOG_ERR("LED write failed");
 		return -EIO;
@@ -263,8 +256,6 @@ static int lp3943_led_init(const struct device *dev)
 	/* Hardware specific limits */
 	dev_data->min_period = 0U;
 	dev_data->max_period = 1600U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	return 0;
 }

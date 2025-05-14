@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Christian Hirsch
+ * Copyright (c) 2025 Petr Vilím
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +73,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		temp = (temp >> THERMOCOUPLE_TEMPERATURE_POS) & 0x3fff;
 
 		/* if sign bit is set, make value negative */
-		if (temp & BIT(14)) {
+		if (temp & BIT(13)) {
 			temp |= THERMOCOUPLE_SIGN_BITS;
 		}
 
@@ -86,7 +87,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		temp = (temp >> INTERNAL_TEMPERATURE_POS) & 0xfff;
 
 		/* if sign bit is set, make value negative */
-		if (temp & BIT(12)) {
+		if (temp & BIT(11)) {
 			temp |= INTERNAL_SIGN_BITS;
 		}
 

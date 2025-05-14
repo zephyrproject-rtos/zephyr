@@ -192,6 +192,24 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 			LOG_ERR("Undefined symbol with no entry in "
 				"symbol table %s, offset %zd, link section %d",
 				name, (size_t)rel->r_offset, shdr->sh_link);
+
+			if (!IS_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES)) {
+				/**
+				 * Attempting to import device objects from LLEXT but forgetting to
+				 * enable the corresponding Kconfig option will result in cryptic
+				 * dynamic linking errors. Try to detect this situation by checking
+				 * if the symbol's name starts with the prefix used to name device
+				 * objects, and print a special warning directing users towards the
+				 * missing Kconfig option in such circumstances.
+				 */
+				const char *const dev_prefix = STRINGIFY(DEVICE_NAME_GET(EMPTY));
+				const int prefix_len = strlen(dev_prefix);
+
+				if (strncmp(name, dev_prefix, prefix_len) == 0) {
+					LOG_WRN("(Device objects are not available for import "
+						"because CONFIG_LLEXT_EXPORT_DEVICES is not enabled)");
+				}
+			}
 			return -ENODATA;
 		}
 

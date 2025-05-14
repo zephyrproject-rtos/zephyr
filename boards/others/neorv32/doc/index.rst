@@ -13,7 +13,7 @@ For more information about the NEORV32, see the following websites:
 - `The NEORV32 RISC-V Processor Datasheet`_
 - `The NEORV32 RISC-V Processor User Guide`_
 
-The currently supported version is NEORV32 v1.11.2.
+The currently supported version is NEORV32 v1.11.3.
 
 Supported Board Targets
 =======================
@@ -97,12 +97,27 @@ supporting the GPIOs, support can be enabled by setting the ``status`` property 
 devicetree node to ``okay``. The number of supported GPIOs can be set via the ``ngpios`` devicetree
 property.
 
+Pulse-Width Modulation
+======================
+
+The NEORV32 PWM controller is supported but disabled by default. For NEORV32 SoC implementations
+supporting PWM, support can be enabled by setting the ``status`` property of the ``pwm`` devicetree
+node to ``okay``.
+
 True Random-Number Generator
 ============================
 
 The True Random-Number Generator (TRNG) of the NEORV32 is supported, but disabled by default. For
 NEORV32 SoC implementations supporting the TRNG, support can be enabled by setting the ``status``
 property of the ``trng`` devicetree node to ``okay``.
+
+General Purpose Timer
+=====================
+
+The General Purpose Timer (GPTMR) of the NEORV32 is supported, but disabled by default. For NEORV32
+SoC implementations supporting the GPTMR, support can be enabled by setting the ``status`` property
+of the ``gptmr`` devicetree node to ``okay`` and selecting the desired GPTMR clock prescaler using
+the node's ``prescaler`` property.
 
 Programming and Debugging
 *************************

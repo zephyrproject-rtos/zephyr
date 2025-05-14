@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Copyright (c) 2025 Aerlync Labs Inc.
  */
 
 #include "main_functions.h"
@@ -90,7 +92,8 @@ void loop(void)
 	float x = position * kXrange;
 
 	/* Quantize the input from floating-point to integer */
-	int8_t x_quantized = x / input->params.scale + input->params.zero_point;
+	int8_t x_quantized = (int8_t)round(x / input->params.scale)
+		             + input->params.zero_point;
 	/* Place the quantized input in the model's input tensor */
 	input->data.int8[0] = x_quantized;
 

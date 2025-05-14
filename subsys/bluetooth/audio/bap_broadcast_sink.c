@@ -128,7 +128,8 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 		subgroup_param->bis_sync = sink_subgroup->bis_indexes & sink->indexes_bitfield;
 	}
 
-	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
+	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ ||
+	    recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_DEC;
 	} else {
 		mod_src_param.encrypt_state = recv_state->encrypt_state;

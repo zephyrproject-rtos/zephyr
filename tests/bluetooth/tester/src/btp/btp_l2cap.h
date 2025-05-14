@@ -7,7 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/addr.h>
 
 /* L2CAP Service */
@@ -53,6 +54,7 @@ struct btp_l2cap_send_data_cmd {
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR	0x02
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY	0x03
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION 0x04
+#define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_SEC_AUTHEN	0x05
 
 #define BTP_L2CAP_LISTEN				0x05
 struct btp_l2cap_listen_cmd {

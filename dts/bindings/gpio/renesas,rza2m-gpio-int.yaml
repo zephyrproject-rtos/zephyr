@@ -1,0 +1,13 @@
+description: Renesas RZ/A2M GPIO Interrupt
+
+compatible: "renesas,rza2m-gpio-int"
+
+include: base.yaml
+
+properties:
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0

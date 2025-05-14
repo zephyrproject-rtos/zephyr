@@ -86,8 +86,9 @@ ZTEST(posix_rw_locks, test_rw_lock)
 	usleep(USEC_PER_MSEC);
 	LOG_DBG("Parent thread acquiring WR lock again");
 
-	time.tv_sec = 2;
-	time.tv_nsec = 0;
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &time));
+	time.tv_sec += 2;
+
 	ret = pthread_rwlock_timedwrlock(&rwlock, &time);
 	if (ret) {
 		zassert_ok(pthread_rwlock_wrlock(&rwlock), "Failed to acquire write lock");
