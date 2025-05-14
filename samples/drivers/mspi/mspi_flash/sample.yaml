@@ -5,7 +5,8 @@ tests:
     tags:
       - mspi
       - flash
-    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("mspi-atxp032")
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+      or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
@@ -22,3 +23,4 @@ tests:
     depends_on: mspi
     integration_platforms:
       - apollo3p_evb
+      - apollo510_evb
