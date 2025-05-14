@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2025 Paul Wedeck
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v208/ch32v208.dtsi>
+
+
+/ {
+	soc {
+		dma1: dma@40020000 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020000 0x90>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_DMA1>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <27>, <28>, <29>, <30>, <31>, <32>, <33>, <62>;
+			dma-channels = <8>;
+		};
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+};
+
+&clk_lsi {
+	clock-frequency = <DT_FREQ_K(40)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(20)>;
+};
+
+&flash {
+	reg = <0x40022000 0x28>;
+};
+
+&flash0 {
+	reg = <0 DT_SIZE_K(64)>;
+};
+
+&gpioa {
+	ngpios = <16>;
+};
+
+&gpiob {
+	ngpios = <16>;
+};
+
+&gpioc {
+	gpio-reserved-ranges = <0 13>;
+	ngpios = <16>;
+};
+
+&gpiod {
+	ngpios = <2>;
+};
+
+&usart4 {
+	interrupts = <61>;
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(96)>;
+};

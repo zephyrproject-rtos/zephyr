@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Paul Wedeck
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32l103/ch32l103.dtsi>
+
+&gpiob {
+        gpio-reserved-ranges = <10, 5>;
+};

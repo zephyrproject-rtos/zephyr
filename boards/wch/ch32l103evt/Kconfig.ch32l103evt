@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Paul Wedeck
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH32L103EVT
+	select SOC_CH32L103
