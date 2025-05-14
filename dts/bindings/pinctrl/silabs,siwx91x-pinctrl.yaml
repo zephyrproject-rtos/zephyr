@@ -2,9 +2,10 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+title: Silabs SiWx91x Pin Controller
+
 description: |
-  The Silabs SiWx91x pin controller is a devicetree node tasked with selecting
-  the proper IO function for a given pin.
+  Node tasked with selecting the proper IO function for a given pin.
 
   The pinctrl settings are referenced in a device tree peripheral node. For
   example when configuring a UART:
