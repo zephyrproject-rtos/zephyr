@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <silabs/efr32mg24.dtsi>
+#include <silabs/xg24/efr32mg24.dtsi>
 
 / {
 	sram0: memory@20000000 {
@@ -13,10 +13,8 @@
 	};
 
 	soc {
-		compatible = "silabs,efr32mg24b210f1536im48",
-					 "silabs,efr32mg24",
-					 "silabs,efr32",
-					 "simple-bus";
+		compatible = "silabs,efr32mg24b310f1536im48", "silabs,efr32mg24", "silabs,xg24",
+			     "silabs,efr32", "simple-bus";
 	};
 };
 
