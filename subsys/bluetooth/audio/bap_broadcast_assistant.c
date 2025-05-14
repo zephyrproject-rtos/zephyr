@@ -1267,6 +1267,30 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs, uint32_t a
 	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
 }
 
+static bool valid_bis_sync_request(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
+{
+	/* Verify that the request BIS sync indexes are unique or no preference */
+	if (!bis_syncs_unique_or_no_pref(requested_bis_syncs, aggregated_bis_syncs)) {
+		LOG_DBG("Duplicate BIS index 0x%08x (aggregated %x)", requested_bis_syncs,
+			aggregated_bis_syncs);
+		return false;
+	}
+
+	if (requested_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF &&
+	    aggregated_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF) {
+		LOG_DBG("Invalid BIS index 0x%08X mixing BT_BAP_BIS_SYNC_NO_PREF and specific BIS",
+			requested_bis_syncs);
+		return false;
+	}
+
+	if (!valid_bis_syncs(requested_bis_syncs)) {
+		LOG_DBG("Invalid BIS sync: 0x%08X", requested_bis_syncs);
+		return false;
+	}
+
+	return true;
+}
+
 static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subgroup subgroups[],
 				  uint8_t num_subgroups)
 {
@@ -1284,17 +1308,14 @@ static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subg
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (!bis_syncs_unique_or_no_pref(subgroups[i].bis_sync, aggregated_bis_syncs)) {
-			LOG_DBG("[%u]: Duplicate BIS index 0x%08x (aggregated 0x%08x)", i,
-				subgroups[i].bis_sync, aggregated_bis_syncs);
+		if (!valid_bis_sync_request(subgroups[i].bis_sync, aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS Sync request[%d]", i);
 
 			return false;
 		}
 
 		/* Keep track of BIS sync values to ensure that we do not have duplicates */
-		if (subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			aggregated_bis_syncs |= subgroups[i].bis_sync;
-		}
+		aggregated_bis_syncs |= subgroups[i].bis_sync;
 
 #if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
 		if (subgroups[i].metadata_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
