@@ -397,6 +397,11 @@ static int lpspi_init(const struct device *dev)
 	return 0;
 }
 
+static int lpspi_deinit(const struct device *dev)
+{
+	return spi_nxp_deinit_common(dev);
+}
+
 #define LPSPI_INIT(n)                                                                              \
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
 	SPI_LPSPI_CONFIG_INIT(n)                                                              \
@@ -408,9 +413,9 @@ static int lpspi_init(const struct device *dev)
 		.driver_data = &lpspi_##n##_driver_data,                                           \
 	};                                                                                         \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, lpspi_init, NULL, &lpspi_data_##n,                            \
-				  &lpspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-				  &lpspi_driver_api);
+	SPI_DEVICE_DT_INST_DEINIT_DEFINE(n, lpspi_init, lpspi_deinit, NULL, &lpspi_data_##n,       \
+					 &lpspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
+					 &lpspi_driver_api);
 
 #define SPI_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 

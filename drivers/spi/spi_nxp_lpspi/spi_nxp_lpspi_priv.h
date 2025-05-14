@@ -34,6 +34,7 @@ struct lpspi_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
+	void (*irq_deinit_func)(const struct device *dev);
 	uint32_t pcs_sck_delay;
 	uint32_t sck_pcs_delay;
 	uint32_t transfer_delay;
@@ -65,6 +66,13 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
  */
 int spi_nxp_init_common(const struct device *dev);
 
+/* Does these things:
+ * Reset module
+ * Disable clock if present
+ * Clear or simply disable IRQ
+ */
+int spi_nxp_deinit_common(const struct device *dev);
+
 /* common api function for now */
 int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg);
 
@@ -87,12 +95,27 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev);
 #define LPSPI_IRQN(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm),	   \
 					(DT_IRQN(DT_INST_PARENT(n))), (DT_INST_IRQN(n)))
 
+#define SPI_LPSPI_IRQ_DEINIT_FUNC_LP_FLEXCOMM(n)                                                   \
+	nxp_lp_flexcomm_clearirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)),                          \
+					LP_FLEXCOMM_PERIPH_LPSPI);
+
+#define SPI_LPSPI_IRQ_DEINIT_FUNC_DISTINCT(n)                                                      \
+	irq_disable(DT_INST_IRQN(n));
+
+#define SPI_LPSPI_IRQ_DEINIT_FUNC(n)                                                               \
+	COND_CODE_1(                                                                               \
+		DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm),                            \
+		(SPI_LPSPI_IRQ_DEINIT_FUNC_LP_FLEXCOMM(n)),                                        \
+		(SPI_LPSPI_IRQ_DEINIT_FUNC_DISTINCT(n))                                            \
+	)
+
 #define SPI_LPSPI_CONFIG_INIT(n)                                                              \
 	static const struct lpspi_config lpspi_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.irq_config_func = lpspi_config_func_##n,                                          \
+		.irq_deinit_func = lpspi_deinit_func_##n,                                          \
 		.pcs_sck_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, pcs_sck_delay),                 \
 					  DT_INST_PROP(n, pcs_sck_delay)),                         \
 		.sck_pcs_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, sck_pcs_delay),                 \
@@ -112,7 +135,12 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev);
                                                                                                    \
 	static void lpspi_config_func_##n(const struct device *dev)                                \
 	{                                                                                          \
-		SPI_LPSPI_IRQ_FUNC(n)                                                         \
+		SPI_LPSPI_IRQ_FUNC(n)                                                              \
+	}                                                                                          \
+                                                                                                   \
+	static void lpspi_deinit_func_##n(const struct device *dev)                                \
+	{                                                                                          \
+		SPI_LPSPI_IRQ_DEINIT_FUNC(n)                                                       \
 	}
 
 #define SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                          \
