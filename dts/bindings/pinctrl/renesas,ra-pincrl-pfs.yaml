@@ -1,10 +1,11 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+title: Renesas RA Pin Controller
+
 description: |
-    The Renesas RA pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing a SCI0 RXD
-    to P610.
+    Node responsible for controlling pin function selection and pin properties,
+    such as routing a SCI0 RXD to P610.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

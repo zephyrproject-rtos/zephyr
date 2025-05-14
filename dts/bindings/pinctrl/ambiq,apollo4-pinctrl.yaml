@@ -1,10 +1,12 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Ambiq Apollo4 Pin Controller
+
 description: |
-    The Ambiq Apollo4 pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing a UART0 TX
-    to pin 60 and enabling the pullup resistor on that pin.
+    Singleton node responsible for controlling pin function selection and pin
+    properties, such as routing a UART0 TX to pin 60 and enabling the pullup
+    resistor on that pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:
