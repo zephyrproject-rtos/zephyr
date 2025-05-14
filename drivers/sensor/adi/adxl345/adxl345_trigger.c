@@ -197,6 +197,8 @@ int adxl345_init_interrupt(const struct device *dev)
 			adxl345_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL345_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl345_work_cb;
 #endif
