@@ -875,7 +875,7 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 static int dma_dw_axi_init(const struct device *dev)
 {
 	DEVICE_MMIO_NAMED_MAP(dev, dma_mmio, K_MEM_CACHE_NONE);
-	int i, ret;
+	int i;
 	struct dma_dw_axi_ch_data *chan_data;
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
@@ -883,6 +883,8 @@ static int dma_dw_axi_init(const struct device *dev)
 #if DMA_DW_AXI_RESET_SUPPORTED
 
 	if (dw_dma_config->reset.dev != NULL) {
+		int ret;
+
 	/* check if reset manager is in ready state */
 		if (!device_is_ready(dw_dma_config->reset.dev)) {
 			LOG_ERR("reset controller device not found");
