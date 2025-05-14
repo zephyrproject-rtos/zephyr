@@ -900,7 +900,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_PM
-	/* Disable unused clocks that are enabled. These will not be enabled, unless
+	/* Disable unused clocks that are enabled (by bootloader or as wakeup source). These will not be enabled, unless
 	the MCU uses them for PM wakeup purposes. */
 	if (!IS_ENABLED(STM32_MSIS_ENABLED) && READ_BIT(RCC->CR, RCC_CR_MSISON)) {
 		LL_RCC_MSIS_Disable();
