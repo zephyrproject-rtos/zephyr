@@ -16,10 +16,21 @@ menuconfig IIS3DWB
 
 if IIS3DWB
 
+config IIS3DWB_STREAM
+	bool "IIS3DWB data streaming"
+	select IIS3DWB_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this config option to enable streaming sensor data via RTIO subsystem.
+
+config IIS3DWB_TRIGGER
+	bool
+
 config IIS3DWB_ENABLE_TEMP
 	bool "Temperature"
 	help
 	  Enable/disable temperature sensor
-
 
 endif # IIS3DWB
