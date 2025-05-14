@@ -170,6 +170,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - drivers/*/*modulino*
 
 ARM arch:
   status: maintained
