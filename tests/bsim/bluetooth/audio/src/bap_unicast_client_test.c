@@ -850,8 +850,11 @@ static void transceive_streams(void)
 	}
 
 	if (source_stream != NULL) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(source_stream);
+
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		WAIT_FOR_FLAG(test_stream->flag_audio_received);
 	}
 }
 
