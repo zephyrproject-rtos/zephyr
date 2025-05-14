@@ -181,29 +181,6 @@ SECTIONS {
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
-		MPU_MIN_SIZE_ALIGN
-		/*
-		 * For performance, BSS section is assumed to be 4 byte aligned and
-		 * a multiple of 4 bytes
-		 */
-		. = ALIGN(4);
-		__bss_start = .;
-		__kernel_ram_start = .;
-		*(".bss")
-		*(".bss.*")
-		*(COMMON)
-		*(".kernel_bss.*")
-
-		/*
-		 * BSP clears this memory in words only and doesn't clear any
-		 * potential left over bytes.
-		 */
-		__bss_end = ALIGN(4);
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-#include <zephyr/linker/common-noinit.ld>
-
 	GROUP_START(DATA_REGION)
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,) {
@@ -211,6 +188,7 @@ SECTIONS {
 /* when XIP, .text is in ROM, but vector table must be at start of .data */
 		__data_region_start = .;
 		__data_start = .;
+		__kernel_ram_start = .;
 		*(".data")
 		*(".data.*")
 		*(".kernel.*")
@@ -244,6 +222,28 @@ SECTIONS {
 #include <snippets-data-sections.ld>
 
 	__data_region_end = .;
+
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
+		MPU_MIN_SIZE_ALIGN
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		. = ALIGN(4);
+		__bss_start = .;
+		*(".bss")
+		*(".bss.*")
+		*(COMMON)
+		*(".kernel_bss.*")
+
+		/*
+		 * BSP clears this memory in words only and doesn't clear any
+		 * potential left over bytes.
+		 */
+		__bss_end = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+#include <zephyr/linker/common-noinit.ld>
 
 	MPU_MIN_SIZE_ALIGN
 	/* Define linker symbols */
