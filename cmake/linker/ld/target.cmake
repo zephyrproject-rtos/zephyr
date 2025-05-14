@@ -4,8 +4,6 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 find_package(GnuLd REQUIRED)
 set(CMAKE_LINKER ${GNULD_LINKER})
 
-set_ifndef(LINKERFLAGPREFIX -Wl)
-
 if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
    ${GNULD_LINKER_IS_BFD})
   # ld.bfd was found so let's explicitly use that for linking, see #32237

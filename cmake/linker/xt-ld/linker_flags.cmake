@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+set_ifndef(LINKERFLAGPREFIX -Wl)
+
 check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--gc-sections
                           ${LINKERFLAGPREFIX},--build-id=none

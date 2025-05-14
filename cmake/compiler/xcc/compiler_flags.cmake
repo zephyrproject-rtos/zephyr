@@ -18,3 +18,7 @@ set_compiler_property(PROPERTY warning_shadow_variables)
 
 # xcc does not recognize -fno-printf-return-value
 set_compiler_property(PROPERTY no_printf_return_value)
+
+# xcc should never do nostdinc so clear those properties.
+set_compiler_property(PROPERTY nostdinc)
+set_compiler_property(APPEND PROPERTY nostdinc_include)

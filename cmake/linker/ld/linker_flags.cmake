@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+if("${LINKER}" STREQUAL ld)
+  # This file may be sourced by other ld flag compatible linkers,
+  # but are not ld, and thus should not find GnuLd package.
+  find_package(GnuLd)
+endif()
+
+set_ifndef(LINKERFLAGPREFIX -Wl)
+
 check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--gc-sections
                           ${LINKERFLAGPREFIX},--build-id=none

@@ -83,6 +83,7 @@ add_custom_target(asm)
 add_custom_target(compiler)
 add_custom_target(compiler-cpp)
 add_custom_target(linker)
+add_custom_target(bintools)
 
 if(NOT (COMPILER STREQUAL "host-gcc"))
   include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/target.cmake)
@@ -98,14 +99,36 @@ unset(CMAKE_C_COMPILER CACHE)
 # In Zephyr, toolchains require a port under cmake/toolchain/.
 # Each toolchain port must set COMPILER and LINKER.
 # E.g. toolchain/llvm may pick {clang, ld} or {clang, lld}.
-add_custom_target(bintools)
+
+# Loading of templates are strictly not needed as they do not set any
+# properties.
+# They purely provide an overview as well as a starting point for supporting
+# a new toolchain.
+include(${ZEPHYR_BASE}/cmake/compiler/compiler_flags_template.cmake)
+include(${ZEPHYR_BASE}/cmake/linker/linker_flags_template.cmake)
+include(${ZEPHYR_BASE}/cmake/linker/linker_libraries_template.cmake)
+include(${ZEPHYR_BASE}/cmake/bintools/bintools_template.cmake)
+
+# Configure the toolchain flags based on what toolchain technology is used
+# (gcc, host-gcc etc.)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/compiler_flags.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/linker_flags.cmake OPTIONAL)
 
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
-include(${ZEPHYR_BASE}/cmake/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
 
-include(${TOOLCHAIN_ROOT}/cmake/linker/target_template.cmake)
+if(CONFIG_NATIVE_LIBRARY)
+  include(${TOOLCHAIN_ROOT}/cmake/linker/linker_libraries_native.cmake)
+else()
+  include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/linker_libraries.cmake OPTIONAL)
+endif()
+
+# Load the compile features file which will provide compile features lists for
+# various C / CXX language dialects that can then be exported based on current
+# Zephyr Kconfig settings or the CSTD global property.
+include(${ZEPHYR_BASE}/cmake/compiler/compiler_features.cmake)
+include(${ZEPHYR_BASE}/cmake/linker/target_template.cmake)
 
 set(TargetTools_FOUND TRUE)
 set(TARGETTOOLS_FOUND TRUE)

@@ -38,6 +38,7 @@ endforeach()
 foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
 endforeach()
+set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 
 if(CONFIG_64BIT)
   list(APPEND TOOLCHAIN_C_FLAGS "-m64")

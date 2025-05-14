@@ -142,15 +142,13 @@ enable_language(ASM)
 
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatibility with certain C flags.
-zephyr_check_compiler_flag(C "" toolchain_is_ok)
+zephyr_verify_toolchain(C toolchain_is_ok TOOLCHAIN_SIGNATURE)
 set(log_file "CMakeConfigureLog.yaml")
 if(CMAKE_VERSION VERSION_LESS "3.26.0")
   set(log_file "CMakeError.log")
 endif()
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file.\
  Move ${USER_CACHE_DIR}, re-run and look at ${log_file}")
-
-include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
 # but for legacy reasons we need it to be set to

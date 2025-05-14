@@ -1106,6 +1106,68 @@ endfunction()
 
 # 1.5. Misc.
 
+# Zephyr Verify Toolchain:
+#
+# Usage:
+#  zephyr_verify_toolchain(<language> <check> <signature>)
+#
+# zephyr_verify_toolchain is a part of Zephyr's toolchain
+# infrastructure. It should be used after first project() call to ensure that
+# the target toolchain is in a working condition, which is that it is able to
+# build and link a dummy C.
+#
+# It uses zephyr_check_compiler_flag() to test the toolchain.
+#
+# If testing is successful, then function will invoke all defered compiler and
+# linker flags.
+#
+# <language> : Language to use for testing, for example 'C'
+# <check>    : Return variable where the test result will be returned.
+# <signature>: Return variable where an MD5 signature identifying the toolchain
+#              (copmpiler) will be stored.
+function(zephyr_verify_toolchain lang check signature)
+  # Uniquely identify the toolchain wrt. its capabilities.
+  #
+  # What we are looking for, is a signature definition that is defined
+  # like this:
+  #  * The MD5 sum of the compiler itself. A MD5 checksum is taken of the content
+  #    after symlinks are resolved. This ensure that if the content changes, then
+  #    the MD5 will also change (as example toolchain upgrade in same folder)
+  #  * The CMAKE_C_COMPILER itself. This may be a symlink, but it ensures that
+  #    multiple symlinks pointing to same executable will generate different
+  #    signatures, as example: clang, gcc, arm-zephyr-eabi-gcc, links pointing to
+  #    ccache will generate unique signatures
+
+  #  * CMAKE_C_COMPILER_VERSION will ensure that even when using the previous
+  #    methods, where an upgraded compiler could have same signature due to ccache
+  #    usage and symbolic links, then the upgraded compiler will have new version
+  #    and thus generate a new signature.
+  #
+  #  Toolchains with the same signature will always support the same set of flags.
+  #
+  file(MD5 ${CMAKE_C_COMPILER} md5_cmake_c_compiler)
+
+  # Extend the md5 CMAKE_C_COMPILER_MD5 sum with the compiler signature.
+  string(MD5 md5_compiler ${CMAKE_C_COMPILER}_${CMAKE_C_COMPILER_ID}_${CMAKE_C_COMPILER_VERSION})
+  set(${signature} ${md5_cmake_c_compiler}_${md5_compiler})
+  set(${signature} ${md5_cmake_c_compiler}_${md5_compiler} PARENT_SCOPE)
+
+  zephyr_check_compiler_flag(C "" result)
+  set(${check} "${result}" PARENT_SCOPE)
+
+  if(result)
+    foreach(target compiler linker)
+      get_property(length TARGET ${target} PROPERTY queue_length)
+      foreach(index RANGE 1 ${length})
+        get_property(command_list TARGET ${target} PROPERTY queue_${index})
+        list(POP_FRONT command_list function)
+        cmake_language(CALL ${function} ${command_list})
+      endforeach()
+      set_property(TARGET ${target} PROPERTY queue_length 0)
+    endforeach()
+  endif()
+endfunction()
+
 # zephyr_check_compiler_flag is a part of Zephyr's toolchain
 # infrastructure. It should be used when testing toolchain
 # capabilities and it should normally be used in place of the
@@ -2491,6 +2553,15 @@ endfunction()
 # PROPERTY: Name of property with the value(s) following immediately after
 #           property name
 function(check_set_linker_property)
+  if(NOT DEFINED PROJECT_NAME)
+    # Add properties to best tested later and return
+    get_property(length TARGET linker PROPERTY queue_length)
+    math(EXPR index "${length} + 1")
+    set_property(TARGET linker PROPERTY queue_${index} "check_set_linker_property" "${ARGV}")
+    set_property(TARGET linker PROPERTY queue_length ${index})
+    return()
+  endif()
+
   set(options APPEND)
   set(single_args TARGET)
   set(multi_args  PROPERTY)
@@ -2564,9 +2635,19 @@ endfunction()
 # PROPERTY: Name of property with the value(s) following immediately after
 #           property name
 function(check_set_compiler_property)
+  if(NOT DEFINED PROJECT_NAME)
+    # Add properties to best tested later and return
+    get_property(length TARGET compiler PROPERTY queue_length)
+    math(EXPR index "${length} + 1")
+    set_property(TARGET compiler PROPERTY queue_${index} "check_set_compiler_property" "${ARGV}")
+    set_property(TARGET compiler PROPERTY queue_length ${index})
+    return()
+  endif()
+
   set(options APPEND)
   set(multi_args  PROPERTY)
   cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
   if(COMPILER_PROPERTY_APPEND)
    set(APPEND "APPEND")
    set(APPEND-CPP "APPEND")

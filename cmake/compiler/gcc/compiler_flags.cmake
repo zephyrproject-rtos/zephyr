@@ -13,20 +13,16 @@ list(APPEND CXX_EXCLUDED_OPTIONS
 # This section covers flags related to optimization #
 #####################################################
 set_compiler_property(PROPERTY no_optimization -O0)
-if(CMAKE_C_COMPILER_VERSION VERSION_LESS "4.8.0")
-  set_compiler_property(PROPERTY optimization_debug -O0)
-else()
-  set_compiler_property(PROPERTY optimization_debug -Og)
-endif()
+set_compiler_property(PROPERTY optimization_debug -O0)
+# Very old gcc releases does not support -Og, so let's check and update setting if supported.
+check_set_compiler_property(PROPERTY optimization_debug -Og)
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
 set_compiler_property(PROPERTY optimization_fast -Ofast)
 
-if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
-  set_compiler_property(PROPERTY optimization_lto -flto=auto)
-  set_compiler_property(PROPERTY prohibit_lto -fno-lto)
-endif()
+check_set_compiler_property(PROPERTY optimization_lto -flto=auto)
+check_set_compiler_property(PROPERTY prohibit_lto -fno-lto)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -113,14 +109,12 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 # GCC compiler flags for C standard. The specific standard must be appended by user.
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_NEWLIB_LIBC AND
-    NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
-    NOT COMPILER STREQUAL "xcc" AND
-    NOT CONFIG_HAS_ESPRESSIF_HAL AND
-    NOT CONFIG_NATIVE_BUILD)
-  set_compiler_property(PROPERTY nostdinc -nostdinc)
-  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
-endif()
+set_compiler_property(PROPERTY nostdinc -nostdinc)
+# Keeping nostdinc property empty. The compiler will populate include paths
+# from its default search path. The toolchain may adjust the value to a
+# specific location, for example gcc infrastructure will set the value based
+# on output from --print-libgcc-file-name.
+set_compiler_property(APPEND PROPERTY nostdinc_include)
 
 check_set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
 
