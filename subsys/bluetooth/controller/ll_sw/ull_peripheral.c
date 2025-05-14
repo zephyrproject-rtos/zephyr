@@ -160,7 +160,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
 	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
 	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
-	    !lll->interval) {
+	    !IN_RANGE(lll->interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
