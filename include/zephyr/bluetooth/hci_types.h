@@ -2729,6 +2729,10 @@ struct bt_hci_evt_le_advertising_report {
 	struct bt_hci_evt_le_advertising_info adv_info[0];
 } __packed;
 
+/** All limits according to BT Core Spec v5.4 [Vol 4, Part E]. */
+#define BT_HCI_LE_INTERVAL_MIN                  0x0006
+#define BT_HCI_LE_INTERVAL_MAX                  0x0c80
+
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
 struct bt_hci_evt_le_conn_update_complete {
 	uint8_t  status;
