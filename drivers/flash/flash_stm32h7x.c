@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_SERIES_MAX_FLASH_KB KB(2048)
 #define BANK2_OFFSET                (STM32H7_SERIES_MAX_FLASH_KB / 2)
 /* When flash is dual bank and flash size is smaller than Max flash size of
- * the serie, there is a discontinuty between bank1 and bank2.
+ * the series, there is a discontinuty between bank1 and bank2.
  */
 #define DISCONTINUOUS_BANKS         (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
 #define NUMBER_OF_BANKS             2
@@ -840,17 +840,19 @@ static const struct flash_parameters *flash_stm32h7_get_parameters(const struct 
 	return &flash_stm32h7_parameters;
 }
 
-#ifndef CONFIG_SOC_SERIES_STM32H7RSX
 /* Gives the total logical device size in bytes and return 0. */
 static int flash_stm32h7_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	*size = (uint64_t)0x10000U; /* The series has only 64K of user flash memory */
+#else
 	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	return 0;
 }
-#endif /* !CONFIG_SOC_SERIES_STM32H7RSX */
 
 void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
@@ -909,9 +911,7 @@ static DEVICE_API(flash, flash_stm32h7_api) = {
 	.write = flash_stm32h7_write,
 	.read = flash_stm32h7_read,
 	.get_parameters = flash_stm32h7_get_parameters,
-#ifndef CONFIG_SOC_SERIES_STM32H7RSX
 	.get_size = flash_stm32h7_get_size,
-#endif
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
