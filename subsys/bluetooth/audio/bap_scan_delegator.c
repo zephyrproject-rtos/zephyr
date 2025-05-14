@@ -152,6 +152,30 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
 }
 
+static bool valid_bis_sync_request(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
+{
+	/* Verify that the request BIS sync indexes are unique or no preference */
+	if (!bis_syncs_unique_or_no_pref(requested_bis_syncs, aggregated_bis_syncs)) {
+		LOG_DBG("Duplicate BIS index 0x%08x (aggregated %x)", requested_bis_syncs,
+			aggregated_bis_syncs);
+		return false;
+	}
+
+	if (requested_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF &&
+	    aggregated_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF) {
+		LOG_DBG("Invalid BIS index 0x%08X mixing BT_BAP_BIS_SYNC_NO_PREF and specific BIS",
+			requested_bis_syncs);
+		return false;
+	}
+
+	if (!valid_bis_syncs(requested_bis_syncs)) {
+		LOG_DBG("Invalid BIS sync: 0x%08X", requested_bis_syncs);
+		return false;
+	}
+
+	return true;
+}
+
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv_state)
 {
 	if (recv_state->active) {
@@ -710,19 +734,9 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 			bis_sync_requested = true;
 		}
 
-		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (!bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
-						 aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
-				i, internal_state->requested_bis_sync[i],
-				aggregated_bis_syncs);
-			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-			goto unlock_return;
-		}
-
-		if (!valid_bis_syncs(internal_state->requested_bis_sync[i])) {
-			LOG_DBG("Invalid BIS sync[%d]: 0x%08X", i,
-				internal_state->requested_bis_sync[i]);
+		if (!valid_bis_sync_request(internal_state->requested_bis_sync[i],
+					    aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS Sync request[%d]", i);
 			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 			goto unlock_return;
 		}
@@ -914,15 +928,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			bis_sync_change_requested = true;
 		}
 
-		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (!bis_syncs_unique_or_no_pref(requested_bis_sync[i], aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)", i,
-				requested_bis_sync[i], aggregated_bis_syncs);
-			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-			goto unlock_return;
-		}
-
-		if (!valid_bis_syncs(requested_bis_sync[i])) {
+		if (!valid_bis_sync_request(internal_state->requested_bis_sync[i],
+					    aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS Sync request[%d]", i);
 			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 			goto unlock_return;
 		}
