@@ -265,7 +265,53 @@ int mdm_sim7080_query_gnss(struct sim7080_gnss_data *data)
 	return ret;
 }
 
-int mdm_sim7080_start_gnss(void)
+static uint8_t cgnscpy_ret;
+
+MODEM_CMD_DEFINE(on_cmd_cgnscpy)
+{
+	cgnscpy_ret = (uint8_t)strtoul(argv[0], NULL, 10);
+	LOG_INF("CGNSCPY: %u", cgnscpy_ret);
+	return 0;
+}
+
+static int16_t xtra_diff_h, xtra_duration_h;
+
+MODEM_CMD_DEFINE(on_cmd_cgnsxtra)
+{
+	xtra_diff_h = (int16_t)strtol(argv[0], NULL, 10);
+	xtra_duration_h = (int16_t)strtol(argv[1], NULL, 10);
+	LOG_INF("XTRA validity: diff=%d, duration=%d, inject=%s,%s",
+		xtra_diff_h,
+		xtra_duration_h,
+		argv[2],
+		argv[3]);
+	return 0;
+}
+
+int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h)
+{
+	struct modem_cmd cmds[] = { MODEM_CMD("+CGNSXTRA: ", on_cmd_cgnsxtra, 4U, ",") };
+	int ret = -EINVAL;
+
+	if (!diff_h || !duration_h) {
+		goto out;
+	}
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSXTRA",
+			     &mdata.sem_response, K_SECONDS(2));
+	if (ret != 0) {
+		LOG_ERR("Failed to query xtra validity");
+		goto out;
+	}
+
+	*diff_h = xtra_diff_h;
+	*duration_h = xtra_duration_h;
+
+out:
+	return ret;
+}
+
+static int sim7080_start_gnss_ext(bool xtra)
 {
 	int ret = -EALREADY;
 
@@ -278,6 +324,7 @@ int mdm_sim7080_start_gnss(void)
 		goto out;
 	}
 
+	/* Power GNSS unit */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=1",
 			     &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
@@ -285,6 +332,36 @@ int mdm_sim7080_start_gnss(void)
 		goto out;
 	}
 
+	if (xtra == false) {
+		goto coldstart;
+	}
+
+	struct modem_cmd cmds[] = { MODEM_CMD("+CGNSCPY: ", on_cmd_cgnscpy, 1U, "") };
+
+	cgnscpy_ret = UINT8_MAX;
+
+	/* Copy the xtra file to gnss unit */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSCPY",
+			     &mdata.sem_response, K_SECONDS(5));
+	if (ret < 0) {
+		LOG_WRN("Failed to copy xtra file. Performing cold start");
+		goto coldstart;
+	}
+
+	if (cgnscpy_ret != 0) {
+		LOG_WRN("CGNSCPY returned %u. Performing cold start", cgnscpy_ret);
+		goto coldstart;
+	}
+
+	/* Enable xtra functionality */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSXTRA=1",
+			     &mdata.sem_response, K_SECONDS(5));
+	if (ret < 0) {
+		LOG_WRN("Failed query xtra file validity. Performing cold start");
+		goto coldstart;
+	}
+
+coldstart:
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSCOLD",
 			     &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
@@ -295,6 +372,16 @@ int mdm_sim7080_start_gnss(void)
 	sim7080_change_state(SIM7080_STATE_GNSS);
 out:
 	return ret;
+}
+
+int mdm_sim7080_start_gnss(void)
+{
+	return sim7080_start_gnss_ext(false);
+}
+
+int mdm_sim7080_start_gnss_xtra(void)
+{
+	return sim7080_start_gnss_ext(true);
 }
 
 int mdm_sim7080_stop_gnss(void)
@@ -314,6 +401,49 @@ int mdm_sim7080_stop_gnss(void)
 	}
 
 	sim7080_change_state(SIM7080_STATE_IDLE);
+out:
+	return ret;
+}
+
+int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name)
+{
+	char buf[sizeof("AT+HTTPTOFS=\"http://iot#.xtracloud.net/xtra3##_72h.bin\",\"/customer/Xtra3.bin\"")];
+	int ret = -ENOTCONN;
+
+	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
+		LOG_WRN("Need network to download xtra file");
+		goto out;
+	}
+
+	ret = snprintk(buf, sizeof(buf), "AT+HTTPTOFS=\"http://iot%hhu.xtracloud.net/%s\",\"/customer/Xtra3.bin\"",
+		server_id, f_name);
+	if (ret < 0) {
+		LOG_ERR("Failed to format xtra download");
+		goto out;
+	}
+
+	mdata.http_status = 0;
+
+	/* Download xtra file */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
+			     &mdata.sem_response, K_SECONDS(2));
+	if (ret < 0) {
+		LOG_ERR("Failed to download xtra file");
+		goto out;
+	}
+
+	/* Wait for HTTP status code */
+	ret = k_sem_take(&mdata.sem_http, K_SECONDS(60));
+	if (ret != 0) {
+		LOG_ERR("Waiting for http completion failed");
+		goto out;
+	}
+
+	if (mdata.http_status != 200) {
+		LOG_ERR("HTTP request failed with: %u", mdata.http_status);
+		ret = -1;
+	}
+
 out:
 	return ret;
 }

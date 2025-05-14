@@ -141,6 +141,8 @@ struct sim7080_data {
 	struct sim7080_sms_buffer *sms_buffer;
 	/* Position in the sms buffer. */
 	uint8_t sms_buffer_pos;
+	/* Status of the last http operation */
+	uint16_t http_status;
 	/* Ftp related variables. */
 	struct {
 		/* User buffer for ftp data. */
@@ -157,6 +159,7 @@ struct sim7080_data {
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_dns;
 	struct k_sem sem_ftp;
+	struct k_sem sem_http;
 	struct k_sem boot_sem;
 	struct k_sem pdp_sem;
 };
