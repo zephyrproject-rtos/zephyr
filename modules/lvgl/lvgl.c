@@ -27,6 +27,8 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 	.blanking_on = false,
 }};
 
+#define DISPLAY_BUFFER_ALIGN(alignbytes) __aligned(alignbytes)
+
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_displays)
 #define DISPLAY_NODE(n) DT_ZEPHYR_DISPLAY(n)
 #elif DT_HAS_CHOSEN(zephyr_display)
@@ -77,21 +79,21 @@ static uint8_t *mono_vtile_buf_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 /* prevent unaligned memory accesses. */
 
 /* clang-format off */
-#define LV_BUFFERS_DEFINE(n)                                                                       \
-	static uint8_t buf0_##n[BUFFER_SIZE(n)]							   \
-	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))                 \
-						       __aligned(CONFIG_LV_Z_VDB_ALIGN);           \
-                                                                                                   \
-	IF_ENABLED(CONFIG_LV_Z_DOUBLE_VDB, (							   \
-	static uint8_t buf1_##n[BUFFER_SIZE(n)]							   \
-	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))		   \
-			__aligned(CONFIG_LV_Z_VDB_ALIGN);					   \
-	))                                            \
-                                                                                                   \
-	IF_ENABLED(ALLOC_MONOCHROME_CONV_BUFFER, (						   \
-	static uint8_t mono_vtile_buf_##n[BUFFER_SIZE(n)]					   \
-	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))		   \
-			__aligned(CONFIG_LV_Z_VDB_ALIGN);					   \
+#define LV_BUFFERS_DEFINE(n)									\
+	static DISPLAY_BUFFER_ALIGN(LV_DRAW_BUF_ALIGN) uint8_t buf0_##n[BUFFER_SIZE(n)]		\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))		\
+						       __aligned(CONFIG_LV_Z_VDB_ALIGN);	\
+												\
+	IF_ENABLED(CONFIG_LV_Z_DOUBLE_VDB, (							\
+	static DISPLAY_BUFFER_ALIGN(LV_DRAW_BUF_ALIGN) uint8_t buf1_##n[BUFFER_SIZE(n)]		\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))		\
+			__aligned(CONFIG_LV_Z_VDB_ALIGN);					\
+	))											\
+												\
+	IF_ENABLED(ALLOC_MONOCHROME_CONV_BUFFER, (						\
+	static uint8_t mono_vtile_buf_##n[BUFFER_SIZE(n)]					\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))		\
+			__aligned(CONFIG_LV_Z_VDB_ALIGN);					\
 	))
 
 FOR_EACH(LV_BUFFERS_DEFINE, (), LV_DISPLAYS_IDX_LIST);
