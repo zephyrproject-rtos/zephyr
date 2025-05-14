@@ -632,8 +632,16 @@ script as well.
 CMSIS
 *****
 
-Cortex-M CMSIS headers are hosted in a standalone module repository:
-`zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_.
+Cortex-M CMSIS headers are provided through standalone module repositories:
+
+- **CMSIS 5**: `zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_
+- **CMSIS 6**: `zephyrproject-rtos/CMSIS_6 <https://github.com/zephyrproject-rtos/CMSIS_6>`_
+
+Zephyr has begun transitioning to **CMSIS 6** as the default source for Cortex-M core headers.
+However, at present, Zephyr includes headers from **both** the CMSIS 6 and legacy CMSIS 5 modules.
+
+The legacy CMSIS 5 headers remain available primarily for compatibility with vendor HALs, while all
+new architecture-level development should use **CMSIS 6** headers whenever possible.
 
 :kconfig:option:`CONFIG_CPU_CORTEX_M` selects :kconfig:option:`CONFIG_HAS_CMSIS_CORE` to signify that
 CMSIS headers are available for all supported Cortex-M variants.
