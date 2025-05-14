@@ -2530,7 +2530,7 @@ def test_twisterrunner_run(
     pipeline_q = queue.LifoQueue()
     done_q = queue.LifoQueue()
     done_instance = mock.Mock(
-        metrics={'k2': 'v2'},
+        metrics={'k': 'v2'},
         execution_time=30
     )
     done_instance.name='dummy instance'
@@ -2570,8 +2570,7 @@ def test_twisterrunner_run(
     assert tr.jobserver.name == expected_jobserver
 
     assert tr.instances['dummy instance'].metrics == {
-        'k': 'v',
-        'k2': 'v2',
+        'k': 'v2',
         'handler_time': 30
     }
 
