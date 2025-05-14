@@ -275,16 +275,7 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 	if ((fmt->pixelformat != fmts[0].pixelformat) ||
 	    (fmt->width != fmts[0].width_min) ||
 	    (fmt->height != fmts[0].height_min)) {
-		/* Update format of sensor */
-		fmt->pixelformat = fmts[0].pixelformat;
-		fmt->width = fmts[0].width_min;
-		fmt->height = fmts[0].height_min;
-		fmt->pitch = fmts[0].width_min * 2;
-		ret = video_set_format(config->sensor_dev, fmt);
-		if (ret < 0) {
-			LOG_ERR("Sensor device does not support RGB565");
-			return ret;
-		}
+		return -ENOTSUP;
 	}
 
 	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
