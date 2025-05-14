@@ -59,12 +59,10 @@ int z_vrfy___posix_clock_get_base(clockid_t clock_id, struct timespec *ts)
 
 int z_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	struct timespec base;
+	struct timespec base = {.tv_sec = 0, .tv_nsec = 0};
 
 	switch (clock_id) {
 	case CLOCK_MONOTONIC:
-		base.tv_sec = 0;
-		base.tv_nsec = 0;
 		break;
 
 	case CLOCK_REALTIME:
