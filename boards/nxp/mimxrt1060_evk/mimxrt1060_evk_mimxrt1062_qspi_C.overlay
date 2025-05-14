@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
+	};
+};
+
 /* FLEXPWM not routed to LED on this EVK */
 &flexpwm2_pwm3 {
 	status = "disabled";
@@ -12,4 +19,19 @@
 &green_led {
 	gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 	label = "User LED1";
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
+		clock-names = "mclk";
+	};
+
 };
