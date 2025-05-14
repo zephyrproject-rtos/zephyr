@@ -203,6 +203,8 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 		return ret;
 	}
 
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
 	data->fmt = *fmt;
 
 	return 0;
@@ -225,6 +227,8 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 	if (ret < 0) {
 		return ret;
 	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	data->fmt = *fmt;
 

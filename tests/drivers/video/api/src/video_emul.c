@@ -156,7 +156,6 @@ ZTEST(video_common, test_video_vbuf)
 	fmt.pixelformat = caps.format_caps[0].pixelformat;
 	fmt.width = caps.format_caps[0].width_max;
 	fmt.height = caps.format_caps[0].height_max;
-	fmt.pitch = fmt.width * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 	zexpect_ok(video_set_format(rx_dev, VIDEO_EP_OUT, &fmt));
 
 	/* Allocate a buffer, assuming prj.conf gives enough memory for it */

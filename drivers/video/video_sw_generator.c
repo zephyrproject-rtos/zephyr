@@ -86,6 +86,8 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 		return -ENOTSUP;
 	}
 
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
 	data->fmt = *fmt;
 
 	return 0;
