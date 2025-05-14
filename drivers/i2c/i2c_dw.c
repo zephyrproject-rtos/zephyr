@@ -110,6 +110,48 @@ int i2c_dw_recovery_bus(const struct device *dev)
 	return ret;
 }
 
+static int i2c_dw_error_chk(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+	union ic_interrupt_register intr_stat;
+	union ic_txabrt_register ic_txabrt_src;
+	uint32_t value;
+	/* Cache ic_intr_stat and txabrt_src for processing,
+	 * so there is no need to read the register multiple times.
+	 */
+	intr_stat.raw = read_intr_stat(reg_base);
+	ic_txabrt_src.raw = read_txabrt_src(reg_base);
+	/* NACK and SDA_STUCK are below TX_Abort */
+	if (intr_stat.bits.tx_abrt) {
+		/* check 7bit NACK Tx Abort */
+		if (ic_txabrt_src.bits.ADDR7BNACK) {
+			dw->state |= I2C_DW_NACK;
+			LOG_ERR("NACK on %s", dev->name);
+		}
+		/* check SDA stuck low Tx abort, need to do bus recover */
+		if (ic_txabrt_src.bits.SDASTUCKLOW) {
+			dw->state |= I2C_DW_SDA_STUCK;
+			LOG_ERR("SDA Stuck Low on %s", dev->name);
+		}
+		/* clear RTS5912_INTR_STAT_TX_ABRT */
+		value = read_clr_tx_abrt(reg_base);
+	}
+	/* check SCL stuck low */
+	if (intr_stat.bits.scl_stuck_low) {
+		dw->state |= I2C_DW_SCL_STUCK;
+		LOG_ERR("SCL Stuck Low on %s", dev->name);
+	}
+	if (dw->state & I2C_DW_ERR_MASK) {
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+		dw->need_setup = true;
+#endif
+		LOG_ERR("IO Fail on %s", dev->name);
+		return -EIO;
+	}
+	return 0;
+}
+
 #ifdef CONFIG_I2C_DW_LPSS_DMA
 void i2c_dw_enable_idma(const struct device *dev, bool enable)
 {
@@ -312,6 +354,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 
 		write_cmd_data(data, reg_base);
 
+		if (i2c_dw_error_chk(dev)) {
+			return;
+		}
+
 		dw->rx_pending++;
 		dw->request_bytes--;
 		cnt--;
@@ -339,6 +385,10 @@ static void i2c_dw_data_read(const struct device *dev)
 
 		if (dw->xfr_len == 0U) {
 			break;
+		}
+
+		if (i2c_dw_error_chk(dev)) {
+			return;
 		}
 	}
 #endif
@@ -388,6 +438,10 @@ static int i2c_dw_data_send(const struct device *dev)
 		dw->xfr_buf++;
 
 		if (test_bit_intr_stat_tx_abrt(reg_base)) {
+			return -EIO;
+		}
+
+		if (i2c_dw_error_chk(dev)) {
 			return -EIO;
 		}
 	}
@@ -462,6 +516,7 @@ static void i2c_dw_isr(const struct device *port)
 		     DW_INTR_STAT_RX_UNDER | DW_INTR_STAT_SCL_STUCK_LOW) &
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
+			i2c_dw_error_chk(port);
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 			dw->need_setup = true;
 #endif
@@ -774,7 +829,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	 * not execute PM policies that would turn off this ip block, causing an
 	 * ongoing hw transaction to be left in an inconsistent state.
 	 * Note : This is just a sample to show a possible use of the API, it is
-	 * upto the driver expert to see, if he actually needs it here, or
+	 * up to the driver expert to see, if he actually needs it here, or
 	 * somewhere else, or not needed as the driver's suspend()/resume()
 	 * can handle everything
 	 */
