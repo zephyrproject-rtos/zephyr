@@ -323,12 +323,12 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	dmas = <&dma1 5 5 0x0000>;
 	dma-names = "tx_rx";
-
 	status = "okay";
 
-	mx25r6435f: qspi-nor-flash@90000000 {
+	mx25r6435f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <50000000>;
 		status = "okay";
 
