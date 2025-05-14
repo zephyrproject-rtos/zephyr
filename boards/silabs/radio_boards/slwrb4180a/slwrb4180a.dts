@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg21a020f1024im32.dtsi>
+#include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slwrb4180a-pinctrl.dtsi"
 
