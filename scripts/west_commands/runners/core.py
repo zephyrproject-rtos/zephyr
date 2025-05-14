@@ -727,6 +727,12 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             return build_conf['CONFIG_FLASH_BASE_ADDRESS']
 
+    @staticmethod
+    def sram_address_from_build_conf(build_conf: BuildConfiguration):
+        '''return CONFIG_SRAM_BASE_ADDRESS.
+        '''
+        return build_conf['CONFIG_SRAM_BASE_ADDRESS']
+
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 
