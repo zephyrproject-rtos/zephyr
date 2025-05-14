@@ -199,6 +199,9 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 			clk_dev = clk_context->clk_dev;
 			clk_spec = &clk_context->clk_specs[u];
 
+			zassert_true(device_is_ready(clk_dev),
+				     "%s is not ready", clk_dev->name);
+
 			TC_PRINT("Applying clock (%s) spec: frequency %d, accuracy %d, precision "
 				 "%d\n",
 				 clk_dev->name, clk_spec->frequency, clk_spec->accuracy,
@@ -211,7 +214,6 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 #if CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP
 ZTEST(nrf2_clock_control, test_cpuapp_hsfll_control)
 {
-
 	TC_PRINT("APPLICATION DOMAIN HSFLL test\n");
 	/* Wait for the DVFS init to complete */
 	k_msleep(3000);
@@ -244,6 +246,9 @@ ZTEST(nrf2_clock_control, test_invalid_fll16m_clock_spec_response)
 		for (size_t u = 0; u < clk_specs_size; u++) {
 			clk_dev = clk_context->clk_dev;
 			clk_spec = &clk_context->clk_specs[u];
+
+			zassert_true(device_is_ready(clk_dev),
+				     "%s is not ready", clk_dev->name);
 
 			TC_PRINT("Applying clock (%s) spec: frequency %d, accuracy %d, precision "
 				 "%d\n",
@@ -289,6 +294,9 @@ ZTEST(nrf2_clock_control, test_safe_request_cancellation)
 	const struct test_clk_context *clk_context = &lfclk_test_clk_contexts[0];
 	const struct device *clk_dev = clk_context->clk_dev;
 	const struct nrf_clock_spec *clk_spec = &test_clk_specs_lfclk[0];
+
+	zassert_true(device_is_ready(clk_dev),
+		     "%s is not ready", clk_dev->name);
 
 	TC_PRINT("Safe clock request cancellation\n");
 	TC_PRINT("Clock under test: %s\n", clk_dev->name);
