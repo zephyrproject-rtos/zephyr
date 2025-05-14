@@ -368,7 +368,7 @@ int emul_imager_init(const struct device *dev)
 	fmt.pixelformat = fmts[0].pixelformat;
 	fmt.width = fmts[0].width_min;
 	fmt.height = fmts[0].height_min;
-	fmt.pitch = fmt.width * 2;
+	fmt.pitch = fmt.width * video_bits_per_pixel(fmt.pixelformat) / BITS_PER_BYTE;
 
 	ret = emul_imager_set_fmt(dev, &fmt);
 	if (ret < 0) {
