@@ -42,6 +42,12 @@ properties:
 
     enum: [1, 2]
 
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.
+
   range:
     type: int
     default: 0
@@ -96,3 +102,53 @@ properties:
     enum: [0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
            0x17, 0x37, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85,
            0x86, 0x87]
+
+  fifo-watermark:
+    type: int
+    default: 32
+    description: |
+      Specify the default FIFO watermark threshold. Every unit indicates a FIFO row (1 byte of TAG +
+      6 bytes of data). (min 0; max 255)
+      A typical threshold value is 32 which is then used as default.
+      Valid range: 0 - 511
+
+  accel-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer FIFO batch data rate expressed in Hz.
+      The values are taken in accordance to iis3dwb_bdr_xl_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0  # IIS3DWB_DT_XL_NOT_BATCHED
+      - 10 # IIS3DWB_DT_XL_BATCHED_AT_26k7Hz
+
+    enum: [0, 10]
+
+  temp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default timestamp FIFO batch data rate expressed in Hz.
+      The values are taken in accordance to iis3dwb_odr_t_batch_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0  # IIS3DWB_DT_TEMP_NOT_BATCHED
+      - 3  # IIS3DWB_DT_TEMP_BATCHED_AT_104Hz
+
+    enum: [0, 3]
+
+  timestamp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default timestamp FIFO batch data rate expressed as a fraction of the odr.
+      The values are taken in accordance to lis2dux12_dec_ts_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0x0 # IIS3DWB_DT_TS_NOT_BATCHED
+      - 0x1 # IIS3DWB_DT_DEC_TS_1
+      - 0x2 # IIS3DWB_DT_DEC_TS_8
+      - 0x3 # IIS3DWB_DT_DEC_TS_32
+
+    enum: [0x00, 0x01, 0x02, 0x03]
