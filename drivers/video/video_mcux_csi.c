@@ -190,8 +190,8 @@ static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		video_pix_fmt_convert(fmt, true);
 #endif
-		/* align CSI with source fmt */
-		return video_mcux_csi_set_fmt(dev, ep, fmt);
+
+		return 0;
 	}
 
 	return -EIO;
