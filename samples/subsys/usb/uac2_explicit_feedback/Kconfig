@@ -9,6 +9,8 @@ config APP_USE_I2S_LRCLK_EDGES_COUNTER
 	  Use this to use I2S LRCLK edge counting for calculating feedback.
 	  On nRF53 this option requires externally connecting I2S LRCLK back to
 	  separate GPIOTE input pin (P1.09).
+	  On nRF54 this option requires externally connecting TDM FSYNC back to
+	  separate GPIOTE input pin (P0.08).
 endmenu
 
 # Source common USB sample options used to initialize new experimental USB
