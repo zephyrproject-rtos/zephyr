@@ -37,7 +37,7 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 153101c61ce7106f6ba8b108b5c6488efdc1151a
+      revision: d562cd57317d33531ee3655d84660c57b8dc64c9
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -100,7 +100,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: 62e797b2c518e5bb6123a198382ed2b64b8c068e
+      revision: dbfd6b068f3bde8e56dcea58b4e686a8efc01cbe
       groups:
         - babblesim
     - name: babblesim_ext_libCryptov1
@@ -112,7 +112,7 @@ manifest:
         - babblesim
     - name: bsim
       repo-path: babblesim-manifest
-      revision: a88d3353451387ca490a6a7f7c478a90c4ee05b7
+      revision: 193b8ba94cdc6ecbc3bb7fe80b87dee456e5eab0
       path: tools/bsim
       groups:
         - babblesim
