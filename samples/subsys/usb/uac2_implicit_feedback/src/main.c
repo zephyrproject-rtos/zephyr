@@ -37,8 +37,10 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
 #define I2S_BLOCKS          7
-K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, MAX_BLOCK_SIZE, I2S_BLOCKS, 4);
-K_MEM_SLAB_DEFINE_STATIC(i2s_rx_slab, MAX_BLOCK_SIZE, I2S_BLOCKS, 4);
+K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BLOCKS, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(i2s_rx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BLOCKS, UDC_BUF_ALIGN);
 
 struct usb_i2s_ctx {
 	const struct device *i2s_dev;
