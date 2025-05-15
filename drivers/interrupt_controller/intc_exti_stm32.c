@@ -35,6 +35,82 @@ LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);
 #endif /* STM32_EXTI_TOTAL_LINES_NUM > 64 */
 #endif /* STM32_EXTI_TOTAL_LINES_NUM > 32 */
 
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+
+#define EXTI_FN_HANDLER(_fn, line_num, line)			\
+	if (line_num < 32U) {								\
+		_fn(0_31, line);								\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		_fn(64_95, line);								\
+))										\
+	} else {							\
+		LOG_ERR("Invalid line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+	}
+
+#define EXTI_FN_RET_HANDLER(_fn, ret, line_num, line)	\
+	if (line_num < 32U) {								\
+		*ret = _fn(0_31, line);							\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		*ret = _fn(64_95, line);						\
+))										\
+	} else {							\
+		LOG_ERR("Invalid line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+	}
+
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+
+#define EXTI_FN_HANDLER(_fn, line_num, line)			\
+	if (line_num < 32U) {								\
+		_fn(0_31, line);								\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+	} else {							\
+		LOG_ERR("Invalid line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+	}
+
+#define EXTI_FN_RET_HANDLER(_fn, ret, line_num, line)	\
+	if (line_num < 32U) {								\
+		*ret = _fn(0_31, line);							\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		LOG_ERR("Hardcoded line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+))										\
+	} else {							\
+		LOG_ERR("Invalid line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+	}
+
+#else /* CONFIG_SOC_SERIES_STM32MP1X */
+
 #define EXTI_FN_HANDLER(_fn, line_num, line)			\
 	if (line_num < 32U) {								\
 		_fn(0_31, line);								\
@@ -50,6 +126,24 @@ IF_ENABLED(HAS_LINES_64_95, (							\
 		LOG_ERR("Invalid line number %u", line_num);	\
 		__ASSERT_NO_MSG(0);								\
 	}
+
+#define EXTI_FN_RET_HANDLER(_fn, ret, line_num, line)	\
+	if (line_num < 32U) {								\
+		*ret = _fn(0_31, line);							\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		*ret = _fn(32_63, line);						\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		*ret = _fn(64_95, line);						\
+))										\
+	} else {							\
+		LOG_ERR("Invalid line number %u", line_num);	\
+		__ASSERT_NO_MSG(0);								\
+	}
+
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 
 bool stm32_exti_is_pending(uint32_t line_num)
@@ -68,20 +162,7 @@ bool stm32_exti_is_pending(uint32_t line_num)
 	 * Note: we can't use EXTI_FN_HANDLER here because we care
 	 * about the return value of EXTI_IS_ACTIVE_FLAG.
 	 */
-	if (line_num < 32U) {
-		ret = EXTI_IS_ACTIVE_FLAG(0_31, line);
-#if STM32_EXTI_TOTAL_LINES_NUM > 32
-	} else if (line_num < 64U) {
-		ret = EXTI_IS_ACTIVE_FLAG(32_63, line);
-#endif /* STM32_EXTI_TOTAL_LINES_NUM > 32 */
-#if STM32_EXTI_TOTAL_LINES_NUM > 64
-	} else if (line_num < 96U) {
-		ret = EXTI_IS_ACTIVE_FLAG(64_95, line);
-#endif /* STM32_EXTI_TOTAL_LINES_NUM > 64 */
-	} else {
-		LOG_ERR("Invalid line number: %u", line_num);
-		__ASSERT_NO_MSG(0);
-	}
+	EXTI_FN_RET_HANDLER(EXTI_IS_ACTIVE_FLAG, &ret, line_num, line);
 
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 
