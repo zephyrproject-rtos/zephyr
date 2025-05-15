@@ -6,8 +6,23 @@
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+import pykwalify.core
+import yaml
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
+SHIELD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'shield-schema.yml')
+with open(SHIELD_SCHEMA_PATH) as f:
+    shield_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+SHIELD_YML = 'shield.yml'
 
 #
 # This is shared code between the build system's 'shields' target
@@ -22,9 +37,20 @@ from pathlib import Path
 class Shield:
     name: str
     dir: Path
+    full_name: str | None = None
+    vendor: str | None = None
 
 def shield_key(shield):
     return shield.name
+
+def process_shield_data(shield_data, shield_dir):
+    # Create shield from yaml data
+    return Shield(
+        name=shield_data['name'],
+        dir=shield_dir,
+        full_name=shield_data.get('full_name'),
+        vendor=shield_data.get('vendor')
+    )
 
 def find_shields(args):
     ret = []
@@ -45,6 +71,28 @@ def find_shields_in(root):
     for maybe_shield in (shields).iterdir():
         if not maybe_shield.is_dir():
             continue
+
+        # Check for shield.yml first
+        shield_yml = maybe_shield / SHIELD_YML
+        if shield_yml.is_file():
+            with shield_yml.open('r', encoding='utf-8') as f:
+                shield_data = yaml.load(f.read(), Loader=SafeLoader)
+
+            try:
+                pykwalify.core.Core(source_data=shield_data, schema_data=shield_schema).validate()
+            except pykwalify.errors.SchemaError as e:
+                sys.exit(f'ERROR: Malformed shield.yml in file: {shield_yml.as_posix()}\n{e}')
+
+            if 'shields' in shield_data:
+                # Multiple shields format
+                for shield_info in shield_data['shields']:
+                    ret.append(process_shield_data(shield_info, maybe_shield))
+            elif 'shield' in shield_data:
+                # Single shield format
+                ret.append(process_shield_data(shield_data['shield'], maybe_shield))
+            continue
+
+        # Fallback to legacy method if no shield.yml
         for maybe_kconfig in maybe_shield.iterdir():
             if maybe_kconfig.name == 'Kconfig.shield':
                 for maybe_overlay in maybe_shield.iterdir():
