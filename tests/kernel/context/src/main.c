@@ -72,7 +72,7 @@ extern const int32_t z_sys_timer_irq_for_test;
 
 #endif
 
-/* Cortex-M1 and Nios II do have a power saving instruction, so k_cpu_idle()
+/* Cortex-M1 does have a power saving instruction, so k_cpu_idle()
  * returns immediately
  */
 #if !defined(CONFIG_CPU_CORTEX_M1)
