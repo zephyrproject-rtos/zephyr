@@ -9,20 +9,19 @@
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/drivers/edac.h>
-#include "ibecc.h"
+
+static const struct device *const edac_device = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_edac));
 
 /**
  * EDAC Error Injection interface
  *
- * edac inject addr [value]               Physical memory address base
- * edac inject mask [value]               Physical memory address mask
+ * edac inject param1 [value]             Show / Set EDAC injection parameter 1
+ * edac inject param2 [value]             Show / Set EDAC injection parameter 2
  * edac inject error_type                 Show / Set EDAC error type
  * edac inject trigger                    Trigger injection
- *
- * edac inject test_default               Set default injection parameters
- *
- * edac disable_nmi                       Experimental disable NMI
- * edac enable_nmi                        Experimental enable NMI
+ * *
+ * edac disable_nmi                       Experimental disable NMI (X86 only)
+ * edac enable_nmi                        Experimental enable NMI (X86 only)
  *
  * EDAC Report interface
  *
@@ -35,7 +34,11 @@
  * devmem [width [value]]       Physical memory read / write
  */
 
-static void decode_ecc_error(const struct shell *sh, uint64_t ecc_error)
+#ifdef CONFIG_EDAC_IBECC
+
+#include "ibecc.h"
+
+static void decode_ibecc_error(const struct shell *sh, uint64_t ecc_error)
 {
 	uint64_t erradd = ECC_ERROR_ERRADD(ecc_error);
 	unsigned long errsynd = ECC_ERROR_ERRSYND(ecc_error);
@@ -56,6 +59,8 @@ static void decode_ecc_error(const struct shell *sh, uint64_t ecc_error)
 	}
 }
 
+#endif /* CONFIG_EDAC_IBECC */
+
 static int ecc_error_show(const struct shell *sh, const struct device *dev)
 {
 	uint64_t error;
@@ -69,9 +74,11 @@ static int ecc_error_show(const struct shell *sh, const struct device *dev)
 
 	shell_fprintf(sh, SHELL_NORMAL, "ECC Error: 0x%llx\n", error);
 
+#ifdef CONFIG_EDAC_IBECC
 	if (error != 0) {
-		decode_ecc_error(sh, error);
+		decode_ibecc_error(sh, error);
 	}
+#endif /* CONFIG_EDAC_IBECC */
 
 	return 0;
 }
@@ -94,75 +101,57 @@ static int parity_error_show(const struct shell *sh, const struct device *dev)
 
 static int cmd_edac_info(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev;
-	int err;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Show EDAC status\n");
 
-	err = ecc_error_show(sh, dev);
-	if (err != 0) {
-		return err;
-	}
+	(void)ecc_error_show(sh, edac_device);
 
-	err = parity_error_show(sh, dev);
-	if (err != 0) {
-		return err;
-	}
+	(void)parity_error_show(sh, edac_device);
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Errors correctable: %d Errors uncorrectable %d\n",
-		      edac_errors_cor_get(dev), edac_errors_uc_get(dev));
+	shell_fprintf(sh, SHELL_NORMAL, "Errors correctable: %d Errors uncorrectable: %d\n",
+		      edac_errors_cor_get(edac_device), edac_errors_uc_get(edac_device));
 
-	return err;
+	return 0;
 }
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static int cmd_inject_addr(const struct shell *sh, size_t argc, char **argv)
+static int cmd_inject_param1(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev;
 	int err;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
 	if (argc > 2) {
 		/* Usage */
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Usage: edac inject %s [addr]\n", argv[0]);
+		shell_fprintf(sh, SHELL_NORMAL, "Usage: edac inject %s [val]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
 	if (argc == 1) {
-		uint64_t addr;
+		uint64_t value;
 
-		err = edac_inject_get_param1(dev, &addr);
+		err = edac_inject_get_param1(edac_device, &value);
 		if (err != 0) {
-			shell_error(sh, "Error getting address (err %d)",
-				    err);
+			shell_error(sh, "Error getting param1 (err %d)", err);
 			return err;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Injection address base: 0x%llx\n", addr);
+		shell_fprintf(sh, SHELL_NORMAL, "Injection param1: 0x%llx\n", value);
 	} else {
 		unsigned long value = strtoul(argv[1], NULL, 16);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Set injection address base to: %s\n", argv[1]);
+		shell_fprintf(sh, SHELL_NORMAL, "Set injection param1 to: %s\n", argv[1]);
 
-		err = edac_inject_set_param1(dev, value);
+		err = edac_inject_set_param1(edac_device, value);
 		if (err != 0) {
-			shell_error(sh, "Error setting address (err %d)",
-				    err);
+			shell_error(sh, "Error setting param1 (err %d)", err);
 			return err;
 		}
 	}
@@ -170,44 +159,39 @@ static int cmd_inject_addr(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_inject_mask(const struct shell *sh, size_t argc, char **argv)
+static int cmd_inject_param2(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev;
 	int err;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
 	if (argc > 2) {
 		/* Usage */
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Usage: edac inject %s [mask]\n", argv[0]);
+		shell_fprintf(sh, SHELL_NORMAL, "Usage: edac inject %s [val]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
 	if (argc == 1) {
-		uint64_t mask;
+		uint64_t value;
 
-		err = edac_inject_get_param2(dev, &mask);
+		err = edac_inject_get_param2(edac_device, &value);
 		if (err != 0) {
-			shell_error(sh, "Error getting mask (err %d)", err);
+			shell_error(sh, "Error getting param2 (err %d)", err);
 			return err;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Injection address mask: 0x%llx\n", mask);
+		shell_fprintf(sh, SHELL_NORMAL, "Injection param2: 0x%llx\n", value);
 	} else {
 		uint64_t value = strtoul(argv[1], NULL, 16);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Set injection address mask to %llx\n", value);
+		shell_fprintf(sh, SHELL_NORMAL, "Set injection param2 to %llx\n", value);
 
-		err = edac_inject_set_param2(dev, value);
+		err = edac_inject_set_param2(edac_device, value);
 		if (err != 0) {
-			shell_error(sh, "Error setting mask (err %d)", err);
+			shell_error(sh, "Error setting param2 (err %d)", err);
 			return err;
 		}
 	}
@@ -218,20 +202,19 @@ static int cmd_inject_mask(const struct shell *sh, size_t argc, char **argv)
 static int cmd_inject_trigger(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Triggering injection\n");
 
-	edac_inject_error_trigger(dev);
+	edac_inject_error_trigger(edac_device);
 
 	return 0;
 }
+
+#ifdef CONFIG_X86
 
 static int cmd_inject_disable_nmi(const struct shell *sh, size_t argc,
 				  char **argv)
@@ -249,6 +232,8 @@ static int cmd_inject_enable_nmi(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+#endif /* CONFIG_X86 */
+
 static const char *get_error_type(uint32_t type)
 {
 	switch (type) {
@@ -264,17 +249,15 @@ static const char *get_error_type(uint32_t type)
 static int cmd_inject_error_type_show(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	const struct device *dev;
 	uint32_t error_type;
 	int err;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
-	err = edac_inject_get_error_type(dev, &error_type);
+	err = edac_inject_get_error_type(edac_device, &error_type);
 	if (err != 0) {
 		shell_error(sh, "Error getting error type (err %d)", err);
 		return err;
@@ -288,18 +271,15 @@ static int cmd_inject_error_type_show(const struct shell *sh, size_t argc,
 
 static int set_error_type(const struct shell *sh, uint32_t error_type)
 {
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Set injection error type: %s\n",
 		      get_error_type(error_type));
 
-	return edac_inject_set_error_type(dev, error_type);
+	return edac_inject_set_error_type(edac_device, error_type);
 }
 
 static int cmd_inject_error_type_cor(const struct shell *sh, size_t argc,
@@ -314,24 +294,6 @@ static int cmd_inject_error_type_uc(const struct shell *sh, size_t argc,
 	return set_error_type(sh, EDAC_ERROR_TYPE_DRAM_UC);
 }
 
-static int cmd_inject_test(const struct shell *sh, size_t argc, char **argv)
-{
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
-		return -ENODEV;
-	}
-
-	edac_inject_set_param1(dev, 0x1000);
-	edac_inject_set_param2(dev, INJ_ADDR_BASE_MASK_MASK);
-	edac_inject_set_error_type(dev, EDAC_ERROR_TYPE_DRAM_COR);
-	edac_inject_error_trigger(dev);
-
-	return 0;
-}
-
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_error_type_cmds,
 	SHELL_CMD(correctable, NULL, "Set correctable error type",
 		  cmd_inject_error_type_cor),
@@ -341,18 +303,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_error_type_cmds,
 );
 
 /* EDAC Error Injection shell commands */
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_cmds,
-	SHELL_CMD(addr, NULL, "Get / Set physical address", cmd_inject_addr),
-	SHELL_CMD(mask, NULL, "Get / Set address mask", cmd_inject_mask),
-	SHELL_CMD_ARG(trigger, NULL, "Trigger injection", cmd_inject_trigger,
-		      1, 0),
-	SHELL_CMD(error_type, &sub_inject_error_type_cmds,
-		  "Get / Set injection error type",
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_inject_cmds, SHELL_CMD(param1, NULL, "Get / Set injection param 1", cmd_inject_param1),
+	SHELL_CMD(param2, NULL, "Get / Set injection param 2", cmd_inject_param2),
+	SHELL_CMD_ARG(trigger, NULL, "Trigger injection", cmd_inject_trigger, 1, 0),
+	SHELL_CMD(error_type, &sub_inject_error_type_cmds, "Get / Set injection error type",
 		  cmd_inject_error_type_show),
+#ifdef CONFIG_X86
 	SHELL_CMD(disable_nmi, NULL, "Disable NMI", cmd_inject_disable_nmi),
 	SHELL_CMD(enable_nmi, NULL, "Enable NMI", cmd_inject_enable_nmi),
-	SHELL_CMD_ARG(test_default, NULL, "Test default injection parameters",
-		      cmd_inject_test, 1, 0),
+#endif                       /* CONFIG_X86 */
 	SHELL_SUBCMD_SET_END /* Array terminated */
 );
 #endif /* CONFIG_EDAC_ERROR_INJECT */
@@ -360,30 +320,25 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_cmds,
 static int cmd_ecc_error_show(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
-	return ecc_error_show(sh, dev);
+	return ecc_error_show(sh, edac_device);
 }
 
 static int cmd_ecc_error_clear(const struct shell *sh, size_t argc,
 			       char **argv)
 {
-	const struct device *dev;
 	int err;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
-	err = edac_ecc_error_log_clear(dev);
+	err = edac_ecc_error_log_clear(edac_device);
 	if (err != 0) {
 		shell_error(sh, "Error clear ecc error log (err %d)",
 			    err);
@@ -404,30 +359,25 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_ecc_error_cmds,
 static int cmd_parity_error_show(const struct shell *sh, size_t argc,
 				 char **argv)
 {
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
-	return parity_error_show(sh, dev);
+	return parity_error_show(sh, edac_device);
 }
 
 static int cmd_parity_error_clear(const struct shell *sh, size_t argc,
 				  char **argv)
 {
-	const struct device *dev;
 	int err;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "IBECC device not ready");
+	if (!device_is_ready(edac_device)) {
+		shell_error(sh, "EDAC device not ready");
 		return -ENODEV;
 	}
 
-	err = edac_parity_error_log_clear(dev);
+	err = edac_parity_error_log_clear(edac_device);
 	if (err != 0) {
 		shell_error(sh, "Error clear parity error log (err %d)",
 			    err);
