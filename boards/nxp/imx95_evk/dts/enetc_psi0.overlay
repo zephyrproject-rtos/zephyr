@@ -15,3 +15,7 @@
 &enetc_psi0 {
 	status = "okay";
 };
+
+&enetc_ptp_clock {
+	status = "okay";
+};
