@@ -12,30 +12,29 @@
 #include <zephyr/audio/codec.h>
 #include <string.h>
 
-
 #if DT_NODE_EXISTS(DT_NODELABEL(i2s_rxtx))
-#define I2S_RX_NODE  DT_NODELABEL(i2s_rxtx)
-#define I2S_TX_NODE  I2S_RX_NODE
+#define I2S_RX_NODE DT_NODELABEL(i2s_rxtx)
+#define I2S_TX_NODE I2S_RX_NODE
 #else
-#define I2S_RX_NODE  DT_NODELABEL(i2s_rx)
-#define I2S_TX_NODE  DT_NODELABEL(i2s_tx)
+#define I2S_RX_NODE DT_NODELABEL(i2s_rx)
+#define I2S_TX_NODE DT_NODELABEL(i2s_tx)
 #endif
 
-#define SAMPLE_FREQUENCY    44100
-#define SAMPLE_BIT_WIDTH    16
-#define BYTES_PER_SAMPLE    sizeof(int16_t)
-#define NUMBER_OF_CHANNELS  2
+#define SAMPLE_FREQUENCY   44100
+#define SAMPLE_BIT_WIDTH   16
+#define BYTES_PER_SAMPLE   sizeof(int16_t)
+#define NUMBER_OF_CHANNELS 2
 /* Such block length provides an echo with the delay of 100 ms. */
-#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
-#define INITIAL_BLOCKS      2
-#define TIMEOUT             1000
+#define SAMPLES_PER_BLOCK  ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
+#define INITIAL_BLOCKS     2
+#define TIMEOUT            1000
 
-#define SW0_NODE        DT_ALIAS(sw0)
+#define SW0_NODE DT_ALIAS(sw0)
 #ifdef CONFIG_TOGGLE_ECHO_EFFECT_SW0
 static struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 
-#define SW1_NODE        DT_ALIAS(sw1)
+#define SW1_NODE DT_ALIAS(sw1)
 #ifdef CONFIG_STOP_START_STREAMS_SW1
 static struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
@@ -49,8 +48,7 @@ static volatile bool echo_enabled = true;
 static K_SEM_DEFINE(toggle_transfer, 1, 1);
 
 #ifdef CONFIG_TOGGLE_ECHO_EFFECT_SW0
-static void sw0_handler(const struct device *dev, struct gpio_callback *cb,
-			uint32_t pins)
+static void sw0_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	bool enable = !echo_enabled;
 
@@ -60,8 +58,7 @@ static void sw0_handler(const struct device *dev, struct gpio_callback *cb,
 #endif
 
 #ifdef CONFIG_STOP_START_STREAMS_SW1
-static void sw1_handler(const struct device *dev, struct gpio_callback *cb,
-			uint32_t pins)
+static void sw1_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	k_sem_give(&toggle_transfer);
 }
@@ -81,16 +78,15 @@ static bool init_buttons(void)
 
 	ret = gpio_pin_configure_dt(&sw0_spec, GPIO_INPUT);
 	if (ret < 0) {
-		printk("Failed to configure %s pin %d: %d\n",
-		       sw0_spec.port->name, sw0_spec.pin, ret);
+		printk("Failed to configure %s pin %d: %d\n", sw0_spec.port->name, sw0_spec.pin,
+		       ret);
 		return false;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&sw0_spec,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		printk("Failed to configure interrupt on %s pin %d: %d\n",
-		       sw0_spec.port->name, sw0_spec.pin, ret);
+		printk("Failed to configure interrupt on %s pin %d: %d\n", sw0_spec.port->name,
+		       sw0_spec.pin, ret);
 		return false;
 	}
 
@@ -109,16 +105,15 @@ static bool init_buttons(void)
 
 	ret = gpio_pin_configure_dt(&sw1_spec, GPIO_INPUT);
 	if (ret < 0) {
-		printk("Failed to configure %s pin %d: %d\n",
-		       sw1_spec.port->name, sw1_spec.pin, ret);
+		printk("Failed to configure %s pin %d: %d\n", sw1_spec.port->name, sw1_spec.pin,
+		       ret);
 		return false;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&sw1_spec,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&sw1_spec, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		printk("Failed to configure interrupt on %s pin %d: %d\n",
-		       sw1_spec.port->name, sw1_spec.pin, ret);
+		printk("Failed to configure interrupt on %s pin %d: %d\n", sw1_spec.port->name,
+		       sw1_spec.pin, ret);
 		return false;
 	}
 
@@ -149,8 +144,7 @@ static void process_block_data(void *mem_block, uint32_t number_of_samples)
 	}
 }
 
-static bool configure_streams(const struct device *i2s_dev_rx,
-			      const struct device *i2s_dev_tx,
+static bool configure_streams(const struct device *i2s_dev_rx, const struct device *i2s_dev_tx,
 			      const struct i2s_config *config)
 {
 	int ret;
@@ -184,8 +178,7 @@ static bool configure_streams(const struct device *i2s_dev_rx,
 	return true;
 }
 
-static bool prepare_transfer(const struct device *i2s_dev_rx,
-			     const struct device *i2s_dev_tx)
+static bool prepare_transfer(const struct device *i2s_dev_rx, const struct device *i2s_dev_tx)
 {
 	int ret;
 
@@ -210,8 +203,7 @@ static bool prepare_transfer(const struct device *i2s_dev_rx,
 	return true;
 }
 
-static bool trigger_command(const struct device *i2s_dev_rx,
-			    const struct device *i2s_dev_tx,
+static bool trigger_command(const struct device *i2s_dev_rx, const struct device *i2s_dev_tx,
 			    enum i2s_trigger_cmd cmd)
 {
 	int ret;
@@ -259,8 +251,8 @@ int main(void)
 	}
 
 #else
-const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
-struct audio_codec_cfg audio_cfg;
+	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
+	struct audio_codec_cfg audio_cfg;
 
 	audio_cfg.dai_route = AUDIO_ROUTE_PLAYBACK_CAPTURE;
 	audio_cfg.dai_type = AUDIO_DAI_TYPE_I2S;
@@ -309,8 +301,7 @@ struct audio_codec_cfg audio_cfg;
 			return 0;
 		}
 
-		if (!trigger_command(i2s_dev_rx, i2s_dev_tx,
-				     I2S_TRIGGER_START)) {
+		if (!trigger_command(i2s_dev_rx, i2s_dev_tx, I2S_TRIGGER_START)) {
 			return 0;
 		}
 
@@ -336,8 +327,7 @@ struct audio_codec_cfg audio_cfg;
 			}
 		}
 
-		if (!trigger_command(i2s_dev_rx, i2s_dev_tx,
-				     I2S_TRIGGER_DROP)) {
+		if (!trigger_command(i2s_dev_rx, i2s_dev_tx, I2S_TRIGGER_DROP)) {
 			return 0;
 		}
 
