@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -79,6 +80,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 			struct bt_bap_stream *bap_stream = tx_streams[i].bap_stream;
 
 			if (stream_is_streaming(bap_stream)) {
+				uint16_t sdu_len;
 				struct net_buf *buf;
 
 				buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -88,12 +90,25 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 				    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 					stream_lc3_add_data(&tx_streams[i], buf);
 				} else {
+					__ASSERT(bap_stream->qos->sdu <= ARRAY_SIZE(mock_data),
+						 "Configured codec SDU len %u does not match mock "
+						 "data size %zu",
+						 bap_stream->qos->sdu, ARRAY_SIZE(mock_data));
 					net_buf_add_mem(buf, mock_data, bap_stream->qos->sdu);
 				}
+
+				sdu_len = buf->len;
 
 				err = bt_bap_stream_send(bap_stream, buf, tx_streams[i].seq_num);
 				if (err == 0) {
 					tx_streams[i].seq_num++;
+
+					if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
+					    (tx_streams[i].seq_num %
+					     CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
+						LOG_INF("Stream %p: Sent %u total SDUs of size %u",
+							bap_stream, tx_streams[i].seq_num, sdu_len);
+					}
 				} else {
 					LOG_ERR("Unable to send: %d", err);
 					net_buf_unref(buf);
@@ -131,6 +146,11 @@ int stream_tx_register(struct bt_bap_stream *bap_stream)
 			}
 
 			LOG_INF("Registered %p for TX", bap_stream);
+			if (bap_stream->qos->sdu > CONFIG_BT_ISO_TX_MTU) {
+				LOG_WRN("Stream configured for SDUs larger (%u) than "
+					"CONFIG_BT_ISO_TX_MTU (%d)",
+					bap_stream->qos->sdu, CONFIG_BT_ISO_TX_MTU);
+			}
 
 			return 0;
 		}
