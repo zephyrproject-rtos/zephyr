@@ -17,6 +17,8 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &yellow_led;
+		sw0 = &btn0;
+		sw1 = &btn1;
 	};
 
 	chosen {
@@ -41,6 +43,20 @@
 		yellow_led: led_1 {
 			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn0: btn0 {
+			label = "BTN0";
+			gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn1 {
+			label = "BTN1";
+			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
