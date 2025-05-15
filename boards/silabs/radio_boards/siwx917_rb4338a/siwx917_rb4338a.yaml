@@ -17,5 +17,6 @@ supported:
   - pwm
   - watchdog
   - spi
+  - uart
   - wifi
 vendor: silabs
