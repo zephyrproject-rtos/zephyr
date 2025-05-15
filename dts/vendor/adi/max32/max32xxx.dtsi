@@ -191,7 +191,7 @@
 		};
 
 		mbox: mbox@4003e000 {
-			compatible = "adi,mbox-max32-semaphore";
+			compatible = "adi,mbox-max32-sema";
 			reg = <0x4003e000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 9>;
 			#mbox-cells = <1>;
