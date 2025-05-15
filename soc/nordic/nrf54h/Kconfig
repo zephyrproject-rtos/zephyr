@@ -8,7 +8,6 @@ config SOC_SERIES_NRF54HX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select SOC_EARLY_INIT_HOOK if ARM
-	select SOC_LATE_INIT_HOOK if SOC_NRF54H20_CPURAD_ENABLE
 	select NRF_PLATFORM_HALTIUM
 	select EXPERIMENTAL if MCUBOOT
 
@@ -68,11 +67,23 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select HAS_PM
 	select HAS_POWEROFF
 
+config SOC_NRF54H20_TDD_ENABLE
+	bool "Power and configure the trace and debug domain (TDD)"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_TDD_SERVICE
+	select SOC_LATE_INIT_HOOK
+	help
+	  This will at application boot time request that the trace and
+	  debug domain (TDD) is powered up and configured.
+	  This allows configuring the coresight peripherals from
+	  the application domain.
+
 config SOC_NRF54H20_CPURAD_ENABLE
 	bool "Boot the nRF54H20 Radio core"
 	default y if NRF_802154_SER_HOST || BT_HCI_HOST
 	depends on SOC_NRF54H20_CPUAPP
 	select NRF_IRONSIDE_CPUCONF_SERVICE
+	select SOC_LATE_INIT_HOOK
 	help
 	  This will at application boot time enable clock to the
 	  Radiocore, and also power will be requested to the Radiocore
