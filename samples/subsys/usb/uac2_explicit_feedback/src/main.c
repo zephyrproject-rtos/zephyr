@@ -10,7 +10,6 @@
 #include <sample_usbd.h>
 #include "feedback.h"
 
-#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_uac2.h>
@@ -117,7 +116,6 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 		 */
 		size = BLOCK_SIZE;
 		memset(buf, 0, size);
-		sys_cache_data_flush_range(buf, size);
 	}
 
 	LOG_DBG("Received %d data to input terminal %d", size, terminal);
