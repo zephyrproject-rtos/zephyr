@@ -302,6 +302,15 @@
 			status = "disabled";
 		};
 
+		rtc0: rtc@24048200 {
+			compatible = "silabs,siwx91x-rtc";
+			reg = <0x24048200 0x40>;
+			interrupts = <28 0>;
+			interrupt-names = "rtc";
+			clocks = <&clock0 SIWX91X_CLK_RTC>;
+			status = "disabled";
+		};
+
 		watchdog: wdt@24048300 {
 			compatible = "silabs,siwx91x-wdt";
 			#address-cells = <1>;
