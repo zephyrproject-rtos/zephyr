@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+config BOARD_CALICO
+	select SOC_APOLLO4P
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE

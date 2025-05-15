@@ -1,0 +1,16 @@
+identifier: calico
+name: Calico V1.0
+vendor: amat
+type: mcu
+arch: arm
+ram: 2816
+flash: 1952
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
