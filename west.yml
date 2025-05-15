@@ -148,6 +148,12 @@ manifest:
       path: modules/hal/adi
       groups:
         - hal
+    - name: hal_afbr
+      revision: zephyr
+      url: git@github.com:cognipilot/hal_afbr.git
+      path: modules/hal/afbr
+      groups:
+        - hal
     - name: hal_altera
       revision: 4fe4df959d4593ce66e676aeba0b57f546dba0fe
       path: modules/hal/altera
