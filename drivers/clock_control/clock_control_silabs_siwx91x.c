@@ -85,6 +85,10 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 	case SIWX91X_CLK_QSPI:
 		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_ULPREFCLK, 0, 0, 0);
 		break;
+	case SIWX91X_CLK_RTC:
+		/* Already done in sl_calendar_init()*/
+		RSI_PS_NpssPeriPowerUp(SLPSS_PWRGATE_ULP_MCURTC | SLPSS_PWRGATE_ULP_TIMEPERIOD);
+		break;
 	default:
 		return -EINVAL;
 	}
