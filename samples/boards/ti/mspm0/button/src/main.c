@@ -65,9 +65,11 @@ int main(void)
 	gpio_add_callback(button.port, &button_cb_data);
 	printk("Set up button at %s pin %d\n", button.port->name, button.pin);
 
-	printk("Press the button\n");
+	printk("before %lld\n", k_uptime_get());
 	main_init = true;
 
+	k_msleep(1000);
+	printk("after %lld\n", k_uptime_get());
 	k_sleep(K_FOREVER);
 
 	return 0;
