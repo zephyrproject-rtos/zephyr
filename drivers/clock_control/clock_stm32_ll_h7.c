@@ -53,15 +53,29 @@
 /* This check should only be performed for the M7 core code */
 #ifdef CONFIG_CPU_CORTEX_M7
 
-/* Choose PLL SRC */
-#if defined(STM32_PLL_SRC_HSI)
+/* Choose PLL SRC : same source for all the PLL */
+#if defined(STM32_PLL_SRC_HSI) || defined(STM32_PLL2_SRC_HSI) || defined(STM32_PLL3_SRC_HSI)
 #define PLLSRC_FREQ  ((STM32_HSI_FREQ)/(STM32_HSI_DIVISOR))
-#elif defined(STM32_PLL_SRC_CSI)
+#endif
+
+#if defined(STM32_PLL_SRC_CSI) || defined(STM32_PLL2_SRC_CSI) || defined(STM32_PLL3_SRC_CSI)
+#if !defined(PLLSRC_FREQ)
 #define PLLSRC_FREQ  STM32_CSI_FREQ
-#elif defined(STM32_PLL_SRC_HSE)
+#else
+#error "All PLLs must have the same clock source"
+#endif
+#endif
+
+#if defined(STM32_PLL_SRC_HSE) || defined(STM32_PLL2_SRC_HSE) || defined(STM32_PLL3_SRC_HSE)
+#if !defined(PLLSRC_FREQ)
 #define PLLSRC_FREQ  STM32_HSE_FREQ
 #else
-#define PLLSRC_FREQ 0
+#error "All PLLs must have the same clock source"
+#endif
+#endif
+
+#if !defined(PLLSRC_FREQ)
+#define PLLSRC_FREQ  0
 #endif
 
 /* Given source clock and dividers, computed the output frequency of PLLP */
@@ -782,13 +796,19 @@ static int set_up_plls(void)
 	/* Configure PLL source */
 
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
-	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+	if (IS_ENABLED(STM32_PLL_SRC_HSE) ||
+		IS_ENABLED(STM32_PLL2_SRC_HSE) ||
+		IS_ENABLED(STM32_PLL3_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
-	} else if (IS_ENABLED(STM32_PLL_SRC_CSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_CSI) ||
+		IS_ENABLED(STM32_PLL2_SRC_CSI) ||
+		IS_ENABLED(STM32_PLL3_SRC_CSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
-	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI) ||
+		IS_ENABLED(STM32_PLL2_SRC_HSI) ||
+		IS_ENABLED(STM32_PLL3_SRC_HSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
 	} else {
