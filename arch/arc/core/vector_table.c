@@ -47,7 +47,7 @@ struct vector_table {
 	uintptr_t unused_2;
 };
 
-struct vector_table _VectorTable Z_GENERIC_SECTION(.exc_vector_table) = {
+const struct vector_table _VectorTable Z_GENERIC_SECTION(.exc_vector_table) = {
 	(uintptr_t)__reset,
 	(uintptr_t)__memory_error,
 	(uintptr_t)__instruction_error,

@@ -8,10 +8,10 @@
 		*(.tdata .tdata.* .gnu.linkonce.td.*);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(tbss,,)
+	SECTION_DATA_PROLOGUE(tbss,(NOLOAD),)
 	{
 		*(.tbss .tbss.* .gnu.linkonce.tb.* .tcommon);
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	/*
 	 * These needs to be outside of the tdata/tbss
