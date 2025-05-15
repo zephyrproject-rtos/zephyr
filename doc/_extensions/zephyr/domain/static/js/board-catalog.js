@@ -119,7 +119,7 @@ function setupHWCapabilitiesField() {
   const datalist = document.getElementById('tag-list');
 
   const tagCounts = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
-    board.getAttribute('data-supported-features').split(' ').forEach(tag => {
+    (board.getAttribute('data-supported-features') || '').split(' ').forEach(tag => {
       acc[tag] = (acc[tag] || 0) + 1;
     });
     return acc;
@@ -254,12 +254,14 @@ function resetForm() {
 }
 
 function updateBoardCount() {
-  const boards = document.getElementsByClassName("board-card");
-  const visibleBoards = Array.from(boards).filter(
-    (board) => !board.classList.contains("hidden")
-  ).length;
-  const totalBoards = boards.length;
-  document.getElementById("nb-matches").textContent = `Showing ${visibleBoards} of ${totalBoards}`;
+  const boards = Array.from(document.getElementsByClassName("board-card"));
+  const visible = boards.filter(board => !board.classList.contains("hidden"));
+  const shields = boards.filter(board => board.classList.contains("shield"));
+  const visibleShields = visible.filter(board => board.classList.contains("shield"));
+
+  document.getElementById("nb-matches").textContent =
+    `Showing ${visible.length - visibleShields.length} of ${boards.length - shields.length} boards,`
+    + ` ${visibleShields.length} of ${shields.length} shields`;
 }
 
 function filterBoards() {
@@ -281,10 +283,10 @@ function filterBoards() {
 
   Array.from(boards).forEach(function (board) {
     const boardName = board.getAttribute("data-name").toLowerCase();
-    const boardArchs = board.getAttribute("data-arch").split(" ");
-    const boardVendor = board.getAttribute("data-vendor");
-    const boardSocs = board.getAttribute("data-socs").split(" ");
-    const boardSupportedFeatures = board.getAttribute("data-supported-features").split(" ");
+    const boardArchs = (board.getAttribute("data-arch") || "").split(" ").filter(Boolean);
+    const boardVendor = board.getAttribute("data-vendor") || "";
+    const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
+    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "").split(" ").filter(Boolean);
 
     let matches = true;
 
