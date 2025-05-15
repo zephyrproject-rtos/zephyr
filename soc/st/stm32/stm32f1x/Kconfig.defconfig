@@ -14,4 +14,11 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
 
+if PM
+
+config COUNTER
+	default y
+
+endif # PM
+
 endif # SOC_SERIES_STM32F1X
