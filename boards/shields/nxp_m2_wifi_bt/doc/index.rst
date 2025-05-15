@@ -66,7 +66,7 @@ Below are the supported shields to be used with ``--shield <option>`` when you i
 For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/handsfree
+   :zephyr-app: samples/bluetooth/classic/handsfree
    :board: mimxrt1060_evk@C//qspi
    :shield: nxp_m2_1xk_wifi_bt
    :goals: build
