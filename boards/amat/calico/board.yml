@@ -1,0 +1,5 @@
+board:
+  name: calico
+  vendor: amat
+  socs:
+    - name: apollo4p
