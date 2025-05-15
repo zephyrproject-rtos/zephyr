@@ -39,6 +39,7 @@ tests:
       - fpb_ra4e1
       - ek_ra2a1
       - ek_ra2l1
+      - sam_e54_xpro
   drivers.adc.accuracy.ref_volt:
     extra_configs:
       - CONFIG_REFERENCE_VOLTAGE_TEST=y
@@ -65,8 +66,10 @@ tests:
       - slwrb4180a
       - ek_ra4c1
       - pic32cx_sg41_cult
+      - sam_e54_xpro
     extra_args:
-      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE="boards/pic32cx_sg41_cult_ref.overlay"
+      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/pic32cx_sg41_cult_ref.overlay"
+      - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/sam_e54_xpro_ref.overlay"
     integration_platforms:
       - frdm_kl25z
       - nrf54l15dk/nrf54l15/cpuapp
