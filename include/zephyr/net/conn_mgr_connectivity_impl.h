@@ -57,8 +57,6 @@ struct conn_mgr_conn_api {
 	 * stop any in-progress attempts to associate to a network, the bound iface pointed to by
 	 * if_conn->iface.
 	 *
-	 * Must be non-blocking.
-	 *
 	 * Called by @ref conn_mgr_if_disconnect.
 	 */
 	int (*disconnect)(struct conn_mgr_conn_binding *const binding);
