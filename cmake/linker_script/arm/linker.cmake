@@ -1,6 +1,4 @@
-set(COMMON_ZEPHYR_LINKER_DIR ${ZEPHYR_BASE}/cmake/linker_script/common)
-
-# This should be different for cortex_r or cortex_a....
+set(COMMON_ZEPHYR_LINKER_DIR ${ZEPHYR_BASE}/cmake/linker_script/common) # This should be different for cortex_r or cortex_a....
 # cut from zephyr/include/zephyr/arch/arm/cortex_m/scripts/linker.ld
 if(DEFINED CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE)
   set_ifndef(region_min_align ${CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE})
@@ -258,10 +256,10 @@ foreach(path IN LISTS paths)
 endforeach()
 
 
-# .last_section must be last in romable region
-# .last_section contains a fixed word to ensure location counter and actual
-# rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y.
-zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH
-                      NOINPUT TYPE LINKER_SCRIPT_FOOTER)
-# KEEP can not be passed to zephyr_linker_section, so:
-zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)
+zephyr_linker_section(NAME .last_section LMA FLASH)
+
+if(CONFIG_IAR_DATA_INIT)
+  zephyr_linker_group(NAME INIT_REGION GROUP ROM_REGION)
+  zephyr_linker_section(NAME .iar.init_table GROUP INIT_REGION)
+  zephyr_linker_section_configure(SECTION .iar.init_table INPUT "*_init" GROUP INIT_REGION)
+endif()

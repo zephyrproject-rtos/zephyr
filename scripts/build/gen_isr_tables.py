@@ -12,6 +12,7 @@ import sys
 import os
 import importlib
 from elftools.elf.elffile import ELFFile
+from elftools.elf.constants import SH_FLAGS
 from elftools.elf.sections import SymbolTableSection
 
 
@@ -256,6 +257,45 @@ def get_symbols(obj):
 
     log.error("Could not find symbol table")
 
+def get_range_from_symbols(obj,start="__intList_start", end="__intList_end"):
+    for section in obj.iter_sections():
+        if isinstance(section, SymbolTableSection):
+           for sym in section.iter_symbols():
+             if sym.name == start:
+               symbol_start = sym
+             if sym.name == end:
+               symbol_end = sym
+
+    print(symbol_start.__dict__)
+
+    start_address = symbol_start.entry.st_value 
+    end_address   = symbol_end.entry.st_value 
+
+    print("__intList_start: %08x" % start_address)
+    print("__intList_end: %08x" % end_address)
+
+    for section in obj.iter_sections():
+      if section.header.sh_type != 'SHT_PROGBITS':
+        continue
+      if (section.header.sh_flags & SH_FLAGS.SHF_ALLOC) == 0:
+        continue
+
+      if section.header.sh_addr <= start_address <= end_address <= (section.header.sh_addr + section.header.sh_size):
+        intList_section = section
+
+    print("section: %s" % repr(intList_section.__dict__))
+    offset_into_section = start_address - intList_section.header.sh_addr
+    print("off_into: %08x" % offset_into_section)
+
+    start_idx = offset_into_section
+    end_idx   = offset_into_section + (end_address - start_address)
+    print("start: %08x" % start_idx)
+    print("end: %08x" % end_idx)
+
+    return intList_section.data()[start_idx:end_idx]
+
+    log.error("Could not find symbol table")
+
 def read_intList_sect(elfobj, snames):
     """
     Load the raw intList section data in a form of byte array.
@@ -267,6 +307,9 @@ def read_intList_sect(elfobj, snames):
         if intList_sect is not None:
             log.debug("Found intlist section: \"{}\"".format(sname))
             break
+
+
+    return get_range_from_symbols(elfobj)
 
     if intList_sect is None:
         log.error("Cannot find the intlist section!")
@@ -294,6 +337,7 @@ def parse_args():
                  "In other case empty file would be generated.")
     parser.add_argument("-k", "--kernel", required=True,
             help="Zephyr kernel image")
+
     parser.add_argument("-s", "--sw-isr-table", action="store_true",
             help="Generate SW ISR table")
     parser.add_argument("-V", "--vector-table", action="store_true",

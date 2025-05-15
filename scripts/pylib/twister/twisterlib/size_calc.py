@@ -17,6 +17,7 @@ logger = logging.getLogger('twister')
 
 class SizeCalculator:
     alloc_sections = [
+        "REGION_RAM",
         "bss",
         "noinit",
         "app_bss",
@@ -26,6 +27,7 @@ class SizeCalculator:
     ]
 
     rw_sections = [
+        "REGION_FLASH",
         "datas",
         "initlevel",
         "exceptions",

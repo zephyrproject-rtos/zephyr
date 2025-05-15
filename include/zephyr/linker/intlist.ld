@@ -34,8 +34,10 @@
 #ifndef LINKER_ZEPHYR_FINAL
 SECTION_PROLOGUE(.intList,,)
 {
+  PLACE_SYMBOL_HERE(__intList_start);
 	KEEP(*(.irq_info*))
 	KEEP(*(.intList*))
+  PLACE_SYMBOL_HERE(__intList_end);
 } GROUP_ROM_LINK_IN(IDT_LIST, IDT_LIST)
 #else
 /DISCARD/ :
