@@ -278,7 +278,7 @@ static ssize_t settings_zms_load_one(struct settings_store *cs, const char *name
  * It updates as well the next cache index and the next linked list node ID.
  */
 static int settings_zms_get_next_ll(struct settings_zms *cf, uint32_t *ll_hash_id,
-				    [[maybe_unused]] uint32_t *ll_cache_index)
+				    uint32_t *ll_cache_index __maybe_unused)
 {
 	struct settings_hash_linked_list settings_element;
 	int ret = 0;
