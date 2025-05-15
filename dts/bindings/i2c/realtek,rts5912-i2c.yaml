@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5912 I2C node
+
+compatible: "realtek,rts5912-i2c"
+
+include: base.yaml
+
+properties:
+  dw-i2c-dev:
+    type: phandle
+    required: true
+    description: |
+      DesignWare i2c device
+
+  sda-gpio-pin:
+    type: int
+    required: true
+    description: |
+      Describe the SDA gpio number
+
+  scl-gpio-pin:
+    type: int
+    required: true
+    description: |
+      Describe the SCL gpio number
