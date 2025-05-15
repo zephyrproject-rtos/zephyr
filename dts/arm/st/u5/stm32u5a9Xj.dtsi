@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <st/u5/stm32u5a9.dtsi>
+#include <st/u5/stm32u5_crypt.dtsi>
 
 / {
 	sram0: memory@20000000 {
