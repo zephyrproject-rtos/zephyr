@@ -504,8 +504,7 @@ ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays
 ouya	Ouya Inc.
 overkiz	Overkiz SAS
-ovti	OmniVision Technologies
-ovti	OmniVision Technologies Co., Ltd.
+ovti	OmniVision Technologies Inc.
 oxsemi	Oxford Semiconductor, Ltd.
 ozzmaker	OzzMaker
 panasonic	Panasonic Corporation
