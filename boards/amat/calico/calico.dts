@@ -1,0 +1,110 @@
+/dts-v1/;
+#include <ambiq/ambiq_apollo4p_blue.dtsi>
+#include "calico-pinctrl.dtsi"
+
+/ {
+	model = "AMAT Calico V1 Board";
+	compatible = "amat,calico";
+
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash;
+	};
+
+	/* Regulators */
+	ap_pwr_2v0_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_N2V0";
+		enable-gpios = <&gpio64_95 18 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	ap_pwr_3v3_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_P3V3";
+		enable-gpios = <&gpio64_95 16 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	ap_pwr_2v5_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_P2V5";
+		enable-gpios = <&gpio64_95 17 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	ap_pwr_1v8_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_P1V8";
+		enable-gpios = <&gpio64_95 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	ap_pwr_1v2_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_P1V2";
+		enable-gpios = <&gpio64_95 14 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	ap_pwr_1v0_en {
+		compatible = "regulator-fixed";
+		regulator-name = "EN_P1V0";
+		enable-gpios = <&gpio64_95 19 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&flash0 {
+	erase-block-size = <2048>;
+	write-block-size = <16>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+	};
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stimer0 {
+	clk-source = <3>;
+};
+
+&xo32m {
+	pinctrl-0 = <&xo32m_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&xo32k {
+	pinctrl-0 = <&xo32k_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio0_31 13 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio0_31 15 (GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&gpio64_95 {
+	status = "okay";
+};
+
+&gpio96_127 {
+	status = "okay";
+};
+
