@@ -7,6 +7,10 @@ family:
       cpuclusters:
       - name: cpu0
       - name: cpu1
+    - name: mcxn547
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
     - name: mcxn236
   - name: mcxc
     socs:
