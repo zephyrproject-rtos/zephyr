@@ -46,7 +46,7 @@ static const char dummy_data[] =
 "LED wearables to sophisticated smart watches and IoT wireless gateways.\n"
 "\n"
 "The Zephyr kernel supports multiple architectures, including ARM Cortex-M,\n"
-"Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of\n"
+"Intel x86, ARC, Tensilica Xtensa, and RISC-V, and a large number of\n"
 "`supported boards`_.\n";
 
 
