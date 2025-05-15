@@ -3,7 +3,7 @@ name: Arduino Portenta H7 (M7) rev. 1.0.0
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 512
 flash: 1024

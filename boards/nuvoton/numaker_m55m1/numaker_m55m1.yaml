@@ -6,7 +6,7 @@ name: NUVOTON NUMAKER-M55M1 Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 1536
 flash: 2048

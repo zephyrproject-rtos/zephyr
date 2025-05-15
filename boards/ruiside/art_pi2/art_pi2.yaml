@@ -3,7 +3,7 @@ name: art pi2
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 640
 flash: 64
 supported:

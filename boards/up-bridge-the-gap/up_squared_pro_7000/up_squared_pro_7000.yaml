@@ -3,7 +3,7 @@ name: UP SQUARED PRO 7000 board
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 2048
 supported:
   - acpi

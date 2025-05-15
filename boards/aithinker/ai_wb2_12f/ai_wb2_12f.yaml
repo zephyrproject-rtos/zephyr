@@ -8,7 +8,7 @@ type: mcu
 arch: riscv
 ram: 64
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   ignore_tags:
     - net

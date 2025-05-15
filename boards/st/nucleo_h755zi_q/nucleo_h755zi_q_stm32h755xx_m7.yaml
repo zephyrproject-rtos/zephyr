@@ -3,7 +3,7 @@ name: ST Nucleo H755ZI-Q (M7)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 512
 flash: 1024

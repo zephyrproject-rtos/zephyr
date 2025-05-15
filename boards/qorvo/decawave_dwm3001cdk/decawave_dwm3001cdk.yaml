@@ -6,7 +6,7 @@ ram: 128
 flash: 512
 vendor: decawave
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - adc

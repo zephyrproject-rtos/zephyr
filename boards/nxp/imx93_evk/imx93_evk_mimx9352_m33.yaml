@@ -6,7 +6,7 @@ name: NXP i.MX93 EVK M33
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 128
 flash: 128

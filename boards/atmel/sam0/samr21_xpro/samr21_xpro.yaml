@@ -7,7 +7,7 @@ name: SAM R21 Xplained Pro
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 flash: 256
 ram: 32

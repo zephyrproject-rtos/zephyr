@@ -5,7 +5,7 @@ arch: arm
 ram: 32
 flash: 256
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - arduino_serial
   - clock_controller

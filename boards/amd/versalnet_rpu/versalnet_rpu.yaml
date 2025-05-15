@@ -2,7 +2,7 @@ identifier: versalnet_rpu
 name: AMD Development board for Versal NET RPU
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   ignore_tags:
     - net

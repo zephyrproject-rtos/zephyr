@@ -3,7 +3,7 @@ name: TI AM62X A53 Starter Kit (SK)
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 1024
 testing:

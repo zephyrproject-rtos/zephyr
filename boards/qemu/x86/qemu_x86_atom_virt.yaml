@@ -5,7 +5,7 @@ arch: x86
 simulation:
   - name: qemu
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   default: true
   only_tags:

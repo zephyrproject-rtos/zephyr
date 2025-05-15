@@ -3,5 +3,5 @@ name: ICE-V Wireless
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 vendor: espressif

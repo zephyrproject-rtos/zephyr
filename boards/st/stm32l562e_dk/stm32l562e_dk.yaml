@@ -3,7 +3,7 @@ name: ST STM32L562E-DK Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio

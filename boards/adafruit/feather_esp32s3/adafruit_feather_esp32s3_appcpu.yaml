@@ -3,7 +3,7 @@ name: Adafruit Feather ESP32-S3 APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

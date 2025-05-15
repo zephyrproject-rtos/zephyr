@@ -3,7 +3,7 @@ name: OSD32MP1-BRK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - shell

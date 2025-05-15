@@ -3,7 +3,7 @@ name: XMC47-RELAX-KIT
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - adc

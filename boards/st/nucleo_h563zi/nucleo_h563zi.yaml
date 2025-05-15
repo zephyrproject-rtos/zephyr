@@ -3,7 +3,7 @@ name: ST Nucleo H563ZI
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 640
 flash: 2048
 supported:

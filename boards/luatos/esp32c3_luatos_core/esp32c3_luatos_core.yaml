@@ -3,7 +3,7 @@ name: ESP32C3 LuatOS Core
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - gpio

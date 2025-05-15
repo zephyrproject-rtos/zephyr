@@ -5,7 +5,7 @@ simulation:
   - name: qemu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 65536
 flash: 32768

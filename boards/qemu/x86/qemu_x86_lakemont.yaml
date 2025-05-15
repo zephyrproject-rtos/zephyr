@@ -5,7 +5,7 @@ simulation:
   - name: qemu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - llvm
 testing:
   default: true

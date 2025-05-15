@@ -8,7 +8,7 @@ arch: arm
 flash: 256
 ram: 32
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - counter
   - gpio

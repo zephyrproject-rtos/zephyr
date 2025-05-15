@@ -3,6 +3,6 @@ name: TI AM62X M4 Starter Kit (SK)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 192
 vendor: ti

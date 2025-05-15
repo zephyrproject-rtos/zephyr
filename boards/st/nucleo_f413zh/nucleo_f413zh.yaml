@@ -3,7 +3,7 @@ name: ST Nucleo F413ZH
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 320
 flash: 1536

@@ -9,7 +9,7 @@ name: NXP MIMXRT1050-EVK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 32768
 flash: 65536

@@ -9,7 +9,7 @@ name: MEC174X EVB ASSY 6941 with MEC1753-QLJ
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 60
 flash: 416

@@ -3,7 +3,7 @@ name: Alder Lake RVP
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 2048
 supported:
   - acpi

@@ -3,7 +3,7 @@ name: Cortex-M33 for Renesas RZ/G2LC SMARC
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - uart

@@ -11,7 +11,7 @@ arch: xtensa
 toolchain:
   - xcc
   - xt-clang
-  - zephyr
+  - zephyr-gnu
 testing:
   only_tags:
     - kernel

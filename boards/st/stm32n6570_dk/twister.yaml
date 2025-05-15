@@ -23,5 +23,5 @@ variants:
     twister: false
   stm32n6570_dk/stm32n657xx/sb:
     toolchain:
-      - zephyr
+      - zephyr-gnu
       - gnuarmemb

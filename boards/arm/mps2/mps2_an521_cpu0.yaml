@@ -9,7 +9,7 @@ simulation:
   - name: armfvp
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
 testing:

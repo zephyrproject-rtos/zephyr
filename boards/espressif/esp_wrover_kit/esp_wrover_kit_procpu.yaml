@@ -3,7 +3,7 @@ name: ESP WROVER KIT PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - dac

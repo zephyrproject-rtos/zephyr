@@ -5,7 +5,7 @@ simulation:
   - name: qemu
 arch: mips
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 1024
 flash: 512
 testing:

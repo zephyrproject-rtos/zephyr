@@ -3,7 +3,7 @@ name: Adafruit ESP32-S2 TFT Feather
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - uart

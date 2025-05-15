@@ -4,7 +4,7 @@ type: mcu
 arch: riscv
 toolchain:
   - cross-compile
-  - zephyr
+  - zephyr-gnu
 supported:
   - arduino_gpio
   - arduino_i2c

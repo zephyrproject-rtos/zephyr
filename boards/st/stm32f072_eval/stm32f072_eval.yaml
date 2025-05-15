@@ -3,7 +3,7 @@ name: ST STM32F072 Evaluation
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 16
 flash: 128

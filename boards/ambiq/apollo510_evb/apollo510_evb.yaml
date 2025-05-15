@@ -5,7 +5,7 @@ arch: arm
 ram: 3072
 flash: 4096
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - uart

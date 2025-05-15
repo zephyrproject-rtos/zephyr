@@ -3,5 +3,5 @@ name: Raspberry Pi 5
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile

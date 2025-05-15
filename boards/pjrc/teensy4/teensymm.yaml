@@ -9,7 +9,7 @@ name: PJRC TEENSY_MICROMOD
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 768

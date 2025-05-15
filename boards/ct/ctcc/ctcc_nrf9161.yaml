@@ -3,7 +3,7 @@ name: CTHINGS.CO Connectivity Card nRF9161
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 88
 flash: 1024

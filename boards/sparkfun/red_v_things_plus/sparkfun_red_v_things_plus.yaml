@@ -3,7 +3,7 @@ name: SparkFun RED-V Things Plus
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 16
 testing:
   ignore_tags:

@@ -3,7 +3,7 @@ name: Adafruit MacroPad RP2040
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 264
 flash: 8192

@@ -10,7 +10,7 @@ name: Variscite VAR-SOM-MX8M-PLUS A53
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 1024
 supported:

@@ -5,6 +5,6 @@ arch: arm
 ram: 32
 flash: 232
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 vendor: adafruit

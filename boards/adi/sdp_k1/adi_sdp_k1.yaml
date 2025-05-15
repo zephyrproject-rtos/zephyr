@@ -3,7 +3,7 @@ name: ADI SDP-K1
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 384
 flash: 2048

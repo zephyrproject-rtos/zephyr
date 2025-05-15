@@ -5,7 +5,7 @@ arch: arm
 ram: 191
 flash: 1024
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - bluetooth

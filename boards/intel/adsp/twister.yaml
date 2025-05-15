@@ -1,7 +1,7 @@
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xcc
   - xt-clang
 supported:
@@ -29,7 +29,7 @@ variants:
   intel_adsp/ace30/ptl:
     toolchain:
       - xt-clang
-      - zephyr
+      - zephyr-gnu
   intel_adsp/ace30:
     twister: false
   intel_adsp/ace20_lnl/sim:
@@ -53,20 +53,20 @@ variants:
         exec: acesim
     toolchain:
       - xt-clang
-      - zephyr
+      - zephyr-gnu
     testing:
       timeout_multiplier: 8
   intel_adsp/cavs25:
     toolchain:
       - xcc
-      - zephyr
+      - zephyr-gnu
     supported:
       - dma
       - dai
   intel_adsp/cavs25/tgph:
     toolchain:
       - xcc
-      - zephyr
+      - zephyr-gnu
     supported:
       - dma
       - dai

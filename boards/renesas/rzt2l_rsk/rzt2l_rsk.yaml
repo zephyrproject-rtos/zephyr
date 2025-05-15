@@ -6,7 +6,7 @@ name: Renesas Starter Kit+ for RZ/T2L
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
   - gpio

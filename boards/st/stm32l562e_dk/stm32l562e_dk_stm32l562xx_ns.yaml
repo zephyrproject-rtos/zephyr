@@ -3,7 +3,7 @@ name: ST STM32L562E-DK Discovery non secure
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - counter

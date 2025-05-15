@@ -3,7 +3,7 @@ name: RZ/A2M Evaluation Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - uart

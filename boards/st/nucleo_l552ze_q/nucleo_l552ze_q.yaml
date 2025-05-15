@@ -3,7 +3,7 @@ name: ST Nucleo L552ZE Q
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio

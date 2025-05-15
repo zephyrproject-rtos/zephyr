@@ -3,7 +3,7 @@ name: Elkhart Lake CRB with Slim Bootloader
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 2048
 testing:
   ignore_tags:

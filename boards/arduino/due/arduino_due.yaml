@@ -3,7 +3,7 @@ name: Arduino Due
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 flash: 512
 ram: 96

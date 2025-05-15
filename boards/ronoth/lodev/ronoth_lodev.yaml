@@ -3,7 +3,7 @@ name: Ronoth LoDev
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 20
 flash: 192

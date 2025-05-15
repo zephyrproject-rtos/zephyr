@@ -3,6 +3,6 @@ name: Intel SoC FPGA Agilex
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 vendor: intel

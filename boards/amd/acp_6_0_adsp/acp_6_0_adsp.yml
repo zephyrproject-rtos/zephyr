@@ -9,6 +9,6 @@ name: AMD ACP6.0  Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xcc
 vendor: amd

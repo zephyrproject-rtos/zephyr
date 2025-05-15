@@ -3,7 +3,7 @@ name: Khadas Edge-V (single core, non SMP)
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 8192
 vendor: khadas

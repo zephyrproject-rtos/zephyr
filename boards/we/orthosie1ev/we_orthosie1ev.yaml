@@ -3,7 +3,7 @@ name: we_orthosie1ev
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - gpio

@@ -9,7 +9,7 @@ name: NXP MIMXRT1170-EVKB CM4
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 128
 flash: 128

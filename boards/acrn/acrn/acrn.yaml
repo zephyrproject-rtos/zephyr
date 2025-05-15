@@ -3,7 +3,7 @@ name: ACRN
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 8192
 testing:
   ignore_tags:

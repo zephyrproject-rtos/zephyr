@@ -9,7 +9,7 @@ ram: 32
 flash: 32
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
 testing:

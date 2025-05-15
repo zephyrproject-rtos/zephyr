@@ -3,7 +3,7 @@ name: TTGO LoRa32 APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

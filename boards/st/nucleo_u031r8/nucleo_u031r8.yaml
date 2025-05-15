@@ -3,7 +3,7 @@ name: ST Nucleo U031R8
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - arduino_gpio
   - adc

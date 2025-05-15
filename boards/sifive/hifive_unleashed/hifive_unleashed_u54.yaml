@@ -3,7 +3,7 @@ name: SiFive HiFive Unleashed (U54)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 3840
 simulation:
   - name: renode

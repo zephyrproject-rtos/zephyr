@@ -6,7 +6,7 @@ name: nRF54L15-DK-nRF54L15-Fast-Lightweight-Peripheral-Processor (RRAM XIP)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 68
 flash: 96

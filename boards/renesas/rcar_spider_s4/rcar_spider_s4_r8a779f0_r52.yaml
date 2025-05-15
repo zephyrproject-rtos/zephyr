@@ -3,7 +3,7 @@ name: Cortex r52 for Renesas Spider
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio
