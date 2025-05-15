@@ -50,6 +50,10 @@ static int mcux_rgpio_configure(const struct device *dev,
 	struct pinctrl_soc_pin pin_cfg;
 	int cfg_idx = pin, i;
 
+	if ((flags == GPIO_DISCONNECTED)) {
+		return -ENOTSUP;
+	}
+
 	/* Make sure pin is supported */
 	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
 		return -ENOTSUP;
@@ -68,10 +72,18 @@ static int mcux_rgpio_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_PINCTRL_IMX_SCMI)
+	/*
+	 * For SCMI Pinctrl platform, set default PAD config value for SCMI clock:
+	 * Pull down, Slight Fast Slew Rate, X4 driver strength.
+	 */
+	uint32_t reg = 0x0000051e;
+#else
 	/* Set appropriate bits in pin configuration register */
 	volatile uint32_t *gpio_cfg_reg = (volatile uint32_t *)
 			((size_t)config->pin_muxes[cfg_idx].config_register);
 	uint32_t reg = *gpio_cfg_reg;
+#endif
 
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
 	/* PUE/PDRV types have the same ODE bit */
