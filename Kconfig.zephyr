@@ -329,6 +329,8 @@ endmenu # "Linker Sections"
 config LINKER_ITERABLE_SUBALIGN
 	int
 	default 8 if 64BIT
+	# aligned to _static_thread_data's init_delay size
+	default 8 if TIMEOUT_64BIT
 	default 4
 	help
 	  Hidden option for the default subalignment of iterable sections.
