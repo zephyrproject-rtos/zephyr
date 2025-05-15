@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,13 @@ extern char _rom_attr[];
 #endif
 
 static struct arm_mpu_region mpu_regions[] = {
+
+	/* ERR011573: use first region to prevent speculative access in entire memory space */
+	{
+		.name = "BACKGROUND",
+		.base = 0,
+		.attr = {REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk},
+	},
 
 	/* Keep before CODE region so it can be overlapped by SRAM CODE in non-XIP systems */
 	{
