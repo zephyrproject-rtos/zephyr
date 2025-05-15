@@ -10,10 +10,6 @@ find_program(CMAKE_LINKER
   NO_DEFAULT_PATH
 )
 
-if(CONFIG_IAR_DATA_INIT)
-  zephyr_linker_section(NAME .iar.init_table KVMA RAM_REGION GROUP RODATA_REGION)
-endif()
-
 add_custom_target(${IAR_LINKER})
 set(ILINK_THUMB_CALLS_WARNING_SUPPRESSED)
 set(IAR_LIB_USED)
@@ -58,6 +54,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     DEPENDS
            ${extra_dependencies}
            ${DEVICE_API_LD_TARGET}
+           ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
     COMMAND ${CMAKE_COMMAND}
       -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
       -C ${cmake_linker_script_settings}
@@ -67,8 +64,11 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -DCONFIG_LINKER_LAST_SECTION_ID_PATTERN=${CONFIG_LINKER_LAST_SECTION_ID_PATTERN}
       -DCONFIG_IAR_DATA_INIT=${CONFIG_IAR_DATA_INIT}
       -DCONFIG_IAR_ZEPHYR_INIT=${CONFIG_IAR_ZEPHYR_INIT}
+      -DCONFIG_XIP=${CONFIG_XIP}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       ${IAR_LIB_USED}
+      --trace-expand
+      --trace-redirect out
       -P ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
   )
 

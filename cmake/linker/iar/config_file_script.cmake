@@ -14,6 +14,7 @@ set_property(GLOBAL PROPERTY ILINK_REGION_SYMBOL_ICF)
 # - Symbol translation using a steering file is configured.
 function(process_region)
   cmake_parse_arguments(REGION "" "OBJECT" "" ${ARGN})
+  message(STATUS "process_region(${REGION_OBJECT})")
 
   process_region_common(${ARGN})
 
@@ -25,6 +26,7 @@ function(process_region)
     set_property(GLOBAL APPEND PROPERTY ${REGION_OBJECT}_SYMBOLS ${symbols})
     set_property(GLOBAL PROPERTY ${parent}_SYMBOLS)
   endif()
+  get_property(wat GLOBAL PROPERTY ${REGION}_FLASH_SECTIONS)
 
   get_property(sections GLOBAL PROPERTY ${REGION_OBJECT}_SECTION_LIST_ORDERED)
   foreach(section ${sections})
@@ -35,7 +37,7 @@ function(process_region)
     get_property(type       GLOBAL PROPERTY ${section}_TYPE)
     get_property(nosymbols  GLOBAL PROPERTY ${section}_NOSYMBOLS)
 
-    if(NOT nosymbols)
+    if(NOT nosymbols AND NOT CONFIG_IAR_DATA_INIT)
       if(${name} STREQUAL .ramfunc)
         create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean}_load_start
           EXPR "@ADDR(.ramfunc_init)@"
@@ -46,23 +48,6 @@ function(process_region)
           )
       endif()
     endif()
-
-    get_property(indicies GLOBAL PROPERTY ${section}_SETTINGS_INDICIES)
-    list(LENGTH indicies length)
-    foreach(idx ${indicies})
-      set(steering_postfixes Base Limit)
-      get_property(symbols GLOBAL PROPERTY ${section}_SETTING_${idx}_SYMBOLS)
-      get_property(sort    GLOBAL PROPERTY ${section}_SETTING_${idx}_SORT)
-      get_property(offset  GLOBAL PROPERTY ${section}_SETTING_${idx}_OFFSET)
-      if(DEFINED offset AND NOT offset EQUAL 0 )
-        # Same behavior as in section_to_string
-      elseif(DEFINED offset AND offset STREQUAL 0 )
-        # Same behavior as in section_to_string
-      elseif(sort)
-        # Treated by labels in the icf or image symbols.
-      elseif(DEFINED symbols AND ${length} EQUAL 1 AND noinput)
-      endif()
-    endforeach()
 
     # Symbols translation here.
 
@@ -97,9 +82,60 @@ function(process_region)
         EXPR "@ADDR(${symbol_start})@"
         )
     endif()
+    # Treat BSS to be noinit
+    if(type STREQUAL BSS)
+      set_property(GLOBAL PROPERTY ${section}_NOINIT TRUE)
+    endif()
+  endforeach() # all sections
 
-  endforeach()
+  #Add houseeeping symbols for sektion start, end, size, load start.
 
+  get_objects(LIST sections OBJECT ${REGION_OBJECT} TYPE SECTION)
+  if(CONFIG_IAR_ZEPHYR_INIT)
+    message(STATUS "REGION: ${REGION_OBJECT}: Processing blocks that needs to be put into INIT_REGION")
+    foreach(section ${sections})
+      message(STATUS "preprocess_section ${section} ${name}: vma=${vma}, lma=${lma}")
+      get_property(name GLOBAL PROPERTY ${section}_NAME)
+      get_parent(OBJECT ${section} PARENT parent TYPE GROUP)
+      get_property(lma GLOBAL PROPERTY ${parent}_LMA)
+      get_property(vma GLOBAL PROPERTY ${parent}_VMA)
+
+
+      ###
+      # Try to make a copy of section placements, and suffix all sections with _init
+      # TODO: Sections directly in REGION
+      # TODO: This is wrong:  block data_init_winput with alignment=4, fixed order { section .data_init, section .data_init.* },
+      ###
+      if(vma AND lma AND NOT (vma STREQUAL lma)) 
+        copy_section("${section}" "${section}_init")
+        set_property(GLOBAL PROPERTY ${section}_init_NAME "${name}_init")
+        string(REGEX REPLACE "^[\.]" "" name_clean "${name}_init")
+        string(REPLACE "." "_" name_clean "${name_clean}")
+        set_property(GLOBAL PROPERTY ${section}_init_NAME_CLEAN "${name_clean}")
+
+        set_property(GLOBAL PROPERTY ${section}_init_VMA)
+        # set_property(GLOBAL PROPERTY ${section}_init_LMA)
+
+        set_property(GLOBAL PROPERTY ${section}_init_PARENT GROUP_${lma}) # TODO this will break sections directly in REGION
+
+        get_property(indicies GLOBAL PROPERTY ${section}_init_SETTINGS_INDICIES)
+        foreach(idx ${indicies})
+          get_property(input GLOBAL PROPERTY ${section}_init_SETTING_${idx}_INPUT)
+          set(new_input)
+          foreach(in ${input})
+            list(APPEND new_input ${in}_init)
+          endforeach()
+          message(STATUS "input=${input}")
+          set_property(GLOBAL PROPERTY ${section}_init_SETTING_${idx}_INPUT ${new_input})
+          set_property(GLOBAL PROPERTY ${section}_init_SETTING_${idx}_SYMBOLS) # don't bring symbols
+        endforeach()
+
+
+        add_section(OBJECT GROUP_${lma} SECTION "${name}_init")
+        #get_property(lma GLOBAL PROPERTY ${section}_LMA)
+      endif()
+    endforeach()
+  endif()
   get_property(groups GLOBAL PROPERTY ${REGION_OBJECT}_GROUP_LIST_ORDERED)
   foreach(group ${groups})
     get_property(name GLOBAL PROPERTY ${group}_NAME)
@@ -123,12 +159,12 @@ function(process_region)
     list(POP_BACK sections section)
     get_property(last_section_name GLOBAL PROPERTY ${section}_NAME_CLEAN)
 
-    if(DEFINED vma AND DEFINED lma)
+    if(DEFINED vma AND DEFINED lma AND NOT CONFIG_IAR_DATA_INIT)
       # Something to init
       create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name}_load_start
         EXPR "@ADDR(${first_section_name}_init)@"
         )
-    else()
+    elseif(NOT CONFIG_IAR_DATA_INIT)
       create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name}_load_start
         EXPR "@LOADADDR(${first_section_name})@"
         )
@@ -146,6 +182,7 @@ function(process_region)
 
   endforeach()
 
+  # create_symbol() for region-symbols that dont have an expression ?
   get_property(symbols GLOBAL PROPERTY ${REGION_OBJECT}_SYMBOLS)
   foreach(symbol ${symbols})
     get_property(name GLOBAL PROPERTY ${symbol}_NAME)
@@ -190,14 +227,19 @@ endfunction()
 
 function(system_to_string)
   cmake_parse_arguments(STRING "" "OBJECT;STRING" "" ${ARGN})
+  message(STATUS "system_to_string(${STRING_OBJECT})")
 
   get_property(name    GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
   get_property(regions GLOBAL PROPERTY ${STRING_OBJECT}_REGIONS)
   get_property(format  GLOBAL PROPERTY ${STRING_OBJECT}_FORMAT)
 
   # Ilink specials
-  # set(${STRING_STRING} "build for rom;\n")
-  set(${STRING_STRING} "build for ram;\n")
+  # TODO
+  #if(CONFIG_XIP)
+  #  set(${STRING_STRING} "build for rom;\n")
+  #else()
+    set(${STRING_STRING} "build for ram;\n")
+  #endif()
   if("${format}" MATCHES "aarch64")
     set(${STRING_STRING} "${${STRING_STRING}}define memory mem with size = 16E;\n")
   else()
@@ -244,18 +286,43 @@ function(system_to_string)
   set(${STRING_STRING} "${${STRING_STRING}}\n\n")
   set_property(GLOBAL PROPERTY ILINK_SYMBOL_ICF)
 
-  set(${STRING_STRING} "${${STRING_STRING}}\n")
+  #Generate all regions
   foreach(region ${regions})
     get_property(empty GLOBAL PROPERTY ${region}_EMPTY)
+    message(STATUS "SYSTEM: ${region}-empty: ${empty}")
     if(NOT empty)
       get_property(name    GLOBAL PROPERTY ${region}_NAME)
       set(ILINK_CURRENT_NAME ${name})
+      message(STATUS "${region}-start")
+      set(REGION_BLOCK)
       to_string(OBJECT ${region} STRING ${STRING_STRING})
+      set(${STRING_STRING} "${${STRING_STRING}}\"${region}\": place in ${name} { block ${region} };\n")
+
+      message(STATUS "${region}-end")
       set(ILINK_CURRENT_NAME)
     endif()
   endforeach()
-  set(${STRING_STRING} "${${STRING_STRING}}\n")
+  set(${STRING_STRING} "${${STRING_STRING}}\n/*SYSTEM_SECTIONS*/\n")
 
+  # Sections that sit directly under the system are fishy characters.
+  # Currently there are two classes of them:
+  # 1 - .rel.iplt & friends - these are not used by iar tools currently.
+  #     These do not have any parents, so get no placement. Ignore them for
+  #     now, since the get Error[Lc041]: "foo" defined but not referenced
+  # 2 - TYPE LINKER_SCRIPT_FOOTER - these have vma and lma settings, and so
+  #     are easy to handle
+  get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS)
+  foreach(section ${sections})
+    get_property(vma GLOBAL PROPERTY ${section}_VMA)
+    get_property(lma GLOBAL PROPERTY ${section}_LMA)
+    if(DEFINED lma OR DEFINED vma)
+      to_string(OBJECT ${section} STRING ${STRING_STRING})
+      place_in_region(STRING place OBJECT ${section})
+      string(APPEND ${STRING_STRING} "${place}")
+    endif()
+  endforeach()
+
+  #Generate all image symbols we have collected
   get_property(symbols_icf GLOBAL PROPERTY ILINK_SYMBOL_ICF)
   foreach(image_symbol ${symbols_icf})
     set(${STRING_STRING} "${${STRING_STRING}}define image symbol ${image_symbol};\n")
@@ -281,8 +348,41 @@ function(system_to_string)
   set(${STRING_STRING} ${${STRING_STRING}} PARENT_SCOPE)
 endfunction()
 
+#A helper to output "place in <Region>"
+function(place_in_region)
+  cmake_parse_arguments(PLACE "" "OBJECT;STRING" "" ${ARGN})
+  set(section ${PLACE_OBJECT})
+  get_property(name     GLOBAL PROPERTY ${section}_NAME)
+
+  get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
+
+  get_property(parent   GLOBAL PROPERTY ${section}_PARENT)
+  get_property(noinit   GLOBAL PROPERTY ${section}_NOINIT)
+  # This is only a trick to get the memories
+  get_property(parent_type GLOBAL PROPERTY ${parent}_OBJ_TYPE)
+  if(${parent_type} STREQUAL GROUP)
+    get_property(vma GLOBAL PROPERTY ${parent}_VMA)
+    get_property(lma GLOBAL PROPERTY ${parent}_LMA)
+  endif()
+
+  if(DEFINED vma)
+    set(ILINK_CURRENT_NAME ${vma})
+  elseif(DEFINED lma)
+    set(ILINK_CURRENT_NAME ${lma})
+  else()
+    # message(FATAL_ERROR "Need either vma or lma")
+  endif()
+
+  set(result "\"${name}\": place in ${ILINK_CURRENT_NAME} { block ${name_clean} };\n")
+  if(CONFIG_IAR_ZEPHYR_INIT AND DEFINED vma AND DEFINED lma AND (NOT ${noinit}) AND NOT ("${vma}" STREQUAL "${lma}") )
+    string(APPEND result "\"${name}_init\": place in ${lma} { block ${name_clean}_init };\n")
+  endif()
+  set(${PLACE_STRING} "${result}" PARENT_SCOPE)
+endfunction()
+
 function(group_to_string)
   cmake_parse_arguments(STRING "" "OBJECT;STRING" "" ${ARGN})
+  message(STATUS "group_to_string(${STRING_OBJECT})")
 
   get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
   if(${type} STREQUAL REGION)
@@ -302,55 +402,48 @@ function(group_to_string)
     set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place at address mem:${section_address} { block ${name_clean} };\n")
   endforeach()
 
+  #Generate sub-groups
   get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_GROUPS)
   foreach(group ${groups})
     to_string(OBJECT ${group} STRING ${STRING_STRING})
   endforeach()
 
+  #Generate sections
   get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS)
+
+
+  set(sections_to_place ${sections})
+
   foreach(section ${sections})
     to_string(OBJECT ${section} STRING ${STRING_STRING})
-
-    get_property(name     GLOBAL PROPERTY ${section}_NAME)
-
-    get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
-
-    get_property(parent   GLOBAL PROPERTY ${section}_PARENT)
-    get_property(noinit   GLOBAL PROPERTY ${section}_NOINIT)
-    # This is only a trick to get the memories
-    get_property(parent_type GLOBAL PROPERTY ${parent}_OBJ_TYPE)
-    if(${parent_type} STREQUAL GROUP)
-      get_property(vma GLOBAL PROPERTY ${parent}_VMA)
-      get_property(lma GLOBAL PROPERTY ${parent}_LMA)
-    endif()
-
-    if(DEFINED vma)
-      set(ILINK_CURRENT_NAME ${vma})
-    elseif(DEFINED lma)
-      set(ILINK_CURRENT_NAME ${lma})
-    else()
-      # message(FATAL_ERROR "Need either vma or lma")
-    endif()
-
-    set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place in ${ILINK_CURRENT_NAME} { block ${name_clean} };\n")
-    if(CONFIG_IAR_ZEPHYR_INIT AND DEFINED vma AND DEFINED lma AND NOT ${noinit})
-      set(${STRING_STRING} "${${STRING_STRING}}\"${name}_init\": place in ${lma} { block ${name_clean}_init };\n")
-    endif()
-
   endforeach()
+
+  set(${STRING_STRING} "${${STRING_STRING}}define block ${STRING_OBJECT} with fixed order {\n")
+  foreach(group ${groups})
+    set(${STRING_STRING} "${${STRING_STRING}}  block ${group},\n")
+  endforeach()
+  foreach(section ${sections})
+    get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
+    set(${STRING_STRING} "${${STRING_STRING}}  block ${name_clean},\n")
+  endforeach()
+
+  set(${STRING_STRING} "${${STRING_STRING}}};\n")
 
   get_parent(OBJECT ${STRING_OBJECT} PARENT parent TYPE SYSTEM)
   get_property(regions GLOBAL PROPERTY ${parent}_REGIONS)
   list(REMOVE_ITEM regions ${STRING_OBJECT})
 
+  #Go over REGIONS
   foreach(region ${regions})
     get_property(vma GLOBAL PROPERTY ${region}_NAME)
     get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_SECTIONS_FIXED)
 
+    #Generate our fixed-sections that has vma in this region
     foreach(section ${sections})
       to_string(OBJECT ${section} STRING ${STRING_STRING})
     endforeach()
 
+    #generate our groups with vma in region
     get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_GROUPS)
     foreach(group ${groups})
       to_string(OBJECT ${group} STRING ${STRING_STRING})
@@ -358,6 +451,7 @@ function(group_to_string)
 
     get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_SECTIONS)
     foreach(section ${sections})
+      list(APPEND sections_to_place ${section})
       to_string(OBJECT ${section} STRING ${STRING_STRING})
       get_property(name     GLOBAL PROPERTY ${section}_NAME)
       string(REGEX REPLACE "^[\.]" "" name_clean "${name}")
@@ -378,24 +472,9 @@ function(group_to_string)
           set_property(GLOBAL PROPERTY ILINK_CURRENT_SECTIONS)
         endif()
       endif()
-
-      if(${name_clean} STREQUAL last_ram_section)
-        get_property(group_name_lma GLOBAL PROPERTY ILINK_ROM_REGION_NAME)
-        set(${STRING_STRING} "${${STRING_STRING}}\n")
-        if(${CONFIG_LINKER_LAST_SECTION_ID})
-          set(${STRING_STRING} "${${STRING_STRING}}define section last_section_id { udata32 ${CONFIG_LINKER_LAST_SECTION_ID_PATTERN}; };\n")
-          set(${STRING_STRING} "${${STRING_STRING}}define block last_section with fixed order { section last_section_id };\n")
-        else()
-          set(${STRING_STRING} "${${STRING_STRING}}define block last_section with fixed order { };\n")
-        endif()
-        # Not really the right place, we want the last used flash bytes not end of the world!
-        # set(${STRING_STRING} "${${STRING_STRING}}\".last_section\": place at end of ${group_name_lma} { block last_section };\n")
-        set(${STRING_STRING} "${${STRING_STRING}}\".last_section\": place in ${group_name_lma} { block last_section };\n")
-        set(${STRING_STRING} "${${STRING_STRING}}keep { block last_section };\n")
-      endif()
-
     endforeach()
   endforeach()
+  message(STATUS "${sections_to_place}")
 
   get_property(symbols GLOBAL PROPERTY ${STRING_OBJECT}_SYMBOLS)
   set(${STRING_STRING} "${${STRING_STRING}}\n")
@@ -409,6 +488,7 @@ endfunction()
 
 function(section_to_string)
   cmake_parse_arguments(STRING "" "SECTION;STRING" "" ${ARGN})
+  message(STATUS "section_to_string(${STRING_SECTION})")
 
   get_property(name     GLOBAL PROPERTY ${STRING_SECTION}_NAME)
   get_property(address  GLOBAL PROPERTY ${STRING_SECTION}_ADDRESS)
@@ -439,11 +519,12 @@ function(section_to_string)
     endif()
   endif()
 
-  if(DEFINED group_parent_vma AND DEFINED group_parent_lma)
+  # TODO: This is not the right logic
+  if(DEFINED vma AND DEFINED lma AND NOT (vma STREQUAL lma))
     # Something to init
-    set(part "rw ")
+    # set(part "rw ")
   else()
-    set(part)
+    # set(part)
   endif()
 
 
@@ -677,11 +758,6 @@ function(section_to_string)
     set(block_attr)
     set(block_attr_str)
 
-    if(empty)
-      set(TEMP "${TEMP}\n  {")
-      set(empty FALSE)
-    endif()
-
     list(GET input -1 last_input)
 
     set(TEMP "${TEMP} {")
@@ -696,21 +772,6 @@ function(section_to_string)
       endif()
 
       set(section_type "")
-
-      # build for ram, no section_type
-      # if("${lma}" STREQUAL "${vma}")
-      #		# if("${vma}" STREQUAL "")
-      #           set(section_type "")
-      #		# else()
-      #		#   set(section_type " readwrite")
-      #		# endif()
-      # elseif(NOT "${vma}" STREQUAL "")
-      #		set(section_type " readwrite")
-      # elseif(NOT "${lma}" STREQUAL "")
-      #		set(section_type " readonly")
-      # else()
-      #		message(FATAL_ERROR "How to handle this? lma=${lma} vma=${vma}")
-      # endif()
 
       set(TEMP "${TEMP}${section_type} ${part}section ${setting}")
       set_property(GLOBAL APPEND PROPERTY ILINK_CURRENT_SECTIONS "section ${setting}")
@@ -777,66 +838,46 @@ function(section_to_string)
 
   set(TEMP "${TEMP}\n};")
 
-  get_property(type GLOBAL PROPERTY ${parent}_OBJ_TYPE)
-  if(${type} STREQUAL REGION)
-    get_property(name GLOBAL PROPERTY ${parent}_NAME)
-    get_property(address GLOBAL PROPERTY ${parent}_ADDRESS)
-    get_property(size GLOBAL PROPERTY ${parent}_SIZE)
-
-  endif()
-
   get_property(current_sections GLOBAL PROPERTY ILINK_CURRENT_SECTIONS)
+  if(${noinit})
+    list(JOIN current_sections ", " SELECTORS)
+    set(TEMP "${TEMP}\ndo not initialize {\n${SELECTORS}\n};")
+  elseif(DEFINED group_parent_vma AND DEFINED group_parent_lma)
+    if(DEFINED current_sections)
+      if(CONFIG_IAR_DATA_INIT)
+        set(TEMP "${TEMP}\ninitialize by copy\n")
+        set(TEMP "${TEMP}{\n")
+        foreach(section ${current_sections})
+          set(TEMP "${TEMP}  ${section},\n")
+        endforeach()
+        set(TEMP "${TEMP}};")
 
-  if(DEFINED group_parent_vma AND DEFINED group_parent_lma)
-    if(${noinit})
-      list(JOIN current_sections ", " SELECTORS)
-      set(TEMP "${TEMP}\ndo not initialize {\n${SELECTORS}\n};")
-    else()
+      elseif(CONFIG_IAR_ZEPHYR_INIT)
+        # Generate the _init block and the initialize manually statement.
+        # Note that we need to have the X_init block defined even if we have
+        # no sections, since there will come a "place in XXX" statement later.
 
-      if(DEFINED current_sections)
-        if(CONFIG_IAR_DATA_INIT)
-          set(TEMP "${TEMP}\ninitialize by copy\n")
-          set(TEMP "${TEMP}{\n")
-          foreach(section ${current_sections})
-            set(TEMP "${TEMP}  ${section},\n")
-          endforeach()
-          set(TEMP "${TEMP}};")
+        # "${TEMP}" is there too keep the ';' else it will be a list
+        # string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
+        # string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
+        # string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
+        # string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
+        # string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
 
-          set(TEMP "${TEMP}\n\"${name}_init\": place in ${group_parent_lma} {\n")
-          foreach(section ${current_sections})
-            set(TEMP "${TEMP}  ${section}_init,\n")
-          endforeach()
-          set(TEMP "${TEMP}};")
-        elseif(CONFIG_IAR_ZEPHYR_INIT)
-          # Generate the _init block and the initialize manually statement.
-          # Note that we need to have the X_init block defined even if we have
-          # no sections, since there will come a "place in XXX" statement later.
-
-          # "${TEMP}" is there too keep the ';' else it will be a list
-          string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
-          string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
-          string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
-          string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
-          string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
-
-          # If any content is marked as keep, is has to be applied to the init block
-          # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
-          if(to_be_kept)
-            list(APPEND to_be_kept "block ${name_clean}_init")
-          endif()
-          set(TEMP "${TEMP}\n${INIT_TEMP}\n")
-          set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
-          set(TEMP "${TEMP}{\n")
-          foreach(section ${current_sections})
-            set(TEMP "${TEMP}  ${section},\n")
-          endforeach()
-          set(TEMP "${TEMP}};")
-          set(current_sections)
-        endif()
+        # If any content is marked as keep, is has to be applied to the init block
+        # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
+        # if(to_be_kept)
+        #   list(APPEND to_be_kept "block ${name_clean}_init")
+        # endif()
+        # set(TEMP "${TEMP}\n${INIT_TEMP}\n")
+        set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
+        set(TEMP "${TEMP}{\n")
+        foreach(section ${current_sections})
+          set(TEMP "${TEMP}  ${section},\n")
+        endforeach()
+        set(TEMP "${TEMP}};")
       endif()
-
       set(current_sections)
-
     endif()
   endif()
 
