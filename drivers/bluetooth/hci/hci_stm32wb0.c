@@ -10,6 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/drivers/entropy.h>
 #include "bleplat_cntr.h"
 #include "ble_stack.h"
 #include "stm32wb0x_hal_radio_timer.h"
@@ -20,7 +21,6 @@
 #include "dm_alloc.h"
 #include "aci_adv_nwk.h"
 #include "app_common.h"
-#include "hw_rng.h"
 #include "hw_aes.h"
 #include "hw_pka.h"
 
@@ -301,6 +301,30 @@ static void ble_isr_installer(void)
 	IRQ_CONNECT(PKA_IRQn, PKA_PRIO, _PKA_IRQHandler, NULL, PKA_FLAGS);
 }
 
+static void rng_get_random(void *num, size_t size)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	int res;
+
+	/* try to allocate from pool */
+	res = entropy_get_entropy_isr(dev, (uint8_t *)num, size, !ENTROPY_BUSYWAIT);
+	if (res != size) {
+		/* Not enough available random numbers, so it falls back to polling */
+		entropy_get_entropy_isr(dev, (uint8_t *)num, size, ENTROPY_BUSYWAIT);
+	}
+}
+
+/* BLEPLAT_RngGetRandomXX definitions are needed for the BLE library. */
+void BLEPLAT_RngGetRandom16(uint16_t *num)
+{
+	rng_get_random(num, sizeof(*num));
+}
+
+void BLEPLAT_RngGetRandom32(uint32_t *num)
+{
+	rng_get_random(num, sizeof(*num));
+}
+
 static struct net_buf *get_rx(uint8_t *msg)
 {
 	bool discardable = false;
@@ -465,7 +489,6 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 	HAL_RADIO_Init(&hradio);
 	HAL_RADIO_TIMER_Init(&VTIMER_InitStruct);
 
-	HW_RNG_Init();
 	HW_AES_Init();
 	hpka.Instance = PKA;
 	HAL_PKA_Init(&hpka);

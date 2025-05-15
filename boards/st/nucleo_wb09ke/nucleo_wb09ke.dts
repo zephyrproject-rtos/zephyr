@@ -24,6 +24,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,entropy = &rng;
 	};
 
 	leds: leds {
@@ -164,6 +165,10 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+&rng {
+	status = "okay";
 };
 
 &flash0 {
