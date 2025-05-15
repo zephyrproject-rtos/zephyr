@@ -18,4 +18,10 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 24000000
 
+# Disable data cache until MMU is enabled when booting from EL2
+config ARM64_DCACHE_ALL_OPS
+	default y
+config ARM64_BOOT_DISABLE_DCACHE
+	default y
+
 endif
