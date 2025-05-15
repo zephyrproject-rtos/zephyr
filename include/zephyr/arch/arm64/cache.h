@@ -139,6 +139,8 @@ done:
 	return 0;
 }
 
+#ifdef CONFIG_ARM64_DCACHE_ALL_OPS
+
 /*
  * operation for all data cache
  * ops:  K_CACHE_INVD: invalidate
@@ -226,6 +228,25 @@ static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
 {
 	return arm64_dcache_all(K_CACHE_WB_INVD);
 }
+
+#else
+
+static ALWAYS_INLINE int arch_dcache_flush_all(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_dcache_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
+static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
+#endif /* CONFIG_ARM64_DCACHE_ALL_OPS */
 
 static ALWAYS_INLINE int arch_dcache_flush_range(void *addr, size_t size)
 {
