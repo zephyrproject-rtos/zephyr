@@ -158,20 +158,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(44)>;
 		};
-		/* The MCUBoot swap-move algorithm uses the last 2 sectors
-		 * of the primary slot0 for swap status and move.
-		 */
 		slot0_partition: partition@b000 {
 			label = "image-0";
-			reg = <0xb000 (DT_SIZE_K(96) + DT_SIZE_K(8))>;
+			reg = <0xb000 DT_SIZE_K(100)>;
 		};
-		slot1_partition: partition@25000 {
+		slot1_partition: partition@24000 {
 			label = "image-1";
-			reg = <0x25000 DT_SIZE_K(96)>;
+			reg = <0x24000 DT_SIZE_K(100)>;
 		};
 		storage_partition: partition@3d000 {
 			label = "storage";

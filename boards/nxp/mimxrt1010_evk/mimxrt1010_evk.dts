@@ -105,24 +105,26 @@ arduino_serial: &lpuart1 {};
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 3 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
-			slot1_partition: partition@723000 {
+			slot1_partition: partition@720000 {
 				label = "image-1";
-				reg = <0x00723000 DT_SIZE_M(7)>;
+				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E23000 {
+			storage_partition: partition@E20000 {
 				label = "storage";
-				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
+				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};
