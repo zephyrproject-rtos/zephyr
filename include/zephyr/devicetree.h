@@ -2190,6 +2190,39 @@
  */
 
 /**
+ * @defgroup devicetree-dma-ranges-prop dma-ranges property
+ * @ingroup devicetree
+ * @{
+ */
+
+#define DT_NUM_DMA_RANGES(node_id) DT_CAT(node_id, _DMA_RANGES_NUM)
+
+#define DT_DMA_RANGES_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _EXISTS))
+
+#define DT_DMA_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS_EXISTS))
+
+#define DT_DMA_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS)
+
+#define DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_CHILD_BUS_ADDRESS)
+
+#define DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_PARENT_BUS_ADDRESS)
+
+#define DT_DMA_RANGES_LENGTH_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_LENGTH)
+
+#define DT_FOREACH_DMA_RANGE(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_DMA_RANGE)(fn)
+
+/**
+ * @}
+ */
+
+/**
  * @defgroup devicetree-generic-vendor Vendor and model name helpers
  * @ingroup devicetree
  * @{
