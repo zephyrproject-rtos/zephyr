@@ -1077,6 +1077,11 @@ static bool usb_halt_endpoint_req(struct usb_setup_packet *setup, bool halt)
 			}
 		} else {
 			LOG_INF("Clear halt ep 0x%02x", ep);
+			/* usb_dc_ep_clear_stall effectively will cancel the transfer.
+			 * Remove transfer from the queue to prevent perpetual locked state.
+			 */
+			usb_cancel_transfer(ep);
+
 			usb_dc_ep_clear_stall(ep);
 			if (usb_dev.status_callback) {
 				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);

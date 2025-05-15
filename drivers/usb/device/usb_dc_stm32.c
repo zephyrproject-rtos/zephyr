@@ -740,6 +740,14 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		return -EIO;
 	}
 
+	/* The DataInCallback will never be called at this point for any pending
+	 * transaction associated with this endpoint as it's status has been set to NAK.
+	 * Reset the IN semaphore to prevent perpetual locked state.
+	 */
+	if (USB_EP_DIR_IS_IN(ep) && ep_state->ep_type != EP_TYPE_ISOC) {
+		k_sem_give(&ep_state->write_sem);
+	}
+
 	ep_state->ep_stalled = 0U;
 	ep_state->read_count = 0U;
 
