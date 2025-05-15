@@ -178,6 +178,14 @@
 			reg = <0x40084000 0x2000>;
 			status = "disabled";
 
+			counterg0: counterg0 {
+				compatible = "ti,mspm0g1x0x_g3x0x-timer-counter";
+				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+				interrupts = <21 0>;
+				resolution = <16>;
+				status = "disabled";
+			};
+
 			pwm0: pwm {
 				compatible = "ti,mspm0g1x0x_g3x0x-timer-pwm";
 				clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
