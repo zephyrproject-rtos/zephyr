@@ -144,6 +144,29 @@ struct _ready_q {
 
 typedef struct _ready_q _ready_q_t;
 
+/* kernel timeout record */
+struct _timeout;
+typedef void (*_timeout_func_t)(struct _timeout *t);
+
+struct _timeout {
+	sys_dnode_t node;
+	_timeout_func_t fn;
+#ifdef CONFIG_TIMEOUT_64BIT
+	/* Can't use k_ticks_t for header dependency reasons */
+	int64_t dticks;
+#else
+	int32_t dticks;
+#endif
+};
+
+struct _timeslice {
+	/* timeout for the timeslice */
+	struct _timeout timeout;
+
+	/* true if timeslice expired */
+	bool expired;
+};
+
 struct _cpu {
 	/* nested interrupt count */
 	uint32_t nested;
@@ -194,6 +217,10 @@ struct _cpu {
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
 	struct k_obj_core  obj_core;
+#endif
+
+#ifdef CONFIG_TIMESLICING
+	struct _timeslice timeslice;
 #endif
 
 	/* Per CPU architecture specifics */
@@ -291,21 +318,6 @@ typedef struct {
 #define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
 
 #endif /* CONFIG_WAITQ_SCALABLE */
-
-/* kernel timeout record */
-struct _timeout;
-typedef void (*_timeout_func_t)(struct _timeout *t);
-
-struct _timeout {
-	sys_dnode_t node;
-	_timeout_func_t fn;
-#ifdef CONFIG_TIMEOUT_64BIT
-	/* Can't use k_ticks_t for header dependency reasons */
-	int64_t dticks;
-#else
-	int32_t dticks;
-#endif
-};
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
 
