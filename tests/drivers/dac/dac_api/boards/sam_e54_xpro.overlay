@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac {
+	status = "okay";
+	refsel = "intref";
+
+	dac0: dac0 {
+		channel = <0>;
+		rate = <1000>;
+	};
+};
