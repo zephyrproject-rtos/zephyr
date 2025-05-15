@@ -337,6 +337,10 @@ class Filters:
             tag.exclude = True
             tag.name = t
 
+            if not isinstance(x, dict) or x.get("files") is None:
+                logging.debug(f"Tag {t} is might be a standalone anchor, skipping...")
+                continue
+
             # tag._match_fn(path) tests if the path matches files and/or
             # files-regex
             tag._match_fn = _get_match_fn(x.get("files"), x.get("files-regex"))
