@@ -116,8 +116,8 @@ static int settings_set_default_cb(const char *name, size_t len, settings_read_c
  * Returns the value's length in the provided `param` pointer
  */
 static int settings_get_val_len_default_cb(const char *name, size_t len,
-					   [[maybe_unused]] settings_read_cb read_cb,
-					   [[maybe_unused]] void *cb_arg, void *param)
+					   settings_read_cb read_cb __maybe_unused,
+					   void *cb_arg __maybe_unused, void *param)
 {
 	const char *next;
 	size_t name_len;
