@@ -2862,6 +2862,16 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 	}
 
 out:
+	if (prefix != NULL) {
+		NET_DBG("Found prefix %s/%d for %s",
+			net_sprint_ipv6_addr(&prefix->prefix),
+			prefix->len,
+			net_sprint_ipv6_addr(addr));
+	} else {
+		NET_DBG("No prefix found for %s",
+			net_sprint_ipv6_addr(addr));
+	}
+
 	net_if_unlock(iface);
 
 	return prefix;
