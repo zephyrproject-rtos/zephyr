@@ -34,17 +34,17 @@ ZBUS_CHAN_DEFINE(regular_chan,	 /* Name */
 
 ZTEST(user_data, test_channel_user_data)
 {
-	zassert_true(sizeof(my_user_data) > 0, NULL);
+	zassert_true(sizeof(my_user_data) > 0);
 
-	zassert_equal_ptr(version_chan.user_data, NULL, NULL);
+	zassert_equal_ptr(version_chan.user_data, NULL);
 
-	zassert_equal_ptr(regular_chan.user_data, &my_user_data, NULL);
+	zassert_equal_ptr(regular_chan.user_data, &my_user_data);
 
 	int *counter = regular_chan.user_data;
 	*counter = -2;
 
-	zassert_equal(zbus_chan_user_data(&regular_chan), counter, NULL);
-	zassert_equal(*(int *)zbus_chan_user_data(&regular_chan), -2, NULL);
+	zassert_equal(zbus_chan_user_data(&regular_chan), counter);
+	zassert_equal(*(int *)zbus_chan_user_data(&regular_chan), -2);
 
 	memset(regular_chan.user_data, 0, sizeof(my_user_data));
 }
@@ -94,16 +94,16 @@ ZTEST(user_data, test_user_data_regression)
 
 	zbus_chan_read(&regular_chan, &received, K_MSEC(100));
 
-	zassert_equal(sent.a, received.a, NULL);
+	zassert_equal(sent.a, received.a);
 
-	zassert_equal(sent.b, received.b, NULL);
+	zassert_equal(sent.b, received.b);
 
 	k_msleep(1000);
 
 	if (!zbus_chan_claim(&regular_chan, K_FOREVER)) {
 		int *count = zbus_chan_user_data(&regular_chan);
 
-		zassert_equal(*count, 2, NULL);
+		zassert_equal(*count, 2);
 
 		zbus_chan_finish(&regular_chan);
 	}

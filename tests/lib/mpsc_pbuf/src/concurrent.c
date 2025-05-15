@@ -167,7 +167,7 @@ static bool produce(void *user_data, uint32_t cnt, bool last, int prio)
 {
 	struct mpsc_pbuf_buffer *buffer = user_data;
 
-	zassert_true(prio < 4, NULL);
+	zassert_true(prio < 4);
 
 
 	uint32_t wlen = sys_rand32_get() % (buffer->size / 4) + 1;
