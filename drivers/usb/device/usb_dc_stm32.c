@@ -869,6 +869,10 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		return -EINVAL;
 	}
 
+	if (!ep_state->ep_stalled) {
+		return 0;
+	}
+
 	status = HAL_PCD_EP_ClrStall(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
 		LOG_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d", ep,
