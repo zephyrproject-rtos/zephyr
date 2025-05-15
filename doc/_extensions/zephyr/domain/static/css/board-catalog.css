@@ -146,6 +146,7 @@
   flex-direction: column;
   align-items: center;
   transition: transform 0.3s ease;
+  position: relative;
 }
 
 .board-card:hover,
@@ -153,6 +154,34 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-5px);
   text-decoration: none;
+}
+
+.board-card.shield::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-style: solid;
+  border-width: 0 48px 48px 0;
+  border-color: transparent var(--admonition-note-title-background-color) transparent transparent;
+  border-radius: 0 8px 0 0;
+}
+
+.board-card.shield::after {
+  rotate: 45deg;
+  content: "SHIELD";
+  position: absolute;
+  top: 7px;
+  right: 6px;
+  color: var(--admonition-note-title-color);
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .board-card .picture {
@@ -245,6 +274,23 @@
   box-shadow: none;
   list-style-position: outside;
   max-width: none;
+}
+
+#catalog.compact .board-card.shield::before {
+  display: none; /* Remove the S prefix */
+}
+
+#catalog.compact .board-card.shield::after {
+  content: "Shield";
+  color: var(--admonition-note-color);
+  background-color: var(--admonition-note-background-color);
+  padding: 2px 10px 2px 10px;
+  border-radius: 30px;
+  font-size: 0.8em;
+}
+
+#catalog.compact .board-card.shield {
+  padding: 4px 0;
 }
 
 #catalog.compact .board-card .vendor,

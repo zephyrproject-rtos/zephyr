@@ -12,6 +12,7 @@ from pathlib import Path
 
 import list_boards
 import list_hardware
+import list_shields
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -256,8 +257,10 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    shields = list_shields.find_shields(args_find_boards)
     systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
+    shield_catalog = {}
     board_devicetrees = {}
     board_runners = {}
 
@@ -400,8 +403,24 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "commands": runner.capabilities().commands,
         }
 
+    for shield in shields:
+        doc_page = guess_doc_page(shield)
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
+        shield_catalog[shield.name] = {
+            "name": shield.name,
+            "full_name": shield.full_name or shield.name,
+            "vendor": shield.vendor or "others",
+            "doc_page": doc_page_path,
+            "image": guess_image(shield),
+        }
+
     return {
         "boards": board_catalog,
+        "shields": shield_catalog,
         "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
         "socs": socs_hierarchy,
         "runners": available_runners,
