@@ -109,14 +109,17 @@ config ZBUS_ASSERT_MOCK
 
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
-	int "Zbus message subscriber heap pool size."
+	int "Zbus requested heap pool size."
 	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 0
 	help
-	  This configures heap memory pool available for configured net buffers via ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE.
-	  Can be set, if more heap is required, or default heap size is too big for the soc.
+	  Configures the available heap memory pool for zbus.
+	  The heap is used for various zbus operations (especially required for dynamic buffer allocation for
+	  message subscribers and runtime observers).
+	  In case of dynamic net buffer allocation the heap must fit all data distributed via message subscribers.
+	  Can be set manual, if more heap is required, or default heap size is too big for the soc.
 
 module = ZBUS
 module-str = zbus

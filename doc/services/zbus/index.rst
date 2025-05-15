@@ -943,7 +943,8 @@ Related configuration options:
   a pool for the message subscriber for a set of channels;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
   channels to be transported into a message buffer;
-* :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS` the reserved heap size for message buffer allocation;
+* :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS` the reserved heap size for zbus in a whole
+  including message buffer allocation;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC` allocate the runtime observers
   dynamically using the heap;
