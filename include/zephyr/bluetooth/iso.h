@@ -1313,6 +1313,9 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 /**
  * @brief Terminates a BIG as a broadcaster or receiver
  *
+ * This function cannot be called while in @ref bt_iso_big_cb.started, @ref bt_iso_big_cb.stopped,
+ * @ref bt_iso_chan_ops.connected or @ref bt_iso_chan_ops.disconnected callbacks.
+ *
  * @param big    Pointer to the BIG structure.
  *
  * @return 0 in case of success or negative value in case of error.
