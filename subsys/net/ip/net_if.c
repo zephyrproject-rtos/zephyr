@@ -5286,6 +5286,15 @@ out:
 	return ifaddr;
 }
 
+/* This helper function is used only in tests. */
+#if defined(CONFIG_NET_TEST)
+struct net_if_addr *net_if_ipv6_get_ifaddr(struct net_if *iface,
+					   const void *addr)
+{
+	return get_ifaddr(iface, AF_INET6, addr, NULL);
+}
+#endif /* CONFIG_NET_TEST */
+
 static void remove_ipv6_ifaddr(struct net_if *iface,
 			       struct net_if_addr *ifaddr,
 			       unsigned int maddr_count)
