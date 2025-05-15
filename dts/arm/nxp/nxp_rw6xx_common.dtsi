@@ -565,6 +565,7 @@
 			interrupts = <108 0>;
 			status = "disabled";
 			#io-channel-cells = <0>;
+			zephyr,disabling-power-states = <&suspend &standby>;
 			power-domains = <&power_mode3_domain>;
 		};
 	};
