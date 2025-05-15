@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * The Image Definition Block is only linked to the app that
+ * resides at 0x100. This can be the application, or a bootloader
+ * such as mcuboot.
+ */
+#if CONFIG_RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 MEMORY
 {
 	IMAGE_DEF_FLASH (r) : ORIGIN = 0x10000000, LENGTH = 128
@@ -23,5 +29,6 @@ SECTIONS
 		LONG(0xab123579) /* PICOBIN_BLOCK_MARKER_END */
 	} > IMAGE_DEF_FLASH
 }
+#endif /* CONFIG_RP2_REQUIRES_IMAGE_DEFINITION_BLOCK */
 
 #include <zephyr/arch/arm/cortex_m/scripts/linker.ld>
