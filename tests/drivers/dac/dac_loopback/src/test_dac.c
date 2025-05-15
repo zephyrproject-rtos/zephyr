@@ -202,6 +202,21 @@
 #define ADC_CHANNEL_ID		0
 #define ADC_1ST_CHANNEL_INPUT	IADC_INPUT_DAC0
 
+#elif defined(CONFIG_BOARD_SAM_E54_XPRO)
+
+/*  DAC0 internally connected to ADC channel 30 */
+#define DAC_DEVICE_NODE DT_NODELABEL(dac)
+#define DAC_RESOLUTION  12
+#define DAC_CHANNEL_ID  0
+
+#define ADC_DEVICE_NODE      DT_NODELABEL(adc0)
+#define ADC_RESOLUTION       12
+#define ADC_GAIN             ADC_GAIN_1
+#define ADC_REFERENCE        ADC_REF_VDD_1
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4)
+#define ADC_CHANNEL_ID       1
+#define ADC_INPUT_POSITIVE   30
+
 #else
 #error "Unsupported board."
 #endif

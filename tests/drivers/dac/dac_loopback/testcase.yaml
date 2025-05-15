@@ -33,5 +33,6 @@ tests:
       - xg24_dk2601b
       - xg24_ek2703a
       - xg24_rb4187c
+      - sam_e54_xpro
     integration_platforms:
       - nucleo_f207zg
