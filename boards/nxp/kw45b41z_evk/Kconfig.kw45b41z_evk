@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KW45B41Z_EVK
+	select SOC_KW45B41Z83
+	select SOC_PART_NUMBER_KW45B41Z83AFTA

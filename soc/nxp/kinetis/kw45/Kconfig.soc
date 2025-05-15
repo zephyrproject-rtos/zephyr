@@ -1,0 +1,24 @@
+# KW45 Series
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KW45
+	bool
+	select SOC_FAMILY_KINETIS
+
+config SOC_SERIES
+	default "kw45" if SOC_SERIES_KINETIS_KW45
+
+config SOC_KW45B41Z83
+	bool
+	select SOC_SERIES_KINETIS_KW45
+
+config SOC
+	default "kw45b41z83" if SOC_KW45B41Z83
+
+config SOC_PART_NUMBER_KW45B41Z83AFTA
+	bool
+
+config SOC_PART_NUMBER
+	default "KW45B41Z83AFTA" if SOC_PART_NUMBER_KW45B41Z83AFTA

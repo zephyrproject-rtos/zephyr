@@ -1,0 +1,53 @@
+# KW45 series configuration options
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_KW45
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 96000000 if CORTEX_M_SYSTICK
+
+config MCUX_FLASH_K4_API
+	default y
+
+config WDOG_INIT
+	default n
+
+config SOC_SERIES
+	default "kw45"
+
+config NUM_IRQS
+	default 74
+
+if BT
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+#  Set the controller's public identity using NXP vendor command
+config BT_HCI_SET_PUBLIC_ADDR
+	default y
+
+# HCI RX buffers are received in ISR context. RX messages
+# need to be queued and processed by a dedicated thread
+config HCI_NXP_RX_THREAD
+	default y
+
+endif # BT
+
+config PM
+	select COUNTER
+
+config FLASH
+	default y if BT
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 84 if BT
+
+choice LIBC_IMPLEMENTATION
+	default NEWLIB_LIBC if PM
+endchoice
+
+endif # SOC_SERIES_KINETIS_KW45
