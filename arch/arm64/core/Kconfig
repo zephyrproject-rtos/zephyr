@@ -357,4 +357,11 @@ config MAX_XLAT_TABLES
 
 endif # ARM_MMU
 
+config ARM64_DCACHE_ALL_OPS
+	bool "Provide data cache APIs to operate all data caches"
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Enable this option to provide the data cache APIs to flush or
+	  invalidate all data caches.
+
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
