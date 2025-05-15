@@ -30,6 +30,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,cortex-m-idle-timer = &counterg0;
 	};
 
 	leds {
@@ -239,7 +240,7 @@
 	ti,period = <65535>;
 };
 
-&countera0 {
+&counterg0 {
 	status = "okay";
 	ti,clk-prescaler = <255>;
 	ti,clk-div = <1>;
