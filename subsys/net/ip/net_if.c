@@ -3173,23 +3173,31 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			len = prefix_len;
 		}
 
-		if (len >= *best_so_far) {
+		if (ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED &&
+		    addr_state == NET_ADDR_PREFERRED) {
+			/* We have a preferred address and a deprecated
+			 * address. We prefer always the preferred address
+			 * over the deprecated address.
+			 * See RFC 6724 chapter 5.
+			 */
+			NET_DBG("skipping deprecated address %s",
+				net_sprint_ipv6_addr(&ipv6->unicast[i].address.in6_addr));
+			continue;
+		}
+
+		if (len >= *best_so_far ||
+		    (ipv6->unicast[i].addr_state == NET_ADDR_PREFERRED &&
+		     addr_state == NET_ADDR_DEPRECATED)) {
+			/* Currently we have best deprecated address, but
+			 * should now choose the preferred address regardless
+			 * of the length.
+			 */
+
 			/* Mesh local address can only be selected for the same
 			 * subnet.
 			 */
 			if (ipv6->unicast[i].is_mesh_local && len < 64 &&
 			    !net_ipv6_is_addr_mcast_mesh(dst)) {
-				continue;
-			}
-
-			if (len == *best_so_far &&
-			    ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED &&
-			    addr_state == NET_ADDR_PREFERRED) {
-				/* We have a preferred address and a deprecated
-				 * address. We prefer the preferred address if the
-				 * prefix lengths are the same.
-				 * See RFC 6724 chapter 5.
-				 */
 				continue;
 			}
 
