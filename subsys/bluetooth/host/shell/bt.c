@@ -809,12 +809,7 @@ static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *use
 	}
 
 	if (info.state == BT_CONN_STATE_CONNECTED) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
 		default_conn = bt_conn_ref(conn);
-
-		bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
-		bt_shell_print("Selected conn is now: %s", addr_str);
 	}
 }
 
@@ -826,11 +821,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_shell_print("Disconnected: %s (reason 0x%02x)", addr, reason);
 
 	if (default_conn == conn) {
+		struct bt_conn_info info;
+		enum bt_conn_type conn_type = BT_CONN_TYPE_LE;
+
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn_type |= BT_CONN_TYPE_BR;
+		}
+
+		bt_conn_get_info(conn, &info);
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		if (default_conn == NULL) {
+			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
+		}
+
+		if (default_conn != NULL) {
+			conn_addr_str(default_conn, addr, sizeof(addr));
+			bt_shell_print("Selected conn is now: %s", addr);
+		}
 	}
 }
 
