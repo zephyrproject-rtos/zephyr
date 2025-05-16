@@ -16,3 +16,5 @@ variants:
     name: MediaTek MT8186 Audio DSP
   mt8196/mt8196/adsp:
     name: MediaTek MT8196 Audio DSP
+  mt8365/mt8365/adsp:
+    name: MediaTek MT8365 Audio DSP
