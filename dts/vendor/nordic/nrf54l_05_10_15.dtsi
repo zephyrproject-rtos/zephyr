@@ -318,6 +318,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				cross-domain-constlat-required;
+				default-port = <0x1>;
 			};
 
 			i2c21: i2c@c7000 {
@@ -357,6 +359,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				cross-domain-constlat-required;
+				default-port = <0x1>;
 			};
 
 			i2c22: i2c@c8000 {
