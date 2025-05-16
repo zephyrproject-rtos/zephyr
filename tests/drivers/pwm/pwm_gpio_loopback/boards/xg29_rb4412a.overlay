@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	zephyr,user {
+		pwms = <&letimer0_pwm 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+		gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>; /* WPK EXP16 */
+	};
+};
+
+&pinctrl {
+	letimer0_default: letimer0_default {
+		group1 {
+			pins = <LETIMER0_OUT0_PB2>; /* WPK EXP15 */
+			drive-push-pull;
+		};
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
