@@ -836,7 +836,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	bt_shell_print("LE conn  param req: int (0x%04x, 0x%04x) lat %d to %d",
+	bt_shell_print("LE conn param req: int (0x%04x, 0x%04x) lat %d to %d",
 		       param->interval_min, param->interval_max,
 		       param->latency, param->timeout);
 
