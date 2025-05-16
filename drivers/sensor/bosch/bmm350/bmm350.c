@@ -1053,9 +1053,12 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 static int bmm350_init(const struct device *dev)
 {
 	int err = 0;
+	const struct bmm350_config *config = dev->config;
 	struct bmm350_data *data = dev->data;
-	const struct sensor_value odr = {100, 0};
-	const struct sensor_value osr = {2, 0};
+	const struct sensor_value osr = {config->default_osr, 0};
+	struct sensor_value odr;
+
+	mag_reg_to_odr(config->default_odr, &odr);
 
 	err = bmm350_bus_check(dev);
 	if (err < 0) {
@@ -1078,8 +1081,9 @@ static int bmm350_init(const struct device *dev)
 	/* Assign axis_en with all axis enabled (BMM350_EN_XYZ_MSK) */
 	data->axis_en = BMM350_EN_XYZ_MSK;
 
-	/* Initialize to 100Hz, averaging between 2 samples by default */
+	/* Initialize to odr and osr */
 	if (set_mag_odr_osr(dev, &odr, &osr) < 0) {
+		LOG_ERR("failed to set default odr and osr");
 		return -EIO;
 	}
 
@@ -1095,6 +1099,8 @@ static int bmm350_init(const struct device *dev)
 	static const struct bmm350_config bmm350_config_##inst = {                                 \
 		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
 		.bus_io = &bmm350_bus_io_i2c,                                                      \
+		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \
+		.default_osr = DT_INST_PROP(inst, osr),                                            \
 		BMM350_INT_CFG(inst)};                                                             \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
