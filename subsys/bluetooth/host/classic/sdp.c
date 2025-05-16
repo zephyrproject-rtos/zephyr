@@ -2221,6 +2221,14 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("session %p chan %p disconnected", session, chan);
 
+	/* callback all the sdp reqs */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
+		session->param = param;
+		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
+		/* Remove already callbacked UUID node */
+		sys_slist_find_and_remove(&session->reqs, &param->_node);
+	}
+
 	if (session->rec_buf) {
 		net_buf_unref(session->rec_buf);
 	}
