@@ -2570,32 +2570,31 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 static inline void dwc2_handle_iepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	const uint8_t n_max = 16;
 	uint32_t diepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	diepmsk = sys_read32((mem_addr_t)&base->diepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_inepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[n].diepint;
 		uint32_t diepint;
 		uint32_t status;
 
-		if (daint & USB_DWC2_DAINT_INEPINT(n)) {
-			/* Read and clear interrupt status */
-			diepint = sys_read32(diepint_reg);
-			status = diepint & diepmsk;
-			sys_write32(status, diepint_reg);
+		/* Read and clear interrupt status */
+		diepint = sys_read32(diepint_reg);
+		status = diepint & diepmsk;
+		sys_write32(status, diepint_reg);
 
-			LOG_DBG("ep 0x%02x interrupt status: 0x%x",
-				n | USB_EP_DIR_IN, status);
+		LOG_DBG("ep 0x%02x interrupt status: 0x%x",
+			n | USB_EP_DIR_IN, status);
 
-			if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
-				dwc2_handle_in_xfercompl(dev, n);
-			}
-
+		if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
+			dwc2_handle_in_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear IEPINT interrupt */
@@ -2678,21 +2677,17 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	const uint8_t n_max = 16;
 	uint32_t doepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	doepmsk = sys_read32((mem_addr_t)&base->doepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_outepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t doepint_reg = (mem_addr_t)&base->out_ep[n].doepint;
 		uint32_t doepint;
 		uint32_t status;
-
-		if (!(daint & USB_DWC2_DAINT_OUTEPINT(n))) {
-			continue;
-		}
 
 		/* Read and clear interrupt status */
 		doepint = sys_read32(doepint_reg);
@@ -2739,6 +2734,8 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
 			dwc2_handle_out_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear OEPINT interrupt */
