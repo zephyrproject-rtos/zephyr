@@ -2112,6 +2112,14 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_periodic_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_periodic_chat_script,
 			 simcom_a76xx_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPOF", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_shutdown_chat_script,
+			 simcom_a76xx_shutdown_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 15);
+
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(u_blox_sara_r4)
@@ -2617,7 +2625,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       &simcom_sim7080_dial_chat_script,                           \
 				       &simcom_sim7080_periodic_chat_script, NULL)
 
-#define MODEM_CELLULAR_DEVICE_SIMCOM_A76XX(inst)                                                 \
+#define MODEM_CELLULAR_DEVICE_SIMCOM_A76XX(inst)                                                   \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
@@ -2632,9 +2640,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 100, 20000, 5000, false,                         \
 				       NULL,                                                       \
-				       &simcom_a76xx_init_chat_script,                           \
-				       &simcom_a76xx_dial_chat_script,                           \
-				       &simcom_a76xx_periodic_chat_script, NULL)
+				       &simcom_a76xx_init_chat_script,                             \
+				       &simcom_a76xx_dial_chat_script,                             \
+				       &simcom_a76xx_periodic_chat_script,                         \
+				       &simcom_a76xx_shutdown_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
