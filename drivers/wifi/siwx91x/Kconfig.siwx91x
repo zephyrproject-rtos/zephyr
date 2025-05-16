@@ -89,6 +89,15 @@ config WIFI_SILABS_SIWX91X_HTTP_CLIENT
 	  than the Zephyr one. See also sl_http_client.h in Silabs HAL for more
 	  information about the API.
 
+config WIFI_SILABS_SIWX91X_MQTT_CLIENT
+	bool "Offloaded implementation of MQTT client"
+	help
+	  Enable this option to allow to use the MQTT(Message Queuing Telemetry
+	  Transport) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_mqtt_client.h in Silabs HAL for more
+	  information about the API.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
