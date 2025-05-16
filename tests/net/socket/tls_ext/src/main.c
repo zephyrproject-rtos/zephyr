@@ -14,6 +14,7 @@
 #include <zephyr/ztest.h>
 
 #include <mbedtls/x509.h>
+#include <mbedtls/x509_crt.h>
 
 LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
@@ -150,6 +151,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 {
 	const int server_fd = POINTER_TO_INT(arg0);
 	const int echo = POINTER_TO_INT(arg1);
+	const int expect_failure = POINTER_TO_INT(arg2);
 
 	int r;
 	int client_fd;
@@ -168,6 +170,10 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 	NET_DBG("Accepting client connection..");
 	k_sem_give(&server_sem);
 	r = accept(server_fd, (struct sockaddr *)&sa, &addrlen);
+	if (expect_failure) {
+		zassert_equal(r, -1, "accept() should've failed");
+		return;
+	}
 	zassert_not_equal(r, -1, "accept() failed (%d)", r);
 	client_fd = r;
 
@@ -199,7 +205,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 }
 
 static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
-				 int echo)
+				 int echo, int expect_failure)
 {
 	static const sec_tag_t server_tag_list_verify_none[] = {
 		SERVER_CERTIFICATE_TAG,
@@ -282,7 +288,8 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
 	*server_thread_id = k_thread_create(&server_thread, server_stack,
 					    STACK_SIZE, server_thread_fn,
 					    INT_TO_POINTER(server_fd),
-					    INT_TO_POINTER(echo), NULL,
+					    INT_TO_POINTER(echo),
+					    INT_TO_POINTER(expect_failure),
 					    K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
 
 	r = k_sem_take(&server_sem, K_MSEC(TIMEOUT));
@@ -380,7 +387,8 @@ static void test_common(int peer_verify)
 	/*
 	 * Server socket setup
 	 */
-	server_fd = test_configure_server(&server_thread_id, peer_verify, true);
+	server_fd = test_configure_server(&server_thread_id, peer_verify, true,
+					  false);
 
 	/*
 	 * Client socket setup
@@ -444,7 +452,7 @@ static void test_tls_cert_verify_result_opt_common(uint32_t expect)
 	}
 
 	server_fd = test_configure_server(&server_thread_id, TLS_PEER_VERIFY_NONE,
-					  false);
+					  false, false);
 	client_fd = test_configure_client(&sa, false, hostname);
 
 	ret = zsock_setsockopt(client_fd, SOL_TLS, TLS_PEER_VERIFY,
@@ -471,6 +479,71 @@ ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_result_opt_ok)
 ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_result_opt_bad_cn)
 {
 	test_tls_cert_verify_result_opt_common(MBEDTLS_X509_BADCERT_CN_MISMATCH);
+}
+
+struct test_cert_verify_ctx {
+	bool cb_called;
+	int result;
+};
+
+static int cert_verify_cb(void *ctx, mbedtls_x509_crt *crt, int depth,
+			  uint32_t *flags)
+{
+	struct test_cert_verify_ctx *test_ctx = (struct test_cert_verify_ctx *)ctx;
+
+	test_ctx->cb_called = true;
+
+	if (test_ctx->result == 0) {
+		*flags = 0;
+	} else {
+		*flags |= MBEDTLS_X509_BADCERT_NOT_TRUSTED;
+	}
+
+	return test_ctx->result;
+}
+
+static void test_tls_cert_verify_cb_opt_common(int result)
+{
+	int server_fd, client_fd, ret;
+	k_tid_t server_thread_id;
+	struct sockaddr_in sa;
+	struct test_cert_verify_ctx ctx = {
+		.cb_called = false,
+		.result = result,
+	};
+	struct tls_cert_verify_cb cb = {
+		.cb = cert_verify_cb,
+		.ctx = &ctx,
+	};
+
+	server_fd = test_configure_server(&server_thread_id, TLS_PEER_VERIFY_NONE,
+					  false, result == 0 ? false : true);
+	client_fd = test_configure_client(&sa, false, "localhost");
+
+	ret = zsock_setsockopt(client_fd, SOL_TLS, TLS_CERT_VERIFY_CALLBACK,
+			       &cb, sizeof(cb));
+	zassert_ok(ret, "failed to set TLS_CERT_VERIFY_CALLBACK (%d)", errno);
+
+	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	zassert_true(ctx.cb_called, "callback not called");
+	if (result == 0) {
+		zassert_equal(ret, 0, "failed to connect (%d)", errno);
+	} else {
+		zassert_equal(ret, -1, "connect() should fail");
+		zassert_equal(errno, ECONNABORTED, "invalid errno");
+	}
+
+	test_shutdown(client_fd, server_fd, server_thread_id);
+}
+
+ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_cb_opt_ok)
+{
+	test_tls_cert_verify_cb_opt_common(0);
+}
+
+ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_cb_opt_bad_cert)
+{
+	test_tls_cert_verify_cb_opt_common(MBEDTLS_ERR_X509_CERT_VERIFY_FAILED);
 }
 
 static void *setup(void)
