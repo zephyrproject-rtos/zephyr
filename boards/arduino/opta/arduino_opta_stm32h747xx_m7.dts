@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 };
 
@@ -123,33 +124,84 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
+/* Assign Bluetooth to M7 by default */
+&uart4 {
+	pinctrl-0 = <
+		&uart4_tx_pb9
+		&uart4_rx_ph14
+		&uart4_cts_pb15
+		&uart4_rts_pa15
+	>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioj 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+/* Assign external flash to M7 by default */
 &quadspi {
-	pinctrl-0 = < &quadspi_bk1_io0_pd11
-		      &quadspi_bk1_io1_pd12
-		      &quadspi_bk1_io2_pe2
-		      &quadspi_bk1_io3_pd13
-		      &quadspi_bk1_ncs_pg6
-		      &quadspi_clk_pb2 >;
+	pinctrl-0 = <
+		&quadspi_bk1_io0_pd11
+		&quadspi_bk1_io1_pd12
+		&quadspi_bk1_io2_pe2
+		&quadspi_bk1_io3_pd13
+		&quadspi_bk1_ncs_pg6
+		&quadspi_clk_pb2
+	>;
 	pinctrl-names = "default";
 	status = "okay";
 
-	at25sf128a: qspi-nor-flash@0 {
+	qspi_flash: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 MBits */
-		qspi-max-frequency = <DT_FREQ_M(70)>;
+		qspi-max-frequency = <80000000>;
+		jedec-id = [01 1f 89];
+		spi-bus-width = <4>;
+		quad-enable-requirements = "NONE";
 		status = "okay";
-		spi-bus-width = <2>;
-		st,read-id-dummy-cycles = <16>;
 
+		/* The following partitions are valid only if the Opta external flash
+		 * has never been reformatted or repartitioned. Note the offset of the
+		 * first partition, due to the presence of the MBR.
+		 */
 		partitions {
 			compatible = "fixed-partitions";
-			#address-cells = < 1 >;
-			#size-cells = < 1 >;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			storage_partition: partition@0 {
-				label = "storage";
-				reg=< 0x0 DT_SIZE_K(15872) >;
+			/* WiFi firmware and TLS certificates: 1MB - 4K for MBR using LBA */
+			wlan_partition: partition@1000 {
+				label = "wlan";
+				reg=<0x001000 DT_SIZE_K(1020)>;
+			};
+
+			/* Arduino OTA partition: 13MB */
+			fs_partition: partition@100000 {
+				label = "fs";
+				reg=<0x100000 DT_SIZE_M(13)>;
+			};
+
+			/* The final 2MB is used to keep a memory-mapped copy of the WiFi
+			 * firmware. The address of the firmware blob is 0xF80000 and the
+			 * size of the partition in the MBR is 0 but, given that we can't
+			 * specify a zero size in `reg` we just give the "correct" one.
+			 */
+			wifi_partition: partition@e00000 {
+				label = "4343WA1";
+				reg=<0xE00000 DT_SIZE_M(2)>;
 			};
 		};
 	};
