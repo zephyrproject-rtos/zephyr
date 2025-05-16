@@ -1422,3 +1422,8 @@ test_i2c_als31300: als31300@bd {
 	compatible = "allegro,als31300";
 	reg = <0xbd>;
 };
+
+test_i2c_veml6046: veml6046@be {
+	compatible = "vishay,veml6046";
+	reg = <0xbe>;
+};
