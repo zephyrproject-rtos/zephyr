@@ -11,7 +11,7 @@
 const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
 const struct device *imager_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_imager));
 
-ZTEST(video_common, test_video_device)
+ZTEST(video_emul, test_video_device)
 {
 	zexpect_true(device_is_ready(rx_dev));
 	zexpect_true(device_is_ready(imager_dev));
@@ -23,7 +23,7 @@ ZTEST(video_common, test_video_device)
 	zexpect_ok(video_stream_stop(rx_dev));
 }
 
-ZTEST(video_common, test_video_format)
+ZTEST(video_emul, test_video_format)
 {
 	struct video_caps caps = {0};
 	struct video_format fmt = {0};
@@ -73,7 +73,7 @@ ZTEST(video_common, test_video_format)
 	zexpect_not_equal(fmt.pixelformat, 0x00000000, "should not store wrong formats");
 }
 
-ZTEST(video_common, test_video_frmival)
+ZTEST(video_emul, test_video_frmival)
 {
 	struct video_format fmt;
 	struct video_frmival_enum fie = {.format = &fmt};
@@ -132,7 +132,7 @@ ZTEST(video_common, test_video_frmival)
 	}
 }
 
-ZTEST(video_common, test_video_ctrl)
+ZTEST(video_emul, test_video_ctrl)
 {
 	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
 
@@ -143,7 +143,7 @@ ZTEST(video_common, test_video_ctrl)
 	zexpect_equal(ctrl.val, 30);
 }
 
-ZTEST(video_common, test_video_vbuf)
+ZTEST(video_emul, test_video_vbuf)
 {
 	struct video_caps caps;
 	struct video_format fmt;
@@ -190,6 +190,35 @@ ZTEST(video_common, test_video_vbuf)
 
 	/* Nothing tested, but this should not crash */
 	video_buffer_release(vbuf);
+}
+
+ZTEST(video_emul, test_video_stats)
+{
+	struct video_stats_channels chan = {
+		.base.flags = VIDEO_STATS_CHANNELS,
+	};
+
+	zexpect_ok(video_get_stats(rx_dev, VIDEO_EP_OUT, &chan.base),
+		   "statistics collection should succeed for the emulated device");
+
+	zexpect_equal(chan.base.flags & VIDEO_STATS_HISTOGRAM, 0, "histogram was not requested");
+
+	zexpect_not_equal(chan.base.flags & VIDEO_STATS_CHANNELS, 0,
+			  "this emulated device is known to support channel averages.");
+
+	if (chan.base.flags & VIDEO_STATS_CHANNELS_Y) {
+		zexpect_not_equal(chan.y, 0x00, "Test data likely not completely black.");
+		zexpect_not_equal(chan.y, 0xff, "Test data likely not completely white.");
+	}
+
+	if (chan.base.flags & VIDEO_STATS_CHANNELS_RGB) {
+		zexpect_not_equal(chan.rgb[0], 0x00, "Red channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[0], 0xff, "Red channel likely not completely 0xff.");
+		zexpect_not_equal(chan.rgb[1], 0x00, "Green channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[1], 0xff, "Green channel likely not completely 0xff.");
+		zexpect_not_equal(chan.rgb[2], 0x00, "Blue channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[2], 0xff, "Blue channel likely not completely 0xff.");
+	}
 }
 
 ZTEST_SUITE(video_emul, NULL, NULL, NULL, NULL, NULL);
