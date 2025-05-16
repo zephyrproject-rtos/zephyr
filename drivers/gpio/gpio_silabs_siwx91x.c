@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 /* Zephyr GPIO header must be included after driver, due to symbol conflicts
  * for GPIO_INPUT and GPIO_OUTPUT between preprocessor macros in the Zephyr
@@ -56,9 +58,42 @@ struct gpio_siwx91x_port_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
+#if defined(CONFIG_PM)
+	/* stores the direction of each pin */
+	uint16_t pin_direction[MAX_PIN_COUNT];
+#endif
 };
 
 /* Functions */
+static int gpio_siwx91x_port_pm_action(const struct device *port, enum pm_device_action action)
+{
+	__maybe_unused const struct gpio_siwx91x_port_config *config = port->config;
+	__maybe_unused struct gpio_siwx91x_port_data *data = port->data;
+#if defined(CONFIG_PM)
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		for (int pin = 0; pin < MAX_PIN_COUNT; ++pin) {
+			if (config->common.port_pin_mask & BIT(pin)) {
+				sl_si91x_gpio_set_pin_direction(config->hal_port, pin,
+								data->pin_direction[pin]);
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		for (int pin = 0; pin < MAX_PIN_COUNT; ++pin) {
+			if (config->common.port_pin_mask & BIT(pin)) {
+				data->pin_direction[pin] =
+					sl_si91x_gpio_get_pin_direction(config->hal_port, pin);
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif
+	return 0;
+}
+
 static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_siwx91x_port_config *cfg = dev->config;
@@ -295,7 +330,7 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 	__ASSERT(cfg->port < MAX_PORT_COUNT, "Too many ports");
 	data->ports[cfg->port] = port;
 
-	return 0;
+	return pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
 }
 
 static void gpio_siwx91x_isr(const struct device *parent)
@@ -361,9 +396,10 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 	};                                                                                         \
 	static struct gpio_siwx91x_port_data gpio_siwx91x_port_data##n;                            \
                                                                                                    \
-	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, NULL, &gpio_siwx91x_port_data##n,              \
-			 &gpio_siwx91x_port_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
-			 &gpio_siwx91x_api);
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_siwx91x_port_pm_action);                                  \
+	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, PM_DEVICE_DT_INST_GET(n),                      \
+			 &gpio_siwx91x_port_data##n, &gpio_siwx91x_port_config##n, PRE_KERNEL_1,   \
+			 CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_api);
 
 #define CONFIGURE_SHARED_INTERRUPT(node_id, prop, idx)                                             \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \
