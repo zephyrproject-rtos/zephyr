@@ -78,6 +78,11 @@ choice NXP_IW610_MODULE
 	default NXP_IW610_MURATA_2LL_M2
 endchoice
 
+if WIFI_NM_HOSTAPD_AP
+config WIFI_NM_HOSTAPD_REGULATORY_REGION
+	default "US "
+endif # WIFI_NM_HOSTAPD_AP
+
 endif # WIFI
 
 endif # SHIELD_NXP_M2_2LL_WIFI_BT
