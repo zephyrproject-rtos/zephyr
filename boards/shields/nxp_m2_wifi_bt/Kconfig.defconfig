@@ -16,6 +16,12 @@ if WIFI
 config WIFI_NXP
 	default y
 
+config WIFI_NM_WPA_SUPPLICANT_11AX
+	default n
+
+config WIFI_NM_WPA_SUPPLICANT_11AC
+	default n
+
 choice NXP_WIFI_PART
 	default NXP_IW416
 endchoice
