@@ -89,6 +89,11 @@ Devicetree
   to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
   a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
 
+* Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
+  all previously used underscores(``_``). For local code, you can migrate property names in
+  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
+
+
 DAI
 ===
 
