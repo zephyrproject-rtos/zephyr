@@ -36,6 +36,38 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #endif
 
+/*
+ * Current factors requiring use of DT_NODELABEL:
+ *
+ * - HAL design (requirement of drv_inst_idx in nrfx_spis_t)
+ * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
+ */
+#define SPIS_NODE(idx) COND_CODE_1(SPIS_IS_FAST(idx), (spis##idx), (spi##idx))
+#define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
+#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
+#define SPIS_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIS(idx), prop)
+
+#define SPIS_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIS(prefix##idx)),		\
+		   (SPIS_PROP(idx, cross_domain_pins_supported)),	\
+		   (0))
+
+#if NRFX_FOREACH_PRESENT(SPIS, SPIS_PINS_CROSS_DOMAIN, (||), (0))
+#include <hal/nrf_gpio.h>
+/* Certain SPIM instances support usage of cross domain pins in form of dedicated pins on
+ * a port different from the default one.
+ */
+#define SPIS_CROSS_DOMAIN_SUPPORTED 1
+#endif
+
+#if SPIS_CROSS_DOMAIN_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
+#include <nrf_sys_event.h>
+/* To use cross domain pins, constant latency mode needs to be applied, which is
+ * handled via nrf_sys_event requests.
+ */
+#define SPIS_CROSS_DOMAIN_PINS_HANDLE 1
+#endif
+
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -58,7 +90,37 @@ struct spi_nrfx_config {
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
 	void *mem_reg;
+#if SPIS_CROSS_DOMAIN_SUPPORTED
+	bool cross_domain;
+	int8_t default_port;
+#endif
 };
+
+#if SPIS_CROSS_DOMAIN_SUPPORTED
+static bool spis_has_cross_domain_connection(const struct spi_nrfx_config *config)
+{
+	const struct pinctrl_dev_config *pcfg = config->pcfg;
+	const struct pinctrl_state *state;
+	int ret;
+
+	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		LOG_ERR("Unable to read pin state");
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+		uint32_t pin = NRF_GET_PIN(state->pins[i]);
+
+		if ((pin != NRF_PIN_DISCONNECTED) &&
+		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -384,6 +446,19 @@ static void spi_nrfx_suspend(const struct device *dev)
 		nrf_gpd_retain_pins_set(dev_config->pcfg, true);
 	}
 #endif
+#if SPIS_CROSS_DOMAIN_SUPPORTED
+	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
+#if SPIS_CROSS_DOMAIN_PINS_HANDLE
+		int err;
+
+		err = nrf_sys_event_request_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+#else
+		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
+#endif
+	}
+#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
@@ -397,6 +472,19 @@ static void spi_nrfx_resume(const struct device *dev)
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	if (dev_config->gpd_ctrl) {
 		nrf_gpd_retain_pins_set(dev_config->pcfg, false);
+	}
+#endif
+#if SPIS_CROSS_DOMAIN_SUPPORTED
+	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
+#if SPIS_CROSS_DOMAIN_PINS_HANDLE
+		int err;
+
+		err = nrf_sys_event_request_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+#else
+		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
+#endif
 	}
 #endif
 
@@ -482,19 +570,6 @@ static int spi_nrfx_init(const struct device *dev)
 	return pm_device_driver_init(dev, spi_nrfx_pm_action);
 }
 
-/*
- * Current factors requiring use of DT_NODELABEL:
- *
- * - HAL design (requirement of drv_inst_idx in nrfx_spis_t)
- * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
- */
-
-#define SPIS_NODE(idx) COND_CODE_1(SPIS_IS_FAST(idx), (spis##idx), (spi##idx))
-
-#define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
-
-#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
-
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
 	static void irq_connect##idx(void)				       \
 	{								       \
@@ -533,6 +608,11 @@ static int spi_nrfx_init(const struct device *dev)
 				NRFX_MHZ_TO_HZ(16UL),))			       \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 		.mem_reg = DMM_DEV_TO_REG(SPIS(idx)),			       \
+		IF_ENABLED(SPIS_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),       \
+			(.cross_domain = true,				       \
+			 .default_port =				       \
+				DT_PROP_OR(DT_PHANDLE(SPIS(idx),	       \
+					default_gpio_port), port, -1),))       \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
