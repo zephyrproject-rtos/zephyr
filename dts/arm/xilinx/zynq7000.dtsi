@@ -167,6 +167,30 @@
 				status = "okay";
 			};
 		};
+
+		i2c0: i2c@e0004000 {
+			compatible = "cdns,i2c";
+			reg = <0xe0004000 0x1000>;
+			status = "disabled";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-depth = <16>;
+		};
+
+		i2c1: i2c@e0005000 {
+			compatible = "cdns,i2c-r1p10";
+			reg = <0xe0005000 0x1000>;
+			status = "disabled";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-depth = <16>;
+		};
 	};
 
 	slcr: slcr@f8000000 {
