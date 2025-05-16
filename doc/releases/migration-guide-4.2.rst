@@ -89,6 +89,10 @@ Devicetree
   to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
   a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
 
+* Silicon Labs SoC-level dts files for Series 2 have been reorganized in subdirectories per device
+  superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
+  include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
+
 DAI
 ===
 
