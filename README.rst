@@ -27,6 +27,7 @@ Ambiq SoCs that support zephyr now include:
   | Apollo3 Blue Plus
   | Apollo4 Plus
   | Apollo4 Blue Plus KXR
+  | Apollo510
 
 As well as the following Evaluation Kits:
 
@@ -34,6 +35,7 @@ As well as the following Evaluation Kits:
   | Apollo3 Blue Plus EVB
   | Apollo4 Plus EVB
   | Apollo4 Blue Plus KXR EVB
+  | Apollo510 EVB
 
 As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 
@@ -44,15 +46,18 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
   | GPIO Controller
   | HW Info
   | I2C Controller
+  | I2S
   | ITM
+  | PDM
   | Power Management
   | PWM
   | RTC
-  | Serial (PL011)
+  | SDIO Host
   | SPI Controller
   | SPI Device
   | MSPI Controller
   | System Timer
+  | UART
   | USB device
   | Watchdog
 
