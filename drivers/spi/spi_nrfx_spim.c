@@ -155,6 +155,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 	if (deactivate_cs) {
 		spi_context_cs_control(&dev_data->ctx, false);
+
 	}
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -402,6 +403,11 @@ static void finish_transaction(const struct device *dev, int error)
 
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
+
+	if ((dev_data->ctx.config->operation & SPI_LOCK_ON)) {
+		/* Keep device resumed until call to spi_release() */
+		(void)pm_device_runtime_get(dev);
+	}
 
 	finalize_spi_transaction(dev, true);
 }
