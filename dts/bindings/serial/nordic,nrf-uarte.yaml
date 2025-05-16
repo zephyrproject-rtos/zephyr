@@ -14,3 +14,9 @@ properties:
     type: boolean
     description: |
       UARTE has RX frame timeout HW feature.
+
+  cross-domain-default-port:
+    type: int
+    description: |
+      UARTE default GPIO port for instances that allow cross domain pins.
+      Used to determine whether constant latency mode is required.
