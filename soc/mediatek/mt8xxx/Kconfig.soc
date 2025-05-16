@@ -22,6 +22,12 @@ config SOC_SERIES_MT8196
 	help
 	  Mediatek MT8196 Audio DSPs
 
+config SOC_SERIES_MT8365
+	bool
+	select SOC_FAMILY_MTK
+	help
+	  Mediatek MT8365 Audio DSP
+
 config SOC_MT8195
 	bool
 	select SOC_SERIES_MT8195
@@ -38,8 +44,13 @@ config SOC_MT8196
 	bool
 	select SOC_SERIES_MT8196
 
+config SOC_MT8365
+	bool
+	select SOC_SERIES_MT8365
+
 config SOC
 	default "mt8195" if SOC_MT8195
 	default "mt8186" if SOC_MT8186
 	default "mt8188" if SOC_MT8188
 	default "mt8196" if SOC_MT8196
+	default "mt8365" if SOC_MT8365
