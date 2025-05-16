@@ -214,6 +214,8 @@ static void notify(struct bt_aics *inst, enum bt_aics_notify notify, const struc
 		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 	} else if (err < 0 && err != -ENOTCONN) {
 		LOG_ERR("Notify %s err %d", aics_notify_str(notify), err);
+	} else {
+		/* Notification sent successfully */
 	}
 }
 
@@ -246,99 +248,160 @@ static void value_changed(struct bt_aics *inst, enum bt_aics_notify notify)
 #define value_changed(...)
 #endif /* CONFIG_BT_AICS */
 
-static ssize_t write_aics_control(struct bt_conn *conn,
-				  const struct bt_gatt_attr *attr,
-				  const void *buf, uint16_t len,
-				  uint16_t offset, uint8_t flags)
+static uint8_t valid_control_point_write(uint16_t len, uint16_t offset,
+					 const struct bt_aics_gain_control *cp,
+					 uint8_t change_counter)
 {
-	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const struct bt_aics_gain_control *cp = buf;
-	bool notify = false;
-
-	if (offset) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	if (offset != 0) {
+		LOG_DBG("Invalid offset: %u", offset);
+		return BT_ATT_ERR_INVALID_OFFSET;
 	}
 
-	if (!len || !buf) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	if (len == 0 || cp == NULL) {
+		LOG_DBG("Invalid length (%u) or NULL data (%p)", len, cp);
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 	}
 
 	/* Check opcode before length */
 	if (!VALID_AICS_OPCODE(cp->cp.opcode)) {
 		LOG_DBG("Invalid opcode %u", cp->cp.opcode);
-		return BT_GATT_ERR(BT_AICS_ERR_OP_NOT_SUPPORTED);
+		return BT_AICS_ERR_OP_NOT_SUPPORTED;
 	}
 
 	if ((len < AICS_CP_LEN) ||
 	    (len == AICS_CP_SET_GAIN_LEN && cp->cp.opcode != BT_AICS_OPCODE_SET_GAIN) ||
 	    (len > AICS_CP_SET_GAIN_LEN)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		LOG_DBG("Invalid length: %u", len);
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 	}
 
 	LOG_DBG("Opcode %u, counter %u", cp->cp.opcode, cp->cp.counter);
-	if (cp->cp.counter != inst->srv.state.change_counter) {
-		return BT_GATT_ERR(BT_AICS_ERR_INVALID_COUNTER);
+	if (cp->cp.counter != change_counter) {
+		LOG_DBG("Invalid counter: %u != %u", cp->cp.counter, change_counter);
+		return BT_AICS_ERR_INVALID_COUNTER;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
+static uint8_t handle_set_gain_op(struct bt_aics *inst, const struct bt_aics_gain_control *cp,
+				  bool *state_change)
+{
+	LOG_DBG("Set gain %d", cp->gain_setting);
+	if (cp->gain_setting < inst->srv.gain_settings.minimum ||
+	    cp->gain_setting > inst->srv.gain_settings.maximum) {
+		return BT_AICS_ERR_OUT_OF_RANGE;
+	}
+
+	if (BT_AICS_INPUT_MODE_SETTABLE(inst->srv.state.gain_mode) &&
+	    inst->srv.state.gain != cp->gain_setting) {
+		inst->srv.state.gain = cp->gain_setting;
+		*state_change = true;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
+static uint8_t handle_unmute_op(struct bt_aics *inst, bool *state_change)
+{
+	LOG_DBG("Unmute");
+	if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
+		return BT_AICS_ERR_MUTE_DISABLED;
+	}
+	if (inst->srv.state.mute != BT_AICS_STATE_UNMUTED) {
+		inst->srv.state.mute = BT_AICS_STATE_UNMUTED;
+		*state_change = true;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
+static uint8_t handle_mute_op(struct bt_aics *inst, bool *state_change)
+{
+	LOG_DBG("Mute");
+
+	if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
+		return BT_AICS_ERR_MUTE_DISABLED;
+	}
+
+	if (inst->srv.state.mute != BT_AICS_STATE_MUTED) {
+		inst->srv.state.mute = BT_AICS_STATE_MUTED;
+		*state_change = true;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
+static uint8_t handle_set_manual_mode_op(struct bt_aics *inst, bool *state_change)
+{
+	LOG_DBG("Set manual mode");
+
+	if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
+		return BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED;
+	}
+
+	if (inst->srv.state.gain_mode != BT_AICS_MODE_MANUAL) {
+		inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL;
+		*state_change = true;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+static uint8_t handle_set_automatic_mode_op(struct bt_aics *inst, bool *state_change)
+{
+	LOG_DBG("Set automatic mode");
+
+	if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
+		return BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED;
+	}
+
+	if (inst->srv.state.gain_mode != BT_AICS_MODE_AUTO) {
+		inst->srv.state.gain_mode = BT_AICS_MODE_AUTO;
+		*state_change = true;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
+static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const struct bt_aics_gain_control *cp = buf;
+	bool state_change = false;
+	int ret;
+
+	ret = valid_control_point_write(len, offset, cp, inst->srv.state.change_counter);
+	if (ret != BT_ATT_ERR_SUCCESS) {
+		return BT_GATT_ERR(ret);
 	}
 
 	switch (cp->cp.opcode) {
 	case BT_AICS_OPCODE_SET_GAIN:
-		LOG_DBG("Set gain %d", cp->gain_setting);
-		if (cp->gain_setting < inst->srv.gain_settings.minimum ||
-		    cp->gain_setting > inst->srv.gain_settings.maximum) {
-			return BT_GATT_ERR(BT_AICS_ERR_OUT_OF_RANGE);
-		}
-		if (BT_AICS_INPUT_MODE_SETTABLE(inst->srv.state.gain_mode) &&
-		    inst->srv.state.gain != cp->gain_setting) {
-			inst->srv.state.gain = cp->gain_setting;
-			notify = true;
-		}
+		ret = handle_set_gain_op(inst, cp, &state_change);
 		break;
 	case BT_AICS_OPCODE_UNMUTE:
-		LOG_DBG("Unmute");
-		if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
-			return BT_GATT_ERR(BT_AICS_ERR_MUTE_DISABLED);
-		}
-		if (inst->srv.state.mute != BT_AICS_STATE_UNMUTED) {
-			inst->srv.state.mute = BT_AICS_STATE_UNMUTED;
-			notify = true;
-		}
+		ret = handle_unmute_op(inst, &state_change);
 		break;
 	case BT_AICS_OPCODE_MUTE:
-		LOG_DBG("Mute");
-		if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
-			return BT_GATT_ERR(BT_AICS_ERR_MUTE_DISABLED);
-		}
-		if (inst->srv.state.mute != BT_AICS_STATE_MUTED) {
-			inst->srv.state.mute = BT_AICS_STATE_MUTED;
-			notify = true;
-		}
+		ret = handle_mute_op(inst, &state_change);
 		break;
 	case BT_AICS_OPCODE_SET_MANUAL:
-		LOG_DBG("Set manual mode");
-		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
-			return BT_GATT_ERR(BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED);
-		}
-		if (inst->srv.state.gain_mode != BT_AICS_MODE_MANUAL) {
-			inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL;
-			notify = true;
-		}
+		ret = handle_set_manual_mode_op(inst, &state_change);
 		break;
 	case BT_AICS_OPCODE_SET_AUTO:
-		LOG_DBG("Set automatic mode");
-		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
-			return BT_GATT_ERR(BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED);
-		}
-		if (inst->srv.state.gain_mode != BT_AICS_MODE_AUTO) {
-			inst->srv.state.gain_mode = BT_AICS_MODE_AUTO;
-			notify = true;
-		}
+		ret = handle_set_automatic_mode_op(inst, &state_change);
 		break;
 	default:
-		return BT_GATT_ERR(BT_AICS_ERR_OP_NOT_SUPPORTED);
+		ret = BT_AICS_ERR_OP_NOT_SUPPORTED;
 	}
 
-	if (notify) {
-		inst->srv.state.change_counter++;
+	if (ret != BT_ATT_ERR_SUCCESS) {
+		return BT_GATT_ERR(ret);
+	}
+
+	if (state_change) {
+		inst->srv.state.change_counter++; /* May overflow which is OK */
 
 		LOG_DBG("New state: gain %d, mute %u, gain_mode %u, counter %u",
 			inst->srv.state.gain, inst->srv.state.mute, inst->srv.state.gain_mode,
