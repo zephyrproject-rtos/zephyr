@@ -309,6 +309,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				cross-domain-constlat-required;
+				default-port = <0x1>;
 			};
 
 			uart20: uart@c6000 {
@@ -350,6 +352,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				cross-domain-constlat-required;
+				default-port = <0x1>;
 			};
 
 			uart21: uart@c7000 {
