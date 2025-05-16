@@ -1,0 +1,111 @@
+/*!
+ * SPDX-License-Identifier: Apache 2.0
+ * Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>,
+ * D-82229 Seefeld, Germany.
+ * Author: Isaac L. L. Yuki
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt11xx_cm7.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
+#include "mba117xl.dtsi"
+
+/ {
+	model = "MBA117XL_CM7 board";
+	compatible = "nxp,mimxrt1176";
+	aliases 
+	{
+		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdog1;
+	};
+
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm	= &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,flash-controller = &mt25qu256;
+		zephyr,flash = &mt25qu256;
+		zephyr,cpu1-region = &ocram;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ipc = &mailbox_a;
+		zephyr,canbus = &flexcan3;
+	};
+	sdram0: memory@80000000 {
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+
+		/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J48 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	nxp_mipi_connector: mipi-connector {};
+};
+
+
+&edma0 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c6 {
+	status = "okay";
+};
+
+&lpi2c5 {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
+&pxp { 
+	status = "okay";
+};
+
+&pit1 {
+	status = "okay";
+};
+
+&pit2 {
+	status = "okay";
+};
+
+&flexcan3 {
+	status = "okay";
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {
+	dphy-ref-frequency = <24000000>;
+};
+
+nxp_mipi_csi: &mipi_csi2rx {};
+
+nxp_csi: &csi {};
+
+nxp_mipi_i2c: &lpi2c3 {};

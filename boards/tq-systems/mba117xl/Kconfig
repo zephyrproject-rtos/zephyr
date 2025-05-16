@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>,
+# D-82229 Seefeld, Germany.
+# SPDX-License-Identifier: Apache 2.0
+# Author: Isaac L. L. Yuki
+#
+
+config BOARD_MBA117XL
+    select BOARD_LATE_INIT_HOOK
+    select SOC_LATE_INIT_HOOK
+    select PINCTRL
