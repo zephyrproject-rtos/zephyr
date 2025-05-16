@@ -364,6 +364,10 @@ int usbd_device_register_vreq(struct usbd_context *const uds_ctx,
 {
 	int ret = 0;
 
+	if (!IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT)) {
+		return -ENOTSUP;
+	}
+
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_initialized(uds_ctx)) {

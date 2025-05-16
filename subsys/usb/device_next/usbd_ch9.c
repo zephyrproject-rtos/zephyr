@@ -940,6 +940,11 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct usbd_vreq_node *vreq_nd;
 
+	if (!IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT)) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	vreq_nd = usbd_device_get_vreq(uds_ctx, setup->bRequest);
 	if (vreq_nd == NULL) {
 		errno = -ENOTSUP;
