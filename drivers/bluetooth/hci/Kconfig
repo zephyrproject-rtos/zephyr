@@ -345,12 +345,14 @@ config BT_HCI_SETUP
 
 config BT_DRV_TX_STACK_SIZE
 	int
+	depends on BT_H5
 	default 256
 	help
 	  Stack size for the HCI driver's TX thread.
 
 config BT_DRV_RX_STACK_SIZE
 	int
+	depends on BT_H4 || BT_H5 || BT_SPI || BT_HCI_RAW_H4 || BT_AMBIQ_HCI || BT_STM32_IPM || HCI_NXP_RX_THREAD
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
