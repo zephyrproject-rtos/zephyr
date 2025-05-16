@@ -1,3 +1,4 @@
+# Copyright (c) 2025 NXP
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
@@ -5,6 +6,9 @@ config BT_CRYPTO
 	bool
 	select MBEDTLS if !BUILD_WITH_TFM
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ALG_JPAKE
+	select PSA_WANT_ALG_GCM
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_CMAC
 	select PSA_WANT_ALG_ECB_NO_PADDING
