@@ -64,13 +64,16 @@ struct z_riscv_fp_context {
 };
 typedef struct z_riscv_fp_context z_riscv_fp_context_t;
 #ifdef CONFIG_RISCV_ISA_EXT_V
+// TOOD: Missing vxsat, vxrm
 struct z_riscv_v_context {
 	unsigned long vstart;
 	unsigned long vl;
 	unsigned long vtype;
 	unsigned long vcsr;
 	unsigned long vlenb;
+	// #ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 	bool is_dirty;
+	// #endif
 	char vreg[32][CONFIG_RISCV_VECTOR_MAX_LEN/8]__attribute__((aligned(CONFIG_RISCV_VECTOR_MAX_LEN)));
 };
 typedef struct z_riscv_v_context z_riscv_v_context_t;

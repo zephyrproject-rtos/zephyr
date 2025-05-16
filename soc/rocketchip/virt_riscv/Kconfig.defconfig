@@ -32,4 +32,7 @@ config NUM_IRQS
 config PMP_SLOTS
 	default 16
 
+config TICKET_SPINLOCKS
+	default y
+
 endif # SOC_FAMILY_ROCKETCHIP_VIRT_RISCV

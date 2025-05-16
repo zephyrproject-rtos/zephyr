@@ -97,10 +97,17 @@ config RISCV_ISA_EXT_C
 	  instruction encodings for common operations.
 
 config RISCV_ISA_EXT_V
-	bool "Enable RISC-V extension"
+	bool "Enable RISC-V vector extension"
 	default n
 	help
 	  (V) - Standard Extension for Vector Instructions
+
+config RISCV_ISA_EXT_V_LAZY
+	bool "Enable lazy context switching while using the RISC-V vector extension"
+	depends on RISCV_ISA_EXT_V
+	default y
+	help
+	  (V) - Standard Extension for Vector Instructions with Lazy Context Switching
 
 config RISCV_ISA_EXT_ZICSR
 	bool
