@@ -1433,3 +1433,8 @@ test_i2c_hdc302x: hdc302x@be {
 	reg = <0xbe>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_veml6046: veml6046@bf {
+	compatible = "vishay,veml6046";
+	reg = <0xbf>;
+};
