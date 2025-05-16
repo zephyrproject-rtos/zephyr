@@ -188,7 +188,7 @@
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
 			interrupt-names = "UART0";
@@ -198,7 +198,7 @@
 		};
 
 		uart1: uart@4001d000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
 			interrupt-names = "UART1";
