@@ -137,6 +137,9 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_HTTP_CLIENT)) {
 			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_HTTP_CLIENT;
 		}
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT)) {
+			boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_EMB_MQTT_ENABLE;
+		}
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
 
