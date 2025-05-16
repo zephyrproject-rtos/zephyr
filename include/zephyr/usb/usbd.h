@@ -688,12 +688,16 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Define a vendor request with recipient device
  *
+ * @note It requires Kconfig options USBD_VREQ_SUPPORT to be enabled.
+ *
  * @param name      Vendor request identifier
  * @param vcode     Vendor request code
  * @param vto_host  Vendor callback for to-host direction request
  * @param vto_dev   Vendor callback for to-device direction request
  */
 #define USBD_VREQUEST_DEFINE(name, vcode, vto_host, vto_dev)			\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT),			\
+		     "USB device vendor request support is disabled");		\
 	static struct usbd_vreq_node name = {					\
 		.code = vcode,							\
 		.to_host = vto_host,						\
@@ -708,6 +712,9 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  *
  * USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,
  *                           SAMPLE_WEBUSB_VENDOR_CODE, webusb_to_host_cb, NULL);
+ *
+ * @note It requires Kconfig options USBD_VREQ_SUPPORT and USBD_BOS_SUPPORT to
+ *       be enabled.
  *
  * @param name      Descriptor node identifier
  * @param len       Device Capability descriptor length
