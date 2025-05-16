@@ -168,16 +168,16 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define AMBIQ_UART_DEFINE(n)                                                                       \
+#define AMBIQ_PL011_UART_DEFINE(n)                                                                 \
 	PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);                                         \
-	static int pwr_on_ambiq_uart_##n(void)                                                     \
+	static int pwr_on_ambiq_pl011_uart_##n(void)                                               \
 	{                                                                                          \
 		uint32_t module = (DT_INST_REG_ADDR(n) - UART0_BASE) / (UART1_BASE - UART0_BASE);  \
 		am_hal_pwrctrl_periph_e eUARTPowerModule =                                         \
 			((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_UART0 + module));         \
 		return am_hal_pwrctrl_periph_enable(eUARTPowerModule);                             \
 	}                                                                                          \
-	static inline int clk_enable_ambiq_uart_##n(const struct device *dev, uint32_t clk)        \
+	static inline int clk_enable_ambiq_pl011_uart_##n(const struct device *dev, uint32_t clk)  \
 	{                                                                                          \
 		return clk_enable_ambiq_uart(dev, clk);                                            \
 	}
