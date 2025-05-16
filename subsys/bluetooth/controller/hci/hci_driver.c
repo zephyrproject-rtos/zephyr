@@ -1024,7 +1024,7 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&prio_recv_thread_data, "BT CTLR RX pri");
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 

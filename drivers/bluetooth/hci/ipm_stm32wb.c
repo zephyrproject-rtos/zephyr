@@ -559,7 +559,7 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
 			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
 			bt_ipm_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
 	hci->recv = recv;

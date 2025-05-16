@@ -31,15 +31,15 @@ BUILD_ASSERT(alignof(bt_addr_t) == 1);
 BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
 BUILD_ASSERT(alignof(bt_addr_le_t) == 1);
 
-#if defined(CONFIG_BT_HCI_HOST)
+#if defined(CONFIG_BT_HCI_HOST) && defined(CONFIG_BT_DRV_RX_HIGH_PRIO_SUPPORT)
 /* The Bluetooth subsystem requires that higher priority events shall be given
  * in a priority higher than the Bluetooth Host's Tx and the Controller's
  * receive thread priority.
  * This is required in order to dispatch Number of Completed Packets event
  * before any new data arrives on a connection to the Host threads.
  */
-BUILD_ASSERT(CONFIG_BT_DRIVER_RX_HIGH_PRIO < CONFIG_BT_HCI_TX_PRIO);
-#endif /* defined(CONFIG_BT_HCI_HOST) */
+BUILD_ASSERT(CONFIG_BT_RX_HIGH_PRIO < CONFIG_BT_HCI_TX_PRIO);
+#endif /* CONFIG_BT_HCI_HOST && CONFIG_BT_DRV_RX_HIGH_PRIO_SUPPORT */
 
 #if (defined(CONFIG_LOG_BACKEND_RTT) &&                     \
      (defined(CONFIG_SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL) || \

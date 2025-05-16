@@ -398,7 +398,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			bt_spi_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 	k_thread_name_set(&spi_rx_thread_data, "bt_spi_rx_thread");
 
