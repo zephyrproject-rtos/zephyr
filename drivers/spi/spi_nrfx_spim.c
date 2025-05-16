@@ -403,6 +403,11 @@ static void finish_transaction(const struct device *dev, int error)
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
+	if (dev_data->ctx.config->operation & SPI_LOCK_ON) {
+		/* Keep device resumed until call to spi_release() */
+		(void)pm_device_runtime_get(dev);
+	}
+
 	finalize_spi_transaction(dev, true);
 }
 
