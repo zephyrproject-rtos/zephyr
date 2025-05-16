@@ -43,6 +43,13 @@ config USBD_BOS_SUPPORT
 	  BOS support can be disabled if the application does not use a BOS
 	  descriptor.
 
+config USBD_VREQ_SUPPORT
+	bool "USB device vendor request support"
+	default y
+	help
+	  Allow the application to register a handler for the vendor request
+	  with the recipient device.
+
 config USBD_SHELL
 	bool "USB device shell"
 	depends on SHELL
