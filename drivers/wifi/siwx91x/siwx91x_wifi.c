@@ -23,6 +23,7 @@
 #include "sl_wifi_constants.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
+#define SIWX91X_DEFAULT_PASSIVE_SCAN_DWELL_TIME 400
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
@@ -1121,6 +1122,9 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 						 dwell_time_active);
 		break;
 	case SL_WIFI_SCAN_TYPE_PASSIVE:
+		if (!dwell_time_passive) {
+			dwell_time_passive = SIWX91X_DEFAULT_PASSIVE_SCAN_DWELL_TIME;
+		}
 		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
 						 dwell_time_passive);
 		break;
