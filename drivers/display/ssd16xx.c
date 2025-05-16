@@ -645,7 +645,16 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 		return err;
 	}
 
-	memset(clear_page, 0xff, sizeof(clear_page));
+	if (config->profiles[SSD16XX_PROFILE_PARTIAL] == NULL
+		&& ram_cmd == SSD16XX_CMD_WRITE_RED_RAM) {
+		/* Display doesn't support partial refresh, so it either doesn't matter what is in
+		 * red Ram, or it needs to be inverted because this is a black/white/red display
+		 * and for red 0 is off, the opposite of black.
+		 */
+		memset(clear_page, 0x00, sizeof(clear_page));
+	} else {
+		memset(clear_page, 0xff, sizeof(clear_page));
+	}
 	for (int h = 0; h < panel_h; h++) {
 		size_t x = config->width;
 
