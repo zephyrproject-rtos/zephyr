@@ -301,12 +301,12 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
  */
 int32_t timeutil_sync_skew_to_ppb(float skew);
 
-#ifdef __cplusplus
-}
-#endif
-
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_TIMEUTIL_H_ */
