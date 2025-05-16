@@ -13,6 +13,12 @@ extern char _mtk_adsp_sram_end[];
 #define SRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(sram0))
 #define SRAM_END   (SRAM_START + SRAM_SIZE)
 
+#ifdef CONFIG_SOC_MT8365
+#define SRAM1_START DT_REG_ADDR(DT_NODELABEL(sram1))
+#define SRAM1_SIZE  DT_REG_SIZE(DT_NODELABEL(sram1))
+#define SRAM1_END   (SRAM1_START + SRAM1_SIZE)
+#endif
+
 extern char _mtk_adsp_dram_end[];
 
 #define DRAM_START DT_REG_ADDR(DT_NODELABEL(dram0))
@@ -195,7 +201,12 @@ static void enable_mpu(void)
 	static const uint32_t mpu[][2] = {
 		{ 0x00000000, 0x06000 },          /* inaccessible null region */
 		{ 0x10000000, 0x06f00 },          /* MMIO registers */
+#ifndef CONFIG_SOC_MT8365
 		{ 0x1d000000, 0x06000 },          /* inaccessible */
+#else
+		{ SRAM1_START, 0xf7f00 },         /* cached SRAM */
+		{ SRAM1_END,  0x06000 },          /* inaccessible */
+#endif
 		{ SRAM_START, 0xf7f00 },          /* cached SRAM */
 		{ SRAM_END,   0x06000 },          /* inaccessible */
 		{ DRAM_START, 0xf7f00 },          /* cached DRAM */
