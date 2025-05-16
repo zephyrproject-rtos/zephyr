@@ -1,0 +1,234 @@
+/*!
+ * Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>
+ * SPDX-License-Identifier: Apache 2.0
+ * Author: Isaac L. L. Yuki
+ */
+
+#include <nxp/nxp_rt1170.dtsi>
+#include "mba117xl-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &user_led0;
+		led1 = &user_led1;
+		sw0  = &key0;
+		i2c-peripheral-3 = &lpi2c3;
+		i2c-peripheral-5 = &lpi2c5;
+		i2c-peripheral-6 = &lpi2c6;
+	};
+
+	gpio_out: gpio_out {
+		compatible = "gpio-leds";
+		user_led0: led-1 {
+			gpios = <&gpio8 19 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+
+		user_led1: led-2 {
+			gpios = <&gpio8 20 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+
+		lcdControl: lcd-control{
+            gpios = <&pca95xx 9 GPIO_ACTIVE_HIGH>,
+			<&pca95xx 10 GPIO_ACTIVE_LOW>,
+			<&pca95xx 11 GPIO_ACTIVE_HIGH>,
+			<&pca95xx 13 GPIO_ACTIVE_HIGH>;	/* MIPI_SEL */
+            label = "LCD_CONTROL";
+            };
+
+		portExpander: portExpander {
+			gpios = <&pca95xx 0 GPIO_ACTIVE_HIGH>,
+					<&pca95xx 1 GPIO_ACTIVE_HIGH>,
+					<&pca95xx 2 GPIO_ACTIVE_HIGH>,
+					<&pca95xx 3 GPIO_ACTIVE_HIGH>;
+
+			label = "GPIO OUTPUT";
+		};
+	};
+
+	gpio_in: gpio_in {
+		compatible = "gpio-keys";
+		key0: key0 {
+			gpios = <&gpio4 16 GPIO_ACTIVE_HIGH>;
+			label = "GPIO INPUT 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		key1: key1 {
+			gpios = <&gpio4 17 GPIO_ACTIVE_HIGH>;
+			label = "GPIO INPUT 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		key2: key2 {
+			gpios = <&gpio4 18 GPIO_ACTIVE_HIGH>;
+			label = "GPIO INPUT 2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+		key3: key3 {
+			gpios = <&gpio4 19 GPIO_ACTIVE_HIGH>;
+			label = "GPIO INPUT 3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+};
+
+&lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c6 {
+	pinctrl-0 = <&pinmux_lpi2c6>;
+	pinctrl-names = "default";
+};
+
+&lpi2c5 {
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+	status = "okay";
+	pca95xx: pca95xx@20 {
+		compatible = "nxp,pca95xx";
+		reg = <0x20>; // The I2C address of the pca95xx
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <16>;
+		interrupt-gpios = <&gpio4 21 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&flexpwm2_pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm2_pwm2>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	mt25qu256:mt25qu256@0 {
+		compatible = "nxp,imx-flexspi-nor";  // Use your driver's compatible string
+		size = <DT_SIZE_M(256)>;  // Size of MT25QU256ABA8E12-1SIT
+		reg = <0>; //CS-line
+		spi-max-frequency = <166000000>;  // Max SPI frequency in STR mode
+		status = "okay";
+		jedec-id = [ba 19 00];  // JEDEC ID
+		erase-block-size = <65536>;  // 64KB sector erase granularity
+		write-block-size = <1>;  // Minimum write block size
+
+		/*
+			* Partitions are present to support dual core operation.
+			* as flash write is not supported, MCUBoot is not enabled.
+			*/
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+				* this is intended for use with the swap move algorithm
+				*/
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			scratch_partition: partition@621000 {
+				label = "image-scratch";
+				reg = <0x00621000 DT_SIZE_K(128)>;
+			};
+			storage_partition: partition@641000 {
+				label = "storage";
+				reg = <0x00641000 DT_SIZE_K(1856)>;
+			};
+		};
+	};
+};
+
+&enet_mac {
+status = "okay";
+pinctrl-0 = <&pinmux_enet_qos>;
+pinctrl-names = "default";
+phy-handle = <&phy>;
+phy-connection-type = "rmii";
+zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_qos_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ti,dp83867";
+		reg = <0>;
+		status = "okay";
+		reset-gpios = <&gpio10 20 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_qos_ptp>;
+	pinctrl-names = "default";
+};
+
+&enet1g_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
+	phy-handle = <&enet1g_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+};
+
+&enet1g_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet1g_mdio>;
+	pinctrl-names = "default";
+	enet1g_phy: phy@3 {
+		compatible = "ti,dp83867";
+		reg = <3>;
+		status = "okay";
+		reset-gpios = <&gpio10 20 GPIO_ACTIVE_LOW>;
+		fixed-link = "1000BASE-T Full-Duplex";
+	};
+};
+
+&enet1g_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet1g_ptp>;
+	pinctrl-names = "default";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};

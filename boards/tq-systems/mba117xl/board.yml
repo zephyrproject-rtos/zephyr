@@ -1,0 +1,15 @@
+# Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>
+# SPDX-License-Identifier: Apache 2.0
+# Author: Isaac L. L. Yuki
+
+board:
+  name: mba117xl
+  full_name: MBa117xL
+  vendor: tq-systems
+  socs:
+    - name: mimxrt1176
+  revision:
+    format: "number"
+    default: "200"
+    revisions:
+      - name: "200"

@@ -1,0 +1,15 @@
+/ {
+	soc {
+		/delete-node/ ethernet@40424000;
+	};
+};
+
+&enet1g {
+	status = "okay";
+};
+
+&pinctrl {
+	/delete-node/ pinmux_enet_qos;
+	/delete-node/ pinmux_enet_qos_mdio;
+	/delete-node/ pinmux_qos_ptp;
+};

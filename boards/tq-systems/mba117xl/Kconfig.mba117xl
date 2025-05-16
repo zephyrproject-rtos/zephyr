@@ -1,0 +1,7 @@
+# Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>
+# SPDX-License-Identifier: Apache 2.0
+# Author: Isaac L. L. Yuki
+
+config BOARD_MBA117XL
+	select SOC_PART_NUMBER_MIMXRT1176DVMAA
+	select SOC_MIMXRT1176_CM7

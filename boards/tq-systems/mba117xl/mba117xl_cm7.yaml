@@ -1,0 +1,29 @@
+# Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>
+# SPDX-License-Identifier: Apache 2.0
+# Author: Isaac L. L. Yuki
+
+identifier: mba117xl/mimxrt1176/cm7
+name: MBA117XL CM7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 16384
+supported:
+  - display
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - mipi_dsi
+  - netif:eth
+  - spi
+  - usb_device
+  - watchdog
+  - usbd
+  - can
+
+vendor: tq-systems
