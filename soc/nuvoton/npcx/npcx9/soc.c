@@ -20,6 +20,9 @@ void soc_early_init_hook(void)
 
 		SET_FIELD(NPCX_JEN_CTL1(scfg_base), NPCX_JEN_CTL1_JEN_HEN,
 			  NPCX_JEN_CTL1_JEN_DISABLE);
+
+		SET_FIELD(NPCX_JEN_CTL2(scfg_base), NPCX_JEN_CTL2_CCDEV_SEL_EN,
+			  NPCX_JEN_CTL2_CCDEV_SEL_DISABLE);
 	}
 	scfg_init();
 }
