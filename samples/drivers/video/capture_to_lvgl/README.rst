@@ -37,6 +37,16 @@ For :zephyr:board:`mini_stm32h743`, build this sample application with the follo
    :gen-args: -DCONFIG_BOOT_DELAY=2000
    :compact:
 
+For testing purpose without the need of any real video capture hardware,
+a video software pattern generator is supported by using :ref:`snippet-video-sw-generator`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: native_sim
+   :snippets: video-sw-generator
+   :goals: build
+   :compact:
+
 Sample Output
 =============
 

@@ -17,17 +17,52 @@ LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
 
 static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
-	static const char *const camera_power_line_frequency[] = {"Disabled", "50 Hz", "60 Hz",
-								  "Auto", NULL};
-	static const char *const camera_exposure_auto[] = {"Auto Mode", "Manual Mode",
-							   "Shutter Priority Mode",
-							   "Aperture Priority Mode", NULL};
-
 	switch (id) {
+	/* User control menus */
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		return camera_power_line_frequency;
+		return (char const *const []){
+			"Disabled", "50 Hz", "60 Hz", "Auto", NULL
+		};
+
+	/* Camera control menus */
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return camera_exposure_auto;
+		return (char const *const []){
+			"Auto Mode", "Manual Mode", "Shutter Priority Mode",
+			"Aperture Priority Mode", NULL
+		};
+	case VIDEO_CID_AUTO_FOCUS_RANGE:
+		return (char const *const []){
+			"Auto", "Normal", "Macro", "Infinity", NULL
+		};
+	case VIDEO_CID_COLORFX:
+		return (char const *const []){
+			"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch",
+			"Sky Blue", "Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze",
+			"Silhouette", "Solarization", "Antique", "Set Cb/Cr", NULL
+		};
+	case VIDEO_CID_AUTO_N_PRESET_WHITE_BALANCE:
+		return (char const *const []){
+			"Manual", "Auto", "Incandescent", "Fluorescent", "Fluorescent H", "Horizon",
+			"Daylight", "Flash", "Cloudy", "Shade", "Greyworld", NULL
+		};
+	case VIDEO_CID_ISO_SENSITIVITY_AUTO:
+		return (char const *const []){
+			"Manual", "Auto", NULL
+		};
+	case VIDEO_CID_EXPOSURE_METERING:
+		return (char const *const []){
+			"Average", "Center Weighted", "Spot", "Matrix", NULL
+		};
+	case VIDEO_CID_SCENE_MODE:
+		return (char const *const []){
+			"None", "Backlight", "Beach/Snow", "Candle Light", "Dusk/Dawn",
+			"Fall Colors", "Fireworks", "Landscape", "Night", "Party/Indoor",
+			"Portrait", "Sports", "Sunset", "Text", NULL
+		};
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return (char const *const []){
+			"Front", "Back", "External", NULL
+		};
 	default:
 		return NULL;
 	}
@@ -69,12 +104,35 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	*flags = 0;
 
 	switch (id) {
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+	case VIDEO_CID_AUTOGAIN:
 	case VIDEO_CID_HFLIP:
 	case VIDEO_CID_VFLIP:
+	case VIDEO_CID_HUE_AUTO:
+	case VIDEO_CID_CHROMA_AGC:
+	case VIDEO_CID_COLOR_KILLER:
+	case VIDEO_CID_AUTOBRIGHTNESS:
+	case VIDEO_CID_ILLUMINATORS_1:
+	case VIDEO_CID_ILLUMINATORS_2:
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+	case VIDEO_CID_FOCUS_AUTO:
+	case VIDEO_CID_PRIVACY:
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+	case VIDEO_CID_IMAGE_STABILIZATION:
 		*type = VIDEO_CTRL_TYPE_BOOLEAN;
 		break;
+
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
+	case VIDEO_CID_EXPOSURE_AUTO:
+	case VIDEO_CID_AUTO_FOCUS_RANGE:
+	case VIDEO_CID_COLORFX:
+	case VIDEO_CID_AUTO_N_PRESET_WHITE_BALANCE:
+	case VIDEO_CID_ISO_SENSITIVITY_AUTO:
+	case VIDEO_CID_EXPOSURE_METERING:
+	case VIDEO_CID_SCENE_MODE:
 	case VIDEO_CID_TEST_PATTERN:
+	case VIDEO_CID_CAMERA_ORIENTATION:
+	case VIDEO_CID_HDR_SENSOR_MODE:
 		*type = VIDEO_CTRL_TYPE_MENU;
 		break;
 	case VIDEO_CID_PIXEL_RATE:
@@ -388,6 +446,16 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Saturation";
 	case VIDEO_CID_HUE:
 		return "Hue";
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+		return "White Balance, Automatic";
+	case VIDEO_CID_DO_WHITE_BALANCE:
+		return "Do White Balance";
+	case VIDEO_CID_RED_BALANCE:
+		return "Red Balance";
+	case VIDEO_CID_BLUE_BALANCE:
+		return "Blue Balance";
+	case VIDEO_CID_GAMMA:
+		return "Gamma";
 	case VIDEO_CID_EXPOSURE:
 		return "Exposure";
 	case VIDEO_CID_AUTOGAIN:
@@ -402,10 +470,114 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Vertical Flip";
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
 		return "Power Line Frequency";
+	case VIDEO_CID_HUE_AUTO:
+		return "Hue, Automatic";
+	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
+		return "White Balance Temperature";
+	case VIDEO_CID_SHARPNESS:
+		return "Sharpness";
+	case VIDEO_CID_BACKLIGHT_COMPENSATION:
+		return "Backlight Compensation";
+	case VIDEO_CID_CHROMA_AGC:
+		return "Chroma AGC";
+	case VIDEO_CID_COLOR_KILLER:
+		return "Color Killer";
+	case VIDEO_CID_COLORFX:
+		return "Color Effects";
+	case VIDEO_CID_AUTOBRIGHTNESS:
+		return "Brightness, Automatic";
+	case VIDEO_CID_BAND_STOP_FILTER:
+		return "Band-Stop Filter";
+	case VIDEO_CID_ROTATE:
+		return "Rotate";
+	case VIDEO_CID_BG_COLOR:
+		return "Background Color";
+	case VIDEO_CID_CHROMA_GAIN:
+		return "Chroma Gain";
+	case VIDEO_CID_ILLUMINATORS_1:
+		return "Illuminator 1";
+	case VIDEO_CID_ILLUMINATORS_2:
+		return "Illuminator 2";
+	case VIDEO_CID_ALPHA_COMPONENT:
+		return "Alpha Component";
+	case VIDEO_CID_COLORFX_CBCR:
+		return "Color Effects, CbCr";
+	case VIDEO_CID_COLORFX_RGB:
+		return "Color Effects, RGB";
 
 	/* Camera controls */
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return "Auto Exposure";
+	case VIDEO_CID_EXPOSURE_ABSOLUTE:
+		return "Exposure Time, Absolute";
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+		return "Exposure, Dynamic Framerate";
+	case VIDEO_CID_PAN_RELATIVE:
+		return "Pan, Relative";
+	case VIDEO_CID_TILT_RELATIVE:
+		return "Tilt, Relative";
+	case VIDEO_CID_PAN_RESET:
+		return "Pan, Reset";
+	case VIDEO_CID_TILT_RESET:
+		return "Tilt, Reset";
+	case VIDEO_CID_PAN_ABSOLUTE:
+		return "Pan, Absolute";
+	case VIDEO_CID_TILT_ABSOLUTE:
+		return "Tilt, Absolute";
+	case VIDEO_CID_FOCUS_ABSOLUTE:
+		return "Focus, Absolute";
+	case VIDEO_CID_FOCUS_RELATIVE:
+		return "Focus, Relative";
+	case VIDEO_CID_FOCUS_AUTO:
+		return "Focus, Automatic Continuous";
 	case VIDEO_CID_ZOOM_ABSOLUTE:
 		return "Zoom, Absolute";
+	case VIDEO_CID_ZOOM_RELATIVE:
+		return "Zoom, Relative";
+	case VIDEO_CID_ZOOM_CONTINUOUS:
+		return "Zoom, Continuous";
+	case VIDEO_CID_PRIVACY:
+		return "Privacy";
+	case VIDEO_CID_IRIS_ABSOLUTE:
+		return "Iris, Absolute";
+	case VIDEO_CID_IRIS_RELATIVE:
+		return "Iris, Relative";
+	case VIDEO_CID_AUTO_EXPOSURE_BIAS:
+		return "Auto Exposure, Bias";
+	case VIDEO_CID_AUTO_N_PRESET_WHITE_BALANCE:
+		return "White Balance, Auto & Preset";
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+		return "Wide Dynamic Range";
+	case VIDEO_CID_IMAGE_STABILIZATION:
+		return "Image Stabilization";
+	case VIDEO_CID_ISO_SENSITIVITY:
+		return "ISO Sensitivity";
+	case VIDEO_CID_ISO_SENSITIVITY_AUTO:
+		return "ISO Sensitivity, Auto";
+	case VIDEO_CID_EXPOSURE_METERING:
+		return "Exposure, Metering Mode";
+	case VIDEO_CID_SCENE_MODE:
+		return "Scene Mode";
+	case VIDEO_CID_3A_LOCK:
+		return "3A Lock";
+	case VIDEO_CID_AUTO_FOCUS_START:
+		return "Auto Focus, Start";
+	case VIDEO_CID_AUTO_FOCUS_STOP:
+		return "Auto Focus, Stop";
+	case VIDEO_CID_AUTO_FOCUS_STATUS:
+		return "Auto Focus, Status";
+	case VIDEO_CID_AUTO_FOCUS_RANGE:
+		return "Auto Focus, Range";
+	case VIDEO_CID_PAN_SPEED:
+		return "Pan, Speed";
+	case VIDEO_CID_TILT_SPEED:
+		return "Tilt, Speed";
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return "Camera Orientation";
+	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
+		return "Camera Sensor Rotation";
+	case VIDEO_CID_HDR_SENSOR_MODE:
+		return "HDR Sensor Mode";
 
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
