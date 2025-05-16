@@ -3847,7 +3847,7 @@ static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 	sec = *argv[1] - '0';
 
 	if ((info.type == BT_CONN_TYPE_BR &&
-	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L3))) {
+	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L4))) {
 		shell_error(sh, "Invalid BR/EDR security level (%d)", sec);
 		return -ENOEXEC;
 	}
@@ -5118,7 +5118,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
-	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
+	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 4, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
 	SHELL_CMD_ARG(bondable, NULL, HELP_ONOFF, cmd_bondable,
