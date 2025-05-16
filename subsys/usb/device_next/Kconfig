@@ -36,6 +36,13 @@ config USBD_MAX_SPEED
 	default 0 if USBD_MAX_SPEED_FULL
 	default 1 if USBD_MAX_SPEED_HIGH
 
+config USBD_BOS_SUPPORT
+	bool "USB device BOS support"
+	default y
+	help
+	  BOS support can be disabled if the application does not use a BOS
+	  descriptor.
+
 config USBD_SHELL
 	bool "USB device shell"
 	depends on SHELL

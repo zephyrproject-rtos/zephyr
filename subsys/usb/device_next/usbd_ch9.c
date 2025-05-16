@@ -733,6 +733,11 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	struct usbd_desc_node *desc_nd;
 	size_t len;
 
+	if (!IS_ENABLED(CONFIG_USBD_BOS_SUPPORT)) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	switch (usbd_bus_speed(uds_ctx)) {
 	case USBD_SPEED_FS:
 		dev_dsc = uds_ctx->fs_desc;
