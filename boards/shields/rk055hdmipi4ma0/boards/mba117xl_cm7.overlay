@@ -1,0 +1,26 @@
+/{
+    aliases {
+        lcd-control = &lcdControl;
+    };
+};
+
+
+&nxp_mipi_connector{
+	compatible = "gpio-nexus";
+	#gpio-cells = <2>;
+	gpio-map-mask = <0xffffffff 0xffffffc0>;
+	gpio-map-pass-thru = <0 0x3f>;
+	gpio-map = <29 0 &gpio4 23 0>,	/* Pin 29, INPUT_IRQ*/
+			<21 0 &pca95xx 10 0>,	/* Pin 31, LCD RESET# */
+			<32 0 &pca95xx 11 0>,	/* Pin 32, PWR_EN */
+			<28 0 &pca95xx 12 0>,	/* Pin 32, CTP RESET# */
+			<34 0 &pca95xx 13 0>;	/* Pin 34, MIPI_EN */
+};
+
+&zephyr_lcdif {
+	backlight-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+};
+
+&zephyr_mipi_dsi {
+	phy-clock = <792000000>;
+};
