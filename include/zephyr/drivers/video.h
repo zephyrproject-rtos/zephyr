@@ -1437,6 +1437,29 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
  * @}
  */
 
+/**
+ * @name MIPI CSI2 Data-types
+ *
+ * @{
+ */
+#define VIDEO_MIPI_CSI2_DT_YUV422_8	0x1e
+#define VIDEO_MIPI_CSI2_DT_YUV422_10	0x1f
+#define VIDEO_MIPI_CSI2_DT_RGB444	0x20
+#define VIDEO_MIPI_CSI2_DT_RGB555	0x21
+#define VIDEO_MIPI_CSI2_DT_RGB565	0x22
+#define VIDEO_MIPI_CSI2_DT_RGB666	0x23
+#define VIDEO_MIPI_CSI2_DT_RGB888	0x24
+#define VIDEO_MIPI_CSI2_DT_RAW6		0x28
+#define VIDEO_MIPI_CSI2_DT_RAW7		0x29
+#define VIDEO_MIPI_CSI2_DT_RAW8		0x2a
+#define VIDEO_MIPI_CSI2_DT_RAW10	0x2b
+#define VIDEO_MIPI_CSI2_DT_RAW12	0x2c
+#define VIDEO_MIPI_CSI2_DT_RAW14	0x2d
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
