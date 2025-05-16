@@ -275,6 +275,8 @@ static int video_esp32_get_fmt(const struct device *dev, enum video_endpoint_id 
 		return ret;
 	}
 
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
 	return 0;
 }
 
@@ -283,14 +285,22 @@ static int video_esp32_set_fmt(const struct device *dev, enum video_endpoint_id 
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
+	int ret;
 
 	if (fmt == NULL || ep != VIDEO_EP_OUT) {
 		return -EINVAL;
 	}
 
+	ret = video_set_format(cfg->source_dev, ep, fmt);
+	if (ret) {
+		return ret;
+	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
 	data->video_format = *fmt;
 
-	return video_set_format(cfg->source_dev, ep, fmt);
+	return 0;
 }
 
 static int video_esp32_enqueue(const struct device *dev, enum video_endpoint_id ep,

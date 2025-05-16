@@ -186,17 +186,6 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
 }
 
-static inline int video_stm32_dcmi_is_fmt_valid(uint32_t pixelformat, uint32_t pitch,
-						uint32_t height)
-{
-	if (video_bits_per_pixel(pixelformat) / BITS_PER_BYTE == 0 ||
-	    pitch * height > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int video_stm32_dcmi_set_fmt(const struct device *dev,
 				  enum video_endpoint_id ep,
 				  struct video_format *fmt)
@@ -209,15 +198,12 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = video_stm32_dcmi_is_fmt_valid(fmt->pixelformat, fmt->pitch, fmt->height);
-	if (ret < 0) {
-		return ret;
-	}
-
 	ret = video_set_format(config->sensor_dev, ep, fmt);
 	if (ret < 0) {
 		return ret;
 	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	data->fmt = *fmt;
 
@@ -242,10 +228,7 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 		return ret;
 	}
 
-	ret = video_stm32_dcmi_is_fmt_valid(fmt->pixelformat, fmt->pitch, fmt->height);
-	if (ret < 0) {
-		return ret;
-	}
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	data->fmt = *fmt;
 
@@ -370,12 +353,6 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, enum video_en
 
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
-	}
-
-	ret = video_stm32_dcmi_is_fmt_valid(fie->format->pixelformat, fie->format->pitch,
-					    fie->format->height);
-	if (ret < 0) {
-		return ret;
 	}
 
 	ret = video_enum_frmival(config->sensor_dev, ep, fie);

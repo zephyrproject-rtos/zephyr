@@ -134,16 +134,15 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	status_t ret;
 	struct video_format format = *fmt;
 
-	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
-	data->csi_config.bytesPerPixel = bpp;
-	data->csi_config.linePitch_Bytes = fmt->pitch;
+	data->csi_config.bytesPerPixel = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	data->csi_config.linePitch_Bytes = fmt->width * data->csi_config.bytesPerPixel;
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 	if (fmt->pixelformat != VIDEO_PIX_FMT_XRGB32 && fmt->pixelformat != VIDEO_PIX_FMT_XYUV32) {
 		return -ENOTSUP;
@@ -173,6 +172,8 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 		return -EIO;
 	}
 
+	fmt->pitch = data->csi_config.linePitch_Bytes;
+
 	return 0;
 }
 
@@ -189,8 +190,8 @@ static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		video_pix_fmt_convert(fmt, true);
 #endif
-		/* align CSI with source fmt */
-		return video_mcux_csi_set_fmt(dev, ep, fmt);
+
+		return 0;
 	}
 
 	return -EIO;
