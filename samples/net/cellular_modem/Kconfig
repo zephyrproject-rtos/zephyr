@@ -1,0 +1,11 @@
+# Configuration options for cellular modem sample
+
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Cellular modem sample application"
+
+config SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
+	string "Endpoint hostname"
+	default "test-endpoint.com"
+
+source "Kconfig.zephyr"

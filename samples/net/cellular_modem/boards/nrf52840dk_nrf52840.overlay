@@ -1,0 +1,25 @@
+/ {
+	aliases {
+		modem = &modem;
+	};
+};
+
+// Tested with Simcom A7672SA module connected via UART
+// TX: P1.2
+// RX: P1.1
+// PWRKEY: P0.02
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	// The module I tested with doesn't expose RCS/CTS pins
+	// hw-flow-control;
+
+	pinctrl-0 = <&uart1_default>;
+
+	modem: modem {
+		compatible = "simcom,a76xx";
+		status = "okay";
+		mdm-power-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH)>;
+	};
+};
