@@ -153,7 +153,7 @@ void xtensa_dump_stack(const void *stack)
 	bsa = frame->ptr_to_bsa;
 
 	/* Calculate number of high registers. */
-	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs = (uint8_t *)bsa - ((uint8_t *)frame + sizeof(void *));
 	num_high_regs /= sizeof(uintptr_t);
 
 	/* And high registers are always comes in 4 in a block. */
