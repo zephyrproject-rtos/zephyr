@@ -37,6 +37,14 @@
 		};
 	};
 
+	letimer0_default: letimer0_default {
+		group0 {
+			pins = <LETIMER0_OUT0_PB0>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
 	pti_default: pti_default {
 		group0 {
 			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
