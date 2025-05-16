@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 /* Zephyr GPIO header must be included after driver, due to symbol conflicts
  * for GPIO_INPUT and GPIO_OUTPUT between preprocessor macros in the Zephyr
@@ -56,7 +58,11 @@ struct gpio_siwx91x_port_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
+	/* stores the direction of each pin */
+	uint8_t pin_direction[MAX_PIN_COUNT];
 };
+
+static int gpio_siwx91x_port_pm_action(const struct device *port, enum pm_device_action action);
 
 /* Functions */
 static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
@@ -295,6 +301,34 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 	__ASSERT(cfg->port < MAX_PORT_COUNT, "Too many ports");
 	data->ports[cfg->port] = port;
 
+	return pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
+}
+
+static int gpio_siwx91x_port_pm_action(const struct device *port, enum pm_device_action action)
+{
+	const struct gpio_siwx91x_port_config *config = port->config;
+	struct gpio_siwx91x_port_data *data = port->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		for (int pin = 0; pin < MAX_PIN_COUNT; ++pin) {
+			if (config->common.port_pin_mask & BIT(pin)) {
+				sl_si91x_gpio_set_pin_direction(config->hal_port, pin,
+								data->pin_direction[pin]);
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		for (int pin = 0; pin < MAX_PIN_COUNT; ++pin) {
+			if (config->common.port_pin_mask & BIT(pin)) {
+				data->pin_direction[pin] =
+					sl_si91x_gpio_get_pin_direction(config->hal_port, pin);
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
 	return 0;
 }
 
@@ -361,16 +395,17 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 	};                                                                                         \
 	static struct gpio_siwx91x_port_data gpio_siwx91x_port_data##n;                            \
                                                                                                    \
-	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, NULL, &gpio_siwx91x_port_data##n,              \
-			 &gpio_siwx91x_port_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
-			 &gpio_siwx91x_api);
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_siwx91x_port_pm_action);                                  \
+	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, PM_DEVICE_DT_INST_GET(n),                      \
+			 &gpio_siwx91x_port_data##n, &gpio_siwx91x_port_config##n, PRE_KERNEL_1,   \
+			 CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_api);
 
 #define CONFIGURE_SHARED_INTERRUPT(node_id, prop, idx)                                             \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \
 		    gpio_siwx91x_isr, DEVICE_DT_GET(node_id), 0);                                  \
 	irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));
 
-static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
+static DEVICE_API(gpio, gpio_siwx91x_common_api) = {};
 
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
 	static const struct gpio_siwx91x_common_config gpio_siwx91x_config##idx = {                \
@@ -384,7 +419,8 @@ static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
 		int status;                                                                        \
                                                                                                    \
 		status = sl_si91x_gpio_driver_enable_clock(                                        \
-			COND_CODE_1(DT_INST_PROP(idx, silabs_ulp), (ULPCLK_GPIO), (M4CLK_GPIO)));  \
+			COND_CODE_1(DT_INST_PROP(idx, silabs_ulp), (ULPCLK_GPIO),                  \
+			(M4CLK_GPIO)));     \
 		if (status) {                                                                      \
 			return -ENODEV;                                                            \
 		}                                                                                  \
@@ -395,8 +431,8 @@ static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
 		return 0;                                                                          \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_init_controller_##idx, NULL,                       \
-			      &gpio_siwx91x_data##idx, &gpio_siwx91x_config##idx,                  \
-			      PRE_KERNEL_1, CONFIG_GPIO_SILABS_SIWX91X_COMMON_INIT_PRIORITY,       \
+			      &gpio_siwx91x_data##idx, &gpio_siwx91x_config##idx, PRE_KERNEL_1,    \
+			      CONFIG_GPIO_SILABS_SIWX91X_COMMON_INIT_PRIORITY,                     \
 			      &gpio_siwx91x_common_api);                                           \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, GPIO_PORT_INIT);
 
