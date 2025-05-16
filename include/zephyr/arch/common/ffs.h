@@ -57,6 +57,9 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 	return __builtin_ffs(op);
 
 #else
+	if (op == 0U) {
+		return 0;
+	}
 	/*
 	 * Toolchain does not have __builtin_ffs(). Leverage find_lsb_set()
 	 * by first clearing all but the lowest set bit.
