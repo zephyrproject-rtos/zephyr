@@ -90,7 +90,7 @@
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
 			interrupt-names = "UART0";
@@ -98,7 +98,7 @@
 			clocks = <&uartclk>;
 		};
 		uart1: uart@4001d000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
 			interrupt-names = "UART1";
@@ -107,7 +107,7 @@
 		};
 
 		uart2: uart@4001e000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001e000 0x1000>;
 			interrupts = <17 0>;
 			interrupt-names = "UART2";
@@ -116,7 +116,7 @@
 		};
 
 		uart3: uart@4001f000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001f000 0x1000>;
 			interrupts = <18 0>;
 			interrupt-names = "UART3";
