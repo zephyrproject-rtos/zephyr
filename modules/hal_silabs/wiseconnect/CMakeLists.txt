@@ -133,6 +133,16 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
     ${WISECONNECT_DIR}/components/service/http_client/si91x_socket/sl_http_client.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_http_client_callback_framework.c
   )
+  zephyr_compile_definitions_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT
+    SLI_SI91X_EMBEDDED_MQTT_CLIENT
+  )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT
+    ${WISECONNECT_DIR}/components/service/mqtt/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/inc/mqtt/inc
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT
+    ${WISECONNECT_DIR}/components/service/mqtt/si91x/sl_mqtt_client.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
