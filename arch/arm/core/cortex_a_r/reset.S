@@ -227,12 +227,12 @@ EL1_Reset_Handler:
     /* signal our desire to vote */
     mov r5, #1
     strb r5, [r4, r2]
+    mov r7, #0
     ldr r3, [r0, #BOOT_PARAM_MPID_OFFSET]
     cmn r3, #1
     beq 1f
 
     /* some core already won, release */
-    mov r7, #0
     strb r7, [r4, r2]
     b _secondary_core
 
