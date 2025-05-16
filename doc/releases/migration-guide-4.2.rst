@@ -404,6 +404,25 @@ Networking
   the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
   is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
 
+* The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
+  change some of the existing options have been renamed. The following table
+  summarizes the changes:
+
+  +------------------------+---------------------+--------------------+
+  | Command(s)             | Old option          | New option         |
+  +------------------------+---------------------+--------------------+
+  | ``wifi connect``       | ``-i``              | ``-g``             |
+  | ``wifi ap enable``     |                     |                    |
+  +------------------------+---------------------+--------------------+
+  | ``wifi twt setup``     | ``-i``              | ``-p``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi ap config``     | ``-i``              | ``-t``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi mode``          | ``--if-index``      | ``--iface``        |
+  | ``wifi channel``       |                     |                    |
+  | ``wifi packet_filter`` |                     |                    |
+  +------------------------+---------------------+--------------------+
+
 OpenThread
 ==========
 
