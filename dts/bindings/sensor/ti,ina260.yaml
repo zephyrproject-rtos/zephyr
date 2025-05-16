@@ -1,0 +1,84 @@
+# Copyright (c) 2024 Launch Initiative
+# SPDX-License-Identifier: Apache-2.0
+# datasheet: http://www.ti.com/lit/ds/symlink/ina260.pdf
+
+description: Texas Instruments Bidirectional Current/Power Sensor
+
+compatible: "ti,ina260"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+
+  average:
+    type: int
+    required: true
+    description: |
+      Averaging Mode.
+      Number of samples that are collected and averaged.
+      Values correspond to the register configuration bits 0-7
+    enum:
+      - 1
+      - 4
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+
+  mode:
+    type: string
+    description: |
+      Operating Mode
+      Selects continuous, triggered, or power-down mode of operation. These bits default to
+      continuous shunt and bus measurement mode. The following shows mode settings
+      - TRIG_OFF
+      - TRIG_CURRENT
+      - TRIG_VOLTAGE
+      - TRIG_BOTH
+      - CONT_OFF
+      - CONT_CURRENT
+      - CONT_VOLTAGE
+      - CONT_BOTH
+    default: "CONT_BOTH"
+    enum:
+      - "TRIG_OFF"
+      - "TRIG_CURRENT"
+      - "TRIG_VOLTAGE"
+      - "TRIG_BOTH"
+      - "CONT_OFF"
+      - "CONT_CURRENT"
+      - "CONT_VOLTAGE"
+      - "CONT_BOTH"
+
+  v-conv-time:
+    type: int
+    required: true
+    description: |
+      Bus Voltage Conversion Time in microseconds
+      Values correspond to the register configuration bits 0-7
+    enum:
+      - 140
+      - 204
+      - 332
+      - 588
+      - 1100
+      - 2116
+      - 4156
+      - 8244
+  i-conv-time:
+    type: int
+    required: true
+    description: |
+      Shunt Current Conversion Time in microseconds
+      Values correspond to the register configuration bits 0-7
+    enum:
+      - 140
+      - 204
+      - 332
+      - 588
+      - 1100
+      - 2116
+      - 4156
+      - 8244

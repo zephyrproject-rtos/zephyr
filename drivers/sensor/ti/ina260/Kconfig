@@ -1,0 +1,12 @@
+# Copyright (c) 2025 RIT Launch Initiative <launchinitiative@rit.edu>
+# Copyright (c) 2025 Aaron Chan
+# Copyright (c) 2025 Richard Sommers
+# SPDX-License-Identifier: Apache-2.0
+
+config INA260
+	bool "INA260 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA260_ENABLED
+	select I2C
+	help
+	  Enable driver for INA260 Bidirectional Current/Power Sensor.
