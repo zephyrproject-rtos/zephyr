@@ -536,6 +536,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	ARG_UNUSED(resume_cb);
 
+	/* Prepare being cancelled (no resume for periodic sync) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
 	/* Different radio event overlap */
 	if (next != curr) {
 		struct lll_scan_aux *lll_aux;
