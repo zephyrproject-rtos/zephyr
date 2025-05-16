@@ -2175,11 +2175,12 @@ Release Notes:
     - "area: Timer"
 
 "Drivers: Video":
-  status: odd fixes
-  collaborators:
-    - loicpoulain
+  status: maintained
+  maintainers:
     - josuah
     - ngphibang
+  collaborators:
+    - loicpoulain
     - avolmat-st
   files:
     - drivers/video/
