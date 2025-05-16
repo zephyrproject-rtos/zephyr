@@ -229,8 +229,28 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 		if (err) {
 			last_error = err;
 		}
+
+		LOG_DBG(" %d -> %s", index++, _ZBUS_OBS_NAME(obs));
 	}
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
+
+	STRUCT_SECTION_FOREACH(zbus_global_observation, global_obs) {
+		_ZBUS_ASSERT(global_obs != NULL, "observation must be not NULL");
+
+		const struct zbus_observer *obs = global_obs->obs;
+
+		if (!obs->data->enabled) {
+			continue;
+		}
+
+		err = _zbus_notify_observer(chan, obs, end_time, buf);
+
+		if (err) {
+			last_error = err;
+		}
+
+		LOG_DBG(" %d -> %s", index++, _ZBUS_OBS_NAME(obs));
+	}
 
 	IF_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER, (net_buf_unref(buf);))
 

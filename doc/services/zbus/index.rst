@@ -79,8 +79,10 @@ Another essential aspect of zbus is the observers. There are three types of obse
 Channel observation structures define the relationship between a channel and its observers. For
 every observation, a pair channel/observer. Developers can statically allocate observation using the
 :c:macro:`ZBUS_CHAN_DEFINE` or :c:macro:`ZBUS_CHAN_ADD_OBS`. There are also runtime observers,
-enabling developers to create runtime observations. It is possible to disable an observer entirely
-or observations individually.  The event dispatcher will ignore disabled observers and observations.
+enabling developers to create runtime observations. Finally, it is possible to define an observer
+which is notified on publishes to every channel using :c:macro:`ZBUS_GLOBAL_ADD_OBS`. It is possible
+to disable an observer entirely or observations individually.  The event dispatcher will ignore
+disabled observers and observations.
 
 .. figure:: images/zbus_observation_mask.svg
     :alt: ZBus observation mask.
@@ -425,8 +427,9 @@ The message delivery will follow the precedence:
    sequence);
 #. Observers defined using the :c:macro:`ZBUS_CHAN_ADD_OBS` based on the sequence priority
    (parameter of the macro);
-#. The latest is the runtime observers in the addition sequence using the
-   :c:func:`zbus_chan_add_obs`.
+#. Runtime observers in the order they were registered using :c:func:`zbus_chan_add_obs`.
+#. Finally, global observers defined using the :c:macro:`ZBUS_GLOBAL_ADD_OBS` based on the sequence
+   priority (parameter of the macro);
 
 .. note::
     The VDED will ignore all disabled observers or observations.
