@@ -1389,3 +1389,8 @@ test_i2c_mb7040: mb7040@ba {
 	reg = <0xba>;
 	status-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_veml6046: veml6046@b3 {
+	compatible = "vishay,veml6046";
+	reg = <0xbb>;
+};
