@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/xg29/efr32mg29b140f1024im40.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg29_rb4412a-pinctrl.dtsi"
 
@@ -28,6 +29,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
 		spi-flash0 = &mx25r80;
 		sw0 = &button0;
 		sw1 = &button1;
@@ -45,6 +47,14 @@
 		led1: led_1 {
 			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&letimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -167,6 +177,16 @@
 		width = <128>;
 		extcomin-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 		extcomin-frequency = <60>;
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
