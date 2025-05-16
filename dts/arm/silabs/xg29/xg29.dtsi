@@ -435,6 +435,20 @@
 			status = "disabled";
 		};
 
+		letimer0: letimer@5a000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x5a000000 0x4000>;
+			clocks = <&cmu CLOCK_LETIMER0 CLOCK_BRANCH_EM23GRPACLK>;
+			interrupts = <24 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		adc0: adc@5a004000 {
 			compatible = "silabs,gecko-iadc";
 			reg = <0x5a004000 0x4000>;

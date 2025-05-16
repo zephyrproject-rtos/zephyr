@@ -360,6 +360,20 @@
 			status = "disabled";
 		};
 
+		letimer0: letimer@5a000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x5a000000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM23GRPACLK>;
+			interrupts = <19 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
