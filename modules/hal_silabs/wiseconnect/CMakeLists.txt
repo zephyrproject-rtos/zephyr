@@ -87,6 +87,10 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
     ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_basic_profiles.c
     ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_credentials.c
   )
+  zephyr_compile_definitions(
+    SLI_SI91X_CONFIG_WIFI6_PARAMS
+    SLI_SI91X_ENABLE_TWT_FEATURE
+  )
   zephyr_compile_definitions_ifdef(CONFIG_NET_IPV6
     SLI_SI91X_ENABLE_IPV6
   )
