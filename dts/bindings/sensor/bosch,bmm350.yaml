@@ -10,3 +10,45 @@ properties:
     description: |
       This property specifies the connection for data ready pin.
       The polarity default is active high when sensor data is ready.
+
+  odr:
+    type: string
+    description: |
+      Default output data rate in Hz. Only the following values are allowed:
+        400    - 400     - 2.5ms
+        200    - 200     - 5ms
+        100    - 100     - 10ms
+        50     - 50      - 20ms
+        25     - 25      - 40ms
+        12.5   - 25/2    - 80ms
+        6.25   - 25/4    - 160ms
+        3.125  - 25/8    - 320ms
+        1.5625 - 25/16   - 640ms
+      Reset Value of the BMM350 is 100Hz.
+    default: "100"
+    enum:
+      - "400"
+      - "200"
+      - "100"
+      - "50"
+      - "25"
+      - "12.5"
+      - "6.25"
+      - "3.125"
+      - "1.5625"
+
+  osr:
+    type: int
+    description: |
+      Default oversampling. Only the following values are allowed:
+        8 - 8x
+        4 - 4x
+        2 - 2x
+        1 - 1x
+      Reset Value of the BMM350 is 2x.
+    default: 2
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8

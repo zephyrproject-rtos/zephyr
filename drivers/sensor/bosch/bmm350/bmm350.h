@@ -452,6 +452,8 @@ struct bmm350_config {
 	struct bmm350_bus bus;
 	const struct bmm350_bus_io *bus_io;
 	struct gpio_dt_spec drdy_int;
+	uint8_t default_odr;
+	uint8_t default_osr;
 };
 
 struct bmm350_data {
