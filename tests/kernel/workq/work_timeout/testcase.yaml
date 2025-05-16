@@ -1,0 +1,10 @@
+tests:
+  kernel.workqueue.work_timeout:
+    tags: kernel
+    min_flash: 64
+    min_ram: 32
+    extra_args: CONFIG_WORKQUEUE_WORK_TIMEOUT=y
+  kernel.workqueue.work_timeout.disabled:
+    tags: kernel
+    min_flash: 64
+    min_ram: 32
