@@ -192,4 +192,33 @@ ZTEST(video_common, test_video_vbuf)
 	video_buffer_release(vbuf);
 }
 
+ZTEST(video_emul, test_video_stats)
+{
+	struct video_stats_channels chan = {
+		.base.flags = VIDEO_STATS_CHANNELS,
+	};
+
+	zexpect_ok(video_get_stats(rx_dev, VIDEO_EP_OUT, &chan.base),
+		   "statistics collection should succeed for the emulated device");
+
+	zexpect_equal(chan.base.flags & VIDEO_STATS_HISTOGRAM, 0, "histogram was not requested");
+
+	zexpect_not_equal(chan.base.flags & VIDEO_STATS_CHANNELS, 0,
+			  "this emulated device is known to support channel averages.");
+
+	if (chan.base.flags & VIDEO_STATS_CHANNELS_Y) {
+		zexpect_not_equal(chan.y, 0x00, "Test data likely not completely black.");
+		zexpect_not_equal(chan.y, 0xff, "Test data likely not completely white.");
+	}
+
+	if (chan.base.flags & VIDEO_STATS_CHANNELS_RGB) {
+		zexpect_not_equal(chan.rgb[0], 0x00, "Red channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[0], 0xff, "Red channel likely not completely 0xff.");
+		zexpect_not_equal(chan.rgb[1], 0x00, "Green channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[1], 0xff, "Green channel likely not completely 0xff.");
+		zexpect_not_equal(chan.rgb[2], 0x00, "Blue channel likely not completely 0x00.");
+		zexpect_not_equal(chan.rgb[2], 0xff, "Blue channel likely not completely 0xff.");
+	}
+}
+
 ZTEST_SUITE(video_emul, NULL, NULL, NULL, NULL, NULL);
