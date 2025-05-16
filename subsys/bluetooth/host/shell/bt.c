@@ -826,11 +826,17 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_shell_print("Disconnected: %s (reason 0x%02x)", addr, reason);
 
 	if (default_conn == conn) {
+		enum bt_conn_type conn_type = BT_CONN_TYPE_LE;
+
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn_type |= BT_CONN_TYPE_BR;
+		}
+
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
 	}
 }
 
