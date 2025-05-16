@@ -297,6 +297,9 @@ Bluetooth Audio
 * ``bt_csip_set_member_get_sirk`` has been removed. Use :c:func:`bt_csip_set_member_get_info` to get
   the SIRK (and other information). (:github:`86996`)
 
+* ``BT_AUDIO_CONTEXT_TYPE_PROHIBITED`` has been renamed to
+  :c:enumerator:`BT_AUDIO_CONTEXT_TYPE_NONE`. (:github:`89506`)
+
 Bluetooth HCI
 =============
 
@@ -326,6 +329,9 @@ Bluetooth Host
 
 * The macro ``BT_GATT_CCC_INITIALIZER`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h`
   has been renamed to :c:macro:`BT_GATT_CCC_MANAGED_USER_DATA_INIT`. (:github:`88652`)
+
+* The ``CONFIG_BT_ISO_TX_FRAG_COUNT`` Kconfig option was removed as it was completely unused.
+  Any uses of it can simply be removed. (:github:`89836`)
 
 Bluetooth Classic
 =================
@@ -487,6 +493,23 @@ xSPI
   Note that the property gives the actual size of the memory device in bits.
   Previous mapping address information is now described in xspi node at SoC dtsi level.
 
+Video
+=====
+
+* 8 bit RAW Bayer formats BGGR8 / GBRG8 / GRBG8 / RGGB8 have been renamed by adding
+  a S prefix in front:
+
+  ``VIDEO_PIX_FMT_BGGR8`` becomes ``VIDEO_PIX_FMT_SBGGR8``
+  ``VIDEO_PIX_FMT_GBRG8`` becomes ``VIDEO_PIX_FMT_SGBRG8``
+  ``VIDEO_PIX_FMT_GRBG8`` becomes ``VIDEO_PIX_FMT_SGRBG8``
+  ``VIDEO_PIX_FMT_RGGB8`` becomes ``VIDEO_PIX_FMT_SRGGB8``
+
+* On STM32 devices, the DCMI driver (:dtcompatible:`st,stm32-dcmi`) now relies on endpoint based
+  video-interfaces.yaml bindings for sensor interface properties (such as bus width and
+  synchronization signals).
+  Also the ``capture-rate`` property has been replaced by the usage of the frame interval API
+  :c:func:`video_set_frmival`.
+  See (:github:`89627`).
 
 Other subsystems
 ****************

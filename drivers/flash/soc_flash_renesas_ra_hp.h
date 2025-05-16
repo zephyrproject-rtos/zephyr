@@ -90,6 +90,12 @@ enum flash_region {
 #define FLASH_FLAG_ERASE_COMPLETE BIT(0)
 #define FLASH_FLAG_WRITE_COMPLETE BIT(1)
 #define FLASH_FLAG_GET_ERROR      BIT(2)
+
+#if defined(CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING)
+#define FLASH_FLAG_BLANK          BIT(3)
+#define FLASH_FLAG_NOT_BLANK      BIT(4)
+#endif /* CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING */
+
 #endif /* CONFIG_FLASH_RENESAS_RA_HP_BGO */
 
 struct flash_hp_ra_controller {

@@ -20,6 +20,7 @@ properties:
 
   poll-interval-ms:
     type: int
+    default: 10
     description: |
       Polling interval in ms when not using interrupt mode.
 
@@ -28,3 +29,52 @@ properties:
     required: true
     description: |
       Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  sensor-gain:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+    default: 1
+    description: |
+      Defines the gain of the sensor circuitry. This
+      effectively controls the sensitivity, as a
+      smaller delta capacitance is required to
+      generate the same delta count values.
+
+  sensitivity-delta-sense:
+    type: int
+    enum: [1, 2, 4, 8, 16, 32, 64, 128]
+    default: 32
+    description:
+      Controls the sensitivity multiplier of a touch detection.
+      Higher value means more sensitive settings.
+      At the more sensitive settings, touches are detected for a smaller delta
+      capacitance corresponding to a "lighter" touch.
+
+  signal-guard:
+    type: array
+    enum: [0, 1]
+    default: [0, 0, 0]
+    description: |
+      0 - off
+      1 - on
+      The signal guard isolates the signal from virtual grounds.
+      If enabled then the behavior of the channel is changed to signal guard.
+      The number of entries must correspond to the number of channels.
+
+  calib-sensitivity:
+    type: array
+    enum: [1, 2, 4]
+    default: [1, 1, 1]
+    description: |
+      Specifies an array of numeric values that controls the gain
+      used by the calibration routine to enable sensor inputs
+      to be more sensitive for proximity detection.
+      Gain is based on touch pad capacitance range
+      1 - 5-50pF
+      2 - 0-25pF
+      4 - 0-12.5pF
+      The number of entries must correspond to the number of channels.

@@ -35,8 +35,17 @@
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
+
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
 };
 
+&dac {
+	status = "okay";
+};
 
 &lpuart1 {
 	status = "okay";

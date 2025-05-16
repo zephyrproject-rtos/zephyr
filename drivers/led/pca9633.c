@@ -121,17 +121,10 @@ static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 				      uint8_t value)
 {
 	const struct pca9633_config *config = dev->config;
-	struct pca9633_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
 	/* Set the LED brightness value */
-	val = (value * 255U) / dev_data->max_brightness;
+	val = (value * 255U) / LED_BRIGTHNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       PCA9633_PWM_BASE + led,
 			       val)) {
@@ -210,8 +203,6 @@ static int pca9633_led_init(const struct device *dev)
 	/* Hardware specific limits */
 	dev_data->min_period = 41U;
 	dev_data->max_period = 10667U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	return 0;
 }

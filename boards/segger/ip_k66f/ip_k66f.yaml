@@ -14,4 +14,3 @@ supported:
   - netif:eth
 ram: 256
 flash: 2048
-vendor: nxp

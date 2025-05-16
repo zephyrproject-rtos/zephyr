@@ -28,6 +28,14 @@ description: |
   than 1000 MHz or program the mpuss_ck mux to use the MPUDIV
   (refer to the stm32mp13 reference manual for details)
 
+  div-m (aka DIVM1 + 1), div-p (aka DIVP + 1), div-q (aka DIVQ + 1),
+  div-r (aka DIVR + 1) have identical valid ranges for all 4 PLLs.
+  mul-n (aka DIVN + 1) valid range depends on the PLL
+    PLL1: 31 - 125
+    PLL2: 25 - 100
+    PLL3: 25 - 200
+    PLL4: 25 - 200
+
 compatible: "st,stm32mp13-pll-clock"
 
 include: [clock-controller.yaml, base.yaml]
@@ -44,25 +52,36 @@ properties:
     type: int
     required: true
     description: |
-        Prescaler for PLLx
-        input clock
+        PLLx division factor (aka DIVM1 + 1) of the input clock divider
         Valid range: 1 - 64
 
   mul-n:
     type: int
     required: true
     description: |
-        PLLx multiplication factor for VCO
-        Valid range: 31 - 125
+        PLLx multiplication factor (aka DIVN + 1) for VCO
+        Valid range: 25 - 200
 
   div-p:
     type: int
     description: |
-        PLLx DIVP division factor
+        PLLx_P division factor (aka DIVP + 1)
         Valid range: 1 - 128
 
-  frac-v:
+  div-q:
+    type: int
+    description: |
+        PLLx_Q division factor (aka DIVQ + 1)
+        Valid range: 1 - 128
+
+  div-r:
+    type: int
+    description: |
+        PLLx_R division factor (aka DIVR + 1)
+        Valid range: 1 - 128
+
+  fracn:
     type: int
     description: |
         PLLx FRACV fractional latch
-        Valid range: 1 - 8192
+        Valid range: 0 - 8191

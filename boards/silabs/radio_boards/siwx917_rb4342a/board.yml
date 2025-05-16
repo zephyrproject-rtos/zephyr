@@ -1,0 +1,6 @@
+board:
+  name: siwx917_rb4342a
+  full_name: SiWx917 Wi-Fi 6 and Bluetooth LE 8 MB Flash + 8 MB ext PSRAM Radio Board (SLWRB4342A)
+  vendor: silabs
+  socs:
+    - name: siwg917m111mgtba

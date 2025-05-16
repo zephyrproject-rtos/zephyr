@@ -738,7 +738,11 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.bStrictLenFilter = 1
 		},
 		.frameTypes = {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+			.bAcceptFt0Beacon = 1,
+#else
 			.bAcceptFt0Beacon = 0,
+#endif
 			.bAcceptFt1Data = 1,
 			.bAcceptFt2Ack = 0,
 			.bAcceptFt3MacCmd = 1,

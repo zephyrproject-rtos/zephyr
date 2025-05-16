@@ -22,3 +22,9 @@ tests:
   drivers.video.mcux_smartdma.build:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+  drivers.video.stm32_dcmi.build:
+    platform_allow:
+      - stm32h7b3i_dk/stm32h7b3xx
+      - arduino_nicla_vision/stm32h747xx/m7
+    extra_args:
+      - platform:stm32h7b3i_dk/stm32h7b3xx:SHIELD=st_b_cams_omv_mb1683

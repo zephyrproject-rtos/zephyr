@@ -56,7 +56,7 @@
 	 *  Then, the user can override the pin control options at the board level.
 	 */
 	pinctrl: pinctrl {
-		compatible = "nuvoton,npcx-pinctrl";
+		compatible = "nuvoton,npcx-pinctrl", "nuvoton,npcx-pinctrl-npckn";
 		status = "okay";
 	};
 

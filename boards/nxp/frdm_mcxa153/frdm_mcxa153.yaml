@@ -18,6 +18,8 @@ supported:
   - dma
   - flash
   - gpio
+  - i2c
   - pwm
+  - spi
   - uart
 vendor: nxp

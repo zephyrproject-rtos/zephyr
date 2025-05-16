@@ -2003,9 +2003,11 @@ class TwisterRunner:
                             pb.process(pipeline, done_queue, task, lock, results)
                             if self.env.options.quit_on_failure and \
                                 pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                                with pipeline.mutex:
-                                    pipeline.queue.clear()
-                                break
+                                try:
+                                    while True:
+                                        pipeline.get_nowait()
+                                except queue.Empty:
+                                    pass
 
                     return True
             else:
@@ -2021,9 +2023,11 @@ class TwisterRunner:
                         pb.process(pipeline, done_queue, task, lock, results)
                         if self.env.options.quit_on_failure and \
                             pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                            with pipeline.mutex:
-                                pipeline.queue.clear()
-                            break
+                            try:
+                                while True:
+                                    pipeline.get_nowait()
+                            except queue.Empty:
+                                pass
                 return True
         except Exception as e:
             logger.error(f"General exception: {e}\n{traceback.format_exc()}")

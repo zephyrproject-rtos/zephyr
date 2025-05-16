@@ -150,6 +150,7 @@ struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
 	uint8_t			remote_auth;
+	uint8_t			local_auth;
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
@@ -210,12 +211,7 @@ struct bt_conn_tx {
 
 struct acl_data {
 	/* Index into the bt_conn storage array */
-	uint8_t index;
-
-	/** Host has already sent a Host Number of Completed Packets
-	 *  for this buffer.
-	 */
-	bool host_ncp_sent;
+	uint8_t  index;
 
 	/** ACL connection handle */
 	uint16_t handle;

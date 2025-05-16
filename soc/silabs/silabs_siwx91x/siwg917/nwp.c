@@ -22,9 +22,9 @@
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
-BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(196) ||
-	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(256) ||
-	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(320));
+BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
+	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
+	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
 int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *get_config)
 {
@@ -35,19 +35,26 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		.boot_config = {
 			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
-			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
-			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
+			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
+						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
+			.ext_custom_feature_bit_map =
+				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
+				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
+				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
+				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
+				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH,
 		}
 	};
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
 
-	if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(196)) {
+	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
+	if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(256)) {
+	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
-	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(320)) {
+	} else if (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319)) {
 		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
 	} else {
 		 k_panic();
@@ -78,9 +85,7 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 		boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
 		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
-		boot_config->ext_custom_feature_bit_map |=
-			SL_SI91X_EXT_FEAT_IEEE_80211W |
-			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
 #endif
 
 #ifdef CONFIG_BT_SILABS_SIWX91X
@@ -109,11 +114,21 @@ int siwg91x_get_nwp_config(int wifi_oper_mode, sl_wifi_device_configuration_t *g
 		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 			LOG_WRN("Bluetooth is not supported in AP mode");
 		}
+
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+		}
+
 	} else {
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
+	if (!IS_ENABLED(CONFIG_PM)) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+	}
+
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
@@ -193,7 +208,11 @@ static int siwg917_nwp_init(void)
 
 	return 0;
 }
-SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#if defined(CONFIG_MBEDTLS_INIT)
+BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	     "mbed TLS must be initialized after the NWP.");
+#endif
+SYS_INIT(siwg917_nwp_init, POST_KERNEL, CONFIG_SIWX91X_NWP_INIT_PRIORITY);
 
 /* IRQn 74 is used for communication with co-processor */
 Z_ISR_DECLARE(74, 0, IRQ074_Handler, 0);

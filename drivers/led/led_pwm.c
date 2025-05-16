@@ -58,24 +58,14 @@ static int led_pwm_set_brightness(const struct device *dev,
 	const struct led_pwm_config *config = dev->config;
 	const struct pwm_dt_spec *dt_led;
 
-	if (led >= config->num_leds || value > 100) {
+	if (led >= config->num_leds) {
 		return -EINVAL;
 	}
 
 	dt_led = &config->led[led];
 
 	return pwm_set_pulse_dt(&config->led[led],
-			(uint32_t) ((uint64_t) dt_led->period * value / 100));
-}
-
-static int led_pwm_on(const struct device *dev, uint32_t led)
-{
-	return led_pwm_set_brightness(dev, led, 100);
-}
-
-static int led_pwm_off(const struct device *dev, uint32_t led)
-{
-	return led_pwm_set_brightness(dev, led, 0);
+			(uint32_t) ((uint64_t) dt_led->period * value / LED_BRIGTHNESS_MAX));
 }
 
 static int led_pwm_init(const struct device *dev)
@@ -125,8 +115,6 @@ static int led_pwm_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(led, led_pwm_api) = {
-	.on		= led_pwm_on,
-	.off		= led_pwm_off,
 	.blink		= led_pwm_blink,
 	.set_brightness	= led_pwm_set_brightness,
 };

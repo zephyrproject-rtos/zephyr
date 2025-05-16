@@ -33,7 +33,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t pcfr_id = FIELD_GET(CH32V20X_V30X_PINCTRL_PCFR_ID_MASK, pins->config);
 		uint8_t remap = FIELD_GET(CH32V20X_V30X_PINCTRL_RM_MASK, pins->config);
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
-		uint32_t pcfr = pcfr_id == 0 ? AFIO->PCFR1 : AFIO->PCFR2;
 		uint8_t cfg = 0;
 
 		if (pins->output_high || pins->output_low) {
@@ -72,19 +71,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		pcfr |= remap << bit0;
+		if (remap != 0) {
+			RCC->APB2PCENR |= RCC_AFIOEN;
 
-		if (pcfr_id == 0) {
-			AFIO->PCFR1 = pcfr;
-		} else {
-			AFIO->PCFR2 = pcfr;
-		}
-
-		if (bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
-			pcfr = AFIO->PCFR2;
-			pcfr |= ((uint32_t)((remap >> 1) & 1)
-				 << (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
-			AFIO->PCFR2 = pcfr;
+			if (pcfr_id == 0 && bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
+				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+					<< (CH32V20X_V30X_PINMUX_USART1_RM & 0x1F));
+				AFIO->PCFR2 |= ((uint32_t)((remap >> 1) & 1)
+					<< (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
+			} else {
+				if (pcfr_id == 0) {
+					AFIO->PCFR1 |= (uint32_t)remap << bit0;
+				} else {
+					AFIO->PCFR2 |= (uint32_t)remap << bit0;
+				}
+			}
 		}
 	}
 

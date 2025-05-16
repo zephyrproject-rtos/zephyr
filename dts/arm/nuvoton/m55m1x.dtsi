@@ -338,6 +338,34 @@
 			status = "disabled";
 		};
 
+		canfd0: canfd@40222000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40222000 0x200>, <0x40222200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <117 0>, <118 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_SYS_CANFD0RST>;
+			clocks = <&pcc NUMAKER_CANFD0_MODULE
+				  NUMAKER_CLK_CANFDSEL_CANFD0SEL_HCLK0
+				  NUMAKER_CLK_CANFDDIV_CANFD0DIV(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: canfd@40224000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40224000 0x200>, <0x40224200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <119 0>, <120 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_SYS_CANFD1RST>;
+			clocks = <&pcc NUMAKER_CANFD1_MODULE
+				  NUMAKER_CLK_CANFDSEL_CANFD1SEL_HCLK0
+				  NUMAKER_CLK_CANFDDIV_CANFD1DIV(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
 		emac: ethernet@40208000 {
 			compatible = "nuvoton,numaker-ethernet";
 			reg = <0x40208000 0x2000>;
@@ -407,6 +435,30 @@
 			channels = <28>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		epwm0: epwm@40242000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40242000 0x37c>;
+			interrupts = <31 0>, <32 0>, <33 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_SYS_EPWM0RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_EPWM0_MODULE NUMAKER_CLK_EPWMSEL_EPWM0SEL_PCLK0 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		epwm1: epwm@40282000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40282000 0x37c>;
+			interrupts = <35 0>, <36 0>, <37 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_SYS_EPWM1RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_EPWM1_MODULE NUMAKER_CLK_EPWMSEL_EPWM1SEL_PCLK2 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 };

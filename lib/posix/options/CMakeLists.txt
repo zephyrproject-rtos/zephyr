@@ -2,7 +2,9 @@
 
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
+zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
+zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
 if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
@@ -42,6 +44,13 @@ endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_BARRIERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
+endif()
+
+if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION
+    clock_common.c
+    clock_selection.c
+  )
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
@@ -102,6 +111,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
     confstr.c
     env.c
+    env_common.c
     sysconf.c
     uname.c
   )
@@ -114,6 +124,7 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
     clock.c
+    clock_common.c
     timer.c
     timespec_to_timeout.c
   )
@@ -152,6 +163,14 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
+
+if (NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
+  zephyr_library_sources_ifdef(CONFIG_XSI_SINGLE_PROCESS
+    clock_common.c
+    env_common.c
+    xsi_single_process.c
+  )
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)

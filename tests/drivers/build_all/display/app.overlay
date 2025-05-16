@@ -209,6 +209,46 @@
 				vcomh-voltage = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_ssd1331: ssd1331@13 {
+				compatible = "solomon,ssd1331";
+				reg = <13>;
+				mipi-max-frequency = <10000000>;
+				width =	<96>;
+				height = <64>;
+				display-offset = <0x0>;
+				start-line = <0x0>;
+				phase-length = <0x0>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0x0>;
+				precharge-time-a = <0x0>;
+				precharge-time-b = <0x0>;
+				precharge-time-c = <0x0>;
+				precharge-voltage = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_ssd1351: ssd1351@14 {
+				compatible = "solomon,ssd1351";
+				mipi-max-frequency = <10000000>;
+				reg = <14>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				multiplex-ratio = <0x0>;
+				phase-length = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				precharge-time = <0x0>;
+				start-line = <0>;
+				precharge-voltage = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {

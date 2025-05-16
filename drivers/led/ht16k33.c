@@ -130,17 +130,10 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	ARG_UNUSED(led);
 
 	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t dim;
 	uint8_t cmd;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
-	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / dev_data->max_brightness;
+	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / LED_BRIGTHNESS_MAX;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
 	if (i2c_write_dt(&config->i2c, &cmd, sizeof(cmd))) {
@@ -304,8 +297,6 @@ static int ht16k33_init(const struct device *dev)
 	/* Hardware specific limits */
 	dev_data->min_period = 0U;
 	dev_data->max_period = 2000U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	/* System oscillator on */
 	cmd[0] = HT16K33_CMD_SYSTEM_SETUP | HT16K33_OPT_S;

@@ -58,3 +58,4 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_RENESAS_RZ_GTM      counter_renesas_
 zephyr_library_sources_ifdef(CONFIG_COUNTER_REALTEK_RTS5912_SLWTMR     counter_realtek_rts5912_slwtmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_REALTEK_RTS5912     counter_realtek_rts5912.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NEORV32_GPTMR       counter_neorv32_gptmr.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_WUT_MAX32           counter_max32_wut.c)

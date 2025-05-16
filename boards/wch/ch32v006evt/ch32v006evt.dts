@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v0/ch32v006k8u.dtsi>
+#include "ch32v006evt-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "ch32v006evt";
+	compatible = "wch,ch32v006";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * Please connect the unconnected LED1 on the WCH CH32V006EVT
+		 * board to PD0 and then change this status to "okay".
+		 */
+		status = "disabled";
+
+		blue_led1: led1 {
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+		};
+
+		blue_led2: led2 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		/* LED1 is on PD0 which does not have a PWM channel */
+
+		blue_pwm2: blue_pwm2 {
+			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Blue LED 2";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led1;
+		led1 = &blue_led2;
+		pwm-led0 = &blue_pwm2;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};

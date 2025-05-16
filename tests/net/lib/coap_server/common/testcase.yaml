@@ -1,5 +1,7 @@
 common:
-  min_ram: 16
+  min_ram: 40
+  min_flash: 180
+  depends_on: netif
   tags:
     - net
     - coap

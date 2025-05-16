@@ -582,5 +582,3 @@ int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
 bool bt_drv_quirk_no_auto_dle(void);
 
 void bt_tx_irq_raise(void);
-void bt_send_one_host_num_completed_packets(uint16_t handle);
-void bt_acl_set_ncp_sent(struct net_buf *packet, bool value);

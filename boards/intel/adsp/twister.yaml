@@ -12,6 +12,20 @@ testing:
     - bluetooth
     - mcumgr
 variants:
+  intel_adsp/ace30/wcl:
+    toolchain:
+      - xt-clang
+      - zephyr
+  intel_adsp/ace30/wcl/sim:
+    type: sim
+    simulation:
+      - name: custom
+        exec: acesim
+    toolchain:
+      - xt-clang
+      - zephyr
+    testing:
+      timeout_multiplier: 8
   intel_adsp/ace30/ptl:
     toolchain:
       - xt-clang

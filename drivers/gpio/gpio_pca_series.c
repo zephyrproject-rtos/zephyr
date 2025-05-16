@@ -521,7 +521,7 @@ static inline int gpio_pca_series_reg_cache_read(const struct device *dev,
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
 	src = ((uint8_t *)data->cache) + offset;
-	LOG_DBG("cache read type %d len %d mem addr 0x%p", reg_type, size, src);
+	LOG_DBG("cache read type %d len %d mem addr 0x%p", reg_type, size, (void *)src);
 	memcpy(buf, src, size);
 	return ret;
 }
@@ -560,7 +560,7 @@ static inline int gpio_pca_series_reg_cache_update(const struct device *dev,
 		(buf ? "buffer" : "device"));
 
 	dst = ((uint8_t *)data->cache) + offset;
-	LOG_DBG("cache write mem addr 0x%p len %d", dst, size);
+	LOG_DBG("cache write mem addr 0x%p len %d", (void *)dst, size);
 
 	/** update cache from buf */
 	memcpy(dst, buf, size);
@@ -587,7 +587,7 @@ static inline struct gpio_pca_series_reg_cache_mini *gpio_pca_series_reg_cache_m
 	struct gpio_pca_series_data *data = dev->data;
 	struct gpio_pca_series_reg_cache_mini *cache =
 		(struct gpio_pca_series_reg_cache_mini *)(&data->cache);
-	LOG_DBG("mini cache addr 0x%p", cache);
+	LOG_DBG("mini cache addr 0x%p", (void *)cache);
 	return cache;
 }
 
@@ -725,10 +725,10 @@ void gpio_pca_series_debug_dump(const struct device *dev)
 	LOG_WRN("**** debug dump ****");
 	LOG_WRN("device: %s", dev->name);
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
-	LOG_WRN("cache base addr: 0x%p size: 0x%2.2x",
-		data->cache, cfg->part_cfg->cache_size);
+	LOG_WRN("cache base addr: 0x%p size: 0x%2.2x", (void *)data->cache,
+		cfg->part_cfg->cache_size);
 #else
-	LOG_WRN("cache base addr: 0x%p", data->cache);
+	LOG_WRN("cache base addr: 0x%p", (void *)data->cache);
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
 	LOG_WRN("register profile:");
@@ -1068,7 +1068,7 @@ static int gpio_pca_series_port_read_standard(
 	if (ret) {
 		LOG_ERR("port read error %d", ret);
 	} else {
-		value = sys_le32_to_cpu(input_data);
+		*value = (gpio_port_value_t)sys_le32_to_cpu(input_data);
 	}
 	k_sem_give(&data->lock);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
@@ -1684,6 +1684,11 @@ static int gpio_pca_series_init(const struct device *dev)
 		LOG_ERR("i2c bus device not found");
 		goto out_bus;
 	}
+
+	/** device reset */
+	gpio_pca_series_reset(dev);
+	LOG_DBG("device reset done");
+
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
@@ -1701,10 +1706,6 @@ static int gpio_pca_series_init(const struct device *dev)
 		goto out;
 	}
 	LOG_DBG("cache init done");
-
-	/** device reset */
-	gpio_pca_series_reset(dev);
-	LOG_DBG("device reset done");
 
 	/** configure interrupt */
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT

@@ -7,6 +7,8 @@ import os
 import subprocess
 from twister_harness import DeviceAdapter
 
+import pytest
+
 logger = logging.getLogger(__name__)
 
 def get_arguments_from_server_type(server_type, port):
@@ -51,7 +53,8 @@ def get_arguments_from_server_type(server_type, port):
                  "-accept", "{}".format(port)])
     return args
 
-def start_server(server_type, port):
+@pytest.fixture()
+def openssl_server(server_type, port):
     logger.info("Server type: " + server_type)
     args = get_arguments_from_server_type(server_type, port)
     logger.info("Launch command:")
@@ -67,14 +70,12 @@ def start_server(server_type, port):
     except subprocess.TimeoutExpired:
         logger.info("Server is up")
 
-    return openssl
+    yield
 
-def test_app_vs_openssl(dut: DeviceAdapter, server_type, port):
-    server = start_server(server_type, port)
+    logger.info("Kill server")
+    openssl.kill()
 
+def test_app_vs_openssl(dut: DeviceAdapter, openssl_server):
     logger.info("Launch Zephyr application")
     dut.launch()
     dut.readlines_until("Test PASSED", timeout=3.0)
-
-    logger.info("Kill server")
-    server.kill()

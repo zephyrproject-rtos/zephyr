@@ -275,6 +275,7 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 		/* remove packet temporarily. */
 		buf = pkt->buffer;
 		pkt->buffer = buf->frags;
+		buf->frags = NULL;
 
 		hdr = net_udp_get_hdr(pkt, NULL);
 

@@ -157,12 +157,14 @@ config UART_SHELL
 comment "Serial Drivers"
 
 # zephyr-keep-sorted-start
+rsource "Kconfig.aesc"
 rsource "Kconfig.altera"
 rsource "Kconfig.altera_jtag"
 rsource "Kconfig.apbuart"
 rsource "Kconfig.b91"
 rsource "Kconfig.bcm2711"
 rsource "Kconfig.bflb"
+rsource "Kconfig.bridge"
 rsource "Kconfig.bt"
 rsource "Kconfig.cc13xx_cc26xx"
 rsource "Kconfig.cc23x0"

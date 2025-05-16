@@ -219,9 +219,11 @@ static int wdt_max32_init(const struct device *dev)
 	mxc_wdt_regs_t *regs = cfg->regs;
 
 	/* Enable clock */
-	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret) {
-		return ret;
+	if (cfg->clock != NULL) {
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	ret = Wrap_MXC_WDT_SelectClockSource(regs, cfg->perclk.clk_src);
@@ -259,11 +261,11 @@ static DEVICE_API(wdt, max32_wdt_api) = {
 	static struct max32_wdt_data max32_wdt_data##_num;                                         \
 	static const struct max32_wdt_config max32_wdt_config##_num = {                            \
 		.regs = (mxc_wdt_regs_t *)DT_INST_REG_ADDR(_num),                                  \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
+		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                         \
 		.perclk.clk_src =                                                                  \
 			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),          \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
+		.perclk.bus = DT_PHA_BY_IDX_OR(DT_DRV_INST(_num), clocks, 0, offset, 0),           \
+		.perclk.bit = DT_PHA_BY_IDX_OR(DT_DRV_INST(_num), clocks, 0, bit, 0),              \
 		.irq_func = &wdt_max32_irq_init_##_num,                                            \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_num, wdt_max32_init, NULL, &max32_wdt_data##_num,                   \

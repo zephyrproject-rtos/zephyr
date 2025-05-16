@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NITROGEN
+	select RISCV
+	select RISCV_PRIVILEGED
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+config SOC_PART_NUMBER
+	default "elemrv_n" if SOC_ELEMRV_N

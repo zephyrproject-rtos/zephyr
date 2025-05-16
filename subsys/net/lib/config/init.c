@@ -546,14 +546,16 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT) &&
+	    !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER)) {
 		net_init_clock_via_sntp();
 	}
 
 	/* This is activated late as it requires the network stack to be up
 	 * and running before syslog messages can be sent to network.
 	 */
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART) &&
+	    !IS_ENABLED(CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER)) {
 		log_backend_net_start();
 	}
 

@@ -23,6 +23,7 @@ struct adc_keys_code_config {
 };
 
 struct adc_keys_key_state {
+	bool orig_state;
 	bool last_state;
 	bool curr_state;
 };
@@ -99,7 +100,18 @@ static inline void adc_keys_process(const struct device *dev)
 	LOG_DBG("sample=%d mV, closest=%d mV, diff=%d mV", sample_mv, closest_mv, closest_diff);
 
 	/*
-	 * Update cached key states according to the closest key press threshold.
+	 * Update cached key states and init current states with false
+	 */
+
+	for (uint8_t i = 0; i < cfg->key_cnt; i++) {
+		key_state = &cfg->key_state[i];
+
+		key_state->last_state = key_state->curr_state;
+		key_state->curr_state = false;
+	}
+
+	/*
+	 * Update current key states according to the closest key press threshold.
 	 *
 	 * Note that multiple keys may have the same press threshold, which is
 	 * the mixed voltage that these keys are simultaneously pressed.
@@ -119,25 +131,20 @@ static inline void adc_keys_process(const struct device *dev)
 	}
 
 	/*
-	 * Report the key event if the key state has changed.
+	 * Report the key event if the key state changed for at least two continuous cycles.
 	 */
 
 	for (uint8_t i = 0; i < cfg->key_cnt; i++) {
 		key_state = &cfg->key_state[i];
 		key_code = cfg->key_code[i];
 
-		if (key_state->last_state != key_state->curr_state) {
+		if (key_state->orig_state != key_state->curr_state &&
+		    key_state->last_state == key_state->curr_state) {
 			LOG_DBG("Report event %s %d, code=%d", dev->name, key_state->curr_state,
 				key_code);
 			input_report_key(dev, key_code, key_state->curr_state, true, K_FOREVER);
-			key_state->last_state = key_state->curr_state;
+			key_state->orig_state = key_state->curr_state;
 		}
-
-		/*
-		 * Reset the state so that it can be updated in the next
-		 * iteration.
-		 */
-		key_state->curr_state = false;
 	}
 }
 

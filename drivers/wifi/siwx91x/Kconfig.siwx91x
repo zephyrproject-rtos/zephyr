@@ -45,8 +45,17 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
+	bool "Limits the number of packets buffered per STA in AP mode"
+	default y
+	help
+	  In AP mode, if the bit is set, only two packets per Station (STA)
+	  would be buffered when the STA is in Power Save (PS) mode.
+	  This helps manage buffer usage and ensures efficient packet handling.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
+	default y
 	help
 	  Enable this option to configure roaming parameters.
 	  Roaming will be enabled automatically when the
@@ -64,7 +73,7 @@ config WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH
 config WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL
 	int "Default value of roam trigger level (in dBm)"
 	default -70
-	range -10 -100
+	range -100 -10
 	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	help
 	  Sets the default roam trigger level. Higher values trigger

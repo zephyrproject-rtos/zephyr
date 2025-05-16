@@ -279,7 +279,7 @@ struct http_request {
 	 * some header fields may remain constant through the application's
 	 * life cycle. This is a NULL terminated list of header fields.
 	 */
-	const char **header_fields;
+	const char * const *header_fields;
 
 	/** The value of the Content-Type header field, may be NULL */
 	const char *content_type_value;

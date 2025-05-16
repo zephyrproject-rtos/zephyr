@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <zephyr/debug/coredump.h>
+#include <zephyr/kernel/thread.h>
 
 #define ARCH_HDR_VER 2
 
@@ -95,4 +96,9 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_ARM_CORTEX_M;
+}
+
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
+{
+	return (thread == _current) ? z_arm_coredump_fault_sp : thread->callee_saved.psp;
 }

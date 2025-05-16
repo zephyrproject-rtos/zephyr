@@ -18,4 +18,5 @@ supported:
   - watchdog
   - spi
   - wifi
+  - rtc
 vendor: silabs

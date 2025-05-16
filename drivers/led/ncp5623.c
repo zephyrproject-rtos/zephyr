@@ -100,16 +100,12 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 		return -ENODEV;
 	}
 
-	if (value > 100) {
-		return -EINVAL;
-	}
-
 	if (led_info->num_colors != 1) {
 		return -ENOTSUP;
 	}
 
 	/* Rescale 0..100 to 0..31 */
-	value = value * NCP5623_MAX_BRIGHTNESS / 100;
+	value = value * NCP5623_MAX_BRIGHTNESS / LED_BRIGTHNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led] | value, 0x70);
 
@@ -118,16 +114,6 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 	}
 
 	return ret;
-}
-
-static inline int ncp5623_led_on(const struct device *dev, uint32_t led)
-{
-	return ncp5623_set_brightness(dev, led, 100);
-}
-
-static inline int ncp5623_led_off(const struct device *dev, uint32_t led)
-{
-	return ncp5623_set_brightness(dev, led, 0);
 }
 
 static int ncp5623_led_init(const struct device *dev)
@@ -186,8 +172,6 @@ static int ncp5623_led_init(const struct device *dev)
 
 static DEVICE_API(led, ncp5623_led_api) = {
 	.set_brightness = ncp5623_set_brightness,
-	.on = ncp5623_led_on,
-	.off = ncp5623_led_off,
 	.get_info = ncp5623_get_info,
 	.set_color = ncp5623_set_color,
 };

@@ -7,10 +7,10 @@
 &pinctrl0 {
 	spi0_default: spi0_default {
 		out {
-			pinmux = <GSPI_CLK_PB9>, <GSPI_MOSI_PB11>;
+			pinmux = <GSPI_CLK_HP25>, <GSPI_MOSI_HP27>;
 		};
 		in {
-			pinmux = <GSPI_MISO_PB10>;
+			pinmux = <GSPI_MISO_HP26>;
 		};
 	};
 };
