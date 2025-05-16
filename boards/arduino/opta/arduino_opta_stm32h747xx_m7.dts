@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 };
 
@@ -120,5 +121,31 @@ zephyr_udc0: &usbotg_fs {
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
+	};
+};
+
+/* Assign Bluetooth to M7 by default */
+&uart4 {
+	pinctrl-0 = <
+		&uart4_tx_pb9
+		&uart4_rx_ph14
+		&uart4_cts_pb15
+		&uart4_rts_pa15
+	>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioj 14 GPIO_ACTIVE_HIGH>;
+		};
 	};
 };
