@@ -504,20 +504,6 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 	memcpy(status->bssid, wlan_info.bssid, WIFI_MAC_ADDR_LEN);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
-	ret = sl_si91x_get_join_configuration(interface, &join_config);
-	if (ret != SL_STATUS_OK) {
-		LOG_ERR("Failed to get join configuration: 0x%x", ret);
-		return -EINVAL;
-	}
-
-	if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED) {
-		status->mfp = WIFI_MFP_REQUIRED;
-	} else if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_ONLY) {
-		status->mfp = WIFI_MFP_OPTIONAL;
-	} else {
-		status->mfp = WIFI_MFP_DISABLE;
-	}
-
 	if (interface & SL_WIFI_2_4GHZ_INTERFACE) {
 		status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	}
@@ -529,6 +515,27 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
 		status->twt_capable = true;
+
+		ret = sl_si91x_get_join_configuration(interface, &join_config);
+		if (ret != SL_STATUS_OK) {
+			LOG_ERR("Failed to get join configuration: 0x%x", ret);
+			return -EINVAL;
+		}
+
+		if (wlan_info.sec_type == SL_WIFI_WPA3) {
+			status->mfp = WIFI_MFP_REQUIRED;
+		} else if (wlan_info.sec_type == SL_WIFI_WPA3_TRANSITION) {
+			status->mfp = WIFI_MFP_OPTIONAL;
+		} else if (wlan_info.sec_type == SL_WIFI_WPA2) {
+			if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED) {
+				status->mfp = WIFI_MFP_REQUIRED;
+			} else {
+				status->mfp = WIFI_MFP_OPTIONAL;
+			}
+		} else {
+			status->mfp = WIFI_MFP_DISABLE;
+		}
+
 		ret = sl_wifi_get_signal_strength(SL_WIFI_CLIENT_INTERFACE, &rssi);
 		if (ret) {
 			LOG_ERR("Failed to get signal strength: 0x%x", ret);
@@ -553,10 +560,10 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 			LOG_ERR("Failed to get the AP configuration: 0x%x", ret);
 			return -EINVAL;
 		}
-
 		status->twt_capable = false;
 		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
+		status->mfp = WIFI_MFP_DISABLE;
 		status->channel = sl_ap_cfg.channel.channel;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
