@@ -501,7 +501,7 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 
 	strncpy(status->ssid, wlan_info.ssid, WIFI_SSID_MAX_LEN);
 	status->ssid_len = strlen(status->ssid);
-	memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
+	memcpy(status->bssid, wlan_info.bssid, WIFI_MAC_ADDR_LEN);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
 	ret = sl_si91x_get_join_configuration(interface, &join_config);
