@@ -1,0 +1,85 @@
+/* Copyright 2025 Mediatek
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram1: memory@1e000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x1e000000 DT_SIZE_K(416)>;
+	};
+
+	/* SRAM0 is mapped to a physical DRAM region that contains
+	 * exceptions and vectors, but we keep its name to maintain
+	 * compatibility with other Mediatek platforms.
+	 */
+
+	sram0: memory@40020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40020000 DT_SIZE_K(256)>;
+	};
+
+	dram0: memory@60000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x60000000 DT_SIZE_K(13824)>;
+	};
+
+	dram1: memory@60d80000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x60d80000 DT_SIZE_K(2560)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0 4>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		intc1: intc@1d062130 {
+			compatible = "mediatek,adsp_intc";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			reg = <0x1d062130 4>;
+			status-reg = <0x1d062150>;
+			interrupts = <1 0 0>;
+			mask = <0x3ff>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		ostimer64: ostimer64@1d060000 {
+			compatible = "mediatek,ostimer64";
+			reg = <0x1d060000 30>;
+		};
+
+		ostimer0: ostimer@1d060040 {
+			compatible = "mediatek,ostimer";
+			reg = <0x1d060040 8>;
+			interrupt-parent = <&core_intc>;
+			interrupts = <2 0 0>;
+		};
+
+		ipi: ipi@1d062114 {
+			compatible = "mediatek,ipi";
+			reg = <0x1d062114 4>;
+			interrupt-parent = <&intc1>;
+			interrupts = <9 0 0>;
+		};
+
+		/* Generated code for AFE devices */
+		#include "afe-mt8365.dts"
+	}; /* soc */
+};
