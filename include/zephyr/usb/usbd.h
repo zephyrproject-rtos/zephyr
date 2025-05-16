@@ -667,11 +667,15 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * The application defines a BOS capability descriptor node for descriptors
  * such as USB 2.0 Extension Descriptor.
  *
+ * @note It requires Kconfig options USBD_BOS_SUPPORT to be enabled.
+ *
  * @param name       Descriptor node identifier
  * @param len        Device Capability descriptor length
  * @param subset     Pointer to a Device Capability descriptor
  */
 #define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_BOS_SUPPORT),			\
+		     "USB device BOS support is disabled");			\
 	static struct usbd_desc_node name = {					\
 		.bos = {							\
 			.utype = USBD_DUT_BOS_NONE,				\
@@ -713,6 +717,8 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param vto_dev   Vendor callback for to-device direction request
  */
 #define USBD_DESC_BOS_VREQ_DEFINE(name, len, subset, vcode, vto_host, vto_dev)	\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_BOS_SUPPORT),			\
+		     "USB device BOS support is disabled");			\
 	USBD_VREQUEST_DEFINE(vreq_nd_##name, vcode, vto_host, vto_dev);		\
 	static struct usbd_desc_node name = {					\
 		.bos = {							\
