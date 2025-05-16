@@ -80,7 +80,7 @@ NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MT
 
 #define SDP_CLIENT_MTU 64
 
-enum __packed sdp_client_state {
+enum sdp_client_state {
 	SDP_CLIENT_RELEASED,
 	SDP_CLIENT_CONNECTING,
 	SDP_CLIENT_CONNECTED,
@@ -2321,7 +2321,7 @@ void sdp_client_released(struct bt_l2cap_chan *chan)
 	if (!sys_slist_is_empty(&session->reqs_next)) {
 		/* put the reqs_next to reqs */
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs_next, param, tmp, _node) {
-			sys_slist_append(&session->reqs, (sys_snode_t *)&param->_node);
+			sys_slist_append(&session->reqs, &param->_node);
 			/* Remove already proccessed node */
 			sys_slist_remove(&session->reqs_next, NULL, &param->_node);
 		}
@@ -2332,7 +2332,7 @@ void sdp_client_released(struct bt_l2cap_chan *chan)
 		if (err) {
 			sys_slist_init(&cb_reqs);
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
-				sys_slist_append(&cb_reqs, (sys_snode_t *)&param->_node);
+				sys_slist_append(&cb_reqs, &param->_node);
 			}
 
 			sdp_client_clean_after_release(session);
@@ -2392,14 +2392,14 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 	k_sem_take(&session->sem_lock, K_FOREVER);
 	if (session->state == SDP_CLIENT_CONNECTING ||
 	    session->state == SDP_CLIENT_CONNECTED) {
-		sys_slist_append(&session->reqs, (sys_snode_t *)&params->_node);
+		sys_slist_append(&session->reqs, &params->_node);
 		k_sem_give(&session->sem_lock);
 		return 0;
 	}
 
 	/* put in `reqs_next` for next round after disconnected */
 	if (session->state == SDP_CLIENT_DISCONNECTING) {
-		sys_slist_append(&session->reqs_next, (sys_snode_t *)&params->_node);
+		sys_slist_append(&session->reqs_next, &params->_node);
 		k_sem_give(&session->sem_lock);
 		return 0;
 	}
@@ -2410,7 +2410,7 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 	 */
 	sys_slist_init(&session->reqs);
 	sys_slist_init(&session->reqs_next);
-	sys_slist_append(&session->reqs, (sys_snode_t *)&params->_node);
+	sys_slist_append(&session->reqs, &params->_node);
 	err = sdp_client_new_session(conn, session);
 	if (err) {
 		sdp_client_clean_after_release(session);
@@ -2421,7 +2421,7 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 }
 
 int bt_sdp_discover(struct bt_conn *conn,
-		    const struct bt_sdp_discover_params *params)
+		    struct bt_sdp_discover_params *params)
 {
 	if (!params || !params->uuid || !params->func || !params->pool) {
 		LOG_WRN("Invalid user params");
