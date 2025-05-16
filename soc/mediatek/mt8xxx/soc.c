@@ -173,7 +173,7 @@ __asm__(".align 4\n\t"
  * a 1024 byte alignment requirement, forcing us to waste ~1011 bytes
  * needlessly.
  */
-__asm__(".pushsection .sof_entry.text\n\t"
+__asm__(".pushsection .sof_entry.text, \"ax\"\n\t"
 	"  j 2f\n"
 	".align 4\n\t"
 	"1:\n\t"
