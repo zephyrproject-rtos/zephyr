@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +11,18 @@
 #include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
+
+#if defined(CONFIG_CPU_CORTEX_M7) && defined(CONFIG_CPU_HAS_ARM_MPU) && \
+	defined(CONFIG_CPU_HAS_DCACHE)
+	/* Erratum 1013783-B (SDEN-1068427): use first region to prevent speculative access
+	 * in entire memory space
+	 */
+	MPU_REGION_ENTRY("BACKGROUND",
+			 0,
+			 {REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk}),
+#endif
+
 #ifdef CONFIG_XIP
-	/* Region 0 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
 #if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
@@ -22,7 +33,6 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 #endif
 
-	/* Region 1 */
 	MPU_REGION_ENTRY("SRAM_0",
 			 CONFIG_SRAM_BASE_ADDRESS,
 #if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
