@@ -1,0 +1,23 @@
+# Kconfig ET171 SPI configuration options
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+# Copyright (c) 2025 Egis Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_ET171
+	bool "Andes ATCSPI200-based ET171 SPI driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ET171_ENABLED
+	help
+	  Enable driver for Andes ATCSPI200-based ET171 SPI controller
+
+if SPI_ET171
+
+	config ANDES_SPI_DMA_MODE
+	bool "Enable DMA mode for SPI driver"
+	default y
+	depends on DMA
+
+endif # SPI_ET171
