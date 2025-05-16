@@ -676,7 +676,8 @@ static int bmm350_channel_get(const struct device *dev, enum sensor_channel chan
 
 	return 0;
 }
-static uint8_t acc_odr_to_reg(const struct sensor_value *val)
+
+static uint8_t mag_odr_to_reg(const struct sensor_value *val)
 {
 	double odr = sensor_value_to_double((struct sensor_value *)val);
 
@@ -706,7 +707,7 @@ static uint8_t acc_odr_to_reg(const struct sensor_value *val)
 	return reg;
 }
 
-static uint8_t acc_osr_to_reg(const struct sensor_value *val)
+static uint8_t mag_osr_to_reg(const struct sensor_value *val)
 {
 	switch (val->val1) {
 	case 0:
@@ -767,6 +768,7 @@ int8_t bmm350_set_odr_performance(enum bmm350_data_rates odr,
 
 	return rslt;
 }
+
 static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *odr,
 			   const struct sensor_value *osr)
 {
@@ -792,10 +794,10 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 	}
 
 	if (odr) {
-		odr_bits = acc_odr_to_reg(odr);
+		odr_bits = mag_odr_to_reg(odr);
 	}
 	if (osr) {
-		osr_bits = acc_osr_to_reg(osr);
+		osr_bits = mag_osr_to_reg(osr);
 		if (osr_bits == 0xFF) {
 			LOG_ERR("unsupported oversampling rate");
 			return -EINVAL;
@@ -836,8 +838,125 @@ static int bmm350_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	return 0;
 }
+
+static void mag_reg_to_odr(uint8_t bits, struct sensor_value *val)
+{
+	switch (bits) {
+	case BMM350_DATA_RATE_1_5625HZ:
+		val->val1 = 1;
+		val->val2 = 562500;
+		break;
+	case BMM350_DATA_RATE_3_125HZ:
+		val->val1 = 3;
+		val->val2 = 125000;
+		break;
+	case BMM350_DATA_RATE_6_25HZ:
+		val->val1 = 6;
+		val->val2 = 250000;
+		break;
+	case BMM350_DATA_RATE_12_5HZ:
+		val->val1 = 12;
+		val->val2 = 500000;
+		break;
+	case BMM350_DATA_RATE_25HZ:
+		val->val1 = 25;
+		val->val2 = 0;
+		break;
+	case BMM350_DATA_RATE_50HZ:
+		val->val1 = 50;
+		val->val2 = 0;
+		break;
+	case BMM350_DATA_RATE_100HZ:
+		val->val1 = 100;
+		val->val2 = 0;
+		break;
+	case BMM350_DATA_RATE_200HZ:
+		val->val1 = 200;
+		val->val2 = 0;
+		break;
+	case BMM350_DATA_RATE_400HZ:
+		val->val1 = 400;
+		val->val2 = 0;
+		break;
+	default:
+		val->val1 = 0;
+		val->val2 = 0;
+		break;
+	}
+}
+
+static void mag_reg_to_osr(uint8_t bits, struct sensor_value *val)
+{
+	val->val2 = 0;
+
+	switch (bits) {
+	case BMM350_NO_AVERAGING:
+		val->val1 = 1;
+		break;
+	case BMM350_AVERAGING_2:
+		val->val1 = 2;
+		break;
+	case BMM350_AVERAGING_4:
+		val->val1 = 4;
+		break;
+	case BMM350_AVERAGING_8:
+		val->val1 = 8;
+		break;
+	default:
+		val->val1 = 0;
+		break;
+	}
+}
+
+static int get_mag_odr_osr(const struct device *dev, struct sensor_value *odr,
+			   struct sensor_value *osr)
+{
+	int ret;
+	uint8_t rx_buf[3] = {0x00};
+	uint8_t osr_bits;
+	uint8_t odr_bits;
+
+	/* read current state */
+	ret = bmm350_reg_read(dev, BMM350_REG_PMU_CMD_AGGR_SET, &rx_buf[0], sizeof(rx_buf));
+	if (ret < 0) {
+		LOG_ERR("failed to read PMU_CMD_AGGR_SET");
+		return -EIO;
+	}
+
+	if (odr) {
+		odr_bits = ((rx_buf[2] & BMM350_ODR_MSK) >> BMM350_ODR_POS);
+		mag_reg_to_odr(odr_bits, odr);
+	}
+	if (osr) {
+		osr_bits = ((rx_buf[2] & BMM350_AVG_MSK) >> BMM350_AVG_POS);
+		mag_reg_to_osr(osr_bits, osr);
+	}
+
+	return 0;
+}
+
+static int bmm350_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	int ret;
+
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		ret = get_mag_odr_osr(dev, val, NULL);
+		break;
+	case SENSOR_ATTR_OVERSAMPLING:
+		ret = get_mag_odr_osr(dev, NULL, val);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
 static DEVICE_API(sensor, bmm350_api_funcs) = {
 	.attr_set = bmm350_attr_set,
+	.attr_get = bmm350_attr_get,
 	.sample_fetch = bmm350_sample_fetch,
 	.channel_get = bmm350_channel_get,
 #ifdef CONFIG_BMM350_TRIGGER
