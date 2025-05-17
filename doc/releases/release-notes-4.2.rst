@@ -786,3 +786,9 @@ Other notable changes
 
 * Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
   https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
+
+* As of commit f726cb5123eda12feb8746e3acb34a1f7d7b0340, Zephyr now uses the ``CMSIS_6`` module
+  (instead of ``cmsis`` which was CMSIS 5.9.0) for Cortex-M architectures.
+  Other modules still relying on the older ``cmsis`` module are encouraged to migrate to ``CMSIS_6``.
+  The path to the ``CMSIS_6`` module can be accessed via the ``CONFIG_ZEPHYR_CMSIS_6_MODULE_DIR`` configuration.
+  Note: Zephyr will continue using the older ``cmsis`` module for Cortex-A and Cortex-R targets.
