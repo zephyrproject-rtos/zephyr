@@ -27,8 +27,8 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_POSIX_THREADS OR CONFIG_POSIX_TIMERS OR
-  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FILE_SYSTEM OR CONFIG_EVENTFD OR
-  CONFIG_POSIX_C_LIB_EXT OR CONFIG_POSIX_SINGLE_PROCESS)
+  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FILE_SYSTEM OR
+  CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
   # types for us. POSIX features to be formalized as part of #51211
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_THREADS>)
@@ -36,7 +36,6 @@ if(CONFIG_POSIX_API OR CONFIG_POSIX_THREADS OR CONFIG_POSIX_TIMERS OR
 endif()
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_ASYNCHRONOUS_IO)
   zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
@@ -175,13 +174,6 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
-  getopt/getopt_long.c
-)
-zephyr_include_directories_ifdef(CONFIG_POSIX_C_LIB_EXT
-  getopt/
-)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
