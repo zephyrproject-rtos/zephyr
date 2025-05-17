@@ -10,6 +10,8 @@ config SOC_SERIES_M55M1X
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
 	select CPU_CORTEX_M_HAS_DWT
 	select ARMV8_1_M_PMU
 	select SOC_EARLY_INIT_HOOK
