@@ -99,12 +99,6 @@ struct gdb_ctx {
 
 	/** Index in register descriptions of A0 register */
 	uint8_t			a0_idx;
-
-	/** Index in register descriptions of AR0 register */
-	uint8_t			ar_idx;
-
-	/** Index in register descriptions of WINDOWBASE register */
-	uint8_t			wb_idx;
 };
 
 /**
