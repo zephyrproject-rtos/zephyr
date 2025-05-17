@@ -14,7 +14,7 @@ set(USE_TYPE "float32" CACHE STRING "Set floating point type for TinyMPC depende
 
 # Build the matlib dependency.
 # set(MATLIB_EXTERNAL_BUILD ON CACHE BOOL "Skip matlib toolchain setup when using Zephyr")
-include(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/matlib/matlib.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/matlib/matlib_header.cmake)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/matlib)
 
 # Build the admm library.
@@ -22,7 +22,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/matlib/matlib.cmake)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm)
 
 # Your main application sources.
-target_sources(app PRIVATE src/main_hover.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm/src/admm_rvv.cpp)
+target_sources(app PRIVATE src/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm/src/admm_rvv.cpp)
 
 # Include directories for admm and matlib headers.
 target_include_directories(app PRIVATE

@@ -111,7 +111,7 @@ int main(void)
     tiny_VectorNx Xref_origin;
     init_VectorNx(&Xref_origin);
     tinytype Xref_origin_data[NSTATES] = {
-        0, 0, 1.5, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
     matsetv(Xref_origin.data, Xref_origin_data, Xref_origin.outer, Xref_origin.inner);
     for (int j = 0; j < NHORIZON; j++) {

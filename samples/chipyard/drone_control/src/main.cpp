@@ -11,156 +11,156 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <admm.hpp>
-#include "problem_data/quadrotor_50hz_params_unconstrained.hpp"  // TinyMPC problem data
+//#include "problem_data/quadrotor_50hz_params_constrained.hpp"  // TinyMPC problem data
+#include "problem_data/quadrotor_20hz_params.hpp"
 #include "glob_opts.hpp"  // Contains NSTATES, NINPUTS, NHORIZON, etc.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Global TinyMPC objects (they are defined in admm.hpp or related headers)
+// Global TinyMPC objects
 TinyCache cache;
 TinyWorkspace work;
 TinySettings settings;
-TinySolver solver{&settings, &cache, &work};
+TinySolver solver = {&settings, &cache, &work};
+
+#define BUFFER_SIZE 256
+#define NUM_STATE_VARS 12
+
+const struct device *uart0 = DEVICE_DT_GET(DT_NODELABEL(uart0));
+
+void send_str(const char *str) {
+    for (size_t i = 0; str[i] != '\0'; i++) {
+        uart_poll_out(uart0, str[i]);
+    }
+}
+
+
+void recv_str(char *buf, size_t buf_size)
+{
+    size_t i = 0;
+    unsigned char c = 0;
+
+    // Read until newline or buffer full
+    while (i < buf_size - 1) {
+        if (uart_poll_in(uart0, &c) == 0) {
+            if (c == '\r' || c == '\n') {
+                break;
+            }
+            buf[i++] = c;
+        } else {
+        }
+    }
+
+    buf[i] = '\0';
+}
+
+
+void init_all() {
+    tiny_init(&solver);
+
+    init_VectorNx(&work.x1);
+    init_VectorNx(&work.x2);
+    init_VectorNx(&work.x3);
+    init_VectorNu(&work.u1);
+    init_VectorNu(&work.u2);
+}
 
 int main(void)
 {
-    // Print initial greeting.
-    printf("Testing drone control on %s\n", CONFIG_BOARD);
-
-    // Get the console UART device from Zephyr's configuration
-    // const struct device *uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-    const struct device *uart_dev = DEVICE_DT_GET(DT_NODELABEL(uart0));
-    if (!uart_dev) {
-        printf("Error: Console UART device not found.\n");
+    if (!device_is_ready(uart0)) {
         return -1;
     }
 
+    // send_str("Testing drone control via UART\n");
 
-    #define BUFFER_SIZE 256
-    char input_buf[BUFFER_SIZE];
-    size_t pos = 0;
-    unsigned char c;
-
-
-    // Enable vector operations (provided by TinyMPC/ADMM)
     enable_vector_operations();
+    init_all();
 
-    printf("Entered MPC simulation main!\n");
+    // Local temp vectors
+    tiny_VectorNx v1, v2, x0;
+    init_VectorNx(&v1);
+    init_VectorNx(&v2);
+    init_VectorNx(&x0);
 
-    // Temporary vectors for MPC computations
-    tiny_VectorNx v1, v2;
-
-    // Setup problem data
+    // Set up problem data
     cache.rho = rho_value;
-    cache.Kinf.set(Kinf_data);
+    matsetv(cache.Kinf.data, Kinf_data, cache.Kinf.outer, cache.Kinf.inner);
     transpose(cache.Kinf.data, cache.KinfT.data, NINPUTS, NSTATES);
-    cache.Pinf.set(Pinf_data);
+    matsetv(cache.Pinf.data, Pinf_data, cache.Pinf.outer, cache.Pinf.inner);
     transpose(cache.Pinf.data, cache.PinfT.data, NSTATES, NSTATES);
-    cache.Quu_inv.set(Quu_inv_data);
-    cache.AmBKt.set(AmBKt_data);
-    cache.coeff_d2p.set(coeff_d2p_data);
-    work.Adyn.set(Adyn_data);
-    work.Bdyn.set(Bdyn_data);
+    matsetv(cache.Quu_inv.data, Quu_inv_data, cache.Quu_inv.outer, cache.Quu_inv.inner);
+    matsetv(cache.AmBKt.data, AmBKt_data, cache.AmBKt.outer, cache.AmBKt.inner);
+    matsetv(cache.coeff_d2p.data, coeff_d2p_data, cache.coeff_d2p.outer, cache.coeff_d2p.inner);
+    matsetv(work.Adyn.data, Adyn_data, work.Adyn.outer, work.Adyn.inner);
+    matsetv(work.Bdyn.data, Bdyn_data, work.Bdyn.outer, work.Bdyn.inner);
     transpose(work.Bdyn.data, work.BdynT.data, NSTATES, NINPUTS);
-    work.Q.set(Q_data);
-    work.R.set(R_data);
+    matsetv(work.Q.data, Q_data, work.Q.outer, work.Q.inner);
+    matsetv(work.R.data, R_data, work.R.outer, work.R.inner);
+    matset(work.u_min.data, -0.583, work.u_min.outer, work.u_min.inner);
+    matset(work.u_max.data, 1 - 0.583, work.u_max.outer, work.u_max.inner);
+    matset(work.x_min.data, -5, work.x_min.outer, work.x_min.inner);
+    matset(work.x_max.data, 5, work.x_max.outer, work.x_max.inner);
 
-    // Valid range for inputs and states
-    work.u_min = -0.583;
-    work.u_max = 1 - 0.583;
-    work.x_min = -5;
-    work.x_max = 5;
-
-    // Initialize optimization residuals and settings
-    work.primal_residual_state = 0;
-    work.primal_residual_input = 0;
-    work.dual_residual_state = 0;
-    work.dual_residual_input = 0;
-    work.status = 0;
-    work.iter = 0;
-    settings.abs_pri_tol = 0.001;
-    settings.abs_dua_tol = 0.001;
-    settings.max_iter = 10;
-    settings.check_termination = 1;
-    settings.en_input_bound = 1;
-    settings.en_state_bound = 1;
-
-    // Setup hovering setpoint (desired state)
+    // Hovering reference
     tiny_VectorNx Xref_origin;
-    tinytype Xref_origin_data[NSTATES] = {
-        0, 0, 1.5, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    Xref_origin.set(Xref_origin_data);
-    // For each step in the horizon, set the reference to hover at the same point.
+    init_VectorNx(&Xref_origin);
+    tinytype Xref_origin_data[NSTATES] = {0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    matsetv(Xref_origin.data, Xref_origin_data, Xref_origin.outer, Xref_origin.inner);
     for (int j = 0; j < NHORIZON; j++) {
-        tinytype *target = work.Xref.col(j);
-        matsetv(target, Xref_origin_data, 1, NSTATES);
+        matsetv(work.Xref.vector[j], Xref_origin_data, 1, NSTATES);
     }
 
-    // Setup an initial state x0 (this will be overwritten by input)
-    tiny_VectorNx x0;
+    // Default initial state
     tinytype x0_data[NSTATES] = {
-        -3.64893626e-02,  3.70428882e-02,  2.25366379e-01, -1.92755080e-01,
-        -1.91678221e-01, -2.21354598e-03,  9.62340916e-01, -4.09749891e-01,
-        -3.78764621e-01,  7.50158432e-02, -6.63581815e-01,  6.71744046e-01
+        -0.036, 0.037, 0.225, -0.193,
+        -0.192, -0.002, 0.962, -0.409,
+        -0.378, 0.075, -0.663, 0.672
     };
-    x0.set(x0_data);
+    matsetv(x0.data, x0_data, x0.outer, x0.inner);
 
-    while (true)
-    {
+    char input_buf[BUFFER_SIZE];
+    unsigned char c;
+    int pos = 0;
 
-        printf("Enter new state (12 floats separated by spaces):\n");
+    while (1) {
+        //send_str("Enter new state (12 floats):\n");
+        pos = 0;
 
-        // Poll UART until a newline or carriage return is received.
-        while (true) {
-            int ret = uart_poll_in(uart_dev, &c);
-            if (ret == 0) {
-                if (c == '\n' || c == '\r') {
-                    input_buf[pos] = '\0';
-                    break;
-                }
-                if (pos < (BUFFER_SIZE - 1)) {
-                    input_buf[pos++] = c;
-                }
-            } else {
-                k_sleep(K_MSEC(10));
-            }
-        }
 
-        // Parse the input string for 12 floats.
-        float new_state[12];
-        int num_parsed = sscanf(input_buf,
-                                "%f %f %f %f %f %f %f %f %f %f %f %f",
-                                &new_state[0],  &new_state[1],  &new_state[2],
-                                &new_state[3],  &new_state[4],  &new_state[5],
-                                &new_state[6],  &new_state[7],  &new_state[8],
-                                &new_state[9],  &new_state[10], &new_state[11]);
+        recv_str(input_buf, BUFFER_SIZE);
 
-        if (num_parsed != 12) {
-            printf("Error: expected 12 floats but got %d\n", num_parsed);
+        float parsed[NUM_STATE_VARS];
+        int n = sscanf(input_buf,
+                       "%f %f %f %f %f %f %f %f %f %f %f %f",
+                       &parsed[0], &parsed[1], &parsed[2], &parsed[3],
+                       &parsed[4], &parsed[5], &parsed[6], &parsed[7],
+                       &parsed[8], &parsed[9], &parsed[10], &parsed[11]);
+
+        if (n == NUM_STATE_VARS) {
+            matsetv(x0.data, parsed, x0.outer, x0.inner);
         } else {
-            // Update the current state x0 using the new values.
-            x0.set(new_state);
+            send_str("Invalid input. Expected 12 floats.\n");
+            continue;
         }
-        // 1. Update measurement: copy current state into work.x (column 0)
-        matsetv(work.x.col(0), x0.data, 1, NSTATES);
 
-        // 2. Reset dual variables (if needed)
-        work.y = 0.0;
-        work.g = 0.0;
+        // Load into work.x
+        matsetv(work.x.vector[0], x0.data, 1, NSTATES);
+        matset(work.y.data, 0.0, work.y.outer, work.y.inner);
+        matset(work.g.data, 0.0, work.g.outer, work.g.inner);
 
-        // 3. Solve the MPC problem using ADMM
         tiny_solve(&solver);
 
-        // 4. Print the computed control actions.
-        printf("Computed actions: %f %f %f %f\n", 
-               work.u.col(0)[0], work.u.col(0)[1], work.u.col(0)[2], work.u.col(0)[3]);
+        // Output control results
+        char outbuf[128];
+        snprintf(outbuf, sizeof(outbuf),
+                 "u = [%0.4f %0.4f %0.4f %0.4f]\n",
+                 work.u.vector[0][0], work.u.vector[0][1],
+                 work.u.vector[0][2], work.u.vector[0][3]);
+        send_str(outbuf);
     }
 
-    // Optionally, you could reboot at the end:
-    sys_reboot(SYS_REBOOT_COLD);
     return 0;
 }
 
