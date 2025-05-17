@@ -250,7 +250,7 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 
 	const uint32_t scale[2][2] = {
 		/* low-res,	hi-res */
-		{35744,		8936}, /* gyro */
+		{35744,		2235}, /* gyro */
 		{40168,		2511}, /* accel */
 	};
 
