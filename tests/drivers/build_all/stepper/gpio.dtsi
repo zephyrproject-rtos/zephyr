@@ -45,10 +45,11 @@ ti_drv84xx: ti_drv84xx {
 	counter = <&counter0>;
 };
 
-zephyr_gpio_stepper: zephyr_gpio_stepper {
-	compatible = "zephyr,gpio-stepper";
+zephyr_h_bridge_stepper: zephyr_h_bridge_stepper {
+	compatible = "zephyr,h-bridge-stepper";
 	status = "okay";
 	micro-step-res = <1>;
+	en-gpios = <&test_gpio 0 0>;
 	gpios = <&test_gpio 0 0>,
 		<&test_gpio 0 0>,
 		<&test_gpio 0 0>,

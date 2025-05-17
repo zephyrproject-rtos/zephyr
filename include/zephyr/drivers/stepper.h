@@ -503,7 +503,7 @@ static inline int z_impl_stepper_run(const struct device *dev,
 
 /**
  * @brief Stop the stepper
- * @details Cancel all active movements, however keep the coils energized.
+ * @details Cancel all active movements.
  *
  * @param dev pointer to the stepper driver instance
  *
