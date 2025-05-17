@@ -1,0 +1,18 @@
+# Copyright (c) 2025, Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if TISCI
+
+config TISCI_INIT_PRIORITY
+	int "TISCI init priority"
+	default KERNEL_INIT_PRIORITY_OBJECTS
+	help
+	  Init priority for the TISCI driver.
+
+config TISCI_RESPONSE_TIMEOUT_MS
+	int "TISCI response timeout in milliseconds"
+	default 100
+	help
+		Timeout in milliseconds to wait for a response from the TISCI firmware.
+
+endif

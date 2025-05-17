@@ -15,4 +15,14 @@ source "drivers/firmware/nrf_ironside/Kconfig"
 source "drivers/firmware/scmi/Kconfig"
 # zephyr-keep-sorted-stop
 
+config TISCI
+	bool "TISCI Firmware driver"
+	select MBOX
+	help
+	  TISCI firmware driver is a frontend interface
+	  to TI System Controller interface firmware through
+	  secureproxy mailbox.
+
+source "drivers/firmware/ti_sci/Kconfig"
+
 endmenu
