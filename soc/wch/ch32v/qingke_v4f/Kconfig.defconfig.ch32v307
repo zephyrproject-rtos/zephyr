@@ -9,4 +9,4 @@ config VECTOR_TABLE_SIZE
 config NUM_IRQS
 	default 128
 
-endif # SOC_CH32V208
+endif # SOC_CH32V307

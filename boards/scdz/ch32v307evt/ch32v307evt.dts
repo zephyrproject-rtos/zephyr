@@ -5,11 +5,10 @@
 
 /dts-v1/;
 
-#include <wch/ch32v307/ch32v307vct6.dtsi>
-#include "ch32v307evt-pinctrl.dtsi"
-
+#include <wch/ch32v307/ch32v307.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "ch32v307evt-pinctrl.dtsi"
 
 / {
 	model = "ch32v307evt";
@@ -18,8 +17,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &usart3;
-		zephyr,shell-uart = &usart3;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 	};
 
 	leds {
@@ -33,17 +32,26 @@
 		status = "disabled";
 
 		red_led: led0 {
-			gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+	buttons {
+		compatible = "gpio-keys";
+
+		boot: sw0 {
+			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
 	aliases {
 		led0 = &red_led;
+        sw0 = &boot;
 	};
 };
 
 &clk_hse {
-	clock-frequency = <DT_FREQ_M(144)>;
+	clock-frequency = <DT_FREQ_M(32)>;
 	status = "okay";
 };
 
@@ -56,6 +64,10 @@
 	clocks = <&pll>;
 };
 
+&gpioa {
+	status = "okay";
+};
+
 &gpioc {
 	status = "okay";
 };
@@ -64,14 +76,7 @@
 	status = "okay";
 };
 
-&i2c1 {
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c1_default>;
-	pinctrl-names = "default";
-};
-
-&usart3 {
+&usart1 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;

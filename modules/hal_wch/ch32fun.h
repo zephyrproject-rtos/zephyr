@@ -18,7 +18,7 @@
 #endif
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4F)
-#define CH32V20x 1
+#define CH32V30x 1
 #include <ch32v003fun.h>
 #endif
 

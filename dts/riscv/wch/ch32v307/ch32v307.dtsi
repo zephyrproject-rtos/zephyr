@@ -70,6 +70,7 @@
 			reg = <0x40010000 16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+            status = "okay";
 
 			gpioa: gpio@40010800 {
 				compatible = "wch,gpio";
@@ -144,24 +145,36 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@40005400 {
-			compatible = "wch,i2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40005400 0x400>;
-			clocks = <&rcc CH32V20X_V30X_CLOCK_I2C1>;
-			interrupt-parent = <&pfic>;
-			interrupts = <30>, <31>;
-		};
-
 		rcc: rcc@40021000 {
 			compatible = "wch,rcc";
 			reg = <0x40021000 16>;
 			#clock-cells = <1>;
+            status = "okay";
+		};
+        
+      	dma1: dma@40020000 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020000 0x90>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_DMA1>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <27>, <28>, <29>, <30>, <31>, <32>, <33>;
+			dma-channels = <7>;
+		};
+
+		dma2: dma@40020400 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020400 0x90>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_DMA2>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <72>, <73>, <74>, <75>, <76>, <98>, <99>, <100>,
+						 <101>, <102>, <103>;
+			dma-channels = <11>;
 		};
 	};
 };
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_M(144)>;
+	clock-frequency = <DT_FREQ_M(127)>;
 };

@@ -8,22 +8,15 @@
 &pinctrl {
 	usart1_default: usart1_default {
 		group1 {
-			pinmux = <USART3_TX_PB10_0>;
+			pinmux = <USART1_TX_PA9_0>;
 			output-high;
 			drive-push-pull;
 			slew-rate = "max-speed-10mhz";
 		};
 		group2 {
-			pinmux = <USART3_RX_PB11_0>;
+			pinmux = <USART1_RX_PA10_0>;
 			bias-pull-up;
 		};
 	};
 
-	i2c1_default: i2c1_default {
-		group1 {
-			pinmux = <I2C1_SDA_PB7_0>, <I2C1_SCL_PB6_0>;
-			output-high;
-			drive-open-drain;
-		};
-	};
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Thomas Boje
+ * Copyright (c) 2025 Bootlin
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,9 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "wch,qingke-v4c";
+			compatible = "wch,qingke-v4f";
 			reg = <0>;
-			riscv,isa = "rv32imac_zicsr_zifencei";
+			riscv,isa = "rv32imacf_zicsr_zifencei";
 		};
 	};
 
