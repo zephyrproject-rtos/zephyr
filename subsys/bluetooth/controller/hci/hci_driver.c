@@ -72,6 +72,13 @@ struct hci_driver_data {
 	bt_hci_recv_t recv;
 };
 
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+static struct node_rx_hci_evt {
+	struct node_rx_hdr hdr;
+	struct net_buf *buf;
+} hci_evt;
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
 static struct k_sem sem_recv;
 static struct k_fifo recv_fifo;
 
@@ -509,12 +516,14 @@ static void node_rx_recv(const struct device *dev)
 	} while (iso_received || (node_rx != NULL));
 }
 
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 static int bt_recv(const struct device *dev, struct net_buf *buf)
 {
 	const struct hci_driver_data *data = dev->data;
 
 	return data->recv(dev, buf);
 }
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 #endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 void hci_recv_fifo_reset(void)
@@ -643,6 +652,17 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
 	uint8_t class = node_rx->hdr.user_meta;
 	struct net_buf *buf = NULL;
+
+#if !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
+	if (class == HCI_CLASS_EVT_CMD_STATUS) {
+		struct node_rx_hci_evt *node_rx_hci = (void *)node_rx;
+
+		buf = node_rx_hci->buf;
+		node_rx_hci->buf = NULL;
+
+		return buf;
+	}
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	if (hbuf_count != -1) {
@@ -898,9 +918,14 @@ static int cmd_handle(const struct device *dev, struct net_buf *buf)
 
 #if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 		err = bt_recv_prio(dev, evt);
-#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
-		err = bt_recv(dev, evt);
-#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+#else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+		LL_ASSERT(hci_evt.buf == NULL);
+
+		hci_evt.buf = evt;
+		hci_evt.hdr.user_meta = HCI_CLASS_EVT_CMD_STATUS;
+
+		k_fifo_put(&recv_fifo, &hci_evt);
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 		if ((err == 0) && (node_rx != NULL)) {
 			LOG_DBG("RX node enqueue");
@@ -922,11 +947,12 @@ static int acl_handle(const struct device *dev, struct net_buf *buf)
 	if (evt) {
 		LOG_DBG("Replying with event of %u bytes", evt->len);
 
+		/* Let the upper layer be notified immediately of data buffer overflow */
 #if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 		err = bt_recv_prio(dev, evt);
-#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+#else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
-#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 	}
 
 	return err;
@@ -943,11 +969,12 @@ static int iso_handle(const struct device *dev, struct net_buf *buf)
 	if (evt) {
 		LOG_DBG("Replying with event of %u bytes", evt->len);
 
+		/* Let the upper layer be notified immediately of ISO data buffer overflow */
 #if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 		err = bt_recv_prio(dev, evt);
-#else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+#else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
-#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 	}
 
 	return err;
@@ -1026,7 +1053,10 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 			prio_recv_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&prio_recv_thread_data, "BT CTLR RX pri");
-#endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+#else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+	hci_evt.buf = NULL;
+#endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(recv_thread_stack),
