@@ -22,6 +22,7 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
+#include <zephyr/drivers/firmware/nrf_ironside/cpuconf.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -42,6 +43,8 @@ sys_snode_t soc_node;
 				      ADDRESS_SECURITY_Msk |                   \
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
+
+#define DT_NODELABEL_CPURAD_SLOT0_PARTITION DT_NODELABEL(cpurad_slot0_partition)
 
 static void power_domain_init(void)
 {
@@ -126,7 +129,7 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
-static int nordicsemi_nrf54h_init(void)
+void soc_early_init_hook(void)
 {
 	int err;
 
@@ -138,9 +141,7 @@ static int nordicsemi_nrf54h_init(void)
 	trim_hsfll();
 
 	err = dmm_init();
-	if (err < 0) {
-		return err;
-	}
+	__ASSERT_NO_MSG(err == 0);
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ccm030))
 	/* DMASEC is set to non-secure by default, which prevents CCM from
@@ -156,13 +157,33 @@ static int nordicsemi_nrf54h_init(void)
 	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
 		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
 	}
-
-	return 0;
 }
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+void soc_late_init_hook(void)
+{
+	int err;
+
+	/* The msg will be used for communication prior to IPC
+	 * communication being set up. But at this moment no such
+	 * communication is required.
+	 */
+	uint8_t *msg = NULL;
+	size_t msg_size = 0;
+
+	void *radiocore_address =
+		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
+				 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION));
+
+	/* Don't wait as this is not yet supported. */
+	bool cpu_wait = false;
+
+	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg, msg_size);
+	__ASSERT(err == 0, "err was %d", err);
+}
+#endif
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf54h_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
