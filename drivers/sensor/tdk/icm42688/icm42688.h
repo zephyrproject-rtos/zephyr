@@ -308,6 +308,9 @@ struct icm42688_cfg {
 	bool interrupt1_drdy;
 	bool interrupt1_fifo_ths;
 	bool interrupt1_fifo_full;
+
+	uint8_t pin9_function;
+	uint16_t rtc_freq;
 };
 
 struct icm42688_trigger_entry {
