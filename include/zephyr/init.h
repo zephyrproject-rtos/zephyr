@@ -48,6 +48,7 @@ extern "C" {
  */
 
 struct device;
+struct service;
 
 /**
  * @brief Structure to store initialization entry information.
@@ -65,15 +66,14 @@ struct device;
  */
 struct init_entry {
 	/**
-	 * If the init function belongs to a SYS_INIT, this field stored the
-	 * initialization function, otherwise it is set to NULL.
+	 * An init entry can be about a device or a service, _init_object
+	 * will be used to differentiate depending on relative sections.
 	 */
-	int (*init_fn)(void);
-	/**
-	 * If the init entry belongs to a device, this fields stores a
-	 * reference to it, otherwise it is set to NULL.
-	 */
-	const struct device *dev;
+	union {
+		const void *_init_object;
+		const struct device *dev;
+		const struct service *srv;
+	};
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -131,6 +131,8 @@ struct init_entry {
 	(COND_CODE_1(Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                     \
 	(ZERO_OR_COMPILE_ERROR(0)))))))))))))
 
+#include <zephyr/service.h>
+
 /**
  * @brief Register an initialization function.
  *
@@ -164,9 +166,12 @@ struct init_entry {
  * @see SYS_INIT()
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
+	Z_SERVICE_DEFINE(name, init_fn_, level, prio);                                    \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
-		Z_INIT_ENTRY_NAME(name) = {.init_fn = (init_fn_), .dev = NULL}            \
+		Z_INIT_ENTRY_NAME(name) = {                                               \
+			.srv = (const struct service *)&Z_SERVICE_NAME_GET(name)          \
+		}
 
 /** @} */
 
