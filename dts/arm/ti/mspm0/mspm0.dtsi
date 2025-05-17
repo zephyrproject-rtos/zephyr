@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+
+/{
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		flash0: serial-flash@0 {
+			compatible = "serial-flash";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

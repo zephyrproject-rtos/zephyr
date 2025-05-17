@@ -1,0 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <ti/mspm0gx51x/mspm0gx51x.dtsi>
+#include <ti/mspm0gx51x/mspm0gxxx9.dtsi>
