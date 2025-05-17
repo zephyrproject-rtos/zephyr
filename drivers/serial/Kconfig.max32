@@ -12,6 +12,8 @@ config UART_MAX32
 	select PINCTRL
 	select SERIAL_SUPPORT_ASYNC if DT_HAS_ADI_MAX32_DMA_ENABLED
 	select DMA if UART_ASYNC_API
+	# UART HAL uses pow() function, so we need full LIBC
+	select REQUIRES_FULL_LIBC
 	help
 	  This option enables the UART driver for MAX32 family of
 	  processors.
