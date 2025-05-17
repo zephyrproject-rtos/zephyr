@@ -616,6 +616,8 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	}
 
 	modem_cellular_notify_user_pipes_disconnected(data);
+	net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 	modem_chat_release(&data->chat);
 	modem_ppp_release(data->ppp);
 	modem_cmux_release(&data->cmux);
