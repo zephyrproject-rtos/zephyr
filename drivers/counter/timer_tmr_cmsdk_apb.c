@@ -16,6 +16,21 @@
 
 #include "timer_cmsdk_apb.h"
 
+#if DT_NODE_HAS_PROP(DT_INST(0, arm_cmsdk_timer), clocks) && \
+    DT_NODE_HAS_PROP(DT_PHANDLE(DT_INST(0, arm_cmsdk_timer), clocks), clock_frequency)
+
+#define TIMER_CMSDK_FREQ(inst) \
+	DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)
+
+#else
+
+#define TIMER_CMSDK_FREQ(inst) \
+	24000000U  /* fallback default */
+
+#warning "clock-frequency not defined in clocks node; using default 24MHz"
+
+#endif
+
 typedef void (*timer_config_func_t)(const struct device *dev);
 
 struct tmr_cmsdk_apb_cfg {
@@ -172,7 +187,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 	static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_##inst = { \
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 24000000U,				\
+			.freq = TIMER_CMSDK_FREQ(inst),			\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 0U,					\
 		},							\
