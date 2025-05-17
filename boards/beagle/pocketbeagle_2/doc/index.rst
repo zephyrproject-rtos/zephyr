@@ -106,6 +106,7 @@ superuser privilege, openocd needs to be launched seperately for now:
 Start debugging
 
 .. zephyr-app-commands::
+   :board: pocketbeagle_2/am6232/m4
    :goals: debug
 
 References
