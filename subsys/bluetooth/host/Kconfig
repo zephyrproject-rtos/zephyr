@@ -110,6 +110,7 @@ endchoice
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
+	depends on BT_RECV_WORKQ_BT
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2600 if BT_MESH
