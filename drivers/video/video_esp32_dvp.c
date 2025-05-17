@@ -249,7 +249,7 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the source device */
-	return video_get_caps(config->source_dev, ep, caps);
+	return video_get_caps(config->source_dev, caps);
 }
 
 static int video_esp32_get_fmt(const struct device *dev, struct video_format *fmt)
