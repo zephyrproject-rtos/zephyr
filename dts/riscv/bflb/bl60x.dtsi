@@ -151,5 +151,12 @@
 			compatible = "mmio-sram";
 			reg = <0x42030000 DT_SIZE_K(112)>;
 		};
+
+		efuse: efuse@40007000 {
+			compatible = "bflb,efuse";
+			reg = <0x40007000 0x1000>;
+			status = "okay";
+			size = <128>;
+		};
 	};
 };
