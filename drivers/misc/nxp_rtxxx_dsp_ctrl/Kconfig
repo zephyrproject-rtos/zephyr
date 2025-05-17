@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_RTXXX_DSP_CTRL
+	bool "NXP i.MX RTxxx DSP control"
+	depends on DT_HAS_NXP_RTXXX_DSP_CTRL_ENABLED
+	default y
+	help
+	  Enables a DSP control driver for NXP i.MX RTxxx devices.
