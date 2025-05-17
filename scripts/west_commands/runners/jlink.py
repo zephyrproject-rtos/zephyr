@@ -54,7 +54,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  commander=DEFAULT_JLINK_EXE,
                  dt_flash=True, erase=True, reset=False,
                  iface='swd', speed='auto', flash_script = None,
-                 loader=None,
+                 loader=None, flash_sram=False,
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
@@ -73,6 +73,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander
         self.flash_script = flash_script
         self.dt_flash = dt_flash
+        self.flash_sram = flash_sram
         self.erase = erase
         self.reset = reset
         self.gdbserver = gdbserver
@@ -173,6 +174,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='RTT client, default is JLinkRTTClient')
         parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
                             help=f'jlink rtt port, defaults to {DEFAULT_JLINK_RTT_PORT}')
+        parser.add_argument('--flash-sram', default=False, action='store_true',
+                            help='if given, flashing the image to SRAM and '
+                            'modify PC register to be SRAM base address')
 
         parser.set_defaults(reset=False)
 
@@ -182,6 +186,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  dev_id=args.dev_id,
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
+                                 flash_sram=args.flash_sram,
                                  erase=args.erase,
                                  reset=args.reset,
                                  iface=args.iface, speed=args.speed,
@@ -386,7 +391,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             if self.file_type == FileType.HEX:
                 flash_cmd = f'loadfile "{self.file}"'
             elif self.file_type == (FileType.BIN or FileType.MOT):
-                if self.dt_flash:
+                if self.flash_sram:
+                    flash_addr = self.sram_address_from_build_conf(self.build_conf)
+                elif self.dt_flash:
                     flash_addr = self.flash_address_from_build_conf(self.build_conf)
                 else:
                     flash_addr = 0
@@ -407,7 +414,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 flash_cmd = f'loadfile {self.mot_name}'
             # Preferring .bin over .elf
             elif self.bin_name is not None and os.path.isfile(self.bin_name):
-                if self.dt_flash:
+                if self.flash_sram:
+                    flash_addr = self.sram_address_from_build_conf(self.build_conf)
+                elif self.dt_flash:
                     flash_addr = self.flash_address_from_build_conf(self.build_conf)
                 else:
                     flash_addr = 0
@@ -428,6 +437,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         if self.reset:
             lines.append('r') # Reset and halt the target
+
+        if self.flash_sram:
+            sram_addr = self.sram_address_from_build_conf(self.build_conf)
+            lines.append(f'WReg PC 0x{sram_addr:x}') # Change PC to start of SRAM
 
         lines.append('g') # Start the CPU
 
