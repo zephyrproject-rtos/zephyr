@@ -6,6 +6,7 @@ family:
     - name: am6232
       cpuclusters:
       - name: m4
+      - name: a53
     - name: am6234
       cpuclusters:
       - name: m4
