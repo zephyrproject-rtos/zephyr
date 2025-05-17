@@ -131,6 +131,10 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 		} else if (bis[i] > sync->num_bis) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		} else {
+			/* This is empty since an empty
+			 * if .. if else is not allowed
+			 */
 		}
 		last_index = bis[i];
 	}
