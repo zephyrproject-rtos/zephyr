@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  # Verify struct _cpu_arch struct _thread_arch are compatible with C++
+  # when specific configs are enabled.
+  arch.riscv.test_build_cpp:
+    build_only: true
+    tags:
+      - riscv
+    arch_allow: riscv
+    extra_configs:
+      - CONFIG_USERSPACE=n
+      - CONFIG_SMP=n
+      - CONFIG_FPU_SHARING=n
