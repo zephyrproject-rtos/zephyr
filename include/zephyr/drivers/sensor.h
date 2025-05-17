@@ -272,6 +272,10 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when the FIFO becomes full. */
 	SENSOR_TRIG_FIFO_FULL,
+
+	/** Trigger fires when a tilt is detected. */
+	SENSOR_TRIG_TILT,
+
 	/**
 	 * Number of all common sensor triggers.
 	 */
