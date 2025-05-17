@@ -19,10 +19,6 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_suspend_disable_resume \
 	suspend_dut_suspend_disable_resume suspend_tester_pub
 
-overlay=overlay_low_lat_conf
-RunTest mesh_suspend_disable_resume_low_lat \
-	suspend_dut_suspend_disable_resume suspend_tester_pub
-
-overlay=overlay_psa_conf
-RunTest mesh_suspend_disable_resume_psa \
+overlay=overlay_legacy_conf
+RunTest mesh_suspend_disable_resume_legacy \
 	suspend_dut_suspend_disable_resume suspend_tester_pub
