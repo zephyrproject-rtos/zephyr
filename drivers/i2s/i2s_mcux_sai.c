@@ -457,6 +457,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	int ret = -EINVAL;
 	uint32_t mclk;
 
+	if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
+	}
+
 	if ((dev_data->tx.state != I2S_STATE_NOT_READY) &&
 	    (dev_data->tx.state != I2S_STATE_READY) &&
 	    (dev_data->rx.state != I2S_STATE_NOT_READY) &&
