@@ -1,16 +1,13 @@
 # Copyright (c) 2020, Mohamed ElShahawi
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 RTC (Power & Clock Controller Module) Module
+description: ESP32 Clock (Power & Clock Controller Module) Module
 
-compatible: "espressif,esp32-rtc"
+compatible: "espressif,esp32-clock"
 
-include: [clock-controller.yaml, base.yaml]
+include: [clock-controller.yaml]
 
 properties:
-  reg:
-    required: true
-
   fast-clk-src:
     type: int
     required: true

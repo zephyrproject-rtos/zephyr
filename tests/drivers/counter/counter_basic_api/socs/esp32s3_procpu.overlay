@@ -6,6 +6,6 @@
 	status = "okay";
 };
 
-&rtc {
+&clock {
 	slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256>;
 };
