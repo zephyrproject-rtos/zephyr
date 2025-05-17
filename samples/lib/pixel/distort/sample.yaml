@@ -1,0 +1,19 @@
+sample:
+  description: Pixel Distort sample, correct fish-eye deformation of an image
+  name: pixel distort
+common:
+  min_ram: 32
+  tags: pixel
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "output image, distorted,"
+      - "output image, corrected,"
+tests:
+  sample.pixel.distort:
+    tags: pixel
+    extra_configs:
+      - CONFIG_PIXEL_PRINT_NONE=y
