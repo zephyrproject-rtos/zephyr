@@ -43,3 +43,14 @@ config UART_RENESAS_RZA2M_SCIF
 	select PINCTRL
 	help
 	  Enable Renesas SCIF UART Driver.
+
+if UART_RENESAS_RZ_SCI
+
+config UART_RENESAS_RZ_SCI_B
+	bool "Renesas RZ SCI B UART"
+	default y
+	depends on SOC_SERIES_RZV2H
+	help
+	  This option is to support SCI_B UART interface.
+
+endif
