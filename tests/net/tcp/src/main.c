@@ -2202,7 +2202,7 @@ static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th)
 		/* Port was closed so expect RST instead of SYN */
 		test_verify_flags(th, RST | ACK);
 		zassert_equal(ntohl(th->th_seq), 0, "Invalid SEQ value");
-		zassert_equal(ntohl(th->th_ack), seq, "Invalid ACK value");
+		zassert_equal(ntohl(th->th_ack), seq + 1, "Invalid ACK value");
 		t_state = T_CLOSING;
 		test_sem_give();
 		break;
