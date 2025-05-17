@@ -396,6 +396,7 @@ SECTIONS
     *libzephyr.a:mmu_psram_flash.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_psram_impl_quad.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_psram.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
@@ -408,6 +409,9 @@ SECTIONS
     *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
     *libzephyr.a:systimer_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal_gpspi.*(.literal .text .literal.* .text.*)
+
+    *libzephyr.a:spi_flash_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:spi_flash_hal_common.*(.literal .literal.* .text .text.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.literal .literal.* .text .text.*)
@@ -639,6 +643,7 @@ SECTIONS
     *libzephyr.a:mmu_psram_flash.*(.rodata .rodata.*)
     *libzephyr.a:esp_psram_impl_octal.*(.rodata .rodata.*)
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
+    *libzephyr.a:esp_psram.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
@@ -651,6 +656,9 @@ SECTIONS
     *libzephyr.a:wdt_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:systimer_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
+
+    *libzephyr.a:spi_flash_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_hal_common.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.rodata .rodata.*)
@@ -1001,6 +1009,7 @@ SECTIONS
   .ext_ram.data (NOLOAD) :
   {
     _ext_ram_start = ABSOLUTE(.);
+
     _ext_ram_noinit_start = ABSOLUTE(.);
 
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
@@ -1013,17 +1022,18 @@ SECTIONS
     . = ALIGN(16);
     *(.ext_ram_noinit.*)
     . = ALIGN(16);
+#ifdef CONFIG_ESP_SPIRAM_HEAP_SIZE
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
+#endif
     _ext_ram_noinit_end = ABSOLUTE(.);
 
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
     . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
-
-    _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(16);
-    _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(EXT_DRAM_REGION)
