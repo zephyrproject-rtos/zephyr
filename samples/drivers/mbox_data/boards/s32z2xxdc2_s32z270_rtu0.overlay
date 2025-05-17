@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mru0 0>, <&mru0 0>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mru0 {
+	rx-channels = <1>;
+	status = "okay";
+};

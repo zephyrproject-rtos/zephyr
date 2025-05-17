@@ -13,6 +13,9 @@ It can be used only with mbox driver which supports data transfer mode.
 Sample will ping-pong up to 4 bytes of data between two cores via two mbox channels.
 After each core receives data, it increments it by one and sends it back to other core.
 
+Sample also supports ping-pong loopback data on a mbox channel within one core,
+if the hardware allows (eg. Hardware MRU on SoC S32Z).
+
 Building and Running
 ********************
 
@@ -53,6 +56,14 @@ Building the application for frdm_mcxn947/mcxn947/cpu0
    :board: frdm_mcxn947/mcxn947/cpu0
    :goals: debug
    :west-args: --sysbuild
+
+Building the application for the test loopback, example for s32z2xxdc2/s32z270/rtu0
+===================================================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: s32z2xxdc2/s32z270/rtu0
+   :goals: build flash
 
 Sample Output
 =============
@@ -102,3 +113,20 @@ serial port, one is the main core another is the remote core:
    Server receive (on channel 3) value: 98
    Server send (on channel 2) value: 99
    mbox_data Server demo ended.
+
+Results from running the test loopback, example for s32z2xxdc2/s32z270/rtu0:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.1.0-3644-ga4ee89a96597 ***
+   mbox_data Client demo started
+   Client send (on channel 0) value: 0
+   Client received (on channel 0) value: 0
+   Client send (on channel 0) value: 1
+   Client received (on channel 0) value: 1
+   ...
+   Client send (on channel 0) value: 98
+   Client received (on channel 0) value: 98
+   Client send (on channel 0) value: 99
+   Client received (on channel 0) value: 99
+   mbox_data Client demo ended
