@@ -426,6 +426,11 @@ static int cmd_udp_download_stop(const struct shell *sh, size_t argc,
 {
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_NET_UDP)) {
+		shell_warn(sh, "UDP not supported");
+		return -ENOEXEC;
+	}
+
 	ret = zperf_udp_download_stop();
 	if (ret < 0) {
 		shell_fprintf(sh, SHELL_WARNING, "UDP server not running!\n");
@@ -1493,6 +1498,11 @@ static int cmd_tcp_download_stop(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_TCP)) {
+		shell_warn(sh, "TCP not supported");
+		return -ENOEXEC;
+	}
 
 	ret = zperf_tcp_download_stop();
 	if (ret < 0) {
