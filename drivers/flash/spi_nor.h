@@ -72,6 +72,12 @@
 #define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
 #define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
 
+#define SPI_NOR_CMD_WR_WRARG 0x71 /* Write Any Register for S28Hx512T */
+#define SPI_NOR_CMD_RSFDPID  0x5A /* Read SFDP ID for S28Hx512T */
+#define SPI_NOR_CMD_RREG     0x65 /* Read Any Register for S28Hx512T */
+#define SPI_NOR_CMD_SE_256KB 0xDC /* Sector Erase 256KB for S28Hx512T */
+#define SPI_NOR_CMD_ERCHP    0x60 /* Erase Chip for S28Hx512T */
+
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */
 #define SPI_NOR_OCMD_CE         0xC738  /* Octal Chip erase */
@@ -86,6 +92,20 @@
 #define SPI_NOR_OCMD_WR_CFGREG2 0x728D  /* Octal Write configuration Register2 */
 #define SPI_NOR_OCMD_RD_CFGREG2 0x718E  /* Octal Read configuration Register2 */
 #define SPI_NOR_OCMD_BULKE      0x609F  /* Octa Bulk Erase */
+
+#define SPI_NOR_OCMD_WEN      0x0606 /* Octal Write enable for S28Hx512T */
+#define SPI_NOR_OCMD_RSR      0x0505 /* Octal Read status register for S28Hx512T */
+#define SPI_NOR_OCMD_WR_REG2  0x7171 /* Octal Write config register 2 for S28Hx512T */
+#define SPI_NOR_OCMD_RDID     0x9F9F /* Octal Read JEDEC ID for S28Hx512T */
+#define SPI_NOR_OCMD_RSFDPID  0x5A5A /* Octal Read SFDP ID for S28Hx512T */
+#define SPI_NOR_OCMD_RREG     0x6565 /* Octal Read Any Register for S28Hx512T */
+#define SPI_NOR_OCMD_PP_4B    0x1212 /* Octal Page Program 4 Byte Address for S28Hx512T */
+#define SPI_NOR_OCMD_READ     0xEEEE /* Octal Read data for S28Hx512T */
+#define SPI_NOR_OCMD_RST_EN   0x6666 /* Octal Reset Enable for S28Hx512T */
+#define SPI_NOR_OCMD_RST_MEM  0x9999 /* Reset Memory for S28Hx512T */
+#define SPI_NOR_OCMD_SE_4KB   0x2121 /* Octal Sector Erase 4Kb address for S28Hx512T */
+#define SPI_NOR_OCMD_SE_256KB 0xDCDC /* Octal Sector Erase 256Kb address for S28Hx512T */
+#define SPI_NOR_OCMD_ERCHP    0x6060 /* Octal Erase Chip for S28Hx512T */
 
  /* Page, sector, and block size are standard, not configurable. */
  #define SPI_NOR_PAGE_SIZE    0x0100U
@@ -111,6 +131,16 @@
 #define SPI_NOR_DUMMY_REG_OCTAL         4U
 #define SPI_NOR_DUMMY_REG_OCTAL_DTR     5U
 
+#define SPI_NOR_DUMMY_WR              0U
+#define SPI_NOR_DUMMY_WR_OCTAL        0U
+#define SPI_NOR_DUMMY_RD_STATUS       0U
+#define SPI_NOR_DUMMY_RD_STATUS_OCTAL 4U
+#define SPI_NOR_DUMMY_RD_REG          1U
+#define SPI_NOR_DUMMY_RD_REG_OCTAL    4U
+#define SPI_NOR_DUMMY_RD_MEM          3U
+#define SPI_NOR_DUMMY_RD_MEM_OCTAL    10U
+#define SPI_NOR_DUMMY_RD_SFDP         8U
+#define SPI_NOR_DUMMY_RD_SFDP_OCTAL   8U
 
 /* Memory registers address */
 #define SPI_NOR_REG2_ADDR1              0x0000000
@@ -118,6 +148,12 @@
 #define SPI_NOR_CR2_DTR_OPI_EN          0x02
 #define SPI_NOR_REG2_ADDR3              0x00000300
 #define SPI_NOR_CR2_DUMMY_CYCLES_66MHZ  0x07
+
+#define SPI_NOR_CFR1V_ADDR 0x00800002
+#define SPI_NOR_CFR2V_ADDR 0x00800003
+#define SPI_NOR_CFR3V_ADDR 0x00800004
+#define SPI_NOR_CFR4V_ADDR 0x00800005
+#define SPI_NOR_CFR5V_ADDR 0x00800006
 
 /* Test whether offset is aligned to a given number of bits. */
 #define SPI_NOR_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)
