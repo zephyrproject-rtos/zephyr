@@ -296,6 +296,15 @@
 			#size-cells = <0>;
 			fifo-depth = <16>;
 		};
-	};
 
+		qspi: spi@ff0f0000 {
+			compatible = "xlnx,zynqmp-qspi-1.0";
+			reg = <0xff0f0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
 };
