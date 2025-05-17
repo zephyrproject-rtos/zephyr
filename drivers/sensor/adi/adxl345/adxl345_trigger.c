@@ -90,7 +90,9 @@ int adxl345_trigger_set(const struct device *dev,
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *drv_data = dev->data;
-	uint8_t int_mask, int_en, status1;
+	struct adxl345_sample sample;
+	uint8_t int_mask, int_en;
+	uint8_t samples_count;
 	int ret;
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
@@ -103,7 +105,13 @@ int adxl345_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
-		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK;
+		/** Enabling DRDY means not using Watermark interrupt as both
+		 * are served by reading data-register: two clients can't be
+		 * served simultaneously.
+		 */
+		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK |
+			   ADXL345_INT_MAP_OVERRUN_MSK |
+			   ADXL345_INT_MAP_WATERMARK_MSK;
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
@@ -111,23 +119,41 @@ int adxl345_trigger_set(const struct device *dev,
 	}
 
 	if (handler) {
-		int_en = int_mask;
+		int_en = ADXL345_INT_MAP_DATA_RDY_MSK;
 	} else {
 		int_en = 0U;
+	}
+
+#ifdef CONFIG_ADXL345_STREAM
+	(void)adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED, ADXL345_INT2, 0);
+#endif
+
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, 0);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
-	/* Clear status */
-	ret = adxl345_get_status(dev, &status1, NULL);
+
+	/* Clear status and read sample-set to clear interrupt flag */
+	(void)adxl345_read_sample(dev, &sample);
+
+	ret = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
 	if (ret < 0) {
+		LOG_ERR("Failed to read FIFO status rc = %d\n", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
@@ -171,6 +197,8 @@ int adxl345_init_interrupt(const struct device *dev)
 			adxl345_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL345_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl345_work_cb;
 #endif
