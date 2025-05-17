@@ -15,6 +15,8 @@
  */
 
 #define __OFS_MDE __attribute__((section(".ofs_mde")))
+#define __OFS0 __attribute__((section(".ofs0")))
+#define __OFS1 __attribute__((section(".ofs1")))
 
 /* Endian Select Register (MDE) at 0xFE7F5D00
  *
@@ -41,9 +43,23 @@ struct st_ofs0 {
 	unsigned long res2: 16;
 };
 
-const unsigned long __OFS_MDE __OFS0reg = 0xffffffff;
+/* Option Function Select Register 0 (OFS0) */
+const struct st_ofs0 __OFS0 __OFS0reg = {
+	.res0 = 1,
+	.IWDTSTRT = CONFIG_IWDT_RENESAS_RX_IWDTSTRT,
+#ifdef CONFIG_IWDT_RENESAS_RX_AUTO_START_MODE
+	.IWDTTOPS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTTOPS,
+	.IWDTCKS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTCKS,
+	.IWDTRPES = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRPES,
+	.IWDTRPSS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRPSS,
+	.IWDTRSTIRQS = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTRSTIRQS,
+	.res1 = 1,
+	.IWDTSLCSTP = CONFIG_IWDT_RENESAS_RX_OFS0_IWDTSLCSTP,
+#endif
+	.res2 = 0xFFFF
+};
 
 /* Option Function Select Register 1 (OFS1) at 0xFE7F5D08 (Voltage detection and
  * HOCO)
  */
-const unsigned long __OFS_MDE __OFS1reg = 0xffffffff;
+const unsigned long __OFS1 __OFS1reg = 0xffffffff;

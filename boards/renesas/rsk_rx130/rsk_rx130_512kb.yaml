@@ -11,5 +11,6 @@ supported:
   - gpio
   - serial
   - timer
+  - watchdog
 ram: 48
 flash: 512
