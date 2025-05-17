@@ -37,6 +37,17 @@
 		watchdog0 = &wdt0;
 	};
 
+	rf_switch {
+		compatible = "gpio-keys";
+		rf_switch_en: rf_switch_en {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "Activate RF switch control";
+		};
+		ext_ant: ext_ant {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "External Antenna Selector";
+		};
+	};
 };
 
 &trng0 {
