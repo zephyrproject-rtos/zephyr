@@ -21,8 +21,15 @@
 #ifndef ZEPHYR_INCLUDE_SYS_TIMEUTIL_H_
 #define ZEPHYR_INCLUDE_SYS_TIMEUTIL_H_
 
+#include <limits.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <time.h>
 
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -301,12 +308,308 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
  */
 int32_t timeutil_sync_skew_to_ppb(float skew);
 
-#ifdef __cplusplus
+/**
+ * @}
+ */
+
+BUILD_ASSERT(sizeof(time_t) == sizeof(int64_t), "time_t must be 64-bit");
+BUILD_ASSERT(sizeof(((struct timespec *)0)->tv_sec) == sizeof(int64_t), "tv_sec must be 64-bit");
+
+/**
+ * @defgroup timeutil_timespec_apis Timespec Utility APIs
+ * @ingroup timeutil_apis
+ * @{
+ */
+
+/**
+ * @brief Check if a timespec is valid.
+ *
+ * Check if a timespec is valid (i.e. normalized) by ensuring that the `tv_nsec` field is in the
+ * range `[0, NSEC_PER_SEC-1]`.
+ *
+ * @note @p ts must not be `NULL`.
+ *
+ * @param ts the timespec to check
+ *
+ * @return `true` if the timespec is valid, otherwise `false`.
+ */
+static inline bool timespec_is_valid(const struct timespec *ts)
+{
+	__ASSERT_NO_MSG(ts != NULL);
+
+	return (ts->tv_nsec >= 0) && (ts->tv_nsec < NSEC_PER_SEC);
+}
+
+/** @cond INTERNAL_HIDDEN */
+
+/* this is mainly to work around a clang-format issue */
+#define TIMESPEC_HAS_BUILTINS                                                                      \
+	(HAS_BUILTIN(__builtin_add_overflow) && HAS_BUILTIN(__builtin_sub_overflow))
+
+/** INTERNAL_HIDDEN @endcond */
+
+#if (defined(CONFIG_SPEED_OPTIMIZATIONS) && TIMESPEC_HAS_BUILTINS) || defined(__DOXYGEN__)
+/**
+ * @brief Normalize a timespec so that the `tv_nsec` field is in valid range.
+ *
+ * Normalize a timespec by adjusting the `tv_sec` and `tv_nsec` fields so that the `tv_nsec` field
+ * is in the range `[0, NSEC_PER_SEC-1]`. This is achieved by converting nanoseconds to seconds and
+ * accumulating seconds in either the positive direction when `tv_nsec` > `NSEC_PER_SEC`, or in the
+ * negative direction when `tv_nsec` < 0.
+ *
+ * In pseudocode, normalization can be done as follows:
+ * ```python
+ * if ts.tv_nsec >= NSEC_PER_SEC:
+ *     sec = ts.tv_nsec / NSEC_PER_SEC
+ *     ts.tv_sec += sec
+ *     ts.tv_nsec -= sec * NSEC_PER_SEC
+ * elif ts.tv_nsec < 0:
+ *      # div_round_up(abs(ts->tv_nsec), NSEC_PER_SEC)
+ *	    sec = (NSEC_PER_SEC - ts.tv_nsec - 1) / NSEC_PER_SEC
+ *	    ts.tv_sec -= sec;
+ *	    ts.tv_nsec += sec * NSEC_PER_SEC;
+ * ```
+ *
+ * @note There are two cases where the normalization can result in integer overflow. These can
+ * be extrapolated to not simply overflowing the `tv_sec` field by one second, but also by any
+ * realizable multiple of `NSEC_PER_SEC`.
+ *
+ * 1. When `tv_nsec` is negative and `tv_sec` is already most negative.
+ * 2. When `tv_nsec` is greater-or-equal to `NSEC_PER_SEC` and `tv_sec` is already most positive.
+ *
+ * If the operation would result in integer overflow, return value is `false`.
+ *
+ * @note @p ts must be non-`NULL`.
+ *
+ * @param ts the timespec to be normalized
+ *
+ * @return `true` if the operation completes successfully, otherwise `false`.
+ */
+static inline bool timespec_normalize(struct timespec *ts)
+{
+	__ASSERT_NO_MSG(ts != NULL);
+
+	int sign = (ts->tv_nsec >= 0) - (ts->tv_nsec < 0);
+	int64_t sec =
+		(ts->tv_nsec >= (long)NSEC_PER_SEC) * (ts->tv_nsec / (long)NSEC_PER_SEC) +
+		(ts->tv_nsec < 0) * DIV_ROUND_UP((unsigned long)-ts->tv_nsec, (long)NSEC_PER_SEC);
+	bool overflow =
+		__builtin_add_overflow(ts->tv_sec, sign * sec, &ts->tv_sec) ||
+		__builtin_sub_overflow(ts->tv_nsec, sign * sec * NSEC_PER_SEC, &ts->tv_nsec);
+
+	if (!overflow) {
+		__ASSERT_NO_MSG(timespec_is_valid(ts));
+	}
+
+	return !overflow;
+}
+
+/**
+ * @brief Add one timespec to another
+ *
+ * This function sums the two timespecs pointed to by @p a and @p b and stores the result in the
+ * timespce pointed to by @p a.
+ *
+ * If the operation would result in integer overflow, return value is `false`.
+ *
+ * @note @p a and @p b must be non-`NULL` and normalized.
+ *
+ * @param a the timespec which is added to
+ * @param b the timespec to be added
+ *
+ * @return `true` if the operation was successful, otherwise `false`.
+ */
+static inline bool timespec_add(struct timespec *a, const struct timespec *b)
+{
+	__ASSERT_NO_MSG((a != NULL) && timespec_is_valid(a));
+	__ASSERT_NO_MSG((b != NULL) && timespec_is_valid(b));
+
+	return !__builtin_add_overflow(a->tv_sec, b->tv_sec, &a->tv_sec) &&
+	       !__builtin_add_overflow(a->tv_nsec, b->tv_nsec, &a->tv_nsec) &&
+	       timespec_normalize(a);
+}
+
+/**
+ * @brief Negate a timespec object
+ *
+ * Negate the timespec object pointed to by @p ts and store the result in the same
+ * memory location.
+ *
+ * If the operation would result in integer overflow, return value is `false`.
+ *
+ * @param ts The timespec object to negate.
+ *
+ * @return `true` of the operation is successful, otherwise `false`.
+ */
+static inline bool timespec_negate(struct timespec *ts)
+{
+	__ASSERT_NO_MSG((ts != NULL) && timespec_is_valid(ts));
+
+	return !__builtin_sub_overflow(0LL, ts->tv_sec, &ts->tv_sec) &&
+	       !__builtin_sub_overflow(0L, ts->tv_nsec, &ts->tv_nsec) && timespec_normalize(ts);
+}
+#else
+
+static inline bool timespec_normalize(struct timespec *ts)
+{
+	__ASSERT_NO_MSG(ts != NULL);
+
+	long sec;
+
+	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+		sec = ts->tv_nsec / (long)NSEC_PER_SEC;
+	} else if (ts->tv_nsec < 0) {
+		if ((sizeof(ts->tv_nsec) == sizeof(uint32_t)) && (ts->tv_nsec == LONG_MIN)) {
+			sec = DIV_ROUND_UP(LONG_MAX / NSEC_PER_USEC, USEC_PER_SEC);
+		} else {
+			sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
+		}
+	} else {
+		sec = 0;
+	}
+
+	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - INT64_MIN < sec)) {
+		/*
+		 * When `tv_nsec` is negative and `tv_sec` is already most negative,
+		 * further subtraction would cause integer overflow.
+		 */
+		return false;
+	}
+
+	if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
+	    (INT64_MAX - ts->tv_sec < sec)) {
+		/*
+		 * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
+		 * positive, further addition would cause integer overflow.
+		 */
+		return false;
+	}
+
+	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+		ts->tv_sec += sec;
+		ts->tv_nsec -= sec * (long)NSEC_PER_SEC;
+	} else if (ts->tv_nsec < 0) {
+		ts->tv_sec -= sec;
+		ts->tv_nsec += sec * (long)NSEC_PER_SEC;
+	} else {
+		/* no change: SonarQube was complaining */
+	}
+
+	__ASSERT_NO_MSG(timespec_is_valid(ts));
+
+	return true;
+}
+
+static inline bool timespec_add(struct timespec *a, const struct timespec *b)
+{
+	__ASSERT_NO_MSG((a != NULL) && timespec_is_valid(a));
+	__ASSERT_NO_MSG((b != NULL) && timespec_is_valid(b));
+
+	if ((a->tv_sec < 0) && (b->tv_sec < 0) && (INT64_MIN - a->tv_sec > b->tv_sec)) {
+		/* negative integer overflow would occur */
+		return false;
+	}
+
+	if ((a->tv_sec > 0) && (b->tv_sec > 0) && (INT64_MAX - a->tv_sec < b->tv_sec)) {
+		/* positive integer overflow would occur */
+		return false;
+	}
+
+	a->tv_sec += b->tv_sec;
+	a->tv_nsec += b->tv_nsec;
+
+	return timespec_normalize(a);
+}
+
+static inline bool timespec_negate(struct timespec *ts)
+{
+	__ASSERT_NO_MSG((ts != NULL) && timespec_is_valid(ts));
+
+	if (ts->tv_sec == INT64_MIN) {
+		/* -INT64_MIN > INT64_MAX, so +ve integer overflow would occur */
+		return false;
+	}
+
+	ts->tv_sec = -ts->tv_sec;
+	ts->tv_nsec = -ts->tv_nsec;
+
+	return timespec_normalize(ts);
 }
 #endif
 
 /**
+ * @brief Subtract one timespec from another
+ *
+ * This function subtracts the timespec pointed to by @p b from the timespec pointed to by @p a and
+ * stores the result in the timespce pointed to by @p a.
+ *
+ * If the operation would result in integer overflow, return value is `false`.
+ *
+ * @note @p a and @p b must be non-`NULL`.
+ *
+ * @param a the timespec which is subtracted from
+ * @param b the timespec to be subtracted
+ *
+ * @return `true` if the operation is successful, otherwise `false`.
+ */
+static inline bool timespec_sub(struct timespec *a, const struct timespec *b)
+{
+	__ASSERT_NO_MSG(a != NULL);
+	__ASSERT_NO_MSG(b != NULL);
+
+	struct timespec neg = *b;
+
+	return timespec_negate(&neg) && timespec_add(a, &neg);
+}
+
+/**
+ * @brief Compare two timespec objects
+ *
+ * This function compares two timespec objects pointed to by @p a and @p b.
+ *
+ * @note @p a and @p b must be non-`NULL` and normalized.
+ *
+ * @param a the first timespec to compare
+ * @param b the second timespec to compare
+ *
+ * @return -1, 0, or +1 if @a a is less than, equal to, or greater than @a b, respectively.
+ */
+static inline int timespec_compare(const struct timespec *a, const struct timespec *b)
+{
+	__ASSERT_NO_MSG((a != NULL) && timespec_is_valid(a));
+	__ASSERT_NO_MSG((b != NULL) && timespec_is_valid(b));
+
+	return (((a->tv_sec == b->tv_sec) && (a->tv_nsec < b->tv_nsec)) * -1) +
+	       (((a->tv_sec == b->tv_sec) && (a->tv_nsec > b->tv_nsec)) * 1) +
+	       ((a->tv_sec < b->tv_sec) * -1) + ((a->tv_sec > b->tv_sec));
+}
+
+/**
+ * @brief Check if two timespec objects are equal
+ *
+ * This function checks if the two timespec objects pointed to by @p a and @p b are equal.
+ *
+ * @note @p a and @p b must be non-`NULL` are not required to be normalized.
+ *
+ * @param a the first timespec to compare
+ * @param b the second timespec to compare
+ *
+ * @return true if the two timespec objects are equal, otherwise false.
+ */
+static inline bool timespec_equal(const struct timespec *a, const struct timespec *b)
+{
+	__ASSERT_NO_MSG(a != NULL);
+	__ASSERT_NO_MSG(b != NULL);
+
+	return (a->tv_sec == b->tv_sec) && (a->tv_nsec == b->tv_nsec);
+}
+
+/**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_TIMEUTIL_H_ */
