@@ -252,3 +252,6 @@
 		status = "okay";
 	};
 };
+
+/delete-node/ &i2s0;
+/delete-node/ &i2s1;

@@ -897,6 +897,24 @@
 				status = "disabled";
 			};
 		};
+
+		i2s0: ssie@4025d000 {
+			compatible = "renesas,ra-i2s-ssie";
+			channel = <0>;
+			reg = <0x4025d000 0x28>;
+			clocks = <&pclkb MSTPC 8>;
+			full-duplex;
+			status = "disabled";
+		};
+
+		i2s1: ssie@4025d100 {
+			compatible = "renesas,ra-i2s-ssie";
+			channel = <1>;
+			reg = <0x4025d100 0x28>;
+			clocks = <&pclkb MSTPC 7>;
+			status = "disabled";
+		};
+
 	};
 
 	usbfs_phy: usbfs-phy {

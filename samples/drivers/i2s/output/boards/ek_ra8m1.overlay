@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &i2s1;
+	};
+};
+
+&i2s1 {
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "ssi_rt", "ssi_if";
+	status = "okay";
+	clocks = <&pclkb MSTPC 8>, <&ssi_internal_clock 0>;
+	clock-names = "pclk", "audio-clock";
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	interrupts = <50 1>, <51 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+
+	ssi_internal_clock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		pwms = <&pwm2 0 PWM_HZ(2822400) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	pwm2_default: pwm2_default {
+		group1 {
+			/* GTIOC2A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 7, 13)>;
+		};
+	};
+};
+
+/ {
+	i2s1_external_clock: i2s1_external_clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <0>;
+	};
+};

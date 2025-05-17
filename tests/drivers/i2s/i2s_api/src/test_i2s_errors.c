@@ -27,15 +27,23 @@ ZTEST_USER(i2s_errors, test_i2s_improper_configuration)
 
 	invalid_config.format =
 		I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED | I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED;
-
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &invalid_config);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &invalid_config);
+#endif
 	zassert_not_equal(
 		err, 0,
 		"I2S configuration did not detect improper data format (I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED | I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED)");
 
 	invalid_config.format = I2S_FMT_DATA_FORMAT_I2S | I2S_FMT_DATA_ORDER_LSB;
 
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &invalid_config);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &invalid_config);
+#endif
+
 	zassert_not_equal(
 		err, 0,
 		"I2S configuration did not detect improper stream format (I2S_FMT_DATA_ORDER_LSB)");
@@ -62,6 +70,21 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 							 I2S_OPT_BIT_CLK_MASTER,
 					      .mem_slab = &tx_mem_slab };
 
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &inactive_config);
+	zassert_equal(err, 0, "I2S interface configuration failed, err=%d", err);
+
+	err = i2s_buf_write(dev_i2s_tx, tx_data, BLOCK_SIZE);
+	zassert_equal(err, 0, "I2S buffer write unexpected error: %d", err);
+
+	err = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
+	zassert_equal(err, 0, "I2S_TRIGGER_START unexpected error: %d", err);
+
+	config_err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &inactive_config);
+
+	err = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_STOP);
+	zassert_equal(err, 0, "I2S_TRIGGER_STOP unexpected error: %d", err);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &inactive_config);
 	zassert_equal(err, 0, "I2S interface configuration failed, err=%d", err);
 
@@ -75,7 +98,7 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 
 	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_STOP);
 	zassert_equal(err, 0, "I2S_TRIGGER_STOP unexpected error: %d", err);
-
+#endif
 	zassert_not_equal(
 		config_err, 0,
 		"I2S configuration should not be possible in states other than I2S_STATE_READY");
@@ -95,6 +118,16 @@ ZTEST_USER(i2s_errors, test_i2s_incorrect_trigger)
 						  I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER,
 					  .mem_slab = &tx_mem_slab };
 
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &test_config);
+	zassert_equal(err, 0, "CFG err=%d", err);
+
+	err = i2s_buf_write(dev_i2s_tx, tx_data, BLOCK_SIZE);
+	zassert_equal(err, 0, "I2S buffer write unexpected error: %d", err);
+
+	err = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, INVALID_TRIGGER_SETTING);
+	zassert_equal(err, -EINVAL, "I2S invalid trigger setting not detected: err=%d", err);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &test_config);
 	zassert_equal(err, 0, "CFG err=%d", err);
 
@@ -103,6 +136,7 @@ ZTEST_USER(i2s_errors, test_i2s_incorrect_trigger)
 
 	err = i2s_trigger(dev_i2s, I2S_DIR_TX, INVALID_TRIGGER_SETTING);
 	zassert_equal(err, -EINVAL, "I2S invalid trigger setting not detected: err=%d", err);
+#endif
 }
 
 ZTEST_USER(i2s_errors, test_i2s_unconfigured_access)
@@ -119,10 +153,18 @@ ZTEST_USER(i2s_errors, test_i2s_unconfigured_access)
 							 I2S_OPT_BIT_CLK_MASTER,
 					      .mem_slab = &tx_mem_slab };
 
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &inactive_config);
+	zassert_equal(err, 0, "I2S interface NOT_READY state transition failed. err=%d", err);
+
+	err = i2s_buf_write(dev_i2s_tx, tx_data, BLOCK_SIZE);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &inactive_config);
 	zassert_equal(err, 0, "I2S interface NOT_READY state transition failed. err=%d", err);
 
 	err = i2s_buf_write(dev_i2s, tx_data, BLOCK_SIZE);
+#endif
 	zassert_equal(
 		err, -EIO,
 		"I2S attempting unconfigured interface access did not raise I/O error, err=%d",
@@ -142,11 +184,17 @@ ZTEST_USER(i2s_errors, test_i2s_improper_block_size_write)
 					  .options =
 						  I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER,
 					  .mem_slab = &tx_mem_slab };
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	err = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &test_config);
+	zassert_equal(err, 0, "Unexpected error when configuring I2S interface: %d", err);
 
+	err = i2s_buf_write(dev_i2s_tx, tx_data, sizeof(uint16_t) + BLOCK_SIZE);
+#else
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &test_config);
 	zassert_equal(err, 0, "Unexpected error when configuring I2S interface: %d", err);
 
 	err = i2s_buf_write(dev_i2s, tx_data, sizeof(uint16_t) + BLOCK_SIZE);
+#endif
 	zassert_not_equal(
 		err, 0,
 		"I2S attempting write with incorrect block size did not raise error, err=%d", err);
