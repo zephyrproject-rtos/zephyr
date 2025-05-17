@@ -63,4 +63,7 @@ config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
 	default 100 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 	default 300
 
+config MODEM_CELLULAR_POWER_ON_GNSS
+	bool "Power on the modem's GNSS module"
+	depends on DT_HAS_SIMCOM_A76XX_ENABLED
 endif
