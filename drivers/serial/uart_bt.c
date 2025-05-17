@@ -311,6 +311,7 @@ static int uart_bt_workqueue_init(void)
 	k_work_queue_start(&nus_work_queue, nus_work_queue_stack,
 			   K_THREAD_STACK_SIZEOF(nus_work_queue_stack),
 			   CONFIG_UART_BT_WORKQUEUE_PRIORITY, NULL);
+	k_thread_name_set(&nus_work_queue.thread, "uart_bt");
 
 	return 0;
 }
