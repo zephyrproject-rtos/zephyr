@@ -12,6 +12,7 @@
 		test_uart: uart@0 {
 			compatible = "vnd,serial";
 			reg = <0x0 0x1000>;
+			current-speed = <9600>;
 			status = "okay";
 
 			gnss_nmea_generic: gnss-nmea-generic {
@@ -29,6 +30,9 @@
 
 			gnss_m8: m8 {
 				compatible = "u-blox,m8";
+			};
+			gnss_f9p: f9p {
+				compatible = "u-blox,f9p";
 			};
 		};
 	};
