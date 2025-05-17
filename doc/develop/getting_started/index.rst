@@ -393,6 +393,8 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west packages pip --install
 
+.. _gs_install_zephyr_sdk:
+
 Install the Zephyr SDK
 **********************
 
