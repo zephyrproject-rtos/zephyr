@@ -70,15 +70,22 @@ int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg
 	return 0;
 }
 
-static inline int lpspi_validate_xfer_args(const struct spi_config *spi_cfg)
+static inline int lpspi_validate_xfer_args(const struct device *dev,
+					   const struct spi_config *spi_cfg)
 {
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 	uint32_t pcs = spi_cfg->slave;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		/* the IP DOES support half duplex, need to implement driver support */
 		LOG_WRN("Half-duplex not supported");
 		return -ENOTSUP;
+	}
+
+	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
+		LOG_WRN("Warning: spi hold on feature is not supported on this platform.");
 	}
 
 	if (word_size < 2 || (word_size % 32 == 1)) {
@@ -121,7 +128,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return 0;
 	}
 
-	ret = lpspi_validate_xfer_args(spi_cfg);
+	ret = lpspi_validate_xfer_args(dev, spi_cfg);
 	if (ret) {
 		return ret;
 	}
