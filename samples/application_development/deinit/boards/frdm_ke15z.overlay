@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	lpuart0_default: lpuart0_default {
+		group0 {
+			pinmux = <LPSPI0_SCK_PTB2>,
+				 <LPSPI0_SIN_PTB3>,
+				 <LPSPI0_SOUT_PTB1>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&lpspi0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	zephyr,deferred-init;
+	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+};
+
+&gpiod {
+	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		spi = <&lpspi0>;
+		cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+	};
+};
