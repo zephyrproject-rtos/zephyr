@@ -1,0 +1,18 @@
+/* Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "disabled";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+
+	icm42688: icm42688@3 {
+		compatible = "invensense,icm42688";
+		status = "okay";
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		reg = <3>;
+	};
+};
