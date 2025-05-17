@@ -10,7 +10,6 @@
 #include <sample_usbd.h>
 #include "feedback.h"
 
-#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_uac2.h>
@@ -38,8 +37,10 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
 #define I2S_BLOCKS          7
-K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, MAX_BLOCK_SIZE, I2S_BLOCKS, 4);
-K_MEM_SLAB_DEFINE_STATIC(i2s_rx_slab, MAX_BLOCK_SIZE, I2S_BLOCKS, 4);
+K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BLOCKS, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(i2s_rx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BLOCKS, UDC_BUF_ALIGN);
 
 struct usb_i2s_ctx {
 	const struct device *i2s_dev;
@@ -164,7 +165,6 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 			size = SAMPLES_PER_SOF * BYTES_PER_SLOT;
 		}
 		memset(buf, 0, size);
-		sys_cache_data_flush_range(buf, size);
 	}
 
 	LOG_DBG("Received %d data to input terminal %d", size, terminal);
@@ -259,7 +259,6 @@ static void process_mic_data(const struct device *dev, struct usb_i2s_ctx *ctx)
 			/* No data available, I2S will restart soon */
 			return;
 		}
-		sys_cache_data_invd_range(rx_block, num_bytes);
 
 		/* I2S operates on 2 channels (stereo) */
 		rx_samples = num_bytes / (BYTES_PER_SAMPLE * 2);
@@ -314,7 +313,6 @@ static void process_mic_data(const struct device *dev, struct usb_i2s_ctx *ctx)
 			ctx->pending_mic_samples = mic_samples;
 			return;
 		}
-		sys_cache_data_invd_range(rx_block, num_bytes);
 
 		src = rx_block;
 		rx_samples = num_bytes / (BYTES_PER_SAMPLE * 2);
@@ -424,7 +422,6 @@ static void process_mic_data(const struct device *dev, struct usb_i2s_ctx *ctx)
 	}
 
 	/* Finally send the microphone samples to host */
-	sys_cache_data_flush_range(mic_buf, mic_samples * BYTES_PER_SAMPLE);
 	if (usbd_uac2_send(dev, MICROPHONE_IN_TERMINAL_ID,
 			   mic_buf, mic_samples * BYTES_PER_SAMPLE) < 0) {
 		k_mem_slab_free(&i2s_rx_slab, mic_buf);
