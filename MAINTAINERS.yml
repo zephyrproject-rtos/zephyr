@@ -1995,9 +1995,7 @@ Release Notes:
     - sample.drivers.espi.ps2
 
 "Drivers: PTP Clock":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
@@ -2311,9 +2309,7 @@ Release Notes:
     - "area: Display Controller"
 
 "Drivers: Virtualization":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/virtualization/
     - tests/drivers/virtualization/
@@ -2876,7 +2872,6 @@ Networking:
     - jukkar
   collaborators:
     - pdgendt
-    - tbursztyka
     - ssharks
   files:
     - scripts/net/
@@ -2945,7 +2940,6 @@ Networking:
     - jhedberg
   collaborators:
     - rlubos
-    - tbursztyka
     - jukkar
   files:
     - doc/services/net_buf/
