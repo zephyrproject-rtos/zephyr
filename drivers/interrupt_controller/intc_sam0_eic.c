@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+ * Copyright (c) 2025 GP Orcullo
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,38 +25,48 @@ struct sam0_eic_port_data {
 };
 
 struct sam0_eic_data {
-	struct sam0_eic_port_data ports[PORT_GROUPS];
+	struct sam0_eic_port_data ports[NUM_PORT_GROUPS];
 	struct sam0_eic_line_assignment lines[EIC_EXTINT_NUM];
+};
+
+struct sam0_eic_config {
+	uintptr_t base;
 };
 
 static void wait_synchronization(void)
 {
-#ifdef REG_EIC_SYNCBUSY
-	while (EIC->SYNCBUSY.reg) {
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
+
+#if !defined(CONFIG_SOC_SERIES_SAMD20) && !defined(CONFIG_SOC_SERIES_SAMD21) &&                    \
+	!defined(CONFIG_SOC_SERIES_SAMR21)
+	while (sys_read32(config->base + SYNCBUSY_OFFSET)) {
 	}
 #else
-	while (EIC->STATUS.bit.SYNCBUSY) {
+	while (IS_BIT_SET(sys_read8(config->base + STATUS_OFFSET), SYNCBUSY_BIT)) {
 	}
 #endif
 }
 
 static inline void set_eic_enable(bool on)
 {
-#ifdef REG_EIC_CTRLA
-	EIC->CTRLA.bit.ENABLE = on;
-#else
-	EIC->CTRL.bit.ENABLE = on;
-#endif
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
+	uint8_t ctrl = sys_read8(config->base);
+
+	WRITE_BIT(ctrl, EIC_ENABLE_BIT, on);
+	sys_write8(ctrl, config->base);
 }
 
 static void sam0_eic_isr(const struct device *dev)
 {
 	struct sam0_eic_data *const dev_data = dev->data;
-	uint16_t bits = EIC->INTFLAG.reg;
+	const struct sam0_eic_config *config = dev->config;
+	uint32_t bits = sys_read32(config->base + INTFLAG_OFFSET);
 	uint32_t line_index;
 
 	/* Acknowledge all interrupts */
-	EIC->INTFLAG.reg = bits;
+	sys_write32(bits, config->base + INTFLAG_OFFSET);
 
 	/* No clz on M0, so just do a quick test */
 #if __CORTEX_M >= 3
@@ -97,6 +108,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 		     bool filter, sam0_eic_callback_t cb, void *data)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
 	struct sam0_eic_data *dev_data = dev->data;
 	struct sam0_eic_port_data *port_data;
 	struct sam0_eic_line_assignment *line_assignment;
@@ -105,7 +117,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	int config_index;
 	int config_shift;
 	unsigned int key;
-	uint32_t config;
+	uint32_t cfg;
 
 	line_index = sam0_eic_map_to_line(port, pin);
 	if (line_index < 0) {
@@ -139,32 +151,32 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	line_assignment->port = port;
 	line_assignment->enabled = 1;
 
-	config = EIC->CONFIG[config_index].reg;
-	config &= ~(0xF << config_shift);
+	cfg = sys_read32(config->base + CFG_OFFSET + (config_index * 4));
+	cfg &= ~(0xF << config_shift);
 	switch (trigger) {
 	case SAM0_EIC_RISING:
-		config |= EIC_CONFIG_SENSE0_RISE << config_shift;
+		cfg |= CFG_SENSE0_RISE << config_shift;
 		break;
 	case SAM0_EIC_FALLING:
-		config |= EIC_CONFIG_SENSE0_FALL << config_shift;
+		cfg |= CFG_SENSE0_FALL << config_shift;
 		break;
 	case SAM0_EIC_BOTH:
-		config |= EIC_CONFIG_SENSE0_BOTH << config_shift;
+		cfg |= CFG_SENSE0_BOTH << config_shift;
 		break;
 	case SAM0_EIC_HIGH:
-		config |= EIC_CONFIG_SENSE0_HIGH << config_shift;
+		cfg |= CFG_SENSE0_HIGH << config_shift;
 		break;
 	case SAM0_EIC_LOW:
-		config |= EIC_CONFIG_SENSE0_LOW << config_shift;
+		cfg |= CFG_SENSE0_LOW << config_shift;
 		break;
 	}
 
 	if (filter) {
-		config |= EIC_CONFIG_FILTEN0 << config_shift;
+		cfg |= CFG_FILTEN0 << config_shift;
 	}
 
 	/* Apply the config to the EIC itself */
-	EIC->CONFIG[config_index].reg = config;
+	sys_write32(cfg, config->base + CFG_OFFSET + (config_index * 4));
 
 	set_eic_enable(1);
 	wait_synchronization();
@@ -173,7 +185,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	 * enabled pin after being enabled, so clear it before re-enabling
 	 * the IRQ.
 	 */
-	EIC->INTFLAG.reg = mask;
+	sys_write32(mask, config->base + INTFLAG_OFFSET);
 	irq_unlock(key);
 	return 0;
 
@@ -206,8 +218,10 @@ static bool sam0_eic_check_ownership(int port, int pin, int line_index)
 int sam0_eic_release(int port, int pin)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
 	struct sam0_eic_data *dev_data = dev->data;
 	uint32_t mask;
+	uint32_t cfg;
 	int line_index;
 	int config_index;
 	int config_shift;
@@ -239,11 +253,13 @@ int sam0_eic_release(int port, int pin)
 	dev_data->lines[line_index].enabled = 0;
 
 	/* Clear the EIC config, including the trigger condition */
-	EIC->CONFIG[config_index].reg &= ~(0xF << config_shift);
+	cfg = sys_read32(config->base + CFG_OFFSET + (config_index * 4));
+	cfg &= ~(0xF << config_shift);
+	sys_write32(cfg, config->base + CFG_OFFSET + (config_index * 4));
 
 	/* Clear any pending interrupt for it */
-	EIC->INTENCLR.reg = mask;
-	EIC->INTFLAG.reg = mask;
+	sys_write32(mask, config->base + INTENCLR_OFFSET);
+	sys_write32(mask, config->base + INTFLAG_OFFSET);
 
 done:
 	set_eic_enable(1);
@@ -254,6 +270,8 @@ done:
 
 int sam0_eic_enable_interrupt(int port, int pin)
 {
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
 	uint32_t mask;
 	int line_index;
 
@@ -267,14 +285,16 @@ int sam0_eic_enable_interrupt(int port, int pin)
 	}
 
 	mask = BIT(line_index);
-	EIC->INTFLAG.reg = mask;
-	EIC->INTENSET.reg = mask;
+	sys_write32(mask, config->base + INTFLAG_OFFSET);
+	sys_write32(mask, config->base + INTENSET_OFFSET);
 
 	return 0;
 }
 
 int sam0_eic_disable_interrupt(int port, int pin)
 {
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
 	uint32_t mask;
 	int line_index;
 
@@ -288,8 +308,8 @@ int sam0_eic_disable_interrupt(int port, int pin)
 	}
 
 	mask = BIT(line_index);
-	EIC->INTENCLR.reg = mask;
-	EIC->INTFLAG.reg = mask;
+	sys_write32(mask, config->base + INTENCLR_OFFSET);
+	sys_write32(mask, config->base + INTFLAG_OFFSET);
 
 	return 0;
 }
@@ -297,9 +317,10 @@ int sam0_eic_disable_interrupt(int port, int pin)
 uint32_t sam0_eic_interrupt_pending(int port)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	const struct sam0_eic_config *config = dev->config;
 	struct sam0_eic_data *dev_data = dev->data;
 	struct sam0_eic_line_assignment *line_assignment;
-	uint32_t set = EIC->INTFLAG.reg;
+	uint32_t set = sys_read32(config->base + INTFLAG_OFFSET);
 	uint32_t mask = 0;
 
 	for (int line_index = 0; line_index < EIC_EXTINT_NUM; line_index++) {
@@ -334,22 +355,17 @@ uint32_t sam0_eic_interrupt_pending(int port)
 
 static int sam0_eic_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const uintptr_t mclk = DT_REG_ADDR(DT_INST(0, atmel_sam0_mclk));
+	const uintptr_t gclk = DT_REG_ADDR(DT_INST(0, atmel_sam0_gclk));
 
-#ifdef MCLK
 	/* Enable the EIC clock in APBAMASK */
-	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
+	sys_set_bit(mclk + APBAMASK_OFFSET, APBAMASK_EIC_BIT);
 
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					 GCLK_PCHCTRL_CHEN;
+#ifdef PCHCTRL_GEN_GCLK0
+	sys_write32(PCHCTRL_GEN_GCLK0 | PCHCTRL_CHEN, gclk + PCHCTRL_OFFSET + (4 * GCLK_ID));
 #else
-	/* Enable the EIC clock in PM */
-	PM->APBAMASK.bit.EIC_ = 1;
-
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	sys_write16(CLKCTRL_ID_EIC | CLKCTRL_GEN_GCLK0 | CLKCTRL_CLKEN, gclk + CLKCTRL_OFFSET);
 #endif
 
 #if DT_INST_IRQ_HAS_CELL(0, irq)
@@ -408,7 +424,9 @@ static int sam0_eic_init(const struct device *dev)
 }
 
 static struct sam0_eic_data eic_data;
-DEVICE_DT_INST_DEFINE(0, sam0_eic_init,
-	      NULL, &eic_data, NULL,
-	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-	      NULL);
+static const struct sam0_eic_config eic_config = {
+	.base = DT_INST_REG_ADDR(0),
+};
+
+DEVICE_DT_INST_DEFINE(0, sam0_eic_init, NULL, &eic_data, &eic_config, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);
