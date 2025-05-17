@@ -33,4 +33,9 @@ config ETH_RENESAS_RX_BUF_NUM
 	default 4
 	range 1 8
 
+config ETH_RENESAS_RA_SUPPORT_SECURE
+	bool "Support TrustZone secure access"
+	help
+	  Enable for Renesas RA Ethernet which supports TrustZone secure access.
+
 endif
