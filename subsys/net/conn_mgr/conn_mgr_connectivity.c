@@ -41,6 +41,8 @@ int conn_mgr_if_connect(struct net_if *iface)
 		}
 	}
 
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, false);
+
 	status = api->connect(binding);
 
 out:
@@ -48,8 +50,6 @@ out:
 
 	return status;
 }
-
-static void conn_mgr_conn_if_auto_admin_down(struct net_if *iface);
 
 int conn_mgr_if_disconnect(struct net_if *iface)
 {
@@ -75,20 +75,12 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 		goto out;
 	}
 
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, true);
+
 	status = api->disconnect(binding);
 
 out:
 	conn_mgr_binding_unlock(binding);
-
-	/* Since the connectivity implementation will not automatically attempt to reconnect after
-	 * a call to conn_mgr_if_disconnect, conn_mgr_conn_if_auto_admin_down should be called.
-	 *
-	 * conn_mgr_conn_handle_iface_down will only call conn_mgr_conn_if_auto_admin_down if
-	 * persistence is disabled. To ensure conn_mgr_conn_if_auto_admin_down is called in all
-	 * cases, we must call it directly from here. If persistence is disabled, this will result
-	 * in conn_mgr_conn_if_auto_admin_down being called twice, but that is not an issue.
-	 */
-	conn_mgr_conn_if_auto_admin_down(iface);
 
 	return status;
 }
@@ -306,10 +298,15 @@ static void conn_mgr_conn_handle_iface_down(struct net_if *iface)
 		return;
 	}
 
-	/* If the iface is persistent, we expect it to try to reconnect, so nothing else to do */
-	if (conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT)) {
+	/* If the iface is persistent, we expect it to try to reconnect, unless
+	 * disconnect was explicitly initiated by the application.
+	 */
+	if (conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT) &&
+	    !conn_mgr_if_get_flag(iface, CONN_MGR_IF_DISCONNECTING)) {
 		return;
 	}
+
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, false);
 
 	/* Otherwise, we do not expect the iface to reconnect, and we should call
 	 * conn_mgr_conn_if_auto_admin_down
