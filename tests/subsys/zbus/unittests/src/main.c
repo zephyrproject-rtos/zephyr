@@ -86,6 +86,14 @@ ZBUS_CHAN_DEFINE(stuck_chan,      /* Name */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
+ZBUS_CHAN_DEFINE(msg_obs_sem,                      /* Name */
+		 int,                              /* Message type */
+		 NULL,                             /* Validator */
+		 NULL,                             /* User data */
+		 ZBUS_OBSERVERS(waiter1, waiter2), /* observers */
+		 ZBUS_MSG_INIT(0)                  /* Initial value 0 */
+);
+
 ZBUS_CHAN_DEFINE(msg_sub_fail_chan,                        /* Name */
 		 int,                                      /* Message type */
 		 NULL,                                     /* Validator */
@@ -223,6 +231,11 @@ static void wq_dh_cb(struct k_work *item)
 ZBUS_SUBSCRIBER_DEFINE(sub1, 1);
 ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(foo_msg_sub, false);
 ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(foo2_msg_sub, false);
+
+static K_SEM_DEFINE(sem1, 0, 2);
+static K_SEM_DEFINE(sem2, 0, 1);
+ZBUS_WAITER_DEFINE(waiter1, &sem1);
+ZBUS_WAITER_DEFINE_WITH_ENABLE(waiter2, &sem2, false);
 
 static K_FIFO_DEFINE(_zbus_observer_fifo_invalid_obs);
 
@@ -409,17 +422,21 @@ static bool check_chan_iterator(const struct zbus_channel *chan, void *user_data
 		zassert_mem_equal__(zbus_chan_name(chan), "hard_chan", 9, "Must be equal");
 		break;
 	case 5:
+		zassert_mem_equal__(zbus_chan_name(chan), "msg_obs_sem", sizeof("msg_obs_sem"),
+				    "Must be equal");
+		break;
+	case 6:
 		zassert_mem_equal__(zbus_chan_name(chan), "msg_sub_fail_chan",
 				    sizeof("msg_sub_fail_chan"), "Must be equal");
 		break;
-	case 6:
+	case 7:
 		zassert_mem_equal__(zbus_chan_name(chan), "msg_sub_no_pool_chan",
 				    sizeof("msg_sub_no_pool_chan"), "Must be equal");
 		break;
-	case 7:
+	case 8:
 		zassert_mem_equal__(zbus_chan_name(chan), "stuck_chan", 10, "Must be equal");
 		break;
-	case 8:
+	case 9:
 		zassert_mem_equal__(zbus_chan_name(chan), "version_chan", 12, "Must be equal");
 		break;
 	default:
@@ -470,6 +487,12 @@ static bool check_obs_iterator(const struct zbus_observer *obs, void *user_data)
 		break;
 	case 9:
 		zassert_mem_equal__(zbus_obs_name(obs), "sub1", 4, "Must be equal");
+		break;
+	case 10:
+		zassert_mem_equal__(zbus_obs_name(obs), "waiter1", 7, "Must be equal");
+		break;
+	case 11:
+		zassert_mem_equal__(zbus_obs_name(obs), "waiter2", 7, "Must be equal");
 		break;
 	default:
 		zassert_unreachable(NULL);
@@ -782,6 +805,45 @@ ZTEST(basic, test_specification_based__zbus_sub_wait_msg)
 	zassert_equal(-ENOMSG, zbus_sub_wait_msg(&foo_msg_sub, &chan, &a, K_MSEC(200)), NULL);
 
 	irq_offload(isr_sub_wait_msg, NULL);
+}
+
+ZTEST(basic, test_specification_based__zbus_obs_waiter)
+{
+	int data = 0;
+
+	/* Semaphores not given by default */
+	zassert_equal(-EBUSY, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem2, K_NO_WAIT));
+
+	/* Publish to channel */
+	zassert_equal(0, zbus_chan_pub(&msg_obs_sem, &data, K_FOREVER));
+
+	/* First semaphore available, second waiter is not enabled */
+	zassert_equal(0, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem2, K_NO_WAIT));
+
+	/* Enable second waiter */
+	zbus_obs_set_enable(&waiter2, true);
+
+	/* Publish again to channel */
+	zassert_equal(0, zbus_chan_pub(&msg_obs_sem, &data, K_FOREVER));
+
+	/* Both semaphores given */
+	zassert_equal(0, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(0, k_sem_take(&sem2, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem2, K_NO_WAIT));
+
+	/* Publish twice */
+	zassert_equal(0, zbus_chan_pub(&msg_obs_sem, &data, K_FOREVER));
+	zassert_equal(0, zbus_chan_pub(&msg_obs_sem, &data, K_FOREVER));
+
+	/* First semaphore should have 2 takes available due to its max_count value */
+	zassert_equal(0, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(0, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(0, k_sem_take(&sem2, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem1, K_NO_WAIT));
+	zassert_equal(-EBUSY, k_sem_take(&sem2, K_NO_WAIT));
 }
 
 #if defined(CONFIG_ZBUS_PRIORITY_BOOST)
