@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <stdio.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/internal/pm/device.h>
 
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/__assert.h>
 

@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/math_extras.h>
 

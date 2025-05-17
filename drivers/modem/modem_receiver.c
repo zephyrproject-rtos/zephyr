@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/internal/pm/device.h>
 
 #include <zephyr/logging/log.h>
 
