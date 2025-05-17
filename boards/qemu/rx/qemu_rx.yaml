@@ -9,6 +9,7 @@ simulation:
 arch: rx
 toolchain:
   - cross-compile
+  - zephyr
 supported:
   - serial
 ram: 96
