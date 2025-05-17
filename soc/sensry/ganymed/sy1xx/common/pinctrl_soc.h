@@ -45,6 +45,7 @@ typedef struct {
 		(SY1XX_PULL_UP_ENABLE * DT_PROP(node, bias_pull_up)) << SY1XX_PAD_PULL_UP_OFFS |   \
 		(SY1XX_PULL_DOWN_ENABLE * DT_PROP(node, bias_pull_down))                           \
 			<< SY1XX_PAD_PULL_DOWN_OFFS |                                              \
+		(DT_PROP(node, slew_rate) << SY1XX_PAD_DRIVE_OFFS) |                               \
 		(SY1XX_TRISTATE_ENABLE * DT_PROP(node, bias_high_impedance))                       \
 			<< SY1XX_PAD_TRISTATE_OFFS |                                               \
 		(SY1XX_OUTPUT_ENABLE & (1 - DT_PROP(node, input_enable))) << SY1XX_PAD_DIR_OFFS    \
@@ -61,9 +62,7 @@ typedef struct {
 	},
 
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{                                                                                          \
-		DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)                      \
-	}
+	{DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)}
 
 #ifdef __cplusplus
 }
