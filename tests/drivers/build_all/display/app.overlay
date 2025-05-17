@@ -249,6 +249,23 @@
 				remap-value = <0x0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_ssd1363: ssd1363@15 {
+				compatible = "solomon,ssd1363";
+				reg = <15>;
+				mipi-max-frequency = <100000000>;
+				width = <256>;
+				height = <128>;
+				precharge-period = <0x0>;
+				remap-value = <0x0000>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				column-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				phase-length = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -477,6 +494,7 @@
 				com-invdir;
 				prechargep = <0x22>;
 			};
+
 			test_st7567: st7567@2 {
 				compatible = "sitronix,st7567";
 				reg = <0x2>;
@@ -516,6 +534,21 @@
 				precharge-voltage = <0>;
 				phase-length = <0>;
 				vcomh-voltage = <0>;
+			};
+
+			test_ssd1363: ssd1363@5 {
+				compatible = "solomon,ssd1363";
+				reg = <0x5>;
+				width = <256>;
+				height = <128>;
+				precharge-period = <0x0>;
+				remap-value = <0x0000>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				column-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				phase-length = <0x0>;
 			};
 		};
 	};

@@ -1,0 +1,8 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1363 320x160 dot-matrix display controller on I2C bus
+
+include: ["solomon,ssd1363-common.yaml", "i2c-device.yaml"]
+
+compatible: "solomon,ssd1363"
