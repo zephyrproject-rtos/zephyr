@@ -3,20 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_npm1300_charger
-
 #include <math.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/linear_range.h>
-#include <zephyr/drivers/sensor/npm1300_charger.h>
+#include <zephyr/drivers/sensor/npm13xx_charger.h>
 
-struct npm1300_charger_config {
+struct npm13xx_charger_config {
 	const struct device *mfd;
 	int32_t term_microvolt;
 	int32_t term_warm_microvolt;
+	const struct linear_range term_volt_ranges[2U];
 	int32_t current_microamp;
+	const struct linear_range current_range;
+	const int32_t full_scale_discharge_factors[2U];
 	int32_t dischg_limit_microamp;
 	uint8_t dischg_limit_idx;
 	int32_t vbus_limit_microamp;
@@ -32,7 +33,7 @@ struct npm1300_charger_config {
 	bool disable_recharge;
 };
 
-struct npm1300_charger_data {
+struct npm13xx_charger_data {
 	uint16_t voltage;
 	uint16_t current;
 	uint16_t temp;
@@ -43,12 +44,12 @@ struct npm1300_charger_data {
 	uint8_t vbus_stat;
 };
 
-/* nPM1300 base addresses */
+/* nPM13xx base addresses */
 #define CHGR_BASE 0x03U
 #define ADC_BASE  0x05U
 #define VBUS_BASE 0x02U
 
-/* nPM1300 charger register offsets */
+/* nPM13xx charger register offsets */
 #define CHGR_OFFSET_ERR_CLR     0x00U
 #define CHGR_OFFSET_EN_SET      0x04U
 #define CHGR_OFFSET_EN_CLR      0x05U
@@ -65,7 +66,7 @@ struct npm1300_charger_data {
 #define CHGR_OFFSET_ERR_REASON  0x36U
 #define CHGR_OFFSET_VBATLOW_EN  0x50U
 
-/* nPM1300 ADC register offsets */
+/* nPM13xx ADC register offsets */
 #define ADC_OFFSET_TASK_VBAT 0x00U
 #define ADC_OFFSET_TASK_TEMP 0x01U
 #define ADC_OFFSET_TASK_DIE  0x02U
@@ -75,7 +76,7 @@ struct npm1300_charger_data {
 #define ADC_OFFSET_RESULTS   0x10U
 #define ADC_OFFSET_IBAT_EN   0x24U
 
-/* nPM1300 VBUS register offsets */
+/* nPM13xx VBUS register offsets */
 #define VBUS_OFFSET_ILIMUPDATE  0x00U
 #define VBUS_OFFSET_ILIM        0x01U
 #define VBUS_OFFSET_ILIMSTARTUP 0x02U
@@ -137,20 +138,28 @@ struct adc_results_t {
 #define DIETEMP_FACTOR_DIV   5000
 
 /* Linear range for charger terminal voltage */
-static const struct linear_range charger_volt_ranges[] = {
-	LINEAR_RANGE_INIT(3500000, 50000, 0U, 3U), LINEAR_RANGE_INIT(4000000, 50000, 4U, 13U)};
+#define NPM1300_CHARGER_VOLT_RANGES                                                                \
+	{LINEAR_RANGE_INIT(3500000, 50000, 0U, 3U), LINEAR_RANGE_INIT(4000000, 50000, 4U, 13U)}
+#define NPM1304_CHARGER_VOLT_RANGES                                                                \
+	{LINEAR_RANGE_INIT(3600000, 50000, 0U, 1U), LINEAR_RANGE_INIT(4000000, 50000, 2U, 15U)}
 
 /* Linear range for charger current */
-static const struct linear_range charger_current_range = LINEAR_RANGE_INIT(32000, 2000, 16U, 400U);
+#define NPM1300_CHARGER_CURRENT_RANGE LINEAR_RANGE_INIT(32000, 2000, 16U, 400U)
+#define NPM1304_CHARGER_CURRENT_RANGE LINEAR_RANGE_INIT(4000, 500, 8U, 200U)
+
+/* Full-scale factors for calculating current */
+#define NPM1300_FULL_SCALE_DISCHARGE_FACTORS {112, 100}
+#define NPM1304_FULL_SCALE_DISCHARGE_FACTORS {415, 400}
+static const int32_t full_scale_charge_factors[] = {125, 100};
 
 /* Allowed values for discharge limit */
-static const uint16_t discharge_limits[] = {84U, 415U};
+static const uint16_t npm1300_discharge_limits[] = {84U, 415U};
 
 /* Linear range for vbusin current limit */
 static const struct linear_range vbus_current_ranges[] = {
 	LINEAR_RANGE_INIT(100000, 0, 1U, 1U), LINEAR_RANGE_INIT(500000, 100000, 5U, 15U)};
 
-static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
+static void calc_temp(const struct npm13xx_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
 {
 	/* Ref: PS v1.2 Section 7.1.4: Battery temperature (Kelvin) */
@@ -162,7 +171,7 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 	(void)sensor_value_from_float(valp, temp);
 }
 
-static void calc_dietemp(const struct npm1300_charger_config *const config, uint16_t code,
+static void calc_dietemp(const struct npm13xx_charger_config *const config, uint16_t code,
 			 struct sensor_value *valp)
 {
 	/* Ref: PS v1.2 Section 7.1.4: Die temperature (Celsius) */
@@ -172,7 +181,7 @@ static void calc_dietemp(const struct npm1300_charger_config *const config, uint
 	(void)sensor_value_from_milli(valp, temp);
 }
 
-static uint32_t calc_ntc_res(const struct npm1300_charger_config *const config, int32_t temp_mdegc)
+static uint32_t calc_ntc_res(const struct npm13xx_charger_config *const config, int32_t temp_mdegc)
 {
 	float inv_t0 = 1.f / 298.15f;
 	float temp = (float)temp_mdegc / 1000.f;
@@ -188,56 +197,64 @@ static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
 	return ((uint16_t)msb << ADC_MSB_SHIFT) | ((lsb >> lsb_shift) & ADC_LSB_MASK);
 }
 
-static void calc_current(const struct npm1300_charger_config *const config,
-			 struct npm1300_charger_data *const data, struct sensor_value *valp)
+static void calc_current(const struct npm13xx_charger_config *const config,
+			 struct npm13xx_charger_data *const data, struct sensor_value *valp)
 {
 	int32_t full_scale_ua;
 	int32_t current_ua;
 
-	/* Largest value of discharge limit and charge limit is 1A.
-	 * We can therefore guarantee that multiplying the uA by 1000 does not overflow.
-	 *    1000 * 1'000'000 uA < 2**31
-	 *             1000000000 < 2147483648
-	 */
 	switch (data->ibat_stat) {
 	case IBAT_STAT_DISCHARGE:
-		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.12 */
-		full_scale_ua = -(1000 * config->dischg_limit_microamp) / 893;
+	/* nPM1300: Largest discharge limit is 1A. Multiplying it by 112 will not overflow.
+	 *     112 * -1_000_000 > INT32_MIN
+	 *         -112_000_000 > -2_147_483_648
+	 * nPM1304: Discharge limit is 125mA. Multiplying it by 415 will not overflow.
+	 *       415 * -125_000 > INT32_MIN
+	 *          -51_875_000 > -2_147_483_648
+	 */
+		full_scale_ua = -config->dischg_limit_microamp *
+				config->full_scale_discharge_factors[0] /
+				config->full_scale_discharge_factors[1];
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_COOL:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_NORMAL:
-		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.25 */
-		full_scale_ua = (1000 * config->current_microamp) / 800;
+	/* nPM1300: Largest charge limit is 800mA. Multiplying it by 125 will not overflow.
+	 *     125 * 800_000 < INT32_MAX
+	 *       100_000_000 < 2_147_483_647
+	 * nPM1304: Largest charge limit is even lower - no overflow.
+	 */
+		full_scale_ua = config->current_microamp * full_scale_charge_factors[0] /
+				full_scale_charge_factors[1];
 		break;
 	default:
 		full_scale_ua = 0;
 		break;
 	}
 
-	/* Largest possible value for data->current is 1023
-	 * Limits for full_scale_ua are -1'119'820 and 1'000'000
-	 *    1023 * -1119820 > -2**31
-	 *        -1145575860 > -2147483648
-	 *     1023 * 1000000 < 2**31
-	 *         1023000000 < 2147483648
+	/* Largest possible value for data->current is 1023 (10-bit ADC)
+	 * Limits for full_scale_ua are -1_120_000 and 1_000_000
+	 *    1023 * -1_120_000 > INT32_MIN
+	 *       -1_145_760_000 > -2_147_483_648
+	 *     1023 * 1_000_000 < INT32_MAX
+	 *        1_023_000_000 < 2_147_483_647
 	 */
 	__ASSERT_NO_MSG(data->current <= 1023);
 	__ASSERT_NO_MSG(full_scale_ua <= 1000000);
-	__ASSERT_NO_MSG(full_scale_ua >= -1119820);
+	__ASSERT_NO_MSG(full_scale_ua >= -1120000);
 
-	current_ua = (data->current * full_scale_ua) / 1024;
+	current_ua = (data->current * full_scale_ua) / 1023;
 
 	(void)sensor_value_from_micro(valp, current_ua);
 }
 
-int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel chan,
+int npm13xx_charger_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *valp)
 {
-	const struct npm1300_charger_config *const config = dev->config;
-	struct npm1300_charger_data *const data = dev->data;
+	const struct npm13xx_charger_config *const config = dev->config;
+	struct npm13xx_charger_data *const data = dev->data;
 
 	switch ((uint32_t)chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
@@ -252,11 +269,11 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
 		calc_current(config, data, valp);
 		break;
-	case SENSOR_CHAN_NPM1300_CHARGER_STATUS:
+	case SENSOR_CHAN_NPM13XX_CHARGER_STATUS:
 		valp->val1 = data->status;
 		valp->val2 = 0;
 		break;
-	case SENSOR_CHAN_NPM1300_CHARGER_ERROR:
+	case SENSOR_CHAN_NPM13XX_CHARGER_ERROR:
 		valp->val1 = data->error;
 		valp->val2 = 0;
 		break;
@@ -269,7 +286,7 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_DIE_TEMP:
 		calc_dietemp(config, data->dietemp, valp);
 		break;
-	case SENSOR_CHAN_NPM1300_CHARGER_VBUS_STATUS:
+	case SENSOR_CHAN_NPM13XX_CHARGER_VBUS_STATUS:
 		valp->val1 = data->vbus_stat;
 		valp->val2 = 0;
 		break;
@@ -280,26 +297,26 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel chan)
+int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	const struct npm1300_charger_config *const config = dev->config;
-	struct npm1300_charger_data *data = dev->data;
+	const struct npm13xx_charger_config *const config = dev->config;
+	struct npm13xx_charger_data *data = dev->data;
 	struct adc_results_t results;
 	int ret;
 
 	/* Read charge status and error reason */
-	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
+	ret = mfd_npm13xx_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
+	ret = mfd_npm13xx_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Read adc results */
-	ret = mfd_npm1300_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
+	ret = mfd_npm13xx_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
 					 sizeof(results));
 	if (ret != 0) {
 		return ret;
@@ -312,27 +329,24 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	data->ibat_stat = results.ibat_stat;
 
 	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm1300_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
+	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Read vbus status */
-	ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
-	if (ret != 0) {
-		return ret;
-	}
+	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
 
 	return ret;
 }
 
-static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
+static int set_ntc_thresholds(const struct npm13xx_charger_config *const config)
 {
 	for (uint8_t idx = 0U; idx < 4U; idx++) {
 		if (config->temp_thresholds[idx] < INT32_MAX) {
@@ -341,7 +355,7 @@ static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
 			/* Ref: Datasheet Figure 14: Equation for battery temperature */
 			uint16_t code = (1024 * res) / (res + config->thermistor_ohms);
 
-			int ret = mfd_npm1300_reg_write2(
+			int ret = mfd_npm13xx_reg_write2(
 				config->mfd, CHGR_BASE, CHGR_OFFSET_NTC_TEMPS + (idx * 2U),
 				code >> NTCTEMP_MSB_SHIFT, code & NTCTEMP_LSB_MASK);
 
@@ -354,7 +368,7 @@ static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
 	return 0;
 }
 
-static int set_dietemp_thresholds(const struct npm1300_charger_config *const config)
+static int set_dietemp_thresholds(const struct npm13xx_charger_config *const config)
 {
 	for (uint8_t idx = 0U; idx < 2U; idx++) {
 		if (config->dietemp_thresholds[idx] < INT32_MAX) {
@@ -364,7 +378,7 @@ static int set_dietemp_thresholds(const struct npm1300_charger_config *const con
 				DIETEMP_FACTOR_DIV;
 			uint16_t code = DIV_ROUND_CLOSEST(numerator, DIETEMP_FACTOR_MUL);
 
-			int ret = mfd_npm1300_reg_write2(
+			int ret = mfd_npm13xx_reg_write2(
 				config->mfd, CHGR_BASE, CHGR_OFFSET_DIE_TEMPS + (idx * 2U),
 				code >> DIETEMP_MSB_SHIFT, code & DIETEMP_LSB_MASK);
 
@@ -377,10 +391,10 @@ static int set_dietemp_thresholds(const struct npm1300_charger_config *const con
 	return 0;
 }
 
-static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channel chan,
+static int npm13xx_charger_attr_get(const struct device *dev, enum sensor_channel chan,
 				    enum sensor_attribute attr, struct sensor_value *val)
 {
-	const struct npm1300_charger_config *const config = dev->config;
+	const struct npm13xx_charger_config *const config = dev->config;
 	uint8_t data;
 	int ret;
 
@@ -390,7 +404,7 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 			return -ENOTSUP;
 		}
 
-		ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, &data);
+		ret = mfd_npm13xx_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, &data);
 		if (ret == 0) {
 			val->val1 = data;
 			val->val2 = 0U;
@@ -402,7 +416,7 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 			return -ENOTSUP;
 		}
 
-		ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_DETECT, &data);
+		ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_DETECT, &data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -419,29 +433,29 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 
 		return 0;
 
-	case SENSOR_CHAN_NPM1300_CHARGER_VBUS_STATUS:
-		ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data);
+	case SENSOR_CHAN_NPM13XX_CHARGER_VBUS_STATUS:
+		ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data);
 		if (ret < 0) {
 			return ret;
 		}
 
-		switch ((enum sensor_attribute_npm1300_charger)attr) {
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_PRESENT:
+		switch ((enum sensor_attribute_npm13xx_charger)attr) {
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_PRESENT:
 			val->val1 = (data & STATUS_PRESENT_MASK) != 0;
 			break;
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_CUR_LIMIT:
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_CUR_LIMIT:
 			val->val1 = (data & STATUS_CUR_LIMIT_MASK) != 0;
 			break;
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_OVERVLT_PROT:
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_OVERVLT_PROT:
 			val->val1 = (data & STATUS_OVERVLT_PROT_MASK) != 0;
 			break;
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_UNDERVLT:
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_UNDERVLT:
 			val->val1 = (data & STATUS_UNDERVLT_MASK) != 0;
 			break;
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_SUSPENDED:
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_SUSPENDED:
 			val->val1 = (data & STATUS_SUSPENDED_MASK) != 0;
 			break;
-		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_BUSOUT:
+		case SENSOR_ATTR_NPM13XX_CHARGER_VBUS_BUSOUT:
 			val->val1 = (data & STATUS_BUSOUT_MASK) != 0;
 			break;
 		default:
@@ -455,10 +469,10 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 	}
 }
 
-static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channel chan,
+static int npm13xx_charger_attr_set(const struct device *dev, enum sensor_channel chan,
 				    enum sensor_attribute attr, const struct sensor_value *val)
 {
-	const struct npm1300_charger_config *const config = dev->config;
+	const struct npm13xx_charger_config *const config = dev->config;
 	int ret;
 
 	if (attr != SENSOR_ATTR_CONFIGURATION) {
@@ -469,16 +483,16 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
 		if (val->val1 == 0) {
 			/* Disable charging */
-			return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_CLR,
+			return mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_CLR,
 						     1U);
 		}
 
 		/* Clear any errors and enable charging */
-		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_CLR, 1U);
+		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_CLR, 1U);
 		if (ret != 0) {
 			return ret;
 		}
-		return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+		return mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
 
 	case SENSOR_CHAN_CURRENT:
 		/* Set vbus current limit */
@@ -493,22 +507,22 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 			return ret;
 		}
 
-		ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
+		ret = mfd_npm13xx_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
 		if (ret != 0) {
 			return ret;
 		}
 
 		/* Switch to new current limit, this will be reset automatically on USB removal */
-		return mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMUPDATE, 1U);
+		return mfd_npm13xx_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMUPDATE, 1U);
 
 	default:
 		return -ENOTSUP;
 	}
 }
 
-int npm1300_charger_init(const struct device *dev)
+int npm13xx_charger_init(const struct device *dev)
 {
-	const struct npm1300_charger_config *const config = dev->config;
+	const struct npm13xx_charger_config *const config = dev->config;
 	uint16_t idx;
 	uint8_t byte = 0U;
 	int ret;
@@ -518,7 +532,7 @@ int npm1300_charger_init(const struct device *dev)
 	}
 
 	/* Configure temperature thresholds */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
+	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
 				    config->thermistor_idx);
 	if (ret != 0) {
 		return ret;
@@ -535,46 +549,54 @@ int npm1300_charger_init(const struct device *dev)
 	}
 
 	/* Configure termination voltages */
-	ret = linear_range_group_get_win_index(charger_volt_ranges, ARRAY_SIZE(charger_volt_ranges),
-					       config->term_microvolt, config->term_microvolt,
-					       &idx);
+	ret = linear_range_group_get_win_index(
+		config->term_volt_ranges, ARRAY_SIZE(config->term_volt_ranges),
+		config->term_microvolt, config->term_microvolt, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
+	ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = linear_range_group_get_win_index(charger_volt_ranges, ARRAY_SIZE(charger_volt_ranges),
-					       config->term_warm_microvolt,
-					       config->term_warm_microvolt, &idx);
+	ret = linear_range_group_get_win_index(
+		config->term_volt_ranges, ARRAY_SIZE(config->term_volt_ranges),
+		config->term_warm_microvolt, config->term_warm_microvolt, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
 
-	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
+	ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Set current, allow rounding down to closest value */
-	ret = linear_range_get_win_index(&charger_current_range,
-					 config->current_microamp - charger_current_range.step,
+	ret = linear_range_get_win_index(&config->current_range,
+					 config->current_microamp - config->current_range.step + 1,
 					 config->current_microamp, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}
 
-	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
-	if (ret != 0) {
-		return ret;
-	}
+	if (config->dischg_limit_idx == UINT8_MAX) {
+		/* Set only charge current MSB for nPM1304 */
+		printk("ISET: %d", idx);
+		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx);
+	} else {
+		/* Set charge current MSB and LSB and discharge limit for nPM1300 */
+		ret = mfd_npm13xx_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET + 1, idx / 2U,
+					     idx & 1U);
+		if (ret != 0) {
+			return ret;
+		}
 
-	/* Set discharge limit */
-	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
-				     discharge_limits[config->dischg_limit_idx] / 2U,
-				     discharge_limits[config->dischg_limit_idx] & 1U);
+		ret = mfd_npm13xx_reg_write2(
+			config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
+			npm1300_discharge_limits[config->dischg_limit_idx] / 2U,
+			npm1300_discharge_limits[config->dischg_limit_idx] & 1U);
+	}
 	if (ret != 0) {
 		return ret;
 	}
@@ -586,52 +608,52 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMSTARTUP, idx);
+	ret = mfd_npm13xx_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMSTARTUP, idx);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Configure trickle voltage threshold */
-	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_TRICKLE_SEL,
+	ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_TRICKLE_SEL,
 				    config->trickle_sel);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Configure termination current */
-	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ITERM_SEL,
+	ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ITERM_SEL,
 				    config->iterm_sel);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable current measurement */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
+	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm1300_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
+	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable automatic temperature measurements during charging */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_AUTO, 1U);
+	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_AUTO, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable charging at low battery if configured */
 	if (config->vbatlow_charge_enable) {
-		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VBATLOW_EN, 1U);
+		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VBATLOW_EN, 1U);
 		if (ret != 0) {
 			return ret;
 		}
@@ -647,14 +669,14 @@ int npm1300_charger_init(const struct device *dev)
 		WRITE_BIT(byte, 1U, true);
 	}
 
-	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_DIS_SET, byte);
+	ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_DIS_SET, byte);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable charging if configured */
 	if (config->charging_enable) {
-		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
 		if (ret != 0) {
 			return ret;
 		}
@@ -663,26 +685,30 @@ int npm1300_charger_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(sensor, npm1300_charger_battery_driver_api) = {
-	.sample_fetch = npm1300_charger_sample_fetch,
-	.channel_get = npm1300_charger_channel_get,
-	.attr_set = npm1300_charger_attr_set,
-	.attr_get = npm1300_charger_attr_get,
+static DEVICE_API(sensor, npm13xx_charger_battery_driver_api) = {
+	.sample_fetch = npm13xx_charger_sample_fetch,
+	.channel_get = npm13xx_charger_channel_get,
+	.attr_set = npm13xx_charger_attr_set,
+	.attr_get = npm13xx_charger_attr_get,
 };
 
-#define NPM1300_CHARGER_INIT(n)                                                                    \
-	BUILD_ASSERT(DT_INST_ENUM_IDX(n, dischg_limit_microamp) < ARRAY_SIZE(discharge_limits));   \
+#define NPM13XX_CHARGER_INIT(n, partno)                                                            \
+	BUILD_ASSERT(DT_INST_ENUM_IDX_OR(n, dischg_limit_microamp, 0) <                            \
+		     ARRAY_SIZE(npm1300_discharge_limits));                                        \
                                                                                                    \
-	static struct npm1300_charger_data npm1300_charger_data_##n;                               \
+	static struct npm13xx_charger_data npm13xx_charger_data_##n;                               \
                                                                                                    \
-	static const struct npm1300_charger_config npm1300_charger_config_##n = {                  \
+	static const struct npm13xx_charger_config npm13xx_charger_config_##n = {                  \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                 \
 		.term_warm_microvolt =                                                             \
 			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \
+		.term_volt_ranges = partno##_CHARGER_VOLT_RANGES,                                  \
 		.current_microamp = DT_INST_PROP(n, current_microamp),                             \
+		.current_range = partno##_CHARGER_CURRENT_RANGE,                                   \
+		.full_scale_discharge_factors = partno##_FULL_SCALE_DISCHARGE_FACTORS,             \
 		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                   \
-		.dischg_limit_idx = DT_INST_ENUM_IDX(n, dischg_limit_microamp),                    \
+		.dischg_limit_idx = DT_INST_ENUM_IDX_OR(n, dischg_limit_microamp, UINT8_MAX),      \
 		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                       \
 		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                               \
 		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
@@ -700,9 +726,17 @@ static DEVICE_API(sensor, npm1300_charger_battery_driver_api) = {
 				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}};  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,    \
-				     &npm1300_charger_config_##n, POST_KERNEL,                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm13xx_charger_init, NULL, &npm13xx_charger_data_##n,    \
+				     &npm13xx_charger_config_##n, POST_KERNEL,                     \
 				     CONFIG_SENSOR_INIT_PRIORITY,                                  \
-				     &npm1300_charger_battery_driver_api);
+				     &npm13xx_charger_battery_driver_api);
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT           nordic_npm1300_charger
+#define NPM1300_CHARGER_INIT(n) NPM13XX_CHARGER_INIT(n, NPM1300)
 DT_INST_FOREACH_STATUS_OKAY(NPM1300_CHARGER_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT           nordic_npm1304_charger
+#define NPM1304_CHARGER_INIT(n) NPM13XX_CHARGER_INIT(n, NPM1304)
+DT_INST_FOREACH_STATUS_OKAY(NPM1304_CHARGER_INIT)

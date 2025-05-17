@@ -1,13 +1,13 @@
-# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Nordic nPM1300 LED controller
+  Nordic nPM1304 LED controller
 
-  The nPM1300 has three LED outputs.
+  The nPM1304 has three LED outputs.
   Each LED can automatically display error or charging status,
   or be controlled by software.
 
-compatible: "nordic,npm1300-led"
+compatible: "nordic,npm1304-led"
 
 include: "nordic,npm13xx-led.yaml"
