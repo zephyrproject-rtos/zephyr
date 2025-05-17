@@ -55,6 +55,8 @@ class Blobs(WestCommand):
             - type: type of blob
             - version: version string
             - license_path: path to the license file for the blob
+            - license-abspath: absolute path to the license file for the blob
+            - license-click-through: need license click-through or not
             - uri: URI to the remote location of the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
@@ -151,6 +153,23 @@ class Blobs(WestCommand):
                 self.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
             self.inf('Fetching blob {module}: {abspath}'.format(**blob))
+
+            if blob['license-click-through']:
+                user_input = input("For this blob, need to read and accept license to continue."
+                                   "Read it? [y/n]: ")
+                if user_input.upper() != "Y":
+                    self.inf('Warn: skip fetching this blob.')
+                    continue
+
+                with open(blob['license-abspath']) as license_file:
+                    license_content = license_file.read()
+                    print(license_content)
+
+                user_input = input("Accept license to continue? [y/n]: ")
+                if user_input.upper() != "Y":
+                    self.inf('Warn: skip fetching this blob.')
+                    continue
+
             self.fetch_blob(blob['url'], blob['abspath'])
             if not self.verify_blob(blob):
                 bad_checksum_count += 1
