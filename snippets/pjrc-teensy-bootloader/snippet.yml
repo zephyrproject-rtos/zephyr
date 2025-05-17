@@ -1,0 +1,4 @@
+name: pjrc-teensy-bootloader
+append:
+  EXTRA_CONF_FILE: pjrc-teensy-bootloader.conf
+  EXTRA_DTC_OVERLAY_FILE: pjrc-teensy-bootloader.overlay
