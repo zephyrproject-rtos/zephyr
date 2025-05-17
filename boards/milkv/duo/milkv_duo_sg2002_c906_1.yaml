@@ -1,0 +1,15 @@
+identifier: milkv_duo/sg2002/c906_1
+name: Milk-V Duo 256M coprocessor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - clock
+  - gpio
+  - interrupt-controller
+  - mailbox
+  - pinctrl
+  - pwm
+  - serial
