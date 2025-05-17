@@ -35,14 +35,19 @@ extern uintptr_t _irq_vector_table[];
 #error "Target not supported"
 #endif
 
-#elif defined(CONFIG_RISCV_HAS_CLIC)
+#elif defined(CONFIG_SOC_GD32VF103)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
 #define TRIG_CHECK_SIZE	19
+#elif defined(CONFIG_SOC_ANDES_AE350_CLIC)
+#define ISR1_OFFSET	19
+#define ISR3_OFFSET	20
+#define ISR5_OFFSET	21
+#define TRIG_CHECK_SIZE	22
 #else
 
-/* RISC-V has very few IRQ lines which can be triggered from software */
+/* RISC-V CLINT has very few IRQ lines which can be triggered from software */
 #define ISR3_OFFSET	1
 
 /* Since we have so few lines we have to share the same line for two different
