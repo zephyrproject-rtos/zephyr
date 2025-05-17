@@ -10,7 +10,7 @@ from itertools import takewhile
 import json
 import logging
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import platform
 import re
 import subprocess
@@ -21,6 +21,7 @@ import shlex
 import shutil
 import textwrap
 import unidiff
+import yaml
 
 from yamllint import config, linter
 
@@ -29,6 +30,11 @@ import magic
 
 from west.manifest import Manifest
 from west.manifest import ManifestProject
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
@@ -729,6 +735,45 @@ class KconfigCheck(ComplianceTest):
         grep_stdout_socs = git("grep", "--line-number", "-I", "--null",
                                "--perl-regexp", regex_socs, "--", ":soc",
                                cwd=ZEPHYR_BASE)
+
+        manifest = Manifest.from_file()
+        for project in manifest.get_projects([]):
+            if not manifest.is_active(project):
+                continue
+
+            if not project.is_cloned():
+                continue
+
+            module_path = PurePath(project.abspath)
+            module_yml = module_path.joinpath('zephyr/module.yml')
+
+            if not Path(module_yml).is_file():
+                module_yml = module_path.joinpath('zephyr/module.yaml')
+
+            if Path(module_yml).is_file():
+                with Path(module_yml).open('r', encoding='utf-8') as f:
+                    meta = yaml.load(f.read(), Loader=SafeLoader)
+
+                    if 'build' in meta and 'settings' in meta['build']:
+                        if 'board_root' in meta['build']['settings']:
+                            tmp_path = module_path.joinpath(meta['build']['settings']['board_root'])
+                            if Path(tmp_path.joinpath('boards')).is_dir():
+                                tmp_output = git("grep", "--line-number", "-I", "--null",
+                                                 "--perl-regexp", regex_boards, "--", ":boards",
+                                                 cwd=tmp_path, ignore_non_zero=True)
+
+                                if len(tmp_output) > 0:
+                                    grep_stdout_boards = grep_stdout_boards + "\n" + tmp_output
+
+                        if 'soc_root' in meta['build']['settings']:
+                            tmp_path = module_path.joinpath(meta['build']['settings']['soc_root'])
+                            if Path(tmp_path.joinpath('soc')).is_dir():
+                                tmp_output = git("grep", "--line-number", "-I", "--null",
+                                                 "--perl-regexp", regex_socs, "--", ":soc",
+                                                 cwd=tmp_path, ignore_non_zero=True)
+
+                                if len(tmp_output) > 0:
+                                    grep_stdout_socs = grep_stdout_socs + "\n" + tmp_output
 
         # Board processing
         # splitlines() supports various line terminators
