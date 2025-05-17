@@ -814,4 +814,36 @@ ZTEST(basic, test_specification_based__zbus_obs_attach_detach)
 }
 #endif
 
+struct version_msg pub_msg = {2};
+ZBUS_CHANNEL_PUBLISHER_DEFINE(pub1, &version_chan, &pub_msg);
+
+ZTEST(basic, test_publisher_api)
+{
+	/* test the init of the ZBUS_CHANNEL_PUBLISHER_DEFINE() macro */
+	zassert_true(K_TIMEOUT_EQ(pub1.period, K_NO_WAIT));
+	zassert_true(pub1.data == &pub_msg);
+	zassert_false(k_work_delayable_is_pending(&pub1.work));
+
+	/* test that the period gets saved in the struct and the publisher is queued */
+	zbus_chan_publisher_start(&pub1, K_FOREVER, K_SECONDS(99999));
+	zassert_true(k_work_delayable_is_pending(&pub1.work));
+	zassert_true(K_TIMEOUT_EQ(pub1.period, K_SECONDS(99999)));
+
+	/* test that the publisher gets unqueued and the period is set to K_NO_WAIT */
+	zbus_chan_publisher_stop_sync(&pub1);
+	zassert_false(k_work_delayable_is_pending(&pub1.work));
+	zassert_true(K_TIMEOUT_EQ(pub1.period, K_NO_WAIT));
+
+	/* test that the publisher does not get rescheduled when the period equals K_NO_WAIT */
+	zbus_publisher_work_handler(&pub1.work.work);
+	zassert_false(k_work_delayable_is_pending(&pub1.work));
+
+	/* test the work handler reschedules when the period does not equal K_NO_WAIT */
+	pub1.period = K_HOURS(99999);
+	zbus_publisher_work_handler(&pub1.work.work);
+	zassert_true(k_work_delayable_is_pending(&pub1.work));
+
+	zbus_chan_publisher_stop(&pub1);
+}
+
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);
