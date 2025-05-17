@@ -1,0 +1,171 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+&system_clock {
+	sys_clk_96mhz: sys-clk-96mhz {
+		compatible = "clock-state";
+		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+		clock-frequency = <DT_FREQ_M(96)>;
+		locking-state;
+	};
+};
+
+&cpu0 {
+	clock-state-0 = <&sys_clk_96mhz>;
+};
+
+/* Disable the SD controller- we are using its clock for this test */
+&sdif {
+	status = "disabled";
+};
+
+/* Define clock states for clockout clock */
+&clkout_clock {
+	clkout_500mhz: clkout-500mhz {
+		compatible = "clock-state";
+		/* Expect a clock frequency of 500 KHz */
+		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+			&pll0_pdec 4 &pll0_directo 0
+			&pll0 512000000 8 256 0 31 31 0 0 0
+			&pll1_bypass 0 &clkoutsel 1
+			&clkoutdiv 256>;
+		clock-frequency = <DT_FREQ_K(500)>;
+	};
+
+	clkout_invalid: clkout-invalid {
+		compatible = "clock-state";
+		/* Expect error when applying this invalid state */
+		clocks = <&clkoutsel 10>;
+		clock-frequency = <0>;
+	};
+
+	clkout_shared: clkout-shared {
+		compatible = "clock-state";
+		/* Expect notification on first device only,
+		 * as sdioclksel is not selecting pll0 as an input.
+		 * After reconfiguring PLL0 from emul_dev2, output
+		 * frequency will be 25.5 MHz
+		 */
+		clocks = <&pll0_pdec 8 &pll0 401000000 4 0
+				0 4 3 1 3363831808 0 &clkoutdiv 2>;
+		clock-frequency = <DT_FREQ_K(25500)>;
+	};
+
+
+	clkout_locking: clkout-locking {
+		compatible ="clock-state";
+		/* Use PLL0 at 25.5 MHz, but make this a locking state.
+		 * this way, the SDIO locking state will fail to apply,
+		 * as it reconfigures PLL0
+		 */
+		clocks = <&pll0_pdec 8 &pll0 401000000 4 0
+				0 4 3 1 3363831808 0 &clkoutdiv 2>;
+		clock-frequency = <DT_FREQ_K(25500)>;
+		locking-state;
+	};
+};
+
+/* Define clock states for SDIO clock */
+&sdio_clock {
+	sdioclk_48mhz: sdioclk-48mhz {
+		compatible = "clock-state";
+		/* Expect a clock frequency of 48 MHz */
+		clocks = <&fro_12m 1 &pll1clksel 0
+			&pll1_pdec 4 &pll1_directo 0
+			&pll1 384000000 4 128 0 62 31
+			&pll1_bypass 0 &sdioclksel 5
+			&sdioclkdiv 2>;
+		clock-frequency = <DT_FREQ_M(48)>;
+	};
+
+	sdioclk_invalid: sdioclk-invalid {
+		compatible = "clock-state";
+		/* Expect error when applying this invalid state */
+		clocks = <&sdioclksel 8>;
+		clock-frequency = <0>;
+	};
+
+	sdioclk_shared: sdioclk-shared {
+		compatible = "clock-state";
+		/* Expect notification on both devices with this state.
+		 * frequency should be 25.5 MHz for each
+		 */
+		clocks = <&pll0_pdec 8 &pll0 408000000 4 0
+			0 4 3 1 3422552064 0 &sdioclkdiv 2
+			&sdioclksel 1>;
+		clock-frequency = <DT_FREQ_K(25500)>;
+	};
+
+	sdioclk_locking: sdioclk-locking {
+		compatible = "clock-state";
+		/* This state will fail to apply, as it reconfigures PLL0
+		 * and the first consumer currently has a locking frequency
+		 * constraint on the PLL0 frequency
+		 */
+		clocks = <&pll0_pdec 10 &pll0 408000000 4 0
+			0 4 3 1 3422552064 0 &sdioclkdiv 2
+			&sdioclksel 1>;
+		clock-frequency = <DT_FREQ_K(20400)>;
+		locking-state;
+	};
+};
+
+/ {
+	/* Emulated device clock consumers */
+	emul_devices {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&clkout_clock>;
+			clock-output-names = "default";
+			clock-state-0 = <&clkout_500mhz &clkout_invalid>;
+			default-freq = <500000>;
+			clock-state-1 = <&clkout_invalid>;
+			clock-state-2 = <&clkout_shared>;
+			shared-freq = <25500000>;
+			clock-state-3 = <&clkout_locking>;
+			clock-state-names = "default", "invalid", "shared",
+					"locking";
+			locking-freq = <DT_FREQ_K(25500)>;
+			/* Request 0-48MHz. We expect pll0 to be used to
+			 * produce this clock rate. We allow a frequency of
+			 * 0 to indicate the PLL can be gated if needed.
+			 */
+			freq-constraints-0 = <0 DT_FREQ_M(48)>;
+			req-freq-0 = <DT_FREQ_M(48)>;
+			/* Request narrow range that only PLL0 could produce.
+			 * Since emul_dev2 is using PLL0 as well and can't
+			 * accept this range, we expect this request to fail.
+			 */
+			freq-constraints-1 = <DT_FREQ_K(44100) DT_FREQ_K(44200)>;
+			req-freq-1 = <0>;
+		};
+
+		emul_dev2: emul-dev2 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&sdio_clock>;
+			clock-output-names = "default";
+			clock-state-0 = <&sdioclk_48mhz>;
+			default-freq = <48000000>;
+			clock-state-1 = <&sdioclk_invalid>;
+			clock-state-2 = <&sdioclk_shared>;
+			shared-freq = <25500000>;
+			clock-state-3 = <&sdioclk_locking>;
+			clock-state-names = "default", "invalid", "shared",
+					"locking";
+			locking-freq = <0>;
+			/* Request 40-43.5MHz. We expect pll0 to be used to
+			 * produce this clock rate, so emul_dev1 will be
+			 * notified.
+			 */
+			freq-constraints-0 = <DT_FREQ_M(40) DT_FREQ_K(43500)>;
+			req-freq-0 = <DT_FREQ_K(43500)>;
+			/* Request constraints that static state 0 can satisfy */
+			freq-constraints-1 = <DT_FREQ_M(48) DT_FREQ_M(48)>;
+			req-freq-1 = <DT_FREQ_M(48)>;
+		};
+	};
+};
