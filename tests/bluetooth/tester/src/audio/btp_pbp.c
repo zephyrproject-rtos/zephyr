@@ -5,18 +5,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "btp/btp.h"
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pbp.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#define LOG_MODULE_NAME bttester_pbp
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util_macro.h>
 
 #include "btp_bap_broadcast.h"
+#include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_pbp
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define PBP_EXT_ADV_METADATA_LEN_MAX 128
 
