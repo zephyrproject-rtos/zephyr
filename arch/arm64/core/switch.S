@@ -74,6 +74,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x0, x1, [sp], #16
 #endif
 
+#ifdef CONFIG_SMP
+	/* Write barrier: ensure all preceding writes are executed
+	* before writing the switch handle
+	*/
+	dmb sy
+#endif
+
 	/* save old thread into switch handle which is required by
 	 * z_sched_switch_spin()
 	 */
