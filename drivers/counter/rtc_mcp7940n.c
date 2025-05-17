@@ -27,20 +27,17 @@
 LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Alarm channels */
-#define ALARM0_ID			0
-#define ALARM1_ID			1
+#define ALARM0_ID 0
+#define ALARM1_ID 1
 
 /* Size of block when writing whole struct */
-#define RTC_TIME_REGISTERS_SIZE		sizeof(struct mcp7940n_time_registers)
-#define RTC_ALARM_REGISTERS_SIZE	sizeof(struct mcp7940n_alarm_registers)
-
-/* Largest block size */
-#define MAX_WRITE_SIZE                  (RTC_TIME_REGISTERS_SIZE)
+#define RTC_TIME_REGISTERS_SIZE  sizeof(struct mcp7940n_time_registers)
+#define RTC_ALARM_REGISTERS_SIZE sizeof(struct mcp7940n_alarm_registers)
 
 /* tm struct uses years since 1900 but unix time uses years since
  * 1970. MCP7940N default year is '1' so the offset is 69
  */
-#define UNIX_YEAR_OFFSET		69
+#define UNIX_YEAR_OFFSET 69
 
 /* Macro used to decode BCD to UNIX time to avoid potential copy and paste
  * errors.
@@ -81,7 +78,7 @@ static time_t decode_rtc(const struct device *dev)
 {
 	struct mcp7940n_data *data = dev->data;
 	time_t time_unix = 0;
-	struct tm time = { 0 };
+	struct tm time = {0};
 
 	time.tm_sec = RTC_BCD_DECODE(data->registers.rtc_sec.sec);
 	time.tm_min = RTC_BCD_DECODE(data->registers.rtc_min.min);
@@ -91,8 +88,7 @@ static time_t decode_rtc(const struct device *dev)
 	/* tm struct starts months at 0, mcp7940n starts at 1 */
 	time.tm_mon = RTC_BCD_DECODE(data->registers.rtc_month.month) - 1;
 	/* tm struct uses years since 1900 but unix time uses years since 1970 */
-	time.tm_year = RTC_BCD_DECODE(data->registers.rtc_year.year) +
-		UNIX_YEAR_OFFSET;
+	time.tm_year = RTC_BCD_DECODE(data->registers.rtc_year.year) + UNIX_YEAR_OFFSET;
 
 	time_unix = timeutil_timegm(&time);
 
@@ -254,43 +250,41 @@ static int write_register(const struct device *dev, enum mcp7940n_register addr,
  *
  * @param dev the MCP7940N device pointer.
  * @param addr first register address to write to, should be REG_RTC_SEC,
- * REG_ALM0_SEC or REG_ALM0_SEC.
- * @param size size of data struct that will be written.
+ * REG_ALM0_SEC or REG_ALM1_SEC.
  *
  * @retval return 0 on success, or a negative error code from an I2C
  * transaction or invalid parameter.
  */
-static int write_data_block(const struct device *dev, enum mcp7940n_register addr, uint8_t size)
+static int write_data_block(const struct device *dev, enum mcp7940n_register addr)
 {
 	struct mcp7940n_data *data = dev->data;
 	const struct mcp7940n_config *cfg = dev->config;
-	int rc = 0;
-	uint8_t time_data[MAX_WRITE_SIZE + 1];
-	uint8_t *write_block_start;
-
-	if (size > MAX_WRITE_SIZE) {
-		return -EINVAL;
-	}
+	int rc;
+	const uint8_t *write_block_start;
+	uint8_t write_block_size;
 
 	if (addr >= REG_INVAL) {
 		return -EINVAL;
 	}
 
-	if (addr == REG_RTC_SEC) {
+	switch (addr) {
+	case REG_RTC_SEC:
 		write_block_start = (uint8_t *)&data->registers;
-	} else if (addr == REG_ALM0_SEC) {
+		write_block_size = sizeof(data->registers);
+		break;
+	case REG_ALM0_SEC:
 		write_block_start = (uint8_t *)&data->alm0_registers;
-	} else if (addr == REG_ALM1_SEC) {
+		write_block_size = sizeof(data->alm0_registers);
+		break;
+	case REG_ALM1_SEC:
 		write_block_start = (uint8_t *)&data->alm1_registers;
-	} else {
+		write_block_size = sizeof(data->alm1_registers);
+		break;
+	default:
 		return -EINVAL;
 	}
 
-	/* Load register address into first byte then fill in data values */
-	time_data[0] = addr;
-	memcpy(&time_data[1], write_block_start, size);
-
-	rc = i2c_write_dt(&cfg->i2c, time_data, size + 1);
+	rc = i2c_burst_write_dt(&cfg->i2c, addr, write_block_start, write_block_size);
 
 	return rc;
 }
@@ -310,13 +304,13 @@ static int write_data_block(const struct device *dev, enum mcp7940n_register add
 static int set_day_of_week(const struct device *dev, time_t *unix_time)
 {
 	struct mcp7940n_data *data = dev->data;
-	struct tm time_buffer = { 0 };
+	struct tm time_buffer = {0};
 	int rc = 0;
 
 	if (gmtime_r(unix_time, &time_buffer) != NULL) {
 		data->registers.rtc_weekday.weekday = time_buffer.tm_wday;
 		rc = write_register(dev, REG_RTC_WDAY,
-			*((uint8_t *)(&data->registers.rtc_weekday)));
+				    *((uint8_t *)(&data->registers.rtc_weekday)));
 	} else {
 		rc = -EINVAL;
 	}
@@ -358,8 +352,7 @@ static void mcp7940n_handle_interrupt(const struct device *dev, uint8_t alarm_id
 	if (alm_regs->alm_weekday.alm_if) {
 		/* Clear interrupt */
 		alm_regs->alm_weekday.alm_if = 0;
-		write_register(dev, alarm_reg_address,
-			*((uint8_t *)(&alm_regs->alm_weekday)));
+		write_register(dev, alarm_reg_address, *((uint8_t *)(&alm_regs->alm_weekday)));
 
 		/* Fire callback */
 		if (data->counter_handler[alarm_id]) {
@@ -378,19 +371,16 @@ static void mcp7940n_handle_interrupt(const struct device *dev, uint8_t alarm_id
 
 static void mcp7940n_work_handler(struct k_work *work)
 {
-	struct mcp7940n_data *data =
-		CONTAINER_OF(work, struct mcp7940n_data, alarm_work);
+	struct mcp7940n_data *data = CONTAINER_OF(work, struct mcp7940n_data, alarm_work);
 
 	/* Check interrupt flags for both alarms */
 	mcp7940n_handle_interrupt(data->mcp7940n, ALARM0_ID);
 	mcp7940n_handle_interrupt(data->mcp7940n, ALARM1_ID);
 }
 
-static void mcp7940n_init_cb(const struct device *dev,
-				 struct gpio_callback *gpio_cb, uint32_t pins)
+static void mcp7940n_init_cb(const struct device *dev, struct gpio_callback *gpio_cb, uint32_t pins)
 {
-	struct mcp7940n_data *data =
-		CONTAINER_OF(gpio_cb, struct mcp7940n_data, int_callback);
+	struct mcp7940n_data *data = CONTAINER_OF(gpio_cb, struct mcp7940n_data, int_callback);
 
 	ARG_UNUSED(pins);
 
@@ -400,7 +390,7 @@ static void mcp7940n_init_cb(const struct device *dev,
 int mcp7940n_rtc_set_time(const struct device *dev, time_t unix_time)
 {
 	struct mcp7940n_data *data = dev->data;
-	struct tm time_buffer = { 0 };
+	struct tm time_buffer = {0};
 	int rc = 0;
 
 	if (unix_time > UINT32_MAX) {
@@ -423,7 +413,7 @@ int mcp7940n_rtc_set_time(const struct device *dev, time_t unix_time)
 	}
 
 	/* Write to device */
-	rc = write_data_block(dev, REG_RTC_SEC, RTC_TIME_REGISTERS_SIZE);
+	rc = write_data_block(dev, REG_RTC_SEC);
 
 out:
 	k_sem_give(&data->lock);
@@ -440,8 +430,7 @@ static int mcp7940n_counter_start(const struct device *dev)
 
 	/* Set start oscillator configuration bit */
 	data->registers.rtc_sec.start_osc = 1;
-	rc = write_register(dev, REG_RTC_SEC,
-		*((uint8_t *)(&data->registers.rtc_sec)));
+	rc = write_register(dev, REG_RTC_SEC, *((uint8_t *)(&data->registers.rtc_sec)));
 
 	k_sem_give(&data->lock);
 
@@ -457,16 +446,14 @@ static int mcp7940n_counter_stop(const struct device *dev)
 
 	/* Clear start oscillator configuration bit */
 	data->registers.rtc_sec.start_osc = 0;
-	rc = write_register(dev, REG_RTC_SEC,
-		*((uint8_t *)(&data->registers.rtc_sec)));
+	rc = write_register(dev, REG_RTC_SEC, *((uint8_t *)(&data->registers.rtc_sec)));
 
 	k_sem_give(&data->lock);
 
 	return rc;
 }
 
-static int mcp7940n_counter_get_value(const struct device *dev,
-				      uint32_t *ticks)
+static int mcp7940n_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
 	struct mcp7940n_data *data = dev->data;
 	time_t unix_time;
@@ -494,7 +481,7 @@ static int mcp7940n_counter_set_alarm(const struct device *dev, uint8_t alarm_id
 	uint32_t seconds_until_alarm;
 	time_t current_time;
 	time_t alarm_time;
-	struct tm time_buffer = { 0 };
+	struct tm time_buffer = {0};
 	uint8_t alarm_base_address;
 	struct mcp7940n_alarm_registers *alm_regs;
 	int rc = 0;
@@ -538,14 +525,13 @@ static int mcp7940n_counter_set_alarm(const struct device *dev, uint8_t alarm_id
 
 	/* Write time to alarm registers */
 	encode_alarm(dev, &time_buffer, alarm_id);
-	rc = write_data_block(dev, alarm_base_address, RTC_ALARM_REGISTERS_SIZE);
+	rc = write_data_block(dev, alarm_base_address);
 	if (rc < 0) {
 		goto out;
 	}
 
 	/* Enable alarm */
-	rc = write_register(dev, REG_RTC_CONTROL,
-		*((uint8_t *)(&data->registers.rtc_control)));
+	rc = write_register(dev, REG_RTC_CONTROL, *((uint8_t *)(&data->registers.rtc_control)));
 	if (rc < 0) {
 		goto out;
 	}
@@ -578,8 +564,7 @@ static int mcp7940n_counter_cancel_alarm(const struct device *dev, uint8_t alarm
 		goto out;
 	}
 
-	rc = write_register(dev, REG_RTC_CONTROL,
-		*((uint8_t *)(&data->registers.rtc_control)));
+	rc = write_register(dev, REG_RTC_CONTROL, *((uint8_t *)(&data->registers.rtc_control)));
 
 out:
 	k_sem_give(&data->lock);
@@ -610,8 +595,7 @@ static uint32_t mcp7940n_counter_get_pending_int(const struct device *dev)
 	k_sem_take(&data->lock, K_FOREVER);
 
 	/* Check interrupt flag for alarm 0 */
-	rc = read_register(dev, REG_ALM0_WDAY,
-		(uint8_t *)&data->alm0_registers.alm_weekday);
+	rc = read_register(dev, REG_ALM0_WDAY, (uint8_t *)&data->alm0_registers.alm_weekday);
 	if (rc < 0) {
 		goto out;
 	}
@@ -620,7 +604,7 @@ static uint32_t mcp7940n_counter_get_pending_int(const struct device *dev)
 		/* Clear interrupt */
 		data->alm0_registers.alm_weekday.alm_if = 0;
 		rc = write_register(dev, REG_ALM0_WDAY,
-			*((uint8_t *)(&data->alm0_registers.alm_weekday)));
+				    *((uint8_t *)(&data->alm0_registers.alm_weekday)));
 		if (rc < 0) {
 			goto out;
 		}
@@ -628,8 +612,7 @@ static uint32_t mcp7940n_counter_get_pending_int(const struct device *dev)
 	}
 
 	/* Check interrupt flag for alarm 1 */
-	rc = read_register(dev, REG_ALM1_WDAY,
-		(uint8_t *)&data->alm1_registers.alm_weekday);
+	rc = read_register(dev, REG_ALM1_WDAY, (uint8_t *)&data->alm1_registers.alm_weekday);
 	if (rc < 0) {
 		goto out;
 	}
@@ -638,7 +621,7 @@ static uint32_t mcp7940n_counter_get_pending_int(const struct device *dev)
 		/* Clear interrupt */
 		data->alm1_registers.alm_weekday.alm_if = 0;
 		rc = write_register(dev, REG_ALM1_WDAY,
-			*((uint8_t *)(&data->alm1_registers.alm_weekday)));
+				    *((uint8_t *)(&data->alm1_registers.alm_weekday)));
 		if (rc < 0) {
 			goto out;
 		}
@@ -691,8 +674,7 @@ static int mcp7940n_init(const struct device *dev)
 
 	/* Set 24-hour time */
 	data->registers.rtc_hours.twelve_hr = false;
-	rc = write_register(dev, REG_RTC_HOUR,
-		*((uint8_t *)(&data->registers.rtc_hours)));
+	rc = write_register(dev, REG_RTC_HOUR, *((uint8_t *)(&data->registers.rtc_hours)));
 	if (rc < 0) {
 		goto out;
 	}
@@ -700,8 +682,7 @@ static int mcp7940n_init(const struct device *dev)
 	/* Configure alarm interrupt gpio */
 	if (cfg->int_gpios.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->int_gpios)) {
-			LOG_ERR("Port device %s is not ready",
-				cfg->int_gpios.port->name);
+			LOG_ERR("Port device %s is not ready", cfg->int_gpios.port->name);
 			rc = -ENODEV;
 			goto out;
 		}
@@ -711,11 +692,9 @@ static int mcp7940n_init(const struct device *dev)
 
 		gpio_pin_configure_dt(&cfg->int_gpios, GPIO_INPUT);
 
-		gpio_pin_interrupt_configure_dt(&cfg->int_gpios,
-						GPIO_INT_EDGE_TO_ACTIVE);
+		gpio_pin_interrupt_configure_dt(&cfg->int_gpios, GPIO_INT_EDGE_TO_ACTIVE);
 
-		gpio_init_callback(&data->int_callback, mcp7940n_init_cb,
-				   BIT(cfg->int_gpios.pin));
+		gpio_init_callback(&data->int_callback, mcp7940n_init_cb, BIT(cfg->int_gpios.pin));
 
 		(void)gpio_add_callback(cfg->int_gpios.port, &data->int_callback);
 
