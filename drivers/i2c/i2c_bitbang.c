@@ -31,6 +31,7 @@
  */
 #define T_LOW		0
 #define T_HIGH		1
+#define T_CLK_STR	2
 #define T_SU_STA	T_LOW
 #define T_HD_STA	T_HIGH
 #define T_SU_STP	T_HIGH
@@ -38,6 +39,9 @@
 
 #define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
 	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
+
+#define MS_TO_SYS_CLOCK_HW_CYCLES(ms) \
+	((uint64_t)sys_clock_hw_cycles_per_sec() * (ms) / MSEC_PER_SEC + 1)
 
 int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 {
@@ -60,6 +64,8 @@ int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 
+	context->delays[T_CLK_STR] =
+		MS_TO_SYS_CLOCK_HW_CYCLES(CONFIG_I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_MS);
 	context->dev_config = dev_config;
 
 	return 0;
@@ -76,9 +82,30 @@ int i2c_bitbang_get_config(struct i2c_bitbang *context, uint32_t *config)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+static void i2c_wait_clock_stretching(struct i2c_bitbang *context)
+{
+	uint32_t timeout = context->delays[T_CLK_STR];
+	uint32_t start = k_cycle_get_32();
+
+	do {
+		/* Wait for slave to release the clock */
+		if (context->io->get_scl(context->io_context)) {
+			return;
+		}
+	} while (k_cycle_get_32() - start < timeout);
+}
+#endif
+
 static void i2c_set_scl(struct i2c_bitbang *context, int state)
 {
 	context->io->set_scl(context->io_context, state);
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+	if (state == 1) {
+		/* Wait for slave to release the clock */
+		i2c_wait_clock_stretching(context);
+	}
+#endif
 }
 
 static void i2c_set_sda(struct i2c_bitbang *context, int state)

@@ -12,6 +12,10 @@
 struct i2c_bitbang_io {
 	/* Set the state of the SCL line (zero/non-zero value) */
 	void (*set_scl)(void *io_context, int state);
+#ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
+	/* Return the state of the SCL line (zero/non-zero value) */
+	int (*get_scl)(void *io_context);
+#endif
 	/* Set the state of the SDA line (zero/non-zero value) */
 	void (*set_sda)(void *io_context, int state);
 	/* Return the state of the SDA line (zero/non-zero value) */
@@ -28,7 +32,7 @@ struct i2c_bitbang_io {
 struct i2c_bitbang {
 	const struct i2c_bitbang_io	*io;
 	void				*io_context;
-	uint32_t			delays[2];
+	uint32_t			delays[3];
 	uint32_t			dev_config;
 };
 
