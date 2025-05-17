@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #define DEBUG_RX 0
 #endif
 
+#define NET_BUF_TIMEOUT K_MSEC(100)
+
 /* If the VLAN interface count is 0, then only priority tagged (tag 0)
  * Ethernet frames can be received. In this case we do not need to
  * allocate any memory for VLAN interfaces.
@@ -181,24 +183,11 @@ static struct vlan_context *get_vlan(struct net_if *iface,
 		goto out;
 	}
 
-	/* If the interface is the main Ethernet one, then we only need
-	 * to go through its attached virtual interfaces.
-	 */
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) ||
+	    net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		ctx = get_vlan_ctx(iface, vlan_tag, false);
 		goto out;
-
 	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
-		goto out;
-	}
-
-	/* If the interface is virtual, then it should be the VLAN one.
-	 * Just get the Ethernet interface it points to get the context.
-	 */
-	ctx = get_vlan_ctx(net_virtual_get_iface(iface), vlan_tag, false);
 
 out:
 	k_mutex_unlock(&lock);
@@ -390,28 +379,46 @@ static void setup_link_address(struct vlan_context *ctx)
 				   ll_addr->type);
 }
 
+static int vlan_fill_header(struct net_pkt *pkt) {
+	struct net_buf *hdr_frag;
+	void *hdr_buf;
+	struct net_vlan_hdr hdr;
+	const size_t hdr_len = sizeof(struct net_vlan_hdr);
+
+	/* Check if previous layer reserved some space */
+	if (net_buf_headroom(pkt->frags) < hdr_len) {
+		/* TODO: Reserve meachnism */
+		const size_t reserve_len = 32;
+		hdr_frag = net_pkt_get_frag(pkt, reserve_len, NET_BUF_TIMEOUT);
+		if (!hdr_frag) {
+			return -ENOMEM;
+		}
+		net_pkt_frag_insert(pkt, hdr_frag);
+		net_buf_reserve(hdr_frag, reserve_len);
+	} else {
+		hdr_frag = pkt->frags;
+	}
+	hdr.tpid = htons(NET_ETH_PTYPE_VLAN);
+	hdr.tci = htons(net_pkt_vlan_tci(pkt));
+	hdr.type = htons(net_pkt_ll_proto_type(pkt));
+
+	hdr_buf = net_buf_push(hdr_frag, hdr_len);
+	memcpy(hdr_buf, &hdr, sizeof(struct net_vlan_hdr));
+
+	return 0;
+}
+
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	const struct ethernet_api *eth = net_if_get_device(iface)->api;
 	struct vlan_context *vlan;
 	int ret;
 
-	if (!eth) {
-		return -ENOENT;
-	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) &&
+	    net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
 		return -EINVAL;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
-		NET_DBG("Interface %d does not support VLAN",
-			net_if_get_by_iface(iface));
-		return -ENOTSUP;
-	}
-
-	if (!ctx->is_init) {
+	if (!iface->is_init) {
 		return -EPERM;
 	}
 
@@ -457,9 +464,12 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		 */
 		setup_link_address(vlan);
 
-		if (eth->vlan_setup) {
-			eth->vlan_setup(net_if_get_device(iface),
-					iface, vlan->tag, true);
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+			const struct ethernet_api *eth = net_if_get_device(iface)->api;
+			if ((eth->get_capabilities(net_if_get_device(iface)) & ETHERNET_HW_VLAN) &&
+			    eth->vlan_setup) {
+				eth->vlan_setup(net_if_get_device(iface), iface, vlan->tag, true);
+			}
 		}
 
 		ethernet_mgmt_raise_vlan_enabled_event(vlan->iface, vlan->tag);
@@ -502,9 +512,10 @@ int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 
 	vlan->tag = NET_VLAN_TAG_UNSPEC;
 
-	if (eth->vlan_setup) {
-		eth->vlan_setup(net_if_get_device(vlan->attached_to),
-				vlan->attached_to, tag, false);
+	if ((eth->get_capabilities(net_if_get_device(vlan->attached_to)) & ETHERNET_HW_VLAN) &&
+	    eth->vlan_setup) {
+		eth->vlan_setup(net_if_get_device(vlan->attached_to), vlan->attached_to, tag,
+				false);
 	}
 
 	ethernet_mgmt_raise_vlan_disabled_event(vlan->iface, tag);
@@ -576,6 +587,7 @@ static int vlan_interface_stop(const struct device *dev)
 static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
+	int ret;
 
 	if (ctx->attached_to == NULL) {
 		return -ENOENT;
@@ -584,6 +596,16 @@ static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_set_vlan_tag(pkt, ctx->tag);
 	net_pkt_set_iface(pkt, ctx->attached_to);
 	set_priority(pkt);
+
+	ret = vlan_fill_header(pkt);
+	if (ret < 0) {
+		NET_DBG("Cannot fill VLAN header");
+		return ret;
+	}
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_VLAN);
+	/* Pull two bytes of due to vlan type also belonging to etherent header */
+	net_buf_pull(pkt->frags, 2);
 
 	if (DEBUG_TX) {
 		char str[sizeof("TX iface xx (tag xxxx)")];
@@ -595,7 +617,7 @@ static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_hexdump(pkt, str);
 	}
 
-	return net_send_data(pkt);
+	return net_if_l2(ctx->attached_to)->send(ctx->attached_to, pkt);
 }
 
 static enum net_verdict vlan_interface_recv(struct net_if *iface,
@@ -603,9 +625,12 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
 
+	/* Check if the tag matches. Otherwise drop the packet. */
 	if (net_pkt_vlan_tag(pkt) != ctx->tag) {
-		return NET_CONTINUE;
+		return NET_DROP;
 	}
+
+	/* Header has been already processed in net_core. */
 
 	if (DEBUG_RX) {
 		char str[sizeof("RX iface xx (tag xxxx)")];
@@ -617,7 +642,7 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 		net_pkt_hexdump(pkt, str);
 	}
 
-	return NET_OK;
+	return NET_CONTINUE;
 }
 
 int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
@@ -661,7 +686,7 @@ static void vlan_iface_init(struct net_if *iface)
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
 	char name[MAX(MAX_VLAN_NAME_LEN, MAX_VIRT_NAME_LEN)];
 
-	if (ctx->init_done) {
+	if (iface->is_init) {
 		return;
 	}
 
@@ -676,7 +701,7 @@ static void vlan_iface_init(struct net_if *iface)
 
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
 
-	ctx->init_done = true;
+	iface->is_init = true;
 }
 
 #else /* CONFIG_NET_VLAN_COUNT > 0 */
