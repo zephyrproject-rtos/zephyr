@@ -1,4 +1,4 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP VREF SOC peripheral
@@ -40,6 +40,13 @@ properties:
       Enable second-order curvature compensation.
       This must be enabled to achieve the performance stated in the datasheet.
       However, the reset value of the peripheral has it disabled.
+
+  nxp,high-performance-en:
+    type: boolean
+    description: |
+      Enable VREF internal voltage regulator and chop oscillator to minimize
+      analog offset and supply noise, this will improve the stability and
+      accuracy of the output voltage, but the current consumption will increase.
 
   "#nxp,reference-cells":
     type: int
