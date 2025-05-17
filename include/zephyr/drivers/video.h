@@ -1278,6 +1278,15 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
 #define VIDEO_PIX_FMT_XRGB32 VIDEO_FOURCC('B', 'X', '2', '4')
 
 /**
+ * Red, Green, Blue, one byte per channel, 24-bits in total.
+ *
+ * @verbatim
+ * | Rrrrrrrr Gggggggg Bbbbbbbb | ...
+ * @endverbatim
+ */
+#define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
  * @}
  */
 

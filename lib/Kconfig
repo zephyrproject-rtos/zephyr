@@ -19,6 +19,8 @@ source "lib/net_buf/Kconfig"
 
 source "lib/os/Kconfig"
 
+source "lib/pixel/Kconfig"
+
 source "lib/posix/Kconfig"
 
 source "lib/open-amp/Kconfig"
@@ -32,4 +34,5 @@ source "lib/runtime/Kconfig"
 source "lib/utils/Kconfig"
 
 source "lib/uuid/Kconfig"
+
 endmenu
