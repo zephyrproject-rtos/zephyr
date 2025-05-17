@@ -15,7 +15,7 @@ supported:
   - pwm
   - i2c
   - gpio
-  - usb device
+  - usb_device
   - counter
   - spi
   - rng
