@@ -8,6 +8,8 @@ to extend its features and services for easier and modularized prototyping.
 In Zephyr, the shield feature provides Zephyr-formatted shield
 descriptions for easier compatibility with applications.
 
+.. _shield_porting_guide:
+
 Shield porting and configuration
 ********************************
 
@@ -17,11 +19,27 @@ under :zephyr_file:`boards/shields`:
 .. code-block:: none
 
    boards/shields/<shield>
+   ├── shield.yml
    ├── <shield>.overlay
    ├── Kconfig.shield
    └── Kconfig.defconfig
 
 These files provides shield configuration as follows:
+
+* **shield.yml**: This file provides metadata about the shield in YAML format.
+  It must contain the following fields:
+
+  * ``name``: Name of the shield used in Kconfig and build system (required)
+  * ``full_name``: Full commercial name of the shield (optional)
+  * ``vendor``: Manufacturer/vendor of the shield (required)
+
+  Example:
+
+  .. code-block:: yaml
+
+     name: foo_shield
+     full_name: Foo Shield for Arduino
+     vendor: acme
 
 * **<shield>.overlay**: This file provides a shield description in devicetree
   format that is merged with the board's :ref:`devicetree <dt-guide>`
