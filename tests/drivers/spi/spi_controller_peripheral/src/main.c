@@ -18,18 +18,16 @@
 #elif CONFIG_TESTED_SPI_MODE == 2
 #define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_LSB | SPI_MODE_CPOL)
 #elif CONFIG_TESTED_SPI_MODE == 3
-#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA \
-				| SPI_MODE_CPOL)
+#define SPI_MODE                                                                                   \
+	(SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_MODE_CPOL)
 #endif
 
-#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
-#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+#define SPIM_OP (SPI_OP_MODE_MASTER | SPI_MODE)
+#define SPIS_OP (SPI_OP_MODE_SLAVE | SPI_MODE)
 
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP, 0);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
-static const struct spi_config spis_config = {
-	.operation = SPIS_OP
-};
+static const struct spi_config spis_config = {.operation = SPIS_OP};
 
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -97,7 +95,7 @@ static void work_handler(struct k_work *work)
 		}
 	} else {
 		rv = spi_transceive_signal(spim.bus, &spim.config, td->mtx_set, td->mrx_set,
-				&async_sig_spim);
+					   &async_sig_spim);
 		zassert_equal(rv, 0);
 
 		rv = k_poll(&async_evt_spim, 1, K_MSEC(200));
@@ -155,6 +153,8 @@ static int check_buffers(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set,
 	static uint8_t rx_data[256];
 	int rx_len;
 	int tx_len;
+	int len;
+	int result;
 
 	if (!tx_set || !rx_set) {
 		return 0;
@@ -165,8 +165,14 @@ static int check_buffers(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set,
 	if (same_size && (rx_len != tx_len)) {
 		return -1;
 	}
-
-	return memcmp(tx_data, rx_data, rx_len);
+	len = MIN(rx_len, tx_len);
+	result = memcmp(tx_data, rx_data, len);
+	if (result != 0) {
+		for (size_t i = 0; i < len; i++) {
+			TC_PRINT("[%d]tx: 0x%02x, rx: 0x%02x\n", i, tx_data[i], rx_data[i]);
+		}
+	}
+	return result;
 }
 
 /** Calculate expected number of received bytes by the SPI peripheral.
