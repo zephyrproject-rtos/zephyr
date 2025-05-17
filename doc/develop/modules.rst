@@ -15,7 +15,9 @@ modules, an external project is required to have its own life-cycle outside
 the Zephyr Project, that is, reside in its own repository, and have its own
 contribution and maintenance workflow and release process. Zephyr modules
 should not contain code that is written exclusively for Zephyr. Instead,
-such code should be contributed to the main zephyr tree.
+such code should be contributed to the main zephyr tree. The exception to this
+are projects that include an externally-maintained Zephyr application as part of
+its codebase, due to the nature of the feature itself (e.g. a bootloader).
 
 Modules to be included in the default manifest of the Zephyr project need to
 provide functionality or features endorsed and approved by the project Technical
