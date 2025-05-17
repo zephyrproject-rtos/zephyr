@@ -1,14 +1,24 @@
 /*
  * Copyright (c) 2019, Linaro Limited
- * Copyright (c) 2024, tinyVision.ai Inc.
+ * Copyright (c) 2024-2025, tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 
-#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "video_common.h"
+
+LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
@@ -165,4 +175,213 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
 			break;
 		}
 	}
+}
+
+int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t *data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, reg_addr);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, reg_addr);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
+	uint8_t buf_w[sizeof(uint16_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	__ASSERT(addr_size > 0, "The address must have a address size flag");
+	__ASSERT(data_size > 0, "The address must have a data size flag");
+
+	*data = 0;
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		data_ptr = (uint8_t *)data + sizeof(*data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		data_ptr = (uint8_t *)data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		ret = i2c_write_read_dt(i2c, buf_w, addr_size, &data_ptr[i], 1);
+		if (ret) {
+			LOG_ERR("Failed to read from register 0x%x", addr + i);
+			return ret;
+		}
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size, "Data written to the I2C device...");
+		LOG_HEXDUMP_DBG(&data_ptr[i], 1, "... data read back from the I2C device");
+	}
+
+	*data = big_endian ? sys_be32_to_cpu(*data) : sys_le32_to_cpu(*data);
+
+	return 0;
+}
+
+static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size)
+{
+	int ret;
+
+	for (int i = 0;; i++) {
+		ret = i2c_write_dt(i2c, buf_w, size);
+		if (!ret) {
+			break;
+		}
+		if (i == CONFIG_VIDEO_I2C_RETRY_NUM) {
+			LOG_HEXDUMP_ERR(buf_w, size, "failed to write to I2C register");
+			return ret;
+		}
+
+		k_sleep(K_MSEC(1));
+	}
+
+	return 0;
+}
+
+int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t data)
+{
+	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
+	size_t data_size = FIELD_GET(VIDEO_REG_DATA_SIZE_MASK, reg_addr);
+	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, reg_addr);
+	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
+	uint8_t buf_w[sizeof(uint16_t) + sizeof(uint32_t)] = {0};
+	uint8_t *data_ptr;
+	int ret;
+
+	__ASSERT(addr_size > 0, "The address must have a address size flag");
+	__ASSERT(data_size > 0, "The address must have a data size flag");
+
+	if (big_endian) {
+		/* Casting between data sizes in big-endian requires re-aligning */
+		data = sys_cpu_to_be32(data);
+		data_ptr = (uint8_t *)&data + sizeof(data) - data_size;
+	} else {
+		/* Casting between data sizes in little-endian is a no-op */
+		data = sys_cpu_to_le32(data);
+		data_ptr = (uint8_t *)&data;
+	}
+
+	for (int i = 0; i < data_size; i++) {
+		/* The address is always big-endian as per CCI standard */
+		if (addr_size == 1) {
+			buf_w[0] = addr + i;
+		} else {
+			sys_put_be16(addr + i, &buf_w[0]);
+		}
+
+		buf_w[addr_size] = data_ptr[i];
+
+		LOG_HEXDUMP_DBG(buf_w, addr_size + 1, "Data written to the I2C device");
+
+		ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
+		if (ret) {
+			LOG_ERR("Failed to write to register 0x%x", addr + i);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_modify_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t field_mask,
+			 uint32_t field_value)
+{
+	uint32_t reg;
+	int ret;
+
+	ret = video_read_cci_reg(i2c, reg_addr, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	return video_write_cci_reg(i2c, reg_addr, (reg & ~field_mask) | field_value);
+}
+
+int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_reg *regs,
+			      size_t num_regs)
+{
+	int ret;
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video_reg8 *regs,
+			       size_t num_regs)
+{
+	int ret;
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
+				size_t num_regs)
+{
+	int ret;
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int64_t video_get_link_frequency(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	int ret;
+
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQUENCY,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.id = VIDEO_CID_LINK_FREQUENCY,
+	};
+
+
+	/* Try to get the LINK_FREQUENCY value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(dev, &ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ctrl.val < ctrl_query.range.min || ctrl.val > ctrl_query.range.max) {
+		return -EIO;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQUENCY is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ctrl.val64 * bpp / (2 * lane_nb);
 }

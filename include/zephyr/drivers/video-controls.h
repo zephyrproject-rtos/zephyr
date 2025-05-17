@@ -368,6 +368,9 @@ enum video_camera_orientation {
 /** Selection of the type of test pattern to represent */
 #define VIDEO_CID_TEST_PATTERN (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 3)
 
+/** Link frequency, applicable for the CSI2 based devices. This control is read-only. */
+#define VIDEO_CID_LINK_FREQUENCY (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 4)
+
 /**
  * @}
  */
@@ -463,7 +466,10 @@ struct video_ctrl_query {
 	/** control range */
 	struct video_ctrl_range range;
 	/** menu if control is of menu type */
-	const char *const *menu;
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
+	};
 };
 
 /**
