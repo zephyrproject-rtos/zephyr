@@ -183,6 +183,19 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+	case ZFD_IOCTL_STAT: {
+		struct stat *buf;
+
+		buf = va_arg(args, struct stat *);
+
+		/*
+		 * fs_stat() is kind of broken. The problem is that newlib calls stat() prior to
+		 * doing certain stdio file operations. Simply clear the buffer to prevent errno
+		 * from being set to EOPNOTSUPP.
+		 */
+		memset(buf, 0, sizeof(*buf));
+		return 0;
+	}
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
