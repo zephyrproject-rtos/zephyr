@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	vhost: xen-vhost-mmio {
+		compatible = "xen,vhost-mmio";
+		device-id = <4>;
+		vendor-id = <0x7a707972>; /* "zphy" */
+		num-queues = <2>;
+		queue-size-max= <16>;
+		base = <0x2000000>;
+	};
+};
