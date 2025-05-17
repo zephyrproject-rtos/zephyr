@@ -22,7 +22,7 @@ if(CONFIG_CPP
 endif()
 
 
-if(CONFIG_NEWLIB_LIBC AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+if(CONFIG_NEWLIB_LIBC AND COMPILER STREQUAL "gcc")
   # We are using c;rt;c (expands to '-lc -lgcc -lc') in code below.
   # This is needed because when linking with newlib on aarch64, then libgcc has a
   # link dependency to libc (strchr), but libc also has dependencies to libgcc.
