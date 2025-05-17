@@ -310,6 +310,9 @@ if (CONFIG_BUILD_WITH_TFM)
 	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
 
+  set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
+  build_info(images VALUE ${tfm_image_info})
+
   ExternalProject_Add(
     tfm
     SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
