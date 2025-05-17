@@ -6,6 +6,6 @@
 config CLOCK_CONTROL_ESP32
 	bool "ESP32 Clock driver"
 	default y
-	depends on DT_HAS_ESPRESSIF_ESP32_RTC_ENABLED
+	depends on DT_HAS_ESPRESSIF_ESP32_CLOCK_ENABLED
 	help
 	  Enable support for ESP32 clock driver.
