@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &zephyr_gpio_stepper;
+		stepper =  &zephyr_h_bridge_stepper;
 	};
 };
 
@@ -42,13 +42,13 @@
 };
 
 / {
-	zephyr_gpio_stepper: zephyr_gpio_stepper {
-		compatible = "zephyr,gpio-stepper";
+	zephyr_h_bridge_stepper: zephyr_h_bridge_stepper {
+		compatible = "zephyr,h-bridge-stepper";
 		status = "okay";
 		micro-step-res = <2>;
 		gpios = <&gpio1 0 0>,
-				<&gpio2 0 0>,
-				<&gpio3 0 0>,
-				<&gpio4 0 0>;
+			<&gpio2 0 0>,
+			<&gpio3 0 0>,
+			<&gpio4 0 0>;
 	};
 };

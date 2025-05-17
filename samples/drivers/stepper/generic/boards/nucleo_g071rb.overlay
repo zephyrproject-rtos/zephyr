@@ -1,14 +1,15 @@
 / {
 	aliases {
-		stepper = &gpio_stepper;
+		stepper = &h_bridge_stepper;
 	};
 };
 
 / {
-	gpio_stepper: gpio_stepper {
-		compatible = "zephyr,gpio-stepper";
+	h_bridge_stepper: h_bridge_stepper {
+		compatible = "zephyr,h-bridge-stepper";
 		status = "okay";
 		micro-step-res = <2>;
+		en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>; /* D12 */
 		gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,	/* D8 */
 			<&gpioc 7 GPIO_ACTIVE_HIGH>,	/* D9 */
 			<&gpiob 0 GPIO_ACTIVE_HIGH>,	/* D10 */

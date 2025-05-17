@@ -8,14 +8,15 @@ description: |
   Example:
     /* Lead A is connected Lead C and Lead B is connected to Lead D*/
     stepper: stepper {
-        compatible = "zephyr,gpio-stepper";
+        compatible = "zephyr,h-bridge-stepper";
+        en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
         gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
                 <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
                 <&gpiob 0 GPIO_ACTIVE_HIGH>,  /* Lead A2/C */
                 <&gpioa 7 GPIO_ACTIVE_HIGH>;  /* Lead B2/D */
     };
 
-compatible: "zephyr,gpio-stepper"
+compatible: "zephyr,h-bridge-stepper"
 
 include: stepper-controller.yaml
 
