@@ -27,7 +27,8 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 
 	hawkbit_autohandler(false);
 
-	switch (hawkbit_autohandler_wait(UINT32_MAX, K_FOREVER)) {
+	switch (hawkbit_autohandler_wait(UINT32_MAX,
+					 K_MSEC(CONFIG_HAWKBIT_SHELL_AUTOHANDLER_TIMEOUT))) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		shell_error(sh, "Image is unconfirmed."
 				"Rebooting to revert back to previous confirmed image");
@@ -55,6 +56,10 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 
 	case HAWKBIT_NOT_INITIALIZED:
 		shell_error(sh, "hawkBit not initialized");
+		break;
+
+	case HAWKBIT_NO_RESPONSE:
+		shell_info(sh, "hawkBit is still running, see log for more information");
 		break;
 
 	default:
