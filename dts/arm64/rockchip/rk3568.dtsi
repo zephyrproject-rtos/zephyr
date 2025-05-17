@@ -81,7 +81,7 @@
 		compatible = "rockchip,rk3568-uart", "ns16550";
 		reg = <0xfe660000 0x10000>;
 		interrupts = <GIC_SPI 118 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-		clock-frequency = <12000000>;
+		clock-frequency = <24000000>;
 		reg-shift = <2>;
 		status = "disabled";
 	};
