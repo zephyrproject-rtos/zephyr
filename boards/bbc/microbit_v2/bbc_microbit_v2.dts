@@ -20,6 +20,8 @@
 		magn0 = &lsm303agr_magn;
 		accel0 = &lsm303agr_accel;
 		watchdog0 = &wdt0;
+		led0 = &led_row_1;
+		led1 = &led_col_1;
 	};
 
 	chosen {
@@ -98,6 +100,18 @@
 			   <16 0 &gpio1 2 0>,	/* P16 */
 			   <19 0 &gpio0 26 0>,	/* P19 */
 			   <20 0 &gpio1 0 0>;	/* P20 */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_col_1: ledcol1 {
+			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+			label = "BLINK_LED";
+		};
+		led_row_1: ledrow1 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			label = "BLINK_LED";
+		};
 	};
 };
 
