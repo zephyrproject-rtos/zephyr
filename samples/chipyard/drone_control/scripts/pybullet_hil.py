@@ -57,7 +57,8 @@ DEFAULT_SIMULATION_FREQ_HZ = 400
 #DEFAULT_CONTROL_FREQ_HZ = 50
 DEFAULT_CONTROL_FREQ_HZ = 100
 #DEFAULT_DURATION_SEC = 12
-DEFAULT_DURATION_SEC = 5
+#DEFAULT_DURATION_SEC = 5
+DEFAULT_DURATION_SEC = 1000
 DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 
@@ -92,7 +93,8 @@ def extract_state_inputs(observation):
     # Angular velocities
     dphi, dtheta, dpsi = observation[13], observation[14], observation[15]
 
-    formatted_state_string = f"{x} {y} {z} {r1} {r2} {r3} {vx} {vy} {vz} {dphi} {dtheta} {dpsi}"
+    formatted_state_string = f"{x:.6f} {y:.6f} {z:.6f} {r1:.6f} {r2:.6f} {r3:.6f} {vx:.6f} {vy:.6f} {vz:.6f} {dphi:.6f} {dtheta:.6f} {dpsi:.6f}"
+
     # print (f"Formatted_State_String =========== {type(formatted_state_string)} {formatted_state_string}")
     return formatted_state_string
 
@@ -226,13 +228,6 @@ def run(
     INIT_XYZS = np.array([[R*np.cos((i/6)*2*np.pi+np.pi/2), R*np.sin((i/6)*2*np.pi+np.pi/2)-R, H+i*H_STEP] for i in range(num_drones)])
     INIT_RPYS = np.array([[0.1, 0.1,  i * (np.pi/2)/num_drones] for i in range(num_drones)])
 
-    #### Initialize a circular trajectory ######################
-    PERIOD = 10
-    NUM_WP = control_freq_hz*PERIOD
-    TARGET_POS = np.zeros((NUM_WP,3))
-    for i in range(NUM_WP):
-        TARGET_POS[i, :] = R*np.cos((i/NUM_WP)*(2*np.pi)+np.pi/2)+INIT_XYZS[0, 0], R*np.sin((i/NUM_WP)*(2*np.pi)+np.pi/2)-R+INIT_XYZS[0, 1], 0
-    wp_counters = np.array([int((i*NUM_WP/6)%NUM_WP) for i in range(num_drones)])
 
     #### Create the environment ################################
     env = CtrlAviary(drone_model=drone,
@@ -252,6 +247,20 @@ def run(
     #### Obtain the PyBullet Client ID from the environment ####
     PYB_CLIENT = env.getPyBulletClient()
 
+    # Create sliders in the PyBullet UI
+    target_x_slider = p.addUserDebugParameter("Target X", -2, 2, 0)
+    target_y_slider = p.addUserDebugParameter("Target Y", -2, 2, 0)
+    target_z_slider = p.addUserDebugParameter("Target Z", 0, 2, 1)
+
+    # Create a purely visual target marker (no collision)
+    target_visual = p.createVisualShape(shapeType=p.GEOM_SPHERE, radius=0.02, rgbaColor=[1, 0, 0, 0.5])
+    target_marker_id = p.createMultiBody(
+        baseMass=0,  # static
+        baseVisualShapeIndex=target_visual,
+        baseCollisionShapeIndex=-1,  # no collision
+        basePosition=[0, 0, 1]
+    )
+
     #### Initialize the logger #################################
     logger = Logger(logging_freq_hz=control_freq_hz,
                     num_drones=num_drones,
@@ -259,9 +268,6 @@ def run(
                     colab=colab
                     )
 
-    #### Initialize the controllers ############################
-    if drone in [DroneModel.CF2X, DroneModel.CF2P]:
-        ctrl = [DSLPIDControl(drone_model=drone) for i in range(num_drones)]
 
     #### Run the simulation ####################################
     action = np.zeros((num_drones,4))
@@ -274,6 +280,20 @@ def run(
         #### Step the simulation ###################################
         obs, _, _, _, _ = env.step(action)
         # print(f"obs: {obs}")
+
+        target_x = p.readUserDebugParameter(target_x_slider)
+        target_y = p.readUserDebugParameter(target_y_slider)
+        target_z = p.readUserDebugParameter(target_z_slider)
+
+        target_pos = np.array([target_x, target_y, target_z])
+
+        # Update visual marker position
+        p.resetBasePositionAndOrientation(target_marker_id, target_pos, [0, 0, 0, 1])
+
+        obs[0][0] -= target_x;
+        obs[0][1] -= target_y;
+        obs[0][2] -= target_z - 0.3;
+
         tinympc.send_state(obs)
         try:
             forces = tinympc.read_action()
@@ -286,17 +306,6 @@ def run(
         #time.sleep(0.5)
         
 
-        #### Go to the next way point and loop #####################
-        # for j in range(num_drones):
-        #     wp_counters[j] = wp_counters[j] + 1 if wp_counters[j] < (NUM_WP-1) else 0
-
-        # #### Log the simulation ####################################
-        logger.log(drone=0,
-                    timestamp=i/env.CTRL_FREQ,
-                    state=obs[0],
-                    control=np.hstack([TARGET_POS[wp_counters[0], 0:2], INIT_XYZS[0, 2], INIT_RPYS[0, :], np.zeros(6)])
-                    # control=np.hstack([INIT_XYZS[j, :]+TARGET_POS[wp_counters[j], :], INIT_RPYS[j, :], np.zeros(6)])
-                    )
 
         #### Printout ##############################################
         env.render()

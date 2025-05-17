@@ -73,7 +73,7 @@ int main(void)
         return -1;
     }
 
-    // send_str("Testing drone control via UART\n");
+    send_str("Testing drone control via UART\n");
 
     enable_vector_operations();
     init_all();
@@ -106,7 +106,7 @@ int main(void)
     // Hovering reference
     tiny_VectorNx Xref_origin;
     init_VectorNx(&Xref_origin);
-    tinytype Xref_origin_data[NSTATES] = {0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    tinytype Xref_origin_data[NSTATES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     matsetv(Xref_origin.data, Xref_origin_data, Xref_origin.outer, Xref_origin.inner);
     for (int j = 0; j < NHORIZON; j++) {
         matsetv(work.Xref.vector[j], Xref_origin_data, 1, NSTATES);
