@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *display_dev;
 	struct video_format fmt;
 	struct video_caps caps;
