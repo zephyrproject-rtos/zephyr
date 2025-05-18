@@ -46,9 +46,16 @@ static struct k_thread rx_thread_data;
 static unsigned short bt_dev_index;
 
 #define TCP_ADDR_BUFF_SIZE 16
-static bool hci_socket;
+#define UNIX_ADDR_BUFF_SIZE 4096
+enum hci_connection_type {
+	HCI_USERCHAN,
+	HCI_TCP,
+	HCI_UNIX,
+};
+static enum hci_connection_type conn_type;
 static char ip_addr[TCP_ADDR_BUFF_SIZE];
 static unsigned int port;
+static char socket_path[UNIX_ADDR_BUFF_SIZE];
 static bool arg_found;
 
 static struct net_buf *get_rx(const uint8_t *buf)
@@ -286,16 +293,19 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct uc_data *uc = dev->data;
 
-	if (hci_socket) {
+	switch (conn_type) {
+	case HCI_USERCHAN:
 		LOG_DBG("hci%d", bt_dev_index);
-	} else {
-		LOG_DBG("hci %s:%d", ip_addr, port);
-	}
-
-	if (hci_socket) {
 		uc->fd = user_chan_socket_open(bt_dev_index);
-	} else {
+		break;
+	case HCI_TCP:
+		LOG_DBG("hci %s:%d", ip_addr, port);
 		uc->fd = user_chan_net_connect(ip_addr, port);
+		break;
+	case HCI_UNIX:
+		LOG_DBG("hci socket %s", socket_path);
+		uc->fd = user_chan_unix_connect(socket_path);
+		break;
 	}
 	if (uc->fd < 0) {
 		return -nsi_errno_from_mid(-uc->fd);
@@ -325,7 +335,8 @@ static int uc_init(const struct device *dev)
 {
 	if (!arg_found) {
 		posix_print_warning("Warning: Bluetooth device missing.\n"
-				    "Specify either a local hci interface --bt-dev=hciN\n"
+				    "Specify either a local hci interface --bt-dev=hciN,\n"
+				    "a UNIX socket --bt-dev=/tmp/bt-server-bredrle\n"
 				    "or a valid hci tcp server --bt-dev=ip_address:port\n");
 		return -ENODEV;
 	}
@@ -350,7 +361,7 @@ static void cmd_bt_dev_found(char *argv, int offset)
 
 		if (arg_hci_idx >= 0 && arg_hci_idx <= USHRT_MAX) {
 			bt_dev_index = arg_hci_idx;
-			hci_socket = true;
+			conn_type = HCI_USERCHAN;
 		} else {
 			posix_print_error_and_exit("Invalid argument value for --bt-dev. "
 						  "hci idx must be within range 0 to 65536.\n");
@@ -365,9 +376,14 @@ static void cmd_bt_dev_found(char *argv, int offset)
 			posix_print_error_and_exit("Error: IP address for bluetooth "
 						   "hci tcp server is incorrect.\n");
 		}
+
+		conn_type = HCI_TCP;
+	} else if (strlen(&argv[offset]) > 0 && argv[offset] == '/') {
+		strncpy(socket_path, &argv[offset], UNIX_ADDR_BUFF_SIZE - 1);
+		conn_type = HCI_UNIX;
 	} else {
 		posix_print_error_and_exit("Invalid option %s for --bt-dev. "
-					   "An hci interface or hci tcp server is expected.\n",
+					   "An hci interface, absolute UNIX socket path or hci tcp server is expected.\n",
 					   &argv[offset]);
 	}
 }
@@ -385,7 +401,8 @@ static void add_btuserchan_arg(void)
 		{ false, true, false,
 		"bt-dev", "hciX", 's',
 		NULL, cmd_bt_dev_found,
-		"A local HCI device to be used for Bluetooth (e.g. hci0) "
+		"A local HCI device to be used for Bluetooth (e.g. hci0), "
+		"UNIX socket (absolute path, like /tmp/bt-server-bredrle) "
 		"or an HCI TCP Server (e.g. 127.0.0.1:9000)"},
 		ARG_TABLE_ENDMARKER
 	};
