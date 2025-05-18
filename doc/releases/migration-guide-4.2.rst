@@ -649,6 +649,11 @@ Video
   ``video_stream_start``
   ``video_stream_stop``
 
+* ``video_format.pitch`` has been updated to be set explicitly by the driver, a task formerly
+  required by the application. This update enables the application to correctly allocate a buffer
+  size on a per driver basis. Existing applications will not be broken by this change but can be
+  simplified as performed in the sample in the commit ``33dcbe37cfd3593e8c6e9cfd218dd31fdd533598``.
+
 Audio
 =====
 
