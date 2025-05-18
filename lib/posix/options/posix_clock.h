@@ -61,11 +61,7 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
 
 uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime);
 
-__syscall int __posix_clock_get_base(clockid_t clock_id, struct timespec *ts);
-
 /** INTERNAL_HIDDEN @endcond */
-
-#include <zephyr/syscalls/posix_clock.h>
 
 #ifdef __cplusplus
 }
