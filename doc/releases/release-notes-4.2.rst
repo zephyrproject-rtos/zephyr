@@ -241,6 +241,7 @@ New APIs and options
 
 * ZBus
 
+  * Zbus has achieved stable status with the release of API version v1.0.0.
   * Runtime observers can work without heap. Now it is possible to choose between static, dynamic,
     and none allocation for the runtime observers nodes.
   * Runtime observers using :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` must use
