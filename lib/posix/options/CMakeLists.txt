@@ -47,10 +47,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_BARRIERS)
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION
-    clock_common.c
-    clock_selection.c
-  )
+  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION clock_selection.c)
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
@@ -124,7 +121,6 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
     clock.c
-    clock_common.c
     timer.c
     timespec_to_timeout.c
   )
@@ -166,7 +162,6 @@ zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
 
 if (NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_XSI_SINGLE_PROCESS
-    clock_common.c
     env_common.c
     xsi_single_process.c
   )
