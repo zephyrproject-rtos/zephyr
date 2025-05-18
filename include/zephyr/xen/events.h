@@ -79,6 +79,9 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 int unbind_event_channel(evtchn_port_t port);
 int get_missed_events(evtchn_port_t port);
 
+int mask_event_channel(evtchn_port_t port);
+int unmask_event_channel(evtchn_port_t port);
+
 int xen_events_init(void);
 
 #endif /* __XEN_EVENTS_H__ */

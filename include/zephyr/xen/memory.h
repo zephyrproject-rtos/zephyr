@@ -64,3 +64,6 @@ int xendom_remove_from_physmap(int domid, xen_pfn_t gpfn);
 int xendom_populate_physmap(int domid, unsigned int extent_order,
 			    unsigned int nr_extents, unsigned int mem_flags,
 			    xen_pfn_t *extent_start);
+
+int xendom_acquire_resource(domid_t domid, uint16_t type, uint32_t id, uint64_t frame,
+			    uint32_t *nr_frames, xen_pfn_t *frame_list);
