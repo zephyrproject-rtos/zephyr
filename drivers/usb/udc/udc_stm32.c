@@ -1131,9 +1131,8 @@ static int priv_clock_enable(void)
 			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
 			return -ENOTSUP;
 		}
-#endif
 	}
-
+#endif
 	/* Previous check won't work in case of F1/F3. Add build time check */
 #if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
 
@@ -1145,39 +1144,39 @@ static int priv_clock_enable(void)
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 #if USB_OTG_HS_ULPI_PHY
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#else
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif
+    #if defined(CONFIG_SOC_SERIES_STM32H7X)
+        LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+    #else
+        LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+    #endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
-	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
-	 * It is disabled by default in run power mode, no need to disable it.
-	 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USBOTGHS ||
-					LL_AHB1_GRP1_PERIPH_USBPHYC);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
-	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
-						LL_AHB2_GRP1_PERIPH_USBPHY);
-#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
+    /* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
+     * It is disabled by default in run power mode, no need to disable it.
+     */
+    #if defined(CONFIG_SOC_SERIES_STM32H7X)
+        LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+    #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+        LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USBOTGHS ||
+                        LL_AHB1_GRP1_PERIPH_USBPHYC);
+    #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+        LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+        /* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
+        LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
+                            LL_AHB2_GRP1_PERIPH_USBPHY);
+    #elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+        LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+    #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
-#if USB_OTG_HS_EMB_PHY
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-#endif
-#endif
+    #if USB_OTG_HS_EMB_PHY
+        #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+            LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+        #endif
+    #endif
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-	/* The USB2 controller only works in FS mode, but the ULPI clock needs
-	 * to be disabled in sleep mode for it to work.
-	 */
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
+    /* The USB2 controller only works in FS mode, but the ULPI clock needs
+     * to be disabled in sleep mode for it to work.
+     */
+    LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 #endif /* USB_OTG_HS_ULPI_PHY */
 
 	return 0;

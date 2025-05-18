@@ -389,11 +389,9 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 			return -ENOTSUP;
 		}
 	}
-
+#endif
 	return 0;
 }
-#endif
-
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) */
 
 static int usb_dc_stm32_clock_enable(void)
@@ -442,7 +440,7 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
 #elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USBOTGHS);
 #endif
 
 #if USB_OTG_HS_EMB_PHYC
