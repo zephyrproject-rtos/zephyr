@@ -37,7 +37,7 @@ ZTEST(libc_time, test_time_passing)
 		time_current = time(NULL);
 		zassert_equal(time_current, time_initial + i,
 			      "Current time (%d) does not match expected time (%d)",
-			      (int) time_current, (int) (time_initial + i));
+			      (int)time_current, (int)(time_initial + i));
 	}
 }
 
@@ -49,14 +49,12 @@ ZTEST(libc_time, test_time_param)
 
 	time_result = time(&time_param);
 
-	zassert_equal(time_result, time_param,
-		      "time() result does not match param value");
+	zassert_equal(time_result, time_param, "time() result does not match param value");
 
 	for (i = 0; i < 10; i++) {
 		k_sleep(K_SECONDS(1));
 
-		zassert_equal(time_result, time_param,
-		      "time() result does not match param value");
+		zassert_equal(time_result, time_param, "time() result does not match param value");
 	}
 }
 
