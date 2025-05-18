@@ -15,6 +15,7 @@
 #include <poll.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <limits.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -87,6 +88,29 @@ int user_chan_net_connect(char ip_addr[], unsigned int port)
 		close(fd);
 		return err;
 	}
+
+	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		int err = -nsi_errno_to_mid(errno);
+
+		close(fd);
+		return err;
+	}
+
+	return fd;
+}
+
+int user_chan_unix_connect(char socket_path[])
+{
+	int fd;
+	struct sockaddr_un addr;
+
+	fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (fd < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	addr.sun_family = AF_UNIX;
+	strcpy(addr.sun_path, socket_path);
 
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		int err = -nsi_errno_to_mid(errno);
