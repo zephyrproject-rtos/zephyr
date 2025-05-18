@@ -6,8 +6,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(drone_control)
 
 # Configure the build options required for admm/matlib (the same ones you would pass to TinyMPC)
-set(USE_CPU ON CACHE BOOL "Enable RISCV Scalar support")
-set(USE_RVV OFF CACHE BOOL "Enable RVV support")
+set(USE_CPU OFF CACHE BOOL "Enable RISCV Scalar support")
+set(USE_RVV ON CACHE BOOL "Enable RVV support")
 set(MEASURE_CYCLES OFF CACHE BOOL "Automatically Append Cycle Logging")
 # set(USE_RVV ON CACHE BOOL "Enable RVV support")
 set(USE_TYPE "float32" CACHE STRING "Set floating point type for TinyMPC dependencies")
@@ -22,7 +22,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/matlib/matlib_header.cmake)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm)
 
 # Your main application sources.
-target_sources(app PRIVATE src/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm/src/admm_rvv.cpp)
+target_sources(app PRIVATE src/main_mt.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tinympc/external/admm/src/admm_rvv.cpp)
 
 # Include directories for admm and matlib headers.
 target_include_directories(app PRIVATE

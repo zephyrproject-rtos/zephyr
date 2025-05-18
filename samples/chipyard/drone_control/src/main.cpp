@@ -127,21 +127,21 @@ int main(void)
     while (1) {
         //send_str("Enter new state (12 floats):\n");
         pos = 0;
-
+        int id;
 
         recv_str(input_buf, BUFFER_SIZE);
 
         float parsed[NUM_STATE_VARS];
         int n = sscanf(input_buf,
-                       "%f %f %f %f %f %f %f %f %f %f %f %f",
-                       &parsed[0], &parsed[1], &parsed[2], &parsed[3],
+                       "%d %f %f %f %f %f %f %f %f %f %f %f %f",
+                       &id, &parsed[0], &parsed[1], &parsed[2], &parsed[3],
                        &parsed[4], &parsed[5], &parsed[6], &parsed[7],
                        &parsed[8], &parsed[9], &parsed[10], &parsed[11]);
 
-        if (n == NUM_STATE_VARS) {
+        if (n == NUM_STATE_VARS + 1) {
             matsetv(x0.data, parsed, x0.outer, x0.inner);
         } else {
-            send_str("Invalid input. Expected 12 floats.\n");
+            send_str("Invalid input. Expected ID + 12 floats.\n");
             continue;
         }
 

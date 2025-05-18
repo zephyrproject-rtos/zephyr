@@ -166,7 +166,7 @@ class TinyMPCSerialInterface:
                     break
 
     def send_state(self, observation):
-        state_str = extract_state_inputs(observation)
+        state_str = '0 ' + extract_state_inputs(observation)
         if self.debug:
             print(f"[TinyMPC][TX] {state_str}")
         self.ser.write((state_str + "\n").encode('ascii'))
@@ -244,6 +244,8 @@ def run(
                         user_debug_gui=user_debug_gui
                         )
 
+    
+
     #### Obtain the PyBullet Client ID from the environment ####
     PYB_CLIENT = env.getPyBulletClient()
 
@@ -251,6 +253,8 @@ def run(
     target_x_slider = p.addUserDebugParameter("Target X", -2, 2, 0)
     target_y_slider = p.addUserDebugParameter("Target Y", -2, 2, 0)
     target_z_slider = p.addUserDebugParameter("Target Z", 0, 2, 1)
+
+    
 
     # Create a purely visual target marker (no collision)
     target_visual = p.createVisualShape(shapeType=p.GEOM_SPHERE, radius=0.02, rgbaColor=[1, 0, 0, 0.5])
@@ -260,6 +264,10 @@ def run(
         baseCollisionShapeIndex=-1,  # no collision
         basePosition=[0, 0, 1]
     )
+
+    
+
+    
 
     #### Initialize the logger #################################
     logger = Logger(logging_freq_hz=control_freq_hz,

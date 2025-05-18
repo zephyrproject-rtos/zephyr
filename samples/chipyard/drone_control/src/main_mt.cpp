@@ -12,11 +12,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <admm.hpp>
-#include "problem_data/quadrotor_20hz_params.hpp"
+
+#include <zephyr/sys/atomic.h>
+
+// #include "problem_data/quadrotor_20hz_params.hpp"
+#include "problem_data/quadrotor_50hz_params_constrained.hpp"
 #include "glob_opts.hpp"
 
-#define NUM_DRONES 1
-#define STACK_SIZE (8192*16)
+#define NUM_DRONES 3
+#define STACK_SIZE (8192*2)
 #define BUFFER_SIZE 256
 #define NUM_STATE_VARS 12
 
@@ -31,12 +35,17 @@ K_THREAD_STACK_ARRAY_DEFINE(drone_stacks, NUM_DRONES, STACK_SIZE);
 struct k_thread drone_threads[NUM_DRONES];
 k_tid_t drone_thread_ids[NUM_DRONES];
 
+
+
 struct DroneTask {
     struct k_sem start_sem;
     struct k_sem done_sem;
     float obs[NSTATES];
     float action[NINPUTS];
 };
+
+
+
 
 struct k_mutex uart_mutex;
 
@@ -122,15 +131,22 @@ void drone_worker(void *id_ptr, void *, void *) {
         
         char obs_buf[256];
         
+        
         snprintf(obs_buf, sizeof(obs_buf),
-                 "Obs[%d] = [%0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f]\n",
+                 "Obs[%d] = [%d %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f]\n",
                  id,
                  drone_tasks[id].obs[0], drone_tasks[id].obs[1], drone_tasks[id].obs[2],
                  drone_tasks[id].obs[3], drone_tasks[id].obs[4], drone_tasks[id].obs[5],
                  drone_tasks[id].obs[6], drone_tasks[id].obs[7], drone_tasks[id].obs[8],
                  drone_tasks[id].obs[9], drone_tasks[id].obs[10], drone_tasks[id].obs[11]);
-        // send_str(obs_buf);
         /**/
+        /*
+        snprintf(obs_buf, sizeof(obs_buf),
+                 "Obs[%d] = [%d %0.3f %0.3f %0.3f %0.3f]\n",
+                 id,
+                 drone_tasks[id].obs[0] , drone_tasks[id].obs[1], drone_tasks[id].obs[2], drone_tasks[id].obs[3]);
+        // send_str(obs_buf);
+        */
         #endif
 
         
@@ -143,10 +159,13 @@ void drone_worker(void *id_ptr, void *, void *) {
 
         int status = tiny_solve(solver);
 
-        memcpy(drone_tasks[id].action, work->u.vector[0], sizeof(float) * NINPUTS);
-        
 
-        k_sem_give(&drone_tasks[id].done_sem);
+        char outbuf[128];
+        snprintf(outbuf, sizeof(outbuf),
+                 "u = [%d %0.4f %0.4f %0.4f %0.4f]\n", id,
+                  work->u.vector[0][0],  work->u.vector[0][1],
+                  work->u.vector[0][2],  work->u.vector[0][3]);
+        send_str(outbuf);
 
     }
 }
@@ -161,7 +180,7 @@ void spawn_drone_workers() {
         drone_thread_ids[i] = k_thread_create(&drone_threads[i], drone_stacks[i], STACK_SIZE,
             drone_worker, (void *)(uintptr_t)i, NULL, NULL,
             K_PRIO_PREEMPT(1), 0, K_FOREVER);
-        k_thread_cpu_pin(drone_thread_ids[i], (i+1) % CONFIG_MP_MAX_NUM_CPUS);
+        k_thread_cpu_pin(drone_thread_ids[i], (i + 1) % CONFIG_MP_MAX_NUM_CPUS);
     }
     for (int i = 0; i < NUM_DRONES; i++) {
         
@@ -196,18 +215,13 @@ int main(void) {
 
 
         memcpy(drone_tasks[id].obs, parsed, sizeof(parsed));
+
+        __sync_synchronize();
         k_sem_give(&drone_tasks[id].start_sem);
 
 
-        k_sem_take(&drone_tasks[id].done_sem, K_FOREVER);
 
 
-        char outbuf[128];
-        snprintf(outbuf, sizeof(outbuf),
-                 "u = [%0.4f %0.4f %0.4f %0.4f]\n",
-                 drone_tasks[id].action[0], drone_tasks[id].action[1],
-                 drone_tasks[id].action[2], drone_tasks[id].action[3]);
-        send_str(outbuf);
     }
 
     return 0;
