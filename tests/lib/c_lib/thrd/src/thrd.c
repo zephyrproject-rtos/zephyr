@@ -10,6 +10,7 @@
 #include <threads.h>
 
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/ztest.h>
 
 static thrd_t     thr;
@@ -32,7 +33,7 @@ ZTEST(libc_thrd, test_thrd_sleep)
 	zassert_equal(thrd_success, thrd_sleep(&duration, &duration));
 
 	for (int i = 0; i < ARRAY_SIZE(delay_ms); ++i) {
-		duration = (struct timespec){.tv_nsec = delay_ms[i] * NSEC_PER_MSEC};
+		timespec_from_timeout(K_MSEC(delay_ms[i]), &duration);
 		remaining = (struct timespec){.tv_sec = 4242, .tv_nsec = 4242};
 
 		printk("sleeping %d ms\n", delay_ms[i]);
