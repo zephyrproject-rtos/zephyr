@@ -163,7 +163,8 @@ config HTTP_SERVER_WEBSOCKET
 
 config HTTP_SERVER_RESOURCE_WILDCARD
 	bool "Allow wildcard matching of resources"
-	select FNMATCH
+	# The POSIX_C_LIB_EXT will get fnmatch() support
+	select POSIX_C_LIB_EXT
 	help
 	  Allow user to specify wildcards when setting up resource strings.
 	  This means that instead of specifying multiple resources with exact
