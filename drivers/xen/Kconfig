@@ -5,6 +5,12 @@ if XEN
 
 menu "Xen drivers"
 
+config XEN_DMOP
+	bool "Xen dmop hypercall wrappers"
+	help
+	  Enable lightweight wrappers for Xen dm_op hypercalls used by
+	  Xen device backends. Disable to drop dmop.c from the build.
+
 config XEN_GRANT_TABLE
 	bool "Xen grant table driver"
 	depends on HEAP_MEM_POOL_SIZE > 0
