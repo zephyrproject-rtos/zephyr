@@ -11,7 +11,6 @@
 #include <stdlib.h>
 
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_MOCK_OUTPUT_DEFAULT;
-union log_msg_generic *test_msg;
 
 static uint8_t mock_output_buf[1];
 uint8_t test_output_buf[256];
@@ -46,8 +45,6 @@ static void process(const struct log_backend *const backend,
 		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
-
-	test_msg = msg;
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
