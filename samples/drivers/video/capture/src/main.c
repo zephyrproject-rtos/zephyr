@@ -90,7 +90,8 @@ static inline void video_display_frame(const struct device *const display_dev,
 
 int main(void)
 {
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX], *vbuf;
+	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	struct video_format fmt;
 	struct video_caps caps;
 	struct video_frmival frmival;
