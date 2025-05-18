@@ -8,18 +8,23 @@
 #include <errno.h>
 #include <time.h>
 
-#include <zephyr/posix/time.h>
+#include <zephyr/kernel.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/time.h>
 #include <zephyr/posix/unistd.h>
-
-extern int z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-			     struct timespec *rmtp);
-extern int z_clock_gettime(clockid_t clock_id, struct timespec *ts);
-extern int z_clock_settime(clockid_t clock_id, const struct timespec *tp);
+#include <zephyr/sys/clock.h>
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	return z_clock_gettime(clock_id, ts);
+	int ret;
+
+	ret = sys_clock_gettime((int)clock_id, ts);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 int clock_getres(clockid_t clock_id, struct timespec *res)
@@ -54,7 +59,15 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
  */
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
-	return z_clock_settime(clock_id, tp);
+	int ret;
+
+	ret = sys_clock_settime((int)clock_id, tp);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 /*
@@ -88,7 +101,20 @@ int usleep(useconds_t useconds)
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-	return z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+	int ret;
+
+	if (rqtp == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	ret = sys_clock_nanosleep(SYS_CLOCK_REALTIME, 0, rqtp, rmtp);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
