@@ -116,6 +116,8 @@ source "drivers/adc/Kconfig.xmc4xxx"
 
 source "drivers/adc/Kconfig.gecko"
 
+source "drivers/adc/Kconfig.siwx91x"
+
 source "drivers/adc/Kconfig.ifx_cat1"
 
 source "drivers/adc/Kconfig.smartbond"
