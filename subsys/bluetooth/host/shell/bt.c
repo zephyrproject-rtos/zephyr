@@ -3942,46 +3942,39 @@ static int cmd_bonds(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static const char *role_str(uint8_t role)
-{
-	switch (role) {
-	case BT_CONN_ROLE_CENTRAL:
-		return "Central";
-	case BT_CONN_ROLE_PERIPHERAL:
-		return "Peripheral";
-	}
-
-	return "Unknown";
-}
-
 static void connection_info(struct bt_conn *conn, void *user_data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int *conn_count = user_data;
 	struct bt_conn_info info;
+	const char *selected;
+	const char *role_str;
 
 	if (bt_conn_get_info(conn, &info) < 0) {
 		bt_shell_error("Unable to get info: conn %p", conn);
 		return;
 	}
 
+	selected = conn == default_conn ? "*" : " ";
+	role_str = get_conn_role_str(info.role);
+
 	switch (info.type) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-		bt_shell_print(" #%u [BR][%s] %s", info.id, role_str(info.role), addr);
+		bt_shell_print("%s#%u [BR][%s] %s", selected, info.id, role_str, addr);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u",
-			       conn == default_conn ? "*" : " ", info.id, role_str(info.role), addr,
-			       info.le.interval, info.le.latency, info.le.timeout);
+		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u", selected,
+			       info.id, role_str, addr, info.le.interval, info.le.latency,
+			       info.le.timeout);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print(" #%u [ISO][%s] %s", info.id, role_str(info.role), addr);
+		bt_shell_print(" #%u [ISO][%s] %s", info.id, role_str, addr);
 		break;
 #endif
 	default:
