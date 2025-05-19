@@ -24,4 +24,5 @@ supported:
   - pwm
   - spi
   - uart
+  - watchdog
 vendor: nxp
