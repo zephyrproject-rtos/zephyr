@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_
 
+#ifndef ZEPHYR_USE_TOOLCHAIN_STDINT
+
 /*
  * Some gcc versions and/or configurations as found in the Zephyr SDK
  * (questionably) define __INT32_TYPE__ and derivatives as a long int
@@ -103,4 +105,5 @@
 #define __INT64_C(c) c ## LL
 #define __UINT64_C(c) c ## ULL
 
+#endif /* ZEPHYR_USE_TOOLCHAIN_STDINT */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_ */

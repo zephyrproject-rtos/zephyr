@@ -19,6 +19,8 @@ if(CONFIG_CMSIS_DSP)
     ${cmsis_glue_path}/CMSIS/Core/Include
   )
 
+  zephyr_library_compile_definitions(ZEPHYR_USE_TOOLCHAIN_STDINT)
+
   # Global Feature Definitions
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON                  ARM_MATH_NEON)
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL     ARM_MATH_NEON_EXPERIMENTAL)
