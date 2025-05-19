@@ -651,6 +651,17 @@ static int compare_strings(const char *s1, const char *s2)
 	return 1; /* Strings are not equal */
 }
 
+static int path_len_without_query(const char *path)
+{
+	int len = 0;
+
+	while ((path[len] != '\0') && (path[len] != '?')) {
+		len++;
+	}
+
+	return len;
+}
+
 static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 {
 	struct http_resource_detail *detail;
@@ -685,7 +696,7 @@ struct http_resource_detail *get_resource_detail(const char *path,
 
 				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
 				if (ret == 0) {
-					*path_len = strlen(resource->resource);
+					*path_len = path_len_without_query(path);
 					return resource->detail;
 				}
 			}
