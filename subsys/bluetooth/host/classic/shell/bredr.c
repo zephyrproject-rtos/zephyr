@@ -989,6 +989,37 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
+{
+	char addr_str[BT_ADDR_STR_LEN];
+	struct bt_conn *conn;
+	bt_addr_t addr;
+	int err;
+
+	err = bt_addr_from_str(argv[1], &addr);
+	if (err) {
+		shell_error(sh, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	conn = bt_conn_lookup_addr_br(&addr);
+	if (!conn) {
+		shell_error(sh, "No matching connection found");
+		return -ENOEXEC;
+	}
+
+	if (default_conn != NULL) {
+		bt_conn_unref(default_conn);
+	}
+
+	default_conn = conn;
+
+	bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
+	shell_print(sh, "Selected conn is now: %s", addr_str);
+
+	return 0;
+}
+
 static const char *get_conn_type_str(uint8_t type)
 {
 	switch (type) {
@@ -1101,6 +1132,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR"]", cmd_clear, 2, 0),
+	SHELL_CMD_ARG(select, NULL, HELP_ADDR, cmd_select, 2, 0),
 	SHELL_CMD_ARG(info, NULL, HELP_ADDR, cmd_info, 1, 1),
 	SHELL_CMD_ARG(discovery, NULL, "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
