@@ -6,6 +6,9 @@ toolchain:
   - zephyr
   - gccarmemb
   - xtools
+supported:
+  - LED
+  - gpio
 testing:
   ignore_tags:
     - net
@@ -15,8 +18,6 @@ testing:
     - aes
     - cmm
     - shell
-    - LED
-    - gpio
     - nfc
 ram: 256
 flash: 128

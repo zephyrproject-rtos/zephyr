@@ -163,11 +163,11 @@ Loading the firmware
 ====================
 In the case of the MP boards, the linux part is responsible (in the current
 distribution) of starting the Cortex-M33 core and loading the firmware using
-remoteproc. The application can be built using west, so far, only the
-:zephyr:code-sample:`hello_world` application is supported:
+remoteproc. The application can be built using west, taking the
+:zephyr:code-sample:`blinky` as an example.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/basic/blinky
    :board: stm32mp257f_ev1
    :goals: build
 
@@ -184,12 +184,12 @@ Zephyr firmware using OpenOCD.
 - Build the sample:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/basic/blinky
    :board: stm32mp257f_ev1
    :goals: build
 
 - Copy the firmware to the board, load it and start it with remoteproc
-  (`STM32MP257F boot Cortex-M33 firmware`_)
+  (`STM32MP257F boot Cortex-M33 firmware`_). The orange LED should be blinking.
 - Attach to the target:
 
 .. code-block:: console
