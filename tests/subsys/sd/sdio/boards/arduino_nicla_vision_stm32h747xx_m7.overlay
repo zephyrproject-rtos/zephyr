@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &board_cdc_acm_uart;
+	};
+
+	aliases {
+		sdhc0 = &sdhc;
+	};
+};
+
+&zephyr_udc0 {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	num-bidir-endpoints = < 4 >;
+
+	board_cdc_acm_uart: board_cdc_acm_uart {
+		status = "okay";
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&wifi {
+	status = "disabled";
+};
+
+&sdhc {
+	hw-flow-control;
+	bus-width = <4>;
+	clk-div = <8>;
+	sdhi-on-gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
+};
