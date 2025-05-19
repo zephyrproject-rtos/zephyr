@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * This is a collection of functions that would be useful for any driver for LPSPI.
+ * This function/file has no knowledge of lpspi usage model by the driver
+ * beyond basic configuration and should avoid making any assumptions about how
+ * the driver is going to achieve the zephyr API.
+ */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
@@ -131,23 +138,20 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return ret;
 	}
 
-	if (already_configured) {
-		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
-		 * disable if already configured, otherwise the clock is not enabled and the
-		 * CR register cannot be written.
-		 */
-		LPSPI_Enable(base, false);
-		while ((base->CR & LPSPI_CR_MEN_MASK) != 0U) {
-			/* Wait until LPSPI is disabled. Datasheet:
-			 * After writing 0, MEN (Module Enable) remains set until the LPSPI has
-			 * completed the current transfer and is idle.
-			 */
-		}
+	/* specific driver implementation should set up watermarks and interrupts.
+	 * we reset them here to avoid any unexpected events during configuring.
+	 */
+	base->FCR = 0;
+	base->IER = 0;
 
-		/* this is workaround for ERR050456 */
-		base->CR |= LPSPI_CR_RST_MASK;
-		base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
-		base->CR = 0x00U;
+	/* this is workaround for ERR050456 */
+	base->CR |= LPSPI_CR_RST_MASK;
+	base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
+
+	/* Setting the baud rate requires module to be disabled. */
+	base->CR = 0;
+	while ((base->CR & LPSPI_CR_MEN_MASK) != 0) {
+		/* According to datasheet, should wait for this MEN bit to clear once idle */
 	}
 
 	data->ctx.config = spi_cfg;
