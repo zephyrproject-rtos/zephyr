@@ -36,4 +36,17 @@ config SPI_MCUX_LPSPI_CPU
 	  This has lower latency than DMA-based driver but over the
 	  longer transfers will likely have less bandwidth and use more CPU time.
 
+config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
+	int "Number of CPU cycles to wait on TX fifo empty"
+	default 0 if DEBUG
+	default 10000
+	help
+	  This option most likely does not need changed.
+	  The drivers tend to need to wait on confirming the transmit command
+	  is consumed by the hardware by checking of the TX fifo is emptied.
+	  This option gives a maximum number of CPU cycles to wait on that check.
+	  The special value of 0 means infinite, which can be useful for debugging
+	  for if there is some programming error that causes TX fifo not to empty.
+	  The default of 10000 is arbitrary.
+
 endif # SPI_MCUX_LPSPI

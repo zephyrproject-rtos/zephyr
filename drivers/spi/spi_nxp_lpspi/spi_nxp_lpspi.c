@@ -337,7 +337,10 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		base->TCR |= LPSPI_TCR_CONT_MASK;
 	}
 	/* tcr is written to tx fifo */
-	lpspi_wait_tx_fifo_empty(dev);
+	ret = lpspi_wait_tx_fifo_empty(dev);
+	if (ret) {
+		return ret;
+	}
 
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
