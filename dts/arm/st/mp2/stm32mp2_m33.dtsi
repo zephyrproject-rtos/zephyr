@@ -7,6 +7,8 @@
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 
 / {
 	cpus {
@@ -55,6 +57,101 @@
 				      <4 1>, <5 1>, <6 1>, <7 1>,
 				      <8 1>, <9 1>, <10 1>, <11 1>,
 				      <12 1>, <13 1>, <14 1>, <15 1>;
+		};
+
+		pinctrl: pin-controller@44240000 {
+			compatible = "st,stm32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x44240000 0xb0000>;
+
+			gpioa: gpio@44240000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44240000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@44250000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44250000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@44260000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44260000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@44270000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44270000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioe: gpio@44280000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44280000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@44290000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44290000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiog: gpio@442a0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442a0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioh: gpio@442b0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442b0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioi: gpio@442c0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442c0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioj: gpio@442d0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442d0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiok: gpio@442e0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442e0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
 		};
 	};
 };
