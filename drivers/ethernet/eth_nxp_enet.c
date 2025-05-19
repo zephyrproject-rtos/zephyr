@@ -627,6 +627,9 @@ static void eth_nxp_enet_isr(const struct device *dev)
 		nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT, NULL);
 	}
 
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	ENET_TimeStampIRQHandler(data->base, &data->enet_handle);
+#endif
 	irq_unlock(irq_lock_key);
 }
 
