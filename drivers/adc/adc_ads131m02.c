@@ -121,7 +121,7 @@ struct ads131m02_config {
 	const struct spi_dt_spec spi;
 	const struct gpio_dt_spec gpio_drdy;
 	const struct device *clk_dev;
-	uint8_t bus_clk;
+	uint32_t bus_clk;
 	uint32_t clock_frequency;
 };
 
