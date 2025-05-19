@@ -3,15 +3,12 @@ common:
           CONFIG_CSPRNG_ENABLED and
           CONFIG_HARDWARE_DEVICE_CS_GENERATOR and
           not CONFIG_BUILD_WITH_TFM and
-          not (CONFIG_MBEDTLS and CONFIG_TINYCRYPT)
+          CONFIG_MBEDTLS
   tags:
     - mbedtls
-    - tinycrypt
     - p256-m
 tests:
   crypto.secp256r1.mbedtls:
     extra_args: EXTRA_CONF_FILE=mbedtls.conf
   crypto.secp256r1.p256-m_raw:
     extra_args: EXTRA_CONF_FILE=p256-m_raw.conf
-  crypto.secp256r1.tinycrypt:
-    extra_args: EXTRA_CONF_FILE=tinycrypt.conf
