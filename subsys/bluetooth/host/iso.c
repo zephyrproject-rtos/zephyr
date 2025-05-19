@@ -1666,22 +1666,19 @@ static bool valid_chan_qos(const struct bt_iso_chan_qos *qos, bool advanced)
 		return false;
 	}
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
-
-	if (qos->rx != NULL) {
-		if (!valid_chan_io_qos(qos->rx, false, false, advanced)) {
-			LOG_DBG("Invalid rx qos");
-			return false;
-		}
-	} else if (qos->tx == NULL) {
+	if (qos->rx == NULL && qos->tx == NULL) {
 		LOG_DBG("Both rx and tx qos are NULL");
 		return false;
 	}
 
-	if (qos->tx != NULL) {
-		if (!valid_chan_io_qos(qos->tx, true, false, advanced)) {
-			LOG_DBG("Invalid tx qos");
-			return false;
-		}
+	if (qos->rx != NULL && !valid_chan_io_qos(qos->rx, false, false, advanced)) {
+		LOG_DBG("Invalid rx qos");
+		return false;
+	}
+
+	if (qos->tx != NULL && !valid_chan_io_qos(qos->tx, true, false, advanced)) {
+		LOG_DBG("Invalid tx qos");
+		return false;
 	}
 
 	return true;
