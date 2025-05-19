@@ -684,6 +684,8 @@ static int i2c_omap_init(const struct device *dev)
 	const struct i2c_omap_cfg *cfg = DEV_CFG(dev);
 	int ret;
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("failed to apply pinctrl");
