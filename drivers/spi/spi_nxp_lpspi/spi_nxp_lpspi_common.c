@@ -60,12 +60,24 @@ static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
 }
 #endif
 
-void lpspi_wait_tx_fifo_empty(const struct device *dev)
+int lpspi_wait_tx_fifo_empty(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	int arbitrary_cycle_limit = CONFIG_SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES;
+	bool limit_wait = arbitrary_cycle_limit > 0;
 
-	while (LPSPI_GetTxFifoCount(base) != 0) {
+	while (FIELD_GET(LPSPI_FSR_TXCOUNT_MASK, base->FSR) != 0) {
+		if (!limit_wait) {
+			continue;
+		}
+
+		if (arbitrary_cycle_limit-- < 0) {
+			LOG_WRN("Failed waiting for TX fifo empty");
+			return -EIO;
+		}
 	}
+
+	return 0;
 }
 
 int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg)
@@ -185,7 +197,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		base->CR |= LPSPI_CR_DBGEN_MASK;
 	}
 
-	return 0;
+	return lpspi_wait_tx_fifo_empty(dev);
 }
 
 static void lpspi_module_system_init(LPSPI_Type *base)

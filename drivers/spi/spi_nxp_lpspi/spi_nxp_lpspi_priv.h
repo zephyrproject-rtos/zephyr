@@ -68,7 +68,7 @@ int spi_nxp_init_common(const struct device *dev);
 /* common api function for now */
 int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg);
 
-void lpspi_wait_tx_fifo_empty(const struct device *dev);
+int lpspi_wait_tx_fifo_empty(const struct device *dev);
 
 #define SPI_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)                                                     \
 	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)), DEVICE_DT_INST_GET(n),     \
