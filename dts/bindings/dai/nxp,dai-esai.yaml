@@ -5,7 +5,7 @@ description: NXP Enhanced Serial Audio Interface (ESAI)
 
 compatible: "nxp,dai-esai"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
