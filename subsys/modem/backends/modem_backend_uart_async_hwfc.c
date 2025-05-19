@@ -105,7 +105,7 @@ static void modem_backend_uart_async_hwfc_rx_recovery(struct modem_backend_uart 
 	}
 }
 
-static bool modem_backend_uart_async_hwfc_is_uart_stopped(struct modem_backend_uart *backend)
+static bool modem_backend_uart_async_hwfc_is_uart_stopped(const struct modem_backend_uart *backend)
 {
 	if (!atomic_test_bit(&backend->async.common.state,
 			     MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT) &&
@@ -119,7 +119,7 @@ static bool modem_backend_uart_async_hwfc_is_uart_stopped(struct modem_backend_u
 	return false;
 }
 
-static bool modem_backend_uart_async_hwfc_is_open(struct modem_backend_uart *backend)
+static bool modem_backend_uart_async_hwfc_is_open(const struct modem_backend_uart *backend)
 {
 	return atomic_test_bit(&backend->async.common.state,
 			       MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
@@ -253,7 +253,7 @@ static void advertise_receive_buf_stats(struct modem_backend_uart *backend, uint
 }
 #endif
 
-static uint32_t get_transmit_buf_size(struct modem_backend_uart *backend)
+static uint32_t get_transmit_buf_size(const struct modem_backend_uart *backend)
 {
 	return backend->async.common.transmit_buf_size;
 }
@@ -410,6 +410,10 @@ int modem_backend_uart_async_init(struct modem_backend_uart *backend,
 	int err;
 
 	backend->async.rx_buf_count = CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT;
+
+	/* k_mem_slab_init requires a word-aligned buffer. */
+	__ASSERT((uintptr_t)config->receive_buf % sizeof(void *) == 0,
+		 "Receive buffer is not word-aligned");
 
 	/* Make sure all the buffers will be aligned. */
 	buf_size -= (config->receive_buf_size % (sizeof(uint32_t) * backend->async.rx_buf_count));
