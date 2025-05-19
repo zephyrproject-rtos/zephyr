@@ -1592,9 +1592,42 @@ void bt_le_adv_resume(void)
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info)
 {
+	if (!IS_ARRAY_ELEMENT(adv_pool, adv)) {
+		LOG_DBG("adv %p is a valid pointer from bt_le_ext_adv_create", adv);
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
+		LOG_DBG("Advertising set %p is not created", adv);
+		return -EINVAL;
+	}
+
+	if (info == NULL) {
+		LOG_DBG("info is NULL");
+		return -EINVAL;
+	}
+
 	info->id = adv->id;
 	info->tx_power = adv->tx_power;
 	info->addr = &adv->random_addr;
+
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_ENABLED;
+	} else {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_DISABLED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		if (atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_ENABLED;
+		} else if (atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_DISABLED;
+		} else {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_NONE;
+		}
+	} else {
+		info->per_adv_state = BT_LE_PER_ADV_STATE_NONE;
+	}
 
 	return 0;
 }
