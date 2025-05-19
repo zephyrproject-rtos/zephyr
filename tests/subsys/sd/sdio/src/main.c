@@ -46,6 +46,32 @@ ZTEST(sd_stack, test_read)
 	zassert_not_equal(reg, 0xFF, "CCCR read returned invalid data");
 }
 
+/*
+ * Verify that a register write works. Given the custom nature of SDIO devices,
+ * we just write to the card common I/O area.
+ */
+ZTEST(sd_stack, test_write)
+{
+	int ret;
+	uint8_t data = 0x01;
+	uint8_t reg = 0xFF;
+	uint8_t new_reg_value = 0xFF;
+
+	/* Read from card common I/O area. */
+	ret = sdio_read_byte(&card.func0, SDIO_CCCR_BUS_IF, &reg);
+	zassert_equal(ret, 0, "SD card read failed");
+
+	/* Write to card common I/O area. */
+	ret = sdio_write_byte(&card.func0, SDIO_CCCR_BUS_IF, data);
+	zassert_equal(ret, 0, "SD card write failed");
+
+	/* Read after write to verify that data was written */
+	ret = sdio_read_byte(&card.func0, SDIO_CCCR_BUS_IF, &new_reg_value);
+	zassert_equal(ret, 0, "SD card read failed");
+	new_reg_value = new_reg_value & SDIO_CCCR_BUS_IF_WIDTH_MASK;
+	zassert_equal(new_reg_value, data, "read data was not as expected");
+}
+
 /* Simply dump the card configuration. */
 ZTEST(sd_stack, test_card_config)
 {
