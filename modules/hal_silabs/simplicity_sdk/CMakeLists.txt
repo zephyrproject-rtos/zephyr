@@ -246,6 +246,7 @@ if(CONFIG_SOC_GECKO_GPIO)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
 
@@ -258,7 +259,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_r
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_eusart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_TIMER        ${EMLIB_DIR}/src/em_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
 

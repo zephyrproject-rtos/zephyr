@@ -7,6 +7,9 @@ menu "SiSDK configuration"
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 
+config SILABS_SISDK_TIMER
+	bool "Peripheral HAL for TIMER"
+
 config RAIL_PA_CURVE_HEADER
 	string "RAIL PA custom curve header file"
 	default "pa_curves_efr32.h"
