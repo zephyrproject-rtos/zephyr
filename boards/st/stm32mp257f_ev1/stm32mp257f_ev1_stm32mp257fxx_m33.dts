@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/mp2/stm32mp257_m33.dtsi>
+#include <st/mp2/stm32mp257faix-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32MP257F-EV1 board";
@@ -14,6 +15,25 @@
 	chosen {
 		zephyr,flash = &ddr_code;
 		zephyr,sram = &ddr_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led_2: led_2 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+			label = "LD2";
+		};
+
+		orange_led_3: led_3 {
+			gpios = <&gpioj 6 GPIO_ACTIVE_HIGH>;
+			label = "LD3";
+		};
+	};
+
+	aliases {
+		led0 = &orange_led_3;
+		led1 = &green_led_2;
 	};
 };
 
