@@ -40,4 +40,5 @@ OS Services
    retention/index.rst
    rtio/index.rst
    zbus/index.rst
+   min_heap/index.rst
    misc.rst
