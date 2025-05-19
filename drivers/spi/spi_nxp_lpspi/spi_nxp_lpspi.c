@@ -215,7 +215,7 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 		lpspi_data->fill_len -= this_buf_words_sent;
 	}
 
-	lpspi_next_tx_fill(data->dev);
+	lpspi_next_tx_fill(dev);
 }
 
 static inline void lpspi_end_xfer(const struct device *dev)

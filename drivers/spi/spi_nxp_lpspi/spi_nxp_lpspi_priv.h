@@ -47,7 +47,6 @@ struct lpspi_config {
 
 struct lpspi_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
-	const struct device *dev;
 	struct spi_context ctx;
 	void *driver_data;
 	size_t transfer_len;
