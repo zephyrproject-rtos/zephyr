@@ -740,6 +740,12 @@ static int esai_init(const struct device *dev)
 	}
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
+	/* note: optional operation so -ENOENT is allowed */
+	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+
 	ret = esai_parse_pinmodes(cfg, data);
 	if (ret < 0) {
 		return ret;
@@ -749,6 +755,8 @@ static int esai_init(const struct device *dev)
 }
 
 #define ESAI_INIT(inst)							\
+									\
+PINCTRL_DT_INST_DEFINE(inst);						\
 									\
 BUILD_ASSERT(ESAI_TX_FIFO_WATERMARK(inst) >= 1 &&			\
 	     ESAI_TX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),	\
@@ -806,6 +814,7 @@ static struct esai_config esai_config_##inst = {			\
 	.clock_cfg = clock_cfg_##inst,					\
 	.clock_cfg_size = ARRAY_SIZE(clock_cfg_##inst),			\
 	.clk_data = ESAI_CLOCK_DATA_DECLARE(inst),			\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 };									\
 									\
 static struct esai_data esai_data_##inst = {				\
