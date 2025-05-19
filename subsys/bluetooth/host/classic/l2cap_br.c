@@ -2652,7 +2652,7 @@ static uint16_t l2cap_br_conf_rsp_opt_mtu(struct bt_l2cap_chan *chan, struct net
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != sizeof(*opt_mtu)) {
-		LOG_ERR("tx MTU length %zu invalid", len);
+		LOG_ERR("Proposed MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -2661,14 +2661,22 @@ static uint16_t l2cap_br_conf_rsp_opt_mtu(struct bt_l2cap_chan *chan, struct net
 
 	mtu = sys_le16_to_cpu(opt_mtu->mtu);
 	if (mtu < L2CAP_BR_MIN_MTU) {
-		result = BT_L2CAP_CONF_UNACCEPT;
+		result = BT_L2CAP_CONF_REJECT;
 		opt_mtu->mtu = sys_cpu_to_le16(BR_CHAN(chan)->rx.mtu);
-		LOG_DBG("tx MTU %u invalid", mtu);
+		LOG_WRN("Proposed MTU %u invalid", mtu);
 		goto done;
 	}
 
 	if (mtu < BR_CHAN(chan)->rx.mtu) {
 		BR_CHAN(chan)->rx.mtu = mtu;
+	} else if (mtu > BR_CHAN(chan)->rx.mtu) {
+		LOG_WRN("Proposed MTU is more than given value (%u > %u)", mtu,
+			BR_CHAN(chan)->rx.mtu);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	} else {
+		LOG_WRN("Proposed MTU is the same as given value (%u == %u)", mtu,
+			BR_CHAN(chan)->rx.mtu);
 	}
 
 	LOG_DBG("rx MTU %u", BR_CHAN(chan)->rx.mtu);
@@ -3120,7 +3128,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_mtu(struct bt_l2cap_chan *chan, s
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != sizeof(*opt_mtu)) {
-		LOG_ERR("tx MTU length %zu invalid", len);
+		LOG_ERR("Proposed MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3129,12 +3137,21 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_mtu(struct bt_l2cap_chan *chan, s
 
 	mtu = sys_le16_to_cpu(opt_mtu->mtu);
 	if (mtu < L2CAP_BR_MIN_MTU) {
-		LOG_DBG("tx MTU %u invalid", mtu);
+		LOG_WRN("Proposed MTU %u invalid", mtu);
+		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
 
 	if (mtu < BR_CHAN(chan)->rx.mtu) {
 		BR_CHAN(chan)->rx.mtu = mtu;
+	} else if (mtu > BR_CHAN(chan)->rx.mtu) {
+		LOG_WRN("Proposed MTU is more than given value (%u > %u)", mtu,
+			BR_CHAN(chan)->rx.mtu);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	} else {
+		LOG_WRN("Proposed MTU is the same as given value (%u == %u)", mtu,
+			BR_CHAN(chan)->rx.mtu);
 	}
 
 done:
