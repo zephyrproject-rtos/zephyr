@@ -1,0 +1,24 @@
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32MP2 RCC (Reset and Clock controller).
+
+  On STM32MP2 platforms, clock control configuration is performed on A35 side.
+  As a consequence, the only property to be set in devicetree node is the
+  clock-frequency.
+
+  As for the peripherals, the clocks are configured per peripheral in the
+  corresponding device tree node. The clock controller is responsible for
+  enabling/disabling the clocks for the peripherals, do note that the gpios are
+  enabled by the cortex-A35 core being the resource manager.
+
+compatible: "st,stm32mp2-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - ahb-prescaler
+      - apb1-prescaler
+      - apb2-prescaler
+      - undershoot-prevention
