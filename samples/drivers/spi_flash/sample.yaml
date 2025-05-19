@@ -1,5 +1,17 @@
 sample:
   name: SPI Flash Sample
+common:
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Test 1: Flash erase"
+      - "Flash erase succeeded!"
+      - "Test 2: Flash write"
+      - "Attempting to write 4 bytes"
+      - "Data read matches data written. Good!!"
+  depends_on: spi
 tests:
   sample.drivers.spi.flash:
     tags:
@@ -11,14 +23,17 @@ tests:
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "Test 1: Flash erase"
-        - "Flash erase succeeded!"
-        - "Test 2: Flash write"
-        - "Attempting to write 4 bytes"
-        - "Data read matches data written. Good!!"
-    depends_on: spi
+  sample.drivers.spi.flash.stm32.memmap:
+    tags:
+      - spi
+      - flash
+    filter: dt_compat_enabled("st,stm32-qspi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor")
+      or dt_compat_enabled("st,stm32-xspi-nor")
+    extra_configs:
+      - CONFIG_STM32_MEMMAP=y
+    integration_platforms:
+      - stm32h573i_dk
+    platform_allow:
+      - stm32h573i_dk
+      - b_u585i_iot02a
