@@ -1714,6 +1714,31 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  */
 uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
 
+enum bt_le_ext_adv_state {
+	/** No state */
+	BT_LE_EXT_ADV_STATE_NONE,
+
+	/** The advertising set has been created but not started */
+	BT_LE_EXT_ADV_STATE_CREATED,
+
+	/** The advertising set is started */
+	BT_LE_EXT_ADV_STATE_STARTED,
+
+	/** Ther advertising set is temporarily paused */
+	BT_LE_EXT_ADV_STATE_PAUSED,
+};
+
+enum bt_le_per_adv_state {
+	/** No state */
+	BT_LE_PER_ADV_STATE_NONE,
+
+	/** The advertising set has been configured for periodic advertising */
+	BT_LE_PER_ADV_STATE_CONFIGURED,
+
+	/** Periodic advertising is started */
+	BT_LE_PER_ADV_STATE_STARTED,
+};
+
 /** @brief Advertising set info structure. */
 struct bt_le_ext_adv_info {
 	/** Local identity handle. */
@@ -1722,8 +1747,19 @@ struct bt_le_ext_adv_info {
 	/** Currently selected Transmit Power (dBM). */
 	int8_t                     tx_power;
 
-	/** Current local advertising address used. */
+	/**
+	 * @brief Current local advertising address used.
+	 *
+	 * If @ref bt_le_ext_adv_info.ext_adv_state is not BT_LE_EXT_ADV_STATE_STARTED the value
+	 * of this address may change when bt_le_ext_adv_start() is called.
+	 */
 	const bt_addr_le_t         *addr;
+
+	/** Extended advertising state */
+	enum bt_le_ext_adv_state ext_adv_state;
+
+	/** Periodic advertising state */
+	enum bt_le_per_adv_state per_adv_state;
 };
 
 /**
@@ -1732,7 +1768,9 @@ struct bt_le_ext_adv_info {
  * @param adv Advertising set object
  * @param info Advertising set info object
  *
- * @return Zero on success or (negative) error code on failure.
+ * @retval 0 Success
+ * @retval -EINVAL @p adv or @p info is NULL
+ * @retval -ENXIO @p adv is not a created advertising set
  */
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info);
