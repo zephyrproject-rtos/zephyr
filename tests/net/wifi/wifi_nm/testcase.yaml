@@ -12,3 +12,7 @@ tests:
     platform_exclude:
       - rd_rw612_bga/rw612/ethernet # Requires binary blobs to build
       - frdm_rw612 # Requires binary blobs to build
+      - arduino_giga_r1/stm32h747xx/m7 # Requires binary blobs to build
+      - arduino_nicla_vision/stm32h747xx/m7 # Requires binary blobs to build
+      - arduino_portenta_h7/stm32h747xx/m7 # Requires binary blobs to build
+      - arduino_portenta_h7@4.10.0/stm32h747xx/m7 # Requires binary blobs to build
