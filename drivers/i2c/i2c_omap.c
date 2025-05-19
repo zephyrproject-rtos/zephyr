@@ -99,10 +99,10 @@ typedef struct {
 typedef void (*init_func_t)(const struct device *dev);
 #define DEV_CFG(dev)      ((const struct i2c_omap_cfg *)(dev)->config)
 #define DEV_DATA(dev)     ((struct i2c_omap_data *)(dev)->data)
-#define DEV_I2C_BASE(dev) ((i2c_omap_regs_t *)DEVICE_MMIO_NAMED_GET(dev, base))
+#define DEV_I2C_BASE(dev) ((i2c_omap_regs_t *)DEVICE_MMIO_GET(dev))
 
 struct i2c_omap_cfg {
-	DEVICE_MMIO_NAMED_ROM(base);
+	DEVICE_MMIO_ROM;
 	uint32_t irq;
 	uint32_t speed;
 	const struct pinctrl_dev_config *pcfg;
@@ -121,7 +121,7 @@ struct i2c_omap_speed_config {
 };
 
 struct i2c_omap_data {
-	DEVICE_MMIO_NAMED_RAM(base);
+	DEVICE_MMIO_RAM;
 	enum i2c_omap_speed speed;
 	struct i2c_omap_speed_config speed_config;
 	struct i2c_msg current_msg;
@@ -704,7 +704,7 @@ static int i2c_omap_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
-		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(inst)),                               \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.speed = DT_INST_PROP(inst, clock_frequency),                                      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
