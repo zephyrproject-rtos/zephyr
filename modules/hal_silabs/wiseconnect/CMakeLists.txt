@@ -32,6 +32,7 @@ zephyr_include_directories(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/inc
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
@@ -44,6 +45,8 @@ zephyr_library_sources(
   ${SISDK_DIR}/platform/service/mem_pool/src/sl_mem_pool.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_adc.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_dac.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_pwm.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
@@ -66,8 +69,17 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_ADC_SILABS_SIWX91X
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/aux_reference_volt_config.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_bod.c
+)
+
 zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
   UDMA_ROMDRIVER_PRESENT
+)
+
+zephyr_compile_definitions_ifdef(CONFIG_ADC_SILABS_SIWX91X
+  ADC_CONTEXT_USES_KERNEL_TIMER
 )
 
 zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
