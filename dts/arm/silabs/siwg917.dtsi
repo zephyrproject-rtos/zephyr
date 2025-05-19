@@ -378,6 +378,19 @@
 				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
 			status = "disabled";
 		};
+
+		adc0: adc@24043800 {
+			compatible = "silabs,siwx91x-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24043800 0x214>;
+			interrupts = <11 0>;
+			interrupt-names = "adc0";
+			silabs,adc-sampling-rate = <100000>;
+			clocks = <&clock0 SIWX91X_ADC_CLK>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
