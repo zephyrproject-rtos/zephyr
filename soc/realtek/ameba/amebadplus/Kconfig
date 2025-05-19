@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_AMEBADPLUS
+	select ARM
+	select CPU_CORTEX_M55
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select CPU_HAS_VFP
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select ARM_TRUSTZONE_M
