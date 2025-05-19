@@ -107,6 +107,10 @@ Deprecated APIs and options
   pending TX buffers is now aligned with the :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT` Kconfig
   option.
 
+* The :kconfig:option:`CONFIG_CRYPTO_TINYCRYPT_SHIM` Kconfig option has been removed. It
+  was deprecated since Zephyr 4.0, and users were advised to migrate to alternative
+  crypto backends.
+
 New APIs and options
 ====================
 
