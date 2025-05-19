@@ -276,7 +276,7 @@ static void lpspi_isr(const struct device *dev)
 	}
 
 	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
-	    (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
+	    (data->major_version < 2)) {
 		/* Due to stalling behavior on older LPSPI,
 		 * need to end xfer in order to get last bit clocked out on bus.
 		 */
