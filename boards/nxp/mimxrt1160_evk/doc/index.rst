@@ -209,15 +209,6 @@ The secondary core can be debugged normally in single core builds
 secondary core should be placed into a loop, then a debugger can be attached
 (see `AN13264`_, section 4.2.3 for more information)
 
-Configuring a Debug Probe
-=========================
-
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
-
 Launching Images Targeting M4 Core
 ==================================
 If building targeting the M4 core, the M7 core must first run code to launch
@@ -237,26 +228,34 @@ so:
 If desired, this behavior can be disabled by building with
 ``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``
 
-Using J-Link
-------------
+Configuring a Debug Probe
+=========================
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-There are two options: the onboard debug circuit can be updated with Segger
-J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
-EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+A debug probe is used for both flashing and debugging the board. The on-board
+debugger :ref:`opensda-daplink-onboard-debug-probe`
+works with the LinkServer runner, or can be reprogrammed with JLink firmware.
 
 Using LinkServer
 ----------------
 
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the CMSIS-DAP firmware include in LinkServer
-install. Please follow the ``LPCScrypt\docs\Debug_Probe_Firmware_Programming.pdf``
-for more details.
+search path. LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
 
-Linkserver is the default runner. You may also se the ``-r linkserver`` option
-with West to use the LinkServer runner.
+Using J-Link
+------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+
+The on-board debug circuit can be updated with Segger J-Link firmware,
+or :ref:`jlink-external-debug-probe` can be attached to the
+EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+Use the ``-r jlink`` option with West to use the jlink runner.
+
+.. code-block:: console
+
+   west flash -r jlink
 
 Configuring a Console
 =====================
