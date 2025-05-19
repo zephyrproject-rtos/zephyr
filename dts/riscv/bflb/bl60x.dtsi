@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2025 ATL Electronics
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +9,49 @@
 #include <mem.h>
 #include <dt-bindings/pinctrl/bl60x-pinctrl.h>
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/clock/bflb_bl60x_clock.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	clocks {
+		clk_rc32m: clk-rc32m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_crystal: clk-crystal {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "okay";
+		};
+
+		clk_pll: clk-pll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl60x-pll";
+			clocks = <&clk_crystal>;
+			status = "okay";
+		};
+
+		clk_root: clk-root {
+			#clock-cells = <0>;
+			compatible = "bflb,bl60x-root-clk";
+			clocks = <&clk_pll BL60X_PLL_192MHz>;
+			divider = <1>;
+			status = "okay";
+		};
+
+		clk_bclk: clk-bclk {
+			#clock-cells = <0>;
+			compatible = "bflb,bclk";
+			divider = <2>;
+			status = "okay";
+		};
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -82,6 +122,20 @@
 				interrupts = <1 0>;
 				interrupt-parent = <&ictrl>;
 			};
+		};
+
+		clocks: clock-controller@40000000 {
+			compatible = "bflb,bl60x-clock-controller", "bflb,clock-controller";
+			reg = <0x40000000 DT_SIZE_K(4)>;
+			#clock-cells = <1>;
+			status = "okay";
+			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
+				<&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
+				<&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
+			clock-names = "rc32m", "crystal", "root", "bclk",
+				"pll_192", "pll_160",
+				"pll_120", "pll_48";
+			zephyr,deferred-init;
 		};
 
 		efuse: efuse@40007000 {

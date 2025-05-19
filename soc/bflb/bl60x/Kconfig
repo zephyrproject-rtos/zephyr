@@ -4,6 +4,7 @@
 
 config SOC_SERIES_BL60X
 	select ATOMIC_OPERATIONS_C
+	select CLOCK_CONTROL
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
 	select RISCV
