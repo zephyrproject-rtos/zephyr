@@ -11,6 +11,8 @@
 
 #define MODE_COUNT               16
 #define HP_PERIPHERAL_ON_ULP_PIN 6
+#define HP_ANALOG_MODE           14
+#define ULP_ANALOG_MODE          7
 
 static bool pinctrl_siwx91x_valid_mode(uint8_t mode)
 {
@@ -27,9 +29,17 @@ static void pinctrl_siwx91x_set(uint8_t port, uint8_t pin, uint8_t ulppin, uint8
 	}
 
 	if (port == SL_GPIO_ULP_PORT) {
-		sl_si91x_gpio_enable_ulp_pad_receiver(ulppin);
+		if (ulpmode != ULP_ANALOG_MODE) {
+			sl_si91x_gpio_enable_ulp_pad_receiver(ulppin);
+		} else {
+			sl_si91x_gpio_disable_ulp_pad_receiver(ulppin);
+		}
 	} else {
-		sl_si91x_gpio_enable_pad_receiver((port << 4) | pin);
+		if (mode != HP_ANALOG_MODE) {
+			sl_si91x_gpio_enable_pad_receiver((port << 4) | pin);
+		} else {
+			sl_si91x_gpio_disable_pad_receiver((port << 4) | pin);
+		}
 	}
 
 	if (pinctrl_siwx91x_valid_mode(mode)) {
