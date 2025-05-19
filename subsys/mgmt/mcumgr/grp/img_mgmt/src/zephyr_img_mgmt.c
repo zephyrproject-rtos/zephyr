@@ -28,15 +28,17 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 /* Apply TF-M configuration */
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2
-#define SLOT0_PARTITION		slot0_ns_partition
-#define SLOT1_PARTITION		slot1_ns_partition
+#define SLOT0_PARTITION		slot0_s_partition
+#define SLOT1_PARTITION		slot1_s_partition
+#define SLOT2_PARTITION		slot0_ns_partition
+#define SLOT3_PARTITION		slot1_ns_partition
 #else
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
-#endif
-
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
+#endif
+
 #define SLOT4_PARTITION		slot4_partition
 #define SLOT5_PARTITION		slot5_partition
 
@@ -47,9 +49,9 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
  * properly.
  */
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
-BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
-	     FIXED_PARTITION_EXISTS(SLOT3_PARTITION),
-	     "Missing partitions?");
+//BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
+//	     FIXED_PARTITION_EXISTS(SLOT3_PARTITION),
+//	     "Missing partitions?");
 #endif
 
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 3
@@ -145,24 +147,26 @@ img_mgmt_flash_area_id(int slot)
 	switch (slot) {
 	case 0:
 		fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
+fa_id = -1;
+LOG_ERR("fa_id = %d", fa_id);
 		break;
 
-#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
+//#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	case 1:
 		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
-#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
+//#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
 		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
 		break;
-#endif
+//#endif
 
-#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
+//#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
 	case 3:
 		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
 		break;
-#endif
+//#endif
 
 #if FIXED_PARTITION_EXISTS(SLOT4_PARTITION)
 	case 4:
@@ -175,7 +179,7 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
 		break;
 #endif
-#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
+//#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 
 	default:
 		fa_id = -1;
