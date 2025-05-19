@@ -555,7 +555,7 @@ ZTEST(spi_loopback, test_spi_null_rx_buf_set)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
-							      NULL, BUF_SIZE);
+							      buffer_tx, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, NULL);
 }
