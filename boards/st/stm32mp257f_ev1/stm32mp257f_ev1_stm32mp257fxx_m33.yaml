@@ -5,6 +5,9 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+supported:
+  - LED
+  - gpio
 testing:
   ignore_tags:
     - cmsis_rtos_v2
@@ -15,8 +18,6 @@ testing:
     - aes
     - cmm
     - shell
-    - LED
-    - gpio
     - nfc
 ram: 256
 flash: 128
