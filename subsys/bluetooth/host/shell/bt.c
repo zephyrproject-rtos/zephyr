@@ -4217,12 +4217,16 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 enum bt_security_err pairing_accept(struct bt_conn *conn,
 				    const struct bt_conn_pairing_feat *const feat)
 {
-	bt_shell_print("Remote pairing features: "
-		       "IO: 0x%02x, OOB: %d, AUTH: 0x%02x, Key: %d, "
-		       "Init Kdist: 0x%02x, Resp Kdist: 0x%02x",
-		       feat->io_capability, feat->oob_data_flag,
-		       feat->auth_req, feat->max_enc_key_size,
-		       feat->init_key_dist, feat->resp_key_dist);
+	if (feat != NULL) {
+		bt_shell_print("Remote pairing features: "
+			       "IO: 0x%02x, OOB: %d, AUTH: 0x%02x, Key: %d, "
+			       "Init Kdist: 0x%02x, Resp Kdist: 0x%02x",
+			       feat->io_capability, feat->oob_data_flag,
+			       feat->auth_req, feat->max_enc_key_size,
+			       feat->init_key_dist, feat->resp_key_dist);
+	} else {
+		bt_shell_print("Remote pairing");
+	}
 
 	return BT_SECURITY_ERR_SUCCESS;
 }
