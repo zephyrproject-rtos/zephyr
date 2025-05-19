@@ -103,3 +103,14 @@ void soc_early_init_hook(void)
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */
 }
+
+#if defined(CONFIG_SOC_FAMILY_MAX32_RV32)
+
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
+}
+
+#endif
