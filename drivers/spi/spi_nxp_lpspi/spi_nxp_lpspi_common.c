@@ -215,6 +215,8 @@ int spi_nxp_init_common(const struct device *dev)
 
 	lpspi_module_system_init(base);
 
+	data->major_version = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
+
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
 		return err;
