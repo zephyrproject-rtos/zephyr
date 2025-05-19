@@ -315,8 +315,8 @@ static void i2c_omap_resize_fifo(const struct device *dev, uint8_t size)
  */
 static int i2c_omap_get_sda(void *io_context)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	return (i2c_base_addr->SYSTEST & I2C_OMAP_SYSTEST_SDA_I_FUNC) ? 1 : 0;
 }
@@ -331,8 +331,8 @@ static int i2c_omap_get_sda(void *io_context)
  */
 static void i2c_omap_set_sda(void *io_context, int state)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SDA_O;
@@ -351,8 +351,8 @@ static void i2c_omap_set_sda(void *io_context, int state)
  */
 static void i2c_omap_set_scl(void *io_context, int state)
 {
-	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	const struct device *dev = io_context;
+	i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SCL_O;
@@ -388,7 +388,7 @@ static int i2c_omap_recover_bus(const struct device *dev)
 	k_sem_take(&data->lock, K_FOREVER);
 	i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_ST_EN | (3 << I2C_OMAP_SYSTEST_TMODE_SHIFT) |
 				  I2C_OMAP_SYSTEST_SCL_O | I2C_OMAP_SYSTEST_SDA_O;
-	i2c_bitbang_init(&bitbang_omap, &bitbang_omap_io, (void *)cfg);
+	i2c_bitbang_init(&bitbang_omap, &bitbang_omap_io, (void *)dev);
 	error = i2c_bitbang_recover_bus(&bitbang_omap);
 	if (error != 0) {
 		LOG_ERR("failed to recover bus (err %d)", error);
