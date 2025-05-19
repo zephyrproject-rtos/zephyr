@@ -1094,6 +1094,11 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 
 		return -EINVAL;
 	}
+#ifdef GMAC_UR_REFCLK_Msk
+	if (DT_INST_ENUM_IDX(0, ref_clk_source)) {
+		gmac->GMAC_UR |= GMAC_UR_REFCLK_Msk;
+	}
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
