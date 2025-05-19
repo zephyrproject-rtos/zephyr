@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/dai/esai.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <fsl_esai.h>
 
@@ -218,6 +219,7 @@ struct esai_config {
 	uint32_t *clock_cfg;
 	uint32_t clock_cfg_size;
 	struct esai_clock_data clk_data;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 /* this needs to perfectly match SOF's struct sof_ipc_dai_esai_params */
