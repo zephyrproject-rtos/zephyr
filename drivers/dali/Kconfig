@@ -18,6 +18,7 @@ config DALI_MAX_FRAMES_IN_QUEUE
 	  How many frames should be buffered in the recv queue
 
 source "drivers/dali/Kconfig.lpc11u6x"
+source "drivers/dali/Kconfig.pwm"
 
 module = DALI_LOW_LEVEL
 module-str = dali_low_level

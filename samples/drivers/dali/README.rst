@@ -20,6 +20,21 @@ access to the DALI bus. See the predefined overlays in
 
 .. note:: For proper operation a DALI specific physcial interface is required.
 
+Building and Running for ST Nucleo F091RC
+=========================================
+The :zephyr_file:`samples/drivers/dali/boards/nucleo_f091rc.overlay`
+is specifically for the Mikroe-2672 DALI2 click development board
+used as physical interface to the DALI bus. This board uses negative
+logic for signal transmission (Tx Low <-> DALI Bus Idle).
+The sample can be build an executed for the
+:zephyr:board:`nucleo_f091rc` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dali
+   :board: nucleo_f091rc
+   :goals: build flash
+   :compact:
+
 Building and Running for NXP LPCXpresso11U68
 ============================================
 The :zephyr_file:`samples/drivers/dali/boards/lpcxpresso11u68.overlay`
