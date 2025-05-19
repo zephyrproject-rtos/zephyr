@@ -72,6 +72,8 @@ HTTP_RESOURCE_DEFINE(resource_5, service_D, "/fo*", RES(1));
 HTTP_RESOURCE_DEFINE(resource_6, service_D, "/f[ob]o3.html", RES(1));
 HTTP_RESOURCE_DEFINE(resource_7, service_D, "/fb?3.htm", RES(0));
 HTTP_RESOURCE_DEFINE(resource_8, service_D, "/f*4.html", RES(3));
+HTTP_RESOURCE_DEFINE(resource_11, service_D, "/foo/*", RES(3));
+HTTP_RESOURCE_DEFINE(resource_12, service_D, "/foo/b?r", RES(3));
 
 
 ZTEST(http_service, test_HTTP_SERVICE_DEFINE)
@@ -326,6 +328,25 @@ ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
 	res = CHECK_PATH("/fbo4.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(3), "Resource mismatch");
+
+	res = CHECK_PATH("/foo/bar", &len);
+	zassert_not_null(res, "Resource not found");
+	zassert_true(len == (sizeof("/foo/bar") - 1), "Length not set correctly");
+	zassert_equal(res, RES(3), "Resource mismatch");
+
+	res = CHECK_PATH("/foo/bar?param=value", &len);
+	zassert_not_null(res, "Resource not found");
+	zassert_true(len == (sizeof("/foo/bar") - 1), "Length not set correctly");
+	zassert_equal(res, RES(3), "Resource mismatch");
+
+	res = CHECK_PATH("/bar?foo=value", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH("/foo/bar?param=value", &len);
+	zassert_not_null(res, "Resource not found");
+	zassert_true(len == (sizeof("/foo/bar") - 1), "Length not set correctly");
 	zassert_equal(res, RES(3), "Resource mismatch");
 }
 
