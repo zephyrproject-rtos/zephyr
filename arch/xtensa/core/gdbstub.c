@@ -427,7 +427,7 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
 
-	uint32_t *bsa = *(const int **)stack;
+	const uint32_t *bsa = *(const int **)stack;
 
 	if (bsa - (const uint32_t *)stack > 12) {
 		num_laddr_regs = 16;
