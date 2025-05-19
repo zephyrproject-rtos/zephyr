@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/debug/gdbstub.h>
 
 #include <xtensa_asm2_context.h>
@@ -986,4 +987,36 @@ void arch_gdb_init(void)
 	 * won't go forward.
 	 */
 	__asm__ volatile ("_break.n 0");
+}
+
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(len);
+	ARG_UNUSED(align);
+
+#if defined(CONFIG_ICACHE) && defined(CONFIG_DCACHE)
+	/*
+	 * Note that a GDB memory write can write to code memory to
+	 * insert breakpoints. We need to deal with this here so
+	 * that the instruction cache can actually see the modified
+	 * instructions.
+	 *
+	 * According to the ISA manual, after writing the instructions:
+	 * 1. Flush the data cache so the modified instructions are
+	 *    in the main memory.
+	 * 2. Do ISYNC or MEMW or both (depending on which part of
+	 *    manual you are reading).
+	 * 3. Invalidate the instruction cache corresponding to
+	 *    the modified memory.
+	 * 4. Do another ISYNC.
+	 */
+	arch_dcache_flush_range(addr, len);
+
+	__asm__ volatile("isync; memw");
+
+	arch_icache_invd_range(addr, len);
+
+	__asm__ volatile("isync");
+#endif /* CONFIG_ICACHE && CONFIG_DCACHE */
 }
