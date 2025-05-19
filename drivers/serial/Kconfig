@@ -63,6 +63,12 @@ config UART_USE_RUNTIME_CONFIGURE
 	  Say y if unsure. Disable this to reduce footprint for
 	  applications that do not require runtime UART configuration.
 
+config SERIAL_SUPPORT_RS485
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware supports RS485.
+
 config UART_ASYNC_API
 	bool "Asynchronous UART API"
 	depends on SERIAL_SUPPORT_ASYNC

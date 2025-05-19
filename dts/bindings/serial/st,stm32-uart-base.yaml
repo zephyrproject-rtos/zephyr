@@ -9,6 +9,7 @@ include:
     property-blocklist:
       - clock-frequency
   - name: pinctrl-device.yaml
+  - name: uart-rs485-controller.yaml
   - name: reset-device.yaml
   - name: uart-controller-pin-inversion.yaml
 
@@ -68,6 +69,7 @@ properties:
       the core from stop mode(s).
       Valid range: 0 - 31
 
+<<<<<<< HEAD
   de-enable:
     type: boolean
     description: |
@@ -96,6 +98,8 @@ properties:
       Invert the binary logic of the de pin. When enabled, physical logic levels are inverted and
       we use 1=Low, 0=High instead of 1=High, 0=Low.
 
+=======
+>>>>>>> 71c82299c2c (uart: Rework support for RS485 APIs)
   fifo-enable:
     type: boolean
     description: |

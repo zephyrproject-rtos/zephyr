@@ -8,6 +8,7 @@ config UART_STM32
 	default y
 	depends on DT_HAS_ST_STM32_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_RS485
 	select SERIAL_SUPPORT_INTERRUPT
 	# the ASYNC implementation requires a DMA controller
 	select SERIAL_SUPPORT_ASYNC \
