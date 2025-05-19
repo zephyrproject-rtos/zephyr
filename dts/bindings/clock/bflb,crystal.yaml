@@ -1,0 +1,8 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalolab crystal Oscillator
+
+compatible: "bflb,crystal"
+
+include: [base.yaml, fixed-clock.yaml]

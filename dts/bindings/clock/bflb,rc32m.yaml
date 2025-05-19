@@ -1,0 +1,13 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalolab Internal 32 MHz Oscillator
+
+compatible: "bflb,rc32m"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    const: 32000000
