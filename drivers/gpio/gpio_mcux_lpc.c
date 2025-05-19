@@ -61,6 +61,23 @@ struct gpio_mcux_lpc_data {
 	sys_slist_t callbacks;
 };
 
+#if ((defined(CPU_RW610ETA2I) || defined(CPU_RW610HNA2I) || defined(CPU_RW610UKA2I) || \
+	defined(CPU_RW612ETA2I) || defined(CPU_RW612HNA2I) || defined(CPU_RW612UKA2I)) && \
+	defined(CONFIG_PM_DEVICE))
+static struct gpio_mux_registers_context_t{
+	/*GPIO Configuration Registers*/
+	uint32_t DIR[2];
+	uint32_t PIN[2];
+	uint32_t INTENA[2];
+	uint32_t INTENB[2];
+	uint32_t INTPOL[2];
+	uint32_t INTEDG[2];
+	/*PinCtrl Configuration Registers*/
+	uint32_t GPIO_GRP0;
+	uint32_t GPIO_GRP1;
+}gpio_mux_registers_context;
+#endif /*RW612/RW610 MCU*/
+
 static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
@@ -414,6 +431,58 @@ static int gpio_mcux_lpc_manage_cb(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+#if ((defined(CPU_RW610ETA2I) || defined(CPU_RW610HNA2I) || defined(CPU_RW610UKA2I) || \
+	defined(CPU_RW612ETA2I) || defined(CPU_RW612HNA2I) || defined(CPU_RW612UKA2I)) && \
+	defined(CONFIG_PM_DEVICE))
+static void gpio_mcux_lpc_context_save(const struct device *dev)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+
+	gpio_mux_registers_context.DIR[0] = config->gpio_base->DIR[0];
+	gpio_mux_registers_context.DIR[1] = config->gpio_base->DIR[1];
+	gpio_mux_registers_context.PIN[0] = config->gpio_base->PIN[0];
+	gpio_mux_registers_context.PIN[1] = config->gpio_base->PIN[1];
+	gpio_mux_registers_context.INTENA[0] = config->gpio_base->INTENA[0];
+	gpio_mux_registers_context.INTENA[1] = config->gpio_base->INTENA[1];
+	gpio_mux_registers_context.INTENB[0] = config->gpio_base->INTENB[0];
+	gpio_mux_registers_context.INTENB[1] = config->gpio_base->INTENB[1];
+	gpio_mux_registers_context.INTPOL[0] = config->gpio_base->INTPOL[0];
+	gpio_mux_registers_context.INTPOL[1] = config->gpio_base->INTPOL[1];
+	gpio_mux_registers_context.INTEDG[0] = config->gpio_base->INTEDG[0];
+	gpio_mux_registers_context.INTEDG[1] = config->gpio_base->INTEDG[1];
+
+	/*IO muxes registers should be handled in the pinctrl driver
+	this is a PRELIMINARY solution to continue with the PM3 
+	support for RW612 platform*/
+	gpio_mux_registers_context.GPIO_GRP0 = config->pinmux_base->GPIO_GRP0;
+	gpio_mux_registers_context.GPIO_GRP1 = config->pinmux_base->GPIO_GRP1;
+}
+
+static void gpio_mcux_lpc_context_restore(const struct device *dev)
+{
+	const struct gpio_mcux_lpc_config *config = dev->config;
+
+	config->gpio_base->DIR[0] = gpio_mux_registers_context.DIR[0];
+	config->gpio_base->DIR[1] = gpio_mux_registers_context.DIR[1];
+	config->gpio_base->PIN[0] = gpio_mux_registers_context.PIN[0];
+	config->gpio_base->PIN[1] = gpio_mux_registers_context.PIN[1]; 
+	config->gpio_base->INTENA[0] = gpio_mux_registers_context.INTENA[0]; 
+	config->gpio_base->INTENA[1] = gpio_mux_registers_context.INTENA[1]; 
+	config->gpio_base->INTENB[0] = gpio_mux_registers_context.INTENB[0]; 
+	config->gpio_base->INTENB[1] = gpio_mux_registers_context.INTENB[1]; 
+	config->gpio_base->INTPOL[0] = gpio_mux_registers_context.INTPOL[0]; 
+	config->gpio_base->INTPOL[1] = gpio_mux_registers_context.INTPOL[1]; 
+	config->gpio_base->INTEDG[0] = gpio_mux_registers_context.INTEDG[0]; 
+	config->gpio_base->INTEDG[1] = gpio_mux_registers_context.INTEDG[1]; 
+
+	/*IO muxes registers should be handled in the pinctrl driver
+	this is a PRELIMINARY solution to continue with the PM3 
+	support for RW612 platform*/
+	config->pinmux_base->GPIO_GRP0 = gpio_mux_registers_context.GPIO_GRP0;
+	config->pinmux_base->GPIO_GRP1 = gpio_mux_registers_context.GPIO_GRP1;
+}
+#endif /*RW610/RW612 MCU*/
+
 static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config;
@@ -424,9 +493,19 @@ static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+#if ((defined(CPU_RW610ETA2I) || defined(CPU_RW610HNA2I) || defined(CPU_RW610UKA2I) || \
+	defined(CPU_RW612ETA2I) || defined(CPU_RW612HNA2I) || defined(CPU_RW612UKA2I)) && \
+	defined(CONFIG_PM_DEVICE))
+		gpio_mcux_lpc_context_save(dev);
+#endif /*RW610/RW612 MCU*/
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		GPIO_PortInit(config->gpio_base, config->port_no);
+#if ((defined(CPU_RW610ETA2I) || defined(CPU_RW610HNA2I) || defined(CPU_RW610UKA2I) || \
+	defined(CPU_RW612ETA2I) || defined(CPU_RW612HNA2I) || defined(CPU_RW612UKA2I)) && \
+	defined(CONFIG_PM_DEVICE))
+		gpio_mcux_lpc_context_restore(dev);
+#endif /*RW610/RW612 MCU*/
 		break;
 	default:
 		return -ENOTSUP;
