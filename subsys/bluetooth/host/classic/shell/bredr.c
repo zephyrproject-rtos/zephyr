@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -989,6 +990,78 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static const char *get_conn_role_str(uint8_t role)
+{
+	switch (role) {
+	case BT_CONN_ROLE_CENTRAL: return "central";
+	case BT_CONN_ROLE_PERIPHERAL: return "peripheral";
+	default: return "Invalid";
+	}
+}
+
+void role_changed(struct bt_conn *conn, uint8_t status)
+{
+	struct bt_conn_info info;
+	int err;
+
+	bt_shell_print("Role changed (HCI status 0x%02x)", status);
+
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
+		bt_shell_print("Failed to get info");
+		return;
+	}
+
+	bt_shell_print("Role: %s", get_conn_role_str(info.role));
+}
+
+static int cmd_switch_role(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_buf *buf = NULL;
+	struct bt_hci_cp_switch_role *cp;
+	const bt_addr_t *dest;
+	const char *action;
+	int err;
+	uint8_t role;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "central")) {
+		role = BT_HCI_SWITCH_ROLE_CENTRAL;
+	} else if (!strcmp(action, "peripheral")) {
+		role = BT_HCI_SWITCH_ROLE_PERIPHERAL;
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	dest = bt_conn_get_dst_br(default_conn);
+	if (!dest) {
+		shell_error(sh, "Failed to get br addr");
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SWITCH_ROLE, sizeof(*cp));
+	if (buf != NULL) {
+		cp = net_buf_add(buf, sizeof(*cp));
+		memcpy(&cp->bdaddr, &dest->val[0], sizeof(cp->bdaddr));
+		cp->role = role;
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_SWITCH_ROLE, buf, NULL);
+		if (err) {
+			shell_print(sh, "fail to send hci cmd (err %d)", err);
+		}
+	} else {
+		shell_error(sh, "hi cmd fail to create");
+	}
+
+	return 0;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1041,6 +1114,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG, HFPHF>", cmd_sdp_find_record, 2, 0),
+	SHELL_CMD_ARG(switch-role, NULL, "<central, peripheral>", cmd_switch_role, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
