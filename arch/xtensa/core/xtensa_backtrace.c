@@ -11,7 +11,7 @@
 #include <esp_memory_utils.h>
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 #include "debug_helpers.h"
-#elif defined(CONFIG_SOC_XTENSA_DC233C)
+#elif defined(CONFIG_SOC_XTENSA_DC233C) || defined(CONFIG_SOC_MIMXRT595S_F1)
 #include "backtrace_helpers.h"
 #endif
 
@@ -69,6 +69,8 @@ static inline bool xtensa_ptr_executable(const void *p)
 	return intel_adsp_ptr_executable(p);
 #elif defined(CONFIG_SOC_XTENSA_DC233C)
 	return xtensa_dc233c_ptr_executable(p);
+#elif defined(CONFIG_SOC_MIMXRT595S_F1)
+	return xtensa_mimxrt595s_f1_ptr_executable(p);
 #else
 #warning "xtensa_ptr_executable is not defined for this platform"
 #endif
