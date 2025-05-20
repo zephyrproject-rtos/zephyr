@@ -358,11 +358,26 @@ static int sim7080_start_gnss_ext(bool xtra)
 		goto coldstart;
 	}
 
+	/* Query the xtra file validity */
+	int16_t diff, duration;
+	struct tm inject;
+
+	ret = mdm_sim7080_query_xtra_validity(&diff, &duration, &inject);
+	if (ret != 0) {
+		LOG_WRN("Could not query xtra validity. Performing cold start");
+		goto coldstart;
+	}
+
+	if (diff < 0) {
+		LOG_WRN("XTRA file is not valid. Performing cold start");
+		goto coldstart;
+	}
+
 	/* Enable xtra functionality */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSXTRA=1",
 			     &mdata.sem_response, K_SECONDS(5));
 	if (ret < 0) {
-		LOG_WRN("Failed query xtra file validity. Performing cold start");
+		LOG_WRN("Failed to enable xtra. Performing cold start");
 		goto coldstart;
 	}
 
