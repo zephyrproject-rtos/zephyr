@@ -149,9 +149,9 @@ static struct websocket_context *websocket_find(int real_sock)
 	return ctx;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	struct websocket_context *ctx = user_data;
 
@@ -164,6 +164,8 @@ static void response_cb(struct http_response *rsp,
 			rsp->data_len);
 		ctx->all_received = true;
 	}
+
+	return 0;
 }
 
 static int on_header_field(struct http_parser *parser, const char *at,
