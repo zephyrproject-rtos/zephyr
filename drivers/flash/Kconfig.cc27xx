@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_CC27XX
+	bool "TI SimpleLink CC27XX flash controller driver"
+	default y
+	depends on DT_HAS_TI_CC27XX_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enables TI SimpleLink CC27XX flash controller driver.

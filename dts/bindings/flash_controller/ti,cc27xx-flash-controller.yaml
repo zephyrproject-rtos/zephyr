@@ -1,0 +1,5 @@
+description: Texas Instruments CC27XX flash controller
+
+compatible: "ti,cc27xx-flash-controller"
+
+include: flash-controller.yaml
