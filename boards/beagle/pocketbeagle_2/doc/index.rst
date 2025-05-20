@@ -96,7 +96,7 @@ Debugging
 *********
 
 The board supports debugging M4 core from the A53 cores running Linux. Since the target needs
-superuser privilege, openocd needs to be launched seperately for now:
+superuser privilege, openocd needs to be launched separately for now:
 
 .. code-block:: console
 
