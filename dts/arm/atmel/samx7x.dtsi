@@ -46,6 +46,13 @@
 	};
 
 	soc {
+		hsmci: hsmci@40000000 {
+			compatible = "atmel,sam-hsmci";
+			reg = <0x40000000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 18>;
+			status = "disabled";
+		};
+
 		ssc: ssc@40004000 {
 			compatible = "atmel,sam-ssc";
 			reg = <0x40004000 0x4000>;
