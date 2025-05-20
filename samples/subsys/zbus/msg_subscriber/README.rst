@@ -8,7 +8,7 @@ Overview
 ********
 This sample illustrates how to use a message subscriber in different ways with other types of
 observers. It is possible to explore the pool isolation feature by setting the pool size and if it
-is static or dynamic by setting the proper :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC`.
+is static or dynamic by setting the proper :kconfig:option:`CONFIG_ZBUS_MSG_BUF_ALLOC`.
 
 Building and Running
 ********************
