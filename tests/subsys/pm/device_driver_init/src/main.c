@@ -73,6 +73,8 @@ ZTEST(device_driver_init, test_device_driver_init)
 struct pm_transition_test_dev_data {
 	enum pm_device_state state_turn_on;
 	enum pm_device_state state_resume;
+	enum pm_device_state state_suspend;
+	enum pm_device_state state_turn_off;
 	bool state_other;
 };
 
@@ -88,6 +90,12 @@ static int pm_transition_test_dev_pm_action(const struct device *dev, enum pm_de
 	case PM_DEVICE_ACTION_RESUME:
 		pm_device_state_get(dev, &data->state_resume);
 		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		pm_device_state_get(dev, &data->state_suspend);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		pm_device_state_get(dev, &data->state_turn_off);
+		break;
 	default:
 		data->state_other = true;
 	}
@@ -100,14 +108,30 @@ static int pm_transition_test_dev_init(const struct device *dev)
 
 	data->state_turn_on = UINT8_MAX;
 	data->state_resume = UINT8_MAX;
+	data->state_suspend = UINT8_MAX;
+	data->state_turn_off = UINT8_MAX;
 	data->state_other = false;
 
 	return pm_device_driver_init(dev, pm_transition_test_dev_pm_action);
 }
 
+static int pm_transition_test_dev_deinit(const struct device *dev)
+{
+	struct pm_transition_test_dev_data *data = dev->data;
+
+	data->state_turn_on = UINT8_MAX;
+	data->state_resume = UINT8_MAX;
+	data->state_suspend = UINT8_MAX;
+	data->state_turn_off = UINT8_MAX;
+	data->state_other = false;
+
+	return pm_device_driver_deinit(dev, pm_transition_test_dev_pm_action);
+}
+
 static struct pm_transition_test_dev_data dev_data;
 PM_DEVICE_DEFINE(pm_transition_test_dev_pm, pm_transition_test_dev_pm_action);
-DEVICE_DEFINE(pm_transition_test_dev, "test_dev", pm_transition_test_dev_init,
+DEVICE_DEINIT_DEFINE(pm_transition_test_dev, "test_dev",
+	pm_transition_test_dev_init, pm_transition_test_dev_deinit,
 	PM_DEVICE_GET(pm_transition_test_dev_pm), &dev_data, NULL,
 	POST_KERNEL, 0, NULL);
 
@@ -116,11 +140,40 @@ ZTEST(device_driver_init, test_device_driver_init_pm_state)
 #ifdef CONFIG_PM_DEVICE
 	zassert_equal(PM_DEVICE_STATE_OFF, dev_data.state_turn_on);
 	zassert_equal(PM_DEVICE_STATE_SUSPENDED, dev_data.state_resume);
+	zassert_equal(UINT8_MAX, dev_data.state_suspend);
+	zassert_equal(UINT8_MAX, dev_data.state_turn_off);
 	zassert_false(dev_data.state_other);
 #else
 	/* pm_device_state_get always returns PM_DEVICE_STATE_ACTIVE */
 	zassert_equal(PM_DEVICE_STATE_ACTIVE, dev_data.state_turn_on);
 	zassert_equal(PM_DEVICE_STATE_ACTIVE, dev_data.state_resume);
+	zassert_equal(UINT8_MAX, dev_data.state_suspend);
+	zassert_equal(UINT8_MAX, dev_data.state_turn_off);
+	zassert_false(dev_data.state_other);
+#endif /* CONFIG_PM */
+
+#ifdef CONFIG_PM_DEVICE
+	/* device_deinit() blocked if device is not suspended or off */
+	zassert_not_ok(device_deinit(DEVICE_GET(pm_transition_test_dev)));
+	zassert_ok(pm_device_action_run(DEVICE_GET(pm_transition_test_dev),
+					PM_DEVICE_ACTION_SUSPEND));
+#endif
+
+	zassert_ok(device_deinit(DEVICE_GET(pm_transition_test_dev)));
+
+#ifdef CONFIG_PM_DEVICE
+	/* no action called as device is already suspended or off */
+	zassert_equal(UINT8_MAX, dev_data.state_turn_on);
+	zassert_equal(UINT8_MAX, dev_data.state_resume);
+	zassert_equal(UINT8_MAX, dev_data.state_suspend);
+	zassert_equal(UINT8_MAX, dev_data.state_turn_off);
+	zassert_false(dev_data.state_other);
+#else
+	/* pm_device_state_get always returns PM_DEVICE_STATE_ACTIVE */
+	zassert_equal(UINT8_MAX, dev_data.state_turn_on);
+	zassert_equal(UINT8_MAX, dev_data.state_resume);
+	zassert_equal(PM_DEVICE_STATE_ACTIVE, dev_data.state_suspend);
+	zassert_equal(UINT8_MAX, dev_data.state_turn_off);
 	zassert_false(dev_data.state_other);
 #endif /* CONFIG_PM */
 }
