@@ -613,8 +613,7 @@ static void prepare_test_packet(int sock_type, uint16_t proto,
 
 		offset += NET_IPV4UDPH_LEN;
 		zassert_true(offset <= sizeof(tx_buf), "Packet too long");
-		zassert_ok(net_addr_pton(AF_INET, IPV4_ADDR, &addr),
-			   "Addres parse failed");
+		zassert_ok(net_addr_pton(AF_INET, IPV4_ADDR, &addr), "Address parse failed");
 
 		/* Prepare IPv4 header */
 		ipv4->vhl = 0x45;
