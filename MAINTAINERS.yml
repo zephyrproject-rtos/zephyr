@@ -3829,10 +3829,12 @@ NXP Wireless:
   collaborators:
     - MaochenWang1
     - axelnxp
+    - George-Stefan
   files:
     - drivers/wifi/nxp/
     - drivers/bluetooth/hci/*nxp*
     - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/*/*mcxw*.c
   labels:
     - "platform: NXP Drivers"
 
