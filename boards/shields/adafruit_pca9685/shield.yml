@@ -1,0 +1,4 @@
+shield:
+  name: adafruit_pca9685
+  full_name: Adafruit PCA9685 PWM Shield
+  vendor: adafruit
