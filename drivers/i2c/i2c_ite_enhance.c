@@ -23,7 +23,8 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 /* Start smbus session from idle state */
-#define I2C_MSG_START BIT(5)
+#define I2C_MSG_START    BIT(5)
+#define I2C_MSG_W2R_MASK (I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP)
 
 #define I2C_LINE_SCL_HIGH BIT(0)
 #define I2C_LINE_SDA_HIGH BIT(1)
@@ -136,6 +137,8 @@ struct i2c_enhance_data {
 	uint8_t stop;
 	/* Number of messages. */
 	uint8_t num_msgs;
+	/* NACK */
+	bool nack;
 #ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
 	/* Store command queue mode messages. */
 	struct i2c_msg *cq_msgs;
@@ -408,6 +411,7 @@ static int enhanced_i2c_error(const struct device *dev)
 	} else if ((i2c_str & E_HOSTA_BDS_AND_ACK) == E_HOSTA_BDS) {
 		if (IT8XXX2_I2C_CTR(base) & E_ACK) {
 			data->err = E_HOSTA_ACK;
+			data->nack = true;
 			/* STOP */
 			IT8XXX2_I2C_CTR(base) = E_FINISH;
 		}
@@ -520,6 +524,12 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 				}
 				/* read next byte */
 				i2c_pio_trans_data(dev, RX_DIRECT, in_data, 0);
+			} else if (data->active_msg->len == 0) {
+				/* Handle data length of 0 */
+				data->i2ccs = I2C_CH_NORMAL;
+				IT8XXX2_I2C_CTR(base) = E_FINISH;
+				/* wait for stop bit interrupt */
+				data->stop = 1;
 			}
 		}
 	}
@@ -589,6 +599,19 @@ static int i2c_transaction(const struct device *dev)
 			}
 		}
 	}
+
+	/*
+	 * When a transaction results in NACK, ensure that the IT8XXX2_I2C_CTR
+	 * register has been updated E_FINISH before proceeding with the
+	 * following i2c_reset.
+	 */
+	if (data->nack) {
+		data->nack = false;
+		data->stop = 1;
+
+		return 1;
+	}
+
 	/* reset i2c port */
 	i2c_reset(dev);
 	IT8XXX2_I2C_CTR1(base) = 0;
@@ -659,6 +682,8 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Clear the flag */
+	data->nack = false;
 
 	return data->err;
 }
@@ -886,11 +911,10 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			return false;
 		}
 		/*
-		 * Write of I2C target address without writing data, used by
-		 * cmd_i2c_scan. Use PIO mode.
+		 * Use PIO mode when no data is written and read, such as in the
+		 * case of cmd_i2c_scan.
 		 */
-		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
-		    (msgs[0].len == 0)) {
+		if (msgs[0].len == 0) {
 			return false;
 		}
 		return true;
@@ -915,10 +939,9 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			 *      msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ |
 			 *                     I2C_MSG_STOP;
 			 */
-			if ((msgs[1].flags & I2C_MSG_RESTART) &&
-			    ((msgs[1].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) &&
-			    (msgs[1].flags & I2C_MSG_STOP) &&
-			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE)) {
+			if (((msgs[1].flags & I2C_MSG_W2R_MASK) == I2C_MSG_W2R_MASK) &&
+			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE) &&
+			    (msgs[1].len != 0)) {
 				return true;
 			}
 		}
