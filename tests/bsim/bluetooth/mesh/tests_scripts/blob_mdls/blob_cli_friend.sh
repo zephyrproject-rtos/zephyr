@@ -14,12 +14,3 @@ RunTest blob_transfer_lpn \
 	blob_srv_lpn_pull \
 	blob_srv_lpn_pull \
 	blob_srv_lpn_pull
-
-overlay=overlay_psa_conf
-RunTest blob_transfer_lpn_psa \
-	blob_cli_friend_pull \
-	blob_srv_lpn_pull \
-	blob_srv_lpn_pull \
-	blob_srv_lpn_pull \
-	blob_srv_lpn_pull \
-	blob_srv_lpn_pull
