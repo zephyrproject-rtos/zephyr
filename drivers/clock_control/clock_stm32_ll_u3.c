@@ -232,7 +232,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(STM32_MSIK_ENABLED)
 	case STM32_SRC_MSIK:
 		*rate = get_msik_frequency();
-		break;
 #endif /* STM32_MSIK_ENABLED */
 #if defined(STM32_HSE_ENABLED)
 	case STM32_SRC_HSE:
@@ -361,6 +360,7 @@ static void set_up_fixed_clock_sources(void)
 
 		/* Enable LSESYS additionally */
 		LL_RCC_LSE_EnablePropagation();
+
 		/* Enforce BackUp domain access is disabled after clock initialization */
 		while (LL_RCC_LSE_IsPropagationReady() == 0U) {
 		}
