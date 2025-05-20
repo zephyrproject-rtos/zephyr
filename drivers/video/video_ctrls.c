@@ -362,7 +362,8 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	/* Call driver's set_ctrl */
 	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl) {
 		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-				->set_ctrl(ctrl->vdev->dev, ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+				     ->set_ctrl(ctrl->vdev->dev,
+						ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 		if (ret) {
 			goto restore;
 		}
