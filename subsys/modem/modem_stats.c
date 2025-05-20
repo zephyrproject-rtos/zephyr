@@ -35,7 +35,9 @@ static struct modem_stats_buffer *stats_buffer_list_first(void)
 	struct modem_stats_buffer *first;
 
 	k_spinlock_key_t key = k_spin_lock(&stats_buffer_lock);
+
 	first = stats_buffer_from_node(sys_slist_peek_head(&stats_buffer_list));
+
 	k_spin_unlock(&stats_buffer_lock, key);
 
 	return first;
@@ -46,7 +48,9 @@ static struct modem_stats_buffer *stats_buffer_list_next(struct modem_stats_buff
 	struct modem_stats_buffer *next;
 
 	k_spinlock_key_t key = k_spin_lock(&stats_buffer_lock);
+
 	next = stats_buffer_from_node(sys_slist_peek_next(&buffer->node));
+	
 	k_spin_unlock(&stats_buffer_lock, key);
 
 	return next;
