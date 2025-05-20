@@ -209,24 +209,29 @@ class testZephyrInitLevels(unittest.TestCase):
                 0x00: ("a", 4, 0),
                 0x04: ("b", 4, 0),
                 0x08: ("c", 4, 0),
+                0x0a: ("d", 4, 0),
                 }
         obj._object_addr = {
                 "__device_dts_ord_11": 0x00,
                 "__device_dts_ord_22": 0x04,
+                "__service_foo" : 0x0a,
                 }
 
         mock_ip.side_effect = lambda *args: args
 
         def mock_obj_name(*args):
-            if args[0] == (0, 5, 0):
-                return "i0"
-            elif args[0] == (0, 1, 0):
+            if args[0] == (0, 0, 0):
                 return "__device_dts_ord_11"
+            elif args[0] == (4, 0, 0):
+                return "__device_dts_ord_22"
+            elif args[0] == (8, 0, 0):
+                return "__service_foo"
+            elif args[0] == (10, 0, 0):
+                return "foo_init_fn"
+            elif args[0] == (0, 5, 0):
+                return "i0"
             elif args[0] == (4, 5, 0):
                 return "i1"
-            elif args[0] == (4, 1, 0):
-                return "__device_dts_ord_22"
-            return f"name_{args[0][0]}_{args[0][1]}"
         mock_on.side_effect = mock_obj_name
 
         obj._process_initlevels()
@@ -235,7 +240,7 @@ class testZephyrInitLevels(unittest.TestCase):
             "EARLY": [],
             "PRE_KERNEL_1": [],
             "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
-            "POST_KERNEL": ["c: name_8_0(name_8_1)"],
+            "POST_KERNEL": ["c: foo_init_fn(__service_foo)"],
             "APPLICATION": [],
             "SMP": [],
             })
