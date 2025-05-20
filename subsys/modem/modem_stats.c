@@ -50,7 +50,7 @@ static struct modem_stats_buffer *stats_buffer_list_next(struct modem_stats_buff
 	k_spinlock_key_t key = k_spin_lock(&stats_buffer_lock);
 
 	next = stats_buffer_from_node(sys_slist_peek_next(&buffer->node));
-	
+
 	k_spin_unlock(&stats_buffer_lock, key);
 
 	return next;

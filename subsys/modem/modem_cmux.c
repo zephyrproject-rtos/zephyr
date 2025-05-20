@@ -1128,7 +1128,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 	};
 
 	ret = modem_cmux_transmit_data_frame(cmux, &frame);
-	
+
 	k_spin_unlock(&cmux->work_lock, key);
 
 	return ret;
