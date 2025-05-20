@@ -14,6 +14,8 @@
 	compatible = "st,stm32mp257f-ev1", "st,stm32mp25";
 
 	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
 		zephyr,flash = &ddr_code;
 		zephyr,sram = &ddr_sys;
 	};
@@ -53,4 +55,18 @@
 
 &gpioj {
 	status = "okay";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pg9 &uart5_rx_pg10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pf13 &usart6_rx_pf14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "disabled";
 };
