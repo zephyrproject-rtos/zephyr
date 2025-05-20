@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -236,5 +237,19 @@ zephyr_udc0: &usbhs {
 	qdec3: qdec {
 		pinctrl-0 = <&qdec3_default>;
 		pinctrl-names = "default";
+	};
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&hsmci_default>;
+	cd-gpios = <&pioc 16 GPIO_ACTIVE_LOW>;
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
 	};
 };
