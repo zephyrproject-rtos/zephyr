@@ -275,27 +275,31 @@ MODEM_CMD_DEFINE(on_cmd_cgnscpy)
 }
 
 static int16_t xtra_diff_h, xtra_duration_h;
+static struct tm *xtra_inject;
 
 MODEM_CMD_DEFINE(on_cmd_cgnsxtra)
 {
 	xtra_diff_h = (int16_t)strtol(argv[0], NULL, 10);
 	xtra_duration_h = (int16_t)strtol(argv[1], NULL, 10);
+	int ret = sim7080_utils_parse_time(argv[2], argv[3], xtra_inject);
 	LOG_INF("XTRA validity: diff=%d, duration=%d, inject=%s,%s",
 		xtra_diff_h,
 		xtra_duration_h,
 		argv[2],
 		argv[3]);
-	return 0;
+	return ret;
 }
 
-int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h)
+int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h, struct tm *inject)
 {
 	struct modem_cmd cmds[] = { MODEM_CMD("+CGNSXTRA: ", on_cmd_cgnsxtra, 4U, ",") };
 	int ret = -EINVAL;
 
-	if (!diff_h || !duration_h) {
+	if (!diff_h || !duration_h || !inject) {
 		goto out;
 	}
+
+	xtra_inject = inject;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSXTRA",
 			     &mdata.sem_response, K_SECONDS(2));
@@ -308,6 +312,7 @@ int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h)
 	*duration_h = xtra_duration_h;
 
 out:
+	xtra_inject = NULL;
 	return ret;
 }
 

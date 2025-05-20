@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_sim7080_meas, CONFIG_MODEM_LOG_LEVEL);
 
@@ -274,4 +275,54 @@ int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info)
 
 out:
     return ret;
+}
+
+static struct tm *local_tm;
+
+MODEM_CMD_DEFINE(on_cmd_cclk)
+{
+	char *saveptr;
+	int ret = -1;
+
+	/* +1 to skip leading " */
+	char *date = strtok_r(argv[0] + 1, ",", &saveptr);
+	if (date == NULL) {
+		LOG_WRN("Failed to parse date");
+		goto out;
+	}
+
+	char *time = strtok_r(NULL, "\"", &saveptr);
+	if (time == NULL) {
+		LOG_WRN("Failed to parse time");
+		goto out;
+	}
+
+	ret = sim7080_utils_parse_time(date, time, local_tm);
+
+out:
+	return ret;
+}
+
+int mdm_sim7080_get_local_time(struct tm *t)
+{
+	int ret = -1;
+	struct modem_cmd cmds[] = {MODEM_CMD("+CCLK: ", on_cmd_cclk, 1U, ",")};
+
+	if (sim7080_get_state() == SIM7080_STATE_OFF) {
+		goto out;
+	}
+
+	if (!t) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	local_tm = t;
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CCLK?",
+			     &mdata.sem_response, K_SECONDS(2));
+
+out:
+	local_tm = NULL;
+	return ret;
 }
