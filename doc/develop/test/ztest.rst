@@ -557,8 +557,9 @@ Ztress
 Mocking via FFF
 ===============
 
-Zephyr has integrated with FFF for mocking. See `FFF`_ for documentation. To use it,
-include the relevant header:
+Zephyr has integrated with FFF for mocking. See `FFF`_ for documentation. By default FFF is enabled when
+:kconfig:option:`CONFIG_ZTEST` is set to "y". It can also be enabled independently by setting
+:kconfig:option:`CONFIG_FFF` to "y". To use it, include the relevant header:
 
 .. code-block:: C
 

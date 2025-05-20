@@ -198,4 +198,9 @@ config TEST_BUSY_SIM
 	  It simulates cpu load by using counter device to generate interrupts
 	  with random intervals and random busy looping in the interrupt.
 
+config FFF
+	bool "Includes FFF in the build"
+	help
+	  This option will include FFF mocking support.
+
 endmenu
