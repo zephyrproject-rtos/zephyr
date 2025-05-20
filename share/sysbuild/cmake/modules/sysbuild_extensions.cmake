@@ -523,6 +523,7 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+  zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
 
   # This custom target informs CMake how the BYPRODUCTS are generated if a target
   # depends directly on the BYPRODUCT instead of depending on the image target.
