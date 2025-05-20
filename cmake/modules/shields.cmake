@@ -31,7 +31,6 @@
 include_guard(GLOBAL)
 
 include(extensions)
-include(yaml)
 
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD WATCH)
@@ -49,47 +48,21 @@ set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
 
 foreach(root ${BOARD_ROOT})
   set(shield_dir ${root}/boards/shields)
-
-  # First, look for shield.yml files
-  file(GLOB_RECURSE shield_yml_files ${shield_dir}/*/shield.yml)
-
-  foreach(shield_yml ${shield_yml_files})
-    get_filename_component(shield_path ${shield_yml} DIRECTORY)
-    get_filename_component(shield ${shield_path} NAME)
-
-    set(yaml_ctx_name shield_data_${shield})
-    yaml_load(FILE ${shield_yml} NAME ${yaml_ctx_name})
-
-    # Check for multiple shields format first
-    yaml_get(shields_data NAME ${yaml_ctx_name} KEY shields)
-    if(shields_data)
-      yaml_length(num_shields NAME ${yaml_ctx_name} KEY shields)
-      if(${num_shields} GREATER 0)
-        math(EXPR shield_stop "${num_shields} - 1")
-        foreach(i RANGE 0 ${shield_stop})
-          yaml_get(shield_name NAME ${yaml_ctx_name} KEY shields ${i} name)
-          list(APPEND SHIELD_LIST ${shield_name})
-          set(SHIELD_DIR_${shield_name} ${shield_path})
-        endforeach()
-      endif()
-    else()
-      yaml_get(shield_data NAME ${yaml_ctx_name} KEY shield)
-      if(shield_data)
-        yaml_get(shield_name NAME ${yaml_ctx_name} KEY shield name)
-        list(APPEND SHIELD_LIST ${shield_name})
-        set(SHIELD_DIR_${shield_name} ${shield_path})
-      endif()
-    endif()
-  endforeach()
-
-  # Then, look for overlay files next to Kconfig.shield files as fallback (legacy shields)
+  # Match the Kconfig.shield files in the shield directories to make sure we are
+  # finding shields, e.g. x_nucleo_iks01a1/Kconfig.shield
   file(GLOB_RECURSE shields_refs_list ${shield_dir}/*/Kconfig.shield)
 
+  # The above gives a list of Kconfig.shield files, like this:
+  #
+  # x_nucleo_iks01a1/Kconfig.shield;x_nucleo_iks01a2/Kconfig.shield
+  #
+  # we construct a list of shield names by extracting the directories
+  # from each file and looking for <shield>.overlay files in there.
+  # Each overlay corresponds to a shield. We obtain the shield name by
+  # removing the .overlay extension.
+  # We also create a SHIELD_DIR_${name} variable for each shield's directory.
   foreach(shields_refs ${shields_refs_list})
     get_filename_component(shield_path ${shields_refs} DIRECTORY)
-    if(EXISTS "${shield_path}/shield.yml")
-      continue()
-    endif()
     file(GLOB shield_overlays RELATIVE ${shield_path} ${shield_path}/*.overlay)
     foreach(overlay ${shield_overlays})
       get_filename_component(shield ${overlay} NAME_WE)
