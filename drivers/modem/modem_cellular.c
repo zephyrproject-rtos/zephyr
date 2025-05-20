@@ -1123,6 +1123,9 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
+		net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+		modem_chat_release(&data->chat);
+		modem_ppp_release(data->ppp);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 
