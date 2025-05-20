@@ -229,7 +229,7 @@ static int bmm350_otp_dump_after_boot(const struct device *dev)
  * @brief This API gets the PMU command status 0 value
  */
 static int bmm350_get_pmu_cmd_status_0(const struct device *dev,
-					  struct bmm350_pmu_cmd_status_0 *pmu_cmd_stat_0)
+				       struct bmm350_pmu_cmd_status_0 *pmu_cmd_stat_0)
 {
 	/* Variable to store the function result */
 	int ret;
@@ -247,10 +247,8 @@ static int bmm350_get_pmu_cmd_status_0(const struct device *dev,
 		pmu_cmd_stat_0->avr_ovwr = BMM350_GET_BITS(rx_buf[2], BMM350_AVG_OVWR);
 		pmu_cmd_stat_0->pwr_mode_is_normal =
 			BMM350_GET_BITS(rx_buf[2], BMM350_PWR_MODE_IS_NORMAL);
-		pmu_cmd_stat_0->cmd_is_illegal =
-			BMM350_GET_BITS(rx_buf[2], BMM350_CMD_IS_ILLEGAL);
-		pmu_cmd_stat_0->pmu_cmd_value =
-			BMM350_GET_BITS(rx_buf[2], BMM350_PMU_CMD_VALUE);
+		pmu_cmd_stat_0->cmd_is_illegal = BMM350_GET_BITS(rx_buf[2], BMM350_CMD_IS_ILLEGAL);
+		pmu_cmd_stat_0->pmu_cmd_value = BMM350_GET_BITS(rx_buf[2], BMM350_PMU_CMD_VALUE);
 	}
 
 	return ret;
@@ -426,7 +424,7 @@ static int bmm350_magnetic_reset_and_wait(const struct device *dev)
  * @brief This API is used to read uncompensated mag and temperature data.
  */
 static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
-					struct bmm350_raw_mag_data *raw_data)
+					    struct bmm350_raw_mag_data *raw_data)
 {
 	struct bmm350_data *data = dev->data;
 	int rslt;
@@ -440,13 +438,13 @@ static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
 
 	if (rslt == 0) {
 		raw_mag_x = (uint32_t)mag_data[2] + ((uint32_t)mag_data[3] << 8) +
-				((uint32_t)mag_data[4] << 16);
+			    ((uint32_t)mag_data[4] << 16);
 		raw_mag_y = (uint32_t)mag_data[5] + ((uint32_t)mag_data[6] << 8) +
-				((uint32_t)mag_data[7] << 16);
+			    ((uint32_t)mag_data[7] << 16);
 		raw_mag_z = (uint32_t)mag_data[8] + ((uint32_t)mag_data[9] << 8) +
-				((uint32_t)mag_data[10] << 16);
+			    ((uint32_t)mag_data[10] << 16);
 		raw_temp = (uint32_t)mag_data[11] + ((uint32_t)mag_data[12] << 8) +
-				((uint32_t)mag_data[13] << 16);
+			   ((uint32_t)mag_data[13] << 16);
 
 		if ((data->axis_en & BMM350_EN_X_MSK) == BMM350_DISABLE) {
 			raw_data->raw_xdata = BMM350_DISABLE;
@@ -484,13 +482,13 @@ static int read_out_raw_data(const struct device *dev, int32_t *out_data)
 	if (rslt == 0) {
 		/* Convert mag lsb to uT and temp lsb to degC */
 		out_data[0] = ((raw_data.raw_xdata * BMM350_LSB_TO_UT_XY_COEFF) /
-				BMM350_LSB_TO_UT_COEFF_DIV);
+			       BMM350_LSB_TO_UT_COEFF_DIV);
 		out_data[1] = ((raw_data.raw_ydata * BMM350_LSB_TO_UT_XY_COEFF) /
-				BMM350_LSB_TO_UT_COEFF_DIV);
+			       BMM350_LSB_TO_UT_COEFF_DIV);
 		out_data[2] = ((raw_data.raw_zdata * BMM350_LSB_TO_UT_Z_COEFF) /
-				BMM350_LSB_TO_UT_COEFF_DIV);
+			       BMM350_LSB_TO_UT_COEFF_DIV);
 		out_data[3] = ((raw_data.raw_data_temp * BMM350_LSB_TO_UT_TEMP_COEFF) /
-				BMM350_LSB_TO_UT_COEFF_DIV);
+			       BMM350_LSB_TO_UT_COEFF_DIV);
 
 		if (out_data[3] > 0) {
 			temp = (out_data[3] - (2549 / 100));
@@ -524,11 +522,11 @@ bmm350_get_compensated_mag_xyz_temp_data_fixed(const struct device *dev,
 
 	if (rslt == 0) {
 		/* Apply compensation to temperature reading */
-		out_data[3] = (((BMM350_MAG_COMP_COEFF_SCALING +
-					data->mag_comp.dut_sensit_coef.t_sens) *
-				out_data[3]) +
-				data->mag_comp.dut_offset_coef.t_offs) /
-				BMM350_MAG_COMP_COEFF_SCALING;
+		out_data[3] =
+			(((BMM350_MAG_COMP_COEFF_SCALING + data->mag_comp.dut_sensit_coef.t_sens) *
+			  out_data[3]) +
+			 data->mag_comp.dut_offset_coef.t_offs) /
+			BMM350_MAG_COMP_COEFF_SCALING;
 
 		/* Store magnetic compensation structure to an array */
 		dut_offset_coef[0] = data->mag_comp.dut_offset_coef.offset_x;
@@ -549,50 +547,45 @@ bmm350_get_compensated_mag_xyz_temp_data_fixed(const struct device *dev,
 
 		/* Compensate raw magnetic data */
 		for (indx = 0; indx < 3; indx++) {
-			out_data[indx] = (out_data[indx] * (BMM350_MAG_COMP_COEFF_SCALING +
-								dut_sensit_coef[indx])) /
-						BMM350_MAG_COMP_COEFF_SCALING;
+			out_data[indx] = (out_data[indx] *
+					  (BMM350_MAG_COMP_COEFF_SCALING + dut_sensit_coef[indx])) /
+					 BMM350_MAG_COMP_COEFF_SCALING;
 			out_data[indx] = (out_data[indx] + dut_offset_coef[indx]);
-			out_data[indx] =
-				((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
-					(dut_tco[indx] * (out_data[3] - data->mag_comp.dut_t0))) /
-				BMM350_MAG_COMP_COEFF_SCALING;
-			out_data[indx] =
-				(out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
-				(BMM350_MAG_COMP_COEFF_SCALING +
-					(dut_tcs[indx] * (out_data[3] - data->mag_comp.dut_t0)));
+			out_data[indx] = ((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
+					  (dut_tco[indx] * (out_data[3] - data->mag_comp.dut_t0))) /
+					 BMM350_MAG_COMP_COEFF_SCALING;
+			out_data[indx] = (out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
+					 (BMM350_MAG_COMP_COEFF_SCALING +
+					  (dut_tcs[indx] * (out_data[3] - data->mag_comp.dut_t0)));
 		}
 
-		cr_ax_comp_x =
-			((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
-				(data->mag_comp.cross_axis.cross_x_y * out_data[1])) *
-				BMM350_MAG_COMP_COEFF_SCALING) /
+		cr_ax_comp_x = ((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
+				  (data->mag_comp.cross_axis.cross_x_y * out_data[1])) *
+				 BMM350_MAG_COMP_COEFF_SCALING) /
 				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				(data->mag_comp.cross_axis.cross_y_x *
-				data->mag_comp.cross_axis.cross_x_y)));
+				 (data->mag_comp.cross_axis.cross_y_x *
+				  data->mag_comp.cross_axis.cross_x_y)));
 
-		cr_ax_comp_y =
-			((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
-				(data->mag_comp.cross_axis.cross_y_x * out_data[0])) *
-				BMM350_MAG_COMP_COEFF_SCALING) /
+		cr_ax_comp_y = ((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
+				  (data->mag_comp.cross_axis.cross_y_x * out_data[0])) *
+				 BMM350_MAG_COMP_COEFF_SCALING) /
 				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				(data->mag_comp.cross_axis.cross_y_x *
-				data->mag_comp.cross_axis.cross_x_y)));
+				 (data->mag_comp.cross_axis.cross_y_x *
+				  data->mag_comp.cross_axis.cross_x_y)));
 
 		cr_ax_comp_z =
 			(out_data[2] +
-				(((out_data[0] * ((data->mag_comp.cross_axis.cross_y_x *
-						data->mag_comp.cross_axis.cross_z_y) -
-						(data->mag_comp.cross_axis.cross_z_x *
-						BMM350_MAG_COMP_COEFF_SCALING))) -
-				(out_data[1] * ((data->mag_comp.cross_axis.cross_z_y *
-						BMM350_MAG_COMP_COEFF_SCALING) -
-						(data->mag_comp.cross_axis.cross_x_y *
-						data->mag_comp.cross_axis.cross_z_x))))) /
-					(((BMM350_MAG_COMP_COEFF_SCALING *
-					BMM350_MAG_COMP_COEFF_SCALING) -
-					data->mag_comp.cross_axis.cross_y_x *
-						data->mag_comp.cross_axis.cross_x_y)));
+			 (((out_data[0] * ((data->mag_comp.cross_axis.cross_y_x *
+					    data->mag_comp.cross_axis.cross_z_y) -
+					   (data->mag_comp.cross_axis.cross_z_x *
+					    BMM350_MAG_COMP_COEFF_SCALING))) -
+			   (out_data[1] *
+			    ((data->mag_comp.cross_axis.cross_z_y * BMM350_MAG_COMP_COEFF_SCALING) -
+			     (data->mag_comp.cross_axis.cross_x_y *
+			      data->mag_comp.cross_axis.cross_z_x))))) /
+				 (((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
+				   data->mag_comp.cross_axis.cross_y_x *
+					   data->mag_comp.cross_axis.cross_x_y)));
 
 		out_data[0] = (int32_t)cr_ax_comp_x;
 		out_data[1] = (int32_t)cr_ax_comp_y;
@@ -724,8 +717,8 @@ static uint8_t mag_osr_to_reg(const struct sensor_value *val)
  * @brief This API sets the ODR and averaging factor.
  */
 static int bmm350_set_odr_performance(enum bmm350_data_rates odr,
-				  enum bmm350_performance_parameters performance,
-				  const struct device *dev)
+				      enum bmm350_performance_parameters performance,
+				      const struct device *dev)
 {
 	/* Variable to store the function result */
 	int rslt;
@@ -1110,13 +1103,12 @@ static int bmm350_init(const struct device *dev)
 
 /* Initializes a struct bmm350_config for an instance on an I2C bus. */
 #define BMM350_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm350_bus_io_i2c,
-#define BMM350_INT_CFG(inst) \
-	.drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                             \
-	.int_flags = FIELD_PREP(BMM350_INT_CTRL_INT_POL_MSK,                                     \
-			DT_INST_PROP(inst, active_high_int)) |                                   \
-		     FIELD_PREP(BMM350_INT_CTRL_INT_OD_MSK, DT_INST_PROP(inst, push_pull_int)) | \
-		     BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK |                                      \
-		     BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
+#define BMM350_INT_CFG(inst)                                                                       \
+	.drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                               \
+	.int_flags =                                                                               \
+		FIELD_PREP(BMM350_INT_CTRL_INT_POL_MSK, DT_INST_PROP(inst, active_high_int)) |     \
+		FIELD_PREP(BMM350_INT_CTRL_INT_OD_MSK, DT_INST_PROP(inst, push_pull_int)) |        \
+		BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK | BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
 
 #define BMM350_DEFINE(inst)                                                                        \
 	static struct bmm350_data bmm350_data_##inst;                                              \
