@@ -52,3 +52,29 @@ properties:
       - 2
       - 4
       - 8
+
+  push-pull-int:
+    type: boolean
+    description: |
+      Set for push-pull interrupt. Otherwise, it is open-drain.
+
+  active-high-int:
+    type: boolean
+    description: |
+      Set for a active high interrupt. Otherwise, it is active-low.
+
+  drive-strength:
+    type: int
+    description: |
+      The pad drive strength. 7 is the strongest. 0 is the weakest.
+      Reset Value of the BMM350 is 7.
+    default: 7
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7

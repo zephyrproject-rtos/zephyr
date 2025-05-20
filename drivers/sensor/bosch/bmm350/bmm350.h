@@ -183,20 +183,30 @@ enum bmm350_signed_bit {
 #define BMM350_PMU_CMD_STATUS_0_BR_FAST  UINT8_C(0x07)
 
 /*********************** Macros for bit masking ***************************/
-#define BMM350_AVG_MSK                (0x30)
-#define BMM350_AVG_POS                UINT8_C(0x04)
-#define BMM350_PMU_CMD_BUSY_MSK       UINT8_C(0x01)
-#define BMM350_PMU_CMD_BUSY_POS       UINT8_C(0x00)
-#define BMM350_ODR_OVWR_MSK           UINT8_C(0x02)
-#define BMM350_ODR_OVWR_POS           UINT8_C(0x01)
-#define BMM350_AVG_OVWR_MSK           UINT8_C(0x04)
-#define BMM350_AVG_OVWR_POS           UINT8_C(0x02)
-#define BMM350_PWR_MODE_IS_NORMAL_MSK UINT8_C(0x08)
-#define BMM350_PWR_MODE_IS_NORMAL_POS UINT8_C(0x03)
-#define BMM350_CMD_IS_ILLEGAL_MSK     UINT8_C(0x10)
-#define BMM350_CMD_IS_ILLEGAL_POS     UINT8_C(0x04)
-#define BMM350_PMU_CMD_VALUE_MSK      UINT8_C(0xE0)
-#define BMM350_PMU_CMD_VALUE_POS      UINT8_C(0x05)
+#define BMM350_AVG_MSK                       (0x30)
+#define BMM350_AVG_POS                       UINT8_C(0x04)
+#define BMM350_PMU_CMD_BUSY_MSK              UINT8_C(0x01)
+#define BMM350_PMU_CMD_BUSY_POS              UINT8_C(0x00)
+#define BMM350_ODR_OVWR_MSK                  UINT8_C(0x02)
+#define BMM350_ODR_OVWR_POS                  UINT8_C(0x01)
+#define BMM350_AVG_OVWR_MSK                  UINT8_C(0x04)
+#define BMM350_AVG_OVWR_POS                  UINT8_C(0x02)
+#define BMM350_PWR_MODE_IS_NORMAL_MSK        UINT8_C(0x08)
+#define BMM350_PWR_MODE_IS_NORMAL_POS        UINT8_C(0x03)
+#define BMM350_CMD_IS_ILLEGAL_MSK            UINT8_C(0x10)
+#define BMM350_CMD_IS_ILLEGAL_POS            UINT8_C(0x04)
+#define BMM350_PMU_CMD_VALUE_MSK             UINT8_C(0xE0)
+#define BMM350_PMU_CMD_VALUE_POS             UINT8_C(0x05)
+#define BMM350_INT_CTRL_INT_MODE_MSK         UINT8_C(0x01)
+#define BMM350_INT_CTRL_INT_MODE_POS         UINT8_C(0x00)
+#define BMM350_INT_CTRL_INT_POL_MSK          UINT8_C(0x02)
+#define BMM350_INT_CTRL_INT_POL_POS          UINT8_C(0x01)
+#define BMM350_INT_CTRL_INT_OD_MSK           UINT8_C(0x04)
+#define BMM350_INT_CTRL_INT_OD_POS           UINT8_C(0x02)
+#define BMM350_INT_CTRL_INT_OUTPUT_EN_MSK    UINT8_C(0x08)
+#define BMM350_INT_CTRL_INT_OUTPUT_EN_POS    UINT8_C(0x03)
+#define BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK UINT8_C(0x80)
+#define BMM350_INT_CTRL_DRDY_DATA_REG_EN_POS UINT8_C(0x07)
 
 /**************************** Self-test macros **********************/
 #define BMM350_SELF_TEST_DISABLE UINT8_C(0x00)
@@ -271,7 +281,6 @@ enum bmm350_signed_bit {
 #define BMM350_ODR_1_5625HZ        UINT8_C(0xA)
 #define BMM350_ODR_MSK             UINT8_C(0xf)
 #define BMM350_ODR_POS             UINT8_C(0x0)
-#define BMM350_DATA_READY_INT_CTRL UINT8_C(0x8e)
 
 /* Macro to SET and GET BITS of a register*/
 #define BMM350_SET_BITS(reg_data, bitname, data)                                                   \
@@ -451,9 +460,13 @@ struct bmm350_raw_mag_data {
 struct bmm350_config {
 	struct bmm350_bus bus;
 	const struct bmm350_bus_io *bus_io;
+#ifdef CONFIG_BMM350_TRIGGER
 	struct gpio_dt_spec drdy_int;
+	uint8_t int_flags;
+#endif
 	uint8_t default_odr;
 	uint8_t default_osr;
+	uint8_t drive_strength;
 };
 
 struct bmm350_data {
