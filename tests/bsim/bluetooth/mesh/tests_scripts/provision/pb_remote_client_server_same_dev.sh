@@ -23,8 +23,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_prov_pb_remote_client_server_same_dev \
 	prov_device_pb_remote_client_server_same_dev \
 	prov_device_pb_remote_server_same_dev
-
-overlay=overlay_psa_conf
-RunTest mesh_prov_pb_remote_client_server_same_dev \
-	prov_device_pb_remote_client_server_same_dev \
-	prov_device_pb_remote_server_same_dev

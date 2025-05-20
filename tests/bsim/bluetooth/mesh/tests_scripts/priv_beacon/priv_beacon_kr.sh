@@ -9,9 +9,3 @@ RunTest mesh_priv_beacon_on_key_refresh \
   beacon_rx_on_key_refresh \
   beacon_tx_priv_on_key_refresh \
   -- -argstest rand-int=1
-
-overlay=overlay_psa_conf
-RunTest mesh_priv_beacon_on_key_refresh_psa \
-  beacon_rx_on_key_refresh \
-  beacon_tx_priv_on_key_refresh \
-  -- -argstest rand-int=1

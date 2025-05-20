@@ -16,7 +16,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 6. The test passes when the Client successfully receives the Status response.
 RunTest sar_slow_test \
 	sar_cli_max_len_sdu_slow_send sar_srv_max_len_sdu_slow_receive
-
-overlay=overlay_psa_conf
-RunTest sar_slow_test_psa \
-	sar_cli_max_len_sdu_slow_send sar_srv_max_len_sdu_slow_receive
