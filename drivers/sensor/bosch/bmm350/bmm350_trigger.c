@@ -15,14 +15,25 @@
 
 LOG_MODULE_DECLARE(BMM350, CONFIG_SENSOR_LOG_LEVEL);
 
-static void bmm350_handle_interrupts(const void *arg)
+static int bmm350_handle_interrupts(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct bmm350_data *data = dev->data;
+	uint8_t intr_status;
+	int ret;
+
+	/* Read interrupt status to clear interrupt */
+	ret = bmm350_reg_read(dev, BMM350_REG_INT_STATUS, &intr_status, sizeof(intr_status));
+	if (ret < 0) {
+		LOG_ERR("%s: failed to read interrupt status", dev->name);
+		return ret;
+	}
 
 	if (data->drdy_handler) {
 		data->drdy_handler(dev, data->drdy_trigger);
 	}
+
+	return 0;
 }
 
 #ifdef CONFIG_BMM350_TRIGGER_OWN_THREAD
@@ -38,7 +49,7 @@ static void bmm350_thread_main(void *arg1, void *unused1, void *unused2)
 
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
-		bmm350_handle_interrupts(dev);
+		(void)bmm350_handle_interrupts(dev);
 	}
 }
 #endif
@@ -48,7 +59,7 @@ static void bmm350_work_handler(struct k_work *work)
 {
 	struct bmm350_data *data = CONTAINER_OF(work, struct bmm350_data, work);
 
-	bmm350_handle_interrupts(data->dev);
+	(void)bmm350_handle_interrupts(data->dev);
 }
 #endif
 
