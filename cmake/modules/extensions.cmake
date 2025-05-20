@@ -3816,6 +3816,10 @@ endfunction()
 #   alias at the beginning of a path interchangeably with the full
 #   path to the aliased node in these functions. The usage comments
 #   will make this clear in each case.
+#
+# - These methods are also available to sysbuild. To retrieve the DT
+#   information of some <image>, after its CMake configuration step,
+#   the dt_* function call must include a "TARGET <image>" argument.
 
 # Usage:
 #   dt_nodelabel(<var> NODELABEL <label> [REQUIRED] [TARGET <target>])
