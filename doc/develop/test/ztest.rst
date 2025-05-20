@@ -395,7 +395,7 @@ that interaction.
 testcases.yaml
 ==============
 
-You have to set the value for the key "tags" to "unit" in the testcase.yaml
+You have to set the value for the key "type" to "unit" in the testcase.yaml
 
 .. code-block:: yaml
 
