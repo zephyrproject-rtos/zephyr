@@ -143,6 +143,12 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT
     ${WISECONNECT_DIR}/components/service/mqtt/si91x/sl_mqtt_client.c
   )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_PING
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/icmp
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_PING
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/icmp/sl_net_ping.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
