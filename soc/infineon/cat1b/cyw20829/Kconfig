@@ -16,3 +16,19 @@ config SOC_SERIES_CYW20829
 	select BUILD_OUTPUT_HEX
 	select BUILD_OUTPUT_BIN
 	select SOC_EARLY_INIT_HOOK
+
+config CYW20829_FLASH_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_sahb)
+
+config CYW20829_FLASH_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_cbus)
+
+config CYW20829_SRAM_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_sahb)
+
+config CYW20829_SRAM_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_cbus)
