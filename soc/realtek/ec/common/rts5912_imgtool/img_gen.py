@@ -69,7 +69,7 @@ def parse_args():
         type=int,
         dest="spi_freq",
         choices=[FREQ_50M, FREQ_25M, FREQ_12P5M, FREQ_6P25M],
-        default=FREQ_6P25M,
+        default=FREQ_50M,
         help="Specify the frequency of SPI I/F.",
     )
 
