@@ -14,27 +14,6 @@
 
 LOG_MODULE_REGISTER(BMM350, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int bmm350_bus_check(const struct device *dev)
-{
-	const struct bmm350_config *cfg = dev->config;
-
-	return cfg->bus_io->check(&cfg->bus);
-}
-
-static inline int bmm350_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
-{
-	const struct bmm350_config *cfg = dev->config;
-
-	return cfg->bus_io->read(&cfg->bus, start, buf, size);
-}
-
-int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
-{
-	const struct bmm350_config *cfg = dev->config;
-
-	return cfg->bus_io->write(&cfg->bus, reg, val);
-}
-
 static int8_t bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t *lsb_msb)
 {
 	int8_t ret = 0;

@@ -495,5 +495,27 @@ int bmm350_trigger_mode_init(const struct device *dev);
 
 int bmm350_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_t val);
+
+/* inline helper functions */
+static inline int bmm350_bus_check(const struct device *dev)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
+}
+
+static inline int bmm350_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, start, buf, size);
+}
+
+static inline int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, val);
+}
+
 #endif /* __SENSOR_BMM350_H__ */
