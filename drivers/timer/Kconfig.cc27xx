@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CC27XX_SYSTIM_TIMER
+	bool "SYSTIM timer"
+	default y
+	select TICKLESS_CAPABLE
+	depends on HAS_CC27XX_SDK
+	help
+	  This module provides SYSTIM as "system clock driver" interfaces
+	  for the TI Simplelink CC27XX devices.
