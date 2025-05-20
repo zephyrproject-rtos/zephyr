@@ -5830,3 +5830,19 @@ RX arch:
     - "area: RX"
   tests:
     - arch.rx
+
+Raspberry Pi 4 Model B Platforms:
+  status: maintained
+  maintainers:
+    - lenghonglin
+  collaborators:
+    - xingrz
+  files:
+    - boards/raspberrypi/rpi_4b/
+    - dts/arm64/broadcom/bcm2711.dtsi
+    - dts/bindings/*/brcm,bcm2711*
+    - drivers/*/*bcm2711*.c
+    - drivers/*/*bcm2711
+    - soc/brcm/bcm2711/
+  labels:
+    - "platform: Raspberry Pi 4 Model B"
