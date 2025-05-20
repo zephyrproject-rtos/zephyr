@@ -635,6 +635,17 @@ bool pm_device_is_powered(const struct device *dev);
  */
 int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb);
 
+/**
+ * @brief Deinit a device driver
+ *
+ * This function must be called at the beginning of a driver's deinit function.
+ *
+ * @param dev Device instance.
+ * @param action_cb Device PM control callback function.
+ * @retval 0 if success.
+ * @retval -errno code if failure.
+ */
+int pm_device_driver_deinit(const struct device *dev, pm_device_action_cb_t action_cb);
 #else
 static inline int pm_device_state_get(const struct device *dev,
 				      enum pm_device_state *state)
@@ -729,6 +740,11 @@ static inline int pm_device_driver_init(const struct device *dev, pm_device_acti
 	}
 
 	return 0;
+}
+
+static inline int pm_device_driver_deinit(const struct device *dev, pm_device_action_cb_t action_cb)
+{
+	return action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
 }
 
 #endif /* CONFIG_PM_DEVICE */
