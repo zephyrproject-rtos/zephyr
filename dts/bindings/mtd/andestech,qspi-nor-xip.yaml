@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2025, The ChromiumOS Authors.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "andestech,qspi-nor-xip"
+
+description:
+  Flash SPI-NOR chip used for XIP, connected to an Andes SPI controller.
+
+include: "base.yaml"
+
+properties:
+  size:
+    type: int
+    description: |
+      The size in bytes.
