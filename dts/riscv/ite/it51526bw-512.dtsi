@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		flashctrl: flash-controller@f01000 {
+			compatible = "ite,it8xxx2-flash-controller";
+			reg = <0x00f01000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(512)>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+	};
+};
