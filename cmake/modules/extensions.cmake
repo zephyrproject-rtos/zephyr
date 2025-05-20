@@ -4625,6 +4625,45 @@ function(zephyr_dt_preprocess)
   endif()
 endfunction()
 
+# Usage:
+#   zephyr_dt_import(EDT_PICKLE_FILE <file> TARGET <target>)
+#
+# Parse devicetree information and make it available to CMake, so that
+# it can be accessed by the dt_* CMake extensions from section 4.1.
+#
+# This requires running a Python script, which can take the output of
+# edtlib and generate a CMake source file from it. If that script fails,
+# a fatal error occurs.
+#
+# EDT_PICKLE_FILE <file> : Input edtlib.EDT object in pickle format
+# TARGET <target>        : Target to populate with devicetree properties
+#
+function(zephyr_dt_import)
+  set(req_single_args "EDT_PICKLE_FILE;TARGET")
+  cmake_parse_arguments(arg "" "${req_single_args}" "" ${ARGN})
+  zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
+
+  set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+  set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
+
+  if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
+     (${gen_dts_cmake_script} IS_NEWER_THAN ${gen_dts_cmake_output})
+  )
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
+      --edt-pickle ${arg_EDT_PICKLE_FILE}
+      --cmake-out ${gen_dts_cmake_output}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      RESULT_VARIABLE ret
+      COMMAND_ERROR_IS_FATAL ANY
+    )
+  endif()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
+
+  set(DEVICETREE_TARGET ${arg_TARGET})
+  include(${gen_dts_cmake_output})
+endfunction()
+
 ########################################################
 # 5. Zephyr linker functions
 ########################################################
