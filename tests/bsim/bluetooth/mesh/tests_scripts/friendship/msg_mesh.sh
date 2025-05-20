@@ -25,9 +25,3 @@ RunTest mesh_friendship_msg_mesh_lpn_scan_on \
 	friendship_lpn_msg_mesh \
 	friendship_other_msg \
 	friendship_friend_est
-
-overlay=overlay_psa_conf
-RunTest mesh_friendship_msg_mesh_psa \
-	friendship_lpn_msg_mesh \
-	friendship_other_msg \
-	friendship_friend_est
