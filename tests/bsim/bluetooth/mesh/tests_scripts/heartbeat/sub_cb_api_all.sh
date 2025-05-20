@@ -9,9 +9,3 @@ RunTest mesh_heartbeat_sub_cb_api_all \
 	heartbeat_publish_all \
 	heartbeat_publish_all \
 	heartbeat_subscribe_all
-
-overlay=overlay_psa_conf
-RunTest mesh_heartbeat_sub_cb_api_all_psa \
-	heartbeat_publish_all \
-	heartbeat_publish_all \
-	heartbeat_subscribe_all

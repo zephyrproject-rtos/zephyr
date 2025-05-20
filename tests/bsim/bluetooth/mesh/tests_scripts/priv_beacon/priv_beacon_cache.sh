@@ -15,8 +15,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_priv_beacon_cache \
 	beacon_tx_priv_beacon_cache \
 	beacon_rx_priv_beacon_cache
-
-overlay=overlay_psa_conf
-RunTest mesh_priv_beacon_cache \
-	beacon_tx_priv_beacon_cache \
-	beacon_rx_priv_beacon_cache

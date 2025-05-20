@@ -15,8 +15,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 2. Suspend Mesh.
 # 3. Resume Mesh.
 # 4. Repeat steps 1-3 twice more than allocated advertiser pool size.
-overlay="overlay_psa_conf"
 RunTest mesh_suspend_resume_unref suspend_dut_suspend_resume_unref
 
-overlay="overlay_low_lat_conf_overlay_psa_conf"
+overlay="overlay_low_lat_conf"
 RunTest mesh_suspend_resume_unref_low_lat suspend_dut_suspend_resume_unref

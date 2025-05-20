@@ -8,8 +8,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_friendship_est \
 	friendship_friend_est \
 	friendship_lpn_est
-
-overlay=overlay_psa_conf
-RunTest mesh_friendship_est_psa \
-	friendship_friend_est \
-	friendship_lpn_est

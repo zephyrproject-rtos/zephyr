@@ -24,8 +24,3 @@ overlay=overlay_pst_conf
 RunTest mesh_lcd_test_comp0_data_split_dfu \
 	lcd_srv_comp_data_status_respond \
 	lcd_cli_split_comp_data_request -- -argstest page=0 comp-changed-mode=1
-
-overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
-RunTest mesh_lcd_test_comp0_data_split_dfu \
-	lcd_srv_comp_data_status_respond \
-	lcd_cli_split_comp_data_request -- -argstest page=0 comp-changed-mode=1

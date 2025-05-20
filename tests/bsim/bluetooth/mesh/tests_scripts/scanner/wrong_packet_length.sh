@@ -7,8 +7,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_scanner_wrong_packet_length \
 	scanner_tx_wrong_packet_length \
 	scanner_rx_invalid_packet
-
-overlay=overlay_psa_conf
-RunTest mesh_scanner_wrong_packet_length_psa \
-	scanner_tx_wrong_packet_length \
-	scanner_rx_invalid_packet
