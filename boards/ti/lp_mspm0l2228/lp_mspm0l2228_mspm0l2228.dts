@@ -19,7 +19,7 @@
 		sw1 = &btn1;
 		sw2 = &btn2;
 		pwm-led0 = &pwm_led0;
-		counter = &countera0;
+		counter = &counterg0;
 		capture = &pwm12;
 	};
 
