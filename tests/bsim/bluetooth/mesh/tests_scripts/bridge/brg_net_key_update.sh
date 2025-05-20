@@ -19,7 +19,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_brg_net_key_remove \
 	brg_tester_net_key_remove brg_bridge_simple brg_device_simple brg_device_simple
-
-overlay=overlay_psa_conf
-RunTest mesh_brg_net_key_remove_psa \
-	brg_tester_net_key_remove brg_bridge_simple brg_device_simple brg_device_simple

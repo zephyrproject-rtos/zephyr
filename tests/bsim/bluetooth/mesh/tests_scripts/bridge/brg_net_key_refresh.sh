@@ -47,7 +47,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_brg_net_key_refresh \
 	brg_tester_key_refresh brg_bridge_simple brg_device_simple
-
-overlay=overlay_psa_conf
-RunTest mesh_brg_net_key_refresh_psa \
-	brg_tester_key_refresh brg_bridge_simple brg_device_simple
