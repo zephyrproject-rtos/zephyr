@@ -8,8 +8,6 @@ to extend its features and services for easier and modularized prototyping.
 In Zephyr, the shield feature provides Zephyr-formatted shield
 descriptions for easier compatibility with applications.
 
-.. _shield_porting_guide:
-
 Shield porting and configuration
 ********************************
 
