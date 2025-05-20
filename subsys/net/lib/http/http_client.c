@@ -460,21 +460,25 @@ static void http_report_complete(struct http_request *req)
 {
 	if (req->internal.response.cb) {
 		NET_DBG("Calling callback for %zd len data", req->internal.response.data_len);
-		req->internal.response.cb(&req->internal.response, HTTP_DATA_FINAL,
-					  req->internal.user_data);
+		(void)req->internal.response.cb(&req->internal.response,
+						HTTP_DATA_FINAL,
+						req->internal.user_data);
 	}
 }
 
 /* Report that some data has been received, but the HTTP transaction is still ongoing. */
-static void http_report_progress(struct http_request *req)
+static int http_report_progress(struct http_request *req)
 {
 	if (req->internal.response.cb) {
 		NET_DBG("Calling callback for partitioned %zd len data",
 			req->internal.response.data_len);
 
-		req->internal.response.cb(&req->internal.response, HTTP_DATA_MORE,
-					  req->internal.user_data);
+		return req->internal.response.cb(&req->internal.response,
+						 HTTP_DATA_MORE,
+						 req->internal.user_data);
 	}
+
+	return 0;
 }
 
 static int http_wait_data(int sock, struct http_request *req, const k_timepoint_t req_end_timepoint)
@@ -568,7 +572,12 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			if (req->internal.response.message_complete) {
 				http_report_complete(req);
 			} else {
-				http_report_progress(req);
+				ret = http_report_progress(req);
+				if (ret < 0) {
+					LOG_DBG("Connection aborted by the application (%d)",
+						ret);
+					return -ECONNABORTED;
+				}
 
 				/* Re-use the result buffer and start to fill it again */
 				req->internal.response.data_len = 0;
