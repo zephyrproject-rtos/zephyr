@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2018 SiFive, Inc.
 
-if BOARD_HIFIVE1_FE310
+if BOARD_HIFIVE1
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
-if "$(BOARD_REVISION)" = "B"
+endif # BOARD_HIFIVE1
+
+if BOARD_HIFIVE1_REVB
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
 
 config HAS_FLASH_LOAD_OFFSET
 	default y
@@ -17,6 +22,4 @@ config FLASH_BASE_ADDRESS
 config FLASH_LOAD_OFFSET
 	default 0x0
 
-endif # "$(BOARD_REVISION)" = "B"
-
-endif # BOARD_HIFIVE1_FE310
+endif # BOARD_HIFIVE1_REVB
