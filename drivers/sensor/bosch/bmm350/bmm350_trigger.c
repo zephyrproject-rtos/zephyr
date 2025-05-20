@@ -80,6 +80,7 @@ static void bmm350_gpio_callback(const struct device *port, struct gpio_callback
 int bmm350_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
+	const struct bmm350_config *cfg = dev->config;
 	struct bmm350_data *data = dev->data;
 	int ret = 0;
 
@@ -91,7 +92,7 @@ int bmm350_trigger_set(const struct device *dev, const struct sensor_trigger *tr
 	data->drdy_handler = handler;
 
 	/* Set PMU command configuration */
-	ret = bmm350_reg_write(dev, BMM350_REG_INT_CTRL, BMM350_DATA_READY_INT_CTRL);
+	ret = bmm350_reg_write(dev, BMM350_REG_INT_CTRL, cfg->int_flags);
 	if (ret < 0) {
 		return ret;
 	}
