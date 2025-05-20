@@ -710,7 +710,7 @@ static uint8_t mag_odr_to_reg(const struct sensor_value *val)
 static uint8_t mag_osr_to_reg(const struct sensor_value *val)
 {
 	switch (val->val1) {
-	case 0:
+	case 1:
 		return BMM350_NO_AVERAGING;
 	case 2:
 		return BMM350_AVERAGING_2;
