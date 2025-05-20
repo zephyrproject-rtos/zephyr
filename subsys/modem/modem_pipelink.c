@@ -29,9 +29,9 @@ bool modem_pipelink_is_connected(struct modem_pipelink *link)
 {
 	bool connected;
 
-	K_SPINLOCK(&link->spinlock) {
-		connected = link->connected;
-	}
+	k_spinlock_key_t key = k_spin_lock(&link->spinlock);
+	connected = link->connected;
+	k_spin_unlock(&link->spinlock, key);
 
 	return connected;
 }

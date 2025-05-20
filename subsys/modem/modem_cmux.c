@@ -1108,25 +1108,26 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 {
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
 	struct modem_cmux *cmux = dlci->cmux;
-	int ret = 0;
+	int ret;
 
-	K_SPINLOCK(&cmux->work_lock) {
-		if (!cmux->attached) {
-			ret = -EPERM;
-			K_SPINLOCK_BREAK;
-		}
-
-		struct modem_cmux_frame frame = {
-			.dlci_address = dlci->dlci_address,
-			.cr = true,
-			.pf = false,
-			.type = MODEM_CMUX_FRAME_TYPE_UIH,
-			.data = buf,
-			.data_len = size,
-		};
-
-		ret = modem_cmux_transmit_data_frame(cmux, &frame);
+	k_spinlock_key_t key = k_spin_lock(&cmux->work_lock);
+	if (!cmux->attached) {
+		ret = -EPERM;
+		k_spin_unlock(&cmux->work_lock, key);
+		return ret;
 	}
+
+	struct modem_cmux_frame frame = {
+		.dlci_address = dlci->dlci_address,
+		.cr = true,
+		.pf = false,
+		.type = MODEM_CMUX_FRAME_TYPE_UIH,
+		.data = buf,
+		.data_len = size,
+	};
+
+	ret = modem_cmux_transmit_data_frame(cmux, &frame);
+	k_spin_unlock(&cmux->work_lock, key);
 
 	return ret;
 }
