@@ -95,3 +95,13 @@
 	clock-frequency = <DT_FREQ_K(400)>;
 	status = "okay";
 };
+
+&mtu1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+
+	pwm1: pwm {
+		status = "okay";
+	};
+};
