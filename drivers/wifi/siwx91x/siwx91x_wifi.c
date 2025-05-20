@@ -36,6 +36,15 @@ enum {
 	DEMAND_TWT = 2,
 };
 
+static bool siwx91x_is_device_connected(struct siwx91x_dev *sidev)
+{
+	if (sidev->state == WIFI_STATE_COMPLETED) {
+		return true;
+	}
+
+	return false;
+}
+
 static int siwx91x_nwp_reboot_if_required(const struct device *dev, uint8_t oper_mode)
 {
 	struct siwx91x_dev *sidev = dev->data;
@@ -726,7 +735,7 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 	enum wifi_mfp_options mfp_conf;
 	int ret = 0;
 
-	if (sidev->state == WIFI_STATE_COMPLETED) {
+	if (siwx91x_is_device_connected(sidev)) {
 		ret = siwx91x_disconnect_if_required(dev, params);
 		if (ret < 0) {
 			wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
@@ -974,7 +983,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	}
 
 	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
-	    sidev->state != WIFI_STATE_COMPLETED) {
+	    !siwx91x_is_device_connected(sidev)) {
 		LOG_ERR("Command given in invalid state");
 		return -EBUSY;
 	}
@@ -984,7 +993,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		return -EINVAL;
 	}
 
-	if (sidev->state == WIFI_STATE_COMPLETED) {
+	if (siwx91x_is_device_connected(sidev)) {
 		siwx91x_configure_scan_dwell_time(SL_WIFI_SCAN_TYPE_ADV_SCAN,
 						  z_scan_config->dwell_time_active,
 						  z_scan_config->dwell_time_passive,
@@ -1620,7 +1629,7 @@ static int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *par
 	}
 
 	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
-	    sidev->state != WIFI_STATE_COMPLETED) {
+	    !siwx91x_is_device_connected(sidev)) {
 		LOG_ERR("Command given in invalid state");
 		return -EBUSY;
 	}
