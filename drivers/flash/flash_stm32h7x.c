@@ -45,7 +45,11 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define REAL_FLASH_SIZE_KB (KB(STM32H7_M4_FLASH_SIZE * 2))
 #endif
 #else
+#if defined(DUAL_BANK)
+#define REAL_FLASH_SIZE_KB (DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) * 2)
+#else
 #define REAL_FLASH_SIZE_KB DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash))
+#endif
 #endif
 #define SECTOR_PER_BANK ((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
