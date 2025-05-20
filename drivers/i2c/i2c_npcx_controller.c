@@ -630,7 +630,6 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 		size_t tx_remain = i2c_ctrl_calculate_msg_remains(dev);
 		size_t tx_avail = MIN(tx_remain, i2c_ctrl_fifo_tx_avail(dev));
 
-		LOG_DBG("tx remains %d, avail %d", tx_remain, tx_avail);
 		for (int i = 0U; i < tx_avail; i++) {
 			i2c_ctrl_fifo_write(dev, *(data->ptr_msg++));
 		}
@@ -700,8 +699,6 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		/* Calculate how many remaining bytes need to receive */
 		size_t rx_remain = i2c_ctrl_calculate_msg_remains(dev);
 		size_t rx_occupied = i2c_ctrl_fifo_rx_occupied(dev);
-
-		LOG_DBG("rx remains %d, occupied %d", rx_remain, rx_occupied);
 
 		/* Is it the last read transaction with STOP condition? */
 		if (rx_occupied >= rx_remain &&
@@ -998,7 +995,6 @@ static void i2c_ctrl_isr(const struct device *dev)
 	uint8_t status, tmp;
 
 	status = inst->SMBST & NPCX_VALID_SMBST_MASK;
-	LOG_DBG("status: %02x, %d", status, data->oper_state);
 
 #ifdef CONFIG_I2C_TARGET
 	if (atomic_get(&data->registered_target_mask) != (atomic_val_t) 0) {
