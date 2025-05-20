@@ -104,6 +104,13 @@
 #define TEST_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_c0)
 #define TEST_PARTITION_2 DT_PATH(test, test_mtd_33221100, partitions, partition_6ff80)
 
+#define TEST_SUBPARTITION_COMBINED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+					   partition_100)
+#define TEST_SUBPARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+				    partition_100, partition_0)
+#define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+				    partition_100, partition_40)
+
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
@@ -3213,6 +3220,34 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	}
 
 #undef FIXED_PARTITION_ID_COMMA
+}
+
+ZTEST(devicetree_api, test_fixed_subpartitions)
+{
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_SUBPARTITION_COMBINED));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_0));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_1));
+
+	/* Test DT_MEM_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_SUBPARTITION_COMBINED)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1)));
+
+	/* Test DT_MTD_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_SUBPARTITION_COMBINED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1)));
+
+	/* Test DT_FIXED_SUBPARTITION_ADDR. */
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0),
+		      DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED));
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_1), 0x20000140);
+
+	/* Check sizes match */
+	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED),
+		      (DT_REG_SIZE(TEST_SUBPARTITION_0) + DT_REG_SIZE(TEST_SUBPARTITION_1)));
 }
 
 ZTEST(devicetree_api, test_string_token)
