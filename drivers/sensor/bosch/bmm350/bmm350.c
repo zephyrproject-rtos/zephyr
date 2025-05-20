@@ -945,6 +945,7 @@ static DEVICE_API(sensor, bmm350_api_funcs) = {
 
 static int bmm350_init_chip(const struct device *dev)
 {
+	const struct bmm350_config *config = dev->config;
 	struct bmm350_pmu_cmd_status_0 pmu_cmd_stat_0 = {0};
 	/* Variable to store soft-reset command */
 	uint8_t soft_reset;
@@ -975,6 +976,14 @@ static int bmm350_init_chip(const struct device *dev)
 		LOG_ERR("invalid chip id 0x%x", chip_id[2]);
 		goto err_poweroff;
 	}
+
+	/* Set pad drive strength */
+	ret = bmm350_reg_write(dev, BMM350_REG_PAD_CTRL, config->drive_strength);
+	if (ret < 0) {
+		LOG_ERR("%s: failed to set pad drive strength", dev->name);
+		return ret;
+	}
+
 	ret = bmm350_otp_dump_after_boot(dev);
 	LOG_DBG("bmm350 chip_id 0x%x otp dump after boot %d\n", chip_id[2], ret);
 
@@ -1071,7 +1080,13 @@ static int bmm350_init(const struct device *dev)
 
 /* Initializes a struct bmm350_config for an instance on an I2C bus. */
 #define BMM350_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm350_bus_io_i2c,
-#define BMM350_INT_CFG(inst)    .drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),
+#define BMM350_INT_CFG(inst) \
+	.drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                             \
+	.int_flags = FIELD_PREP(BMM350_INT_CTRL_INT_POL_MSK,                                     \
+			DT_INST_PROP(inst, active_high_int)) |                                   \
+		     FIELD_PREP(BMM350_INT_CTRL_INT_OD_MSK, DT_INST_PROP(inst, push_pull_int)) | \
+		     BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK |                                      \
+		     BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
 
 #define BMM350_DEFINE(inst)                                                                        \
 	static struct bmm350_data bmm350_data_##inst;                                              \
@@ -1080,7 +1095,8 @@ static int bmm350_init(const struct device *dev)
 		.bus_io = &bmm350_bus_io_i2c,                                                      \
 		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \
 		.default_osr = DT_INST_PROP(inst, osr),                                            \
-		BMM350_INT_CFG(inst)};                                                             \
+		.drive_strength = DT_INST_PROP(inst, drive_strength),                              \
+		IF_ENABLED(CONFIG_BMM350_TRIGGER, (BMM350_INT_CFG(inst)))};                        \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \
