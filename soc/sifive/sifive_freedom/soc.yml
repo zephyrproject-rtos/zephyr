@@ -3,7 +3,8 @@ family:
     series:
       - name: fe300
         socs:
-          - name: fe310
+          - name: fe310_g000
+          - name: fe310_g002
       - name: fu500
         socs:
           - name: fu540

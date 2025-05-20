@@ -6,6 +6,6 @@ tests:
     tags: zbus
     platform_allow:
       - native_sim
-      - hifive1@B
+      - hifive1_revb
     integration_platforms:
       - native_sim
