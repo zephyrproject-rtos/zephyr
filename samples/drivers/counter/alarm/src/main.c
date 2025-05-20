@@ -39,6 +39,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_INST(0, espressif_esp32_counter)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
+#elif defined(CONFIG_COUNTER_MSPM0_TIMER)
+#define TIMER DT_ALIAS(counter)
 #elif defined(CONFIG_COUNTER_NXP_S32_SYS_TIMER)
 #define TIMER DT_NODELABEL(stm0)
 #elif defined(CONFIG_COUNTER_TIMER_GD32)
