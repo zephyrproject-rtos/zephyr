@@ -1046,21 +1046,29 @@ int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size)
  * @param[in] path LwM2M path as a struct
  * @param[out] buf Data buffer to copy data into
  * @param[in] buflen Length of buffer
+ * @param[out] reslen On success, the resource length is set. Can be `NULL`
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t buflen);
+int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t buflen,
+		     uint16_t *reslen);
 
 /**
- * @brief Get resource (instance) value (string)
+ * @brief Get resource (instance) value (string) as C string with zero termination.
+ *
+ * Due to zero-termination, `buf` must be capable to get the resource with additional
+ * zero-termination. -ENOMEM is returned, if data and zero-termiantion do not fit
+ * into the buffer.
  *
  * @param[in] path LwM2M path as a struct
  * @param[out] str String buffer to copy data into
  * @param[in] buflen Length of buffer
+ * @param[out] reslen On success, the resource length is set. Can be `NULL`
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t buflen);
+int lwm2m_get_string(const struct lwm2m_obj_path *path, char *str, uint16_t buflen,
+		     uint16_t *const reslen);
 
 /**
  * @brief Get resource (instance) value (u8)
