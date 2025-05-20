@@ -18,3 +18,5 @@ endif()
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 board_runner_args(jlink "--device=CYW20829_tm")
 include (${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+
+set_property(TARGET runners_yaml_props_target PROPERTY hex_file zephyr_merged.hex)
