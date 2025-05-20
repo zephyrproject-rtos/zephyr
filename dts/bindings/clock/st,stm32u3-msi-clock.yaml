@@ -1,0 +1,29 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32U3 Multi Speed Internal Clock
+
+compatible: "st,stm32u3-msi-clock"
+
+include:
+  - name: st,stm32-msi-clock.yaml
+    property-blocklist:
+      - msi-range
+
+properties:
+
+  msi-range:
+    default: 0
+    required: true
+    type: int
+    description: |
+      MSI clock ranges
+    enum:
+      - 0 # range 0 around 96 MHz
+      - 1 # range 1 around 48 MHz
+      - 2 # range 2 around 24 MHz
+      - 3 # range 3 around 12 MHz
+      - 4 # range 4 around 24 MHz
+      - 5 # range 5 around 12 MHz
+      - 6 # range 6 around 6 MHz
+      - 7 # range 7 around 3 MHz
