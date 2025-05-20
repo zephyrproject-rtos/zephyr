@@ -1665,7 +1665,12 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	struct net_pkt *pkt;
 	int ret;
 
+#ifdef CONFIG_NET_RAW_MODE
+	/* net_if_get_by_iface is not available in raw mode */
+	NET_DBG("On iface N/A (%p) size %zu", iface, size);
+#else
 	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
+#endif /* CONFIG_NET_RAW_MODE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
