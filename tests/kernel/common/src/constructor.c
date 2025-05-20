@@ -59,5 +59,5 @@ ZTEST(constructor, test_constructor)
  * @}
  */
 
- extern void *common_setup(void);
- ZTEST_SUITE(constructor, NULL, common_setup, NULL, NULL, NULL);
+extern void *common_setup(void);
+ZTEST_SUITE(constructor, NULL, common_setup, NULL, NULL, NULL);
