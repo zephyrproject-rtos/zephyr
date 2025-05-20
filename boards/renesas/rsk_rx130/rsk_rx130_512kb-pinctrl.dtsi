@@ -27,4 +27,10 @@
 				<RX_PSEL(RX_PSEL_P1nPFS_SCL, 1, 2)>; /* SCL P12*/
 		};
 	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_P2nPFS_MTIOC1A, 2, 0)>; /* P20 MTIOC1A JA2-PIN22*/
+		};
+	};
 };
