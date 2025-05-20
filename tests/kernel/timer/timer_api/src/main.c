@@ -12,6 +12,7 @@ struct timer_data {
 	int expire_cnt;
 	int stop_cnt;
 	int64_t timestamp;
+	int slew_ppm;
 };
 
 #define DURATION 100
@@ -28,15 +29,6 @@ struct timer_data {
  */
 #define INEXACT_MS_CONVERT ((CONFIG_SYS_CLOCK_TICKS_PER_SEC % MSEC_PER_SEC) != 0)
 
-#if CONFIG_NRF_RTC_TIMER
-/* On Nordic SOCs one or both of the tick and busy-wait clocks may
- * derive from sources that have slews that sum to +/- 13%.
- */
-#define BUSY_TICK_SLEW_PPM 130000U
-#else
-/* On other platforms assume the clocks are perfectly aligned. */
-#define BUSY_TICK_SLEW_PPM 0U
-#endif
 #define PPM_DIVISOR 1000000U
 
 /* If the tick clock is faster or slower than the busywait clock the
@@ -45,8 +37,8 @@ struct timer_data {
  * between the two clocks.  Produce a maximum error for a given
  * duration in microseconds.
  */
-#define BUSY_SLEW_THRESHOLD_TICKS(_us)					\
-	k_us_to_ticks_ceil32((_us) * (uint64_t)BUSY_TICK_SLEW_PPM	\
+#define BUSY_SLEW_THRESHOLD_TICKS(_us, slew_ppm)			\
+	k_us_to_ticks_ceil32((_us) * (uint64_t)slew_ppm			\
 			     / PPM_DIVISOR)
 
 static void duration_expire(struct k_timer *timer);
@@ -253,8 +245,8 @@ ZTEST_USER(timer_api, test_timer_period_0)
 	/** TESTPOINT: set period 0 */
 	k_timer_start(&period0_timer,
 		      K_TICKS(k_ms_to_ticks_floor32(DURATION)
-			      - BUSY_SLEW_THRESHOLD_TICKS(DURATION
-							  * USEC_PER_MSEC)),
+			      - BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC,
+							  tdata.slew_ppm)),
 		      K_NO_WAIT);
 	/* Need to wait at least 2 durations to ensure one-shot behavior. */
 	busy_wait_ms(2 * DURATION + 1);
@@ -291,7 +283,7 @@ ZTEST_USER(timer_api, test_timer_period_k_forever)
 	k_timer_start(
 		&period0_timer,
 		K_TICKS(k_ms_to_ticks_floor32(DURATION) -
-			BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC)),
+			BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC, tdata.slew_ppm)),
 		K_FOREVER);
 	tdata.timestamp = k_uptime_get();
 
@@ -648,7 +640,7 @@ ZTEST_USER(timer_api, test_timer_user_data)
 	} else {
 		uint32_t wait_us = 1000 * wait_ms;
 
-		k_busy_wait(wait_us + (wait_us * BUSY_TICK_SLEW_PPM) / PPM_DIVISOR);
+		k_busy_wait(wait_us + (wait_us * tdata.slew_ppm) / PPM_DIVISOR);
 	}
 
 	for (ii = 0; ii < 5; ii++) {
@@ -722,7 +714,9 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * skew.
 	 */
 	delta_ticks = (int32_t)(rem_ticks - target_rem_ticks);
-	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U);
+	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U, tdata.slew_ppm);
+	printk("slew_ticks:%d delta:%d latency:%d\n",
+			slew_ticks, delta_ticks, latency_ticks);
 	zassert_true(abs(delta_ticks) <= MAX(slew_ticks, latency_ticks),
 		     "tick/busy slew %d larger than test threshold %u",
 		     delta_ticks, slew_ticks);
@@ -857,8 +851,29 @@ static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 	k_timer_init(timer, expiry_fn, stop_fn);
 }
 
+static uint32_t slew_estimate(void)
+{
+	uint32_t now = k_cycle_get_32();
+	uint32_t t;
+	int diff;
+
+	/* Compare 10 ms measured by system clock and k_busy_wait and calculate
+	 * the difference. It is used later on in tests.
+	 */
+	k_busy_wait(10000);
+	now = k_cycle_get_32() - now;
+	t = k_cyc_to_us_floor32(now);
+
+	diff = 10000 - t;
+	diff = diff < 0 ? -diff : diff;
+
+	return diff * 100;
+}
+
 void *setup_timer_api(void)
 {
+	tdata.slew_ppm = slew_estimate();
+
 	timer_init(&duration_timer, duration_expire, duration_stop);
 	timer_init(&period0_timer, period0_expire, NULL);
 	timer_init(&expire_timer, NULL, duration_stop);
