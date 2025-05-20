@@ -35,29 +35,15 @@ static ALWAYS_INLINE void swdp_ll_pin_output(void *const base, uint8_t pin)
 static ALWAYS_INLINE void swdp_ll_pin_set(void *const base, uint8_t pin)
 {
 	GPIO_TypeDef *gpio = base;
-	uint32_t val;
 
-	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	val = LL_GPIO_ReadOutputPort(gpio);
-	val |= BIT(pin);
-	LL_GPIO_WriteOutputPort(gpio, val);
-
-	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
+	LL_GPIO_SetOutputPin(gpio, BIT(pin));
 }
 
 static ALWAYS_INLINE void swdp_ll_pin_clr(void *const base, uint8_t pin)
 {
 	GPIO_TypeDef *gpio = base;
-	uint32_t val;
 
-	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	val = LL_GPIO_ReadOutputPort(gpio);
-	val &= ~BIT(pin);
-	LL_GPIO_WriteOutputPort(gpio, val);
-
-	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
+	LL_GPIO_ResetOutputPin(gpio, BIT(pin));
 }
 
 static ALWAYS_INLINE uint32_t swdp_ll_pin_get(void *const base, uint8_t pin)
