@@ -311,7 +311,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 
-	ret = spi_mcux_configure(dev, spi_cfg);
+	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto error;
 	}
@@ -427,7 +427,7 @@ static int lpspi_init(const struct device *dev)
 #define SPI_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 
 #define SPI_LPSPI_INIT(n)                                                                     \
-	COND_CODE_1(CONFIG_SPI_MCUX_LPSPI_DMA,				   \
+	COND_CODE_1(CONFIG_SPI_NXP_LPSPI_DMA,				   \
 						(SPI_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_LPSPI_INIT)

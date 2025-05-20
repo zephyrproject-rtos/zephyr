@@ -597,6 +597,9 @@ OpenThread
 SPI
 ===
 
+* Renamed ``CONFIG_SPI_MCUX_LPSPI`` to :kconfig:option:`CONFIG_SPI_NXP_LPSPI`,
+  and similar for any child configs for that driver, including
+  :kconfig:option:`CONFIG_SPI_NXP_LPSPI_DMA` and :kconfig:option:`CONFIG_SPI_NXP_LPSPI_CPU`.
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 * The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name

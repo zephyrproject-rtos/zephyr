@@ -258,7 +258,7 @@ static void lpspi_basic_config(const struct device *dev, const struct spi_config
 	}
 }
 
-int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
+int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct lpspi_config *config = dev->config;
 	struct lpspi_data *data = dev->data;
