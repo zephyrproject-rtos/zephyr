@@ -215,12 +215,8 @@ class testZephyrInitLevels(unittest.TestCase):
 
         def mock_obj_name(*args):
             if args[0] == (0, 0, 0):
-                return "i0"
-            elif args[0] == (0, 1, 0):
                 return "__device_dts_ord_11"
             elif args[0] == (4, 0, 0):
-                return "i1"
-            elif args[0] == (4, 1, 0):
                 return "__device_dts_ord_22"
             return f"name_{args[0][0]}_{args[0][1]}"
         mock_on.side_effect = mock_obj_name
@@ -230,14 +226,15 @@ class testZephyrInitLevels(unittest.TestCase):
         self.assertDictEqual(obj.initlevels, {
             "EARLY": [],
             "PRE_KERNEL_1": [],
-            "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
-            "POST_KERNEL": ["c: name_8_0(name_8_1)"],
+            "PRE_KERNEL_2": ["a: __device_dts_ord_11", "b: __device_dts_ord_22"],
+            "POST_KERNEL": ["c: name_8_0"],
             "APPLICATION": [],
             "SMP": [],
             })
+
         self.assertDictEqual(obj.devices, {
-            11: (check_init_priorities.Priority("PRE_KERNEL_2", 0), "i0"),
-            22: (check_init_priorities.Priority("PRE_KERNEL_2", 1), "i1"),
+            11: check_init_priorities.Priority("PRE_KERNEL_2", 0),
+            22: check_init_priorities.Priority("PRE_KERNEL_2", 1),
             })
 
 class testValidator(unittest.TestCase):
@@ -303,14 +300,14 @@ class testValidator(unittest.TestCase):
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
 
-        validator._obj.devices = {1: (10, "i1"), 2: (20, "i2")}
+        validator._obj.devices = {1: 10, 2: 20}
 
         validator._check_dep(2, 1)
         validator._check_dep(1, 2)
 
-        validator.log.info.assert_called_once_with("/2 <i2> 20 > /1 <i1> 10")
+        validator.log.info.assert_called_once_with("/2 20 > /1 10")
         validator.log.error.assert_has_calls([
-            mock.call("/1 <i1> is initialized before its dependency /2 <i2> (10 < 20)")
+            mock.call("/1 is initialized before its dependency /2 (10 < 20)")
             ])
         self.assertEqual(validator.errors, 1)
 
@@ -327,7 +324,7 @@ class testValidator(unittest.TestCase):
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
 
-        validator._obj.devices = {1: (10, "i1"), 2: (10, "i2")}
+        validator._obj.devices = {1: 10, 2: 10,}
 
         with self.assertRaises(ValueError):
             validator._check_dep(1, 2)
