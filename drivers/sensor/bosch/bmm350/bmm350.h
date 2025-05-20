@@ -256,31 +256,31 @@ enum bmm350_signed_bit {
 #define BMM350_SENS_CORR_Y 1
 #define BMM350_TCS_CORR_Z  1
 
-#define BMM350_EN_X_MSK            UINT8_C(0x01)
-#define BMM350_EN_X_POS            UINT8_C(0x0)
-#define BMM350_EN_Y_MSK            UINT8_C(0x02)
-#define BMM350_EN_Y_POS            UINT8_C(0x1)
-#define BMM350_EN_Z_MSK            UINT8_C(0x04)
-#define BMM350_EN_Z_POS            UINT8_C(0x2)
-#define BMM350_EN_XYZ_MSK          UINT8_C(0x7)
-#define BMM350_EN_XYZ_POS          UINT8_C(0x0)
+#define BMM350_EN_X_MSK     UINT8_C(0x01)
+#define BMM350_EN_X_POS     UINT8_C(0x0)
+#define BMM350_EN_Y_MSK     UINT8_C(0x02)
+#define BMM350_EN_Y_POS     UINT8_C(0x1)
+#define BMM350_EN_Z_MSK     UINT8_C(0x04)
+#define BMM350_EN_Z_POS     UINT8_C(0x2)
+#define BMM350_EN_XYZ_MSK   UINT8_C(0x7)
+#define BMM350_EN_XYZ_POS   UINT8_C(0x0)
 /************************ Averaging macros **********************/
-#define BMM350_AVG_NO_AVG          0x0
-#define BMM350_AVG_2               0x1
-#define BMM350_AVG_4               0x2
-#define BMM350_AVG_8               0x3
+#define BMM350_AVG_NO_AVG   0x0
+#define BMM350_AVG_2        0x1
+#define BMM350_AVG_4        0x2
+#define BMM350_AVG_8        0x3
 /******************************* ODR **************************/
-#define BMM350_ODR_400HZ           UINT8_C(0x2)
-#define BMM350_ODR_200HZ           UINT8_C(0x3)
-#define BMM350_ODR_100HZ           UINT8_C(0x4)
-#define BMM350_ODR_50HZ            UINT8_C(0x5)
-#define BMM350_ODR_25HZ            UINT8_C(0x6)
-#define BMM350_ODR_12_5HZ          UINT8_C(0x7)
-#define BMM350_ODR_6_25HZ          UINT8_C(0x8)
-#define BMM350_ODR_3_125HZ         UINT8_C(0x9)
-#define BMM350_ODR_1_5625HZ        UINT8_C(0xA)
-#define BMM350_ODR_MSK             UINT8_C(0xf)
-#define BMM350_ODR_POS             UINT8_C(0x0)
+#define BMM350_ODR_400HZ    UINT8_C(0x2)
+#define BMM350_ODR_200HZ    UINT8_C(0x3)
+#define BMM350_ODR_100HZ    UINT8_C(0x4)
+#define BMM350_ODR_50HZ     UINT8_C(0x5)
+#define BMM350_ODR_25HZ     UINT8_C(0x6)
+#define BMM350_ODR_12_5HZ   UINT8_C(0x7)
+#define BMM350_ODR_6_25HZ   UINT8_C(0x8)
+#define BMM350_ODR_3_125HZ  UINT8_C(0x9)
+#define BMM350_ODR_1_5625HZ UINT8_C(0xA)
+#define BMM350_ODR_MSK      UINT8_C(0xf)
+#define BMM350_ODR_POS      UINT8_C(0x0)
 
 /* Macro to SET and GET BITS of a register*/
 #define BMM350_SET_BITS(reg_data, bitname, data)                                                   \
