@@ -2263,10 +2263,11 @@ struct bt_conn_auth_cb {
 	 *  as if the Kconfig flag was not set.
 	 *
 	 *  For BR/EDR Secure Simple Pairing (SSP), this callback is called
-	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event.
+	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event. The feat is
+	 *  NULL here.
 	 *
 	 *  @param conn Connection where pairing is initiated.
-	 *  @param feat Pairing req/resp info.
+	 *  @param feat Pairing req/resp info. It is NULL in BR/EDR SSP.
 	 */
 	enum bt_security_err (*pairing_accept)(struct bt_conn *conn,
 			      const struct bt_conn_pairing_feat *const feat);
