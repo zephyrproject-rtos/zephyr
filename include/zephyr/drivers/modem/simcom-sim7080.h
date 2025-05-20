@@ -285,8 +285,9 @@ int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name);
  *
  * @param diff_h Difference between the local time and the XTRA inject time in hours.
  * @param duration_h Valid time of the XTRA file in hours.
+ * @param inject Injection time of the XTRA file.
  */
-int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h);
+int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h, struct tm *inject);
 
 /**
  * @brief Query gnss position form the modem.
@@ -394,6 +395,15 @@ int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage
  * @return 0 on success. Otherwise a negative error is returned.
  */
 int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info);
+
+/**
+ * Get the local time of the modem.
+ *
+ * @param t Time structure to fill.
+ * @return 0 on success. Otherwise a negative error is returned.
+ * @note Time is set by network. It may take some time for it to get valid.
+ */
+int mdm_sim7080_get_local_time(struct tm *t);
 
 #ifdef __cplusplus
 }

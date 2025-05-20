@@ -14,4 +14,5 @@ zephyr_library_sources(
     sim7080_sms.c
     sim7080_ftp.c
     sim7080_gps.c
-    sim7080_meas.c)
+    sim7080_meas.c
+    sim7080_utils.c)

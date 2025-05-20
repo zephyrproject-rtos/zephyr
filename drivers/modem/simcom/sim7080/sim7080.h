@@ -198,4 +198,6 @@ void sim7080_handle_sock_data_indication(int fd);
 
 void sim7080_handle_sock_state(int fd, uint8_t state);
 
+int sim7080_utils_parse_time(uint8_t *date, uint8_t *time, struct tm *t);
+
 #endif /* SIMCOM_SIM7080_H */
