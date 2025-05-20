@@ -163,7 +163,7 @@ void timer0_nrf_isr(void);
 	defined(CONFIG_SOC_SERIES_NRF92X)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
-#define TIMER_IRQ_NUM     GRTC_0_IRQn
+#define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))
 #else
 void rtc_nrf_isr(void);
 #define TIMER_IRQ_HANDLER rtc_nrf_isr
