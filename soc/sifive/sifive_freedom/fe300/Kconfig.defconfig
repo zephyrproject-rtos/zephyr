@@ -5,7 +5,7 @@
 if SOC_SERIES_SIFIVE_FREEDOM_FE300
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 32768
+	default $(dt_node_int_prop_int,/clocks/core-clk,clock-frequency)
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y

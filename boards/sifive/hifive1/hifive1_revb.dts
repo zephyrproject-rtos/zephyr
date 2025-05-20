@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "hifive1.dts"
+
 / {
 	model = "SiFive HiFive 1 Rev. B";
 	compatible = "sifive,hifive1_revb";
