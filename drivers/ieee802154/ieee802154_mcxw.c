@@ -1352,5 +1352,11 @@ static const struct ieee802154_radio_api mcxw71_radio_api = {
 #define MTU         CONFIG_NET_L2_CUSTOM_IEEE802154_MTU
 #endif
 
+#if defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
-			  &mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+	&mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+#else
+DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL,
+			POST_KERNEL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
+			&mcxw71_radio_api);
+#endif
