@@ -53,8 +53,11 @@ struct lpspi_data {
 	uint8_t major_version;
 };
 
-/* verifies spi_cfg validity and set up configuration of hardware for xfer */
-int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg);
+/* Verifies spi_cfg validity and set up configuration of hardware for xfer
+ * Unsets interrupt and watermark options, specific implementation should configure that.
+ * Sets bits in the TCR ONLY *directly* relating to what is in the spi_config struct.
+ */
+int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg);
 
 /* Does these things:
  * Set data.dev
