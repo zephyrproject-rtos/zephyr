@@ -386,6 +386,68 @@ static int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_param
 	return 0;
 }
 
+static int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+{
+	sl_wifi_performance_profile_t sl_ps_profile;
+	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_interface_t interface;
+	uint16_t beacon_interval;
+	sl_status_t status;
+
+	__ASSERT(config, "config cannot be NULL");
+
+	interface = sl_wifi_get_default_interface();
+	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
+		LOG_ERR("Wi-Fi not in station mode");
+		return -EINVAL;
+	}
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
+	status = sl_wifi_get_performance_profile(&sl_ps_profile);
+	if (status != SL_STATUS_OK) {
+		LOG_ERR("Failed to get power save profile: 0x%x", status);
+		return -EIO;
+	}
+
+	switch (sl_ps_profile.profile) {
+	case HIGH_PERFORMANCE:
+		config->ps_params.enabled = WIFI_PS_DISABLED;
+		break;
+	case ASSOCIATED_POWER_SAVE_LOW_LATENCY:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+		break;
+	case ASSOCIATED_POWER_SAVE:
+		config->ps_params.enabled = WIFI_PS_ENABLED;
+		config->ps_params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+		break;
+	default:
+		break;
+	}
+
+	if (sl_ps_profile.dtim_aligned_type) {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	} else {
+		config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
+
+		beacon_interval = siwx91x_get_connected_ap_beacon_interval_ms();
+		if (beacon_interval > 0) {
+			config->ps_params.listen_interval =
+				sl_ps_profile.listen_interval / beacon_interval;
+		}
+	}
+
+	/* Device supports only legacy power-save mode */
+	config->ps_params.mode = WIFI_PS_MODE_LEGACY;
+	config->ps_params.timeout_ms = sl_ps_profile.monitor_interval;
+
+	return 0;
+}
+
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 				    char *result, uint32_t result_size, void *arg)
 {
@@ -1575,6 +1637,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 #endif
 	.get_version		= siwx91x_get_version,
 	.set_power_save		= siwx91x_set_power_save,
+	.get_power_save_config	= siwx91x_get_power_save_config,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
