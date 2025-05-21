@@ -13,11 +13,12 @@ config WIFI_NM_WPA_SUPPLICANT
 	select XSI_SINGLE_PROCESS
 	select NET_SOCKETS
 	select NET_SOCKETS_PACKET
-	select NET_SOCKETPAIR
 	select NET_L2_WIFI_MGMT
 	select WIFI_NM
 	select EXPERIMENTAL
 	select COMMON_LIBC_MALLOC
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  WPA supplicant as a network management backend for WIFI_NM.
 
