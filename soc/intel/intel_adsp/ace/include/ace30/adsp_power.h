@@ -104,6 +104,10 @@ static ALWAYS_INLINE bool soc_cpu_is_powered(int cpu_num)
  */
 void intel_adsp_clock_soft_off_exit(void);
 
+/**
+ * @brief Power off Intel ADSP
+ */
+void intel_adsp_power_off(void);
 
 /**
  * @brief Retrieve node identifier for Intel ADSP HOST power domain.

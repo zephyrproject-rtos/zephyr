@@ -18,5 +18,6 @@ if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/include/xtensa-cavs-linker.ld CACHE INTERNAL "")
