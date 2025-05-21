@@ -6,7 +6,8 @@
 import argparse
 from dataclasses import dataclass
 from pathlib import Path, PurePath
-import pykwalify.core
+import jsonschema
+import json
 import sys
 from typing import List
 import yaml
@@ -18,13 +19,16 @@ except ImportError:
     from yaml import SafeLoader
 
 
-SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
+SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.json')
 with open(SOC_SCHEMA_PATH, 'r') as f:
-    soc_schema = yaml.load(f.read(), Loader=SafeLoader)
+    soc_schema = json.load(f)
 
-ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
+ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.json')
 with open(ARCH_SCHEMA_PATH, 'r') as f:
-    arch_schema = yaml.load(f.read(), Loader=SafeLoader)
+    arch_schema = json.load(f)
+
+soc_validator = jsonschema.Draft202012Validator(soc_schema)
+arch_validator = jsonschema.Draft202012Validator(arch_schema)
 
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
@@ -42,10 +46,9 @@ class Systems:
 
         try:
             data = yaml.load(soc_yaml, Loader=SafeLoader)
-            pykwalify.core.Core(source_data=data,
-                                schema_data=soc_schema).validate()
-        except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
-            sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}', e)
+            soc_validator.validate(data)
+        except (yaml.YAMLError, jsonschema.exceptions.ValidationError) as e:
+            sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}: {e.message}')
 
         for f in data.get('family', []):
             family = Family(f['name'], [folder], [], [])
@@ -214,10 +217,10 @@ def find_v2_archs(args):
                 archs = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
-                pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
-            except pykwalify.errors.SchemaError as e:
+                arch_validator.validate(archs)
+            except jsonschema.exceptions.ValidationError as e:
                 sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                         .format(archs_yml.as_posix(), e))
+                         .format(archs_yml.as_posix(), str(e)))
 
             if args.arch is not None:
                 archs = {'archs': list(filter(

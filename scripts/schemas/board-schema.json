@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zephyrproject.org/schemas/board-schema.json",
+  "title": "Zephyr Board Schema",
+  "description": "Schema for validating Zephyr board metadata files",
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "board": { "$ref": "#/$defs/board" }
+      },
+      "required": ["board"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "boards": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/board" }
+        }
+      },
+      "required": ["boards"]
+    }
+  ],
+  "$defs": {
+    "variant": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the variant"
+        },
+        "cpucluster": {
+          "type": "string",
+          "description": "CPU cluster this variant belongs to"
+        },
+        "variants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/variant" }
+        }
+      },
+      "required": ["name"]
+    },
+    "extend-variant": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the variant"
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "Qualifier path for this variant"
+        }
+      },
+      "required": ["name", "qualifier"]
+    },
+    "revision": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the revision"
+        },
+        "revisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/revision" }
+        }
+      },
+      "required": ["name"]
+    },
+    "soc": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the SoC"
+        },
+        "variants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/variant" }
+        }
+      },
+      "required": ["name"]
+    },
+    "board": {
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the board"
+            },
+            "full_name": {
+              "type": "string",
+              "description": "Full name of the board, typically the commercial name"
+            },
+            "vendor": {
+              "type": "string",
+              "description": "Vendor of the board"
+            },
+            "revision": {
+              "type": "object",
+              "properties": {
+                "format": {
+                  "type": "string",
+                  "enum": ["major.minor.patch", "letter", "number", "custom"],
+                  "description": "Format of the revision string"
+                },
+                "default": {
+                  "type": "string",
+                  "description": "Default revision"
+                },
+                "exact": {
+                  "type": "boolean",
+                  "description": "Whether revision matching should be exact"
+                },
+                "revisions": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/revision" }
+                }
+              },
+              "required": ["format"]
+            },
+            "socs": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/soc" }
+            },
+            "variants": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/extend-variant" }
+            }
+          },
+          "required": ["name"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "extend": {
+              "type": "string",
+              "description": "Name of the board to extend"
+            },
+            "variants": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/extend-variant" }
+            }
+          },
+          "required": ["extend"]
+        }
+      ]
+    },
+    "runner-group": {
+      "type": "object",
+      "properties": {
+        "boards": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Board target to match against in regex"
+          }
+        }
+      },
+      "required": ["boards"]
+    },
+    "runner-command": {
+      "type": "object",
+      "properties": {
+        "run": {
+          "type": "string",
+          "enum": ["first", "last"],
+          "description": "When to run this command - first or last image"
+        },
+        "runners": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "List of flash runners this applies to"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/runner-group" }
+        }
+      },
+      "required": ["run", "runners", "groups"]
+    }
+  },
+  "properties": {
+    "runners": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "type": "integer",
+          "description": "Priority of this flash run once configuration"
+        },
+        "run_once": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/runner-command" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

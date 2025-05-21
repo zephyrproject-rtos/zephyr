@@ -10,6 +10,7 @@ gitlint>=0.19.1
 gitpython>=3.1.41
 ijson
 intelhex
+jsonschema
 junit2html
 junitparser>=2
 lxml>=5.3.0
