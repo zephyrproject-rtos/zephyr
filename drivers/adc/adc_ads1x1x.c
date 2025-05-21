@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 
 #endif
 
+#define ADS1X1X_MAX_CHANNELS 4
+
 #define ADS1X1X_CONFIG_OS BIT(15)
 #define ADS1X1X_CONFIG_MUX(x) ((x) << 12)
 #define ADS1X1X_CONFIG_PGA(x) ((x) << 9)
@@ -140,6 +142,7 @@ struct ads1x1x_config {
 #endif
 	const uint32_t odr_delay[8];
 	uint8_t resolution;
+	uint8_t channels;
 	bool multiplexer;
 	bool pga;
 };
@@ -153,7 +156,9 @@ struct ads1x1x_data {
 	int16_t *repeat_buffer;
 	struct k_thread thread;
 	k_tid_t	tid;
-	bool differential;
+	bool differential[ADS1X1X_MAX_CHANNELS];
+	uint16_t configs[ADS1X1X_MAX_CHANNELS];
+	uint8_t channels;
 #ifdef ADC_ADS1X1X_TRIGGER
 	struct gpio_callback gpio_cb;
 	struct k_work work;
@@ -232,16 +237,11 @@ static int ads1x1x_write_reg(const struct device *dev, enum ads1x1x_reg reg_addr
 	return 0;
 }
 
-static int ads1x1x_start_conversion(const struct device *dev)
+static int ads1x1x_start_conversion(const struct device *dev, uint16_t config)
 {
 	/* send start sampling command */
-	uint16_t config;
 	int ret;
 
-	ret = ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &config);
-	if (ret != 0) {
-		return ret;
-	}
 	config |= ADS1X1X_CONFIG_OS;
 	ret = ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
 
@@ -382,7 +382,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	uint16_t config = 0;
 	int dr = 0;
 
-	if (channel_cfg->channel_id != 0) {
+	if (channel_cfg->channel_id >= ads_config->channels) {
 		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
@@ -436,7 +436,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 		}
 	}
 	/* store differential mode to determine supported resolution */
-	data->differential = channel_cfg->differential;
+	data->differential[channel_cfg->channel_id] = channel_cfg->differential;
 
 	dr = ads1x1x_acq_time_to_dr(dev, channel_cfg->acquisition_time);
 	if (dr < 0) {
@@ -486,7 +486,9 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	/* disable comparator */
 	config |= ADS1X1X_CONFIG_COMP_MODE;
 
-	return ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
+	data->configs[channel_cfg->channel_id] = config;
+
+	return 0;
 }
 
 static int ads1x1x_validate_buffer_size(const struct adc_sequence *sequence)
@@ -508,22 +510,30 @@ static int ads1x1x_validate_sequence(const struct device *dev, const struct adc_
 {
 	const struct ads1x1x_config *config = dev->config;
 	struct ads1x1x_data *data = dev->data;
-	uint8_t resolution = data->differential ? config->resolution : config->resolution - 1;
+	uint8_t resolution;
+	uint8_t channel, channels = sequence->channels;
 	int err;
 
-	if (sequence->resolution != resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
-		return -ENOTSUP;
-	}
+	while (channels) {
+		channel = find_lsb_set(channels) - 1;
+		resolution = data->differential[channel] ? config->resolution : config->resolution - 1;
 
-	if (sequence->channels != BIT(0)) {
-		LOG_ERR("only channel 0 supported");
-		return -ENOTSUP;
-	}
+		if (sequence->resolution != resolution) {
+			LOG_ERR("unsupported resolution %d", sequence->resolution);
+			return -ENOTSUP;
+		}
 
-	if (sequence->oversampling) {
-		LOG_ERR("oversampling not supported");
-		return -ENOTSUP;
+		if (channel >= config->channels) {
+			LOG_ERR("unsupported channel id '%d'", channel);
+			return -ENOTSUP;
+		}
+
+		if (sequence->oversampling) {
+			LOG_ERR("oversampling not supported");
+			return -ENOTSUP;
+		}
+		
+		WRITE_BIT(channels, channel, 0);
 	}
 
 	err = ads1x1x_validate_buffer_size(sequence);
@@ -547,19 +557,9 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ads1x1x_data *data = CONTAINER_OF(ctx, struct ads1x1x_data, ctx);
-	int ret;
 
+	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
-
-	ret = ads1x1x_start_conversion(data->dev);
-	if (ret != 0) {
-		/* if we fail to complete the I2C operations to start
-		 * sampling, return an immediate error (likely -EIO) rather
-		 * than handing it off to the acquisition thread.
-		 */
-		adc_context_complete(ctx, ret);
-		return;
-	}
 
 	/* Give semaphore only if the thread is running */
 	if (data->tid) {
@@ -650,19 +650,36 @@ static void ads1x1x_acquisition_thread(void *p1, void *p2, void *p3)
 
 	const struct device *dev = p1;
 	struct ads1x1x_data *data = dev->data;
+	uint8_t channel;
 	int rc;
 
 	while (true) {
 		k_sem_take(&data->acq_sem, K_FOREVER);
 
-		rc = ads1x1x_wait_data_ready(dev);
-		if (rc != 0) {
-			LOG_ERR("failed to get ready status (err %d)", rc);
-			adc_context_complete(&data->ctx, rc);
-			continue;
-		}
+		while (data->channels) {
+			channel = find_lsb_set(data->channels) - 1;
 
-		ads1x1x_adc_perform_read(dev);
+			rc = ads1x1x_start_conversion(data->dev, data->configs[channel]);
+			if (rc != 0) {
+				/* if we fail to complete the I2C operations to start
+				* sampling, return an immediate error (likely -EIO) rather
+				* than handing it off to the acquisition thread.
+				*/
+				adc_context_complete(&data->ctx, rc);
+				continue;
+			}
+
+			rc = ads1x1x_wait_data_ready(dev);
+			if (rc != 0) {
+				LOG_ERR("failed to get ready status (err %d)", rc);
+				adc_context_complete(&data->ctx, rc);
+				continue;
+			}
+
+			ads1x1x_adc_perform_read(dev);
+
+			WRITE_BIT(data->channels, channel, 0);
+		}
 	}
 }
 
@@ -804,11 +821,12 @@ static DEVICE_API(adc, ads1x1x_api) = {
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST_ADS1X1X(n, t), alert_rdy_gpios),                       \
 		   (ADS1X1X_RDY_PROPS(n)))
 
-#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab)                                           \
+#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab, ch)                                       \
 	static const struct ads1x1x_config ads##t##_config_##n = {                                 \
 		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)),                                     \
 		.odr_delay = odr_delay_us,                                                         \
 		.resolution = res,                                                                 \
+		.channels = ch,                                                                    \
 		.multiplexer = mux,                                                                \
 		.pga = pgab,                                                                       \
 		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n)))                               \
@@ -841,26 +859,26 @@ static DEVICE_API(adc, ads1x1x_api) = {
 	}
 
 /*
- * ADS1115: 16 bit, multiplexer, programmable gain amplifier
+ * ADS1115: 16 bit, multiplexer, programmable gain amplifier, 4SE or 2DE
  */
-#define ADS1115_INIT(n) ADS1X1X_INIT(1115, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, true, true)
+#define ADS1115_INIT(n) ADS1X1X_INIT(1115, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, true, true, 4)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1115
 DT_INST_FOREACH_STATUS_OKAY(ADS1115_INIT)
 
 /*
- * ADS1114: 16 bit, no multiplexer, programmable gain amplifier
+ * ADS1114: 16 bit, no multiplexer, programmable gain amplifier, 1SE or 1DE
  */
-#define ADS1114_INIT(n) ADS1X1X_INIT(1114, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, true)
+#define ADS1114_INIT(n) ADS1X1X_INIT(1114, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, true, 1)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1114
 DT_INST_FOREACH_STATUS_OKAY(ADS1114_INIT)
 
 /*
- * ADS1113: 16 bit, no multiplexer, no programmable gain amplifier
+ * ADS1113: 16 bit, no multiplexer, no programmable gain amplifier, 1SE or 1DE
  */
 #define ADS1113_INIT(n)                                                                            \
-	ADS1X1X_INIT(1113, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, false)
+	ADS1X1X_INIT(1113, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, false, 1)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1113
 DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
@@ -884,26 +902,26 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 	}
 
 /*
- * ADS1015: 12 bit, multiplexer, programmable gain amplifier
+ * ADS1015: 12 bit, multiplexer, programmable gain amplifier, 4SE or 2DE
  */
-#define ADS1015_INIT(n) ADS1X1X_INIT(1015, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, true, true)
+#define ADS1015_INIT(n) ADS1X1X_INIT(1015, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, true, true, 4)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1015
 DT_INST_FOREACH_STATUS_OKAY(ADS1015_INIT)
 
 /*
- * ADS1014: 12 bit, no multiplexer, programmable gain amplifier
+ * ADS1014: 12 bit, no multiplexer, programmable gain amplifier, 1SE or 1DE
  */
-#define ADS1014_INIT(n) ADS1X1X_INIT(1014, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, true)
+#define ADS1014_INIT(n) ADS1X1X_INIT(1014, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, true, 1)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1014
 DT_INST_FOREACH_STATUS_OKAY(ADS1014_INIT)
 
 /*
- * ADS1013: 12 bit, no multiplexer, no programmable gain amplifier
+ * ADS1013: 12 bit, no multiplexer, no programmable gain amplifier, 1SE or 1DE
  */
 #define ADS1013_INIT(n)                                                                            \
-	ADS1X1X_INIT(1013, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, false)
+	ADS1X1X_INIT(1013, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, false, 1)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1013
 DT_INST_FOREACH_STATUS_OKAY(ADS1013_INIT)
