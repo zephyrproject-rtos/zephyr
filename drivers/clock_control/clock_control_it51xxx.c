@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(clock_control_it51xxx, LOG_LEVEL_ERR);
+#include "soc_espi.h"
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it51xxx-ecpm compatible node can be supported");
@@ -171,11 +172,21 @@ static int clock_control_it51xxx_init(const struct device *dev)
 		ite_intc_save_and_disable_interrupts();
 	}
 
+#ifdef CONFIG_ESPI
+	/*
+	 * We have to disable eSPI pad before changing PLL sequence
+	 * or sequence will fail if CS# pin is low.
+	 */
+	espi_ite_ec_enable_pad_ctrl(ESPI_ITE_SOC_DEV, false);
+#endif
 	if (reg_val != data->pll_configuration[config->pll_freq]) {
 		/* configure PLL clock */
 		chip_configure_pll(dev, data->pll_configuration[config->pll_freq]);
 	}
-
+#ifdef CONFIG_ESPI
+	/* Enable eSPI pad after changing PLL sequence */
+	espi_ite_ec_enable_pad_ctrl(ESPI_ITE_SOC_DEV, true);
+#endif
 	if (IS_ENABLED(CONFIG_ITE_IT51XXX_INTC)) {
 		ite_intc_restore_interrupts();
 	}
