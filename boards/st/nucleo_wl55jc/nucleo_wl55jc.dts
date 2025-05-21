@@ -25,14 +25,17 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		blue_led_1: led_0 {
 			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "User LED1";
 		};
+
 		green_led_2: led_1 {
 			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 			label = "User LED2";
 		};
+
 		green_led_3: led_2 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
 			label = "User LED3";
@@ -41,16 +44,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "SW1";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "SW2";
 			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "SW3";
 			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -138,6 +144,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &timers2 {
 	status = "okay";
+
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pb11>;
@@ -172,6 +179,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &subghzspi {
 	status = "okay";
+
 	lora: radio@0 {
 		status = "okay";
 		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
@@ -200,10 +208,12 @@ stm32_lp_tick_source: &lptim1 {
 			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(104)>;
 		};
+
 		slot1_partition: partition@22000 {
 			label = "image-1";
 			reg = <0x00022000 DT_SIZE_K(104)>;
