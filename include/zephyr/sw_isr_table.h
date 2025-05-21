@@ -177,7 +177,11 @@ struct z_shared_isr_table_entry {
 
 void z_shared_isr(const void *data);
 
-extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
+extern
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
+struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #endif /* CONFIG_SHARED_INTERRUPTS */
 
 /** This interrupt gets put directly in the vector table */

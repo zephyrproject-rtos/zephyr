@@ -98,6 +98,9 @@ struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 #endif
 
 #ifdef CONFIG_SHARED_INTERRUPTS
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
 struct z_shared_isr_table_entry __shared_sw_isr_table z_shared_sw_isr_table[IRQ_TABLE_SIZE] = {
 };
 #endif
