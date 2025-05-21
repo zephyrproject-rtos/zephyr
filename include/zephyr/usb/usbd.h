@@ -269,10 +269,14 @@ struct usbd_status {
 /**
  * @brief Callback type definition for USB device message delivery
  *
- * The implementation uses the system workqueue, and a callback provided and
- * registered by the application. The application callback is called in the
- * context of the system workqueue. Notification messages are stored in a queue
- * and delivered to the callback in sequence.
+ * If the Kconfig option USBD_MSG_DEFERRED_MODE is enabled, then the callback
+ * is executed in the context of the system workqueue. Notification messages are
+ * stored in a queue and delivered to the callback in sequence.
+ *
+ * If the Kconfig option USBD_MSG_DEFERRED_MODE is disabled, the callback is
+ * executed in the context of the USB device stack thread. The user should make
+ * sure that the callback execution does not block or disrupt device stack
+ * handling.
  *
  * @param[in] ctx Pointer to USB device support context
  * @param[in] msg Pointer to USB device message

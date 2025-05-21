@@ -116,7 +116,11 @@ void usbd_msg_pub_simple(struct usbd_context *const ctx,
 	};
 
 	if (ctx->msg_cb != NULL) {
-		usbd_msg_pub(ctx, msg);
+		if (IS_ENABLED(CONFIG_USBD_MSG_DEFERRED_MODE)) {
+			usbd_msg_pub(ctx, msg);
+		} else {
+			ctx->msg_cb(ctx, &msg);
+		}
 	}
 }
 
@@ -129,6 +133,10 @@ void usbd_msg_pub_device(struct usbd_context *const ctx,
 	};
 
 	if (ctx->msg_cb != NULL) {
-		usbd_msg_pub(ctx, msg);
+		if (IS_ENABLED(CONFIG_USBD_MSG_DEFERRED_MODE)) {
+			usbd_msg_pub(ctx, msg);
+		} else {
+			ctx->msg_cb(ctx, &msg);
+		}
 	}
 }
