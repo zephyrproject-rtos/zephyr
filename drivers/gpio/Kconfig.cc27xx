@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CC27XX
+	bool "TI SimpleLink CC27XX GPIO driver"
+	default y
+	depends on DT_HAS_TI_CC27XX_GPIO_ENABLED
+	help
+	  Enable the TI SimpleLink CC27XX  GPIO driver.
