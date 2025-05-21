@@ -235,7 +235,6 @@
 "./scripts/build/gen_relocate_app.py" = [
     "B028",     # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
@@ -1476,7 +1475,6 @@ exclude = [
     "./scripts/build/gen_kobject_list.py",
     "./scripts/build/gen_kobject_placeholders.py",
     "./scripts/build/gen_offset_header.py",
-    "./scripts/build/gen_relocate_app.py",
     "./scripts/build/gen_strerror_table.py",
     "./scripts/build/gen_strsignal_table.py",
     "./scripts/build/gen_symtab.py",
