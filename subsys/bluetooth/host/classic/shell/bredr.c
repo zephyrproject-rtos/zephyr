@@ -1281,6 +1281,97 @@ static int cmd_set_role_switchable(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
+{
+	bt_shell_print("Incoming connectionless data psm 0x%04x len %u", psm, buf->len);
+
+	if (buf->len > 0) {
+		bt_shell_hexdump(buf->data, buf->len);
+	}
+}
+
+static struct bt_l2cap_br_connless_cb connless_cb = {
+	.recv = connless_recv,
+};
+
+static int cmd_l2cap_connless_reg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint16_t psm;
+
+	psm = (uint16_t)strtoul(argv[1], NULL, 16);
+	shell_print(sh, "Register connectionless callbacks with PSM 0x%04x", psm);
+
+	connless_cb.psm = psm;
+
+	if (argc > 2) {
+		connless_cb.sec_level = (bt_security_t)strtoul(argv[2], NULL, 0);
+	} else {
+		connless_cb.sec_level = BT_SECURITY_L1;
+	}
+
+	err = bt_l2cap_br_connless_register(&connless_cb);
+	if (err) {
+		shell_error(sh, "Failed to register connectionless callback: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_connless_unreg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_br_connless_unregister(&connless_cb);
+	if (err) {
+		shell_error(sh, "Failed to unregister connectionless callback: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_connless_send(const struct shell *sh, size_t argc, char *argv[])
+{
+	static uint8_t buf_data[DATA_BREDR_MTU];
+	int err, len = DATA_BREDR_MTU;
+	struct net_buf *buf;
+	uint16_t psm;
+
+	psm = (uint16_t)strtoul(argv[1], NULL, 16);
+
+	len = (int)strtoul(argv[2], NULL, 10);
+	if (len > DATA_BREDR_MTU) {
+		shell_error(sh, "Length exceeds TX MAX length for the channel");
+		return -ENOEXEC;
+	}
+
+	buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+	if (!buf) {
+		shell_error(sh, "Allocation timeout, stopping TX");
+		return -EAGAIN;
+	}
+	net_buf_reserve(buf, BT_L2CAP_CONNLESS_RESERVE);
+	for (int i = 0; i < len; i++) {
+		buf_data[i] = (uint8_t)i;
+	}
+
+	net_buf_add_mem(buf, buf_data, len);
+
+	shell_print(sh, "Sending connectionless data with PSM 0x%04x", psm);
+	err = bt_l2cap_br_connless_send(default_conn, psm, buf);
+	if (err < 0) {
+		shell_error(sh, "Unable to send connectionless data: %d", err);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1311,6 +1402,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+SHELL_STATIC_SUBCMD_SET_CREATE(connless_cmds,
+	SHELL_CMD_ARG(register, NULL, "<psm> [sec level]", cmd_l2cap_connless_reg, 2, 1),
+	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_connless_unreg, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "<psm> <length of data>", cmd_l2cap_connless_send, 3, 0),
+	SHELL_SUBCMD_SET_END
+);
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	SHELL_CMD_ARG(register, NULL, HELP_REG, cmd_l2cap_register, 3, 3),
@@ -1326,6 +1426,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(credits, NULL, HELP_NONE, cmd_l2cap_credits, 1, 0),
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 	SHELL_CMD(echo, &echo_cmds, "L2CAP BR ECHO commands", cmd_default_handler),
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+	SHELL_CMD(connless, &connless_cmds, "L2CAP connectionless commands", cmd_default_handler),
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
 	SHELL_SUBCMD_SET_END
 );
 
