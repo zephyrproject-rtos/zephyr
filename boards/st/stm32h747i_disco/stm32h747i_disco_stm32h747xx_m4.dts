@@ -25,6 +25,7 @@
 		red_led_3:led_3 {
 			status = "okay";
 		};
+
 		blue_led_4:led_4 {
 			status = "okay";
 		};

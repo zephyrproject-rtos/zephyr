@@ -43,6 +43,7 @@
 		green_led_1:led_1 {
 			status = "okay";
 		};
+
 		orange_led_2:led_2 {
 			status = "okay";
 		};
@@ -261,13 +262,13 @@ zephyr_udc0: &usbotg_hs {
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x0 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
 		};
 	};
 
