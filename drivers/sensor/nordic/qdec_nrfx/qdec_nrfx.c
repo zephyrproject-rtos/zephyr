@@ -106,6 +106,10 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	acc = data->fetched_acc;
 	irq_unlock(key);
 
+	LOG_DBG("acc: %d", acc);
+	LOG_DBG("config->steps: %d", config->steps);
+	LOG_DBG("val->val1: %d", val->val1);
+
 	val->val1 = (acc * FULL_ANGLE) / config->steps;
 	val->val2 = (acc * FULL_ANGLE) - (val->val1 * config->steps);
 	if (val->val2 != 0) {

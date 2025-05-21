@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SECOND_QDEC_INSTANCE
+	bool
+	default y if SOC_NRF5340_CPUAPP
+	default y if SOC_NRF54L15_CPUAPP
+	default y if SOC_NRF54H20_CPUAPP
+	default n
+
+source "Kconfig.zephyr"

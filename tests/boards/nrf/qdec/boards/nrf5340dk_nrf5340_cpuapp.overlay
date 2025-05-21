@@ -5,9 +5,12 @@
 
 / {
 	aliases {
-		qdec0 = &qdec1;
+		qdec-0 = &qdec1;
+		qdec-1 = &qdec0;
 		qenca = &phase_a;
 		qencb = &phase_b;
+		qencc = &phase_c;
+		qencd = &phase_d;
 	};
 
 	encoder-emulate {
@@ -20,18 +23,39 @@
 			/* Arduino A3 */
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
+		phase_c: phase_c {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+		phase_d: phase_d {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
 	};
 };
 
 &pinctrl {
-	qdec_pinctrl: qdec_pinctrl {
+	qdec_0_pinctrl: qdec_0_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 0)>,
+				<NRF_PSEL(QDEC_B, 1, 2)>;
+		};
+	};
+
+	qdec_0_sleep_pinctrl: qdec_0_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 0)>,
+				<NRF_PSEL(QDEC_B, 1, 2)>;
+			low-power-enable;
+		};
+	};
+
+	qdec_1_pinctrl: qdec_1_pinctrl {
 		group1 {
 			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Ardiuno A0 */
 				<NRF_PSEL(QDEC_B, 0, 6)>;   /* Arduino A2 */
 		};
 	};
 
-	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
+	qdec_1_sleep_pinctrl: qdec_1_sleep_pinctrl {
 		group1 {
 			psels = <NRF_PSEL(QDEC_A, 0, 4)>,
 				<NRF_PSEL(QDEC_B, 0, 6)>;
@@ -40,10 +64,20 @@
 	};
 };
 
+&qdec0 {
+	status = "okay";
+	pinctrl-0 = <&qdec_0_pinctrl>;
+	pinctrl-1 = <&qdec_0_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
+	steps = < 127 >;
+	led-pre = < 500 >;
+	zephyr,pm-device-runtime-auto;
+};
+
 &qdec1 {
 	status = "okay";
-	pinctrl-0 = <&qdec_pinctrl>;
-	pinctrl-1 = <&qdec_sleep_pinctrl>;
+	pinctrl-0 = <&qdec_1_pinctrl>;
+	pinctrl-1 = <&qdec_1_sleep_pinctrl>;
 	pinctrl-names = "default", "sleep";
 	steps = < 127 >;
 	led-pre = < 500 >;

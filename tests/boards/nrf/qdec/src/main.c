@@ -14,8 +14,14 @@
 static K_SEM_DEFINE(sem, 0, 1);
 static const struct gpio_dt_spec phase_a = GPIO_DT_SPEC_GET(DT_ALIAS(qenca), gpios);
 static const struct gpio_dt_spec phase_b = GPIO_DT_SPEC_GET(DT_ALIAS(qencb), gpios);
-static const struct device *const qdec_dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
-static const uint32_t qdec_config_step = DT_PROP(DT_ALIAS(qdec0), steps);
+static const struct device *const qdec_dev = DEVICE_DT_GET(DT_ALIAS(qdec_0));
+static const uint32_t qdec_config_step = DT_PROP(DT_ALIAS(qdec_0), steps);
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+static const struct gpio_dt_spec phase_c = GPIO_DT_SPEC_GET(DT_ALIAS(qencc), gpios);
+static const struct gpio_dt_spec phase_d = GPIO_DT_SPEC_GET(DT_ALIAS(qencd), gpios);
+static const struct device *const qdec_1_dev = DEVICE_DT_GET(DT_ALIAS(qdec_1));
+static const uint32_t qdec_1_config_step = DT_PROP(DT_ALIAS(qdec_1), steps);
+#endif
 static struct sensor_trigger qdec_trigger = {.type = SENSOR_TRIG_DATA_READY,
 					     .chan = SENSOR_CHAN_ROTATION};
 static bool toggle_a = true;
@@ -37,8 +43,14 @@ static void qenc_emulate_work_handler(struct k_work *work)
 {
 	if (toggle_a) {
 		gpio_pin_toggle_dt(&phase_a);
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+		gpio_pin_toggle_dt(&phase_c);
+#endif
 	} else {
 		gpio_pin_toggle_dt(&phase_b);
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+		gpio_pin_toggle_dt(&phase_d);
+#endif
 	}
 	toggle_a = !toggle_a;
 }
@@ -75,6 +87,10 @@ static void qenc_emulate_start(k_timeout_t period, bool forward)
 {
 	qenc_emulate_reset_pin(&phase_a);
 	qenc_emulate_reset_pin(&phase_b);
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+	qenc_emulate_reset_pin(&phase_c);
+	qenc_emulate_reset_pin(&phase_d);
+#endif
 
 	toggle_a = !forward;
 
@@ -87,10 +103,14 @@ static void qenc_emulate_stop(void)
 
 	qenc_emulate_reset_pin(&phase_a);
 	qenc_emulate_reset_pin(&phase_b);
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+	qenc_emulate_reset_pin(&phase_c);
+	qenc_emulate_reset_pin(&phase_d);
+#endif
 }
 
-static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_duration_ms,
-					bool forward, bool overflow_expected)
+static void qenc_emulate_verify_reading(const struct device *const dev, int emulator_period_ms,
+		int emulation_duration_ms, bool forward, bool overflow_expected)
 {
 	int rc;
 	struct sensor_value val = {0};
@@ -107,7 +127,7 @@ static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_du
 	/* wait for some readings*/
 	k_msleep(emulation_duration_ms);
 
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(dev);
 
 	if (!overflow_expected) {
 		zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
@@ -115,9 +135,11 @@ static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_du
 		zassert_true(rc == -EOVERFLOW, "Failed to detect overflow");
 	}
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
+	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 
+	TC_PRINT("Expected reading: %d, actual value: %d, delta: %d\n",
+			expected_reading, val.val1, delta);
 	if (!overflow_expected) {
 		zassert_within(val.val1, expected_reading, delta,
 			       "Expected reading: %d,  but got: %d", expected_reading, val.val1);
@@ -128,10 +150,10 @@ static void qenc_emulate_verify_reading(int emulator_period_ms, int emulation_du
 	/* wait and get readings to clear state */
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(qdec_dev);
+	rc = sensor_sample_fetch(dev);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
-	rc = sensor_channel_get(qdec_dev, SENSOR_CHAN_ROTATION, &val);
+	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 }
 
@@ -282,15 +304,40 @@ ZTEST(qdec_sensor, test_qdec_readings)
 		pm_device_runtime_get(qdec_dev);
 	}
 
-	qenc_emulate_verify_reading(10, 100, true, false);
-	qenc_emulate_verify_reading(2, 500, true, false);
-	qenc_emulate_verify_reading(10, 200, false, false);
-	qenc_emulate_verify_reading(1, 1000, false, true);
-	qenc_emulate_verify_reading(1, 1000, true, true);
+	TC_PRINT("Testing QDEC-0, address: %p\n", qdec_dev);
+	qenc_emulate_verify_reading(qdec_dev, 10, 100, true, false);
+	qenc_emulate_verify_reading(qdec_dev, 2, 500, true, false);
+	qenc_emulate_verify_reading(qdec_dev, 10, 200, false, false);
+	qenc_emulate_verify_reading(qdec_dev, 1, 1000, false, true);
+	qenc_emulate_verify_reading(qdec_dev, 1, 1000, true, true);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_put(qdec_dev);
 	}
+}
+
+/*
+* For debuggin purposes
+*/
+
+ZTEST(qdec_sensor, test_qdec_readings_second_instance)
+{
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_1_dev);
+	}
+
+	TC_PRINT("Testing QDEC-1, address: %p\n", qdec_1_dev);
+	qenc_emulate_verify_reading(qdec_1_dev, 10, 100, true, false);
+	qenc_emulate_verify_reading(qdec_1_dev, 2, 500, true, false);
+	qenc_emulate_verify_reading(qdec_1_dev, 10, 200, false, false);
+	qenc_emulate_verify_reading(qdec_1_dev, 1, 1000, false, true);
+	qenc_emulate_verify_reading(qdec_1_dev, 1, 1000, true, true);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_1_dev);
+	}
+#endif
 }
 
 /**
@@ -460,6 +507,14 @@ static void *setup(void)
 
 	qenc_emulate_setup_pin(&phase_a);
 	qenc_emulate_setup_pin(&phase_b);
+
+#if defined(CONFIG_SECOND_QDEC_INSTANCE)
+	rc = device_is_ready(qdec_1_dev);
+	zassert_true(rc, "QDEC 1 device not ready: %d", rc);
+
+	qenc_emulate_setup_pin(&phase_c);
+	qenc_emulate_setup_pin(&phase_d);
+#endif
 
 	return NULL;
 }
