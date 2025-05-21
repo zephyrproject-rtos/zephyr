@@ -432,6 +432,12 @@ Networking
   | ``wifi packet_filter`` |                     |                    |
   +------------------------+---------------------+--------------------+
 
+* The :c:type:`http_response_cb_t` HTTP client response callback signature has
+  changed. The callback function now returns ``int`` instead of ``void``. This
+  allows the application to abort the HTTP connection. Existing applications
+  need to update their response callback implementations. To retain current
+  behavior, simply return 0 from the callback.
+
 OpenThread
 ==========
 
