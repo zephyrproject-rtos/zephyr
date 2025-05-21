@@ -1237,8 +1237,12 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 	int addr_idx;
 
 	/* A transiaction is ongoing */
-	if (data->oper_state != NPCX_I2C_IDLE) {
+	if (data->oper_state != NPCX_I2C_IDLE && data->oper_state != NPCX_I2C_ERROR_RECOVERY) {
+		LOG_ERR("Reg TGT in err state: %d", data->oper_state);
 		return -EBUSY;
+	}
+	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
+		LOG_WRN("Reg TGT in Recovery");
 	}
 
 	/* Find valid smbaddr location */
