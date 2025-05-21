@@ -3,11 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Required loopbacks
+ * P2.08 <-> P2.09
+ * P2.10 <-> P2.11
+ * P1.02 <-> P1.03
+ * P7.01 <-> P1.05
+ */
+
 / {
 	aliases {
 		qdec0 = &qdec130;
+		qdec1 = &qdec131;
 		qenca = &phase_a;
 		qencb = &phase_b;
+		qenca1 = &phase_a1;
+		qencb1 = &phase_b1;
 	};
 
 	encoder-emulate {
@@ -18,34 +28,73 @@
 		phase_b: phase_b {
 			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
 		};
+		phase_a1: phase_a1 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b1: phase_b1 {
+			gpios = <&gpio7 1 GPIO_ACTIVE_HIGH>;
+		};
 	};
 };
 
 &pinctrl {
-	qdec_pinctrl: qdec_pinctrl {
+	qdec_130_pinctrl: qdec_130_pinctrl {
 		group1 {
 			psels = <NRF_PSEL(QDEC_A, 2, 8)>,
 				<NRF_PSEL(QDEC_B, 2, 10)>;
 		};
 	};
 
-	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
+	qdec_130_sleep_pinctrl: qdec_130_sleep_pinctrl {
 		group1 {
 			psels = <NRF_PSEL(QDEC_A, 2, 8)>,
 				<NRF_PSEL(QDEC_B, 2, 10)>;
 			low-power-enable;
 		};
 	};
+
+	qdec_131_pinctrl: qdec_131_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 3)>,
+				<NRF_PSEL(QDEC_B, 1, 5)>;
+		};
+	};
+
+	qdec_131_sleep_pinctrl: qdec_131_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 3)>,
+				<NRF_PSEL(QDEC_B, 1, 5)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
 };
 
 &gpio2 {
 	status = "okay";
 };
 
+&gpio7 {
+	status = "okay";
+};
+
 &qdec130 {
 	status = "okay";
-	pinctrl-0 = <&qdec_pinctrl>;
-	pinctrl-1 = <&qdec_sleep_pinctrl>;
+	pinctrl-0 = <&qdec_130_pinctrl>;
+	pinctrl-1 = <&qdec_130_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
+	steps = <127>;
+	led-pre = <500>;
+	zephyr,pm-device-runtime-auto;
+};
+
+&qdec131 {
+	status = "okay";
+	pinctrl-0 = <&qdec_131_pinctrl>;
+	pinctrl-1 = <&qdec_131_sleep_pinctrl>;
 	pinctrl-names = "default", "sleep";
 	steps = <127>;
 	led-pre = <500>;
