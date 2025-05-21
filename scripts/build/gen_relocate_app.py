@@ -333,7 +333,7 @@ def print_linker_sections(list_sections: 'list[OutputSection]'):
 
 
 def add_phdr(memory_type, phdrs):
-    return f'{memory_type} {phdrs[memory_type] if memory_type in phdrs else ""}'
+    return f'{memory_type} {phdrs.get(memory_type, "")}'
 
 
 def string_create_helper(
