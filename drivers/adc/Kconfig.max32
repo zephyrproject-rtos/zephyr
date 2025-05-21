@@ -10,3 +10,11 @@ config ADC_MAX32
 	select PINCTRL
 	help
 	  Enable ADC driver for ADI MAX32xxx MCUs.
+
+config ADC_MAX32_STREAM
+	bool "Use FIFO to stream data"
+	select ADC_ASYNC
+	depends on ADC_MAX32
+	depends on DT_HAS_ADI_MAX32_ADC_B_ME18_ENABLED
+	help
+	  Use this configuration option to enable streaming ADC data via RTIO.
