@@ -1,0 +1,6 @@
+board:
+  name: ra8d1_vision_board
+  full_name: RA8D1 Vision Board
+  vendor: ruiside
+  socs:
+    - name: r7fa8d1bhecbd
