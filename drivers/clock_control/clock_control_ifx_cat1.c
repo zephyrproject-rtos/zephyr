@@ -14,6 +14,22 @@
 #include <cyhal_utils.h>
 #include <cyhal_clock_impl.h>
 
+#include "cy_gpio.h"
+#include "cy_sysclk.h"
+
+#define GET_CLK_SOURCE_ORD(N) DT_DEP_ORD(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(N), 0))
+
+#define CY_CFG_SYSCLK_ECO_ERROR   1
+#define CY_CFG_SYSCLK_ALTHF_ERROR 2
+#define CY_CFG_SYSCLK_PLL_ERROR   3
+#define CY_CFG_SYSCLK_FLL_ERROR   4
+#define CY_CFG_SYSCLK_WCO_ERROR   5
+
+#define CY_CFG_SYSCLK_ECO_FREQ        16000000UL
+#define CY_CFG_SYSCLK_ECO_CLOAD       17UL
+#define CY_CFG_SYSCLK_ECO_ESR         150UL
+#define CY_CFG_SYSCLK_ECO_DRIVE_LEVEL 100UL
+
 #define GET_CLK_SOURCE_ORD(N) DT_DEP_ORD(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(N), 0))
 
 /* Enumeration of enabled in device tree Clock, uses for indexing clock info table */
@@ -24,6 +40,10 @@ enum {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
 	INFINEON_CAT1_CLOCK_IHO,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+	INFINEON_CAT1_CLOCK_ECO,
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux0))
@@ -106,12 +126,24 @@ enum {
 	INFINEON_CAT1_CLOCK_FAST,
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast0))
+	INFINEON_CAT1_CLOCK_FAST0,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast1))
+	INFINEON_CAT1_CLOCK_FAST1,
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_slow))
 	INFINEON_CAT1_CLOCK_SLOW,
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_peri))
 	INFINEON_CAT1_CLOCK_PERI,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_mem))
+	INFINEON_CAT1_CLOCK_MEM,
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll0))
@@ -141,6 +173,23 @@ enum {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lf))
 	INFINEON_CAT1_CLOCK_LF,
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m0))
+	INFINEON_CAT1_CLOCK_PLL400M0,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m1))
+	INFINEON_CAT1_CLOCK_PLL400M1,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m0))
+	INFINEON_CAT1_CLOCK_PLL200M0,
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m1))
+	INFINEON_CAT1_CLOCK_PLL200M1,
+#endif
+
 	/* Count of enabled clock */
 	INFINEON_CAT1_ENABLED_CLOCK_COUNT
 }; /* infineon_cat1_clock_info_name_t */
@@ -173,6 +222,10 @@ static struct infineon_cat1_clock_info_t clock_info_table[INFINEON_CAT1_ENABLED_
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
 	[INFINEON_CAT1_CLOCK_IHO] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_iho))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+	[INFINEON_CAT1_CLOCK_ECO] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_eco))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux0))
@@ -255,12 +308,24 @@ static struct infineon_cat1_clock_info_t clock_info_table[INFINEON_CAT1_ENABLED_
 	[INFINEON_CAT1_CLOCK_FAST] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_fast))},
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast0))
+	[INFINEON_CAT1_CLOCK_FAST0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_fast0))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast1))
+	[INFINEON_CAT1_CLOCK_FAST1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_fast1))},
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_slow))
 	[INFINEON_CAT1_CLOCK_SLOW] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_slow))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_peri))
 	[INFINEON_CAT1_CLOCK_PERI] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_peri))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_mem))
+	[INFINEON_CAT1_CLOCK_MEM] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_mem))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll0))
@@ -273,6 +338,22 @@ static struct infineon_cat1_clock_info_t clock_info_table[INFINEON_CAT1_ENABLED_
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fll0))
 	[INFINEON_CAT1_CLOCK_FLL0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(fll0))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m0))
+	[INFINEON_CAT1_CLOCK_PLL400M0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_pll400m0))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m1))
+	[INFINEON_CAT1_CLOCK_PLL400M1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_pll400m1))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m0))
+	[INFINEON_CAT1_CLOCK_PLL200M0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_pll200m0))},
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m1))
+	[INFINEON_CAT1_CLOCK_PLL200M1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_pll200m1))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
@@ -296,6 +377,12 @@ static struct infineon_cat1_clock_info_t clock_info_table[INFINEON_CAT1_ENABLED_
 
 };
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux0)) ||                                            \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux1)) ||                                        \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux2)) ||                                        \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux3)) ||                                        \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux4))
+
 static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj, cyhal_clock_t *clock_source_obj,
 				     const cyhal_clock_t *reserve_obj)
 {
@@ -311,6 +398,8 @@ static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj, cyhal_clock_t *cl
 
 	return rslt;
 }
+
+#endif
 
 static cy_rslt_t _configure_clk_hf(cyhal_clock_t *clock_obj, cyhal_clock_t *clock_source_obj,
 				   const cyhal_clock_t *reserve_obj, uint32_t clock_div)
@@ -331,15 +420,17 @@ static cy_rslt_t _configure_clk_hf(cyhal_clock_t *clock_obj, cyhal_clock_t *cloc
 		rslt = cyhal_clock_set_enabled(clock_obj, true, true);
 	}
 
+	if (rslt != CY_RSLT_SUCCESS) {
+		return rslt;
+	}
+
 	return rslt;
 }
 
 static cy_rslt_t _configure_clk_frequency_and_enable(cyhal_clock_t *clock_obj,
-						     cyhal_clock_t *clock_source_obj,
 						     const cyhal_clock_t *reserve_obj,
 						     uint32_t frequency)
 {
-	ARG_UNUSED(clock_source_obj);
 	cy_rslt_t rslt;
 
 	rslt = cyhal_clock_reserve(clock_obj, reserve_obj);
@@ -382,15 +473,14 @@ static cy_en_clklf_in_sources_t _get_clklf_source_from_ord(uint32_t dt_ord)
 }
 #endif
 
-#define CY_CFG_SYSCLK_PLL_ERROR 3
-#define CY_CFG_SYSCLK_WCO_ERROR 2
-
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
 __WEAK void cycfg_ClockStartupError(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */
 	while (1) {
 	}
 }
+#endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
 void Cy_SysClk_Dpll_Hp0_Init(void)
@@ -472,6 +562,24 @@ static inline void Cy_SysClk_IloInit(void)
 }
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ilo)) */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+__STATIC_INLINE void Cy_SysClk_EcoInit(void)
+{
+	Cy_SysClk_FllDisable();
+
+	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT21, 2, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT21, 3, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+	if (CY_SYSCLK_BAD_PARAM ==
+	    Cy_SysClk_EcoConfigure(CY_CFG_SYSCLK_ECO_FREQ, CY_CFG_SYSCLK_ECO_CLOAD,
+				   CY_CFG_SYSCLK_ECO_ESR, CY_CFG_SYSCLK_ECO_DRIVE_LEVEL)) {
+		cycfg_ClockStartupError(CY_CFG_SYSCLK_ECO_ERROR);
+	}
+	if (CY_SYSCLK_TIMEOUT == Cy_SysClk_EcoEnable(3000UL)) {
+		cycfg_ClockStartupError(CY_CFG_SYSCLK_ECO_ERROR);
+	}
+}
+#endif
+
 static int clock_control_infineon_cat1_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -481,6 +589,15 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 
 	__attribute__((unused)) uint32 frequency;
 	uint32 clock_div;
+
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_CPU_CORTEX_M7)
+	/* The ECO was configured by the CORTEX_M0P, and the frequency is stored in a variable.
+	 * For the M7, we need to update that variable with this function.  The frequency
+	 * is needed by the UART driver to calculate the BAUD.
+	 */
+	Cy_SysClk_EcoSetFrequency(CY_CFG_SYSCLK_ECO_FREQ);
+	return 0;
+#endif
 
 	/* Configure IMO */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
@@ -498,6 +615,13 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 #if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo)) &&                                             \
 	!DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
 #error "IMO clock or IHO clock must be enabled"
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_ECO].obj.cyhal_clock;
+	Cy_SysClk_EcoInit();
+	if (cyhal_clock_get(clock_obj, &CYHAL_CLOCK_RSC_ECO)) {
+		return -EIO;
+	}
 #endif
 
 	/* Configure the PathMux[0] to source defined in tree device 'path_mux0' node */
@@ -555,8 +679,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FLL0].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(fll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_FLL, frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_FLL, frequency);
 	if (rslt) {
 		return -EIO;
 	}
@@ -567,8 +690,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL0].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(pll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[0], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL[0], frequency);
 
 	if (rslt) {
 		return -EIO;
@@ -580,8 +702,51 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL1].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(pll1), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[1], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL[1], frequency);
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure PLL400M0 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m0))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL400M0].obj.cyhal_clock;
+	frequency = DT_PROP(DT_NODELABEL(clk_pll400m0), clock_frequency);
+
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL400[0], frequency);
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure PLL400M1 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll400m1))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL400M1].obj.cyhal_clock;
+	frequency = DT_PROP(DT_NODELABEL(clk_pll400m1), clock_frequency);
+
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL400[1], frequency);
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure PLL200M0 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m0))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL200M0].obj.cyhal_clock;
+	frequency = DT_PROP(DT_NODELABEL(clk_pll200m0), clock_frequency);
+
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL200[0], frequency);
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure PLL200M1 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pll200m1))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL200M1].obj.cyhal_clock;
+	frequency = DT_PROP(DT_NODELABEL(clk_pll200m1), clock_frequency);
+
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL200[1], frequency);
 	if (rslt) {
 		return -EIO;
 	}
@@ -603,6 +768,13 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF1].obj.cyhal_clock;
 	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf1));
 	clock_div = DT_PROP(DT_NODELABEL(clk_hf1), clock_div);
+
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+	Cy_SysClk_ClkHfSetSource(1, CY_SYSCLK_CLKHF_IN_CLKPATH1);
+	Cy_SysClk_ClkHfSetDivider(1, CY_SYSCLK_CLKHF_NO_DIVIDE);
+	Cy_SysClk_ClkHfDirectSel(1, false);
+	Cy_SysClk_ClkHfEnable(1);
+#endif
 
 	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[1], clock_div)) {
 		return -EIO;
@@ -761,12 +933,58 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	}
 #endif
 
+	/* Configure the clock fast to source defined in tree device 'clk_fast0' node */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast0))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FAST0].obj.cyhal_clock;
+	clock_div = DT_PROP(DT_NODELABEL(clk_fast0), clock_div);
+
+	rslt = cyhal_clock_reserve(clock_obj, &CYHAL_CLOCK_FAST[0]);
+	if (rslt == CY_RSLT_SUCCESS) {
+		rslt = cyhal_clock_set_divider(clock_obj, clock_div);
+	}
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the clock fast to source defined in tree device 'clk_fast1' node */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast1))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FAST1].obj.cyhal_clock;
+	clock_div = DT_PROP(DT_NODELABEL(clk_fast1), clock_div);
+
+	rslt = cyhal_clock_reserve(clock_obj, &CYHAL_CLOCK_FAST[1]);
+	if (rslt == CY_RSLT_SUCCESS) {
+		rslt = cyhal_clock_set_divider(clock_obj, clock_div);
+	}
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the clock mem to source defined in tree device 'clk_mem' node */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_mem))
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_MEM].obj.cyhal_clock;
+	clock_div = DT_PROP(DT_NODELABEL(clk_mem), clock_div);
+
+	rslt = cyhal_clock_reserve(clock_obj, &CYHAL_CLOCK_MEM);
+	if (rslt == CY_RSLT_SUCCESS) {
+		rslt = cyhal_clock_set_divider(clock_obj, clock_div);
+	}
+	if (rslt) {
+		return -EIO;
+	}
+#endif
+
 	/* Configure the clock peri to source defined in tree device 'clk_peri' node */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_peri))
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PERI].obj.cyhal_clock;
 	clock_div = DT_PROP(DT_NODELABEL(clk_peri), clock_div);
 
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+	rslt = cyhal_clock_reserve(clock_obj, &CYHAL_CLOCK_PERI[0]);
+#else
 	rslt = cyhal_clock_reserve(clock_obj, &CYHAL_CLOCK_PERI);
+#endif
 	if (rslt == CY_RSLT_SUCCESS) {
 		rslt = cyhal_clock_set_divider(clock_obj, clock_div);
 	}
@@ -824,27 +1042,15 @@ static int clock_control_infineon_cat_on_off(const struct device *dev, clock_con
 }
 
 static DEVICE_API(clock_control, clock_control_infineon_cat1_api) = {
-	.on = clock_control_infineon_cat_on_off,
-	.off = clock_control_infineon_cat_on_off
-};
+	.on = clock_control_infineon_cat_on_off, .off = clock_control_infineon_cat_on_off};
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
-		 clock_control_infineon_cat1_init,
-		 NULL,
-		 NULL,
-		 NULL,
-		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo), clock_control_infineon_cat1_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho),
-		 clock_control_infineon_cat1_init,
-		 NULL,
-		 NULL,
-		 NULL,
-		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho), clock_control_infineon_cat1_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif
