@@ -148,6 +148,15 @@ struct btp_l2cap_listen_v2_cmd {
 	uint32_t options;
 } __packed;
 
+#define BTP_L2CAP_CONNLESS_SEND				0x0d
+struct btp_l2cap_connless_send_cmd {
+	bt_addr_le_t address;
+	uint16_t psm;
+	uint32_t options;
+	uint16_t data_length;
+	uint8_t data[];
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
