@@ -4669,6 +4669,15 @@ Tracing:
   tests:
     - tracing
 
+u-blox Platforms:
+  status: maintained
+  maintainers:
+    - 3rang
+  files:
+    - boards/u-blox/
+  labels:
+    - "platform: u-blox"
+
 USB:
   status: maintained
   maintainers:
