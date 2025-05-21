@@ -233,7 +233,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/build/gen_relocate_app.py" = [
-    "B028",     # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
