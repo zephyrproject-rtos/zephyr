@@ -49,7 +49,7 @@ import warnings
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple, NewType, Tuple
+from typing import NamedTuple, NewType
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -297,7 +297,7 @@ def assign_to_correct_mem_region(
     return {MemoryRegion(memory_region): output_sections}
 
 
-def section_kinds_from_memory_region(memory_region: str) -> 'Tuple[set[SectionKind], str]':
+def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKind], str]':
     """
     Get the section kinds requested by the given memory region name.
 
