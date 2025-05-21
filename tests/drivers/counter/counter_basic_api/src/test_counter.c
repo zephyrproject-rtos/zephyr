@@ -103,7 +103,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
-	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+	DEVS_FOR_DT_COMPAT(espressif_esp32_counter)
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
