@@ -194,7 +194,7 @@ extern const struct bt_mesh_comp comp;
  * with a 100ms interval.
  */
 static struct bt_mesh_test_gatt gatt_param = {
-#if defined(CONFIG_BT_EXT_ADV)
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	/* (total transmit duration) / (transmit interval) */
 	.transmits = 1500 / 100,
 	.interval = 100,
@@ -448,6 +448,11 @@ static void test_tester_gatt(void)
 	gatt_param.interval = 1000;
 	gatt_param.service = MESH_SERVICE_PROXY;
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	/* Delay for low latency feature */
+	#if defined(CONFIG_BT_CTLR_LOW_LAT)
+	k_sleep(K_MSEC(100));
+	#endif
 
 	/* Allow DUT to suspend before scanning for gatt proxy beacons */
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
