@@ -22,6 +22,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_3: led_3 {
 			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
@@ -38,6 +39,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		reset_button: button {
 			label = "reset button";
 			gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
@@ -156,7 +158,6 @@
 		zephyr,resolution = <12>;
 		zephyr,vref-mv = <3300>;
 	};
-
 };
 
 &die_temp {
