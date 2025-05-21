@@ -516,15 +516,14 @@ static int ads1x1x_validate_sequence(const struct device *dev, const struct adc_
 
 	while (channels) {
 		channel = find_lsb_set(channels) - 1;
-		resolution = data->differential[channel] ? config->resolution : config->resolution - 1;
-
-		if (sequence->resolution != resolution) {
-			LOG_ERR("unsupported resolution %d", sequence->resolution);
+		if (channel >= config->channels) {
+			LOG_ERR("unsupported channel id '%d'", channel);
 			return -ENOTSUP;
 		}
 
-		if (channel >= config->channels) {
-			LOG_ERR("unsupported channel id '%d'", channel);
+		resolution = data->differential[channel] ? config->resolution : config->resolution - 1;
+		if (sequence->resolution != resolution) {
+			LOG_ERR("unsupported resolution %d", sequence->resolution);
 			return -ENOTSUP;
 		}
 
