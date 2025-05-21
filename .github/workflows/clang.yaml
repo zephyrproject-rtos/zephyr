@@ -18,7 +18,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -29,7 +29,7 @@ jobs:
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
       CCACHE_REMOTE_ONLY: "true"
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
-      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       BASE_REF: ${{ github.base_ref }}
     steps:
       - name: Apply container owner mismatch workaround
