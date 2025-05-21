@@ -150,6 +150,163 @@ static int adc_max32_read(const struct device *dev, const struct adc_sequence *s
 	return ret;
 }
 
+<<<<<<< Updated upstream
+=======
+#ifdef CONFIG_ADC_MAX32_STREAM
+static int start_read_stream(const struct device *dev, const struct adc_sequence *seq)
+{
+	struct max32_adc_data *data = dev->data;
+	int ret = 0;
+
+	if (seq->resolution != data->resolution) {
+		LOG_ERR("Unsupported resolution (%d)", seq->resolution);
+		return -ENOTSUP;
+	}
+	if (seq->channels == 0) {
+		return -EINVAL;
+	}
+	if ((data->channels & seq->channels) != seq->channels) {
+		return -EINVAL;
+	}
+
+	ret = Wrap_MXC_ADC_AverageConfig(seq->oversampling);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	data->ctx.asynchronous = 1;
+	data->sample_channels = seq->channels;
+
+	/* Here we use regular cb that does nothing, it should be
+	 * adc_complete_rtio_cb but the problem is dev struct
+	 * cannot be passed to HAL without some big changes
+	 * in the HAL layers, for now it is set like this
+	 */
+	ret = Wrap_MXC_ADC_StartConversionAsyncStream(&data->sample_channels, adc_complete_cb);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	return adc_context_wait_for_completion(&data->ctx);
+}
+
+void adc_max32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct max32_adc_data *data = (struct max32_adc_data *)dev->data;
+	const struct adc_sequence *sequence = (const struct adc_sequence *)iodev_sqe->sqe.userdata;
+	int rc;
+
+	if (data->no_mem == 1) {
+		data->no_mem = 0;
+		return;
+	}
+	data->sqe = iodev_sqe;
+
+	adc_context_lock(&data->ctx, false, NULL);
+	rc = start_read_stream(dev, sequence);
+
+	adc_context_release(&data->ctx, rc);
+
+	if (rc < 0) {
+		LOG_ERR("Error starting conversion (%d)", rc);
+	}
+
+}
+
+static const uint32_t adc_max32_resolution[] = {
+	[MAX32_12B_MODE] = 12,
+};
+
+static inline int adc_max32_convert_q31(q31_t *out, const uint8_t *buff,
+			enum max32_qscale_modes mode, uint8_t diff_mode,
+			uint16_t vref_mv, uint8_t adc_shift)
+{
+	int32_t data_in = 0;
+	uint32_t scale = BIT(adc_max32_resolution[mode]);
+
+	/* No Differential mode */
+	if (diff_mode) {
+		return -EINVAL;
+	}
+
+	uint32_t sensitivity = (vref_mv * (scale - 1)) / scale
+			 * 1000 / scale; /* uV / LSB */
+
+	if (mode == MAX32_12B_MODE) {
+		data_in = (buff[1] << 8) | buff[0];
+		if (diff_mode && (data_in & (BIT(adc_max32_resolution[mode] - 1)))) {
+			data_in |= ~BIT_MASK(adc_max32_resolution[mode]);
+		}
+	} else {
+		data_in = sys_get_be16(buff);
+	}
+
+	*out =  BIT(31 - adc_shift) * sensitivity / 1000000 * data_in;
+	return 0;
+}
+
+static int adc_max32_decoder_get_frame_count(const uint8_t *buffer, uint32_t channel,
+			   uint16_t *frame_count)
+{
+	const struct adc_max32_fifo_data *data = (const struct adc_max32_fifo_data *)buffer;
+
+	*frame_count = data->fifo_byte_count/ADC_MAX32_SAMPLE_SIZE;
+
+	return 0;
+}
+
+static int adc_max32_decoder_decode(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
+			  uint16_t max_count, void *data_out)
+{
+	const struct adc_max32_fifo_data *enc_data = (const struct adc_max32_fifo_data *)buffer;
+	const uint8_t *buffer_end =
+		buffer + sizeof(struct adc_max32_fifo_data) + enc_data->fifo_byte_count;
+	int count = 0;
+	uint8_t sample_num = 0;
+
+	if (buffer_end <= (buffer + *fit + sizeof(struct adc_max32_fifo_data))) {
+		return 0;
+	}
+
+	struct adc_data *data = (struct adc_data *)data_out;
+
+	memset(data, 0, sizeof(struct adc_data));
+	data->header.base_timestamp_ns = enc_data->timestamp;
+	data->header.reading_count = 1;
+
+	/* 32 is used because input parameter for __builtin_clz func is
+	 * unsigneg int (32 bits) and func will consider any input value
+	 * as 32 bit.
+	 */
+	data->shift = 32 - __builtin_clz(enc_data->vref_mv);
+
+	buffer += sizeof(struct adc_max32_fifo_data);
+	uint8_t sample_set_size = enc_data->sample_set_size;
+	/* Calculate which sample is decoded. */
+	if (*fit) {
+		sample_num = *fit / sample_set_size;
+	}
+
+	while (count < max_count && buffer < buffer_end) {
+		/* 125 KSPS - this can be calculated from
+		 * cnt and idle dts parameters but it is hardcoded for now
+		 */
+		data->readings[count].timestamp_delta = sample_num * (UINT32_C(1000000000) / 62500);
+		adc_max32_convert_q31(&data->readings[count].value, (buffer + *fit),
+				enc_data->max32_qscale_mode, enc_data->diff_mode,
+				enc_data->vref_mv, data->shift);
+
+
+		sample_num++;
+		*fit += sample_set_size;
+		count++;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ADC_MAX32_STREAM */
+
+>>>>>>> Stashed changes
 #ifdef CONFIG_ADC_ASYNC
 static int adc_max32_read_async(const struct device *dev, const struct adc_sequence *seq,
 				struct k_poll_signal *async)
