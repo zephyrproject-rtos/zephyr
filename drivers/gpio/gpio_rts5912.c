@@ -180,7 +180,7 @@ static int gpio_rts5912_configuration(const struct device *port, gpio_pin_t pin,
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			pin_output_high(port, pin);
-		} else {
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			pin_output_low(port, pin);
 		}
 	}
