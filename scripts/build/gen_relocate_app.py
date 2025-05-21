@@ -551,9 +551,8 @@ def get_obj_filename(all_obj_files, filename):
     obj_filename = filename.split("/")[-1] + ".obj"
 
     for obj_file in all_obj_files:
-        if obj_file.name == obj_filename:
-            if filename.split("/")[-2] in obj_file.parent.name:
-                return str(obj_file)
+        if obj_file.name == obj_filename and filename.split("/")[-2] in obj_file.parent.name:
+            return str(obj_file)
 
 
 # Extracts all possible components for the input string:
