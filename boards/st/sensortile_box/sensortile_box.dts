@@ -24,6 +24,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led {
 			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -37,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User PB1";
 			gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
@@ -138,7 +140,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>,
+		<&gpioe 10 GPIO_ACTIVE_LOW>;
 
 	lis2dw12: lis2dw12@0 {
 		compatible = "st,lis2dw12";
@@ -168,6 +171,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+
 	spbtle_1s_sensortile_box: spbtle-1s@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
@@ -208,7 +212,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -229,10 +232,12 @@ zephyr_udc0: &usbotg_fs {
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
+
 		slot1_partition: partition@8c000 {
 			label = "image-1";
 			reg = <0x0008C000 DT_SIZE_K(432)>;
 		};
+
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
 			reg = <0x000F8000 DT_SIZE_K(24)>;
