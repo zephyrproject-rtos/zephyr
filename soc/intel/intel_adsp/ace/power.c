@@ -273,6 +273,63 @@ __imr void pm_state_imr_restore(void)
 }
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
+void intel_adsp_power_off(void)
+{
+	uint32_t cpu = arch_proc_id();
+	int ret;
+
+	soc_cpus_active[cpu] = false;
+	ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
+	__ASSERT_NO_MSG(ret == 0);
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+	/* save storage and restore information to imr */
+	__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
+#endif
+	struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
+
+	imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+	sys_cache_data_flush_and_invd_all();
+	imr_layout->imr_state.header.imr_restore_vector =
+			(void *)boot_entry_d3_restore;
+	imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
+	sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
+
+	/* save CPU context here
+		* when _restore_core_context() is called, it will return directly to
+		* the caller of this procedure
+		* any changes to CPU context after _save_core_context
+		* will be lost when power_down is executed
+		* Only data in the imr region survives
+		*/
+	xthal_window_spill();
+	_save_core_context(cpu);
+
+	/* save LPSRAM - a simple copy */
+	memcpy(global_imr_ram_storage, (void *)LP_SRAM_BASE, LP_SRAM_SIZE);
+
+	/* save HPSRAM - a multi step procedure, executed by a TLB driver
+		* the TLB driver will change memory mapping
+		* leaving the system not operational
+		* it must be called directly here,
+		* just before power_down
+		*/
+	const struct device *tlb_dev = DEVICE_DT_GET(DT_NODELABEL(tlb));
+
+	__ASSERT_NO_MSG(tlb_dev != NULL);
+	const struct intel_adsp_tlb_api *tlb_api =
+			(struct intel_adsp_tlb_api *)tlb_dev->api;
+
+	tlb_api->save_context(global_imr_ram_storage+LP_SRAM_SIZE);
+#else
+	imr_layout->imr_state.header.imr_restore_vector =
+			(void *)rom_entry;
+	sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
+	/* do power down - this function won't return */
+	power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
@@ -290,60 +347,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SOFT_OFF:
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
-		if (cpu == 0) {
-			soc_cpus_active[cpu] = false;
-			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
-			__ASSERT_NO_MSG(ret == 0);
-#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
-			/* save storage and restore information to imr */
-			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
-#endif
-			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
-
-			imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
-#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
-			sys_cache_data_flush_and_invd_all();
-			imr_layout->imr_state.header.imr_restore_vector =
-					(void *)boot_entry_d3_restore;
-			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
-			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
-
-			/* save CPU context here
-			 * when _restore_core_context() is called, it will return directly to
-			 * the caller of this procedure
-			 * any changes to CPU context after _save_core_context
-			 * will be lost when power_down is executed
-			 * Only data in the imr region survives
-			 */
-			xthal_window_spill();
-			_save_core_context(cpu);
-
-			/* save LPSRAM - a simple copy */
-			memcpy(global_imr_ram_storage, (void *)LP_SRAM_BASE, LP_SRAM_SIZE);
-
-			/* save HPSRAM - a multi step procedure, executed by a TLB driver
-			 * the TLB driver will change memory mapping
-			 * leaving the system not operational
-			 * it must be called directly here,
-			 * just before power_down
-			 */
-			const struct device *tlb_dev = DEVICE_DT_GET(DT_NODELABEL(tlb));
-
-			__ASSERT_NO_MSG(tlb_dev != NULL);
-			const struct intel_adsp_tlb_api *tlb_api =
-					(struct intel_adsp_tlb_api *)tlb_dev->api;
-
-			tlb_api->save_context(global_imr_ram_storage+LP_SRAM_SIZE);
-#else
-			imr_layout->imr_state.header.imr_restore_vector =
-					(void *)rom_entry;
-			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
-#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-			/* do power down - this function won't return */
-			power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
-		} else {
+		if (cpu == 0)
+			intel_adsp_power_off();
+		else
 			power_gate_entry(cpu);
-		}
 		break;
 
 	/* Only core 0 handles this state */
