@@ -266,7 +266,8 @@ def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[
                     warnings.warn(
                         "Common variable found. Move "
                         + symbol.name
-                        + " to bss by assigning it to 0/NULL"
+                        + " to bss by assigning it to 0/NULL",
+                        stacklevel=2,
                     )
 
     return out
@@ -608,10 +609,12 @@ def create_dict_wrt_mem():
         for file_glob in file_list:
             glob_results = glob.glob(file_glob)
             if not glob_results:
-                warnings.warn("File: " + file_glob + " Not found")
+                warnings.warn("File: " + file_glob + " Not found", stacklevel=2)
                 continue
             elif len(glob_results) > 1:
-                warnings.warn("Regex in file lists is deprecated, please use file(GLOB) instead")
+                warnings.warn(
+                    "Regex in file lists is deprecated, please use file(GLOB) instead", stacklevel=2
+                )
             file_name_list.extend(glob_results)
         if len(file_name_list) == 0:
             continue
