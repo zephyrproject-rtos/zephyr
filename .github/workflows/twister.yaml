@@ -127,7 +127,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -148,7 +148,7 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
-      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
     steps:
       - name: Print cloud service information
         run: |
