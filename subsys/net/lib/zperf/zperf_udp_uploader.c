@@ -118,7 +118,7 @@ static inline int zperf_upload_fin(int sock,
 			}
 
 			ret = zsock_recv(sock, stats, sizeof(stats), 0);
-			if (ret == -EAGAIN) {
+			if (ret < 0 && errno == EAGAIN) {
 				NET_WARN("Stats receive timeout");
 			} else if (ret < 0) {
 				NET_ERR("Failed to receive packet (%d)", errno);
