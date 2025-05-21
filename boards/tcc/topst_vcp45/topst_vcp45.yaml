@@ -1,0 +1,9 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+identifier: topst_vcp45
+name: Telechips TOPST VCP45 board for Cortex-R5F
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
