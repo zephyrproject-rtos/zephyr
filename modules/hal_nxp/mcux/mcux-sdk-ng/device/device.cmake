@@ -38,14 +38,18 @@ endif()
 
 set(CONFIG_MCUX_COMPONENT_device.system ON)
 set(CONFIG_MCUX_COMPONENT_device.CMSIS ON)
-set(CONFIG_MCUX_COMPONENT_driver.clock ON)
+if(NOT CONFIG_CLOCK_CONTROL_ARM_SCMI)
+  set(CONFIG_MCUX_COMPONENT_driver.clock ON)
+endif()
 
-if((NOT CONFIG_SOC_MIMXRT798S_HIFI1) AND (NOT CONFIG_SOC_MIMXRT798S_HIFI4))
+if((NOT CONFIG_SOC_MIMXRT798S_HIFI1) AND (NOT CONFIG_SOC_MIMXRT798S_HIFI4) AND (NOT CONFIG_SOC_MIMX94398_A55))
   set(CONFIG_MCUX_COMPONENT_driver.power ON)
 endif()
 
-set(CONFIG_MCUX_COMPONENT_driver.reset ON)
-set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+if(NOT CONFIG_SOC_MIMX94398_A55)
+  set(CONFIG_MCUX_COMPONENT_driver.reset ON)
+  set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+endif()
 
 # load device variables
 include(${mcux_device_folder}/variable.cmake)
