@@ -33,7 +33,9 @@ tests:
       - memc
     depends_on: memc
     filter: dt_compat_enabled("renesas,ra-sdram")
-    platform_allow: ek_ra8d1
+    platform_allow:
+      - ek_ra8d1
+      - ra8d1_vision_board
   drivers.memc.max32_hpb:
     tags:
       - drivers
