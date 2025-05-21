@@ -1,0 +1,235 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ubx_evk_iris_w1_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "u-blox evk_iris_w1 rw612";
+	compatible = "u-blox,ubx_evk_iris_w1_rw612";
+
+	aliases {
+		led0 = &rgb_red;
+		led1 = &rgb_green;
+		led2 = &rgb_blue;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		watchdog0 = &wwdt;
+		usart-0 = &flexcomm3;
+		i2c-0 = &flexcomm2;
+		pwm-0 = &sctimer;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &w25q512jvfiq;
+		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
+		zephyr,flash-controller = &w25q512jvfiq;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm3;
+	};
+
+	rgb_leds {
+		compatible = "gpio-leds";
+
+		rgb_blue: led_1 {
+			gpios = <&hsgpio1 0xa GPIO_ACTIVE_LOW>;
+			label = "IRIS RGB_BLUE";
+		};
+
+		rgb_green: led_2 {
+			gpios = <&hsgpio1 0xb GPIO_ACTIVE_LOW>;
+			label = "IRIS RGB_GREEN";
+		};
+
+		rgb_red: led_3 {
+			gpios = <&hsgpio1 0xc GPIO_ACTIVE_LOW>;
+			label = "IRIS RGB_RED";
+		};
+	};
+
+	sw {
+		compatible = "gpio-keys";
+
+		user_button_0: sw_1 {
+			label = "IRIS SWITCH_1"; /* GPIO45 */
+			gpios = <&hsgpio1 0xd GPIO_ACTIVE_LOW>;
+			zephyr,code = <0x2>;
+		};
+
+		user_button_1: sw_2 {
+			label = "IRIS SWITCH_2"; /* GPIO51 */
+			gpios = <&hsgpio1 0x13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <0x3>;
+		};
+	};
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&hsgpio0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	ahb-boundary = "1024";
+	rx-clock-source = <1>;
+	rx-clock-source-b = <1>;
+
+	/* external flash */
+	w25q512jvfiq: w25q512jvfiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(64 * 8)>;
+		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		spi-max-frequency = <104000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_M(3)>;
+			};
+
+			slot1_partition: partition@320000 {
+				label = "image-1";
+				reg = <0x00320000 DT_SIZE_M(3)>;
+			};
+
+			storage_partition: partition@620000 {
+				label = "storage";
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+			};
+		};
+	};
+
+	aps6404l: aps6404l@2 {
+		compatible = "nxp,imx-flexspi-aps6404l";
+		/* APS6404L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <2>;
+		spi-max-frequency = <109000000>;
+
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+	};
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
+};
+
+&wwdt {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
+};
+
+&systick {
+	status = "disabled";
+};
+
+&sctimer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
+};
+
+/* RTC is the wakeup source for PM modes 3,4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+/*
+ * the default resistors on the board breaks out the MOSI/MISO
+ * pins to the nets labelled "UART" which go to J1 2 and 4,
+ * but we are using it for spi mosi and miso here.
+ * SCK is on J2 6 as labelled.
+ */
+&flexcomm1 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm1_spi>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
