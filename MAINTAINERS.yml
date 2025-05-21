@@ -3918,6 +3918,8 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
+    - yangbolu1991
+    - Zhiqiang-Hou
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
