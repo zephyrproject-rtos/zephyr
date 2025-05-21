@@ -29,7 +29,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -47,21 +46,25 @@
 			reg = <0x00000000 DT_SIZE_K(80)>;
 			read-only;
 		};
+
 		/* Secure image primary slot */
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(180)>;
 		};
+
 		/* Non-secure image primary slot */
 		slot0_ns_partition: partition@41000 {
 			label = "image-0-nonsecure";
 			reg = <0x00041000 DT_SIZE_K(36)>;
 		};
+
 		/* Secure image secondary slot */
 		slot1_partition: partition@4a000 {
 			label = "image-1";
 			reg = <0x0004a000 DT_SIZE_K(180)>;
 		};
+
 		/* Non-secure image secondary slot */
 		slot1_ns_partition: partition@77000 {
 			label = "image-1-nonsecure";
