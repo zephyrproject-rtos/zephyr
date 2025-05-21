@@ -15,89 +15,98 @@
 #ifndef ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
 #define ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
 
-#define _TEXT_SECTION_NAME text
+#define _TEXT_SECTION_NAME   text
 #define _RODATA_SECTION_NAME rodata
-#define _CTOR_SECTION_NAME ctors
+#define _CTOR_SECTION_NAME   ctors
 /* Linker issue with XIP where the name "data" cannot be used */
-#define _DATA_SECTION_NAME datas
-#define _BSS_SECTION_NAME bss
+#define _DATA_SECTION_NAME   datas
+#define _BSS_SECTION_NAME    bss
 #define _NOINIT_SECTION_NAME noinit
 
-#define _APP_SMEM_SECTION_NAME		app_smem
-#define _APP_DATA_SECTION_NAME		app_datas
-#define _APP_BSS_SECTION_NAME		app_bss
-#define _APP_NOINIT_SECTION_NAME	app_noinit
+#define _APP_SMEM_SECTION_NAME   app_smem
+#define _APP_DATA_SECTION_NAME   app_datas
+#define _APP_BSS_SECTION_NAME    app_bss
+#define _APP_NOINIT_SECTION_NAME app_noinit
 
-#define _APP_SMEM_PINNED_SECTION_NAME	app_smem_pinned
+#define _APP_SMEM_PINNED_SECTION_NAME app_smem_pinned
 
 #define _UNDEFINED_SECTION_NAME undefined
 
 /* Interrupts */
-#define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table
-#define _IRQ_VECTOR_TABLE_SECTION_SYMS	.gnu.linkonce.irq_vector_table*
+#define _IRQ_VECTOR_TABLE_SECTION_NAME .gnu.linkonce.irq_vector_table
+/* clang-format off */
+#define _IRQ_VECTOR_TABLE_SECTION_SYMS .gnu.linkonce.irq_vector_table*
+/* clang-format on */
 
-#define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table
-#define _SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.sw_isr_table*
+#define _SW_ISR_TABLE_SECTION_NAME .gnu.linkonce.sw_isr_table
+/* clang-format off */
+#define _SW_ISR_TABLE_SECTION_SYMS .gnu.linkonce.sw_isr_table*
+/* clang-format on */
 
 #ifdef CONFIG_SHARED_INTERRUPTS
-#define _SHARED_SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.shared_sw_isr_table
-#define _SHARED_SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.shared_sw_isr_table*
+#define _SHARED_SW_ISR_TABLE_SECTION_NAME .gnu.linkonce.shared_sw_isr_table
+/* clang-format off */
+#define _SHARED_SW_ISR_TABLE_SECTION_SYMS .gnu.linkonce.shared_sw_isr_table*
+/* clang-format on */
 #endif /* CONFIG_SHARED_INTERRUPTS */
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
-#define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
-#define _TI_CCFG_SECTION_NAME	        .ti_ccfg
+#define _KINETIS_FLASH_CONFIG_SECTION_NAME kinetis_flash_config
+#define _TI_CCFG_SECTION_NAME              .ti_ccfg
+#define _TI_SCFG_SECTION_NAME              .ti_scfg
 
-#define _ITCM_SECTION_NAME		.itcm
+#define _ITCM_SECTION_NAME .itcm
 
-#define _DTCM_DATA_SECTION_NAME	        .dtcm_data
-#define _DTCM_BSS_SECTION_NAME		.dtcm_bss
-#define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
+#define _DTCM_DATA_SECTION_NAME   .dtcm_data
+#define _DTCM_BSS_SECTION_NAME    .dtcm_bss
+#define _DTCM_NOINIT_SECTION_NAME .dtcm_noinit
 
-#define _OCM_DATA_SECTION_NAME	        .ocm_data
-#define _OCM_BSS_SECTION_NAME		.ocm_bss
+#define _OCM_DATA_SECTION_NAME .ocm_data
+#define _OCM_BSS_SECTION_NAME  .ocm_bss
 #endif
 
-#define _IMX_BOOT_CONF_SECTION_NAME	.boot_hdr.conf
-#define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
-#define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
-#define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
+#define _IMX_BOOT_CONF_SECTION_NAME      .boot_hdr.conf
+#define _IMX_BOOT_DATA_SECTION_NAME      .boot_hdr.data
+#define _IMX_BOOT_IVT_SECTION_NAME       .boot_hdr.ivt
+#define _IMX_BOOT_DCD_SECTION_NAME       .boot_hdr.dcd_data
 #define _IMX_BOOT_CONTAINER_SECTION_NAME .boot_hdr.container
 
-#define _STM32_BACKUP_SRAM_SECTION_NAME	.stm32_backup_sram
+#define _STM32_BACKUP_SRAM_SECTION_NAME .stm32_backup_sram
 
 #ifdef CONFIG_NOCACHE_MEMORY
-#define _NOCACHE_SECTION_NAME nocache
+#define _NOCACHE_SECTION_NAME      nocache
 #define _NOCACHE_LOAD_SECTION_NAME nocache_load
 #endif
 
 /* Symbol table section */
 #if defined(CONFIG_SYMTAB)
-#define _SYMTAB_INFO_SECTION_NAME	.gnu.linkonce.symtab.info
-#define _SYMTAB_ENTRY_SECTION_NAME	.gnu.linkonce.symtab.entry
-#define _SYMTAB_SECTION_SYMS		.gnu.linkonce.symtab*
+#define _SYMTAB_INFO_SECTION_NAME  .gnu.linkonce.symtab.info
+#define _SYMTAB_ENTRY_SECTION_NAME .gnu.linkonce.symtab.entry
+/* clang-format off */
+#define _SYMTAB_SECTION_SYMS       .gnu.linkonce.symtab*
+/* clang-format on */
 #endif /* CONFIG_SYMTAB */
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
-#define BOOT_TEXT_SECTION_NAME		boot_text
-#define BOOT_BSS_SECTION_NAME		boot_bss
-#define BOOT_RODATA_SECTION_NAME	boot_rodata
-#define BOOT_DATA_SECTION_NAME		boot_data
-#define BOOT_NOINIT_SECTION_NAME	boot_noinit
+#define BOOT_TEXT_SECTION_NAME   boot_text
+#define BOOT_BSS_SECTION_NAME    boot_bss
+#define BOOT_RODATA_SECTION_NAME boot_rodata
+#define BOOT_DATA_SECTION_NAME   boot_data
+#define BOOT_NOINIT_SECTION_NAME boot_noinit
 #endif
 
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
-#define PINNED_TEXT_SECTION_NAME	pinned_text
-#define PINNED_BSS_SECTION_NAME		pinned_bss
-#define PINNED_RODATA_SECTION_NAME	pinned_rodata
-#define PINNED_DATA_SECTION_NAME	pinned_data
-#define PINNED_NOINIT_SECTION_NAME	pinned_noinit
+#define PINNED_TEXT_SECTION_NAME   pinned_text
+#define PINNED_BSS_SECTION_NAME    pinned_bss
+#define PINNED_RODATA_SECTION_NAME pinned_rodata
+#define PINNED_DATA_SECTION_NAME   pinned_data
+#define PINNED_NOINIT_SECTION_NAME pinned_noinit
 #endif
 
 #if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
-#define ONDEMAND_TEXT_SECTION_NAME	ondemand_text
-#define ONDEMAND_RODATA_SECTION_NAME	ondemand_rodata
+#define ONDEMAND_TEXT_SECTION_NAME   ondemand_text
+#define ONDEMAND_RODATA_SECTION_NAME ondemand_rodata
 #endif
 
 /* Short section references for use in ASM files */
@@ -106,45 +115,45 @@
 #define TEXT text
 
 /* Various data type section names */
-#define BSS bss
+#define BSS    bss
 #define RODATA rodata
-#define DATA data
+#define DATA   data
 #define NOINIT noinit
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
-#define BOOT_TEXT			BOOT_TEXT_SECTION_NAME
-#define BOOT_BSS			BOOT_BSS_SECTION_NAME
-#define BOOT_RODATA			BOOT_RODATA_SECTION_NAME
-#define BOOT_DATA			BOOT_DATA_SECTION_NAME
-#define BOOT_NOINIT			BOOT_NOINIT_SECTION_NAME
+#define BOOT_TEXT   BOOT_TEXT_SECTION_NAME
+#define BOOT_BSS    BOOT_BSS_SECTION_NAME
+#define BOOT_RODATA BOOT_RODATA_SECTION_NAME
+#define BOOT_DATA   BOOT_DATA_SECTION_NAME
+#define BOOT_NOINIT BOOT_NOINIT_SECTION_NAME
 #else
-#define BOOT_TEXT			TEXT
-#define BOOT_BSS			BSS
-#define BOOT_RODATA			RODATA
-#define BOOT_DATA			DATA
-#define BOOT_NOINIT			NOINIT
+#define BOOT_TEXT   TEXT
+#define BOOT_BSS    BSS
+#define BOOT_RODATA RODATA
+#define BOOT_DATA   DATA
+#define BOOT_NOINIT NOINIT
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
-#define PINNED_TEXT			PINNED_TEXT_SECTION_NAME
-#define PINNED_BSS			PINNED_BSS_SECTION_NAME
-#define PINNED_RODATA			PINNED_RODATA_SECTION_NAME
-#define PINNED_DATA			PINNED_DATA_SECTION_NAME
-#define PINNED_NOINIT			PINNED_NOINIT_SECTION_NAME
+#define PINNED_TEXT   PINNED_TEXT_SECTION_NAME
+#define PINNED_BSS    PINNED_BSS_SECTION_NAME
+#define PINNED_RODATA PINNED_RODATA_SECTION_NAME
+#define PINNED_DATA   PINNED_DATA_SECTION_NAME
+#define PINNED_NOINIT PINNED_NOINIT_SECTION_NAME
 #else
-#define PINNED_TEXT			TEXT
-#define PINNED_BSS			BSS
-#define PINNED_RODATA			RODATA
-#define PINNED_DATA			DATA
-#define PINNED_NOINIT			NOINIT
+#define PINNED_TEXT   TEXT
+#define PINNED_BSS    BSS
+#define PINNED_RODATA RODATA
+#define PINNED_DATA   DATA
+#define PINNED_NOINIT NOINIT
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
-#define ONDEMAND_TEXT			ONDEMAND_TEXT_SECTION_NAME
-#define ONDEMAND_RODATA		ONDEMAND_RODATA_SECTION_NAME
+#define ONDEMAND_TEXT   ONDEMAND_TEXT_SECTION_NAME
+#define ONDEMAND_RODATA ONDEMAND_RODATA_SECTION_NAME
 #else
-#define ONDEMAND_TEXT			TEXT
-#define ONDEMAND_RODATA		RODATA
+#define ONDEMAND_TEXT   TEXT
+#define ONDEMAND_RODATA RODATA
 #endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 
 #endif /* _ASMLANGUAGE */
