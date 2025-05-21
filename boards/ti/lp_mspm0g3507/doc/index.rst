@@ -110,25 +110,25 @@ earlier versions to use a branch of open OCD onto the device.
 Before OpenOCD is public, one can clone `This Repo <https://github.com/openocd-org/openocd.git>`_,
 and then this can be built with
 
-```
-cd <cloned_OPENOCD_dir>
-./bootstrap (when building from the git repository)
-./configure
-make
-sudo make install
-```
+.. code-block:: console
+
+   $ cd <cloned_OPENOCD_dir>
+   $ ./bootstrap (when building from the git repository)
+   $ ./configure
+   $ make
+   $ sudo make install
 
 Then after the build, it is possible to flash the device by passing additional arguments to the flash command
 
-```
-west flash --openocd <path to cloned dir>/src/openocd --openocd-search <path to cloned dir>/tcl
-```
+.. code-block:: console
+
+   $ west flash --openocd <path to cloned dir>/src/openocd --openocd-search <path to cloned dir>/tcl
 
 Flashing using JLINK
 
-```
-west flash --runner=jlink
-```
+.. code-block:: console
+
+   $ west flash --runner jlink
 
 Debugging
 =========
