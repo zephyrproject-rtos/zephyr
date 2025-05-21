@@ -192,7 +192,6 @@ BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= SAM_GMAC_PHY_CONNECTION
 		DEFN_RX_FRAG(n)								\
 		DEFN_TX_FRAG(n)								\
 		DEFN_TX_FRAME(n)
-DT_INST_FOREACH_STATUS_OKAY(SAM_GMAC_LISTS_DEFN)
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
@@ -1763,7 +1762,7 @@ static const struct device *eth_sam_gmac_get_phy(const struct device *dev)
 	return cfg->phy_dev;
 }
 
-static void eth0_iface_init(struct net_if *iface)
+static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_sam_dev_data *const dev_data = dev->data;
@@ -2063,7 +2062,7 @@ static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev)
 #endif
 
 static const struct ethernet_api eth_api = {
-	.iface_api.init = eth0_iface_init,
+	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_sam_gmac_get_capabilities,
 	.set_config = eth_sam_gmac_set_config,
@@ -2076,240 +2075,192 @@ static const struct ethernet_api eth_api = {
 #endif
 };
 
-static void eth0_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, gmac, irq),
-		    DT_INST_IRQ_BY_NAME(0, gmac, priority),
-		    queue0_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, gmac, irq));
-
+#define DEFN_IRQ_CONFIG(n, x, name)							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),				\
+			DT_INST_IRQ_BY_NAME(n, name, priority),				\
+			queue##x##_isr, DEVICE_DT_INST_GET(n), 0);			\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));
+#define DEFN_IRQ_CONFIG_0(n) DEFN_IRQ_CONFIG(n, 0, gmac)
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q1, irq),
-		    DT_INST_IRQ_BY_NAME(0, q1, priority),
-		    queue1_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, q1, irq));
+#define DEFN_IRQ_CONFIG_1(n) DEFN_IRQ_CONFIG(n, 1, q1)
+#else
+#define DEFN_IRQ_CONFIG_1(n)
 #endif
-
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q2, irq),
-		    DT_INST_IRQ_BY_NAME(0, q1, priority),
-		    queue2_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, q2, irq));
+#define DEFN_IRQ_CONFIG_2(n) DEFN_IRQ_CONFIG(n, 2, q2)
+#else
+#define DEFN_IRQ_CONFIG_2(n)
 #endif
-
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q3, irq),
-		    DT_INST_IRQ_BY_NAME(0, q3, priority),
-		    queue3_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, q3, irq));
+#define DEFN_IRQ_CONFIG_3(n) DEFN_IRQ_CONFIG(n, 3, q3)
+#else
+#define DEFN_IRQ_CONFIG_3(n)
 #endif
-
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q4, irq),
-		    DT_INST_IRQ_BY_NAME(0, q4, priority),
-		    queue4_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, q4, irq));
+#define DEFN_IRQ_CONFIG_4(n) DEFN_IRQ_CONFIG(n, 4, q4)
+#else
+#define DEFN_IRQ_CONFIG_4(n)
 #endif
-
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q5, irq),
-		    DT_INST_IRQ_BY_NAME(0, q5, priority),
-		    queue5_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, q5, irq));
+#define DEFN_IRQ_CONFIG_5(n) DEFN_IRQ_CONFIG(n, 5, q5)
+#else
+#define DEFN_IRQ_CONFIG_5(n)
 #endif
-}
+#define SAM_GMAC_IRQ_CONFIG_DEFN(n)							\
+		static void eth##n##_irq_config(void)					\
+		{									\
+			DEFN_IRQ_CONFIG_0(n)						\
+			DEFN_IRQ_CONFIG_1(n)						\
+			DEFN_IRQ_CONFIG_2(n)						\
+			DEFN_IRQ_CONFIG_3(n)						\
+			DEFN_IRQ_CONFIG_4(n)						\
+			DEFN_IRQ_CONFIG_5(n)						\
+		}
 
-PINCTRL_DT_INST_DEFINE(0);
+#define SAM_GMAC_PINCTRL_DEFN(n) PINCTRL_DT_INST_DEFINE(n);
 
-static const struct eth_sam_dev_cfg eth0_config = {
-	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(0)),
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
-	.clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(0)),
+#define CFG_CLK_DEFN(n) .clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(n)),
+#else
+#define CFG_CLK_DEFN(n)
 #endif
-	.config_func = eth0_irq_config,
-	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))
-	.num_queues = DT_INST_PROP(0, num_queues),
-};
+#define SAM_GMAC_CFG_DEFN(n)								\
+		static const struct eth_sam_dev_cfg eth##n##_config = {			\
+			.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
+			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+			CFG_CLK_DEFN(n)							\
+			.config_func = eth##n##_irq_config,				\
+			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
+			.num_queues = DT_INST_PROP(n, num_queues),			\
+		};
 
-static struct eth_sam_dev_data eth0_data = {
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-	.mac_addr = DT_INST_PROP(0, local_mac_address),
+#define DEFN_RX_FLAG_LIST_0(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE0_RX_DESC_IDX],
+#if (GMAC_PRIORITY_QUEUE_NUM >= 1) && (GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1)
+#define DEFN_RX_FLAG_LIST_1(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE1_RX_DESC_IDX],
+#else
+#define DEFN_RX_FLAG_LIST_1(n)
 #endif
-	.queue_list = {
-		{
-			.que_idx = GMAC_QUE_0,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE0_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE0_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE0_RX_DESC_IDX],
+#if (GMAC_PRIORITY_QUEUE_NUM >= 2) && (GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2)
+#define DEFN_RX_FLAG_LIST_2(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE2_RX_DESC_IDX],
+#else
+#define DEFN_RX_FLAG_LIST_2(n)
+#endif
+#if (GMAC_PRIORITY_QUEUE_NUM >= 3) && (GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3)
+#define DEFN_RX_FLAG_LIST_3(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE3_RX_DESC_IDX],
+#else
+#define DEFN_RX_FLAG_LIST_3(n)
+#endif
+#if (GMAC_PRIORITY_QUEUE_NUM >= 4) && (GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4)
+#define DEFN_RX_FLAG_LIST_4(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE4_RX_DESC_IDX],
+#else
+#define DEFN_RX_FLAG_LIST_4(n)
+#endif
+#if (GMAC_PRIORITY_QUEUE_NUM >= 5) && (GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5)
+#define DEFN_RX_FLAG_LIST_5(n)								\
+		.rx_frag_list = &rx_frag_list##n##_que[PRIORITY_QUEUE5_RX_DESC_IDX],
+#else
+#define DEFN_RX_FLAG_LIST_5(n)
+#endif
+
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE0_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
+#define BUF_TX_FRAG_LIST_QUE(n, x)							\
+		(uint32_t *)&tx_frag_list##n##_que[PRIORITY_QUEUE##x##_TX_DESC_IDX]
+#define DEFN_TX_FLAG_LIST(n, x)								\
+		.tx_frag_list = {							\
+			.buf = BUF_TX_FRAG_LIST_QUE(n, x),				\
+			.len = MAIN_QUEUE_TX_DESC_COUNT,				\
+		},
+
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[0 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			},
-#endif
-#endif
+#define BUF_TX_FRAME_LIST_QUE (uint32_t *)&tx_frame_list##n##_que[x * NET_PKT_PER_QUE]
+#define DEFN_TX_FRAME_LIST(n, x)							\
+		.tx_frames = {								\
+			.buf = BUF_TX_FRAME_LIST_QUE,					\
+			.len = NET_PKT_PER_QUE,						\
+		},
+#else /* CONFIG_PTP_CLOCK_SAM_GMAC */
+#define DEFN_TX_FRAME_LIST(n, x)
+#endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
+#else /*GMAC_MULTIPLE_TX_PACKETS*/
+#define DEFN_TX_FLAG_LIST(n, x)
+#define DEFN_TX_FRAME_LIST(n, x)
+#endif /*GMAC_MULTIPLE_TX_PACKETS*/
+
+#define BUF_RX_DESC_QUE(n, x) &rx_desc##n##_que[PRIORITY_QUEUE##x##_RX_DESC_IDX]
+#define BUF_TX_DESC_QUE(n, x) &tx_desc##n##_que[PRIORITY_QUEUE##x##_TX_DESC_IDX]
+#define DEFN_DATA_QUEUE_LIST(n, x)							\
+		{									\
+			.que_idx = GMAC_QUE_##x,					\
+			.rx_desc_list = {						\
+				.buf = BUF_RX_DESC_QUE(n, x),				\
+				.len = MAIN_QUEUE_RX_DESC_COUNT,			\
+			},								\
+			.tx_desc_list = {						\
+				.buf = BUF_TX_DESC_QUE(n, x),				\
+				.len = MAIN_QUEUE_TX_DESC_COUNT,			\
+			},								\
+			DEFN_RX_FLAG_LIST_##x(n)					\
+			DEFN_TX_FLAG_LIST(n, x)						\
+			DEFN_TX_FRAME_LIST(n, x)					\
+		},
+#define DEFN_DATA_QUEUE_LIST_0(n) DEFN_DATA_QUEUE_LIST(n, 0)
 #if GMAC_PRIORITY_QUEUE_NUM >= 1
-		}, {
-			.que_idx = GMAC_QUE_1,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE1_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE1_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE1_RX_DESC_IDX],
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE1_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[1 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			}
-#endif
-#endif
-#endif
+
+#define DEFN_DATA_QUEUE_LIST_1(n) DEFN_DATA_QUEUE_LIST(n, 1)
+#else
+#define DEFN_DATA_QUEUE_LIST_1(n)
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 2
-		}, {
-			.que_idx = GMAC_QUE_2,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE2_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE2_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE2_RX_DESC_IDX],
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE2_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[2 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			}
-#endif
-#endif
-#endif
+#define DEFN_DATA_QUEUE_LIST_2(n) DEFN_DATA_QUEUE_LIST(n, 2)
+#else
+#define DEFN_DATA_QUEUE_LIST_2(n)
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 3
-		}, {
-			.que_idx = GMAC_QUE_3,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE3_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE3_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE3_RX_DESC_IDX],
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE3_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[3 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			}
-#endif
-#endif
-#endif
+#define DEFN_DATA_QUEUE_LIST_3(n) DEFN_DATA_QUEUE_LIST(n, 3)
+#else
+#define DEFN_DATA_QUEUE_LIST_3(n)
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 4
-		}, {
-			.que_idx = GMAC_QUE_4,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE4_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE4_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE4_RX_DESC_IDX],
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE4_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[4 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			}
-#endif
-#endif
-#endif
+#define DEFN_DATA_QUEUE_LIST_4(n) DEFN_DATA_QUEUE_LIST(n, 4)
+#else
+#define DEFN_DATA_QUEUE_LIST_4(n)
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 5
-		}, {
-			.que_idx = GMAC_QUE_5,
-			.rx_desc_list = {
-				.buf = &rx_desc0_que[PRIORITY_QUEUE5_RX_DESC_IDX],
-				.len = MAIN_QUEUE_RX_DESC_COUNT,
-			},
-			.tx_desc_list = {
-				.buf = &tx_desc0_que[PRIORITY_QUEUE5_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE5_RX_DESC_IDX],
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-			.tx_frag_list = {
-				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE5_TX_DESC_IDX],
-				.len = MAIN_QUEUE_TX_DESC_COUNT,
-			},
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			.tx_frames = {
-				.buf = (uint32_t *)&tx_frame_list0_que[5 * NET_PKT_PER_QUE],
-				.len = NET_PKT_PER_QUE,
-			}
+#define DEFN_DATA_QUEUE_LIST_5(n) DEFN_DATA_QUEUE_LIST(n, 5)
+#else
+#define DEFN_DATA_QUEUE_LIST_5(n)
 #endif
-#endif
-#endif
-#endif
-		}
-	},
-};
+#define SAM_GMAC_DATA_DEFN(n)								\
+		static struct eth_sam_dev_data eth##n##_data = {			\
+			.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0U}),	\
+			.queue_list = {							\
+				DEFN_DATA_QUEUE_LIST_0(n)				\
+				DEFN_DATA_QUEUE_LIST_1(n)				\
+				DEFN_DATA_QUEUE_LIST_2(n)				\
+				DEFN_DATA_QUEUE_LIST_3(n)				\
+				DEFN_DATA_QUEUE_LIST_4(n)				\
+				DEFN_DATA_QUEUE_LIST_5(n)				\
+			},								\
+		};
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    eth_initialize, NULL, &eth0_data,
-		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
-		    GMAC_MTU);
+#define SAM_GMAC_DT_INST_DEFN(n)							\
+		ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
+					      eth_initialize, NULL, &eth##n##_data,	\
+					      &eth##n##_config,				\
+					      CONFIG_ETH_INIT_PRIORITY, &eth_api,	\
+					      GMAC_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 struct ptp_context {
 	const struct device *eth_dev;
 };
 
-static struct ptp_context ptp_gmac_0_context;
+#define SAM_GMAC_PTP_CONTEXT_DEFN(n) static struct ptp_context ptp_gmac_##n##_context;
 
 static int ptp_clock_sam_gmac_set(const struct device *dev,
 				  struct net_ptp_time *tm)
@@ -2370,20 +2321,42 @@ static DEVICE_API(ptp_clock, ptp_api) = {
 	.rate_adjust = ptp_clock_sam_gmac_rate_adjust,
 };
 
-static int ptp_gmac_init(const struct device *port)
-{
-	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
-	struct eth_sam_dev_data *dev_data = eth_dev->data;
-	struct ptp_context *ptp_context = port->data;
+#define SAM_GMAC_PTP_INIT_DEFN(n)							\
+		static int ptp_gmac_##n##_init(const struct device *port)		\
+		{									\
+			const struct device *const eth_dev = DEVICE_DT_INST_GET(n);	\
+			struct eth_sam_dev_data *dev_data = eth_dev->data;		\
+			struct ptp_context *ptp_context = port->data;			\
+											\
+			dev_data->ptp_clock = port;					\
+			ptp_context->eth_dev = eth_dev;					\
+											\
+			return 0;							\
+		}
 
-	dev_data->ptp_clock = port;
-	ptp_context->eth_dev = eth_dev;
-
-	return 0;
-}
-
-DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
-		NULL, &ptp_gmac_0_context, NULL, POST_KERNEL,
-		CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
-
+#define SAM_GMAC_PTP_CLOCK_DEFN(n)							\
+		DEVICE_DEFINE(gmac_ptp_clock_##n, PTP_CLOCK_NAME, ptp_gmac_##n##_init,	\
+			NULL, &ptp_gmac_##n##_context, NULL, POST_KERNEL,		\
+			CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
+#else
+#define SAM_GMAC_PTP_CONTEXT_DEFN(n)
+#define SAM_GMAC_PTP_INIT_DEFN(n)
+#define SAM_GMAC_PTP_CLOCK_DEFN(n)
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
+
+#define ETH_SAM_GMAC_DEVICE(n)								\
+		SAM_GMAC_LISTS_DEFN(n)							\
+											\
+		SAM_GMAC_IRQ_CONFIG_DEFN(n)						\
+		SAM_GMAC_PINCTRL_DEFN(n)						\
+											\
+		SAM_GMAC_CFG_DEFN(n)							\
+		SAM_GMAC_DATA_DEFN(n)							\
+											\
+		SAM_GMAC_DT_INST_DEFN(n)						\
+											\
+		SAM_GMAC_PTP_CONTEXT_DEFN(n)						\
+		SAM_GMAC_PTP_INIT_DEFN(n)						\
+		SAM_GMAC_PTP_CLOCK_DEFN(n)
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_SAM_GMAC_DEVICE)
