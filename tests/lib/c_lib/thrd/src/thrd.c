@@ -23,7 +23,11 @@ ZTEST(libc_thrd, test_thrd_sleep)
 	struct timespec remaining;
 	const uint16_t delay_ms[] = {0, 100, 200, 400};
 
-	zassert_not_equal(0, thrd_sleep(NULL, NULL));
+	if (false) {
+		/* duration may not be NULL */
+		zassert_not_equal(thrd_success, thrd_sleep(NULL, NULL));
+	}
+
 	zassert_equal(thrd_success, thrd_sleep(&duration, NULL));
 	zassert_equal(thrd_success, thrd_sleep(&duration, &duration));
 
