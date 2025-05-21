@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_CC27XX
+	bool "TI SimpleLink CC27XX pinctrl driver"
+	default y
+	depends on DT_HAS_TI_CC27XX_PINCTRL_ENABLED
+	help
+	  Enable the TI SimpleLink CC27XX pinctrl driver
