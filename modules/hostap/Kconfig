@@ -602,9 +602,4 @@ config WIFI_NM_WPA_CTRL_RESP_TIMEOUT_S
 	  Timeout for the control interface commands to get a response from the
 	  supplicant.
 
-config WIFI_NM_HOSTAPD_REGULATORY_REGION
-	string "Select Wi-Fi Regulatory Domain"
-	default "WW "
-	depends on WIFI_NM_HOSTAPD_AP
-
 endif # WIFI_NM_WPA_SUPPLICANT
