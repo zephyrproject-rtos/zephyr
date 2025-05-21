@@ -296,7 +296,7 @@ been signaled.
                 // weird error
             }
 
-            k_poll_signal_reset(signal);
+            k_poll_signal_reset(&signal);
             events[0].state = K_POLL_STATE_NOT_READY;
         }
     }
