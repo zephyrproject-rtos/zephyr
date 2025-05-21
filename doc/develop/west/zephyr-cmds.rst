@@ -114,7 +114,7 @@ To use this command:
    .. code-block:: bash
 
      west spdx --init  -d BUILD_DIR/hello_world
-     west build -d BUILD_DIR/hello_world
+     west build -d BUILD_DIR
      west spdx -d BUILD_DIR/hello_world
 
 This generates the following SPDX bill-of-materials (BOM) documents in
