@@ -269,7 +269,7 @@ static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	queue->err_rx_flushed_count = 0U;
 	queue->err_tx_flushed_count = 0U;
 
-	LOG_INF("Queue %d activated", queue->que_idx);
+	LOG_INF("ethernet@%x Queue %d activated", (uint32_t)gmac, queue->que_idx);
 
 	return 0;
 }
@@ -301,7 +301,7 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	/* Set Transmit Buffer Queue Pointer Register */
 	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (uint32_t)tx_desc_list->buf;
 
-	LOG_INF("Queue %d set to idle", queue->que_idx);
+	LOG_INF("ethernet@%x Queue %d set to idle", (uint32_t)gmac, queue->que_idx);
 
 	return 0;
 }
@@ -1175,7 +1175,7 @@ static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	queue->err_rx_flushed_count = 0U;
 	queue->err_tx_flushed_count = 0U;
 
-	LOG_INF("Queue %d activated", queue->que_idx);
+	LOG_INF("ethernet@%x Queue %d activated", (uint32_t)gmac, queue->que_idx);
 
 	return 0;
 }
@@ -1388,7 +1388,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	__ASSERT(pkt, "buf pointer is NULL");
 	__ASSERT(pkt->frags, "Frame data missing");
 
-	LOG_DBG("ETH tx");
+	LOG_DBG("%s tx", dev->name);
 
 	/* Decide which queue should be used */
 	pkt_prio = net_pkt_priority(pkt);
@@ -1548,7 +1548,7 @@ static void queue0_isr(const struct device *dev)
 
 	/* Interrupt Status Register is cleared on read */
 	isr = gmac->GMAC_ISR;
-	LOG_DBG("GMAC_ISR=0x%08x", isr);
+	LOG_DBG("%s GMAC_ISR=0x%08x", dev->name, isr);
 
 	queue = &dev_data->queue_list[0];
 	rx_desc_list = &queue->rx_desc_list;
@@ -1559,7 +1559,7 @@ static void queue0_isr(const struct device *dev)
 		rx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_RCOMP) {
 		tail_desc = &rx_desc_list->buf[rx_desc_list->tail];
-		LOG_DBG("rx.w1=0x%08x, tail=%d",
+		LOG_DBG("%s rx.w1=0x%08x, tail=%d", dev->name,
 			tail_desc->w1,
 			rx_desc_list->tail);
 		eth_rx(queue);
@@ -1571,7 +1571,7 @@ static void queue0_isr(const struct device *dev)
 	} else if (isr & GMAC_ISR_TCOMP) {
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 		tail_desc = &tx_desc_list->buf[tx_desc_list->tail];
-		LOG_DBG("tx.w1=0x%08x, tail=%d",
+		LOG_DBG("%s tx.w1=0x%08x, tail=%d", dev->name,
 			tail_desc->w1,
 			tx_desc_list->tail);
 #endif
@@ -1580,7 +1580,7 @@ static void queue0_isr(const struct device *dev)
 	}
 
 	if (isr & GMAC_IER_HRESP) {
-		LOG_DBG("IER HRESP");
+		LOG_DBG("%s IER HRESP", dev->name);
 	}
 }
 
@@ -1598,7 +1598,7 @@ static inline void priority_queue_isr(const struct device *dev,
 	uint32_t isrpq;
 
 	isrpq = gmac->GMAC_ISRPQ[queue_idx - 1];
-	LOG_DBG("GMAC_ISRPQ%d=0x%08x", queue_idx - 1,  isrpq);
+	LOG_DBG("%s GMAC_ISRPQ%d=0x%08x", dev->name, queue_idx - 1,  isrpq);
 
 	queue = &dev_data->queue_list[queue_idx];
 	rx_desc_list = &queue->rx_desc_list;
@@ -1609,7 +1609,7 @@ static inline void priority_queue_isr(const struct device *dev,
 		rx_error_handler(gmac, queue);
 	} else if (isrpq & GMAC_ISRPQ_RCOMP) {
 		tail_desc = &rx_desc_list->buf[rx_desc_list->tail];
-		LOG_DBG("rx.w1=0x%08x, tail=%d",
+		LOG_DBG("%s rx.w1=0x%08x, tail=%d", dev->name,
 			tail_desc->w1,
 			rx_desc_list->tail);
 		eth_rx(queue);
@@ -1621,7 +1621,7 @@ static inline void priority_queue_isr(const struct device *dev,
 	} else if (isrpq & GMAC_ISRPQ_TCOMP) {
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 		tail_desc = &tx_desc_list->buf[tx_desc_list->tail];
-		LOG_DBG("tx.w1=0x%08x, tail=%d",
+		LOG_DBG("%s tx.w1=0x%08x, tail=%d", dev->name,
 			tail_desc->w1,
 			tx_desc_list->tail);
 #endif
@@ -1630,7 +1630,7 @@ static inline void priority_queue_isr(const struct device *dev,
 	}
 
 	if (isrpq & GMAC_IERPQ_HRESP) {
-		LOG_DBG("IERPQ%d HRESP", queue_idx - 1);
+		LOG_DBG("%s IERPQ%d HRESP", dev->name, queue_idx - 1);
 	}
 }
 #endif
@@ -1737,7 +1737,7 @@ static void phy_link_state_changed(const struct device *pdev,
 	is_up = state->is_up;
 
 	if (is_up && !dev_data->link_up) {
-		LOG_INF("Link up");
+		LOG_INF("%s Link up", dev->name);
 
 		/* Announce link up status */
 		dev_data->link_up = true;
@@ -1748,7 +1748,7 @@ static void phy_link_state_changed(const struct device *pdev,
 			       PHY_LINK_IS_FULL_DUPLEX(state->speed),
 			       PHY_LINK_IS_SPEED_100M(state->speed));
 	} else if (!is_up && dev_data->link_up) {
-		LOG_INF("Link down");
+		LOG_INF("%s Link down", dev->name);
 
 		/* Announce link down status */
 		dev_data->link_up = false;
@@ -1799,13 +1799,13 @@ static void eth0_iface_init(struct net_if *iface)
 		| GMAC_MAX_FRAME_SIZE;
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
 	if (result < 0) {
-		LOG_ERR("Unable to initialize ETH driver");
+		LOG_ERR("%s Unable to initialize ETH driver", dev->name);
 		return;
 	}
 
 	generate_mac(dev_data->mac_addr);
 
-	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_INF("%s MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3],
 		dev_data->mac_addr[4], dev_data->mac_addr[5]);
@@ -1819,10 +1819,10 @@ static void eth0_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	/* Initialize GMAC queues */
-	for (i = GMAC_QUE_0; i < GMAC_QUEUE_NUM; i++) {
+	for (i = GMAC_QUE_0; i < cfg->num_queues; i++) {
 		result = queue_init(cfg->regs, &dev_data->queue_list[i]);
 		if (result < 0) {
-			LOG_ERR("Unable to initialize ETH queue%d", i);
+			LOG_ERR("%s Unable to initialize ETH queue%d", dev->name, i);
 			return;
 		}
 	}
@@ -1874,7 +1874,7 @@ static void eth0_iface_init(struct net_if *iface)
 				      (void *)dev);
 
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERR("%s PHY device not ready", dev->name);
 	}
 
 	init_done = true;
@@ -2129,6 +2129,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 #endif
 	.config_func = eth0_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))
+	.num_queues = DT_INST_PROP(0, num_queues),
 };
 
 static struct eth_sam_dev_data eth0_data = {
