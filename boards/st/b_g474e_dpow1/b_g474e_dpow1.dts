@@ -22,18 +22,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led_2: led2 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "LED_DOWN_BLUE";
 		};
+
 		orange_led_3: led3 {
 			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
 			label = "LED_LEFT_ORANGE";
 		};
+
 		green_led_4: led4 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "LED_RIGHT_GREEN";
 		};
+
 		red_led_5: led5 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "LED_UP_RED";
@@ -42,26 +46,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joystick_sel: button0 {
 			label = "JOYSTICK_SEL";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joystick_left: button1 {
 			label = "JOYSTICK_LEFT";
 			gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joystick_down: button2 {
 			label = "JOYSTICK_DOWN";
 			gpios = <&gpioc 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joystick_right: button3 {
 			label = "JOYSTICK_RIGHT";
 			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
+
 		joystick_up: button4 {
 			label = "JOYSTICK_UP";
 			gpios = <&gpiob 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -97,7 +106,7 @@
 
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
-	<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 
