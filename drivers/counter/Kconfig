@@ -42,6 +42,8 @@ source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"
 
+source "drivers/counter/Kconfig.ite_it51xxx"
+
 source "drivers/counter/Kconfig.ite_it8xxx2"
 
 source "drivers/counter/Kconfig.stm32_rtc"

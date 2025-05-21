@@ -1162,6 +1162,15 @@
 			interrupt-parent = <&intc>;
 		};
 
+		counter0: counter@f04730 {
+			compatible = "ite,it51xxx-counter";
+			reg = <0x00f04730 0xcf>;
+			interrupts = <IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING   /* Alarm timer */
+				      IT51XXX_IRQ_TIMER8_DW IRQ_TYPE_EDGE_RISING>; /* Top timer */
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		kbd: kbd@f01d00 {
 			compatible = "ite,it51xxx-kbd";
 			reg = <0x00f01d00 0x29>;
