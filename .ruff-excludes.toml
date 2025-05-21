@@ -234,7 +234,6 @@
 ]
 "./scripts/build/gen_relocate_app.py" = [
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]
 "./scripts/build/gen_strerror_table.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
