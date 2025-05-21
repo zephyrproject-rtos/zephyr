@@ -49,8 +49,11 @@ SECTION_FUNC(vectors, __start)
 .global eflash_sig
 eflash_sig:
 .byte 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5
-/* Enable eSPI */
-.byte 0xA4
+#ifdef CONFIG_ESPI
+.byte 0xA4 /* eSPI mode */
+#else
+.byte 0xA5 /* LPC mode */
+#endif
 /* Flag of signature. Enable internal clock generator */
 .byte 0xB4
 .byte 0x85, 0x12, 0x5A, 0x5A, 0xAA, 0xAA, 0x55, 0x55
