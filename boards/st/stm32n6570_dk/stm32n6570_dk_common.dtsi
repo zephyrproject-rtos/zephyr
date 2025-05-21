@@ -374,6 +374,7 @@ zephyr_udc0: &usbotg_hs1 {
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -387,6 +388,7 @@ zephyr_udc0: &usbotg_hs1 {
 		hfront-porch = <8>;
 		vfront-porch = <8>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
