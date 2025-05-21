@@ -243,6 +243,7 @@
 			reg = <0x41016000 0x1000>;
 			cc-num = <4>;
 			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
