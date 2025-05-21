@@ -49,13 +49,13 @@ config HCI_NXP_RX_THREAD
 
 endif # BT
 
-if NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+if IEEE802154
 
 # Include intercore messaging component
 config NXP_RF_IMU
 	default y
 
-endif # NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+endif # IEEE802154
 
 
 endif # SOC_SERIES_MCXW
