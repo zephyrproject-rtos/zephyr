@@ -24,8 +24,8 @@ ZTEST(libc_thrd, test_thrd_sleep)
 	const uint16_t delay_ms[] = {0, 100, 200, 400};
 
 	zassert_not_equal(0, thrd_sleep(NULL, NULL));
-	zassert_ok(thrd_sleep(&duration, NULL));
-	zassert_ok(thrd_sleep(&duration, &duration));
+	zassert_equal(thrd_success, thrd_sleep(&duration, NULL));
+	zassert_equal(thrd_success, thrd_sleep(&duration, &duration));
 
 	for (int i = 0; i < ARRAY_SIZE(delay_ms); ++i) {
 		duration = (struct timespec){.tv_nsec = delay_ms[i] * NSEC_PER_MSEC};
@@ -33,7 +33,7 @@ ZTEST(libc_thrd, test_thrd_sleep)
 
 		printk("sleeping %d ms\n", delay_ms[i]);
 		start = k_uptime_get();
-		zassert_ok(thrd_sleep(&duration, &remaining));
+		zassert_equal(thrd_success, thrd_sleep(&duration, &remaining));
 		end = k_uptime_get();
 		zassert_equal(remaining.tv_sec, 0);
 		zassert_equal(remaining.tv_nsec, 0);
