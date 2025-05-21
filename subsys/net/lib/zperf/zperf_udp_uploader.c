@@ -67,7 +67,7 @@ static inline int zperf_upload_fin(int sock,
 	struct zperf_client_hdr_v1 *hdr;
 	uint32_t secs = end_time_us / USEC_PER_SEC;
 	uint32_t usecs = end_time_us % USEC_PER_SEC;
-	int loop = 2;
+	int loop = CONFIG_NET_ZPERF_UDP_REPORT_RETANSMISSION_COUNT;
 	int ret = 0;
 	struct timeval rcvtimeo = {
 		.tv_sec = 2,
