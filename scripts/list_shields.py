@@ -38,6 +38,9 @@ def find_shields_in(root):
     shields = root / 'boards' / 'shields'
     ret = []
 
+    if not shields.exists():
+        return ret
+
     for maybe_shield in (shields).iterdir():
         if not maybe_shield.is_dir():
             continue
