@@ -234,7 +234,6 @@
 ]
 "./scripts/build/gen_relocate_app.py" = [
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
     "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
