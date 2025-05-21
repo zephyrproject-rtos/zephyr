@@ -350,7 +350,6 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
-	default 1024 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help
@@ -372,8 +371,6 @@ if NET_SOCKETPAIR_STATIC
 
 config NET_SOCKETPAIR_MAX
 	int "How many socketpairs to pre-allocate"
-	default 6 if WIFI_NM_HOSTAPD_AP
-	default 4 if WIFI_NM_WPA_SUPPLICANT
 	default 1
 
 endif # NET_SOCKETPAIR_STATIC
@@ -382,8 +379,6 @@ if NET_SOCKETPAIR_HEAP
 
 config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
 	int
-	default 9136 if WIFI_NM_HOSTAPD_AP
-	default 6852 if WIFI_NM_WPA_SUPPLICANT
 	default 296
 
 endif # NET_SOCKETPAIR_HEAP
