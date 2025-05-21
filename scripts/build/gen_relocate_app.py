@@ -41,10 +41,10 @@ Multiple regions can be appended together like SRAM2_DATA_BSS
 this will place data and bss inside SRAM2.
 """
 
-import sys
 import argparse
 import glob
 import re
+import sys
 import warnings
 from collections import defaultdict
 from enum import Enum
