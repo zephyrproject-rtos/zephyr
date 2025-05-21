@@ -83,9 +83,28 @@ using the :ref:`dvp_20pin_ov7670` and :ref:`lcd_par_s035` connected to the board
    :goals: build
    :compact:
 
+For :ref:`native_sim`, build this sample application with the following commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: native_sim
+   :goals: build
+   :compact:
+
 For testing purpose without the need of any real video capture and/or display hardwares,
 a video software pattern generator is supported by the above build commands without
 specifying the shields.
+
+For controlling the camera device using shell commands instead of continuously capturing the data,
+append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: mimxrt1064_evk
+   :shield: dvp_fpc24_mt9m114,rk043fn66hs_ctg
+   :gen-args: -DCONFIG_VIDEO_SHELL=y
+   :goals: build
+   :compact:
 
 Sample Output
 =============
@@ -117,6 +136,28 @@ Sample Output
     Got frame 6! size: 261120; timestamp 451 ms
 
    <repeats endlessly>
+
+If using the shell, the capture would not start, and instead it is possible to access the shell
+
+.. code-block:: console
+
+   uart:~$ video
+   video - Video driver commands
+   Subcommands:
+     start    : Start a video device and its sources
+                Usage: video start <device>
+     stop     : Stop a video device and its sources
+                Usage: video stop <device>
+     capture  : Capture a given number of frames from a device
+                Usage: video capture <device> <num-frames>
+     format   : Query or set the video format of a device
+                Usage: video format <device> <ep> [<fourcc> <width>x<height>]
+     frmival  : Query or set the video frame rate/interval of a device
+                Usage: video frmival <device> <ep> [<n>fps|<n>ms|<n>us]
+     ctrl     : Query or set video controls of a device
+                Usage: video ctrl <device> [<ctrl> <value>]
+   uart:~$
+
 
 References
 **********

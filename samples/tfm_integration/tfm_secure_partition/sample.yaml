@@ -7,6 +7,7 @@ common:
     - nrf5340dk/nrf5340/cpuapp/ns
     - nrf9160dk/nrf9160/ns
     - lpcxpresso55s69/lpc55s69/cpu0/ns
+    - max32657evkit/max32657/ns
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console

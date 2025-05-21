@@ -147,8 +147,7 @@ static const struct linear_range charger_current_range = LINEAR_RANGE_INIT(32000
 static const uint16_t discharge_limits[] = {84U, 415U};
 
 /* Linear range for vbusin current limit */
-static const struct linear_range vbus_current_ranges[] = {
-	LINEAR_RANGE_INIT(100000, 0, 1U, 1U), LINEAR_RANGE_INIT(500000, 100000, 5U, 15U)};
+static const struct linear_range vbus_current_range = LINEAR_RANGE_INIT(100000, 100000, 1U, 15U);
 
 static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
@@ -485,9 +484,7 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 		int32_t current = (val->val1 * 1000000) + val->val2;
 		uint16_t idx;
 
-		ret = linear_range_group_get_win_index(vbus_current_ranges,
-						       ARRAY_SIZE(vbus_current_ranges), current,
-						       current, &idx);
+		ret = linear_range_get_win_index(&vbus_current_range, current, current, &idx);
 
 		if (ret == -EINVAL) {
 			return ret;
@@ -580,9 +577,8 @@ int npm1300_charger_init(const struct device *dev)
 	}
 
 	/* Configure vbus current limit */
-	ret = linear_range_group_get_win_index(vbus_current_ranges, ARRAY_SIZE(vbus_current_ranges),
-					       config->vbus_limit_microamp,
-					       config->vbus_limit_microamp, &idx);
+	ret = linear_range_get_win_index(&vbus_current_range, config->vbus_limit_microamp,
+					 config->vbus_limit_microamp, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}

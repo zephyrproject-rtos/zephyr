@@ -81,6 +81,12 @@ static void onoff_stop_option(struct onoff_manager *mgr,
 	notify(mgr, 0);
 }
 
+static void onoff_reset_option(struct onoff_manager *mgr,
+			       onoff_notify_fn notify)
+{
+	notify(mgr, 0);
+}
+
 static inline uint8_t get_index_of_highest_bit(uint32_t value)
 {
 	return value ? (uint8_t)(31 - __builtin_clz(value)) : 0;
@@ -129,7 +135,8 @@ int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_
 	for (int i = 0; i < onoff_cnt; ++i) {
 		static const struct onoff_transitions transitions = {
 			.start = onoff_start_option,
-			.stop  = onoff_stop_option
+			.stop  = onoff_stop_option,
+			.reset = onoff_reset_option,
 		};
 		int rc;
 
@@ -146,6 +153,22 @@ int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_
 	k_work_init(&cfg->work, update_work_handler);
 
 	return 0;
+}
+
+int clock_config_request(struct onoff_manager *mgr, struct onoff_client *cli)
+{
+	/* If the on-off service recorded earlier an error, its state must be
+	 * reset before a new request is made, otherwise the request would fail
+	 * immediately.
+	 */
+	if (onoff_has_error(mgr)) {
+		struct onoff_client reset_cli;
+
+		sys_notify_init_spinwait(&reset_cli.notify);
+		onoff_reset(mgr, &reset_cli);
+	}
+
+	return onoff_request(mgr, cli);
 }
 
 uint8_t clock_config_update_begin(struct k_work *work)

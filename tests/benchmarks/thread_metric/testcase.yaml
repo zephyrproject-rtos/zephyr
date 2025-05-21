@@ -13,7 +13,6 @@ common:
   platform_exclude:
     - qemu_malta/qemu_malta
     - qemu_malta/qemu_malta/be
-    - qemu_nios2
   integration_platforms:
     - qemu_x86
     - qemu_cortex_a53

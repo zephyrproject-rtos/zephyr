@@ -124,9 +124,11 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 			return -E2BIG;
 		}
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
-		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf) & (0xFFFFFFFF >> (32 - (hdr_msg->len * 8)));
+		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf)
+				   & (0xFFFFFFFFUL >> (32 - (hdr_msg->len * 8)));
 #else
-		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf) & (0xFFFFFFFFFFFFFFFF >> (64 - (hdr_msg->len * 8)));
+		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf)
+				   & (0xFFFFFFFFFFFFFFFFULL >> (64 - (hdr_msg->len * 8)));
 #endif
 		trans.ui32InstrLen = hdr_msg->len;
 	}
@@ -177,9 +179,11 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
 			return -E2BIG;
 		}
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
-		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf) & (0xFFFFFFFF >> (32 - (hdr_msg->len * 8)));
+		trans.ui32Instr = (*(uint32_t *)hdr_msg->buf)
+				   & (0xFFFFFFFFUL >> (32 - (hdr_msg->len * 8)));
 #else
-		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf) & (0xFFFFFFFFFFFFFFFF >> (64 - (hdr_msg->len * 8)));
+		trans.ui64Instr = (*(uint64_t *)hdr_msg->buf)
+				   & (0xFFFFFFFFFFFFFFFFULL >> (64 - (hdr_msg->len * 8)));
 #endif
 		trans.ui32InstrLen = hdr_msg->len;
 	}

@@ -520,6 +520,25 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
+test_i2c_itds_2533020201601: wsen_itds_2533020201601@4e {
+	compatible = "we,wsen-itds-2533020201601";
+	reg = <0x4e>;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+	odr = "400";
+	tap-threshold = <0>, <0>, <6>;
+	tap-latency = < 5 >;
+	tap-shock = < 2 >;
+	tap-quiet = < 1 >;
+	tap-mode = < 1 >;
+	freefall-duration = < 6 >;
+	freefall-threshold = < 10 >;
+	delta-duration = < 1 >;
+	delta-threshold = < 4 >;
+	op-mode = "high-perf";
+	power-mode = "normal";
+};
+
 test_i2c_max17055: max17055@4f {
 	compatible = "maxim,max17055";
 	reg = <0x4f>;
@@ -1294,5 +1313,11 @@ test_i2c_paj7620: paj7620@b0 {
 test_i2c_icm45686: icm45686@b1 {
 	compatible = "invensense,icm45686";
 	reg = <0xb1>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_rm3100: rm3100@b2 {
+	compatible = "pni,rm3100";
+	reg = <0xb2>;
 	int-gpios = <&test_gpio 0 0>;
 };

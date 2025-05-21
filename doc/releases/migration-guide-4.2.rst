@@ -79,6 +79,10 @@ Boards
 * Espressif boards ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover`` shared almost identical features.
   The differences are covered by the Kconfig options so both boards were merged into ``esp32_devkitc``.
 
+* STM32 boards should now add OpenOCD programming support by including ``openocd-stm32.board.cmake``
+  instead of ``openocd.board.cmake``. The ``openocd-stm32.board.cmake`` file extends the default
+  OpenOCD runner with manufacturer-specific configuration like STM32 mass erase commands.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -88,6 +92,10 @@ Devicetree
 * Many of the vendor-specific and arch-specific files that were in dts/common have been moved
   to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
   a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
+
+* Silicon Labs SoC-level dts files for Series 2 have been reorganized in subdirectories per device
+  superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
+  include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
 
 DAI
 ===
@@ -214,6 +222,24 @@ Sensors
 * :dtcompatible:`meas,ms5837` has been replaced by :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`. In order to use one of the two variants, the
   status property needs to be used as well.
+
+* The :dtcompatible:`we,wsen-itds` driver has been renamed to
+  :dtcompatible:`we,wsen-itds-2533020201601`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+      itds:itds-2533020201601@19 {
+        compatible = "we,wsen-itds-2533020201601";
+        reg = <0x19>;
+        odr = "400";
+        op-mode = "high-perf";
+        power-mode = "normal";
+        events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+      };
+    };
 
 Serial
 =======
@@ -378,6 +404,25 @@ Networking
   the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
   is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
 
+* The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
+  change some of the existing options have been renamed. The following table
+  summarizes the changes:
+
+  +------------------------+---------------------+--------------------+
+  | Command(s)             | Old option          | New option         |
+  +------------------------+---------------------+--------------------+
+  | ``wifi connect``       | ``-i``              | ``-g``             |
+  | ``wifi ap enable``     |                     |                    |
+  +------------------------+---------------------+--------------------+
+  | ``wifi twt setup``     | ``-i``              | ``-p``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi ap config``     | ``-i``              | ``-t``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi mode``          | ``--if-index``      | ``--iface``        |
+  | ``wifi channel``       |                     |                    |
+  | ``wifi packet_filter`` |                     |                    |
+  +------------------------+---------------------+--------------------+
+
 OpenThread
 ==========
 
@@ -511,15 +556,16 @@ Video
   :c:func:`video_set_frmival`.
   See (:github:`89627`).
 
+* video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
+
+* video_buf_type enum has been added. It is a required parameter in the following video APIs:
+
+  ``set_stream``
+  ``video_stream_start``
+  ``video_stream_stop``
+
 Other subsystems
 ****************
-
-ZBus
-====
-
-* The function :c:func:`zbus_chan_add_obs` now requires a :c:struct:`zbus_observer_node` as an argument,
-  which was previously allocated through :c:func:`k_malloc` internally. The structure must remain valid
-  in memory until :c:func:`zbus_chan_rem_obs` is called.
 
 Modules
 *******

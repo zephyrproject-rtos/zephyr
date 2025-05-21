@@ -1040,8 +1040,7 @@ static uint8_t gc2145_check_connection(const struct device *dev)
 	return 0;
 }
 
-static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
 	size_t res = ARRAY_SIZE(fmts);
@@ -1085,8 +1084,7 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
 
@@ -1095,7 +1093,7 @@ static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_set_stream(const struct device *dev, bool enable)
+static int gc2145_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct gc2145_config *cfg = dev->config;
 
@@ -1103,8 +1101,7 @@ static int gc2145_set_stream(const struct device *dev, bool enable)
 		      : gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
 }
 
-static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int gc2145_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -1186,9 +1183,8 @@ static int gc2145_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = RESOLUTION_QVGA_W;
 	fmt.height = RESOLUTION_QVGA_H;
-	fmt.pitch = RESOLUTION_QVGA_W * 2;
 
-	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return ret;

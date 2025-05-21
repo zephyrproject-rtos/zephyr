@@ -1,11 +1,12 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+title: TI CC32XX Pin Controller
+
 description: |
-    The TI CC32XX pin controller is a singleton node responsible for controlling
-    pin function selection and pin properties. For example, you can
-    use this node to route UART0 RX to pin 55 and enable the pull-up resistor
-    on the pin.
+    Singleton node responsible for controlling pin function selection and pin
+    properties. For example, you can use this node to route UART0 RX to pin 55
+    and enable the pull-up resistor on the pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

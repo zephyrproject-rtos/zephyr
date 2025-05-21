@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		spi0 = &qspi0;
+	};
+};
+
+/* Loopback requires wire connecting qspi_shd_io0_gpio223 to qspi_shd_io1_gpio224 */
+
+&qspi0 {
+	status = "okay";
+	compatible = "microchip,mec5-qspi";
+	clock-frequency = <12000000>;
+
+	pinctrl-0 = < &qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
+		      &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224 >;
+	pinctrl-names = "default";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

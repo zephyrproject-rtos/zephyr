@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Texas Instruments
+# Copyright (c) 2025 Linumiz
+
+if SOC_FAMILY_TI_MSPM0
+
+rsource "*/Kconfig.defconfig"
+
+DT_MSPM0_MCLK_PATH := $(dt_nodelabel_path,mclk)
+DT_MSPM0_MCLK_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_MCLK_PATH),clock-frequency)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_MSPM0_MCLK_CPU_FREQ)" if "$(dt_nodelabel_enabled,mclk)"
+
+endif # SOC_FAMILY_TI_MSPM0

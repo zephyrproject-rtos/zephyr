@@ -42,8 +42,16 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-As with the Pico 1, the SWD interface can be used to program and debug the
-device, e.g. using OpenOCD with the `Raspberry Pi Debug Probe <https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html>`_ .
+The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
+
+Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rpi_pico2/rp2350a/m33
+   :goals: build flash
+   :flash-args: --openocd /usr/local/bin/openocd
 
 References
 **********

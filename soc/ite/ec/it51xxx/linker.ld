@@ -79,6 +79,12 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
+/* The IT515XX series must use the address range 0x83E000 to 0x83EFFF to calculate SHA */
+#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
+#define SHA256_DLM_BASE   (RAM_BASE + CONFIG_SOC_IT515XX_SHA256_DLM_OFFSET)
+#define SHA256_DLM_LENGTH KB(4)
+#endif
+
 #ifdef CONFIG_RISCV_PMP
 	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
@@ -103,6 +109,10 @@ MEMORY
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
+
+#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
+	SHA256_DLM (rw) : ORIGIN = SHA256_DLM_BASE, LENGTH = SHA256_DLM_LENGTH
+#endif
 
 #if defined(CONFIG_LINKER_DEVNULL_MEMORY)
     DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
@@ -442,6 +452,21 @@ GROUP_END(DTCM)
 #include <zephyr/linker/ram-end.ld>
 
     GROUP_END(RAMABLE_REGION)
+
+#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
+	GROUP_START(SHA256_DLM)
+
+		SECTION_PROLOGUE(it515xx_sha256_ram, (NOLOAD),)
+		{
+			__sha256_ram_block_start = .;
+			KEEP(*(.__sha256_ram_block))
+
+			ASSERT((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == 0, \
+				"SHA256 DLM block must be 4KB aligned");
+		} GROUP_LINK_IN(SHA256_DLM)
+
+	GROUP_END(SHA256_DLM)
+#endif
 
 #include <zephyr/linker/debug-sections.ld>
 

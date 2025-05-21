@@ -112,8 +112,9 @@ static inline void irq_set_priority_next_level(const struct device *dev,
 	const struct irq_next_level_api *api =
 		(const struct irq_next_level_api *)dev->api;
 
-	if (api->intr_set_priority)
+	if (api->intr_set_priority) {
 		api->intr_set_priority(dev, irq, prio, flags);
+	}
 }
 
 /**

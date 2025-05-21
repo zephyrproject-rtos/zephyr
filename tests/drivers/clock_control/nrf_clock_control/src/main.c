@@ -43,11 +43,6 @@ const struct nrf_clock_spec test_clk_specs_fll16m[] = {
 	},
 	{
 		.frequency = MHZ(16),
-		.accuracy = 5020,
-		.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,
-	},
-	{
-		.frequency = MHZ(16),
 		.accuracy = 30,
 		.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,
 	},
@@ -199,6 +194,9 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 			clk_dev = clk_context->clk_dev;
 			clk_spec = &clk_context->clk_specs[u];
 
+			zassert_true(device_is_ready(clk_dev),
+				     "%s is not ready", clk_dev->name);
+
 			TC_PRINT("Applying clock (%s) spec: frequency %d, accuracy %d, precision "
 				 "%d\n",
 				 clk_dev->name, clk_spec->frequency, clk_spec->accuracy,
@@ -211,10 +209,7 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 #if CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP
 ZTEST(nrf2_clock_control, test_cpuapp_hsfll_control)
 {
-
 	TC_PRINT("APPLICATION DOMAIN HSFLL test\n");
-	/* Wait for the DVFS init to complete */
-	k_msleep(3000);
 	test_clock_control_request(cpuapp_hsfll_test_clk_contexts,
 				   ARRAY_SIZE(cpuapp_hsfll_test_clk_contexts));
 }
@@ -244,6 +239,9 @@ ZTEST(nrf2_clock_control, test_invalid_fll16m_clock_spec_response)
 		for (size_t u = 0; u < clk_specs_size; u++) {
 			clk_dev = clk_context->clk_dev;
 			clk_spec = &clk_context->clk_specs[u];
+
+			zassert_true(device_is_ready(clk_dev),
+				     "%s is not ready", clk_dev->name);
 
 			TC_PRINT("Applying clock (%s) spec: frequency %d, accuracy %d, precision "
 				 "%d\n",
@@ -290,6 +288,9 @@ ZTEST(nrf2_clock_control, test_safe_request_cancellation)
 	const struct device *clk_dev = clk_context->clk_dev;
 	const struct nrf_clock_spec *clk_spec = &test_clk_specs_lfclk[0];
 
+	zassert_true(device_is_ready(clk_dev),
+		     "%s is not ready", clk_dev->name);
+
 	TC_PRINT("Safe clock request cancellation\n");
 	TC_PRINT("Clock under test: %s\n", clk_dev->name);
 	sys_notify_init_spinwait(&cli.notify);
@@ -303,4 +304,56 @@ ZTEST(nrf2_clock_control, test_safe_request_cancellation)
 	zassert_between_inclusive(ret, ONOFF_STATE_ON, ONOFF_STATE_TO_ON);
 }
 
-ZTEST_SUITE(nrf2_clock_control, NULL, NULL, NULL, NULL, NULL);
+static void *setup(void)
+{
+#if defined(CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP)
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(cpuapp_hsfll));
+	const struct nrf_clock_spec clk_spec = {
+		.frequency = MHZ(64),
+	};
+	struct onoff_client cli;
+	uint32_t start_uptime;
+	const uint32_t timeout_ms = 3000;
+
+	zassert_true(device_is_ready(clk_dev),
+		     "%s is not ready", clk_dev->name);
+
+	/* Constantly make requests to DVFS until one is successful (what also
+	 * means that the service has finished its initialization). This loop
+	 * also verifies that the clock control driver is able to recover after
+	 * an unsuccesful attempt to start a clock (at least one initial request
+	 * is expected to fail here due to DFVS not being initialized yet).
+	 */
+	TC_PRINT("Polling DVFS until it is ready\n");
+	start_uptime = k_uptime_get_32();
+	while (1) {
+		int status;
+		int ret;
+
+		sys_notify_init_spinwait(&cli.notify);
+		ret = nrf_clock_control_request(clk_dev, &clk_spec, &cli);
+		/* The on-off manager for this clock controller is expected to
+		 * always be in the off state when a request is done (its error
+		 * state is expected to be cleared by the clock control driver).
+		 */
+		zassert_equal(ret, ONOFF_STATE_OFF, "request result: %d", ret);
+		do {
+			ret = sys_notify_fetch_result(&cli.notify, &status);
+			k_yield();
+		} while (ret == -EAGAIN);
+
+		if (status == 0) {
+			TC_PRINT("DVFS is ready\n");
+			break;
+		} else if ((k_uptime_get_32() - start_uptime) >= timeout_ms) {
+			TC_PRINT("DVFS is not ready after %u ms\n", timeout_ms);
+			ztest_test_fail();
+			break;
+		}
+	}
+#endif
+
+	return NULL;
+}
+
+ZTEST_SUITE(nrf2_clock_control, NULL, setup, NULL, NULL, NULL);

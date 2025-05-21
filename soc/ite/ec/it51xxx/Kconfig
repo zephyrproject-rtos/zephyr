@@ -40,6 +40,19 @@ config SOC_IT51XXX_USE_ILM
 	  predictable than executing from Flash directly, and some code (such as code
 	  that writes to the internal Flash) must execute out of RAM.
 
+config SOC_IT51XXX_SHA256_HW_ACCELERATE
+	bool "HW SHA256 calculation"
+	help
+	  IT51XXX HW support sha256 calculation, and its calculation is faster than FW.
+
+config SOC_IT515XX_SHA256_DLM_OFFSET
+	hex
+	default 0x03E000
+	depends on SOC_IT51XXX_SHA256_HW_ACCELERATE
+	help
+	  Due to the hardware requirements of the IT515XX, the SHA-256 data must be
+	  placed within the specific address range (0x83E000 to 0x83EFFF by default).
+
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
 	default 4

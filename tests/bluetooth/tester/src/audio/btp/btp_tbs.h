@@ -6,6 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+
 /* TBS commands */
 #define BTP_TBS_READ_SUPPORTED_COMMANDS		0x01
 struct btp_tbs_read_supported_commands_rp {

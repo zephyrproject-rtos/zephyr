@@ -91,7 +91,7 @@ static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample, int32_t
 #define SENSOR_SCALING_FACTOR (SENSOR_G / (16 * 1000 / 100))
 
 static const uint32_t accel_period_ns[] = {
-	[ADXL345_ODR_12HZ] = UINT32_C(1000000000) / 12,
+	[ADXL345_ODR_12_5HZ] = UINT32_C(1000000000) / 12,
 	[ADXL345_ODR_25HZ] = UINT32_C(1000000000) / 25,
 	[ADXL345_ODR_50HZ] = UINT32_C(1000000000) / 50,
 	[ADXL345_ODR_100HZ] = UINT32_C(1000000000) / 100,

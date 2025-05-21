@@ -174,7 +174,7 @@ static struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x008F}, /* 143 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_resolution_config resolutionConfigs[] = {
+static struct mt9m114_resolution_config resolution_configs[] = {
 	{.width = 480, .height = 272, .params = mt9m114_480_272},
 	{.width = 640, .height = 480, .params = mt9m114_640_480},
 	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
@@ -397,8 +397,7 @@ static int mt9m114_set_output_format(const struct device *dev, int pixel_format)
 	return ret;
 }
 
-static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
@@ -433,10 +432,10 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Set output resolution */
-	for (i = 0; i < ARRAY_SIZE(resolutionConfigs); i++) {
-		if (fmt->width == resolutionConfigs[i].width &&
-		    fmt->height == resolutionConfigs[i].height) {
-			ret = mt9m114_write_all(dev, resolutionConfigs[i].params);
+	for (i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
+		if (fmt->width == resolution_configs[i].width &&
+		    fmt->height == resolution_configs[i].height) {
+			ret = mt9m114_write_all(dev, resolution_configs[i].params);
 			if (ret) {
 				LOG_ERR("Unable to set resolution");
 				return ret;
@@ -450,8 +449,7 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
 }
 
-static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 
@@ -460,14 +458,13 @@ static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_set_stream(const struct device *dev, bool enable)
+static int mt9m114_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return enable ? mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING)
 		      : mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
 
-static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			    struct video_caps *caps)
+static int mt9m114_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -529,9 +526,15 @@ static int mt9m114_init_controls(const struct device *dev)
 
 static int mt9m114_init(const struct device *dev)
 {
+	const struct mt9m114_config *cfg = dev->config;
 	struct video_format fmt;
 	uint16_t val;
 	int ret;
+
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
 
 	/* no power control, wait for camera ready */
 	k_sleep(K_MSEC(100));
@@ -561,9 +564,8 @@ static int mt9m114_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = 480;
 	fmt.height = 272;
-	fmt.pitch = fmt.width * 2;
 
-	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -576,29 +578,16 @@ static int mt9m114_init(const struct device *dev)
 	return mt9m114_init_controls(dev);
 }
 
-#if 1 /* Unique Instance */
+#define MT9M114_INIT(n)                                                                            \
+	static struct mt9m114_data mt9m114_data_##n;                                               \
+                                                                                                   \
+	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mt9m114_init, NULL, &mt9m114_data_##n, &mt9m114_cfg_##n,         \
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);       \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(mt9m114_##n, DEVICE_DT_INST_GET(n), NULL);
 
-static const struct mt9m114_config mt9m114_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-static struct mt9m114_data mt9m114_data_0;
-
-static int mt9m114_init_0(const struct device *dev)
-{
-	const struct mt9m114_config *cfg = dev->config;
-
-	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-	return mt9m114_init(dev);
-}
-
-DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL, &mt9m114_data_0, &mt9m114_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);
-
-VIDEO_DEVICE_DEFINE(mt9m114, DEVICE_DT_INST_GET(0), NULL);
-
-#endif
+DT_INST_FOREACH_STATUS_OKAY(MT9M114_INIT)

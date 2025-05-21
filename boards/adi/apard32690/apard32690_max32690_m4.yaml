@@ -11,6 +11,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - pmod_spi
+  - pmod_gpio
   - gpio
   - serial
   - spi

@@ -9,6 +9,10 @@ menuconfig ZBUS
 
 if ZBUS
 
+config ZBUS_PREFER_DYNAMIC_ALLOCATION
+	bool "Set zbus to work with dynamic allocation using the system heap"
+	default y
+
 config ZBUS_CHANNELS_SYS_INIT_PRIORITY
 	default 5
 	int "The priority used during the SYS_INIT procedure."
@@ -33,7 +37,8 @@ if ZBUS_MSG_SUBSCRIBER
 
 choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC
 	prompt "ZBus msg_subscribers buffer allocation"
-	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
+	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC if ZBUS_PREFER_DYNAMIC_ALLOCATION
+	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
 	bool "Use heap to allocate msg_subscriber buffers data"
@@ -63,6 +68,31 @@ endif # ZBUS_MSG_SUBSCRIBER
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."
 
+if ZBUS_RUNTIME_OBSERVERS
+
+choice ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC
+	prompt "ZBus runtime observers node allocation"
+	default ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC if ZBUS_PREFER_DYNAMIC_ALLOCATION
+	default ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC
+
+config ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	bool "Use heap to allocate runtime observers node"
+
+config ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC
+	bool "Use a pool of runtime observers nodes"
+
+config ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE
+	bool "Use user-provided runtime observers nodes"
+
+endchoice
+
+config ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE
+	int "Runtime observer pool size"
+	depends on ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC
+	default 8
+
+endif # ZBUS_RUNTIME_OBSERVERS
+
 config ZBUS_PRIORITY_BOOST
 	bool "ZBus priority boost algorithm"
 	default y
@@ -80,9 +110,9 @@ config ZBUS_ASSERT_MOCK
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	int
-	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS
-	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
-	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
+	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 
 
 module = ZBUS

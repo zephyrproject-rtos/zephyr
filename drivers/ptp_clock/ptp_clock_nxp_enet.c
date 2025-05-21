@@ -152,7 +152,7 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	struct nxp_enet_ptp_data *ptp_data;
 
-	__ASSERT(cb_data == NULL, "ptp data is NULL");
+	__ASSERT(cb_data != NULL, "ptp data is NULL");
 
 	ptp_data = (struct nxp_enet_ptp_data *)cb_data;
 
@@ -180,6 +180,7 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
 				kENET_PtpChannelPulseHighonCompare, true);
 		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
+		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
 	}
 }
 

@@ -22,4 +22,24 @@ DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
+if BOARD_MAX32657EVKIT_MAX32657_NS
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+# MAX32657 has one UART interface,
+# It can be used either on TFM or Zephyr
+# Enabling debug (TFM_SPM_LOG_LEVEL || TFM_PARTITION_LOG_LEVEL) will transfer it to the TFM side
+# Disabling TFM debug will transfer it to the Zephyr side.
+
+choice TFM_SPM_LOG_LEVEL
+	default TFM_SPM_LOG_LEVEL_SILENCE
+endchoice
+
+choice TFM_PARTITION_LOG_LEVEL
+	default TFM_PARTITION_LOG_LEVEL_SILENCE
+endchoice
+
+endif # BOARD_MAX32657EVKIT_MAX32657_NS
+
 endif # BOARD_MAX32657EVKIT

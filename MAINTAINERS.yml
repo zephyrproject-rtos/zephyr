@@ -1995,9 +1995,7 @@ Release Notes:
     - sample.drivers.espi.ps2
 
 "Drivers: PTP Clock":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
@@ -2311,9 +2309,7 @@ Release Notes:
     - "area: Display Controller"
 
 "Drivers: Virtualization":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/virtualization/
     - tests/drivers/virtualization/
@@ -2876,7 +2872,6 @@ Networking:
     - jukkar
   collaborators:
     - pdgendt
-    - tbursztyka
     - ssharks
   files:
     - scripts/net/
@@ -2945,7 +2940,6 @@ Networking:
     - jhedberg
   collaborators:
     - rlubos
-    - tbursztyka
     - jukkar
   files:
     - doc/services/net_buf/
@@ -3156,25 +3150,6 @@ Networking:
     - "area: HTTP"
   tests:
     - net.http
-
-NIOS-2 arch:
-  status: maintained
-  maintainers:
-    - nashif
-  files:
-    - arch/nios2/
-    - dts/nios2/intel/
-    - boards/common/nios2.board.cmake
-    - soc/altr/*nios2*/
-    - include/zephyr/arch/nios2/
-    - tests/boards/altera_max10/
-    - boards/qemu/nios2/
-    - boards/altr/max10/
-    - scripts/support/quartus-flash.py
-  labels:
-    - "area: NIOS2"
-  tests:
-    - boards.altera_max10
 
 nRF BSIM:
   status: maintained
@@ -3854,10 +3829,12 @@ NXP Wireless:
   collaborators:
     - MaochenWang1
     - axelnxp
+    - George-Stefan
   files:
     - drivers/wifi/nxp/
     - drivers/bluetooth/hci/*nxp*
     - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/*/*mcxw*.c
   labels:
     - "platform: NXP Drivers"
 
@@ -4301,6 +4278,20 @@ ITE Platforms:
     - soc/ite/
   labels:
     - "platform: ITE"
+
+TI MSPM0 Platforms:
+  status: maintained
+  maintainers:
+    - ssekar15
+  files:
+    - soc/ti/mspm0/
+    - boards/ti/lp_mspm0g3507/
+    - dts/arm/ti/mspm0/
+    - dts/bindings/*/*mspm0*
+    - drivers/*/*_mspm0*
+    - modules/Kconfig.mspm0
+  labels:
+    - "platform: Texas Instruments MSPM0"
 
 TI SimpleLink Platforms:
   status: maintained
@@ -4952,15 +4943,6 @@ West:
   files: []
   labels:
     - "platform: ADI"
-
-"West project: hal_altera":
-  status: odd fixes
-  collaborators:
-    - nashif
-  files:
-    - modules/Kconfig.altera
-  labels:
-    - "platform: Altera"
 
 "West project: hal_ambiq":
   status: odd fixes

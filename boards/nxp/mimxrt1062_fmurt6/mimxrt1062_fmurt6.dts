@@ -207,24 +207,26 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 256KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(256)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@40000 {
 				label = "image-0";
-				reg = <0x00040000 (DT_SIZE_M(3) + DT_SIZE_K(512))>;
+				reg = <0x00040000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@3C0000 {
+			slot1_partition: partition@340000 {
 				label = "image-1";
-				reg = <0x003C0000 DT_SIZE_M(3)>;
+				reg = <0x00340000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@6C0000 {
+			storage_partition: partition@640000 {
 				label = "storage";
-				reg = <0x006C0000 (DT_SIZE_M(58) - DT_SIZE_K(768))>;
+				reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
 			};
 		};
 	};

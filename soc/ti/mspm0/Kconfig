@@ -1,0 +1,18 @@
+# Texas Instruments MSPM0 Family
+# Copyright (c) 2025 Texas Instruments
+# Copyright (c) 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_TI_MSPM0
+
+rsource "*/Kconfig"
+
+# Per TRM Section 2.2.7 Peripheral Power Enable Control: wait at least 4 ULPCLK
+# clock cycles before accessing the peripheral's memory-mapped registers.
+# ULPCLK will either be equivalent or half of the main MCLK and CPUCLK,
+# yielding the delay time of 8 cycles
+config MSPM0_PERIPH_STARTUP_DELAY
+	int
+	default 8
+
+endif # SOC_FAMILY_TI_MSPM0

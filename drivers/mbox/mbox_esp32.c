@@ -75,8 +75,8 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 
 	/* first of all take the ownership of the shared memory */
 	while (!atomic_cas(&dev_data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
-			   dev_data->this_core_id))
-		;
+			   dev_data->this_core_id)) {
+	}
 
 	if (dev_data->cb) {
 		/* For ESP32 soft mbox driver, the message parameter of the callback holds
@@ -224,8 +224,8 @@ static int esp32_mbox_init(const struct device *dev)
 
 		LOG_DBG("Waiting CPU0 to sync");
 		while (!atomic_cas(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
-				   data->this_core_id))
-			;
+				   data->this_core_id)) {
+		}
 
 		atomic_set(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
 

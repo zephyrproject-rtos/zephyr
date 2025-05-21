@@ -5,6 +5,6 @@
 if SOC_APOLLO510
 
 config NUM_IRQS
-    default 134
+	default 134
 
 endif # SOC_APOLLO510

@@ -154,12 +154,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 	void *reg = dev_config->spim.p_reg;
 
 	if (deactivate_cs) {
-		/*
-		 * We may suspend SPI only if we don't have to keep CS asserted, as we
-		 * need to keep the CS GPIO port resumed until spi_release() in this case.
-		 */
 		spi_context_cs_control(&dev_data->ctx, false);
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
 	}
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -169,6 +164,8 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		release_clock(dev);
 	}
+
+	pm_device_runtime_put_async(dev, K_NO_WAIT);
 }
 
 static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
@@ -406,7 +403,12 @@ static void finish_transaction(const struct device *dev, int error)
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
-	finalize_spi_transaction(dev, (dev_data->ctx.config->operation & SPI_HOLD_ON_CS) > 0);
+	if (dev_data->ctx.config->operation & SPI_LOCK_ON) {
+		/* Keep device resumed until call to spi_release() */
+		(void)pm_device_runtime_get(dev);
+	}
+
+	finalize_spi_transaction(dev, true);
 }
 
 static void transfer_next_chunk(const struct device *dev)

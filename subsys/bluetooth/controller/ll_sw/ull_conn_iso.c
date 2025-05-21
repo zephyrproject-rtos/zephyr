@@ -345,7 +345,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 		cis = ll_conn_iso_stream_get(handle);
 
 		/* Match CIS contexts associated with the CIG */
-		if (cis->group == cig) {
+		if ((cis->group == cig) && (cis->lll.active == 1U)) {
 			if (cis_curr && (cis->lll.offset <= cis_offset_curr)) {
 				/* Skip already returned CISes with offsets less
 				 * than the current CIS.

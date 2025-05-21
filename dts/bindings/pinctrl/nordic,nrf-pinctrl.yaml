@@ -1,11 +1,12 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+title: Nordic nRF family Pin Controller
+
 description: |
-    The nRF pin controller is a singleton node responsible for controlling
-    pin function selection and pin properties. For example, you can use this
-    node to route UART0 RX to pin P0.1 and enable the pull-up resistor on the
-    pin.
+    Singleton node responsible for controlling pin function selection and pin
+    properties. For example, you can use this node to route UART0 RX to pin P0.1
+    and enable the pull-up resistor on the pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

@@ -141,13 +141,13 @@ void soc_reset_hook(void)
 	/* Wait for LIRC clock ready */
 	CLK_WaitClockReady(CLK_STATUS_LIRCSTB_Msk);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hirc48)
-	/* Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48) */
-	if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_ENABLE) {
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hirc48m)
+	/* Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48M) */
+	if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48m) == NUMAKER_SCC_CLKSW_ENABLE) {
 		CLK_EnableXtalRC(CLK_SRCCTL_HIRC48MEN_Msk);
-		/* Wait for HIRC48 clock ready */
+		/* Wait for HIRC48M clock ready */
 		CLK_WaitClockReady(CLK_STATUS_HIRC48MSTB_Msk);
-	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_DISABLE) {
+	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48m) == NUMAKER_SCC_CLKSW_DISABLE) {
 		CLK_DisableXtalRC(CLK_SRCCTL_HIRC48MEN_Msk);
 	}
 #endif

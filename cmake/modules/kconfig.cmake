@@ -66,6 +66,14 @@ if(DEFINED BOARD_REVISION)
     message(DEPRECATION "Use of '${board_rev_file}.conf' is deprecated, please switch to '${board_rev_file}_defconfig'")
     set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${board_rev_file}.conf)
   endif()
+
+  # Generate boolean board revision kconfig option
+  zephyr_string(SANITIZE TOUPPER BOARD_REVISION_GEN_CONFIG_VAR "BOARD_REVISION_${BOARD_REVISION}")
+
+  file(APPEND ${KCONFIG_BOARD_DIR}/Kconfig
+       "config ${BOARD_REVISION_GEN_CONFIG_VAR}\n"
+       "\tdef_bool y\n"
+  )
 endif()
 
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)

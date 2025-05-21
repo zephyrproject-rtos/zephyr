@@ -1,9 +1,11 @@
 # Copyright (c) 2024 sensry.io
 # SPDX-License-Identifier: Apache-2.0
 
+title: Sensry SY1xx Pin Controller
+
 description: |
-  The sensry SY1xx pin controller is a single node responsible for controlling
-  pin configuration, such as pull-up, pull-down, tri-state, ...
+  Singleton node responsible for controlling pin configuration, such as pull-up,
+  pull-down, tri-state, ...
 
   The node has the 'pinctrl0' node label set in your SoC's devicetree,
   so you can modify it like this:
