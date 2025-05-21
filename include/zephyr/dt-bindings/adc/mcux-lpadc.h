@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCUX_LPADC_H_
@@ -25,6 +25,8 @@
 #define MCUX_LPADC_CH7B (0x27)
 #define MCUX_LPADC_CH8A (0x8)
 #define MCUX_LPADC_CH8B (0x28)
+#define MCUX_LPADC_CH23A (0x17)
+#define MCUX_LPADC_CH23B (0x37)
 
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCUX_LPADC_H_ */
