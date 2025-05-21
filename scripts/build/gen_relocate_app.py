@@ -643,7 +643,7 @@ def main():
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
     rel_dict, phdrs = create_dict_wrt_mem()
-    complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]' = (
+    complete_list_of_sections: dict[MemoryRegion, dict[SectionKind, list[OutputSection]]] = (
         defaultdict(lambda: defaultdict(list))
     )
 
@@ -652,7 +652,7 @@ def main():
 
     # for each memory_type, create text/rodata/data/bss sections for all obj files
     for memory_type, files in rel_dict.items():
-        full_list_of_sections: 'dict[SectionKind, list[OutputSection]]' = defaultdict(list)
+        full_list_of_sections: dict[SectionKind, list[OutputSection]] = defaultdict(list)
 
         for filename, symbol_filter in files:
             obj_filename = get_obj_filename(all_obj_files, filename)
