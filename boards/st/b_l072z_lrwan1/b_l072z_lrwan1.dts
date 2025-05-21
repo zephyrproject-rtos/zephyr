@@ -22,18 +22,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_0 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1";
 		};
+
 		green_led_1: led_1 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 2";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
@@ -42,6 +46,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "Push button switch";
 			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
