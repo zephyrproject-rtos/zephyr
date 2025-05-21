@@ -23,3 +23,7 @@
 &cpu0 {
 	clock-frequency = <96000000>;
 };
+
+&gpio0 {
+	status = "okay";
+};
