@@ -70,7 +70,7 @@
 		};
 	};
 
-	oscillators: oscialltors {
+	oscillators: oscillators {
 		hfxt: hfxt {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-osc";
