@@ -24,14 +24,17 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		yellow_led: led_2 {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -40,6 +43,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -196,14 +200,17 @@
 				label = "image-0";
 				reg = <0x00000000 DT_SIZE_K(512)>;
 			};
+
 			slot1_partition: partition@80000 {
 				label = "image-1";
 				reg = <0x0080000 DT_SIZE_K(512)>;
 			};
+
 			scratch_partition: partition@100000 {
 				label = "image-scratch";
 				reg = <0x00100000 DT_SIZE_K(64)>;
 			};
+
 			storage_partition: partition@110000 {
 				label = "storage";
 				reg = <0x00110000 DT_SIZE_K(64)>;

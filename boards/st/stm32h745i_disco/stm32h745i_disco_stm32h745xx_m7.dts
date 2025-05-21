@@ -189,13 +189,13 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   storage_partition: partition@0 {
-			       reg = <0x0 DT_SIZE_M(64)>;
-			   };
+			storage_partition: partition@0 {
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
 		};
 	};
 
@@ -264,6 +264,7 @@
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <0x603>;
+
 		bank@1 {
 			reg = <1>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_8
