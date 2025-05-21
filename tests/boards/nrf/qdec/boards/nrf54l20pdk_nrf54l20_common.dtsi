@@ -5,7 +5,7 @@
 
 / {
 	aliases {
-		qdec0 = &qdec20;
+		qdec-0 = &qdec20;
 		qenca = &phase_a;
 		qencb = &phase_b;
 	};
