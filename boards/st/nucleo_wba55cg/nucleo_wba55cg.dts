@@ -29,14 +29,17 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		blue_led_1: led_0 {
 			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led_2: led_1 {
 			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		red_led_3: led_2 {
 			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
@@ -53,16 +56,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User B1";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User B2";
 			gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "User B3";
 			gpios = <&gpiob 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -206,14 +212,17 @@ stm32_lp_tick_source: &lptim1 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(456)>;
 		};
+
 		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(448)>;
 		};
+
 		storage_partition: partition@f2000 {
 			label = "storage";
 			reg = <0x000f2000 DT_SIZE_K(56)>;
