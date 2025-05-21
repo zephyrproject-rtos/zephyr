@@ -1995,7 +1995,9 @@ Release Notes:
     - sample.drivers.espi.ps2
 
 "Drivers: PTP Clock":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - yangbolu1991
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
