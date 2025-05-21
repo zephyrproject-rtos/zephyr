@@ -27,6 +27,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_3 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -157,6 +158,7 @@
 		group = <6>;
 		channel-ios = <TSC_IO2>;
 		sampling-io = <TSC_IO1>;
+
 		ts1 {
 			compatible = "tsc-keys";
 			sampling-interval-ms = <10>;
