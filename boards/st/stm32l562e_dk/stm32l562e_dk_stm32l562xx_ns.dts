@@ -45,16 +45,19 @@
 			reg = <0x00000000 DT_SIZE_K(100)>;
 			read-only;
 		};
+
 		/* Secure image primary slot */
 		slot0_partition: partition@19000 {
 			reg = <0x00019000 DT_SIZE_K(240)>;
 		};
+
 		/* Non-secure image primary slot */
 		slot1_ns_partition: partition@55000 {
 			reg = <0x00055000 DT_SIZE_K(168)>;
 		};
+
 		/* 4KB at the end of 512KB flash is set for storage */
-		 storage_partition: partition@7f000 {
+		storage_partition: partition@7f000 {
 			reg = <0x0007f000 DT_SIZE_K(4)>;
 		};
 	};
