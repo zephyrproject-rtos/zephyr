@@ -41,7 +41,6 @@ Multiple regions can be appended together like SRAM2_DATA_BSS
 this will place data and bss inside SRAM2.
 """
 
-
 import sys
 import argparse
 import glob
@@ -251,9 +250,7 @@ def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[
             if section_kind is None:
                 continue
 
-            out[section_kind].append(
-                OutputSection(obj_file_path.name, section.name)
-            )
+            out[section_kind].append(OutputSection(obj_file_path.name, section.name))
 
             # Common variables will be placed in the .bss section
             # only after linking in the final executable. This "if" finds
@@ -261,19 +258,22 @@ def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[
             # The solution to which is simply assigning a 0 to
             # bss variable and it will go to the required place.
             if isinstance(section, SymbolTableSection):
+
                 def is_common_symbol(s):
                     return s.entry["st_shndx"] == "SHN_COMMON"
 
                 for symbol in filter(is_common_symbol, section.iter_symbols()):
-                    warnings.warn("Common variable found. Move "+
-                                  symbol.name + " to bss by assigning it to 0/NULL")
+                    warnings.warn(
+                        "Common variable found. Move "
+                        + symbol.name
+                        + " to bss by assigning it to 0/NULL"
+                    )
 
     return out
 
 
 def assign_to_correct_mem_region(
-    memory_region: str,
-    full_list_of_sections: 'dict[SectionKind, list[OutputSection]]'
+    memory_region: str, full_list_of_sections: 'dict[SectionKind, list[OutputSection]]'
 ) -> 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]':
     """
     Generate a mapping of memory region to collection of output sections to be
@@ -292,8 +292,7 @@ def assign_to_correct_mem_region(
     for used_kind in use_section_kinds:
         # Pass through section kinds that go into this memory region
         output_sections[used_kind] = [
-            section._replace(keep=keep_sections)
-            for section in full_list_of_sections[used_kind]
+            section._replace(keep=keep_sections) for section in full_list_of_sections[used_kind]
         ]
 
     return {MemoryRegion(memory_region): output_sections}
@@ -328,9 +327,11 @@ def print_linker_sections(list_sections: 'list[OutputSection]'):
     out = ''
     for section in sorted(list_sections):
         template = PRINT_TEMPLATE if section.keep else PRINT_TEMPLATE_NOKEEP
-        out += template.format(obj_file_name=section.obj_file_name,
-                               section_name=section.section_name)
+        out += template.format(
+            obj_file_name=section.obj_file_name, section_name=section.section_name
+        )
     return out
+
 
 def add_phdr(memory_type, phdrs):
     return f'{memory_type} {phdrs[memory_type] if memory_type in phdrs else ""}'
@@ -342,14 +343,16 @@ def string_create_helper(
     full_list_of_sections: 'dict[SectionKind, list[OutputSection]]',
     load_address_in_flash,
     is_copy,
-    phdrs
+    phdrs,
 ):
     linker_string = ''
     if load_address_in_flash:
         if is_copy:
             load_address_string = LOAD_ADDRESS_LOCATION_FLASH.format(add_phdr(memory_type, phdrs))
         else:
-            load_address_string = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY.format(add_phdr(memory_type, phdrs))
+            load_address_string = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY.format(
+                add_phdr(memory_type, phdrs)
+            )
     else:
         load_address_string = LOAD_ADDRESS_LOCATION_BSS.format(add_phdr(memory_type, phdrs))
     if full_list_of_sections[kind]:
@@ -364,50 +367,87 @@ def string_create_helper(
                 if memory_type in mpu_align:
                     align_size = mpu_align[memory_type]
 
-                linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), kind.value, memory_type.upper(),
-                                                               kind, tmp, load_address_string, align_size)
+                linker_string += LINKER_SECTION_SEQ_MPU.format(
+                    memory_type.lower(),
+                    kind.value,
+                    memory_type.upper(),
+                    kind,
+                    tmp,
+                    load_address_string,
+                    align_size,
+                )
             else:
-                if region_is_default_ram(memory_type) and kind in (SectionKind.TEXT, SectionKind.LITERAL):
+                if region_is_default_ram(memory_type) and kind in (
+                    SectionKind.TEXT,
+                    SectionKind.LITERAL,
+                ):
                     align_size = 0
-                    linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), kind.value, memory_type.upper(),
-                                                                   kind, tmp, load_address_string, align_size)
+                    linker_string += LINKER_SECTION_SEQ_MPU.format(
+                        memory_type.lower(),
+                        kind.value,
+                        memory_type.upper(),
+                        kind,
+                        tmp,
+                        load_address_string,
+                        align_size,
+                    )
                 else:
-                    linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), kind.value, memory_type.upper(),
-                                                               kind, tmp, load_address_string)
+                    linker_string += LINKER_SECTION_SEQ.format(
+                        memory_type.lower(),
+                        kind.value,
+                        memory_type.upper(),
+                        kind,
+                        tmp,
+                        load_address_string,
+                    )
             if load_address_in_flash:
-                linker_string += SECTION_LOAD_MEMORY_SEQ.format(memory_type.lower(), kind.value, memory_type.upper(),
-                                                                kind)
+                linker_string += SECTION_LOAD_MEMORY_SEQ.format(
+                    memory_type.lower(), kind.value, memory_type.upper(), kind
+                )
     return linker_string
 
 
-def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_file,
-                           complete_list_of_sections, phdrs):
+def generate_linker_script(
+    linker_file, sram_data_linker_file, sram_bss_linker_file, complete_list_of_sections, phdrs
+):
     gen_string = ''
     gen_string_sram_data = ''
     gen_string_sram_bss = ''
 
-    for memory_type, full_list_of_sections in \
-            sorted(complete_list_of_sections.items()):
-
+    for memory_type, full_list_of_sections in sorted(complete_list_of_sections.items()):
         is_copy = bool("|COPY" in memory_type)
         memory_type = memory_type.split("|", 1)[0]
 
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_START.format(memory_type.lower(), memory_type.upper())
 
-        gen_string += string_create_helper(SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs)
-        gen_string += string_create_helper(SectionKind.TEXT, memory_type, full_list_of_sections, 1, is_copy, phdrs)
-        gen_string += string_create_helper(SectionKind.RODATA, memory_type, full_list_of_sections, 1, is_copy, phdrs)
+        gen_string += string_create_helper(
+            SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs
+        )
+        gen_string += string_create_helper(
+            SectionKind.TEXT, memory_type, full_list_of_sections, 1, is_copy, phdrs
+        )
+        gen_string += string_create_helper(
+            SectionKind.RODATA, memory_type, full_list_of_sections, 1, is_copy, phdrs
+        )
 
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(memory_type.lower())
 
         if region_is_default_ram(memory_type):
-            gen_string_sram_data += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
-            gen_string_sram_bss += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+            gen_string_sram_data += string_create_helper(
+                SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
+            )
+            gen_string_sram_bss += string_create_helper(
+                SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs
+            )
         else:
-            gen_string += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
-            gen_string += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+            gen_string += string_create_helper(
+                SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs
+            )
+            gen_string += string_create_helper(
+                SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs
+            )
 
     # finally writing to the linker file
     with open(linker_file, "w") as file_desc:
@@ -432,17 +472,20 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
         if kind in generate_sections and full_list_of_sections[kind]:
             code_generation["copy_code"] += MEMCPY_TEMPLATE.format(memory_type.lower(), kind.value)
             code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
-                memory_type.lower(), kind.value)
+                memory_type.lower(), kind.value
+            )
 
     # BSS sections in main memory are automatically zeroed; others need to have
     # zeroing code generated.
-    if (SectionKind.BSS in generate_sections
+    if (
+        SectionKind.BSS in generate_sections
         and full_list_of_sections[SectionKind.BSS]
         and not region_is_default_ram(memory_type)
     ):
         code_generation["zero_code"] += MEMSET_TEMPLATE.format(memory_type.lower())
         code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
-            memory_type.lower(), SectionKind.BSS.value)
+            memory_type.lower(), SectionKind.BSS.value
+        )
 
     return code_generation
 
@@ -472,26 +515,36 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
-    parser.add_argument("-d", "--directory", required=True,
-                        help="obj file's directory")
-    parser.add_argument("-i", "--input_rel_dict", required=True, type=argparse.FileType('r'),
-                        help="input file with dict src:memory type(sram2 or ccm or aon etc)")
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+    parser.add_argument("-d", "--directory", required=True, help="obj file's directory")
+    parser.add_argument(
+        "-i",
+        "--input_rel_dict",
+        required=True,
+        type=argparse.FileType('r'),
+        help="input file with dict src:memory type(sram2 or ccm or aon etc)",
+    )
     parser.add_argument("-o", "--output", required=False, help="Output ld file")
-    parser.add_argument("-s", "--output_sram_data", required=False,
-                        help="Output sram data ld file")
-    parser.add_argument("-b", "--output_sram_bss", required=False,
-                        help="Output sram bss ld file")
-    parser.add_argument("-c", "--output_code", required=False,
-                        help="Output relocation code header file")
-    parser.add_argument("-R", "--default_ram_region", default='SRAM',
-                        help="Name of default RAM memory region for system")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Verbose Output")
+    parser.add_argument("-s", "--output_sram_data", required=False, help="Output sram data ld file")
+    parser.add_argument("-b", "--output_sram_bss", required=False, help="Output sram bss ld file")
+    parser.add_argument(
+        "-c", "--output_code", required=False, help="Output relocation code header file"
+    )
+    parser.add_argument(
+        "-R",
+        "--default_ram_region",
+        default='SRAM',
+        help="Name of default RAM memory region for system",
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbose Output")
     args = parser.parse_args()
+
 
 def gen_all_obj_files(searchpath):
     return list(Path(searchpath).rglob('*.o')) + list(Path(searchpath).rglob('*.obj'))
+
 
 # return the absolute path for the object file.
 def get_obj_filename(all_obj_files, filename):
@@ -502,6 +555,7 @@ def get_obj_filename(all_obj_files, filename):
         if obj_file.name == obj_filename:
             if filename.split("/")[-2] in obj_file.parent.name:
                 return str(obj_file)
+
 
 # Extracts all possible components for the input string:
 # <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...][,filter]
@@ -519,7 +573,6 @@ def parse_input_string(line):
 
     flag_list, rest = rest.split(':', 1)
     flag_list = flag_list.split(';')
-
 
     # Split file list by semicolons, in part to support generator expressions
     file_list, symbol_filter = rest.split(',', 1)
@@ -555,7 +608,7 @@ def create_dict_wrt_mem():
         for file_glob in file_list:
             glob_results = glob.glob(file_glob)
             if not glob_results:
-                warnings.warn("File: "+file_glob+" Not found")
+                warnings.warn("File: " + file_glob + " Not found")
                 continue
             elif len(glob_results) > 1:
                 warnings.warn("Regex in file lists is deprecated, please use file(GLOB) instead")
@@ -590,8 +643,9 @@ def main():
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
     rel_dict, phdrs = create_dict_wrt_mem()
-    complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]' \
-        = defaultdict(lambda: defaultdict(list))
+    complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]' = (
+        defaultdict(lambda: defaultdict(list))
+    )
 
     # Create/or truncate file contents if it already exists
     # raw = open(linker_file, "w")
@@ -613,20 +667,19 @@ def main():
 
         # cleanup and attach the sections to the memory type after cleanup.
         sections_by_category = assign_to_correct_mem_region(memory_type, full_list_of_sections)
-        for (region, section_category_map) in sections_by_category.items():
-            for (category, sections) in section_category_map.items():
+        for region, section_category_map in sections_by_category.items():
+            for category, sections in section_category_map.items():
                 complete_list_of_sections[region][category].extend(sections)
 
-    generate_linker_script(linker_file, sram_data_linker_file,
-                           sram_bss_linker_file, complete_list_of_sections, phdrs)
+    generate_linker_script(
+        linker_file, sram_data_linker_file, sram_bss_linker_file, complete_list_of_sections, phdrs
+    )
 
     code_generation = {"copy_code": '', "zero_code": '', "extern": ''}
     for mem_type, list_of_sections in sorted(complete_list_of_sections.items()):
-
         if "|COPY" in mem_type:
             mem_type = mem_type.split("|", 1)[0]
-            code_generation = generate_memcpy_code(mem_type,
-                                               list_of_sections, code_generation)
+            code_generation = generate_memcpy_code(mem_type, list_of_sections, code_generation)
 
     dump_header_file(args.output_code, code_generation)
 
