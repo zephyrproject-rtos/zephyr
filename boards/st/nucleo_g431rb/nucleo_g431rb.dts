@@ -25,6 +25,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -41,6 +42,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -163,7 +165,6 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -173,14 +174,17 @@ stm32_lp_tick_source: &lptim1 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(34)>;
 		};
+
 		slot0_partition: partition@8800 {
 			label = "image-0";
 			reg = <0x00008800 DT_SIZE_K(48)>;
 		};
+
 		slot1_partition: partition@14800 {
 			label = "image-1";
 			reg = <0x00014800 DT_SIZE_K(42)>;
 		};
+
 		/* Set 4Kb of storage at the end of the 128Kb of flash */
 		storage_partition: partition@1f000 {
 			label = "storage";
