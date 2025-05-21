@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 counters
+
+compatible: "espressif,esp32-counter"
+
+include: base.yaml
