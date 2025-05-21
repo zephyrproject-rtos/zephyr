@@ -132,6 +132,36 @@ __asm__(".align 4\n\t"
 	"  add   a1, a1, a2\n\t"
 	"  call0 power_gate_exit\n\t");
 
+void intel_adsp_power_off(void)
+{
+	struct imr_header hdr = {
+		.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE,
+		.imr_restore_vector = rom_entry,
+	};
+	struct imr_layout *imr_layout =
+		sys_cache_uncached_ptr_get((__sparse_force void __sparse_cache *)L3_MEM_BASE_ADDR);
+	uint32_t hpsram_mask[HPSRAM_SEGMENTS] = {0};
+	uint32_t cpu = arch_proc_id();
+
+	core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
+	z_xt_ints_off(0xffffffff);
+	xthal_window_spill();
+	_save_core_context();
+	soc_cpus_active[cpu] = false;
+	sys_cache_data_flush_and_invd_all();
+
+	imr_layout->imr_state.header = hdr;
+
+#ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
+	/* turn off all HPSRAM banks - get a full bitmap */
+	for (int i = 0; i < HPSRAM_SEGMENTS; i++) {
+		hpsram_mask[i] = HPSRAM_MEMMASK(i);
+	}
+#endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
+	/* do power down - this function won't return */
+	power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
@@ -144,30 +174,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		_save_core_context();
 		soc_cpus_active[cpu] = false;
 		sys_cache_data_flush_and_invd_all();
-		if (cpu == 0) {
-			uint32_t hpsram_mask[HPSRAM_SEGMENTS] = {0};
-
-			struct imr_header hdr = {
-				.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE,
-				.imr_restore_vector = rom_entry,
-			};
-			struct imr_layout *imr_layout =
-				sys_cache_uncached_ptr_get((__sparse_force void __sparse_cache *)
-						   L3_MEM_BASE_ADDR);
-
-			imr_layout->imr_state.header = hdr;
-
-#ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
-			/* turn off all HPSRAM banks - get a full bitmap */
-			for (int i = 0; i < HPSRAM_SEGMENTS; i++) {
-				hpsram_mask[i] = HPSRAM_MEMMASK(i);
-			}
-#endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
-			/* do power down - this function won't return */
-			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
-		} else {
-			k_cpu_atomic_idle(arch_irq_lock());
-		}
+		/* this will only be called for secondary cores */
+		k_cpu_atomic_idle(arch_irq_lock());
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
