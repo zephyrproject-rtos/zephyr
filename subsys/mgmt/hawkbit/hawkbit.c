@@ -1497,6 +1497,11 @@ static void s_report(void *o)
 		return;
 	}
 
+	/* After reporting the successful update to the hawkBit server, we can reset the saved
+	 * action ID to 0, as we don't need it anymore.
+	 */
+	(void)hawkbit_device_acid_update(0);
+
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
 }
 
