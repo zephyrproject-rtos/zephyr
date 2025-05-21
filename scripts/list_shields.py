@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -57,6 +58,7 @@ def find_shields_in(root):
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
     add_args(parser)
+    add_args_formatting(parser)
     return parser.parse_args()
 
 def add_args(parser):
@@ -66,9 +68,19 @@ def add_args(parser):
                         type=Path, action='append',
                         help='add a board root, may be given more than once')
 
+def add_args_formatting(parser):
+    parser.add_argument("--json", action='store_true',
+                        help='''output list of shields in JSON format''')
+
 def dump_shields(shields):
-    for shield in shields:
-        print(f'  {shield.name}')
+    if args.json:
+        print(
+            json.dumps([{'dir': shield.dir.as_posix(), 'name': shield.name} for shield in shields])
+        )
+    else:
+        for shield in shields:
+            print(f'  {shield.name}')
 
 if __name__ == '__main__':
-    dump_shields(find_shields(parse_args()))
+    args = parse_args()
+    dump_shields(find_shields(args))
