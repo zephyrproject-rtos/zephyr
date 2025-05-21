@@ -7,7 +7,7 @@ menuconfig IEEE802154_MCXW
 	bool "NXP MCXW series IEEE 802.15.4 Driver"
 	default y
 	depends on DT_HAS_NXP_MCXW_IEEE802154_ENABLED
-	depends on COUNTER
+	select COUNTER
 
 if IEEE802154_MCXW
 
