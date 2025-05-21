@@ -271,6 +271,7 @@ struct eth_sam_dev_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	void (*config_func)(void);
 	const struct device *phy_dev;
+	uint8_t num_queues;
 };
 
 /* Device run time data */
