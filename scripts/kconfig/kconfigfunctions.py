@@ -532,6 +532,29 @@ def dt_nodelabel_bool_prop(kconf, _, label, prop):
 
     return _dt_node_bool_prop_generic(edt.label2node.get, label, prop)
 
+def dt_nodelabel_int_prop(kconf, _, label, prop):
+    """
+    This function takes a 'label' and looks for an EDT node with that label.
+    If it finds an EDT node, it will look to see if that node has a int
+    property by the name of 'prop'.  If the 'prop' exists it will return the
+    value of the property, otherwise it returns "0".
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.label2node.get(label)
+    except edtlib.EDTError:
+        return "0"
+
+    if not node or node.props[prop].type != "int":
+        return "0"
+
+    if not node.props[prop].val:
+        return "0"
+
+    return str(node.props[prop].val)
+
 def dt_chosen_bool_prop(kconf, _, chosen, prop):
     """
     This function takes a /chosen node property named 'chosen', and
@@ -1059,6 +1082,7 @@ functions = {
         "dt_nodelabel_reg_size_hex": (dt_nodelabel_reg, 1, 3),
         "dt_node_bool_prop": (dt_node_bool_prop, 2, 2),
         "dt_nodelabel_bool_prop": (dt_nodelabel_bool_prop, 2, 2),
+        "dt_nodelabel_int_prop": (dt_nodelabel_int_prop, 2, 2),
         "dt_chosen_bool_prop": (dt_chosen_bool_prop, 2, 2),
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
         "dt_nodelabel_has_prop": (dt_nodelabel_has_prop, 2, 2),
