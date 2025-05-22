@@ -1,0 +1,74 @@
+# Renesas RX architecture configuration options
+
+# Copyright (c) 2020 KT-Elektronik, Klaucke und Partner GmbH
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Renesas RX Options"
+	depends on RX
+
+config ARCH
+	string
+	default "rx"
+
+config CPU_RXV1
+	bool
+	help
+	  Set if the processor supports the Renesas RXv1 instruction set.
+
+config CPU_RXV2
+	bool
+	help
+	  Set if the processor supports the Renesas RXv2 instruction set.
+
+config CPU_RXV3
+	bool
+	help
+	  Set if the processor supports the Renesas RXv3 instruction set.
+
+config HAS_EXCEPT_VECTOR_TABLE
+	bool
+	help
+	  Set if the processor has the exception vector table.
+
+config XIP
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	int "Number of supported interrupt priority levels"
+	range 1 16
+	default 16
+	help
+	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1. The
+	  minimum value is 1. The BSP must provide a valid default for proper
+	  operation.
+
+config NUM_IRQS
+	int
+	default 256
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_IRQ_START_VECTOR
+	default 16
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config MAIN_STACK_SIZE
+	default 1024
+
+config INITIALIZATION_STACK_SIZE
+	int "Initialization stack size (in bytes)"
+	default 512
+	help
+	  Stack size for initialization process of kernel (in bytes)
+
+endmenu

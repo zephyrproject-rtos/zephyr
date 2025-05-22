@@ -6,12 +6,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdint.h>
+
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/tmap.h>
 #include "btp/btp.h"
 
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+
 LOG_MODULE_REGISTER(bttester_tmap, CONFIG_BTTESTER_LOG_LEVEL);
 
 static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,

@@ -24,6 +24,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>

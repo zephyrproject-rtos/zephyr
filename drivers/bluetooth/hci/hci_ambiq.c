@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 
 static struct spi_dt_spec spi_bus =
-	SPI_DT_SPEC_GET(DT_INST_PARENT(0),
+	SPI_DT_SPEC_INST_GET(0,
 			     SPI_OP_MODE_MASTER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
 				     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8),
 			     0);
@@ -344,24 +344,10 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 {
-	int ret = 0;
+	int ret;
 
-	/* Buffer needs an additional byte for type */
-	if (buf->len >= SPI_MAX_TX_MSG_LEN) {
+	if (buf->len > SPI_MAX_TX_MSG_LEN) {
 		LOG_ERR("Message too long");
-		return -EINVAL;
-	}
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	default:
-		LOG_ERR("Unsupported type");
-		net_buf_unref(buf);
 		return -EINVAL;
 	}
 

@@ -52,7 +52,7 @@ directory of the running process.
    semihost_close(fd);
 
 Additional Functionality
-########################
+************************
 
 Additional functionality is available by running semihosting instructions
 directly with :c:func:`semihost_exec` with one of the instructions defined

@@ -6,6 +6,7 @@ config UDC_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_UDC_ENABLED
 	select USE_RA_FSP_USB_DEVICE
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	select PINCTRL
 	help
 	  Enable Renesas RA family UDC driver.

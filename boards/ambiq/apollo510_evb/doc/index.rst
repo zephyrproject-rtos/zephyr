@@ -1,13 +1,6 @@
-.. _apollo510_evb:
-
-Ambiq Apollo510 EVB
-##################
+.. zephyr:board:: apollo510_evb
 
 Apollo510 EVB is a board by Ambiq featuring their ultra-low power Apollo510 SoC.
-
-.. image:: ./apollo510-soc-engineering-board.jpg
-   :align: center
-   :alt: Apollo510 EVB
 
 Hardware
 ********
@@ -29,53 +22,18 @@ For more information about the Apollo510 SoC and Apollo510 EVB board:
 Supported Features
 ==================
 
-The Apollo510 EVB board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| STIMER    | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C(M)    | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| MSPI(M)   | on-chip    | mspi, x16/8/4 psram, x8/4/1 flash   |
-+-----------+------------+-------------------------------------+
-| SDIO(M)   | on-chip    | sdio, eMMC, WIFI                    |
-+-----------+------------+-------------------------------------+
-| USB(D)    | on-chip    | usb device                          |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-``boards/arm/apollo510_evb/apollo510_evb_defconfig``.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 =========================
+
+.. zephyr:board-supported-runners::
 
 Flashing an application
 -----------------------
 
 Connect your device to your host computer using the JLINK USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
@@ -84,7 +42,7 @@ Build the Zephyr kernel and application, then flash it to the device:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ and `pylink`_ Python module
+   ``west flash`` requires `SEGGER J-Link software`_ and `pylink`_ Python module
    to be installed on you host computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -105,7 +63,7 @@ the following message:
    https://ambiq.com/apollo510/
 
 .. _Apollo510 Datasheet:
-   https://contentportal.ambiq.com/documents/20123/2877485/Apollo510-SoC-Product-Brief-A4.pdf
+   https://contentportal.ambiq.com/documents/20123/2877485/Apollo510-SoC-Datasheet.pdf
 
 .. _Apollo510 EVB Website:
    For more information, please reach out to Sales and FAE.

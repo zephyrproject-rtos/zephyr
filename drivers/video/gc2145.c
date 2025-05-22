@@ -14,6 +14,10 @@
 #include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
+
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 
 #define GC2145_REG_AMODE1               0x17
@@ -689,7 +693,13 @@ struct gc2145_config {
 #endif
 };
 
+struct gc2145_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct gc2145_data {
+	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -1030,8 +1040,7 @@ static uint8_t gc2145_check_connection(const struct device *dev)
 	return 0;
 }
 
-static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
 	size_t res = ARRAY_SIZE(fmts);
@@ -1075,8 +1084,7 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
 
@@ -1085,7 +1093,7 @@ static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_set_stream(const struct device *dev, bool enable)
+static int gc2145_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct gc2145_config *cfg = dev->config;
 
@@ -1093,20 +1101,21 @@ static int gc2145_set_stream(const struct device *dev, bool enable)
 		      : gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
 }
 
-static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int gc2145_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
 }
 
-static int gc2145_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 {
-	switch (cid) {
+	struct gc2145_data *drv_data = dev->data;
+
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return gc2145_set_ctrl_hmirror(dev, (int)value);
+		return gc2145_set_ctrl_hmirror(dev, drv_data->ctrls.hflip.val);
 	case VIDEO_CID_VFLIP:
-		return gc2145_set_ctrl_vflip(dev, (int)value);
+		return gc2145_set_ctrl_vflip(dev, drv_data->ctrls.vflip.val);
 	default:
 		return -ENOTSUP;
 	}
@@ -1119,6 +1128,22 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
 };
+
+static int gc2145_init_controls(const struct device *dev)
+{
+	int ret;
+	struct gc2145_data *drv_data = dev->data;
+	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+}
 
 static int gc2145_init(const struct device *dev)
 {
@@ -1158,15 +1183,15 @@ static int gc2145_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = RESOLUTION_QVGA_W;
 	fmt.height = RESOLUTION_QVGA_H;
-	fmt.pitch = RESOLUTION_QVGA_W * 2;
 
-	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return ret;
 	}
 
-	return 0;
+	/* Initialize controls */
+	return gc2145_init_controls(dev);
 }
 
 /* Unique Instance */
@@ -1208,3 +1233,5 @@ static int gc2145_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
+
+VIDEO_DEVICE_DEFINE(gc2145, DEVICE_DT_INST_GET(0), NULL);

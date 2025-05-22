@@ -13,16 +13,17 @@ supported:
   - watchdog
   - counter
   - gpio
-  - rtc
-  - hwinfo
   - spi
   - i2c
+  - rtc
+  - hwinfo
+  - clock_control
   - mspi
   - sdio
   - sdhc
-  - clock_control
   - usbd
   - pdm
+  - i2s
 testing:
   ignore_tags:
     - net

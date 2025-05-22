@@ -49,6 +49,7 @@ struct npf_rule_list npf_ipv6_recv_rules = {
 /*
  * Helper function
  */
+#if defined(CONFIG_NET_PKT_FILTER_IPV4_HOOK) || defined(CONFIG_NET_PKT_FILTER_IPV6_HOOK)
 static struct npf_rule_list *get_ip_rules(uint8_t pf)
 {
 	switch (pf) {
@@ -68,7 +69,7 @@ static struct npf_rule_list *get_ip_rules(uint8_t pf)
 
 	return NULL;
 }
-
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK || CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 /*
  * Rule application
  */
@@ -86,7 +87,9 @@ static bool apply_tests(struct npf_rule *rule, struct net_pkt *pkt)
 	for (i = 0; i < rule->nb_tests; i++) {
 		test = rule->tests[i];
 		result = test->fn(test, pkt);
-		NET_DBG("test %p result %d", test, result);
+		NET_DBG("test %s (%p) result %d",
+			COND_CODE_1(NPF_TEST_ENABLE_NAME, (test->name), ("")),
+			test, result);
 		if (result == false) {
 			return false;
 		}
@@ -239,6 +242,10 @@ bool npf_iface_match(struct npf_test *test, struct net_pkt *pkt)
 	struct npf_test_iface *test_iface =
 			CONTAINER_OF(test, struct npf_test_iface, test);
 
+	NET_DBG("iface %d pkt %d",
+		net_if_get_by_iface(test_iface->iface),
+		net_if_get_by_iface(net_pkt_iface(pkt)));
+
 	return test_iface->iface == net_pkt_iface(pkt);
 }
 
@@ -251,6 +258,10 @@ bool npf_orig_iface_match(struct npf_test *test, struct net_pkt *pkt)
 {
 	struct npf_test_iface *test_iface =
 			CONTAINER_OF(test, struct npf_test_iface, test);
+
+	NET_DBG("orig iface %d pkt %d",
+		net_if_get_by_iface(test_iface->iface),
+		net_if_get_by_iface(net_pkt_orig_iface(pkt)));
 
 	return test_iface->iface == net_pkt_orig_iface(pkt);
 }
@@ -265,6 +276,9 @@ bool npf_size_inbounds(struct npf_test *test, struct net_pkt *pkt)
 	struct npf_test_size_bounds *bounds =
 			CONTAINER_OF(test, struct npf_test_size_bounds, test);
 	size_t pkt_size = net_pkt_get_len(pkt);
+
+	NET_DBG("pkt_size %zu min %zu max %zu",
+		pkt_size, bounds->min, bounds->max);
 
 	return pkt_size >= bounds->min && pkt_size <= bounds->max;
 }
@@ -296,4 +310,157 @@ bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 bool npf_ip_src_addr_unmatch(struct npf_test *test, struct net_pkt *pkt)
 {
 	return !npf_ip_src_addr_match(test, pkt);
+}
+
+static void rules_cb(struct npf_rule_list *rules, enum npf_rule_type type,
+		     npf_rule_cb_t cb, void *user_data)
+{
+	struct npf_rule *rule;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&rules->rule_head, rule, node) {
+		cb(rule, type, user_data);
+	}
+}
+
+void npf_rules_foreach(npf_rule_cb_t cb, void *user_data)
+{
+	rules_cb(&npf_send_rules, NPF_RULE_TYPE_SEND, cb, user_data);
+	rules_cb(&npf_recv_rules, NPF_RULE_TYPE_RECV, cb, user_data);
+
+#ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
+	rules_cb(&npf_local_in_recv_rules, NPF_RULE_TYPE_LOCAL_IN_RECV, cb, user_data);
+#endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
+	rules_cb(&npf_ipv4_recv_rules, NPF_RULE_TYPE_IPV4_RECV, cb, user_data);
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
+	rules_cb(&npf_ipv6_recv_rules, NPF_RULE_TYPE_IPV6_RECV, cb, user_data);
+#endif /* CONFIG_NET_PKT_FILTER_IPV6_HOOK */
+}
+
+#include "net_private.h" /* for net_sprint_addr() */
+
+const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
+{
+#if defined(CONFIG_NET_SHELL_PKT_FILTER_SUPPORTED)
+	if (test->type == NPF_TEST_TYPE_IFACE_MATCH ||
+	    test->type == NPF_TEST_TYPE_IFACE_UNMATCH ||
+	    test->type == NPF_TEST_TYPE_ORIG_IFACE_MATCH ||
+	    test->type == NPF_TEST_TYPE_ORIG_IFACE_UNMATCH) {
+		struct npf_test_iface *test_iface =
+			CONTAINER_OF(test, struct npf_test_iface, test);
+
+		snprintk(buf, len, "[%d]", net_if_get_by_iface(test_iface->iface));
+
+	} else if (test->type == NPF_TEST_TYPE_SIZE_BOUNDS ||
+		   test->type == NPF_TEST_TYPE_SIZE_MIN ||
+		   test->type == NPF_TEST_TYPE_SIZE_MAX) {
+		struct npf_test_size_bounds *bounds =
+			CONTAINER_OF(test, struct npf_test_size_bounds, test);
+
+		if (test->type == NPF_TEST_TYPE_SIZE_MIN ||
+		    test->type == NPF_TEST_TYPE_SIZE_MAX) {
+			snprintk(buf, len, "[%zu]",
+				 test->type == NPF_TEST_TYPE_SIZE_MIN ?
+				 bounds->min :  bounds->max);
+		} else {
+			snprintk(buf, len, "[%zu-%zu]", bounds->min, bounds->max);
+		}
+
+	} else if (test->type == NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST ||
+		   test->type == NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST) {
+		struct npf_test_ip *test_ip =
+			CONTAINER_OF(test, struct npf_test_ip, test);
+		int pos = 1;
+
+		if (len < 2) {
+			goto out;
+		}
+
+		if (test_ip->ipaddr_num == 0) {
+			snprintk(buf, len, "[]");
+			goto out;
+		}
+
+		buf[0] = '[';
+
+		for (uint32_t i = 0; i < test_ip->ipaddr_num; i++) {
+			if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			    test_ip->addr_family == AF_INET) {
+				struct in_addr *addr =
+					&((struct in_addr *)test_ip->ipaddr)[i];
+
+				pos += snprintk(buf + pos, len - pos,
+						"%s%s", pos > 1 ? "," : "",
+						net_sprint_ipv4_addr(addr));
+
+			} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+				   test_ip->addr_family == AF_INET6) {
+				struct in6_addr *addr =
+					&((struct in6_addr *)test_ip->ipaddr)[i];
+
+				pos += snprintk(buf + pos, len - pos,
+						"%s%s", pos > 1 ? "," : "",
+						net_sprint_ipv6_addr(addr));
+			}
+		}
+
+		if (pos >= len) {
+			goto out;
+		}
+
+		buf[pos] = ']';
+
+	} else if (test->type == NPF_TEST_TYPE_ETH_SRC_ADDR_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_SRC_ADDR_UNMATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_DST_ADDR_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_DST_ADDR_UNMATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_SRC_ADDR_MASK_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_DST_ADDR_MASK_MATCH) {
+		struct npf_test_eth_addr *test_eth =
+			CONTAINER_OF(test, struct npf_test_eth_addr, test);
+		int pos = 1;
+
+		if (len < 2) {
+			goto out;
+		}
+
+		if (test_eth->nb_addresses == 0) {
+			snprintk(buf, len, "[]");
+			goto out;
+		}
+
+		buf[0] = '[';
+
+		for (uint32_t i = 0; i < test_eth->nb_addresses; i++) {
+			pos += snprintk(buf + pos, len - pos,
+					"%s%s", pos > 1 ? "," : "",
+					net_sprint_ll_addr(
+						(const uint8_t *)(&test_eth->addresses[i]),
+						NET_ETH_ADDR_LEN));
+		}
+
+		if (pos >= len) {
+			goto out;
+		}
+
+		buf[pos] = ']';
+
+	} else if (test->type == NPF_TEST_TYPE_ETH_TYPE_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_TYPE_UNMATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH ||
+		   test->type == NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH) {
+		struct npf_test_eth_type *test_eth =
+			CONTAINER_OF(test, struct npf_test_eth_type, test);
+
+		snprintk(buf, len, "[0x%04x]", ntohs(test_eth->type));
+	}
+
+out:
+	return test->name;
+#else
+	return "<UNKNOWN>";
+#endif
 }

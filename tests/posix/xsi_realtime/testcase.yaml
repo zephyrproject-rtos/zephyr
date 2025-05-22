@@ -8,8 +8,11 @@ common:
     - arch
     - simulation
   min_flash: 64
-  min_ram: 32
-  timeout: 240
+  min_ram: 96
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+    - qemu_riscv64
   platform_exclude:
     # linker_zephyr_pre0.cmd:140: syntax error (??)
     - qemu_xtensa/dc233c

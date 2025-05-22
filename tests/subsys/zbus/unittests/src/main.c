@@ -137,7 +137,7 @@ static struct action_msg ga;
 
 static void isr_handler(const void *operation)
 {
-	enum operation *op = (enum operation *)operation;
+	const enum operation *op = (const enum operation *)operation;
 
 	switch (*op) {
 	case PUB_ISR_INVAL:

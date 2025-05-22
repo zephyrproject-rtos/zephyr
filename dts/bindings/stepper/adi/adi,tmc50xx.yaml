@@ -13,7 +13,7 @@ description: |
         tmc50xx: tmc50xx@0 {
             compatible = "adi,tmc50xx";
             reg = <0>;
-            spi-max-frequency = <DT_FREQ_M(24)>; /* Maximum SPI bus frequency */
+            spi-max-frequency = <DT_FREQ_M(8)>; /* Maximum SPI bus frequency */
 
             #address-cells = <1>;
             #size-cells = <0>;
@@ -61,8 +61,6 @@ include:
   - name: adi,trinamic-gconf.yaml
     property-allowlist:
       - poscmp-enable
-      - shaft1
-      - shaft2
       - test-mode
       - lock-gconf
 

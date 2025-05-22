@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,10 +37,10 @@ static inline int display_setup(const struct device *const display_dev, const ui
 
 	LOG_INF("- Capabilities:");
 	LOG_INF("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u"
-	       "  current_pixel_format = %u, current_orientation = %u",
-	       capabilities.x_resolution, capabilities.y_resolution,
-	       capabilities.supported_pixel_formats, capabilities.current_pixel_format,
-	       capabilities.current_orientation);
+		"  current_pixel_format = %u, current_orientation = %u",
+		capabilities.x_resolution, capabilities.y_resolution,
+		capabilities.supported_pixel_formats, capabilities.current_pixel_format,
+		capabilities.current_orientation);
 
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {
@@ -62,7 +63,14 @@ static inline int display_setup(const struct device *const display_dev, const ui
 		return ret;
 	}
 
-	return display_blanking_off(display_dev);
+	/* Turn off blanking if driver supports it */
+	ret = display_blanking_off(display_dev);
+	if (ret == -ENOSYS) {
+		LOG_DBG("Display blanking off not available");
+		ret = 0;
+	}
+
+	return ret;
 }
 
 static inline void video_display_frame(const struct device *const display_dev,
@@ -82,15 +90,23 @@ static inline void video_display_frame(const struct device *const display_dev,
 
 int main(void)
 {
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX], *vbuf;
+	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	struct video_format fmt;
 	struct video_caps caps;
 	struct video_frmival frmival;
 	struct video_frmival_enum fie;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	unsigned int frame = 0;
 	size_t bsize;
 	int i = 0;
 	int err;
+
+	/* When the video shell is enabled, do not run the capture loop */
+	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
+		LOG_INF("Letting the user control the device with the video shell");
+		return 0;
+	}
 
 #if DT_HAS_CHOSEN(zephyr_camera)
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
@@ -111,7 +127,8 @@ int main(void)
 	LOG_INF("Video device: %s", video_dev->name);
 
 	/* Get capabilities */
-	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
+	caps.type = type;
+	if (video_get_caps(video_dev, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
@@ -121,14 +138,15 @@ int main(void)
 		const struct video_format_cap *fcap = &caps.format_caps[i];
 		/* fourcc to string */
 		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
-		       VIDEO_FOURCC_TO_STR(fcap->pixelformat),
-		       fcap->width_min, fcap->width_max, fcap->width_step,
-		       fcap->height_min, fcap->height_max, fcap->height_step);
+			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
+			fcap->width_min, fcap->width_max, fcap->width_step,
+			fcap->height_min, fcap->height_max, fcap->height_step);
 		i++;
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	fmt.type = type;
+	if (video_get_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
@@ -139,7 +157,6 @@ int main(void)
 
 #if CONFIG_VIDEO_FRAME_WIDTH
 	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
-	fmt.pitch = fmt.width * 2;
 #endif
 
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
@@ -149,39 +166,52 @@ int main(void)
 	LOG_INF("- Video format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
 
-	if (video_set_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	if (video_set_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to set format");
 		return 0;
 	}
 
-	if (!video_get_frmival(video_dev, VIDEO_EP_OUT, &frmival)) {
+	if (!video_get_frmival(video_dev, &frmival)) {
 		LOG_INF("- Default frame rate : %f fps",
-		       1.0 * frmival.denominator / frmival.numerator);
+			1.0 * frmival.denominator / frmival.numerator);
 	}
 
 	LOG_INF("- Supported frame intervals for the default format:");
 	memset(&fie, 0, sizeof(fie));
 	fie.format = &fmt;
-	while (video_enum_frmival(video_dev, VIDEO_EP_OUT, &fie) == 0) {
+	while (video_enum_frmival(video_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u ", fie.discrete.numerator, fie.discrete.denominator);
+			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
 		} else {
 			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-			       fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-			       fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
+				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
+				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
 		}
 		fie.index++;
 	}
 
-	/* Set controls */
-	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
+	/* Get supported controls */
+	LOG_INF("- Supported controls:");
+
+	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+
+	while (!video_query_ctrl(video_dev, &cq)) {
+		video_print_ctrl(video_dev, &cq);
+		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 	}
 
-#ifdef CONFIG_TEST
-	video_set_ctrl(video_dev, VIDEO_CID_TEST_PATTERN, (void *)1);
-#endif
+	/* Set controls */
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+
+	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
+		video_set_ctrl(video_dev, &ctrl);
+	}
+
+	if (IS_ENABLED(CONFIG_TEST)) {
+		ctrl.id = VIDEO_CID_TEST_PATTERN;
+		video_set_ctrl(video_dev, &ctrl);
+	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -217,12 +247,12 @@ int main(void)
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
-
-		video_enqueue(video_dev, VIDEO_EP_OUT, buffers[i]);
+		buffers[i]->type = type;
+		video_enqueue(video_dev, buffers[i]);
 	}
 
 	/* Start video capture */
-	if (video_stream_start(video_dev)) {
+	if (video_stream_start(video_dev, type)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -230,15 +260,16 @@ int main(void)
 	LOG_INF("Capture started");
 
 	/* Grab video frames */
+	vbuf->type = type;
 	while (1) {
-		err = video_dequeue(video_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER);
+		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
 		}
 
-		LOG_DBG("Got frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
-		       vbuf->timestamp);
+		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
+			frame++, vbuf->bytesused, vbuf->timestamp);
 
 #ifdef CONFIG_TEST
 		if (is_colorbar_ok(vbuf->buffer, fmt)) {
@@ -250,7 +281,7 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, VIDEO_EP_OUT, vbuf);
+		err = video_enqueue(video_dev, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;

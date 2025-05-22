@@ -261,19 +261,19 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 		       (SY1XX_MAC_CTRL_CLK_DIV_MASK << SY1XX_MAC_CTRL_CLK_DIV_OFFS));
 
 		switch (speed) {
-		case LINK_FULL_10BASE_T:
+		case LINK_FULL_10BASE:
 			LOG_INF("link speed FULL_10BASE_T");
 			/* 2.5MHz, MAC is clock source */
 			v |= (SY1XX_MAC_CTRL_CLK_SEL_MII_CLK << SY1XX_MAC_CTRL_CLK_SEL_OFFS) |
 			     (SY1XX_MAC_CTRL_CLK_DIV_10 << SY1XX_MAC_CTRL_CLK_DIV_OFFS);
 			break;
-		case LINK_FULL_100BASE_T:
+		case LINK_FULL_100BASE:
 			LOG_INF("link speed FULL_100BASE_T");
 			/* 25MHz, MAC is clock source */
 			v |= (SY1XX_MAC_CTRL_CLK_SEL_MII_CLK << SY1XX_MAC_CTRL_CLK_SEL_OFFS) |
 			     (SY1XX_MAC_CTRL_CLK_DIV_1 << SY1XX_MAC_CTRL_CLK_DIV_OFFS);
 			break;
-		case LINK_FULL_1000BASE_T:
+		case LINK_FULL_1000BASE:
 			LOG_INF("link speed FULL_1000BASE_T");
 			/* 125MHz, Phy is clock source */
 			v |= BIT(SY1XX_MAC_CTRL_GMII_OFFS) |
@@ -346,7 +346,7 @@ static enum ethernet_hw_caps sy1xx_mac_get_caps(const struct device *dev)
 
 	/* basic implemented features */
 	supported |= ETHERNET_PROMISC_MODE;
-	supported |= ETHERNET_LINK_1000BASE_T;
+	supported |= ETHERNET_LINK_1000BASE;
 	supported |= ETHERNET_PROMISC_MODE;
 
 	return supported;

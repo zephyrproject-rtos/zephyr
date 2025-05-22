@@ -67,4 +67,11 @@
 				 <PC5B_PWM_PWMH1>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA24X_ADC_AD6>,
+				 <PA16X_ADC_AD7>;
+		};
+	};
 };

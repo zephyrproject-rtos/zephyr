@@ -1,0 +1,12 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC23x0 watchdog
+
+compatible: "ti,cc23x0-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

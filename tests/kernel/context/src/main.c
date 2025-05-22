@@ -72,10 +72,10 @@ extern const int32_t z_sys_timer_irq_for_test;
 
 #endif
 
-/* Cortex-M1 and Nios II do have a power saving instruction, so k_cpu_idle()
+/* Cortex-M1 does have a power saving instruction, so k_cpu_idle()
  * returns immediately
  */
-#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2)
+#if !defined(CONFIG_CPU_CORTEX_M1)
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
@@ -845,13 +845,10 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 
 	k_busy_wait(usecs);
 
-	/* FIXME: Broken on Nios II, see #22956 */
-#ifndef CONFIG_NIOS2
 	int key = arch_irq_lock();
 
 	k_busy_wait(usecs);
 	arch_irq_unlock(key);
-#endif
 
 	/*
 	 * Ideally the test should verify that the correct number of ticks

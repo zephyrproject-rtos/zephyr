@@ -11,6 +11,7 @@
 #include "xtensa_asm2_context.h"
 
 #include <zephyr/offsets.h>
+#include <offsets_short.h>
 
 /* Assembler header!  This file contains macros designed to be included
  * only by the assembler.
@@ -156,134 +157,111 @@
  * ODD_REG_SAVE
  *
  * Stashes the oddball shift/loop context registers in the base save
- * area pointed to by the current stack pointer.  On exit, A0 will
- * have been modified but A2/A3 have not, and the shift/loop
- * instructions can be used freely (though note loops don't work in
- * exceptions for other reasons!).
+ * area pointed to by the register specified by parameter BSA_PTR.
+ * On exit, the scratch register specified by parameter SCRATCH_REG
+ * will have been modified, and the shift/loop instructions can be
+ * used freely (though note loops don't work in exceptions for other
+ * reasons!).
  *
  * Does not populate or modify the PS/PC save locations.
  */
-.macro ODD_REG_SAVE
-	rsr.sar a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
+.macro ODD_REG_SAVE SCRATCH_REG, BSA_PTR
+	rsr.sar \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_sar_OFFSET
 #if XCHAL_HAVE_LOOPS
-	rsr.lbeg a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	rsr.lend a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	rsr.lcount a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
+	rsr.lbeg \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lbeg_OFFSET
+	rsr.lend \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lend_OFFSET
+	rsr.lcount \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lcount_OFFSET
 #endif
-	rsr.exccause a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
+	rsr.exccause \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_exccause_OFFSET
 #if XCHAL_HAVE_S32C1I
-	rsr.scompare1 a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
+	rsr.scompare1 \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
 #if XCHAL_HAVE_THREADPTR && \
 	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
-	rur.THREADPTR a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
-#endif
-#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
-	FPU_REG_SAVE
+	rur.THREADPTR \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_threadptr_OFFSET
 #endif
 
 .endm
 
-#ifdef CONFIG_XTENSA_MMU
 /*
- * CALC_PTEVADDR_BASE
+ * ODD_REG_RESTORE
  *
- * This calculates the virtual address of the first PTE page
- * (PTEVADDR base, the one mapping 0x00000000) so that we can
- * use this to obtain the virtual address of the PTE page we are
- * interested in. This can be obtained via
- * (1 << CONFIG_XTENSA_MMU_PTEVADDR_SHIFT).
+ * Restores the oddball shift/loop context registers in the base save
+ * area pointed to by the register specified by parameter BSA_PTR.
+ * On exit, the scratch register specified by parameter SCRATCH_REG
+ * will have been modified.
  *
- * Note that this is done this way is to avoid any TLB
- * miss if we are to use l32r to load the PTEVADDR base.
- * If the page containing the PTEVADDR base address is
- * not in TLB, we will need to handle the TLB miss which
- * we are trying to avoid here.
- *
- * @param ADDR_REG Register to store the calculated
- *                 PTEVADDR base address.
- *
- * @note The content of ADDR_REG will be modified.
- *       Save and restore it around this macro usage.
+ * Does not restore the PS/PC save locations.
  */
-.macro CALC_PTEVADDR_BASE ADDR_REG
-	movi \ADDR_REG, 1
-	slli \ADDR_REG, \ADDR_REG, CONFIG_XTENSA_MMU_PTEVADDR_SHIFT
+.macro ODD_REG_RESTORE SCRATCH_REG, BSA_PTR
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_sar_OFFSET
+	wsr.sar \SCRATCH_REG
+#if XCHAL_HAVE_LOOPS
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lbeg_OFFSET
+	wsr.lbeg \SCRATCH_REG
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lend_OFFSET
+	wsr.lend \SCRATCH_REG
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lcount_OFFSET
+	wsr.lcount \SCRATCH_REG
+#endif
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_exccause_OFFSET
+	wsr.exccause \SCRATCH_REG
+#if XCHAL_HAVE_S32C1I
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
+	wsr.scompare1 \SCRATCH_REG
+#endif
+#if XCHAL_HAVE_THREADPTR && \
+	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_threadptr_OFFSET
+	wur.THREADPTR \SCRATCH_REG
+#endif
+
 .endm
 
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
 /*
- * PRELOAD_PTEVADDR
+ * SWAP_PAGE_TABLE
  *
- * This preloads the page table entries for a 4MB region to avoid TLB
- * misses. This 4MB region is mapped via a page (4KB) of page table
- * entries (PTE). Each entry is 4 bytes mapping a 4KB region. Each page,
- * then, has 1024 entries mapping a 4MB region. Filling TLB entries is
- * automatically done via hardware, as long as the PTE page associated
- * with a particular address is also in TLB. If the PTE page is not in
- * TLB, an exception will be raised that must be handled. This TLB miss
- * is problematic when we are in the middle of dealing with another
- * exception or handling an interrupt. So we need to put the PTE page
- * into TLB by simply do a load operation.
+ * This swaps the page tables by using the pre-computed register values
+ * inside the architecture-specific memory domain struct.
  *
- * @param ADDR_REG Register containing the target address
- * @param PTEVADDR_BASE_REG Register containing the PTEVADDR base
+ * THREAD_PTR_REG is input containing pointer to the incoming thread struct.
+ * SC1_REG and SC2_REG are scratch registers.
  *
- * @note Both the content of ADDR_REG will be modified.
- *       Save and restore it around this macro usage.
+ * Note that all THREAD_PTR_REG, SC1_REG and SC2_REG are all clobbered.
+ * Restore the thread pointer after this if necessary.
  */
-.macro PRELOAD_PTEVADDR ADDR_REG, PTEVADDR_BASE_REG
-	/*
-	 * Calculate the offset to first PTE page of all memory.
-	 *
-	 * Every page (4KB) of page table entries contains
-	 * 1024 entires (as each entry is 4 bytes). Each entry
-	 * maps one 4KB page. So one page of entries maps 4MB of
-	 * memory.
-	 *
-	 * 1. We need to find the virtual address of the PTE page
-	 *    having the page table entry mapping the address in
-	 *    register ADDR_REG. To do this, we first need to find
-	 *    the offset of this PTE page from the first PTE page
-	 *    (the one mapping memory 0x00000000):
-	 *    a. Find the beginning address of the 4KB page
-	 *       containing address in ADDR_REG. This can simply
-	 *       be done by discarding 11 bits (or shifting right
-	 *	 and then left 12 bits).
-	 *    b. Since each PTE page contains 1024 entries,
-	 *	 we divide the address obtained in step (a) by
-	 *       further dividing it by 1024 (shifting right and
-	 *       then left 10 bits) to obtain the offset of
-	 *       the PTE page.
-	 *
-	 *    Step (a) and (b) can be obtained together so that
-	 *    we can shift right 22 bits, and then shift left
-	 *    12 bits.
-	 *
-	 * 2. Once we have combine the results from step (1) and
-	 *    PTEVADDR_BASE_REG to get the virtual address of
-	 *    the PTE page.
-	 *
-	 * 3. Do a l32i to force the PTE page to be in TLB.
-	 */
+.macro SWAP_PAGE_TABLE THREAD_PTR_REG, SC1_REG, SC2_REG
+	l32i \THREAD_PTR_REG, \THREAD_PTR_REG, _thread_offset_to_mem_domain
 
-	/* Step 1 */
-	srli \ADDR_REG, \ADDR_REG, 22
-	slli \ADDR_REG, \ADDR_REG, 12
+	j _swap_page_table_\@
 
-	/* Step 2 */
-	add \ADDR_REG, \ADDR_REG, \PTEVADDR_BASE_REG
+.align 16
+_swap_page_table_\@:
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptevaddr
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_asid
+	wsr \SC1_REG, PTEVADDR
+	wsr \SC2_REG, RASID
 
-	/* Step 3 */
-	l32i \ADDR_REG, \ADDR_REG, 0
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptepin_as
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_ptepin_at
+	wdtlb \SC2_REG, \SC1_REG
+
+	l32i \SC1_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_vecpin_as
+	l32i \SC2_REG, \THREAD_PTR_REG, _k_mem_domain_offset_to_arch_reg_vecpin_at
+	wdtlb \SC2_REG, \SC1_REG
+
+	isync
 .endm
-#endif /* CONFIG_XTENSA_MMU */
+
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 
 /*
  * CROSS_STACK_CALL
@@ -353,15 +331,25 @@
  * the context save handle in A1 as it's first argument.
  */
 .macro CROSS_STACK_CALL
-	mov a6, a3		/* place "new sp" in the next frame's A2 */
-	mov a10, a1             /* pass "context handle" in 2nd frame's A2 */
-	mov a3, a1		/* stash it locally in A3 too */
-	mov a11, a2		/* handler in 2nd frame's A3, next frame's A7 */
+	/* Since accessing A4-A11 may trigger window overflows so
+	 * we need to setup A0 and A1 correctly before putting
+	 * the function arguments for the next two callx4 into
+	 * A6, A10 and A11. So stach the "context handle" into
+	 * ZSR_EPC, which is usable for now similar to ZSR_EPS.
+	 */
+	wsr.ZSR_EPC a1
+	rsync
 
 	/* Recover the interrupted SP from the BSA */
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
+
+	mov a6, a3		/* place "new sp" in the next frame's A2 */
+
+	rsr.ZSR_EPC a3		/* restore saved "context handle" in A3 */
+	mov a10, a3             /* pass "context handle" in 2nd frame's A2 */
+	mov a11, a2		/* handler in 2nd frame's A3, next frame's A7 */
 
 	call4 _xstack_call0_\@
 	mov a1, a3		/* restore original SP */
@@ -377,16 +365,46 @@ _xstack_call0_\@:
 	mov a1, a2
 	rsr.ZSR_EPS a2
 	wsr.ps a2
-	call4 _xstack_call1_\@
-	mov a2, a6		/* copy return value */
-	retw
-.align 4
-_xstack_call1_\@:
-	/* Remember the handler is going to do our ENTRY, so the
-	 * handler pointer is still in A6 (not A2) even though this is
-	 * after the second CALL4.
+
+#ifdef CONFIG_USERSPACE
+	/* Save "context handle" in A3 as we need it to determine
+	 * if we need to swap page table later.
 	 */
-	jx a7
+	mov a3, a6
+#endif
+
+	callx4 a7		/* call handler */
+	mov a2, a6		/* copy return value */
+
+#ifdef CONFIG_USERSPACE
+	rsil a6, XCHAL_NUM_INTLEVELS
+
+	/* If "next" handle to be restored is the same as
+	 * the current handle, there is no need to swap page
+	 * tables or MPU entries since we will return to
+	 * the same thread that was interrupted.
+	 */
+	beq a2, a3, _xstack_skip_table_swap_\@
+
+	/* Need to switch page tables because the "next" handle
+	 * returned above is not the same handle as we started
+	 * with. This means we are being restored to another
+	 * thread.
+	 */
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+
+#ifdef CONFIG_XTENSA_MMU
+	SWAP_PAGE_TABLE a6, a3, a7
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
+
+_xstack_skip_table_swap_\@:
+#endif /* CONFIG_USERSPACE */
+
+	retw
 _xstack_returned_\@:
 .endm
 
@@ -409,7 +427,11 @@ _xstack_returned_\@:
 	 */
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
-	ODD_REG_SAVE
+	ODD_REG_SAVE a0, a1
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
+#endif
 
 #if defined(CONFIG_XTENSA_HIFI_SHARING)
 	call0 _xtensa_hifi_save    /* Save HiFi registers */
@@ -430,46 +452,6 @@ _xstack_returned_\@:
 	wur.THREADPTR a0
 #endif /* XCHAL_HAVE_THREADPTR && CONFIG_USERSPACE */
 
-#ifdef CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE
-
-	/* Setting the interrupt mask to the max non-debug level
-	 * to prevent lower priority interrupts being preempted by
-	 * high level interrupts until processing of that lower level
-	 * interrupt has completed.
-	 */
-	rsr.ps a0
-	movi a3, ~(PS_INTLEVEL_MASK)
-	and a0, a0, a3
-	movi a3, PS_INTLEVEL(ZSR_RFI_LEVEL)
-	or a0, a0, a3
-	wsr.ps a0
-
-#else
-
-	/* There's a gotcha with level 1 handlers: the INTLEVEL field
-	 * gets left at zero and not set like high priority interrupts
-	 * do.  That works fine for exceptions, but for L1 interrupts,
-	 * when we unmask EXCM below, the CPU will just fire the
-	 * interrupt again and get stuck in a loop blasting save
-	 * frames down the stack to the bottom of memory.  It would be
-	 * good to put this code into the L1 handler only, but there's
-	 * not enough room in the vector without some work there to
-	 * squash it some.  Next choice would be to make this a macro
-	 * argument and expand two versions of this handler.  An
-	 * optimization FIXME, I guess.
-	 */
-	rsr.ps a0
-	movi a3, PS_INTLEVEL_MASK
-	and a0, a0, a3
-	bnez a0, _not_l1
-	rsr.ps a0
-	movi a3, PS_INTLEVEL(1)
-	or a0, a0, a3
-	wsr.ps a0
-
-_not_l1:
-#endif /* CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE */
-
 	/* Setting up the cross stack call below has states where the
 	 * resulting frames are invalid/non-reentrant, so we can't
 	 * allow nested interrupts.  But we do need EXCM unmasked, as
@@ -486,7 +468,48 @@ _not_l1:
 	 */
 	movi a3, ~(PS_EXCM_MASK) & ~(PS_RING_MASK)
 	and a0, a0, a3
+
+#ifdef CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE
+
+	/* Setting the interrupt mask to the max non-debug level
+	 * to prevent lower priority interrupts being preempted by
+	 * high level interrupts until processing of that lower level
+	 * interrupt has completed.
+	 */
+	movi a3, ~(PS_INTLEVEL_MASK)
+	and a0, a0, a3
+	movi a3, PS_INTLEVEL(ZSR_RFI_LEVEL)
+	or a0, a0, a3
 	wsr.ZSR_EPS a0
+
+#else
+
+	/* There's a gotcha with level 1 handlers: the INTLEVEL field
+	 * gets left at zero and not set like high priority interrupts
+	 * do.  That works fine for exceptions, but for L1 interrupts,
+	 * when we unmask EXCM below, the CPU will just fire the
+	 * interrupt again and get stuck in a loop blasting save
+	 * frames down the stack to the bottom of memory.  It would be
+	 * good to put this code into the L1 handler only, but there's
+	 * not enough room in the vector without some work there to
+	 * squash it some.  Next choice would be to make this a macro
+	 * argument and expand two versions of this handler.  An
+	 * optimization FIXME, I guess.
+	 */
+	movi a3, PS_INTLEVEL_MASK
+	and a3, a0, a3
+	bnez a3, _not_l1
+
+	/* interrupt masking is zero, so no need to zero it before OR-ing. */
+	movi a3, PS_INTLEVEL(1)
+	or a0, a0, a3
+
+_not_l1:
+	wsr.ZSR_EPS a0
+#endif /* CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE */
+
+	movi a3, PS_INTLEVEL(0xf)
+	or a0, a0, a3
 	wsr.ps a0
 	rsync
 
@@ -536,52 +559,48 @@ _do_call_\@:
 	 */
 	beq a6, a1, _restore_\@
 
-#ifndef CONFIG_USERSPACE
+#if !defined(CONFIG_KERNEL_COHERENCE) || \
+    (defined(CONFIG_KERNEL_COHERENCE) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY))
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
-#ifndef CONFIG_KERNEL_COHERENCE
+
 	/* When using coherence, the registers of the interrupted
 	 * context got spilled upstream in arch_cohere_stacks()
 	 */
 	SPILL_ALL_WINDOWS
 #endif
 
+#if defined(CONFIG_KERNEL_COHERENCE) && \
+	defined(CONFIG_USERSPACE) && \
+	!defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+
+	/* With userspace enabled, we need to swap page table via function calls
+	 * above after returning from syscall handler above in CROSS_STACK_CALL.
+	 * This means that the stack is being actively used, and so we need to
+	 * flush the cached data in stack.
+	 */
+
+	movi a2, 0
+	xsr.ZSR_FLUSH a2
+	beqz a2, _excint_noflush_\@
+
+	rsr.ZSR_CPU a3
+	l32i a3, a3, \NEST_OFF
+	bnez a3, _excint_noflush_\@
+
+	mov a3, a1
+
+_excint_flushloop_\@:
+	dhwb a3, 0
+	addi a3, a3, XCHAL_DCACHE_LINESIZE
+	blt a3, a2, _excint_flushloop_\@
+
+_excint_noflush_\@:
+#endif /* CONFIG_KERNEL_COHERENCE && CONFIG_USERSPACE && !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
 	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
-#else
-	/* With userspace, we cannot simply restore A1 stack pointer
-	 * at this pointer because we need to swap page tables to
-	 * the incoming thread, and we do not want to call that
-	 * function with thread's stack. So we stash the new stack
-	 * pointer into A2 first, then move it to A1 after we have
-	 * swapped the page table.
-	 */
-	mov a2, a6
-
-	/* Need to switch page tables because the "next" handle
-	 * returned above is not the same handle as we started
-	 * with. This means we are being restored to another
-	 * thread.
-	 */
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
-
-#ifdef CONFIG_XTENSA_MMU
-	call4 xtensa_swap_update_page_tables
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
-#endif
-	l32i a1, a1, 0
-	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
-	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
-
-	SPILL_ALL_WINDOWS
-
-	/* Moved stashed stack pointer to A1 to restore stack. */
-	mov a1, a2
-#endif
 
 _restore_\@:
 	j _restore_context
@@ -705,6 +724,25 @@ _not_triple_fault:
 	rsr.eps\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .endif
+
+#ifdef CONFIG_USERSPACE
+	/* When restoring context via xtensa_switch and
+	 * returning from non-nested interrupts, we will be
+	 * using the stashed PS value in the thread struct
+	 * instead of the one in the thread stack. Both of
+	 * these scenarios will have nested value of 0.
+	 * So when nested value is zero, we store the PS
+	 * value into thread struct.
+	 */
+	rsr.ZSR_CPU a3
+	l32i a2, a3, ___cpu_t_nested_OFFSET
+	bnez a2, _excint_skip_ps_save_to_thread_\LVL
+
+	l32i a2, a3, ___cpu_t_current_OFFSET
+	s32i a0, a2, _thread_offset_to_return_ps
+
+_excint_skip_ps_save_to_thread_\LVL:
+#endif
 
 	rsr.epc\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET

@@ -526,7 +526,7 @@ function(yaml_save)
 
     cmake_path(SET yaml_path "${yaml_file}")
     cmake_path(GET yaml_path STEM yaml_file_no_ext)
-    set(expanded_file ${yaml_file_no_ext}_${genex_save_count}.yaml)
+    set(expanded_file ${CMAKE_CURRENT_BINARY_DIR}/${yaml_file_no_ext}_${genex_save_count}.yaml)
     set_property(TARGET ${save_target} PROPERTY expanded_file ${expanded_file})
 
     # comment this to keep the temporary files
@@ -534,6 +534,7 @@ function(yaml_save)
 
     to_yaml("${json_content}" 0 yaml_out TEMP_GENEX)
     FILE(GENERATE OUTPUT ${expanded_file} CONTENT "${yaml_out}")
+    FILE(TOUCH ${expanded_file}) # ensure timestamp is updated even if nothing changed
   endif()
 endfunction()
 

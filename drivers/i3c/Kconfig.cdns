@@ -8,7 +8,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config I3C_CADENCE
 	bool "Cadence I3C driver"
-	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI && I3C_CONTROLLER
 	depends on DT_HAS_CDNS_I3C_ENABLED
 	default y
 	help

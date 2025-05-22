@@ -17,3 +17,6 @@ boards:
           - name: 'ptl'
             variants:
               - name: 'sim'
+          - name: 'wcl'
+            variants:
+              - name: 'sim'

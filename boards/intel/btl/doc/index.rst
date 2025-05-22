@@ -1,7 +1,4 @@
-.. _intel_btl_s:
-
-Bartlett Lake S
-###############
+.. zephyr:board:: intel_btl_s_crb
 
 Overview
 ********
@@ -19,6 +16,8 @@ This board configuration enables kernel support for the Bartlett Lake S boards.
 
 Hardware
 ********
+
+.. zephyr:board-supported-hw::
 
 General information about the board can be found at the `BTL`_ website.
 

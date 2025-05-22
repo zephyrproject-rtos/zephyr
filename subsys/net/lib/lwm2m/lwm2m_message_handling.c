@@ -1057,9 +1057,6 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 				return ret;
 			}
 		}
-		if (msg->in.block_ctx && !last_pkt_block) {
-			msg->in.block_ctx->ctx.current += len;
-		}
 		opaque_ctx.offset += len;
 		written += len;
 	}

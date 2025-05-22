@@ -11,26 +11,31 @@
  */
 
 #include <errno.h>
-#include <zephyr/types.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/kernel.h>
-
-#include <zephyr/settings/settings.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
-
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/atomic_types.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
@@ -72,13 +77,13 @@ static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
-	if (delta > 1000000000) {
+	if (delta > NSEC_PER_SEC) {
 		len = 0U;
 		l2cap_rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		len += buf->len;
-		l2cap_rate = ((uint64_t)len << 3) * 1000000000U / delta;
+		l2cap_rate = ((uint64_t)len << 3) * NSEC_PER_SEC / delta;
 	}
 
 	return 0;

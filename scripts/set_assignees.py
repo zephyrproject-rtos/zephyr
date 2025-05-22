@@ -136,7 +136,13 @@ def process_pr(gh, maintainer_file, number):
             if pr.user.login in area.maintainers:
                 # submitter = assignee, try to pick next area and
                 # assign someone else other than the submitter
-                continue
+                # when there also other maintainers for the area
+                # assign them
+                if len(area.maintainers) > 1:
+                    assignees = area.maintainers.copy()
+                    assignees.remove(pr.user.login)
+                else:
+                    continue
             else:
                 assignees = area.maintainers
 

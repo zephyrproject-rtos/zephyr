@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/renesas/rz/rza/r7s9210.dtsi>
+#include <freq.h>
+#include "rza2m_evk-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZA2M EVK";
+	compatible = "renesas,rza2m_evk";
+
+	chosen {
+		zephyr,sram = &ram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &scif4;
+		zephyr,shell-uart = &scif4;
+	};
+
+	aliases {
+		led0 = &led1_green;
+		led1 = &led1_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_red: led1_red {
+			gpios = <&gpio6 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1_green: led1_green {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	flash0: flash@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_M(64)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			loader_program: partition@0 {
+				label = "loader-program";
+				reg = <0x00000000 DT_SIZE_K(56)>;
+				read-only;
+			};
+
+			slot0_partition: partition@E000  {
+				label = "image-0";
+				reg = <0x0000E000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
+				read-only;
+			};
+		};
+	};
+};
+
+&osc {
+	clock-frequency = <DT_FREQ_M(24)>;
+};
+
+&iclk {
+	clock-frequency = <DT_FREQ_M(528)>;
+};
+
+&bclk {
+	clock-frequency = <DT_FREQ_M(132)>;
+};
+
+&p1clk {
+	clock-frequency = <DT_FREQ_M(66)>;
+};
+
+&ostm0 {
+	status = "okay";
+};
+
+/* Currently, the maximum supported baud rate on the USB Micro port (CN5) is 115200 */
+&scif4 {
+	pinctrl-0 = <&scif4_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

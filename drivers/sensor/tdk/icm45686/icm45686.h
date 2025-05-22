@@ -14,6 +14,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/sensor/icm45686.h>
 #include <zephyr/rtio/rtio.h>
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
+#include <zephyr/drivers/i3c.h>
+#endif
 
 struct icm45686_encoded_payload {
 	union {
@@ -130,10 +133,24 @@ struct icm45686_stream {
 	} data;
 };
 
+enum icm45686_bus_type {
+	ICM45686_BUS_SPI,
+	ICM45686_BUS_I2C,
+	ICM45686_BUS_I3C,
+};
+
 struct icm45686_data {
 	struct {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
+		enum icm45686_bus_type type;
+/** Required to support In-band Interrupts */
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
+		struct {
+			struct i3c_device_desc *desc;
+			const struct i3c_device_id id;
+		} i3c;
+#endif
 	} rtio;
 	/** Single-shot encoded data instance to support fetch/get API */
 	struct icm45686_encoded_data edata;

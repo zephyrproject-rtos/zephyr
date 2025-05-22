@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_
 
-#include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

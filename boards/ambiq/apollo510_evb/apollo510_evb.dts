@@ -27,9 +27,6 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
-		rtc = &rtc0;
-		sdhc0 = &sdio0;
-		pwm-led0 = &pwm_led0;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -46,14 +43,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio160_191 5 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio64_95 25 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio64_95 28 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
@@ -63,12 +63,14 @@
 	buttons {
 		compatible = "gpio-keys";
 		polling-mode;
+
 		button0: button_0 {
 			gpios = <&gpio64_95 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
+
 		button1: button_1 {
 			gpios = <&gpio64_95 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
@@ -96,9 +98,15 @@
 	pinctrl-names = "default";
 };
 
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &timer0 {
 	counter0: counter {
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -108,33 +116,13 @@
 		pinctrl-names = "default";
 		status = "disabled";
 	};
-};
-
-&rtc0 {
-	status = "okay";
-	clock = "XTAL";
-};
-
-&adc0 {
-	pinctrl-0 = <&adc0_default>;
-	pinctrl-names = "default";
 	status = "disabled";
 };
 
-&iom2 {
-	cmdq-buffer-location = "SRAM_NO_CACHE";
-	cmdq-buffer-size = <256>;
-
-	i2c2: i2c {
-		pinctrl-0 = <&i2c2_default>;
-		pinctrl-names = "default";
-		clock-frequency = <I2C_BITRATE_STANDARD>;
-		scl-gpios = <&gpio0_31 25 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		sda-gpios = <&gpio0_31 26 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		status = "okay";
-	};
+&rtc0 {
+	status = "disabled";
+	clock = "XTAL";
 };
-
 
 &uart0 {
 	current-speed = <115200>;
@@ -156,11 +144,11 @@
 	pinctrl-names = "default";
 	txdelay = <0>;
 	rxdelay = <0>;
-	status = "okay";
+	status = "disabled";
 	mmc {
 		compatible = "zephyr,mmc-disk";
         disk-name = "SD2";
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -173,19 +161,19 @@ zephyr_udc0: &usb {
 &pdm0 {
 	pinctrl-0 = <&pdm0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &i2s0 {
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &i2s1 {
 	pinctrl-0 = <&i2s1_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &mspi0 {

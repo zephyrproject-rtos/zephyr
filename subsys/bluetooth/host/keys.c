@@ -5,34 +5,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <string.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/sys/byteorder.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/settings/settings.h>
-
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "common/bt_str.h"
-
 #include "common/rpa.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
-#include "smp.h"
-#include "settings.h"
 #include "id.h"
 #include "keys.h"
+#include "settings.h"
+#include "smp.h"
+#include "sys/types.h"
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_keys);
 
 static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];

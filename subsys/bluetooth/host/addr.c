@@ -5,14 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-#include <errno.h>
-
-#include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/sys/util.h>
 
 #define ADDR_RESOLVED_BITMASK (0x02)
 

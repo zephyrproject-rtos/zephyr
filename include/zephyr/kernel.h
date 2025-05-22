@@ -332,8 +332,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 /**
  * @brief Dynamically allocate a thread stack.
  *
- * Relevant stack creation flags include:
- * - @ref K_USER allocate a userspace thread (requires `CONFIG_USERSPACE=y`)
+ * Dynamically allocate a thread stack either from a pool of thread stacks of
+ * size @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap.
+ * Order is determined by the @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and
+ * @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL} options. Thread stacks from the
+ * pool are of maximum size @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
+ *
+ * @note When no longer required, thread stacks allocated with
+ * `k_thread_stack_alloc()` must be freed with @ref k_thread_stack_free to
+ * avoid leaking memory.
  *
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
@@ -341,7 +348,10 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * @retval the allocated thread stack on success.
  * @retval NULL on failure.
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * Relevant stack creation flags include:
+ * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
+ *
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
 
@@ -355,7 +365,7 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
  * @retval -EINVAL if @p stack is invalid.
  * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
- * @see CONFIG_DYNAMIC_THREAD
+ * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
 __syscall int k_thread_stack_free(k_thread_stack_t *stack);
 
@@ -373,7 +383,7 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * Stack objects passed to this function must be originally defined with
+ * Stack objects passed to this function may be statically allocated with
  * either of these macros in order to be portable:
  *
  * - K_THREAD_STACK_DEFINE() - For stacks that may support either user or
@@ -381,6 +391,9 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  * - K_KERNEL_STACK_DEFINE() - For stacks that may support supervisor
  *   threads only. These stacks use less memory if CONFIG_USERSPACE is
  *   enabled.
+ *
+ * Alternatively, the stack may be dynamically allocated using
+ * @ref k_thread_stack_alloc.
  *
  * The stack_size parameter has constraints. It must either be:
  *
@@ -2379,6 +2392,8 @@ __syscall void k_event_init(struct k_event *event);
  * Posting differs from setting in that posted events are merged together with
  * the current set of events tracked by the event object.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
@@ -2396,6 +2411,8 @@ __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
  * Setting differs from posting in that set events replace the current set of
  * events tracked by the event object.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to set in @a event
  *
@@ -2411,6 +2428,8 @@ __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
  * become met by this immediately unpend. Unlike @ref k_event_set, this routine
  * allows specific event bits to be set and cleared as determined by the mask.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
@@ -2424,6 +2443,8 @@ __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
  * @brief Clear the events in an event object
  *
  * This routine clears (resets) the specified events stored in an event object.
+ *
+ * @funcprops \isr_ok
  *
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
@@ -2442,6 +2463,9 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  *
  * @note The caller must be careful when resetting if there are multiple threads
  * waiting for the event object @a event.
+ *
+ * @note This function may be called from ISR context only when @a timeout is
+ * set to K_NO_WAIT.
  *
  * @param event Address of the event object
  * @param events Set of desired events on which to wait
@@ -2467,6 +2491,9 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @note The caller must be careful when resetting if there are multiple threads
  * waiting for the event object @a event.
  *
+ * @note This function may be called from ISR context only when @a timeout is
+ * set to K_NO_WAIT.
+ *
  * @param event Address of the event object
  * @param events Set of desired events on which to wait
  * @param reset If true, clear the set of events tracked by the event object
@@ -2482,6 +2509,8 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 
 /**
  * @brief Test the events currently tracked in the event object
+ *
+ * @funcprops \isr_ok
  *
  * @param event Address of the event object
  * @param events_mask Set of desired events to test
@@ -5788,6 +5817,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
 /**
  * @defgroup heap_apis Heap APIs
+ * @brief Memory allocation from the Heap
  * @ingroup kernel_apis
  * @{
  */
@@ -5945,6 +5975,8 @@ enum _poll_states_bits {
 
 /**
  * @defgroup poll_apis Async polling APIs
+ * @brief An API to wait concurrently for any one of multiple conditions to be
+ *        fulfilled
  * @ingroup kernel_apis
  * @{
  */

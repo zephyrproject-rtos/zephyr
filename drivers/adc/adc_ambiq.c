@@ -16,7 +16,7 @@
 #include "adc_context.h"
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ambiq, CONFIG_ADC_LOG_LEVEL);
@@ -282,7 +282,7 @@ static int adc_ambiq_init(const struct device *dev)
 	if (AM_HAL_STATUS_SUCCESS !=
 		am_hal_adc_initialize(0, &data->adcHandle)) {
 		ret = -ENODEV;
-		LOG_ERR("Faile to initialize ADC, code:%d", ret);
+		LOG_ERR("Failed to initialize ADC, code:%d", ret);
 		return ret;
 	}
 

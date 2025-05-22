@@ -63,26 +63,40 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
 {
-	static struct pm_state_info info = {};
+	static const struct pm_state_info states[] = {
+		{
+			.state = PM_STATE_ACTIVE
+		},
+		{
+			.state = PM_STATE_RUNTIME_IDLE
+		},
+		{
+			.state = PM_STATE_SUSPEND_TO_IDLE
+		},
+		{
+			.state = PM_STATE_STANDBY
+		},
+	};
+	static const struct pm_state_info *info;
 	int32_t msecs = k_ticks_to_ms_floor64(ticks);
 
 	if (msecs < ACTIVE_MSEC) {
-		info.state = PM_STATE_ACTIVE;
+		info = NULL;
 	} else if (msecs <= IDLE_MSEC) {
-		info.state = PM_STATE_RUNTIME_IDLE;
+		info = &states[1];
 	} else if (msecs <= SUSPEND_TO_IDLE_MSEC) {
-		info.state = PM_STATE_SUSPEND_TO_IDLE;
+		info = &states[2];
 	} else {
 		if (cpu == 0U) {
-			info.state = PM_STATE_SUSPEND_TO_IDLE;
+			info = &states[2];
 		} else {
-			info.state = PM_STATE_STANDBY;
+			info = &states[3];
 		}
 	}
 
-	state_testing[cpu] = info.state;
+	state_testing[cpu] = info ? info->state : PM_STATE_ACTIVE;
 
-	return &info;
+	return info;
 }
 
 /*

@@ -14,29 +14,29 @@ struct sensor_data_msg {
 	int b;
 };
 
-ZBUS_CHAN_DEFINE(chan1,			 /* Name */
+ZBUS_CHAN_DEFINE(chan1,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan2,			 /* Name */
+ZBUS_CHAN_DEFINE(chan2,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS(lis2), /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan3,			 /* Name */
+ZBUS_CHAN_DEFINE(chan3,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
@@ -113,6 +113,7 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis5, K_MSEC(200)), "It must add the obs");
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis6, K_MSEC(200)), "It must add the obs");
 
+#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC)
 	/* Make the heap full */
 	void *mem;
 
@@ -121,7 +122,8 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	} while (mem != NULL);
 
 	/* With the heap full it will not be possible to add another obs */
-	zassert_equal(-ENOMEM, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)), NULL);
+#endif
+	zassert_equal(-EFAULT, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)), NULL);
 	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback2, 5, NULL);
 

@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_ambiq_bleif);
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 struct spi_ambiq_config {
 	uint32_t base;

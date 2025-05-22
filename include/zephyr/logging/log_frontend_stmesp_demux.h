@@ -16,6 +16,7 @@ extern "C" {
 
 /**
  * @defgroup log_frontend_stmesp_apis Trace and Debug Domain APIs
+ * @ingroup logging
  * @{
  * @}
  * @defgroup log_frontend_stpesp_demux_apis Logging frontend STMESP Demultiplexer API

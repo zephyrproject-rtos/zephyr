@@ -6,6 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #ifdef CONFIG_CACHE_MANAGEMENT
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -15,7 +16,7 @@
 #include <zephyr/linker/linker-defs.h>
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-#include "soc.h"
+#include <soc.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -56,12 +57,6 @@ void soc_early_init_hook(void)
 
 	/* Enable Dcache */
 	sys_cache_data_enable();
-
-#ifdef CONFIG_LOG_BACKEND_SWO
-	/* Select HFRC 48MHz for the TPIU clock source */
-	MCUCTRL->DBGCTRL_b.DBGTPIUCLKSEL = MCUCTRL_DBGCTRL_DBGTPIUCLKSEL_HFRC_48MHz;
-	MCUCTRL->DBGCTRL_b.DBGTPIUTRACEENABLE = MCUCTRL_DBGCTRL_DBGTPIUTRACEENABLE_EN;
-#endif
 }
 
 #if CONFIG_CACHE_MANAGEMENT

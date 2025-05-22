@@ -417,13 +417,32 @@ static void tmbox(struct k_mbox *pmbox)
 	k_thread_abort(receiver_tid);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_mbox_api
+ * @{
+ */
+
+
+/**
+ * @brief Test mailbox initialization
+ */
 ZTEST(mbox_api, test_mbox_kinit)
 {
 	/**TESTPOINT: init via k_mbox_init*/
 	k_mbox_init(&mbox);
 }
 
+/**
+ * @brief Test mailbox definition
+ *
+ * @details
+ * - Define a mailbox and verify the mailbox whether as expected
+ * - Verify the mailbox can be used
+ *
+ * @ingroup kernel_mbox_api
+ *
+ * @see k_mbox_init() k_mbox_put() k_mbox_get()
+ */
 ZTEST(mbox_api, test_mbox_kdefine)
 {
 	info_type = PUT_GET_NULL;
@@ -434,7 +453,7 @@ static ZTEST_BMEM char __aligned(4) buffer[8];
 
 /**
  *
- * @brief Test mailbox enhance capabilities
+ * @brief Test mailbox enhanced capabilities
  *
  * @details
  * - Define and initialized a message queue and a mailbox
@@ -445,7 +464,7 @@ static ZTEST_BMEM char __aligned(4) buffer[8];
  *
  * @see k_msgq_init() k_msgq_put() k_mbox_async_put() k_mbox_get()
  */
-ZTEST(mbox_api, test_enhance_capability)
+ZTEST(mbox_api, test_mbox_enhanced_capabilities)
 {
 	info_type = ASYNC_PUT_GET_BUFFER;
 	struct k_msgq msgq;
@@ -460,15 +479,13 @@ ZTEST(mbox_api, test_enhance_capability)
 	tmbox(&mbox);
 }
 
-/*
- *
- * @brife Test any number of mailbox can be defined
+/**
+ * @brief Test that multiple mailboxs can be defined
  *
  * @details
- * - Define multi mailbox and verify the mailbox whether as
+ * - Define multiple mailbox and verify the mailbox whether as
  *   expected
  * - Verify the mailbox can be used
- *
  */
 ZTEST(mbox_api, test_define_multi_mbox)
 {
@@ -486,84 +503,129 @@ ZTEST(mbox_api, test_define_multi_mbox)
 	tmbox(&mbox3);
 }
 
+/**
+ * @brief Test case for mailbox put and get operations with null data.
+ */
 ZTEST(mbox_api, test_mbox_put_get_null)
 {
 	info_type = PUT_GET_NULL;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox put and get operations with buffer.
+ *
+ */
 ZTEST(mbox_api, test_mbox_put_get_buffer)
 {
 	info_type = PUT_GET_BUFFER;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox asynchronous put and get operations with buffer.
+ *
+ */
 ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 {
 	info_type = ASYNC_PUT_GET_BUFFER;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox asynchronous put and get operations with block.
+ *
+ */
 ZTEST(mbox_api, test_mbox_async_put_get_block)
 {
 	info_type = ASYNC_PUT_GET_BLOCK;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox target/source thread buffer operations.
+ */
 ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
 {
 	info_type = TARGET_SOURCE_THREAD_BUFFER;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox incorrect receiver thread ID.
+ */
 ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
 {
 	info_type = INCORRECT_RECEIVER_TID;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox incorrect transmit thread ID.
+ */
 ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
 {
 	info_type = INCORRECT_TRANSMIT_TID;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox timed out get operation.
+ */
 ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 {
 	info_type = TIMED_OUT_MBOX_GET;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox message thread ID mismatch.
+ */
 ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
 {
 	info_type = MSG_TID_MISMATCH;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox dispose size 0 message.
+ */
 ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
 {
 	info_type = DISPOSE_SIZE_0_MSG;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox asynchronous put to waiting get operation.
+ */
 ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
 {
 	info_type = ASYNC_PUT_TO_WAITING_GET;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox get waiting put with incorrect thread ID.
+ */
 ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
 {
 	info_type = GET_WAITING_PUT_INCORRECT_TID;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox asynchronous multiple put operation.
+ */
 ZTEST(mbox_api, test_mbox_async_multiple_put)
 {
 	info_type = ASYNC_MULTIPLE_PUT;
 	tmbox(&mbox);
 }
 
+/**
+ * @brief Test case for mailbox multiple waiting get operation.
+ */
 ZTEST(mbox_api, test_mbox_multiple_waiting_get)
 {
 	info_type = MULTIPLE_WAITING_GET;
@@ -583,5 +645,9 @@ void *setup_mbox_api(void)
 
 	return NULL;
 }
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(mbox_api, NULL, setup_mbox_api, NULL, NULL, NULL);

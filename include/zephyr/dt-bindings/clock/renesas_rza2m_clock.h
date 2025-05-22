@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_RZA2M_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_RZA2M_CLOCK_H_
+
+#define RZA2M_MODULE_CORESIGHT 1UL
+#define RZA2M_MODULE_OSTM0     2UL
+#define RZA2M_MODULE_OSTM1     3UL
+#define RZA2M_MODULE_OSTM2     4UL
+#define RZA2M_MODULE_MTU3      5UL
+#define RZA2M_MODULE_CANFD     6UL
+#define RZA2M_MODULE_ADC       7UL
+#define RZA2M_MODULE_GPT       8UL
+#define RZA2M_MODULE_SCIFA0    9UL
+#define RZA2M_MODULE_SCIFA1    10UL
+#define RZA2M_MODULE_SCIFA2    11UL
+#define RZA2M_MODULE_SCIFA3    12UL
+#define RZA2M_MODULE_SCIFA4    13UL
+#define RZA2M_MODULE_SCI0      14UL
+#define RZA2M_MODULE_SCI1      15UL
+#define RZA2M_MODULE_IrDA      16UL
+#define RZA2M_MODULE_CEU       17UL
+#define RZA2M_MODULE_RTC0      18UL
+#define RZA2M_MODULE_RTC1      19UL
+#define RZA2M_MODULE_JCU       20UL
+#define RZA2M_MODULE_VIN       21UL
+#define RZA2M_MODULE_ETHER     22UL
+#define RZA2M_MODULE_USB0      23UL
+#define RZA2M_MODULE_USB1      24UL
+#define RZA2M_MODULE_IMR2      25UL
+#define RZA2M_MODULE_DRW       26UL
+#define RZA2M_MODULE_MIPI      27UL
+#define RZA2M_MODULE_SSIF0     28UL
+#define RZA2M_MODULE_SSIF1     29UL
+#define RZA2M_MODULE_SSIF2     30UL
+#define RZA2M_MODULE_SSIF3     31UL
+#define RZA2M_MODULE_I2C0      32UL
+#define RZA2M_MODULE_I2C1      33UL
+#define RZA2M_MODULE_I2C2      34UL
+#define RZA2M_MODULE_I2C3      35UL
+#define RZA2M_MODULE_SPIBSC    36UL
+#define RZA2M_MODULE_VDC6      37UL
+#define RZA2M_MODULE_RSPI0     38UL
+#define RZA2M_MODULE_RSPI1     39UL
+#define RZA2M_MODULE_RSPI2     40UL
+#define RZA2M_MODULE_HYPERBUS  41UL
+#define RZA2M_MODULE_OCTAMEM   42UL
+#define RZA2M_MODULE_RSPDIF    43UL
+#define RZA2M_MODULE_DRP       44UL
+#define RZA2M_MODULE_TSIP      45UL
+#define RZA2M_MODULE_NAND      46UL
+#define RZA2M_MODULE_SDMMC0    47UL
+#define RZA2M_MODULE_SDMMC1    48UL
+
+/** RZ/A2M clock configuration values */
+#define RZA2M_MODULE_SHIFT    8UL
+#define RZA2M_CLOCK_SRC_SHIFT 0UL
+
+#define RZA2M_CLK_EXTAL 0UL
+#define RZA2M_CLK_I     1UL
+#define RZA2M_CLK_G     2UL
+#define RZA2M_CLK_B     3UL
+#define RZA2M_CLK_P1    4UL
+#define RZA2M_CLK_P1C   4UL
+#define RZA2M_CLK_P0    5UL
+
+#define RZA2M_CLOCK(module, clk)                                                                   \
+	(((module) << RZA2M_MODULE_SHIFT) | ((clk) << RZA2M_CLOCK_SRC_SHIFT))
+
+/*
+ * Example: RZA2M_CLOCK(MODULE_SCIFA4, RZA2M_CLK_P1C) // SCIFA4
+ */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_RZA2M_CLOCK_H_ */

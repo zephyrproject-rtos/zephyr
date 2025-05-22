@@ -1057,7 +1057,7 @@ static DEVICE_API(uart, uart_esp32_api) = {
 		ESP_UART_UHCI_INIT(idx)};                                                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, uart_esp32_init, NULL, &uart_esp32_data_##idx,                  \
-			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_2,                            \
+			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_1,                            \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);

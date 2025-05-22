@@ -4,19 +4,31 @@
 #               Lukasz Majewski <lukma@denx.de>
 # SPDX-License-Identifier: Apache-2.0
 
-config ETH_DSA_SUPPORT
+config ETH_DSA_SUPPORT_DEPRECATED
 	bool
 	help
-	  Set by an ethernet driver that supports DSA.
+	  Set by an ethernet driver that supports DSA. This is obsolete,
+	  and only used for legacy dsa device.
 
 menuconfig NET_DSA
 	bool "Distributed Switch Architecture support"
-	depends on ETH_DSA_SUPPORT
 	help
-	  Enable Distributed Switch Architecture support. For now it
-	  only supports Kinetics and STM32 ENET drivers.
+	  Enable Distributed Switch Architecture support.
 
 if NET_DSA
+
+config NET_DSA_DEPRECATED
+	bool "Distributed Switch Architecture support for legacy device"
+	select DEPRECATED
+	depends on ETH_DSA_SUPPORT_DEPRECATED
+	help
+	  This is obsolete, and only used for legacy dsa device.
+
+config DSA_PORT_MAX_COUNT
+	int "DSA port max count"
+	default 8
+	help
+	  Set DSA port max count.
 
 config DSA_KSZ8XXX
 	bool

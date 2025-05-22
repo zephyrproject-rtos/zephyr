@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MSPI_AMBIQ_CONTROLLER
-	bool
+	bool "Ambiq MSPI Controller driver"
 	depends on DT_HAS_AMBIQ_MSPI_CONTROLLER_ENABLED
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_MSPI
@@ -13,7 +13,7 @@ config MSPI_AMBIQ_CONTROLLER
 if MSPI_AMBIQ_CONTROLLER
 
 config MSPI_AMBIQ_AP3
-	bool "Ambiq Apollo3 series MSPI driver"
+	bool "Ambiq Apollo3 series MSPI Controller driver"
 	default y
 	depends on SOC_SERIES_APOLLO3X
 	imply MSPI_XIP
@@ -23,7 +23,7 @@ config MSPI_AMBIQ_AP3
 	  Enable driver for Ambiq MSPI.
 
 config MSPI_AMBIQ_AP4
-	bool "Ambiq Apollo4 series MSPI driver"
+	bool "Ambiq Apollo4 series MSPI Controller driver"
 	default y
 	depends on SOC_SERIES_APOLLO4X
 	imply MSPI_XIP
@@ -33,7 +33,7 @@ config MSPI_AMBIQ_AP4
 	  Enable driver for Ambiq MSPI.
 
 config MSPI_AMBIQ_AP5
-	bool "Ambiq Apollo5 series MSPI driver"
+	bool "Ambiq Apollo5 series MSPI Controller driver"
 	default y
 	depends on SOC_SERIES_APOLLO5X
 	imply MSPI_XIP
@@ -43,16 +43,17 @@ config MSPI_AMBIQ_AP5
 	  Enable driver for Ambiq MSPI.
 
 config MSPI_AMBIQ_BUFF_RAM_LOCATION
-	hex "byte offset to SRAM_BASE_ADDRESS"
+	hex "Byte offset to SRAM_BASE_ADDRESS"
+	default SOC_AMBIQ_DMA_BUFF_LOCATION if SOC_SERIES_APOLLO5X
 	default 0x50000
 	help
 	  This option specifies the mspi buffer/heap start address
 
 config MSPI_AMBIQ_BUFF_ALIGNMENT
-	int "byte alignment of the MSPI buffer"
+	int "Byte alignment of the MSPI buffer"
 	default 8 if MSPI_AMBIQ_AP3
 	default 16 if MSPI_AMBIQ_AP4
-	default AMBIQ_CACHEABLE_DMA_BUFFER_ALIGNMENT if MSPI_AMBIQ_AP5
+	default SOC_AMBIQ_DMA_BUFF_ALIGNMENT if SOC_SERIES_APOLLO5X
 	help
 	  This option specifies the mspi buffer alignment
 

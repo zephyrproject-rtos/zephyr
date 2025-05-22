@@ -18,6 +18,10 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
+	depends on !COUNTER_REALTEK_RTS5912_SLWTMR
+
+config FLASH
+	default y
 
 endif # REALTEK_RTS5912_RTMR
 

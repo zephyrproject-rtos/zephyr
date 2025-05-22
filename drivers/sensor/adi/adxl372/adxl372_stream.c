@@ -107,7 +107,8 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 					data->fifo_config.fifo_samples);
 
 		if (current_fifo_mode == ADXL372_FIFO_BYPASSED) {
-			current_fifo_mode = ADXL372_FIFO_STREAMED;
+			LOG_ERR("ERROR: FIFO BYPASSED");
+			return;
 		}
 
 		adxl372_configure_fifo(dev, current_fifo_mode, data->fifo_config.fifo_format,

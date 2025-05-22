@@ -38,24 +38,24 @@ static void sensor_shell_processing_entry_point(void *a, void *b, void *c)
 K_THREAD_DEFINE(sensor_shell_processing_tid, CONFIG_SENSOR_SHELL_THREAD_STACK_SIZE,
 		sensor_shell_processing_entry_point, NULL, NULL, NULL, 0, 0, 0);
 
-int cmd_sensor_stream(const struct shell *shell_ptr, size_t argc, char *argv[])
+int cmd_sensor_stream(const struct shell *sh, size_t argc, char *argv[])
 {
 	static struct rtio_sqe *current_streaming_handle;
 	static struct sensor_shell_processing_context ctx;
 	const struct device *dev = device_get_binding(argv[1]);
 
 	if (argc != 5 && argc != 3) {
-		shell_error(shell_ptr, "Wrong number of arguments (%zu)", argc);
+		shell_error(sh, "Wrong number of arguments (%zu)", argc);
 		return -EINVAL;
 	}
 
 	if (dev == NULL) {
-		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+		shell_error(sh, "Device unknown (%s)", argv[1]);
 		return -ENODEV;
 	}
 
 	if (current_streaming_handle != NULL) {
-		shell_info(shell_ptr, "Disabling existing stream");
+		shell_info(sh, "Disabling existing stream");
 		rtio_sqe_cancel(current_streaming_handle);
 	}
 
@@ -64,7 +64,7 @@ int cmd_sensor_stream(const struct shell *shell_ptr, size_t argc, char *argv[])
 	}
 
 	if (strcmp("on", argv[2]) != 0) {
-		shell_error(shell_ptr, "Unknown streaming operation (%s)", argv[2]);
+		shell_error(sh, "Unknown streaming operation (%s)", argv[2]);
 		return -EINVAL;
 	}
 
@@ -91,7 +91,7 @@ int cmd_sensor_stream(const struct shell *shell_ptr, size_t argc, char *argv[])
 	} else if (strcmp("tap", argv[3]) == 0) {
 		iodev_sensor_shell_trigger.trigger = SENSOR_TRIG_TAP;
 	} else {
-		shell_error(shell_ptr, "Invalid trigger (%s)", argv[3]);
+		shell_error(sh, "Invalid trigger (%s)", argv[3]);
 		return -EINVAL;
 	}
 
@@ -102,23 +102,23 @@ int cmd_sensor_stream(const struct shell *shell_ptr, size_t argc, char *argv[])
 	} else if (strcmp("nop", argv[4]) == 0) {
 		iodev_sensor_shell_trigger.opt = SENSOR_STREAM_DATA_NOP;
 	} else {
-		shell_error(shell_ptr, "Unknown trigger op (%s)", argv[4]);
+		shell_error(sh, "Unknown trigger op (%s)", argv[4]);
 		return -EINVAL;
 	}
 
-	shell_print(shell_ptr, "Enabling stream...");
+	shell_print(sh, "Enabling stream...");
 	iodev_sensor_shell_stream_config.sensor = dev;
 
 	iodev_sensor_shell_stream_config.count = 1;
 
 	ctx.dev = dev;
-	ctx.sh = shell_ptr;
+	ctx.sh = sh;
 
 	int rc = sensor_stream(&iodev_sensor_shell_stream, &sensor_read_rtio, &ctx,
 			       &current_streaming_handle);
 
 	if (rc != 0) {
-		shell_error(shell_ptr, "Failed to start stream");
+		shell_error(sh, "Failed to start stream");
 	}
 	return rc;
 }

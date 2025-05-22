@@ -7,8 +7,6 @@ archs:
     path: arm64
   - name: mips
     path: mips
-  - name: nios2
-    path: nios2
   - name: posix
     path: posix
   - name: riscv
@@ -19,3 +17,5 @@ archs:
     path: xtensa
   - name: x86
     path: x86
+  - name: rx
+    path: rx

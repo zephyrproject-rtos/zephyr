@@ -4,4 +4,5 @@
 Prepare Machine
     Execute Command           $elf = ${ELF}
     Execute Command           include ${RESC}
-    Create Terminal Tester    ${UART}
+    Create Terminal Tester    ${UART}  defaultPauseEmulation=True
+    Write Char Delay          0.01

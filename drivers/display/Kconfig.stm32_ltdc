@@ -8,6 +8,7 @@ menuconfig STM32_LTDC
 	default y
 	depends on DT_HAS_ST_STM32_LTDC_ENABLED
 	select USE_STM32_HAL_LTDC
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select PINCTRL
 	help
@@ -54,6 +55,17 @@ config STM32_LTDC_FB_NUM
 
 config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
 	bool "Use shared multi heap for the display buffer"
+
+config STM32_LTDC_FB_SMH_ATTRIBUTE
+	int "Shared multi heap attribute for the display buffer"
+	depends on STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
+	default 0
+	range 0 2
+	help
+	  Shared multi heap attribute for the display buffer:
+	  0: SMH_REG_ATTR_CACHEABLE
+	  1: SMH_REG_ATTR_NON_CACHEABLE
+	  2: SMH_REG_ATTR_EXTERNAL
 
 config STM32_LTDC_DISABLE_FMC_BANK1
 	bool "Disable FMC bank1 for STM32F7/H7 series"

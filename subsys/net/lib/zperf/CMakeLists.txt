@@ -2,14 +2,15 @@
 
 zephyr_library_named(zperf)
 
-zephyr_library_sources(
-  zperf_common.c
-  zperf_session.c
-  zperf_udp_receiver.c
-  zperf_udp_uploader.c
-  zperf_tcp_receiver.c
-  zperf_tcp_uploader.c
-)
+zephyr_library_sources(zperf_common.c)
+zephyr_library_sources_ifdef(CONFIG_NET_UDP zperf_udp_uploader.c)
+zephyr_library_sources_ifdef(CONFIG_NET_TCP zperf_tcp_uploader.c)
+
+if(CONFIG_NET_ZPERF_SERVER)
+  zephyr_library_sources(zperf_session.c)
+  zephyr_library_sources_ifdef(CONFIG_NET_UDP zperf_udp_receiver.c)
+  zephyr_library_sources_ifdef(CONFIG_NET_TCP zperf_tcp_receiver.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL
   zperf_shell.c

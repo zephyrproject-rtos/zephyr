@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bl54l15_dvk/nrf54l10/cpuapp
+name: BL54L15-DVK-nRF54L10-Application
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 192
+flash: 230
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - retained_mem
+  - spi
+  - watchdog
+  - i2s

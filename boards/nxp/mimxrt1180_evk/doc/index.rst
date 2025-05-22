@@ -13,8 +13,9 @@ Hardware
 
 - MIMXRT1189CVM8B MCU
 
-  - 240MHz Cortex-M33 & 792Mhz Cortex-M7
-  - 1.5MB SRAM with 512KB of TCM for Cortex-M7 and 256KB of TCM for Cortex-M4
+  - 240MHz Cortex-M33 with 256KB TCM and 16 KB caches
+  - 792Mhz Cortex-M7 with 512KB TCM and 32 KB caches
+  - 1.5MB SRAM
 
 - Memory
 

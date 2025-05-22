@@ -157,7 +157,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || NIOS2)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -653,7 +653,7 @@ config TIMESLICING
 
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
-	default 0
+	default 20
 	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help
@@ -782,9 +782,9 @@ endmenu
 config SWAP_NONATOMIC
 	bool
 	help
-	  On some architectures, the _Swap() primitive cannot be made
+	  On some architectures, the z_swap() primitive cannot be made
 	  atomic with respect to the irq_lock being released.  That
-	  is, interrupts may be received between the entry to _Swap
+	  is, interrupts may be received between the entry to z_swap
 	  and the completion of the context switch.  There are a
 	  handful of workaround cases in the kernel that need to be
 	  enabled when this is true.  Currently, this only happens on
@@ -1046,10 +1046,10 @@ config KERNEL_WHOLE_ARCHIVE
 	  to be included, rather than searching the archive for required object files.
 
 config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
-	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
-	# initialization of static objects, new toolchains can be added
-	# here if required.
-	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	# As of today, we don't know of any toolchains that don't create
+	# either .ctors or .init_array sections containing initializer
+	# addresses in a fashion compatible with how Zephyr uses them.
+	def_bool y
 
 config STATIC_INIT_GNU
 	bool "Support GNU-compatible initializers and constructors"
@@ -1059,14 +1059,11 @@ config STATIC_INIT_GNU
 	help
 	  GNU-compatible initialization of static objects. This is required for
 	  C++ constructor support as well as for initializer functions as
-	  defined by GNU-compatible toolchains. This increases the size
-	  of Zephyr binaries by around 100 bytes. If you know your
-	  application doesn't need any initializers, you can disable this
-	  option.
-	  The ARC MWDT toolchain, does not support or use this setting,
-	  and has instead separate C++ constructor initialization code.
-	  Note the option CMAKE_LINKER_GENERATOR does not yet support this feature
-	  or CPP.
+	  defined by GNU-compatible toolchains. This increases the size of
+	  Zephyr binaries by around 24 bytes. If you know your application
+	  doesn't need any initializers, you can disable this option. The linker
+	  will emit an error if constructors are needed and this option has been
+	  disabled.
 
 config BOOTARGS
 	bool "Support bootargs"

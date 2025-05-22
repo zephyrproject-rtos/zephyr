@@ -9,22 +9,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <errno.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util.h>
+#include <stddef.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
-#include "hci_core.h"
 #include "conn_internal.h"
+#include "hci_core.h"
 #include "l2cap_internal.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_smp);
 
 static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BT_MAX_CONN];

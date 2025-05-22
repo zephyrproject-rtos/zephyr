@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/mspm0/mspm0.dtsi>
+
+/{
+	clocks: clocks {
+		pll: pll {
+			compatible = "ti,mspm0-pll";
+			clocks = <&sysosc>;
+			p-div = <2>;
+			q-div = <5>;
+			clk1-div = <2>;
+			clk2x-div = <2>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		syspll2x: syspll2x {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+	};
+};

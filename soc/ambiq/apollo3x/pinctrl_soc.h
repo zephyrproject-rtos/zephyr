@@ -34,7 +34,7 @@ struct apollo3_pinctrl_soc_pin {
 	/** pullup resistor value */
 	uint32_t ambiq_pull_up_ohms: 3;
 	/** nCE module select */
-	uint32_t nce: 6;
+	uint32_t nce: 2;
 	/** IOM or MSPI */
 	uint32_t iom_mspi: 1;
 	/** IOM/MSPI instance number */

@@ -1,6 +1,0 @@
-board:
-  name: qemu_nios2
-  full_name: QEMU Emulation for Altera Nios-II
-  vendor: altr
-  socs:
-  - name: qemu_nios2

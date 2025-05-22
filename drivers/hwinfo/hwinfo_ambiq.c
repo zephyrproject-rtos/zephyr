@@ -4,14 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-
-#if (CONFIG_SOC_SERIES_APOLLO5X)
-extern uint32_t g_ui32TrimVer;
-#endif
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
@@ -31,7 +27,8 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	am_hal_mcuctrl_device_t mcu_ctrl_device;
 
 #if (CONFIG_SOC_SERIES_APOLLO5X)
-	dev_hw_info.factory_trim_version = g_ui32TrimVer;
+	am_hal_info1_read(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, AM_REG_OTP_INFO1_TRIM_REV_O / 4, 1,
+			  &dev_hw_info.factory_trim_version);
 #else
 	am_hal_mram_info_read(1, AM_REG_INFO1_TRIM_REV_O / 4, 1, &dev_hw_info.factory_trim_version);
 #endif
@@ -147,7 +144,11 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = RESET_PIN | RESET_SOFTWARE | RESET_POR | RESET_WATCHDOG | RESET_HARDWARE |
-		     RESET_BROWNOUT;
+	*supported = RESET_PIN
+			| RESET_SOFTWARE
+			| RESET_POR
+			| RESET_WATCHDOG
+			| RESET_HARDWARE
+			| RESET_BROWNOUT;
 	return 0;
 }

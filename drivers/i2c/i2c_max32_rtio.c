@@ -97,7 +97,7 @@ static int max32_do_configure(const struct device *dev, uint32_t dev_cfg)
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return ((ret > 0) ? 0 : -EIO);
 }
 
 static void max32_complete(const struct device *dev, int status);
@@ -199,6 +199,7 @@ static void i2c_max32_isr_controller(const struct device *dev, mxc_i2c_regs_t *i
 	if (int_fl0 & ADI_MAX32_I2C_INT_FL0_ERR) {
 		data->err = -EIO;
 		Wrap_MXC_I2C_SetIntEn(i2c, 0, 0);
+		max32_complete(dev, data->err);
 		return;
 	}
 
@@ -303,7 +304,6 @@ static void max32_complete(const struct device *dev, int status)
 	struct max32_i2c_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
 	const struct max32_i2c_config *const cfg = dev->config;
-	int ret = 0;
 
 	if (cfg->regs->clkhi == I2C_STANDAR_BITRATE_CLKHI) {
 		/* When I2C is configured in Standard Bitrate 100KHz
@@ -319,9 +319,12 @@ static void max32_complete(const struct device *dev, int status)
 		LOG_ERR("For Standard speed HW needs more time to run");
 		return;
 	}
-	if (i2c_rtio_complete(ctx, ret)) {
+
+	if (i2c_rtio_complete(ctx, status)) {
 		data->second_msg_flag = 1;
 		max32_start(dev);
+	} else {
+		data->second_msg_flag = 0;
 	}
 }
 

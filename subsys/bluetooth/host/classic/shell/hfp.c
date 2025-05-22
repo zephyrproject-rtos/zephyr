@@ -39,9 +39,9 @@ static struct bt_hfp_hf_call *hfp_hf_call[CONFIG_BT_HFP_HF_MAX_CALLS];
 
 static void hf_add_a_call(struct bt_hfp_hf_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_hf_call); index++) {
-		if (!hfp_hf_call[index]) {
-			hfp_hf_call[index] = call;
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (!hfp_hf_call[i]) {
+			hfp_hf_call[i] = call;
 			return;
 		}
 	}
@@ -49,10 +49,19 @@ static void hf_add_a_call(struct bt_hfp_hf_call *call)
 
 static void hf_remove_a_call(struct bt_hfp_hf_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_hf_call); index++) {
-		if (call == hfp_hf_call[index]) {
-			hfp_hf_call[index] = NULL;
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (call == hfp_hf_call[i]) {
+			hfp_hf_call[i] = NULL;
 			return;
+		}
+	}
+}
+
+static void hf_remove_calls(void)
+{
+	ARRAY_FOR_EACH(hfp_hf_call, i) {
+		if (hfp_hf_call[i] != NULL) {
+			hfp_hf_call[i] = NULL;
 		}
 	}
 }
@@ -68,6 +77,7 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 {
 	hf_conn = NULL;
 	hfp_hf = NULL;
+	hf_remove_calls();
 	bt_shell_print("HF disconnected");
 }
 
@@ -976,9 +986,9 @@ static struct bt_hfp_ag_call *hfp_ag_call[CONFIG_BT_HFP_AG_MAX_CALLS];
 
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_ag_call); index++) {
-		if (!hfp_ag_call[index]) {
-			hfp_ag_call[index] = call;
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (!hfp_ag_call[i]) {
+			hfp_ag_call[i] = call;
 			return;
 		}
 	}
@@ -986,10 +996,19 @@ static void ag_add_a_call(struct bt_hfp_ag_call *call)
 
 static void ag_remove_a_call(struct bt_hfp_ag_call *call)
 {
-	for (size_t index = 0; index < ARRAY_SIZE(hfp_ag_call); index++) {
-		if (call == hfp_ag_call[index]) {
-			hfp_ag_call[index] = NULL;
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (call == hfp_ag_call[i]) {
+			hfp_ag_call[i] = NULL;
 			return;
+		}
+	}
+}
+
+static void ag_remove_calls(void)
+{
+	ARRAY_FOR_EACH(hfp_ag_call, i) {
+		if (hfp_ag_call[i] != NULL) {
+			hfp_ag_call[i] = NULL;
 		}
 	}
 }
@@ -1005,6 +1024,7 @@ static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 
 static void ag_disconnected(struct bt_hfp_ag *ag)
 {
+	ag_remove_calls();
 	bt_shell_print("AG disconnected");
 }
 

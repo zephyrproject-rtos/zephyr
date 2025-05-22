@@ -139,6 +139,8 @@ Currently, Zephyr has support for the following standard protocols:
 	#. **Clock management**
 	#. **Pin Control**
 
+NXP-specific protocols:
+	#. **CPU domain management**
 
 Power domain management
 ***********************
@@ -178,6 +180,16 @@ supported command is ``PINCTRL_SETTINGS_CONFIGURE``.
 	call into the SCMI pin control protocol function implementing the
 	``PINCTRL_SETTINGS_CONFIGURE`` command.
 
+NXP - CPU domain management
+***************************
+
+This protocol is intended for management of cpu states.
+This is done via a set of functions implementing various commands, for
+example, ``CPU_SLEEP_MODE_SET``.
+
+.. note::
+	This driver is NXP-specific. As such, it may only be used on NXP
+	system that uses SCMI for cpu domain management operations.
 
 Enabling the SCMI support
 *************************

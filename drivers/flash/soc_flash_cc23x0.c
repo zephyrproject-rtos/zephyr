@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include <driverlib/flash.h>
-#include <driverlib/vims.h>
 
 #define DT_DRV_COMPAT     ti_cc23x0_flash_controller
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
@@ -40,44 +39,9 @@ static int flash_cc23x0_init(const struct device *dev)
 	return 0;
 }
 
-static void flash_cc23x0_cache_restore(uint32_t vims_mode)
-{
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
-		;
-	}
-
-	/* Restore VIMS mode and line buffers */
-	if (vims_mode != VIMS_MODE_DISABLED) {
-		VIMSModeSafeSet(VIMS_BASE, vims_mode, true);
-	}
-
-	VIMSLineBufEnable(VIMS_BASE);
-}
-
-static uint32_t flash_cc23x0_cache_disable(void)
-{
-	uint32_t vims_mode;
-
-	/* VIMS and both line buffers should be off during flash update */
-	VIMSLineBufDisable(VIMS_BASE);
-
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
-		;
-	}
-
-	/* Save current VIMS mode for restoring it later */
-	vims_mode = VIMSModeGet(VIMS_BASE);
-	if (vims_mode != VIMS_MODE_DISABLED) {
-		VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_DISABLED, true);
-	}
-
-	return vims_mode;
-}
-
 static int flash_cc23x0_erase(const struct device *dev, off_t offs, size_t size)
 {
 	struct flash_cc23x0_data *data = dev->data;
-	uint32_t vims_mode;
 	unsigned int key;
 	int i;
 	int rc = 0;
@@ -96,7 +60,6 @@ static int flash_cc23x0_erase(const struct device *dev, off_t offs, size_t size)
 		return -EACCES;
 	}
 
-	vims_mode = flash_cc23x0_cache_disable();
 	/*
 	 * Disable all interrupts to prevent flash read, from TI's TRF:
 	 *
@@ -121,8 +84,6 @@ static int flash_cc23x0_erase(const struct device *dev, off_t offs, size_t size)
 
 	irq_unlock(key);
 
-	flash_cc23x0_cache_restore(vims_mode);
-
 	k_sem_give(&data->mutex);
 	return rc;
 }
@@ -130,7 +91,6 @@ static int flash_cc23x0_erase(const struct device *dev, off_t offs, size_t size)
 static int flash_cc23x0_write(const struct device *dev, off_t offs, const void *data, size_t size)
 {
 	struct flash_cc23x0_data *flash_data = dev->data;
-	uint32_t vims_mode;
 	unsigned int key;
 	int rc = 0;
 
@@ -159,8 +119,6 @@ static int flash_cc23x0_write(const struct device *dev, off_t offs, const void *
 		return -EACCES;
 	}
 
-	vims_mode = flash_cc23x0_cache_disable();
-
 	key = irq_lock();
 
 	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
@@ -173,8 +131,6 @@ static int flash_cc23x0_write(const struct device *dev, off_t offs, const void *
 	}
 
 	irq_unlock(key);
-
-	flash_cc23x0_cache_restore(vims_mode);
 
 	k_sem_give(&flash_data->mutex);
 

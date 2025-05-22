@@ -49,7 +49,7 @@ static void tmheap_malloc_align4_handler(void *p1, void *p2, void *p3)
 /**
  * @brief The test validates k_calloc() API.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The 8 blocks of memory of size 16 bytes are allocated
  * by k_calloc() API. When allocated using k_calloc() the memory buffers

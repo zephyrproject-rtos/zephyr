@@ -39,6 +39,17 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
   zephyr_library_sources(xcc_stubs.c)
 endif()
 
+# ...where to find core-isa.h for custom compilation commands below.
+if(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+  set(XTENSA_CONFIG_HAL_INCLUDE_DIR
+      -I${ZEPHYR_HAL_ESPRESSIF_MODULE_DIR}/components/xtensa/${CONFIG_SOC}/include
+     )
+else()
+  set(XTENSA_CONFIG_HAL_INCLUDE_DIR
+      -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+     )
+endif()
+
 add_subdirectory(startup)
 
 # This produces a preprocessed and regenerated (in the sense of gcc
@@ -54,7 +65,7 @@ set(CORE_ISA_IN ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.c)
 file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
   COMMAND ${CMAKE_C_COMPILER} -E -dM -U__XCC__ ${XTENSA_CORE_LOCAL_C_FLAG}
-          -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+          ${XTENSA_CONFIG_HAL_INCLUDE_DIR}
           -I${SOC_FULL_DIR}
           ${CORE_ISA_IN} -o ${CORE_ISA_DM})
 
@@ -73,13 +84,19 @@ else()
   set(MAY_NEED_SYSCALL_SCRATCH_REG false)
 endif()
 
+if(CONFIG_KERNEL_COHERENCE AND NOT CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+  set(NEED_FLUSH_SCRATCH_REG true)
+else()
+  set(NEED_FLUSH_SCRATCH_REG false)
+endif()
+
 # Generates a list of device-specific scratch register choices
 set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
                                $<$<BOOL:${MAY_NEED_SYSCALL_SCRATCH_REG}>:--syscall-scratch>
-                               $<$<BOOL:${CONFIG_KERNEL_COHERENCE}>:--coherence>
+                               $<$<BOOL:${NEED_FLUSH_SCRATCH_REG}>:--flush-reg>
                                ${CORE_ISA_DM} ${ZSR_H})
 add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
@@ -92,7 +109,7 @@ set(HANDLERS ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_handlers)
 add_custom_command(
   OUTPUT ${HANDLERS}_tmp.c
   COMMAND ${CMAKE_C_COMPILER} -E -U__XCC__
-	  -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+          ${XTENSA_CONFIG_HAL_INCLUDE_DIR}
 	  -o ${HANDLERS}_tmp.c
 	  - < ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.tmpl)
 

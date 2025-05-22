@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(spi_ambiq_spid);
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #if defined(CONFIG_SOC_SERIES_APOLLO5X)
 #define SPID_ADDR_INTERVAL (IOSLAVEFD1_BASE - IOSLAVEFD0_BASE)

@@ -42,23 +42,31 @@ Supported Features
 Dual Core samples
 *****************
 
-+-----------+-------------------+----------------------+
-| Core      | Boot Address      | Comment              |
-+===========+===================+======================+
-| CPU0      | 0x10000000[2048K] | primary core flash   |
-+-----------+-------------------+----------------------+
-| CPU1      | 0x1010a000[984K]  | secondary core flash |
-+-----------+-------------------+----------------------+
++-----------+----------------------+-------------------------------+
+| Core      | Flash Region         | Comment                       |
++===========+======================+===============================+
+| CPU0      | Full flash memory    | Primary core with bootloader  |
+|           | (including partition | access and application in     |
+|           | slot0_partition)     | slot0_partition               |
++-----------+----------------------+-------------------------------+
+| CPU1      | slot1_partition only | Secondary core restricted to  |
+|           |                      | its dedicated partition       |
++-----------+----------------------+-------------------------------+
 
 +----------+------------------+-----------------------+
-| Memory   | Address[Size]    | Comment               |
+| Memory   | Region           | Comment               |
 +==========+==================+=======================+
-| srama    | 0x20000000[320k] | CPU0 ram              |
+| srama    | RAM (320KB)      | CPU0 ram              |
 +----------+------------------+-----------------------+
-| sramg    | 0x20050000[64k]  | CPU1 ram              |
+| sramg    | RAM (64KB)       | CPU1 ram              |
 +----------+------------------+-----------------------+
-| sramh    | 0x20060000[32k]  | Shared memory         |
+| sramh    | RAM (32KB)       | Shared memory         |
 +----------+------------------+-----------------------+
+
+.. note::
+   The actual memory addresses are defined in the device tree and can be viewed in the
+   generated map files after building. CPU0 accesses the full flash memory starting from
+   its base address, while CPU1 is restricted to the slot1_partition region.
 
 Targets available
 ==================

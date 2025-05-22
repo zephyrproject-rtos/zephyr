@@ -11,8 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
-#include <zephyr/sys/util_macro.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -818,6 +818,8 @@ enum bt_gap_adv_prop {
 /** Maximum data time */
 #define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
 
+/** Minimum advertising set number */
+#define BT_GAP_SID_MIN                          0x00
 /** Maximum advertising set number */
 #define BT_GAP_SID_MAX                          0x0F
 /** Maximum number of consecutive periodic advertisement events that can be

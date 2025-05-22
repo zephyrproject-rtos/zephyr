@@ -163,7 +163,7 @@ def gather_board_build_info(twister_out_dir):
                 revision = board_info.get('revision', '')
 
                 board_target = board_name
-                if revision is not None:
+                if revision != '':
                     board_target = f"{board_target}@{revision}"
                 if qualifier:
                     board_target = f"{board_target}/{qualifier}"
@@ -185,23 +185,29 @@ def gather_board_build_info(twister_out_dir):
     return board_devicetrees, board_runners
 
 
-def run_twister_cmake_only(outdir):
+def run_twister_cmake_only(outdir, vendor_filter):
     """Run twister in cmake-only mode to generate build info files.
 
     Args:
         outdir: Directory where twister should output its files
+        vendor_filter: Limit build info to boards from listed vendors
     """
     twister_cmd = [
         sys.executable,
         f"{ZEPHYR_BASE}/scripts/twister",
         "-T", "samples/hello_world/",
-        "--all",
         "-M",
         *[arg for path in EDT_PICKLE_PATHS for arg in ('--keep-artifacts', path)],
         *[arg for path in RUNNERS_YAML_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
         "--outdir", str(outdir),
     ]
+
+    if vendor_filter:
+        for vendor in vendor_filter:
+            twister_cmd += ["--vendor", vendor]
+    else:
+        twister_cmd += ["--all"]
 
     minimal_env = {
         'PATH': os.environ.get('PATH', ''),
@@ -216,11 +222,13 @@ def run_twister_cmake_only(outdir):
         logger.warning(f"Failed to run Twister, list of hw features might be incomplete.\n{e}")
 
 
-def get_catalog(generate_hw_features=False):
+def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
     """Get the board catalog.
 
     Args:
         generate_hw_features: If True, run twister to generate hardware features information.
+        hw_features_vendor_filter: If generate_hw_features is True, limit hardware feature
+                                   information generation to boards from this list of vendors.
     """
     import tempfile
 
@@ -256,23 +264,13 @@ def get_catalog(generate_hw_features=False):
     if generate_hw_features:
         logger.info("Running twister in cmake-only mode to get Devicetree files for all boards")
         with tempfile.TemporaryDirectory() as tmp_dir:
-            run_twister_cmake_only(tmp_dir)
+            run_twister_cmake_only(tmp_dir, hw_features_vendor_filter)
             board_devicetrees, board_runners = gather_board_build_info(Path(tmp_dir))
     else:
         logger.info("Skipping generation of supported hardware features.")
 
     for board in boards.values():
-        # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
-        # containing folder. There are a few exceptions, like the "native" and "others" folders
-        # which we know are not actual vendors so treat them as such.
-        for folder in board.dir.parents:
-            if folder.name in ["native", "others"]:
-                vendor = "others"
-                break
-            elif vnd_lookup.vnd2vendor.get(folder.name):
-                vendor = folder.name
-                break
-
+        vendor = board.vendor or "others"
         socs = {soc.name for soc in board.socs}
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
@@ -304,6 +302,7 @@ def get_catalog(generate_hw_features=False):
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
+                    title = node.title
                     filename = node.filename
                     lineno = node.lineno
                     locations = set()
@@ -318,7 +317,12 @@ def get_catalog(generate_hw_features=False):
                         node.matching_compat
                     )
 
-                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_info = {
+                        "filename": str(filename),
+                        "lineno": lineno,
+                        "dts_path": Path(node.filename),
+                        "binding_path": Path(node.binding_path),
+                    }
                     node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
 
                     if existing_feature:
@@ -328,6 +332,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "title": title,
                         "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],

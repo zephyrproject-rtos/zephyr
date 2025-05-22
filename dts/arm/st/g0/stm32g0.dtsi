@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/reset/stm32g0_reset.h>
 #include <freq.h>
@@ -447,6 +448,47 @@
 			dma-generators = <4>;
 			dma-requests= <49>;
 			status = "disabled";
+		};
+
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <6>; /* 6 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>,
+					     <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			/* wkup-pin@3 only available for g0b0/1 and g0c1 variants */
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@6 {
+				reg = <0x6>;
+				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
 		};
 	};
 

@@ -11,7 +11,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 LOG_MODULE_REGISTER(flash_ambiq, CONFIG_FLASH_LOG_LEVEL);
 
@@ -49,10 +49,9 @@ static const struct flash_parameters flash_ambiq_parameters = {
 	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = FLASH_ERASE_BYTE,
 #if !defined(CONFIG_SOC_SERIES_APOLLO3X)
-	.caps =
-		{
-			.no_explicit_erase = true,
-		},
+	.caps = {
+		.no_explicit_erase = true,
+	},
 #endif
 };
 

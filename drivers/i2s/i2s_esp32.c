@@ -605,10 +605,13 @@ int i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
-	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 	const struct i2s_esp32_stream *stream = NULL;
 	unsigned int key;
 	int err = 0;
+
+#if !SOC_GDMA_SUPPORTED || I2S_ESP32_IS_DIR_EN(rx)
+	const i2s_hal_context_t *hal = &(dev_cfg->hal);
+#endif /* SOC_GDMA_SUPPORTED || I2S_ESP32_IS_DIR_EN(rx) */
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_cfg->rx;
@@ -662,6 +665,7 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 		i2s_hal_rx_enable_dma(hal);
 		i2s_hal_rx_enable_intr(hal);
 		i2s_hal_rx_start_link(hal, (uint32_t)&(stream->conf->dma_desc[0]));
+	}
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
 
 #if I2S_ESP32_IS_DIR_EN(tx)
@@ -681,9 +685,12 @@ unlock:
 static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
-	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 	const struct i2s_esp32_stream *stream;
 	int err = 0;
+
+#if !SOC_GDMA_SUPPORTED || I2S_ESP32_IS_DIR_EN(rx)
+	const i2s_hal_context_t *hal = &(dev_cfg->hal);
+#endif /* SOC_GDMA_SUPPORTED || I2S_ESP32_IS_DIR_EN(rx) */
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_cfg->rx;
@@ -695,11 +702,10 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 	}
 
 #if SOC_GDMA_SUPPORTED
+	uint16_t chunk_len;
 	void *src = NULL, *dst = NULL;
 
 #if I2S_ESP32_IS_DIR_EN(rx)
-	uint16_t chunk_len;
-
 	if (dir == I2S_DIR_RX) {
 		dst = stream->data->mem_block;
 

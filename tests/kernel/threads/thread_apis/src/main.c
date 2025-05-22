@@ -78,7 +78,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief test thread custom data get/set from coop thread
+ * @brief Test thread custom data get/set from coop thread
  *
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
  */
@@ -101,7 +101,7 @@ static void thread_name_entry(void *p1, void *p2, void *p3)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief test thread name get/set from supervisor thread
+ * @brief Test thread name get/set from supervisor thread
  * @see k_thread_name_get(), k_thread_name_copy(), k_thread_name_set()
  */
 ZTEST(threads_lifecycle, test_thread_name_get_set)
@@ -142,7 +142,7 @@ struct k_sem sem;
 
 /**
  * @ingroup kernel_thread_tests
- * @brief test thread name get/set from user thread
+ * @brief Test thread name get/set from user thread
  * @see k_thread_name_copy(), k_thread_name_set()
  */
 ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
@@ -211,7 +211,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief test thread custom data get/set from preempt thread
+ * @brief Test thread custom data get/set from preempt thread
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_customdata_get_set_preempt)
@@ -243,7 +243,7 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Test k_thread_user_mode_enter() to cover when userspace
+ * @brief Test k_thread_user_mode_enter to cover when userspace
  * is not supported/enabled
  * @see k_thread_user_mode_enter()
  */
@@ -392,6 +392,11 @@ static inline int join_scenario(enum control_method m)
 	return join_scenario_interval(m, NULL);
 }
 
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test thread join
+ *
+ */
 ZTEST_USER(threads_lifecycle, test_thread_join)
 {
 	int64_t interval;
@@ -415,6 +420,13 @@ ZTEST_USER(threads_lifecycle, test_thread_join)
 
 }
 
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test thread join from ISR
+ *
+ * @see k_thread_join()
+ * @see k_thread_abort()
+ */
 ZTEST(threads_lifecycle, test_thread_join_isr)
 {
 	zassert_equal(join_scenario(ISR_RUNNING), -EBUSY, "failed isr running");
@@ -447,6 +459,21 @@ static void deadlock2_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, 0, "couldn't join deadlock2_thread");
 }
 
+
+
+/**
+ * @brief Test case for thread join deadlock scenarios.
+ *
+ * This test verifies the behavior of the `k_thread_join` API in scenarios
+ * that could lead to deadlocks. It includes the following checks:
+ *
+ * - Ensures that a thread cannot join itself, which would result in a
+ *   self-deadlock. The API should return `-EDEADLK` in this case.
+ * - Creates two threads (`deadlock1_thread` and `deadlock2_thread`) and
+ *   verifies that they can be joined successfully without causing a deadlock.
+ *
+ * @ingroup kernel_thread_tests
+ */
 ZTEST_USER(threads_lifecycle, test_thread_join_deadlock)
 {
 	/* Deadlock scenarios */
@@ -476,6 +503,11 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	/* do nothing */
 }
+/**
+ * @brief Test case for verifying thread timeout expiration and remaining time.
+ *
+ * @ingroup kernel_thread_tests
+ */
 
 ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
 {
@@ -528,10 +560,16 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 		stats.execution_cycles;
 }
 
-/* This case accumulates every thread's execution_cycles first, then
+/**
+ * @brief Test case for thread runtime statistics retrieval in Zephyr kernel
+ *
+ * This case accumulates every thread's execution_cycles first, then
  * get the total execution_cycles from a global
  * k_thread_runtime_stats_t to see that all time is reflected in the
  * total.
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_thread_runtime_stats_get()
  */
 ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 {
@@ -551,6 +589,13 @@ ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 	zassert_true(stats.execution_cycles <= stats_all.execution_cycles);
 }
 
+
+/**
+ * @brief Test the behavior of k_busy_wait with thread runtime statistics.
+ *
+ * This test verifies the accuracy of the `k_busy_wait` function by checking
+ * the thread's execution cycle statistics before and after calling the function.
+ */
 ZTEST(threads_lifecycle, test_k_busy_wait)
 {
 	uint64_t cycles, dt;
@@ -589,6 +634,12 @@ static void tp_entry(void *p1, void *p2, void *p3)
 	tp = 100;
 }
 
+/**
+ * @brief Test the behavior of k_busy_wait with thread runtime statistics
+ *        in user mode.
+ *
+ * @ingroup kernel_thread_tests
+ */
 ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
 {
 
@@ -624,9 +675,14 @@ static int small_stack(size_t *space)
 	return k_thread_stack_space_get(k_current_get(), space);
 }
 
-/* test k_thread_stack_sapce_get(), unused stack space in large_stack_space()
+/**
+ * @brief Test k_thread_stack_sapce_get
+ *
+ * Test k_thread_stack_sapce_get unused stack space in large_stack_space()
  * is smaller than that in small_stack() because the former function has a
  * large local variable
+ *
+ * @ingroup kernel_thread_tests
  */
 ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 {

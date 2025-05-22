@@ -1,12 +1,18 @@
 family:
   - name: renesas_rz
     series:
+      - name: rza2m
+        socs:
+          - name: r7s921053vcbg
       - name: rza3ul
         socs:
           - name: r9a07g063u02gbg
       - name: rzg2l
         socs:
           - name: r9a07g044l23gbg
+            cpuclusters:
+              - name: cm33
+          - name: r9a07g044c22gbg
             cpuclusters:
               - name: cm33
       - name: rzg3s

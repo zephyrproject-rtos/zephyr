@@ -5,11 +5,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "btp/btp.h"
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "../bluetooth/audio/csip_internal.h"
-#include <zephyr/logging/log.h>
+#include "btp/btp.h"
+
 #define LOG_MODULE_NAME bttester_csip
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -189,7 +201,7 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 	members_count = 0;
 
 	if (cur_csis_inst == NULL) {
-		LOG_ERR("No CISP instance available");
+		LOG_ERR("No CSIP instance available");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -281,7 +293,7 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	if (cur_csis_inst == NULL) {
-		LOG_ERR("No CISP instance available");
+		LOG_ERR("No CSIP instance available");
 
 		return BTP_STATUS_FAILED;
 	}

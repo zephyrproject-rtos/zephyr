@@ -19,10 +19,12 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *display_dev;
 	struct video_format fmt;
 	struct video_caps caps;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	const struct device *video_dev;
 	size_t bsize;
 	int i = 0;
@@ -50,7 +52,8 @@ int main(void)
 	LOG_INF("- Device name: %s", video_dev->name);
 
 	/* Get capabilities */
-	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
+	caps.type = type;
+	if (video_get_caps(video_dev, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
@@ -68,7 +71,8 @@ int main(void)
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	fmt.type = type;
+	if (video_get_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
@@ -76,10 +80,9 @@ int main(void)
 	/* Set format */
 	fmt.width = CONFIG_VIDEO_WIDTH;
 	fmt.height = CONFIG_VIDEO_HEIGHT;
-	fmt.pitch = fmt.width * 2;
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 
-	if (video_set_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	if (video_set_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to set up video format");
 		return 0;
 	}
@@ -102,28 +105,24 @@ int main(void)
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
-
-		video_enqueue(video_dev, VIDEO_EP_OUT, buffers[i]);
+		buffers[i]->type = type;
+		video_enqueue(video_dev, buffers[i]);
 	}
 
-#ifdef CONFIG_VIDEO_HFLIP
-	/* Video flip image horizontally */
-	if (video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1)) {
-		LOG_ERR("Unable to set video control (HFLIP)");
-		return 0;
-	}
-#endif
+	/* Set controls */
+	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
 
-#ifdef CONFIG_VIDEO_VFLIP
-	/* Video flip image vertically */
-	if (video_set_ctrl(video_dev, VIDEO_CID_VFLIP, (void *)1)) {
-		LOG_ERR("Unable to set video control (VFLIP)");
-		return 0;
+	if (IS_ENABLED(CONFIG_VIDEO_HFLIP)) {
+		video_set_ctrl(video_dev, &ctrl);
 	}
-#endif
+
+	if (IS_ENABLED(CONFIG_VIDEO_VFLIP)) {
+		ctrl.id = VIDEO_CID_VFLIP;
+		video_set_ctrl(video_dev, &ctrl);
+	}
 
 	/* Start video capture */
-	if (video_stream_start(video_dev)) {
+	if (video_stream_start(video_dev, type)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -143,10 +142,11 @@ int main(void)
 	LOG_INF("- Capture started");
 
 	/* Grab video frames */
+	vbuf->type = type;
 	while (1) {
 		int err;
 
-		err = video_dequeue(video_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER);
+		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
@@ -157,7 +157,7 @@ int main(void)
 
 		lv_task_handler();
 
-		err = video_enqueue(video_dev, VIDEO_EP_OUT, vbuf);
+		err = video_enqueue(video_dev, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;

@@ -73,15 +73,15 @@ typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
  * @param node_id Node identifier.
  * @param prop Property name describing state pins.
  */
-#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)				\
-        {DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),          \
-                    DT_FOREACH_PROP_ELEM, pinmux,           \
-                    Z_PINCTRL_STATE_PIN_INIT)}
+#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                \
+	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),                      \
+				DT_FOREACH_PROP_ELEM, pinmux,                   \
+				Z_PINCTRL_STATE_PIN_INIT)}
 
-#define APOLLO5_GET_PIN_NUM(pinctrl) \
-        (((pinctrl) >> APOLLO5_PIN_NUM_POS) & APOLLO5_PIN_NUM_MASK)
-#define APOLLO5_GET_PIN_ALT_FUNC(pinctrl) \
-        (((pinctrl) >> APOLLO5_ALT_FUNC_POS) & APOLLO5_ALT_FUNC_MASK)
+#define APOLLO5_GET_PIN_NUM(pinctrl)                                            \
+	(((pinctrl) >> APOLLO5_PIN_NUM_POS) & APOLLO5_PIN_NUM_MASK)
+#define APOLLO5_GET_PIN_ALT_FUNC(pinctrl)                                       \
+	(((pinctrl) >> APOLLO5_ALT_FUNC_POS) & APOLLO5_ALT_FUNC_MASK)
 
 
 #endif /* ZEPHYR_SOC_ARM_AMBIQ_APOLLO5_PINCTRL_SOC_H_ */

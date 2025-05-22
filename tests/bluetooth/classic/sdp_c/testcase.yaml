@@ -2,7 +2,6 @@ tests:
   bluetooth.classic.sdp.client:
     platform_allow:
       - native_sim
-      - mimxrt1170_evk@B/mimxrt1176/cm7
     integration_platforms:
       - native_sim
     tags:
@@ -13,3 +12,13 @@ tests:
       pytest_dut_scope: session
       fixture: usb_hci
     timeout: 180
+  bluetooth.classic.sdp.client.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - sdp
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 180
+    build_only: true

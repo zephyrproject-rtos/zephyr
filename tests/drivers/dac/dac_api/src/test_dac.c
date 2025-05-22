@@ -49,6 +49,7 @@
 	defined(CONFIG_BOARD_FRDM_K64F) || \
 	defined(CONFIG_BOARD_FRDM_K22F) || \
 	defined(CONFIG_BOARD_FRDM_MCXN947) || \
+	defined(CONFIG_BOARD_MCX_N9XX_EVK) || \
 	defined(CONFIG_BOARD_FRDM_MCXA156) || \
 	defined(CONFIG_BOARD_SEEEDUINO_XIAO) || \
 	defined(CONFIG_BOARD_ARDUINO_MKRZERO) || \
@@ -70,8 +71,7 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#elif defined(CONFIG_BOARD_ESP32_DEVKITC_WROOM) || \
-	defined(CONFIG_BOARD_ESP32_DEVKITC_WROVER) || \
+#elif defined(CONFIG_BOARD_ESP32_DEVKITC) || \
 	defined(CONFIG_BOARD_ESP_WROVER_KIT) || \
 	defined(CONFIG_BOARD_ESP32S2_SAOLA) || \
 	defined(CONFIG_BOARD_ESP32S2_DEVKITC) || \
@@ -105,6 +105,12 @@
 #define DAC_DEVICE_NODE DT_NODELABEL(dac0)
 #define DAC_RESOLUTION  12
 #define DAC_CHANNEL_ID  0
+
+#elif defined(CONFIG_BOARD_MIMXRT1170_EVK)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac)
+#define DAC_RESOLUTION	12
+#define DAC_CHANNEL_ID	0
 
 #else
 #error "Unsupported board."

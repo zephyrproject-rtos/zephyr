@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023-2024 NXP
+ * Copyright 2021,2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,6 +88,15 @@
 	};
 
 	soc {
+		dac: dac@40064000 {
+			compatible = "nxp,dac12";
+			reg = <0x40064000 0x4000>;
+			interrupts = <63 0>;
+			voltage-reference = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400cc000 0x4000>;
@@ -1115,12 +1124,12 @@
 			/* Source from audio PLL */
 			clock-mux = <4>;
 			pre-div = <0>;
-			podf = <4>;
+			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 30>,
+					<&anatop 0 0 32>,
 					<&anatop 0 0 1>,
-					<&anatop 0 0 77>,
-					<&anatop 0 0 100>;
+					<&anatop 0 0 768>,
+					<&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x0 0x100>;
 			interrupts = <76 0>;
@@ -1138,12 +1147,12 @@
 			/* Source from audio PLL */
 			clock-mux = <4>;
 			pre-div = <0>;
-			podf = <63>;
+			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 30>,
+					<&anatop 0 0 32>,
 					<&anatop 0 0 1>,
-					<&anatop 0 0 77>,
-					<&anatop 0 0 100>;
+					<&anatop 0 0 768>,
+					<&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100>;
 			interrupts = <77 0>;
@@ -1161,12 +1170,12 @@
 			/* Source from audio PLL */
 			clock-mux = <4>;
 			pre-div = <0>;
-			podf = <63>;
+			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 30>,
+					<&anatop 0 0 32>,
 					<&anatop 0 0 1>,
-					<&anatop 0 0 77>,
-					<&anatop 0 0 100>;
+					<&anatop 0 0 768>,
+					<&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x8 0x100>;
 			interrupts = <78 0>, <79 0>;
@@ -1184,12 +1193,12 @@
 			/* Source from audio PLL */
 			clock-mux = <6>;
 			pre-div = <0>;
-			podf = <63>;
+			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 30>,
+					<&anatop 0 0 32>,
 					<&anatop 0 0 1>,
-					<&anatop 0 0 77>,
-					<&anatop 0 0 100>;
+					<&anatop 0 0 768>,
+					<&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x8 0x200>;
 			interrupts = <80 0>, <81 0>;

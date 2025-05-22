@@ -70,6 +70,11 @@
 					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
 				};
 			};
+
+			scmi_cpu: protocol@82 {
+				compatible = "nxp,scmi-cpu";
+				reg = <0x82>;
+			};
 		};
 	};
 
@@ -456,6 +461,18 @@
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <20 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		lptmr2: timer@424d0000 {
+			compatible = "nxp,lptmr";
+			reg = <0x424d0000 DT_SIZE_K(4)>;
+			interrupts = <63 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
+			clock-frequency = <32000>;
+			clk-source = <2>;
+			prescaler = <1>;
+			resolution = <32>;
 			status = "disabled";
 		};
 

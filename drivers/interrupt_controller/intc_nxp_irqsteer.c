@@ -266,12 +266,12 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
 #if defined(CONFIG_XTENSA)
-#define irqsteer_level1_irq_enable(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
-#define irqsteer_level1_irq_disable(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq))
+#define irqstr_l1_irq_enable_raw(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
+#define irqstr_l1_irq_disable_raw(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq))
 #define irqsteer_level1_irq_is_enabled(irq) xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq))
 #elif defined(CONFIG_ARM)
-#define irqsteer_level1_irq_enable(irq)     arm_irq_enable(irq)
-#define irqsteer_level1_irq_disable(irq)    arm_irq_disable(irq)
+#define irqstr_l1_irq_enable_raw(irq)     arm_irq_enable(irq)
+#define irqstr_l1_irq_disable_raw(irq)    arm_irq_disable(irq)
 #define irqsteer_level1_irq_is_enabled(irq) arm_irq_is_enabled(irq)
 #else
 #error ARCH not supported
@@ -291,11 +291,11 @@ struct irqsteer_dispatcher {
 	uint32_t irq;
 	/* reference count for all IRQs aggregated by dispatcher */
 	uint8_t irq_refcnt[CONFIG_MAX_IRQ_PER_AGGREGATOR];
-	/* dispatcher lock */
-	struct k_spinlock lock;
-	/* reference count for dispatcher */
-	uint8_t refcnt;
 };
+
+static struct k_spinlock irqstr_lock;
+
+static uint8_t l1_irq_refcnt[CONFIG_2ND_LVL_ISR_TBL_OFFSET];
 
 static struct irqsteer_dispatcher dispatchers[] = {
 	IRQSTEER_DECLARE_DISPATCHERS(DT_NODELABEL(irqsteer))
@@ -342,68 +342,95 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 	return idx + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 }
 
-static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
-					bool enable)
+/* note: if disp != NULL that means there's several level2 interrupts
+ * multiplexed into this single level 1 line via irqsteer. In such cases,
+ * the interrupt needs to also be enable/disabled at the irqsteer level.
+ *
+ * brief: disp == NULL => IRQ is not managed by IRQSTEER
+ *        disp != NULL => IRQ is managed by IRQSTEER
+ */
+static void irqstr_l1_irq_enable_disable(uint32_t irq,
+					 struct irqsteer_dispatcher *disp,
+					 bool enable)
 {
-	uint32_t regmap = DISPATCHER_REGMAP(disp);
-
 	if (enable) {
-		irqsteer_level1_irq_enable(disp->irq);
-		IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
+		irqstr_l1_irq_enable_raw(irq);
+
+		if (disp) {
+			IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(DISPATCHER_REGMAP(disp)),
+						       irq);
+		}
 	} else {
-		IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
-		irqsteer_level1_irq_disable(disp->irq);
+		if (disp) {
+			IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(DISPATCHER_REGMAP(disp)),
+							irq);
+		}
+
+		irqstr_l1_irq_disable_raw(irq);
 	}
 }
 
-static void _irqstr_disp_get_unlocked(struct irqsteer_dispatcher *disp)
+static void irqstr_request_l1_irq_unlocked(uint32_t irq,
+					   struct irqsteer_dispatcher *disp)
 {
 	int ret;
 
-	if (disp->refcnt == UINT8_MAX) {
-		LOG_WRN("disp for irq %d reference count reached limit", disp->irq);
+#ifndef CONFIG_SHARED_INTERRUPTS
+	if (l1_irq_refcnt[irq]) {
+		LOG_WRN("L1 IRQ %d already requested", irq);
+		return;
+	}
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
+	if (l1_irq_refcnt[irq] == UINT8_MAX) {
+		LOG_WRN("L1 IRQ %d reference count reached limit", irq);
 		return;
 	}
 
-	if (!disp->refcnt) {
-		ret = pm_device_runtime_get(disp->dev);
-		if (ret < 0) {
-			LOG_ERR("failed to enable PM resources: %d", ret);
-			return;
+	if (!l1_irq_refcnt[irq]) {
+		if (disp) {
+			ret = pm_device_runtime_get(disp->dev);
+			if (ret < 0) {
+				LOG_ERR("failed to enable PM resources: %d", ret);
+				return;
+			}
 		}
 
-		_irqstr_disp_enable_disable(disp, true);
+		irqstr_l1_irq_enable_disable(irq, disp, true);
 	}
 
-	disp->refcnt++;
+	l1_irq_refcnt[irq]++;
 
-	LOG_DBG("get on disp for irq %d results in refcnt: %d",
-		disp->irq, disp->refcnt);
+	LOG_DBG("request for L1 IRQ %d results in refcnt: %d",
+		irq, l1_irq_refcnt[irq]);
 }
 
-static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
+static void irqstr_release_l1_irq_unlocked(uint32_t irq,
+					   struct irqsteer_dispatcher *disp)
 {
 	int ret;
 
-	if (!disp->refcnt) {
-		LOG_WRN("disp for irq %d already put", disp->irq);
+	if (!l1_irq_refcnt[irq]) {
+		LOG_WRN("L1 IRQ %d already released", irq);
 		return;
 	}
 
-	disp->refcnt--;
+	l1_irq_refcnt[irq]--;
 
-	if (!disp->refcnt) {
-		_irqstr_disp_enable_disable(disp, false);
+	if (!l1_irq_refcnt[irq]) {
+		irqstr_l1_irq_enable_disable(irq, disp, false);
 
-		ret = pm_device_runtime_put(disp->dev);
-		if (ret < 0) {
-			LOG_ERR("failed to disable PM resources: %d", ret);
-			return;
+		if (disp) {
+			ret = pm_device_runtime_put(disp->dev);
+			if (ret < 0) {
+				LOG_ERR("failed to disable PM resources: %d", ret);
+				return;
+			}
 		}
 	}
 
-	LOG_DBG("put on disp for irq %d results in refcnt: %d",
-		disp->irq, disp->refcnt);
+	LOG_DBG("release on L1 IRQ %d results in refcnt: %d",
+		irq, l1_irq_refcnt[irq]);
 }
 
 static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp,
@@ -437,7 +464,7 @@ static void irqstr_request_irq_unlocked(struct irqsteer_dispatcher *disp,
 	}
 
 	if (!disp->irq_refcnt[zephyr_irq]) {
-		_irqstr_disp_get_unlocked(disp);
+		irqstr_request_l1_irq_unlocked(disp->irq, disp);
 		_irqstr_enable_disable_irq(disp, system_irq, true);
 	}
 
@@ -462,7 +489,7 @@ static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp,
 
 	if (!disp->irq_refcnt[zephyr_irq]) {
 		_irqstr_enable_disable_irq(disp, system_irq, false);
-		_irqstr_disp_put_unlocked(disp);
+		irqstr_release_l1_irq_unlocked(disp->irq, disp);
 	}
 
 	LOG_DBG("released irq %d has refcount %d",
@@ -476,10 +503,12 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
-		if (enable) {
-			irqsteer_level1_irq_enable(irq);
-		} else {
-			irqsteer_level1_irq_disable(irq);
+		K_SPINLOCK(&irqstr_lock) {
+			if (enable) {
+				irqstr_request_l1_irq_unlocked(irq, NULL);
+			} else {
+				irqstr_release_l1_irq_unlocked(irq, NULL);
+			}
 		}
 		return;
 	}
@@ -493,7 +522,7 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 			continue;
 		}
 
-		K_SPINLOCK(&dispatchers[i].lock) {
+		K_SPINLOCK(&irqstr_lock) {
 			if (enable) {
 				irqstr_request_irq_unlocked(&dispatchers[i], level2_irq);
 			} else {
@@ -520,14 +549,16 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	uint32_t parent_irq;
 	int i;
 	const struct irqsteer_config *cfg;
-	bool enabled;
+	bool enabled = false;
 
 	if (irq_get_level(irq) == 1) {
-		return irqsteer_level1_irq_is_enabled(irq);
+		K_SPINLOCK(&irqstr_lock) {
+			enabled = l1_irq_refcnt[irq];
+		}
+		return enabled;
 	}
 
 	parent_irq = irq_parent_level_2(irq);
-	enabled = false;
 
 	/* find dispatcher responsible for this interrupt */
 	for (i = 0; i < ARRAY_SIZE(dispatchers); i++) {
@@ -537,7 +568,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 		cfg = dispatchers[i].dev->config;
 
-		K_SPINLOCK(&dispatchers[i].lock) {
+		K_SPINLOCK(&irqstr_lock) {
 			enabled = dispatchers[i].irq_refcnt[irq_from_level_2(irq)];
 		}
 

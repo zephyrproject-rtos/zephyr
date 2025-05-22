@@ -343,6 +343,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_ipv4_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
@@ -386,7 +387,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	ip.ipv4 = hdr;
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
-		if (net_conn_input(pkt, &ip, hdr->proto, NULL) == NET_DROP) {
+		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
 			goto drop;
 		}
 	}

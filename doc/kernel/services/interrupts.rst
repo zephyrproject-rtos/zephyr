@@ -336,7 +336,6 @@ The following code demonstrates a direct ISR:
 
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-    /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
@@ -549,10 +548,9 @@ for IRQ line n, and the function pointers are:
    spurious IRQ handler will be placed here. The spurious IRQ handler
    causes a system fatal error if encountered.
 
-Some architectures (such as the Nios II internal interrupt controller) have a
-common entry point for all interrupts and do not support a vector table, in
-which case the :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
-disabled.
+Some architectures have a common entry point for all interrupts and do not
+support a vector table, in which case the
+:kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
 and declare this in a table elsewhere, in which case

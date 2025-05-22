@@ -2,37 +2,48 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+#include <sys/types.h>
 
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/uuid.h>
-#include <zephyr/bluetooth/att.h>
-#include <zephyr/bluetooth/gatt.h>
-
+#include "att_internal.h"
 #include "common/bt_str.h"
-
-#include "hci_core.h"
 #include "conn_internal.h"
+#include "gatt_internal.h"
+#include "hci_core.h"
 #include "l2cap_internal.h"
 #include "smp.h"
-#include "att_internal.h"
-#include "gatt_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_ATT_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_att);
 
 #define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att_chan, chan.chan)
@@ -3922,12 +3933,25 @@ static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 {
 	struct bt_att_req *req = NULL;
+	k_tid_t current_thread = k_current_get();
 
-	if (k_current_get() == att_handle_rsp_thread) {
-		/* No req will be fulfilled while blocking on the bt_recv thread.
-		 * Blocking would cause deadlock.
+	if (current_thread == att_handle_rsp_thread ||
+	    current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
+		/* bt_att_req are released by the att_handle_rsp_thread.
+		 * A blocking allocation the same thread would cause a
+		 * deadlock.
+		 *
+		 * Likewise, the system work queue is used for
+		 * tx_processor(), which is needed to send currently
+		 * pending requests. Blocking here in a situation where
+		 * all the request holding a bt_att_req have yet to go
+		 * through the tx_processor() would cause a deadlock.
+		 *
+		 * Note the att_handle_rsp_thread might be the system
+		 * work queue thread or the dedicated BT RX WQ thread,
+		 * depending on kconfig.
 		 */
-		LOG_DBG("Timeout discarded. No blocking on bt_recv thread.");
+		LOG_DBG("Timeout discarded. No blocking on BT RX WQ or SYS WQ threads.");
 		timeout = K_NO_WAIT;
 	}
 
