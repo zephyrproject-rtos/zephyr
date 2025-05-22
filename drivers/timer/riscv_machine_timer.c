@@ -224,11 +224,12 @@ static int sys_clock_driver_init(void)
 {
 
 	set_divider();
+	printf("Timer IRQ N: %d\nCyc Per Tick: %d\n", TIMER_IRQN, CYC_PER_TICK);
 
 	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
 	last_ticks = mtime() / CYC_PER_TICK;
 	last_count = last_ticks * CYC_PER_TICK;
-	set_mtimecmp(last_count + CYC_PER_TICK);
+	set_mtimecmp(last_count + (CYC_PER_TICK*10000));
 	irq_enable(TIMER_IRQN);
 	return 0;
 }
