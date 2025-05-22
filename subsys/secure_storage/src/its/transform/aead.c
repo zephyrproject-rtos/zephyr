@@ -31,7 +31,7 @@ static psa_status_t psa_aead_crypt(psa_key_usage_t operation, secure_storage_its
 	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
 	psa_set_key_type(&key_attributes, key_type);
 	psa_set_key_algorithm(&key_attributes, alg);
-	psa_set_key_bits(&key_attributes, sizeof(key) * 8);
+	psa_set_key_bits(&key_attributes, PSA_BYTES_TO_BITS(sizeof(key)));
 
 	/* Avoid calling psa_aead_*crypt() because that would require importing keys into
 	 * PSA Crypto. This gets called from PSA Crypto for storing persistent keys so,
@@ -113,7 +113,7 @@ psa_status_t secure_storage_its_transform_from_store(
 		psa_storage_create_flags_t *create_flags)
 {
 	if (stored_data_len < STORED_ENTRY_LEN(0)) {
-		return PSA_ERROR_STORAGE_FAILURE;
+		return PSA_ERROR_DATA_CORRUPT;
 	}
 
 	psa_status_t ret;
