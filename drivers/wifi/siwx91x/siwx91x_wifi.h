@@ -5,14 +5,9 @@
 #ifndef SIWX91X_WIFI_H
 #define SIWX91X_WIFI_H
 
-#include <zephyr/net/net_context.h>
 #include <zephyr/net/wifi_mgmt.h>
-#include <zephyr/net/wifi.h>
-#include <zephyr/kernel.h>
 
-#include "sl_ieee802_types.h"
 #include "sl_si91x_types.h"
-#include "sl_si91x_protocol_types.h"
 
 struct siwx91x_dev {
 	struct net_if *iface;
