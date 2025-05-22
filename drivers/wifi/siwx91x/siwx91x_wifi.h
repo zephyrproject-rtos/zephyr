@@ -37,4 +37,8 @@ struct siwx91x_dev {
 #endif
 };
 
+int siwx91x_status(const struct device *dev, struct wifi_iface_status *status);
+bool siwx91x_param_changed(struct wifi_iface_status *prev_params,
+			   struct wifi_connect_req_params *new_params);
+
 #endif
