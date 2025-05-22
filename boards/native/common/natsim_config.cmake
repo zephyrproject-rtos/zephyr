@@ -7,8 +7,15 @@ get_property(CCACHE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 target_link_options(native_simulator INTERFACE
   "-T ${ZEPHYR_BASE}/boards/native/common/natsim_linker_script.ld")
 
+if(SYSROOT_DIR)
+  message(NOTICE "Appending --sysroot=${SYSROOT_DIR} to native_simulator")
+  target_compile_options(native_simulator INTERFACE "--sysroot=${SYSROOT_DIR}")
+  target_link_options(native_simulator INTERFACE "--sysroot=${SYSROOT_DIR}")
+endif()
+
 set(nsi_config_content
   ${nsi_config_content}
+  "NSI_AR:=${CMAKE_AR}"
   "NSI_BUILD_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_COMPILE_OPTIONS>,\ >"
   "NSI_BUILD_PATH:=${zephyr_build_path}/NSI"
   "NSI_CC:=${CCACHE} ${CMAKE_C_COMPILER}"
