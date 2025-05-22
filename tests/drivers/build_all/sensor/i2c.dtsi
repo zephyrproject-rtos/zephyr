@@ -1382,3 +1382,15 @@ test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
 	compatible = "st,lsm9ds1_mag";
 	reg = <0xb9>;
 };
+
+test_i2c_ina7xx: ina7xx@ba {
+	compatible = "ti,ina7xx";
+	reg = <0xba>;
+	inatype = <3>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
