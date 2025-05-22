@@ -282,6 +282,7 @@ static DEVICE_API(display, ls0xx_driver_api) = {
 	.blanking_on = ls0xx_blanking_on,
 	.blanking_off = ls0xx_blanking_off,
 	.write = ls0xx_write,
+	.clear = ls0xx_clear,
 	.get_capabilities = ls0xx_get_capabilities,
 	.set_pixel_format = ls0xx_set_pixel_format,
 };
