@@ -125,6 +125,7 @@ struct net_if_addr {
 			uint8_t acd_state;
 		};
 #endif /* CONFIG_NET_IPV4_ACD */
+		uint8_t _dummy;
 	};
 
 #if defined(CONFIG_NET_IPV6_DAD) || defined(CONFIG_NET_IPV4_ACD)
