@@ -5,8 +5,6 @@
  */
 #define DT_DRV_COMPAT silabs_siwx91x_wifi
 
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/version.h>
 
 #include <nwp.h>
@@ -18,13 +16,7 @@
 #include "siwx91x_wifi_sta.h"
 
 #include "sl_rsi_utility.h"
-#include "sl_net_constants.h"
-#include "sl_wifi_types.h"
 #include "sl_wifi_callback_framework.h"
-#include "sl_net_default_values.h"
-#include "sl_wifi.h"
-#include "sl_net.h"
-#include "sl_wifi_constants.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
 
