@@ -21,6 +21,8 @@ description: |
     lfclk {
             lfrc-accuracy-ppm = <500>;
             lflprc-accuracy-ppm = <1000>;
+            lfrc-startup-time-us = <400>;
+            lflprc-startup-time-us = <400>;
             clocks = <&hfxo>, <&lfxo>;
             clock-names = "hfxo", "lfxo";
     };
@@ -40,3 +42,11 @@ properties:
   lflprc-accuracy-ppm:
     type: int
     description: Clock accuracy in parts per million if LFLPRC clock source is used.
+
+  lfrc-startup-time-us:
+    type: int
+    description: Clock startup time in microseconds if LFRC clock source is used.
+
+  lflprc-startup-time-us:
+    type: int
+    description: Clock startup time in microseconds if LFLPRC clock source is used.
