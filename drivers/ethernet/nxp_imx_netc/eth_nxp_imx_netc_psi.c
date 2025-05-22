@@ -200,8 +200,14 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.pseudo_mac = DT_ENUM_HAS_VALUE(DT_DRV_INST(n), phy_connection_type, internal),    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
-		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
-		.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,                               \
+		IF_ENABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                        \
+			(.msi_device_id = DT_INST_PROP_OR(n, msi_device_id, 0),                    \
+			.msi_dev = (COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_PARENT(n), msi_parent),   \
+			       (DEVICE_DT_GET(DT_PHANDLE(DT_INST_PARENT(n), msi_parent))), NULL)), \
+			))                                                                         \
+		IF_DISABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                       \
+			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
+			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
 		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				                   \
 			(.ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),))              \
 	};                                                                                         \
