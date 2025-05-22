@@ -72,7 +72,7 @@ More information about the SoM can be found at the
 `Variscite website`_.
 
 Supported Features
-==================
+******************
 
 .. zephyr:board-supported-hw::
 
@@ -198,7 +198,7 @@ For more information about Variscite remoteproc scripts and general Cortex-M33
 support, visit `Variscite Wiki`_.
 
 References
-==========
+**********
 
 - `Variscite Wiki`_
 - `Variscite website`_
