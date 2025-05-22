@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Nathan Winslow <natelostintimeandspace@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices LTC2959 ultra-low-power battery fuel gauge.
+
+compatible: "adi,ltc2959"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  label:
+    required: true
+
+  alert-gpios:
+    required: false
+    type: phandle-array
+    description: |
+      Optional GPIO used for ALERT output. The LTC2959 pulls this pin low
+      when thresholds are crossed or charge events occur. Typically wired
+      to a host interrupt-capable GPIO pin.
+
