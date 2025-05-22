@@ -19,6 +19,8 @@ enum {
 	arg_idx_dev		= 1,
 	arg_idx_led		= 2,
 	arg_idx_value		= 3,
+	arg_idx_delay_on	= 3,
+	arg_idx_delay_off	= 4,
 };
 
 static int parse_common_args(const struct shell *sh, char **argv,
@@ -78,6 +80,45 @@ static int cmd_on(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "%s: turning on LED %d", dev->name, led);
 
 	err = led_on(dev, led);
+	if (err) {
+		shell_error(sh, "Error: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_blink(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t led, delay_on, delay_off;
+	char *end_ptr;
+	int err;
+
+	err = parse_common_args(sh, argv, &dev, &led);
+	if (err < 0) {
+		return err;
+	}
+
+	delay_on = strtoul(argv[arg_idx_delay_on], &end_ptr, 0);
+	if (*end_ptr != '\0') {
+		shell_error(sh, "Invalid delay_on parameter %s", argv[arg_idx_delay_on]);
+		return -EINVAL;
+	}
+
+	if (argc > arg_idx_delay_off) {
+		delay_off = strtoul(argv[arg_idx_delay_off], &end_ptr, 0);
+		if (*end_ptr != '\0') {
+			shell_error(sh, "Invalid delay_off parameter %s", argv[arg_idx_delay_off]);
+			return -EINVAL;
+		}
+	} else {
+		delay_off = delay_on;
+	}
+
+	shell_print(sh, "%s: blinking LED %d with %d ms on and %d ms off",
+		    dev->name, led, delay_on, delay_off);
+
+	err = led_blink(dev, led, delay_on, delay_off);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -353,6 +394,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      3, 0),
 	SHELL_CMD_ARG(on, &dsub_device_name, SHELL_HELP("Turn on LED", "<device> <led>"), cmd_on, 3,
 		      0),
+	SHELL_CMD_ARG(blink, &dsub_device_name,
+		      SHELL_HELP("Blink LED on and off",
+				 "<device> <led> <delay_on_in_ms> [<delay_off_in_ms>]"),
+		      cmd_blink, 4, 1),
 	SHELL_CMD_ARG(get_info, &dsub_device_name,
 		      SHELL_HELP("Get LED information", "<device> <led>"), cmd_get_info, 3, 0),
 	SHELL_CMD_ARG(set_brightness, &dsub_device_name,
