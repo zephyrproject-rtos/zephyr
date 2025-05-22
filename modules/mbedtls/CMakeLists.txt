@@ -129,6 +129,7 @@ zephyr_interface_library_named(mbedTLS)
       # i386 assembly code used in MBEDTLS does not compile with size optimization
       # if address sanitizer is enabled, as such switch default optimization level
       # to speed
+      get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY speed_optimizations)
       set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
           "${OPTIMIZE_FOR_SPEED_FLAG}")
     endif ()
