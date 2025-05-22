@@ -9,7 +9,9 @@
 
 #include "nxp_imx_netc.h"
 #include "fsl_netc_endpoint.h"
+#ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #include "fsl_msgintr.h"
+#endif
 
 /* Buffer and descriptor alignment */
 #define NETC_BUFF_ALIGN 64
@@ -33,6 +35,7 @@
 #define NETC_MSGINTR_IRQ DT_IRQN_BY_IDX(DT_NODELABEL(netc), 0)
 #endif
 
+#ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
 #define NETC_MSGINTR MSGINTR1
 #ifndef NETC_MSGINTR_IRQ
@@ -46,6 +49,7 @@
 #else
 #error "Current CONFIG_ETH_NXP_IMX_MSGINTR not support"
 #endif
+#endif /* CONFIG_ETH_NXP_IMX_NETC_MSI_GIC */
 
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
@@ -90,8 +94,13 @@ struct netc_eth_config {
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
 	const struct pinctrl_dev_config *pincfg;
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+	const struct device *msi_dev;
+	uint8_t msi_device_id; /* MSI device ID */
+#else
 	uint8_t tx_intr_msg_data;
 	uint8_t rx_intr_msg_data;
+#endif
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	const struct device *ptp_clock;
 #endif
@@ -113,6 +122,10 @@ struct netc_eth_data {
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_NXP_IMX_RX_THREAD_STACK_SIZE);
 	uint8_t *rx_frame;
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+	unsigned int tx_intid;
+	unsigned int rx_intid;
+#endif
 };
 
 int netc_eth_init_common(const struct device *dev);
