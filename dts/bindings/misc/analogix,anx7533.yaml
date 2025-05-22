@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analogix ANX7533 low-power 4K Ultra-HD (4096x2160p60) mobile HD receiver
+
+compatible: "analogix,anx7533"
+
+include: i2c-device.yaml
+
+properties:
+  vid-en-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to video enable pin of anx7533.
+  vid-rst-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to video reset pin of anx7533.
+  vid-int-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to video interrupt pin of anx7533.
+  reg-offset:
+    type: int
+    description: |
+      i2c address of the device offset
+  reg-offset-rd:
+    type: int
+    description: |
+      i2c address of the device offset read
+
