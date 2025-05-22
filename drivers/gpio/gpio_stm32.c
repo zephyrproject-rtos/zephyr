@@ -722,8 +722,12 @@ static int gpio_stm32_init(const struct device *dev)
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	/* Port G[15:2] requires external power supply */
-	/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
+	/* Cf: L4/L5/U3 RM, Chapter "Independent I/O supply rail" */
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_EnableVDDIO2();
+#else
 	LL_PWR_EnableVddIO2();
+#endif
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 
