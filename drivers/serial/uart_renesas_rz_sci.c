@@ -385,7 +385,13 @@ static void uart_rz_sci_txi_isr(const struct device *dev)
 
 static void uart_rz_sci_tei_isr(const struct device *dev)
 {
+	struct uart_rz_sci_data *data = dev->data;
+
 	SCI_TEI_ISR();
+
+	if (data->callback) {
+		data->callback(dev, data->callback_data);
+	}
 }
 
 static void uart_rz_sci_eri_isr(const struct device *dev)
