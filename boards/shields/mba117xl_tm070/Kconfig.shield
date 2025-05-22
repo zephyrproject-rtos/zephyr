@@ -1,0 +1,6 @@
+# Copyright (c) 2025 TQ-Systems GmbH <oss@ew.tq-group.com>
+# SPDX-License-Identifier: Apache 2.0
+# Author: Isaac L. L. Yuki
+
+config SHIELD_MBA117XL_TM070
+	def_bool $(shields_list_contains,mba117xl_tm070)

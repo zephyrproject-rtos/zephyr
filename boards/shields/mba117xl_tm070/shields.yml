@@ -1,0 +1,6 @@
+shields:
+  - name: mba117xl_tm070
+    full_name: Tianma Display used with the MBa117xL shield
+    vendor: others
+    supported_features:
+      - display
