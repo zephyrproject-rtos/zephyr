@@ -149,6 +149,12 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_PING
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/icmp/sl_net_ping.c
   )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
+    ${WISECONNECT_DIR}/components/service/sl_websocket_client/inc
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
+    ${WISECONNECT_DIR}/components/service/sl_websocket_client/src/sl_websocket_client.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(

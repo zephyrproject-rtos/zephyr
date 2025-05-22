@@ -107,6 +107,15 @@ config WIFI_SILABS_SIWX91X_PING
 	  than the Zephyr one. See also sl_net_ping.h in Silabs HAL for more
 	  information about the API.
 
+config WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
+	bool "Offloaded implementation of Websocket client"
+	help
+	  Enable this option to allow to use the Websocket client implementation
+	  provided by the Network Co-Processor present on SiWx91x series. This
+	  implementation usually require less resources than the Zephyr one.
+	  See also sl_websocket_client.h in Silabs HAL for more information
+	  about the API.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
