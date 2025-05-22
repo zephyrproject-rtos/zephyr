@@ -199,6 +199,8 @@
 			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
+			lfrc-startup-time-us = <200>; /* To be measured */
+			lflprc-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
