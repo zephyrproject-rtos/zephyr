@@ -1085,8 +1085,13 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 	/* TODO: check for duplicate in SIR */
 
 	sir_cfg = SIR_MAP_DEV_ROLE(I3C_BCR_DEVICE_ROLE(target->bcr)) |
-		  SIR_MAP_DEV_DA(target->dynamic_addr) |
-		  SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		  SIR_MAP_DEV_DA(target->dynamic_addr);
+	if (i3c_ibi_has_payload(target)) {
+		sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+	} else {
+		/* Set to 1 for MDB */
+		sir_cfg |= SIR_MAP_DEV_PL(1);
+	}
 	/* ACK if there is an ibi tir cb or if it is controller capable*/
 	if ((target->ibi_cb != NULL) || i3c_device_is_controller_capable(target)) {
 		sir_cfg |= SIR_MAP_DEV_ACK;
