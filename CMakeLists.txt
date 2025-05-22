@@ -1982,12 +1982,29 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
     endif()
     find_program(MAKE make REQUIRED)
+
+    # By default we have no NSI build C options
+    set(NSI_SYSROOT_FLAG "")
+
+    # Check for custom --sysroot flags
+    # Split TOOLCHAIN_C_FLAGS into a list
+    string(REPLACE " " ";" TOOLCHAIN_C_FLAGS_LIST "${TOOLCHAIN_C_FLAGS}")
+
+    foreach(flag IN LISTS TOOLCHAIN_C_FLAGS_LIST)
+        if (flag MATCHES "^--sysroot=.*")
+		set(NSI_SYSROOT_FLAG "${flag}")
+            break()
+        endif()
+    endforeach()
+
     add_custom_target(native_runner_executable
       ALL
       COMMENT "Building native simulator runner, and linking final executable"
       COMMAND
       ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
         -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
+	NSI_BUILD_C_OPTIONS="${NSI_SYSROOT_FLAG}" NSI_AR="${CMAKE_AR}"
+	NSI_EXTRA_LINK_OPTIONS="${NSI_SYSROOT_FLAG}"
       # nsi_config is created by the board cmake file
       DEPENDS ${logical_target_for_zephyr_elf}
       BYPRODUCTS ${KERNEL_EXE_NAME}
