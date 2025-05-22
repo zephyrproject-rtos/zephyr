@@ -57,6 +57,9 @@ extern "C" {
 #define WIFI_ENT_IDENTITY_MAX_USERS 1
 #endif /* CONFIG_WIFI_ENT_IDENTITY_MAX_USERS */
 
+/** MAX domain len */
+#define WIFI_DOMAIN_NAME_MAX_LENGTH 64
+
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
@@ -723,6 +726,10 @@ struct wifi_connect_req_params {
 	uint8_t ignore_broadcast_ssid;
 	/** Parameter used for frequency band */
 	enum wifi_frequency_bandwidths bandwidth;
+	/** Constraint for server domain name */
+	const uint8_t *domain_match;
+	/** Server domain length */
+	uint8_t domain_match_length; /* Max 64 */
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
