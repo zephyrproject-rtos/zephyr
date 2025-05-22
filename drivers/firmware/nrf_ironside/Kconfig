@@ -50,4 +50,21 @@ config NRF_IRONSIDE_BOOT_REPORT
 	help
 	  Support for parsing the Boot Report populated by Nordic IRONside firmware.
 
+config NRF_IRONSIDE_DVFS_SERVICE
+	bool "IRONside DVFS service"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to handle DVFS operating point requests.
+
+if NRF_IRONSIDE_DVFS_SERVICE
+
+config NRF_IRONSIDE_DVFS_OPPOINT_CHANGE_MUTEX_TIMEOUT_MS
+	int "IRONSside DVFS change oppoint mutex timeout"
+	default 100
+	help
+	  Maximum tiemout when waiting for DVFS oppoint change mutex lock.
+
+endif # NRF_IRONSIDE_DVFS_SERVICE
+
 endmenu
