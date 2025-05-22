@@ -4,9 +4,12 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 find_package(GnuLd REQUIRED)
 set(CMAKE_LINKER ${GNULD_LINKER})
 
-compiler_rt_library(library_dir library_name "")
-set_linker_property(PROPERTY rt_library "-l${library_name}")
-set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
+# The native toolchain will sort out any runtime library requirement
+if(NOT CONFIG_NATIVE_BUILD)
+  compiler_rt_library(library_dir library_name "")
+  set_linker_property(PROPERTY rt_library "-l${library_name}")
+  set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
+endif()
 
 if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
    ${GNULD_LINKER_IS_BFD})
