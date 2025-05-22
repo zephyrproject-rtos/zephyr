@@ -18,11 +18,10 @@ enum {
 
 static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 {
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_operational_statistics_t sl_stat;
-	sl_wifi_interface_t interface;
 	int ret;
 
-	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		return 0;
 	}
@@ -37,12 +36,11 @@ static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 
 int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 {
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_t sl_ps_profile;
-	sl_wifi_interface_t interface;
 	int beacon_interval;
 	int ret;
 
-	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		LOG_ERR("Wi-Fi not in station mode");
 		return -EINVAL;
@@ -153,15 +151,14 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 
 int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
 {
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_t sl_ps_profile;
 	struct siwx91x_dev *sidev = dev->data;
-	sl_wifi_interface_t interface;
 	uint16_t beacon_interval;
 	int ret;
 
 	__ASSERT(config, "config cannot be NULL");
 
-	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		LOG_ERR("Wi-Fi not in station mode");
 		return -EINVAL;
