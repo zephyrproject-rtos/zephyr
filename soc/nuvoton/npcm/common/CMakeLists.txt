@@ -7,6 +7,7 @@ zephyr_include_directories(.)
 
 zephyr_sources(
   scfg.c
+  soc_common.c
 )
 
 set(NPCM_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}_signed.bin)

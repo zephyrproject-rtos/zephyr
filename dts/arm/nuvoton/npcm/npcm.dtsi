@@ -9,6 +9,7 @@
 /* Macros for device tree declarations of npcm soc family */
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcm_clock.h>
+#include <zephyr/dt-bindings/espi/npcm_espi.h>
 #include <zephyr/dt-bindings/flash_controller/npcm_qspi.h>
 #include <zephyr/dt-bindings/sensor/npcm_tach.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -74,6 +75,20 @@
 			reg = <0x400c4200 0x100>;
 			interrupts = <76 3>;
 			clocks = <&pcc NPCM_CLOCK_UART2>;
+			status = "disabled";
+		};
+
+		espi0: espi@4000a000 {
+			compatible = "nuvoton,npcm-espi";
+			reg = <0x4000a000 0x2000>;
+			interrupts = <11 3>; /* Interrupt for eSPI Bus */
+			/* clocks for eSPI modules */
+			clocks = <&pcc NPCM_CLOCK_ESPI>;
+			/* WUI maps for eSPI signals */
+			espi-rst-wui = <&wui_espi_rst>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#vw-cells = <3>;
 			status = "disabled";
 		};
 
@@ -704,7 +719,7 @@
 			status = "disabled";
 		};
 
-                host_sub: lpc@400c1000 {
+        host_sub: lpc@400c1000 {
 			compatible = "nuvoton,npcm-host-sub";
 			/* host sub-module register address & size */
 			reg = <0x400c1000 0x2000
@@ -728,10 +743,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCM_CLOCK_HOSTSUB1>,
-				 <&pcc NPCM_CLOCK_HOSTSUB1>,
-				 <&pcc NPCM_CLOCK_HOSTSUB1>,
-				 <&pcc NPCM_CLOCK_HOSTSUB1>,
-				 <&pcc NPCM_CLOCK_HOSTSUB1>;
+				 <&pcc NPCM_CLOCK_HOSTSUB2>,
+				 <&pcc NPCM_CLOCK_HOSTSUB3>,
+				 <&pcc NPCM_CLOCK_HOSTSUB4>,
+				 <&pcc NPCM_CLOCK_HOSTSUB5>;
 		};
 
 	};

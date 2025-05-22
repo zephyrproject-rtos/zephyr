@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _NUVOTON_NPCM4XX_SOC_HOST_H_
-#define _NUVOTON_NPCM4XX_SOC_HOST_H_
+#ifndef _NUVOTON_NPCM_SOC_HOST_H_
+#define _NUVOTON_NPCM_SOC_HOST_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,7 +37,6 @@ void host_shm_SetP80Ctrl(uint8_t val);
 bool host_shm_IsP80STS(uint8_t val);
 uint32_t host_shm_GetP80Buf(uint8_t Buf);
 
-
 /**
  * @brief Initializes all host sub-modules in Core domain.
  *
@@ -51,7 +50,7 @@ uint32_t host_shm_GetP80Buf(uint8_t Buf);
  * @retval 0 If successful.
  * @retval -EIO if cannot turn on host sub-module source clocks in core domain.
  */
-int npcm4xx_host_init_subs_core_domain(const struct device *host_bus_dev,
+int npcm_host_init_subs_core_domain(const struct device *host_bus_dev,
 							sys_slist_t *callbacks);
 
 /**
@@ -61,7 +60,7 @@ int npcm4xx_host_init_subs_core_domain(const struct device *host_bus_dev,
  * Host domain. Please notcie it must be executed after receiving PLT_RST
  * de-asserted signal and eSPI peripheral channel is enabled and ready.
  */
-void npcm4xx_host_init_subs_host_domain(void);
+void npcm_host_init_subs_host_domain(void);
 
 /**
  * @brief Reads data from a host sub-module which is updated via eSPI.
@@ -76,7 +75,7 @@ void npcm4xx_host_init_subs_host_domain(void);
  * @retval -ENOTSUP if eSPI peripheral is off or not supported.
  * @retval -EINVAL for unimplemented lpc opcode, but in range.
  */
-int npcm4xx_host_periph_read_request(enum lpc_peripheral_opcode op,
+int npcm_host_periph_read_request(enum lpc_peripheral_opcode op,
 								uint32_t *data);
 
 /**
@@ -92,22 +91,22 @@ int npcm4xx_host_periph_read_request(enum lpc_peripheral_opcode op,
  * @retval -ENOTSUP if eSPI peripheral is off or not supported.
  * @retval -EINVAL for unimplemented lpc opcode, but in range.
  */
-int npcm4xx_host_periph_write_request(enum lpc_peripheral_opcode op,
+int npcm_host_periph_write_request(enum lpc_peripheral_opcode op,
 							const uint32_t *data);
 
 /**
  * @brief Enable host access wake-up interrupt. Usually, it is used to wake up
  * ec during system is in Modern standby power mode.
  */
-void npcm4xx_host_enable_access_interrupt(void);
+void npcm_host_enable_access_interrupt(void);
 
 /**
  * @brief Disable host access wake-up interrupt.
  */
-void npcm4xx_host_disable_access_interrupt(void);
+void npcm_host_disable_access_interrupt(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NUVOTON_NPCM4XX_SOC_HOST_H_ */
+#endif /* _NUVOTON_NPCM_SOC_HOST_H_ */

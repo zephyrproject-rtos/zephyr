@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Device tree declarations of npcm soc family */
+#include "npcm.dtsi"
+
 /* npcm4 series pinmux mapping table */
 #include "npcm4/npcm4-alts-map.dtsi"
 /* npcm4 series mapping table between MIWU wui bits and source device */
 #include "npcm4/npcm4-miwus-wui-map.dtsi"
 /* npcm4 series mapping table between MIWU groups and interrupts */
 #include "npcm4/npcm4-miwus-int-map.dtsi"
-
-/* Device tree declarations of npcm soc family */
-#include "npcm.dtsi"
+/* npcm4 series eSPI VW mapping table */
+#include "npcm4/npcm4-espi-vws-map.dtsi"
 
 / {
 	def-io-conf-list {

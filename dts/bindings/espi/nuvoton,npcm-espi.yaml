@@ -1,11 +1,11 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCM-Host Sub-Modules node
+description: Nuvoton, NPCM-eSPI node
 
-compatible: "nuvoton,npcm-host-sub"
+compatible: "nuvoton,npcm-espi"
 
-include: [base.yaml]
+include: [espi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -16,12 +16,11 @@ properties:
         required: true
         description: configurations of device source clock controller
 
-    host-acc-wui:
+    espi-rst-wui:
         type: phandle
         required: true
         description: |
-            Mapping table between Wake-Up Input (WUI) and any legacy host
-            access transactions.
+            Mapping table between Wake-Up Input (WUI) and ESPI_RST signal.
 
             For example the WUI mapping on NPCM would be
-               host-acc-wui = <&wui_host_acc>;
+               espi-rst-wui = <&wui_espi_rst>;

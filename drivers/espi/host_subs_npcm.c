@@ -106,9 +106,9 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
-//#include "espi_utils.h"
+#include "espi_utils.h"
 #include "soc_host.h"
-//#include "soc_espi.h"
+#include "soc_espi.h"
 #include "soc_miwu.h"
 
 #include <zephyr/logging/log.h>
@@ -310,6 +310,7 @@ uint32_t host_shm_GetWrProtect(uint8_t win)
 			ret = inst_shm->WIN4_WR_PROT;
 			break;
 		case hs_SHM_WIN5:
+		default:
 			ret = inst_shm->WIN5_WR_PROT;
 			break;
 	}
@@ -405,6 +406,7 @@ bool host_shm_IsRdOffsetIE(uint8_t win)
 			else {ret = 0;}
 			break;
 		case hs_SHM_WIN5:
+		default:
 			if(inst_shm->HOFS_STS2 & 0x01) {ret = 1;}
 			else {ret = 0;}
 			break;
@@ -434,6 +436,7 @@ bool host_shm_IsWrOffsetIE(uint8_t win)
 			else {ret = 0;}
 			break;
 		case hs_SHM_WIN5:
+		default:
 			if(inst_shm->HOFS_STS2 & 0x02) {ret = 1;}
 			else {ret = 0;}
 			break;
@@ -530,6 +533,7 @@ uint8_t host_shm_GetHostSemaphore(uint8_t win)
 			ret = ((uint8_t)(inst_shm->SHAW4_SEM & 0x0F));
 			break;
 		case hs_SHM_WIN5:
+		default:
 			ret = ((uint8_t)(inst_shm->SHAW5_SEM & 0x0F));
 			break;
 	}
@@ -558,6 +562,7 @@ bool host_shm_IsHostSemIE(uint8_t win)
 			else {ret = 0;}
 			break;
 		case hs_SHM_WIN5:
+		default:
 			if(inst_shm->SMC_STS2 & 0x04) {ret = 1;}
 			else {ret = 0;}
 			break;
@@ -587,6 +592,7 @@ bool host_shm_IsHostSemEnable(uint8_t win)
 			else {ret = 0;}
 			break;
 		case hs_SHM_WIN5:
+		default:
 			if(inst_shm->SMC_STS2 & 0x10) {ret = 1;}
 			else {ret = 0;}
 			break;

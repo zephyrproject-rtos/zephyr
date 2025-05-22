@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common eSPI virtual wires mapping configurations in npcm family */
+#include <nuvoton/npcm/npcm-espi-vws-map.dtsi>
