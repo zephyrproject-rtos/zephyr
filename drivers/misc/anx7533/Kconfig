@@ -1,0 +1,26 @@
+# Copyright (c) 2025, Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+config ANX7533
+	bool "Analogix 7533 mobile HD reciever"
+	depends on I2C
+	help
+	  Analogix 7533 mobile HD reciever
+
+if ANX7533
+
+config ANX7533_SHELL
+	bool "Shell commands"
+	depends on SHELL
+
+config ANX7533_INIT_PRIORITY
+	int "anx7533 init priority"
+	default 65
+	help
+	  Init priority for the anx7533 driver.
+
+module = ANX7533
+module-str = ANX7533 mobile HD reciever
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
