@@ -2514,10 +2514,38 @@ err:
 	return conn;
 }
 
-static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr)
+/* According to RFC 793, the seqnum test includes 4 cases when STATE > TCP_SYN_SENT
+ *
+ *	Seg-len	Recv-win	Test
+ *	-------	--------	-----------------------------------------------
+ *	  0	  0		SEG.SEQ = RCV.NXT
+ *	  0	 >0		RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND
+ *	 >0	  0		not acceptable
+ *	 >0	 >0		RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND
+ *			     or RCV.NXT =< SEG.SEQ+SEG.LEN-1 <RCV.NXT+RCV.WND
+ */
+static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr, size_t len)
 {
-	return (net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
-		(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0);
+	if (conn->state <= TCP_SYN_SENT) {
+		return true;
+	}
+
+	if (conn->recv_win > 0) {
+		if (len == 0) {
+			return ((net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
+				(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0));
+		}
+		return (((net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
+			 (net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0)) ||
+			((net_tcp_seq_cmp(th_seq(hdr) + len - 1, conn->ack) >= 0) &&
+			 (net_tcp_seq_cmp(th_seq(hdr) + len - 1, conn->ack + conn->recv_win) < 0)));
+	}
+
+	if (len == 0) {
+		return (net_tcp_seq_cmp(th_seq(hdr), conn->ack) == 0);
+	}
+
+	return false;
 }
 
 static int32_t tcp_compute_new_length(struct tcp *conn, struct tcphdr *hdr, size_t len,
@@ -2856,14 +2884,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto out;
 	}
 
-	if (FL(&fl, &, RST)) {
-		/* We only accept RST packet that has valid seq field. */
-		if (!tcp_validate_seq(conn, th)) {
-			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
-			k_mutex_unlock(&conn->lock);
-			return NET_DROP;
-		}
+	len = tcp_data_len(pkt);
 
+	/* first validate the seqnum */
+	if (!tcp_validate_seq(conn, th, len)) {
+		/* send ACK for non-RST packet */
+		if (FL(&fl, &, RST)) {
+			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
+		} else if (len > 0) {
+			tcp_out(conn, ACK);
+		}
+		k_mutex_unlock(&conn->lock);
+		return NET_DROP;
+	}
+
+	if (FL(&fl, &, RST)) {
 		/* Valid RST received. */
 		verdict = NET_OK;
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
@@ -2901,8 +2936,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto out;
 	}
 
-	if ((conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
-	    tcp_validate_seq(conn, th) && FL(&fl, &, SYN)) {
+	if (conn->state > TCP_SYN_SENT && FL(&fl, &, SYN)) {
 		/* According to RFC 793, ch 3.9 Event Processing, receiving SYN
 		 * once the connection has been established is an error
 		 * condition, reset should be sent and connection closed.
@@ -2937,8 +2971,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	} else {
 		k_sem_give(&conn->tx_sem);
 	}
-
-	len = tcp_data_len(pkt);
 
 	switch (conn->state) {
 	case TCP_LISTEN:
@@ -3384,22 +3416,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				next = TCP_CLOSING;
 			}
 			verdict = NET_OK;
-		} else {
-			if (len > 0) {
-				if (fin_acked) {
-					/* Send out a duplicate ACK */
-					tcp_send_timer_cancel(conn);
-					tcp_out(conn, ACK);
-				} else {
-					/* In FIN1 state
-					 * Send out a duplicate ACK, with the pending FIN
-					 * flag
-					 */
-					tcp_send_timer_cancel(conn);
-					tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
-				}
-				verdict = NET_OK;
-			}
 		}
 	}
 	break;
@@ -3440,12 +3456,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			verdict = NET_OK;
 			tcp_out(conn, ACK);
-		} else {
-			if (len > 0) {
-				/* Send out a duplicate ACK */
-				tcp_out(conn, ACK);
-				verdict = NET_OK;
-			}
 		}
 		break;
 	case TCP_CLOSING: {
@@ -3491,8 +3501,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		 * Since the conn->ack was already incremented in TCP_FIN_WAIT_1
 		 * add 1 in the comparison sequence
 		 */
-		if ((FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len + 1, conn->ack) == 0)) ||
-		    (len > 0)) {
+		if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len + 1, conn->ack) == 0)) {
 			tcp_send_timer_cancel(conn);
 			if (fin_acked) {
 				/* Send out a duplicate ACK */
@@ -3529,8 +3538,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			/* Acknowledge any FIN attempts, in case retransmission took
 			 * place.
 			 */
-			if ((FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + 1, conn->ack) == 0)) ||
-			    (len > 0)) {
+			if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + 1, conn->ack) == 0)) {
 				tcp_out(conn, ACK);
 				verdict = NET_OK;
 			}
