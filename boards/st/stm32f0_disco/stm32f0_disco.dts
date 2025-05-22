@@ -108,7 +108,7 @@
 
 		/*
 		 * The flash starting at offset 0x2000 and ending at
-		 * offset 0x3999 is reserved for use by the application.
+		 * offset 0x3fff is reserved for use by the application.
 		 */
 
 		slot0_partition: partition@4000 {
