@@ -248,11 +248,11 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 
 int siwx91x_ap_sta_disconnect(const struct device *dev, const uint8_t *mac_addr)
 {
-	ARG_UNUSED(dev);
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_mac_address_t mac = { };
 	int ret;
 
+	ARG_UNUSED(dev);
 	__ASSERT(mac_addr, "mac_addr cannot be NULL");
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_AP_INTERFACE) {
@@ -275,11 +275,11 @@ int siwx91x_ap_sta_disconnect(const struct device *dev, const uint8_t *mac_addr)
 sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
 				      uint32_t data_length, void *arg)
 {
-	ARG_UNUSED(event);
-	ARG_UNUSED(data_length);
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
 
+	ARG_UNUSED(data_length);
+	ARG_UNUSED(event);
 	__ASSERT(data, "data cannot be NULL");
 	__ASSERT(arg, "arg cannot be NULL");
 
@@ -295,11 +295,11 @@ sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
 sl_status_t siwx91x_on_ap_sta_disconnect(sl_wifi_event_t event, void *data,
 					 uint32_t data_length, void *arg)
 {
-	ARG_UNUSED(event);
-	ARG_UNUSED(data_length);
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
 
+	ARG_UNUSED(data_length);
+	ARG_UNUSED(event);
 	__ASSERT(data, "data cannot be NULL");
 	__ASSERT(arg, "arg cannot be NULL");
 
