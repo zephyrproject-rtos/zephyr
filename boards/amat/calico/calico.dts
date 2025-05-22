@@ -18,7 +18,6 @@
 		compatible = "regulator-fixed";
 		regulator-name = "EN_N2V0";
 		enable-gpios = <&gpio64_95 18 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
 	};
 	ap_pwr_3v3_en {
 		compatible = "regulator-fixed";
@@ -30,7 +29,6 @@
 		compatible = "regulator-fixed";
 		regulator-name = "EN_P2V5";
 		enable-gpios = <&gpio64_95 17 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
 	};
 	ap_pwr_1v8_en {
 		compatible = "regulator-fixed";
@@ -42,7 +40,6 @@
 		compatible = "regulator-fixed";
 		regulator-name = "EN_P1V2";
 		enable-gpios = <&gpio64_95 14 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
 	};
 	ap_pwr_1v0_en {
 		compatible = "regulator-fixed";
@@ -72,6 +69,26 @@
 
 &stimer0 {
 	clk-source = <3>;
+};
+
+&i2c5 {
+	pinctrl-0 = <&i2c5_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	scl-gpios = <&gpio32_63 15 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio32_63 16 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+
+	anx7533_0@54 {
+		compatible = "analogix,anx7533";
+		vid-rst-pin-gpios = <&gpio32_63 1 GPIO_ACTIVE_HIGH>;
+		vid-en-pin-gpios = <&gpio64_95 10 GPIO_ACTIVE_HIGH>;
+		vid-int-pin-gpios = <&gpio0_31 30 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+		reg = <0x54>;
+		reg-offset = <0x52>;
+		reg-offset-rd = <0x53>;
+		status = "okay";
+	};
+	status = "okay";
 };
 
 &xo32m {
