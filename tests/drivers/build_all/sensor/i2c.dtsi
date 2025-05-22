@@ -1405,3 +1405,15 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ina7xx: ina7xx@bc {
+	compatible = "ti,ina7xx";
+	reg = <0xbc>;
+	inatype = <2>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
