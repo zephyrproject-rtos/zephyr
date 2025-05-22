@@ -204,6 +204,9 @@ __subsystem struct nrf_clock_control_driver_api {
 	int (*cancel_or_release)(const struct device *dev,
 				 const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
+	int (*resolve)(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec);
 };
 
 /**
@@ -322,6 +325,30 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 		(const struct nrf_clock_control_driver_api *)dev->api;
 
 	return api->cancel_or_release(dev, spec, cli);
+}
+
+/**
+ * @brief Resolve a requested clock spec to resulting spec.
+ *
+ * @param dev Device structure.
+ * @param req_spec The requested clock specification.
+ * @param res_spec Destination for the resulting clock specification.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure
+ */
+static inline int nrf_clock_control_resolve(const struct device *dev,
+					    const struct nrf_clock_spec *req_spec,
+					    struct nrf_clock_spec *res_spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->resolve == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->resolve(dev, req_spec, res_spec);
 }
 
 /** @brief Request the HFXO from Zero Latency Interrupt context.
