@@ -154,110 +154,45 @@ BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= SAM_GMAC_PHY_CONNECTION
 	     "Invalid PHY connection");
 
 /* RX descriptors list */
-static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#if GMAC_PRIORITY_QUEUE_NUM >= 1
-static struct gmac_desc rx_desc_que1[PRIORITY_QUEUE1_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 2
-static struct gmac_desc rx_desc_que2[PRIORITY_QUEUE2_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 3
-static struct gmac_desc rx_desc_que3[PRIORITY_QUEUE3_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 4
-static struct gmac_desc rx_desc_que4[PRIORITY_QUEUE4_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 5
-static struct gmac_desc rx_desc_que5[PRIORITY_QUEUE5_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
+#define DEFN_RX_DESC(n)									\
+		static struct gmac_desc rx_desc##n##_que[PRIORITY_QUEUE_RX_DESC_COUNT]	\
+			__nocache __aligned(GMAC_DESC_ALIGNMENT);
 
 /* TX descriptors list */
-static struct gmac_desc tx_desc_que0[MAIN_QUEUE_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#if GMAC_PRIORITY_QUEUE_NUM >= 1
-static struct gmac_desc tx_desc_que1[PRIORITY_QUEUE1_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 2
-static struct gmac_desc tx_desc_que2[PRIORITY_QUEUE2_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 3
-static struct gmac_desc tx_desc_que3[PRIORITY_QUEUE3_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 4
-static struct gmac_desc tx_desc_que4[PRIORITY_QUEUE4_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
-#if GMAC_PRIORITY_QUEUE_NUM >= 5
-static struct gmac_desc tx_desc_que5[PRIORITY_QUEUE5_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
-#endif
+#define DEFN_TX_DESC(n)									\
+		static struct gmac_desc tx_desc##n##_que[PRIORITY_QUEUE_TX_DESC_COUNT]	\
+			__nocache __aligned(GMAC_DESC_ALIGNMENT);
 
 /* RX buffer accounting list */
-static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_buf *rx_frag_list_que1[PRIORITY_QUEUE1_RX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_buf *rx_frag_list_que2[PRIORITY_QUEUE2_RX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_buf *rx_frag_list_que3[PRIORITY_QUEUE3_RX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_buf *rx_frag_list_que4[PRIORITY_QUEUE4_RX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_buf *rx_frag_list_que5[PRIORITY_QUEUE5_RX_DESC_COUNT];
-#endif
+#define DEFN_RX_FRAG(n)									\
+		static struct net_buf *rx_frag_list##n##_que[PRIORITY_QUEUE_RX_DESC_COUNT];
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 /* TX buffer accounting list */
-static struct net_buf *tx_frag_list_que0[MAIN_QUEUE_TX_DESC_COUNT];
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_buf *tx_frag_list_que1[PRIORITY_QUEUE1_TX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_buf *tx_frag_list_que2[PRIORITY_QUEUE2_TX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_buf *tx_frag_list_que3[PRIORITY_QUEUE3_TX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_buf *tx_frag_list_que4[PRIORITY_QUEUE4_TX_DESC_COUNT];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_buf *tx_frag_list_que5[PRIORITY_QUEUE5_TX_DESC_COUNT];
-#endif
+#define DEFN_TX_FRAG(n)									\
+		static struct net_buf *tx_frag_list##n##_que[PRIORITY_QUEUE_TX_DESC_COUNT];
 
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+#if  defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+#define NET_PKT_PER_QUE (CONFIG_NET_PKT_TX_COUNT + 1)
 /* TX frames accounting list */
-static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_pkt *tx_frame_list_que1[CONFIG_NET_PKT_TX_COUNT + 1];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_pkt *tx_frame_list_que2[CONFIG_NET_PKT_TX_COUNT + 1];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_pkt *tx_frame_list_que3[CONFIG_NET_PKT_TX_COUNT + 1];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_pkt *tx_frame_list_que4[CONFIG_NET_PKT_TX_COUNT + 1];
-#endif
-#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
-#endif
-#endif
-#endif
+#define DEFN_TX_FRAME(n)								\
+		static struct net_pkt *tx_frame_list##n##_que[NET_PKT_PER_QUE *		\
+							      (GMAC_ACTIVE_PRIORITY_QUEUE_NUM + 1)];
+#else
+#define DEFN_TX_FRAME(n)
+#endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
+#else
+#define DEFN_TX_FRAG(n)
+#define DEFN_TX_FRAME(n)
+#endif /* GMAC_MULTIPLE_TX_PACKETS */
+
+#define SAM_GMAC_LISTS_DEFN(n)								\
+		DEFN_RX_DESC(n)								\
+		DEFN_TX_DESC(n)								\
+		DEFN_RX_FRAG(n)								\
+		DEFN_TX_FRAG(n)								\
+		DEFN_TX_FRAME(n)
+DT_INST_FOREACH_STATUS_OKAY(SAM_GMAC_LISTS_DEFN)
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
@@ -2204,23 +2139,23 @@ static struct eth_sam_dev_data eth0_data = {
 		{
 			.que_idx = GMAC_QUE_0,
 			.rx_desc_list = {
-				.buf = rx_desc_que0,
-				.len = ARRAY_SIZE(rx_desc_que0),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE0_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que0,
-				.len = ARRAY_SIZE(tx_desc_que0),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE0_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
-			.rx_frag_list = rx_frag_list_que0,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE0_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que0,
-				.len = ARRAY_SIZE(tx_frag_list_que0),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE0_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que0,
-				.len = ARRAY_SIZE(tx_frame_list_que0),
+				.buf = (uint32_t *)&tx_frame_list0_que[0 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			},
 #endif
 #endif
@@ -2228,24 +2163,24 @@ static struct eth_sam_dev_data eth0_data = {
 		}, {
 			.que_idx = GMAC_QUE_1,
 			.rx_desc_list = {
-				.buf = rx_desc_que1,
-				.len = ARRAY_SIZE(rx_desc_que1),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE1_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que1,
-				.len = ARRAY_SIZE(tx_desc_que1),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE1_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-			.rx_frag_list = rx_frag_list_que1,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE1_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que1,
-				.len = ARRAY_SIZE(tx_frag_list_que1),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE1_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que1,
-				.len = ARRAY_SIZE(tx_frame_list_que1),
+				.buf = (uint32_t *)&tx_frame_list0_que[1 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			}
 #endif
 #endif
@@ -2255,24 +2190,24 @@ static struct eth_sam_dev_data eth0_data = {
 		}, {
 			.que_idx = GMAC_QUE_2,
 			.rx_desc_list = {
-				.buf = rx_desc_que2,
-				.len = ARRAY_SIZE(rx_desc_que2),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE2_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que2,
-				.len = ARRAY_SIZE(tx_desc_que2),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE2_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-			.rx_frag_list = rx_frag_list_que2,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE2_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que2,
-				.len = ARRAY_SIZE(tx_frag_list_que2),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE2_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que2,
-				.len = ARRAY_SIZE(tx_frame_list_que2),
+				.buf = (uint32_t *)&tx_frame_list0_que[2 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			}
 #endif
 #endif
@@ -2282,24 +2217,24 @@ static struct eth_sam_dev_data eth0_data = {
 		}, {
 			.que_idx = GMAC_QUE_3,
 			.rx_desc_list = {
-				.buf = rx_desc_que3,
-				.len = ARRAY_SIZE(rx_desc_que3),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE3_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que3,
-				.len = ARRAY_SIZE(tx_desc_que3),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE3_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-			.rx_frag_list = rx_frag_list_que3,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE3_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que3,
-				.len = ARRAY_SIZE(tx_frag_list_que3),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE3_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que3,
-				.len = ARRAY_SIZE(tx_frame_list_que3),
+				.buf = (uint32_t *)&tx_frame_list0_que[3 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			}
 #endif
 #endif
@@ -2309,24 +2244,24 @@ static struct eth_sam_dev_data eth0_data = {
 		}, {
 			.que_idx = GMAC_QUE_4,
 			.rx_desc_list = {
-				.buf = rx_desc_que4,
-				.len = ARRAY_SIZE(rx_desc_que4),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE4_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que4,
-				.len = ARRAY_SIZE(tx_desc_que4),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE4_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-			.rx_frag_list = rx_frag_list_que4,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE4_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que4,
-				.len = ARRAY_SIZE(tx_frag_list_que4),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE4_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que4,
-				.len = ARRAY_SIZE(tx_frame_list_que4),
+				.buf = (uint32_t *)&tx_frame_list0_que[4 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			}
 #endif
 #endif
@@ -2336,24 +2271,24 @@ static struct eth_sam_dev_data eth0_data = {
 		}, {
 			.que_idx = GMAC_QUE_5,
 			.rx_desc_list = {
-				.buf = rx_desc_que5,
-				.len = ARRAY_SIZE(rx_desc_que5),
+				.buf = &rx_desc0_que[PRIORITY_QUEUE5_RX_DESC_IDX],
+				.len = MAIN_QUEUE_RX_DESC_COUNT,
 			},
 			.tx_desc_list = {
-				.buf = tx_desc_que5,
-				.len = ARRAY_SIZE(tx_desc_que5),
+				.buf = &tx_desc0_que[PRIORITY_QUEUE5_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-			.rx_frag_list = rx_frag_list_que5,
+			.rx_frag_list = &rx_frag_list0_que[PRIORITY_QUEUE5_RX_DESC_IDX],
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
-				.buf = (uint32_t *)tx_frag_list_que5,
-				.len = ARRAY_SIZE(tx_frag_list_que5),
+				.buf = (uint32_t *)&tx_frag_list0_que[PRIORITY_QUEUE5_TX_DESC_IDX],
+				.len = MAIN_QUEUE_TX_DESC_COUNT,
 			},
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que5,
-				.len = ARRAY_SIZE(tx_frame_list_que5),
+				.buf = (uint32_t *)&tx_frame_list0_que[5 * NET_PKT_PER_QUE],
+				.len = NET_PKT_PER_QUE,
 			}
 #endif
 #endif
