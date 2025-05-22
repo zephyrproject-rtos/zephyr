@@ -1,0 +1,2 @@
+config SHIELD_MBA117XL_TM070
+	def_bool $(shields_list_contains,mba117xl_tm070)

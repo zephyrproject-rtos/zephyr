@@ -1,0 +1,87 @@
+#include <zephyr/dt-bindings/display/panel.h>
+
+/{
+	chosen {
+		zephyr,display = &lcdif;
+	};
+
+    aliases {
+        lcd-control = &lcdControl;
+    };
+
+	en_mipi_display_tm070: enable-mipi-display-tm070 {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&nxp_mipi_connector 34 GPIO_ACTIVE_HIGH>,
+		<&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+
+&zephyr_lcdif {
+	status = "okay";
+	width = <1280>;
+	height = <800>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <1>;
+		hfront-porch = <64>;
+		hback-porch = <5>;
+		vsync-len = <1>;
+		vfront-porch = <40>;
+		vback-porch = <2>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+		/*
+		 * Pixel clock is given by the following formula:
+		 * (height + vsync-len + vfront-porch + vback-porch) *
+		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
+		 */
+		clock-frequency = <33000000>;
+	};
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	data-bus-width = "24-bit";
+	backlight-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+	nxp,lcdif = <&lcdif>;
+	dpi-color-coding = "24-bit";
+	dpi-pixel-packet = "24-bit";
+	dpi-video-mode = "burst";
+	dpi-bllp-mode = "low-power";
+	autoinsert-eotp;
+	/*
+	 * PHY clock is given by the following formula:
+	 * (pixel clock * bits per pixel) / MIPI data lanes
+	 */
+	phy-clock = <888000000>;
+	tianma-tm070jvgh33@0 { 
+		status = "okay";
+		compatible = "himax,hx8394"; 
+		/*This display controller works fine for the demo purpose. But clearly it is not the best solution*/
+		reg = <0x0>;
+		data-lanes = <2>;
+		width = <1280>;
+		height = <800>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+	};
+};
+
+
+&nxp_mipi_connector{
+	compatible = "gpio-nexus";
+	#gpio-cells = <2>;
+	gpio-map-mask = <0xffffffff 0xffffffc0>;
+	gpio-map-pass-thru = <0 0x3f>;
+	gpio-map = <29 0 &gpio4 23 0>,	/* Pin 29, INPUT_IRQ*/
+            <20 0 &pca95xx 9 0>,	/* Pin 31, LVDS BACKLIGHT */
+			<21 0 &pca95xx 10 0>,	/* Pin 31, LCD RESET# */
+			<32 0 &pca95xx 11 0>,	/* Pin 32, PWR_EN */
+			<28 0 &pca95xx 12 0>,	/* Pin 32, CTP RESET# */
+			<34 0 &pca95xx 13 0>;	/* Pin 34, MIPI_EN */
+};
