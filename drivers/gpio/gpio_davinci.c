@@ -116,7 +116,7 @@ static int gpio_davinci_port_set_bits_raw(const struct device *dev,
 {
 	volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev);
 
-	regs->set_data |= mask;
+	regs->set_data = mask;
 
 	return 0;
 }
@@ -126,7 +126,7 @@ static int gpio_davinci_port_clear_bits_raw(const struct device *dev,
 {
 	volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev);
 
-	regs->clr_data |= mask;
+	regs->clr_data = mask;
 
 	return 0;
 }
