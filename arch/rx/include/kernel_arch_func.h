@@ -25,6 +25,7 @@ static inline bool arch_is_in_isr(void)
 }
 
 extern void z_rx_arch_switch(void *switch_to, void **switched_from);
+extern void z_rx_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 static inline void arch_switch(void *switch_to, void **switched_from)
 {
