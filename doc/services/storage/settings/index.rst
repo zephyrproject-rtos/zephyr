@@ -133,7 +133,7 @@ that some collisions between key's hashes could occur if a big number of
 different keys are stored. This number depends on the selected hash function.
 
 ZMS backend can handle :math:`2^n` maximum collisions where n is defined by
-(:kconfig:option:`SETTINGS_ZMS_MAX_COLLISIONS_BITS`).
+(:kconfig:option:`CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS`).
 
 
 Storage Location
