@@ -19,8 +19,6 @@ find_package(TargetTools)
 
 enable_language(C CXX ASM)
 
-include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
-
 # Parameters:
 #   SOURCES: list of source files, default main.c
 #   INCLUDE: list of additional include paths relative to ZEPHYR_BASE
