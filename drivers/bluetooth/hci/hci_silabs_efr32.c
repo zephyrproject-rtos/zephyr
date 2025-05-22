@@ -268,10 +268,12 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
 			slz_ll_thread_func, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&slz_ll_thread, "EFR32 LL");
 
 	k_thread_create(&slz_rx_thread, slz_rx_stack, K_KERNEL_STACK_SIZEOF(slz_rx_stack),
 			slz_rx_thread_func, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&slz_rx_thread, "EFR32 HCI RX");
 
 	rail_isr_installer();
 	sl_rail_util_pa_init();

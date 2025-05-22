@@ -218,12 +218,12 @@ static inline void sys_sflist_init(sys_sflist_t *list)
 /* At least 2 available flag bits are expected */
 BUILD_ASSERT(SYS_SFLIST_FLAGS_MASK >= 0x3);
 
-static inline sys_sfnode_t *z_sfnode_next_peek(sys_sfnode_t *node)
+static inline sys_sfnode_t *z_sfnode_next_peek(const sys_sfnode_t *node)
 {
 	return (sys_sfnode_t *)(node->next_and_flags & ~SYS_SFLIST_FLAGS_MASK);
 }
 
-static inline uint8_t sys_sfnode_flags_get(sys_sfnode_t *node);
+static inline uint8_t sys_sfnode_flags_get(const sys_sfnode_t *node);
 
 static inline void z_sfnode_next_set(sys_sfnode_t *parent,
 				       sys_sfnode_t *child)
@@ -250,7 +250,7 @@ static inline void z_sflist_tail_set(sys_sflist_t *list, sys_sfnode_t *node)
  *
  * @return A pointer on the first node of the list (or NULL if none)
  */
-static inline sys_sfnode_t *sys_sflist_peek_head(sys_sflist_t *list)
+static inline sys_sfnode_t *sys_sflist_peek_head(const sys_sflist_t *list)
 {
 	return list->head;
 }
@@ -262,7 +262,7 @@ static inline sys_sfnode_t *sys_sflist_peek_head(sys_sflist_t *list)
  *
  * @return A pointer on the last node of the list (or NULL if none)
  */
-static inline sys_sfnode_t *sys_sflist_peek_tail(sys_sflist_t *list)
+static inline sys_sfnode_t *sys_sflist_peek_tail(const sys_sflist_t *list)
 {
 	return list->tail;
 }
@@ -278,7 +278,7 @@ static inline sys_sfnode_t *sys_sflist_peek_tail(sys_sflist_t *list)
  * @return The value of flags, which will be between 0 and 3 on 32-bit
  *         architectures, or between 0 and 7 on 64-bit architectures
  */
-static inline uint8_t sys_sfnode_flags_get(sys_sfnode_t *node)
+static inline uint8_t sys_sfnode_flags_get(const sys_sfnode_t *node)
 {
 	return node->next_and_flags & SYS_SFLIST_FLAGS_MASK;
 }
@@ -331,7 +331,7 @@ static inline void sys_sfnode_flags_set(sys_sfnode_t *node, uint8_t flags)
  *
  * @return a boolean, true if it's empty, false otherwise
  */
-static inline bool sys_sflist_is_empty(sys_sflist_t *list);
+static inline bool sys_sflist_is_empty(const sys_sflist_t *list);
 
 Z_GENLIST_IS_EMPTY(sflist)
 
@@ -344,7 +344,7 @@ Z_GENLIST_IS_EMPTY(sflist)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_sfnode_t *sys_sflist_peek_next_no_check(sys_sfnode_t *node);
+static inline sys_sfnode_t *sys_sflist_peek_next_no_check(const sys_sfnode_t *node);
 
 Z_GENLIST_PEEK_NEXT_NO_CHECK(sflist, sfnode)
 
@@ -355,7 +355,7 @@ Z_GENLIST_PEEK_NEXT_NO_CHECK(sflist, sfnode)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_sfnode_t *sys_sflist_peek_next(sys_sfnode_t *node);
+static inline sys_sfnode_t *sys_sflist_peek_next(const sys_sfnode_t *node);
 
 Z_GENLIST_PEEK_NEXT(sflist, sfnode)
 
@@ -497,7 +497,7 @@ Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
  *
  * @return an integer equal to the size of the list, or 0 if empty
  */
-static inline size_t sys_sflist_len(sys_sflist_t *list);
+static inline size_t sys_sflist_len(const sys_sflist_t *list);
 
 Z_GENLIST_LEN(sflist, sfnode)
 

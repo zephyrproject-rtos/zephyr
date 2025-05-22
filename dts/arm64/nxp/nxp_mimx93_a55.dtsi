@@ -375,6 +375,32 @@
 		status = "disabled";
 	};
 
+	usdhc1: usdhc@42850000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x42850000 0x10000>;
+		interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+		status = "disabled";
+	};
+
+	usdhc2: usdhc@42860000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x42860000 0x10000>;
+		interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+		status = "disabled";
+	};
+
 	enet: enet@42890000 {
 		compatible = "nxp,enet1g";
 		reg = <0x42890000 DT_SIZE_K(64)>;

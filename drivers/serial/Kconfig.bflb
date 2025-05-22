@@ -4,6 +4,7 @@
 
 config UART_BFLB
 	bool "Bouffalo Lab serial driver"
+	default y
 	depends on DT_HAS_BFLB_UART_ENABLED
 	select PINCTRL
 	select SERIAL_HAS_DRIVER

@@ -79,6 +79,10 @@ Boards
 * Espressif boards ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover`` shared almost identical features.
   The differences are covered by the Kconfig options so both boards were merged into ``esp32_devkitc``.
 
+* STM32 boards should now add OpenOCD programming support by including ``openocd-stm32.board.cmake``
+  instead of ``openocd.board.cmake``. The ``openocd-stm32.board.cmake`` file extends the default
+  OpenOCD runner with manufacturer-specific configuration like STM32 mass erase commands.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -88,6 +92,10 @@ Devicetree
 * Many of the vendor-specific and arch-specific files that were in dts/common have been moved
   to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
   a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
+
+* Silicon Labs SoC-level dts files for Series 2 have been reorganized in subdirectories per device
+  superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
+  include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
 
 DAI
 ===
@@ -215,6 +223,24 @@ Sensors
   and :dtcompatible:`meas,ms5837-02ba`. In order to use one of the two variants, the
   status property needs to be used as well.
 
+* The :dtcompatible:`we,wsen-itds` driver has been renamed to
+  :dtcompatible:`we,wsen-itds-2533020201601`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+      itds:itds-2533020201601@19 {
+        compatible = "we,wsen-itds-2533020201601";
+        reg = <0x19>;
+        odr = "400";
+        op-mode = "high-perf";
+        power-mode = "normal";
+        events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+      };
+    };
+
 Serial
 =======
 
@@ -248,6 +274,25 @@ Modem
 * Removed Kconfig option :kconfig:option:`CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE` in favor of
   :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE` and :kconfig:option:`CONFIG_MODEM_CMUX_MTU`.
 
+Flash
+=====
+
+* Renamed the file from ``flash_hp_ra.h`` to ``soc_flash_renesas_ra_hp.h``.
+* Renamed the file from ``flash_hp_ra.c`` to ``soc_flash_renesas_ra_hp.c``.
+* Renamed the file from ``flash_hp_ra_ex_op.c`` to ``soc_flash_renesas_ra_hp_ex_op.c``.
+
+* The Flash HP Renesas RA dual bank mode Kconfig symbol :kconfig:option:`CONFIG_DUAL_BANK_MODE`
+  has been removed.
+* The Flash HP Renesas RA Kconfig symbol :kconfig:option:`CONFIG_RA_FLASH_HP`
+  has been renamed to :kconfig:option:`CONFIG_SOC_FLASH_RENESAS_RA_HP`.
+* The Flash HP Renesas RA write protect Kconfig symbol :kconfig:option:`CONFIG_FLASH_RA_WRITE_PROTECT`
+  has been renamed to :kconfig:option:`CONFIG_FLASH_RENESAS_RA_HP_WRITE_PROTECT`.
+
+* Separate the file ``renesas,ra-nv-flash.yaml`` into 2 files ``renesas,ra-nv-code-flash.yaml``
+  and ``renesas,ra-nv-data-flash.yaml``.
+* Separate the ``compatible`` from ``renesas,ra-nv-flash`` to :dtcompatible:`renesas,ra-nv-code-flash.yaml`
+  and :dtcompatible:`renesas,ra-nv-data-flash.yaml`.
+
 
 Stepper
 =======
@@ -274,6 +319,12 @@ Bluetooth Audio
 
 * ``CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE`` has been renamed to
   :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE``. (:github:`86763``)
+
+* ``bt_csip_set_member_get_sirk`` has been removed. Use :c:func:`bt_csip_set_member_get_info` to get
+  the SIRK (and other information). (:github:`86996`)
+
+* ``BT_AUDIO_CONTEXT_TYPE_PROHIBITED`` has been renamed to
+  :c:enumerator:`BT_AUDIO_CONTEXT_TYPE_NONE`. (:github:`89506`)
 
 Bluetooth HCI
 =============
@@ -304,6 +355,9 @@ Bluetooth Host
 
 * The macro ``BT_GATT_CCC_INITIALIZER`` in :zephyr_file:`include/zephyr/bluetooth/gatt.h`
   has been renamed to :c:macro:`BT_GATT_CCC_MANAGED_USER_DATA_INIT`. (:github:`88652`)
+
+* The ``CONFIG_BT_ISO_TX_FRAG_COUNT`` Kconfig option was removed as it was completely unused.
+  Any uses of it can simply be removed. (:github:`89836`)
 
 Bluetooth Classic
 =================
@@ -350,9 +404,121 @@ Networking
   the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
   is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
 
-* The OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` have been moved to
-  ``modules/openthread/Kconfig``. All the Kconfig options remain the same. You can still use them in the
-  same way as before, but to modify them, use the new path in the menuconfig or guiconfig.
+* The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
+  change some of the existing options have been renamed. The following table
+  summarizes the changes:
+
+  +------------------------+---------------------+--------------------+
+  | Command(s)             | Old option          | New option         |
+  +------------------------+---------------------+--------------------+
+  | ``wifi connect``       | ``-i``              | ``-g``             |
+  | ``wifi ap enable``     |                     |                    |
+  +------------------------+---------------------+--------------------+
+  | ``wifi twt setup``     | ``-i``              | ``-p``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi ap config``     | ``-i``              | ``-t``             |
+  +------------------------+---------------------+--------------------+
+  | ``wifi mode``          | ``--if-index``      | ``--iface``        |
+  | ``wifi channel``       |                     |                    |
+  | ``wifi packet_filter`` |                     |                    |
+  +------------------------+---------------------+--------------------+
+
+OpenThread
+==========
+
+* The OpenThread stack integration in Zephyr has undergone a major refactor.
+  The implementation has been moved from the Zephyr networking layer (``subsys/net/l2/openthread/``)
+  to a dedicated module (``modules/openthread/``).
+
+* OpenThread is now a standalone module in Zephyr.
+  It can be used independently of Zephyr's networking stack (L2 and IEEE802.15.4 shim layers).
+  This enables new use cases, such as applications that use OpenThread directly with their
+  own IEEE802.15.4 driver, or that do not need the full Zephyr networking stack.
+
+* Most functions in the :zephyr_file:`include/zephyr/net/openthread.h` file have been deprecated.
+  These deprecated APIs are still available for backward compatibility, but new applications should
+  use the new APIs provided by the OpenThread module. The following list summarizes the changes:
+
+  * Mutex handling:
+
+    * Previously:
+
+      * ``openthread_api_mutex_lock``
+      * ``openthread_api_mutex_try_lock``
+      * ``openthread_api_mutex_unlock``
+
+    * Now use:
+
+      * :c:func:`openthread_mutex_lock`
+      * :c:func:`openthread_mutex_try_lock`
+      * :c:func:`openthread_mutex_unlock`
+
+  * OpenThread starting:
+
+    * Previously: ``openthread_start``
+    * Now use: :c:func:`openthread_run`
+
+  * Callback registration:
+
+    * Previously:
+
+      * ``openthread_state_changed_cb_register``
+      * ``openthread_state_changed_cb_unregister``
+
+    * Now use:
+
+      * :c:func:`openthread_state_changed_callback_register`
+      * :c:func:`openthread_state_changed_callback_unregister`
+
+  * Callback structure:
+
+    * Previously: ``openthread_state_changed_cb``
+    * Now use: :c:struct:`openthread_state_changed_callback`
+
+  * The following :c:struct:`openthread_context` struct fields are deprecated and shall not be used
+    in new code anymore:
+
+    * ``instance``
+    * ``api_lock``
+    * ``work_q``
+    * ``api_work``
+    * ``state_change_cbs``
+
+  * The new functions that were not present before:
+
+    * :c:func:`openthread_init` to initialize the OpenThread stack.
+    * :c:func:`openthread_stop` to stop and disable the OpenThread stack.
+    * :c:func:`openthread_set_receive_cb` to set the receive callback for the OpenThread stack.
+
+* The OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig``
+  have been moved to :zephyr_file:`modules/openthread/Kconfig`. All Kconfig options remain the same.
+  You can still use them in the same way as before, but to modify them, use the new path in the
+  menuconfig or guiconfig.
+
+* If the :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` Kconfig option is enabled, Zephyr's L2 layer
+  will use the new OpenThread module API as its backend. The L2 layer no longer implements
+  OpenThread itself, but delegates the implementation to the module.
+
+* For existing applications using OpenThread through Zephyr's networking stack:
+
+  * Your application should continue to work, as the old APIs are still available for compatibility.
+    However, you are encouraged to migrate to the new APIs for future-proofing and use the new
+    modular structure.
+  * Update any references to OpenThread Kconfig options to use the new path
+    (``modules/openthread/Kconfig``) in your configuration tools.
+
+* For applications using :c:struct:`openthread_context` or other deprecated APIs:
+
+  * Begin migrating to the new APIs. The deprecated APIs will be removed in a future release.
+  * Avoid direct use of :c:struct:`openthread_context` and related fields; use the new
+    initialization and callback registration functions instead.
+
+* For new applications or those using OpenThread without Zephyr L2:
+
+  * Use the new initialization (:c:func:`openthread_init`), run (:c:func:`openthread_run`),
+    and callback registration APIs (:c:func:`openthread_state_change_callback_register`).
+  * You can now use OpenThread directly, without enabling Zephyr's L2 or IEEE802.15.4 layers, if
+    your use case allows.
 
 SPI
 ===
@@ -360,15 +526,46 @@ SPI
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 
-Other subsystems
-****************
-
-ZBus
+xSPI
 ====
 
-* The function :c:func:`zbus_chan_add_obs` now requires a :c:struct:`zbus_observer_node` as an argument,
-  which was previously allocated through :c:func:`k_malloc` internally. The structure must remain valid
-  in memory until :c:func:`zbus_chan_rem_obs` is called.
+* On STM32 devices, external memories device tree descriptions for size and address are now split
+  in two separate properties to comply with specification recommendations.
+
+  For instance, following external flash description ``reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits /``
+  is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
+
+  Note that the property gives the actual size of the memory device in bits.
+  Previous mapping address information is now described in xspi node at SoC dtsi level.
+
+Video
+=====
+
+* 8 bit RAW Bayer formats BGGR8 / GBRG8 / GRBG8 / RGGB8 have been renamed by adding
+  a S prefix in front:
+
+  ``VIDEO_PIX_FMT_BGGR8`` becomes ``VIDEO_PIX_FMT_SBGGR8``
+  ``VIDEO_PIX_FMT_GBRG8`` becomes ``VIDEO_PIX_FMT_SGBRG8``
+  ``VIDEO_PIX_FMT_GRBG8`` becomes ``VIDEO_PIX_FMT_SGRBG8``
+  ``VIDEO_PIX_FMT_RGGB8`` becomes ``VIDEO_PIX_FMT_SRGGB8``
+
+* On STM32 devices, the DCMI driver (:dtcompatible:`st,stm32-dcmi`) now relies on endpoint based
+  video-interfaces.yaml bindings for sensor interface properties (such as bus width and
+  synchronization signals).
+  Also the ``capture-rate`` property has been replaced by the usage of the frame interval API
+  :c:func:`video_set_frmival`.
+  See (:github:`89627`).
+
+* video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
+
+* video_buf_type enum has been added. It is a required parameter in the following video APIs:
+
+  ``set_stream``
+  ``video_stream_start``
+  ``video_stream_stop``
+
+Other subsystems
+****************
 
 Modules
 *******

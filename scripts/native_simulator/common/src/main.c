@@ -121,8 +121,7 @@ int main(int argc, char *argv[])
 		nsi_hws_one_event();
 	}
 
-	/* This line should be unreachable */
-	return 1; /* LCOV_EXCL_LINE */
+	NSI_CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 #endif /* NSI_NO_MAIN */

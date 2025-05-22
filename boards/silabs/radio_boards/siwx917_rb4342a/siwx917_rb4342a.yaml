@@ -1,0 +1,23 @@
+identifier: siwx917_rb4342a
+name: |
+  SiWx917 Wi-Fi 6 and Bluetooth LE 8 MB Flash + 8 MB ext PSRAM Radio Board
+  (SLWRB4342A, BRD4342A)
+type: mcu
+arch: arm
+ram: 8864
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - watchdog
+  - wifi
+vendor: silabs

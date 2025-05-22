@@ -100,7 +100,7 @@ The following is an example of a CoAP resource registered with our service:
 
         /* Append payload */
         coap_packet_append_payload_marker(&response);
-        coap_packet_append_payload(&response, (uint8_t *)msg, sizeof(msg));
+        coap_packet_append_payload(&response, (uint8_t *)msg, strlen(msg));
 
         /* Send to response back to the client */
         return coap_resource_send(resource, &response, addr, addr_len, NULL);

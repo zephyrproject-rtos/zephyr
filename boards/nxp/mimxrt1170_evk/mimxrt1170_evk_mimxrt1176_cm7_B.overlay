@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,8 @@
 	aliases {
 		/delete-property/ magn0;
 		/delete-property/ accel0;
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
 	};
 };
 
@@ -39,24 +41,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 3 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
-			slot1_partition: partition@723000 {
+			slot1_partition: partition@720000 {
 				label = "image-1";
-				reg = <0x00723000 DT_SIZE_M(7)>;
+				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E23000 {
+			storage_partition: partition@E20000 {
 				label = "storage";
-				reg = <0x00E23000 (DT_SIZE_M(50) - DT_SIZE_K(140))>;
+				reg = <0x00E20000 (DT_SIZE_M(50) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -101,4 +104,20 @@ m2_hci_uart: &lpuart2 {
 &m2_hci_uart {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&lpi2c5 {
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
+
 };

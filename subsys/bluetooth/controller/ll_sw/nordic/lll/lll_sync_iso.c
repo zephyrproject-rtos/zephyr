@@ -482,6 +482,15 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	if (!prepare_param) {
 		radio_isr_set(isr_done, param);
 		radio_disable();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)) {
+			const struct lll_sync_iso *lll = param;
+
+			if (lll->enc) {
+				radio_ccm_disable();
+			}
+		}
+
 		return;
 	}
 
@@ -1523,11 +1532,9 @@ static void isr_rx_done(void *param)
 		lll->payload_tail = payload_index;
 	} while (latency_event--);
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (node_rx) {
 		iso_rx_sched();
 	}
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);

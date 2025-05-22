@@ -29,8 +29,8 @@ BUILD_ASSERT((sizeof(struct ironside_call_buf) % CONFIG_DCACHE_LINE_SIZE) == 0);
 static const struct mbox_dt_spec mbox_rx = MBOX_DT_SPEC_INST_GET(0, rx);
 static const struct mbox_dt_spec mbox_tx = MBOX_DT_SPEC_INST_GET(0, tx);
 
-K_EVENT_DEFINE(alloc_evts);
-K_EVENT_DEFINE(rsp_evts);
+static K_EVENT_DEFINE(alloc_evts);
+static K_EVENT_DEFINE(rsp_evts);
 
 static void ironside_call_rsp(const struct device *dev, mbox_channel_id_t channel_id,
 			      void *user_data, struct mbox_msg *data)

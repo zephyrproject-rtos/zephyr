@@ -52,6 +52,12 @@
 			status = "okay";
 		};
 
+		rng: rng@107d208000 {
+			compatible = "brcm,iproc-rng200";
+			reg = <0x10 0x7d208000 0x28>;
+			status = "okay";
+		};
+
 		gpio2@107d517c00 {
 			compatible = "simple-bus";
 			reg = <0x10 0x7d517c00 0x40>;

@@ -40,7 +40,7 @@ static const uint32_t saadc_psels[NRF_SAADC_AIN13 + 1] = {
 	[NRF_SAADC_AIN12] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 9),
 	[NRF_SAADC_AIN13] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 9),
 };
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || defined(CONFIG_SOC_NRF54L15)
 static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
@@ -50,6 +50,20 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
+	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
+	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
+	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
+};
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
+	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
+	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(31U, 1),
+	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(30U, 1),
+	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(29U, 1),
+	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
+	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
+	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
 	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
 	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
@@ -318,8 +332,13 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	}
 
 	if (config.mode == NRF_SAADC_MODE_DIFFERENTIAL) {
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
+		if ((input_negative > NRF_SAADC_AIN7) !=
+		    (channel_cfg->input_positive > NRF_SAADC_AIN7)) {
+#else
 		if (input_negative > NRF_SAADC_AIN7 ||
 		    input_negative < NRF_SAADC_AIN0) {
+#endif
 			return -EINVAL;
 		}
 
@@ -719,6 +738,27 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #endif
 };
 
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
+/* AIN8-AIN14 inputs are on 3v3 GPIO port and they cannot be mixed with other
+ * analog inputs (from 1v8 ports) in differential mode.
+ */
+#define CH_IS_3V3(val) (val >= NRF_SAADC_AIN8)
+
+#define MIXED_3V3_1V8_INPUTS(node)					\
+	(DT_NODE_HAS_PROP(node, zephyr_input_negative) &&		\
+	 (CH_IS_3V3(DT_PROP_OR(node, zephyr_input_negative, 0)) !=	\
+	  CH_IS_3V3(DT_PROP_OR(node, zephyr_input_positive, 0))))
+#else
+#define MIXED_3V3_1V8_INPUTS(node) false
+#endif
+
+#define VALIDATE_CHANNEL_CONFIG(node)					\
+	BUILD_ASSERT(MIXED_3V3_1V8_INPUTS(node) == false,		\
+		     "1v8 inputs cannot be mixed with 3v3 inputs");
+
+/* Validate configuration of all channels. */
+#define VALIDATE_CHANNELS_CONFIG(inst) DT_FOREACH_CHILD(DT_DRV_INST(inst), VALIDATE_CHANNEL_CONFIG)
+
 /*
  * There is only one instance on supported SoCs, so inst is guaranteed
  * to be 0 if any instance is okay. (We use adc_0 above, so the driver
@@ -731,6 +771,7 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
+	VALIDATE_CHANNELS_CONFIG(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(0, saadc_pm_hook, 1);			\
 	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\

@@ -8,7 +8,6 @@ config HAS_CMSIS_CORE
 	bool
 	select HAS_CMSIS_CORE_A if CPU_AARCH32_CORTEX_A
 	select HAS_CMSIS_CORE_R if CPU_AARCH32_CORTEX_R
-	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
 
 if HAS_CMSIS_CORE
 
@@ -17,20 +16,5 @@ config HAS_CMSIS_CORE_A
 
 config HAS_CMSIS_CORE_R
 	bool
-
-config HAS_CMSIS_CORE_M
-	bool
-
-config CMSIS_M_CHECK_DEVICE_DEFINES
-	bool "Check device defines"
-	default n
-	depends on HAS_CMSIS_CORE_M
-	help
-	  This options enables the validation of CMSIS configuration flags.
-
-config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
-	bool
-	help
-	  Enable this option if CMSIS SystemCoreClock symbols is available.
 
 endif

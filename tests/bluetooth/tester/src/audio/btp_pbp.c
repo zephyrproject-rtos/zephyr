@@ -5,18 +5,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "btp/btp.h"
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pbp.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#define LOG_MODULE_NAME bttester_pbp
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util_macro.h>
 
 #include "btp_bap_broadcast.h"
+#include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_pbp
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define PBP_EXT_ADV_METADATA_LEN_MAX 128
 
@@ -195,6 +208,13 @@ static uint8_t pbp_set_public_broadcast_announcement(const void *cmd, uint16_t c
 {
 	const struct btp_pbp_set_public_broadcast_announcement_cmd *cp = cmd;
 	int err = -EINVAL;
+
+	if (cp->features == 0U || cp->features > (BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
+		LOG_DBG("Invalid features: %u", cp->features);
+		return BTP_STATUS_FAILED;
+	}
 
 	if (cp->metadata_len <= PBP_EXT_ADV_METADATA_LEN_MAX) {
 		pbp_features_cached = cp->features;

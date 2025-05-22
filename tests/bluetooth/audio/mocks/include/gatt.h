@@ -6,6 +6,7 @@
 
 #ifndef MOCKS_GATT_H_
 #define MOCKS_GATT_H_
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/fff.h>

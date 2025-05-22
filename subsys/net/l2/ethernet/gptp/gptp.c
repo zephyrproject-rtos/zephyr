@@ -35,6 +35,7 @@ K_FIFO_DEFINE(gptp_rx_queue);
 static k_tid_t tid;
 static struct k_thread gptp_thread_data;
 struct gptp_domain gptp_domain;
+struct gptp_clock_data gptp_clock;
 
 int gptp_get_port_number(struct net_if *iface)
 {
@@ -911,6 +912,18 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
+double gptp_servo_pi(int64_t nanosecond_diff)
+{
+	double kp = 0.7;
+	double ki = 0.3;
+	double ppb;
+
+	gptp_clock.pi_drift += ki * nanosecond_diff;
+	ppb = kp * nanosecond_diff + gptp_clock.pi_drift;
+
+	return ppb;
+}
+
 static void init_ports(void)
 {
 	net_if_foreach(gptp_add_port, &gptp_domain.default_ds.nb_ports);
@@ -928,6 +941,9 @@ static void init_ports(void)
 void net_gptp_init(void)
 {
 	gptp_domain.default_ds.nb_ports = 0U;
+
+	gptp_clock.domain = &gptp_domain;
+	gptp_clock.pi_drift = 0.0;
 
 	init_ports();
 }

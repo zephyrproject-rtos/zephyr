@@ -190,6 +190,11 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 	} else {
 		memset(bap_param->broadcast_code, 0, BT_ISO_BROADCAST_CODE_SIZE);
 	}
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bap_param->irc = cap_param->irc;
+	bap_param->pto = cap_param->pto;
+	bap_param->iso_interval = cap_param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	for (size_t i = 0U; i < bap_param->params_count; i++) {
 		const struct bt_cap_initiator_broadcast_subgroup_param *cap_subgroup_param =

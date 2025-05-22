@@ -378,6 +378,8 @@ struct lcp_options {
 };
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+#define LCP_NUM_MY_OPTIONS	2
+#else
 #define LCP_NUM_MY_OPTIONS	1
 #endif
 
@@ -422,9 +424,9 @@ struct ppp_context {
 
 		/** Magic-Number value */
 		uint32_t magic;
-#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+
+		/** Options data */
 		struct ppp_my_option_data my_options_data[LCP_NUM_MY_OPTIONS];
-#endif
 	} lcp;
 
 #if defined(CONFIG_NET_IPV4)

@@ -793,7 +793,10 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	uint32_t disk_version = lcp->disk_version;
 
 	if (disk_version == 0) {
-		disk_version = LFS_DISK_VERSION;
+		disk_version = CONFIG_FS_LITTLEFS_DISK_VERSION_NUMBER;
+		if (disk_version == 0) {
+			disk_version = LFS_DISK_VERSION;
+		}
 	}
 #endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
 

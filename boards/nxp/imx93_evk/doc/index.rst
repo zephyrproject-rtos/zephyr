@@ -62,6 +62,37 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART2 for A55 core and M33 core.
 
+uSDHC (SD or eMMC Interface on A55)
+-----------------------------------
+
+i.MX 93 processor has three ultra secured digital host controller (uSDHC) modules
+for SD/eMMC interface support. On the MCIMX93-EVK board, the uSDHC2 interface of
+the processor connects to the MicroSD card slot (J1002), and uSDHC1 interface connects
+to the eMMC memory (located at the SOM board). DTS overlay file "usdhc1.overlay" and
+"usdhc2.overlay" are provided to enable specified the uSDHC controller.
+
+Currently it rely on U-boot or Linux to boot Zephyr on Cortex-A Core, so Zephyr need
+to use different uSDHC controller from U-boot or Linux to avoid resource conflict.
+For example, if EVK board boots from SD Card which uses uSDHC2, Zephyr can use MMC
+which uses uSDHC1 for testing:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/subsys/sd/mmc
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc1.overlay
+
+And if EVK board boots from MMC which uses uSDHC1, Zephyr can use SD Card which uses
+uSDHC2 for testing:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/subsys/sd/sdmmc
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc2.overlay
+
 Board MUX Control
 -----------------
 

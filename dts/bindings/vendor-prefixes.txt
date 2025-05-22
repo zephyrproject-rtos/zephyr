@@ -33,6 +33,7 @@ adh	AD Holdings Plc.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
+aesc	Aesc Silicon
 aesop	AESOP Embedded Forum
 al	Annapurna Labs
 alcatel	Alcatel
@@ -70,6 +71,7 @@ arc	Synopsys, Inc. (formerly ARC International PLC)
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.
 arctic	Arctic Sand
 arcx	arcx Inc. / Archronix Inc.
+arducam	Arducam
 arduino	Arduino
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
@@ -502,8 +504,7 @@ ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays
 ouya	Ouya Inc.
 overkiz	Overkiz SAS
-ovti	OmniVision Technologies
-ovti	OmniVision Technologies Co., Ltd.
+ovti	OmniVision Technologies Inc.
 oxsemi	Oxford Semiconductor, Ltd.
 ozzmaker	OzzMaker
 panasonic	Panasonic Corporation
@@ -511,6 +512,7 @@ parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
 pda	Precision Design Associates, Inc.
+peacefair	Ningbo Peacefair Electronic Technology Co., Ltd
 peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
@@ -779,6 +781,7 @@ yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
+zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	The Zephyr Project

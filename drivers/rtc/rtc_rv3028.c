@@ -768,6 +768,7 @@ static int rv3028_init(const struct device *dev)
 	uint8_t regs[3];
 	uint8_t val;
 	int err;
+	uint8_t status;
 
 	k_sem_init(&data->lock, 1, 1);
 
@@ -860,13 +861,21 @@ static int rv3028_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Disable the alarms */
-	err = rv3028_update_reg8(dev,
-				 RV3028_REG_CONTROL2,
-				 RV3028_CONTROL2_AIE | RV3028_CONTROL2_UIE,
-				 0);
+	err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &status);
 	if (err) {
 		return -ENODEV;
+	}
+	if (status & RV3028_STATUS_PORF) {
+		/* Disable the alarms */
+		err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2,
+					 RV3028_CONTROL2_AIE | RV3028_CONTROL2_UIE, 0);
+		if (err) {
+			return -ENODEV;
+		}
+		err = rv3028_update_reg8(dev, RV3028_REG_STATUS, RV3028_STATUS_PORF, 0);
+		if (err) {
+			return -ENODEV;
+		}
 	}
 
 	err = rv3028_read_regs(dev, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));

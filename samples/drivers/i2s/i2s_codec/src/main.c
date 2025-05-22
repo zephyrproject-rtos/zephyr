@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,21 +11,24 @@
 #include <zephyr/audio/codec.h>
 #include <string.h>
 
+#ifndef CONFIG_USE_DMIC
+#include "sine.h"
+#endif
 
-#define I2S_CODEC_TX  DT_ALIAS(i2s_codec_tx)
+#define I2S_CODEC_TX DT_ALIAS(i2s_codec_tx)
 
-#define SAMPLE_FREQUENCY    CONFIG_SAMPLE_FREQ
-#define SAMPLE_BIT_WIDTH    (16U)
-#define BYTES_PER_SAMPLE    sizeof(int16_t)
+#define SAMPLE_FREQUENCY CONFIG_SAMPLE_FREQ
+#define SAMPLE_BIT_WIDTH (16U)
+#define BYTES_PER_SAMPLE sizeof(int16_t)
 #if CONFIG_USE_DMIC
-#define NUMBER_OF_CHANNELS  CONFIG_DMIC_CHANNELS
+#define NUMBER_OF_CHANNELS CONFIG_DMIC_CHANNELS
 #else
 #define NUMBER_OF_CHANNELS (2U)
 #endif
 /* Such block length provides an echo with the delay of 100 ms. */
-#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
-#define INITIAL_BLOCKS      CONFIG_I2S_INIT_BUFFERS
-#define TIMEOUT             (2000U)
+#define SAMPLES_PER_BLOCK ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
+#define INITIAL_BLOCKS    CONFIG_I2S_INIT_BUFFERS
+#define TIMEOUT           (2000U)
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 32)
@@ -44,8 +47,7 @@ static bool configure_tx_streams(const struct device *i2s_dev, struct i2s_config
 	return true;
 }
 
-static bool trigger_command(const struct device *i2s_dev_codec,
-			    enum i2s_trigger_cmd cmd)
+static bool trigger_command(const struct device *i2s_dev_codec, enum i2s_trigger_cmd cmd)
 {
 	int ret;
 
@@ -67,12 +69,12 @@ int main(void)
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 	struct i2s_config config;
 	struct audio_codec_cfg audio_cfg;
-	int ret;
+	int ret = 0;
 
 #if CONFIG_USE_DMIC
 	struct pcm_stream_cfg stream = {
 		.pcm_width = SAMPLE_BIT_WIDTH,
-		.mem_slab  = &mem_slab,
+		.mem_slab = &mem_slab,
 	};
 	struct dmic_cfg cfg = {
 		.io = {
@@ -105,7 +107,6 @@ int main(void)
 		return 0;
 	}
 
-
 	if (!device_is_ready(codec_dev)) {
 		printk("%s is not ready", codec_dev->name);
 		return 0;
@@ -113,7 +114,7 @@ int main(void)
 	audio_cfg.dai_route = AUDIO_ROUTE_PLAYBACK;
 	audio_cfg.dai_type = AUDIO_DAI_TYPE_I2S;
 	audio_cfg.dai_cfg.i2s.word_size = SAMPLE_BIT_WIDTH;
-	audio_cfg.dai_cfg.i2s.channels =  2;
+	audio_cfg.dai_cfg.i2s.channels = 2;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
 	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER;
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
@@ -124,14 +125,13 @@ int main(void)
 
 #if CONFIG_USE_DMIC
 	cfg.channel.req_num_chan = 2;
-	cfg.channel.req_chan_map_lo =
-		dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
-		dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
+	cfg.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
+				      dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
 	cfg.streams[0].pcm_rate = SAMPLE_FREQUENCY;
 	cfg.streams[0].block_size = BLOCK_SIZE;
 
-	printk("PCM output rate: %u, channels: %u\n",
-		cfg.streams[0].pcm_rate, cfg.channel.req_num_chan);
+	printk("PCM output rate: %u, channels: %u\n", cfg.streams[0].pcm_rate,
+	       cfg.channel.req_num_chan);
 
 	ret = dmic_configure(dmic_dev, &cfg);
 	if (ret < 0) {
@@ -171,19 +171,14 @@ int main(void)
 
 			for (i = 0; i < 2; i++) {
 #if CONFIG_USE_DMIC
-				ret = dmic_read(dmic_dev, 0,
-								&mem_block, &block_size, TIMEOUT);
+				ret = dmic_read(dmic_dev, 0, &mem_block, &block_size, TIMEOUT);
 				if (ret < 0) {
 					printk("read failed: %d", ret);
 					break;
 				}
 #else
-				ret = k_mem_slab_alloc(&mem_slab,
-							&mem_block, Z_TIMEOUT_TICKS(TIMEOUT));
-				if (ret < 0) {
-					printk("Failed to allocate TX block\n");
-					return 0;
-				}
+				/* If not using DMIC, play a sine wave 440Hz */
+				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
 #endif
 				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 				if (ret < 0) {
@@ -200,8 +195,7 @@ int main(void)
 				started = true;
 			}
 		}
-		if (!trigger_command(i2s_dev_codec,
-				     I2S_TRIGGER_DROP)) {
+		if (!trigger_command(i2s_dev_codec, I2S_TRIGGER_DROP)) {
 			printk("Send I2S trigger DRAIN failed: %d", ret);
 			return 0;
 		}

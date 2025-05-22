@@ -9,6 +9,8 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/renesas_rzg_clock.h>
+#include <zephyr/dt-bindings/dma/renesas_rz_dma.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -37,6 +39,13 @@
 	osc: osc {
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
+	/* External CAN clock - to be overridden by boards that provide it */
+	can_clk: can-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <0>;
 		#clock-cells = <0>;
 	};
 
@@ -466,6 +475,32 @@
 			status = "disabled";
 		};
 
+		canfd_global: canfd-global@400c0000 {
+			compatible = "renesas,rz-canfd-global";
+			reg = <0x400c0000 DT_SIZE_K(128)>;
+			interrupts = <373 1>, <374 1>;
+			interrupt-names = "g_err", "g_recc";
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,rz-canfd";
+				channel = <0>;
+				interrupts = <375 1>, <377 1>, <379 1>;
+				interrupt-names = "ch_rec", "ch_err", "ch_trx";
+				status = "disabled";
+				clocks = <&cpg RZ_CLOCK_CANFD(0)>;
+			};
+
+			canfd1: canfd1 {
+				compatible = "renesas,rz-canfd";
+				channel = <1>;
+				interrupts = <376 1>, <378 1>, <380 1>;
+				interrupt-names = "ch_rec", "ch_err", "ch_trx";
+				status = "disabled";
+				clocks = <&cpg RZ_CLOCK_CANFD(1)>;
+			};
+		};
+
 		i2c0: i2c@40090000 {
 			compatible = "renesas,rz-riic";
 			channel = <0>;
@@ -881,6 +916,61 @@
 			interrupts = <61 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@400aa000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa000 0x24>;
+			interrupts = <358 1>, <359 1>, <360 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@400aa400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa400 0x24>;
+			interrupts = <361 1>, <362 1>, <363 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@400aa800 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aa800 0x24>;
+			interrupts = <364 1>, <365 1>, <366 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@400aac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400aac00 0x24>;
+			interrupts = <367 1>, <368 1>, <369 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@400ab000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x400ab000 0x24>;
+			interrupts = <370 1>, <371 1>, <372 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

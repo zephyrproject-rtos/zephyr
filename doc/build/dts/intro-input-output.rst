@@ -112,6 +112,9 @@ this:
 
    list(APPEND EXTRA_DTC_FLAGS "-Wno-simple_bus_reg")
 
+Shield directories can contain a file named :file:`pre_dt_shield.cmake` which
+has the same functionality as the aforementioned :file:`pre_dt_board.cmake`.
+
 .. _dt-outputs:
 
 Output files

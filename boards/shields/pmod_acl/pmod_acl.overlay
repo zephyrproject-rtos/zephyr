@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+
 &pmod_spi {
 	status = "okay";
 
@@ -11,6 +13,9 @@
 		compatible = "adi,adxl345";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
+		int2-gpios = <&pmod_header 4 GPIO_ACTIVE_HIGH>;
 		status = "okay";
+		odr = <ADXL345_DT_ODR_25>;
+		fifo-watermark = <31>;
 	};
 };

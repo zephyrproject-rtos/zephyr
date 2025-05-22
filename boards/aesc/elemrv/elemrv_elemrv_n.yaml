@@ -1,0 +1,9 @@
+identifier: elemrv/elemrv_n
+name: ElemRV-N
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 32

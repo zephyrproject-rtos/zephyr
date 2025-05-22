@@ -28,7 +28,7 @@ register callbacks.
      lock          :Lock the set
      release       :Release the set [force]
      sirk          :Set the currently used SIRK <sirk>
-     get_sirk      :Get the currently used SIRK
+     get_info      :Get CSIS info
      sirk_rsp      :Set the response used in SIRK requests <accept, accept_enc,
                     reject, oob>
 
@@ -55,10 +55,14 @@ This command can get the currently used SIRK.
 
 .. code-block:: console
 
-   uart:~$ cap_acceptor get_sirk
-   SIRK
-   36 04 9a dc 66 3a a1 a1 |6...f:..
-   1d 9a 2f 41 01 73 3e 01 |../A.s>.
+   uart:~$ cap_acceptor get_info
+   Info for 0x2003b0c8
+           SIRK
+   00000000: 20 37 0a 00 95 c4 04 20  00 00 00 00 f1 79 09 00 | 7.....  .....y..|
+           Set size: 2
+           Rank: 1
+           Lockable: true
+           Locked: false
 
 CAP Initiator
 *************

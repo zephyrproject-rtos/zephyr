@@ -339,6 +339,7 @@ class FileType(Enum):
     HEX = 1
     BIN = 2
     ELF = 3
+    MOT = 4
 
 
 class RunnerConfig(NamedTuple):
@@ -355,6 +356,7 @@ class RunnerConfig(NamedTuple):
     hex_file: str | None         # zephyr.hex path, or None
     bin_file: str | None         # zephyr.bin path, or None
     uf2_file: str | None         # zephyr.uf2 path, or None
+    mot_file: str | None         # zephyr.mot path
     file: str | None             # binary file path (provided by the user), or None
     file_type: FileType | None = FileType.OTHER  # binary file type
     gdb: str | None = None       # path to a usable gdb
@@ -581,6 +583,7 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('--elf-file', help=argparse.SUPPRESS)
             parser.add_argument('--hex-file', help=argparse.SUPPRESS)
             parser.add_argument('--bin-file', help=argparse.SUPPRESS)
+            parser.add_argument('--mot-file', help=argparse.SUPPRESS)
         else:
             parser.add_argument('--elf-file',
                                 metavar='FILE',
@@ -599,6 +602,12 @@ class ZephyrBinaryRunner(abc.ABC):
                                 action=(partial(depr_action, cls=cls,
                                                 replacement='-f/--file') if caps.file else None),
                                 help='path to zephyr.bin'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--mot-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.mot'
                                 if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
@@ -717,6 +726,12 @@ class ZephyrBinaryRunner(abc.ABC):
                     build_conf['CONFIG_FLASH_LOAD_OFFSET'])
         else:
             return build_conf['CONFIG_FLASH_BASE_ADDRESS']
+
+    @staticmethod
+    def sram_address_from_build_conf(build_conf: BuildConfiguration):
+        '''return CONFIG_SRAM_BASE_ADDRESS.
+        '''
+        return build_conf['CONFIG_SRAM_BASE_ADDRESS']
 
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
@@ -966,4 +981,4 @@ class ZephyrBinaryRunner(abc.ABC):
                 elif key.fileobj == sock:
                     resp = sock.recv(2048)
                     if resp:
-                        print(resp.decode())
+                        print(resp.decode(), end='')

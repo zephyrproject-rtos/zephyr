@@ -345,6 +345,7 @@ zephyr_udc0: &usbotg_fs {
 		     &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiog 7 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 	status = "okay";
 
 	disk {

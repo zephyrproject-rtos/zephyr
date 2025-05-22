@@ -420,10 +420,11 @@ static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
 	void *udma_handle = &data->udma_handle;
-	uint32_t desc_src_addr;
-	uint32_t desc_dst_addr;
+	void *desc_src_addr;
+	void *desc_dst_addr;
 	uint32_t length;
 	RSI_UDMA_DESC_T *udma_table = cfg->sram_desc_addr;
+	uint8_t xfer_size = 1 << udma_table[channel].vsUDMAChaConfigData1.srcSize;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
 	if (channel >= data->dma_ctx.dma_channels) {
@@ -438,31 +439,32 @@ static int siwx91x_dma_reload(const struct device *dev, uint32_t channel, uint32
 	/* Update new channel info to dev->data structure */
 	data->chan_info[channel].SrcAddr = src;
 	data->chan_info[channel].DestAddr = dst;
-	data->chan_info[channel].Size = size;
+	data->chan_info[channel].Size = size / xfer_size;
 
 	/* Update new transfer size to dev->data structure */
-	if (size >= DMA_MAX_TRANSFER_COUNT) {
-		data->chan_info[channel].Cnt = DMA_MAX_TRANSFER_COUNT - 1;
+	if (data->chan_info[channel].Size >= DMA_MAX_TRANSFER_COUNT) {
+		data->chan_info[channel].Cnt = DMA_MAX_TRANSFER_COUNT;
 	} else {
-		data->chan_info[channel].Cnt = size;
+		data->chan_info[channel].Cnt = size / xfer_size;
 	}
 
 	/* Program the DMA descriptors with new transfer data information. */
 	if (udma_table[channel].vsUDMAChaConfigData1.srcInc != UDMA_SRC_INC_NONE) {
 		length = data->chan_info[channel].Cnt
 			 << udma_table[channel].vsUDMAChaConfigData1.srcInc;
-		desc_src_addr = src + (length - 1);
-		udma_table[channel].pSrcEndAddr = (void *)desc_src_addr;
+		desc_src_addr = (void *)(src + length - 1);
+		udma_table[channel].pSrcEndAddr = desc_src_addr;
 	}
 
 	if (udma_table[channel].vsUDMAChaConfigData1.dstInc != UDMA_SRC_INC_NONE) {
 		length = data->chan_info[channel].Cnt
 			 << udma_table[channel].vsUDMAChaConfigData1.dstInc;
-		desc_dst_addr = dst + (length - 1);
-		udma_table[channel].pDstEndAddr = (void *)desc_dst_addr;
+		desc_dst_addr = (void *)(dst + length - 1);
+		udma_table[channel].pDstEndAddr = desc_dst_addr;
 	}
 
-	udma_table[channel].vsUDMAChaConfigData1.totalNumOfDMATrans = data->chan_info[channel].Cnt;
+	udma_table[channel].vsUDMAChaConfigData1.totalNumOfDMATrans =
+		data->chan_info[channel].Cnt - 1;
 	udma_table[channel].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
 
 	return 0;
@@ -699,7 +701,7 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 					      (siwx91x_dma_chan_desc##inst)),                      \
 		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,    \
+	DEVICE_DT_INST_DEFINE(inst, siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,     \
 			      POST_KERNEL, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_DMA_INIT)
