@@ -75,6 +75,7 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 	if (hwinfo_ret != 0) {
 		hwinfo_ret = hwinfo_get_device_id(data.device_id, sizeof(data.device_id));
 		if (hwinfo_ret <= 0) {
+			LOG_DBG("Failed to retrieve the device ID. (%zd)", hwinfo_ret);
 			return PSA_ERROR_HARDWARE_FAILURE;
 		}
 		if (hwinfo_ret < sizeof(data.device_id)) {
