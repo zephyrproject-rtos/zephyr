@@ -411,13 +411,11 @@ static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db,
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return LL_USART_DATAWIDTH_8B;
 #ifdef LL_USART_DATAWIDTH_9B
-		} else {
+		if (p != UART_CFG_PARITY_NONE) {
 			return LL_USART_DATAWIDTH_9B;
-#endif
 		}
+#endif
 		return LL_USART_DATAWIDTH_8B;
 	}
 }
