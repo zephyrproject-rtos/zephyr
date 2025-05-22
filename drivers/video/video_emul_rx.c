@@ -31,35 +31,56 @@ struct emul_rx_data {
 	struct k_fifo fifo_out;
 };
 
-static int emul_rx_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_rx_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+			       struct video_frmival *frmival)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_set_frmival(cfg->source_dev, frmival);
+	/* Input/output timing is driven by the source */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
+	return video_set_frmival(cfg->source_dev, VIDEO_EP_OUT, frmival);
 }
 
-static int emul_rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_rx_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+			       struct video_frmival *frmival)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_get_frmival(cfg->source_dev, frmival);
+	/* Input/output timing is driven by the source */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
+	return video_get_frmival(cfg->source_dev, VIDEO_EP_OUT, frmival);
 }
 
-static int emul_rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+static int emul_rx_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+				struct video_frmival_enum *fie)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_enum_frmival(cfg->source_dev, fie);
+	/* Input/output timing is driven by the source */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
+	return video_enum_frmival(cfg->source_dev, VIDEO_EP_OUT, fie);
 }
 
-static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_rx_set_fmt(const struct device *const dev, enum video_endpoint_id ep,
+			   struct video_format *fmt)
 {
 	const struct emul_rx_config *cfg = dev->config;
 	struct emul_rx_data *data = dev->data;
 	int ret;
 
+	/* The same format is shared between input and output: data is just passed through */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
+
 	/* Propagate the format selection to the source */
-	ret = video_set_format(cfg->source_dev, fmt);
+	ret = video_set_format(cfg->source_dev, VIDEO_EP_OUT, fmt);
 	if (ret < 0) {
 		LOG_DBG("Failed to set %s format to %x %ux%u", cfg->source_dev->name,
 			fmt->pixelformat, fmt->width, fmt->height);
@@ -67,34 +88,41 @@ static int emul_rx_set_fmt(const struct device *const dev, struct video_format *
 	}
 
 	/* Cache the format selected locally to use it for getting the size of the buffer  */
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	data->fmt = *fmt;
-
 	return 0;
 }
 
-static int emul_rx_get_fmt(const struct device *dev, struct video_format *fmt)
+static int emul_rx_get_fmt(const struct device *dev, enum video_endpoint_id ep,
+			   struct video_format *fmt)
 {
 	struct emul_rx_data *data = dev->data;
 
+	/* Input/output caps are the same as the source: data is just passed through */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
 	*fmt = data->fmt;
 	return 0;
 }
 
-static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
+static int emul_rx_get_caps(const struct device *dev, enum video_endpoint_id ep,
+			    struct video_caps *caps)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_get_caps(cfg->source_dev, caps);
+	/* Input/output caps are the same as the source: data is just passed through */
+	if (ep != VIDEO_EP_IN && ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
+	return video_get_caps(cfg->source_dev, VIDEO_EP_OUT, caps);
 }
 
-static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int emul_rx_set_stream(const struct device *dev, bool enable)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
 	/* A real hardware driver would first start / stop its own peripheral */
-	return enable ? video_stream_start(cfg->source_dev, type)
-		      : video_stream_stop(cfg->source_dev, type);
+	return enable ? video_stream_start(cfg->source_dev) : video_stream_stop(cfg->source_dev);
 }
 
 static void emul_rx_worker(struct k_work *work)
@@ -127,10 +155,16 @@ static void emul_rx_worker(struct k_work *work)
 	}
 }
 
-static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int emul_rx_enqueue(const struct device *dev, enum video_endpoint_id ep,
+			   struct video_buffer *vbuf)
 {
 	struct emul_rx_data *data = dev->data;
 	struct video_format *fmt = &data->fmt;
+
+	/* Can only enqueue a buffer to get data out, data input is from hardware */
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
 
 	if (vbuf->size < fmt->pitch * fmt->height) {
 		LOG_ERR("Buffer too small for a full frame");
@@ -147,10 +181,15 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	return 0;
 }
 
-static int emul_rx_dequeue(const struct device *dev, struct video_buffer **vbufp,
-			   k_timeout_t timeout)
+static int emul_rx_dequeue(const struct device *dev, enum video_endpoint_id ep,
+			   struct video_buffer **vbufp, k_timeout_t timeout)
 {
 	struct emul_rx_data *data = dev->data;
+
+	/* Can only dequeue a buffer to get data out, data input is from hardware */
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
 
 	/* All the processing is expected to happen in the worker */
 	*vbufp = k_fifo_get(&data->fifo_out, timeout);
@@ -161,10 +200,15 @@ static int emul_rx_dequeue(const struct device *dev, struct video_buffer **vbufp
 	return 0;
 }
 
-static int emul_rx_flush(const struct device *dev, bool cancel)
+static int emul_rx_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
 	struct emul_rx_data *data = dev->data;
 	struct k_work_sync sync;
+
+	/* Can only flush the buffer going out, data input is from hardware */
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		return -EINVAL;
+	}
 
 	if (cancel) {
 		struct video_buffer *vbuf;
@@ -213,13 +257,10 @@ int emul_rx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->fmt);
+	ret = video_get_format(cfg->source_dev, VIDEO_EP_OUT, &data->fmt);
 	if (ret < 0) {
 		return ret;
 	}
-
-	data->fmt.pitch =
-		data->fmt.width * video_bits_per_pixel(data->fmt.pixelformat) / BITS_PER_BYTE;
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);

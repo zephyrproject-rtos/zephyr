@@ -1,4 +1,7 @@
-.. zephyr:board:: rcar_salvator_xs
+.. _rcar_salvator_xs:
+
+R-CAR Salvator XS M3 ARM CA57 (ARMv8)
+#####################################
 
 Overview
 ********
@@ -26,12 +29,27 @@ The R-Car M3-W includes:
 * CAN interface;
 * EtherAVB.
 
-Hardware capabilities for the Salvator-XS for can be found on the `eLinux Salvator-XS page`_.
-
 Supported Features
 ==================
+The Renesas rcar_salvator_xs board configuration supports the following
+hardware features:
 
-.. zephyr:board-supported-hw::
++-----------+------------------------------+--------------------------------+
+| Interface | Driver/components            | Support level                  |
++===========+==============================+================================+
+| PINCTRL   | pinctrl                      |                                |
++-----------+------------------------------+--------------------------------+
+| CLOCK     | clock_control                |                                |
++-----------+------------------------------+--------------------------------+
+| UART      | uart                         | serial port-polling            |
++-----------+------------------------------+--------------------------------+
+| MMC       | renesas_rcar_mmc             | DMA and SCC                    |
++-----------+------------------------------+--------------------------------+
+
+Other hardware features have not been enabled yet for this board.
+
+The default configuration can be found in
+:zephyr_file:`boards/renesas/rcar_salvator_xs/rcar_salvator_xs_defconfig`
 
 Programming and Debugging
 *************************

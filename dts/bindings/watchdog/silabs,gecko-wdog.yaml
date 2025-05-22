@@ -2,9 +2,7 @@
 # Copyright (c) Oane Kingma
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silicon Labs Series 1-2 WDOG (Watchdog)
-
-description: Watchdog timer for Silicon Labs Series 1-2 SoCs.
+description: Silicon Labs Gecko Family Watchdog driver
 
 compatible: "silabs,gecko-wdog"
 

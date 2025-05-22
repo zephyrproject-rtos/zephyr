@@ -79,7 +79,3 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
-
-&lptmr2 {
-	status = "okay";
-};

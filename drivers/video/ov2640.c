@@ -829,7 +829,8 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov2640_set_fmt(const struct device *dev,
+			enum video_endpoint_id ep, struct video_format *fmt)
 {
 	struct ov2640_data *drv_data = dev->data;
 	uint16_t width, height;
@@ -871,7 +872,8 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	return -ENOTSUP;
 }
 
-static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
+static int ov2640_get_fmt(const struct device *dev,
+			enum video_endpoint_id ep, struct video_format *fmt)
 {
 	struct ov2640_data *drv_data = dev->data;
 
@@ -880,12 +882,14 @@ static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int ov2640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int ov2640_set_stream(const struct device *dev, bool enable)
 {
 	return 0;
 }
 
-static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
+static int ov2640_get_caps(const struct device *dev,
+			   enum video_endpoint_id ep,
+			   struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -1032,7 +1036,8 @@ static int ov2640_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = SVGA_HSIZE;
 	fmt.height = SVGA_VSIZE;
-	ret = ov2640_set_fmt(dev, &fmt);
+	fmt.pitch = SVGA_HSIZE * 2;
+	ret = ov2640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

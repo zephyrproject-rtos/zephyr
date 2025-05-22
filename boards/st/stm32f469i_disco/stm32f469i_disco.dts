@@ -137,5 +137,4 @@ zephyr_udc0: &usbotg_fs {
 		     &sdio_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiog 2 GPIO_ACTIVE_LOW>;
-	disk-name = "SD";
 };

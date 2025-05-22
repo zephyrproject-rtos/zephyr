@@ -445,15 +445,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-		/* Get reference to ACL context */
-		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
-
-		if (conn_lll->enc_rx) {
-			radio_ccm_disable();
-		}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
 		return;
 	}
 
@@ -646,7 +637,10 @@ static void isr_rx(void *param)
 
 			ull_iso_pdu_rx_alloc();
 			iso_rx_put(node_rx->hdr.link, node_rx);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			iso_rx_sched();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			cis_lll->rx.bn_curr++;
 			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -1020,8 +1014,6 @@ static void next_cis_prepare(void *param)
 
 		return;
 	}
-
-	payload_count_rx_flush_or_txrx_inc(cis_lll);
 
 	cis_handle_curr = cis_handle;
 

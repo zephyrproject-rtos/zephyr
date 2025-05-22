@@ -39,15 +39,12 @@ tests:
       - arm
       - riscv
       - arc
-      - x86
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.readonly_mpu:
-    arch_allow:
-      - arm # Xtensa needs writable storage, currently not supported on RISC-V
-      - arc
+    arch_allow: arm # Xtensa needs writable storage, currently not supported on RISC-V
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
@@ -57,7 +54,6 @@ tests:
       - arm64
       - arm
       - riscv
-      - x86
     filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
@@ -70,7 +66,6 @@ tests:
       - xtensa
       - riscv
       - arc
-      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -83,7 +78,6 @@ tests:
       - xtensa
       - riscv
       - arc
-      - x86
     platform_exclude:
       - qemu_arc/qemu_arc_hs5x     # See #80949
       - nsim/nsim_hs5x             # See #80949
@@ -105,7 +99,6 @@ tests:
       - xtensa
       - riscv
       - arc
-      - x86
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -119,7 +112,6 @@ tests:
       - xtensa
       - riscv
       - arc
-      - x86
     platform_exclude:
       - qemu_arc/qemu_arc_hs5x     # See #80949
       - nsim/nsim_hs5x             # See #80949

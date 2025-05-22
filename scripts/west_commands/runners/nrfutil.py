@@ -96,8 +96,6 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                         raise subprocess.CalledProcessError(
                             jout['data']['error']['code'], cmd
                         )
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(p.returncode, cmd)
 
         return jout_all
 

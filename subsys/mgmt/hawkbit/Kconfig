@@ -11,6 +11,7 @@ menuconfig HAWKBIT
 	depends on IMG_MANAGER
 	depends on NETWORKING
 	depends on HTTP_CLIENT
+	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
 	depends on SMF
@@ -56,8 +57,7 @@ config HAWKBIT_TENANT
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	help
-	  Configure the hawkbit server address. If the address is not an IP address,
-	  CONFIG_DNS_RESOLVER must be enabled to resolve the hostname.
+	  Configure the hawkbit server address.
 
 config HAWKBIT_PORT
 	int "Port number for the hawkbit server"

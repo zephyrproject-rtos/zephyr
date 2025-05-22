@@ -44,6 +44,17 @@ if(CONFIG_HAS_MCUX)
   #   required by mcux/mcux-sdk/drivers/common/drivers_common.cmake for non DSP
   #   architectures
 
+  function(include_mcux_driver_ifdef feature_toggle directory module)
+    if(${${feature_toggle}})
+      list(APPEND CMAKE_MODULE_PATH
+          ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/${directory}
+      )
+      zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/${directory})
+      include(${module})
+      message(STATUS "directory ${directory} included")
+    endif()
+  endfunction()
+
   set(MCUX_SDK_PROJECT_NAME ${ZEPHYR_CURRENT_LIBRARY})
 
   # Translate the SoC name into the MCUX device
@@ -77,18 +88,17 @@ if(CONFIG_HAS_MCUX)
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
   )
 
-  # Load MCUX SDK NG code.
-  include(../mcux/mcux-sdk-ng/basic.cmake)
+  # Entry CMake component for MCUX
+  include(${CMAKE_CURRENT_LIST_DIR}/../mcux/mcux-sdk/CMakeLists.txt)
 
   if(${MCUX_DEVICE} MATCHES "S32K1")
-    set_variable_ifdef(CONFIG_PINCTRL CONFIG_MCUX_COMPONENT_driver.port)
+    zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/port)
+    include_mcux_driver_ifdef(CONFIG_PINCTRL port driver_port)
 
-    set_variable_ifdef(CONFIG_CPU_HAS_NXP_SYSMPU CONFIG_MCUX_COMPONENT_driver.sysmpu)
+    zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/sysmpu)
+    include_mcux_driver_ifdef(CONFIG_ARM_MPU sysmpu driver_sysmpu)
 
-    set_variable_ifdef(CONFIG_HAS_MCUX_CACHE CONFIG_MCUX_COMPONENT_driver.cache_lmem)
+    include_mcux_driver_ifdef(CONFIG_HAS_MCUX_CACHE cache/lmem driver_cache_lmem)
   endif()
-
-  include(../mcux/mcux-sdk-ng/drivers/drivers.cmake)
-  include(../mcux/mcux-sdk-ng/fixup.cmake)
 
 endif()

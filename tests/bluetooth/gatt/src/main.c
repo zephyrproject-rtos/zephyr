@@ -39,8 +39,7 @@ static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t valu
 	nfy_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static ssize_t test1_ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				      uint16_t value)
+static ssize_t test1_ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value)
 {
 	return sizeof(value);
 }

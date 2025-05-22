@@ -27,7 +27,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
 #include <sys/types.h>
 
@@ -62,14 +61,14 @@ static void update_write_stats(uint16_t len)
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
-	if (delta > NSEC_PER_SEC) {
+	if (delta > 1000000000) {
 		write_stats.len = 0U;
 		write_stats.rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		write_stats.len += len;
 		write_stats.rate = ((uint64_t)write_stats.len << 3) *
-			NSEC_PER_SEC / delta;
+			1000000000U / delta;
 	}
 }
 

@@ -88,18 +88,10 @@ static inline uint32_t ll_rng_is_active_drdy(RNG_TypeDef *RNGx)
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32WB0X) && !defined(CONFIG_SOC_STM32WB09XX)
-/* STM32WB05, STM32WB06 and STM32WB07 have 16-bit data register */
-typedef uint16_t rng_sample_t;
-#else
-/* All other TRNG IPs have 32-bit data register */
-typedef uint32_t rng_sample_t;
-#endif
-
-static inline rng_sample_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
+static inline uint16_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_STM32WB09XX)
-	rng_sample_t rnd = LL_RNG_GetRndVal(RNGx);
+	uint16_t rnd = (uint16_t)LL_RNG_GetRndVal(RNGx);
 
 	/**
 	 * STM32WB09 TRNG does not clear IRQ flags in hardware.
@@ -116,6 +108,6 @@ static inline rng_sample_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
 	/* STM32WB05 / STM32WB06 / STM32WB07 */
 	return LL_RNG_ReadRandData16(RNGx);
 #else
-	return LL_RNG_ReadRandData32(RNGx);
+	return (uint16_t)LL_RNG_ReadRandData32(RNGx);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }

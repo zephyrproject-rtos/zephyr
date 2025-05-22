@@ -17,7 +17,6 @@ extern "C" {
 
 struct lvgl_common_input_config {
 	struct k_msgq *event_msgq;
-	const struct device *display_dev;
 };
 
 struct lvgl_common_input_data {

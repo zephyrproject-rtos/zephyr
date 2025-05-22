@@ -8,6 +8,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>

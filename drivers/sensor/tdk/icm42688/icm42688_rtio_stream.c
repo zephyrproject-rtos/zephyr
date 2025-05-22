@@ -11,7 +11,7 @@
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
 
-LOG_MODULE_DECLARE(ICM42688_RTIO, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(ICM42688_RTIO);
 
 void icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -171,6 +171,7 @@ icm42688_get_read_config_trigger(const struct sensor_read_config *cfg,
 			return &cfg->triggers[i];
 		}
 	}
+	LOG_DBG("Unsupported trigger (%d)", trig);
 	return NULL;
 }
 
@@ -206,7 +207,6 @@ static void icm42688_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, v
 				  FIELD_GET(BIT_INT_STATUS_FIFO_FULL, drv_data->int_status) != 0;
 
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
-		LOG_DBG("No FIFO trigger is configured");
 		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}

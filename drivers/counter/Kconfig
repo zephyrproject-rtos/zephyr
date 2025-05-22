@@ -112,10 +112,4 @@ source "drivers/counter/Kconfig.rts5912_slwtmr"
 
 source "drivers/counter/Kconfig.rts5912"
 
-source "drivers/counter/Kconfig.neorv32"
-
-source "drivers/counter/Kconfig.max32_wut"
-
-source "drivers/counter/Kconfig.cc23x0_rtc"
-
 endif # COUNTER

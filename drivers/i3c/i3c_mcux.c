@@ -198,7 +198,7 @@ static inline bool reg32_test(volatile uint32_t *reg, uint32_t mask)
 }
 
 /**
- * @brief Disable all interrupts.
+ * @breif Disable all interrupts.
  *
  * @param base Pointer to controller registers.
  *

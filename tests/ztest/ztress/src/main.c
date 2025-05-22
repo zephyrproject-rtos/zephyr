@@ -11,7 +11,14 @@ volatile int ztress_dummy;
 
 bool ztress_handler_busy(void *user_data, uint32_t cnt, bool last, int prio)
 {
-	k_busy_wait((prio+1) * 100);
+	/* On nios2 k_busy_wait in k_timer handler context is hanging. */
+	if (IS_ENABLED(CONFIG_NIOS2) && k_is_in_isr()) {
+		for (int i = 0; i < 1000; i++) {
+			ztress_dummy++;
+		}
+	} else {
+		k_busy_wait((prio+1) * 100);
+	}
 
 	return true;
 }

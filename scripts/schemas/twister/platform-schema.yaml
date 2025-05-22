@@ -64,7 +64,6 @@ schema;platform-schema:
           "nios2",
           "posix",
           "riscv",
-          "rx",
           "sparc",
           "x86",
           "xtensa",

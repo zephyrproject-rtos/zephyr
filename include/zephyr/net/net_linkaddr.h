@@ -30,10 +30,14 @@ extern "C" {
  */
 
 /** Maximum length of the link address */
-#if defined(CONFIG_NET_L2_PHY_IEEE802154) || defined(CONFIG_NET_L2_PPP)
+#ifdef CONFIG_NET_L2_IEEE802154
+#define NET_LINK_ADDR_MAX_LENGTH 8
+#else
+#ifdef CONFIG_NET_L2_PPP
 #define NET_LINK_ADDR_MAX_LENGTH 8
 #else
 #define NET_LINK_ADDR_MAX_LENGTH 6
+#endif
 #endif
 
 /**

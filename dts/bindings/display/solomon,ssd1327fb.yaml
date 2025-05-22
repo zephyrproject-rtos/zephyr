@@ -1,0 +1,50 @@
+# Copyright (c) 2024, Savoir-faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1327 128x128 dot-matrix display controller on MIPI_DBI bus
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+compatible: "solomon,ssd1327fb"
+
+properties:
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider / oscillator frequency
+
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 127
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 127
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 16MUX to 128MUX
+
+  prechargep:
+    type: int
+    required: true
+    description: Pre-charge period ranging from 0 to 15 DCLK's
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      - Column Address Remapping (A[0])
+      - Nibble Remapping (A[1])
+      - Address increment mode (A[2])
+      - COM Remapping (A[4])
+      - Splitting of Odd / Even COM Signals (A[6])
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting

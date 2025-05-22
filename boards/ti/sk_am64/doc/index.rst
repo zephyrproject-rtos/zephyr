@@ -46,11 +46,7 @@ DDR RAM
 -------
 
 The board has 2GB of DDR RAM available. This board configuration
-allocates Zephyr:
-
-- 1MB for IPC (VirtIO / Vrings)
-- 4KB for Linux RemoteProc resource table
-- 15MB for general usage
+allocates Zephyr 4kB of RAM (only for resource table: 0xa4100000 to 0xa4100400).
 
 Serial Port
 -----------

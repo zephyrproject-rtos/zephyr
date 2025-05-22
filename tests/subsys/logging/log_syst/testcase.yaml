@@ -7,6 +7,7 @@ tests:
       - logging
     arch_exclude:
       - mips
+      - nios2
       - posix
       - sparc
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
@@ -30,6 +31,7 @@ tests:
       - logging
     arch_exclude:
       - mips
+      - nios2
       - posix
       - sparc
     filter: CONFIG_FULL_LIBC_SUPPORTED

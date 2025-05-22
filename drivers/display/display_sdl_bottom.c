@@ -15,18 +15,15 @@
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    bool use_accelerator, void **window, const void *window_user_data,
-			    const char *title, void **renderer, void **mutex, void **texture,
-			    void **read_texture, void **background_texture,
-			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
-			    uint16_t transparency_grid_cell_size)
+			    void **renderer, void **mutex, void **texture, void **read_texture,
+			    void **background_texture, uint32_t transparency_grid_color1,
+			    uint32_t transparency_grid_color2, uint16_t transparency_grid_cell_size)
 {
-	/* clang-format off */
-	*window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-				   width * zoom_pct / 100,
+	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
+				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
 				   height * zoom_pct / 100, SDL_WINDOW_SHOWN);
-	/* clang-format on */
 	if (*window == NULL) {
-		nsi_print_warning("Failed to create SDL window %s: %s", title, SDL_GetError());
+		nsi_print_warning("Failed to create SDL window: %s", SDL_GetError());
 		return -1;
 	}
 	SDL_SetWindowData(*window, "zephyr_display", (void *)window_user_data);
@@ -157,13 +154,11 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	}
 
 	SDL_SetRenderTarget(renderer, read_texture);
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
 
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 	SDL_RenderReadPixels(renderer, &rect, SDL_PIXELFORMAT_ARGB8888, buf, width * 4);
 
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	SDL_SetRenderTarget(renderer, NULL);
 
 	SDL_UnlockMutex(mutex);

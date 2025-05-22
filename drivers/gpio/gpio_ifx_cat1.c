@@ -203,7 +203,7 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		break;
 
 	default:
-		break;
+		return -ENOTSUP;
 	}
 
 	Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);

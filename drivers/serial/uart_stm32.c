@@ -1434,7 +1434,7 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
-#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_NOCLEAR
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT
 	ARG_UNUSED(dev);
 
 	/*
@@ -1532,6 +1532,8 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 					stat.pending_length;
 	}
 
+	data->dma_tx.buffer_length = 0;
+
 	irq_unlock(key);
 }
 
@@ -1615,15 +1617,7 @@ static int uart_stm32_async_tx(const struct device *dev,
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
-	__maybe_unused unsigned int key;
 	int ret;
-
-	/* Check size of singl character (1 or 2 bytes) */
-	const int char_size = (IS_ENABLED(CONFIG_UART_WIDE_DATA) &&
-			       (LL_USART_GetDataWidth(usart) == LL_USART_DATAWIDTH_9B) &&
-			       (LL_USART_GetParity(usart) == LL_USART_PARITY_NONE))
-				      ? 2
-				      : 1;
 
 	if (data->dma_tx.dma_dev == NULL) {
 		return -ENODEV;
@@ -1656,43 +1650,25 @@ static int uart_stm32_async_tx(const struct device *dev,
 	/* Enable TC interrupt so we can signal correct TX done */
 	LL_USART_EnableIT_TC(usart);
 
-	/**
-	 * Setup DMA descriptor for TX.
-	 * If DMAT low-power errata workaround is enabled,
-	 * we send the first character using polling and the rest
-	 * using DMA; as such, single-character transfers use only
-	 * polling and don't need to prepare a DMA descriptor.
-	 * In other configurations, the DMA is always used.
-	 */
-	if (!IS_ENABLED(CONFIG_UART_STM32U5_ERRATA_DMAT_LOWPOWER) ||
-	    data->dma_tx.buffer_length > char_size) {
-		if (IS_ENABLED(CONFIG_UART_STM32U5_ERRATA_DMAT_LOWPOWER)) {
-			/* set source address */
-			data->dma_tx.blk_cfg.source_address =
-				((uint32_t)data->dma_tx.buffer) + char_size;
-			data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length - char_size;
-		} else {
-			/* set source address */
-			data->dma_tx.blk_cfg.source_address = ((uint32_t)data->dma_tx.buffer);
-			data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
-		}
+	/* set source address */
+	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
+	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
 
-		ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel,
-				 &data->dma_tx.dma_cfg);
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel,
+				&data->dma_tx.dma_cfg);
 
-		if (ret != 0) {
-			LOG_ERR("dma tx config error!");
-			return -EINVAL;
-		}
-
-		if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
-			LOG_ERR("UART err: TX DMA start failed!");
-			return -EFAULT;
-		}
-
-		/* Start TX timer */
-		async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
+	if (ret != 0) {
+		LOG_ERR("dma tx config error!");
+		return -EINVAL;
 	}
+
+	if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
+		LOG_ERR("UART err: TX DMA start failed!");
+		return -EFAULT;
+	}
+
+	/* Start TX timer */
+	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
 #ifdef CONFIG_PM
 
@@ -1700,30 +1676,8 @@ static int uart_stm32_async_tx(const struct device *dev,
 	uart_stm32_pm_policy_state_lock_get_unconditional();
 #endif
 
-	if (IS_ENABLED(CONFIG_UART_STM32U5_ERRATA_DMAT_LOWPOWER)) {
-		/**
-		 * Send first character using polling.
-		 * The DMA TX needs to be enabled before the UART transmits
-		 * the character and triggers transfer complete event.
-		 */
-		key = irq_lock();
-
-		if (char_size > 1) {
-			LL_USART_TransmitData9(usart, *(const uint16_t *)tx_data);
-		} else {
-			LL_USART_TransmitData8(usart, *tx_data);
-		}
-
-		if (data->dma_tx.buffer_length > char_size) {
-			/* Enable TX DMA requests */
-			uart_stm32_dma_tx_enable(dev);
-		}
-
-		irq_unlock(key);
-	} else {
-		/* Enable TX DMA requests */
-		uart_stm32_dma_tx_enable(dev);
-	}
+	/* Enable TX DMA requests */
+	uart_stm32_dma_tx_enable(dev);
 
 	return 0;
 }

@@ -8,7 +8,6 @@
 #define NSI_COMMON_SRC_INCL_NSI_TRACING_H
 
 #include <stdarg.h>
-#include "nsi_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,10 +21,10 @@ extern "C" {
  * All print()/vprint() APIs take the same arguments as printf()/vprintf().
  */
 
-NSI_FUNC_NORETURN void nsi_print_error_and_exit(const char *format, ...);
+void nsi_print_error_and_exit(const char *format, ...);
 void nsi_print_warning(const char *format, ...);
 void nsi_print_trace(const char *format, ...);
-NSI_FUNC_NORETURN void nsi_vprint_error_and_exit(const char *format, va_list vargs);
+void nsi_vprint_error_and_exit(const char *format, va_list vargs);
 void nsi_vprint_warning(const char *format, va_list vargs);
 void nsi_vprint_trace(const char *format, va_list vargs);
 

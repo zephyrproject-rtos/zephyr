@@ -417,7 +417,9 @@ static int ov7725_set_clock(const struct device *dev,
 	return -1;
 }
 
-static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7725_set_fmt(const struct device *dev,
+			  enum video_endpoint_id ep,
+			  struct video_format *fmt)
 {
 	struct ov7725_data *drv_data = dev->data;
 	const struct ov7725_config *cfg = dev->config;
@@ -506,7 +508,9 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
 					((width & 3U) << 0U));
 }
 
-static int ov7725_get_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7725_get_fmt(const struct device *dev,
+			  enum video_endpoint_id ep,
+			  struct video_format *fmt)
 {
 	struct ov7725_data *drv_data = dev->data;
 
@@ -515,7 +519,7 @@ static int ov7725_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int ov7725_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int ov7725_set_stream(const struct device *dev, bool enable)
 {
 	return 0;
 }
@@ -533,7 +537,9 @@ static const struct video_format_cap fmts[] = {
 	{ 0 }
 };
 
-static int ov7725_get_caps(const struct device *dev, struct video_caps *caps)
+static int ov7725_get_caps(const struct device *dev,
+			   enum video_endpoint_id ep,
+			   struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -592,7 +598,8 @@ static int ov7725_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = 640;
 	fmt.height = 480;
-	ret = ov7725_set_fmt(dev, &fmt);
+	fmt.pitch = 640 * 2;
+	ret = ov7725_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

@@ -67,7 +67,7 @@ static void onoff_stop(struct onoff_manager *mgr, onoff_notify_fn notify)
 	notify(mgr, 0);
 }
 
-int nrf53_cpunet_mgmt_init(void)
+static int nrf53_cpunet_mgmt_init(void)
 {
 	static const struct onoff_transitions transitions = {
 		.start = onoff_start,
@@ -76,6 +76,8 @@ int nrf53_cpunet_mgmt_init(void)
 
 	return onoff_manager_init(&cpunet_mgr, &transitions);
 }
+
+SYS_INIT(nrf53_cpunet_mgmt_init, PRE_KERNEL_1, 0);
 
 void nrf53_cpunet_enable(bool on)
 {
@@ -99,7 +101,7 @@ void nrf53_cpunet_enable(bool on)
 }
 
 #ifdef CONFIG_SOC_NRF53_CPUNET_ENABLE
-void nrf53_cpunet_init(void)
+static int nrf53_cpunet_init(void)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Retain nRF5340 Network MCU in Secure domain (bus
@@ -118,5 +120,9 @@ void nrf53_cpunet_init(void)
 
 	nrf53_cpunet_enable(true);
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
+
+	return 0;
 }
+
+SYS_INIT(nrf53_cpunet_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_SOC_NRF53_CPUNET_ENABLE */

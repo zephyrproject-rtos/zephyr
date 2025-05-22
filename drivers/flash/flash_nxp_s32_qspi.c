@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,11 +93,7 @@ int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, 
 	size_t len;
 	int ret = 0;
 
-	if (!size) {
-		return 0;
-	}
-
-	if (!src) {
+	if (!src || !size) {
 		return -EINVAL;
 	}
 
@@ -191,11 +187,7 @@ int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
 	size_t erase_size;
 	int ret = 0;
 
-	if (!size) {
-		return 0;
-	}
-
-	if (!area_is_subregion(dev, offset, size)) {
+	if (!area_is_subregion(dev, offset, size) || !size) {
 		return -EINVAL;
 	}
 

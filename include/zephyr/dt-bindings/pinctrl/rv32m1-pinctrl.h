@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_H_
+#ifndef _ZEPHYR_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_
+#define _ZEPHYR_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_
 
 /**
  * @brief Specify PORTx->PCR register MUX field
@@ -19,4 +19,4 @@
 	(((pin) & 0x3F) << 22) |                \
 	(((mux) & 0x7) << 8))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_H_ */
+#endif /* _ZEPHYR_DT_BINDINGS_PINCTRL_RV32M1_PINCTRL_ */

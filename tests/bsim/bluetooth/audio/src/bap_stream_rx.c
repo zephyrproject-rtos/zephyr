@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
-#include <string.h>
-
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
@@ -14,6 +11,7 @@
 #include <zephyr/net_buf.h>
 
 #include "common.h"
+#include <string.h>
 
 LOG_MODULE_REGISTER(bap_stream_rx, LOG_LEVEL_INF);
 

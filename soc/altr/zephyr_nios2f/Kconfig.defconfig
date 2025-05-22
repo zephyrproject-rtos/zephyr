@@ -1,0 +1,24 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ZEPHYR_NIOS2F
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 50000000
+
+config ALTERA_AVALON_SYSID
+	def_bool y
+
+config ALTERA_AVALON_QSPI
+	def_bool y
+	depends on SOC_FLASH_NIOS2_QSPI
+
+config ALTERA_AVALON_I2C
+	def_bool y
+	depends on I2C_NIOS2
+
+config ALTERA_AVALON_MSGDMA
+	def_bool y
+	depends on DMA_NIOS2_MSGDMA
+
+endif # SOC_ZEPHYR_NIOS2F

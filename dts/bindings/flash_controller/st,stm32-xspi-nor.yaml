@@ -23,9 +23,6 @@ include:
       - spi-bus-width
       - data-rate
 properties:
-  size:
-    required: true
-    description: Flash Memory size in bits
   spi-bus-width:
     type: int
     required: true

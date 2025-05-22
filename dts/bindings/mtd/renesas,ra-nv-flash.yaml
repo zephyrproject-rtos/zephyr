@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Flash memory binding of Renesas RA family
+
+include: [base.yaml, soc-nv-flash.yaml]
+
+compatible: "renesas,ra-nv-flash"
+
+properties:
+  renesas,programming-enable:
+    type: boolean
+    description: Enable flash programming configuration

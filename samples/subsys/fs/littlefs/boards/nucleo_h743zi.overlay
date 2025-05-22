@@ -13,8 +13,6 @@
 		     &sdmmc1_cmd_pd2>;
 
 	pinctrl-names = "default";
-
-	disk-name = "SD";
 };
 
 / {

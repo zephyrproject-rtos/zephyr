@@ -36,14 +36,6 @@ to stdout. Using the completion scripts:
     # permanent
     west completion fish > $HOME/.config/fish/completions/west.fish
 
-  powershell:
-    # one-time
-    west completion powershell | Out-String | Invoke-Expression
-    # permanent
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-    New-item -type file -force $PROFILE
-    (Add-Content -Path $PROFILE -Value ". '{$HOME/west-completion.ps1}'")
-
 positional arguments:
   source_dir            application source directory
   cmake_opt             extra options to pass to cmake; implies -c
@@ -52,12 +44,6 @@ positional arguments:
 
 
 class Completion(WestCommand):
-    _EXT_MAPPING = {
-        "bash": "bash",
-        "fish": "fish",
-        "powershell": "ps1",
-        "zsh": "zsh",
-    }
 
     def __init__(self):
         super().__init__(
@@ -76,7 +62,7 @@ class Completion(WestCommand):
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('shell', nargs=1, choices=self._EXT_MAPPING.keys(),
+        parser.add_argument('shell', nargs=1, choices=['bash', 'zsh', 'fish'],
                             help='''Shell that which the completion
                             script is intended for.''')
         return parser
@@ -85,7 +71,7 @@ class Completion(WestCommand):
         cf = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                           *COMPLETION_REL_PATH.split('/'))
 
-        cf += '.' + self._EXT_MAPPING[args.shell[0]]
+        cf += '.' + args.shell[0]
 
         try:
             with open(cf, 'r') as f:

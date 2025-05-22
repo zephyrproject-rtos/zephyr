@@ -1,3 +1,0 @@
-tests:
-  arch.rx.acc:
-    platform_allow: rsk_rx130@512kb

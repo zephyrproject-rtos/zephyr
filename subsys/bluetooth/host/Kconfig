@@ -12,15 +12,13 @@ config BT_LONG_WQ
 
 if BT_LONG_WQ
 config BT_LONG_WQ_STACK_SIZE
-	int "Long workqueue stack size."
+	# Hidden: Long workqueue stack size. Should be derived from system
+	# requirements.
+	int
 	default 4096 if NO_OPTIMIZATIONS
 	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
-	help
-	  The stack size used for the long workqueue. In most cases it's best to use the default
-	  values, however since the actual requirement depends on the underlying crypto backend
-	  this option can be used to finetune the stack size.
 
 config BT_LONG_WQ_PRIO
 	int "Long workqueue priority. Should be preemptible."
@@ -114,6 +112,7 @@ config BT_RX_STACK_SIZE
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2600 if BT_MESH
 	default 2048 if BT_AUDIO
+	default 2200 if BT_SETTINGS
 	default 1200
 	help
 	  Size of the receiving thread stack. This is the context from
@@ -183,6 +182,9 @@ config BT_HOST_CRYPTO
 config BT_HOST_CRYPTO_PRNG
 	bool "Use PSA crypto API library for random number generation"
 	default y
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
 	depends on BT_HOST_CRYPTO
 	help
 	  When selected, will use PSA Crypto API library for random number generation.
@@ -325,7 +327,7 @@ config BT_CONN_FRAG_COUNT
 if BT_CONN
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers with a callback [DEPRECATED]"
+	int "Maximum number of pending TX buffers with a callback"
 	default BT_BUF_ACL_TX_COUNT
 	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help

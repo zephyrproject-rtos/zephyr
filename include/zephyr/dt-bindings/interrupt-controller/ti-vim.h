@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_TI_VIM_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_TI_VIM_H_
+#ifndef __DT_BINDING_TI_VIM_H
+#define __DT_BINDING_TI_VIM_H
 
 #include <zephyr/sys/util_macro.h>
 
@@ -14,4 +14,4 @@
 
 #define IRQ_DEFAULT_PRIORITY  0xf
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_TI_VIM_H_ */
+#endif /* __DT_BINDING_TI_VIM_H */

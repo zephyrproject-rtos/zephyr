@@ -44,6 +44,7 @@ _names = [
     'minichlink',
     'misc',
     'native',
+    'nios2',
     'nrfjprog',
     'nrfutil',
     'nsim',

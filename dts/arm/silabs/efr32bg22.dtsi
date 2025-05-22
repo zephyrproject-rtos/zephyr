@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "efr32bg2x.dtsi"
+#include <dt-bindings/clock/silabs/xg22-clock.h>
+#include <dt-bindings/dma/silabs/xg22-dma.h>
+#include <mem.h>
+
+/ {
+	clocks {
+		euart0clk: euart0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+	};
+
+	soc {
+		clkin0: clkin0@5003c454 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x5003c454 0x4>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+	};
+};
+
+&cmu {
+	interrupts = <46 2>;
+};
+
+&hfxo {
+	interrupts = <44 0>;
+	interrupt-names = "hfxo";
+};
+
+&msc {
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		write-block-size = <4>;
+		erase-block-size = <8192>;
+		reg = <0x0 DT_SIZE_K(512)>;
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};
+
+&gpio {
+	interrupts = <25 2>, <26 2>;
+	interrupt-names = "gpio_odd", "gpio_even";
+	clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
+
+	gpioa: gpio@5003c000 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C000 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiob: gpio@5003c030 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C030 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpioc: gpio@5003c060 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C060 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiod: gpio@5003c090 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C090 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+};
+
+&dma0 {
+	interrupts = <21 0>;
+};
+
+&i2c0 {
+	interrupts = <27 2>;
+	clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
+};
+
+&i2c1 {
+	interrupts = <28 2>;
+	clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_PCLK>;
+};
+
+&usart0 {
+	interrupts = <13 2>, <14 2>;
+	clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
+};
+
+&usart1 {
+	interrupts = <15 2>, <16 2>;
+	clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
+};
+
+&burtc0 {
+	interrupts = <18 2>;
+	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
+};
+
+&rtcc0 {
+	interrupts = <12 2>;
+	interrupt-names = "rtcc";
+	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
+};
+
+&dcdc {
+	interrupts = <61 2>;
+};
+
+&adc0 {
+	interrupts = <48 2>;
+	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
+};
+
+&wdog0 {
+	interrupts = <43 2>;
+	clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+};
+
+&radio {
+	interrupts = <31 1>, <32 1>, <33 1>, <34 1>, <35 1>, <36 1>,
+		     <37 1>, <38 1>, <39 1>, <40 1>, <41 1>, <42 1>;
+	interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+		     "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "prortc",
+		     "synth";
+};

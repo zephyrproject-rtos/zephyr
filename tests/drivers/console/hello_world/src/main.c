@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 int main(void)
 {
-	printf("Hello World from Console\n");
+	printk("Hello World from Console\n");
 	return 0;
 }

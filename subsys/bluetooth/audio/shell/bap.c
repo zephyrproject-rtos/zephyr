@@ -11,7 +11,6 @@
  */
 
 #include <errno.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -3724,7 +3723,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	ctx = ctx_val;
 
 	if (!strcmp(argv[3], "supported")) {
-		if (ctx_val == BT_AUDIO_CONTEXT_TYPE_NONE) {
+		if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED) {
 			shell_error(sh, "Invalid context: %lu", ctx_val);
 
 			return -ENOEXEC;

@@ -31,13 +31,12 @@ enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 		LOG_ERR("%s: nrf_wifi_fmac_fw_parse failed", __func__);
 		return status;
 	}
-#ifndef CONFIG_NRF71_ON_IPC
 	/* Load the FW patches to the RPU */
 	status = nrf_wifi_fmac_fw_load(rpu_ctx, &fw_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_fw_load failed", __func__);
 	}
-#endif /* !CONFIG_NRF71_ON_IPC */
+
 	return status;
 }

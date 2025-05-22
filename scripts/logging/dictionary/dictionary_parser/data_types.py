@@ -95,6 +95,10 @@ class DataTypes():
             else:
                 stack_min_align = 1
 
+        elif arch == "nios2":
+            need_further_align = False
+            stack_min_align = 1
+
         else:
             need_further_align = True
             stack_min_align = 1

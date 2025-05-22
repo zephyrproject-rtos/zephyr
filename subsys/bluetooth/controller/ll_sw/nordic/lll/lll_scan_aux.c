@@ -1613,13 +1613,8 @@ isr_rx_connect_rsp_do_close:
 
 	ull_rx_put_sched(rx->hdr.link, rx);
 
-	/* Check if LLL scheduled auxiliary PDU reception by scan
-	 * context or auxiliary PDU reception by aux context
-	 */
-	if (lll->is_aux_sched) {
+	if (lll->lll_aux) {
 		struct node_rx_pdu *node_rx;
-
-		lll->is_aux_sched = 0U;
 
 		/* Send message to flush Auxiliary PDU list */
 		node_rx = ull_pdu_rx_alloc();

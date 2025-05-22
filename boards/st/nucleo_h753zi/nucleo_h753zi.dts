@@ -54,7 +54,6 @@
 	};
 
 	aliases {
-		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
@@ -108,13 +107,6 @@
 	d3ppre = <2>;
 };
 
-&lpuart1 {
-	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
-};
-
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	pinctrl-names = "default";
@@ -157,18 +149,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
-	status = "okay";
-};
-
-&adc3 {
-	pinctrl-0 = <&adc3_inp5_pf3>;
-	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	status = "okay";
-};
-
-&die_temp {
 	status = "okay";
 };
 

@@ -2147,7 +2147,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		}
 
 		context = sys_get_le16(data_value);
-		if (context == BT_AUDIO_CONTEXT_TYPE_NONE) {
+		if (context == BT_AUDIO_CONTEXT_TYPE_PROHIBITED) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EINVAL;

@@ -38,16 +38,6 @@ This shield works with below host platform,
 
 - :zephyr:board:`mimxrt1060_evk` Rev-C.
 
-Fetch Binary Blobs
-******************
-
-To support Bluetooth or Wi-Fi, nxp_m2_wifi_bt requires fetching binary blobs,
-using the following command:
-
-.. code-block:: console
-
-   west blobs fetch hal_nxp
-
 Programming
 ***********
 

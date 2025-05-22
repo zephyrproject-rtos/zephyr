@@ -73,6 +73,7 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 								nrf_wifi_rpu_recovery_work);
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	int ret;
+	bool recovery_fail = false;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -143,27 +144,11 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	ret = net_if_down(vif_ctx_zep->zep_net_if_ctx);
 	if (ret) {
 		rpu_ctx_zep->rpu_recovery_failure++;
+		recovery_fail = true;
 		LOG_ERR("%s: net_if_down failed: %d", __func__, ret);
 		/* Continue with the recovery */
-	} else {
-		rpu_ctx_zep->rpu_recovery_success++;
 	}
-	/* Continue recovery process after delay without blocking system workqueue.
-	 * Mutex is released in the next phase.
-	 */
-	k_work_reschedule(&vif_ctx_zep->nrf_wifi_rpu_recovery_bringup_work,
-			  K_MSEC(CONFIG_NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS));
-}
-
-static void nrf_wifi_rpu_recovery_bringup_work_handler(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = CONTAINER_OF(dwork,
-							struct nrf_wifi_vif_ctx_zep,
-							nrf_wifi_rpu_recovery_bringup_work);
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	int ret;
-
+	k_msleep(CONFIG_NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface up", __func__);
 #else
@@ -175,6 +160,9 @@ static void nrf_wifi_rpu_recovery_bringup_work_handler(struct k_work *work)
 	}
 	rpu_ctx_zep->rpu_recovery_in_progress = false;
 	rpu_ctx_zep->last_rpu_recovery_time_ms = k_uptime_get();
+	if (!recovery_fail) {
+		rpu_ctx_zep->rpu_recovery_success++;
+	}
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
@@ -587,7 +575,6 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 		random_mac_addr,
 		WIFI_MAC_ADDR_LEN);
 #elif CONFIG_WIFI_OTP_MAC_ADDRESS
-#ifndef CONFIG_NRF71_ON_IPC
 	status = nrf_wifi_fmac_otp_mac_addr_get(fmac_dev_ctx,
 				vif_ctx_zep->vif_idx,
 				vif_ctx_zep->mac_addr.addr);
@@ -596,15 +583,6 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 			__func__);
 		goto unlock;
 	}
-#else
-	/* Set dummy MAC address */
-	vif_ctx_zep->mac_addr.addr[0] = 0x00;
-	vif_ctx_zep->mac_addr.addr[1] = 0x00;
-	vif_ctx_zep->mac_addr.addr[2] = 0x5E;
-	vif_ctx_zep->mac_addr.addr[3] = 0x00;
-	vif_ctx_zep->mac_addr.addr[4] = 0x10;
-	vif_ctx_zep->mac_addr.addr[5] = 0x00;
-#endif /* !CONFIG_NRF71_ON_IPC */
 #endif
 
 	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {
@@ -681,8 +659,6 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	k_work_init(&vif_ctx_zep->nrf_wifi_rpu_recovery_work,
 		    nrf_wifi_rpu_recovery_work_handler);
-	k_work_init_delayable(&vif_ctx_zep->nrf_wifi_rpu_recovery_bringup_work,
-			      nrf_wifi_rpu_recovery_bringup_work_handler);
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
 #if !defined(CONFIG_NRF_WIFI_IF_AUTO_START)

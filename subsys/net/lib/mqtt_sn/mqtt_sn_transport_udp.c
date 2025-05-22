@@ -16,6 +16,8 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/igmp.h>
 
+#include <zephyr/posix/fcntl.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
@@ -23,13 +25,11 @@ static char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
 {
 	switch (sa->sa_family) {
 	case AF_INET:
-		zsock_inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
-				s, maxlen);
+		inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr), s, maxlen);
 		break;
 
 	case AF_INET6:
-		zsock_inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr),
-				s, maxlen);
+		inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
 		break;
 
 	default:

@@ -7,7 +7,7 @@
 #ifndef STREAM_TX_H
 #define STREAM_TX_H
 
-#include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/bap.h>

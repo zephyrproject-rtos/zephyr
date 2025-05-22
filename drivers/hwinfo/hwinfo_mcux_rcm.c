@@ -120,9 +120,12 @@ int z_impl_hwinfo_clear_reset_cause(void)
 #if (defined(FSL_FEATURE_RCM_HAS_PARAM) && FSL_FEATURE_RCM_HAS_PARAM)
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = hwinfo_mcux_rcm_xlate_reset_sources(UINT32_MAX);
+	uint32_t sources;
 
-	LOG_DBG("supported = 0x%08x", *supported);
+	sources = RCM_GetResetSourceImplementedStatus(RCM);
+	*supported = hwinfo_mcux_rcm_xlate_reset_sources(sources);
+
+	LOG_DBG("sources = 0x%08x, supported = 0x%08x", sources, *supported);
 
 	return 0;
 }

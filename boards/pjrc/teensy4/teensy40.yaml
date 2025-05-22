@@ -21,3 +21,4 @@ testing:
   ignore_tags:
     - net
     - posix
+vendor: nxp

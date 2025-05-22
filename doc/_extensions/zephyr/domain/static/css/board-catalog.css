@@ -176,8 +176,10 @@
 
 .board-card .vendor {
   font-size: 12px;
-  color: var(--body-color);
+  color: var(--admonition-note-color);
+  font-weight: 900;
   margin-bottom: 18px;
+  opacity: 0.5;
 }
 
 .board-card img {

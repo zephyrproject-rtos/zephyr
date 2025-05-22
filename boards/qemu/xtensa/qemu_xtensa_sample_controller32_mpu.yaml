@@ -4,8 +4,6 @@ type: qemu
 simulation:
   - name: qemu
 arch: xtensa
-toolchain:
-  - zephyr
 testing:
   default: true
   ignore_tags:

@@ -1,10 +1,7 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silicon Labs Series 2 IADC (Incremental Analog to Digital Converter)
-
-description: |
-  Incremental ADC peripheral for Silicon Labs Series 2 SoCs.
+description: Silicon Labs Gecko Family IADC
 
 compatible: "silabs,gecko-iadc"
 

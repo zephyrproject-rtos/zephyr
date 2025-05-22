@@ -95,16 +95,13 @@ properties:
         This must be present to support SPI control of the FEM.
   tx-en-settle-time-us:
     type: int
-    default: 26
+    default: 11
     description: |
         Settling time in microseconds from state PG to TX.
 
-        Default value of 11 microseconds is based on Table 6 of the nRF21540
-        Product Specification (v1.0). However the FEM must be ready when
-        the RF power starts to rise at the output of the SoC. That's why
-        the default value is increased by the time needed by the RF power
-        to rise at the output of the nRF5 SoCs.
-        This time can be overridden for tuned configurations.
+        Default value is based on Table 6 of the nRF21540 Product
+        Specification (v1.0), and can be overridden for tuned
+        configurations.
   rx-en-settle-time-us:
     type: int
     default: 11

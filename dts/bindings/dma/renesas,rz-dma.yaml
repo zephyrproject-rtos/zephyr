@@ -34,9 +34,6 @@ properties:
   "#dma-cells":
     const: 2
 
-  dma-buf-addr-alignment:
-    required: true
-
 dma-cells:
   - channel
   - config

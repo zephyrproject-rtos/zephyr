@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "efr32bg2x.dtsi"
+#include <dt-bindings/clock/silabs/xg27-clock.h>
+#include <dt-bindings/dma/silabs/xg27-dma.h>
+#include <mem.h>
+
+/ {
+	clocks {
+		hfxort: hfxort {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfxo>;
+		};
+		hfrcodpllrt: hfrcodpllrt {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		eusart0clk: eusart0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+	};
+
+	soc {
+		clkin0: clkin0@5003c460 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x5003c460 0x4>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+		acmp0: acmp@5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <48 2>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
+	};
+};
+
+&cmu {
+	interrupts = <52 2>;
+};
+
+&hfxo {
+	interrupts = <50 2>;
+	interrupt-names = "hfxo";
+};
+
+&msc {
+	flash0: flash@8000000 {
+		compatible = "soc-nv-flash";
+		write-block-size = <4>;
+		erase-block-size = <8192>;
+		reg = <0x08000000 DT_SIZE_K(768)>;
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&gpio {
+	interrupts = <30 2>, <31 2>;
+	interrupt-names = "gpio_odd", "gpio_even";
+	clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
+
+	gpioa: gpio@5003c030 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C030 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiob: gpio@5003c060 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C060 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpioc: gpio@5003c090 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C090 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpiod: gpio@5003c0c0 {
+		compatible = "silabs,gecko-gpio-port";
+		reg = <0x5003C0C0 0x30>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+};
+
+&i2c0 {
+	interrupts = <32 2>;
+	clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
+};
+
+&i2c1 {
+	interrupts = <33 2>;
+	clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_PCLK>;
+};
+
+&usart0 {
+	interrupts = <16 2>, <17 2>;
+	clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
+};
+
+&usart1 {
+	interrupts = <18 2>, <19 2>;
+	clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
+};
+
+&burtc0 {
+	interrupts = <23 2>;
+	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
+};
+
+&rtcc0 {
+	interrupts = <15 2>;
+	interrupt-names = "rtcc";
+	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
+};
+
+&adc0 {
+	interrupts = <54 2>;
+	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
+};
+
+&dcdc {
+	interrupts = <8 2>;
+};
+
+&dma0 {
+	interrupts = <26 0>;
+};
+
+&wdog0 {
+	interrupts = <49 2>;
+	clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+};
+
+&radio {
+	interrupts = <36 1>, <37 1>, <38 1>, <39 1>, <40 1>, <41 1>,
+		     <42 1>, <43 1>, <44 1>, <45 1>, <46 1>, <47 1>;
+	interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+		     "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "synth",
+		     "prortc";
+};

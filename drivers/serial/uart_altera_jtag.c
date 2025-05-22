@@ -33,6 +33,16 @@
 #define ALTERA_AVALON_JTAG_UART_CONTROL_RI_MSK            (0x00000100)
 #define ALTERA_AVALON_JTAG_UART_CONTROL_WI_MSK            (0x00000200)
 
+#ifdef CONFIG_UART_ALTERA_JTAG_HAL
+#include "altera_avalon_jtag_uart.h"
+#include "altera_avalon_jtag_uart_regs.h"
+
+extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
+		char *buffer, int space, int flags);
+extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
+		const char *ptr, int count, int flags);
+#else
+
 /* device data */
 struct uart_altera_jtag_device_data {
 	struct k_spinlock lock;
@@ -51,7 +61,9 @@ struct uart_altera_jtag_device_config {
 	uint16_t write_fifo_depth;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 
+#ifndef CONFIG_UART_ALTERA_JTAG_HAL
 /**
  * @brief Poll the device for input.
  *
@@ -91,6 +103,7 @@ static int uart_altera_jtag_poll_in(const struct device *dev,
 
 	return ret;
 }
+#endif  /* CONFIG_UART_ALTERA_JTAG_HAL */
 
 /**
  * @brief Output a character in polled mode.
@@ -105,6 +118,12 @@ static int uart_altera_jtag_poll_in(const struct device *dev,
 static void uart_altera_jtag_poll_out(const struct device *dev,
 					       unsigned char c)
 {
+#ifdef CONFIG_UART_ALTERA_JTAG_HAL
+	altera_avalon_jtag_uart_state ustate;
+
+	ustate.base = JTAG_UART_0_BASE;
+	altera_avalon_jtag_uart_write(&ustate, &c, 1, 0);
+#else
 	const struct uart_altera_jtag_device_config *config = dev->config;
 	struct uart_altera_jtag_device_data *data = dev->data;
 
@@ -117,6 +136,7 @@ static void uart_altera_jtag_poll_out(const struct device *dev,
 	sys_write8(c, config->base + UART_ALTERA_JTAG_DATA_OFFSET);
 
 	k_spin_unlock(&data->lock, key);
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 }
 
 /**
@@ -134,6 +154,9 @@ static int uart_altera_jtag_init(const struct device *dev)
 	 * Work around to clear interrupt enable bits
 	 * as it is not being done by HAL driver explicitly.
 	 */
+#ifdef CONFIG_UART_ALTERA_JTAG_HAL
+	IOWR_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE, 0);
+#else
 	const struct uart_altera_jtag_device_config *config = dev->config;
 	uint32_t ctrl_val = sys_read32(config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
 
@@ -148,13 +171,14 @@ static int uart_altera_jtag_init(const struct device *dev)
 	/*  Disable the tx and rx interrupt signals from JTAG core IP. */
 	ctrl_val &= ~(UART_IE_TX | UART_IE_RX);
 	sys_write32(ctrl_val, config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 	return 0;
 }
 
 /*
  * Functions for Interrupt driven API
  */
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && !defined(CONFIG_UART_ALTERA_JTAG_HAL)
 
 /**
  * @brief Fill FIFO with data
@@ -488,13 +512,15 @@ static void uart_altera_jtag_isr(const struct device *dev)
 	}
 }
 
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN && !CONFIG_UART_ALTERA_JTAG_HAL */
 
 static DEVICE_API(uart, uart_altera_jtag_driver_api) = {
+#ifndef CONFIG_UART_ALTERA_JTAG_HAL
 	.poll_in = uart_altera_jtag_poll_in,
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 	.poll_out = uart_altera_jtag_poll_out,
 	.err_check = NULL,
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && !defined(CONFIG_UART_ALTERA_JTAG_HAL)
 	.fifo_fill = uart_altera_jtag_fifo_fill,
 	.fifo_read = uart_altera_jtag_fifo_read,
 	.irq_tx_enable = uart_altera_jtag_irq_tx_enable,
@@ -507,8 +533,15 @@ static DEVICE_API(uart, uart_altera_jtag_driver_api) = {
 	.irq_is_pending = uart_altera_jtag_irq_is_pending,
 	.irq_update = uart_altera_jtag_irq_update,
 	.irq_callback_set = uart_altera_jtag_irq_callback_set,
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN && !CONFIG_UART_ALTERA_JTAG_HAL */
 };
+
+#ifdef CONFIG_UART_ALTERA_JTAG_HAL
+#define UART_ALTERA_JTAG_DEVICE_INIT(n)						\
+DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,	\
+		      CONFIG_SERIAL_INIT_PRIORITY,					\
+		      &uart_altera_jtag_driver_api);
+#else
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define UART_ALTERA_JTAG_CONFIG_FUNC(n)					\
@@ -550,5 +583,6 @@ DEVICE_DT_INST_DEFINE(n,							\
 		      PRE_KERNEL_1,							\
 		      CONFIG_SERIAL_INIT_PRIORITY,			\
 		      &uart_altera_jtag_driver_api);
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ALTERA_JTAG_DEVICE_INIT)

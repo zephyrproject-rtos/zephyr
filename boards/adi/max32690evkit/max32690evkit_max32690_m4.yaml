@@ -21,6 +21,5 @@ supported:
   - w1
   - flash
   - usbd
-  - memc
 ram: 1024
 flash: 3072

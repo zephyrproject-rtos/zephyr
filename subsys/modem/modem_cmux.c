@@ -1108,7 +1108,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 {
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
 	struct modem_cmux *cmux = dlci->cmux;
-	int ret = 0;
+	int ret;
 
 	K_SPINLOCK(&cmux->work_lock) {
 		if (!cmux->attached) {
@@ -1345,7 +1345,7 @@ int modem_cmux_connect(struct modem_cmux *cmux)
 
 int modem_cmux_connect_async(struct modem_cmux *cmux)
 {
-	int ret = 0;
+	int ret;
 
 	if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT)) {
 		return -EALREADY;
@@ -1360,6 +1360,8 @@ int modem_cmux_connect_async(struct modem_cmux *cmux)
 		if (k_work_delayable_is_pending(&cmux->connect_work) == false) {
 			k_work_schedule(&cmux->connect_work, K_NO_WAIT);
 		}
+
+		ret = 0;
 	}
 
 	return ret;

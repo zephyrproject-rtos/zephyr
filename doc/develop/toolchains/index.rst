@@ -10,8 +10,7 @@ Guides on how to set up toolchains for Zephyr development.
 
    zephyr_sdk.rst
 
-   arm_compiler_6.rst
-   arm_toolchain_for_embedded.rst
+   arm_compiler.rst
    cadence_xcc.rst
    designware_arc_mwdt.rst
    gnu_arm_embedded.rst

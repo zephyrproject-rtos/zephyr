@@ -6,7 +6,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stddef.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
@@ -339,7 +338,7 @@ static int recover_seed_error(RNG_TypeDef *rng)
 }
 #endif /* !STM32_CONDRST_SUPPORT */
 
-static int random_sample_get(rng_sample_t *rnd_sample)
+static int random_byte_get(void)
 {
 	int retval = -EAGAIN;
 	unsigned int key;
@@ -369,8 +368,8 @@ static int random_sample_get(rng_sample_t *rnd_sample)
 			goto out;
 		}
 
-		*rnd_sample = ll_rng_read_rand_data(rng);
-		if (*rnd_sample == 0) {
+		retval = ll_rng_read_rand_data(rng);
+		if (retval == 0) {
 			/* A seed error could have occurred between RNG_SR
 			 * polling and RND_DR output reading.
 			 */
@@ -378,7 +377,7 @@ static int random_sample_get(rng_sample_t *rnd_sample)
 			goto out;
 		}
 
-		retval = 0;
+		retval &= 0xFF;
 	}
 
 out:
@@ -391,8 +390,6 @@ out:
 static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 {
 	uint16_t remaining_len = len;
-	rng_sample_t rnd_sample;
-	int ret;
 
 #if !IRQLESS_TRNG
 	__ASSERT_NO_MSG(!irq_is_enabled(IRQN));
@@ -406,7 +403,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	if (ll_rng_is_active_secs(entropy_stm32_rng_data.rng) ||
 		ll_rng_is_active_seis(entropy_stm32_rng_data.rng)) {
 
-		(void)random_sample_get(&rnd_sample); /* this will recover the error */
+		(void)random_byte_get(); /* this will recover the error */
 
 		return 0; /* return cnt is null : no random data available */
 	}
@@ -421,6 +418,8 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 #endif /* !IRQLESS_TRNG */
 
 	do {
+		int byte;
+
 		while (ll_rng_is_active_drdy(
 				entropy_stm32_rng_data.rng) != 1) {
 #if !IRQLESS_TRNG
@@ -442,23 +441,16 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 #endif /* !IRQLESS_TRNG */
 		}
 
-		ret = random_sample_get(&rnd_sample);
+		byte = random_byte_get();
 #if !IRQLESS_TRNG
 		NVIC_ClearPendingIRQ(IRQN);
 #endif /* IRQLESS_TRNG */
 
-		if (ret < 0) {
+		if (byte < 0) {
 			continue;
 		}
 
-		/* push each byte of the RNG sample in buffer */
-		size_t i = sizeof(rnd_sample);
-
-		while (remaining_len && i) {
-			buf[--remaining_len] = (uint8_t)(rnd_sample & 0xFFu);
-			rnd_sample >>= 8;
-			i--;
-		}
+		buf[--remaining_len] = byte;
 	} while (remaining_len);
 
 	return len;
@@ -612,47 +604,31 @@ static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
 
 static int perform_pool_refill(void)
 {
-	rng_sample_t rnd_sample;
-	bool refilled_thr = false;
-	int ret;
+	int byte, ret;
 
-	ret = random_sample_get(&rnd_sample);
+	byte = random_byte_get();
+	if (byte < 0) {
+		return -EIO;
+	}
+
+	ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.isr),
+				byte);
 	if (ret < 0) {
-		return ret;
-	}
-
-	/* push each byte of the RNG sample in pools */
-	for (size_t i = 0; i < sizeof(rnd_sample); i++, rnd_sample >>= 8) {
-		uint8_t byte = rnd_sample & 0xFFu;
-
-		ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.isr), byte);
+		ret = rng_pool_put(
+				(struct rng_pool *)(entropy_stm32_rng_data.thr),
+				byte);
 		if (ret < 0) {
-			/* Take note that data has been added to thread pool */
-			refilled_thr = true;
-
-			ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.thr), byte);
-			if (ret < 0) {
 #if !IRQLESS_TRNG
-				irq_disable(IRQN);
+			irq_disable(IRQN);
 #endif /* !IRQLESS_TRNG */
-				release_rng();
-				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-					PM_ALL_SUBSTATES);
-				if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-					pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM,
-						PM_ALL_SUBSTATES);
-				}
-				entropy_stm32_rng_data.filling_pools = false;
-				break;
+			release_rng();
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 			}
+			entropy_stm32_rng_data.filling_pools = false;
 		}
-	}
 
-	if (refilled_thr) {
-		/**
-		 * Wake up threads that may be waiting for new data to be
-		 * available in thread pool if we added entropy in it.
-		 */
 		k_sem_give(&entropy_stm32_rng_data.sem_sync);
 	}
 
@@ -669,8 +645,7 @@ static void trng_poll_work_item(struct k_work *work)
 	if (ll_rng_is_active_secs(entropy_stm32_rng_data.rng) ||
 		ll_rng_is_active_seis(entropy_stm32_rng_data.rng)) {
 
-		rng_sample_t dummy;
-		(void)random_sample_get(&dummy); /* this will recover the error */
+		(void)random_byte_get(); /* this will recover the error */
 	} else if (ll_rng_is_active_drdy(rng)) {
 		/* Entropy available: read it and fill pools */
 		int res = perform_pool_refill();

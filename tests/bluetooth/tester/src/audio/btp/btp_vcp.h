@@ -6,9 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-
-#include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
 
 #define BTP_VCP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_vcp_read_supported_commands_rp {

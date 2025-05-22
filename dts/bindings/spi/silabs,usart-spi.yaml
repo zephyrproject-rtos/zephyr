@@ -1,8 +1,4 @@
-title: Silicon Labs Series 2 USART (Universal Synchronous/Asynchronous Receiver/Transmitter)
-
-description: |
-  USART (Universal Synchronous/Asynchronous Receiver/Transmitter) peripheral for
-  Silicon Labs Series 2 SoCs used in SPI mode.
+description: Silabs USART SPI
 
 compatible: "silabs,usart-spi"
 

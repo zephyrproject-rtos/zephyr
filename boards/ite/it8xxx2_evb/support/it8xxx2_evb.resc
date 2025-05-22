@@ -1,0 +1,17 @@
+:name: ITE-evb
+:description: This script is prepared to run Zephyr on a Mi-V RISC-V board.
+
+$name?="ITE-evb"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/boards/it8xxx2_evb.repl
+
+showAnalyzer uart
+cpu PerformanceInMips 80
+
+macro reset
+"""
+    sysbus LoadELF $elf
+"""
+runMacro $reset

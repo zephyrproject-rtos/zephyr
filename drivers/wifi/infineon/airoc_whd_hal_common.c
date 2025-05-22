@@ -64,29 +64,19 @@ int airoc_wifi_power_on(const struct device *dev)
  * Implement WHD memory wrappers
  */
 
-inline void *whd_mem_malloc(size_t size)
+void *whd_mem_malloc(size_t size)
 {
 	return k_malloc(size);
 }
 
-inline void *whd_mem_calloc(size_t nitems, size_t size)
+void *whd_mem_calloc(size_t nitems, size_t size)
 {
 	return k_calloc(nitems, size);
 }
 
-inline void whd_mem_free(void *ptr)
+void whd_mem_free(void *ptr)
 {
 	k_free(ptr);
-}
-
-inline void whd_mem_memcpy(void *dest, const void *src, size_t len)
-{
-	memcpy(dest, src, len);
-}
-
-inline void whd_mem_memset(void *buf, int val, size_t len)
-{
-	memset(buf, val, len);
 }
 
 #ifdef __cplusplus

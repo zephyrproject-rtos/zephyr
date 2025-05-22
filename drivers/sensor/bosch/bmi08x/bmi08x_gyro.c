@@ -199,6 +199,15 @@ static int bmi08x_gyr_config(const struct device *dev, enum sensor_channel chan,
 static int bmi08x_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -EBUSY;
+	}
+#endif
+
 	switch (chan) {
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
@@ -289,6 +298,15 @@ static inline void bmi08x_gyr_channel_get(const struct device *dev, enum sensor_
 static int bmi08x_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -EBUSY;
+	}
+#endif
+
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:

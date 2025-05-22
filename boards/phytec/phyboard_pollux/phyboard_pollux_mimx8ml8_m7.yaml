@@ -20,3 +20,4 @@ testing:
 supported:
   - uart
   - gpio
+vendor: nxp

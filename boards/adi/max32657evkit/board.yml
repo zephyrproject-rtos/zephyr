@@ -6,5 +6,3 @@ board:
   vendor: adi
   socs:
   - name: max32657
-    variants:
-    - name: "ns"

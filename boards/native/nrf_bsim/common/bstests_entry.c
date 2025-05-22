@@ -21,7 +21,7 @@
  */
 enum bst_result_t bst_result;
 
-static const struct bst_test_instance *current_test;
+static struct bst_test_instance *current_test;
 static struct bst_test_list *test_list_top;
 
 __attribute__((weak)) bst_test_install_t test_installers[] = { NULL };
@@ -42,7 +42,8 @@ struct bst_test_list *bst_add_tests(struct bst_test_list *tests,
 		if (test_def[idx].test_id != NULL) {
 			head = bs_malloc(sizeof(struct bst_test_list));
 			head->next = NULL;
-			head->test_instance = &test_def[idx++];
+			head->test_instance = (struct bst_test_instance *)
+						&test_def[idx++];
 			tail = head;
 		}
 	}
@@ -50,14 +51,16 @@ struct bst_test_list *bst_add_tests(struct bst_test_list *tests,
 	while (test_def[idx].test_id != NULL) {
 		tail->next = bs_malloc(sizeof(struct bst_test_list));
 		tail = tail->next;
-		tail->test_instance = &test_def[idx++];
+		tail->test_instance = (struct bst_test_instance *)
+					&test_def[idx++];
 		tail->next = NULL;
 	}
 
 	return head;
 }
 
-static const struct bst_test_instance *bst_test_find(struct bst_test_list *tests, char *test_id)
+static struct bst_test_instance *bst_test_find(struct bst_test_list *tests,
+					  char *test_id)
 {
 	struct bst_test_list *top = tests;
 

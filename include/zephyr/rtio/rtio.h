@@ -31,7 +31,6 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/mem_blocks.h>
@@ -48,7 +47,7 @@ extern "C" {
  * @brief RTIO
  * @defgroup rtio RTIO
  * @since 3.2
- * @version 0.2.0
+ * @version 0.1.0
  * @ingroup os_services
  * @{
  */
@@ -345,12 +344,6 @@ struct rtio_sqe {
 			uint8_t *rx_buf; /**< Buffer to read into */
 		} txrx;
 
-		/** OP_DELAY */
-		struct {
-			k_timeout_t timeout; /**< Delay timeout. */
-			struct _timeout to; /**< Timeout struct. Used internally. */
-		} delay;
-
 		/** OP_I2C_CONFIGURE */
 		uint32_t i2c_config;
 
@@ -562,11 +555,8 @@ struct rtio_iodev {
 /** An operation that transceives (reads and writes simultaneously) */
 #define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
 
-/** An operation that takes a specified amount of time (asynchronously) before completing */
-#define RTIO_OP_DELAY (RTIO_OP_TXRX+1)
-
 /** An operation to recover I2C buses */
-#define RTIO_OP_I2C_RECOVER (RTIO_OP_DELAY+1)
+#define RTIO_OP_I2C_RECOVER (RTIO_OP_TXRX+1)
 
 /** An operation to configure I2C buses */
 #define RTIO_OP_I2C_CONFIGURE (RTIO_OP_I2C_RECOVER+1)
@@ -754,18 +744,6 @@ static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 	sqe->op = RTIO_OP_AWAIT;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
-	sqe->userdata = userdata;
-}
-
-static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
-				       k_timeout_t timeout,
-				       void *userdata)
-{
-	memset(sqe, 0, sizeof(struct rtio_sqe));
-	sqe->op = RTIO_OP_DELAY;
-	sqe->prio = 0;
-	sqe->iodev = NULL;
-	sqe->delay.timeout = timeout;
 	sqe->userdata = userdata;
 }
 

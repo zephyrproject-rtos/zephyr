@@ -11,8 +11,6 @@ testing:
   only_tags:
     - kernel
     - userspace
-    - llext
   ignore_tags:
     - benchmark
-ram: 256
 vendor: qemu

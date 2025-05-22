@@ -1,0 +1,9 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_NIOS2
+
+config BUILD_OUTPUT_BIN
+	default n
+
+endif

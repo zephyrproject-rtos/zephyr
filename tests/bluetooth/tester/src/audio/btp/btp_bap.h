@@ -6,11 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-
-#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/iso.h>
 
 /* BAP commands */
 #define BTP_BAP_READ_SUPPORTED_COMMANDS		0x01

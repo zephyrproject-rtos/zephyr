@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tmap.h>

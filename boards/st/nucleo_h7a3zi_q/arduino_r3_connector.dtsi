@@ -34,5 +34,3 @@
 			   <21 0 &gpiob 8 0>;	/* D15 */
 	};
 };
-
-arduino_serial: &lpuart1 {};

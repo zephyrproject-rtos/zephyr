@@ -26,6 +26,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -76,11 +77,11 @@
 };
 
 &counter0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &rtc0 {
-	status = "disabled";
+	status = "okay";
 	clock = "XTAL";
 };
 
@@ -95,7 +96,7 @@
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -105,7 +106,7 @@
 		pinctrl-names = "default";
 		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 		clock-frequency = <DT_FREQ_M(1)>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -120,7 +121,7 @@
 &mspi0 {
 	pinctrl-0 = <&mspi0_default>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 };
 
 &flash0 {

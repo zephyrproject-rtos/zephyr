@@ -13,5 +13,3 @@ supported:
   - gpio
   - counter
   - pwm
-  - spi
-  - can

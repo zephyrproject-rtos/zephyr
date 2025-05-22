@@ -10,7 +10,6 @@
 #ifndef BTP_BAP_AUDIO_STREAM_H
 #define BTP_BAP_AUDIO_STREAM_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/conn.h>

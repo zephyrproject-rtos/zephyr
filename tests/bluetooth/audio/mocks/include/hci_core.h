@@ -7,7 +7,6 @@
 #ifndef MOCKS_HCI_CORE_H_
 #define MOCKS_HCI_CORE_H_
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>

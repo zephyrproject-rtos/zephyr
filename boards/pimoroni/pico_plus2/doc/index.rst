@@ -42,16 +42,15 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
-See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
-
-Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
+The overall explanation regarding flashing and debugging is the same as or ``rpi_pico``.
+See :ref:`rpi_pico_flashing_using_openocd` and :ref:`rpi_pico_flashing_using_uf2`
+in ``rpi_pico`` documentation.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: pico_plus2/rp2350b/m33
+   :board: pico_plus2
    :goals: build flash
-   :flash-args: --openocd /usr/local/bin/openocd
+   :gen-args: -DOPENOCD=/usr/local/bin/openocd
 
 .. target-notes::
 

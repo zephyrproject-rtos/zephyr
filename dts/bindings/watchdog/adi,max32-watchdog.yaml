@@ -11,6 +11,9 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
   clock-source:
     type: int
     enum: [0, 1, 2, 3, 4, 5]

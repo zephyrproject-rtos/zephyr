@@ -40,7 +40,7 @@ for projects utilizing this shield. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: arduino_giga_r1/stm32h747xx/m7
+   :board: arduino_giga_r1_wifi
    :shield: arduino_giga_display_shield
    :goals: build
 

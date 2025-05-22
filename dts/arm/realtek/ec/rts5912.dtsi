@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/clock/rts5912_clock.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <mem.h>
 
 / {
 	cpus {
@@ -27,24 +26,24 @@
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <100000000>;
+				min-residency-us = <100000>;
 			};
 
 			suspend_to_ram: suspend_to_ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
-				min-residency-us = <250000000>;
+				min-residency-us = <250000>;
 			};
 		};
 	};
 
-	flash0: flash@2000B400 {
-		reg = <0x2000B400 0x40000>;
+	flash0: flash@20000400 {
+		reg = <0x20000400 0x4FC00>;
 	};
 
 	sram0: memory@20050000 {
 		compatible = "mmio-sram";
-		reg = <0x20050000 0x10000>;
+		reg = <0x20050000 0x8000>;
 	};
 
 	clocks {
@@ -429,20 +428,6 @@
 			reg = <0x4000f054 0x0c>;
 			status = "disabled";
 			#pwm-cells = <3>;
-		};
-
-		flash_controller: flash-controller@40010200 {
-			compatible = "realtek,rts5912-flash-controller";
-			reg = <0x40010200 0x200>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			eflash: eflash@60000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x60000000 DT_SIZE_K(1024)>;
-				erase-block-size = <DT_SIZE_K(4)>;
-				write-block-size = <4>;
-			};
 		};
 	};
 

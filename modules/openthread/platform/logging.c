@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "platform-zephyr.h"
 
-#if defined(CONFIG_LOG)
 /* Convert OT log level to zephyr log level. */
 static inline int log_translate(otLogLevel aLogLevel)
 {
@@ -39,7 +38,6 @@ static inline int log_translate(otLogLevel aLogLevel)
 
 	return -1;
 }
-#endif
 
 void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {

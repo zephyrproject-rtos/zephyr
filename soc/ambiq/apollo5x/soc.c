@@ -8,9 +8,9 @@
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-#ifdef CONFIG_CACHE_MANAGEMENT
+#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_CACHE_MANAGEMENT */
+#endif /* CONFIG_DCACHE */
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
@@ -48,9 +48,8 @@ void soc_early_init_hook(void)
 	/*
 	 * Set default temperature for spotmgr to room temperature
 	 */
-	am_hal_pwrctrl_temp_thresh_t dummy;
-
-	am_hal_pwrctrl_temp_update(25.0f, &dummy);
+	am_hal_pwrctrl_temp_thresh_t dummy[32];
+	am_hal_pwrctrl_temp_update(25.0f, dummy);
 
 	/* Enable Icache*/
 	sys_cache_instr_enable();
@@ -63,10 +62,6 @@ void soc_early_init_hook(void)
 bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
 	bool buf_within_nocache = false;
-
-	if (buf == 0 || len_bytes == 0) {
-		return buf_within_nocache;
-	}
 
 #if CONFIG_NOCACHE_MEMORY
 	/* Check if buffer is in nocache region defined by the linker */

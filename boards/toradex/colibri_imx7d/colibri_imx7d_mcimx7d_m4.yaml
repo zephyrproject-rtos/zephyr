@@ -19,3 +19,4 @@ testing:
     - bluetooth
 supported:
   - pwm
+vendor: nxp

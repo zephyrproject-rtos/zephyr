@@ -16,19 +16,19 @@
  * a time. Check the docs for more info.
  */
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <pthread.h>
-#include <semaphore.h>
-#include <errno.h>
-#include "nsi_utils.h"
+#include <stdbool.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "nce_if.h"
 #include "nsi_safe_call.h"
 
 struct nce_status_t {
-	sem_t sem_sw; /* Semaphore to hold the CPU/SW thread(s) */
-	sem_t sem_hw; /* Semaphore to hold the HW thread */
+	/* Conditional variable to know if the CPU is running or halted/idling */
+	pthread_cond_t  cond_cpu;
+	/* Mutex for the conditional variable cond_cpu */
+	pthread_mutex_t mtx_cpu;
+	/* Variable which tells if the CPU is halted (1) or not (0) */
 	bool cpu_halted;
 	bool terminate; /* Are we terminating the program == cleaning up */
 	void (*start_routine)(void);
@@ -48,16 +48,6 @@ struct nce_status_t {
 
 extern void nsi_exit(int exit_code);
 
-NSI_INLINE int nce_sem_rewait(sem_t *semaphore)
-{
-	int ret;
-
-	while ((ret = sem_wait(semaphore)) == EINTR) {
-		/* Restart wait if we were interrupted */
-	}
-	return ret;
-}
-
 /*
  * Initialize an instance of the native simulator CPU emulator
  * and return a pointer to it.
@@ -75,8 +65,8 @@ void *nce_init(void)
 	this->cpu_halted = true;
 	this->terminate = false;
 
-	NSI_SAFE_CALL(sem_init(&this->sem_sw, 0, 0));
-	NSI_SAFE_CALL(sem_init(&this->sem_hw, 0, 0));
+	NSI_SAFE_CALL(pthread_cond_init(&this->cond_cpu, NULL));
+	NSI_SAFE_CALL(pthread_mutex_init(&this->mtx_cpu, NULL));
 
 	return (void *)this;
 }
@@ -114,9 +104,13 @@ void nce_terminate(void *this_arg)
 	} else if (this->terminate == false) {
 
 		this->terminate = true;
+
+		NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_cpu));
+
 		this->cpu_halted = true;
 
-		NSI_SAFE_CALL(sem_post(&this->sem_hw));
+		NSI_SAFE_CALL(pthread_cond_broadcast(&this->cond_cpu));
+		NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_cpu));
 
 		while (1) {
 			sleep(1);
@@ -129,6 +123,46 @@ void nce_terminate(void *this_arg)
 	/* LCOV_EXCL_STOP */
 }
 
+/**
+ * Helper function which changes the status of the CPU (halted or running)
+ * and waits until somebody else changes it to the opposite
+ *
+ * Both HW and SW threads will use this function to transfer control to the
+ * other side.
+ *
+ * This is how the idle thread halts the CPU and gets halted until the HW models
+ * raise a new interrupt; and how the HW models awake the CPU, and wait for it
+ * to complete and go to idle.
+ */
+static void change_cpu_state_and_wait(struct nce_status_t *this, bool halted)
+{
+	NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_cpu));
+
+	NCE_DEBUG("Going to halted = %d\n", halted);
+
+	this->cpu_halted = halted;
+
+	/* We let the other side know the CPU has changed state */
+	NSI_SAFE_CALL(pthread_cond_broadcast(&this->cond_cpu));
+
+	/* We wait until the CPU state has been changed. Either:
+	 * we just awoke it, and therefore wait until the CPU has run until
+	 * completion before continuing (before letting the HW models do
+	 * anything else)
+	 *  or
+	 * we are just hanging it, and therefore wait until the HW models awake
+	 * it again
+	 */
+	while (this->cpu_halted == halted) {
+		/* Here we unlock the mutex while waiting */
+		pthread_cond_wait(&this->cond_cpu, &this->mtx_cpu);
+	}
+
+	NCE_DEBUG("Awaken after halted = %d\n", halted);
+
+	NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_cpu));
+}
+
 /*
  * Helper function that wraps the SW start_routine
  */
@@ -136,8 +170,9 @@ static void *sw_wrapper(void *this_arg)
 {
 	struct nce_status_t *this = (struct nce_status_t *)this_arg;
 
-	/* Ensure nce_boot_cpu is blocked in nce_wake_cpu() */
-	NSI_SAFE_CALL(nce_sem_rewait(&this->sem_sw));
+	/* Ensure nce_boot_cpu has reached the cond loop */
+	NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_cpu));
+	NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_cpu));
 
 #if (NCE_DEBUG_PRINTS)
 		pthread_t sw_thread = pthread_self();
@@ -163,6 +198,9 @@ void nce_boot_cpu(void *this_arg, void (*start_routine)(void))
 {
 	struct nce_status_t *this = (struct nce_status_t *)this_arg;
 
+	NSI_SAFE_CALL(pthread_mutex_lock(&this->mtx_cpu));
+
+	this->cpu_halted = false;
 	this->start_routine = start_routine;
 
 	/* Create a thread for the embedded SW init: */
@@ -170,7 +208,15 @@ void nce_boot_cpu(void *this_arg, void (*start_routine)(void))
 
 	NSI_SAFE_CALL(pthread_create(&sw_thread, NULL, sw_wrapper, this_arg));
 
-	nce_wake_cpu(this_arg);
+	/* And we wait until the embedded OS has send the CPU to sleep for the first time */
+	while (this->cpu_halted == false) {
+		pthread_cond_wait(&this->cond_cpu, &this->mtx_cpu);
+	}
+	NSI_SAFE_CALL(pthread_mutex_unlock(&this->mtx_cpu));
+
+	if (this->terminate) {
+		nsi_exit(0);
+	}
 }
 
 /*
@@ -190,12 +236,7 @@ void nce_halt_cpu(void *this_arg)
 		nsi_print_error_and_exit("Programming error on: %s ",
 					"This CPU was already halted\n");
 	}
-	this->cpu_halted = true;
-
-	NSI_SAFE_CALL(sem_post(&this->sem_hw));
-	NSI_SAFE_CALL(nce_sem_rewait(&this->sem_sw));
-
-	NCE_DEBUG("CPU awaken, HW thread held\n");
+	change_cpu_state_and_wait(this, true);
 }
 
 /*
@@ -214,13 +255,7 @@ void nce_wake_cpu(void *this_arg)
 		nsi_print_error_and_exit("Programming error on: %s ",
 					"This CPU was already awake\n");
 	}
-
-	this->cpu_halted = false;
-
-	NSI_SAFE_CALL(sem_post(&this->sem_sw));
-	NSI_SAFE_CALL(nce_sem_rewait(&this->sem_hw));
-
-	NCE_DEBUG("CPU went to sleep, HW continues\n");
+	change_cpu_state_and_wait(this, false);
 
 	/*
 	 * If while the SW was running it was decided to terminate the execution

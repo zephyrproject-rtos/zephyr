@@ -37,7 +37,7 @@
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "wch,ch32v20x_30x-pll-clock";
-			mul = <15>;
+			mul = <18>;
 			status = "disabled";
 		};
 	};
@@ -54,9 +54,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@8000000 {
+			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x08000000 DT_SIZE_K(480)>;
+				reg = <0 DT_SIZE_K(128)>;
 			};
 		};
 
@@ -76,7 +76,6 @@
 			reg = <0x40010000 16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			clocks = <&rcc CH32V20X_V30X_CLOCK_AFIO>;
 
 			gpioa: gpio@40010800 {
 				compatible = "wch,gpio";
@@ -160,5 +159,5 @@
 };
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_M(120)>;
+	clock-frequency = <DT_FREQ_M(144)>;
 };

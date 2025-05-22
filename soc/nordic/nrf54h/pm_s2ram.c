@@ -167,11 +167,11 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	nvic_suspend(&backup_data.nvic_context);
 	mpu_suspend(&backup_data.mpu_context);
 	ret = arch_pm_s2ram_suspend(system_off);
-	/* Cache is powered down so power up is needed even if s2ram failed. */
-	nrf_power_up_cache();
 	if (ret < 0) {
 		return ret;
 	}
+
+	nrf_power_up_cache();
 
 	mpu_resume(&backup_data.mpu_context);
 	nvic_resume(&backup_data.nvic_context);

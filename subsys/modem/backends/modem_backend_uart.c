@@ -45,9 +45,7 @@ struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 
 #ifdef CONFIG_MODEM_BACKEND_UART_ASYNC
 	if (modem_backend_uart_async_is_supported(backend)) {
-		if (modem_backend_uart_async_init(backend, config)) {
-			return NULL;
-		}
+		modem_backend_uart_async_init(backend, config);
 		return &backend->pipe;
 	}
 #endif /* CONFIG_MODEM_BACKEND_UART_ASYNC */

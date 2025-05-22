@@ -6,6 +6,7 @@ common:
     - mipi-sys-t
   arch_exclude:
     - mips
+    - nios2
     - posix
     - sparc
   filter: not CONFIG_64BIT

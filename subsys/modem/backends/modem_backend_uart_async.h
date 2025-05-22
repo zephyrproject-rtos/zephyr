@@ -15,8 +15,8 @@ extern "C" {
 
 bool modem_backend_uart_async_is_supported(struct modem_backend_uart *backend);
 
-int modem_backend_uart_async_init(struct modem_backend_uart *backend,
-				  const struct modem_backend_uart_config *config);
+void modem_backend_uart_async_init(struct modem_backend_uart *backend,
+				   const struct modem_backend_uart_config *config);
 
 #ifdef __cplusplus
 }

@@ -350,10 +350,12 @@
           "type": "string",
           "title": "Mode",
           "enumNames": [
-            "Crystal"
+            "Crystal",
+            "External square signal"
           ],
           "enum": [
-            "CRYSTAL"
+            "CRYSTAL",
+            "EXT_SQUARE"
           ],
           "default": "CRYSTAL"
         },

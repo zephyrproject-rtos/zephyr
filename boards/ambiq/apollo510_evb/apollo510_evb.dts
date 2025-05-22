@@ -43,17 +43,14 @@
 
 	leds {
 		compatible = "gpio-leds";
-
 		led0: led_0 {
 			gpios = <&gpio160_191 5 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
-
 		led1: led_1 {
 			gpios = <&gpio64_95 25 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
-
 		led2: led_2 {
 			gpios = <&gpio64_95 28 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
@@ -63,14 +60,12 @@
 	buttons {
 		compatible = "gpio-keys";
 		polling-mode;
-
 		button0: button_0 {
 			gpios = <&gpio64_95 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
-
 		button1: button_1 {
 			gpios = <&gpio64_95 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
@@ -87,21 +82,6 @@
 &itm {
 	pinctrl-0 = <&swo_default>;
 	pinctrl-names = "default";
-};
-
-&adc0 {
-	pinctrl-0 = <&adc0_default>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
-&counter0 {
-	status = "disabled";
-};
-
-&rtc0 {
-	status = "disabled";
-	clock = "XTAL";
 };
 
 &uart0 {

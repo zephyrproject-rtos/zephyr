@@ -17,8 +17,6 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &yellow_led;
-		sw0 = &btn0;
-		sw1 = &btn1;
 	};
 
 	chosen {
@@ -29,7 +27,6 @@
 		zephyr,itcm = &itcm;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -45,31 +42,9 @@
 			label = "User LD1";
 		};
 	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		btn0: btn0 {
-			label = "BTN0";
-			gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
-		btn1: btn1 {
-			label = "BTN1";
-			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_1>;
-		};
-	};
 };
 
 &gpiod {
-	status = "okay";
-};
-
-&gpioh {
-	status = "okay";
-};
-
-&gpioi {
 	status = "okay";
 };
 
@@ -112,21 +87,8 @@
 	status = "okay";
 };
 
-&canfd0 {
-	pinctrl-0 = <&canfd0_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
 &emac {
 	pinctrl-0 = <&emac_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-/* On enabled, usbd is required to be clocked in 48MHz. */
-zephyr_udc0: &usbd {
-	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

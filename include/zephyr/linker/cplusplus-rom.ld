@@ -28,7 +28,3 @@
 #endif /* CONFIG_CPP_EXCEPTIONS */
 
 #endif /* CONFIG_CPP */
-
-#if !defined(CONFIG_CPP_EXCEPTIONS)
-	/DISCARD/ : { *(.eh_frame) }
-#endif

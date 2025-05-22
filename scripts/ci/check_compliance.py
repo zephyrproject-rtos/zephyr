@@ -971,8 +971,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 sym_name = sym_name[len(self.CONFIG_):]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
                    sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
-                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms) \
-                   and not sym_name.startswith("BOARD_REVISION_"):
+                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -1072,10 +1071,8 @@ flagged.
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
-        "IAR_DATA_INIT",
         "IAR_LIBCPP",
         "IAR_SEMIHOSTING",
-        "IAR_ZEPHYR_INIT",
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
                                                       # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
@@ -1097,8 +1094,6 @@ flagged.
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
-        "MCUX_HW_DEVICE_CORE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-                               # It is a variable used by MCUX SDK CMake.
         "MISSING",
         "MODULES",
         "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
@@ -1118,7 +1113,6 @@ flagged.
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
         "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
-        "SOC_SDKNG_UNSUPPORTED", # Used in modules/hal_nxp/mcux/CMakeLists.txt
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
@@ -1460,24 +1454,16 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
-
-            failures = []
-
-            if len(commit_info) == 2:
-                failures.append(f'{shaidx}: Empty commit message body')
-                auth_name, auth_email = commit_info
-                body = ''
-            elif len(commit_info) == 3:
-                auth_name, auth_email, body = commit_info
-            else:
-                self.failure(f'Unable to parse commit message for {shaidx}')
+            auth_name, auth_email, body = git(
+                'show', '-s', '--format=%an%n%ae%n%b', shaidx
+            ).split('\n', 2)
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
-            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
-                                       body,
+            detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
                                        re.IGNORECASE)
+
+            failures = []
 
             if auth_email.endswith("@users.noreply.github.com"):
                 failures.append(f"{shaidx}: author email ({auth_email}) must "

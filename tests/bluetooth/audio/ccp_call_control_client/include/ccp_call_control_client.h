@@ -7,6 +7,8 @@
 #ifndef MOCKS_CCP_CALL_CONTROL_CLIENT_H_
 #define MOCKS_CCP_CALL_CONTROL_CLIENT_H_
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>

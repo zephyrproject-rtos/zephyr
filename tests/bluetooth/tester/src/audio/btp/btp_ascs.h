@@ -5,9 +5,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdint.h>
-
-#include <zephyr/bluetooth/addr.h>
 
 /* ASCS commands */
 #define BTP_ASCS_READ_SUPPORTED_COMMANDS	0x01

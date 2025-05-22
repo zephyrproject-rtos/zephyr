@@ -13,30 +13,22 @@ static const struct device *test_dev = DEVICE_DT_GET(DT_ALIAS(test_comp));
 static const struct gpio_dt_spec test_pin_1 = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), first_gpios);
 static const struct gpio_dt_spec test_pin_2 = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), second_gpios);
 
-#define TEST_COMP_SE_PSEL_AIN _CONCAT(COMP_NRF_COMP_PSEL_AIN, \
-				      CONFIG_TEST_COMP_SE_PSEL_AIN_INDEX)
-#define TEST_COMP_SE_EXTREFSEL_AIN _CONCAT(COMP_NRF_COMP_EXTREFSEL_AIN, \
-					   CONFIG_TEST_COMP_SE_EXTREFSEL_AIN_INDEX)
-#define TEST_COMP_DIFF_PSEL_AIN _CONCAT(COMP_NRF_COMP_PSEL_AIN, \
-					CONFIG_TEST_COMP_DIFF_PSEL_AIN_INDEX)
-#define TEST_COMP_DIFF_EXTREFSEL_AIN _CONCAT(COMP_NRF_COMP_EXTREFSEL_AIN, \
-					     CONFIG_TEST_COMP_DIFF_EXTREFSEL_AIN_INDEX)
 
 struct comp_nrf_comp_se_config comp_se_config = {
-	.psel = TEST_COMP_SE_PSEL_AIN,
+	.psel = COMP_NRF_COMP_PSEL_AIN5,
 	.sp_mode = COMP_NRF_COMP_SP_MODE_HIGH,
 	.isource = COMP_NRF_COMP_ISOURCE_DISABLED,
 	.refsel = COMP_NRF_COMP_REFSEL_AREF,
-	.extrefsel = TEST_COMP_SE_EXTREFSEL_AIN,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN1,
 	.th_up = 32,
 	.th_down = 32,
 };
 
 struct comp_nrf_comp_diff_config comp_diff_config = {
-	.psel = TEST_COMP_DIFF_PSEL_AIN,
+	.psel = COMP_NRF_COMP_PSEL_AIN4,
 	.sp_mode = COMP_NRF_COMP_SP_MODE_LOW,
 	.isource = COMP_NRF_COMP_ISOURCE_DISABLED,
-	.extrefsel = TEST_COMP_DIFF_EXTREFSEL_AIN,
+	.extrefsel = COMP_NRF_COMP_EXTREFSEL_AIN5,
 	.enable_hyst = true,
 };
 

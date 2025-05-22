@@ -8,6 +8,7 @@ common:
     - mipi-sys-t
   arch_exclude:
     - mips
+    - nios2
     - posix
     - sparc
 tests:

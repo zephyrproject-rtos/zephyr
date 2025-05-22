@@ -45,7 +45,4 @@
 /* Time constant in ms */
 #define SSD1327_RESET_DELAY			10
 
-#define SSD1327_CONTROL_ALL_BYTES_CMD		0x0
-#define SSD1327_CONTROL_ALL_BYTES_DATA		0x40
-
 #endif
