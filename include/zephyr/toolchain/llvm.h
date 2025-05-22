@@ -13,8 +13,10 @@
 
 #define __no_optimization __attribute__((optnone))
 
+#ifndef __fallthrough
 #if __clang_major__ >= 10
 #define __fallthrough __attribute__((fallthrough))
+#endif
 #endif
 
 #define TOOLCHAIN_CLANG_VERSION \
