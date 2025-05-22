@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	sim_flash_controller: sim_flash_controller {
+		compatible = "zephyr,sim-flash";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-value = <0xff>;
+
+		flash_sim0: flash_sim@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_M(1)>;
+
+			erase-block-size = <1024>;
+			write-block-size = <4>;
+		};
+	};
+};
