@@ -388,8 +388,6 @@ static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj, cyhal_clock_t *cl
 {
 	cy_rslt_t rslt;
 
-	ARG_UNUSED(clock_source_obj);
-
 	rslt = cyhal_clock_reserve(clock_obj, reserve_obj);
 
 	if (rslt == CY_RSLT_SUCCESS) {
