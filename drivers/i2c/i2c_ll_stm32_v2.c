@@ -544,7 +544,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 #endif /* defined(CONFIG_I2C_TARGET) */
 
-static void i2c_stm32_event(const struct device *dev)
+void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -618,7 +618,7 @@ end:
 	i2c_stm32_master_mode_end(dev);
 }
 
-static int i2c_stm32_error(const struct device *dev)
+int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -658,33 +658,6 @@ end:
 	i2c_stm32_master_mode_end(dev);
 	return -EIO;
 }
-
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void i2c_stm32_combined_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	if (i2c_stm32_error(dev)) {
-		return;
-	}
-	i2c_stm32_event(dev);
-}
-#else
-
-void i2c_stm32_event_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	i2c_stm32_event(dev);
-}
-
-void i2c_stm32_error_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	i2c_stm32_error(dev);
-}
-#endif
 
 #if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
 static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)

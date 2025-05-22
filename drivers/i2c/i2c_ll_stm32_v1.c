@@ -564,9 +564,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 }
 #endif /* defined(CONFIG_I2C_TARGET) */
 
-void i2c_stm32_event_isr(void *arg)
+void i2c_stm32_event(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -593,9 +592,8 @@ void i2c_stm32_event_isr(void *arg)
 	}
 }
 
-void i2c_stm32_error_isr(void *arg)
+int i2c_stm32_error(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -603,7 +601,7 @@ void i2c_stm32_error_isr(void *arg)
 #if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
 		/* No need for a slave error function right now. */
-		return;
+		return 0;
 	}
 #endif
 
@@ -634,9 +632,10 @@ void i2c_stm32_error_isr(void *arg)
 		goto end;
 	}
 #endif
-	return;
+	return 0;
 end:
 	i2c_stm32_master_mode_end(dev);
+	return -EIO;
 }
 
 static int32_t i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
