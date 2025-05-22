@@ -141,8 +141,10 @@ do {                                                                    \
 #define __ramfunc __attribute__((noinline, section(".ramfunc")))
 #endif /* !CONFIG_XIP */
 
+#ifndef __fallthrough
 /* TG-WG: ICCARM does not support __fallthrough */
 #define __fallthrough  [[fallthrough]]
+#endif
 
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
