@@ -3775,7 +3775,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Default no password for eap user.\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n"
 		      "-h --help (prints help)",
-		      cmd_wifi_ap_enable, 2, 7),
+		      cmd_wifi_ap_enable, 2, 47),
 	SHELL_CMD_ARG(stations, NULL, "List stations connected to the AP\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
 		      cmd_wifi_ap_stations, 1, 2),
