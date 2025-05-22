@@ -237,6 +237,8 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 
 	chan_data = &dev_data->chan[channel];
 
+	chan_data->capacity = 0;
+
 	/* initialize bd pool */
 	chan_data->bd_pool = &dev_data->bd_pool[channel][0];
 	chan_data->bd_count = config->block_count;
