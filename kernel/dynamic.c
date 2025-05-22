@@ -61,7 +61,7 @@ static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t size, int flags)
 {
 	if ((flags & K_USER) == K_USER) {
 #ifdef CONFIG_DYNAMIC_OBJECTS
-		return k_object_alloc_size(K_OBJ_THREAD_STACK_ELEMENT, size);
+		return k_object_alloc_size(K_OBJ_THREAD_STACK_ELEMENT, K_THREAD_STACK_LEN(size));
 #else
 		/* Dynamic user stack needs a kobject, so if this option is not
 		 * enabled we can't proceed.
