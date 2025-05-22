@@ -139,8 +139,8 @@ you can pass ``NOKEEP`` to your ``zephyr_code_relocate()`` call.
 The example above will help ensure that any unused code found in the .text
 sections of ``file1.c`` will not stick to SRAM2.
 
-NOCOPY flag
-===========
+NOCOPY and NOCOPY_DATA flags
+============================
 
 When a ``NOCOPY`` option is passed to the ``zephyr_code_relocate()`` function,
 the relocation code is not generated in ``code_relocation.c``. This flag can be
@@ -149,12 +149,23 @@ XIP area.
 
 This example will place the .text section of the ``xip_external_flash.c`` file
 to the ``EXTFLASH`` memory region where it will be executed from (XIP). The
-.data will be relocated as usual into SRAM.
+.data will be relocated as usual into SRAM, since flash in XIP mode does not
+allow random write access and variables do not have to persist.
 
   .. code-block:: none
 
      zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION EXTFLASH_TEXT NOCOPY)
      zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION SRAM_DATA)
+
+You can additionally specify ``NOCOPY_DATA`` if you do not want .data to be copied into SRAM.
+This can be useful if it is already loaded into SRAM, e.g. by the Linux kernel
+using the `remoteproc framework <https://docs.kernel.org/staging/remoteproc.html>`_.
+The following example demonstrates how to place an entire file into the SRAM section without
+copying.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(FILES src/file1.c LOCATION SRAM NOCOPY NOCOPY_DATA)
 
 Relocating libraries
 ====================
