@@ -220,13 +220,13 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 		 * We have to disable eSPI pad before changing
 		 * PLL sequence or sequence will fail if CS# pin is low.
 		 */
-		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, false);
+		espi_ite_ec_enable_pad_ctrl(ESPI_ITE_SOC_DEV, false);
 #endif
 		/* Run change PLL sequence */
 		chip_run_pll_sequence(pll);
 #ifdef CONFIG_ESPI
 		/* Enable eSPI pad after changing PLL sequence */
-		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, true);
+		espi_ite_ec_enable_pad_ctrl(ESPI_ITE_SOC_DEV, true);
 #endif
 	}
 }
@@ -307,7 +307,7 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 * interrupt to restore clocks. With this interrupt, EC will not defer
 	 * eSPI bus while transaction is accepted.
 	 */
-	espi_it8xxx2_enable_trans_irq(ESPI_IT8XXX2_SOC_DEV, true);
+	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, true);
 #endif
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
@@ -335,7 +335,7 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 
 #ifdef CONFIG_ESPI
 	/* CPU has been woken up, the interrupt is no longer needed */
-	espi_it8xxx2_enable_trans_irq(ESPI_IT8XXX2_SOC_DEV, false);
+	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, false);
 #endif
 	/*
 	 * Enable M-mode external interrupt
