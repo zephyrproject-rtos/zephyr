@@ -67,10 +67,12 @@ zephyr_library_sources_ifdef(CONFIG_I2C_SEDI		i2c_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SIFIVE		i2c_sifive.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SMARTBOND	i2c_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
+	i2c_ll_stm32_common.c
 	i2c_ll_stm32_v1.c
 	i2c_ll_stm32.c
  )
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
+	i2c_ll_stm32_common.c
 	i2c_ll_stm32_v2.c
 	i2c_ll_stm32.c
  )
