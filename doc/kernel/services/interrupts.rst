@@ -598,9 +598,9 @@ The name comes from the fact that all the entries to the arrays that would creat
 interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
 Then automatically generated linker scripts are used to place it in the right place in the memory.
 
-This option requires enabling by the choose of :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION`.
+This option requires enabling by the choose of :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`.
 If this configuration is supported by the used architecture and toolchaing the
-:kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
 See details of this option for the information about currently supported configurations.
 
 Any invocation of :c:macro:`IRQ_CONNECT` or :c:macro:`IRQ_DIRECT_CONNECT` will declare an instance
