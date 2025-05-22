@@ -329,59 +329,6 @@ static DEVICE_API(i2c, api_funcs) = {
 #endif
 };
 
-#ifdef CONFIG_PM_DEVICE
-
-static int i2c_stm32_suspend(const struct device *dev)
-{
-	int ret;
-	const struct i2c_stm32_config *cfg = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	/* Disable device clock. */
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
-		return ret;
-	}
-
-	/* Move pins to sleep state */
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-	if (ret == -ENOENT) {
-		/* Warn but don't block suspend */
-		LOG_WRN("I2C pinctrl sleep state not available ");
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
-#endif
-
-static int i2c_stm32_activate(const struct device *dev)
-{
-	int ret;
-	const struct i2c_stm32_config *cfg = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	/* Move pins to active/default state */
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-
-	/* Enable device clock. */
-	if (clock_control_on(clk,
-			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("i2c: failure enabling clock");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-
 static int i2c_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -450,28 +397,6 @@ static int i2c_stm32_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-
-static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	int err;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		err = i2c_stm32_activate(dev);
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		err = i2c_stm32_suspend(dev);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return err;
-}
-
-#endif
-
 #ifdef CONFIG_SMBUS_STM32_SMBALERT
 void i2c_stm32_smbalert_set_callback(const struct device *dev, i2c_stm32_smbalert_cb_func_t func,
 				     const struct device *cb_dev)
@@ -539,51 +464,6 @@ void i2c_stm32_smbalert_disable(const struct device *dev)
 #endif /* CONFIG_SMBUS_STM32 */
 
 /* Macros for I2C instance declaration */
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-#define I2C_STM32_IRQ_CONNECT_AND_ENABLE(index)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQN(index),			\
-			    DT_INST_IRQ(index, priority),		\
-			    i2c_stm32_combined_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQN(index));			\
-	} while (false)
-#else
-#define I2C_STM32_IRQ_CONNECT_AND_ENABLE(index)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),	\
-			    DT_INST_IRQ_BY_NAME(index, event, priority),\
-			    i2c_stm32_event_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));	\
-									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, error, irq),	\
-			    DT_INST_IRQ_BY_NAME(index, error, priority),\
-			    i2c_stm32_error_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));	\
-	} while (false)
-#endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
-
-#define I2C_STM32_IRQ_HANDLER_DECL(index)				\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)
-#define I2C_STM32_IRQ_HANDLER_FUNCTION(index)				\
-	.irq_config_func = i2c_stm32_irq_config_func_##index,
-#define I2C_STM32_IRQ_HANDLER(index)					\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
-{									\
-	I2C_STM32_IRQ_CONNECT_AND_ENABLE(index);			\
-}
-#else
-
-#define I2C_STM32_IRQ_HANDLER_DECL(index)
-#define I2C_STM32_IRQ_HANDLER_FUNCTION(index)
-#define I2C_STM32_IRQ_HANDLER(index)
-
-#endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 
