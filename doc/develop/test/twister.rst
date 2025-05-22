@@ -1774,3 +1774,9 @@ To run a single testsuite instead of a whole group of test you can run:
 .. code-block:: bash
 
    $ twister -p qemu_riscv32 -s tests/kernel/interrupt/arch.shared_interrupt
+
+Twister plugin filter
+*********************
+
+For information regarding how to use plugin filters, consult :ref:`Plugin Filter Documentation <pluginFilterDocu>`.
+For information regarding writing a custom plugin filter, visit the :ref:`Plugin Filter Creation <pluginFilterCreation>` page.
