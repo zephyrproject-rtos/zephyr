@@ -75,6 +75,11 @@ struct i2c_stm32_data {
 	uint8_t *xfer_buf;
 	uint8_t xfer_len;
 	uint8_t xfer_flags;
+#ifdef CONFIG_I2C_STM32_V1
+	uint8_t msg_len;
+	uint8_t is_restart;
+	uint16_t slave_address;
+#endif /* CONFIG_I2C_STM32_V1 */
 #else /* CONFIG_I2C_RTIO */
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
