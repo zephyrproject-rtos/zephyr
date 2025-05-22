@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/net/dsa_core.h>
+#ifdef CONFIG_GIC_V3_ITS
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
+#endif
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
@@ -173,6 +176,28 @@ static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+
+static void netc_tx_isr_handler(const void *arg)
+{
+	const struct device *dev = (const struct device *)arg;
+	struct netc_eth_data *data = dev->data;
+
+	EP_CleanTxIntrFlags(&data->handle, 1, 0);
+	data->tx_done = true;
+}
+
+static void netc_rx_isr_handler(const void *arg)
+{
+	const struct device *dev = (const struct device *)arg;
+	struct netc_eth_data *data = dev->data;
+
+	EP_CleanRxIntrFlags(&data->handle, 1);
+	k_sem_give(&data->rx_sem);
+}
+
+#else /* CONFIG_ETH_NXP_IMX_NETC_MSI_GIC */
+
 static void msgintr_isr(void)
 {
 	uint32_t irqs = NETC_MSGINTR->MSI[NETC_MSGINTR_CHANNEL].MSIR;
@@ -203,6 +228,8 @@ static void msgintr_isr(void)
 	SDK_ISR_EXIT_BARRIER;
 }
 
+#endif
+
 int netc_eth_init_common(const struct device *dev)
 {
 	const struct netc_eth_config *config = dev->config;
@@ -222,6 +249,51 @@ int netc_eth_init_common(const struct device *dev)
 #endif
 
 	/* MSIX entry configuration */
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+	int ret;
+
+	if (config->msi_dev == NULL) {
+		LOG_ERR("MSI device is not configured");
+		return -ENODEV;
+	}
+	ret = its_setup_deviceid(config->msi_dev, config->msi_device_id, NETC_MSIX_ENTRY_NUM);
+	if (ret != 0) {
+		LOG_ERR("Failed to setup device ID for MSI: %d", ret);
+		return ret;
+	}
+	data->tx_intid = its_alloc_intid(config->msi_dev);
+	data->rx_intid = its_alloc_intid(config->msi_dev);
+
+	msg_addr = its_get_msi_addr(config->msi_dev);
+	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
+	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
+	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgData = NETC_TX_MSIX_ENTRY_IDX;
+	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_TX_MSIX_ENTRY_IDX,
+			    data->tx_intid);
+	if (ret != 0) {
+		LOG_ERR("Failed to map TX MSI interrupt: %d", ret);
+		return ret;
+	}
+
+	msix_entry[NETC_RX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
+	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
+	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgData = NETC_RX_MSIX_ENTRY_IDX;
+	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_RX_MSIX_ENTRY_IDX,
+			    data->rx_intid);
+	if (ret != 0) {
+		LOG_ERR("Failed to map RX MSI interrupt: %d", ret);
+		return ret;
+	}
+
+	if (!irq_is_enabled(data->tx_intid)) {
+		irq_connect_dynamic(data->tx_intid, 0, netc_tx_isr_handler, dev, 0);
+		irq_enable(data->tx_intid);
+	}
+	if (!irq_is_enabled(data->rx_intid)) {
+		irq_connect_dynamic(data->rx_intid, 0, netc_rx_isr_handler, dev, 0);
+		irq_enable(data->rx_intid);
+	}
+#else
 	msg_addr = MSGINTR_GetIntrSelectAddr(NETC_MSGINTR, NETC_MSGINTR_CHANNEL);
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
@@ -235,6 +307,7 @@ int netc_eth_init_common(const struct device *dev)
 		IRQ_CONNECT(NETC_MSGINTR_IRQ, 0, msgintr_isr, 0, 0);
 		irq_enable(NETC_MSGINTR_IRQ);
 	}
+#endif
 
 	/* Endpoint configuration. */
 	EP_GetDefaultConfig(&ep_config);
