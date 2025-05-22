@@ -13,16 +13,6 @@
  */
 #include <zephyr/secure_storage/its/common.h>
 
-/** The maximum size, in bytes, of an entry's data after it has been transformed for storage. */
-enum { SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE
-	= CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE
-	  + sizeof(secure_storage_packed_create_flags_t)
-	  + CONFIG_SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD };
-
-#define SECURE_STORAGE_ITS_TRANSFORM_DATA_SIZE(stored_data_len) \
-	(stored_data_len - (SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE \
-			    - CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE))
-
 /** @brief Transforms the data of an ITS entry for storage.
  *
  * @param[in]  uid             The entry's UID.

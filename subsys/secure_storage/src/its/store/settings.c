@@ -10,10 +10,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-#ifdef CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
-#include <zephyr/secure_storage/its/transform.h>
-#endif
-
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 static int init_settings_subsys(void)
