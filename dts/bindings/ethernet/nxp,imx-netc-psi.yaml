@@ -20,3 +20,7 @@ properties:
     required: true
     type: int
     description: The SI index of this PSI.
+
+  msi-device-id:
+    type: int
+    description: The device ID passed to MSI controller.
