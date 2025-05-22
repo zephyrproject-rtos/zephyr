@@ -10,3 +10,28 @@ include: [base.yaml, pcie-device.yaml]
 properties:
   interrupts:
     required: true
+
+  rdmts:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Receive Descriptor Minimum Threshold Size
+      Controls when RXDMT0 interrupt is set.
+      0: interrupt set when 1/2 of RDLEN is free
+      1: interrupt set when 1/4 of RDLEN is free
+      2: interrupt set when 1/8 of RDLEN is free
+      The default value is the hardware reset value
+
+  itr:
+    type: int
+    default: 0
+    description: |
+      Interrupt Throttling Rate
+      Controls inter-interrupt delay. Non-zero value
+      enables it and adjusts the interval in 256ns
+      increments. The maximum value is 2^16 - 1.
+      The default value is the hardware reset value
