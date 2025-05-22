@@ -69,6 +69,13 @@ struct i2c_stm32_config {
 };
 
 struct i2c_stm32_data {
+#ifdef CONFIG_I2C_RTIO
+	struct i2c_rtio *ctx;
+	uint32_t dev_config;
+	uint8_t *xfer_buf;
+	uint8_t xfer_len;
+	uint8_t xfer_flags;
+#else /* CONFIG_I2C_RTIO */
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
@@ -114,20 +121,27 @@ struct i2c_stm32_data {
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
+#endif /* CONFIG_I2C_RTIO */
 };
 
+#ifdef CONFIG_I2C_RTIO
+bool i2c_stm32_start(const struct device *dev);
+int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
+			uint8_t *buf, size_t buf_len, uint16_t i2c_addr);
+#else /* CONFIG_I2C_RTIO */
 int i2c_stm32_transaction(const struct device *dev,
 			  struct i2c_msg msg, uint8_t *next_msg_flags,
 			  uint16_t periph);
-int i2c_stm32_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 
 #ifdef CONFIG_I2C_TARGET
 int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
 int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
 #endif /* CONFIG_I2C_TARGET */
+#endif /* CONFIG_I2C_RTIO */
 
 int i2c_stm32_activate(const struct device *dev);
+int i2c_stm32_configure_timing(const struct device *dev, uint32_t clk);
 
 #ifdef CONFIG_PM_DEVICE
 int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action);
