@@ -1510,6 +1510,7 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 	int twt_req_type = siwx91x_convert_z_sl_twt_req_type(params->setup_cmd);
 
 	sl_wifi_twt_request_t twt_req = {
+		.twt_retry_interval = 5,
 		.wake_duration_unit = 0,
 		.wake_int_mantissa = params->setup.twt_mantissa,
 		.un_announced_twt = !params->setup.announce,
