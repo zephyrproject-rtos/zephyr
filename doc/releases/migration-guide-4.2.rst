@@ -409,9 +409,9 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
-* :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
-  the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
-  is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+* :kconfig:option:`CONFIG_NET_ZPERF` no longer includes server support by default. To use
+  the server commands, enable :kconfig:option:`CONFIG_NET_ZPERF_SERVER`. If server support
+  is not needed, :kconfig:option:`CONFIG_ZVFS_POLL_MAX` can possibly be reduced.
 
 * The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
   change some of the existing options have been renamed. The following table
