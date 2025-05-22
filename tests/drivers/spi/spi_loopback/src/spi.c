@@ -196,13 +196,13 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 	spi_loopback_gpio_cs_loopback_prepare();
 	ret = spi_transceive_dt(spec, tx, rx);
 	if (ret == -EINVAL || ret == -ENOTSUP) {
-		TC_PRINT("Spi config invalid for this controller - skip\n");
-		goto out;
+		TC_PRINT("Spi config invalid for this controller\n");
+		zassert_ok(pm_device_runtime_put(spec->bus));
+		ztest_test_skip();
 	}
 	zassert_ok(ret, "SPI transceive failed, code %d", ret);
 	/* There should be two CS triggers during the transaction, start and end */
 	zassert_false(spi_loopback_gpio_cs_loopback_check(2));
-out:
 	zassert_ok(pm_device_runtime_put(spec->bus));
 }
 
