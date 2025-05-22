@@ -75,7 +75,10 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 	if (hwinfo_ret != 0) {
 		hwinfo_ret = hwinfo_get_device_id(data.device_id, sizeof(data.device_id));
 		if (hwinfo_ret <= 0) {
-			return PSA_ERROR_HARDWARE_FAILURE;
+			if (hwinfo_ret == PSA_SUCCESS) {
+				hwinfo_ret ^= 1;
+			}
+			return hwinfo_ret;
 		}
 		if (hwinfo_ret < sizeof(data.device_id)) {
 			memset(data.device_id + hwinfo_ret, 0, sizeof(data.device_id) - hwinfo_ret);
