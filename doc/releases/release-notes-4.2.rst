@@ -254,6 +254,9 @@ New APIs and options
 
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
+  * :c:func:`sys_clock_gettime`
+  * :c:func:`sys_clock_settime`
+  * :c:func:`sys_clock_nanosleep`
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
