@@ -27,6 +27,7 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 
 #include "net_shell_private.h"
+#include <stdlib.h>
 
 #define UNICAST_MASK GENMASK(7, 1)
 #define LOCAL_BIT BIT(1)
@@ -817,6 +818,47 @@ static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv
 	return 0;
 }
 
+static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
+{
+#if !defined(CONFIG_NET_L2_ETHERNET_MGMT)
+       PR_WARNING("Unsupported command, please enable CONFIG_NET_L2_ETHERNET_MGMT\n");
+       return -ENOEXEC;
+#else
+       struct ethernet_req_params params = { 0 };
+       int idx = get_iface_idx(sh, argv[1]);
+       uint16_t speed = atoi(argv[2]);
+       struct net_if *iface;
+
+       if (idx < 0) {
+               return -ENOEXEC;
+       }
+
+       iface = net_if_get_by_index(idx);
+       if (!iface) {
+               PR_WARNING("No such interface in index %d\n", idx);
+               return -ENODEV;
+       }
+
+       switch (speed) {
+       case 10:
+               params.l.link_10bt = true;
+               break;
+       case 100:
+               params.l.link_100bt = true;
+               break;
+       case 1000:
+               params.l.link_1000bt = true;
+               break;
+       default:
+               PR_WARNING("Unsupported speed %d\n", speed);
+               return -ENOTSUP;
+       }
+
+       return net_mgmt(NET_REQUEST_ETHERNET_SET_LINK, iface,
+                       &params, sizeof(struct ethernet_req_params));
+#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
+}
+
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
 #include "iface_dynamic.h"
@@ -841,6 +883,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(default, IFACE_DYN_CMD,
 		  "'net iface default [<index>]' displays or sets the default network interface.",
 		  cmd_net_default_iface),
+	SHELL_CMD(set_link, IFACE_DYN_CMD,
+		  "'net iface set_link <index> <Speed 10/100/1000>' sets link speed for the network interface.",
+		  cmd_net_link_speed),
 	SHELL_SUBCMD_SET_END
 );
 
