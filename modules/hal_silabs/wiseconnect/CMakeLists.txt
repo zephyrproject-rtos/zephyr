@@ -155,6 +155,12 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
     ${WISECONNECT_DIR}/components/service/sl_websocket_client/src/sl_websocket_client.c
   )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MDNS_RESPONDER
+    ${WISECONNECT_DIR}/components/service/mdns/inc
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MDNS_RESPONDER
+    ${WISECONNECT_DIR}/components/service/mdns/si91x/sl_mdns.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
