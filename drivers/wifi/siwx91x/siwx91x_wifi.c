@@ -294,11 +294,11 @@ static void siwx91x_ethernet_init(struct net_if *iface)
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
 {
-	ARG_UNUSED(dev);
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_statistics_t statistics = { };
 	int ret;
 
+	ARG_UNUSED(dev);
 	__ASSERT(stats, "stats cannot be NULL");
 
 	ret = sl_wifi_get_statistics(FIELD_GET(SIWX91X_INTERFACE_MASK, interface), &statistics);
