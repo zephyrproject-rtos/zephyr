@@ -3,6 +3,8 @@
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)
+get_property(zephyr_OPTIMIZE_FLAG TARGET compiler PROPERTY optimization)
+list(APPEND zephyr_COMPILE_OPTIONS ${zephyr_OPTIMIZE_FLAG})
 #Any -Os is (or may be) wraped in $<COMPILE_LANGUAGE> guards
 list(FILTER zephyr_COMPILE_OPTIONS INCLUDE REGEX "-Os")
 list(LENGTH zephyr_COMPILE_OPTIONS have_os)
