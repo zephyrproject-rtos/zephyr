@@ -217,7 +217,7 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	size_t pkt_len = net_pkt_get_len(pkt);
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	int ret;
 
 	if (net_pkt_get_len(pkt) > _NET_ETH_MAX_FRAME_SIZE) {
