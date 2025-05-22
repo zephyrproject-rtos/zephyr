@@ -34,6 +34,7 @@ BUILD_ASSERT(FLL16M_MODE_CLOSED_LOOP == NRF_LRCCONF_CLK_SRC_CLOSED_LOOP);
 #define FLL16M_HFXO_ACCURACY DT_PROP(FLL16M_HFXO_NODE, accuracy_ppm)
 #define FLL16M_OPEN_LOOP_ACCURACY DT_INST_PROP(0, open_loop_accuracy_ppm)
 #define FLL16M_MAX_ACCURACY FLL16M_HFXO_ACCURACY
+#define FLL16M_OPEN_LOOP_STARTUP_TIME_US DT_INST_PROP(0, open_loop_startup_time_us)
 
 #define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
 
@@ -57,6 +58,7 @@ struct fll16m_dev_data {
 	STRUCT_CLOCK_CONFIG(fll16m, ARRAY_SIZE(clock_options)) clk_cfg;
 	struct onoff_client hfxo_cli;
 	sys_snode_t fll16m_node;
+	uint32_t bypass_startup_time_us;
 };
 
 struct fll16m_dev_config {
@@ -133,49 +135,98 @@ static void fll16m_work_handler(struct k_work *work)
 	}
 }
 
-static struct onoff_manager *fll16m_find_mgr(const struct device *dev,
-					     const struct nrf_clock_spec *spec)
+static int fll16m_resolve_spec_to_idx(const struct device *dev,
+				      const struct nrf_clock_spec *req_spec)
 {
-	struct fll16m_dev_data *dev_data = dev->data;
 	const struct fll16m_dev_config *dev_config = dev->config;
-	uint16_t accuracy;
+	uint16_t req_accuracy;
 
-	if (!spec) {
-		return &dev_data->clk_cfg.onoff[0].mgr;
-	}
-
-	if (spec->frequency > dev_config->fixed_frequency) {
+	if (req_spec->frequency > dev_config->fixed_frequency) {
 		LOG_ERR("invalid frequency");
-		return NULL;
+		return -EINVAL;
 	}
 
-	if (spec->precision) {
+	if (req_spec->precision) {
 		LOG_ERR("invalid precision");
-		return NULL;
+		return -EINVAL;
 	}
 
-	accuracy = spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX
-		 ? FLL16M_MAX_ACCURACY
-		 : spec->accuracy;
+	req_accuracy = req_spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX
+		     ? FLL16M_MAX_ACCURACY
+		     : req_spec->accuracy;
 
 	for (int i = 0; i < ARRAY_SIZE(clock_options); ++i) {
-		if (accuracy &&
-		    accuracy < clock_options[i].accuracy) {
+		if (req_accuracy &&
+		    req_accuracy < clock_options[i].accuracy) {
 			continue;
 		}
 
-		return &dev_data->clk_cfg.onoff[i].mgr;
+		return i;
 	}
 
 	LOG_ERR("invalid accuracy");
-	return NULL;
+	return -EINVAL;
+}
+
+static void fll16m_get_spec_by_idx(const struct device *dev,
+				   uint8_t idx,
+				   struct nrf_clock_spec *spec)
+{
+	const struct fll16m_dev_config *dev_config = dev->config;
+
+	spec->frequency = dev_config->fixed_frequency;
+	spec->accuracy = clock_options[idx].accuracy;
+	spec->precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT;
+}
+
+static int fll16m_get_startup_time_by_idx(const struct device *dev,
+					  uint8_t idx,
+					  uint32_t *startup_time_us)
+{
+	const struct fll16m_dev_data *dev_data = dev->data;
+	uint8_t mode = clock_options[idx].mode;
+
+	switch (mode) {
+	case FLL16M_MODE_OPEN_LOOP:
+		*startup_time_us = FLL16M_OPEN_LOOP_STARTUP_TIME_US;
+		return 0;
+
+	case FLL16M_MODE_BYPASS:
+		*startup_time_us = dev_data->bypass_startup_time_us;
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -EINVAL;
+}
+
+static struct onoff_manager *fll16m_get_mgr_by_idx(const struct device *dev, uint8_t idx)
+{
+	struct fll16m_dev_data *dev_data = dev->data;
+
+	return &dev_data->clk_cfg.onoff[idx].mgr;
+}
+
+static struct onoff_manager *fll16m_find_mgr_by_spec(const struct device *dev,
+						     const struct nrf_clock_spec *spec)
+{
+	int idx;
+
+	if (!spec) {
+		return fll16m_get_mgr_by_idx(dev, 0);
+	}
+
+	idx = fll16m_resolve_spec_to_idx(dev, spec);
+	return idx < 0 ? NULL : fll16m_get_mgr_by_idx(dev, idx);
 }
 
 static int api_request_fll16m(const struct device *dev,
 			      const struct nrf_clock_spec *spec,
 			      struct onoff_client *cli)
 {
-	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
+	struct onoff_manager *mgr = fll16m_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return clock_config_request(mgr, cli);
@@ -187,7 +238,7 @@ static int api_request_fll16m(const struct device *dev,
 static int api_release_fll16m(const struct device *dev,
 			      const struct nrf_clock_spec *spec)
 {
-	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
+	struct onoff_manager *mgr = fll16m_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_release(mgr);
@@ -200,7 +251,7 @@ static int api_cancel_or_release_fll16m(const struct device *dev,
 					const struct nrf_clock_spec *spec,
 					struct onoff_client *cli)
 {
-	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
+	struct onoff_manager *mgr = fll16m_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_cancel_or_release(mgr, cli);
@@ -222,9 +273,44 @@ static int api_get_rate_fll16m(const struct device *dev,
 	return 0;
 }
 
+static int api_resolve(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec)
+{
+	int idx;
+
+	idx = fll16m_resolve_spec_to_idx(dev, req_spec);
+	if (idx < 0) {
+		return -EINVAL;
+	}
+
+	fll16m_get_spec_by_idx(dev, idx, res_spec);
+	return 0;
+}
+
+static int api_get_startup_time(const struct device *dev,
+				const struct nrf_clock_spec *spec,
+				uint32_t *startup_time_us)
+{
+	int idx;
+
+	idx = fll16m_resolve_spec_to_idx(dev, spec);
+	if (idx < 0) {
+		return -EINVAL;
+	}
+
+	return fll16m_get_startup_time_by_idx(dev, idx, startup_time_us);
+}
+
 static int fll16m_init(const struct device *dev)
 {
 	struct fll16m_dev_data *dev_data = dev->data;
+
+	dev_data->bypass_startup_time_us = nrf_bicr_hfxo_startup_time_us_get(BICR);
+	if (dev_data->bypass_startup_time_us == NRF_BICR_HFXO_STARTUP_TIME_UNCONFIGURED) {
+		LOG_ERR("BICR HFXO startup time invalid");
+		return -ENODEV;
+	}
 
 	return clock_config_init(&dev_data->clk_cfg,
 				 ARRAY_SIZE(dev_data->clk_cfg.onoff),
@@ -240,6 +326,8 @@ static DEVICE_API(nrf_clock_control, fll16m_drv_api) = {
 	.request = api_request_fll16m,
 	.release = api_release_fll16m,
 	.cancel_or_release = api_cancel_or_release_fll16m,
+	.resolve = api_resolve,
+	.get_startup_time = api_get_startup_time,
 };
 
 static struct fll16m_dev_data fll16m_data;
