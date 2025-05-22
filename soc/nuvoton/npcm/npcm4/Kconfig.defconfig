@@ -11,6 +11,10 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCM_ITIM_SYSTICK
 
+config ESPI_TAF_NPCM
+	default y
+	depends on ESPI_SAF
+
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE

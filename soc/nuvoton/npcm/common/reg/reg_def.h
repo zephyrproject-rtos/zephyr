@@ -963,6 +963,7 @@ struct espi_reg {
 #define NPCM_ESPICFG_MAXFREQ_FIELD       FIELD(10, 3)
 #define NPCM_ESPICFG_VWMS_VALID_EN       13
 #define NPCM_ESPICFG_VWSM_VALID_EN       14
+#define NPCM_ESPICFG_FLASHCHANMODE       16
 #define NPCM_ESPICFG_PCCHN_SUPP          24
 #define NPCM_ESPICFG_VWCHN_SUPP          25
 #define NPCM_ESPICFG_OOBCHN_SUPP         26
@@ -1044,9 +1045,11 @@ struct espi_reg {
 #define NPCM_FLASHCFG_FLASHPLSIZE        FIELD(10, 3)
 #define NPCM_FLASHCFG_FLASHREQSIZE       FIELD(13, 3)
 #define NPCM_FLASHCFG_FLASHCAPA          FIELD(16, 2)
+#define NPCM_FLASHCFG_SUPP_CAFS          1
+#define NPCM_FLASHCFG_SUPP_TAFS          2
+#define NPCM_FLASHCFG_SUPP_TAFS_CAFS     3
 #define NPCM_FLASHCFG_TRGFLASHEBLKSIZE   FIELD(18, 8)
-#define NPCM_FLASHCFG_BOTH_TAFS_CAFS     3
-#define NPCM_FLASHCFG_TRGLKSIZE_DEF      68
+#define NPCM_FLASHCFG_FLASHREQSUP        FIELD(0, 3)
 #define NPCM_FLASHCTL_FLASH_NP_FREE      0
 #define NPCM_FLASHCTL_FLASH_TX_AVAIL     1
 #define NPCM_FLASHCTL_STRPHDR            2
@@ -1057,6 +1060,13 @@ struct espi_reg {
 #define NPCM_FLASHCTL_CHKSUMSEL          15
 #define NPCM_FLASHCTL_AMTEN              16
 #define NPCM_FLASHCTL_SAF_AUTO_READ      18
+#define NPCM_FLASHBASE_FLBASE_ADDR       FIELD(12, 17)
+#define NPCM_FLASH_PRTR_BADDR            FIELD(12, 17)
+#define NPCM_FRGN_RPR                    30
+#define NPCM_FRGN_WPR                    31
+#define NPCM_FLASH_PRTR_HADDR            FIELD(12, 17)
+#define NPCM_FLASH_TAG_OVR_RPR           FIELD(16, 16)
+#define NPCM_FLASH_TAG_OVR_WPR           FIELD(0, 16)
 #define NPCM_ESPIHINDP_AUTO_PCRDY        0
 #define NPCM_ESPIHINDP_AUTO_VWCRDY       1
 #define NPCM_ESPIHINDP_AUTO_OOBCRDY      2

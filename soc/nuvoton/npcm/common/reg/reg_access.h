@@ -17,6 +17,10 @@
 #define FIELD_POS(field)            GET_POS_##field
 #define FIELD_SIZE(field)           GET_SIZE_##field
 
+#define GET_FIELD_POS(field) \
+	_GET_FIELD_POS_(FIELD_POS(field))
+#define _GET_FIELD_POS_(f_ops) f_ops
+
 #define GET_FIELD_SZ(field) \
 	_GET_FIELD_SZ_(FIELD_SIZE(field))
 #define _GET_FIELD_SZ_(f_ops) f_ops

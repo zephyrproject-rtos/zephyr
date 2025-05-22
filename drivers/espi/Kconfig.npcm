@@ -30,6 +30,37 @@ config ESPI_NPCM_PERIPHERAL_HOST_CMD_PARAM_SIZE
 	  Please notice the valid value in npcm for this option is
 	  8/16/32/64/128/256/512/1024/2048/4096 bytes.
 
+config ESPI_TAF_NPCM
+	bool "Nuvoton NPCM ESPI TAF driver"
+	depends on SOC_SERIES_NPCM4
+	depends on FLASH
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  Target Attached Flash (eSPI TAF) for NPCM4 family of processors.
+
+choice ESPI_NPCM_TAF_ACCESS_MODE_CHOICE
+	prompt "eSPI TAF Read Access Mode"
+	default ESPI_NPCM_TAF_AUTO_MODE
+
+config ESPI_NPCM_TAF_AUTO_MODE
+	bool "eSPI TAF Automatic Mode"
+	help
+	  This is the setting to use auto mode for eSPI TAF read.
+
+config ESPI_NPCM_TAF_MANUAL_MODE
+	bool "eSPI TAF Manual Mode"
+	help
+	  This is the setting to use manual mode for eSPI TAF read.
+
+endchoice
+
+config ESPI_TAF_PR_NUM
+	int "Sets of protection region settings"
+	default 16
+	help
+	  This size is display how many group of slave attached flash protection
+	  region.
+
 # The default value 'y' for the existing options if ESPI_NPCM is selected.
 if ESPI_NPCM
 
@@ -68,5 +99,11 @@ config ESPI_PERIPHERAL_PMCH4
 	default n
 	help
 	  Enables PM channel 4 for eSPI peripheral channel.
+
+config ESPI_NPCM_SUPP_VW_GPIO
+	bool "Indicates that the eSPI hardware supports virtual wire GPIOs"
+	default n
+	help
+	  Supports virtual wire GPIOs in eSPI module.
 
 endif #ESPI_NPCM

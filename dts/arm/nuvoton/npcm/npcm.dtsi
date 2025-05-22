@@ -80,7 +80,7 @@
 
 		espi0: espi@4000a000 {
 			compatible = "nuvoton,npcm-espi";
-			reg = <0x4000a000 0x2000>;
+			reg = <0x4000a000 0x1000>;
 			interrupts = <11 3>; /* Interrupt for eSPI Bus */
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCM_CLOCK_ESPI>;
@@ -89,7 +89,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#vw-cells = <3>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		mdc: mdc@4000c000 {

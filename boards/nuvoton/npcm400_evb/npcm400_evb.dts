@@ -22,6 +22,7 @@
 	aliases {
 		watchdog0 = &twd;
 		rtc = &rtc;
+		taf-flash = &ext_flash;
 	};
 
 	zephyr,user {

@@ -7,11 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_NPCM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ESPI_NPCM_H_
 
-struct espi_npcm_ioc {
-	uint32_t pkt_len;
-	uint8_t pkt[68];
-};
-
 struct espi_comm_hdr {
 	uint8_t cyc;
 	uint8_t len_h : 4;
@@ -54,8 +49,5 @@ struct espi_flash_cmplt {
 #define ESPI_PLD_LEN_MAX                    (1UL << 12)
 
 #define ESPI_FLASH_RESP_LEN	3
-
-int espi_npcm_flash_get_rx(const struct device *dev, struct espi_npcm_ioc *ioc, bool blocking);
-int espi_npcm_flash_put_tx(const struct device *dev, struct espi_npcm_ioc *ioc);
 
 #endif

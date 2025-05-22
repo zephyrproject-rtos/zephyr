@@ -154,6 +154,22 @@
 		dasdc: dsadc@400d1100 {
 			channel-count = <24>;
 		};
+
+		espi0: espi@4000a000 {
+			rx-plsize = <64>;
+			tx-plsize = <64>;
+
+			espi_taf: espitaf@4000a000 {
+				compatible = "nuvoton,npcm-espi-taf";
+				reg = <0x4000a000 0x1000>;
+
+				mapped-addr = <0x70000000>;
+				max-read-sz = "NPCM_ESPI_TAF_MAX_READ_REQ_64B";
+				erase-sz = "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_4KB";
+
+				status = "okay";
+			};
+		};
 	};
 
 	soc-if {

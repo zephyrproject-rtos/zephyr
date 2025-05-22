@@ -1,0 +1,60 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The target flash devices accessed by Nuvoton eSPI TAF controller.
+
+    Representation:
+
+      espi_taf: espitaf@4000a000 {
+        compatible = "nuvoton,npcm-espi-taf";
+        reg = <0x4000a000 0x1000>;
+
+        mapped-addr = <0x70000000>;
+        max-read-sz = "NPCM_ESPI_TAF_MAX_READ_REQ_64B";
+        erase-sz = "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_4KB";
+
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "okay";
+      };
+
+compatible: "nuvoton,npcm-espi-taf"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  mapped-addr:
+    type: int
+    description: |
+      Mapped memory address of direct read access for flash.
+    required: true
+
+  erase-sz:
+    type: string
+    required: true
+    description: |
+      Erase block size of target flash. The default was 4KB Erase Block Size.
+      All Intel platforms require support for at least 4 KB Erase Block Size.
+    default: "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_4KB"
+    enum:
+      - "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_4KB"
+      - "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_32KB"
+      - "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_64KB"
+      - "NPCM_ESPI_TAF_ERASE_BLOCK_SIZE_128KB"
+
+  max-read-sz:
+    type: string
+    required: true
+    description: |
+      Maximum read request size of flash access channel. The default was 64 bytes.
+      This value is recommended in datasheet.
+    default: "NPCM_ESPI_TAF_MAX_READ_REQ_64B"
+    enum:
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_64B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_128B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_256B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_512B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_1024B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_2048B"
+      - "NPCM_ESPI_TAF_MAX_READ_REQ_4096B"
