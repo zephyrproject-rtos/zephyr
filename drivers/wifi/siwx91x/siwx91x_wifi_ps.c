@@ -20,15 +20,15 @@ static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 {
 	sl_wifi_operational_statistics_t sl_stat;
 	sl_wifi_interface_t interface;
-	int status;
+	int ret;
 
 	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		return 0;
 	}
 
-	status = sl_wifi_get_operational_statistics(SL_WIFI_CLIENT_INTERFACE, &sl_stat);
-	if (status) {
+	ret = sl_wifi_get_operational_statistics(SL_WIFI_CLIENT_INTERFACE, &sl_stat);
+	if (ret) {
 		return 0;
 	}
 
@@ -40,7 +40,7 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	sl_wifi_performance_profile_t sl_ps_profile;
 	sl_wifi_interface_t interface;
 	int beacon_interval;
-	int status;
+	int ret;
 
 	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
@@ -90,14 +90,14 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	}
 
 out:
-	status = sl_wifi_set_performance_profile(&sl_ps_profile);
-	return status ? -EIO : 0;
+	ret = sl_wifi_set_performance_profile(&sl_ps_profile);
+	return ret ? -EIO : 0;
 }
 
 int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
 	struct siwx91x_dev *sidev = dev->data;
-	int status;
+	int ret;
 
 	__ASSERT(params, "params cannot be NULL");
 
@@ -143,10 +143,10 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
 		return -EINVAL;
 	}
-	status = siwx91x_apply_power_save(sidev);
-	if (status) {
+	ret = siwx91x_apply_power_save(sidev);
+	if (ret) {
 		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
-		return status;
+		return ret;
 	}
 	return 0;
 }
@@ -157,7 +157,7 @@ int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_confi
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_interface_t interface;
 	uint16_t beacon_interval;
-	sl_status_t status;
+	int ret;
 
 	__ASSERT(config, "config cannot be NULL");
 
@@ -172,9 +172,9 @@ int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_confi
 		return -EINVAL;
 	}
 
-	status = sl_wifi_get_performance_profile(&sl_ps_profile);
-	if (status != SL_STATUS_OK) {
-		LOG_ERR("Failed to get power save profile: 0x%x", status);
+	ret = sl_wifi_get_performance_profile(&sl_ps_profile);
+	if (ret) {
+		LOG_ERR("Failed to get power save profile: 0x%x", ret);
 		return -EIO;
 	}
 
@@ -229,9 +229,7 @@ static int siwx91x_convert_z_sl_twt_req_type(enum wifi_twt_setup_cmd z_req_cmd)
 
 static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 {
-	sl_status_t status;
 	int twt_req_type = siwx91x_convert_z_sl_twt_req_type(params->setup_cmd);
-
 	sl_wifi_twt_request_t twt_req = {
 		.twt_retry_interval = 5,
 		.wake_duration_unit = 0,
@@ -245,6 +243,7 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 		.twt_enable = 1,
 		.req_type = twt_req_type,
 	};
+	int ret;
 
 	if (twt_req_type < 0) {
 		params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
@@ -278,8 +277,8 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 		twt_req.wake_duration = params->setup.twt_wake_interval / 256;
 	}
 
-	status = sl_wifi_enable_target_wake_time(&twt_req);
-	if (status != SL_STATUS_OK) {
+	ret = sl_wifi_enable_target_wake_time(&twt_req);
+	if (ret) {
 		params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
 		params->resp_status = WIFI_TWT_RESP_NOT_RECEIVED;
 		return -EINVAL;
@@ -290,8 +289,8 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 
 static int siwx91x_set_twt_teardown(struct wifi_twt_params *params)
 {
-	sl_status_t status;
 	sl_wifi_twt_request_t twt_req = { };
+	int ret;
 
 	twt_req.twt_enable = 0;
 
@@ -301,8 +300,8 @@ static int siwx91x_set_twt_teardown(struct wifi_twt_params *params)
 		twt_req.twt_flow_id = params->flow_id;
 	}
 
-	status = sl_wifi_disable_target_wake_time(&twt_req);
-	if (status != SL_STATUS_OK) {
+	ret = sl_wifi_disable_target_wake_time(&twt_req);
+	if (ret) {
 		params->fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
 		params->teardown_status = WIFI_TWT_TEARDOWN_FAILED;
 		return -EINVAL;

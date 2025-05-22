@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/net/net_offload.h>

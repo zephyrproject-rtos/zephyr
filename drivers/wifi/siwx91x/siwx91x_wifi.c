@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 #define DT_DRV_COMPAT silabs_siwx91x_wifi
@@ -79,7 +79,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->twt_capable = true;
 
 		ret = sl_si91x_get_join_configuration(interface, &join_config);
-		if (ret != SL_STATUS_OK) {
+		if (ret) {
 			LOG_ERR("Failed to get join configuration: 0x%x", ret);
 			return -EINVAL;
 		}
@@ -324,7 +324,7 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	sl_wifi_firmware_version_t fw_version = { };
 	struct siwx91x_dev *sidev = dev->data;
 	static char fw_version_str[32];
-	sl_status_t status;
+	int ret;
 
 	__ASSERT(params, "params cannot be NULL");
 
@@ -332,8 +332,8 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 		return -EIO;
 	}
 
-	status = sl_wifi_get_firmware_version(&fw_version);
-	if (status != SL_STATUS_OK) {
+	ret = sl_wifi_get_firmware_version(&fw_version);
+	if (ret) {
 		return -EINVAL;
 	}
 
@@ -352,7 +352,7 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 static void siwx91x_iface_init(struct net_if *iface)
 {
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
-	sl_status_t status;
+	int ret;
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
@@ -367,9 +367,9 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sl_wifi_set_callback(SL_WIFI_STATS_RESPONSE_EVENTS, siwx91x_wifi_module_stats_event_handler,
 			     sidev);
 
-	status = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
-	if (status) {
-		LOG_ERR("sl_wifi_get_mac_address(): %#04x", status);
+	ret = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
+	if (ret) {
+		LOG_ERR("sl_wifi_get_mac_address(): %#04x", ret);
 		return;
 	}
 	net_if_set_link_addr(iface, sidev->macaddr.octet, sizeof(sidev->macaddr.octet),

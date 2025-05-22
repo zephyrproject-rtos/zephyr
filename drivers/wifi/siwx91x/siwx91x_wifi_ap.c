@@ -87,7 +87,7 @@ int siwx91x_ap_disable(const struct device *dev)
 	}
 	wifi_mgmt_raise_ap_disable_result_event(sidev->iface, WIFI_STATUS_AP_SUCCESS);
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
-	return ret;
+	return 0;
 }
 
 static int siwx91x_ap_disable_if_required(const struct device *dev,
@@ -131,10 +131,6 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
-	sl_wifi_ap_configuration_t saved_ap_cfg;
-	int ret;
-	int sec;
-
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg = {
 		.credential_id       = SL_NET_DEFAULT_WIFI_AP_CREDENTIAL_ID,
 		.keepalive_type      = SL_SI91X_AP_NULL_BASED_KEEP_ALIVE,
@@ -150,6 +146,8 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 		.options             = 0,
 		.is_11n_enabled      = 1,
 	};
+	sl_wifi_ap_configuration_t saved_ap_cfg;
+	int ret;
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_AP_INTERFACE) {
 		LOG_ERR("Interface not in AP mode");
@@ -189,19 +187,19 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 		return -EINVAL;
 	}
 
-	sec = siwx91x_map_ap_security(params->security);
-	if (sec < 0) {
+	ret = siwx91x_map_ap_security(params->security);
+	if (ret < 0) {
 		LOG_ERR("Invalid security type");
 		wifi_mgmt_raise_ap_enable_result_event(sidev->iface,
 						       WIFI_STATUS_AP_AUTH_TYPE_NOT_SUPPORTED);
 		return -EINVAL;
 	}
+	siwx91x_ap_cfg.security = ret;
 
-	siwx91x_ap_cfg.security = sec;
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		ret = sl_net_set_credential(siwx91x_ap_cfg.credential_id, SL_NET_WIFI_PSK,
 					    params->psk, params->psk_length);
-		if (ret != SL_STATUS_OK) {
+		if (ret) {
 			LOG_ERR("Failed to set credentials: 0x%x", ret);
 			wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_FAIL);
 			return -EINVAL;
@@ -233,7 +231,7 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 	}
 
 	ret = sl_wifi_start_ap(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE, &siwx91x_ap_cfg);
-	if (ret != SL_STATUS_OK) {
+	if (ret) {
 		LOG_ERR("Failed to enable AP mode: 0x%x", ret);
 		wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_FAIL);
 		return -EIO;

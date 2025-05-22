@@ -196,7 +196,7 @@ int siwx91x_disconnect(const struct device *dev)
 	}
 
 	ret = sl_wifi_disconnect(interface);
-	if (ret != SL_STATUS_OK) {
+	if (ret) {
 		wifi_mgmt_raise_disconnect_result_event(sidev->iface, ret);
 		return -EIO;
 	}
@@ -254,7 +254,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	};
 	struct siwx91x_dev *sidev = dev->data;
 	enum wifi_mfp_options mfp_conf;
-	int ret = 0;
+	int ret;
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
 		ret = siwx91x_disconnect_if_required(dev, params);
@@ -311,9 +311,11 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		ret = sl_net_set_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 					    SL_NET_WIFI_PSK, params->sae_password,
 					    params->sae_password_length);
+	} else {
+		ret = 0;
 	}
 
-	if (ret != SL_STATUS_OK) {
+	if (ret) {
 		LOG_ERR("Failed to set credentials: 0x%x", ret);
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EINVAL;
