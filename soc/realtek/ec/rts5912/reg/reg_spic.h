@@ -37,7 +37,8 @@ struct reg_spic_reg {
 		uint16_t HALF;
 		uint32_t WORD;
 	} DR;
-	const uint32_t RESERVED2[44];
+	const uint32_t RESERVED2[43];
+	uint32_t CTRLR2;
 	uint32_t FBAUD;
 	uint32_t USERLENGTH;
 	const uint32_t RESERVED3[3];
@@ -107,6 +108,8 @@ struct reg_spic_reg {
 #define SPIC_RISR_FSEIR                BIT(5UL)
 #define SPIC_RISR_USEIR                BIT(9UL)
 #define SPIC_RISR_TFSIR                BIT(10UL)
+/* CTRLR2 */
+#define SPIC_CTRLR2_WPN_SET            BIT(1UL)
 /* USERLENGTH */
 #define SPIC_USERLENGTH_RDDUMMYLEN_Pos (0UL)
 #define SPIC_USERLENGTH_RDDUMMYLEN_Msk GENMASK(11, 0)
