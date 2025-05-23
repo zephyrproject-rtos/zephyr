@@ -18,7 +18,7 @@ Changes:
 - Add ``--inactive`` argument option to ``west list`` to support printing inactive projects.
 
 - Support ``--active-only`` argument option for the ``west manifest --resolve`` and
-  ``west manidest --freeze`` commands.
+  ``west manifest --freeze`` commands.
   This allows freezing workspaces with active project or group filters.
 
 API changes:
