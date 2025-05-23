@@ -28,7 +28,7 @@ config SPI_RA_DTC
 config SPI_USE_HW_SS
 	bool "RA MCU SPI Hardware Peripheral Select support"
 	default y
-	depends on !(SOC_SERIES_RA2A1 || SOC_SERIES_RA4M1)
+	depends on !(SOC_SERIES_RA2A1 || SOC_SERIES_RA2L1 || SOC_SERIES_RA4M1)
 	help
 	  Use Hardware Peripheral Select instead of Software Peripheral Select.
 
