@@ -31,8 +31,7 @@
 			#size-cells = <1>;
 			cpu-power-states = <&run0 &run1 &run2
 					    &stop0 &stop1 &stop2
-					    &stdby0 &stdby1
-					    &shutdown>;
+					    &stdby0 &stdby1>;
 		};
 
 		power-states {
@@ -95,14 +94,6 @@
 				exit-latency-us = <16>; /* 15.7us */
 				min-residency-us = <10000>;
 			};
-
-			shutdown: shutdown {
-				compatible = "zephyr,power-state";
-				power-state-name = "soft-off";
-				exit-latency-us = <322>; /* 322us */
-				min-residency-us = <100000>;
-			};
-
 		};
 	};
 
