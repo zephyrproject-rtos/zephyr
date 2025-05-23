@@ -125,7 +125,7 @@ endif()
 zephyr_linker_section(NAME .ARM.exidx GROUP ROM_REGION)
 # Here the original linker would check for __GCC_LINKER_CMD__, need to check toolchain linker ?
 #if(__GCC_LINKER_CMD__)
-  zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*")
+  zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*" SYMBOLS "__exidx_start" "__exidx_end")
 #endif()
 
 
