@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFM32TG_STK3300
+
+config CMU_HFXO_FREQ
+	default 32000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+endif # BOARD_EFM32TG_STK3300
