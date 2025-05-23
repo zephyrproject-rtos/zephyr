@@ -30,6 +30,19 @@ tests:
       type: one_line
       regex:
         - "Wait for DTR"
+  sample.usb_device_next.cdc-acm-workqueue:
+    depends_on: usbd
+    tags: usb
+    extra_args:
+      - CONF_FILE="usbd_next_prj.conf"
+      - DCONFIG_USBD_CDC_ACM_WORKQUEUE=y
+    integration_platforms:
+      - frdm_k64f
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"
   sample.usb.cdc-acm.buildonly:
     depends_on: usb_device
     tags: usb
