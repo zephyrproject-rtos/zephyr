@@ -125,6 +125,15 @@ config WIFI_SILABS_SIWX91X_MDNS_RESPONDER
 	  than the Zephyr one. See also sl_mdns.h in Silabs HAL for more
 	  information about the API.
 
+config WIFI_SILABS_SIWX91X_DNS_CLIENT
+	bool "Offloaded implementation of DNS client"
+	help
+	  Enable this option to allow to use the DNS(Domain Name System)
+	  implementation provided by the Network Co-Processor present on
+	  SiWx91x series. This implementation usually require less
+	  resources than the Zephyr one. See also sl_net_dns.h in Silabs
+	  HAL for more information about the API.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y

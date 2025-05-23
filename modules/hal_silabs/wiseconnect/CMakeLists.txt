@@ -161,6 +161,9 @@ if(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_MDNS_RESPONDER
     ${WISECONNECT_DIR}/components/service/mdns/si91x/sl_mdns.c
   )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_DNS_CLIENT
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
