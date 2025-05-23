@@ -427,9 +427,36 @@ static int flash_read_sr2(const struct device *dev, uint8_t *val)
 }
 #endif
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_set_wp(const struct device *dev, uint8_t *val)
+{
+	const struct flash_rts5912_dev_config *config = dev->config;
+	volatile struct reg_spic_reg *spic_reg = config->regs;
+
+	if (!val) {
+		return -EINVAL;
+	}
+
+	if (*val) {
+		spic_reg->CTRLR2 |= SPIC_CTRLR2_WPN_SET;
+	}
+
+	return 0;
+}
+
+static int flash_get_wp(const struct device *dev, uint8_t *val)
+{
+	const struct flash_rts5912_dev_config *config = dev->config;
+	volatile struct reg_spic_reg *spic_reg = config->regs;
+
+	*val = (uint8_t)(spic_reg->CTRLR2 & SPIC_CTRLR2_WPN_SET);
+
+	return 0;
+}
+#endif
+
 static int flash_wait_till_ready(const struct device *dev)
 {
-	int ret;
 	int timeout = TIMEOUT_SPIBUSY;
 	uint8_t sr = 0;
 
@@ -437,10 +464,7 @@ static int flash_wait_till_ready(const struct device *dev)
 	 * while a program page requires about 40 cycles.
 	 */
 	do {
-		ret = flash_read_sr(dev, &sr);
-		if (ret < 0) {
-			return ret;
-		}
+		flash_read_sr(dev, &sr);
 		if (!(sr & SPI_NOR_WIP_BIT)) {
 			return 0;
 		}
@@ -750,6 +774,12 @@ static int flash_rts5912_ex_op(const struct device *dev, uint16_t opcode, const 
 		break;
 	case FLASH_RTS5912_EX_OP_RD_SR2:
 		ret = flash_read_sr2(dev, (uint8_t *)in);
+		break;
+	case FLASH_RTS5912_EX_OP_SET_WP:
+		ret = flash_set_wp(dev, (uint8_t *)out);
+		break;
+	case FLASH_RTS5912_EX_OP_GET_WP:
+		ret = flash_get_wp(dev, (uint8_t *)in);
 		break;
 	}
 
