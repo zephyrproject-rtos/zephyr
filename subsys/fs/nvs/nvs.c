@@ -1136,7 +1136,10 @@ no_cached_entry:
 		} else if (len + NVS_DATA_CRC_SIZE == wlk_ate.len) {
 			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
-			rc = nvs_flash_block_cmp(fs, rd_addr, data, len + NVS_DATA_CRC_SIZE);
+			/* note: data CRC is not taken into account here, as it has not yet been
+			 * appended to the data buffer
+			 */
+			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
 			if (rc <= 0) {
 				return rc;
 			}
