@@ -24,6 +24,7 @@ config SPI_SHELL
 
 config SPI_ASYNC
 	bool "Asynchronous call support"
+	depends on MULTITHREADING
 	select POLL
 	help
 	  This option enables the asynchronous API calls.

@@ -39,7 +39,11 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem wake_sem;
+#else
+	atomic_t woken_up;
+#endif
 	struct gpio_callback wake_cb_data;
 };
 
@@ -193,7 +197,11 @@ static void wake_callback(const struct device *dev, struct gpio_callback *cb,
 
 	(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 					      GPIO_INT_DISABLE);
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->wake_sem);
+#else
+	atomic_set(&dev_data->woken_up, 1);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static void wait_for_wake(struct spi_nrfx_data *dev_data,
@@ -206,7 +214,19 @@ static void wait_for_wake(struct spi_nrfx_data *dev_data,
 			     dev_config->wake_gpio.pin) == 0) {
 		(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 						      GPIO_INT_LEVEL_HIGH);
+#ifdef CONFIG_MULTITHREADING
 		(void)k_sem_take(&dev_data->wake_sem, K_FOREVER);
+#else
+		unsigned int key = irq_lock();
+
+		while (!atomic_get(&dev_data->woken_up)) {
+			k_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+
+		dev_data->woken_up = 0;
+		irq_unlock(key);
+#endif /* CONFIG_MULTITHREADING */
 	}
 }
 
@@ -482,11 +502,14 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
 		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
-		.wake_sem = Z_SEM_INITIALIZER(				       \
-			spi_##idx##_data.wake_sem, 0, 1),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(.wake_sem = Z_SEM_INITIALIZER(			       \
+				spi_##idx##_data.wake_sem, 0, 1),))	       \
 	};								       \
 	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
