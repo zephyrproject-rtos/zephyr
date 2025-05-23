@@ -123,7 +123,7 @@ ZTEST(blob_io_flash, test_chunk_read)
 
 			err = blob_flash_stream.io.rd(&blob_flash_stream.io, &xfer, &block, &chunk);
 			zassert_equal(err, 0, "BLOB I/O read failed with err=%d off=%d len=%d",
-				      err, block.offset + chunk.offset, chunk.size);
+				      err, (int)(block.offset + chunk.offset), (int)chunk.size);
 
 			zassert_mem_equal(&chunk_data, &test_data[tests_data_offset], chunk.size,
 					  "Incorrect data written into flash");
