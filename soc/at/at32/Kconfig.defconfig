@@ -5,9 +5,6 @@ if SOC_FAMILY_AT32
 
 rsource "*/Kconfig.defconfig"
 
-config PINCTRL
-	default y
-
 config CLOCK_CONTROL
     default y
 

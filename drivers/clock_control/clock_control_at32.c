@@ -140,9 +140,9 @@ int at32_clock_control_init(const struct device *dev)
     crm_sysclk_switch(CRM_SCLK_HICK);
 
     /* wait till pll is used as system clock source */
-    while(crm_sysclk_switch_status_get() != CRM_SCLK_HICK){
+    while (crm_sysclk_switch_status_get() != CRM_SCLK_HICK) {
     }
-	
+
 	crm_periph_clock_enable(CRM_PWC_PERIPH_CLOCK, TRUE);
 #if defined(PWC_LDO_OUTPUT)
     pwc_ldo_output_voltage_set(PWC_LDO_OUTPUT_MAX);
@@ -150,41 +150,41 @@ int at32_clock_control_init(const struct device *dev)
 	/* disable pll */
     crm_clock_source_enable(CRM_CLOCK_SOURCE_PLL, FALSE);
 #if defined(FLASH_WAIT_CYCLE)
-    if(CPU_FREQ > 192000000){
+    if (CPU_FREQ > 192000000) {
 	    flash_psr_set(FLASH_WAIT_CYCLE_6);	
 	}
-	else if(CPU_FREQ > 160000000){
+	else if (CPU_FREQ > 160000000) {
         flash_psr_set(FLASH_WAIT_CYCLE_5);	
 	}
-	else if(CPU_FREQ > 128000000){
+	else if (CPU_FREQ > 128000000) {
         flash_psr_set(FLASH_WAIT_CYCLE_4);	
 	}
-	else if(CPU_FREQ > 96000000){
+	else if (CPU_FREQ > 96000000) {
         flash_psr_set(FLASH_WAIT_CYCLE_3);	
 	}
-	else if(CPU_FREQ > 64000000){
+	else if (CPU_FREQ > 64000000) {
         flash_psr_set(FLASH_WAIT_CYCLE_2);	
 	}
-	else{
+	else {
         flash_psr_set(FLASH_WAIT_CYCLE_1);	
 	}
 #endif
-    if (IS_ENABLED(AT32_HEXT_ENABLED)){
+    if (IS_ENABLED(AT32_HEXT_ENABLED)) {
         crm_clock_source_enable(CRM_CLOCK_SOURCE_HEXT, TRUE);
 
         /* wait till hext is ready */
         while(crm_hext_stable_wait() == ERROR){
         }
     }
-    if(IS_ENABLED(AT32_SYSCLK_SRC_PLL)){
+    if (IS_ENABLED(AT32_SYSCLK_SRC_PLL)) {
 		/* config pll clock resource */
-		if(IS_ENABLED(AT32_PLL_SRC_HEXT)){
+		if (IS_ENABLED(AT32_PLL_SRC_HEXT)) {
 			crm_pll_config(CRM_PLL_SOURCE_HEXT, 
 				DT_PROP(DT_NODELABEL(pll), mul_ns), 
 				DT_PROP(DT_NODELABEL(pll), div_ms), 
 				DT_PROP(DT_NODELABEL(pll), div_fp));
 		}
-		else if(IS_ENABLED(AT32_PLL_SRC_HICK)){
+		else if (IS_ENABLED(AT32_PLL_SRC_HICK)) {
 			crm_pll_config(CRM_PLL_SOURCE_HICK, 
 				DT_PROP(DT_NODELABEL(pll), mul_ns), 
 				DT_PROP(DT_NODELABEL(pll), div_ms), 
@@ -198,13 +198,13 @@ int at32_clock_control_init(const struct device *dev)
 		crm_clock_source_enable(CRM_CLOCK_SOURCE_PLL, TRUE);
 
 		/* wait till pll is ready */
-		while(crm_flag_get(CRM_PLL_STABLE_FLAG) != SET){
+		while (crm_flag_get(CRM_PLL_STABLE_FLAG) != SET) {
 		}
     }
 	
     /* config ahbclk */
     clk_div = DT_PROP(DT_NODELABEL(crm), ahb_prescaler);
-    if(clk_div == 1)
+    if (clk_div == 1)
       clk_div = CRM_AHB_DIV_1;
     else
       clk_div = (clk_div - 2) + 8;
@@ -212,7 +212,7 @@ int at32_clock_control_init(const struct device *dev)
 
     /* config apb2clk */
     clk_div = DT_PROP(DT_NODELABEL(crm), apb2_prescaler);
-    if(clk_div == 1)
+    if (clk_div == 1)
       clk_div = CRM_APB2_DIV_1;
     else
       clk_div = (clk_div - 2) + 4;
@@ -220,7 +220,7 @@ int at32_clock_control_init(const struct device *dev)
 
     /* config apb1clk */
     clk_div = DT_PROP(DT_NODELABEL(crm), apb1_prescaler);
-    if(clk_div == 1)
+    if (clk_div == 1)
       clk_div = CRM_APB1_DIV_1;
     else
       clk_div = (clk_div - 2) + 4;
@@ -230,20 +230,20 @@ int at32_clock_control_init(const struct device *dev)
     /* enable auto step mode */
     crm_auto_step_mode_enable(TRUE);
 
-    if(IS_ENABLED(AT32_SYSCLK_SRC_PLL)){
+    if (IS_ENABLED(AT32_SYSCLK_SRC_PLL)) {
 		/* select pll as system clock source */
 		crm_sysclk_switch(CRM_SCLK_PLL);
 
 		/* wait till pll is used as system clock source */
-		while(crm_sysclk_switch_status_get() != CRM_SCLK_PLL){
+		while (crm_sysclk_switch_status_get() != CRM_SCLK_PLL) {
 		}
     }
-	else if(IS_ENABLED(AT32_SYSCLK_SRC_HEXT)){
+	else if (IS_ENABLED(AT32_SYSCLK_SRC_HEXT)) {
 		/* select hext as system clock source */
 		crm_sysclk_switch(CRM_SCLK_HEXT);
 
 		/* wait till hext is used as system clock source */
-		while(crm_sysclk_switch_status_get() != CRM_SCLK_HEXT){
+		while (crm_sysclk_switch_status_get() != CRM_SCLK_HEXT) {
 		}
     }
 	else {
@@ -251,7 +251,7 @@ int at32_clock_control_init(const struct device *dev)
 		crm_sysclk_switch(CRM_SCLK_HICK);
 
 		/* wait till hick is used as system clock source */
-		while(crm_sysclk_switch_status_get() != CRM_SCLK_HICK){
+		while (crm_sysclk_switch_status_get() != CRM_SCLK_HICK) {
 		}
     }
 

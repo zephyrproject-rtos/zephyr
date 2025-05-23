@@ -74,12 +74,12 @@
 };
 
 &clk_hick {
-	status = "okay";
+    status = "okay";
 };
 
 &clk_hext {
-	clock-frequency = <12000000>;
-	status = "okay";
+    clock-frequency = <12000000>;
+    status = "okay";
 };
 
 &pll {
