@@ -116,7 +116,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	zassert_equal_ptr(&eth_context, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context, context);
+			  &eth_context, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -686,7 +686,7 @@ ZTEST(net_virtual, test_virtual_04_get_mtu)
 
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_GET_MTU,
 		       iface, &params, sizeof(params));
-	zassert_equal(ret, 0, "Cannot get interface %d MTU (%d)",
+	zassert_equal(ret, 0, "Cannot get interface %d MTU %d (%d)",
 		      net_if_get_by_iface(iface), params.mtu, ret);
 
 	zassert_equal(params.mtu, MTU,
@@ -978,7 +978,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	if (peer_addr.sa_family == AF_INET) {
 		outer = create_outer(attached, AF_INET, IPPROTO_IP,
 				     sizeof(struct net_ipv4_hdr), 0);
-		zassert_not_null(outer, "Cannot allocate %s pkt", outer);
+		zassert_not_null(outer, "Cannot allocate pkt");
 
 		ret = net_ipv4_create(outer, &net_sin(&src_addr)->sin_addr,
 				      &net_sin(&dst_addr)->sin_addr);
@@ -987,7 +987,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	} else {
 		outer = create_outer(attached, AF_INET6, IPPROTO_IPV6,
 				     sizeof(struct net_ipv6_hdr), 0);
-		zassert_not_null(outer, "Cannot allocate %s pkt", outer);
+		zassert_not_null(outer, "Cannot allocate %p pkt", outer);
 
 		ret = net_ipv6_create(outer, &net_sin6(&src_addr)->sin6_addr,
 				      &net_sin6(&dst_addr)->sin6_addr);
@@ -1000,7 +1000,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				     sizeof(struct net_ipv4_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
-		zassert_not_null(inner, "Cannot allocate %s pkt", inner);
+		zassert_not_null(inner, "Cannot allocate pkt");
 
 		ret = net_ipv4_create(inner, &net_sin(&inner_src)->sin_addr,
 				      innerv4);
@@ -1013,7 +1013,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				     sizeof(struct net_ipv6_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
-		zassert_not_null(inner, "Cannot allocate %s pkt", inner);
+		zassert_not_null(inner, "Cannot allocate pkt");
 
 		ret = net_ipv6_create(inner, &net_sin6(&inner_src)->sin6_addr,
 				      innerv6);

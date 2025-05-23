@@ -28,7 +28,7 @@ static void test_credential_add(void)
 	for (i = 0; i < CONFIG_TLS_MAX_CREDENTIALS_NUMBER - 2; i++) {
 		ret = tls_credential_add(i, TLS_CREDENTIAL_CA_CERTIFICATE,
 					 test_ca_cert, sizeof(test_ca_cert));
-		zassert_equal(ret, 0, "Failed to add credential %d %d", i);
+		zassert_equal(ret, 0, "Failed to add credential %d", i);
 	}
 
 	/* Function should allow to add credentials of different types
