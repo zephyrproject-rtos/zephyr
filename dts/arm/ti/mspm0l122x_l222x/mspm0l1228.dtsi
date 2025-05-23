@@ -1,1 +1,1 @@
-#include <mspm0lx228.dtsi>
+#include "mspm0lx228.dtsi"
