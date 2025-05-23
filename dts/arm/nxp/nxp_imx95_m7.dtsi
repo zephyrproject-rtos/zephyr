@@ -143,6 +143,19 @@
 			status = "disabled";
 		};
 
+		edma5: dma-controller@42000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x42000000 0x4000>;
+			#dma-cells = <2>;
+			nxp,version = <5>;
+			dma-channels = <64>;
+			dma-requests = <92>;
+			no-error-irq;
+			interrupts = <128 0>, <129 0>;
+			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000C 0x00000000>;
+			status = "disabled";
+		};
+
 		tpm3: pwm@424e0000 {
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x424e0000 0x88>;
@@ -234,6 +247,8 @@
 			reg = <0x42570000 DT_SIZE_K(64)>;
 			interrupts = <64 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART3>;
+			dmas = <&edma5 0 17>, <&edma5 1 18>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -250,6 +265,8 @@
 			reg = <0x42590000 DT_SIZE_K(64)>;
 			interrupts = <66 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART5>;
+			dmas = <&edma5 2 21>, <&edma5 3 22>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
