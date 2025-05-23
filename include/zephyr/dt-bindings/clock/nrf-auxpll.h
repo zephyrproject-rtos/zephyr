@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NRF_AUXPLL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NRF_AUXPLL_H_
+
+#define NRF_AUXPLL_FREQ_MIN        0
+#define NRF_AUXPLL_FREQ_AUDIO_44K1 15309
+#define NRF_AUXPLL_FREQ_USB24M     32768
+#define NRF_AUXPLL_FREQ_AUDIO_48K  39845
+#define NRF_AUXPLL_FREQ_MAX        65535
+
+#endif /* #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NRF_AUXPLL_H_ */
