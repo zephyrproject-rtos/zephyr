@@ -37,15 +37,9 @@
     <div class="select-container">
       <select id="arch">
         <option value="" disabled selected>Select an architecture</option>
-        <option value="arm">ARM</option>
-        <option value="arm64">ARM 64</option>
-        <option value="mips">MIPS</option>
-        <option value="posix">POSIX</option>
-        <option value="riscv">RISC-V</option>
-        <option value="sparc">SPARC</option>
-        <option value="arc">Synopsys DesignWare ARC</option>
-        <option value="x86">x86</option>
-        <option value="xtensa">Xtensa</option>
+        {% for arch_name, arch in archs | items | sort(attribute='1.full_name') -%}
+        <option value="{{ arch_name }}">{{ arch.full_name }}</option>
+        {% endfor %}
       </select>
     </div>
   </div>
