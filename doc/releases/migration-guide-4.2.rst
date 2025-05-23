@@ -234,12 +234,41 @@ GPIO
 * ``arduino-nano-header-r3`` is renamed to :dtcompatible:`arduino-nano-header`.
   Because the R3 comes from the Arduino UNO R3, which has changed the connector from
   the former version, and is unrelated to the Arduino Nano.
+* Moved file ``include/zephyr/dt-bindings/gpio/nordic-npm1300-gpio.h`` to
+  :zephyr_file:`include/zephyr/dt-bindings/gpio/nordic-npm13xx-gpio.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the defines
+* Renamed ``CONFIG_GPIO_NPM1300`` to :kconfig:option:`CONFIG_GPIO_NPM13XX`,
+  ``CONFIG_GPIO_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_GPIO_NPM13XX_INIT_PRIORITY`
 
 I2S
 ===
 * The :dtcompatible:`nxp,mcux-i2s` driver added property ``mclk-output``. Set this property to
 * configure the MCLK signal as an output.  Older driver versions used the macro
 * ``I2S_OPT_BIT_CLK_SLAVE`` to configure the MCLK signal direction. (:github:`88554`)
+
+LED
+===
+
+* Renamed ``CONFIG_LED_NPM1300`` to :kconfig:option:`CONFIG_LED_NPM13XX`
+
+MFD
+===
+
+* Moved file ``include/zephyr/drivers/mfd/npm1300.h`` to :zephyr_file:`include/zephyr/drivers/mfd/npm13xx.h`
+  and renamed all instances of ``npm1300``/``NPM1300`` to ``npm13xx``/``NPM13XX`` in the enums and
+  function names
+* Renamed ``CONFIG_MFD_NPM1300`` to :kconfig:option:`CONFIG_MFD_NPM13XX`,
+  ``CONFIG_MFD_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_MFD_NPM13XX_INIT_PRIORITY`
+
+Regulator
+=========
+
+* Moved file ``include/zephyr/dt-bindings/regulator/npm1300.h`` to
+  :zephyr_file:`include/zephyr/dt-bindings/regulator/npm13xx.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the defines
+* Renamed ``CONFIG_REGULATOR_NPM1300`` to :kconfig:option:`CONFIG_REGULATOR_NPM13XX`,
+  ``CONFIG_REGULATOR_NPM1300_COMMON_INIT_PRIORITY`` to :kconfig:option:`REGULATOR_NPM13XX_COMMON_INIT_PRIORITY`,
+  ``CONFIG_REGULATOR_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_REGULATOR_NPM13XX_INIT_PRIORITY`
 
 Sensors
 =======
@@ -276,6 +305,12 @@ Sensors
 
 * The binding file for :dtcompatible:`raspberrypi,pico-temp.yaml` has been renamed to have a name
   matching the compatible string.
+
+* Moved file ``include/zephyr/drivers/sensor/npm1300_charger.h`` to
+  :zephyr_file:`include/zephyr/drivers/sensor/npm13xx_charger.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the enums
+
+* Renamed ``CONFIG_NPM1300_CHARGER`` to :kconfig:option:`CONFIG_NPM13XX_CHARGER`
 
 Serial
 =======
@@ -325,6 +360,11 @@ Timer
                0xd1000008 0x8>;
         reg-names = "mtime", "mtimecmp";
     };
+
+Watchdog
+========
+* Renamed ``CONFIG_WDT_NPM1300`` to :kconfig:option:`CONFIG_WDT_NPM13XX`,
+  ``CONFIG_WDT_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_WDT_NPM13XX_INIT_PRIORITY`
 
 Modem
 =====
