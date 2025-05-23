@@ -41,7 +41,7 @@ struct qspi_nor_data {
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
-	bool xip_enabled;
+	uint32_t xip_users;
 };
 
 struct qspi_nor_config {
@@ -313,7 +313,7 @@ static void qspi_acquire(const struct device *dev)
 
 	qspi_lock(dev);
 
-	if (!dev_data->xip_enabled) {
+	if (dev_data->xip_users == 0) {
 		qspi_clock_div_change();
 
 		pm_device_busy_set(dev);
@@ -331,7 +331,7 @@ static void qspi_release(const struct device *dev)
 	deactivate = atomic_dec(&dev_data->usage_count) == 1;
 #endif
 
-	if (!dev_data->xip_enabled) {
+	if (dev_data->xip_users == 0) {
 		qspi_clock_div_restore();
 
 		if (deactivate) {
@@ -1344,35 +1344,54 @@ static int qspi_nor_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void on_xip_enable(const struct device *dev)
+{
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, true);
+#endif
+	(void)nrfx_qspi_activate(false);
+}
+
+static void on_xip_disable(const struct device *dev)
+{
+	/* It turns out that when the QSPI peripheral is deactivated
+	 * after a XIP transaction, it cannot be later successfully
+	 * reactivated and an attempt to perform another XIP transaction
+	 * results in the CPU being hung; even a debug session cannot be
+	 * started then and the SoC has to be recovered.
+	 * As a workaround, at least until the cause of such behavior
+	 * is fully clarified, perform a simple non-XIP transaction
+	 * (a read of the status register) before deactivating the QSPI.
+	 * This prevents the issue from occurring.
+	 */
+	(void)qspi_rdsr(dev, 1);
+
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, false);
+#endif
+}
+
 void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 
-	if (dev_data->xip_enabled == enable) {
-		return;
-	}
-
 	qspi_acquire(dev);
 
-#if NRF_QSPI_HAS_XIPEN
-	nrf_qspi_xip_set(NRF_QSPI, enable);
-#endif
 	if (enable) {
-		(void)nrfx_qspi_activate(false);
+		if (dev_data->xip_users == 0) {
+			on_xip_enable(dev);
+		}
+
+		++dev_data->xip_users;
+	} else if (dev_data->xip_users == 0) {
+		LOG_ERR("Unbalanced XIP disabling");
 	} else {
-		/* It turns out that when the QSPI peripheral is deactivated
-		 * after a XIP transaction, it cannot be later successfully
-		 * reactivated and an attempt to perform another XIP transaction
-		 * results in the CPU being hung; even a debug session cannot be
-		 * started then and the SoC has to be recovered.
-		 * As a workaround, at least until the cause of such behavior
-		 * is fully clarified, perform a simple non-XIP transaction
-		 * (a read of the status register) before deactivating the QSPI.
-		 * This prevents the issue from occurring.
-		 */
-		(void)qspi_rdsr(dev, 1);
+		--dev_data->xip_users;
+
+		if (dev_data->xip_users == 0) {
+			on_xip_disable(dev);
+		}
 	}
-	dev_data->xip_enabled = enable;
 
 	qspi_release(dev);
 }
