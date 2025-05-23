@@ -51,10 +51,6 @@ UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 #define CDC_ACM_RX_FIFO_BUSY		4
 #define CDC_ACM_TX_FIFO_BUSY		5
 
-static struct k_work_q cdc_acm_work_q;
-static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
-			     CONFIG_USBD_CDC_ACM_STACK_SIZE);
-
 struct cdc_acm_uart_fifo {
 	struct ring_buf *rb;
 	bool irq;
@@ -148,6 +144,24 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 	return buf;
 }
 
+#if CONFIG_USBD_CDC_ACM_WORKQUEUE
+static struct k_work_q cdc_acm_work_q;
+static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
+			     CONFIG_USBD_CDC_ACM_STACK_SIZE);
+
+static int usbd_cdc_acm_init_wq(void)
+{
+	k_work_queue_init(&cdc_acm_work_q);
+	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,
+			   K_KERNEL_STACK_SIZEOF(cdc_acm_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
+	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
+
+	return 0;
+}
+
+SYS_INIT(usbd_cdc_acm_init_wq, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
 static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
 {
 	return k_work_submit_to_queue(&cdc_acm_work_q, work);
@@ -163,6 +177,23 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 {
 	return k_current_get() == k_work_queue_thread_get(&cdc_acm_work_q);
 }
+
+#else /* Use system workqueue */
+
+static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
+{
+	return k_work_submit(work);
+}
+
+static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
+					       k_timeout_t delay)
+{
+	return k_work_schedule(work, delay);
+}
+
+#define check_wq_ctx(dev) true
+
+#endif /* CONFIG_USBD_CDC_ACM_WORKQUEUE */
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
@@ -1066,17 +1097,6 @@ static int cdc_acm_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int usbd_cdc_acm_init_wq(void)
-{
-	k_work_queue_init(&cdc_acm_work_q);
-	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,
-			   K_KERNEL_STACK_SIZEOF(cdc_acm_stack),
-			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
-	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
-
-	return 0;
-}
-
 static int usbd_cdc_acm_preinit(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
@@ -1329,5 +1349,3 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		&cdc_acm_uart_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_CDC_ACM_DT_DEVICE_DEFINE);
-
-SYS_INIT(usbd_cdc_acm_init_wq, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
