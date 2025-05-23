@@ -448,9 +448,6 @@ static int ov7670_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov7670_data *data = dev->data;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
 	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
 }
