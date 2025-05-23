@@ -413,6 +413,30 @@
 				ngpios = <16>;
 				int-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_npm1300: pmic@1d {
+				compatible = "nordic,npm1300";
+				reg = <0x1d>;
+
+				npm1300_gpio: gpio-controller {
+					compatible = "nordic,npm1300-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <5>;
+				};
+			};
+
+			test_i2c_npm1304: pmic@1e {
+				compatible = "nordic,npm1304";
+				reg = <0x1e>;
+
+				npm1304_gpio: gpio-controller {
+					compatible = "nordic,npm1304-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <5>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
