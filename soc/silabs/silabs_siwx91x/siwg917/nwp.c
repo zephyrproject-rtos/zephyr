@@ -178,8 +178,8 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
-	__ASSERT((hidden_ssid == true || max_num_sta != 0) && wifi_oper_mode != WIFI_SOFTAP_MODE,
-		 "hidden_ssid or max_num_sta requires SOFTAP mode");
+	__ASSERT((hidden_ssid == false && max_num_sta == 0) || wifi_oper_mode == WIFI_SOFTAP_MODE,
+		 "hidden_ssid or max_num_sta requires SOFT AP mode");
 
 	if (wifi_oper_mode == WIFI_SOFTAP_MODE && max_num_sta > AP_MAX_NUM_STA) {
 		LOG_ERR("Exceeded maximum supported stations (%d)", AP_MAX_NUM_STA);
