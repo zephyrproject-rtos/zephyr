@@ -7,10 +7,16 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - counter
   - gpio
   - hwinfo
   - watchdog
   - i2c
   - spi
   - usb_device
+  - rtc
+  - crypto
+  - dma
+  - memc
   - usbd
+vendor: renesas
