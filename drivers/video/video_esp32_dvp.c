@@ -259,10 +259,6 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 
 	LOG_DBG("Get format");
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	ret = video_get_format(cfg->source_dev, fmt);
 	if (ret) {
 		LOG_ERR("Failed to get format from source");
@@ -279,10 +275,6 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
 	int ret;
-
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
 
 	ret = video_set_format(cfg->source_dev, fmt);
 	if (ret < 0) {
