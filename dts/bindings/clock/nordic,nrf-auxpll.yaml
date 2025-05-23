@@ -43,7 +43,7 @@ properties:
     required: true
     description: |
       Value used to set the fractional PLL divider ratio (can be set between
-      divider ratios 4 to 5). Valid values range from 0 to 65535.
+      divider ratios 4 to 5). Valid values shown in dt-bindings/clock/nrf-auxpll.h.
 
   nordic,out-div:
     type: int
