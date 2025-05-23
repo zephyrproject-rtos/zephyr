@@ -8,6 +8,7 @@
 
 #include "frdm_mcxn947_mcxn947_cpu0.dtsi"
 
+/delete-node/ &boot_partition;
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;
 /delete-node/ &storage_partition;
@@ -28,17 +29,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: partition@0 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00000000 DT_SIZE_M(3)>;
+			reg = <0x00014000 DT_SIZE_M(3)>;
 		};
-		slot1_partition: partition@300000 {
+		slot1_partition: partition@314000 {
 			label = "image-1";
-			reg = <0x00300000 DT_SIZE_M(3)>;
+			reg = <0x00314000 DT_SIZE_M(3)>;
 		};
-		storage_partition: partition@600000 {
+		storage_partition: partition@614000 {
 			label = "storage";
-			reg = <0x00600000 DT_SIZE_M(2)>;
+			reg = <0x00614000 DT_SIZE_K(1968)>;
 		};
 	};
 };
