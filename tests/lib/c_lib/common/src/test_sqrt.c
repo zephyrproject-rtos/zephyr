@@ -147,6 +147,9 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 
 ZTEST(libc_common, test_sqrt)
 {
+	if (sizeof(double) != 8) {
+		ztest_test_skip();
+	}
 int i;
 double	resd, error, square, root_squared, exponent;
 uint64_t max_error;
