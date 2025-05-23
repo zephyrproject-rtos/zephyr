@@ -23,6 +23,7 @@ def test_runner_imports():
 
     expected = set((
         # zephyr-keep-sorted-start
+        'alif_flash',
         'amebaflash',
         'arc-nsim',
         'bflb_flash_command',
