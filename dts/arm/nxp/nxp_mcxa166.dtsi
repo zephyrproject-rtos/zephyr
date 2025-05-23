@@ -308,6 +308,11 @@
 			clocks = <&syscon MCUX_LPADC1_CLK>;
 		};
 
+		temp0: temp0 {
+			compatible = "nxp,lpadc-temp40";
+			status = "disabled";
+		};
+
 		lpadc1: lpadc@400b0000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x400b0000 0x1000>;
