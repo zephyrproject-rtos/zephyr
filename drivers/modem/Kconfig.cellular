@@ -81,6 +81,9 @@ config MODEM_CELLULAR_RAT_4G_3G_2G
 
 endchoice
 
+config MODEM_CELLULAR_CLEAR_FORBIDDEN
+	bool "Clear forbidden networks from SIM-card on boot"
+
 endif #DT_HAS_U_BLOX_LARA_R6_ENABLED
 
 endif #MODEM_CELLULAR
