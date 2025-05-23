@@ -60,7 +60,7 @@ static void test_pow2_ceil_x(unsigned long test_value,
 	unsigned int result = Z_POW2_CEIL(x);
 
 	zassert_equal(result, expected_result,
-		      "ZPOW2_CEIL(%lu) returned %lu, expected %lu",
+		      "ZPOW2_CEIL(%lu) returned %ld, expected %lu",
 		      test_value, result, expected_result);
 }
 
