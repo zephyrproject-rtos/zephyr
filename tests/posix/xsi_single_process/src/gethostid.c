@@ -18,6 +18,6 @@ ZTEST(xsi_single_process, test_gethostid)
 
 	uint32_t id32 = gethostid();
 
-	zassert_equal((uint32_t)id, id32, "gethostid() returned inconsistent values", (uint32_t)id,
-		      id32);
+	zassert_equal((uint32_t)id, id32, "gethostid() returned inconsistent values %u (exp: %u)",
+			(uint32_t)id, id32);
 }

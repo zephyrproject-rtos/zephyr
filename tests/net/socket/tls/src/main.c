@@ -67,7 +67,7 @@ static void test_config_psk(int s_sock, int c_sock)
 
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK,
 					 psk, sizeof(psk)),
-		      0, "Failed to register PSK %d");
+		      0, "Failed to register PSK");
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK_ID,
 					 psk_id, strlen(psk_id)),
 		      0, "Failed to register PSK ID");
