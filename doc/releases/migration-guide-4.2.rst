@@ -250,6 +250,9 @@ Sensors
       };
     };
 
+* The binding file for :dtcompatible:`raspberrypi,pico-temp.yaml` has been renamed to have a name
+  matching the compatible string.
+
 Serial
 =======
 
