@@ -760,6 +760,7 @@ class BoardCatalogDirective(SphinxDirective):
                     "shields": domain_data["shields"],
                     "vendors": domain_data["vendors"],
                     "socs": domain_data["socs"],
+                    "archs": domain_data["archs"],
                     "hw_features_present": self.env.app.config.zephyr_generate_hw_features,
                 },
             )
@@ -1385,6 +1386,7 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
     app.env.domaindata["zephyr"]["shields"] = board_catalog["shields"]
     app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
     app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]
+    app.env.domaindata["zephyr"]["archs"] = board_catalog["archs"]
     app.env.domaindata["zephyr"]["runners"] = board_catalog["runners"]
 
 
