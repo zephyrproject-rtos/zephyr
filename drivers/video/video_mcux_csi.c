@@ -176,10 +176,6 @@ static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format 
 {
 	const struct video_mcux_csi_config *config = dev->config;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	if (config->source_dev && !video_get_format(config->source_dev, fmt)) {
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		video_pix_fmt_convert(fmt, true);
