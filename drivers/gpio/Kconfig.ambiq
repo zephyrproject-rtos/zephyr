@@ -10,5 +10,6 @@ config GPIO_AMBIQ
 	default y
 	depends on DT_HAS_AMBIQ_GPIO_ENABLED
 	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_GPIO
 	help
 	  Enable driver for Ambiq gpio.
