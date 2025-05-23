@@ -2302,6 +2302,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+#if CONFIG_MODEM_CELLULAR_RAT_4G
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3", ok_match),
+#elif CONFIG_MODEM_CELLULAR_RAT_4G_3G
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3,2", ok_match),
+#elif CONFIG_MODEM_CELLULAR_RAT_4G_3G_2G
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3,2,0", ok_match),
+#endif
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
