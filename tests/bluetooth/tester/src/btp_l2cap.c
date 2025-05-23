@@ -890,11 +890,13 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_l2cap_credits_cmd),
 		.func = credits,
 	},
+#if defined(CONFIG_BT_EATT)
 	{
 		.opcode = BTP_L2CAP_DISCONNECT_EATT_CHANS,
 		.expect_len = sizeof(struct btp_l2cap_disconnect_eatt_chans_cmd),
 		.func = disconnect_eatt_chans,
 	},
+#endif
 };
 
 uint8_t tester_init_l2cap(void)
