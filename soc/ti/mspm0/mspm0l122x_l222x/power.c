@@ -61,9 +61,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		set_mode_standby(substate_id);
 		break;
-	case PM_STATE_SOFT_OFF:
-		DL_SYSCTL_setPowerPolicySHUTDOWN();
-		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		return;
@@ -77,22 +74,3 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk);
 	irq_unlock(0);
 }
-
-static int ti_mspm0l2xxx_pm_init(void)
-{
-	int ret;
-	uint32_t rst_cause;
-
-	ret = hwinfo_get_reset_cause(&rst_cause);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (RESET_LOW_POWER_WAKE == rst_cause)
-	{
-		DL_SYSCTL_releaseShutdownIO();
-	}
-
-	return 0;
-}
-SYS_INIT(ti_mspm0l2xxx_pm_init, POST_KERNEL, 0);
