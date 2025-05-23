@@ -516,7 +516,9 @@ static inline bool timespec_negate(struct timespec *ts)
 
 #else
 
-	if (ts->tv_sec == INT64_MIN) {
+	/* note: must check for 32-bit size here until #90029 is resolved */
+	if (((sizeof(ts->tv_sec) == sizeof(int32_t)) && (ts->tv_sec == INT32_MIN)) ||
+	    ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MIN))) {
 		/* -INT64_MIN > INT64_MAX, so +ve integer overflow would occur */
 		return false;
 	}
@@ -695,7 +697,11 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *ts)
 		return (k_timeout_t){
 			.ticks = 0,
 		};
-	} else if (ts->tv_sec == INT64_MAX && ts->tv_nsec == NSEC_PER_SEC - 1) {
+		/* note: must check for 32-bit size here until #90029 is resolved */
+	} else if (((sizeof(ts->tv_sec) == sizeof(int32_t)) && (ts->tv_sec == INT32_MAX) &&
+		    (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
+		   ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MAX) &&
+		    (ts->tv_nsec == NSEC_PER_SEC - 1))) {
 		/* This is equivalent to K_FOREVER, but not including <zephyr/kernel.h> */
 		return (k_timeout_t){
 			.ticks = K_TICKS_FOREVER,
